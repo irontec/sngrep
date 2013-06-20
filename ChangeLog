@@ -1,0 +1,7 @@
+2013-04-22 Ivan Alonso <kaian@irontec.com>
+
+    * sngrep 0.0-alpha released.
+
+    * Initial version, code is just a mere stub with global variables, without
+      sanity checks... expect the worst.
+

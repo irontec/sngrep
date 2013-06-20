@@ -1,0 +1,37 @@
+ToDo List
+=========
+This program is not even alpha stage, so there are TONS of improvements, which most 
+probably will not be done, or maybe yes, who knows. 
+
+=========
+exec:
+	* Capture SIP messages using libpcap
+		In online mode, we're spawning a ngrep process that is responsible
+		to write the captured messages to stdout.
+		If we dont use correct ngrep filters (like udp or port 5060), most
+		probably sngrep will fail to parse.
+		We could remove this thread and capture the packages ourself.
+
+sip:
+	* Change parsing functions for something more efficient (osip2?)
+		Parsing with sscanf is not the best way, but the simplest. If
+		we require to parse more headers in the future, it will start 
+		to be worse and worse;
+		
+ui:
+ 	* Change panels initialization
+		Right now, all panels are initializated at the same, because
+		each panel can only be invoked once (it is not possible to have
+		two call details panel right now)
+		
+	* Improve scrolling in all panels
+		Don't redraw panels if it's not required... just keep them.
+	
+	* Show call duration and Finish status
+		It would be great to show this two columns on main screean.
+		First one can be calculated from the difference between first
+		and last messages timestamps.
+		The second one, depends on the messages in the callflow. But the
+		idea is something like: BYE (Normal Clearing), CANCEL (Canceled),
+		486 Busy Here (Busy), ...
+

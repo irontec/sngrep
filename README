@@ -1,0 +1,78 @@
+===============================================================================
+===            sngrep - Ncurses ngrep interface for SIP                     ===
+===            Copyright (C) 2013 Irontec S.L                               ===
+===============================================================================
+-------------------------------------------------------------------------------
+--- DISCLAIMER ----------------------------------------------------------------
+-------------------------------------------------------------------------------
+--- sngrep is a small development done in a couple of days. It has not been 
+--- properly coded. It has not been propely tested. It should not even reach
+--- the alpha stage, but can be handy somehow in strange cases.
+---
+--- If you use this piece of code and find a bug or have a comment, write them 
+--- to
+---					kaian@irontec.com
+---
+-------------------------------------------------------------------------------
+ 
+-------------------------------------------------------------------------------
+--- WHAT IS SNGREP?
+-------------------------------------------------------------------------------
+--- This 'tool' aims to make easier the task of my workmates while using ngrep
+--- on heavy load production systems. When a lot of SIP messages are flowing 
+--- in your screen, is useful to have a tool that order them and print in a 
+--- fashion way.
+---
+--- This can be also used as a PCAP file viewer, although will only show SIP
+--- packages.
+---
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+--- FEATURES
+-------------------------------------------------------------------------------
+--- There are two ways of using sngrep
+---
+--- Offline mode:
+---  Just pass a PCAP file as parameter, it will read all UDP SIP packages
+---  and parse them in different dialogs showing their call flows when possible.
+---
+--- Online mode
+---  You can use sngrep with the same parameters than ngrep. 
+---  It will spawn a ngrep process passing the given parameters and parse its
+---  output. 
+---  Some parameters will make ngrep output be different from what sngrep
+---  expects, making it fail. Yes, it sucks.
+--- 
+--- sngrep will try to group parsed messages in dialogs based on Call-ID
+--- header of SIP messages.
+--- 
+--- If you want to make relations between different dialogs (extended callflow)
+--- a header must be present in of the dialogs referencing the other one.
+--- This header can be X-CID or X-Call-ID and must contain the Call-ID of the
+--- other related dialog.
+---
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+--- FREQUENT ASKED QUESTIONS 
+-------------------------------------------------------------------------------
+--- Q: Why a new tool from network filtering?
+--- A: Don't know. I didn't find any console tool that will display call flows
+---    not even in text mode.
+---
+--- Q: Why dont you filter packages in online mode instead of using ngrep?
+--- A: Because I don't have the required time to code all that right now
+---
+--- Q: Why only parsing SIP Messages?
+--- A: Because it's useful for us.
+---
+--- Q: I have found a bug, what should I do?
+--- A: There are LOTS of bugs. The strange thing will be you haven't found one.
+---    Just write me an email to kaian@irontec.com and will try to fix it.
+---
+--- Q: I think the idea is better than the tool.
+--- A: I think that too. If you want to start a new tool with the same purpose
+---    send me an email, I'll want to contribute.
+---
+-------------------------------------------------------------------------------

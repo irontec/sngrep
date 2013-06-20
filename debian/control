@@ -1,0 +1,18 @@
+Source: sngrep
+Section: comm
+Priority: optional
+Maintainer: Ivan Alonso <kaian@irontec.com>
+
+Package: sngrep
+Architecture: amd64
+Section: comm
+Depends: ngrep, libpcap0.8, libncurses5
+Priority: optional
+Homepage: http://www.irontec.com
+Description: Ncurses ngrep interface for SIP packages
+ sngrep is a small development done in a couple of days. It has not been
+ properly coded. It has not been propely tested. It should not even reach
+ the alpha stage, but can be handy somehow in strange cases.
+ If you use this piece of code and find a bug or have a comment, write them
+ to kaian@irontec.com
+ .
