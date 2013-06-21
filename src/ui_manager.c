@@ -22,7 +22,7 @@
  * @brief Interface status data
  */
 static struct ui_status {
-	int color;
+    int color;
 } status;
 
 /**
@@ -35,28 +35,28 @@ static struct ui_status {
  */
 static ui_panel_t panel_pool[] = {
 {
-	.type = MAIN_PANEL,
+    .type = MAIN_PANEL,
     .panel = NULL,
-	.create = call_list_create,
-	.draw = call_list_draw,
+    .create = call_list_create,
+    .draw = call_list_draw,
     .handle_key = call_list_handle_key,
-	.help = call_list_help
+    .help = call_list_help
 },
 {
-	.type = DETAILS_PANEL,
-	.panel = NULL,
-	.create = call_flow_create,
-	.draw = call_flow_draw,
-	.handle_key = call_flow_handle_key,
-	.help = call_flow_help
+    .type = DETAILS_PANEL,
+    .panel = NULL,
+    .create = call_flow_create,
+    .draw = call_flow_draw,
+    .handle_key = call_flow_handle_key,
+    .help = call_flow_help
 },
 {
-	.type = DETAILS_PANEL_EX,
-	.panel = NULL,
-	.create = call_flow_ex_create,
-	.draw = call_flow_ex_draw,
-	.handle_key = call_flow_ex_draw,
-	.help = call_flow_ex_help
+    .type = DETAILS_PANEL_EX,
+    .panel = NULL,
+    .create = call_flow_ex_create,
+    .draw = call_flow_ex_draw,
+    .handle_key = call_flow_ex_handle_key,
+    .help = call_flow_ex_help
 }};
 
 /**
@@ -70,21 +70,21 @@ int init_interface(const struct ui_config uicfg)
     // Initialize curses 
     initscr();
     cbreak();
-	// Dont write user input on screen
+    // Dont write user input on screen
     noecho(); 
-	// Hide the cursor
+    // Hide the cursor
     curs_set(0); 
-	// Only delay ESC Sequences 25 ms (we dont want Escape sequences)
+    // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25; 
     start_color();
-	toggle_color((status.color = 1));
+    toggle_color((status.color = 1));
 
-	// Start showing call list 
-	// Fixme for a wrapper ui_panel_show(ui_panel_t*);
-	panel_pool->panel = panel_pool->create();
-	wait_for_input(panel_pool);
-	
-	// End ncurses mode
+    // Start showing call list 
+    // Fixme for a wrapper ui_panel_show(ui_panel_t*);
+    panel_pool->panel = panel_pool->create();
+    wait_for_input(panel_pool);
+    
+    // End ncurses mode
     endwin();
 }
 
@@ -121,7 +121,7 @@ void toggle_color(int on)
 void wait_for_input(ui_panel_t *ui_panel)
 {
 
-	PANEL *panel = ui_panel->panel;
+    PANEL *panel = ui_panel->panel;
     // Get window of main panel
     WINDOW *win = panel_window(panel);
     keypad(win, TRUE);
@@ -131,7 +131,7 @@ void wait_for_input(ui_panel_t *ui_panel)
         top_panel(panel);
 
         // Paint the panel 
-		ui_panel->draw(panel);
+        ui_panel->draw(panel);
 
         update_panels(); // Update the stacking order
         doupdate(); // Refresh screen
@@ -146,8 +146,8 @@ void wait_for_input(ui_panel_t *ui_panel)
         case 'H':
         case 'h':
         case 265: /* KEY_F1 */
-			/* wrapper this shit */
-			ui_panel->help(panel);
+            /* wrapper this shit */
+            ui_panel->help(panel);
             break;
         case 'Q':
         case 'q':
@@ -155,9 +155,9 @@ void wait_for_input(ui_panel_t *ui_panel)
             hide_panel(panel);
             return;
             break;
-		default:
-			ui_panel->handle_key(panel, c);
-			break;
+        default:
+            ui_panel->handle_key(panel, c);
+            break;
         }
     }
 }
@@ -194,26 +194,29 @@ void title_foot_box(WINDOW *win)
  */
 void refresh_call_ui(const char *callid)
 {
+    ui_panel_t *ui_panel;
+    PANEL *panel;
+
     // Get the topmost panel
-    PANEL *panel = panel_below(NULL);
-
-    if (panel) {
-        // Get panel info
-        struct panel_info *pinfo;
-        pinfo = (struct panel_info*) panel_userptr(panel);
-        if (!pinfo) return;
-
-        /** FIXME
-         * If panel type is DETAILS or DETAILS_EX, it should
-         * be only be refreshed if active_call Call-ID or its
-         * ex_call Call-ID are the one being updated 
-         */
-
-        // Paint the panel
-        //if ((pinfo->draw)(panel) != 0) return;
-
-        update_panels(); // Update the stacking order
-        doupdate(); // Refresh screen
+    if ((panel = panel_below(NULL))) {
+        // Get ui information for that panel
+        if ((ui_panel = ui_get_panel(panel))){
+            // Request the panel to be drawn again
+            ui_panel->draw(panel);
+            //! Refresh panel stack
+            update_panels(); 
+            doupdate(); 
+        }
     }
 }
 
+
+ui_panel_t *ui_get_panel(PANEL *panel)
+{
+	int i;
+	int panelcnt = sizeof(panel_pool)/sizeof(ui_panel_t);
+	for (i=0; i <panelcnt; i++){
+		if (panel_pool[i].panel == panel)
+			return &panel_pool[i];
+	}
+}

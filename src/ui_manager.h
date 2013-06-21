@@ -137,4 +137,6 @@ void title_foot_box(WINDOW *win);
  */
 void refresh_call_ui(const char *callid);
 
+ui_panel_t *ui_get_panel(PANEL *panel);
+
 #endif	// __SNGREP_UI_MANAGER_H
