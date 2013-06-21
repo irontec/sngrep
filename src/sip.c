@@ -124,6 +124,7 @@ struct sip_call *call_new(const char *callid)
     call->messages = NULL;
     call->finished = 0;
     call->next = NULL;
+    call->prev = NULL;
     memset(&call->xcallid, 0, sizeof(call->xcallid));
 
     // XXX Put this call at the end of the call list
@@ -135,6 +136,7 @@ struct sip_call *call_new(const char *callid)
         for (cur = calls; cur; prev = cur, cur = cur->next)
             ;
         prev->next = call;
+        call->prev = prev;
     }
     return call;
 }
@@ -196,8 +198,7 @@ struct sip_msg *call_add_message(struct sip_call *call, const char *header, cons
  */
 int msg_parse_header(struct sip_msg *msg, const char *header)
 {
-    struct tm when = {
-            0 };
+    struct tm when = { 0 };
     if (sscanf(header, "U %d/%d/%d %d:%d:%d.%d %s -> %s", &when.tm_year, &when.tm_mon,
             &when.tm_mday, &when.tm_hour, &when.tm_min, &when.tm_sec, (int*) &msg->ts.tv_usec,
             msg->ip_from, msg->ip_to)) {
@@ -251,7 +252,7 @@ int msg_parse_payload(struct sip_msg *msg, const char *payload)
         if (sscanf(pch, "SIP/2.0 %[^\n]", msg->type)) {
             continue;
         }
-        if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &irest, rest)) {
+        if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &msg->cseq, rest)) {
             if (!strlen(msg->type)) strcpy(msg->type, rest);
             continue;
         }
@@ -361,7 +362,7 @@ struct sip_call *get_ex_call(const struct sip_call *call)
  * Finds the next msg in a call. If the passed msg is
  * NULL it returns the first message in the call 
  *
- * @param call SIP call structure
+ * @PARAM CALL sip CALL STRUCTURe
  * @param msg Actual SIP msg from the call (can be NULL)
  * @returns Next chronological message in the call
  *

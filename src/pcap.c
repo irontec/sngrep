@@ -74,7 +74,7 @@ int load_pcap_file(const char* file) {
         } else if (linktype == DLT_LINUX_SLL) {
             size_link = SLL_HDR_LEN;    
         } else {
-        	// Something we are not prepared to parse :(
+            // Something we are not prepared to parse :(
             fprintf(stderr, "Error handing linktype %d\n", linktype);
             return 1;
         }
@@ -94,9 +94,9 @@ int load_pcap_file(const char* file) {
         size_payload = htons(udp->udp_hlen) - SIZE_UDP;
         msg_payload[size_payload] = '\0';
 
-		// XXX Process timestamp
-		struct timeval ut_tv = header.ts;
-		time_t t = (time_t)ut_tv.tv_sec;
+        // XXX Process timestamp
+        struct timeval ut_tv = header.ts;
+        time_t t = (time_t)ut_tv.tv_sec;
 
         // XXX Get current time 
         char timestr[200];
@@ -105,10 +105,10 @@ int load_pcap_file(const char* file) {
         strftime(timestr, sizeof(timestr), "%Y/%m/%d %T", time);
 
         // XXX Build a header string
-        sprintf(msg_header, "U %s.%06ld", timestr, ut_tv.tv_usec);
-        sprintf(msg_header, "%s %s:%u", msg_header, inet_ntoa(ip->ip_src), htons(udp->udp_sport));
-        sprintf(msg_header, "%s -> %s:%u", msg_header, inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
-
+        sprintf(msg_header, "U %s.%06ld %s:%u -> %s:%u", 
+                    timestr, ut_tv.tv_usec,
+                    inet_ntoa(ip->ip_src), htons(udp->udp_sport),
+                    inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
         // Parse this header and payload
         sip_parse_message(msg_header, (const char*)msg_payload);
     }

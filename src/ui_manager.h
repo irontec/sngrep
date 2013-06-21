@@ -42,18 +42,18 @@ typedef struct ui_panel ui_panel_t;
  */
 struct ui_panel
 {
-	//! Panel Type @see panel_types enum
-    int type; 		
+    //! Panel Type @see panel_types enum
+    int type;         
     //! The actual ncurses panel pointer
     PANEL *panel;
-	//! Constructor for this panel
+    //! Constructor for this panel
     PANEL *(*create)();
-	//! Reques the panel to redraw its data
+    //! Reques the panel to redraw its data
     int (*draw)(PANEL*);
-	//! Handle a custom keybind on this panel
-	int (*handle_key)(PANEL*, char key);
-	//! Show help window for this panel (if any)
-	int (*help)(PANEL *);
+    //! Handle a custom keybind on this panel
+    int (*handle_key)(PANEL*, int key);
+    //! Show help window for this panel (if any)
+    int (*help)(PANEL *);
 };
 
 /**
@@ -119,6 +119,9 @@ void toggle_color(int on);
  */
 void wait_for_input(ui_panel_t *ui_panel);
 
+
+void ui_draw_panel(ui_panel_t *ui_panel);
+
 /**
  * Draw a box around passed windows with two bars (top and bottom)
  * of one line each.
@@ -137,6 +140,14 @@ void title_foot_box(WINDOW *win);
  */
 void refresh_call_ui(const char *callid);
 
-ui_panel_t *ui_get_panel(PANEL *panel);
+/**
+ * @brief Find a ui_panel from its pannel pointer
+ */
+ui_panel_t *ui_find_element_by_panel(PANEL *panel);
 
-#endif	// __SNGREP_UI_MANAGER_H
+/**
+ * @brief Find a ui_panel form its panel id
+ */
+ui_panel_t *ui_find_element_by_type(int type);
+
+#endif    // __SNGREP_UI_MANAGER_H

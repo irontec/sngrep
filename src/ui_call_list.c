@@ -19,110 +19,214 @@
  **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+#include <unistd.h>
+#include <string.h>
 #include "ui_call_list.h"
+#include "ui_call_flow.h"
 #include "sip.h"
 
+// FIXME create a getter function for this at sip.c
 extern struct sip_call *calls;
-struct sip_call *active_call;
 
 PANEL *call_list_create()
 {
-	PANEL *panel = new_panel(newwin(LINES, COLS, 0, 0));
-	return panel;
+    PANEL *panel;
+    WINDOW *win;
+    int height, width, i, colpos;
+    call_list_info_t *info;    
+
+    // Create a new panel that fill all the screen
+    panel = new_panel(newwin(LINES, COLS, 0, 0));
+    // Initialize Call List specific data 
+    info = malloc(sizeof(call_list_info_t));
+    memset(info, 0, sizeof(call_list_info_t));
+    // Store it into panel userptr
+    set_panel_userptr(panel, (void*) info);
+
+    // Set default columns. One day this will be configurable
+    call_list_add_column( panel, 0, "From SIP", 40);
+    call_list_add_column( panel, 1, "To SIP", 40);
+    call_list_add_column( panel, 2, "Msg", 5);
+    call_list_add_column( panel, 3, "From", 22);
+    call_list_add_column( panel, 4, "To", 22);
+    call_list_add_column( panel, 5, "Starting", 15);
+
+    // Let's draw the fixed elements of the screen
+    win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Calculate available printable area
+    info->linescnt = height - 11;
+ 
+    // Draw a box arround the window
+    title_foot_box(win);
+
+    // Draw a header with APP_NAME and APP_LONG_DESC - FIXME /calculate a properly middle :P
+    mvwprintw(win, 1, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
+    mvwprintw(win, 3, 2, "Current Mode: %s", "Online");
+    mvwaddch(win, 5, 0, ACS_LTEE);
+    mvwhline(win, 5, 1, ACS_HLINE, width - 2);
+    mvwaddch(win, 5, width - 1, ACS_RTEE);
+    mvwaddch(win, 7, 0, ACS_LTEE);
+    mvwhline(win, 7, 1, ACS_HLINE, width - 2);
+    mvwaddch(win, 7, width - 1, ACS_RTEE);
+    mvwprintw(win, height - 2, 2,  "Q/Esc: Quit");
+    mvwprintw(win, height - 2, 16, "F1: Show help");
+    mvwprintw(win, height - 2, 32, "Enter: Show Call-flow");
+
+    // Draw columns titles
+    for (colpos = 5, i = 0; i < info->columncnt; i++){
+		// Check if the column will fit in the remaining space of the screen
+		if (colpos + info->columns[i].width >= width) break;
+        mvwprintw(win, 6, colpos, info->columns[i].title);
+        colpos += info->columns[i].width;
+    }
+    // Return the created panel
+    return panel;
 }
 
 int call_list_draw(PANEL *panel)
 {
-    int y = 1, x = 5;
-    int w, h, ph, padpos, highlight, entries;
-
-    // Get window of main panel
-    WINDOW *win = panel_window(panel);
+    int height, width, i, colpos, collen, startline = 8;
+    struct sip_call *call;
+    int callcnt;
 
     // Get panel info
-    entries = get_n_calls();
+    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    if (!info) return -1;
 
-    // Get window size
-    getmaxyx(win, h, w);
+    // Get available calls counter (we'll use it here a couple of times)
+    if (!(callcnt = get_n_calls()))
+            return -1;
 
-    title_foot_box(win);
-    mvwprintw(win, y, (w - 45) / 2, "sngrep - SIP message interface for ngrep");
-    mvwprintw(win, y + 2, 2, "Current Mode: %s", "Online");
-    mvwaddch(win, y+4, 0, ACS_LTEE);
-    mvwhline(win, y+4, 1, ACS_HLINE, w - 2);
-    mvwaddch(win, y+4, w-1, ACS_RTEE);
-    mvwprintw(win, y + 5, x + 2, "From SIP");
-    mvwprintw(win, y + 5, x + 51, "To SIP");
-    mvwprintw(win, y + 5, x + 109, "Msg");
-    mvwprintw(win, y + 5, x + 116, "From");
-    mvwprintw(win, y + 5, x + 136, "To");
-    mvwprintw(win, y + 5, x + 155, "Starting");
-    mvwaddch(win, y+6, 0, ACS_LTEE);
-    mvwhline(win, y+6, 1, ACS_HLINE, w - 2);
-    mvwaddch(win, y+6, w-1, ACS_RTEE);
+    // If no active call, use the fist one (if exists)
+    if (!info->first_call && calls) {
+        info->cur_call = info->first_call = calls;
+        info->cur_line = info->first_line = 1;
+    }
 
-    WINDOW *main_pad = newpad(get_n_calls() + h, w);
+    // Get window of call list panel
+    WINDOW *win = panel_window(panel);
+    getmaxyx(win, height, width);
 
-    struct sip_call *call = calls;
-    int cline = 0, callcnt = 1;
-    while (call) {
-        if (callcnt == highlight) {
-            active_call = call;
-            wattron(main_pad,COLOR_PAIR(HIGHLIGHT_COLOR));
-        }
+    // Fill the call list
+    int cline = startline;
+    for (call = info->first_call; call; call = call->next) {
+        // Stop if we have reached the bottom of the list
+        if (cline >= info->linescnt + startline)
+            break;
 
-        mvwprintw(main_pad, cline, x + 2, "%*s", w - x * 2 - 4, ""); /* Highlight all the line */
-        mvwprintw(main_pad, cline, x, "%.50s", call->messages->sip_from);
-        mvwprintw(main_pad, cline, x + 50, "%.50s", call->messages->sip_to);
-        mvwprintw(main_pad, cline, x + 109, "%d", get_n_msgs(call));
-        mvwprintw(main_pad, cline, x + 115, "%s", call->messages->ip_from);
-        mvwprintw(main_pad, cline, x + 135, "%s", call->messages->ip_to);
-        mvwprintw(main_pad, cline, x + 155, "%s", call->messages->type);
-        wattroff(main_pad, COLOR_PAIR(HIGHLIGHT_COLOR));
+        // We only print calls with messages (In fact, all call should have msgs)
+        if (!get_n_msgs(call))
+            continue;
+
+        // Highlight active call
+        if (call == info->cur_call) {
+            wattron(win,COLOR_PAIR(HIGHLIGHT_COLOR));
+        } 
+        mvwprintw(win, cline, 4, "%*s", width - 6 , ""); 
+
+        // Print requested columns
+        for (colpos = 5, i=0; i < info->columncnt; i++){
+            collen = info->columns[i].width;
+			// Check if the column will fit in the remaining space of the screen
+			if (colpos + collen >= width) break;
+		
+			// Display each column with it's data
+            switch (info->columns[i].id) {
+               case 0: mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->sip_from); break;
+               case 1: mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->sip_to); break;
+               case 2: mvwprintw(win, cline, colpos, "%d", get_n_msgs(call)); break;
+               case 3: mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->ip_from); break;
+               case 4: mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->ip_to); break;
+               case 5: mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->type); break;
+            }
+            colpos += collen;
+       }
+        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         cline++;
-        callcnt++;
-        call = call->next;
     }
 
-    /* Calculate the space the pad will be covering in the screen */
-    ph = h - 2 /* Title */- 5 /* Header */- 2 /* Footer */;
-
-    /* Calculate the highlight position */
-    // The highlight position is below the last displayed position?
-    if (highlight > ph + padpos - 2) {
-        // Scrolling down 
-        padpos++;
-        // The highlight position is above the first displayed position?
-    } else if (highlight <= padpos) {
-        // Scroll up
-        padpos--;
+    // Clean scroll information
+    mvwprintw(win, startline, 2, "");
+    mvwprintw(win, startline + info->linescnt - 2, 2, "   ");
+    mvwprintw(win, startline + info->linescnt - 1, 2, "");
+    
+    // Update the scroll information
+    if (info->first_line > 1 ) 
+        mvwaddch(win, startline, 2, ACS_UARROW);
+    if (callcnt > info->first_line + info->linescnt) {
+        mvwaddch(win, startline + info->linescnt - 1, 2, ACS_DARROW);
     }
 
-    /* Draw some fancy arrow to indicate scrolling */
-    if (padpos > 0) {
-        mvwaddch(main_pad, padpos, 3, ACS_UARROW);
-    }
-    if (get_n_calls() > ph + padpos) {
-        mvwaddch(main_pad, ph+padpos-3, 3, ACS_DARROW);
-    }
-
-    // Copy the rawmessage into the screen
-    copywin(main_pad, win, padpos, 1, 2 + 5 + 1, 1, 5 + ph, w - 2, false);
-    delwin(main_pad);
-
-    mvwprintw(
-            win,
-            h - 2,
-            2,
-            "Q: Quit    C: Toggle color    F: Show raw messages     H: Help    ENTER: Show Call-flow    X: Show Extended Call-Flow");
-
+    // Set the current line % if we have more calls that available lines
+    if (callcnt > info->linescnt ) 
+           mvwprintw(win, startline + info->linescnt - 2, 1, "%2d%%", 
+                (info->first_line + info->cur_line) * 100 / callcnt);
     return 0;
-
 }
 
-int call_list_handle_key(PANEL *panel, char key) 
+int call_list_handle_key(PANEL *panel, int key) 
 {
-	return 0;
+    int i, rnpag_steps = 10;
+    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    ui_panel_t *flow_panel;
+    struct call_flow_info *flow_info;
+
+    // Sanity check, this should not happen
+    if (!info) return -1;
+
+    switch (key) {
+    case KEY_DOWN:
+        // Check if there is a call below us
+        if (!info->cur_call || !info->cur_call->next)
+            break;
+        info->cur_call = info->cur_call->next;
+        info->cur_line++;
+        // If we are out of the bottom of the displayed list
+        // refresh it starting in the next call
+        if (info->cur_line > info->linescnt) {
+            info->first_call = info->first_call->next;
+            info->first_line++;
+            info->cur_line = info->linescnt;
+        }
+        break;
+    case KEY_UP:
+        // Check if there is a call above us
+        if (!info->cur_call || !info->cur_call->prev)
+            break;
+        info->cur_call = info->cur_call->prev;
+        info->cur_line--;
+        // If we are out of the top of the displayed list
+        // refresh it starting in the previous (in fact current) call
+        if (info->cur_line <= 0 ){
+            info->first_call = info->cur_call;
+            info->first_line--;
+            info->cur_line = 1;
+        }
+        break;
+    case KEY_NPAGE:
+        // Next page => N key down strokes 
+        for (i=0; i < rnpag_steps; i++) 
+            call_list_handle_key(panel, KEY_DOWN);    
+        break;
+    case KEY_PPAGE:
+        // Prev page => N key up strokes
+        for (i=0; i < rnpag_steps; i++) 
+            call_list_handle_key(panel, KEY_UP);    
+        break;
+    case 10:
+        // KEY_ENTER , Display current call flow
+        flow_panel = ui_find_element_by_type(DETAILS_PANEL);
+        flow_panel->panel = flow_panel->create();
+		call_flow_set_call(info->cur_call);
+        wait_for_input(flow_panel);
+        break;
+    default:
+        return -1;
+    }
+
+    return 0;
 }
 
 int call_list_help(PANEL * ppanel)
@@ -130,7 +234,7 @@ int call_list_help(PANEL * ppanel)
     int cline = 1;
     int width, height;
 
-	PANEL *panel = new_panel(newwin(20, 50, LINES / 4, COLS / 4));
+    PANEL *panel = new_panel(newwin(20, 50, LINES / 4, COLS / 4));
     // Get window of main panel
     WINDOW *win = panel_window(panel);
 
@@ -154,6 +258,17 @@ int call_list_help(PANEL * ppanel)
     mvwprintw(win, cline + 2, 15, "Select Previous dialog");
     mvwprintw(win, cline + 3, 15, "Select Next dialog");
     mvwprintw(win, cline + 4, 15, "Show dialog details");
+    return 0;
+}
 
+int call_list_add_column (PANEL *panel, int id, const char *title, int width)
+{
+	call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+	if (!info) return -1;
+
+	info->columns[info->columncnt].id = id;
+	info->columns[info->columncnt].title = title;
+	info->columns[info->columncnt].width = width;
+	info->columncnt++;
 	return 0;
 }

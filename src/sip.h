@@ -24,6 +24,11 @@
 
 #include <sys/time.h>
 
+//! Shorter declaration of sip_call structure
+typedef struct sip_call sip_call_t;
+//! Shorter declaration of sip_msg structure
+typedef struct sip_msg sip_msg_t;
+
 /** 
  * This structure contains all required information of a single
  * message withing a dialog.
@@ -43,6 +48,7 @@ struct sip_msg
     char sip_from[256];
     char sip_to[256];
     char type[40];
+	int cseq;
     time_t timet; // FIXME not required
     struct timeval ts;
     const char *payload[80]; // FIXME Payload in one struct
@@ -69,7 +75,8 @@ struct sip_call
     /* pthread_mutex_t */// XXX NYI
 
     struct sip_msg *messages; /* Messages of this call */
-    struct sip_call *next; /* Calls linked list */
+    struct sip_call *next; /* Calls double linked list */
+    struct sip_call *prev; /* Calls double linked list */
 };
 
 /**

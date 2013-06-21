@@ -12,7 +12,6 @@
  ** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  **
  ******************************************************************************/
-#include "curses.h"
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
@@ -80,10 +79,8 @@ int init_interface(const struct ui_config uicfg)
     toggle_color((status.color = 1));
 
     // Start showing call list 
-    // Fixme for a wrapper ui_panel_show(ui_panel_t*);
-    panel_pool->panel = panel_pool->create();
-    wait_for_input(panel_pool);
-    
+    wait_for_input(ui_find_element_by_type(MAIN_PANEL));
+
     // End ncurses mode
     endwin();
 }
@@ -120,22 +117,16 @@ void toggle_color(int on)
  */
 void wait_for_input(ui_panel_t *ui_panel)
 {
-
+	// Request the panel to draw itself
+	ui_draw_panel(ui_panel);
     PANEL *panel = ui_panel->panel;
+
     // Get window of main panel
     WINDOW *win = panel_window(panel);
     keypad(win, TRUE);
 
     for (;;) {
-        // Put this panel on top
-        top_panel(panel);
-
-        // Paint the panel 
-        ui_panel->draw(panel);
-
-        update_panels(); // Update the stacking order
-        doupdate(); // Refresh screen
-
+		ui_draw_panel(ui_panel);
         int c = wgetch(win);
         switch (c) {
         case 'C':
@@ -147,7 +138,11 @@ void wait_for_input(ui_panel_t *ui_panel)
         case 'h':
         case 265: /* KEY_F1 */
             /* wrapper this shit */
-            ui_panel->help(panel);
+            if (ui_panel->help(panel) == 0){
+        		update_panels(); // Update the stacking order
+        		doupdate(); // Refresh screen
+				wgetch(win);
+			}
             break;
         case 'Q':
         case 'q':
@@ -161,6 +156,33 @@ void wait_for_input(ui_panel_t *ui_panel)
         }
     }
 }
+
+void ui_draw_panel(ui_panel_t *ui_panel)
+{
+	//! Sanity check, this should not happen
+	if (!ui_panel) return;	
+
+	//! If panel does not exit, create it
+	if (!ui_panel->panel){
+		if (ui_panel->create)
+			ui_panel->panel = ui_panel->create();
+	}
+	
+	//! If something failed
+	if (!ui_panel->panel) return;
+
+	// Make this panel the topmost panel
+	top_panel(ui_panel->panel);
+
+	// Request the panel to draw on the scren
+	if (ui_panel->draw)
+		ui_panel->draw(ui_panel->panel);
+
+	// Update panel stack
+    update_panels(); 
+    doupdate(); 
+}
+	
  
 /**
  * Draw a box around passed windows with two bars (top and bottom)
@@ -200,23 +222,27 @@ void refresh_call_ui(const char *callid)
     // Get the topmost panel
     if ((panel = panel_below(NULL))) {
         // Get ui information for that panel
-        if ((ui_panel = ui_get_panel(panel))){
-            // Request the panel to be drawn again
-            ui_panel->draw(panel);
-            //! Refresh panel stack
-            update_panels(); 
-            doupdate(); 
-        }
+        ui_draw_panel(ui_find_element_by_panel(panel));
     }
 }
 
 
-ui_panel_t *ui_get_panel(PANEL *panel)
+ui_panel_t *ui_find_element_by_panel(PANEL *panel)
 {
-	int i;
-	int panelcnt = sizeof(panel_pool)/sizeof(ui_panel_t);
-	for (i=0; i <panelcnt; i++){
-		if (panel_pool[i].panel == panel)
-			return &panel_pool[i];
-	}
+    int i;
+    int panelcnt = sizeof(panel_pool)/sizeof(ui_panel_t);
+    for (i=0; i <panelcnt; i++){
+        if (panel_pool[i].panel == panel)
+            return &panel_pool[i];
+    }
+}
+
+ui_panel_t *ui_find_element_by_type(int type)
+{
+    int i;
+    int panelcnt = sizeof(panel_pool)/sizeof(ui_panel_t);
+    for (i=0; i <panelcnt; i++){
+        if (panel_pool[i].type == type)
+            return &panel_pool[i];
+    }
 }
