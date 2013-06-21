@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "sip.h"
-#include "curses.h"
+#include "ui_manager.h"
 
 #define STDBUF_ARGS "-i0 -o0 -e0"
 #define NGREP_ARGS  "-qpt -W byline"

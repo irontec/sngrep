@@ -25,8 +25,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "exec.h"
-#include "curses.h"
 #include "pcap.h"
+#include "ui_manager.h"
 
 /**
  * Usage function
@@ -68,8 +68,8 @@ int main(int argc, char* argv[])
         return 1;
     } else if (argc == 2) {
         // Show ofline mode in ui
-        config.online = 0;
-        config.fname = argv[1];
+        //config.online = 0;
+        //config.fname = argv[1];
 
         // Assume Offline mode with pcap file
         if (load_pcap_file(argv[1]) != 0) {
