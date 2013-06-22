@@ -48,11 +48,14 @@ struct sip_msg
     char sip_from[256];
     char sip_to[256];
     char type[40];
-	int cseq;
+    int cseq;
     time_t timet; // FIXME not required
     struct timeval ts;
+    char *headerptr;
+    char *payloadptr;
     const char *payload[80]; // FIXME Payload in one struct
     int plines; // FIXME not required
+    int parsed; // Flag to mark if payload data has been parsed
 
     struct sip_call *call; /* Message owner */
     struct sip_msg *next; /* Messages linked list */
@@ -201,5 +204,7 @@ struct sip_msg *get_next_msg(const struct sip_call *call, const struct sip_msg *
  *
  */
 struct sip_msg *get_next_msg_ex(const struct sip_call *call, const struct sip_msg *msg);
+
+sip_msg_t *parse_msg(sip_msg_t *msg);
 
 #endif

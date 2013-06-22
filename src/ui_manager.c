@@ -16,9 +16,12 @@
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_flow_ex.h"
+#include "ui_call_raw.h"
 
 /**
  * @brief Interface status data
+ * XXX I think this should be in the applicaton configuration structure
+ *     avaliable everywhere in the program
  */
 static struct ui_status {
     int color;
@@ -32,14 +35,15 @@ static struct ui_status {
  *     load panels as modules and provide a way to register
  *     themselfs into the panel pool dynamically.
  */
-static ui_panel_t panel_pool[] = {
+static ui_t panel_pool[] = {
 {
     .type = MAIN_PANEL,
     .panel = NULL,
     .create = call_list_create,
     .draw = call_list_draw,
     .handle_key = call_list_handle_key,
-    .help = call_list_help
+    .help = call_list_help,
+    .destroy = call_list_destroy,
 },
 {
     .type = DETAILS_PANEL,
@@ -47,15 +51,24 @@ static ui_panel_t panel_pool[] = {
     .create = call_flow_create,
     .draw = call_flow_draw,
     .handle_key = call_flow_handle_key,
-    .help = call_flow_help
+    .help = call_flow_help,
+    .destroy = call_flow_destroy,
 },
 {
     .type = DETAILS_PANEL_EX,
     .panel = NULL,
     .create = call_flow_ex_create,
     .draw = call_flow_ex_draw,
-    .handle_key = call_flow_ex_handle_key,
+    //.handle_key = call_flow_ex_handle_key,
     .help = call_flow_ex_help
+},
+{
+    .type = RAW_PANEL,
+    .panel = NULL,
+    .create = call_raw_create,
+    .draw = call_raw_draw,
+    .handle_key = call_raw_handle_key,
+    .help = call_raw_help
 }};
 
 /**
@@ -64,7 +77,8 @@ static ui_panel_t panel_pool[] = {
  * @param ui_config UI configuration structure
  * @returns 0 on ncurses initialization success, 1 otherwise 
  */
-int init_interface(const struct ui_config uicfg)
+int
+init_interface(const struct ui_config uicfg)
 {
     // Initialize curses 
     initscr();
@@ -79,17 +93,155 @@ int init_interface(const struct ui_config uicfg)
     toggle_color((status.color = 1));
 
     // Start showing call list 
-    wait_for_input(ui_find_element_by_type(MAIN_PANEL));
+    wait_for_input(ui_create(MAIN_PANEL));
 
     // End ncurses mode
     endwin();
+    return 0;
 }
 
-/**
- * Toggle color mode on and off
- * @param on Pass 0 to turn all black&white
- */
-void toggle_color(int on)
+ui_t *
+ui_create(int type)
+{
+    ui_t* ui;
+
+    // Find the ui structure for this panel type
+    if (!(ui = ui_find_by_type(type)))
+        return NULL;
+
+    // If already has a panel, just return it
+    if (ui_get_panel(ui)) 
+        return ui;
+    else if (ui->create)
+        ui->panel = ui->create();
+
+    // And return it
+    return ui;
+}
+
+void
+ui_destroy(ui_t *ui) 
+{
+    PANEL *panel;
+    // If thre is no ui panel, we're done
+    if (!(panel = ui_get_panel(ui)))
+        return;
+
+    // If panel has a destructor function use it
+    if (ui->destroy)
+        ui->destroy(panel);
+
+    // Initialize panel pointer
+    ui->panel = NULL;    
+}
+
+PANEL *
+ui_get_panel(ui_t *ui)
+{
+    // Return panel pointer of ui struct
+    return (ui)?ui->panel:NULL;
+}
+
+void 
+ui_draw_panel(ui_t *ui)
+{
+    //! Sanity check, this should not happen
+    if (!ui) return;    
+
+    // Create the panel if it does not exist
+    if (!(ui_create(ui->type))) return;
+
+    // Make this panel the topmost panel
+    top_panel(ui_get_panel(ui));
+
+    // Request the panel to draw on the scren
+    if (ui->draw)
+        ui->draw(ui_get_panel(ui));
+
+    // Update panel stack
+    update_panels(); 
+    doupdate(); 
+}
+
+void 
+ui_help(ui_t *ui)
+{
+    // If current ui has help function
+    if (ui->help)
+        ui->help(ui_get_panel(ui));
+
+    // Update the stacking order
+    update_panels(); 
+    doupdate(); 
+    // Press any key to continue
+    wgetch(panel_window(ui_get_panel(ui)));
+}
+
+void 
+ui_handle_key(ui_t *ui, int key)
+{
+    if (ui->handle_key)
+        ui->handle_key(ui_get_panel(ui), key);
+}
+
+ui_t *
+ui_find_by_panel(PANEL *panel)
+{
+    int i;
+    int panelcnt = sizeof(panel_pool)/sizeof(ui_t);
+    for (i=0; i <panelcnt; i++){
+        if (panel_pool[i].panel == panel)
+            return &panel_pool[i];
+    }
+    return NULL;
+}
+
+ui_t *
+ui_find_by_type(int type)
+{
+    int i;
+    int panelcnt = sizeof(panel_pool)/sizeof(ui_t);
+    for (i=0; i <panelcnt; i++){
+        if (panel_pool[i].type == type)
+            return &panel_pool[i];
+    }
+    return NULL;
+}
+
+void 
+wait_for_input(ui_t *ui)
+{
+    // Get window of main panel
+    //ui_draw_panel(ui);
+    WINDOW *win = panel_window(ui_get_panel(ui));
+    keypad(win, TRUE);
+
+    for (;;) {
+        ui_draw_panel(ui);
+        int c = wgetch(win);
+        switch (c) {
+        case 'C':
+        case 'c':
+            // TODO general application config structure
+            status.color = (status.color) ? 0 : 1;
+            toggle_color(status.color);
+            break;
+        case 'H':
+        case 'h':
+        case 265: /* KEY_F1 */
+            ui_help(ui); break;
+        case 'Q':
+        case 'q':
+        case 27: /* KEY_ESC */
+            ui_destroy(ui); return;
+        default:
+            ui_handle_key(ui, c); break;
+        }
+    }
+}
+
+void 
+toggle_color(int on)
 {
     if (on) {
         // Initialize some colors
@@ -107,90 +259,20 @@ void toggle_color(int on)
     }
 }
 
-
-/**
- * Wait for user input.
- * This function manages all user input in all panel types and
- * redraws the panel using its own draw function
- * 
- * @param panel the topmost panel
- */
-void wait_for_input(ui_panel_t *ui_panel)
+void 
+refresh_call_ui(const char *callid)
 {
-	// Request the panel to draw itself
-	ui_draw_panel(ui_panel);
-    PANEL *panel = ui_panel->panel;
+    PANEL *panel;
 
-    // Get window of main panel
-    WINDOW *win = panel_window(panel);
-    keypad(win, TRUE);
-
-    for (;;) {
-		ui_draw_panel(ui_panel);
-        int c = wgetch(win);
-        switch (c) {
-        case 'C':
-        case 'c':
-            status.color = (status.color) ? 0 : 1;
-            toggle_color(status.color);
-            break;
-        case 'H':
-        case 'h':
-        case 265: /* KEY_F1 */
-            /* wrapper this shit */
-            if (ui_panel->help(panel) == 0){
-        		update_panels(); // Update the stacking order
-        		doupdate(); // Refresh screen
-				wgetch(win);
-			}
-            break;
-        case 'Q':
-        case 'q':
-        case 27: /* KEY_ESC */
-            hide_panel(panel);
-            return;
-            break;
-        default:
-            ui_panel->handle_key(panel, c);
-            break;
-        }
+    // Get the topmost panel
+    if ((panel = panel_below(NULL))) {
+        // Get ui information for that panel
+        ui_draw_panel(ui_find_by_panel(panel));
     }
 }
-
-void ui_draw_panel(ui_panel_t *ui_panel)
-{
-	//! Sanity check, this should not happen
-	if (!ui_panel) return;	
-
-	//! If panel does not exit, create it
-	if (!ui_panel->panel){
-		if (ui_panel->create)
-			ui_panel->panel = ui_panel->create();
-	}
-	
-	//! If something failed
-	if (!ui_panel->panel) return;
-
-	// Make this panel the topmost panel
-	top_panel(ui_panel->panel);
-
-	// Request the panel to draw on the scren
-	if (ui_panel->draw)
-		ui_panel->draw(ui_panel->panel);
-
-	// Update panel stack
-    update_panels(); 
-    doupdate(); 
-}
-	
  
-/**
- * Draw a box around passed windows with two bars (top and bottom)
- * of one line each.
- *
- * @param win Window to draw borders on
- */
-void title_foot_box(WINDOW *win)
+void 
+title_foot_box(WINDOW *win)
 {
     int height, width;
 
@@ -204,45 +286,4 @@ void title_foot_box(WINDOW *win)
     mvwhline(win, height-3, 1, ACS_HLINE, width - 2);
     mvwaddch(win, height-3, width-1, ACS_RTEE);
 
-}
-
-/**
- * This function is invocked asynchronously from the
- * ngrep exec thread to notify a new message of the giving
- * callid. If the UI is displaying this call or it's 
- * extended one, the topmost panel will be redraw again 
- *
- * @param callid Call-ID from the last received message
- */
-void refresh_call_ui(const char *callid)
-{
-    ui_panel_t *ui_panel;
-    PANEL *panel;
-
-    // Get the topmost panel
-    if ((panel = panel_below(NULL))) {
-        // Get ui information for that panel
-        ui_draw_panel(ui_find_element_by_panel(panel));
-    }
-}
-
-
-ui_panel_t *ui_find_element_by_panel(PANEL *panel)
-{
-    int i;
-    int panelcnt = sizeof(panel_pool)/sizeof(ui_panel_t);
-    for (i=0; i <panelcnt; i++){
-        if (panel_pool[i].panel == panel)
-            return &panel_pool[i];
-    }
-}
-
-ui_panel_t *ui_find_element_by_type(int type)
-{
-    int i;
-    int panelcnt = sizeof(panel_pool)/sizeof(ui_panel_t);
-    for (i=0; i <panelcnt; i++){
-        if (panel_pool[i].type == type)
-            return &panel_pool[i];
-    }
 }

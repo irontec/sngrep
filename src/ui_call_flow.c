@@ -19,6 +19,7 @@
  **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+#include <stdlib.h>
 #include <string.h>
 #include "ui_manager.h"
 #include "ui_call_flow.h"
@@ -30,13 +31,13 @@
  */
 PANEL *call_flow_create()
 {
-	PANEL *panel;
-	WINDOW *win;
-	int height, width;
-	call_flow_info_t *info;
+    PANEL *panel;
+    WINDOW *win;
+    int height, width;
+    call_flow_info_t *info;
 
-	// Create a new panel to fill all the screen
-	panel = new_panel(newwin(LINES, COLS, 0, 0));
+    // Create a new panel to fill all the screen
+    panel = new_panel(newwin(LINES, COLS, 0, 0));
     // Initialize Call List specific data 
     info = malloc(sizeof(call_flow_info_t));
     memset(info, 0, sizeof(call_flow_info_t));
@@ -72,23 +73,41 @@ PANEL *call_flow_create()
     mvwprintw(win, height - 2, 16, "F1: Show help");
     mvwprintw(win, height - 2, 32, "X: Show Extendend");
 
-	return panel;
+    return panel;
+}
+
+void call_flow_destroy(PANEL *panel)
+{
+    call_flow_info_t *info;
+    
+    // Hide the panel
+    hide_panel(panel);
+
+    // Free the panel information
+    if ((info = (call_flow_info_t*)panel_userptr(panel)))
+        free(info);
+
+    // Delete panel window
+    delwin(panel_window(panel));
+    // Delete panel
+    del_panel(panel);
 }
 
 int call_flow_draw(PANEL *panel)
 {
-    int i, height, width, cline, cseq, msgcnt, startpos = 7;
-	sip_msg_t *msg;
+    int i, height, width, cline, msgcnt, startpos = 7;
+    sip_msg_t *msg;
+    //int cseq;
 
-	// Get panel information
-	call_flow_info_t *info = (call_flow_info_t*) panel_userptr(panel);
+    // Get panel information
+    call_flow_info_t *info = (call_flow_info_t*) panel_userptr(panel);
 
     // This panel only makes sense with a selected call
     if (!info->call) return 1;
 
     // Get window of main panel
     WINDOW *win = panel_window(panel);
-	msgcnt = get_n_msgs(info->call);
+    msgcnt = get_n_msgs(info->call);
 
     // Get data from first message
     const char *from = info->call->messages->ip_from;
@@ -106,20 +125,21 @@ int call_flow_draw(PANEL *panel)
     mvwvline(win, 7, 20, ACS_VLINE, info->linescnt);
     mvwvline(win, 7, 50, ACS_VLINE, info->linescnt);
 
-	for (cline = startpos, msg = info->first_msg; msg; msg = get_next_msg(info->call, msg)) {
-		// Print messages with differents CSeq separed by one line
-		//if (cseq != msg->cseq){ 
-		//	cline++;
-		//	cseq = msg->cseq;
-		//}
+    for (cline = startpos, msg = info->first_msg; msg; msg = get_next_msg(info->call, msg)) {
+        // Print messages with differents CSeq separed by one line
+        // XXX Not for now, makes harder to control selected message and scroll
+        //if (cseq != msg->cseq){ 
+        //    cline++;
+        //    cseq = msg->cseq;
+        //}
 
-		// Check if there are still 2 spaces for this message in the list
-		if (cline >= info->linescnt + startpos ) {
-			// Draw 2 arrow to show there are more messages
+        // Check if there are still 2 spaces for this message in the list
+        if (cline >= info->linescnt + startpos ) {
+            // Draw 2 arrow to show there are more messages
             mvwaddch(win, info->linescnt + startpos - 1, 20, ACS_DARROW);
             mvwaddch(win, info->linescnt + startpos - 1, 50, ACS_DARROW);
-			break;
-		}
+            break;
+        }
 
         // Print timestamp
         mvwprintw(win, cline, 2, "%s", msg->time);
@@ -148,27 +168,27 @@ int call_flow_draw(PANEL *panel)
         wattroff(win, COLOR_PAIR(INCOMING_COLOR));
         wattroff(win, A_REVERSE);
 
-		// One message fills 2 lines
+        // One message fills 2 lines
         cline += 2;
     } 
 
-	// Clean the message area
-	for (cline = 3, i = 0; i < info->linescnt + 4; i++)
-		mvwprintw(win, cline++, 62, "%*s", width - 63, "");
+    // Clean the message area
+    for (cline = 3, i = 0; i < info->linescnt + 4; i++)
+        mvwprintw(win, cline++, 62, "%*s", width - 63, "");
 
-	// Print the message payload in the right side of the screen
-	for (cline = 3, i = 0; i < info->cur_msg->plines && i < info->linescnt + 4; i++)
-		mvwprintw(win, cline++, 62, "%.*s", width - 63, info->cur_msg->payload[i]);  
+    // Print the message payload in the right side of the screen
+    for (cline = 3, i = 0; i < info->cur_msg->plines && i < info->linescnt + 4; i++)
+        mvwprintw(win, cline++, 62, "%.*s", width - 63, info->cur_msg->payload[i]);  
 
     return 0;
-	
+    
 }
 
 int call_flow_handle_key(PANEL *panel, int key) 
 {
     int i, rnpag_steps = 4;
     call_flow_info_t *info = (call_flow_info_t*) panel_userptr(panel);
-	sip_msg_t *next = NULL, *prev = NULL;
+    sip_msg_t *next = NULL, *prev = NULL;
 
     // Sanity check, this should not happen
     if (!info) return -1;
@@ -188,20 +208,20 @@ int call_flow_handle_key(PANEL *panel, int key)
         }
         break;
     case KEY_UP:
-		// FIXME We start searching from the fist one
-		// FIXME This wont work well with a lot of msg
-		while ((prev = get_next_msg(info->call, prev))){
-			if (prev->next == info->cur_msg)
-				break;
-		}	
-		// We're at the first message already
-		if (!prev) break;
-		info->cur_msg = prev;
-		info->cur_line -= 2;
-		if ( info->cur_line <= 0 ){
-			info->first_msg = info->cur_msg;
-			info->cur_line = 1;	
-		}
+        // FIXME We start searching from the fist one
+        // FIXME This wont work well with a lot of msg
+        while ((prev = get_next_msg(info->call, prev))){
+            if (prev->next == info->cur_msg)
+                break;
+        }    
+        // We're at the first message already
+        if (!prev) break;
+        info->cur_msg = prev;
+        info->cur_line -= 2;
+        if ( info->cur_line <= 0 ){
+            info->first_msg = info->cur_msg;
+            info->cur_line = 1;    
+        }
         break;
     case KEY_NPAGE:
         // Next page => N key down strokes 
@@ -220,34 +240,33 @@ int call_flow_handle_key(PANEL *panel, int key)
     }
 
     return 0;
-
 }
 
 
 int call_flow_help(PANEL *panel)
 {
-	return 0;
+    return 0;
 }
 
 int call_flow_set_call(sip_call_t *call) {
-	ui_panel_t *flow_panel;
-	PANEL *panel;
-	call_flow_info_t *info;
+    ui_t *flow_panel;
+    PANEL *panel;
+    call_flow_info_t *info;
 
-	if (!call) 
-		return -1;
+    if (!call) 
+        return -1;
 
-	if (!(flow_panel = ui_find_element_by_type(DETAILS_PANEL)))
-		return -1;
-	
-	if (!(panel = flow_panel->panel))
-		return -1;
+    if (!(flow_panel = ui_find_by_type(DETAILS_PANEL)))
+        return -1;
+    
+    if (!(panel = flow_panel->panel))
+        return -1;
 
-	if (!(info = (call_flow_info_t*) panel_userptr(panel)))
-		return -1;
+    if (!(info = (call_flow_info_t*) panel_userptr(panel)))
+        return -1;
 
-	info->call = call;
-	info->cur_msg = info->first_msg = call->messages;
-	info->cur_line = 1;
-	return 0;
+    info->call = call;
+    info->cur_msg = info->first_msg = call->messages;
+    info->cur_line = 1;
+    return 0;
 }

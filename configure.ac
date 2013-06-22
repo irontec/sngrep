@@ -8,6 +8,16 @@ AC_COPYRIGHT("Irontec S.L.")
 # Define _GNU_SOURCE etc.
 AC_USE_SYSTEM_EXTENSIONS
 
+# debug compilation
+AC_ARG_ENABLE(debug,
+    AC_HELP_STRING(--enable-debug, [Debug compilation (Default = no)]),
+    enable_debug=$enableval, enable_debug=no)
+
+if test "$enable_debug" = "yes" ; then
+    CFLAGS="$CFLAGS  -g -O0 -Wall -Werror -Wno-uninitialized"
+    CXXFLAGS="$CXXFLAGS -g -O0 -Wall -Werror -Wno-uninitialized"
+fi
+
 # Minimum checks for a C program :)
 AC_PROG_CC
 AC_PROG_CXX
@@ -24,37 +34,37 @@ AC_CHECK_HEADER([ncurses.h], [], [
 ])
 
 AC_CHECK_HEADER([pcap.h], [], [
-	AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
+    AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
 ])
 
 AC_CHECK_LIB([ncurses], [initscr], [], [
-	AC_MSG_ERROR([ You need to have libncurses installed to compile sngrep.])
+    AC_MSG_ERROR([ You need to have libncurses installed to compile sngrep.])
 ])
 
 AC_CHECK_LIB([panel], [new_panel], [], [
-	AC_MSG_ERROR([ You need to have libpanel installed to compile sngrep.])
+    AC_MSG_ERROR([ You need to have libpanel installed to compile sngrep.])
 ])
 
 AC_CHECK_LIB([pthread], [pthread_create], [], [
-	AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
+    AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
 ])
 
 AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
-	AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
+    AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
 ])
 
 #######################################################################
 # Check for REQUIRED binaries
 AC_PATH_PROG(STDBUF, stdbuf, [:], $PATH)
 AS_IF([test "x$STDBUF" != "x:"],
-	[AC_DEFINE_UNQUOTED([STDBUF_BIN], ["$STDBUF"])],
-	[AC_MSG_ERROR([stdbuf (coreutils) is needed to run sngrep])]
+    [AC_DEFINE_UNQUOTED([STDBUF_BIN], ["$STDBUF"])],
+    [AC_MSG_ERROR([stdbuf (coreutils) is needed to run sngrep])]
 )
 
 AC_PATH_PROG(NGREP, ngrep, [:], $PATH)
 AS_IF([test "x$NGREP" != "x:"],
-	[AC_DEFINE_UNQUOTED([NGREP_BIN], ["$NGREP"])],
-	[AC_MSG_ERROR([ngrep is needed to run sngrep])]
+    [AC_DEFINE_UNQUOTED([NGREP_BIN], ["$NGREP"])],
+    [AC_MSG_ERROR([ngrep is needed to run sngrep])]
 )
 
 ######################################################################

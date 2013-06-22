@@ -118,14 +118,10 @@ char *get_callid(const char* payload)
  */
 struct sip_call *call_new(const char *callid)
 {
-    struct sip_call *call = malloc(sizeof(struct sip_call));
     // XXX LOCKING
+    struct sip_call *call = malloc(sizeof(struct sip_call));
+    memset(call, 0, sizeof(sip_call_t));
     call->callid = strdup(callid);
-    call->messages = NULL;
-    call->finished = 0;
-    call->next = NULL;
-    call->prev = NULL;
-    memset(&call->xcallid, 0, sizeof(call->xcallid));
 
     // XXX Put this call at the end of the call list
     // Order is important (FIXME)!!!
@@ -133,8 +129,7 @@ struct sip_call *call_new(const char *callid)
     if (!calls) {
         calls = call;
     } else {
-        for (cur = calls; cur; prev = cur, cur = cur->next)
-            ;
+        for (cur = calls; cur; prev = cur, cur = cur->next);
         prev->next = call;
         call->prev = prev;
     }
@@ -154,38 +149,23 @@ struct sip_msg *call_add_message(struct sip_call *call, const char *header, cons
     struct sip_msg *msg;
 
     if (!(msg = malloc(sizeof(struct sip_msg)))) return NULL;
-
-    memset(&msg->type, 0, sizeof(msg->type));
-    memset(&msg->ip_from, 0, sizeof(msg->ip_from));
-    memset(&msg->ip_to, 0, sizeof(msg->ip_to));
-
+    memset(msg, 0, sizeof(sip_msg_t));
     msg->call = call;
-    msg->next = NULL;
-    msg->plines = 0; // XXX
-
-    // Parse message header 
-    if (msg_parse_header(msg, header) != 0) {
-        free(msg);
-        return NULL;
-    }
-
-    // Parse message payload
-    if (msg_parse_payload(msg, payload) != 0) {
-        free(msg);
-        return NULL;
-    }
+    msg->headerptr = strdup(header);
+    msg->payloadptr = strdup(payload);
 
     // XXX Put this msg at the end of the msg list
     // Order is important!!!
     struct sip_msg *cur, *prev;
     if (!call->messages) {
-        call->messages = msg;
+        call->messages = parse_msg(msg);
     } else {
         for (cur = call->messages; cur; prev = cur, cur = cur->next)
             ;
         prev->next = msg;
     }
-    return msg;
+ 
+   return msg;
 }
 
 /**
@@ -199,6 +179,7 @@ struct sip_msg *call_add_message(struct sip_call *call, const char *header, cons
 int msg_parse_header(struct sip_msg *msg, const char *header)
 {
     struct tm when = { 0 };
+    char time[20];
     if (sscanf(header, "U %d/%d/%d %d:%d:%d.%d %s -> %s", &when.tm_year, &when.tm_mon,
             &when.tm_mday, &when.tm_hour, &when.tm_min, &when.tm_sec, (int*) &msg->ts.tv_usec,
             msg->ip_from, msg->ip_to)) {
@@ -210,9 +191,8 @@ int msg_parse_header(struct sip_msg *msg, const char *header)
         msg->ts.tv_sec = (long int) msg - msg->timet;
 
         // Convert to string
-        strftime(msg->time, 20, "%H:%M:%S", localtime(&msg->timet));
-        sprintf(msg->time, "%s.%06d", msg->time, (int) msg->ts.tv_usec);
-
+        strftime(time, 20, "%H:%M:%S", localtime(&msg->timet));
+        sprintf(msg->time, "%s.%06d", time, (int) msg->ts.tv_usec);
         return 0;
     }
     return 1;
@@ -234,7 +214,6 @@ int msg_parse_payload(struct sip_msg *msg, const char *payload)
     char *body = strdup(payload);
     char * pch;
     char rest[256];
-    int irest;
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
         // fix last ngrep line character
@@ -373,7 +352,7 @@ struct sip_msg *get_next_msg(const struct sip_call *call, const struct sip_msg *
     if (msg == NULL) {
         return call->messages;
     } else {
-        return msg->next;
+        return parse_msg(msg->next);
     }
 }
 
@@ -428,3 +407,32 @@ struct sip_msg *get_next_msg_ex(const struct sip_call *call, const struct sip_ms
     }
 }
 
+sip_msg_t *parse_msg(sip_msg_t *msg){
+
+    // Nothing to parse
+    if (!msg) 
+        return NULL;
+
+    // Message already parsed
+    if (msg->parsed) 
+        return msg;
+
+    // Parse message header 
+    if (msg_parse_header(msg, msg->headerptr) != 0) {
+        return NULL;
+    }
+
+    // Parse message payload
+    if (msg_parse_payload(msg, msg->payloadptr) != 0) {
+        return NULL;
+    }
+
+    // Free message pointers
+    free(msg->headerptr);
+    free(msg->payloadptr);
+
+    // Mark as parsed
+    msg->parsed = 1;
+    // Return the parsed message
+    return msg;
+}

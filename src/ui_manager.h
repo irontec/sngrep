@@ -32,15 +32,15 @@
  */
 #define UI_MIN_COLS     175
 
-//! Shorter declaration of ui_panel structure
-typedef struct ui_panel ui_panel_t;
+//! Shorter declaration of ui structure
+typedef struct ui ui_t;
 
 /**
  * @brief Panel information structure
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct ui_panel
+struct ui
 {
     //! Panel Type @see panel_types enum
     int type;         
@@ -54,6 +54,8 @@ struct ui_panel
     int (*handle_key)(PANEL*, int key);
     //! Show help window for this panel (if any)
     int (*help)(PANEL *);
+    //! Destroy current panel
+    void (*destroy)(PANEL *);
 };
 
 /**
@@ -117,10 +119,10 @@ void toggle_color(int on);
  * 
  * @param panel the topmost panel ui structure
  */
-void wait_for_input(ui_panel_t *ui_panel);
+void wait_for_input(ui_t *ui);
 
 
-void ui_draw_panel(ui_panel_t *ui_panel);
+void ui_draw_panel(ui_t *ui);
 
 /**
  * Draw a box around passed windows with two bars (top and bottom)
@@ -141,13 +143,27 @@ void title_foot_box(WINDOW *win);
 void refresh_call_ui(const char *callid);
 
 /**
- * @brief Find a ui_panel from its pannel pointer
+ * @brief Create a panel structure
  */
-ui_panel_t *ui_find_element_by_panel(PANEL *panel);
+ui_t *ui_create(int type);
 
 /**
- * @brief Find a ui_panel form its panel id
+ * @berif Destroy a panel structure 
  */
-ui_panel_t *ui_find_element_by_type(int type);
+void ui_destroy(ui_t *ui);
+
+PANEL *ui_get_panel(ui_t *ui);
+void ui_help(ui_t *ui);
+void ui_handle_key(ui_t *ui, int key);
+
+/**
+ * @brief Find a ui from its pannel pointer
+ */
+ui_t *ui_find_by_panel(PANEL *panel);
+
+/**
+ * @brief Find a ui form its panel id
+ */
+ui_t *ui_find_by_type(int type);
 
 #endif    // __SNGREP_UI_MANAGER_H

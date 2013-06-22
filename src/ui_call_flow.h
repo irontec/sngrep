@@ -34,13 +34,14 @@ typedef struct call_flow_info call_flow_info_t;
  */
 struct call_flow_info {
     sip_call_t *call;
-	sip_msg_t *first_msg;
+    sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
-	int linescnt;
+    int linescnt;
     int cur_line;
 };
 
 extern PANEL *call_flow_create();
+extern void call_flow_destroy(PANEL *panel);
 extern int call_flow_draw(PANEL *panel);
 extern int call_flow_handle_key(PANEL *panel, int key);
 extern int call_flow_help(PANEL *panel);

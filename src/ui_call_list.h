@@ -66,5 +66,6 @@ extern PANEL *call_list_create();
 extern int call_list_draw(PANEL *panel);
 extern int call_list_handle_key(PANEL *panel, int key);
 extern int call_list_help(PANEL *panel);
-extern int call_list_add_column (PANEL *panel, int id, const char *title, int width);
+extern void call_list_destroy(PANEL *panel);
+extern int call_list_add_column (PANEL *panel, int id, char *title, int width);
 #endif

@@ -19,10 +19,12 @@
  **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
+#include "ui_call_raw.h"
 #include "sip.h"
 
 // FIXME create a getter function for this at sip.c
@@ -76,8 +78,8 @@ PANEL *call_list_create()
 
     // Draw columns titles
     for (colpos = 5, i = 0; i < info->columncnt; i++){
-		// Check if the column will fit in the remaining space of the screen
-		if (colpos + info->columns[i].width >= width) break;
+        // Check if the column will fit in the remaining space of the screen
+        if (colpos + info->columns[i].width >= width) break;
         mvwprintw(win, 6, colpos, info->columns[i].title);
         colpos += info->columns[i].width;
     }
@@ -129,10 +131,10 @@ int call_list_draw(PANEL *panel)
         // Print requested columns
         for (colpos = 5, i=0; i < info->columncnt; i++){
             collen = info->columns[i].width;
-			// Check if the column will fit in the remaining space of the screen
-			if (colpos + collen >= width) break;
-		
-			// Display each column with it's data
+            // Check if the column will fit in the remaining space of the screen
+            if (colpos + collen >= width) break;
+        
+            // Display each column with it's data
             switch (info->columns[i].id) {
                case 0: mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->sip_from); break;
                case 1: mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->sip_to); break;
@@ -148,9 +150,9 @@ int call_list_draw(PANEL *panel)
     }
 
     // Clean scroll information
-    mvwprintw(win, startline, 2, "");
+    mvwprintw(win, startline, 2, " ");
     mvwprintw(win, startline + info->linescnt - 2, 2, "   ");
-    mvwprintw(win, startline + info->linescnt - 1, 2, "");
+    mvwprintw(win, startline + info->linescnt - 1, 2, " ");
     
     // Update the scroll information
     if (info->first_line > 1 ) 
@@ -170,8 +172,7 @@ int call_list_handle_key(PANEL *panel, int key)
 {
     int i, rnpag_steps = 10;
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    ui_panel_t *flow_panel;
-    struct call_flow_info *flow_info;
+    ui_t *next_panel;
 
     // Sanity check, this should not happen
     if (!info) return -1;
@@ -216,12 +217,21 @@ int call_list_handle_key(PANEL *panel, int key)
             call_list_handle_key(panel, KEY_UP);    
         break;
     case 10:
+        if (!info->cur_call) return -1;
         // KEY_ENTER , Display current call flow
-        flow_panel = ui_find_element_by_type(DETAILS_PANEL);
-        flow_panel->panel = flow_panel->create();
-		call_flow_set_call(info->cur_call);
-        wait_for_input(flow_panel);
+        next_panel = ui_create(DETAILS_PANEL);
+        call_flow_set_call(info->cur_call);
+        wait_for_input(next_panel);
         break;
+    case 'r':
+    case 'R':
+        if (!info->cur_call) return -1;
+        // KEY_R, display current call in raw mode
+        next_panel = ui_create(RAW_PANEL);
+        call_raw_set_call(info->cur_call);
+        wait_for_input(next_panel);
+        break;
+ 
     default:
         return -1;
     }
@@ -261,14 +271,28 @@ int call_list_help(PANEL * ppanel)
     return 0;
 }
 
-int call_list_add_column (PANEL *panel, int id, const char *title, int width)
+void call_list_destroy(PANEL *panel)
 {
-	call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-	if (!info) return -1;
+	call_list_info_t *info;
 
-	info->columns[info->columncnt].id = id;
-	info->columns[info->columncnt].title = title;
-	info->columns[info->columncnt].width = width;
-	info->columncnt++;
-	return 0;
+	// Hide the panel
+	hide_panel(panel);
+
+	// Free its status data
+	if ((info = (call_list_info_t*) panel_userptr(panel)))
+		free(info);	
+
+	// Finally free the panel memory
+	del_panel(panel);
+}
+
+int call_list_add_column (PANEL *panel, int id, char *title, int width)
+{
+    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    if (!info) return -1;
+    info->columns[info->columncnt].id = id;
+    info->columns[info->columncnt].title = title;
+    info->columns[info->columncnt].width = width;
+    info->columncnt++;
+    return 0;
 }

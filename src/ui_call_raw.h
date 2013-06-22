@@ -21,11 +21,26 @@
  ****************************************************************************/
 #ifndef __UI_CALL_RAW_H
 #define __UI_CALL_RAW_H
+#include "sip.h"
 #include "ui_manager.h"
+
+//! Sorter declaration of struct call_raw_info
+typedef struct call_raw_info call_raw_info_t;
+
+/** 
+ * @brief Call raw status information
+ * This data stores the actual status of the panel. It's stored in the
+ * PANEL user pointer.
+ */
+struct call_raw_info {
+    sip_call_t *call;
+    int scrollpos;
+};
 
 extern PANEL *call_raw_create();
 extern int call_raw_draw(PANEL *panel);
-extern int call_raw_handle_key(PANEL *panel, char key);
+extern int call_raw_handle_key(PANEL *panel, int key);
 extern int call_raw_help(PANEL *panel);
+extern int call_raw_set_call(sip_call_t *call);
 
 #endif

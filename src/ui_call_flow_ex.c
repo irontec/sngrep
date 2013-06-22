@@ -22,7 +22,7 @@
 #include <string.h>
 #include "ui_call_flow_ex.h"
 
-extern struct sip_call *active_call;
+struct sip_call *active_call;
 
 PANEL *call_flow_ex_create()
 {
@@ -34,7 +34,7 @@ int call_flow_ex_draw(PANEL *panel)
 {
     int w, h, fw, fh, rw, rh, ph;
     int msgcnt = 0;
-    int padpos, highlight, entries;
+    int padpos, highlight;
 
     // This panel only makes sense with a selected call
     if (!active_call) return 1;
