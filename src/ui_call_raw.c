@@ -27,7 +27,9 @@
 PANEL *call_raw_create()
 {
     PANEL *panel;
+    WINDOW *win;
     call_raw_info_t *info;
+    int height, width;
 
     // Create a new panel to fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
@@ -37,6 +39,14 @@ PANEL *call_raw_create()
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
 
+    // Let's draw the fixed elements of the screen
+    win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Calculate available printable area
+    info->linescnt = height;
+
+
     return panel;
 }
 
@@ -44,20 +54,33 @@ int call_raw_draw(PANEL *panel)
 {
     struct sip_msg *msg = NULL;
     int pline = 0, raw_line;
+    const char *all_lines[1024];
+    int all_linescnt = 0;
 
     // Get panel information
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
     // Get window of main panel
     WINDOW *win = panel_window(panel);
+    wclear(win);
 
-    mvwprintw(win, pline++, 0, "%d", info->scrollpos);
-
+    /*
+        FIXME This part could be coded decently.
+        A better aproach is creating a pad window and copy the visible area
+        into the panel window, taking into account the scroll position.
+        This is dirty but easier to manage by now
+    */
+    memset(all_lines, 0, 1024);
     while ((msg = get_next_msg(info->call, msg))) {
         for (raw_line = 0; raw_line < msg->plines; raw_line++) {
-            mvwprintw(win, pline, 0, "%s", msg->payload[raw_line]);
-            pline++;
+            all_lines[all_linescnt++] = msg->payload[raw_line];
         }
-        pline++;
+        all_linescnt+=2;
+    }
+    info->all_lines = all_linescnt;
+ 
+    for (raw_line = info->scrollpos; raw_line - info->scrollpos < info->linescnt; raw_line++){
+        if (all_lines[raw_line])
+            mvwprintw(win, pline, 0, "%s", all_lines[raw_line]);    
         pline++;
     }
     return 0;
@@ -65,7 +88,7 @@ int call_raw_draw(PANEL *panel)
 
 int call_raw_handle_key(PANEL *panel, int key) 
 {
-    int i, rnpag_steps = 5;
+    int i, rnpag_steps = 10;
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
 
     // Sanity check, this should not happen
@@ -76,9 +99,13 @@ int call_raw_handle_key(PANEL *panel, int key)
     switch (key) {
     case KEY_DOWN:
         info->scrollpos++;
+        if (info->scrollpos + info->linescnt >= info->all_lines) 
+            info->scrollpos--;
         break;
     case KEY_UP:
         info->scrollpos--;
+        if (info->scrollpos <= 0)
+            info->scrollpos = 0;
         break;
     case KEY_NPAGE:
         // Next page => N key down strokes 

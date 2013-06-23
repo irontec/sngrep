@@ -35,6 +35,8 @@ typedef struct call_raw_info call_raw_info_t;
 struct call_raw_info {
     sip_call_t *call;
     int scrollpos;
+    int linescnt;
+    int all_lines;
 };
 
 extern PANEL *call_raw_create();

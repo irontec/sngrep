@@ -92,10 +92,7 @@ int main(int argc, char* argv[])
 
     // Initialize interface
     // This is a blocking call. Interface have user action loops.
-    ret = init_interface(config);
-    if (ret == 127) {
-        fprintf(stderr, "%s requires at least %d columns in terminal :(\n", argv[0], UI_MIN_COLS);
-    }
+    init_interface(config);
 
     // Leaving!
     return ret;

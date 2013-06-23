@@ -23,6 +23,7 @@
 #include <string.h>
 #include "ui_manager.h"
 #include "ui_call_flow.h"
+#include "ui_call_raw.h"
 
 /**
  * @brief Call flow status information
@@ -189,6 +190,7 @@ int call_flow_handle_key(PANEL *panel, int key)
     int i, rnpag_steps = 4;
     call_flow_info_t *info = (call_flow_info_t*) panel_userptr(panel);
     sip_msg_t *next = NULL, *prev = NULL;
+    ui_t *next_panel;
 
     // Sanity check, this should not happen
     if (!info) return -1;
@@ -235,6 +237,12 @@ int call_flow_handle_key(PANEL *panel, int key)
         break;
     case 10:
         break;
+    case 'r':
+    case 'R':
+        // KEY_R, display current call in raw mode
+        next_panel = ui_create(RAW_PANEL);
+        call_raw_set_call(info->call);
+        wait_for_input(next_panel);
     default:
         return -1;
     }

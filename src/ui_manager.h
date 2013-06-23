@@ -25,13 +25,6 @@
 #include <panel.h>
 #include "sip.h"
 
-/**
- * The actual UI is not very flexible. It requires a lot of space to 
- * be correctyle drawn.. It would be nice to be more adaptative and hide
- * some columns in main panel depending on the available columns 
- */
-#define UI_MIN_COLS     175
-
 //! Shorter declaration of ui structure
 typedef struct ui ui_t;
 
@@ -48,15 +41,18 @@ struct ui
     PANEL *panel;
     //! Constructor for this panel
     PANEL *(*create)();
-    //! Reques the panel to redraw its data
+    //! Destroy current panel
+    void (*destroy)(PANEL *);
+    //! Request the panel to redraw its data
     int (*draw)(PANEL*);
+    //! Check if the panel request redraw with given msg
+    int (*redraw_required)(PANEL *, sip_msg_t *);
     //! Handle a custom keybind on this panel
     int (*handle_key)(PANEL*, int key);
     //! Show help window for this panel (if any)
     int (*help)(PANEL *);
-    //! Destroy current panel
-    void (*destroy)(PANEL *);
-};
+}
+;
 
 /**
  * Enum for available color pairs
@@ -107,6 +103,63 @@ struct ui_config
 int init_interface(const struct ui_config);
 
 /**
+ * @brief Create a panel structure
+ */
+ui_t *ui_create(int type);
+
+/**
+ * @brief Destroy a panel structure 
+ */
+void ui_destroy(ui_t *ui);
+
+/**
+ * @brief Get panel pointer from an ui element
+ *
+ * Basic getter to get the Ncurses PANEL pointer
+ * from ui structure. Use this instead of accessing
+ * directly to the pointer.
+ *
+ * @param ui UI structure
+ * @return ncurses panel pointer of given UI
+ */
+PANEL *ui_get_panel(ui_t *ui);
+
+
+void ui_draw_panel(ui_t *ui);
+
+/**
+ * @brief Show help screen from current UI (if any)
+ * 
+ * This function will display the help screen for given
+ * ui if exits. 
+ * All help screens exits after any character input
+ * 
+ * @param ui UI structure
+ */
+void ui_help(ui_t *ui);
+
+/**
+ * @brief Handle key inputs on given UI
+ *
+ * This function will pass the input key sequence
+ * to the given UI. This will only happen if the key
+ * sequence don't match any of the general keybindings
+ *
+ * @param ui UI structure
+ * @param key keycode sequence of the pressed keys and mods
+ */
+void ui_handle_key(ui_t *ui, int key);
+
+/**
+ * @brief Find a ui from its pannel pointer
+ */
+ui_t *ui_find_by_panel(PANEL *panel);
+
+/**
+ * @brief Find a ui form its panel id
+ */
+ui_t *ui_find_by_type(int type);
+/**
  * @brief Toggle color mode on and off
  * @param on Pass 0 to turn all black&white
  */
@@ -122,7 +175,6 @@ void toggle_color(int on);
 void wait_for_input(ui_t *ui);
 
 
-void ui_draw_panel(ui_t *ui);
 
 /**
  * Draw a box around passed windows with two bars (top and bottom)
@@ -142,28 +194,5 @@ void title_foot_box(WINDOW *win);
  */
 void refresh_call_ui(const char *callid);
 
-/**
- * @brief Create a panel structure
- */
-ui_t *ui_create(int type);
-
-/**
- * @berif Destroy a panel structure 
- */
-void ui_destroy(ui_t *ui);
-
-PANEL *ui_get_panel(ui_t *ui);
-void ui_help(ui_t *ui);
-void ui_handle_key(ui_t *ui, int key);
-
-/**
- * @brief Find a ui from its pannel pointer
- */
-ui_t *ui_find_by_panel(PANEL *panel);
-
-/**
- * @brief Find a ui form its panel id
- */
-ui_t *ui_find_by_type(int type);
 
 #endif    // __SNGREP_UI_MANAGER_H
