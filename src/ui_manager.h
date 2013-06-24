@@ -1,26 +1,41 @@
 /**************************************************************************
  **
- **  sngrep - Ncurses ngrep interface for SIP
+ ** sngrep - SIP callflow viewer using ngrep
  **
- **   Copyright (C) 2013 Ivan Alonso (Kaian)
- **   Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013 Irontec SL. All rights reserved.
  **
- **   This program is free software: you can redistribute it and/or modify
- **   it under the terms of the GNU General Public License as published by
- **   the Free Software Foundation, either version 3 of the License, or
- **   (at your option) any later version.
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
  **
- **   This program is distributed in the hope that it will be useful,
- **   but WITHOUT ANY WARRANTY; without even the implied warranty of
- **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- **   GNU General Public License for more details.
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
  **
- **   You should have received a copy of the GNU General Public License
- **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+/**
+ * @file ui_manager.h
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief Functions to manage interface panels
+ *
+ * All sngrep panel pointers are encapsulated into a ui structure that is
+ * used to invoke custom functions for creating, destroying, drawing, etc
+ * the screens.
+ *
+ * This sctructure also manages concurrents updates and access to ncurses
+ * panel pointers.
+ *
+ */
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
+
 #include <ncurses.h>
 #include <panel.h>
 #include "sip.h"
@@ -30,6 +45,7 @@ typedef struct ui ui_t;
 
 /**
  * @brief Panel information structure
+ *
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
@@ -65,37 +81,51 @@ struct ui
 };
 
 /**
- * Enum for available color pairs
+ * @brief Enum for available color pairs
+ *
  * Colors for each pair are chosen in toggle_colors function
  */
 enum sngrep_colors
 {
+    //! Highlight color for Call List
     HIGHLIGHT_COLOR = 1,
+    //! Key name color in help screens
     HELP_COLOR,
+    //! Outgoing messages color
     OUTGOING_COLOR,
+    //! Incoming messages color
     INCOMING_COLOR,
+    //! Call-Flow border color
     DETAIL_BORDER_COLOR,
-    DETAIL_WIN_COLOR,
 };
 
 /**
- * Enum for available panel types
+ * @brief Enum for available panel types
+ *
  * Mostly used for managing keybindings and offloop ui refresh
+ *
+ * FIXME Replace this IDs for something more representative
  */
 enum panel_types
 {
+    //! Call List ui screen
     MAIN_PANEL = 0,
-    MHELP_PANEL,
+    //! Call-Flow ui screen
     DETAILS_PANEL,
+    //! Call-Flow Extended ui screen
     DETAILS_EX_PANEL,
+    //! Raw SIP messages ui screen
     RAW_PANEL,
 };
 
 /**
- * Interface configuration.
+ * @brief Interface configuration.
+ *
  * If some day a rc file is created, its data will be loaded
  * into this structure. 
  * By now, we'll store some ui information.
+ *
+ * FIXME Replace this for an application config struct
  */
 struct ui_config
 {
@@ -105,7 +135,10 @@ struct ui_config
 };
 
 /**
- * Initialize ncurses mode and create a main window
+ * @brief Initialize ncurses mode
+ *
+ * This functions will initialize ncurses mode and show a
+ * Call List panel.
  * 
  * @param ui_config UI configuration structure
  * @returns 0 on ncurses initialization success, 1 otherwise 
@@ -115,12 +148,24 @@ init_interface(const struct ui_config);
 
 /**
  * @brief Create a panel structure
+ *
+ * Create a ncurses panel associated to the given ui
+ * This function is a small wrapper for panel create function
+ *
+ * @param ui UI structure
+ * @return the ui structure with the panel pointer created
  */
 extern ui_t *
 ui_create(ui_t *ui);
 
 /**
  * @brief Destroy a panel structure 
+ *
+ * Removes the panel associatet to the given ui and free
+ * its memory. Most part of this task is done in the custom
+ * destroy function of the panel.
+ *
+ * @param ui UI structure
  */
 extern void
 ui_destroy(ui_t *ui);
@@ -218,8 +263,12 @@ extern int
 wait_for_input(ui_t *ui);
 
 /**
- * Draw a box around passed windows with two bars (top and bottom)
- * of one line each.
+ * @brief Draw a box around passed windows
+ *
+ * Draw a box around passed windows  with two bars
+ * (top and bottom) of one line each.
+ *
+ * FIXME The parameter should be a panel, or ui, but not a window..
  *
  * @param win Window to draw borders on
  */
@@ -227,6 +276,8 @@ extern void
 title_foot_box(WINDOW *win);
 
 /**
+ * @brief Update topmost panel with the newest readed message
+ *
  * This function is invocked asynchronously from the
  * ngrep exec thread to notify a new message of the giving
  * callid. If the UI is displaying this call or it's 

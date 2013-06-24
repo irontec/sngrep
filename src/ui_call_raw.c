@@ -1,27 +1,36 @@
 /**************************************************************************
  **
- **  sngrep - Ncurses ngrep interface for SIP
+ ** sngrep - SIP callflow viewer using ngrep
  **
- **   Copyright (C) 2013 Ivan Alonso (Kaian)
- **   Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013 Irontec SL. All rights reserved.
  **
- **   This program is free software: you can redistribute it and/or modify
- **   it under the terms of the GNU General Public License as published by
- **   the Free Software Foundation, either version 3 of the License, or
- **   (at your option) any later version.
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
  **
- **   This program is distributed in the hope that it will be useful,
- **   but WITHOUT ANY WARRANTY; without even the implied warranty of
- **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- **   GNU General Public License for more details.
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
  **
- **   You should have received a copy of the GNU General Public License
- **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+/**
+ * @file ui_call_raw.c
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief Source of functions defined in ui_call_raw.h
+ *
+ * @todo Code help screen. Please.
+ * @todo Replace the panel refresh. Wclear sucks on high latency conections.
+ *
+ */
 #include <string.h>
 #include <stdlib.h>
-#include "ui_manager.h"
 #include "ui_call_raw.h"
 
 PANEL *
@@ -49,6 +58,7 @@ call_raw_create()
 
     return panel;
 }
+
 int
 call_raw_redraw_required(PANEL *panel, sip_msg_t *msg)
 {
@@ -127,12 +137,6 @@ call_raw_handle_key(PANEL *panel, int key)
     default:
         return -1;
     }
-    return 0;
-}
-
-int
-call_raw_help(PANEL * ppanel)
-{
     return 0;
 }
 

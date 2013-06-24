@@ -1,17 +1,31 @@
-/******************************************************************************
+/**************************************************************************
  **
- ** Copyright (C) 2011-2012 Irontec SL. All rights reserved.
+ ** sngrep - SIP callflow viewer using ngrep
  **
- ** This file may be used under the terms of the GNU General Public
- ** License version 3.0 as published by the Free Software Foundation
- ** and appearing in the file LICENSE.GPL included in the packaging of
- ** this file.  Please review the following information to ensure GNU
- ** General Public Licensing requirements will be met:
+ ** Copyright (C) 2013 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013 Irontec SL. All rights reserved.
  **
- ** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- ** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
  **
- ******************************************************************************/
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
+ **
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **
+ ****************************************************************************/
+/**
+ * @file ui_manager.c
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief Source of functions defined in ui_manager.h
+ *
+ */
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
@@ -20,8 +34,10 @@
 
 /**
  * @brief Interface status data
+ *
  * XXX I think this should be in the applicaton configuration structure
  *     avaliable everywhere in the program
+ * FIXME Replace this an ui_config for an application configuration struct
  */
 static struct ui_status
 {
@@ -30,8 +46,10 @@ static struct ui_status
 
 /**
  * @brief Available panel windows list
+ *
  * This list contein the available list of windows
  * and pointer to their main functions.
+ *
  * XXX If the panel count increase a lot, it will be required to 
  *     load panels as modules and provide a way to register
  *     themselfs into the panel pool dynamically.
@@ -69,15 +87,8 @@ static ui_t panel_pool[] = {
                 .create = call_raw_create,
                 .redraw_required = call_raw_redraw_required,
                 .draw = call_raw_draw,
-                .handle_key = call_raw_handle_key,
-                .help = call_raw_help } };
+                .handle_key = call_raw_handle_key, } };
 
-/**
- * Initialize ncurses mode and create a main window
- * 
- * @param ui_config UI configuration structure
- * @returns 0 on ncurses initialization success, 1 otherwise 
- */
 int
 init_interface(const struct ui_config uicfg)
 {
@@ -209,7 +220,9 @@ ui_t *
 ui_find_by_panel(PANEL *panel)
 {
     int i;
+    // Panel pool is fixed size
     int panelcnt = sizeof(panel_pool) / sizeof(ui_t);
+    // Return ui pointer if found
     for (i = 0; i < panelcnt; i++) {
         if (panel_pool[i].panel == panel) return &panel_pool[i];
     }
@@ -220,7 +233,9 @@ ui_t *
 ui_find_by_type(int type)
 {
     int i;
+    // Panel pool is fixed size
     int panelcnt = sizeof(panel_pool) / sizeof(ui_t);
+    // Return ui pointer if found
     for (i = 0; i < panelcnt; i++) {
         if (panel_pool[i].type == type) return &panel_pool[i];
     }
@@ -257,18 +272,15 @@ wait_for_input(ui_t *ui)
 
         // Otherwise, use standard keybindings
         switch (c) {
-        case 'C':
         case 'c':
-            // TODO general application config structure
+            // @todo general application config structure
             status.color = (status.color) ? 0 : 1;
             toggle_color(status.color);
             break;
-        case 'H':
         case 'h':
         case 265: /* KEY_F1 */
             ui_help(ui);
             break;
-        case 'Q':
         case 'q':
         case 27: /* KEY_ESC */
             ui_destroy(ui);

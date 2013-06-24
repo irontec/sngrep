@@ -1,37 +1,45 @@
 /**************************************************************************
  **
- **  sngrep - Ncurses ngrep interface for SIP
+ ** sngrep - SIP callflow viewer using ngrep
  **
- **   Copyright (C) 2013 Ivan Alonso (Kaian)
- **   Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013 Irontec SL. All rights reserved.
  **
- **   This program is free software: you can redistribute it and/or modify
- **   it under the terms of the GNU General Public License as published by
- **   the Free Software Foundation, either version 3 of the License, or
- **   (at your option) any later version.
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
  **
- **   This program is distributed in the hope that it will be useful,
- **   but WITHOUT ANY WARRANTY; without even the implied warranty of
- **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- **   GNU General Public License for more details.
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
  **
- **   You should have received a copy of the GNU General Public License
- **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+/**
+ * @file main.c
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief Source of initial functions used by sngrep
+ *
+ * @todo This should be coded properly. We could use use -f flag argument to
+ * load the pcap file (because ngrep has no -f flag) and assume any other
+ * argument are ngrep arguments. Anyway, actual main code is awful.
+ */
+
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <pthread.h>
 #include <unistd.h>
 #include "exec.h"
 #include "pcap.h"
 #include "ui_manager.h"
 
 /**
- * Usage function
- * Print all available options (which are none actually)
+ * @brief Usage function
  *
+ * Print all available options (which are none actually)
  */
 void
 usage(const char* progname)
@@ -45,7 +53,8 @@ usage(const char* progname)
 }
 
 /**
- * Main function 
+ * @brief Main function logic
+ *
  * Parse command line options and start running threads
  *
  * @note There are no params actually... if you supply one 
@@ -59,9 +68,12 @@ main(int argc, char* argv[])
 {
 
     int ret;
-    struct ui_config config; /* ui configuration */
-    pthread_attr_t attr; /* ngrep thread attributes */
-    pthread_t exec_t; /* ngrep running thread */
+    //! ui configuration @todo Remove this structure
+    struct ui_config config;
+    //! ngrep thread attributes
+    pthread_attr_t attr;
+    //! ngrep running thread
+    pthread_t exec_t;
 
     // Parse arguments.. I mean..
     if (argc < 2) {
@@ -98,4 +110,3 @@ main(int argc, char* argv[])
     // Leaving!
     return ret;
 }
-

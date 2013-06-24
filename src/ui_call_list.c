@@ -1,24 +1,33 @@
 /**************************************************************************
  **
- **  sngrep - Ncurses ngrep interface for SIP
+ ** sngrep - SIP callflow viewer using ngrep
  **
- **   Copyright (C) 2013 Ivan Alonso (Kaian)
- **   Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013 Irontec SL. All rights reserved.
  **
- **   This program is free software: you can redistribute it and/or modify
- **   it under the terms of the GNU General Public License as published by
- **   the Free Software Foundation, either version 3 of the License, or
- **   (at your option) any later version.
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
  **
- **   This program is distributed in the hope that it will be useful,
- **   but WITHOUT ANY WARRANTY; without even the implied warranty of
- **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- **   GNU General Public License for more details.
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
  **
- **   You should have received a copy of the GNU General Public License
- **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+/**
+ * @file ui_call_list.c
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief Source of functions defined in ui_call_list.h
+ *
+ * @todo Recode help screen. Please.
+ * @todo Replace calls structure this for a iterator at sip.h
+ */
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -26,10 +35,9 @@
 #include "ui_call_flow.h"
 #include "ui_call_flow_ex.h"
 #include "ui_call_raw.h"
-#include "sip.h"
 
-// FIXME create a getter function for this at sip.c
-extern struct sip_call *calls;
+//! Calls structure list
+extern sip_call_t *calls;
 
 PANEL *
 call_list_create()
@@ -76,7 +84,7 @@ call_list_create()
     mvwaddch(win, 7, width - 1, ACS_RTEE);
     mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
     mvwprintw(win, height - 2, 16, "F1: Help");
-    mvwprintw(win, height - 2, 27, "X: Call-Flow Extended");
+    mvwprintw(win, height - 2, 27, "x: Call-Flow Extended");
 
     // Draw columns titles
     for (colpos = 5, i = 0; i < info->columncnt; i++) {
@@ -89,9 +97,25 @@ call_list_create()
     return panel;
 }
 
+void
+call_list_destroy(PANEL *panel)
+{
+    call_list_info_t *info;
+
+    // Hide the panel
+    hide_panel(panel);
+
+    // Free its status data
+    if ((info = (call_list_info_t*) panel_userptr(panel))) free(info);
+
+    // Finally free the panel memory
+    del_panel(panel);
+}
+
 int
 call_list_redraw_required(PANEL *panel, sip_msg_t *msg)
 {
+    //@todo alway redraw this screen on new messages
     return 0;
 }
 
@@ -294,21 +318,6 @@ call_list_help(PANEL * ppanel)
     mvwprintw(win, cline + 3, 15, "Select Next dialog");
     mvwprintw(win, cline + 4, 15, "Show dialog details");
     return 0;
-}
-
-void
-call_list_destroy(PANEL *panel)
-{
-    call_list_info_t *info;
-
-    // Hide the panel
-    hide_panel(panel);
-
-    // Free its status data
-    if ((info = (call_list_info_t*) panel_userptr(panel))) free(info);
-
-    // Finally free the panel memory
-    del_panel(panel);
 }
 
 int

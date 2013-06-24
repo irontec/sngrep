@@ -1,24 +1,38 @@
 /**************************************************************************
  **
- **  sngrep - Ncurses ngrep interface for SIP
+ ** sngrep - SIP callflow viewer using ngrep
  **
- **   Copyright (C) 2013 Ivan Alonso (Kaian)
- **   Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013 Irontec SL. All rights reserved.
  **
- **   This program is free software: you can redistribute it and/or modify
- **   it under the terms of the GNU General Public License as published by
- **   the Free Software Foundation, either version 3 of the License, or
- **   (at your option) any later version.
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
  **
- **   This program is distributed in the hope that it will be useful,
- **   but WITHOUT ANY WARRANTY; without even the implied warranty of
- **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- **   GNU General Public License for more details.
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
  **
- **   You should have received a copy of the GNU General Public License
- **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+/**
+ * @file pcap.h
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief Functions to manage pcap files
+ *
+ * sngrep can parse a pcap file to display call flows.
+ * This file include the functions that uses libpcap to do so.
+ *
+ * @todo We could request libpcap to filter the file before being processed
+ * and only read sip packages. We also allow UDP packages here, and SIP can
+ * use other transports, uh.
+ *
+ */
 #ifndef __SNGREP_PCAP_H
 #define __SNGREP_PCAP_H
 
@@ -30,14 +44,16 @@
 #include <netinet/if_ether.h>
 #include <time.h>
 
-/* Ethernet headers are always exactly 14 bytes */
+//! Ethernet headers are always exactly 14 bytes
 #define SIZE_ETHERNET 14
-/* Linux cooked packages headers are 16 bytes */
+//! Linux cooked packages headers are 16 bytes
 #define SLL_HDR_LEN 16
-/* UDP  headers are always exactly 8 bytes */
+//! UDP  headers are always exactly 8 bytes
 #define SIZE_UDP 8
 
-/* IP data structure */
+/**
+ * @brief IP data structure
+ */
 struct nread_ip
 {
     //! header length, version
@@ -71,7 +87,9 @@ struct nread_ip
 #define IP_HL(ip)               (((ip)->ip_vhl) & 0x0f)
 #define IP_V(ip)                (((ip)->ip_vhl) >> 4)
 
-/* UDP data structure */
+/**
+ * @brief UDP data structure
+ */
 struct nread_udp
 {
     //! source port
@@ -85,7 +103,8 @@ struct nread_udp
 };
 
 /**
- * Read from pcap file and fill sngrep sctuctures
+ * @brief Read from pcap file and fill sngrep sctuctures
+ *
  * This function will use libpcap files and previous structures to 
  * parse the pcap file.
  * This program is only focused in VoIP calls so we only consider
