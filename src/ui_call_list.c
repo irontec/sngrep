@@ -169,7 +169,7 @@ call_list_draw(PANEL *panel)
 
     // Clean scroll information
     mvwprintw(win, startline, 2, " ");
-    mvwprintw(win, startline + info->linescnt - 2, 2, "   ");
+    mvwprintw(win, startline + info->linescnt - 2, 1, "   ");
     mvwprintw(win, startline + info->linescnt - 1, 2, " ");
 
     // Update the scroll information
@@ -179,8 +179,10 @@ call_list_draw(PANEL *panel)
     }
 
     // Set the current line % if we have more calls that available lines
-    if (callcnt > info->linescnt) mvwprintw(win, startline + info->linescnt - 2, 1, "%2d%%",
-            (info->first_line + info->cur_line) * 100 / callcnt);
+    int percentage = (info->first_line + info->cur_line) * 100 / callcnt;
+    if (callcnt > info->linescnt && percentage < 100) {
+        mvwprintw(win, startline + info->linescnt - 2, 1, "%2d%%", percentage);
+    }
     return 0;
 }
 

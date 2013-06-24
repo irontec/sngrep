@@ -75,6 +75,7 @@ call_raw_draw(PANEL *panel)
      into the panel window, taking into account the scroll position.
      This is dirty but easier to manage by now
      */
+    memset(all_lines, 0, 1024);
     while ((msg = get_next_msg(info->call, msg))) {
         for (raw_line = 0; raw_line < msg->plines; raw_line++) {
             all_lines[all_linescnt++] = msg->payload[raw_line];
@@ -84,8 +85,12 @@ call_raw_draw(PANEL *panel)
     }
     info->all_lines = all_linescnt;
 
-    for (raw_line = info->scrollpos; raw_line - info->scrollpos < info->linescnt; raw_line++) {
+    for (raw_line = info->scrollpos; raw_line <= all_linescnt; raw_line++) {
+        // Until we have reached the end of the screen
+        if (pline >= info->linescnt) break;
+        // If printable line, otherwise let this line empty
         if (all_lines[raw_line]) mvwprintw(win, pline, 0, "%s", all_lines[raw_line]);
+        // but increase line counter
         pline++;
     }
     return 0;
