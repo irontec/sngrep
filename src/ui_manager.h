@@ -59,6 +59,9 @@ struct ui
     (*help)(PANEL *);
     //! Replace current UI with the following in the next update
     ui_t *replace;
+    //! UI lock. Avoid multi-thread update on this UI
+    pthread_mutex_t lock;
+
 };
 
 /**

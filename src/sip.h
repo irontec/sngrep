@@ -23,6 +23,7 @@
 #define __SNGREP_SIP_H
 
 #include <sys/time.h>
+#include <pthread.h>
 
 //! Shorter declaration of sip_call structure
 typedef struct sip_call sip_call_t;
@@ -87,11 +88,13 @@ struct sip_call
     char *callid; // Call-ID for this call
     char xcallid[800]; // FIXME Dynamic length
     int finished; // XXX NYI
-    /* pthread_mutex_t */// XXX NYI
+    pthread_mutex_t lock;
 
-    struct sip_msg *messages; /* Messages of this call */
-    struct sip_call *next; /* Calls double linked list */
-    struct sip_call *prev; /* Calls double linked list */
+    //! List of messages of this call
+    struct sip_msg *messages;
+    //! Calls double linked list
+    struct sip_call *next;
+    struct sip_call *prev;
 };
 
 /**
@@ -193,7 +196,7 @@ get_n_calls();
  * @returns how many messages are in the call
  */
 extern int
-get_n_msgs(const sip_call_t *call);
+get_n_msgs(sip_call_t *call);
 
 /**
  * Finds the other leg of this call.
@@ -206,7 +209,7 @@ get_n_msgs(const sip_call_t *call);
  * @returns The other call structure or NULL if none found
  */
 extern sip_call_t *
-get_ex_call(const sip_call_t *call);
+get_ex_call(sip_call_t *call);
 
 /**
  * Finds the next msg in a call. If the passed msg is
@@ -216,7 +219,7 @@ get_ex_call(const sip_call_t *call);
  * @returns Next chronological message in the call
  */
 extern sip_msg_t *
-get_next_msg(const sip_call_t *call, const sip_msg_t *msg);
+get_next_msg(sip_call_t *call, sip_msg_t *msg);
 
 /**
  * Finds the next msg in call and it's extended. If the passed msg is
@@ -228,7 +231,7 @@ get_next_msg(const sip_call_t *call, const sip_msg_t *msg);
  *
  */
 extern sip_msg_t *
-get_next_msg_ex(const sip_call_t *call, const sip_msg_t *msg);
+get_next_msg_ex(sip_call_t *call, sip_msg_t *msg);
 
 extern sip_msg_t *
 parse_msg(sip_msg_t *msg);

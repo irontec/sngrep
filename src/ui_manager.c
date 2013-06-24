@@ -144,14 +144,17 @@ ui_get_panel(ui_t *ui)
 int
 ui_redraw_required(ui_t *ui, sip_msg_t *msg)
 {
+    int ret = -1;
     //! Sanity check, this should not happen
     if (!ui) return -1;
+    pthread_mutex_lock(&ui->lock);
     // Request the panel to draw on the scren
     if (ui->redraw_required) {
-        return ui->redraw_required(ui_get_panel(ui), msg);
+        ret = ui->redraw_required(ui_get_panel(ui), msg);
     }
+    pthread_mutex_unlock(&ui->lock);
     // If no redraw capabilities, never redraw
-    return -1;
+    return ret;
 }
 
 int
@@ -159,6 +162,8 @@ ui_draw_panel(ui_t *ui)
 {
     //! Sanity check, this should not happen
     if (!ui) return -1;
+
+    pthread_mutex_lock(&ui->lock);
 
     // Create the panel if it does not exist
     if (!(ui_create(ui))) return -1;
@@ -172,9 +177,11 @@ ui_draw_panel(ui_t *ui)
             // Update panel stack
             update_panels();
             doupdate();
+            pthread_mutex_unlock(&ui->lock);
             return 0;
         }
     }
+    pthread_mutex_unlock(&ui->lock);
     return -1;
 }
 

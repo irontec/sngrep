@@ -121,13 +121,17 @@ get_callid(const char* payload)
 struct sip_call *
 call_new(const char *callid)
 {
-    // XXX LOCKING
+    // Initialize a new call structure
     struct sip_call *call = malloc(sizeof(struct sip_call));
     memset(call, 0, sizeof(sip_call_t));
     call->callid = strdup(callid);
 
-    // XXX Put this call at the end of the call list
-    // Order is important (FIXME)!!!
+    // Initialize call lock
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&call->lock, &attr);
+
     struct sip_call *cur, *prev;
     if (!calls) {
         calls = call;
@@ -159,6 +163,7 @@ call_add_message(struct sip_call *call, const char *header, const char *payload)
     msg->headerptr = strdup(header);
     msg->payloadptr = strdup(payload);
 
+    pthread_mutex_lock(&call->lock);
     // XXX Put this msg at the end of the msg list
     // Order is important!!!
     struct sip_msg *cur, *prev;
@@ -169,7 +174,7 @@ call_add_message(struct sip_call *call, const char *header, const char *payload)
             ;
         prev->next = msg;
     }
-
+    pthread_mutex_unlock(&call->lock);
     return msg;
 }
 
@@ -320,14 +325,16 @@ get_n_calls()
  * @returns how many messages are in the call
  */
 int
-get_n_msgs(const struct sip_call *call)
+get_n_msgs(struct sip_call *call)
 {
     int msgcnt = 0;
+    pthread_mutex_lock(&call->lock);
     struct sip_msg *msg = call->messages;
     while (msg) {
         msgcnt++;
         msg = msg->next;
     }
+    pthread_mutex_unlock(&call->lock);
     return msgcnt;
 }
 
@@ -342,7 +349,7 @@ get_n_msgs(const struct sip_call *call)
  * @returns The other call structure or NULL if none found
  */
 struct sip_call *
-get_ex_call(const struct sip_call *call)
+get_ex_call(struct sip_call *call)
 {
     if (strlen(call->xcallid)) {
         return call_find_by_callid(call->xcallid);
@@ -362,13 +369,17 @@ get_ex_call(const struct sip_call *call)
  * XXX This function must be recoded if message linked list is not sorted
  */
 struct sip_msg *
-get_next_msg(const struct sip_call *call, const struct sip_msg *msg)
+get_next_msg(struct sip_call *call, struct sip_msg *msg)
 {
+    sip_msg_t *ret;
+    pthread_mutex_lock(&call->lock);
     if (msg == NULL) {
-        return call->messages;
+        ret = call->messages;
     } else {
-        return parse_msg(msg->next);
+        ret = parse_msg(msg->next);
     }
+    pthread_mutex_unlock(&call->lock);
+    return ret;
 }
 
 /**
@@ -382,12 +393,13 @@ get_next_msg(const struct sip_call *call, const struct sip_msg *msg)
  * XXX This function must be recoded if message linked list is not sorted
  */
 struct sip_msg *
-get_next_msg_ex(const struct sip_call *call, const struct sip_msg *msg)
+get_next_msg_ex(struct sip_call *call, struct sip_msg *msg)
 {
 
     struct sip_msg *msg1 = NULL, *msg2 = NULL;
     struct sip_call *call2;
 
+    pthread_mutex_lock(&call->lock);
     // Let's assume that call is always present, but call2 may not
     if (!(call2 = get_ex_call(call))) return get_next_msg(call, msg);
 
@@ -414,6 +426,7 @@ get_next_msg_ex(const struct sip_call *call, const struct sip_msg *msg)
                     && msg->ts.tv_usec < msg2->ts.tv_usec)) break;
         }
     }
+    pthread_mutex_unlock(&call->lock);
 
     if ((!msg2) || (msg1 && msg1->ts.tv_sec < msg2->ts.tv_sec) || (msg1 && msg1->ts.tv_sec
             == msg2->ts.tv_sec && msg1->ts.tv_usec < msg2->ts.tv_usec)) {
