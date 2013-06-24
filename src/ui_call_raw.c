@@ -24,7 +24,8 @@
 #include "ui_manager.h"
 #include "ui_call_raw.h"
 
-PANEL *call_raw_create()
+PANEL *
+call_raw_create()
 {
     PANEL *panel;
     WINDOW *win;
@@ -46,11 +47,16 @@ PANEL *call_raw_create()
     // Calculate available printable area
     info->linescnt = height;
 
-
     return panel;
 }
+int
+call_raw_redraw_required(PANEL *panel, sip_msg_t *msg)
+{
+    return 0;
+}
 
-int call_raw_draw(PANEL *panel)
+int
+call_raw_draw(PANEL *panel)
 {
     struct sip_msg *msg = NULL;
     int pline = 0, raw_line;
@@ -64,29 +70,29 @@ int call_raw_draw(PANEL *panel)
     wclear(win);
 
     /*
-        FIXME This part could be coded decently.
-        A better aproach is creating a pad window and copy the visible area
-        into the panel window, taking into account the scroll position.
-        This is dirty but easier to manage by now
-    */
-    memset(all_lines, 0, 1024);
+     FIXME This part could be coded decently.
+     A better aproach is creating a pad window and copy the visible area
+     into the panel window, taking into account the scroll position.
+     This is dirty but easier to manage by now
+     */
     while ((msg = get_next_msg(info->call, msg))) {
         for (raw_line = 0; raw_line < msg->plines; raw_line++) {
             all_lines[all_linescnt++] = msg->payload[raw_line];
         }
-        all_linescnt+=2;
+        all_lines[all_linescnt++] = NULL;
+        all_lines[all_linescnt++] = NULL;
     }
     info->all_lines = all_linescnt;
- 
-    for (raw_line = info->scrollpos; raw_line - info->scrollpos < info->linescnt; raw_line++){
-        if (all_lines[raw_line])
-            mvwprintw(win, pline, 0, "%s", all_lines[raw_line]);    
+
+    for (raw_line = info->scrollpos; raw_line - info->scrollpos < info->linescnt; raw_line++) {
+        if (all_lines[raw_line]) mvwprintw(win, pline, 0, "%s", all_lines[raw_line]);
         pline++;
     }
     return 0;
 }
 
-int call_raw_handle_key(PANEL *panel, int key) 
+int
+call_raw_handle_key(PANEL *panel, int key)
 {
     int i, rnpag_steps = 10;
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
@@ -98,23 +104,19 @@ int call_raw_handle_key(PANEL *panel, int key)
 
     switch (key) {
     case KEY_DOWN:
-        info->scrollpos++;
-        if (info->scrollpos + info->linescnt >= info->all_lines) 
-            info->scrollpos--;
+        if (info->scrollpos + info->linescnt < info->all_lines) info->scrollpos++;
         break;
     case KEY_UP:
-        info->scrollpos--;
-        if (info->scrollpos <= 0)
-            info->scrollpos = 0;
+        if (info->scrollpos > 0) info->scrollpos--;
         break;
     case KEY_NPAGE:
         // Next page => N key down strokes 
-        for (i=0; i < rnpag_steps; i++)
+        for (i = 0; i < rnpag_steps; i++)
             call_raw_handle_key(panel, KEY_DOWN);
         break;
     case KEY_PPAGE:
         // Prev page => N key up strokes
-        for (i=0; i < rnpag_steps; i++)
+        for (i = 0; i < rnpag_steps; i++)
             call_raw_handle_key(panel, KEY_UP);
         break;
     default:
@@ -123,27 +125,26 @@ int call_raw_handle_key(PANEL *panel, int key)
     return 0;
 }
 
-int call_raw_help(PANEL * ppanel)
+int
+call_raw_help(PANEL * ppanel)
 {
     return 0;
 }
 
-int call_raw_set_call(sip_call_t *call) {
+int
+call_raw_set_call(sip_call_t *call)
+{
     ui_t *raw_panel;
     PANEL *panel;
     call_raw_info_t *info;
 
-    if (!call)
-        return -1;
+    if (!call) return -1;
 
-    if (!(raw_panel = ui_find_by_type(RAW_PANEL)))
-        return -1;
+    if (!(raw_panel = ui_find_by_type(RAW_PANEL))) return -1;
 
-    if (!(panel = raw_panel->panel))
-        return -1;
+    if (!(panel = raw_panel->panel)) return -1;
 
-    if (!(info = (call_raw_info_t*) panel_userptr(panel)))
-        return -1;
+    if (!(info = (call_raw_info_t*) panel_userptr(panel))) return -1;
 
     info->call = call;
     info->scrollpos = 0;

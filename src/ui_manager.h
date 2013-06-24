@@ -36,23 +36,30 @@ typedef struct ui ui_t;
 struct ui
 {
     //! Panel Type @see panel_types enum
-    int type;         
+    int type;
     //! The actual ncurses panel pointer
     PANEL *panel;
     //! Constructor for this panel
-    PANEL *(*create)();
+    PANEL *
+    (*create)();
     //! Destroy current panel
-    void (*destroy)(PANEL *);
+    void
+    (*destroy)(PANEL *);
     //! Request the panel to redraw its data
-    int (*draw)(PANEL*);
+    int
+    (*draw)(PANEL*);
     //! Check if the panel request redraw with given msg
-    int (*redraw_required)(PANEL *, sip_msg_t *);
+    int
+    (*redraw_required)(PANEL *, sip_msg_t *);
     //! Handle a custom keybind on this panel
-    int (*handle_key)(PANEL*, int key);
+    int
+    (*handle_key)(PANEL*, int key);
     //! Show help window for this panel (if any)
-    int (*help)(PANEL *);
-}
-;
+    int
+    (*help)(PANEL *);
+    //! Replace current UI with the following in the next update
+    ui_t *replace;
+};
 
 /**
  * Enum for available color pairs
@@ -77,7 +84,7 @@ enum panel_types
     MAIN_PANEL = 0,
     MHELP_PANEL,
     DETAILS_PANEL,
-    DETAILS_PANEL_EX,
+    DETAILS_EX_PANEL,
     RAW_PANEL,
 };
 
@@ -100,17 +107,20 @@ struct ui_config
  * @param ui_config UI configuration structure
  * @returns 0 on ncurses initialization success, 1 otherwise 
  */
-int init_interface(const struct ui_config);
+extern int
+init_interface(const struct ui_config);
 
 /**
  * @brief Create a panel structure
  */
-ui_t *ui_create(int type);
+extern ui_t *
+ui_create(ui_t *ui);
 
 /**
  * @brief Destroy a panel structure 
  */
-void ui_destroy(ui_t *ui);
+extern void
+ui_destroy(ui_t *ui);
 
 /**
  * @brief Get panel pointer from an ui element
@@ -122,10 +132,34 @@ void ui_destroy(ui_t *ui);
  * @param ui UI structure
  * @return ncurses panel pointer of given UI
  */
-PANEL *ui_get_panel(ui_t *ui);
+extern PANEL *
+ui_get_panel(ui_t *ui);
 
+/**
+ * @brief Check if the given msg makes the UI redraw
+ *
+ * This function is ivoked every time a new package is readed
+ * in online mode. Check if the ui needs to be redrawn with the
+ * message to avioid not needed work.
+ *
+ * @param ui UI structure
+ * @param msg las readed message
+ * @return 0 in case of redraw required, -1 otherwise
+ */
+extern int
+ui_redraw_required(ui_t *ui, sip_msg_t *msg);
 
-void ui_draw_panel(ui_t *ui);
+/**
+ * @brief Redrawn current ui
+ *
+ * This function acts as wrapper to custom ui draw functions
+ * with some checks
+ *
+ * @param ui UI structure
+ * @return 0 if ui has been drawn, -1 otherwise
+ */
+extern int
+ui_draw_panel(ui_t *ui);
 
 /**
  * @brief Show help screen from current UI (if any)
@@ -136,7 +170,8 @@ void ui_draw_panel(ui_t *ui);
  * 
  * @param ui UI structure
  */
-void ui_help(ui_t *ui);
+extern void
+ui_help(ui_t *ui);
 
 /**
  * @brief Handle key inputs on given UI
@@ -148,22 +183,26 @@ void ui_help(ui_t *ui);
  * @param ui UI structure
  * @param key keycode sequence of the pressed keys and mods
  */
-void ui_handle_key(ui_t *ui, int key);
+extern int
+ui_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Find a ui from its pannel pointer
  */
-ui_t *ui_find_by_panel(PANEL *panel);
+extern ui_t *
+ui_find_by_panel(PANEL *panel);
 
 /**
  * @brief Find a ui form its panel id
  */
-ui_t *ui_find_by_type(int type);
+extern ui_t *
+ui_find_by_type(int type);
 /**
  * @brief Toggle color mode on and off
  * @param on Pass 0 to turn all black&white
  */
-void toggle_color(int on);
+extern void
+toggle_color(int on);
 
 /**
  * @brief Wait for user input.
@@ -172,9 +211,8 @@ void toggle_color(int on);
  * 
  * @param panel the topmost panel ui structure
  */
-void wait_for_input(ui_t *ui);
-
-
+extern int
+wait_for_input(ui_t *ui);
 
 /**
  * Draw a box around passed windows with two bars (top and bottom)
@@ -182,7 +220,8 @@ void wait_for_input(ui_t *ui);
  *
  * @param win Window to draw borders on
  */
-void title_foot_box(WINDOW *win);
+extern void
+title_foot_box(WINDOW *win);
 
 /**
  * This function is invocked asynchronously from the
@@ -192,7 +231,16 @@ void title_foot_box(WINDOW *win);
  *
  * @param callid Call-ID from the last received message
  */
-void refresh_call_ui(const char *callid);
+extern void
+ui_new_msg_refresh(sip_msg_t *msg);
 
+/**
+ * @brief Replace one UI with another
+ *
+ * This function can be handy when we want to destroy one UI element
+ * and replace it for another.
+ */
+extern int
+ui_set_replace(ui_t *, ui_t*);
 
 #endif    // __SNGREP_UI_MANAGER_H

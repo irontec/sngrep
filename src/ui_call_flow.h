@@ -32,7 +32,8 @@ typedef struct call_flow_info call_flow_info_t;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct call_flow_info {
+struct call_flow_info
+{
     sip_call_t *call;
     sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
@@ -40,11 +41,19 @@ struct call_flow_info {
     int cur_line;
 };
 
-extern PANEL *call_flow_create();
-extern void call_flow_destroy(PANEL *panel);
-extern int call_flow_draw(PANEL *panel);
-extern int call_flow_handle_key(PANEL *panel, int key);
-extern int call_flow_help(PANEL *panel);
-extern int call_flow_set_call(sip_call_t *call);
+extern PANEL *
+call_flow_create();
+extern void
+call_flow_destroy(PANEL *panel);
+extern int
+call_flow_redraw_required(PANEL *panel, sip_msg_t *msg);
+extern int
+call_flow_draw(PANEL *panel);
+extern int
+call_flow_handle_key(PANEL *panel, int key);
+extern int
+call_flow_help(PANEL *panel);
+extern int
+call_flow_set_call(sip_call_t *call);
 
 #endif

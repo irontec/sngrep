@@ -32,17 +32,25 @@ typedef struct call_raw_info call_raw_info_t;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct call_raw_info {
+struct call_raw_info
+{
     sip_call_t *call;
     int scrollpos;
     int linescnt;
     int all_lines;
 };
 
-extern PANEL *call_raw_create();
-extern int call_raw_draw(PANEL *panel);
-extern int call_raw_handle_key(PANEL *panel, int key);
-extern int call_raw_help(PANEL *panel);
-extern int call_raw_set_call(sip_call_t *call);
+extern PANEL *
+call_raw_create();
+int
+call_raw_redraw_required(PANEL *panel, sip_msg_t *msg);
+extern int
+call_raw_draw(PANEL *panel);
+extern int
+call_raw_handle_key(PANEL *panel, int key);
+extern int
+call_raw_help(PANEL *panel);
+extern int
+call_raw_set_call(sip_call_t *call);
 
 #endif

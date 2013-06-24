@@ -40,19 +40,32 @@
 /* IP data structure */
 struct nread_ip
 {
-    u_int8_t ip_vhl; /* header length, version    */
-    u_int8_t ip_tos; /* type of service           */
-    u_int16_t ip_len; /* total length              */
-    u_int16_t ip_id; /* identification            */
-    u_int16_t ip_off; /* fragment offset field     */
-#define IP_RF 0x8000                 /* reserved fragment flag    */
-#define IP_DF 0x4000                 /* dont fragment flag        */
-#define IP_MF 0x2000                 /* more fragments flag       */
-#define IP_OFFMASK 0x1fff            /* mask for fragmenting bits */
-    u_int8_t ip_ttl; /* time to live              */
-    u_int8_t ip_p; /* protocol                  */
-    u_int16_t ip_sum; /* checksum                  */
-    struct in_addr ip_src, ip_dst; /* source and dest address   */
+    //! header length, version
+    u_int8_t ip_vhl;
+    //! type of service
+    u_int8_t ip_tos;
+    //! total length
+    u_int16_t ip_len;
+    //! identification
+    u_int16_t ip_id;
+    //! fragment offset field
+    u_int16_t ip_off;
+    //! reserved fragment flag
+#define IP_RF 0x8000
+    //! dont fragment flag
+#define IP_DF 0x4000
+    //! more fragments flag
+#define IP_MF 0x2000
+    //!  mask for fragmenting bits
+#define IP_OFFMASK 0x1fff
+    //! time to live
+    u_int8_t ip_ttl;
+    //! protocol
+    u_int8_t ip_p;
+    //! checksum
+    u_int16_t ip_sum;
+    //! source and dest addresses
+    struct in_addr ip_src, ip_dst;
 };
 
 #define IP_HL(ip)               (((ip)->ip_vhl) & 0x0f)
@@ -61,10 +74,14 @@ struct nread_ip
 /* UDP data structure */
 struct nread_udp
 {
-    u_short udp_sport; /* source port */
-    u_short udp_dport; /* destination port */
-    u_short udp_hlen; /* Udp header length*/
-    u_short udp_chksum; /* Udp Checksum */
+    //! source port
+    u_short udp_sport;
+    //! destination port
+    u_short udp_dport;
+    //! UDP header length
+    u_short udp_hlen;
+    //! UDP Checksum
+    u_short udp_chksum;
 };
 
 /**
@@ -78,6 +95,7 @@ struct nread_udp
  * @return 0 if load has been successfull, 1 otherwise
  *
  */
-int load_pcap_file(const char* file);
+extern int
+load_pcap_file(const char* file);
 
 #endif

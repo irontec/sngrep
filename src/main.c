@@ -33,7 +33,8 @@
  * Print all available options (which are none actually)
  *
  */
-void usage(const char* progname)
+void
+usage(const char* progname)
 {
     fprintf(stdout, "[%s] Copyright (C) 2013 Irontec S.L.\n\n", progname);
     fprintf(stdout, "Usage:\n");
@@ -53,7 +54,8 @@ void usage(const char* progname)
  *    without any type of validation.
  *
  */
-int main(int argc, char* argv[])
+int
+main(int argc, char* argv[])
 {
 
     int ret;
@@ -79,7 +81,6 @@ int main(int argc, char* argv[])
     } else {
         // Show online mode in ui
         config.online = 1;
-
         // Assume online mode, launch ngrep in a thread
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);

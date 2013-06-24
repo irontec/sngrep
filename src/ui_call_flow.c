@@ -23,6 +23,7 @@
 #include <string.h>
 #include "ui_manager.h"
 #include "ui_call_flow.h"
+#include "ui_call_flow_ex.h"
 #include "ui_call_raw.h"
 
 /**
@@ -30,7 +31,8 @@
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-PANEL *call_flow_create()
+PANEL *
+call_flow_create()
 {
     PANEL *panel;
     WINDOW *win;
@@ -53,15 +55,15 @@ PANEL *call_flow_create()
     info->linescnt = height - 10;
 
     // Window borders
-    wattron(win,COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
     title_foot_box(win);
     mvwaddch(win, 2, 61, ACS_TTEE);
     mvwvline(win, 3, 61, ACS_VLINE, height - 6);
     mvwaddch(win, 4, 0, ACS_LTEE);
     mvwhline(win, 4, 1, ACS_HLINE, 61);
     mvwaddch(win, 4, 61, ACS_RTEE);
-    mvwaddch(win, height-3, 61, ACS_BTEE);
-    wattroff(win,COLOR_PAIR(DETAIL_BORDER_COLOR));
+    mvwaddch(win, height - 3, 61, ACS_BTEE);
+    wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
     // Callflow box title
     mvwprintw(win, 3, 30, "Call Flow");
@@ -70,23 +72,38 @@ PANEL *call_flow_create()
     mvwaddch(win, 6, 20, ACS_TTEE);
     mvwaddch(win, 6, 50, ACS_TTEE);
 
-    mvwprintw(win, height - 2, 2,  "Q/Esc: Quit");
-    mvwprintw(win, height - 2, 16, "F1: Show help");
-    mvwprintw(win, height - 2, 32, "X: Show Extendend");
+    mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
+    mvwprintw(win, height - 2, 16, "F1: Help");
+    mvwprintw(win, height - 2, 27, "X: Call-Flow Extended");
 
     return panel;
 }
 
-void call_flow_destroy(PANEL *panel)
+int
+call_flow_redraw_required(PANEL *panel, sip_msg_t *msg)
+{
+    // Get panel information
+    call_flow_info_t *info;
+
+    // Check we have panel info
+    if (!(info = (call_flow_info_t*) panel_userptr(panel))) return -1;
+
+    // If this message belongs to first call
+    if (msg->call == info->call) return 0;
+
+    return -1;
+}
+
+void
+call_flow_destroy(PANEL *panel)
 {
     call_flow_info_t *info;
-    
+
     // Hide the panel
     hide_panel(panel);
 
     // Free the panel information
-    if ((info = (call_flow_info_t*)panel_userptr(panel)))
-        free(info);
+    if ((info = (call_flow_info_t*) panel_userptr(panel))) free(info);
 
     // Delete panel window
     delwin(panel_window(panel));
@@ -94,7 +111,8 @@ void call_flow_destroy(PANEL *panel)
     del_panel(panel);
 }
 
-int call_flow_draw(PANEL *panel)
+int
+call_flow_draw(PANEL *panel)
 {
     int i, height, width, cline, msgcnt, startpos = 7;
     sip_msg_t *msg;
@@ -135,7 +153,7 @@ int call_flow_draw(PANEL *panel)
         //}
 
         // Check if there are still 2 spaces for this message in the list
-        if (cline >= info->linescnt + startpos ) {
+        if (cline >= info->linescnt + startpos) {
             // Draw 2 arrow to show there are more messages
             mvwaddch(win, info->linescnt + startpos - 1, 20, ACS_DARROW);
             mvwaddch(win, info->linescnt + startpos - 1, 50, ACS_DARROW);
@@ -145,7 +163,7 @@ int call_flow_draw(PANEL *panel)
         // Print timestamp
         mvwprintw(win, cline, 2, "%s", msg->time);
 
-        if (msg == info->cur_msg) wattron(win,A_REVERSE);
+        if (msg == info->cur_msg) wattron(win, A_REVERSE);
 
         // Determine the message direction
         if (!strcmp(msg->ip_from, from)) {
@@ -171,7 +189,7 @@ int call_flow_draw(PANEL *panel)
 
         // One message fills 2 lines
         cline += 2;
-    } 
+    }
 
     // Clean the message area
     for (cline = 3, i = 0; i < info->linescnt + 4; i++)
@@ -179,13 +197,14 @@ int call_flow_draw(PANEL *panel)
 
     // Print the message payload in the right side of the screen
     for (cline = 3, i = 0; i < info->cur_msg->plines && i < info->linescnt + 4; i++)
-        mvwprintw(win, cline++, 62, "%.*s", width - 63, info->cur_msg->payload[i]);  
+        mvwprintw(win, cline++, 62, "%.*s", width - 63, info->cur_msg->payload[i]);
 
     return 0;
-    
+
 }
 
-int call_flow_handle_key(PANEL *panel, int key) 
+int
+call_flow_handle_key(PANEL *panel, int key)
 {
     int i, rnpag_steps = 4;
     call_flow_info_t *info = (call_flow_info_t*) panel_userptr(panel);
@@ -198,8 +217,7 @@ int call_flow_handle_key(PANEL *panel, int key)
     switch (key) {
     case KEY_DOWN:
         // Check if there is a call below us
-        if (!(next = get_next_msg(info->call, info->cur_msg)))
-            break;
+        if (!(next = get_next_msg(info->call, info->cur_msg))) break;
         info->cur_msg = next;
         info->cur_line += 2;
         // If we are out of the bottom of the displayed list
@@ -212,35 +230,40 @@ int call_flow_handle_key(PANEL *panel, int key)
     case KEY_UP:
         // FIXME We start searching from the fist one
         // FIXME This wont work well with a lot of msg
-        while ((prev = get_next_msg(info->call, prev))){
-            if (prev->next == info->cur_msg)
-                break;
-        }    
+        while ((prev = get_next_msg(info->call, prev))) {
+            if (prev->next == info->cur_msg) break;
+        }
         // We're at the first message already
         if (!prev) break;
         info->cur_msg = prev;
         info->cur_line -= 2;
-        if ( info->cur_line <= 0 ){
+        if (info->cur_line <= 0) {
             info->first_msg = info->cur_msg;
-            info->cur_line = 1;    
+            info->cur_line = 1;
         }
         break;
     case KEY_NPAGE:
         // Next page => N key down strokes 
-        for (i=0; i < rnpag_steps; i++)
+        for (i = 0; i < rnpag_steps; i++)
             call_flow_handle_key(panel, KEY_DOWN);
         break;
     case KEY_PPAGE:
         // Prev page => N key up strokes
-        for (i=0; i < rnpag_steps; i++)
+        for (i = 0; i < rnpag_steps; i++)
             call_flow_handle_key(panel, KEY_UP);
         break;
-    case 10:
+    case 'x':
+        if (!info->call) return -1;
+        if (!get_ex_call(info->call)) return -1;
+        // KEY_ENTER , Display current call flow
+        next_panel = ui_create(ui_find_by_type(DETAILS_EX_PANEL));
+        call_flow_ex_set_call(info->call);
+        ui_set_replace(ui_find_by_panel(panel), next_panel);
         break;
     case 'r':
     case 'R':
         // KEY_R, display current call in raw mode
-        next_panel = ui_create(RAW_PANEL);
+        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
         call_raw_set_call(info->call);
         wait_for_input(next_panel);
     default:
@@ -250,28 +273,26 @@ int call_flow_handle_key(PANEL *panel, int key)
     return 0;
 }
 
-
-int call_flow_help(PANEL *panel)
+int
+call_flow_help(PANEL *panel)
 {
     return 0;
 }
 
-int call_flow_set_call(sip_call_t *call) {
+int
+call_flow_set_call(sip_call_t *call)
+{
     ui_t *flow_panel;
     PANEL *panel;
     call_flow_info_t *info;
 
-    if (!call) 
-        return -1;
+    if (!call) return -1;
 
-    if (!(flow_panel = ui_find_by_type(DETAILS_PANEL)))
-        return -1;
-    
-    if (!(panel = flow_panel->panel))
-        return -1;
+    if (!(flow_panel = ui_find_by_type(DETAILS_PANEL))) return -1;
 
-    if (!(info = (call_flow_info_t*) panel_userptr(panel)))
-        return -1;
+    if (!(panel = flow_panel->panel)) return -1;
+
+    if (!(info = (call_flow_info_t*) panel_userptr(panel))) return -1;
 
     info->call = call;
     info->cur_msg = info->first_msg = call->messages;

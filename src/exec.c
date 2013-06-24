@@ -45,7 +45,8 @@
  ** (let's say -T), sngrep will fail at parsing any header :(
  **
  ****************************************************************************/
-int run_ngrep(void *pargv)
+int
+run_ngrep(void *pargv)
 {
     char **argv = (char**) pargv;
     int argc = 1;
@@ -73,7 +74,7 @@ int run_ngrep(void *pargv)
             struct sip_msg *msg;
             if ((msg = sip_parse_message(msg_header, strdup((const char*) msg_payload)))) {
                 // Update the ui
-                refresh_call_ui(msg->call->callid);
+                ui_new_msg_refresh(msg);
             }
 
             // Initialize structures

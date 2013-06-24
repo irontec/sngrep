@@ -19,35 +19,130 @@
  **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+#include <stdlib.h>
 #include <string.h>
+#include "ui_manager.h"
+#include "ui_call_flow.h"
 #include "ui_call_flow_ex.h"
+#include "ui_call_raw.h"
 
-struct sip_call *active_call;
-
-PANEL *call_flow_ex_create()
+/**
+ * @brief Call flow status information
+ * This data stores the actual status of the panel. It's stored in the
+ * PANEL user pointer.
+ */
+PANEL *
+call_flow_ex_create()
 {
-	PANEL *panel = new_panel(newwin(LINES, COLS, 0, 0));
-	return panel;
+    PANEL *panel;
+    WINDOW *win;
+    int height, width;
+    call_flow_ex_info_t *info;
+
+    // Create a new panel to fill all the screen
+    panel = new_panel(newwin(LINES, COLS, 0, 0));
+    // Initialize Call List specific data 
+    info = malloc(sizeof(call_flow_ex_info_t));
+    memset(info, 0, sizeof(call_flow_ex_info_t));
+    // Store it into panel userptr
+    set_panel_userptr(panel, (void*) info);
+
+    // Let's draw the fixed elements of the screen
+    win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Calculate available printable area
+    info->linescnt = height - 10;
+
+    // Window borders
+    wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    title_foot_box(win);
+    mvwaddch(win, 2, 91, ACS_TTEE);
+    mvwvline(win, 3, 91, ACS_VLINE, height - 6);
+    mvwaddch(win, 4, 0, ACS_LTEE);
+    mvwhline(win, 4, 1, ACS_HLINE, 91);
+    mvwaddch(win, 4, 91, ACS_RTEE);
+    mvwaddch(win, height - 3, 91, ACS_BTEE);
+    wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+
+    // Callflow box title
+    mvwprintw(win, 3, 40, "Call Flow Extended");
+    mvwhline(win, 6, 11, ACS_HLINE, 20);
+    mvwhline(win, 6, 40, ACS_HLINE, 20);
+    mvwhline(win, 6, 70, ACS_HLINE, 20);
+    mvwaddch(win, 6, 20, ACS_TTEE);
+    mvwaddch(win, 6, 50, ACS_TTEE);
+    mvwaddch(win, 6, 80, ACS_TTEE);
+
+    // Make the vertical lines for messages (2 lines per message + extra space)
+    mvwvline(win, 7, 20, ACS_VLINE, info->linescnt);
+    mvwvline(win, 7, 50, ACS_VLINE, info->linescnt);
+    mvwvline(win, 7, 80, ACS_VLINE, info->linescnt);
+
+    mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
+    mvwprintw(win, height - 2, 16, "F1: Help");
+    mvwprintw(win, height - 2, 27, "X: Call-Flow");
+
+    return panel;
 }
 
-int call_flow_ex_draw(PANEL *panel)
+int
+call_flow_ex_redraw_required(PANEL *panel, sip_msg_t *msg)
 {
-    int w, h, fw, fh, rw, rh, ph;
-    int msgcnt = 0;
-    int padpos, highlight;
+    // Get panel information
+    call_flow_ex_info_t *info;
 
-    // This panel only makes sense with a selected call
-    if (!active_call) return 1;
+    // Check we have panel info
+    if (!(info = (call_flow_ex_info_t*) panel_userptr(panel))) return -1;
+
+    // If this message belongs to first call
+    if (msg->call == info->call)
+        return 0;
+
+    // If this message belongs to second call
+    if (msg->call == info->call2)
+        return 0;
+
+    return -1;
+}
+
+void
+call_flow_ex_destroy(PANEL *panel)
+{
+    call_flow_ex_info_t *info;
+
+    // Hide the panel
+    hide_panel(panel);
+
+    // Free the panel information
+    if ((info = (call_flow_ex_info_t*) panel_userptr(panel))) free(info);
+
+    // Delete panel window
+    delwin(panel_window(panel));
+    // Delete panel
+    del_panel(panel);
+}
+
+int
+call_flow_ex_draw(PANEL *panel)
+{
+    int i, height, width, cline, msgcnt, startpos = 7;
+    sip_msg_t *msg;
+    sip_call_t *call, *call2;
+
+    // Get panel information
+    call_flow_ex_info_t *info = (call_flow_ex_info_t*) panel_userptr(panel);
+    call = info->call;
+    call2 = info->call2;
+
+    // This panel only makes sense with a selected call with extended xcallid
+    if (!call || !call2) return 1;
 
     // Get window of main panel
     WINDOW *win = panel_window(panel);
+    msgcnt = get_n_msgs(call) + get_n_msgs(call2);
 
-    // Get other call data
-    struct sip_call *call = active_call;
-    struct sip_call *call2 = get_ex_call(call);
-
-    if (!call2) return 1;
-
+    // Get data from first message
     const char *from, *to, *via;
     const char *callid1, *callid2;
 
@@ -67,154 +162,172 @@ int call_flow_ex_draw(PANEL *panel)
     }
 
     // Get window size
-    getmaxyx(win, h, w);
-    // Get flow size
-    fw = 95;
-    fh = h - 3 - 3;
-    // Get the raw size
-    rw = w - fw - 2;
-    rh = h - 3 - 3;
-
-    // Window borders
-    wattron(win,COLOR_PAIR(DETAIL_BORDER_COLOR));
-    title_foot_box(win);
-    mvwaddch(win, 2, fw, ACS_TTEE);
-    mvwvline(win, 3, fw, ACS_VLINE, fh);
-    mvwaddch(win, 4, 0, ACS_LTEE);
-    mvwhline(win, 4, 1, ACS_HLINE, fw);
-    mvwaddch(win, 4, fw, ACS_RTEE);
-    mvwaddch(win, 3+fh, fw, ACS_BTEE);
-    wattroff(win,COLOR_PAIR(DETAIL_BORDER_COLOR));
+    getmaxyx(win, height, width);
 
     // Window title
-    mvwprintw(win, 1, (w - 45) / 2, "Call Details for %s", call->callid);
-    // Callflow box title
-    mvwprintw(win, 3, 40, "Call Flow Extended");
-
+    mvwprintw(win, 1, (width - 45) / 2, "Call Details for %s -> %s", call->callid, call2->callid);
     // Hosts and lines in callflow
-    mvwprintw(win, 5, 13, "%-22s", from);
-    mvwprintw(win, 5, 42, "%-22s", via);
-    mvwprintw(win, 5, 72, "%-22s", to);
-    mvwhline(win, 6, 11, ACS_HLINE, 20);
-    mvwhline(win, 6, 40, ACS_HLINE, 20);
-    mvwhline(win, 6, 70, ACS_HLINE, 20);
-    mvwaddch(win, 6, 20, ACS_TTEE);
-    mvwaddch(win, 6, 50, ACS_TTEE);
-    mvwaddch(win, 6, 80, ACS_TTEE);
-    mvwprintw(win, h - 2, 2,
-            "Q: Quit    C: Toggle color    F: Show raw messages     X: Show Call-Flow");
+    mvwprintw(win, 5, 7, "%22s", from);
+    mvwprintw(win, 5, 37, "%22s", via);
+    mvwprintw(win, 5, 67, "%22s", to);
 
-    int msgcntex = get_n_msgs(call) + get_n_msgs(call2);
-
-    // Make the pad long enough to contain all messages and some extra space
-    WINDOW *flow_pad = newpad(fh + msgcntex * 2, fw);
-    mvwvline(flow_pad, 0, 20, ACS_VLINE, fh+msgcntex*2);
-    mvwvline(flow_pad, 0, 50, ACS_VLINE, fh+msgcntex*2);
-    mvwvline(flow_pad, 0, 80, ACS_VLINE, fh+msgcntex*2);
-
-    // Make a pad for sip message
-    WINDOW *raw_pad = newpad(rh, rw);
-
-    struct sip_msg *msg = NULL;
-
-    int cline = 0;
-    while ((msg = get_next_msg_ex(call, msg))) {
-        msgcnt++;
-
-        // Set raw content for selected text
-        if (msgcnt == highlight) {
-            int raw_line = 0, pcount = 0;
-            for (raw_line = 0; raw_line < msg->plines; raw_line++, pcount++) {
-                mvwprintw(raw_pad, pcount, 0, "%.*s", rw, msg->payload[raw_line]);
-            }
+    for (cline = startpos, msg = info->first_msg; msg; msg = get_next_msg_ex(info->call, msg)) {
+        // Check if there are still 2 spaces for this message in the list
+        if (cline >= info->linescnt + startpos) {
+            // Draw 2 arrow to show there are more messages
+            mvwaddch(win, info->linescnt + startpos - 1, 20, ACS_DARROW);
+            mvwaddch(win, info->linescnt + startpos - 1, 50, ACS_DARROW);
+            break;
         }
 
         // Print timestamp
-        mvwprintw(flow_pad, cline, 2, "%s", msg->time);
+        mvwprintw(win, cline, 2, "%s", msg->time);
 
-        if (msgcnt == highlight) wattron(flow_pad,A_REVERSE);
+        if (msg == info->cur_msg) wattron(win, A_REVERSE);
 
+        // Draw message type or status and line
         int msglen = strlen(msg->type);
         if (msglen > 24) msglen = 24;
 
         // Determine the message direction
         if (!strcmp(msg->call->callid, callid1) && !strcmp(msg->ip_from, from)) {
-            wattron(flow_pad,COLOR_PAIR(OUTGOING_COLOR));
-            mvwprintw(flow_pad, cline, 22, "%26s", "");
-            mvwprintw(flow_pad, cline++, 22 + (24 - msglen) / 2, "%.24s", msg->type);
-            mvwhline(flow_pad, cline, 22, ACS_HLINE, 26);
-            mvwaddch(flow_pad, cline++, 47, ACS_RARROW);
+            wattron(win, COLOR_PAIR(OUTGOING_COLOR));
+            mvwprintw(win, cline, 22, "%26s", "");
+            mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwhline(win, cline + 1, 22, ACS_HLINE, 26);
+            mvwaddch(win, cline + 1, 47, ACS_RARROW);
         } else if (!strcmp(msg->call->callid, callid1) && !strcmp(msg->ip_to, from)) {
-            wattron(flow_pad,COLOR_PAIR(INCOMING_COLOR));
-            mvwprintw(flow_pad, cline, 22, "%26s", "");
-            mvwprintw(flow_pad, cline++, 22 + (24 - msglen) / 2, "%.24s", msg->type);
-            mvwhline(flow_pad, cline, 22, ACS_HLINE, 26);
-            mvwaddch(flow_pad, cline++, 22, ACS_LARROW);
+            wattron(win, COLOR_PAIR(INCOMING_COLOR));
+            mvwprintw(win, cline, 22, "%26s", "");
+            mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwhline(win, cline + 1, 22, ACS_HLINE, 26);
+            mvwaddch(win, cline + 1, 22, ACS_LARROW);
         } else if (!strcmp(msg->call->callid, callid2) && !strcmp(msg->ip_from, via)) {
-            wattron(flow_pad,COLOR_PAIR(OUTGOING_COLOR));
-            mvwprintw(flow_pad, cline, 52, "%26s", "");
-            mvwprintw(flow_pad, cline++, 54 + (24 - msglen) / 2, "%.24s", msg->type);
-            mvwhline(flow_pad, cline, 52, ACS_HLINE, 26);
-            mvwaddch(flow_pad, cline++, 77, ACS_RARROW);
+            wattron(win, COLOR_PAIR(OUTGOING_COLOR));
+            mvwprintw(win, cline, 52, "%26s", "");
+            mvwprintw(win, cline, 54 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwhline(win, cline + 1, 52, ACS_HLINE, 26);
+            mvwaddch(win, cline + 1, 77, ACS_RARROW);
         } else {
-            wattron(flow_pad,COLOR_PAIR(INCOMING_COLOR));
-            mvwprintw(flow_pad, cline, 52, "%26s", "");
-            mvwprintw(flow_pad, cline++, 54 + (24 - msglen) / 2, "%.24s", msg->type);
-            mvwhline(flow_pad, cline, 52, ACS_HLINE, 26);
-            mvwaddch(flow_pad, cline++, 52, ACS_LARROW);
+            wattron(win, COLOR_PAIR(INCOMING_COLOR));
+            mvwprintw(win, cline, 52, "%26s", "");
+            mvwprintw(win, cline, 54 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwhline(win, cline + 1, 52, ACS_HLINE, 26);
+            mvwaddch(win, cline + 1, 52, ACS_LARROW);
         }
 
-        wattroff(flow_pad,COLOR_PAIR(OUTGOING_COLOR));
-        wattroff(flow_pad,COLOR_PAIR(INCOMING_COLOR));
-        wattroff(flow_pad, A_REVERSE);
+        // Turn off colors
+        wattroff(win, COLOR_PAIR(OUTGOING_COLOR));
+        wattroff(win, COLOR_PAIR(INCOMING_COLOR));
+        wattroff(win, A_REVERSE);
+
+        // One message fills 2 lines
+        cline += 2;
     }
 
-    /* Calculate the space the pad will be covering in the screen */
-    ph = fh - 3 /* CF header */- 2 /* Addresses */;
-    /* Make it even */
-    ph -= ph % 2;
+    // Clean the message area
+    for (cline = 3, i = 0; i < info->linescnt + 4; i++)
+        mvwprintw(win, cline++, 92, "%*s", width - 93, "");
 
-    /* Calculate the highlight position */
-    // The highlight position is below the last displayed position?
-    if (highlight * 2 > ph + padpos) {
-        // Scrolling down 
-        padpos += 2;
-        // The highlight position is above the first displayed position?
-    } else if (highlight * 2 <= padpos) {
-        // Scroll up
-        padpos -= 2;
-    }
-
-    /* Draw some fancy arrow to indicate scrolling */
-    if (padpos > 0) {
-        mvwaddch(flow_pad, padpos, 20, ACS_UARROW);
-        mvwaddch(flow_pad, padpos, 50, ACS_UARROW);
-        mvwaddch(flow_pad, padpos, 80, ACS_UARROW);
-    }
-    if (msgcntex * 2 > ph + padpos) {
-        mvwaddch(flow_pad, ph+padpos-1, 20, ACS_DARROW);
-        mvwaddch(flow_pad, ph+padpos-1, 50, ACS_DARROW);
-        mvwaddch(flow_pad, ph+padpos-1, 80, ACS_DARROW);
-    }
-
-    // Copy the callflow into the screen
-    copywin(flow_pad, win, padpos, 1, 3 + 2 + 2, 1, 6 + ph, fw - 1, false);
-    delwin(flow_pad);
-    // Copy the rawmessage into the screen
-    copywin(raw_pad, win, 0, 0, 3, fw + 1, rh, fw + rw, false);
-    delwin(raw_pad);
+    // Print the message payload in the right side of the screen
+    for (cline = 3, i = 0; i < info->cur_msg->plines && i < info->linescnt + 4; i++)
+        mvwprintw(win, cline++, 92, "%.*s", width - 93, info->cur_msg->payload[i]);
 
     return 0;
 
 }
 
-int call_flow_ex_handle_key(PANEL *panel, char key) 
+int
+call_flow_ex_handle_key(PANEL *panel, int key)
 {
-	return 0;
+    int i, rnpag_steps = 4;
+    call_flow_ex_info_t *info = (call_flow_ex_info_t*) panel_userptr(panel);
+    sip_msg_t *next = NULL, *prev = NULL;
+    ui_t *next_panel;
+
+    // Sanity check, this should not happen
+    if (!info) return -1;
+
+    switch (key) {
+    case KEY_DOWN:
+        // Check if there is a call below us
+        if (!(next = get_next_msg_ex(info->call, info->cur_msg))) break;
+        info->cur_msg = next;
+        info->cur_line += 2;
+        // If we are out of the bottom of the displayed list
+        // refresh it starting in the next call
+        if (info->cur_line > info->linescnt) {
+            info->first_msg = get_next_msg_ex(info->call, info->first_msg);
+            info->cur_line = info->linescnt;
+        }
+        break;
+    case KEY_UP:
+        // FIXME We start searching from the fist one
+        // FIXME This wont work well with a lot of msg
+        while ((next = get_next_msg_ex(info->call, next))) {
+            if (next == info->cur_msg) break;
+            prev = next;
+        }
+        // We're at the first message already
+        if (!prev) break;
+        info->cur_msg = prev;
+        info->cur_line -= 2;
+        if (info->cur_line <= 0) {
+            info->first_msg = info->cur_msg;
+            info->cur_line = 1;
+        }
+        break;
+    case KEY_NPAGE:
+        // Next page => N key down strokes 
+        for (i = 0; i < rnpag_steps; i++)
+            call_flow_ex_handle_key(panel, KEY_DOWN);
+        break;
+    case KEY_PPAGE:
+        // Prev page => N key up strokes
+        for (i = 0; i < rnpag_steps; i++)
+            call_flow_ex_handle_key(panel, KEY_UP);
+        break;
+    case 'x':
+        if (!info->call) return -1;
+        // KEY_ENTER , Display current call flow
+        next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
+        call_flow_set_call(info->call);
+        ui_set_replace(ui_find_by_panel(panel), next_panel);
+        break;
+    case 'r':
+    case 'R':
+        // KEY_R, display current call in raw mode
+        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
+        call_raw_set_call(info->call);
+        wait_for_input(next_panel);
+    default:
+        return -1;
+    }
+
+    return 0;
 }
 
-
-int call_flow_ex_help(PANEL *panel)
+int
+call_flow_ex_help(PANEL *panel)
 {
-	return 0;
+    return 0;
+}
+
+int
+call_flow_ex_set_call(sip_call_t *call)
+{
+    PANEL *panel;
+    call_flow_ex_info_t *info;
+
+    if (!call) return -1;
+
+    if (!(panel = ui_get_panel(ui_find_by_type(DETAILS_EX_PANEL)))) return -1;
+
+    if (!(info = (call_flow_ex_info_t*) panel_userptr(panel))) return -1;
+
+    info->call = call;
+    info->call2 = get_ex_call(call);
+    info->cur_msg = info->first_msg = get_next_msg_ex(call, NULL);
+    info->cur_line = 1;
+    return 0;
 }

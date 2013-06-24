@@ -19,13 +19,42 @@
  **   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
-#ifndef __UI_CALL_flow_ex_EX_H
-#define __UI_CALL_flow_ex_EX_H
+#ifndef __UI_CALL_flow_ex_H
+#define __UI_CALL_flow_ex_H
+#include "sip.h"
 #include "ui_manager.h"
 
-extern PANEL *call_flow_ex_create();
-extern int call_flow_ex_draw(PANEL *panel);
-extern int call_flow_ex_handle_key(PANEL *panel, char key);
-extern int call_flow_ex_help(PANEL *panel);
+//! Sorter declaration of struct call_flow_ex_info
+typedef struct call_flow_ex_info call_flow_ex_info_t;
+
+/**
+ * @brief Call flow status information
+ * This data stores the actual status of the panel. It's stored in the
+ * PANEL user pointer.
+ */
+struct call_flow_ex_info
+{
+    sip_call_t *call;
+    sip_call_t *call2;
+    sip_msg_t *first_msg;
+    sip_msg_t *cur_msg;
+    int linescnt;
+    int cur_line;
+};
+
+extern PANEL *
+call_flow_ex_create();
+extern void
+call_flow_ex_destroy(PANEL *panel);
+extern int
+call_flow_ex_redraw_required(PANEL *panel, sip_msg_t *msg);
+extern int
+call_flow_ex_draw(PANEL *panel);
+extern int
+call_flow_ex_handle_key(PANEL *panel, int key);
+extern int
+call_flow_ex_help(PANEL *panel);
+extern int
+call_flow_ex_set_call(sip_call_t *call);
 
 #endif

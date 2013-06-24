@@ -22,6 +22,7 @@
 #ifndef __UI_CALL_LIST_H
 #define __UI_CALL_LIST_H
 #include "ui_manager.h"
+#include "sip.h"
 
 //! Sorter declaration of call_list_column struct
 typedef struct call_list_column call_list_column_t;
@@ -34,10 +35,11 @@ typedef struct call_list_info call_list_info_t;
  * in which order a configurable option. 
  * This structure is one step towards configurable stuff
  */
-struct call_list_column {
-     int id;
-     char *title;
-     int width;
+struct call_list_column
+{
+    int id;
+    char *title;
+    int width;
 };
 
 /**
@@ -45,9 +47,10 @@ struct call_list_column {
  * This data stores the actual status of the panel. It's stored in the
  * panel pointer.
  */
-struct call_list_info {
+struct call_list_info
+{
     //! First displayed call, for drawing faster
-    sip_call_t *first_call;    
+    sip_call_t *first_call;
     //! First displayed call counter, for drawing scroll arrow faster
     int first_line;
     //! Selected call in the list
@@ -60,12 +63,20 @@ struct call_list_info {
     int linescnt;
     //! Stores the current selected line
     int cur_line;
-}; 
+};
 
-extern PANEL *call_list_create();
-extern int call_list_draw(PANEL *panel);
-extern int call_list_handle_key(PANEL *panel, int key);
-extern int call_list_help(PANEL *panel);
-extern void call_list_destroy(PANEL *panel);
-extern int call_list_add_column (PANEL *panel, int id, char *title, int width);
+extern PANEL *
+call_list_create();
+extern int
+call_list_redraw_required(PANEL *panel, sip_msg_t *msg);
+extern int
+call_list_draw(PANEL *panel);
+extern int
+call_list_handle_key(PANEL *panel, int key);
+extern int
+call_list_help(PANEL *panel);
+extern void
+call_list_destroy(PANEL *panel);
+extern int
+call_list_add_column(PANEL *panel, int id, char *title, int width);
 #endif

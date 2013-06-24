@@ -38,6 +38,7 @@
  ** (let's say -T), sngrep will fail at parsing any header :(
  **
  ****************************************************************************/
-int run_ngrep(void *pargs);
+int
+run_ngrep(void *pargs);
 
 #endif
