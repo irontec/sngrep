@@ -27,6 +27,16 @@ On most systems the commands to build will be the standard atotools procedure:
 	make
 	make install (as root)
 
+## Usage
+
+sngrep can be used to view SIP packages from a pcap file 
+
+    sngrep file.pcap
+
+or online parsing using ngrep filters and parameters (man ngrep for a full list)
+
+    sngrep -O file.pcap port 5060 and udp and host 192.168.8.101
+
 ## Frequent Asked Questions
  <dl>
   <dt>Why a new tool from network filtering?</dt>
@@ -42,7 +52,7 @@ On most systems the commands to build will be the standard atotools procedure:
    other related dialog.</dd>
   <dt>I have found a bug, what should I do?</dt>
   <dd>There are LOTS of bugs. The strange thing will be you haven't found one.
-   Just write me an email to kaian@irontec.com and will try to fix it.</dd>
+   Just write an issue at github and I will try to fix it.</dd>
   <dt>I think the idea is better than the tool.</dt>
   <dd> I think that too. If you want to start a new tool with the same purpose
    send me an email, I'll want to contribute.</dd>

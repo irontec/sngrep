@@ -69,7 +69,7 @@
 ---
 --- Q: I have found a bug, what should I do?
 --- A: There are LOTS of bugs. The strange thing will be you haven't found one.
----    Just write me an email to kaian@irontec.com and will try to fix it.
+---    Just write an issue at github and I will try to fix it.
 ---
 --- Q: I think the idea is better than the tool.
 --- A: I think that too. If you want to start a new tool with the same purpose
