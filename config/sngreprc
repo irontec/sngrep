@@ -1,0 +1,46 @@
+##-----------------------------------------------------------------------------
+## sngreprc - sngrep configuration file
+##-----------------------------------------------------------------------------
+## This file stores sngrep configuration and it's totally optional
+##
+
+##-----------------------------------------------------------------------------
+## Enable color on or off
+set color off
+
+##-----------------------------------------------------------------------------
+## Change default scrolling in call list
+# set cl.scrollstep 20
+
+##-----------------------------------------------------------------------------
+## Change default columns count in call list
+# set cl.columns 3
+
+##-----------------------------------------------------------------------------
+## Set displayed columns in call list screen
+## 		set cl.column{num} field 
+## You can also configure the column width using
+##		set cl.column{num}.width {cols}
+##
+## Available columns fields are: 
+##	- sipfrom
+##	- sipto
+##	- src
+##	- dst
+##	- msgcnt
+##	- starting
+
+# set cl.column0 src
+# set cl.column0.width	60
+# set cl.column1 dst
+# set cl.column2 msgcnt
+
+##-----------------------------------------------------------------------------
+## You can ignore some calls with any of the previous calls with a given 
+## value with ignore directive.
+## 
+## ignore {field} {value}
+##
+# ignore starting OPTIONS
+# ignore starting REGISTER
+# ignore starting BYE
