@@ -85,7 +85,7 @@ read_options(const char *fname)
 
     // Compile expression matching
     regcomp(&empty, "^#|^\\s*$", REG_EXTENDED | REG_NOSUB);
-    regcomp(&setting, "^\\s*(\\w+)\\s+(.*)\\s+(\\w+)\\s*$", REG_EXTENDED);
+    regcomp(&setting, "^\\s*(\\S+)\\s+(\\S*)\\s+(\\S+)\\s*$", REG_EXTENDED);
 
     while (fgets(line, 1024, fh) != NULL) {
         // Check if this line is a commentary or empty line

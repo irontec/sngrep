@@ -37,9 +37,6 @@
 #include "ui_call_flow_ex.h"
 #include "ui_call_raw.h"
 
-//! Calls structure list
-extern sip_call_t *calls;
-
 PANEL *
 call_list_create()
 {
@@ -151,8 +148,8 @@ call_list_draw(PANEL *panel)
     if (!(callcnt = get_n_calls())) return 0;
 
     // If no active call, use the fist one (if exists)
-    if (!info->first_call && calls) {
-        info->cur_call = info->first_call = calls;
+    if (!info->first_call && call_get_next(NULL)) {
+        info->cur_call = info->first_call = call_get_next(NULL);
         info->cur_line = info->first_line = 1;
     }
 
@@ -168,6 +165,13 @@ call_list_draw(PANEL *panel)
 
         // We only print calls with messages (In fact, all call should have msgs)
         if (!get_n_msgs(call)) continue;
+        if (get_option_value("address")) {
+            if (!strcasecmp(get_option_value("address"), call_get_attribute(call, "src"))) {
+                wattron(win, COLOR_PAIR(OUTGOING_COLOR));
+            } else if (!strcasecmp(get_option_value("address"), call_get_attribute(call, "dst"))) {
+                wattron(win, COLOR_PAIR(INCOMING_COLOR));
+            }
+        }
 
         // Highlight active call
         if (call == info->cur_call) {
