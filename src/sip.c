@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "sip.h"
+#include "option.h"
 
 /** 
  * @brief Linked list of parsed calls
@@ -257,7 +258,7 @@ get_n_calls()
     int callcnt = 0;
     struct sip_call *call = calls;
     while (call) {
-        callcnt++;
+        if (!ignore_call(call)) callcnt++;
         call = call->next;
     }
     return callcnt;
@@ -370,3 +371,71 @@ parse_msg(sip_msg_t *msg)
     // Return the parsed message
     return msg;
 }
+
+sip_call_t *
+call_get_next(sip_call_t *cur)
+{
+
+    sip_call_t *next;
+    if (!cur) {
+        next = calls;
+    } else {
+        next = cur->next;
+    }
+
+    if (next && ignore_call(next)) {
+        return call_get_next(next);
+    }
+    return next;
+}
+
+sip_call_t *
+call_get_prev(sip_call_t *cur)
+{
+
+    sip_call_t *prev;
+    if (!cur) {
+        prev = calls;
+    } else {
+        prev = cur->prev;
+    }
+
+    if (prev && ignore_call(prev)) {
+        return call_get_prev(prev);
+    }
+    return prev;
+}
+
+int
+ignore_call(sip_call_t *call)
+{
+    int ret = 0;
+    ret |= is_ignored_value("sipfrom", call_get_attribute(call, "sipfrom"));
+    ret |= is_ignored_value("sipto", call_get_attribute(call, "sipto"));
+    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "msgcnt"));
+    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "src"));
+    ret |= is_ignored_value("dst", call_get_attribute(call, "dst"));
+    ret |= is_ignored_value("starting", call_get_attribute(call, "starting"));
+    return ret;
+}
+
+/**
+ * @todo Update this with a proper way to store call attributes.
+ */
+const char *
+call_get_attribute(sip_call_t *call, const char *attr)
+{
+    char value[80];
+    if (!strcasecmp(attr, "sipfrom")) return call->messages->sip_from;
+    if (!strcasecmp(attr, "sipto")) return call->messages->sip_to;
+    if (!strcasecmp(attr, "msgcnt")) {
+        // FIXME REALLY
+        sprintf(value, "%d", get_n_msgs(call));
+        return strdup(value);
+    }
+    if (!strcasecmp(attr, "src")) return call->messages->ip_from;
+    if (!strcasecmp(attr, "dst")) return call->messages->ip_to;
+    if (!strcasecmp(attr, "starting")) return call->messages->type;
+    return NULL;
+}
+

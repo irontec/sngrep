@@ -263,4 +263,27 @@ get_next_msg_ex(sip_call_t *call, sip_msg_t *msg);
 extern sip_msg_t *
 parse_msg(sip_msg_t *msg);
 
+extern sip_call_t *
+call_get_next(sip_call_t *cur);
+
+extern sip_call_t *
+call_get_prev(sip_call_t *cur);
+
+extern int
+ignore_call(sip_call_t *call);
+
+/**
+ * @brief Return a call value
+ *
+ * This function will be used to avoid accessing call structure
+ * fields directly.
+ * @todo Code a proper way to store this information
+ *
+ * @param call SIP call structure
+ * @param attr Attribute name
+ * @return Attribute value or NULL if not found
+ */
+extern const char *
+call_get_attribute(sip_call_t *call, const char *attr);
+
 #endif

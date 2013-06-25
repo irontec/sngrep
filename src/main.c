@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include "option.h"
 #include "exec.h"
 #include "pcap.h"
 #include "ui_manager.h"
@@ -68,12 +69,13 @@ main(int argc, char* argv[])
 {
 
     int ret;
-    //! ui configuration @todo Remove this structure
-    struct ui_config config;
     //! ngrep thread attributes
     pthread_attr_t attr;
     //! ngrep running thread
     pthread_t exec_t;
+
+    // Initialize configuration options
+    init_options();
 
     // Parse arguments.. I mean..
     if (argc < 2) {
@@ -81,9 +83,9 @@ main(int argc, char* argv[])
         usage(argv[0]);
         return 1;
     } else if (argc == 2) {
-        // Show ofline mode in ui
-        //config.online = 0;
-        //config.fname = argv[1];
+        // Show offline mode in ui
+        set_option_value("running.mode", "Offline");
+        set_option_value("running.file", argv[1]);
 
         // Assume Offline mode with pcap file
         if (load_pcap_file(argv[1]) != 0) {
@@ -92,7 +94,8 @@ main(int argc, char* argv[])
         }
     } else {
         // Show online mode in ui
-        config.online = 1;
+        set_option_value("running.mode", "Online");
+
         // Assume online mode, launch ngrep in a thread
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -105,7 +108,7 @@ main(int argc, char* argv[])
 
     // Initialize interface
     // This is a blocking call. Interface have user action loops.
-    init_interface(config);
+    init_interface();
 
     // Leaving!
     return ret;

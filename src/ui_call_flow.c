@@ -78,7 +78,9 @@ call_flow_create()
 
     mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
     mvwprintw(win, height - 2, 16, "F1: Help");
-    mvwprintw(win, height - 2, 27, "X: Call-Flow Extended");
+    mvwprintw(win, height - 2, 27, "x: Call-Flow Extended");
+    mvwprintw(win, height - 2, 52, "r: Call Raw");
+    mvwprintw(win, height - 2, 67, "c: Colours");
 
     return panel;
 }

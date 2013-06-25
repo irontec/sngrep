@@ -47,8 +47,8 @@ typedef struct call_list_info call_list_info_t;
  */
 struct call_list_column
 {
-    int id;
-    char *title;
+    const char *attr;
+    const char *title;
     int width;
 };
 
@@ -157,11 +157,24 @@ call_list_help(PANEL *panel);
  * @todo Columns are not configurable yet.
  *
  * @param panel Ncurses panel pointer
- * @param id Column ID
+ * @param attr SIP call attribute name
  * @param title Column Title
  * @param width Column Width
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
 extern int
-call_list_add_column(PANEL *panel, int id, char *title, int width);
+call_list_add_column(PANEL *panel, const char* attr, const char *title, int width);
+
+/**
+ * @brief Get the Header title of a given Call attribute
+ *
+ * This function is used to display a header corresponding to the requested
+ * Call atribute in Call List panel
+ *
+ * @param attr Call Attribute name
+ * @return the title string or NULL if attribute has not been found
+ */
+extern const char *
+get_header_title(const char *attr);
+
 #endif

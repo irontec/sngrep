@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "option.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_flow_ex.h"
@@ -44,8 +45,10 @@ call_list_create()
 {
     PANEL *panel;
     WINDOW *win;
-    int height, width, i, colpos;
+    int height, width, i, colpos, collen, colcnt;
     call_list_info_t *info;
+    char option[80];
+    const char *field;
 
     // Create a new panel that fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
@@ -55,13 +58,18 @@ call_list_create()
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
 
-    // Set default columns. One day this will be configurable
-    call_list_add_column(panel, 0, "From SIP", 40);
-    call_list_add_column(panel, 1, "To SIP", 40);
-    call_list_add_column(panel, 2, "Msg", 5);
-    call_list_add_column(panel, 3, "From", 22);
-    call_list_add_column(panel, 4, "To", 22);
-    call_list_add_column(panel, 5, "Starting", 15);
+    // Add configured columns
+    colcnt = get_option_int_value("cl.columns");
+    for (i = 0; i < colcnt; i++) {
+        // Get column attribute name
+        sprintf(option, "cl.column%d", i);
+        field = get_option_value(option);
+        // Get column width
+        sprintf(option, "cl.column%d.width", i);
+        collen = get_option_int_value(option);
+        // Add column to the list
+        call_list_add_column(panel, field, get_header_title(field), collen);
+    }
 
     // Let's draw the fixed elements of the screen
     win = panel_window(panel);
@@ -75,7 +83,10 @@ call_list_create()
 
     // Draw a header with APP_NAME and APP_LONG_DESC - FIXME /calculate a properly middle :P
     mvwprintw(win, 1, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
-    mvwprintw(win, 3, 2, "Current Mode: %s", "Online");
+    mvwprintw(win, 3, 2, "Current Mode: %s", get_option_value("running.mode"));
+    if (get_option_value("running.file")) {
+        mvwprintw(win, 4, 2, "Filename: %s", get_option_value("running.file"));
+    }
     mvwaddch(win, 5, 0, ACS_LTEE);
     mvwhline(win, 5, 1, ACS_HLINE, width - 2);
     mvwaddch(win, 5, width - 1, ACS_RTEE);
@@ -85,13 +96,18 @@ call_list_create()
     mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
     mvwprintw(win, height - 2, 16, "F1: Help");
     mvwprintw(win, height - 2, 27, "x: Call-Flow Extended");
+    mvwprintw(win, height - 2, 52, "r: Call Raw");
+    mvwprintw(win, height - 2, 67, "c: Colours");
 
     // Draw columns titles
     for (colpos = 5, i = 0; i < info->columncnt; i++) {
+        // Get current column width
+        collen = info->columns[i].width;
+
         // Check if the column will fit in the remaining space of the screen
-        if (colpos + info->columns[i].width >= width) break;
+        if (colpos + collen >= width) break;
         mvwprintw(win, 6, colpos, info->columns[i].title);
-        colpos += info->columns[i].width;
+        colpos += collen;
     }
     // Return the created panel
     return panel;
@@ -125,6 +141,7 @@ call_list_draw(PANEL *panel)
     int height, width, i, colpos, collen, startline = 8;
     struct sip_call *call;
     int callcnt;
+    const char *call_attr;
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -145,7 +162,7 @@ call_list_draw(PANEL *panel)
 
     // Fill the call list
     int cline = startline;
-    for (call = info->first_call; call; call = call->next) {
+    for (call = info->first_call; call; call = call_get_next(call)) {
         // Stop if we have reached the bottom of the list
         if (cline >= info->linescnt + startline) break;
 
@@ -156,35 +173,19 @@ call_list_draw(PANEL *panel)
         if (call == info->cur_call) {
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         }
-        mvwprintw(win, cline, 4, "%*s", width - 6, "");
+        mvwprintw(win, cline, 5, "%*s", width - 6, "");
 
         // Print requested columns
-        for (colpos = 5, i = 0; i < info->columncnt; i++) {
+        for (colpos = 6, i = 0; i < info->columncnt; i++) {
+            // Get current column width
             collen = info->columns[i].width;
             // Check if the column will fit in the remaining space of the screen
             if (colpos + collen >= width) break;
-
-            // Display each column with it's data
-            switch (info->columns[i].id) {
-            case 0:
-                mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->sip_from);
-                break;
-            case 1:
-                mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->sip_to);
-                break;
-            case 2:
-                mvwprintw(win, cline, colpos, "%d", get_n_msgs(call));
-                break;
-            case 3:
-                mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->ip_from);
-                break;
-            case 4:
-                mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->ip_to);
-                break;
-            case 5:
-                mvwprintw(win, cline, colpos, "%.*s", collen, call->messages->type);
-                break;
+            // Get call attribute for current column
+            if ((call_attr = call_get_attribute(call, info->columns[i].attr))) {
+                mvwprintw(win, cline, colpos, "%.*s", collen, call_attr);
             }
+
             colpos += collen;
         }
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
@@ -213,7 +214,7 @@ call_list_draw(PANEL *panel)
 int
 call_list_handle_key(PANEL *panel, int key)
 {
-    int i, rnpag_steps = 10;
+    int i, rnpag_steps = get_option_int_value("cl.scrollstep");
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     ui_t *next_panel;
 
@@ -223,21 +224,21 @@ call_list_handle_key(PANEL *panel, int key)
     switch (key) {
     case KEY_DOWN:
         // Check if there is a call below us
-        if (!info->cur_call || !info->cur_call->next) break;
-        info->cur_call = info->cur_call->next;
+        if (!info->cur_call || !call_get_next(info->cur_call)) break;
+        info->cur_call = call_get_next(info->cur_call);
         info->cur_line++;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
         if (info->cur_line > info->linescnt) {
-            info->first_call = info->first_call->next;
+            info->first_call = call_get_next(info->first_call);
             info->first_line++;
             info->cur_line = info->linescnt;
         }
         break;
     case KEY_UP:
         // Check if there is a call above us
-        if (!info->cur_call || !info->cur_call->prev) break;
-        info->cur_call = info->cur_call->prev;
+        if (!info->cur_call || !call_get_prev(info->cur_call)) break;
+        info->cur_call = call_get_prev(info->cur_call);
         info->cur_line--;
         // If we are out of the top of the displayed list
         // refresh it starting in the previous (in fact current) call
@@ -321,13 +322,25 @@ call_list_help(PANEL * ppanel)
 }
 
 int
-call_list_add_column(PANEL *panel, int id, char *title, int width)
+call_list_add_column(PANEL *panel, const char* attr, const char *title, int width)
 {
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     if (!info) return -1;
-    info->columns[info->columncnt].id = id;
+    info->columns[info->columncnt].attr = attr;
     info->columns[info->columncnt].title = title;
     info->columns[info->columncnt].width = width;
     info->columncnt++;
     return 0;
+}
+
+const char *
+get_header_title(const char *attr)
+{
+    if (!strcasecmp(attr, "sipfrom")) return "SIP From";
+    if (!strcasecmp(attr, "sipto")) return "SIP To";
+    if (!strcasecmp(attr, "msgcnt")) return "Msg";
+    if (!strcasecmp(attr, "src")) return "Source";
+    if (!strcasecmp(attr, "dst")) return "Destiny";
+    if (!strcasecmp(attr, "starting")) return "Starting";
+    return NULL;
 }

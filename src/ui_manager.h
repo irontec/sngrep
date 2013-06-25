@@ -119,22 +119,6 @@ enum panel_types
 };
 
 /**
- * @brief Interface configuration.
- *
- * If some day a rc file is created, its data will be loaded
- * into this structure. 
- * By now, we'll store some ui information.
- *
- * FIXME Replace this for an application config struct
- */
-struct ui_config
-{
-    int color;
-    int online; /* 0 - Offline, 1 - Online */
-    const char *fname; /* Filename in offline mode */
-};
-
-/**
  * @brief Initialize ncurses mode
  *
  * This functions will initialize ncurses mode and show a
@@ -144,7 +128,7 @@ struct ui_config
  * @returns 0 on ncurses initialization success, 1 otherwise 
  */
 extern int
-init_interface(const struct ui_config);
+init_interface();
 
 /**
  * @brief Create a panel structure

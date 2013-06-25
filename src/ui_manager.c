@@ -26,23 +26,12 @@
  * @brief Source of functions defined in ui_manager.h
  *
  */
+#include "option.h"
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_flow_ex.h"
 #include "ui_call_raw.h"
-
-/**
- * @brief Interface status data
- *
- * XXX I think this should be in the applicaton configuration structure
- *     avaliable everywhere in the program
- * FIXME Replace this an ui_config for an application configuration struct
- */
-static struct ui_status
-{
-    int color;
-} status;
 
 /**
  * @brief Available panel windows list
@@ -90,7 +79,7 @@ static ui_t panel_pool[] = {
                 .handle_key = call_raw_handle_key, } };
 
 int
-init_interface(const struct ui_config uicfg)
+init_interface()
 {
     // Initialize curses 
     if (!initscr()) {
@@ -106,7 +95,7 @@ init_interface(const struct ui_config uicfg)
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
     start_color();
-    toggle_color((status.color = 1));
+    toggle_color(is_option_enabled("color"));
 
     // Start showing call list 
     wait_for_input(ui_create(ui_find_by_type(MAIN_PANEL)));
@@ -274,8 +263,8 @@ wait_for_input(ui_t *ui)
         switch (c) {
         case 'c':
             // @todo general application config structure
-            status.color = (status.color) ? 0 : 1;
-            toggle_color(status.color);
+            set_option_value("color", is_option_enabled("color")?"off":"on");
+            toggle_color(is_option_enabled("color"));
             break;
         case 'h':
         case 265: /* KEY_F1 */
