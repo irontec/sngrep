@@ -1,0 +1,6 @@
+# Ignore eclipse files
+.*project
+.settings
+
+# Ignore Doxygen generated files
+doc/html

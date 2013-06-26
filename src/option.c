@@ -149,6 +149,7 @@ set_option_value(const char *opt, const char *value)
             }
         }
     }
+    //printf("%s %s\n", opt, value);
 }
 
 int
@@ -173,11 +174,11 @@ set_ignore_value(const char *opt, const char *value)
 }
 
 int
-is_ignored_value(const char *field, const char *field_value)
+is_ignored_value(const char *field, const char *fvalue)
 {
     int i;
     for (i = 0; i < optscnt; i++) {
-        if (!strcasecmp(field, options[i].opt) && !strcasecmp(options[i].value, field_value)) {
+        if (!strcasecmp(options[i].opt, field) && !strcasecmp(options[i].value, fvalue)) {
             return 1;
         }
     }

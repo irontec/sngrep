@@ -92,7 +92,7 @@ extern int
 read_options(const char *fname);
 
 /**
- * @brief Get configuration option value (string)
+ * @brief Get settings option value (string)
  *
  * Used in all the program to access the optionurable options of sngrep
  * Use this function instead of accessing optionuration array.
@@ -104,7 +104,7 @@ extern const char*
 get_option_value(const char *opt);
 
 /**
- * @brief Get configuration option value (int)
+ * @brief Get settings option value (int)
  *
  * Basically the same as get_option_value converting the result to
  * integer.
@@ -119,7 +119,7 @@ int
 get_option_int_value(const char *opt);
 
 /**
- * @brief Sets a configuration option value
+ * @brief Sets a settings option value
  *
  * Basic setter for 'set' directive attributes
  *
@@ -129,6 +129,14 @@ get_option_int_value(const char *opt);
 extern void
 set_option_value(const char *opt, const char *value);
 
+/**
+ * @brief Sets a ignore option value
+ *
+ * Basic setter for 'ignore' directive attributes
+ *
+ * @param opt Name of configuration option
+ * @param value Value of configuration option
+ */
 extern void
 set_ignore_value(const char *opt, const char *value);
 
@@ -144,7 +152,16 @@ set_ignore_value(const char *opt, const char *value);
 extern int
 is_option_enabled(const char *opt);
 
+/**
+ * @brief Check if a exits an ignore directive for the given field and value
+ *
+ * Like is_option_enabled, this check if there is a match in configuration
+ * options that match the given  field and value
+ *
+ * @param opt Name of configuration option
+ * @return 1 if value for field exists
+ */
 int
-is_ignored_value(const char *field, const char *field_value);
+is_ignored_value(const char *field, const char *fvalue);
 
 #endif
