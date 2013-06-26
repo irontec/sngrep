@@ -80,7 +80,7 @@ run_ngrep(void *pargv)
         if (!strncmp(stdout_line, "\n", 1) && strlen(msg_header) && strlen(msg_payload)) {
             // Parse message 
             struct sip_msg *msg;
-            if ((msg = sip_parse_message(msg_header, strdup((const char*) msg_payload)))) {
+            if ((msg = sip_load_message(msg_header, strdup((const char*) msg_payload)))) {
                 // Update the ui
                 ui_new_msg_refresh(msg);
             }

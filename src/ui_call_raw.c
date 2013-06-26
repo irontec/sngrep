@@ -86,7 +86,7 @@ call_raw_draw(PANEL *panel)
      This is dirty but easier to manage by now
      */
     memset(all_lines, 0, 1024);
-    while ((msg = get_next_msg(info->call, msg))) {
+    while ((msg = call_get_next_msg(info->call, msg))) {
         for (raw_line = 0; raw_line < msg->plines; raw_line++) {
             all_lines[all_linescnt++] = msg->payload[raw_line];
         }

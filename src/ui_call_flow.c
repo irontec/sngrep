@@ -132,10 +132,10 @@ call_flow_draw(PANEL *panel)
 
     // Get window of main panel
     WINDOW *win = panel_window(panel);
-    msgcnt = get_n_msgs(info->call);
+    msgcnt = call_msg_count(info->call);
 
     // Get data from first message
-    const char *from = info->call->messages->ip_from;
+    const char *from = call_get_attribute(info->call, "src");
 
     // Get window size
     getmaxyx(win, height, width);
@@ -143,14 +143,14 @@ call_flow_draw(PANEL *panel)
     // Window title
     mvwprintw(win, 1, (width - 45) / 2, "Call Details for %s", info->call->callid);
     // Hosts and lines in callflow
-    mvwprintw(win, 5, 7, "%22s", info->call->messages->ip_from);
-    mvwprintw(win, 5, 37, "%22s", info->call->messages->ip_to);
+    mvwprintw(win, 5, 7, "%22s", call_get_attribute(info->call, "src"));
+    mvwprintw(win, 5, 37, "%22s", call_get_attribute(info->call, "dst"));
 
     // Make the vertical lines for messages (2 lines per message + extra space)
     mvwvline(win, 7, 20, ACS_VLINE, info->linescnt);
     mvwvline(win, 7, 50, ACS_VLINE, info->linescnt);
 
-    for (cline = startpos, msg = info->first_msg; msg; msg = get_next_msg(info->call, msg)) {
+    for (cline = startpos, msg = info->first_msg; msg; msg = call_get_next_msg(info->call, msg)) {
         // Print messages with differents CSeq separed by one line
         // XXX Not for now, makes harder to control selected message and scroll
         //if (cseq != msg->cseq){ 
@@ -223,20 +223,20 @@ call_flow_handle_key(PANEL *panel, int key)
     switch (key) {
     case KEY_DOWN:
         // Check if there is a call below us
-        if (!(next = get_next_msg(info->call, info->cur_msg))) break;
+        if (!(next = call_get_next_msg(info->call, info->cur_msg))) break;
         info->cur_msg = next;
         info->cur_line += 2;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
         if (info->cur_line > info->linescnt) {
-            info->first_msg = get_next_msg(info->call, info->first_msg);
+            info->first_msg = call_get_next_msg(info->call, info->first_msg);
             info->cur_line = info->linescnt;
         }
         break;
     case KEY_UP:
         // FIXME We start searching from the fist one
         // FIXME This wont work well with a lot of msg
-        while ((prev = get_next_msg(info->call, prev))) {
+        while ((prev = call_get_next_msg(info->call, prev))) {
             if (prev->next == info->cur_msg) break;
         }
         // We're at the first message already
@@ -260,7 +260,7 @@ call_flow_handle_key(PANEL *panel, int key)
         break;
     case 'x':
         if (!info->call) return -1;
-        if (!get_ex_call(info->call)) return -1;
+        if (!call_get_xcall(info->call)) return -1;
         // KEY_ENTER , Display current call flow
         next_panel = ui_create(ui_find_by_type(DETAILS_EX_PANEL));
         call_flow_ex_set_call(info->call);
@@ -300,7 +300,7 @@ call_flow_set_call(sip_call_t *call)
     if (!(info = (call_flow_info_t*) panel_userptr(panel))) return -1;
 
     info->call = call;
-    info->cur_msg = info->first_msg = call->messages;
+    info->cur_msg = info->first_msg = call_get_next_msg(call, NULL);
     info->cur_line = 1;
     return 0;
 }

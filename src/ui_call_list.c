@@ -97,7 +97,7 @@ call_list_create()
     mvwprintw(win, height - 2, 67, "c: Colours");
 
     // Draw columns titles
-    for (colpos = 5, i = 0; i < info->columncnt; i++) {
+    for (colpos = 6, i = 0; i < info->columncnt; i++) {
         // Get current column width
         collen = info->columns[i].width;
 
@@ -145,7 +145,7 @@ call_list_draw(PANEL *panel)
     if (!info) return -1;
 
     // Get available calls counter (we'll use it here a couple of times)
-    if (!(callcnt = get_n_calls())) return 0;
+    if (!(callcnt = sip_calls_count())) return 0;
 
     // If no active call, use the fist one (if exists)
     if (!info->first_call && call_get_next(NULL)) {
@@ -164,7 +164,7 @@ call_list_draw(PANEL *panel)
         if (cline >= info->linescnt + startline) break;
 
         // We only print calls with messages (In fact, all call should have msgs)
-        if (!get_n_msgs(call)) continue;
+        if (!call_msg_count(call)) continue;
         if (get_option_value("address")) {
             if (!strcasecmp(get_option_value("address"), call_get_attribute(call, "src"))) {
                 wattron(win, COLOR_PAIR(OUTGOING_COLOR));
@@ -346,5 +346,6 @@ get_header_title(const char *attr)
     if (!strcasecmp(attr, "src")) return "Source";
     if (!strcasecmp(attr, "dst")) return "Destiny";
     if (!strcasecmp(attr, "starting")) return "Starting";
+    if (!strcasecmp(attr, "callid")) return "Call-ID";
     return NULL;
 }

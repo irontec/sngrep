@@ -32,6 +32,7 @@
  *
  * @todo Replace structures for their typedef shorter names
  */
+#include <regex.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -57,63 +58,25 @@ sip_call_t *calls = NULL;
 pthread_mutex_t calls_lock;
 
 sip_msg_t *
-sip_parse_message(const char *header, const char *payload)
+sip_msg_create(const char *header, const char *payload)
 {
-    char *callid;
-    struct sip_call *call;
+    sip_msg_t *msg;
 
-    // Get SIP payload Call-ID
-    if (!(callid = get_callid(payload))) return NULL;
-
-    // Get call structure for that Call-ID
-    if (!(call = call_find_by_callid(callid))) {
-        // Create a new call for the message Call-ID
-        if (!(call = call_new(callid))) {
-            free(callid);
-            return NULL;
-        }
-    }
-
-    // Deallocate parsed callid
-    free(callid);
-
-    // Return the parsed structure
-    return call_add_message(call, header, payload);
+    if (!(msg = malloc(sizeof(sip_msg_t)))) return NULL;
+    memset(msg, 0, sizeof(sip_msg_t));
+    msg->headerptr = strdup(header);
+    msg->payloadptr = strdup(payload);
+    msg->parsed = 0;
+    return msg;
 }
 
-char *
-get_callid(const char* payload)
-{
-    char buffer[512];
-    char *pch, *callid = NULL;
-    char *body = strdup(payload);
-
-    // Parse payload line by line
-    pch = strtok(body, "\n");
-    while (pch) {
-        // fix last ngrep line character
-        if (pch[strlen(pch) - 1] == '.') pch[strlen(pch) - 1] = '\0';
-
-        if (!strncasecmp(pch, "Call-ID: ", 9)) {
-            if (sscanf(pch, "Call-ID: %[^@\n]", buffer)) {
-                callid = malloc(strlen(buffer) + 1);
-                strcpy(callid, buffer);
-                break;
-            }
-        }
-        pch = strtok(NULL, "\n");
-    }
-    free(body);
-    return callid;
-}
-
-struct sip_call *
-call_new(const char *callid)
+sip_call_t *
+sip_call_create(char *callid)
 {
     // Initialize a new call structure
-    struct sip_call *call = malloc(sizeof(struct sip_call));
+    sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
-    call->callid = strdup(callid);
+    call->callid = callid;
 
     // Initialize call lock
     pthread_mutexattr_t attr;
@@ -121,7 +84,9 @@ call_new(const char *callid)
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&call->lock, &attr);
 
-    struct sip_call *cur, *prev;
+    //@todo Add the call to the end of the list.
+    //@todo This should be improved
+    sip_call_t *cur, *prev;
     if (!calls) {
         calls = call;
     } else {
@@ -133,34 +98,307 @@ call_new(const char *callid)
     return call;
 }
 
-struct sip_msg *
-call_add_message(struct sip_call *call, const char *header, const char *payload)
+char *
+sip_get_callid(const char* payload)
 {
-    struct sip_msg *msg;
+    regex_t regcallid;
+    regmatch_t matches[2];
+    char *callid, *ret = NULL;
+    int callid_len;
 
-    if (!(msg = malloc(sizeof(struct sip_msg)))) return NULL;
-    memset(msg, 0, sizeof(sip_msg_t));
-    msg->call = call;
-    msg->headerptr = strdup(header);
-    msg->payloadptr = strdup(payload);
+    // Compile expresion to search Call-ID from the payload
+    regcomp(&regcallid, "Call-ID: ([^@\\s]+)", REG_EXTENDED);
 
-    pthread_mutex_lock(&call->lock);
-    // XXX Put this msg at the end of the msg list
-    // Order is important!!!
-    struct sip_msg *cur, *prev;
-    if (!call->messages) {
-        call->messages = parse_msg(msg);
-    } else {
-        for (cur = call->messages; cur; prev = cur, cur = cur->next)
-            ;
-        prev->next = msg;
+    // Find the Call-ID header from the payload
+    if (!regexec(&regcallid, payload, 2, matches, 0)) {
+        // Get Call-ID length
+        callid_len = matches[1].rm_eo - matches[1].rm_so + 1;
+        // Point to the begining of the string
+        callid = (char*) payload + matches[1].rm_so;
+        // Allocate enough space to contain the Call-ID
+        ret = malloc(callid_len + 1);
+        memset(ret, 0, callid_len);
+        // Copy the Call-ID before returning
+        strncpy(ret, callid, callid_len);
+        ret[callid_len - 1] = '\0';
     }
-    pthread_mutex_unlock(&call->lock);
+    // Return Call-ID header value
+    return ret;
+}
+
+sip_msg_t *
+sip_load_message(const char *header, const char *payload)
+{
+    sip_msg_t *msg;
+    sip_call_t *call;
+    char *callid;
+
+    // Create a new message from this data
+    if (!(msg = sip_msg_create(header, payload))) {
+        return NULL;
+    }
+
+    // Get the Call-ID of this message
+    if (!(callid = sip_get_callid(payload))) {
+        //@todo sip_msg_destroy();
+        return NULL;
+    }
+
+    // Find the call for this msg
+    if (!(call = call_find_by_callid(callid))) {
+        // Create the call if not found
+        if (!(call = sip_call_create(callid))) {
+            //@todo sip_msg_destroy();
+            return NULL;
+        }
+    }
+
+    // Add the message to the found/created call
+    call_add_message(call, msg);
+
+    // Return the loaded message
     return msg;
 }
 
 int
-msg_parse_header(struct sip_msg *msg, const char *header)
+sip_calls_count()
+{
+    int callcnt = 0;
+    sip_call_t *call = calls;
+    while (call) {
+        if (!sip_check_call_ignore(call)) callcnt++;
+        call = call->next;
+    }
+    return callcnt;
+}
+
+int
+sip_check_call_ignore(sip_call_t *call)
+{
+    int ret = 0;
+    ret |= is_ignored_value("sipfrom", call_get_attribute(call, "sipfrom"));
+    ret |= is_ignored_value("sipto", call_get_attribute(call, "sipto"));
+    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "msgcnt"));
+    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "src"));
+    ret |= is_ignored_value("dst", call_get_attribute(call, "dst"));
+    ret |= is_ignored_value("starting", call_get_attribute(call, "starting"));
+    return ret;
+}
+
+void
+call_add_message(sip_call_t *call, sip_msg_t *msg)
+{
+    sip_msg_t *cur, *prev;
+
+    pthread_mutex_lock(&call->lock);
+    // Set the message owner
+    msg->call = call;
+    // XXX Put this msg at the end of the msg list
+    // Order is important!!!
+    if (!call->msgs) {
+        call->msgs = msg_parse(msg);
+    } else {
+        for (cur = call->msgs; cur; prev = cur, cur = cur->next)
+            ;
+        prev->next = msg;
+    }
+    pthread_mutex_unlock(&call->lock);
+}
+
+sip_call_t *
+call_find_by_callid(const char *callid)
+{
+    sip_call_t *cur = calls;
+    // XXX LOCKING
+
+    while (cur) {
+        if (!strcmp(cur->callid, callid)) return cur;
+        cur = cur->next;
+    }
+    return NULL;
+}
+
+sip_call_t *
+call_find_by_xcallid(const char *xcallid)
+{
+    sip_call_t *cur = calls;
+    // XXX LOCKING
+
+    while (cur) {
+        if (!strcmp(cur->xcallid, xcallid)) return cur;
+        cur = cur->next;
+    }
+    return NULL;
+}
+
+//@todo replace this for Msgcnt attribute
+int
+call_msg_count(sip_call_t *call)
+{
+    int msgcnt = 0;
+    pthread_mutex_lock(&call->lock);
+    sip_msg_t *msg = call->msgs;
+    while (msg) {
+        msgcnt++;
+        msg = msg->next;
+    }
+    pthread_mutex_unlock(&call->lock);
+    return msgcnt;
+}
+
+sip_call_t *
+call_get_xcall(sip_call_t *call)
+{
+    if (strlen(call->xcallid)) {
+        return call_find_by_callid(call->xcallid);
+    } else {
+        return call_find_by_xcallid(call->callid);
+    }
+}
+
+sip_msg_t *
+call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
+{
+    sip_msg_t *ret;
+    pthread_mutex_lock(&call->lock);
+    if (msg == NULL) {
+        ret = call->msgs;
+    } else {
+        ret = msg_parse(msg->next);
+    }
+    pthread_mutex_unlock(&call->lock);
+    return ret;
+}
+
+sip_msg_t *
+call_get_next_msg_ex(sip_call_t *call, sip_msg_t *msg)
+{
+
+    sip_msg_t *msg1 = NULL, *msg2 = NULL;
+    sip_call_t *call2;
+
+    pthread_mutex_lock(&call->lock);
+    // Let's assume that call is always present, but call2 may not
+    if (!(call2 = call_get_xcall(call))) {
+        return call_get_next_msg(call, msg);
+    }
+
+    if (!msg) {
+        // No msg, compare the first one of both calls
+        msg1 = call_get_next_msg(call, NULL);
+        msg2 = call_get_next_msg(call2, NULL);
+    } else if (msg->call == call) {
+        // Message is from first call, get the next message in the call
+        msg1 = call_get_next_msg(call, msg);
+        // Get the chronological next message in second call
+        while ((msg2 = call_get_next_msg(call2, msg2))) {
+            // Compare with the actual message
+            if (msg->ts.tv_sec < msg2->ts.tv_sec || (msg->ts.tv_sec == msg2->ts.tv_sec
+                    && msg->ts.tv_usec < msg2->ts.tv_usec)) break;
+        }
+    } else if (msg->call == call2) {
+        // Message is from second call, get the next message in the call
+        msg1 = call_get_next_msg(call2, msg);
+        // Get the chronological next message in first call
+        while ((msg2 = call_get_next_msg(call, msg2))) {
+            // Compare with the actual message
+            if (msg->ts.tv_sec < msg2->ts.tv_sec || (msg->ts.tv_sec == msg2->ts.tv_sec
+                    && msg->ts.tv_usec < msg2->ts.tv_usec)) break;
+        }
+    }
+    pthread_mutex_unlock(&call->lock);
+
+    if ((!msg2) || (msg1 && msg1->ts.tv_sec < msg2->ts.tv_sec) || (msg1 && msg1->ts.tv_sec
+            == msg2->ts.tv_sec && msg1->ts.tv_usec < msg2->ts.tv_usec)) {
+        return msg1;
+    } else {
+        return msg2;
+    }
+}
+
+sip_call_t *
+call_get_next(sip_call_t *cur)
+{
+
+    sip_call_t *next;
+    if (!cur) {
+        next = calls;
+    } else {
+        next = cur->next;
+    }
+
+    if (next && sip_check_call_ignore(next)) {
+        return call_get_next(next);
+    }
+    return next;
+}
+
+sip_call_t *
+call_get_prev(sip_call_t *cur)
+{
+
+    sip_call_t *prev;
+    if (!cur) {
+        prev = calls;
+    } else {
+        prev = cur->prev;
+    }
+
+    if (prev && sip_check_call_ignore(prev)) {
+        return call_get_prev(prev);
+    }
+    return prev;
+}
+
+/**
+ * @todo Update this with a proper way to store call attributes.
+ */
+const char *
+call_get_attribute(sip_call_t *call, const char *attr)
+{
+    char value[80];
+    if (!strcasecmp(attr, "sipfrom")) return call->msgs->sip_from;
+    if (!strcasecmp(attr, "sipto")) return call->msgs->sip_to;
+    if (!strcasecmp(attr, "msgcnt")) {
+        // FIXME REALLY
+        sprintf(value, "%d", call_msg_count(call));
+        return strdup(value);
+    }
+    if (!strcasecmp(attr, "src")) return call->msgs->ip_from;
+    if (!strcasecmp(attr, "dst")) return call->msgs->ip_to;
+    if (!strcasecmp(attr, "starting")) return call->msgs->type;
+    if (!strcasecmp(attr, "callid")) return call->callid;
+    return NULL;
+}
+
+sip_msg_t *
+msg_parse(sip_msg_t *msg)
+{
+
+    // Nothing to parse
+    if (!msg) return NULL;
+
+    // Message already parsed
+    if (msg->parsed) return msg;
+
+    // Parse message header
+    if (msg_parse_header(msg, msg->headerptr) != 0) return NULL;
+
+    // Parse message payload
+    if (msg_parse_payload(msg, msg->payloadptr) != 0) return NULL;
+
+    // Free message pointers
+    free(msg->headerptr);
+    free(msg->payloadptr);
+
+    // Mark as parsed
+    msg->parsed = 1;
+    // Return the parsed message
+    return msg;
+}
+
+int
+msg_parse_header(sip_msg_t *msg, const char *header)
 {
     struct tm when = {
             0 };
@@ -185,7 +423,7 @@ msg_parse_header(struct sip_msg *msg, const char *header)
 }
 
 int
-msg_parse_payload(struct sip_msg *msg, const char *payload)
+msg_parse_payload(sip_msg_t *msg, const char *payload)
 {
     char *body = strdup(payload);
     char * pch;
@@ -224,218 +462,5 @@ msg_parse_payload(struct sip_msg *msg, const char *payload)
     }
     free(body);
     return 0;
-}
-
-struct sip_call *
-call_find_by_callid(const char *callid)
-{
-    struct sip_call *cur = calls;
-    // XXX LOCKING
-
-    while (cur) {
-        if (!strcmp(cur->callid, callid)) return cur;
-        cur = cur->next;
-    }
-    return NULL;
-}
-
-struct sip_call *
-call_find_by_xcallid(const char *xcallid)
-{
-    struct sip_call *cur = calls;
-    // XXX LOCKING
-
-    while (cur) {
-        if (!strcmp(cur->xcallid, xcallid)) return cur;
-        cur = cur->next;
-    }
-    return NULL;
-}
-
-int
-get_n_calls()
-{
-    int callcnt = 0;
-    struct sip_call *call = calls;
-    while (call) {
-        if (!ignore_call(call)) callcnt++;
-        call = call->next;
-    }
-    return callcnt;
-}
-
-int
-get_n_msgs(struct sip_call *call)
-{
-    int msgcnt = 0;
-    pthread_mutex_lock(&call->lock);
-    struct sip_msg *msg = call->messages;
-    while (msg) {
-        msgcnt++;
-        msg = msg->next;
-    }
-    pthread_mutex_unlock(&call->lock);
-    return msgcnt;
-}
-
-struct sip_call *
-get_ex_call(struct sip_call *call)
-{
-    if (strlen(call->xcallid)) {
-        return call_find_by_callid(call->xcallid);
-    } else {
-        return call_find_by_xcallid(call->callid);
-    }
-}
-
-struct sip_msg *
-get_next_msg(struct sip_call *call, struct sip_msg *msg)
-{
-    sip_msg_t *ret;
-    pthread_mutex_lock(&call->lock);
-    if (msg == NULL) {
-        ret = call->messages;
-    } else {
-        ret = parse_msg(msg->next);
-    }
-    pthread_mutex_unlock(&call->lock);
-    return ret;
-}
-
-struct sip_msg *
-get_next_msg_ex(struct sip_call *call, struct sip_msg *msg)
-{
-
-    struct sip_msg *msg1 = NULL, *msg2 = NULL;
-    struct sip_call *call2;
-
-    pthread_mutex_lock(&call->lock);
-    // Let's assume that call is always present, but call2 may not
-    if (!(call2 = get_ex_call(call))) return get_next_msg(call, msg);
-
-    if (!msg) {
-        // No msg, compare the first one of both calls
-        msg1 = get_next_msg(call, NULL);
-        msg2 = get_next_msg(call2, NULL);
-    } else if (msg->call == call) {
-        // Message is from first call, get the next message in the call
-        msg1 = get_next_msg(call, msg);
-        // Get the chronological next message in second call
-        while ((msg2 = get_next_msg(call2, msg2))) {
-            // Compare with the actual message
-            if (msg->ts.tv_sec < msg2->ts.tv_sec || (msg->ts.tv_sec == msg2->ts.tv_sec
-                    && msg->ts.tv_usec < msg2->ts.tv_usec)) break;
-        }
-    } else if (msg->call == call2) {
-        // Message is from second call, get the next message in the call
-        msg1 = get_next_msg(call2, msg);
-        // Get the chronological next message in first call
-        while ((msg2 = get_next_msg(call, msg2))) {
-            // Compare with the actual message
-            if (msg->ts.tv_sec < msg2->ts.tv_sec || (msg->ts.tv_sec == msg2->ts.tv_sec
-                    && msg->ts.tv_usec < msg2->ts.tv_usec)) break;
-        }
-    }
-    pthread_mutex_unlock(&call->lock);
-
-    if ((!msg2) || (msg1 && msg1->ts.tv_sec < msg2->ts.tv_sec) || (msg1 && msg1->ts.tv_sec
-            == msg2->ts.tv_sec && msg1->ts.tv_usec < msg2->ts.tv_usec)) {
-        return msg1;
-    } else {
-        return msg2;
-    }
-}
-
-sip_msg_t *
-parse_msg(sip_msg_t *msg)
-{
-
-    // Nothing to parse
-    if (!msg) return NULL;
-
-    // Message already parsed
-    if (msg->parsed) return msg;
-
-    // Parse message header
-    if (msg_parse_header(msg, msg->headerptr) != 0) return NULL;
-
-    // Parse message payload
-    if (msg_parse_payload(msg, msg->payloadptr) != 0) return NULL;
-
-    // Free message pointers
-    free(msg->headerptr);
-    free(msg->payloadptr);
-
-    // Mark as parsed
-    msg->parsed = 1;
-    // Return the parsed message
-    return msg;
-}
-
-sip_call_t *
-call_get_next(sip_call_t *cur)
-{
-
-    sip_call_t *next;
-    if (!cur) {
-        next = calls;
-    } else {
-        next = cur->next;
-    }
-
-    if (next && ignore_call(next)) {
-        return call_get_next(next);
-    }
-    return next;
-}
-
-sip_call_t *
-call_get_prev(sip_call_t *cur)
-{
-
-    sip_call_t *prev;
-    if (!cur) {
-        prev = calls;
-    } else {
-        prev = cur->prev;
-    }
-
-    if (prev && ignore_call(prev)) {
-        return call_get_prev(prev);
-    }
-    return prev;
-}
-
-int
-ignore_call(sip_call_t *call)
-{
-    int ret = 0;
-    ret |= is_ignored_value("sipfrom", call_get_attribute(call, "sipfrom"));
-    ret |= is_ignored_value("sipto", call_get_attribute(call, "sipto"));
-    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "msgcnt"));
-    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "src"));
-    ret |= is_ignored_value("dst", call_get_attribute(call, "dst"));
-    ret |= is_ignored_value("starting", call_get_attribute(call, "starting"));
-    return ret;
-}
-
-/**
- * @todo Update this with a proper way to store call attributes.
- */
-const char *
-call_get_attribute(sip_call_t *call, const char *attr)
-{
-    char value[80];
-    if (!strcasecmp(attr, "sipfrom")) return call->messages->sip_from;
-    if (!strcasecmp(attr, "sipto")) return call->messages->sip_to;
-    if (!strcasecmp(attr, "msgcnt")) {
-        // FIXME REALLY
-        sprintf(value, "%d", get_n_msgs(call));
-        return strdup(value);
-    }
-    if (!strcasecmp(attr, "src")) return call->messages->ip_from;
-    if (!strcasecmp(attr, "dst")) return call->messages->ip_to;
-    if (!strcasecmp(attr, "starting")) return call->messages->type;
-    return NULL;
 }
 

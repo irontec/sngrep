@@ -144,25 +144,25 @@ call_flow_ex_draw(PANEL *panel)
 
     // Get window of main panel
     WINDOW *win = panel_window(panel);
-    msgcnt = get_n_msgs(call) + get_n_msgs(call2);
+    msgcnt = call_msg_count(call) + call_msg_count(call2);
 
     // Get data from first message
     const char *from, *to, *via;
     const char *callid1, *callid2;
 
-    const struct sip_msg *first = get_next_msg_ex(call, NULL);
+    const struct sip_msg *first = call_get_next_msg_ex(call, NULL);
     if (!strcmp(call->callid, first->call->callid)) {
-        from = call->messages->ip_from;
-        via = call->messages->ip_to;
-        to = call2->messages->ip_to;
-        callid1 = call->callid;
-        callid2 = call2->callid;
+        from = call_get_attribute(call, "src");
+        via = call_get_attribute(call, "dst");
+        to = call_get_attribute(call2, "dst");
+        callid1 = call_get_attribute(call, "callid");
+        callid2 = call_get_attribute(call2, "callid");
     } else {
-        from = call2->messages->ip_from;
-        via = call2->messages->ip_to;
-        to = call->messages->ip_to;
-        callid1 = call2->callid;
-        callid2 = call->callid;
+        from = call_get_attribute(call2, "src");
+        via = call_get_attribute(call2, "dst");
+        to = call_get_attribute(call, "dst");
+        callid1 = call_get_attribute(call2, "callid");
+        callid2 = call_get_attribute(call, "callid");
     }
 
     // Get window size
@@ -175,7 +175,7 @@ call_flow_ex_draw(PANEL *panel)
     mvwprintw(win, 5, 37, "%22s", via);
     mvwprintw(win, 5, 67, "%22s", to);
 
-    for (cline = startpos, msg = info->first_msg; msg; msg = get_next_msg_ex(info->call, msg)) {
+    for (cline = startpos, msg = info->first_msg; msg; msg = call_get_next_msg_ex(info->call, msg)) {
         // Check if there are still 2 spaces for this message in the list
         if (cline >= info->linescnt + startpos) {
             // Draw 2 arrow to show there are more messages
@@ -255,20 +255,20 @@ call_flow_ex_handle_key(PANEL *panel, int key)
     switch (key) {
     case KEY_DOWN:
         // Check if there is a call below us
-        if (!(next = get_next_msg_ex(info->call, info->cur_msg))) break;
+        if (!(next = call_get_next_msg_ex(info->call, info->cur_msg))) break;
         info->cur_msg = next;
         info->cur_line += 2;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
         if (info->cur_line > info->linescnt) {
-            info->first_msg = get_next_msg_ex(info->call, info->first_msg);
+            info->first_msg = call_get_next_msg_ex(info->call, info->first_msg);
             info->cur_line = info->linescnt;
         }
         break;
     case KEY_UP:
         // FIXME We start searching from the fist one
         // FIXME This wont work well with a lot of msg
-        while ((next = get_next_msg_ex(info->call, next))) {
+        while ((next = call_get_next_msg_ex(info->call, next))) {
             if (next == info->cur_msg) break;
             prev = next;
         }
@@ -329,8 +329,8 @@ call_flow_ex_set_call(sip_call_t *call)
     if (!(info = (call_flow_ex_info_t*) panel_userptr(panel))) return -1;
 
     info->call = call;
-    info->call2 = get_ex_call(call);
-    info->cur_msg = info->first_msg = get_next_msg_ex(call, NULL);
+    info->call2 = call_get_xcall(call);
+    info->cur_msg = info->first_msg = call_get_next_msg_ex(call, NULL);
     info->cur_line = 1;
     return 0;
 }

@@ -126,7 +126,7 @@ load_pcap_file(const char* file)
         sprintf(msg_header, "%s -> %s:%u", msg_header, inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
 
         // Parse this header and payload
-        sip_parse_message(msg_header, (const char*) msg_payload);
+        sip_load_message(msg_header, (const char*) msg_payload);
     }
 
     // Close PCAP file
