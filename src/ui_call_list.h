@@ -47,6 +47,7 @@ typedef struct call_list_info call_list_info_t;
  */
 struct call_list_column
 {
+    enum sip_attr_id id;
     const char *attr;
     const char *title;
     int width;
@@ -163,18 +164,6 @@ call_list_help(PANEL *panel);
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
 extern int
-call_list_add_column(PANEL *panel, const char* attr, const char *title, int width);
-
-/**
- * @brief Get the Header title of a given Call attribute
- *
- * This function is used to display a header corresponding to the requested
- * Call atribute in Call List panel
- *
- * @param attr Call Attribute name
- * @return the title string or NULL if attribute has not been found
- */
-extern const char *
-get_header_title(const char *attr);
+call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title, int width);
 
 #endif

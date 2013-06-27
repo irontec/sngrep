@@ -69,9 +69,6 @@ load_pcap_file(const char* file)
     // Packet payload size
     int size_payload;
 
-    struct timeval tvBegin, tvEnd;
-    int packagecnt = 0;
-    gettimeofday(&tvBegin, NULL); // Grab starting time
     // Open PCAP file
     if ((handle = pcap_open_offline(file, errbuf)) == NULL) {
         fprintf(stderr, "Couldn't open pcap file %s: %s\n", file, errbuf);
@@ -83,7 +80,6 @@ load_pcap_file(const char* file)
 
     // Loop through packages
     while ((packet = pcap_next(handle, &header))) {
-        packagecnt++;
         // Get link header size from datalink type
         if (linktype == DLT_EN10MB) {
             eptr = (struct ether_header *) packet;
@@ -131,10 +127,6 @@ load_pcap_file(const char* file)
 
     // Close PCAP file
     pcap_close(handle);
-    gettimeofday(&tvEnd, NULL); // Grab ending time
-    long int diff = ((tvEnd.tv_usec + 1000000 * tvEnd.tv_sec) - (tvBegin.tv_usec + 1000000
-            * tvBegin.tv_sec)) / 1000;
-    printf("%d packages readed in %ld ms.\n", packagecnt, diff);
     return 0;
 }
 

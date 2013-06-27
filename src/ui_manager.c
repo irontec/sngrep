@@ -44,39 +44,39 @@
  *     themselfs into the panel pool dynamically.
  */
 static ui_t panel_pool[] = {
-        {
-                .type = MAIN_PANEL,
-                .panel = NULL,
-                .create = call_list_create,
-                .redraw_required = call_list_redraw_required,
-                .draw = call_list_draw,
-                .handle_key = call_list_handle_key,
-                .help = call_list_help,
-                .destroy = call_list_destroy, },
-        {
-                .type = DETAILS_PANEL,
-                .panel = NULL,
-                .create = call_flow_create,
-                .redraw_required = call_flow_redraw_required,
-                .draw = call_flow_draw,
-                .handle_key = call_flow_handle_key,
-                .help = call_flow_help,
-                .destroy = call_flow_destroy, },
-        {
-                .type = DETAILS_EX_PANEL,
-                .panel = NULL,
-                .create = call_flow_ex_create,
-                .redraw_required = call_flow_ex_redraw_required,
-                .draw = call_flow_ex_draw,
-                .handle_key = call_flow_ex_handle_key,
-                .help = call_flow_ex_help },
-        {
-                .type = RAW_PANEL,
-                .panel = NULL,
-                .create = call_raw_create,
-                .redraw_required = call_raw_redraw_required,
-                .draw = call_raw_draw,
-                .handle_key = call_raw_handle_key, } };
+    {
+        .type = MAIN_PANEL,
+        .panel = NULL,
+        .create = call_list_create,
+        .redraw_required = call_list_redraw_required,
+        .draw = call_list_draw,
+        .handle_key = call_list_handle_key,
+        .help = call_list_help,
+        .destroy = call_list_destroy, },
+    {
+        .type = DETAILS_PANEL,
+        .panel = NULL,
+        .create = call_flow_create,
+        .redraw_required = call_flow_redraw_required,
+        .draw = call_flow_draw,
+        .handle_key = call_flow_handle_key,
+        .help = call_flow_help,
+        .destroy = call_flow_destroy, },
+    {
+        .type = DETAILS_EX_PANEL,
+        .panel = NULL,
+        .create = call_flow_ex_create,
+        .redraw_required = call_flow_ex_redraw_required,
+        .draw = call_flow_ex_draw,
+        .handle_key = call_flow_ex_handle_key,
+        .help = call_flow_ex_help },
+    {
+        .type = RAW_PANEL,
+        .panel = NULL,
+        .create = call_raw_create,
+        .redraw_required = call_raw_redraw_required,
+        .draw = call_raw_draw,
+        .handle_key = call_raw_handle_key, } };
 
 int
 init_interface()
@@ -263,7 +263,7 @@ wait_for_input(ui_t *ui)
         switch (c) {
         case 'c':
             // @todo general application config structure
-            set_option_value("color", is_option_enabled("color")?"off":"on");
+            set_option_value("color", is_option_enabled("color") ? "off" : "on");
             toggle_color(is_option_enabled("color"));
             break;
         case 'h':

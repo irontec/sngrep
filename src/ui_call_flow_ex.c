@@ -149,27 +149,30 @@ call_flow_ex_draw(PANEL *panel)
     // Get data from first message
     const char *from, *to, *via;
     const char *callid1, *callid2;
+    const char *msg_time, *msg_callid, *msg_method, *msg_from, *msg_to, *msg_src, *msg_dst;
 
     const struct sip_msg *first = call_get_next_msg_ex(call, NULL);
-    if (!strcmp(call->callid, first->call->callid)) {
-        from = call_get_attribute(call, "src");
-        via = call_get_attribute(call, "dst");
-        to = call_get_attribute(call2, "dst");
-        callid1 = call_get_attribute(call, "callid");
-        callid2 = call_get_attribute(call2, "callid");
+    if (!strcmp(call_get_attribute(call, SIP_ATTR_CALLID), call_get_attribute(first->call,
+            SIP_ATTR_CALLID))) {
+        from = call_get_attribute(call, SIP_ATTR_SRC);
+        via = call_get_attribute(call, SIP_ATTR_DST);
+        to = call_get_attribute(call2, SIP_ATTR_DST);
+        callid1 = call_get_attribute(call, SIP_ATTR_CALLID);
+        callid2 = call_get_attribute(call2, SIP_ATTR_CALLID);
     } else {
-        from = call_get_attribute(call2, "src");
-        via = call_get_attribute(call2, "dst");
-        to = call_get_attribute(call, "dst");
-        callid1 = call_get_attribute(call2, "callid");
-        callid2 = call_get_attribute(call, "callid");
+        from = call_get_attribute(call2, SIP_ATTR_SRC);
+        via = call_get_attribute(call2, SIP_ATTR_DST);
+        to = call_get_attribute(call, SIP_ATTR_DST);
+        callid1 = call_get_attribute(call2, SIP_ATTR_CALLID);
+        callid2 = call_get_attribute(call, SIP_ATTR_CALLID);
     }
 
     // Get window size
     getmaxyx(win, height, width);
 
     // Window title
-    mvwprintw(win, 1, (width - 45) / 2, "Call Details for %s -> %s", call->callid, call2->callid);
+    mvwprintw(win, 1, (width - 45) / 2, "Call Details for %s -> %s", callid1, callid2);
+
     // Hosts and lines in callflow
     mvwprintw(win, 5, 7, "%22s", from);
     mvwprintw(win, 5, 37, "%22s", via);
@@ -177,47 +180,69 @@ call_flow_ex_draw(PANEL *panel)
 
     for (cline = startpos, msg = info->first_msg; msg; msg = call_get_next_msg_ex(info->call, msg)) {
         // Check if there are still 2 spaces for this message in the list
-        if (cline >= info->linescnt + startpos) {
+        if (cline >= info->linescnt + startpos - 1) {
             // Draw 2 arrow to show there are more messages
             mvwaddch(win, info->linescnt + startpos - 1, 20, ACS_DARROW);
             mvwaddch(win, info->linescnt + startpos - 1, 50, ACS_DARROW);
+            mvwaddch(win, info->linescnt + startpos - 1, 80, ACS_DARROW);
             break;
         }
 
+        // Get message attributes
+        msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
+        msg_callid = msg_get_attribute(msg, SIP_ATTR_CALLID);
+        msg_method = msg_get_attribute(msg, SIP_ATTR_METHOD);
+        msg_from = msg_get_attribute(msg, SIP_ATTR_SIPFROM);
+        msg_to = msg_get_attribute(msg, SIP_ATTR_SIPTO);
+        msg_src = msg_get_attribute(msg, SIP_ATTR_SRC);
+        msg_dst = msg_get_attribute(msg, SIP_ATTR_DST);
+
         // Print timestamp
-        mvwprintw(win, cline, 2, "%s", msg->time);
+        mvwprintw(win, cline, 2, "%s", msg_time);
 
         if (msg == info->cur_msg) wattron(win, A_REVERSE);
 
         // Draw message type or status and line
-        int msglen = strlen(msg->type);
+        int msglen = strlen(msg_method);
         if (msglen > 24) msglen = 24;
 
         // Determine the message direction
-        if (!strcmp(msg->call->callid, callid1) && !strcmp(msg->ip_from, from)) {
+        if (!strcmp(msg_callid, callid1) && !strcmp(msg_src, from)) {
             wattron(win, COLOR_PAIR(OUTGOING_COLOR));
             mvwprintw(win, cline, 22, "%26s", "");
-            mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg_method);
             mvwhline(win, cline + 1, 22, ACS_HLINE, 26);
             mvwaddch(win, cline + 1, 47, ACS_RARROW);
-        } else if (!strcmp(msg->call->callid, callid1) && !strcmp(msg->ip_to, from)) {
+            wattroff(win, A_REVERSE);
+            mvwprintw(win, cline, 52, "%26s", "");
+            mvwprintw(win, cline + 1, 52, "%26s", "");
+        } else if (!strcmp(msg_callid, callid1) && !strcmp(msg_dst, from)) {
             wattron(win, COLOR_PAIR(INCOMING_COLOR));
             mvwprintw(win, cline, 22, "%26s", "");
-            mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg_method);
             mvwhline(win, cline + 1, 22, ACS_HLINE, 26);
             mvwaddch(win, cline + 1, 22, ACS_LARROW);
-        } else if (!strcmp(msg->call->callid, callid2) && !strcmp(msg->ip_from, via)) {
+            wattroff(win, A_REVERSE);
+            mvwprintw(win, cline, 52, "%26s", "");
+            mvwprintw(win, cline + 1, 52, "%26s", "");
+        } else if (!strcmp(msg_callid, callid2) && !strcmp(msg_src, via)) {
             wattron(win, COLOR_PAIR(OUTGOING_COLOR));
             mvwprintw(win, cline, 52, "%26s", "");
-            mvwprintw(win, cline, 54 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwprintw(win, cline, 54 + (24 - msglen) / 2, "%.24s", msg_method);
             mvwhline(win, cline + 1, 52, ACS_HLINE, 26);
             mvwaddch(win, cline + 1, 77, ACS_RARROW);
+            wattroff(win, A_REVERSE);
+            mvwprintw(win, cline, 22, "%26s", "");
+            mvwprintw(win, cline + 1, 22, "%26s", "");
         } else {
             wattron(win, COLOR_PAIR(INCOMING_COLOR));
             mvwprintw(win, cline, 52, "%26s", "");
-            mvwprintw(win, cline, 54 + (24 - msglen) / 2, "%.24s", msg->type);
+            mvwprintw(win, cline, 54 + (24 - msglen) / 2, "%.24s", msg_method);
             mvwhline(win, cline + 1, 52, ACS_HLINE, 26);
             mvwaddch(win, cline + 1, 52, ACS_LARROW);
+            wattroff(win, A_REVERSE);
+            mvwprintw(win, cline, 22, "%26s", "");
+            mvwprintw(win, cline + 1, 22, "%26s", "");
         }
 
         // Turn off colors
@@ -260,9 +285,9 @@ call_flow_ex_handle_key(PANEL *panel, int key)
         info->cur_line += 2;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
-        if (info->cur_line > info->linescnt) {
+        if (info->cur_line >= info->linescnt) {
             info->first_msg = call_get_next_msg_ex(info->call, info->first_msg);
-            info->cur_line = info->linescnt;
+            info->cur_line -= 2;
         }
         break;
     case KEY_UP:
@@ -278,7 +303,7 @@ call_flow_ex_handle_key(PANEL *panel, int key)
         info->cur_line -= 2;
         if (info->cur_line <= 0) {
             info->first_msg = info->cur_msg;
-            info->cur_line = 1;
+            info->cur_line += 2;
         }
         break;
     case KEY_NPAGE:

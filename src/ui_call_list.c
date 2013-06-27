@@ -42,10 +42,10 @@ call_list_create()
 {
     PANEL *panel;
     WINDOW *win;
-    int height, width, i, colpos, collen, colcnt;
+    int height, width, i, colpos, collen, colcnt, attrid;
     call_list_info_t *info;
     char option[80];
-    const char *field;
+    const char *field, *title;
 
     // Create a new panel that fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
@@ -64,8 +64,10 @@ call_list_create()
         // Get column width
         sprintf(option, "cl.column%d.width", i);
         collen = get_option_int_value(option);
+        if (!(attrid = sip_attr_from_name(field))) continue;
+        title = sip_attr_get_description(attrid);
         // Add column to the list
-        call_list_add_column(panel, field, get_header_title(field), collen);
+        call_list_add_column(panel, attrid, field, title, collen);
     }
 
     // Let's draw the fixed elements of the screen
@@ -103,8 +105,8 @@ call_list_create()
 
         // Check if the column will fit in the remaining space of the screen
         if (colpos + collen >= width) break;
-        mvwprintw(win, 6, colpos, info->columns[i].title);
-        colpos += collen;
+        mvwprintw(win, 6, colpos, sip_attr_get_description(info->columns[i].id));
+        colpos += collen + 1;
     }
     // Return the created panel
     return panel;
@@ -138,7 +140,7 @@ call_list_draw(PANEL *panel)
     int height, width, i, colpos, collen, startline = 8;
     struct sip_call *call;
     int callcnt;
-    const char *call_attr;
+    const char *call_attr, *ouraddr;
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -165,10 +167,10 @@ call_list_draw(PANEL *panel)
 
         // We only print calls with messages (In fact, all call should have msgs)
         if (!call_msg_count(call)) continue;
-        if (get_option_value("address")) {
-            if (!strcasecmp(get_option_value("address"), call_get_attribute(call, "src"))) {
+        if ((ouraddr = get_option_value("address"))) {
+            if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_SRC))) {
                 wattron(win, COLOR_PAIR(OUTGOING_COLOR));
-            } else if (!strcasecmp(get_option_value("address"), call_get_attribute(call, "dst"))) {
+            } else if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_DST))) {
                 wattron(win, COLOR_PAIR(INCOMING_COLOR));
             }
         }
@@ -186,11 +188,11 @@ call_list_draw(PANEL *panel)
             // Check if the column will fit in the remaining space of the screen
             if (colpos + collen >= width) break;
             // Get call attribute for current column
-            if ((call_attr = call_get_attribute(call, info->columns[i].attr))) {
+            if ((call_attr = call_get_attribute(call, info->columns[i].id))) {
                 mvwprintw(win, cline, colpos, "%.*s", collen, call_attr);
             }
 
-            colpos += collen;
+            colpos += collen + 1;
         }
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         cline++;
@@ -326,26 +328,16 @@ call_list_help(PANEL * ppanel)
 }
 
 int
-call_list_add_column(PANEL *panel, const char* attr, const char *title, int width)
+call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title,
+        int width)
 {
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    if (!info) return -1;
+    if (!info) return 1;
+
+    info->columns[info->columncnt].id = id;
     info->columns[info->columncnt].attr = attr;
     info->columns[info->columncnt].title = title;
     info->columns[info->columncnt].width = width;
     info->columncnt++;
     return 0;
-}
-
-const char *
-get_header_title(const char *attr)
-{
-    if (!strcasecmp(attr, "sipfrom")) return "SIP From";
-    if (!strcasecmp(attr, "sipto")) return "SIP To";
-    if (!strcasecmp(attr, "msgcnt")) return "Msg";
-    if (!strcasecmp(attr, "src")) return "Source";
-    if (!strcasecmp(attr, "dst")) return "Destiny";
-    if (!strcasecmp(attr, "starting")) return "Starting";
-    if (!strcasecmp(attr, "callid")) return "Call-ID";
-    return NULL;
 }

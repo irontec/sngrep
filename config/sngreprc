@@ -27,6 +27,8 @@
 ##	- sipto
 ##	- src
 ##	- dst
+##	- callid
+##	- xcallid
 ##	- msgcnt
 ##	- starting
 

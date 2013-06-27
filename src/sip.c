@@ -46,7 +46,7 @@
  * All parsed calls will be added to this list, only accesible from
  * this awesome pointer, so, keep it thread-safe.
  */
-sip_call_t *calls = NULL;
+static sip_call_t *calls = NULL;
 
 /**
  * @brief Warranty thread-safe access to the calls list.
@@ -55,7 +55,51 @@ sip_call_t *calls = NULL;
  * before single call locking, it will be used everytime a thread access
  * single call data.
  */
-pthread_mutex_t calls_lock;
+
+static pthread_mutex_t calls_lock;
+
+static sip_attr_hdr_t attrs[] = {
+    {
+        .id = SIP_ATTR_SIPFROM,
+        .name = "sipfrom",
+        .desc = "SIP From" },
+    {
+        .id = SIP_ATTR_SIPTO,
+        .name = "sipto",
+        .desc = "SIP To" },
+    {
+        .id = SIP_ATTR_SRC,
+        .name = "src",
+        .desc = "Source" },
+    {
+        .id = SIP_ATTR_DST,
+        .name = "dst",
+        .desc = "Destiny" },
+    {
+        .id = SIP_ATTR_CALLID,
+        .name = "callid",
+        .desc = "Call-ID" },
+    {
+        .id = SIP_ATTR_XCALLID,
+        .name = "xcallid",
+        .desc = "X-Call-ID" },
+    {
+        .id = SIP_ATTR_TIME,
+        .name = "time",
+        .desc = "Time" },
+    {
+        .id = SIP_ATTR_METHOD,
+        .name = "method",
+        .desc = "Method" },
+
+    {
+        .id = SIP_ATTR_STARTING,
+        .name = "starting",
+        .desc = "Starting" },
+    {
+        .id = SIP_ATTR_MSGCNT,
+        .name = "msgcnt",
+        .desc = "Msgs" }, };
 
 sip_msg_t *
 sip_msg_create(const char *header, const char *payload)
@@ -64,6 +108,7 @@ sip_msg_create(const char *header, const char *payload)
 
     if (!(msg = malloc(sizeof(sip_msg_t)))) return NULL;
     memset(msg, 0, sizeof(sip_msg_t));
+    msg->attrs = NULL;
     msg->headerptr = strdup(header);
     msg->payloadptr = strdup(payload);
     msg->parsed = 0;
@@ -76,7 +121,7 @@ sip_call_create(char *callid)
     // Initialize a new call structure
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
-    call->callid = callid;
+    call->attrs = NULL;
 
     // Initialize call lock
     pthread_mutexattr_t attr;
@@ -86,6 +131,7 @@ sip_call_create(char *callid)
 
     //@todo Add the call to the end of the list.
     //@todo This should be improved
+    pthread_mutex_lock(&calls_lock);
     sip_call_t *cur, *prev;
     if (!calls) {
         calls = call;
@@ -95,35 +141,29 @@ sip_call_create(char *callid)
         prev->next = call;
         call->prev = prev;
     }
+    pthread_mutex_unlock(&calls_lock);
     return call;
 }
 
 char *
 sip_get_callid(const char* payload)
 {
-    regex_t regcallid;
-    regmatch_t matches[2];
-    char *callid, *ret = NULL;
-    int callid_len;
+    char *body = strdup(payload);
+    char *pch, *callid = NULL;
+    char value[256];
 
-    // Compile expresion to search Call-ID from the payload
-    regcomp(&regcallid, "Call-ID: ([^@\\s]+)", REG_EXTENDED);
+    for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
+        // fix last ngrep line character
+        if (pch[strlen(pch) - 1] == '.') pch[strlen(pch) - 1] = '\0';
 
-    // Find the Call-ID header from the payload
-    if (!regexec(&regcallid, payload, 2, matches, 0)) {
-        // Get Call-ID length
-        callid_len = matches[1].rm_eo - matches[1].rm_so + 1;
-        // Point to the begining of the string
-        callid = (char*) payload + matches[1].rm_so;
-        // Allocate enough space to contain the Call-ID
-        ret = malloc(callid_len + 1);
-        memset(ret, 0, callid_len);
-        // Copy the Call-ID before returning
-        strncpy(ret, callid, callid_len);
-        ret[callid_len - 1] = '\0';
+        if (!strncasecmp(pch, "Call-ID", 7)) {
+            if (sscanf(pch, "Call-ID: %[^@\n]", value) == 1) {
+                callid = strdup(value);
+            }
+        }
     }
-    // Return Call-ID header value
-    return ret;
+    free(body);
+    return callid;
 }
 
 sip_msg_t *
@@ -133,14 +173,13 @@ sip_load_message(const char *header, const char *payload)
     sip_call_t *call;
     char *callid;
 
-    // Create a new message from this data
-    if (!(msg = sip_msg_create(header, payload))) {
+    // Get the Call-ID of this message
+    if (!(callid = sip_get_callid(payload))) {
         return NULL;
     }
 
-    // Get the Call-ID of this message
-    if (!(callid = sip_get_callid(payload))) {
-        //@todo sip_msg_destroy();
+    // Create a new message from this data
+    if (!(msg = sip_msg_create(header, payload))) {
         return NULL;
     }
 
@@ -152,6 +191,9 @@ sip_load_message(const char *header, const char *payload)
             return NULL;
         }
     }
+
+    // Set message callid
+    msg_set_attribute(msg, SIP_ATTR_CALLID, callid);
 
     // Add the message to the found/created call
     call_add_message(call, msg);
@@ -176,13 +218,80 @@ int
 sip_check_call_ignore(sip_call_t *call)
 {
     int ret = 0;
-    ret |= is_ignored_value("sipfrom", call_get_attribute(call, "sipfrom"));
-    ret |= is_ignored_value("sipto", call_get_attribute(call, "sipto"));
-    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "msgcnt"));
-    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "src"));
-    ret |= is_ignored_value("dst", call_get_attribute(call, "dst"));
-    ret |= is_ignored_value("starting", call_get_attribute(call, "starting"));
+    //    ret |= is_ignored_value("sipfrom", call_get_attribute(call, SIP_ATTRIBUTE));
+    //    ret |= is_ignored_value("sipto", call_get_attribute(call, "sipto"));
+    //    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "msgcnt"));
+    //    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "src"));
+    //    ret |= is_ignored_value("dst", call_get_attribute(call, "dst"));
+    //    ret |= is_ignored_value("starting", call_get_attribute(call, "starting"));
     return ret;
+}
+
+sip_attr_hdr_t *
+sip_attr_get_header(enum sip_attr_id id)
+{
+    int i;
+    for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
+        if (id == attrs[i].id) {
+            return &attrs[i];
+        }
+    }
+    return NULL;
+}
+
+const char *
+sip_attr_get_description(enum sip_attr_id id)
+{
+    sip_attr_hdr_t *header;
+
+    if ((header = sip_attr_get_header(id))){
+        return header->desc;
+    }
+    return NULL;
+}
+
+const char *
+sip_attr_get_name(enum sip_attr_id id){
+    sip_attr_hdr_t *header;
+
+    if ((header = sip_attr_get_header(id))){
+        return header->name;
+    }
+    return NULL;
+}
+
+enum sip_attr_id
+sip_attr_from_name(const char *name){
+    int i;
+    for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
+        if (!strcasecmp(name, attrs[i].name)) {
+            return attrs[i].id;
+        }
+    }
+    return 0;
+}
+
+void
+sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value)
+{
+    sip_attr_t *attr;
+    if (!(attr = malloc(sizeof(sip_attr_t)))) return;
+    attr->hdr = sip_attr_get_header(id);
+    attr->value = strdup(value);
+    attr->next = *list;
+    *list = attr;
+}
+
+const char *
+sip_attr_get(sip_attr_t *list, enum sip_attr_id id)
+{
+    sip_attr_t *attr;
+    for (attr = list; attr; attr = attr->next) {
+        if (id == attr->hdr->id) {
+            return attr->value;
+        }
+    }
+    return NULL;
 }
 
 void
@@ -208,11 +317,15 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
 sip_call_t *
 call_find_by_callid(const char *callid)
 {
+    const char *cur_callid;
     sip_call_t *cur = calls;
     // XXX LOCKING
 
     while (cur) {
-        if (!strcmp(cur->callid, callid)) return cur;
+        cur_callid = call_get_attribute(cur, SIP_ATTR_CALLID);
+        if (cur_callid && !strcmp(cur_callid, callid)) {
+            return cur;
+        }
         cur = cur->next;
     }
     return NULL;
@@ -221,11 +334,14 @@ call_find_by_callid(const char *callid)
 sip_call_t *
 call_find_by_xcallid(const char *xcallid)
 {
+    const char *cur_xcallid;
     sip_call_t *cur = calls;
-    // XXX LOCKING
 
     while (cur) {
-        if (!strcmp(cur->xcallid, xcallid)) return cur;
+        cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
+        if (cur_xcallid && !strcmp(cur_xcallid, xcallid)) {
+            return cur;
+        }
         cur = cur->next;
     }
     return NULL;
@@ -249,10 +365,10 @@ call_msg_count(sip_call_t *call)
 sip_call_t *
 call_get_xcall(sip_call_t *call)
 {
-    if (strlen(call->xcallid)) {
-        return call_find_by_callid(call->xcallid);
+    if (call_get_attribute(call, SIP_ATTR_XCALLID)) {
+        return call_find_by_callid(call_get_attribute(call, SIP_ATTR_XCALLID));
     } else {
-        return call_find_by_xcallid(call->callid);
+        return call_find_by_xcallid(call_get_attribute(call, SIP_ATTR_CALLID));
     }
 }
 
@@ -350,27 +466,6 @@ call_get_prev(sip_call_t *cur)
     return prev;
 }
 
-/**
- * @todo Update this with a proper way to store call attributes.
- */
-const char *
-call_get_attribute(sip_call_t *call, const char *attr)
-{
-    char value[80];
-    if (!strcasecmp(attr, "sipfrom")) return call->msgs->sip_from;
-    if (!strcasecmp(attr, "sipto")) return call->msgs->sip_to;
-    if (!strcasecmp(attr, "msgcnt")) {
-        // FIXME REALLY
-        sprintf(value, "%d", call_msg_count(call));
-        return strdup(value);
-    }
-    if (!strcasecmp(attr, "src")) return call->msgs->ip_from;
-    if (!strcasecmp(attr, "dst")) return call->msgs->ip_to;
-    if (!strcasecmp(attr, "starting")) return call->msgs->type;
-    if (!strcasecmp(attr, "callid")) return call->callid;
-    return NULL;
-}
-
 sip_msg_t *
 msg_parse(sip_msg_t *msg)
 {
@@ -401,22 +496,31 @@ int
 msg_parse_header(sip_msg_t *msg, const char *header)
 {
     struct tm when = {
-            0 };
-    char time[20];
+        0 };
+    char time[20], ipfrom[22], ipto[22];
+    time_t timet;
+
+    // Sanity check
+    if (!msg || !header) return 1;
 
     if (sscanf(header, "U %d/%d/%d %d:%d:%d.%d %s -> %s", &when.tm_year, &when.tm_mon,
             &when.tm_mday, &when.tm_hour, &when.tm_min, &when.tm_sec, (int*) &msg->ts.tv_usec,
-            msg->ip_from, msg->ip_to)) {
+            ipfrom, ipto)) {
 
         // Fix some time data
         when.tm_year -= 1900; // C99 Years since 1900
         when.tm_mon--; // C99 0-11
-        msg->timet = mktime(&when);
-        msg->ts.tv_sec = (long int) msg - msg->timet;
+        timet = mktime(&when);
+        msg->ts.tv_sec = (long int) timet;
 
         // Convert to string
-        strftime(time, 20, "%H:%M:%S", localtime(&msg->timet));
-        sprintf(msg->time, "%s.%06d", time, (int) msg->ts.tv_usec);
+        strftime(time, 20, "%H:%M:%S", localtime(&timet));
+        sprintf(time, "%s.%06d", time, (int) msg->ts.tv_usec);
+
+        msg_set_attribute(msg, SIP_ATTR_TIME, time);
+        msg_set_attribute(msg, SIP_ATTR_SRC, ipfrom);
+        msg_set_attribute(msg, SIP_ATTR_DST, ipto);
+
         return 0;
     }
     return 1;
@@ -427,7 +531,12 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
 {
     char *body = strdup(payload);
     char * pch;
+    char value[256];
     char rest[256];
+    int irest;
+
+    // Sanity check
+    if (!msg || !payload) return 1;
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
         // fix last ngrep line character
@@ -436,27 +545,36 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
         // Copy the payload line by line (easier to process by the UI)
         msg->payload[msg->plines++] = strdup(pch);
 
-        if (sscanf(pch, "X-Call-ID: %[^@\n]", msg->call->xcallid)) {
+        if (!strlen(pch)) continue;
+
+        if (sscanf(pch, "X-Call-ID: %[^@\n]", value) == 1) {
+            msg_set_attribute(msg, SIP_ATTR_XCALLID, value);
             continue;
         }
-        if (sscanf(pch, "X-CID: %[^@\n]", msg->call->xcallid)) {
+        if (sscanf(pch, "X-CID: %[^@\n]", value) == 1) {
+            msg_set_attribute(msg, SIP_ATTR_XCALLID, value);
             continue;
         }
-        if (sscanf(pch, "SIP/2.0 %[^\n]", msg->type)) {
+        if (sscanf(pch, "SIP/2.0 %[^\n]", value)) {
+            msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             continue;
         }
-        if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &msg->cseq, rest)) {
-            if (!strlen(msg->type)) strcpy(msg->type, rest);
+        if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &irest, value)) {
+            if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
+                msg_set_attribute(msg, SIP_ATTR_METHOD, value);
+            }
             continue;
         }
-        if (sscanf(pch, "From: %[^:]:%[^\t\n\r>;]", rest, msg->sip_from)) {
+        if (sscanf(pch, "From: %[^:]:%[^\t\n\r>;]", rest, value)) {
+            msg_set_attribute(msg, SIP_ATTR_SIPFROM, value);
             continue;
         }
-        if (sscanf(pch, "To: %[^:]:%[^\t\n\r>;]", rest, msg->sip_to)) {
+        if (sscanf(pch, "To: %[^:]:%[^\t\n\r>;]", rest, value)) {
+            msg_set_attribute(msg, SIP_ATTR_SIPTO, value);
             continue;
         }
         if (!strncasecmp(pch, "Content-Type: application/sdp", 31)) {
-            strcat(msg->type, " (SDP)");
+            //strcat(msg->type, " (SDP)");
             continue;
         }
     }
@@ -464,3 +582,36 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     return 0;
 }
 
+void
+call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value)
+{
+    sip_attr_set(&call->attrs, id, value);
+}
+
+const char *
+call_get_attribute(sip_call_t *call, enum sip_attr_id id)
+{
+    //char value[80];
+    //    if (!strcasecmp(name, "msgcnt")) {
+    //        // FIXME REALLY
+    //        sprintf(value, "%d", call_msg_count(call));
+    //        return strdup(value);
+    //    }
+    //    if (!strcasecmp(name, "starting")) {
+    //        return msg_get_attribute(call_get_next_msg(call, NULL), "method");
+    //    }
+    return msg_get_attribute(call_get_next_msg(call, NULL), id);
+}
+
+void
+msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value)
+{
+    sip_attr_set(&msg->attrs, id, value);
+}
+
+const char *
+msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
+{
+    if (!msg) return NULL;
+    return sip_attr_get(msg->attrs, id);
+}

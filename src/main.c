@@ -109,7 +109,6 @@ main(int argc, char* argv[])
     // Initialize interface
     // This is a blocking call. Interface have user action loops.
     init_interface();
-
     // Leaving!
     return ret;
 }

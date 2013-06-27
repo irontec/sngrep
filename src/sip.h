@@ -27,10 +27,8 @@
  *
  * This file contains the functions and structures to manage the SIP calls and
  * messages.
- *
- * @todo Add iterator for calls. We could add some kind of filtering
- *
  */
+
 #ifndef __SNGREP_SIP_H
 #define __SNGREP_SIP_H
 
@@ -41,32 +39,82 @@
 typedef struct sip_call sip_call_t;
 //! Shorter declaration of sip_msg structure
 typedef struct sip_msg sip_msg_t;
+//! Shorter declaration of sip_attr structure
+typedef struct sip_attr_hdr sip_attr_hdr_t;
+//! Shorter declaration of sip_attr structure
+typedef struct sip_attr sip_attr_t;
 
-/** 
+/**
+ * @brief Available SIP Attributes
+ *
+ * This enum contains the list of available attributes
+ * a call or message can have.
+ */
+enum sip_attr_id
+{
+    SIP_ATTR_SIPFROM = 1,
+    SIP_ATTR_SIPTO,
+    SIP_ATTR_SRC,
+    SIP_ATTR_DST,
+    SIP_ATTR_CALLID,
+    SIP_ATTR_XCALLID,
+    SIP_ATTR_TIME,
+    SIP_ATTR_METHOD,
+    SIP_ATTR_STARTING,
+    SIP_ATTR_MSGCNT,
+};
+
+/**
+ * @brief Attribute header data
+ *
+ * This sctructure contains the information about the
+ * attribute, description, id, type and so. It's the
+ * static information of the attributed shared by all
+ * attributes pointer to its type.
+ *
+ */
+struct sip_attr_hdr
+{
+    //! Attribute id
+    enum sip_attr_id id;
+    //! Attribute name
+    char *name;
+    //! Attribute description
+    char *desc;
+};
+
+/**
+ * @brief Attribute data structure
+ *
+ * This structure contains a single attribute value and acts
+ * as a linked list for all attributes of a message (or call)
+ * Right now, all the attributed are stored as strings, which may
+ * not be the better option, but will fit our actual needs.
+ */
+struct sip_attr
+{
+    //! Attribute header pointer
+    sip_attr_hdr_t *hdr;
+    //! Attribute value
+    const char *value;
+    //! Next attribute in the linked list
+    sip_attr_t *next;
+};
+
+/**
  * @brief Information of a single message withing a dialog.
  *
  * Most of the data is just stored to be displayed in the UI so
  * the formats may be no the best, but the simplest for this
- * purpose. It also works as a linked lists of messages in a 
+ * purpose. It also works as a linked lists of messages in a
  * call.
  *
  */
 struct sip_msg
 {
-    //! FIXME for capturing at midnight?
-    char date[9];
-    //! FIXME this can be calculated
-    char time[18];
-    //! From Address including port
-    char ip_from[22];
-    //! To Address including port
-    char ip_to[22];
-    char sip_from[256];
-    char sip_to[256];
-    char type[40];
-    int cseq;
-    //! FIXME not required
-    time_t timet;
+    //! Message attribute list
+    sip_attr_t *attrs;
+    //! Timestamp of current message
     struct timeval ts;
     //! Temporal header data before being parsed
     char *headerptr;
@@ -78,11 +126,10 @@ struct sip_msg
     int plines;
     //! Flag to mark if payload data has been parsed
     int parsed;
-
     //! Message owner
     sip_call_t *call;
     //! Messages linked list
-    struct sip_msg *next;
+    sip_msg_t *next;
 };
 
 /**
@@ -95,20 +142,27 @@ struct sip_msg
  */
 struct sip_call
 {
-    char *callid; // Call-ID for this call
-    char xcallid[800]; // FIXME Dynamic length
-
-    // Call Lock
-    pthread_mutex_t lock;
-
+    //! Call attribute list
+    sip_attr_t *attrs;
     //! List of messages of this call
     sip_msg_t *msgs;
-
+    // Call Lock
+    pthread_mutex_t lock;
     //! Calls double linked list
-    sip_call_t *next;
-    sip_call_t *prev;
+    sip_call_t *next, *prev;
 };
 
+/**
+ * @brief Create a new message from the readed header and payload
+ *
+ * Allocate required memory for a new SIP message. This function
+ * will only store the given information, but wont parse it until
+ * needed.
+ *
+ * @param header Raw header text
+ * @param payload Raw payload content
+ * @return a new allocated message
+ */
 sip_msg_t *
 sip_msg_create(const char *header, const char *payload);
 
@@ -116,7 +170,7 @@ sip_msg_create(const char *header, const char *payload);
  * @brief Create a new call with the given callid (Minimum required data)
  *
  * @param callid Call-ID Header value
- * @returns pointer to the sip_call created
+ * @return pointer to the sip_call created
  */
 extern sip_call_t *
 sip_call_create(char *callid);
@@ -124,9 +178,10 @@ sip_call_create(char *callid);
 /**
  * @brief Parses Call-ID header of a SIP message payload
  *
+ * Mainly used to check if a payload contains a callid.
+ *
  * @param payload SIP message payload
  * @returns callid parsed from Call-ID header
- * @note the returned pointer MUST be deallocated after use
  */
 extern char *
 sip_get_callid(const char* payload);
@@ -147,7 +202,7 @@ sip_load_message(const char *header, const char *payload);
 /**
  * @brief Parse header and payload into a new message
  *
- * This function parses ngrep header and SIP message payload to 
+ * This function parses ngrep header and SIP message payload to
  * fill a sip_message structure.
  *
  * If no call is found with the given Call-ID, a new one will be
@@ -180,6 +235,31 @@ sip_calls_count();
  */
 extern int
 sip_check_call_ignore(sip_call_t *call);
+
+/**
+ * @brief Get the header information of an Attribute
+ *
+ * Retrieve header data from attribute list
+ *
+ * @param id Attribute id
+ */
+extern sip_attr_hdr_t *
+sip_attr_get_header(enum sip_attr_id id);
+
+extern const char *
+sip_attr_get_description(enum sip_attr_id id);
+
+extern const char *
+sip_attr_get_name(enum sip_attr_id id);
+
+extern enum sip_attr_id
+sip_attr_from_name(const char *name);
+
+extern void
+sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value);
+
+extern const char *
+sip_attr_get(sip_attr_t *list, enum sip_attr_id id);
 
 /**
  * @brief Append message to the call's message list
@@ -259,20 +339,6 @@ extern sip_msg_t *
 call_get_next_msg_ex(sip_call_t *call, sip_msg_t *msg);
 
 /**
- * @brief Return a call value
- *
- * This function will be used to avoid accessing call structure
- * fields directly.
- * @todo Code a proper way to store this information
- *
- * @param call SIP call structure
- * @param attr Attribute name
- * @return Attribute value or NULL if not found
- */
-extern const char *
-call_get_attribute(sip_call_t *call, const char *attr);
-
-/**
  * @brief Get next call after applying filters and ignores
  *
  * General getter for call list. Never access calls list
@@ -295,6 +361,23 @@ call_get_next(sip_call_t *cur);
  */
 extern sip_call_t *
 call_get_prev(sip_call_t *cur);
+
+extern void
+call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value);
+
+/**
+ * @brief Return a call value
+ *
+ * This function will be used to avoid accessing call structure
+ * fields directly.
+ * @todo Code a proper way to store this information
+ *
+ * @param call SIP call structure
+ * @param attr Attribute id
+ * @return Attribute value or NULL if not found
+ */
+extern const char *
+call_get_attribute(sip_call_t *call, enum sip_attr_id id);
 
 /**
  * @brief Parse ngrep header line to get timestamps and ip addresses
@@ -328,5 +411,11 @@ msg_parse_payload(sip_msg_t *msg, const char *payload);
  */
 extern sip_msg_t *
 msg_parse(sip_msg_t *msg);
+
+extern void
+msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value);
+
+extern const char *
+msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id);
 
 #endif

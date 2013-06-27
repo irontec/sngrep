@@ -30,7 +30,7 @@
  * from less to more priority, so the later will overwrite the previous.
  *
  *  - Initialization
- *  - @sysdir@/sngreprc
+ *  - \@sysdir\@/sngreprc
  *  - $HOME/.sngreprc
  *
  * This is a basic approach to configuration, but at least a minimun is required
@@ -158,7 +158,8 @@ is_option_enabled(const char *opt);
  * Like is_option_enabled, this check if there is a match in configuration
  * options that match the given  field and value
  *
- * @param opt Name of configuration option
+ * @param field Name of configuration option
+ * @param fvalue Value to check if it has an ignore directive
  * @return 1 if value for field exists
  */
 int

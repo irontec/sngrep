@@ -135,16 +135,17 @@ call_flow_draw(PANEL *panel)
     msgcnt = call_msg_count(info->call);
 
     // Get data from first message
-    const char *from = call_get_attribute(info->call, "src");
+    const char *from = call_get_attribute(info->call, SIP_ATTR_SRC);
 
     // Get window size
     getmaxyx(win, height, width);
 
     // Window title
-    mvwprintw(win, 1, (width - 45) / 2, "Call Details for %s", info->call->callid);
+    mvwprintw(win, 1, (width - 45) / 2, "Call Details for %s", call_get_attribute(info->call,
+            SIP_ATTR_CALLID));
     // Hosts and lines in callflow
-    mvwprintw(win, 5, 7, "%22s", call_get_attribute(info->call, "src"));
-    mvwprintw(win, 5, 37, "%22s", call_get_attribute(info->call, "dst"));
+    mvwprintw(win, 5, 7, "%22s", call_get_attribute(info->call, SIP_ATTR_SRC));
+    mvwprintw(win, 5, 37, "%22s", call_get_attribute(info->call, SIP_ATTR_DST));
 
     // Make the vertical lines for messages (2 lines per message + extra space)
     mvwvline(win, 7, 20, ACS_VLINE, info->linescnt);
@@ -159,7 +160,7 @@ call_flow_draw(PANEL *panel)
         //}
 
         // Check if there are still 2 spaces for this message in the list
-        if (cline >= info->linescnt + startpos) {
+        if (cline >= info->linescnt + startpos - 1) {
             // Draw 2 arrow to show there are more messages
             mvwaddch(win, info->linescnt + startpos - 1, 20, ACS_DARROW);
             mvwaddch(win, info->linescnt + startpos - 1, 50, ACS_DARROW);
@@ -167,12 +168,12 @@ call_flow_draw(PANEL *panel)
         }
 
         // Print timestamp
-        mvwprintw(win, cline, 2, "%s", msg->time);
+        mvwprintw(win, cline, 2, "%s", msg_get_attribute(msg, SIP_ATTR_TIME));
 
         if (msg == info->cur_msg) wattron(win, A_REVERSE);
 
         // Determine the message direction
-        if (!strcmp(msg->ip_from, from)) {
+        if (!strcmp(msg_get_attribute(msg, SIP_ATTR_SRC), from)) {
             wattron(win, COLOR_PAIR(OUTGOING_COLOR));
             mvwhline(win, cline + 1, 22, ACS_HLINE, 26);
             mvwaddch(win, cline + 1, 47, ACS_RARROW);
@@ -184,9 +185,9 @@ call_flow_draw(PANEL *panel)
 
         // Draw message type or status and line
         mvwprintw(win, cline, 22, "%26s", "");
-        int msglen = strlen(msg->type);
+        int msglen = strlen(msg_get_attribute(msg, SIP_ATTR_METHOD));
         if (msglen > 24) msglen = 24;
-        mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg->type);
+        mvwprintw(win, cline, 22 + (24 - msglen) / 2, "%.24s", msg_get_attribute(msg, SIP_ATTR_METHOD));
 
         // Turn off colors
         wattroff(win, COLOR_PAIR(OUTGOING_COLOR));
@@ -228,9 +229,9 @@ call_flow_handle_key(PANEL *panel, int key)
         info->cur_line += 2;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
-        if (info->cur_line > info->linescnt) {
+        if (info->cur_line >= info->linescnt) {
             info->first_msg = call_get_next_msg(info->call, info->first_msg);
-            info->cur_line = info->linescnt;
+            info->cur_line -= 2;
         }
         break;
     case KEY_UP:
@@ -245,7 +246,7 @@ call_flow_handle_key(PANEL *panel, int key)
         info->cur_line -= 2;
         if (info->cur_line <= 0) {
             info->first_msg = info->cur_msg;
-            info->cur_line = 1;
+            info->cur_line += 2;
         }
         break;
     case KEY_NPAGE:
