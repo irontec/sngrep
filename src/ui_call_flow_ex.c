@@ -338,6 +338,54 @@ call_flow_ex_handle_key(PANEL *panel, int key)
 int
 call_flow_ex_help(PANEL *panel)
 {
+    WINDOW *help_win;
+    PANEL *help_panel;
+
+    // Create a new panel and show centered
+    help_win = newwin(20, 65, (LINES - 20) / 2, (COLS - 65) / 2);
+    help_panel = new_panel(help_win);
+
+    // Set the window title
+    mvwprintw(help_win, 1, 18, "Call Flow Extended Help");
+
+    // Write border and boxes around the window
+    wattron(help_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    box(help_win, 0, 0);
+    mvwhline(help_win, 2, 1, ACS_HLINE, 63);
+    mvwhline(help_win, 7, 1, ACS_HLINE, 63);
+    mvwhline(help_win, 17, 1, ACS_HLINE, 63);
+    mvwaddch(help_win, 2, 0, ACS_LTEE);
+    mvwaddch(help_win, 7, 0, ACS_LTEE);
+    mvwaddch(help_win, 17, 0, ACS_LTEE);
+    mvwaddch(help_win, 2, 64, ACS_RTEE);
+    mvwaddch(help_win, 7, 64, ACS_RTEE);
+    mvwaddch(help_win, 17, 64, ACS_RTEE);
+
+    // Set the window footer (nice blue?)
+    mvwprintw(help_win, 18, 20, "Press any key to continue");
+
+    // Some brief explanation abotu what window shows
+    wattron(help_win, COLOR_PAIR(HELP_COLOR));
+    mvwprintw(help_win, 3, 2, "This window shows the messages from a call and its relative");
+    mvwprintw(help_win, 4, 2, "ordered by sent or received time.");
+    mvwprintw(help_win, 5, 2, "This panel is mosly used when capturing at proxy systems that");
+    mvwprintw(help_win, 6, 2, "manages incoming and outgoing request between calls.");
+    wattroff(help_win, COLOR_PAIR(HELP_COLOR));
+
+    // A list of available keys in this window
+    mvwprintw(help_win, 8,  2, "Available keys:");
+    mvwprintw(help_win, 10, 2, "F1          Show this screen.");
+    mvwprintw(help_win, 11, 2, "q/Esc       Go back to Call list window.");
+    mvwprintw(help_win, 12, 2, "c           Turn on/off window colours.");
+    mvwprintw(help_win, 13, 2, "Up/Down     Move to previous/next message.");
+    mvwprintw(help_win, 14, 2, "x           Show call-flow (Normal) for original call.");
+    mvwprintw(help_win, 15, 2, "r           Show original call messages in raw mode.");
+
+    // Press any key to close
+    wgetch(help_win);
+    update_panels();
+    doupdate();
+
     return 0;
 }
 

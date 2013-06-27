@@ -189,13 +189,9 @@ void
 ui_help(ui_t *ui)
 {
     // If current ui has help function
-    if (ui->help) ui->help(ui_get_panel(ui));
-
-    // Update the stacking order
-    update_panels();
-    doupdate();
-    // Press any key to continue
-    wgetch(panel_window(ui_get_panel(ui)));
+    if (ui->help) {
+        ui->help(ui_get_panel(ui));
+    }
 }
 
 int

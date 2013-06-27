@@ -295,35 +295,57 @@ call_list_handle_key(PANEL *panel, int key)
 }
 
 int
-call_list_help(PANEL * ppanel)
+call_list_help(PANEL *panel)
 {
-    int cline = 1;
-    int width, height;
+    WINDOW *help_win;
+    PANEL *help_panel;
 
-    PANEL *panel = new_panel(newwin(20, 50, LINES / 4, COLS / 4));
-    // Get window of main panel
-    WINDOW *win = panel_window(panel);
+    // Create a new panel and show centered
+    help_win = newwin(20, 65, (LINES - 20) / 2, (COLS - 65) / 2);
+    help_panel = new_panel(help_win);
 
-    // Get window size
-    getmaxyx(win, height, width);
+    // Set the window title
+    mvwprintw(help_win, 1, 25, "Call List Help");
 
-    box(win, 0, 0);
-    mvwprintw(win, cline++, 15, "Help - Dialogs Window ");
-    mvwaddch(win, cline, 0, ACS_LTEE);
-    mvwhline(win, cline, 1, ACS_HLINE, width - 2);
-    mvwaddch(win, cline++, width - 1, ACS_RTEE);
-    wattron(win, COLOR_PAIR(HELP_COLOR));
-    mvwprintw(win, cline, 3, "F1/h:");
-    mvwprintw(win, cline + 1, 3, "ESC/q:");
-    mvwprintw(win, cline + 2, 3, "Up:");
-    mvwprintw(win, cline + 3, 3, "Down:");
-    mvwprintw(win, cline + 4, 3, "Enter:");
-    wattroff(win, COLOR_PAIR(HELP_COLOR));
-    mvwprintw(win, cline, 15, "Show this screen :)");
-    mvwprintw(win, cline + 1, 15, "Exit sngrep");
-    mvwprintw(win, cline + 2, 15, "Select Previous dialog");
-    mvwprintw(win, cline + 3, 15, "Select Next dialog");
-    mvwprintw(win, cline + 4, 15, "Show dialog details");
+    // Write border and boxes around the window
+    wattron(help_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    box(help_win, 0, 0);
+    mvwhline(help_win, 2, 1, ACS_HLINE, 63);
+    mvwhline(help_win, 7, 1, ACS_HLINE, 63);
+    mvwhline(help_win, 17, 1, ACS_HLINE, 63);
+    mvwaddch(help_win, 2, 0, ACS_LTEE);
+    mvwaddch(help_win, 7, 0, ACS_LTEE);
+    mvwaddch(help_win, 17, 0, ACS_LTEE);
+    mvwaddch(help_win, 2, 64, ACS_RTEE);
+    mvwaddch(help_win, 7, 64, ACS_RTEE);
+    mvwaddch(help_win, 17, 64, ACS_RTEE);
+
+    // Set the window footer (nice blue?)
+    mvwprintw(help_win, 18, 20, "Press any key to continue");
+
+    // Some brief explanation abotu what window shows
+    wattron(help_win, COLOR_PAIR(HELP_COLOR));
+    mvwprintw(help_win, 3, 2, "This windows show the list of parsed calls from a pcap file ");
+    mvwprintw(help_win, 4, 2, "(Offline) or a live capture with ngrep (Online).");
+    mvwprintw(help_win, 5, 2, "You can configure the columns shown in this screen and some");
+    mvwprintw(help_win, 6, 2, "static filters using sngreprc resource file.");
+    wattroff(help_win, COLOR_PAIR(HELP_COLOR));
+
+    // A list of available keys in this window
+    mvwprintw(help_win, 8,  2, "Available keys:");
+    mvwprintw(help_win, 10, 2, "F1          Show this screen.");
+    mvwprintw(help_win, 11, 2, "q/Esc       Exit sngrep.");
+    mvwprintw(help_win, 12, 2, "c           Turn on/off window colours.");
+    mvwprintw(help_win, 13, 2, "Up/Down     Move to previous/next call.");
+    mvwprintw(help_win, 14, 2, "Enter       Show selected call-flow.");
+    mvwprintw(help_win, 15, 2, "x           Show selected call-flow (Extended) if available.");
+    mvwprintw(help_win, 16, 2, "r           Show selected call messages in raw mode.");
+
+    // Press any key to close
+    wgetch(help_win);
+    update_panels();
+    doupdate();
+
     return 0;
 }
 
