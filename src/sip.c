@@ -217,14 +217,13 @@ sip_calls_count()
 int
 sip_check_call_ignore(sip_call_t *call)
 {
-    int ret = 0;
-    //    ret |= is_ignored_value("sipfrom", call_get_attribute(call, SIP_ATTRIBUTE));
-    //    ret |= is_ignored_value("sipto", call_get_attribute(call, "sipto"));
-    //    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "msgcnt"));
-    //    ret |= is_ignored_value("msgcnt", call_get_attribute(call, "src"));
-    //    ret |= is_ignored_value("dst", call_get_attribute(call, "dst"));
-    //    ret |= is_ignored_value("starting", call_get_attribute(call, "starting"));
-    return ret;
+    int i;
+    for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
+        if (is_ignored_value(attrs[i].name, call_get_attribute(call, attrs[i].id))) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 sip_attr_hdr_t *
@@ -244,24 +243,26 @@ sip_attr_get_description(enum sip_attr_id id)
 {
     sip_attr_hdr_t *header;
 
-    if ((header = sip_attr_get_header(id))){
+    if ((header = sip_attr_get_header(id))) {
         return header->desc;
     }
     return NULL;
 }
 
 const char *
-sip_attr_get_name(enum sip_attr_id id){
+sip_attr_get_name(enum sip_attr_id id)
+{
     sip_attr_hdr_t *header;
 
-    if ((header = sip_attr_get_header(id))){
+    if ((header = sip_attr_get_header(id))) {
         return header->name;
     }
     return NULL;
 }
 
 enum sip_attr_id
-sip_attr_from_name(const char *name){
+sip_attr_from_name(const char *name)
+{
     int i;
     for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
         if (!strcasecmp(name, attrs[i].name)) {
@@ -466,6 +467,27 @@ call_get_prev(sip_call_t *cur)
     return prev;
 }
 
+void
+call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value)
+{
+    sip_attr_set(&call->attrs, id, value);
+}
+
+const char *
+call_get_attribute(sip_call_t *call, enum sip_attr_id id)
+{
+    char value[80];
+    if (id == SIP_ATTR_MSGCNT) {
+        // FIXME REALLY
+        sprintf(value, "%d", call_msg_count(call));
+        return strdup(value);
+    }
+    if (id == SIP_ATTR_STARTING) {
+        return msg_get_attribute(call_get_next_msg(call, NULL), SIP_ATTR_METHOD);
+    }
+    return msg_get_attribute(call_get_next_msg(call, NULL), id);
+}
+
 sip_msg_t *
 msg_parse(sip_msg_t *msg)
 {
@@ -556,7 +578,9 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             continue;
         }
         if (sscanf(pch, "SIP/2.0 %[^\n]", value)) {
-            msg_set_attribute(msg, SIP_ATTR_METHOD, value);
+            if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
+                msg_set_attribute(msg, SIP_ATTR_METHOD, value);
+            }
             continue;
         }
         if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &irest, value)) {
@@ -580,27 +604,6 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     }
     free(body);
     return 0;
-}
-
-void
-call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value)
-{
-    sip_attr_set(&call->attrs, id, value);
-}
-
-const char *
-call_get_attribute(sip_call_t *call, enum sip_attr_id id)
-{
-    //char value[80];
-    //    if (!strcasecmp(name, "msgcnt")) {
-    //        // FIXME REALLY
-    //        sprintf(value, "%d", call_msg_count(call));
-    //        return strdup(value);
-    //    }
-    //    if (!strcasecmp(name, "starting")) {
-    //        return msg_get_attribute(call_get_next_msg(call, NULL), "method");
-    //    }
-    return msg_get_attribute(call_get_next_msg(call, NULL), id);
 }
 
 void

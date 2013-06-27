@@ -124,7 +124,6 @@ enum panel_types
  * This functions will initialize ncurses mode and show a
  * Call List panel.
  * 
- * @param ui_config UI configuration structure
  * @returns 0 on ncurses initialization success, 1 otherwise 
  */
 extern int
@@ -238,10 +237,11 @@ toggle_color(int on);
 
 /**
  * @brief Wait for user input.
+ *
  * This function manages all user input in all panel types and
  * redraws the panel using its own draw function
  * 
- * @param panel the topmost panel ui structure
+ * @param ui the topmost panel ui structure
  */
 extern int
 wait_for_input(ui_t *ui);
@@ -267,7 +267,7 @@ title_foot_box(WINDOW *win);
  * callid. If the UI is displaying this call or it's 
  * extended one, the topmost panel will be redraw again 
  *
- * @param callid Call-ID from the last received message
+ * @param msg Last readed message in Online mode
  */
 extern void
 ui_new_msg_refresh(sip_msg_t *msg);

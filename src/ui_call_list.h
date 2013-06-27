@@ -158,8 +158,9 @@ call_list_help(PANEL *panel);
  * @todo Columns are not configurable yet.
  *
  * @param panel Ncurses panel pointer
+ * @param id SIP call attribute id
  * @param attr SIP call attribute name
- * @param title Column Title
+ * @param title SIP call attribute description
  * @param width Column Width
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
