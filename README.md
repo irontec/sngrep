@@ -52,16 +52,21 @@ sngrep can be used to view SIP packages from a pcap file
 
     sngrep file.pcap
 
-or online parsing using ngrep filters and parameters (man ngrep for a full list)
+or online parsing using ngrep filters and parameters (man ngrep for a full list) 
 
     sngrep -O file.pcap port 5060 and udp and host 192.168.8.101
+
+if you compiled without ngrep support, use only the filters
+
+	sngrep port 5060 and udp
+
 
 ## Frequent Asked Questions
  <dl>
   <dt>Why a new tool from network filtering?</dt>
   <dd>Don't know. I didn't find any console tool that will display call flows.</dd>
   <dt>Why dont you filter packages in online mode instead of using ngrep?</dt>
-  <dd>Because I don't have the required time to code all that right now</dd>
+  <dd>You can actually capture disabling ngrep using only pcap filters (see Installing options above)</dd>
   <dt>Why only parsing SIP Messages?</dt>
   <dd>Because it's useful for us</dd>
   <dt>Extended Call flow window doesn't work</dt>
