@@ -49,7 +49,31 @@
  ** (let's say -T), sngrep will fail at parsing any header :(
  **
  ****************************************************************************/
+/**
+ * @brief Exec ngrep in background
+ *
+ * This function is used as worker thread for spawning a ngrep process and
+ * read its output. This is only used in Online captures. All sngrep arguments
+ * will be passed to sngrep directly.
+ *
+ * @param pargs Argument list for ngrep
+ * @return 0 on spawn success, 1 otherwise
+ */
 extern int
-run_ngrep(void *pargs);
+online_capture(void *pargs);
 
+#ifndef WITH_LIBPCAP
+/**
+ * @brief Loads ngrep data from PCAP file
+ *
+ * This spawns ngrep using -I parameter to read the contents of a PCAP file
+ * and write its output so sngrep can parse it. This can be used instead of
+ * libpcap parsing but will be WAAAAAAY slower.
+ *
+ * @param file Full path to pcap file
+ * @return 0 on read success, 1 otherwise
+ */
+extern int
+load_from_file(const char* file);
+#endif
 #endif

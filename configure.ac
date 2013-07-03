@@ -27,14 +27,26 @@ AC_PROG_EGREP
 AC_LANG(C)
 
 #######################################################################
+# Add configurable options
+
+AC_ARG_ENABLE([ngrep],
+    AS_HELP_STRING([--disable-ngrep], [Disable ngrep for parsing messages]))
+
+
+AC_ARG_ENABLE([libpcap],
+    AS_HELP_STRING([--disable-libpcap], [Disable libpcap for parsing messages]))
+
+
+AS_IF([test "x$enable_ngrep" == "xno"], [
+	AS_IF([test "x$enable_libpcap" == "xno"], [
+    AC_MSG_ERROR([ You can not disable both ngrep and libpcap. Choose one. ])
+])])
+
+#######################################################################
 # Check for other REQUIRED libraries
 
 AC_CHECK_HEADER([ncurses.h], [], [
         AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
-])
-
-AC_CHECK_HEADER([pcap.h], [], [
-    AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
 ])
 
 AC_CHECK_LIB([ncurses], [initscr], [], [
@@ -49,23 +61,32 @@ AC_CHECK_LIB([pthread], [pthread_create], [], [
     AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
 ])
 
-AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
-    AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
+AS_IF([test "x$enable_libpcap" != "xno"], [
+	AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
+	    AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
+	])
+	AC_CHECK_HEADER([pcap.h], [], [
+	    AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
+	])
+	AC_DEFINE(WITH_LIBPCAP)
 ])
 
 #######################################################################
 # Check for REQUIRED binaries
-AC_PATH_PROG(STDBUF, stdbuf, [:], $PATH)
-AS_IF([test "x$STDBUF" != "x:"],
-    [AC_DEFINE_UNQUOTED([STDBUF_BIN], ["$STDBUF"])],
-    [AC_MSG_ERROR([stdbuf (coreutils) is needed to run sngrep])]
-)
+AS_IF([test "x$enable_ngrep" != "xno"], [
+	AC_DEFINE(WITH_NGREP)
 
-AC_PATH_PROG(NGREP, ngrep, [:], $PATH)
-AS_IF([test "x$NGREP" != "x:"],
-    [AC_DEFINE_UNQUOTED([NGREP_BIN], ["$NGREP"])],
-    [AC_MSG_ERROR([ngrep is needed to run sngrep])]
-)
+	AC_PATH_PROG(STDBUF, stdbuf, [:], $PATH)
+	AS_IF([test "x$STDBUF" != "x:"],
+	    [AC_DEFINE_UNQUOTED([STDBUF_BIN], ["$STDBUF"])],
+	    [AC_MSG_ERROR([stdbuf (coreutils) is needed to run sngrep])]
+	)
+	AC_PATH_PROG(NGREP, ngrep, [:], $PATH)
+	AS_IF([test "x$NGREP" != "x:"],
+	    [AC_DEFINE_UNQUOTED([NGREP_BIN], ["$NGREP"])],
+	    [AC_MSG_ERROR([ngrep is needed to run sngrep])]
+	)
+])
 
 ######################################################################
 

@@ -33,9 +33,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "option.h"
-#include "exec.h"
-#include "pcap.h"
 #include "ui_manager.h"
+#include "pcap.h"
+#include "exec.h"
 
 /**
  * @brief Usage function
@@ -48,9 +48,13 @@ usage(const char* progname)
     fprintf(stdout, "[%s] Copyright (C) 2013 Irontec S.L.\n\n", progname);
     fprintf(stdout, "Usage:\n");
     fprintf(stdout, "\t%s <file.pcap>\n", progname);
+#ifdef WITH_NGREP
     fprintf(stdout, "\t%s <ngrep options>\n", progname);
     fprintf(stdout, "\tsee 'man ngrep' for available ngrep options\n\n");
     fprintf(stdout, "Note: some ngrep options are forced by %s\n", progname);
+#else
+    fprintf(stdout, "\t%s <pcap filter>\n", progname);
+#endif
 }
 
 /**
@@ -88,7 +92,7 @@ main(int argc, char* argv[])
         set_option_value("running.file", argv[1]);
 
         // Assume Offline mode with pcap file
-        if (load_pcap_file(argv[1]) != 0) {
+        if (load_from_file(argv[1]) != 0) {
             fprintf(stderr, "Error loading data from pcap file %s\n", argv[1]);
             return 1;
         }
@@ -99,7 +103,7 @@ main(int argc, char* argv[])
         // Assume online mode, launch ngrep in a thread
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-        if (pthread_create(&exec_t, &attr, (void *) run_ngrep, argv)) {
+        if (pthread_create(&exec_t, &attr, (void *) online_capture, argv)) {
             fprintf(stderr, "Unable to create Exec Thread!\n");
             return 1;
         }

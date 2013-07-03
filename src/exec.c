@@ -19,14 +19,13 @@
  ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+#ifdef WITH_NGREP
 /**
  * @file exec.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in exec.h
- *
  */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,7 +53,7 @@
  **
  ****************************************************************************/
 int
-run_ngrep(void *pargv)
+online_capture(void *pargv)
 {
     char **argv = (char**) pargv;
     int argc = 1;
@@ -66,7 +65,7 @@ run_ngrep(void *pargv)
     // Build the commald line to execute ngrep
     sprintf(cmdline, "%s %s %s %s", STDBUF_BIN, STDBUF_ARGS, NGREP_BIN, NGREP_ARGS);
     while (argv[argc])
-        sprintf(cmdline, "%s %s", cmdline, argv[argc++]);
+    sprintf(cmdline, "%s \"%s\"", cmdline, argv[argc++]);
 
     // Open the command for reading. 
     fp = popen(cmdline, "r");
@@ -104,3 +103,48 @@ run_ngrep(void *pargv)
     return 0;
 }
 
+#ifndef WITH_LIBPCAP
+int
+load_from_file(const char* file)
+{
+    char cmdline[256];
+    FILE *fp;
+    char stdout_line[2048] = "";
+    char msg_header[256], msg_payload[20480];
+
+    // Build the commald line to execute ngrep
+    sprintf(cmdline, "%s %s %s %s", STDBUF_BIN, STDBUF_ARGS, NGREP_BIN, NGREP_ARGS);
+    sprintf(cmdline, "%s -I %s", cmdline, file);
+
+    // Open the command for reading.
+    fp = popen(cmdline, "r");
+    if (fp == NULL) {
+        printf("Failed to run command\n");
+        return 1;
+    }
+
+    // Read the output a line at a time - output it.
+    while (fgets(stdout_line, 1024, fp) != NULL) {
+        if (!strncmp(stdout_line, "\n", 1) && strlen(msg_header) && strlen(msg_payload)) {
+            // Parse message
+            sip_load_message(msg_header, strdup((const char*) msg_payload));
+            // Initialize structures
+            memset(msg_header, 0, 256);
+            memset(msg_payload, 0, 20480);
+        } else {
+            if (!strncmp(stdout_line, "U ", 2)) {
+                strcpy(msg_header, stdout_line);
+            } else {
+                if (strlen(msg_header)) {
+                    strcat(msg_payload, stdout_line);
+                }
+            }
+        }
+    }
+
+    // Close read pipe
+    pclose(fp);
+    return 0;
+}
+#endif
+#endif

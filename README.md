@@ -15,9 +15,9 @@ the alpha stage, but can be handy somehow in strange cases.
 ## Prerequisites
 
  - libncurse5 - for UI , windows, panels.
- - libpcap - for parsing pcap files.
- - ngrep - for live captures.
- - stdbuf - for piping ngrep output unbuffered.
+ - libpcap - for parsing pcap files. (Optional, see below)
+ - ngrep - for live captures. (Optional, see below)
+ - stdbuf - for piping ngrep output unbuffered. (Optional, see below)
 
 ## Installing
  
@@ -26,6 +26,25 @@ On most systems the commands to build will be the standard atotools procedure:
 	./configure
 	make
 	make install (as root)
+
+If you dont want to use ngrep (because is not available in your system or you 
+don't have stdbuf), you can use libpcap instead. You will lose all available
+options of ngrep (such as saving to .pcap while capturing) but both online and
+offline modes will work.
+
+	./configure --disable-ngrep
+	make
+	make install (as root)
+
+If you dont want to use libpcap (because is not available in your system or
+don't want to install more development libraries), you can use ngrep insted.
+Parsing with ngrep will be a slower, but both online and offline modes will
+work.
+
+	./configure --disable-libpcap
+	make
+	make install (as root)
+
 
 ## Usage
 

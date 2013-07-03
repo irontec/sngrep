@@ -102,6 +102,22 @@ struct nread_udp
     u_short udp_chksum;
 };
 
+#ifndef WITH_NGREP
+/**
+ * @brief Capture in background using libpcap functions
+ *
+ * This function is used as worker thread for capturing filtered packages and
+ * pass them to the UI layer. We only use this if ngrep is not available
+ * for capturing, becuause it has a lot more options.
+ *
+ * @param pargv Filters for libpcap
+ * @return 0 on spawn success, 1 otherwise
+ */
+extern int
+online_capture(void *pargv);
+
+#endif
+
 /**
  * @brief Read from pcap file and fill sngrep sctuctures
  *
@@ -115,6 +131,18 @@ struct nread_udp
  *
  */
 extern int
-load_pcap_file(const char* file);
+load_from_file(const char* file);
+
+/**
+ * @brief Read the next package and parse SIP messages
+ *
+ * This function is shared between online and offline capture
+ * methods using pcap. This will get the payload from a package and
+ * add it to the SIP storage layer.
+ *
+ * @param handle LIBPCAP capture handler
+ */
+extern void
+parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet);
 
 #endif

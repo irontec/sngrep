@@ -696,6 +696,8 @@ enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
 enable_debug
+enable_ngrep
+enable_libpcap
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1330,6 +1332,8 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-debug          Debug compilation (Default = no)
+  --disable-ngrep         Disable ngrep for parsing messages
+  --disable-libpcap       Disable libpcap for parsing messages
 
 Some influential environment variables:
   CC          C compiler command
@@ -5215,6 +5219,32 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 #######################################################################
+# Add configurable options
+
+# Check whether --enable-ngrep was given.
+if test "${enable_ngrep+set}" = set; then :
+  enableval=$enable_ngrep;
+fi
+
+
+
+# Check whether --enable-libpcap was given.
+if test "${enable_libpcap+set}" = set; then :
+  enableval=$enable_libpcap;
+fi
+
+
+
+if test "x$enable_ngrep" == "xno"; then :
+
+	if test "x$enable_libpcap" == "xno"; then :
+
+    as_fn_error $? " You can not disable both ngrep and libpcap. Choose one. " "$LINENO" 5
+
+fi
+fi
+
+#######################################################################
 # Check for other REQUIRED libraries
 
 ac_fn_c_check_header_mongrel "$LINENO" "ncurses.h" "ac_cv_header_ncurses_h" "$ac_includes_default"
@@ -5223,17 +5253,6 @@ if test "x$ac_cv_header_ncurses_h" = x""yes; then :
 else
 
         as_fn_error $? " You need to have ncurses development files installed to compile sngrep." "$LINENO" 5
-
-fi
-
-
-
-ac_fn_c_check_header_mongrel "$LINENO" "pcap.h" "ac_cv_header_pcap_h" "$ac_includes_default"
-if test "x$ac_cv_header_pcap_h" = x""yes; then :
-
-else
-
-    as_fn_error $? " You need to have libpcap development files installed to compile sngrep." "$LINENO" 5
 
 fi
 
@@ -5389,7 +5408,9 @@ else
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_open_offline in -lpcap" >&5
+if test "x$enable_libpcap" != "xno"; then :
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_open_offline in -lpcap" >&5
 $as_echo_n "checking for pcap_open_offline in -lpcap... " >&6; }
 if test "${ac_cv_lib_pcap_pcap_open_offline+set}" = set; then :
   $as_echo_n "(cached) " >&6
@@ -5434,14 +5455,33 @@ _ACEOF
 
 else
 
-    as_fn_error $? " You need to have libpcap installed to compile sngrep." "$LINENO" 5
+	    as_fn_error $? " You need to have libpcap installed to compile sngrep." "$LINENO" 5
+
+fi
+
+	ac_fn_c_check_header_mongrel "$LINENO" "pcap.h" "ac_cv_header_pcap_h" "$ac_includes_default"
+if test "x$ac_cv_header_pcap_h" = x""yes; then :
+
+else
+
+	    as_fn_error $? " You need to have libpcap development files installed to compile sngrep." "$LINENO" 5
 
 fi
 
 
+	$as_echo "#define WITH_LIBPCAP 1" >>confdefs.h
+
+
+fi
+
 #######################################################################
 # Check for REQUIRED binaries
-# Extract the first word of "stdbuf", so it can be a program name with args.
+if test "x$enable_ngrep" != "xno"; then :
+
+	$as_echo "#define WITH_NGREP 1" >>confdefs.h
+
+
+	# Extract the first word of "stdbuf", so it can be a program name with args.
 set dummy stdbuf; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5482,7 +5522,7 @@ $as_echo "no" >&6; }
 fi
 
 
-if test "x$STDBUF" != "x:"; then :
+	if test "x$STDBUF" != "x:"; then :
   cat >>confdefs.h <<_ACEOF
 #define STDBUF_BIN "$STDBUF"
 _ACEOF
@@ -5491,8 +5531,7 @@ else
   as_fn_error $? "stdbuf (coreutils) is needed to run sngrep" "$LINENO" 5
 
 fi
-
-# Extract the first word of "ngrep", so it can be a program name with args.
+	# Extract the first word of "ngrep", so it can be a program name with args.
 set dummy ngrep; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5533,13 +5572,15 @@ $as_echo "no" >&6; }
 fi
 
 
-if test "x$NGREP" != "x:"; then :
+	if test "x$NGREP" != "x:"; then :
   cat >>confdefs.h <<_ACEOF
 #define NGREP_BIN "$NGREP"
 _ACEOF
 
 else
   as_fn_error $? "ngrep is needed to run sngrep" "$LINENO" 5
+
+fi
 
 fi
 
