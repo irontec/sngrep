@@ -197,7 +197,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     sprintf(msg_header, "%s -> %s:%u", msg_header, inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
 
     // Parse this header and payload
-    if (!strcasecmp(mode, "Online") && (msg = sip_load_message(msg_header, (const char*) msg_payload))) {
+    if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp(mode, "Online") ) {
         ui_new_msg_refresh(msg);
     }
 }
