@@ -97,6 +97,8 @@ enum sngrep_colors
     INCOMING_COLOR,
     //! Call-Flow border color
     DETAIL_BORDER_COLOR,
+    CALLID1_COLOR,
+    CALLID2_COLOR,
 };
 
 /**

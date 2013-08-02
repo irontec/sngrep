@@ -91,7 +91,10 @@ static sip_attr_hdr_t attrs[] = {
         .id = SIP_ATTR_METHOD,
         .name = "method",
         .desc = "Method" },
-
+    {
+        .id = SIP_ATTR_REQUEST,
+        .name = "request",
+        .desc = "Request" },
     {
         .id = SIP_ATTR_STARTING,
         .name = "starting",
@@ -585,6 +588,9 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
         }
         if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &irest, value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
+                // ACK Messages are not considered request, but responses
+                if (strcasecmp(value, "ACK"))
+                    msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
             continue;

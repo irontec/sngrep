@@ -55,6 +55,7 @@ call_raw_create()
 
     // Calculate available printable area
     info->linescnt = height;
+    info->totlines = 0;
 
     return panel;
 }
@@ -69,41 +70,71 @@ int
 call_raw_draw(PANEL *panel)
 {
     struct sip_msg *msg = NULL;
-    int pline = 0, raw_line;
-    const char *all_lines[1024];
-    int all_linescnt = 0;
+    wclear(panel_window(panel));
 
     // Get panel information
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
+    info->totlines = info->scrline = 0;
+
+    if (info->msg) {
+        call_raw_print_msg(panel, info->msg);
+    } else {
+        if (info->call2) {
+            while ((msg = call_get_next_msg_ex(info->call, msg)))
+                call_raw_print_msg(panel, msg);
+        } else {
+            while ((msg = call_get_next_msg(info->call, msg)))
+                call_raw_print_msg(panel, msg);
+        }
+    }
+
+    return 0;
+}
+
+int
+call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
+{
+    // Get panel information
+    call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
+
     // Get window of main panel
     WINDOW *win = panel_window(panel);
-    wclear(win);
 
-    /*
-     FIXME This part could be coded decently.
-     A better aproach is creating a pad window and copy the visible area
-     into the panel window, taking into account the scroll position.
-     This is dirty but easier to manage by now
-     */
-    memset(all_lines, 0, 1024);
-    while ((msg = call_get_next_msg(info->call, msg))) {
-        for (raw_line = 0; raw_line < msg->plines; raw_line++) {
-            all_lines[all_linescnt++] = msg->payload[raw_line];
+    // Get current line
+    int raw_line;
+
+    // Determine arrow color
+    if (is_option_enabled("callid_color")) {
+        if (!strcasecmp(msg_get_attribute(msg, SIP_ATTR_CALLID), call_get_attribute(info->call,
+                SIP_ATTR_CALLID))) {
+            wattron(win, COLOR_PAIR(CALLID1_COLOR));
+        } else {
+            wattron(win, COLOR_PAIR(CALLID2_COLOR));
         }
-        all_lines[all_linescnt++] = NULL;
-        all_lines[all_linescnt++] = NULL;
+    } else {
+        // Determine arrow color
+        if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
+            wattron(win, COLOR_PAIR(OUTGOING_COLOR));
+        } else {
+            wattron(win, COLOR_PAIR(INCOMING_COLOR));
+        }
     }
-    info->all_lines = all_linescnt;
 
-    for (raw_line = info->scrollpos; raw_line <= all_linescnt; raw_line++) {
+    for (raw_line = 0; raw_line < msg->plines; raw_line++) {
+        info->totlines++;
+        // Check if we must start drawing
+        if (info->totlines < info->scrollpos) continue;
         // Until we have reached the end of the screen
-        if (pline >= info->linescnt) break;
+        if (info->scrline >= info->linescnt) break;
+
         // If printable line, otherwise let this line empty
-        if (all_lines[raw_line]) mvwprintw(win, pline, 0, "%s", all_lines[raw_line]);
-        // but increase line counter
-        pline++;
+        mvwprintw(win, info->scrline++, 0, "%s", msg->payload[raw_line]);
+        if (raw_line == msg->plines - 1) {
+            info->scrline++;
+            info->totlines++;
+        }
     }
-    return 0;
+
 }
 
 int
@@ -119,7 +150,7 @@ call_raw_handle_key(PANEL *panel, int key)
 
     switch (key) {
     case KEY_DOWN:
-        if (info->scrollpos + info->linescnt < info->all_lines) info->scrollpos++;
+        if (info->scrollpos + info->linescnt - 10 < info->totlines) info->scrollpos++;
         break;
     case KEY_UP:
         if (info->scrollpos > 0) info->scrollpos--;
@@ -158,4 +189,46 @@ call_raw_set_call(sip_call_t *call)
     info->call = call;
     info->scrollpos = 0;
     return 0;
+}
+
+int
+call_raw_set_call_ex(sip_call_t *call)
+{
+    ui_t *raw_panel;
+    PANEL *panel;
+    call_raw_info_t *info;
+
+    if (!call) return -1;
+
+    if (!(raw_panel = ui_find_by_type(RAW_PANEL))) return -1;
+
+    if (!(panel = raw_panel->panel)) return -1;
+
+    if (!(info = (call_raw_info_t*) panel_userptr(panel))) return -1;
+
+    info->call = call;
+    info->call2 = call_get_xcall(call);
+    info->scrollpos = 0;
+    return 0;
+}
+
+int
+call_raw_set_msg(sip_msg_t *msg)
+{
+    ui_t *raw_panel;
+    PANEL *panel;
+    call_raw_info_t *info;
+
+    if (!msg) return -1;
+
+    if (!(raw_panel = ui_find_by_type(RAW_PANEL))) return -1;
+
+    if (!(panel = raw_panel->panel)) return -1;
+
+    if (!(info = (call_raw_info_t*) panel_userptr(panel))) return -1;
+
+    info->msg = msg;
+    info->scrollpos = 0;
+    return 0;
+
 }

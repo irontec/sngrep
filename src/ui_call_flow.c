@@ -170,15 +170,20 @@ call_flow_draw(PANEL *panel)
         // Print timestamp
         mvwprintw(win, cline, 2, "%s", msg_get_attribute(msg, SIP_ATTR_TIME));
 
-        if (msg == info->cur_msg) wattron(win, A_REVERSE);
+        if (msg == info->cur_msg) wattron(win, A_BOLD);
+
+        // Determine arrow color
+        if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
+            wattron(win, COLOR_PAIR(OUTGOING_COLOR));
+        } else {
+            wattron(win, COLOR_PAIR(INCOMING_COLOR));
+        }
 
         // Determine the message direction
         if (!strcmp(msg_get_attribute(msg, SIP_ATTR_SRC), from)) {
-            wattron(win, COLOR_PAIR(OUTGOING_COLOR));
             mvwhline(win, cline + 1, 22, ACS_HLINE, 26);
             mvwaddch(win, cline + 1, 47, ACS_RARROW);
         } else {
-            wattron(win, COLOR_PAIR(INCOMING_COLOR));
             mvwhline(win, cline + 1, 22, ACS_HLINE, 26);
             mvwaddch(win, cline + 1, 22, ACS_LARROW);
         }
@@ -192,7 +197,7 @@ call_flow_draw(PANEL *panel)
         // Turn off colors
         wattroff(win, COLOR_PAIR(OUTGOING_COLOR));
         wattroff(win, COLOR_PAIR(INCOMING_COLOR));
-        wattroff(win, A_REVERSE);
+        wattroff(win, A_BOLD);
 
         // One message fills 2 lines
         cline += 2;

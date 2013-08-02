@@ -68,6 +68,8 @@ enum sip_attr_id
     SIP_ATTR_TIME,
     //! SIP Message Method or Response code
     SIP_ATTR_METHOD,
+    //! SIP Message
+    SIP_ATTR_REQUEST,
     //! SIP Call first message method
     SIP_ATTR_STARTING,
     //! SIP Call message counter

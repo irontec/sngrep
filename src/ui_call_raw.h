@@ -45,9 +45,12 @@ typedef struct call_raw_info call_raw_info_t;
 struct call_raw_info
 {
     sip_call_t *call;
+    sip_call_t *call2;
+    sip_msg_t *msg;
+    int totlines;
+    int scrline;
     int scrollpos;
     int linescnt;
-    int all_lines;
 };
 
 /**
@@ -112,5 +115,19 @@ call_raw_handle_key(PANEL *panel, int key);
  */
 extern int
 call_raw_set_call(sip_call_t *call);
+
+extern int
+call_raw_set_call_ex(sip_call_t *call);
+
+/**
+ * @brief Set the active msg of the panel
+ *
+ * This function will access the panel information and will set the
+ * msg pointer to the processed message.
+ *
+ * @param msg Message pointer to be set in the internal info struct
+ */
+extern int
+call_raw_set_msg(sip_msg_t *msg);
 
 #endif

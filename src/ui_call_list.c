@@ -273,7 +273,7 @@ call_list_handle_key(PANEL *panel, int key)
         break;
     case 'x':
         if (!info->cur_call) return -1;
-        // KEY_ENTER , Display current call flow
+        // KEY_X , Display current call flow (extended)
         next_panel = ui_create(ui_find_by_type(DETAILS_EX_PANEL));
         call_flow_ex_set_call(info->cur_call);
         wait_for_input(next_panel);

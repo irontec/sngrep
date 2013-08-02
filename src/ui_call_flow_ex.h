@@ -35,6 +35,17 @@
 
 //! Sorter declaration of struct call_flow_ex_info
 typedef struct call_flow_ex_info call_flow_ex_info_t;
+//! Sorter declaration of struct call_flow_ex_column
+typedef struct call_flow_ex_column call_flow_ex_column_t;
+
+
+struct call_flow_ex_column
+{
+    const char *addr;
+    const char *callid;
+    int colpos;
+    call_flow_ex_column_t *next;
+};
 
 /**
  * @brief Call flow Extended status information
@@ -50,6 +61,7 @@ struct call_flow_ex_info
     sip_msg_t *cur_msg;
     int linescnt;
     int cur_line;
+    call_flow_ex_column_t *columns;
 };
 
 /**
@@ -136,5 +148,8 @@ call_flow_ex_help(PANEL *panel);
  */
 extern int
 call_flow_ex_set_call(sip_call_t *call);
+
+extern call_flow_ex_column_t *
+call_flow_ex_column(PANEL *panel, const char *callid, const char *addr);
 
 #endif
