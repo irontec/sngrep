@@ -390,57 +390,11 @@ call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
     return ret;
 }
 
-sip_msg_t *
-call_get_next_msg_ex(sip_call_t *call, sip_msg_t *msg)
-{
-
-    sip_msg_t *msg1 = NULL, *msg2 = NULL;
-    sip_call_t *call2;
-
-    pthread_mutex_lock(&call->lock);
-    // Let's assume that call is always present, but call2 may not
-    if (!(call2 = call_get_xcall(call))) {
-        return call_get_next_msg(call, msg);
-    }
-
-    if (!msg) {
-        // No msg, compare the first one of both calls
-        msg1 = call_get_next_msg(call, NULL);
-        msg2 = call_get_next_msg(call2, NULL);
-    } else if (msg->call == call) {
-        // Message is from first call, get the next message in the call
-        msg1 = call_get_next_msg(call, msg);
-        // Get the chronological next message in second call
-        while ((msg2 = call_get_next_msg(call2, msg2))) {
-            // Compare with the actual message
-            if (msg->ts.tv_sec < msg2->ts.tv_sec || (msg->ts.tv_sec == msg2->ts.tv_sec
-                    && msg->ts.tv_usec < msg2->ts.tv_usec)) break;
-        }
-    } else if (msg->call == call2) {
-        // Message is from second call, get the next message in the call
-        msg1 = call_get_next_msg(call2, msg);
-        // Get the chronological next message in first call
-        while ((msg2 = call_get_next_msg(call, msg2))) {
-            // Compare with the actual message
-            if (msg->ts.tv_sec < msg2->ts.tv_sec || (msg->ts.tv_sec == msg2->ts.tv_sec
-                    && msg->ts.tv_usec < msg2->ts.tv_usec)) break;
-        }
-    }
-    pthread_mutex_unlock(&call->lock);
-
-    if ((!msg2) || (msg1 && msg1->ts.tv_sec < msg2->ts.tv_sec) || (msg1 && msg1->ts.tv_sec
-            == msg2->ts.tv_sec && msg1->ts.tv_usec < msg2->ts.tv_usec)) {
-        return msg1;
-    } else {
-        return msg2;
-    }
-}
-
 sip_call_t *
 call_get_next(sip_call_t *cur)
 {
 
-    sip_call_t *next;
+    sip_call_t * next;
     if (!cur) {
         next = calls;
     } else {
@@ -588,9 +542,8 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
         }
         if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &irest, value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
-                // ACK Messages are not considered request, but responses
-                if (strcasecmp(value, "ACK"))
-                    msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
+                // ACK Messages are not considered requests
+                if (strcasecmp(value, "ACK")) msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
             continue;

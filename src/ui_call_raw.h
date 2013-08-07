@@ -44,8 +44,7 @@ typedef struct call_raw_info call_raw_info_t;
  */
 struct call_raw_info
 {
-    sip_call_t *call;
-    sip_call_t *call2;
+    sip_call_group_t *group;
     sip_msg_t *msg;
     int totlines;
     int scrline;
@@ -91,6 +90,9 @@ call_raw_redraw_required(PANEL *panel, sip_msg_t *msg);
 extern int
 call_raw_draw(PANEL *panel);
 
+extern int
+call_raw_print_msg(PANEL *panel, sip_msg_t *msg);
+
 /**
  * @brief Handle Call Raw key strokes
  *
@@ -106,18 +108,15 @@ extern int
 call_raw_handle_key(PANEL *panel, int key);
 
 /**
- * @brief Set the active call of the panel
+ * @brief Set the active call group of the panel
  *
  * This function will access the panel information and will set the
- * call pointer to the processed call.
+ * call group pointer to the processed calls.
  *
- * @param call Call pointer to be set in the internal info struct
+ * @param group Call Group pointer to be set in the internal info struct
  */
 extern int
-call_raw_set_call(sip_call_t *call);
-
-extern int
-call_raw_set_call_ex(sip_call_t *call);
+call_raw_set_group(sip_call_group_t *group);
 
 /**
  * @brief Set the active msg of the panel

@@ -39,6 +39,7 @@
 #include <ncurses.h>
 #include <panel.h>
 #include "sip.h"
+#include "group.h"
 
 //! Shorter declaration of ui structure
 typedef struct ui ui_t;
@@ -87,8 +88,17 @@ struct ui
  */
 enum sngrep_colors
 {
+    CALLID1_COLOR = 1,
+    CALLID2_COLOR,
+    CALLID3_COLOR,
+    CALLID4_COLOR,
+    CALLID5_COLOR,
+    CALLID6_COLOR,
+    CALLID7_COLOR,
+    CALLID8_COLOR,
+    CALLID9_COLOR,
     //! Highlight color for Call List
-    HIGHLIGHT_COLOR = 1,
+    HIGHLIGHT_COLOR,
     //! Key name color in help screens
     HELP_COLOR,
     //! Outgoing messages color
@@ -97,8 +107,6 @@ enum sngrep_colors
     INCOMING_COLOR,
     //! Call-Flow border color
     DETAIL_BORDER_COLOR,
-    CALLID1_COLOR,
-    CALLID2_COLOR,
 };
 
 /**
@@ -114,8 +122,6 @@ enum panel_types
     MAIN_PANEL = 0,
     //! Call-Flow ui screen
     DETAILS_PANEL,
-    //! Call-Flow Extended ui screen
-    DETAILS_EX_PANEL,
     //! Raw SIP messages ui screen
     RAW_PANEL,
 };
@@ -278,7 +284,7 @@ ui_new_msg_refresh(sip_msg_t *msg);
  * @brief Replace one UI with another
  *
  * This function can be handy when we want to destroy one UI element
- * and replace it for another.
+ * and replace it for another in the next ui loop redraw.
  */
 extern int
 ui_set_replace(ui_t *, ui_t*);

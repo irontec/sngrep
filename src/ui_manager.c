@@ -30,7 +30,6 @@
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
-#include "ui_call_flow_ex.h"
 #include "ui_call_raw.h"
 
 /**
@@ -60,16 +59,7 @@ static ui_t panel_pool[] = {
         .redraw_required = call_flow_redraw_required,
         .draw = call_flow_draw,
         .handle_key = call_flow_handle_key,
-        .help = call_flow_help,
-        .destroy = call_flow_destroy, },
-    {
-        .type = DETAILS_EX_PANEL,
-        .panel = NULL,
-        .create = call_flow_ex_create,
-        .redraw_required = call_flow_ex_redraw_required,
-        .draw = call_flow_ex_draw,
-        .handle_key = call_flow_ex_handle_key,
-        .help = call_flow_ex_help },
+        .help = call_flow_help },
     {
         .type = RAW_PANEL,
         .panel = NULL,
@@ -292,6 +282,11 @@ toggle_color(int on)
         init_pair(DETAIL_BORDER_COLOR, COLOR_BLUE, COLOR_BLACK);
         init_pair(CALLID1_COLOR, COLOR_CYAN, COLOR_BLACK);
         init_pair(CALLID2_COLOR, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(CALLID3_COLOR, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(CALLID4_COLOR, COLOR_GREEN, COLOR_BLACK);
+        init_pair(CALLID5_COLOR, COLOR_RED, COLOR_BLACK);
+        init_pair(CALLID6_COLOR, COLOR_BLUE, COLOR_BLACK);
+        init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
     } else {
         init_pair(HIGHLIGHT_COLOR, COLOR_BLACK, COLOR_WHITE);
         init_pair(HELP_COLOR, COLOR_WHITE, COLOR_BLACK);
@@ -300,6 +295,11 @@ toggle_color(int on)
         init_pair(DETAIL_BORDER_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(CALLID1_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(CALLID2_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID3_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID4_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID5_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID6_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
     }
 }
 

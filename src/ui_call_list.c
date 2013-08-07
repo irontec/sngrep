@@ -34,7 +34,6 @@
 #include "option.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
-#include "ui_call_flow_ex.h"
 #include "ui_call_raw.h"
 
 PANEL *
@@ -76,6 +75,7 @@ call_list_create()
 
     // Calculate available printable area
     info->linescnt = height - 11;
+    info->group = call_group_create();
 
     // Draw a box arround the window
     title_foot_box(win);
@@ -175,6 +175,10 @@ call_list_draw(PANEL *panel)
             }
         }
 
+        if (call_group_exists(info->group, call)) {
+            wattron(win, A_BOLD);
+        }
+
         // Highlight active call
         if (call == info->cur_call) {
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
@@ -195,6 +199,7 @@ call_list_draw(PANEL *panel)
             colpos += collen + 1;
         }
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+        wattroff(win, A_BOLD);
         cline++;
     }
 
@@ -223,6 +228,7 @@ call_list_handle_key(PANEL *panel, int key)
     int i, rnpag_steps = get_option_int_value("cl.scrollstep");
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     ui_t *next_panel;
+    sip_call_group_t *group;
 
     // Sanity check, this should not happen
     if (!info) return -1;
@@ -268,25 +274,47 @@ call_list_handle_key(PANEL *panel, int key)
         if (!info->cur_call) return -1;
         // KEY_ENTER , Display current call flow
         next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
-        call_flow_set_call(info->cur_call);
+        group = call_group_create();
+        call_group_add(group, info->cur_call);
+        call_flow_set_group(group);
         wait_for_input(next_panel);
         break;
     case 'x':
-        if (!info->cur_call) return -1;
         // KEY_X , Display current call flow (extended)
-        next_panel = ui_create(ui_find_by_type(DETAILS_EX_PANEL));
-        call_flow_ex_set_call(info->cur_call);
+        next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
+        if (info->group->callcnt) {
+            group = info->group;
+        } else {
+            if (!info->cur_call) return -1;
+            group = call_group_create();
+            call_group_add(group, info->cur_call);
+            call_group_add(group, call_get_xcall(info->cur_call));
+        }
+        call_flow_set_group(group);
         wait_for_input(next_panel);
         break;
     case 'r':
     case 'R':
-        if (!info->cur_call) return -1;
-        // KEY_R, display current call in raw mode
+        // KEY_X , Display current call flow (extended)
         next_panel = ui_create(ui_find_by_type(RAW_PANEL));
-        call_raw_set_call(info->cur_call);
+        if (info->group->callcnt) {
+            group = info->group;
+        } else {
+            if (!info->cur_call) return -1;
+            group = call_group_create();
+            call_group_add(group, info->cur_call);
+        }
+        call_raw_set_group(group);
         wait_for_input(next_panel);
         break;
-
+    case ' ':
+        if (!info->cur_call) return -1;
+        if (call_group_exists(info->group, info->cur_call)) {
+            call_group_del(info->group, info->cur_call);
+        } else {
+            call_group_add(info->group, info->cur_call);
+        }
+        break;
     default:
         return -1;
     }
@@ -332,7 +360,7 @@ call_list_help(PANEL *panel)
     wattroff(help_win, COLOR_PAIR(HELP_COLOR));
 
     // A list of available keys in this window
-    mvwprintw(help_win, 8,  2, "Available keys:");
+    mvwprintw(help_win, 8, 2, "Available keys:");
     mvwprintw(help_win, 10, 2, "F1          Show this screen.");
     mvwprintw(help_win, 11, 2, "q/Esc       Exit sngrep.");
     mvwprintw(help_win, 12, 2, "c           Turn on/off window colours.");

@@ -35,6 +35,11 @@
 #include <sys/time.h>
 #include <pthread.h>
 
+/* Some very used macros */
+#define CALLID(msg) msg_get_attribute(msg, SIP_ATTR_CALLID)
+#define SRC(msg) msg_get_attribute(msg, SIP_ATTR_SRC)
+#define DST(msg) msg_get_attribute(msg, SIP_ATTR_DST)
+
 //! Shorter declaration of sip_call structure
 typedef struct sip_call sip_call_t;
 //! Shorter declaration of sip_msg structure
@@ -120,7 +125,6 @@ struct sip_attr
  * the formats may be no the best, but the simplest for this
  * purpose. It also works as a linked lists of messages in a
  * call.
- *
  */
 struct sip_msg
 {
@@ -150,7 +154,6 @@ struct sip_msg
  * This structure acts as header of messages list of the same
  * callid (considered a dialog). It contains some replicated
  * data from its messages to speed up searches.
- *
  */
 struct sip_call
 {
@@ -175,7 +178,7 @@ struct sip_call
  * @param payload Raw payload content
  * @return a new allocated message
  */
-sip_msg_t *
+extern sip_msg_t *
 sip_msg_create(const char *header, const char *payload);
 
 /**
@@ -375,20 +378,6 @@ call_get_xcall(sip_call_t *call);
  */
 extern sip_msg_t *
 call_get_next_msg(sip_call_t *call, sip_msg_t *msg);
-
-/**
- * @brief Finds the next msg in call and it's extended.
- *
- * If the passed msg is NULL it returns the first message
- * in the conversation
- *
- * @param call SIP call structure
- * @param msg Actual SIP msg from the call (can be NULL)
- * @return Next chronological message in the conversation
- *
- */
-extern sip_msg_t *
-call_get_next_msg_ex(sip_call_t *call, sip_msg_t *msg);
 
 /**
  * @brief Get next call after applying filters and ignores

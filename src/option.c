@@ -66,6 +66,11 @@ init_options()
     set_option_value("cl.autoscroll", "on");
     set_option_value("cl.scrollstep", "10");
 
+    // Raw options for Call flow screen
+    set_option_value("cf.forceraw", "off");
+    set_option_value("cf.rawminwidth", "100");
+    set_option_value("cf.splitcallid", "off");
+
     // Read options from configuration files
     read_options("/etc/sngreprc");
     read_options("/root/.sngreprc");

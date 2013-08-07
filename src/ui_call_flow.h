@@ -23,36 +23,50 @@
  * @file ui_call_flow.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage Call Flow screen
+ * @brief Functions to manage Call Flow Extended screen
  *
  * This file contains the functions and structures to manage the call flow
- * screen.
+ * extended screen.
  *
  */
-#ifndef __UI_CALL_FLOW_H
-#define __UI_CALL_FLOW_H
+#ifndef __UI_CALL_FLOW_EX_H
+#define __UI_CALL_FLOW_EX_H
 #include "ui_manager.h"
 
 //! Sorter declaration of struct call_flow_info
 typedef struct call_flow_info call_flow_info_t;
+//! Sorter declaration of struct call_flow_column
+typedef struct call_flow_column call_flow_column_t;
+
+
+struct call_flow_column
+{
+    const char *addr;
+    const char *callid;
+    const char *callid2;
+    int colpos;
+    call_flow_column_t *next;
+};
 
 /**
- * @brief Call flow status information
+ * @brief Call flow Extended status information
  *
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
 struct call_flow_info
 {
-    sip_call_t *call;
+    sip_call_group_t *group;
     sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
     int linescnt;
     int cur_line;
+    int msg_lines;
+    call_flow_column_t *columns;
 };
 
 /**
- * @brief Create Call Flow panel
+ * @brief Create Call Flow extended panel
  *
  * This function will allocate the ncurses pointer and draw the static
  * stuff of the screen (which usually won't be redrawn)
@@ -88,7 +102,7 @@ extern int
 call_flow_redraw_required(PANEL *panel, sip_msg_t *msg);
 
 /**
- * @brief Draw the Call flow panel
+ * @brief Draw the Call flow extended panel
  *
  * This function will drawn the panel into the screen based on its stored
  * status
@@ -99,8 +113,17 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg);
 extern int
 call_flow_draw(PANEL *panel);
 
+extern int
+call_flow_draw_columns(PANEL *panel);
+
+extern int
+call_flow_draw_message(PANEL *panel, sip_msg_t *msg);
+
+extern int
+call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
+
 /**
- * @brief Handle Call flow key strokes
+ * @brief Handle Call flow extended key strokes
  *
  * This function will manage the custom keybindings of the panel. If this
  * function returns -1, the ui manager will check if the pressed key
@@ -126,14 +149,20 @@ extern int
 call_flow_help(PANEL *panel);
 
 /**
- * @brief Set the active call of the panel
+ * @brief Set the group call of the panel
  *
  * This function will access the panel information and will set the
- * call pointer to the processed call.
+ * group call pointer to the processed calls.
  *
- * @param call Call pointer to be set in the internal info struct
+ * @param group Call group pointer to be set in the internal info struct
  */
 extern int
-call_flow_set_call(sip_call_t *call);
+call_flow_set_group(sip_call_group_t *group);
+
+extern void
+call_flow_column_add(PANEL *panel, const char *callid, const char *addr);
+
+extern call_flow_column_t *
+call_flow_column_get(PANEL *panel, const char *callid, const char *addr);
 
 #endif

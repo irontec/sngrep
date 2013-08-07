@@ -36,6 +36,7 @@
  */
 #include "pcap.h"
 #include "sip.h"
+#include "ui_manager.h"
 
 //! FIXME Link type
 int linktype;
@@ -121,7 +122,7 @@ load_from_file(const char* file)
     // Loop through packages
     while ((packet = pcap_next(handle, &header))) {
         // Parse package
-        parse_packet("Offline", &header, packet);
+        parse_packet((u_char*)"Offline", &header, packet);
     }
     // Close PCAP file
     pcap_close(handle);
@@ -197,7 +198,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     sprintf(msg_header, "%s -> %s:%u", msg_header, inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
 
     // Parse this header and payload
-    if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp(mode, "Online") ) {
+    if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp((const char*)mode, "Online") ) {
         ui_new_msg_refresh(msg);
     }
 }

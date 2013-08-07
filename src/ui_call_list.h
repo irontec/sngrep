@@ -67,6 +67,8 @@ struct call_list_info
     int first_line;
     //! Selected call in the list
     sip_call_t *cur_call;
+    //! Selected calls with space
+    sip_call_group_t *group;
     //! Displayed column list, make it configurable in the future
     call_list_column_t columns[10];
     //! Displayed column count. 

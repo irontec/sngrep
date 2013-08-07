@@ -9,7 +9,7 @@
  ** it under the terms of the GNU General Public License as published by
  ** the Free Software Foundation, either version 3 of the License, or
  ** (at your option) any later version.
- **
+ ** == 1)
  ** This program is distributed in the hope that it will be useful,
  ** but WITHOUT ANY WARRANTY; without even the implied warranty of
  ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -32,6 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ui_call_raw.h"
+#include "option.h"
 
 PANEL *
 call_raw_create()
@@ -63,7 +64,9 @@ call_raw_create()
 int
 call_raw_redraw_required(PANEL *panel, sip_msg_t *msg)
 {
-    return 0;
+    call_raw_info_t *info;
+    if (!(info = (call_raw_info_t*) panel_userptr(panel))) return -1;
+    return call_group_exists(info->group, msg->call);
 }
 
 int
@@ -79,13 +82,8 @@ call_raw_draw(PANEL *panel)
     if (info->msg) {
         call_raw_print_msg(panel, info->msg);
     } else {
-        if (info->call2) {
-            while ((msg = call_get_next_msg_ex(info->call, msg)))
-                call_raw_print_msg(panel, msg);
-        } else {
-            while ((msg = call_get_next_msg(info->call, msg)))
-                call_raw_print_msg(panel, msg);
-        }
+        while ((msg = call_group_get_next_msg(info->group, msg)))
+            call_raw_print_msg(panel, msg);
     }
 
     return 0;
@@ -105,12 +103,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 
     // Determine arrow color
     if (is_option_enabled("callid_color")) {
-        if (!strcasecmp(msg_get_attribute(msg, SIP_ATTR_CALLID), call_get_attribute(info->call,
-                SIP_ATTR_CALLID))) {
-            wattron(win, COLOR_PAIR(CALLID1_COLOR));
-        } else {
-            wattron(win, COLOR_PAIR(CALLID2_COLOR));
-        }
+        wattron(win, COLOR_PAIR(call_group_color(info->group, msg->call)));
     } else {
         // Determine arrow color
         if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
@@ -135,6 +128,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
         }
     }
 
+    return 0;
 }
 
 int
@@ -172,13 +166,13 @@ call_raw_handle_key(PANEL *panel, int key)
 }
 
 int
-call_raw_set_call(sip_call_t *call)
+call_raw_set_group(sip_call_group_t *group)
 {
     ui_t *raw_panel;
     PANEL *panel;
     call_raw_info_t *info;
 
-    if (!call) return -1;
+    if (!group) return -1;
 
     if (!(raw_panel = ui_find_by_type(RAW_PANEL))) return -1;
 
@@ -186,28 +180,7 @@ call_raw_set_call(sip_call_t *call)
 
     if (!(info = (call_raw_info_t*) panel_userptr(panel))) return -1;
 
-    info->call = call;
-    info->scrollpos = 0;
-    return 0;
-}
-
-int
-call_raw_set_call_ex(sip_call_t *call)
-{
-    ui_t *raw_panel;
-    PANEL *panel;
-    call_raw_info_t *info;
-
-    if (!call) return -1;
-
-    if (!(raw_panel = ui_find_by_type(RAW_PANEL))) return -1;
-
-    if (!(panel = raw_panel->panel)) return -1;
-
-    if (!(info = (call_raw_info_t*) panel_userptr(panel))) return -1;
-
-    info->call = call;
-    info->call2 = call_get_xcall(call);
+    info->group = group;
     info->scrollpos = 0;
     return 0;
 }
