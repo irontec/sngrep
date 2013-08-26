@@ -67,7 +67,7 @@ init_options()
     set_option_value("cl.scrollstep", "10");
 
     // Raw options for Call flow screen
-    set_option_value("cf.forceraw", "off");
+    set_option_value("cf.forceraw", "on");
     set_option_value("cf.rawminwidth", "100");
     set_option_value("cf.splitcallid", "off");
 
@@ -190,3 +190,8 @@ is_ignored_value(const char *field, const char *fvalue)
     return 0;
 }
 
+void
+toggle_option(const char *option)
+{
+    set_option_value(option, is_option_enabled(option) ? "off" : "on");
+}

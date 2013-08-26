@@ -253,7 +253,7 @@ wait_for_input(ui_t *ui)
             toggle_color(is_option_enabled("color"));
             break;
         case 'C':
-            set_option_value("callid_color", is_option_enabled("callid_color") ? "off" : "on");
+            set_option_value("color.callid", is_option_enabled("color.callid") ? "off" : "on");
             break;
         case 'h':
         case 265: /* KEY_F1 */
@@ -287,6 +287,7 @@ toggle_color(int on)
         init_pair(CALLID5_COLOR, COLOR_RED, COLOR_BLACK);
         init_pair(CALLID6_COLOR, COLOR_BLUE, COLOR_BLACK);
         init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
     } else {
         init_pair(HIGHLIGHT_COLOR, COLOR_BLACK, COLOR_WHITE);
         init_pair(HELP_COLOR, COLOR_WHITE, COLOR_BLACK);
@@ -300,6 +301,7 @@ toggle_color(int on)
         init_pair(CALLID5_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(CALLID6_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
     }
 }
 

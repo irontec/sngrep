@@ -177,6 +177,7 @@ call_list_draw(PANEL *panel)
 
         if (call_group_exists(info->group, call)) {
             wattron(win, A_BOLD);
+            wattron(win, COLOR_PAIR(SELECTED_COLOR));
         }
 
         // Highlight active call
@@ -198,6 +199,7 @@ call_list_draw(PANEL *panel)
 
             colpos += collen + 1;
         }
+        wattroff(win, COLOR_PAIR(SELECTED_COLOR));
         wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         wattroff(win, A_BOLD);
         cline++;
@@ -274,8 +276,13 @@ call_list_handle_key(PANEL *panel, int key)
         if (!info->cur_call) return -1;
         // KEY_ENTER , Display current call flow
         next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
-        group = call_group_create();
-        call_group_add(group, info->cur_call);
+        if (info->group->callcnt) {
+            group = info->group;
+        } else {
+            if (!info->cur_call) return -1;
+            group = call_group_create();
+            call_group_add(group, info->cur_call);
+        }
         call_flow_set_group(group);
         wait_for_input(next_panel);
         break;

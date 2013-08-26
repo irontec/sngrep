@@ -162,7 +162,10 @@ is_option_enabled(const char *opt);
  * @param fvalue Value to check if it has an ignore directive
  * @return 1 if value for field exists
  */
-int
+extern int
 is_ignored_value(const char *field, const char *fvalue);
+
+extern void
+toggle_option(const char *option);
 
 #endif

@@ -95,8 +95,6 @@ enum sngrep_colors
     CALLID5_COLOR,
     CALLID6_COLOR,
     CALLID7_COLOR,
-    CALLID8_COLOR,
-    CALLID9_COLOR,
     //! Highlight color for Call List
     HIGHLIGHT_COLOR,
     //! Key name color in help screens
@@ -107,6 +105,8 @@ enum sngrep_colors
     INCOMING_COLOR,
     //! Call-Flow border color
     DETAIL_BORDER_COLOR,
+    //! Call-List selected color
+    SELECTED_COLOR,
 };
 
 /**

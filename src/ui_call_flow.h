@@ -59,9 +59,10 @@ struct call_flow_info
     sip_call_group_t *group;
     sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
-    int linescnt;
+    int msgs_height;
+    int msgs_width;
+    int raw_width;
     int cur_line;
-    int msg_lines;
     call_flow_column_t *columns;
 };
 
@@ -117,7 +118,7 @@ extern int
 call_flow_draw_columns(PANEL *panel);
 
 extern int
-call_flow_draw_message(PANEL *panel, sip_msg_t *msg);
+call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline);
 
 extern int
 call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);

@@ -279,6 +279,16 @@ void
 sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value)
 {
     sip_attr_t *attr;
+
+    // If attribute already exists change its value
+    for (attr = *list; attr; attr = attr->next) {
+        if (id == attr->hdr->id) {
+            attr->value = strdup(value);
+            return;
+        }
+    }
+
+    // Otherwise add a new attribute
     if (!(attr = malloc(sizeof(sip_attr_t)))) return;
     attr->hdr = sip_attr_get_header(id);
     attr->value = strdup(value);
@@ -487,6 +497,7 @@ msg_parse_header(sip_msg_t *msg, const char *header)
             ipfrom, ipto)) {
 
         // Fix some time data
+        when.tm_isdst = 1; // Daylight saving time flag
         when.tm_year -= 1900; // C99 Years since 1900
         when.tm_mon--; // C99 0-11
         timet = mktime(&when);
@@ -526,15 +537,15 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
 
         if (!strlen(pch)) continue;
 
-        if (sscanf(pch, "X-Call-ID: %[^@\n]", value) == 1) {
+        if (sscanf(pch, "X-Call-ID: %[^@\t\n\r]", value) == 1) {
             msg_set_attribute(msg, SIP_ATTR_XCALLID, value);
             continue;
         }
-        if (sscanf(pch, "X-CID: %[^@\n]", value) == 1) {
+        if (sscanf(pch, "X-CID: %[^@\t\n\r]", value) == 1) {
             msg_set_attribute(msg, SIP_ATTR_XCALLID, value);
             continue;
         }
-        if (sscanf(pch, "SIP/2.0 %[^\n]", value)) {
+        if (sscanf(pch, "SIP/2.0 %[^\t\n\r]", value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
@@ -556,8 +567,9 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             msg_set_attribute(msg, SIP_ATTR_SIPTO, value);
             continue;
         }
-        if (!strncasecmp(pch, "Content-Type: application/sdp", 31)) {
-            //strcat(msg->type, " (SDP)");
+        if (!strncasecmp(pch, "Content-Type: application/sdp", 29)) {
+            sprintf(value, "%s (SDP)", msg_get_attribute(msg, SIP_ATTR_METHOD));
+            msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             continue;
         }
     }
