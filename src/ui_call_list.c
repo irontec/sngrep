@@ -97,6 +97,7 @@ call_list_create()
     mvwprintw(win, height - 2, 27, "x: Call-Flow Extended");
     mvwprintw(win, height - 2, 52, "r: Call Raw");
     mvwprintw(win, height - 2, 67, "c: Colours");
+    mvwprintw(win, height - 2, 80, "Space: Select dialog");
 
     // Draw columns titles
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
