@@ -37,7 +37,6 @@
 #define __SNGREP_PCAP_H
 
 #include <pcap.h>
-#include <pcap/pcap.h>
 #include <string.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
