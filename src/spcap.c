@@ -34,7 +34,7 @@
  * use other transports, uh.
  *
  */
-#include "pcap.h"
+#include "spcap.h"
 #include "sip.h"
 #include "ui_manager.h"
 
