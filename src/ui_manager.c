@@ -33,6 +33,14 @@
 #include "ui_call_raw.h"
 
 /**
+ * @brief Warranty thread-safe ui refresh
+ *
+ * This lock should be used whenever the ui is replaced or updated
+ * preventing the ui swap during the screen refresh
+ */
+pthread_mutex_t refresh_lock;
+
+/**
  * @brief Available panel windows list
  *
  * This list contein the available list of windows
@@ -225,6 +233,7 @@ wait_for_input(ui_t *ui)
 
     // Keep getting keys until panel is destroyed
     while (ui_get_panel(ui)) {
+        pthread_mutex_lock(&refresh_lock);
         // If ui requested replacement
         if (ui->replace) {
             replace = ui->replace;
@@ -232,6 +241,7 @@ wait_for_input(ui_t *ui)
             ui_destroy(ui);
             ui = replace;
         }
+        pthread_mutex_unlock(&refresh_lock);
 
         if (ui_draw_panel(ui) != 0) return -1;
 
@@ -310,6 +320,7 @@ ui_new_msg_refresh(sip_msg_t *msg)
 {
     PANEL *panel;
 
+    pthread_mutex_lock(&refresh_lock);
     // Get the topmost panel
     if ((panel = panel_below(NULL))) {
         // Get ui information for that panel
@@ -318,6 +329,7 @@ ui_new_msg_refresh(sip_msg_t *msg)
             ui_draw_panel(ui_find_by_panel(panel));
         }
     }
+    pthread_mutex_unlock(&refresh_lock);
 }
 
 void
@@ -340,7 +352,9 @@ title_foot_box(WINDOW *win)
 int
 ui_set_replace(ui_t *original, ui_t *replace)
 {
+    pthread_mutex_lock(&refresh_lock);
     if (!original || !replace) return -1;
     original->replace = replace;
     return 0;
+    pthread_mutex_unlock(&refresh_lock);
 }
