@@ -400,8 +400,6 @@ call_list_exit_confirm(PANEL *panel)
     int c;
     // Initial exit status
     int exit = get_option_int_value("cl.defexitbutton") ;
-    // If not a valid, set yes by default
-    if (exit != 0 && exit != 1 ) exit = 1;
 
     // Create a new panel and show centered
     exit_win = newwin(8, 40, (LINES - 20) / 2, (COLS - 65) / 2);
@@ -429,10 +427,10 @@ call_list_exit_confirm(PANEL *panel)
     for(;;) {
         // A list of available keys in this window
         if (exit) wattron(exit_win, A_REVERSE);
-        mvwprintw(exit_win, 6, 10, "   Yes   ");
+        mvwprintw(exit_win, 6, 10, "[  Yes  ]");
         wattroff(exit_win, A_REVERSE);
         if (!exit) wattron(exit_win, A_REVERSE);
-        mvwprintw(exit_win, 6, 20, "   No    ");
+        mvwprintw(exit_win, 6, 20, "[  No   ]");
         wattroff(exit_win, A_REVERSE);
 
         update_panels();
@@ -454,7 +452,6 @@ call_list_exit_confirm(PANEL *panel)
             // key and exit sngrep gracefully
             return exit;
         }
-
     }
 
     return 0;
