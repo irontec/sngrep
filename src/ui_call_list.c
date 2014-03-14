@@ -323,6 +323,13 @@ call_list_handle_key(PANEL *panel, int key)
             call_group_add(info->group, info->cur_call);
         }
         break;
+    case 'q':
+    case 27: /* KEY_ESC */
+        // Handle quit from this screen unless requested
+        if (get_option_int_value("cl.noexitprompt") != 1) {
+            return call_list_exit_confirm(panel);
+        }
+        break;
     default:
         return -1;
     }
@@ -381,6 +388,74 @@ call_list_help(PANEL *panel)
     wgetch(help_win);
     update_panels();
     doupdate();
+
+    return 0;
+}
+
+int
+call_list_exit_confirm(PANEL *panel)
+{
+    WINDOW *exit_win;
+    PANEL *exit_panel;
+    int c;
+    // Initial exit status
+    int exit = get_option_int_value("cl.defexitbutton") ;
+    // If not a valid, set yes by default
+    if (exit != 0 && exit != 1 ) exit = 1;
+
+    // Create a new panel and show centered
+    exit_win = newwin(8, 40, (LINES - 20) / 2, (COLS - 65) / 2);
+    exit_panel = new_panel(exit_win);
+    keypad(exit_win, TRUE);
+
+    // Set the window title
+    mvwprintw(exit_win, 1, 13, "Confirm exit");
+
+    // Write border and boxes around the window
+    wattron(exit_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    box(exit_win, 0, 0);
+    mvwhline(exit_win, 2, 1, ACS_HLINE, 40);
+    mvwhline(exit_win, 5, 1, ACS_HLINE, 40);
+    mvwaddch(exit_win, 2, 0, ACS_LTEE);
+    mvwaddch(exit_win, 5, 0, ACS_LTEE);
+    mvwaddch(exit_win, 2, 39, ACS_RTEE);
+    mvwaddch(exit_win, 5, 39, ACS_RTEE);
+
+    // Exit confirmation message message
+    wattron(exit_win, COLOR_PAIR(HELP_COLOR));
+    mvwprintw(exit_win, 3, 2, "Are you sure you want to quit?");
+    wattroff(exit_win, COLOR_PAIR(HELP_COLOR));
+
+    for(;;) {
+        // A list of available keys in this window
+        if (exit) wattron(exit_win, A_REVERSE);
+        mvwprintw(exit_win, 6, 10, "   Yes   ");
+        wattroff(exit_win, A_REVERSE);
+        if (!exit) wattron(exit_win, A_REVERSE);
+        mvwprintw(exit_win, 6, 20, "   No    ");
+        wattroff(exit_win, A_REVERSE);
+
+        update_panels();
+        doupdate();
+
+        c = wgetch(exit_win);
+        switch (c) {
+        case KEY_RIGHT:
+            exit = 0;
+            break;
+        case KEY_LEFT:
+            exit = 1;
+            break;
+        case 9:
+            exit = (exit)?0:1;
+            break;
+        case 10:
+            // If we return 1, we let ui_manager to handle this
+            // key and exit sngrep gracefully
+            return exit;
+        }
+
+    }
 
     return 0;
 }

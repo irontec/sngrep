@@ -11,26 +11,30 @@
 ##-----------------------------------------------------------------------------
 ## Change default scrolling in call list
 # set cl.scrollstep 20
+## Disable exit prompt
+# set cl.noexitprompt 1
+## Or set its default button
+# set cl.defexitbutton 0/1
 
 ##-----------------------------------------------------------------------------
 ## You can change the default number of columns in call list
-## 		set cl.columns {count}
+##    set cl.columns {count}
 ##
 ## Set displayed columns in call list screen
-## 		set cl.column{num} {field}
+##    set cl.column{num} {field}
 ##
 ## You can also configure the column width using
-##		set cl.column{num}.width {cols}
+##    set cl.column{num}.width {cols}
 ##
 ## Available columns fields are: 
-##	- sipfrom
-##	- sipto
-##	- src
-##	- dst
-##	- callid
-##	- xcallid
-##	- msgcnt
-##	- starting
+##    - sipfrom
+##    - sipto
+##    - src
+##    - dst
+##    - callid
+##    - xcallid
+##    - msgcnt
+##    - starting
 
 # set cl.columns 6
 # set cl.column0 sipfrom
