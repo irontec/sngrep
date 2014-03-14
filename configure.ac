@@ -126,4 +126,5 @@ AC_MSG_NOTICE
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([config/Makefile])
 AC_OUTPUT
