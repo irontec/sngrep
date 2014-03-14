@@ -65,14 +65,19 @@ init_options()
     // Set Autoscroll in call list
     set_option_value("cl.autoscroll", "on");
     set_option_value("cl.scrollstep", "10");
+    set_option_value("cl.defexitbutton", "1");
 
     // Raw options for Call flow screen
     set_option_value("cf.forceraw", "on");
     set_option_value("cf.rawminwidth", "100");
     set_option_value("cf.splitcallid", "off");
 
+    // Allow dialogs to be incomplete
+    set_option_value("sip.ignoreincomlete", "0");
+
     // Read options from configuration files
     read_options("/etc/sngreprc");
+    read_options("/usr/local/etc/sngreprc");
     read_options("/root/.sngreprc");
 
     return 0;

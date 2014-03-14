@@ -50,6 +50,15 @@
 # set cl.column5 starting
 # set cl.column5.width 15
 
+
+##-----------------------------------------------------------------------------
+## Default minimun size from Message info in Call Flow panel
+# set cf.rawminwidth 100
+
+##-----------------------------------------------------------------------------
+## Ignore dialogs that does not start with a request method
+# set sip.ignoreincomplete 1
+
 ##-----------------------------------------------------------------------------
 ## You can ignore some calls with any of the previous attributes with a given
 ## value with ignore directive.

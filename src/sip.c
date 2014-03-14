@@ -188,6 +188,20 @@ sip_load_message(const char *header, const char *payload)
 
     // Find the call for this msg
     if (!(call = call_find_by_callid(callid))) {
+
+        // Only create a new call if the first msg
+        // is a request message in the following gorup
+        if (get_option_int_value("sip.ignoreincomplete")) {
+            const char *method = msg_get_attribute(msg, SIP_ATTR_METHOD);
+            if (method && strcasecmp(method, "INVITE")
+                && strcasecmp(method, "REGISTER") && strcasecmp(method, "SUBSCRIBE")
+                && strcasecmp(method, "OPTIONS") && strcasecmp(method, "PUBLISH")
+                && strcasecmp(method, "MESSAGE") && strcasecmp(method, "NOTIFY")){
+                //@todo sip_msg_destroy();
+                return NULL;
+            }
+        }
+
         // Create the call if not found
         if (!(call = sip_call_create(callid))) {
             //@todo sip_msg_destroy();
