@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include "option.h"
 #include "ui_manager.h"
-#include "pcap.h"
+#include "spcap.h"
 #include "exec.h"
 
 /**
