@@ -82,7 +82,6 @@ init_options()
     set_option_value("filter.enable", "off");
     set_option_value("filter.REGISTER", "on");
     set_option_value("filter.INVITE", "on");
-    set_option_value("filter.INVITE (SDP)", "on");
     set_option_value("filter.SUBSCRIBE", "on");
     set_option_value("filter.NOTIFY", "on");
     set_option_value("filter.OPTIONS", "on");

@@ -237,6 +237,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     const char *msg_to;
     const char *msg_src;
     const char *msg_dst;
+    char method[80];
 
     // Get panel information
     info = call_flow_info(panel);
@@ -257,8 +258,13 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     // Print timestamp
     mvwprintw(win, cline, 2, "%s", msg_time);
 
+    // Get Message method (include extra info)
+    sprintf(method, "%s\0", msg_method);
+    if (msg_get_attribute(msg, SIP_ATTR_SDP))
+        sprintf(method, "%s (SDP)\0", method);
+
     // Draw message type or status and line
-    int msglen = strlen(msg_method);
+    int msglen = strlen(method);
     if (msglen > 24) msglen = 24;
 
     // Get origin and destiny column
@@ -290,12 +296,17 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     }
 
     mvwprintw(win, cline, startpos + 2, "%.*s", distance, "");
-    mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", msg_method);
+    mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
     mvwhline(win, cline + 1, startpos + 2, ACS_HLINE, distance);
+    // Write the arrow at the end of the message (two arros if this is a retrans)
     if (!strcasecmp(msg_src, column1->addr)) {
         mvwaddch(win, cline + 1, endpos - 2, ACS_RARROW);
+        if (msg_is_retrans(msg))
+            mvwaddch(win, cline + 1, endpos - 3, ACS_RARROW);
     } else {
         mvwaddch(win, cline + 1, startpos + 2, ACS_LARROW);
+        if (msg_is_retrans(msg))
+            mvwaddch(win, cline + 1, startpos + 2, ACS_LARROW);
     }
 
     // Turn off colors

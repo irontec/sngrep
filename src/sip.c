@@ -96,6 +96,10 @@ static sip_attr_hdr_t attrs[] = {
         .name = "request",
         .desc = "Request" },
     {
+        .id = SIP_ATTR_SDP,
+        .name = "sdp",
+        .desc = "Has SDP"},
+    {
         .id = SIP_ATTR_STARTING,
         .name = "starting",
         .desc = "Starting" },
@@ -453,6 +457,25 @@ call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
     return ret;
 }
 
+sip_msg_t *
+call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
+{
+    sip_msg_t *ret = NULL, *cur;
+    pthread_mutex_lock(&call->lock);
+    if (msg == NULL) {
+        // No message, no previous
+        ret = NULL;
+    } else {
+        // Get previous message
+        for (cur = call->msgs; cur; ret = cur, cur = cur->next) {
+            // If cur is the message, ret will be the previous one
+            if (cur == msg) break;
+        }
+    }
+    pthread_mutex_unlock(&call->lock);
+    return msg_parse(ret);
+}
+
 sip_call_t *
 call_get_next(sip_call_t *cur)
 {
@@ -621,8 +644,7 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             continue;
         }
         if (!strncasecmp(pch, "Content-Type: application/sdp", 29)) {
-            sprintf(value, "%s (SDP)", msg_get_attribute(msg, SIP_ATTR_METHOD));
-            msg_set_attribute(msg, SIP_ATTR_METHOD, value);
+            msg_set_attribute(msg, SIP_ATTR_SDP, "1");
             continue;
         }
     }
@@ -641,4 +663,33 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
 {
     if (!msg) return NULL;
     return sip_attr_get(msg->attrs, id);
+}
+
+int
+msg_is_retrans(sip_msg_t *msg) {
+    sip_msg_t *prev = NULL;
+    int i;
+
+    // Sanity check
+    if (!msg || !msg->call) return 0;
+
+    // Get previous message
+    prev = call_get_prev_msg(msg->call, msg);
+
+    // No previous message, this can not be a retransmission
+    if (!prev) return 0;
+
+    // Not even the same lines in playload
+    if (msg->plines != prev->plines) return 0;
+
+    // Check if they have the same payload
+    for (i=0; i < msg->plines; i++) {
+        // If any line of payload is different, this is not a retrans
+        if (strcasecmp(msg->payload[i], prev->payload[i])) {
+            return 0;
+        }
+    }
+
+    // All check passed, this package is equal to its previous
+    return 1;
 }

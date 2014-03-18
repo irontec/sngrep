@@ -298,8 +298,7 @@ filter_save_options(PANEL *panel)
             case FIELD_REGISTER:
                 set_option_value("filter.REGISTER", strlen(field_value)?"on":"off"); break;
             case FIELD_INVITE:
-                set_option_value("filter.INVITE", strlen(field_value)?"on":"off"); 
-                set_option_value("filter.INVITE (SDP)", strlen(field_value)?"on":"off"); break;
+                set_option_value("filter.INVITE", strlen(field_value)?"on":"off"); break;
             case FIELD_SUBSCRIBE:
                 set_option_value("filter.SUBSCRIBE", strlen(field_value)?"on":"off"); break;
             case FIELD_NOTIFY:

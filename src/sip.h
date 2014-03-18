@@ -73,8 +73,10 @@ enum sip_attr_id
     SIP_ATTR_TIME,
     //! SIP Message Method or Response code
     SIP_ATTR_METHOD,
-    //! SIP Message
+    //! SIP Message is a request
     SIP_ATTR_REQUEST,
+    //! SIP Message has sdp
+    SIP_ATTR_SDP,
     //! SIP Call first message method
     SIP_ATTR_STARTING,
     //! SIP Call message counter
@@ -380,6 +382,19 @@ extern sip_msg_t *
 call_get_next_msg(sip_call_t *call, sip_msg_t *msg);
 
 /**
+ * @brief Finds the prev msg in a call.
+ *
+ * If the passed msg is the first message in the call
+ * this function will return NULL
+ *
+ * @param call SIP call structure
+ * @param msg Actual SIP msg from the call
+ * @return Previous chronological message in the call
+ */
+extern sip_msg_t *
+call_get_prev_msg(sip_call_t *call, sip_msg_t *msg);
+
+/**
  * @brief Get next call after applying filters and ignores
  *
  * General getter for call list. Never access calls list
@@ -483,7 +498,6 @@ msg_parse(sip_msg_t *msg);
 extern void
 msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value);
 
-
 /**
  * @brief Return a message attribute value
  *
@@ -496,5 +510,17 @@ msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value);
  */
 extern const char *
 msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id);
+
+/**
+ * @brief Check if a package is a retransmission
+ *
+ * This function will compare its payload with the previous message
+ * in the dialog, to check if it has the same content.
+ *
+ * @param msg SIP message that will be checked
+ * @return 1 if the previous message is equal to msg, 0 otherwise
+ */
+extern int
+msg_is_retrans(sip_msg_t *msg);
 
 #endif
