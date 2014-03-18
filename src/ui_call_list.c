@@ -92,11 +92,8 @@ call_list_create()
     mvwaddch(win, 7, 0, ACS_LTEE);
     mvwhline(win, 7, 1, ACS_HLINE, width - 2);
     mvwaddch(win, 7, width - 1, ACS_RTEE);
-    mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
-    mvwprintw(win, height - 2, 16, "F1: Help");
-    mvwprintw(win, height - 2, 27, "Enter/x: Call-Flow");
-    mvwprintw(win, height - 2, 48, "p: pause capture");
-    mvwprintw(win, height - 2, 67, "Space: Select dialog");
+    mvwprintw(win, height - 2, 2, "%s  %s  %s  %s  %s  %s",
+        "F1:Help", "ESC:Quit", "Enter/x:Callf-Flow", "P:Pause", "Space:Select", "F:Filter");
 
     // Draw columns titles
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
@@ -351,9 +348,11 @@ call_list_help(PANEL *panel)
 {
     WINDOW *help_win;
     PANEL *help_panel;
+    int height, width;
 
     // Create a new panel and show centered
-    help_win = newwin(21, 65, (LINES - 21) / 2, (COLS - 65) / 2);
+    height = 22; width = 65;
+    help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
 
     // Set the window title
@@ -362,18 +361,18 @@ call_list_help(PANEL *panel)
     // Write border and boxes around the window
     wattron(help_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
     box(help_win, 0, 0);
-    mvwhline(help_win, 2, 1, ACS_HLINE, 63);
-    mvwhline(help_win, 7, 1, ACS_HLINE, 63);
-    mvwhline(help_win, 18, 1, ACS_HLINE, 63);
+    mvwhline(help_win, 2, 1, ACS_HLINE, width-2);
+    mvwhline(help_win, 7, 1, ACS_HLINE, width-2);
+    mvwhline(help_win, height-3, 1, ACS_HLINE, width-2);
     mvwaddch(help_win, 2, 0, ACS_LTEE);
     mvwaddch(help_win, 7, 0, ACS_LTEE);
-    mvwaddch(help_win, 18, 0, ACS_LTEE);
+    mvwaddch(help_win, height-3, 0, ACS_LTEE);
     mvwaddch(help_win, 2, 64, ACS_RTEE);
     mvwaddch(help_win, 7, 64, ACS_RTEE);
-    mvwaddch(help_win, 18, 64, ACS_RTEE);
+    mvwaddch(help_win, height-3, 64, ACS_RTEE);
 
     // Set the window footer (nice blue?)
-    mvwprintw(help_win, 19, 20, "Press any key to continue");
+    mvwprintw(help_win, height-2, 20, "Press any key to continue");
 
     // Some brief explanation abotu what window shows
     wattron(help_win, COLOR_PAIR(HELP_COLOR));
@@ -393,6 +392,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 15, 2, "x           Show selected call-flow (Extended) if available.");
     mvwprintw(help_win, 16, 2, "r           Show selected call messages in raw mode.");
     mvwprintw(help_win, 17, 2, "p           Pause. Stop capturing packages");
+    mvwprintw(help_win, 18, 2, "F           Show filter options");
 
     // Press any key to close
     wgetch(help_win);

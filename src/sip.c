@@ -197,11 +197,11 @@ sip_load_message(const char *header, const char *payload)
         // Only create a new call if the first msg
         // is a request message in the following gorup
         if (get_option_int_value("sip.ignoreincomplete")) {
-            const char *method = msg_get_attribute(msg, SIP_ATTR_METHOD);
-            if (method && strcasecmp(method, "INVITE")
-                && strcasecmp(method, "REGISTER") && strcasecmp(method, "SUBSCRIBE")
-                && strcasecmp(method, "OPTIONS") && strcasecmp(method, "PUBLISH")
-                && strcasecmp(method, "MESSAGE") && strcasecmp(method, "NOTIFY")){
+            const char *method = msg_get_attribute(msg_parse(msg), SIP_ATTR_METHOD);
+            if (method && strncasecmp(method, "INVITE", 6)
+                && strncasecmp(method, "REGISTER", 8) && strncasecmp(method, "SUBSCRIBE", 9)
+                && strncasecmp(method, "OPTIONS", 7) && strncasecmp(method, "PUBLISH", 7)
+                && strncasecmp(method, "MESSAGE", 7) && strncasecmp(method, "NOTIFY", 6)){
                 //@todo sip_msg_destroy();
                 return NULL;
             }
