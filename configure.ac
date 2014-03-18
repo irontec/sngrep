@@ -14,8 +14,8 @@ AC_ARG_ENABLE(debug,
     enable_debug=$enableval, enable_debug=no)
 
 if test "$enable_debug" = "yes" ; then
-    CFLAGS="$CFLAGS  -g -O0 -Wall -Werror -Wno-uninitialized"
-    CXXFLAGS="$CXXFLAGS -g -O0 -Wall -Werror -Wno-uninitialized"
+    CFLAGS="$CFLAGS  -g -O0 -Wall -Werror -Wno-unused-but-set-variable"
+    CXXFLAGS="$CXXFLAGS $CFLAGS"
 fi
 
 # Minimum checks for a C program :)
@@ -54,7 +54,11 @@ AC_CHECK_LIB([ncurses], [initscr], [], [
 ])
 
 AC_CHECK_LIB([panel], [new_panel], [], [
-    AC_MSG_ERROR([ You need to have libpanel installed to compile sngrep.])
+    AC_MSG_ERROR([ You need to have ncurses panel library installed to compile sngrep.])
+])
+
+AC_CHECK_LIB([form], [new_form], [], [
+    AC_MSG_ERROR([ You need to have ncurses forms library installed to compile sngrep.])
 ])
 
 AC_CHECK_LIB([pthread], [pthread_create], [], [

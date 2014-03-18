@@ -64,7 +64,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_sngrep_OBJECTS = exec.$(OBJEXT) spcap.$(OBJEXT) sip.$(OBJEXT) \
 	main.$(OBJEXT) option.$(OBJEXT) group.$(OBJEXT) \
 	ui_manager.$(OBJEXT) ui_call_list.$(OBJEXT) \
-	ui_call_flow.$(OBJEXT) ui_call_raw.$(OBJEXT)
+	ui_call_flow.$(OBJEXT) ui_call_raw.$(OBJEXT) \
+	ui_filter.$(OBJEXT)
 sngrep_OBJECTS = $(am_sngrep_OBJECTS)
 sngrep_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -191,7 +192,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-sngrep_SOURCES = exec.c spcap.c sip.c main.c option.c group.c ui_manager.c ui_call_list.c ui_call_flow.c ui_call_raw.c 
+sngrep_SOURCES = exec.c spcap.c sip.c main.c option.c group.c ui_manager.c ui_call_list.c ui_call_flow.c ui_call_raw.c ui_filter.c
 all: all-am
 
 .SUFFIXES:
@@ -285,6 +286,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_call_flow.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_call_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_call_raw.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_filter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_manager.Po@am__quote@
 
 .c.o:

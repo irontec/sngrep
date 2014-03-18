@@ -160,7 +160,7 @@ call_raw_handle_key(PANEL *panel, int key)
             call_raw_handle_key(panel, KEY_UP);
         break;
     default:
-        return -1;
+        return key;
     }
     return 0;
 }

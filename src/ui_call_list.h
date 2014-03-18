@@ -136,7 +136,7 @@ call_list_draw(PANEL *panel);
  *
  * @param panel Ncurses panel pointer
  * @param key Pressed keycode
- * @return 0 if the function can handle the key, -1 otherwise
+ * @return 0 if the function can handle the key, key otherwise
  */
 extern int
 call_list_handle_key(PANEL *panel, int key);
@@ -162,12 +162,11 @@ call_list_help(PANEL *panel);
  * The default button can be configured using option 
  * cl.defexitbutton (default 1, that means yes)
  *
- * @param panel Ncurses panel pointer
- * @return 0 if user selects yes, 1 otherwise
+ * @param panel Call list panel pointer
+ * @return 27 if user confirmed exit, 0 otherwise
  */
 extern int
 call_list_exit_confirm(PANEL *panel);
-
 
 /**
  * @brief Add a column the Call List
@@ -184,5 +183,17 @@ call_list_exit_confirm(PANEL *panel);
  */
 extern int
 call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title, int width);
+
+/**
+ * @brief Update list information after a filter has been set
+ *
+ * This function is called after showing the filter dialog (@see ui_filter.h)
+ * and resets the displayed information to force a new call list
+ * load.
+ *  
+ * @param panel Call list panel pointer
+ */
+extern void
+call_list_filter_update(PANEL *panel);
 
 #endif

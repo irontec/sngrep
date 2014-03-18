@@ -72,7 +72,7 @@ int
 main(int argc, char* argv[])
 {
 
-    int ret;
+    int ret = 0;
     //! ngrep thread attributes
     pthread_attr_t attr;
     //! ngrep running thread

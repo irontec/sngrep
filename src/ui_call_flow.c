@@ -435,7 +435,7 @@ call_flow_handle_key(PANEL *panel, int key)
         wait_for_input(next_panel);
         break;
     default:
-        return -1;
+        return key;
     }
 
     return 0;

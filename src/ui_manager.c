@@ -31,6 +31,7 @@
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
+#include "ui_filter.h"
 
 /**
  * @brief Warranty thread-safe ui refresh
@@ -74,7 +75,13 @@ static ui_t panel_pool[] = {
         .create = call_raw_create,
         .redraw_required = call_raw_redraw_required,
         .draw = call_raw_draw,
-        .handle_key = call_raw_handle_key, } };
+        .handle_key = call_raw_handle_key, },
+    {
+        .type = FILTER_PANEL,
+        .panel = NULL,
+        .create = filter_create,
+        .handle_key = filter_handle_key,
+        .destroy = filter_destroy}, };
 
 int
 init_interface()
@@ -142,7 +149,7 @@ ui_get_panel(ui_t *ui)
 int
 ui_redraw_required(ui_t *ui, sip_msg_t *msg)
 {
-    int ret = -1;
+    int ret = 0;
     //! Sanity check, this should not happen
     if (!ui) return -1;
     pthread_mutex_lock(&ui->lock);
@@ -171,16 +178,16 @@ ui_draw_panel(ui_t *ui)
 
     // Request the panel to draw on the scren
     if (ui->draw) {
-        if (ui->draw(ui_get_panel(ui)) == 0) {
-            // Update panel stack
-            update_panels();
-            doupdate();
+        if (ui->draw(ui_get_panel(ui)) != 0) {
             pthread_mutex_unlock(&ui->lock);
-            return 0;
+            return -1;
         }
     }
+    // Update panel stack
+    update_panels();
+    doupdate();
     pthread_mutex_unlock(&ui->lock);
-    return -1;
+    return 0;
 }
 
 void
@@ -253,7 +260,7 @@ wait_for_input(ui_t *ui)
         int c = wgetch(win);
 
         // Check if current panel has custom bindings for that key
-        if (ui_handle_key(ui, c) == 0) continue;
+        if ((c = ui_handle_key(ui, c)) == 0) continue;
 
         // Otherwise, use standard keybindings
         switch (c) {
@@ -264,6 +271,10 @@ wait_for_input(ui_t *ui)
             break;
         case 'C':
             set_option_value("color.callid", is_option_enabled("color.callid") ? "off" : "on");
+            break;
+        case 'p':
+            // Toggle capture option
+            toggle_option("sip.capture");
             break;
         case 'h':
         case 265: /* KEY_F1 */

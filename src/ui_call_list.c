@@ -94,10 +94,9 @@ call_list_create()
     mvwaddch(win, 7, width - 1, ACS_RTEE);
     mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
     mvwprintw(win, height - 2, 16, "F1: Help");
-    mvwprintw(win, height - 2, 27, "x: Call-Flow Extended");
-    mvwprintw(win, height - 2, 52, "r: Call Raw");
-    mvwprintw(win, height - 2, 67, "c: Colours");
-    mvwprintw(win, height - 2, 80, "Space: Select dialog");
+    mvwprintw(win, height - 2, 27, "Enter/x: Call-Flow");
+    mvwprintw(win, height - 2, 48, "p: pause capture");
+    mvwprintw(win, height - 2, 67, "Space: Select dialog");
 
     // Draw columns titles
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
@@ -147,6 +146,13 @@ call_list_draw(PANEL *panel)
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     if (!info) return -1;
 
+    // Get window of call list panel
+    WINDOW *win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Print in the header if we're actually capturing
+    mvwprintw(win, 3, 23, "%s", is_option_enabled("sip.capture")?"          ":"(Paused)");
+    
     // Get available calls counter (we'll use it here a couple of times)
     if (!(callcnt = sip_calls_count())) return 0;
 
@@ -155,10 +161,6 @@ call_list_draw(PANEL *panel)
         info->cur_call = info->first_call = call_get_next(NULL);
         info->cur_line = info->first_line = 1;
     }
-
-    // Get window of call list panel
-    WINDOW *win = panel_window(panel);
-    getmaxyx(win, height, width);
 
     // Fill the call list
     int cline = startline;
@@ -303,7 +305,7 @@ call_list_handle_key(PANEL *panel, int key)
         break;
     case 'r':
     case 'R':
-        // KEY_X , Display current call flow (extended)
+        // KEY_R , Display current call flow (extended)
         next_panel = ui_create(ui_find_by_type(RAW_PANEL));
         if (info->group->callcnt) {
             group = info->group;
@@ -315,6 +317,13 @@ call_list_handle_key(PANEL *panel, int key)
         call_raw_set_group(group);
         wait_for_input(next_panel);
         break;
+    case 'f':
+    case 'F':
+        // KEY_F, Display filter panel
+        next_panel = ui_create(ui_find_by_type(FILTER_PANEL));
+        wait_for_input(next_panel); 
+        call_list_filter_update(panel);
+       break;
     case ' ':
         if (!info->cur_call) return -1;
         if (call_group_exists(info->group, info->cur_call)) {
@@ -331,7 +340,7 @@ call_list_handle_key(PANEL *panel, int key)
         }
         break;
     default:
-        return -1;
+        return key;
     }
 
     return 0;
@@ -344,7 +353,7 @@ call_list_help(PANEL *panel)
     PANEL *help_panel;
 
     // Create a new panel and show centered
-    help_win = newwin(20, 65, (LINES - 20) / 2, (COLS - 65) / 2);
+    help_win = newwin(21, 65, (LINES - 21) / 2, (COLS - 65) / 2);
     help_panel = new_panel(help_win);
 
     // Set the window title
@@ -355,16 +364,16 @@ call_list_help(PANEL *panel)
     box(help_win, 0, 0);
     mvwhline(help_win, 2, 1, ACS_HLINE, 63);
     mvwhline(help_win, 7, 1, ACS_HLINE, 63);
-    mvwhline(help_win, 17, 1, ACS_HLINE, 63);
+    mvwhline(help_win, 18, 1, ACS_HLINE, 63);
     mvwaddch(help_win, 2, 0, ACS_LTEE);
     mvwaddch(help_win, 7, 0, ACS_LTEE);
-    mvwaddch(help_win, 17, 0, ACS_LTEE);
+    mvwaddch(help_win, 18, 0, ACS_LTEE);
     mvwaddch(help_win, 2, 64, ACS_RTEE);
     mvwaddch(help_win, 7, 64, ACS_RTEE);
-    mvwaddch(help_win, 17, 64, ACS_RTEE);
+    mvwaddch(help_win, 18, 64, ACS_RTEE);
 
     // Set the window footer (nice blue?)
-    mvwprintw(help_win, 18, 20, "Press any key to continue");
+    mvwprintw(help_win, 19, 20, "Press any key to continue");
 
     // Some brief explanation abotu what window shows
     wattron(help_win, COLOR_PAIR(HELP_COLOR));
@@ -383,6 +392,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 14, 2, "Enter       Show selected call-flow.");
     mvwprintw(help_win, 15, 2, "x           Show selected call-flow (Extended) if available.");
     mvwprintw(help_win, 16, 2, "r           Show selected call messages in raw mode.");
+    mvwprintw(help_win, 17, 2, "p           Pause. Stop capturing packages");
 
     // Press any key to close
     wgetch(help_win);
@@ -448,9 +458,9 @@ call_list_exit_confirm(PANEL *panel)
             exit = (exit)?0:1;
             break;
         case 10:
-            // If we return 1, we let ui_manager to handle this
+            // If we return ESC, we let ui_manager to handle this
             // key and exit sngrep gracefully
-            return exit;
+            return (exit)?27:0;
         }
     }
 
@@ -470,4 +480,34 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
     info->columns[info->columncnt].width = width;
     info->columncnt++;
     return 0;
+}
+
+void
+call_list_filter_update(PANEL *panel)
+{
+    
+    WINDOW *win = panel_window(panel);
+    int height, width, i, startline = 8;
+
+    // Get panel info 
+    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    if (!info) return;
+
+    // Initialize structures
+    info->first_call = info->cur_call = NULL;
+    info->first_line = info->cur_line = 0;
+    info->group->callcnt = 0;
+
+    // Get Window dimensions
+    getmaxyx(win, height, width);
+
+    // Clear Displayed lines
+    for (i=0; i < info->linescnt; i++) {
+       mvwprintw(win, startline++, 5, "%*s", width - 6, ""); 
+    }    
+ 
+    // Print filter info
+    mvwprintw(win, 4, 2, "%*s", width - 4, "");
+    if (is_option_enabled("filter.enable"))
+        mvwprintw(win, 4, 2, "%s", "Display filter: TODO");
 }

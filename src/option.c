@@ -75,6 +75,20 @@ init_options()
     // Allow dialogs to be incomplete
     set_option_value("sip.ignoreincomlete", "0");
 
+    // Toggle capture
+    set_option_value("sip.capture", "on");
+
+    // Set default filter options
+    set_option_value("filter.enable", "off");
+    set_option_value("filter.REGISTER", "on");
+    set_option_value("filter.INVITE", "on");
+    set_option_value("filter.INVITE (SDP)", "on");
+    set_option_value("filter.SUBSCRIBE", "on");
+    set_option_value("filter.NOTIFY", "on");
+    set_option_value("filter.OPTIONS", "on");
+    set_option_value("filter.PUBLISH", "on");
+    set_option_value("filter.MESSAGE", "on");
+
     // Read options from configuration files
     read_options("/etc/sngreprc");
     read_options("/usr/local/etc/sngreprc");
@@ -150,12 +164,12 @@ set_option_value(const char *opt, const char *value)
     if (!get_option_value(opt)) {
         options[optscnt].type = SETTING;
         options[optscnt].opt = opt;
-        options[optscnt].value = value;
+        options[optscnt].value = strdup(value);
         optscnt++;
     } else {
         for (i = 0; i < optscnt; i++) {
             if (!strcasecmp(opt, options[i].opt)) {
-                options[i].value = value;
+                options[i].value = strdup(value);
             }
         }
     }

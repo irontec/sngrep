@@ -132,7 +132,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
  *
  * @param panel Ncurses panel pointer
  * @param key Pressed keycode
- * @return 0 if the function can handle the key, -1 otherwise
+ * @return 0 if the function can handle the key, key otherwise
  */
 extern int
 call_flow_handle_key(PANEL *panel, int key);

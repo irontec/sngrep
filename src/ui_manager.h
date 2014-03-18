@@ -124,6 +124,8 @@ enum panel_types
     DETAILS_PANEL,
     //! Raw SIP messages ui screen
     RAW_PANEL,
+    //! Filters panel
+    FILTER_PANEL, 
 };
 
 /**
