@@ -259,9 +259,10 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     mvwprintw(win, cline, 2, "%s", msg_time);
 
     // Get Message method (include extra info)
-    sprintf(method, "%s\0", msg_method);
+    memset(method, 0, sizeof(method));
+    sprintf(method, "%s", msg_method);
     if (msg_get_attribute(msg, SIP_ATTR_SDP))
-        sprintf(method, "%s (SDP)\0", method);
+        sprintf(method, "%s (SDP)", method);
 
     // Draw message type or status and line
     int msglen = strlen(method);

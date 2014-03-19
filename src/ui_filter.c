@@ -20,13 +20,10 @@
  **
  ****************************************************************************/
 /**
- * @file ui_call_raw.c
+ * @file ui_filter.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in ui_call_raw.h
- *
- * @todo Code help screen. Please.
- * @todo Replace the panel refresh. Wclear sucks on high latency conections.
+ * @brief Source of functions defined in ui_filter.h
  *
  */
 #include <string.h>
@@ -61,43 +58,43 @@ filter_create()
     set_panel_userptr(panel, (void*) info);
 
     // Initialize the fields
-    info->fields[FIELD_ENABLE]      = new_field(1, 1, 3, 19, 0, 0);
-    info->fields[FIELD_SIPFROM]     = new_field(1, 28, 5, 18, 0, 0);
-    info->fields[FIELD_SIPTO]       = new_field(1, 28, 6, 18, 0, 0);
-    info->fields[FIELD_SRC]         = new_field(1, 18, 7, 18, 0, 0);
-    info->fields[FIELD_DST]         = new_field(1, 18, 8, 18, 0, 0);
-    info->fields[FIELD_REGISTER]    = new_field(1, 1, 10, 15, 0, 0);
-    info->fields[FIELD_INVITE]      = new_field(1, 1, 11, 15, 0, 0);
-    info->fields[FIELD_SUBSCRIBE]   = new_field(1, 1, 12, 15, 0, 0);
-    info->fields[FIELD_NOTIFY]      = new_field(1, 1, 13, 15, 0, 0);
-    info->fields[FIELD_OPTIONS]     = new_field(1, 1, 10, 37, 0, 0);
-    info->fields[FIELD_PUBLISH]     = new_field(1, 1, 11, 37, 0, 0);
-    info->fields[FIELD_MESSAGE]     = new_field(1, 1, 12, 37, 0, 0);
-    info->fields[FIELD_FILTER]      = new_field(1, 10, height - 2, 11, 0, 0);
-    info->fields[FIELD_CANCEL]      = new_field(1, 10, height - 2, 30, 0, 0);
-    info->fields[FIELD_COUNT]       = NULL;
+    info->fields[FLD_FILTER_ENABLE]      = new_field(1, 1, 3, 19, 0, 0);
+    info->fields[FLD_FILTER_SIPFROM]     = new_field(1, 28, 5, 18, 0, 0);
+    info->fields[FLD_FILTER_SIPTO]       = new_field(1, 28, 6, 18, 0, 0);
+    info->fields[FLD_FILTER_SRC]         = new_field(1, 18, 7, 18, 0, 0);
+    info->fields[FLD_FILTER_DST]         = new_field(1, 18, 8, 18, 0, 0);
+    info->fields[FLD_FILTER_REGISTER]    = new_field(1, 1, 10, 15, 0, 0);
+    info->fields[FLD_FILTER_INVITE]      = new_field(1, 1, 11, 15, 0, 0);
+    info->fields[FLD_FILTER_SUBSCRIBE]   = new_field(1, 1, 12, 15, 0, 0);
+    info->fields[FLD_FILTER_NOTIFY]      = new_field(1, 1, 13, 15, 0, 0);
+    info->fields[FLD_FILTER_OPTIONS]     = new_field(1, 1, 10, 37, 0, 0);
+    info->fields[FLD_FILTER_PUBLISH]     = new_field(1, 1, 11, 37, 0, 0);
+    info->fields[FLD_FILTER_MESSAGE]     = new_field(1, 1, 12, 37, 0, 0);
+    info->fields[FLD_FILTER_FILTER]      = new_field(1, 10, height - 2, 11, 0, 0);
+    info->fields[FLD_FILTER_CANCEL]      = new_field(1, 10, height - 2, 30, 0, 0);
+    info->fields[FLD_FILTER_COUNT]       = NULL;
 
     // Set fields options
-    field_opts_off(info->fields[FIELD_ENABLE],  O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_SIPFROM], O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_SIPTO],   O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_SRC],     O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_DST],     O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_REGISTER], O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_INVITE],  O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_SUBSCRIBE], O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_NOTIFY],  O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_OPTIONS], O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_PUBLISH], O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_MESSAGE], O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_FILTER],  O_EDIT);
-    field_opts_off(info->fields[FIELD_CANCEL],  O_EDIT);
+    field_opts_off(info->fields[FLD_FILTER_ENABLE],  O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_SIPFROM], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_SIPTO],   O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_SRC],     O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_DST],     O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_REGISTER], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_INVITE],  O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_SUBSCRIBE], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_NOTIFY],  O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_OPTIONS], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_PUBLISH], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_MESSAGE], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_FILTER],  O_EDIT);
+    field_opts_off(info->fields[FLD_FILTER_CANCEL],  O_EDIT);
 
     // Change background of input fields
-    set_field_back(info->fields[FIELD_SIPFROM], A_UNDERLINE);
-    set_field_back(info->fields[FIELD_SIPTO],   A_UNDERLINE);
-    set_field_back(info->fields[FIELD_SRC],     A_UNDERLINE);
-    set_field_back(info->fields[FIELD_DST],     A_UNDERLINE);
+    set_field_back(info->fields[FLD_FILTER_SIPFROM], A_UNDERLINE);
+    set_field_back(info->fields[FLD_FILTER_SIPTO],   A_UNDERLINE);
+    set_field_back(info->fields[FLD_FILTER_SRC],     A_UNDERLINE);
+    set_field_back(info->fields[FLD_FILTER_DST],     A_UNDERLINE);
 
     // Create the form and post it
     info->form = new_form(info->fields);
@@ -119,20 +116,20 @@ filter_create()
     mvwprintw(win, 12, 25, "MESSAGE    [ ]");
 
     // Set Default field values
-    set_field_buffer(info->fields[FIELD_ENABLE],    0, "*");
-    set_field_buffer(info->fields[FIELD_SIPFROM],   0, get_option_value("filter.sipfrom"));
-    set_field_buffer(info->fields[FIELD_SIPTO],     0, get_option_value("filter.sipto"));
-    set_field_buffer(info->fields[FIELD_SRC],       0, get_option_value("filter.src"));
-    set_field_buffer(info->fields[FIELD_DST],       0, get_option_value("filter.dst"));
-    set_field_buffer(info->fields[FIELD_REGISTER],  0, is_option_enabled("filter.REGISTER")?"*":"");
-    set_field_buffer(info->fields[FIELD_INVITE],    0, is_option_enabled("filter.INVITE")?"*":"");
-    set_field_buffer(info->fields[FIELD_SUBSCRIBE], 0, is_option_enabled("filter.SUBSCRIBE")?"*":"");
-    set_field_buffer(info->fields[FIELD_NOTIFY],    0, is_option_enabled("filter.NOTIFY")?"*":"");
-    set_field_buffer(info->fields[FIELD_OPTIONS],   0, is_option_enabled("filter.OPTIONS")?"*":"");
-    set_field_buffer(info->fields[FIELD_PUBLISH],   0, is_option_enabled("filter.PUBLISH")?"*":"");
-    set_field_buffer(info->fields[FIELD_MESSAGE],   0, is_option_enabled("filter.MESSAGE")?"*":"");
-    set_field_buffer(info->fields[FIELD_FILTER],    0, "[ Filter ]");
-    set_field_buffer(info->fields[FIELD_CANCEL],    0, "[ Cancel ]");
+    set_field_buffer(info->fields[FLD_FILTER_ENABLE],    0, "*");
+    set_field_buffer(info->fields[FLD_FILTER_SIPFROM],   0, get_option_value("filter.sipfrom"));
+    set_field_buffer(info->fields[FLD_FILTER_SIPTO],     0, get_option_value("filter.sipto"));
+    set_field_buffer(info->fields[FLD_FILTER_SRC],       0, get_option_value("filter.src"));
+    set_field_buffer(info->fields[FLD_FILTER_DST],       0, get_option_value("filter.dst"));
+    set_field_buffer(info->fields[FLD_FILTER_REGISTER],  0, is_option_enabled("filter.REGISTER")?"*":"");
+    set_field_buffer(info->fields[FLD_FILTER_INVITE],    0, is_option_enabled("filter.INVITE")?"*":"");
+    set_field_buffer(info->fields[FLD_FILTER_SUBSCRIBE], 0, is_option_enabled("filter.SUBSCRIBE")?"*":"");
+    set_field_buffer(info->fields[FLD_FILTER_NOTIFY],    0, is_option_enabled("filter.NOTIFY")?"*":"");
+    set_field_buffer(info->fields[FLD_FILTER_OPTIONS],   0, is_option_enabled("filter.OPTIONS")?"*":"");
+    set_field_buffer(info->fields[FLD_FILTER_PUBLISH],   0, is_option_enabled("filter.PUBLISH")?"*":"");
+    set_field_buffer(info->fields[FLD_FILTER_MESSAGE],   0, is_option_enabled("filter.MESSAGE")?"*":"");
+    set_field_buffer(info->fields[FLD_FILTER_FILTER],    0, "[ Filter ]");
+    set_field_buffer(info->fields[FLD_FILTER_CANCEL],    0, "[ Cancel ]");
 
     // Set the window title and boxes
     mvwprintw(win, 1, 18, "Filter options");
@@ -147,7 +144,7 @@ filter_create()
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
     // Set default cursor position
-    set_current_field(info->form, info->fields[FIELD_SIPFROM]);
+    set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);
     wmove(win, 5, 18);
     curs_set(1);
 
@@ -213,14 +210,14 @@ filter_handle_key(PANEL *panel, int key)
         break;
     case ' ':
         switch(field_idx) {
-        case FIELD_ENABLE:
-        case FIELD_REGISTER:
-        case FIELD_INVITE:
-        case FIELD_SUBSCRIBE:
-        case FIELD_NOTIFY:
-        case FIELD_OPTIONS:
-        case FIELD_PUBLISH:
-        case FIELD_MESSAGE:
+        case FLD_FILTER_ENABLE:
+        case FLD_FILTER_REGISTER:
+        case FLD_FILTER_INVITE:
+        case FLD_FILTER_SUBSCRIBE:
+        case FLD_FILTER_NOTIFY:
+        case FLD_FILTER_OPTIONS:
+        case FLD_FILTER_PUBLISH:
+        case FLD_FILTER_MESSAGE:
             if (field_value[0] == '*') {
                 form_driver(info->form, REQ_DEL_CHAR);
             } else {
@@ -234,16 +231,16 @@ filter_handle_key(PANEL *panel, int key)
         }
         break;
     case 10:    /* KEY_ENTER */
-        if (field_idx != FIELD_CANCEL)
+        if (field_idx != FLD_FILTER_CANCEL)
             filter_save_options(panel);
         return 27;
     default:
         // If this is a normal character on input field, print it
         switch(field_idx) {
-            case FIELD_SIPFROM:
-            case FIELD_SIPTO:
-            case FIELD_SRC:
-            case FIELD_DST:
+            case FLD_FILTER_SIPFROM:
+            case FLD_FILTER_SIPTO:
+            case FLD_FILTER_SRC:
+            case FLD_FILTER_DST:
                 form_driver(info->form, key);
                 break;
         }
@@ -254,13 +251,13 @@ filter_handle_key(PANEL *panel, int key)
     form_driver(info->form, REQ_VALIDATION);
 
     // Change background and cursor of "button fields"
-    set_field_back(info->fields[FIELD_FILTER], A_NORMAL);
-    set_field_back(info->fields[FIELD_CANCEL], A_NORMAL);
+    set_field_back(info->fields[FLD_FILTER_FILTER], A_NORMAL);
+    set_field_back(info->fields[FLD_FILTER_CANCEL], A_NORMAL);
     curs_set(1);
 
     // Change current field background
     field_idx = field_index(current_field(info->form));
-    if (field_idx == FIELD_FILTER || field_idx == FIELD_CANCEL) {
+    if (field_idx == FLD_FILTER_FILTER || field_idx == FLD_FILTER_CANCEL) {
         set_field_back(info->fields[field_idx], A_REVERSE);
         curs_set(0);
     }
@@ -277,7 +274,7 @@ filter_save_options(PANEL *panel)
     // Get panel information
     filter_info_t *info = (filter_info_t*) panel_userptr(panel);
 
-    for (i = 0; i < FIELD_COUNT; i++) {
+    for (i = 0; i < FLD_FILTER_COUNT; i++) {
         // Get current field value.
         // We trim spaces with sscanf because and empty field is stored as
         // space characters
@@ -285,29 +282,29 @@ filter_save_options(PANEL *panel)
         sscanf(field_buffer(info->fields[i], 0), "%[^ ]", field_value);
 
         switch(i) {
-            case FIELD_ENABLE:
+            case FLD_FILTER_ENABLE:
                 set_option_value("filter.enable", strlen(field_value)?"on":"off"); break;
-            case FIELD_SIPFROM:
+            case FLD_FILTER_SIPFROM:
                 set_option_value("filter.sipfrom", field_value); break;
-            case FIELD_SIPTO:
+            case FLD_FILTER_SIPTO:
                 set_option_value("filter.sipto", field_value); break;
-            case FIELD_SRC:
+            case FLD_FILTER_SRC:
                 set_option_value("filter.src", field_value); break;
-            case FIELD_DST:
+            case FLD_FILTER_DST:
                 set_option_value("filter.dst", field_value); break;
-            case FIELD_REGISTER:
+            case FLD_FILTER_REGISTER:
                 set_option_value("filter.REGISTER", strlen(field_value)?"on":"off"); break;
-            case FIELD_INVITE:
+            case FLD_FILTER_INVITE:
                 set_option_value("filter.INVITE", strlen(field_value)?"on":"off"); break;
-            case FIELD_SUBSCRIBE:
+            case FLD_FILTER_SUBSCRIBE:
                 set_option_value("filter.SUBSCRIBE", strlen(field_value)?"on":"off"); break;
-            case FIELD_NOTIFY:
+            case FLD_FILTER_NOTIFY:
                 set_option_value("filter.NOTIFY", strlen(field_value)?"on":"off"); break;
-            case FIELD_OPTIONS:
+            case FLD_FILTER_OPTIONS:
                 set_option_value("filter.OPTIONS", strlen(field_value)?"on":"off"); break;
-            case FIELD_PUBLISH:
+            case FLD_FILTER_PUBLISH:
                 set_option_value("filter.PUBLISH", strlen(field_value)?"on":"off"); break;
-            case FIELD_MESSAGE:
+            case FLD_FILTER_MESSAGE:
                 set_option_value("filter.MESSAGE", strlen(field_value)?"on":"off"); break;
             default:
                 break;

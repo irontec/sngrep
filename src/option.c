@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "option.h"
 
 /**
@@ -82,9 +83,10 @@ init_options()
     set_option_value("sip.capture", "on");
 
     // Set default temporal file
-    sprintf(tmpfile, "/tmp/sngrep-%u-XXXXXX", (unsigned)time());
+    sprintf(tmpfile, "/tmp/sngrep-%u-XXXXXX", (unsigned)time(NULL));
     set_option_value("sngrep.tmpfile", mktemp(tmpfile));
-    set_option_value("sngpre.keeptmpfile", "off");
+    set_option_value("sngrep.keeptmpfile", "off");
+    set_option_value("sngrep.savepath", getenv("HOME"));
 
     // Set default filter options
     set_option_value("filter.enable",   "off");

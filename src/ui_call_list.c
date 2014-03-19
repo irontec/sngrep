@@ -92,8 +92,14 @@ call_list_create()
     mvwaddch(win, 7, 0, ACS_LTEE);
     mvwhline(win, 7, 1, ACS_HLINE, width - 2);
     mvwaddch(win, 7, width - 1, ACS_RTEE);
-    mvwprintw(win, height - 2, 2, "%s  %s  %s  %s  %s  %s",
-        "F1:Help", "ESC:Quit", "Enter/x:Callf-Flow", "P:Pause", "Space:Select", "F:Filter");
+    mvwprintw(win, height - 2, 2, "%s  %s  %s  %s  %s  %s  %s",
+        "F1:Help",
+        "ESC:Quit",
+        "Enter/x:Callf-Flow",
+        "P:Pause",
+        "Space:Select",
+        "F:Filter",
+        "S:Save");
 
     // Draw columns titles
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
@@ -320,7 +326,15 @@ call_list_handle_key(PANEL *panel, int key)
         next_panel = ui_create(ui_find_by_type(FILTER_PANEL));
         wait_for_input(next_panel);
         call_list_filter_update(panel);
-       break;
+        break;
+    case 's':
+    case 'S':
+        if (!is_option_disabled("sngrep.tmpfile")) {
+            // KEY_S, Display save panel
+            next_panel = ui_create(ui_find_by_type(SAVE_PANEL));
+            wait_for_input(next_panel);
+        }
+        break;
     case ' ':
         if (!info->cur_call) return -1;
         if (call_group_exists(info->group, info->cur_call)) {

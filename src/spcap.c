@@ -36,10 +36,13 @@
  */
 #include "spcap.h"
 #include "sip.h"
+#include "option.h"
 #include "ui_manager.h"
 
 //! FIXME Link type
 int linktype;
+//! FIXME Pointer to the dump file
+pcap_dumper_t *pd = NULL;
 
 #ifndef WITH_NGREP
 
@@ -63,10 +66,8 @@ online_capture(void *pargv)
     bpf_u_int32 mask;
     //! The IP of our sniffing device
     bpf_u_int32 net;
-    //! Pointer to the dump file
-    pcap_dumper_t *pd;
-
     //! Build the filter options
+    memset(filter_exp, 0, sizeof(filter_exp));
     while (argv[argc]) {
         sprintf(filter_exp, "%s %s", filter_exp, argv[argc++]);
     }
@@ -89,10 +90,12 @@ online_capture(void *pargv)
         fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
         return 2;
     }
-    if ((pd = pcap_dump_open(handle, get_option_value("sngrep.tmpfile"))) == NULL) {
-        fprintf(stderr, "Couldn't open temporal dump file %s: %s\n",
-            get_option_value("sngrep.tmpfile"), pcap_geterr(handle));
-        return 2;
+    if (!is_option_disabled("sngrep.tmpfile")) {
+        if ((pd = pcap_dump_open(handle, get_option_value("sngrep.tmpfile"))) == NULL) {
+            fprintf(stderr, "Couldn't open temporal dump file %s: %s\n",
+                get_option_value("sngrep.tmpfile"), pcap_geterr(handle));
+            return 2;
+        }
     }
 
     // Get datalink to parse packages correctly
@@ -100,6 +103,9 @@ online_capture(void *pargv)
 
     // Parse available packages
     pcap_loop(handle, -1, parse_packet, "Online");
+
+    // Close temporal file
+    pcap_dump_close(pd);
     // Close PCAP file
     pcap_close(handle);
 }
@@ -207,6 +213,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Parse this header and payload
     if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp((const char*)mode, "Online") ) {
         ui_new_msg_refresh(msg);
+    }
+
+    // Store this package in temporal file
+    if (pd) {
+        pcap_dump((u_char*)pd, header, packet);
+        pcap_dump_flush(pd);
     }
 }
 #endif

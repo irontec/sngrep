@@ -126,6 +126,8 @@ enum panel_types
     RAW_PANEL,
     //! Filters panel
     FILTER_PANEL,
+    //! Save to pcap panel
+    SAVE_PANEL,
 };
 
 /**

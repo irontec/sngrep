@@ -32,6 +32,7 @@
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_filter.h"
+#include "ui_save_pcap.h"
 
 /**
  * @brief Warranty thread-safe ui refresh
@@ -75,13 +76,19 @@ static ui_t panel_pool[] = {
         .create = call_raw_create,
         .redraw_required = call_raw_redraw_required,
         .draw = call_raw_draw,
-        .handle_key = call_raw_handle_key, },
+        .handle_key = call_raw_handle_key },
     {
         .type = FILTER_PANEL,
         .panel = NULL,
         .create = filter_create,
         .handle_key = filter_handle_key,
-        .destroy = filter_destroy}, };
+        .destroy = filter_destroy },
+    {
+        .type = SAVE_PANEL,
+        .panel = NULL,
+        .create = save_create,
+        .handle_key = save_handle_key,
+        .destroy = save_destroy } };
 
 int
 init_interface()

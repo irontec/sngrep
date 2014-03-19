@@ -18,9 +18,10 @@
 ## change the used file
 # set sngrep.tmpfile off
 # set sngrep.tmpfile /tmp/last-sngrep-capture.pcap
-
 ## Uncomment this to keep temporal files
 # set sngrep.keeptmpfile on
+## Default path in save dialog
+# set sngrep.savepath /tmp/sngrep-captures
 
 ##-----------------------------------------------------------------------------
 ## Change default scrolling in call list
