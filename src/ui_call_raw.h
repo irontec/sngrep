@@ -45,11 +45,9 @@ typedef struct call_raw_info call_raw_info_t;
 struct call_raw_info
 {
     sip_call_group_t *group;
-    sip_msg_t *msg;
-    int totlines;
-    int scrline;
-    int scrollpos;
-    int linescnt;
+    WINDOW *pad;
+    int padline;
+    int scroll;
 };
 
 /**

@@ -32,16 +32,16 @@
 #include <unistd.h>
 #include <errno.h>
 #include <form.h>
-#include "ui_save_pcap.h"
+#include "ui_save_raw.h"
 #include "option.h"
 
 PANEL *
-save_create()
+save_raw_create()
 {
     PANEL *panel;
     WINDOW *win;
     int height, width;
-    save_info_t *info;
+    save_raw_info_t *info;
     char savefile[128];
 
     // Calculate window dimensions
@@ -55,23 +55,23 @@ save_create()
     panel = new_panel(win);
 
     // Initialize save panel specific data
-    info = malloc(sizeof(save_info_t));
-    memset(info, 0, sizeof(save_info_t));
+    info = malloc(sizeof(save_raw_info_t));
+    memset(info, 0, sizeof(save_raw_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
 
     // Initialize the fields
-    info->fields[FLD_SAVE_FILE]     = new_field(1, 68, 3, 15, 0, 0);
-    info->fields[FLD_SAVE_SAVE]     = new_field(1, 10, height - 2, 30, 0, 0);
-    info->fields[FLD_SAVE_CANCEL]   = new_field(1, 10, height - 2, 50, 0, 0);
-    info->fields[FLD_SAVE_COUNT]    = NULL;
+    info->fields[FLD_SAVE_RAW_FILE]     = new_field(1, 68, 3, 15, 0, 0);
+    info->fields[FLD_SAVE_RAW_SAVE]     = new_field(1, 10, height - 2, 30, 0, 0);
+    info->fields[FLD_SAVE_RAW_CANCEL]   = new_field(1, 10, height - 2, 50, 0, 0);
+    info->fields[FLD_SAVE_RAW_COUNT]    = NULL;
 
     // Set fields options
-    field_opts_off(info->fields[FLD_SAVE_FILE], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_SAVE_RAW_FILE], O_AUTOSKIP);
 
     // Change background of input fields
-    set_field_back(info->fields[FLD_SAVE_FILE], A_UNDERLINE);
+    set_field_back(info->fields[FLD_SAVE_RAW_FILE], A_UNDERLINE);
 
     // Create the form and post it
     info->form = new_form(info->fields);
@@ -82,15 +82,15 @@ save_create()
     mvwprintw(win, 3, 3, "Save file:");
 
     // Set Default field values
-    sprintf(savefile, "%s/sngrep-capture-%u.pcap",
+    sprintf(savefile, "%s/sngrep-raw-%u.txt",
         get_option_value("sngrep.savepath"), (unsigned)time(NULL));
 
-    set_field_buffer(info->fields[FLD_SAVE_FILE], 0, savefile);
-    set_field_buffer(info->fields[FLD_SAVE_SAVE],      0, "[  Save  ]");
-    set_field_buffer(info->fields[FLD_SAVE_CANCEL],    0, "[ Cancel ]");
+    set_field_buffer(info->fields[FLD_SAVE_RAW_FILE], 0, savefile);
+    set_field_buffer(info->fields[FLD_SAVE_RAW_SAVE],      0, "[  Save  ]");
+    set_field_buffer(info->fields[FLD_SAVE_RAW_CANCEL],    0, "[ Cancel ]");
 
     // Set the window title and boxes
-    mvwprintw(win, 1, 32, "Save capture to file");
+    mvwprintw(win, 1, 28, "Save raw data to file");
     wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
     title_foot_box(panel_window(panel));
     mvwhline(win, height-3, 1, ACS_HLINE, width-1);
@@ -99,7 +99,7 @@ save_create()
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
     // Set default cursor position
-    set_current_field(info->form, info->fields[FLD_SAVE_FILE]);
+    set_current_field(info->form, info->fields[FLD_SAVE_RAW_FILE]);
     wmove(win, 3, 15);
     curs_set(1);
 
@@ -107,20 +107,20 @@ save_create()
 }
 
 void
-save_destroy(PANEL *panel)
+save_raw_destroy(PANEL *panel)
 {
     // Disable cursor position
     curs_set(0);
 }
 
 int
-save_handle_key(PANEL *panel, int key)
+save_raw_handle_key(PANEL *panel, int key)
 {
     int field_idx;
     char field_value[48];
 
     // Get panel information
-    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    save_raw_info_t *info = (save_raw_info_t*) panel_userptr(panel);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -164,18 +164,18 @@ save_handle_key(PANEL *panel, int key)
             form_driver(info->form, REQ_DEL_PREV);
         break;
     case 10:    /* KEY_ENTER */
-        if (field_idx != FLD_SAVE_CANCEL) {
+        if (field_idx != FLD_SAVE_RAW_CANCEL) {
             if (!strcasecmp(field_value, "")) {
-                save_error_message(panel, "Invalid filename");
+                save_raw_error_message(panel, "Invalid filename");
                 return 0;
             }
-            return save_to_file(panel);
+            return save_raw_to_file(panel);
         }
         return 27;
     default:
         // If this is a normal character on input field, print it
         switch(field_idx) {
-            case FLD_SAVE_FILE:
+            case FLD_SAVE_RAW_FILE:
                 form_driver(info->form, key);
                 break;
         }
@@ -186,13 +186,13 @@ save_handle_key(PANEL *panel, int key)
     form_driver(info->form, REQ_VALIDATION);
 
     // Change background and cursor of "button fields"
-    set_field_back(info->fields[FLD_SAVE_SAVE], A_NORMAL);
-    set_field_back(info->fields[FLD_SAVE_CANCEL], A_NORMAL);
+    set_field_back(info->fields[FLD_SAVE_RAW_SAVE], A_NORMAL);
+    set_field_back(info->fields[FLD_SAVE_RAW_CANCEL], A_NORMAL);
     curs_set(1);
 
     // Change current field background
     field_idx = field_index(current_field(info->form));
-    if (field_idx == FLD_SAVE_SAVE || field_idx == FLD_SAVE_CANCEL) {
+    if (field_idx == FLD_SAVE_RAW_SAVE || field_idx == FLD_SAVE_RAW_CANCEL) {
         set_field_back(info->fields[field_idx], A_REVERSE);
         curs_set(0);
     }
@@ -201,79 +201,51 @@ save_handle_key(PANEL *panel, int key)
 }
 
 void
-save_error_message(PANEL *panel, const char *message)
+save_raw_error_message(PANEL *panel, const char *message)
 {
     WINDOW *win = panel_window(panel);
     mvwprintw(win, 4, 3, "Error: %s", message);
     wmove(win, 3, 15);
 }
 
+void
+save_raw_set_group(PANEL *panel, sip_call_group_t *group) {
+    save_raw_info_t *info = (save_raw_info_t*) panel_userptr(panel);
+    info->group = group;
+}
+
 int
-save_to_file(PANEL *panel)
+save_raw_to_file(PANEL *panel)
 {
     char field_value[48];
-    int fd_to, fd_from;
-    char buf[4096];
-    ssize_t nread;
-    int saved_errno;
+    FILE *f;
+    sip_msg_t *msg = NULL;
+    int i;
 
     // Get panel information
-    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    save_raw_info_t *info = (save_raw_info_t*) panel_userptr(panel);
 
     // Get current field value.
     // We trim spaces with sscanf because and empty field is stored as
     // space characters
     memset(field_value, 0, sizeof(field_value));
-    sscanf(field_buffer(info->fields[FLD_SAVE_FILE], 0), "%[^ ]", field_value);
+    sscanf(field_buffer(info->fields[FLD_SAVE_RAW_FILE], 0), "%[^ ]", field_value);
 
-    fd_from = open(get_option_value("sngrep.tmpfile"), O_RDONLY);
-    if (fd_from < 0) {
-        save_error_message(panel, "Unable to open sngrep tempfile");
+    if (!(f = fopen(field_value, "w"))) {
+        save_raw_error_message(panel, "Unable to open save file for writting");
         return 0;
     }
 
-    fd_to = open(field_value, O_WRONLY | O_CREAT | O_EXCL, 0666);
-    if (fd_to < 0) {
-        save_error_message(panel, "Unable to open save file for writting");
-        goto out_error;
-    }
-
-    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
-    {
-        char *out_ptr = buf;
-        ssize_t nwritten;
-
-        do {
-            nwritten = write(fd_to, out_ptr, nread);
-
-            if (nwritten >= 0) {
-                nread -= nwritten;
-                out_ptr += nwritten;
-            } else if (errno != EINTR) {
-                save_error_message(panel, "Write to file interrupted");
-                goto out_error;
-            }
-        } while (nread > 0);
-    }
-
-    if (nread == 0) {
-        if (close(fd_to) < 0) {
-            fd_to = -1;
-            goto out_error;
+    // Print the call group messages into the pad
+    while ((msg = call_group_get_next_msg(info->group, msg))) {
+        fprintf(f, "%s\n", msg->headerptr);
+        for (i=0; i < msg->plines; i++) {
+            fprintf(f, "%s\n", msg->payload[i]);
         }
-        close(fd_from);
-        return 27;
+        fprintf(f, "\n");
     }
 
- out_error:
-    saved_errno = errno;
-
-    close(fd_from);
-    if (fd_to >= 0)
-        close(fd_to);
-
-    errno = saved_errno;
-    return 0;
-
+    fclose(f);
+    return 27;
 }
 

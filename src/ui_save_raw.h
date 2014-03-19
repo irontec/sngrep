@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_save_pcap.h
+ * @file ui_save_raw.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage ui window for saving captured packages
@@ -30,9 +30,10 @@
  *
  */
 
-#ifndef __UI_SAVE_PCAP_H
-#define __UI_SAVE_PCAP_H
+#ifndef __UI_SAVE_RAW_H
+#define __UI_SAVE_RAW_H
 #include <form.h>
+#include "group.h"
 #include "ui_manager.h"
 
 /**
@@ -42,28 +43,30 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum save_field_list {
-    FLD_SAVE_FILE,
-    FLD_SAVE_SAVE,
-    FLD_SAVE_CANCEL,
+enum save_raw_field_list {
+    FLD_SAVE_RAW_FILE,
+    FLD_SAVE_RAW_SAVE,
+    FLD_SAVE_RAW_CANCEL,
     //! Never remove this field id @see save_info
-    FLD_SAVE_COUNT,
+    FLD_SAVE_RAW_COUNT,
 };
 
 //! Sorter declaration of struct save_info
-typedef struct save_info save_info_t;
+typedef struct save_raw_info save_raw_info_t;
 
 /**
  * @brief Save panel private information
  *
  * This structure contains the durable data of save panel.
  */
-struct save_info
+struct save_raw_info
 {
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields
-    FIELD *fields[FLD_SAVE_COUNT];
+    FIELD *fields[FLD_SAVE_RAW_COUNT];
+    //! Group of calls information
+    sip_call_group_t *group;
 };
 
 /**
@@ -77,7 +80,7 @@ struct save_info
  * @return a panel pointer
  */
 extern PANEL *
-save_create();
+save_raw_create();
 
 /**
  * @brief Destroy save panel
@@ -85,7 +88,7 @@ save_create();
  * This function do the final cleanups for this panel
  */
 extern void
-save_destroy();
+save_raw_destroy();
 
 /**
  * @brief Manage pressed keys for save panel
@@ -102,7 +105,7 @@ save_destroy();
  * @return 0 if the key is handled, keycode otherwise
  */
 extern int
-save_handle_key(PANEL *panel, int key);
+save_raw_handle_key(PANEL *panel, int key);
 
 /**
  * @brief Print an error message in Save panel
@@ -112,7 +115,19 @@ save_handle_key(PANEL *panel, int key);
  * @param message Message to be printed in the panel
  */
 extern void
-save_error_message(PANEL *panel, const char *message);
+save_raw_error_message(PANEL *panel, const char *message);
+
+/**
+ * @brief Set the group of calls to save raw data
+ *
+ * This functions sets the internal pointer to the
+ * call group which information will be saved
+ *
+ * @param panel Save Raw panel pointer
+ * @param group Group of calls displayed in the raw panel
+ */
+extern void
+save_raw_set_group(PANEL *panel, sip_call_group_t *group);
 
 /**
  * @brief Save form data to options
@@ -123,6 +138,6 @@ save_error_message(PANEL *panel, const char *message);
  * @param panel Save panel pointer
  */
 extern int
-save_to_file(PANEL *panel);
+save_raw_to_file(PANEL *panel);
 
 #endif

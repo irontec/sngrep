@@ -128,6 +128,8 @@ enum panel_types
     FILTER_PANEL,
     //! Save to pcap panel
     SAVE_PANEL,
+    //! Save to txt panel
+    SAVE_RAW_PANEL,
 };
 
 /**

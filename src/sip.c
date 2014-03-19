@@ -548,7 +548,7 @@ msg_parse(sip_msg_t *msg)
     if (msg_parse_payload(msg, msg->payloadptr) != 0) return NULL;
 
     // Free message pointers
-    free(msg->headerptr);
+    //free(msg->headerptr);
     free(msg->payloadptr);
 
     // Mark as parsed

@@ -139,7 +139,7 @@ struct sip_msg
     //! Temporal payload data before being parsed
     char *payloadptr;
     //! FIXME Payload in one struct
-    const char *payload[80];
+    const char *payload[256];
     //!! FIXME not required
     int plines;
     //! Flag to mark if payload data has been parsed
