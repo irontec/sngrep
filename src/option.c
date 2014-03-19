@@ -44,6 +44,11 @@ int optscnt = 0;
 int
 init_options()
 {
+    // Template for temporal file
+    char tmpfile[32];
+    // Custom user conf file
+    char userconf[128];
+
     // Add basic optionurations
     set_option_value("color", "on");
 
@@ -73,25 +78,32 @@ init_options()
     set_option_value("cf.splitcallid", "off");
 
     // Allow dialogs to be incomplete
-    set_option_value("sip.ignoreincomlete", "0");
-
-    // Toggle capture
+    set_option_value("sip.ignoreincomlete", "on");
     set_option_value("sip.capture", "on");
 
+    // Set default temporal file
+    sprintf(tmpfile, "/tmp/sngrep-%u-XXXXXX", (unsigned)time());
+    set_option_value("sngrep.tmpfile", mktemp(tmpfile));
+    set_option_value("sngpre.keeptmpfile", "off");
+
     // Set default filter options
-    set_option_value("filter.enable", "off");
+    set_option_value("filter.enable",   "off");
     set_option_value("filter.REGISTER", "on");
-    set_option_value("filter.INVITE", "on");
+    set_option_value("filter.INVITE",   "on");
     set_option_value("filter.SUBSCRIBE", "on");
-    set_option_value("filter.NOTIFY", "on");
-    set_option_value("filter.OPTIONS", "on");
-    set_option_value("filter.PUBLISH", "on");
-    set_option_value("filter.MESSAGE", "on");
+    set_option_value("filter.NOTIFY",   "on");
+    set_option_value("filter.OPTIONS",  "on");
+    set_option_value("filter.PUBLISH",  "on");
+    set_option_value("filter.MESSAGE",  "on");
 
     // Read options from configuration files
     read_options("/etc/sngreprc");
     read_options("/usr/local/etc/sngreprc");
-    read_options("/root/.sngreprc");
+    // Get user homedir configuration
+    if (getenv("HOME")) {
+        sprintf(userconf, "%s/.sngreprc", getenv("HOME"));
+        read_options(userconf);
+    }
 
     return 0;
 }
@@ -172,7 +184,6 @@ set_option_value(const char *opt, const char *value)
             }
         }
     }
-    //printf("%s %s\n", opt, value);
 }
 
 int
@@ -180,9 +191,23 @@ is_option_enabled(const char *opt)
 {
     const char *value;
     if ((value = get_option_value(opt))) {
-        if (!strcasecmp(value, "on")) {
+        if (!strcasecmp(value, "on"))
             return 1;
-        }
+        if (!strcasecmp(value, "1"))
+            return 1;
+    }
+    return 0;
+}
+
+int
+is_option_disabled(const char *opt)
+{
+    const char *value;
+    if ((value = get_option_value(opt))) {
+        if (!strcasecmp(value, "off"))
+            return 1;
+        if (!strcasecmp(value, "0"))
+            return 1;
     }
     return 0;
 }

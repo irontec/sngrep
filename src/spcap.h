@@ -120,11 +120,11 @@ online_capture(void *pargv);
 /**
  * @brief Read from pcap file and fill sngrep sctuctures
  *
- * This function will use libpcap files and previous structures to 
+ * This function will use libpcap files and previous structures to
  * parse the pcap file.
  * This program is only focused in VoIP calls so we only consider
  * TCP/UDP packets with Ethernet or Linux coocked headers
- * 
+ *
  * @param file Full path to PCAP file
  * @return 0 if load has been successfull, 1 otherwise
  *

@@ -63,6 +63,8 @@ online_capture(void *pargv)
     bpf_u_int32 mask;
     //! The IP of our sniffing device
     bpf_u_int32 net;
+    //! Pointer to the dump file
+    pcap_dumper_t *pd;
 
     //! Build the filter options
     while (argv[argc]) {
@@ -77,15 +79,20 @@ online_capture(void *pargv)
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
-        return(2);
+        return 2;
     }
     if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
         fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
-        return(2);
+        return 2;
     }
     if (pcap_setfilter(handle, &fp) == -1) {
         fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
-        return(2);
+        return 2;
+    }
+    if ((pd = pcap_dump_open(handle, get_option_value("sngrep.tmpfile"))) == NULL) {
+        fprintf(stderr, "Couldn't open temporal dump file %s: %s\n",
+            get_option_value("sngrep.tmpfile"), pcap_geterr(handle));
+        return 2;
     }
 
     // Get datalink to parse packages correctly

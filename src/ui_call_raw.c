@@ -44,7 +44,7 @@ call_raw_create()
 
     // Create a new panel to fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
-    // Initialize Call List specific data 
+    // Initialize Call List specific data
     info = malloc(sizeof(call_raw_info_t));
     memset(info, 0, sizeof(call_raw_info_t));
     // Store it into panel userptr
@@ -150,7 +150,7 @@ call_raw_handle_key(PANEL *panel, int key)
         if (info->scrollpos > 0) info->scrollpos--;
         break;
     case KEY_NPAGE:
-        // Next page => N key down strokes 
+        // Next page => N key down strokes
         for (i = 0; i < rnpag_steps; i++)
             call_raw_handle_key(panel, KEY_DOWN);
         break;

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "option.h"
 #include "ui_manager.h"
 
 //! Forced stdbuf command line arguments
@@ -37,8 +38,8 @@
 #define NGREP_ARGS  "-qpt -W byline"
 
 /****************************************************************************
- ** Current version of sngrep launches a thread that execs original ngrep 
- ** binary. sngrep was born with the idea of parsing ngrep output. 
+ ** Current version of sngrep launches a thread that execs original ngrep
+ ** binary. sngrep was born with the idea of parsing ngrep output.
  ** This could be changed with a bit of effort to a network capturing thread
  ** using libpcap functions, but we'll keep this way for now.
  **
@@ -47,8 +48,8 @@
  ** forced by the exec process.
  **
  ** U DD/MM/YY hh:mm:ss.uuuuuu fff.fff.fff.fff:pppp -> fff.fff.fff.fff:pppp
- ** 
- ** If any other parameters are supplied to sngrep that changes this header 
+ **
+ ** If any other parameters are supplied to sngrep that changes this header
  ** (let's say -T), sngrep will fail at parsing any header :(
  **
  ****************************************************************************/
@@ -64,10 +65,14 @@ online_capture(void *pargv)
 
     // Build the commald line to execute ngrep
     sprintf(cmdline, "%s %s %s %s", STDBUF_BIN, STDBUF_ARGS, NGREP_BIN, NGREP_ARGS);
-    while (argv[argc])
-    sprintf(cmdline, "%s \"%s\"", cmdline, argv[argc++]);
+    // Add save to temporal file (if option enabled)
+    if (!is_option_disabled("sngrep.tmpfile"))
+        sprintf(cmdline, "%s -O %s", cmdline, get_option_value("sngrep.tmpfile"));
 
-    // Open the command for reading. 
+    while (argv[argc])
+        sprintf(cmdline, "%s \"%s\"", cmdline, argv[argc++]);
+
+    // Open the command for reading.
     fp = popen(cmdline, "r");
     if (fp == NULL) {
         printf("Failed to run command\n");
@@ -77,7 +82,7 @@ online_capture(void *pargv)
     // Read the output a line at a time - output it.
     while (fgets(stdout_line, 1024, fp) != NULL) {
         if (!strncmp(stdout_line, "\n", 1) && strlen(msg_header) && strlen(msg_payload)) {
-            // Parse message 
+            // Parse message
             struct sip_msg *msg;
             if ((msg = sip_load_message(msg_header, strdup((const char*) msg_payload)))) {
                 // Update the ui

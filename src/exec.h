@@ -34,8 +34,8 @@
 #define __SNGREP_EXEC_H
 
 /****************************************************************************
- ** Current version of sngrep launches a thread that execs original ngrep 
- ** binary. sngrep was born with the idea of parsing ngrep output. 
+ ** Current version of sngrep launches a thread that execs original ngrep
+ ** binary. sngrep was born with the idea of parsing ngrep output.
  ** This could be changed with a bit of effort to a network capturing thread
  ** using libpcap functions, but we'll keep this way for now.
  **
@@ -44,8 +44,8 @@
  ** forced by the exec process.
  **
  ** U DD/MM/YY hh:mm:ss.uuuuuu fff.fff.fff.fff:pppp -> fff.fff.fff.fff:pppp
- ** 
- ** If any other parameters are supplied to sngrep that changes this header 
+ **
+ ** If any other parameters are supplied to sngrep that changes this header
  ** (let's say -T), sngrep will fail at parsing any header :(
  **
  ****************************************************************************/

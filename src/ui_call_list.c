@@ -48,7 +48,7 @@ call_list_create()
 
     // Create a new panel that fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
-    // Initialize Call List specific data 
+    // Initialize Call List specific data
     info = malloc(sizeof(call_list_info_t));
     memset(info, 0, sizeof(call_list_info_t));
     // Store it into panel userptr
@@ -82,9 +82,9 @@ call_list_create()
 
     // Draw a header with APP_NAME and APP_LONG_DESC - FIXME /calculate a properly middle :P
     mvwprintw(win, 1, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
-    mvwprintw(win, 3, 2, "Current Mode: %s", get_option_value("running.mode"));
-    if (get_option_value("running.file")) {
-        mvwprintw(win, 4, 2, "Filename: %s", get_option_value("running.file"));
+    mvwprintw(win, 3, 2, "Current Mode: %s", get_option_value("sngrep.mode"));
+    if (get_option_value("sngrep.file")) {
+        mvwprintw(win, 4, 2, "Filename: %s", get_option_value("sngrep.file"));
     }
     mvwaddch(win, 5, 0, ACS_LTEE);
     mvwhline(win, 5, 1, ACS_HLINE, width - 2);
@@ -149,7 +149,7 @@ call_list_draw(PANEL *panel)
 
     // Print in the header if we're actually capturing
     mvwprintw(win, 3, 23, "%s", is_option_enabled("sip.capture")?"          ":"(Paused)");
-    
+
     // Get available calls counter (we'll use it here a couple of times)
     if (!(callcnt = sip_calls_count())) return 0;
 
@@ -263,7 +263,7 @@ call_list_handle_key(PANEL *panel, int key)
         }
         break;
     case KEY_NPAGE:
-        // Next page => N key down strokes 
+        // Next page => N key down strokes
         for (i = 0; i < rnpag_steps; i++)
             call_list_handle_key(panel, KEY_DOWN);
         break;
@@ -318,7 +318,7 @@ call_list_handle_key(PANEL *panel, int key)
     case 'F':
         // KEY_F, Display filter panel
         next_panel = ui_create(ui_find_by_type(FILTER_PANEL));
-        wait_for_input(next_panel); 
+        wait_for_input(next_panel);
         call_list_filter_update(panel);
        break;
     case ' ':
@@ -332,7 +332,7 @@ call_list_handle_key(PANEL *panel, int key)
     case 'q':
     case 27: /* KEY_ESC */
         // Handle quit from this screen unless requested
-        if (get_option_int_value("cl.noexitprompt") != 1) {
+        if (!is_option_enabled("cl.noexitprompt")) {
             return call_list_exit_confirm(panel);
         }
         break;
@@ -485,11 +485,11 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
 void
 call_list_filter_update(PANEL *panel)
 {
-    
+
     WINDOW *win = panel_window(panel);
     int height, width, i, startline = 8;
 
-    // Get panel info 
+    // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     if (!info) return;
 
@@ -503,9 +503,9 @@ call_list_filter_update(PANEL *panel)
 
     // Clear Displayed lines
     for (i=0; i < info->linescnt; i++) {
-       mvwprintw(win, startline++, 5, "%*s", width - 6, ""); 
-    }    
- 
+       mvwprintw(win, startline++, 5, "%*s", width - 6, "");
+    }
+
     // Print filter info
     mvwprintw(win, 4, 2, "%*s", width - 4, "");
     if (is_option_enabled("filter.enable"))

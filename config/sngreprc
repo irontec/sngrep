@@ -9,10 +9,24 @@
 # set color on
 
 ##-----------------------------------------------------------------------------
+## Enable temporal file usage
+## By default, sngrep uses a random tempfile in /tmp for storing packages
+## in case user want to save them to another file. This files are removed
+## when sngep exits
+
+## Uncomment this to disable temporal pcap file while sngrep is running or
+## change the used file
+# set sngrep.tmpfile off
+# set sngrep.tmpfile /tmp/last-sngrep-capture.pcap
+
+## Uncomment this to keep temporal files
+# set sngrep.keeptmpfile on
+
+##-----------------------------------------------------------------------------
 ## Change default scrolling in call list
 # set cl.scrollstep 20
 ## Disable exit prompt
-# set cl.noexitprompt 1
+# set cl.noexitprompt off
 ## Or set its default button
 # set cl.defexitbutton 0/1
 
@@ -26,7 +40,7 @@
 ## You can also configure the column width using
 ##    set cl.column{num}.width {cols}
 ##
-## Available columns fields are: 
+## Available columns fields are:
 ##    - sipfrom
 ##    - sipto
 ##    - src
@@ -56,13 +70,13 @@
 # set cf.rawminwidth 100
 
 ##-----------------------------------------------------------------------------
-## Ignore dialogs that does not start with a request method
-# set sip.ignoreincomplete 1
+## Uncomment to display dialogs that does not start with a request method
+# set sip.ignoreincomplete off
 
 ##-----------------------------------------------------------------------------
 ## You can ignore some calls with any of the previous attributes with a given
 ## value with ignore directive.
-## 
+##
 ## ignore {field} {value}
 ##
 

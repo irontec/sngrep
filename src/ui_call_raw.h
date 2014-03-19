@@ -36,7 +36,7 @@
 //! Sorter declaration of struct call_raw_info
 typedef struct call_raw_info call_raw_info_t;
 
-/** 
+/**
  * @brief Call raw status information
  *
  * This data stores the actual status of the panel. It's stored in the

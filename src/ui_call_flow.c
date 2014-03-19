@@ -81,7 +81,7 @@ call_flow_create()
 
     // Create a new panel to fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
-    // Initialize Call List specific data 
+    // Initialize Call List specific data
     info = malloc(sizeof(call_flow_info_t));
     memset(info, 0, sizeof(call_flow_info_t));
     // Store it into panel userptr
@@ -186,7 +186,7 @@ call_flow_draw(PANEL *panel)
     //if ((20 + info->columns->colpos * 30 + get_option_int_value("cf.rawminwidth") < width)
 	if (is_option_enabled("cf.forceraw")) {
         call_flow_draw_raw(panel, info->cur_msg);
-    } 
+    }
 
     return 0;
 

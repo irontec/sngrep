@@ -62,7 +62,7 @@ usage(const char* progname)
  *
  * Parse command line options and start running threads
  *
- * @note There are no params actually... if you supply one 
+ * @note There are no params actually... if you supply one
  *    param, I will assume we are running offline mode with
  *    a pcap file. Otherwise the args will be passed to ngrep
  *    without any type of validation.
@@ -88,8 +88,8 @@ main(int argc, char* argv[])
         return 1;
     } else if (argc == 2) {
         // Show offline mode in ui
-        set_option_value("running.mode", "Offline");
-        set_option_value("running.file", argv[1]);
+        set_option_value("sngrep.mode", "Offline");
+        set_option_value("sngrep.file", argv[1]);
 
         // Assume Offline mode with pcap file
         if (load_from_file(argv[1]) != 0) {
@@ -98,7 +98,7 @@ main(int argc, char* argv[])
         }
     } else {
         // Show online mode in ui
-        set_option_value("running.mode", "Online");
+        set_option_value("sngrep.mode", "Online");
 
         // Assume online mode, launch ngrep in a thread
         pthread_attr_init(&attr);
@@ -113,6 +113,13 @@ main(int argc, char* argv[])
     // Initialize interface
     // This is a blocking call. Interface have user action loops.
     init_interface();
+
+    // Delete the temporal file (if any)
+    if (!is_option_enabled("sngrep.keeptmpfile") &&
+        !is_option_disabled(get_option_value("sngrep.tmpfile"))) {
+        unlink(get_option_value("sngrep.tmpfile"));
+    }
+
     // Leaving!
     return ret;
 }

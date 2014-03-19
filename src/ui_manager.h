@@ -125,7 +125,7 @@ enum panel_types
     //! Raw SIP messages ui screen
     RAW_PANEL,
     //! Filters panel
-    FILTER_PANEL, 
+    FILTER_PANEL,
 };
 
 /**
@@ -133,8 +133,8 @@ enum panel_types
  *
  * This functions will initialize ncurses mode and show a
  * Call List panel.
- * 
- * @returns 0 on ncurses initialization success, 1 otherwise 
+ *
+ * @returns 0 on ncurses initialization success, 1 otherwise
  */
 extern int
 init_interface();
@@ -152,7 +152,7 @@ extern ui_t *
 ui_create(ui_t *ui);
 
 /**
- * @brief Destroy a panel structure 
+ * @brief Destroy a panel structure
  *
  * Removes the panel associatet to the given ui and free
  * its memory. Most part of this task is done in the custom
@@ -204,11 +204,11 @@ ui_draw_panel(ui_t *ui);
 
 /**
  * @brief Show help screen from current UI (if any)
- * 
+ *
  * This function will display the help screen for given
- * ui if exits. 
+ * ui if exits.
  * All help screens exits after any character input
- * 
+ *
  * @param ui UI structure
  */
 extern void
@@ -250,7 +250,7 @@ toggle_color(int on);
  *
  * This function manages all user input in all panel types and
  * redraws the panel using its own draw function
- * 
+ *
  * @param ui the topmost panel ui structure
  */
 extern int
@@ -274,8 +274,8 @@ title_foot_box(WINDOW *win);
  *
  * This function is invocked asynchronously from the
  * ngrep exec thread to notify a new message of the giving
- * callid. If the UI is displaying this call or it's 
- * extended one, the topmost panel will be redraw again 
+ * callid. If the UI is displaying this call or it's
+ * extended one, the topmost panel will be redraw again
  *
  * @param msg Last readed message in Online mode
  */

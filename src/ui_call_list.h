@@ -41,8 +41,8 @@ typedef struct call_list_info call_list_info_t;
 /**
  * @brief Call List column information
  *
- * It will be nice make which columns will appear in this list and 
- * in which order a configurable option. 
+ * It will be nice make which columns will appear in this list and
+ * in which order a configurable option.
  * This structure is one step towards configurable stuff
  */
 struct call_list_column
@@ -71,7 +71,7 @@ struct call_list_info
     sip_call_group_t *group;
     //! Displayed column list, make it configurable in the future
     call_list_column_t columns[10];
-    //! Displayed column count. 
+    //! Displayed column count.
     int columncnt;
     //! Displayed lines in the list.
     int linescnt;
@@ -159,7 +159,7 @@ call_list_help(PANEL *panel);
  * This function will request the user to confirm exit from
  * the program. This message can be avoided using configuration
  * option cl.noexitprompt 0
- * The default button can be configured using option 
+ * The default button can be configured using option
  * cl.defexitbutton (default 1, that means yes)
  *
  * @param panel Call list panel pointer
@@ -190,7 +190,7 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
  * This function is called after showing the filter dialog (@see ui_filter.h)
  * and resets the displayed information to force a new call list
  * load.
- *  
+ *
  * @param panel Call list panel pointer
  */
 extern void

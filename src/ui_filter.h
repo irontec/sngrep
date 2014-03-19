@@ -80,7 +80,7 @@ struct filter_info
  * @brief Creates a new filter panel
  *
  * This function allocates all required memory for
- * displaying the filter panel. It also draws all the 
+ * displaying the filter panel. It also draws all the
  * static information of the panel that will never be
  * redrawn.
  *
@@ -91,7 +91,7 @@ filter_create();
 
 /**
  * @brief Destroy filter panel
- * 
+ *
  * This function do the final cleanups for this panel
  */
 extern void
@@ -100,11 +100,11 @@ filter_destroy();
 /**
  * @brief Manage pressed keys for filter panel
  *
- * This function is called by UI manager every time a 
+ * This function is called by UI manager every time a
  * key is pressed. This allow the filter panel to manage
- * its own keys. 
+ * its own keys.
  * If this function return 0, the key will not be handled
- * by ui manager. Otherwise the return will be considered 
+ * by ui manager. Otherwise the return will be considered
  * a key code.
  *
  * @param panel Filter panel pointer

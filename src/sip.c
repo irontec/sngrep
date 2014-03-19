@@ -40,7 +40,7 @@
 #include "sip.h"
 #include "option.h"
 
-/** 
+/**
  * @brief Linked list of parsed calls
  *
  * All parsed calls will be added to this list, only accesible from

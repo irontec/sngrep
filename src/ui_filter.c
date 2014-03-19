@@ -9,7 +9,7 @@
  ** it under the terms of the GNU General Public License as published by
  ** the Free Software Foundation, either version 3 of the License, or
  ** (at your option) any later version.
- ** 
+ **
  ** This program is distributed in the hope that it will be useful,
  ** but WITHOUT ANY WARRANTY; without even the implied warranty of
  ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -50,10 +50,10 @@ filter_create()
     // Cerate a new indow for the panel and form
     win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
 
-    // Create a new panel 
+    // Create a new panel
     panel = new_panel(win);
 
-    // Initialize Filter panel specific data 
+    // Initialize Filter panel specific data
     info = malloc(sizeof(filter_info_t));
     memset(info, 0, sizeof(filter_info_t));
 
@@ -77,11 +77,11 @@ filter_create()
     info->fields[FIELD_CANCEL]      = new_field(1, 10, height - 2, 30, 0, 0);
     info->fields[FIELD_COUNT]       = NULL;
 
-    // Set fields options 
+    // Set fields options
     field_opts_off(info->fields[FIELD_ENABLE],  O_AUTOSKIP);
-    field_opts_off(info->fields[FIELD_SIPFROM], O_AUTOSKIP);  
-    field_opts_off(info->fields[FIELD_SIPTO],   O_AUTOSKIP);  
-    field_opts_off(info->fields[FIELD_SRC],     O_AUTOSKIP);  
+    field_opts_off(info->fields[FIELD_SIPFROM], O_AUTOSKIP);
+    field_opts_off(info->fields[FIELD_SIPTO],   O_AUTOSKIP);
+    field_opts_off(info->fields[FIELD_SRC],     O_AUTOSKIP);
     field_opts_off(info->fields[FIELD_DST],     O_AUTOSKIP);
     field_opts_off(info->fields[FIELD_REGISTER], O_AUTOSKIP);
     field_opts_off(info->fields[FIELD_INVITE],  O_AUTOSKIP);
@@ -94,10 +94,10 @@ filter_create()
     field_opts_off(info->fields[FIELD_CANCEL],  O_EDIT);
 
     // Change background of input fields
-    set_field_back(info->fields[FIELD_SIPFROM], A_UNDERLINE);  
-    set_field_back(info->fields[FIELD_SIPTO],   A_UNDERLINE);  
-    set_field_back(info->fields[FIELD_SRC],     A_UNDERLINE);  
-    set_field_back(info->fields[FIELD_DST],     A_UNDERLINE); 
+    set_field_back(info->fields[FIELD_SIPFROM], A_UNDERLINE);
+    set_field_back(info->fields[FIELD_SIPTO],   A_UNDERLINE);
+    set_field_back(info->fields[FIELD_SRC],     A_UNDERLINE);
+    set_field_back(info->fields[FIELD_DST],     A_UNDERLINE);
 
     // Create the form and post it
     info->form = new_form(info->fields);
@@ -146,7 +146,7 @@ filter_create()
     mvwaddch(win, 9, 49, ACS_RTEE);
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
-    // Set default cursor position 
+    // Set default cursor position
     set_current_field(info->form, info->fields[FIELD_SIPFROM]);
     wmove(win, 5, 18);
     curs_set(1);
@@ -174,12 +174,12 @@ filter_handle_key(PANEL *panel, int key)
     field_idx = field_index(current_field(info->form));
 
     // Get current field value.
-    // We trim spaces with sscanf because and empty field is stored as 
+    // We trim spaces with sscanf because and empty field is stored as
     // space characters
     memset(field_value, 0, sizeof(field_value));
     sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
 
-    switch(key)  {   
+    switch(key)  {
     case 9 /*KEY_TAB*/:
     case KEY_DOWN:
         form_driver(info->form, REQ_NEXT_FIELD);
@@ -208,7 +208,7 @@ filter_handle_key(PANEL *panel, int key)
         return key;
         break;
     case KEY_BACKSPACE:
-        if (strlen(field_value) > 0) 
+        if (strlen(field_value) > 0)
             form_driver(info->form, REQ_DEL_PREV);
         break;
     case ' ':
@@ -231,14 +231,14 @@ filter_handle_key(PANEL *panel, int key)
             form_driver(info->form, REQ_NEXT_FIELD);
             form_driver(info->form, REQ_END_LINE);
             break;
-        } 
+        }
         break;
     case 10:    /* KEY_ENTER */
         if (field_idx != FIELD_CANCEL)
             filter_save_options(panel);
         return 27;
     default:
-        // If this is a normal character on input field, print it 
+        // If this is a normal character on input field, print it
         switch(field_idx) {
             case FIELD_SIPFROM:
             case FIELD_SIPTO:
@@ -279,7 +279,7 @@ filter_save_options(PANEL *panel)
 
     for (i = 0; i < FIELD_COUNT; i++) {
         // Get current field value.
-        // We trim spaces with sscanf because and empty field is stored as 
+        // We trim spaces with sscanf because and empty field is stored as
         // space characters
         memset(field_value, 0, sizeof(field_value));
         sscanf(field_buffer(info->fields[i], 0), "%[^ ]", field_value);
@@ -311,7 +311,7 @@ filter_save_options(PANEL *panel)
                 set_option_value("filter.MESSAGE", strlen(field_value)?"on":"off"); break;
             default:
                 break;
-        }        
+        }
     }
 }
 

@@ -47,7 +47,7 @@ pthread_mutex_t refresh_lock;
  * This list contein the available list of windows
  * and pointer to their main functions.
  *
- * XXX If the panel count increase a lot, it will be required to 
+ * XXX If the panel count increase a lot, it will be required to
  *     load panels as modules and provide a way to register
  *     themselfs into the panel pool dynamically.
  */
@@ -86,7 +86,7 @@ static ui_t panel_pool[] = {
 int
 init_interface()
 {
-    // Initialize curses 
+    // Initialize curses
     if (!initscr()) {
         fprintf(stderr, "Unable to initialize ncurses mode.\n");
         return -1;
@@ -102,7 +102,7 @@ init_interface()
     start_color();
     toggle_color(is_option_enabled("color"));
 
-    // Start showing call list 
+    // Start showing call list
     wait_for_input(ui_create(ui_find_by_type(MAIN_PANEL)));
 
     // End ncurses mode

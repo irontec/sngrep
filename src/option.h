@@ -153,6 +153,19 @@ extern int
 is_option_enabled(const char *opt);
 
 /**
+ * @brief Check if a configuration option is "disabled"
+ *
+ * An option is considered disabled if it has "off" or "0" as value,
+ * otherwise will return enabled (1);
+ *
+ * @param opt Name of configuration option
+ * @return 1 if value is "off" or "0", 0 otherwise
+ */
+extern int
+is_option_disabled(const char *opt);
+
+
+/**
  * @brief Check if a exits an ignore directive for the given field and value
  *
  * Like is_option_enabled, this check if there is a match in configuration

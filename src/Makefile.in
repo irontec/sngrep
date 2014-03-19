@@ -267,7 +267,7 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-sngrep$(EXEEXT): $(sngrep_OBJECTS) $(sngrep_DEPENDENCIES) $(EXTRA_sngrep_DEPENDENCIES) 
+sngrep$(EXEEXT): $(sngrep_OBJECTS) $(sngrep_DEPENDENCIES) $(EXTRA_sngrep_DEPENDENCIES)
 	@rm -f sngrep$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sngrep_OBJECTS) $(sngrep_LDADD) $(LIBS)
 
