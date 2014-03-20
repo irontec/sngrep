@@ -5310,7 +5310,7 @@ if test "x$ac_cv_header_ncurses_h" = xyes; then :
 
 else
 
-        as_fn_error $? " You need to have ncurses development files installed to compile sngrep." "$LINENO" 5
+    as_fn_error $? " You need to have ncurses development files installed to compile sngrep." "$LINENO" 5
 
 fi
 
@@ -5636,7 +5636,8 @@ fi
 _ACEOF
 
 else
-  as_fn_error $? "stdbuf (coreutils) is needed to run sngrep" "$LINENO" 5
+  as_fn_error $? "stdbuf (coreutils) is needed to run sngrep using ngrep.
+If you dont have stdbuf available in your distribution, you can disable ngrep support using --disable-ngrep flag." "$LINENO" 5
 
 fi
 	# Extract the first word of "ngrep", so it can be a program name with args.
@@ -5686,7 +5687,8 @@ fi
 _ACEOF
 
 else
-  as_fn_error $? "ngrep is needed to run sngrep" "$LINENO" 5
+  as_fn_error $? "ngrep is required to run sngrep.
+If you dont have ngrep available in your distribution, you can disable ngrep support using --disable-ngrep flag." "$LINENO" 5
 
 fi
 
@@ -5725,8 +5727,8 @@ $as_echo "$as_me: " >&6;}
 $as_echo "$as_me: ====================================================== " >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: sngrep configure finished                            " >&5
 $as_echo "$as_me: sngrep configure finished                            " >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}: Current Development stage: ALPHA                     " >&5
-$as_echo "$as_me: Current Development stage: ALPHA                     " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Current Development stage: BETA                      " >&5
+$as_echo "$as_me: Current Development stage: BETA                      " >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: ----------------------------------------------------  " >&5
 $as_echo "$as_me: ----------------------------------------------------  " >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: ====================================================== " >&5
