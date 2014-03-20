@@ -343,10 +343,8 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     // We can configure an exact raw size
     if (get_option_int_value("cf.rawfixedwidth") != -1) {
         raw_width = get_option_int_value("cf.rawfixedwidth");
-    } else {
-        // Consider the calculated sized as the fixed one
-        set_option_int_value("cf.rawfixedwidth", raw_width);
     }
+
     // Height of raw window is always available size minus 6 lines for header/footer
     raw_height = height - 3;
 
@@ -471,13 +469,13 @@ call_flow_handle_key(PANEL *panel, int key)
         wait_for_input(next_panel);
         break;
     case '0':
-        raw_width = get_option_int_value("cf.rawfixedwidth");
+        raw_width = getmaxx(info->raw_win);
         if (raw_width - 2 > 1) {
             set_option_int_value("cf.rawfixedwidth", raw_width - 2);
         }
         break;
     case '9':
-        raw_width = get_option_int_value("cf.rawfixedwidth");
+        raw_width = getmaxx(info->raw_win);
         if (raw_width + 2 < COLS - 1) {
             set_option_int_value("cf.rawfixedwidth", raw_width + 2);
         }
