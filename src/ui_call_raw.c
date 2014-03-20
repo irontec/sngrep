@@ -112,7 +112,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     }
 
     // Determine arrow color
-    if (is_option_enabled("color.callid")) {
+    if (info->group && is_option_enabled("color.callid")) {
         wattron(pad, COLOR_PAIR(call_group_color(info->group, msg->call)));
     } else {
         // Determine arrow color
