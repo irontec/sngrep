@@ -50,8 +50,11 @@ init_options()
     // Custom user conf file
     char userconf[128];
 
-    // Add basic optionurations
+    // Set default color options
     set_option_value("color", "on");
+    set_option_value("color.request", "on");
+    set_option_value("color.callid", "off");
+    set_option_value("color.cseq", "off");
 
     // Add Call list column options
     set_option_value("cl.columns", "6");

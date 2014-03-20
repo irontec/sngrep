@@ -149,6 +149,7 @@ call_flow_draw(PANEL *panel)
     sip_msg_t *msg;
     WINDOW *win;
     int height, width, cline;
+    char title[256];
 
     // Get panel information
     info = call_flow_info(panel);
@@ -160,6 +161,24 @@ call_flow_draw(PANEL *panel)
     wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
     title_foot_box(win);
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+
+    // Set title
+    if (info->group->callcnt == 1) {
+        sprintf(title, "Call flow for %s", call_get_attribute(*info->group->calls, SIP_ATTR_CALLID));
+    } else {
+        sprintf(title, "Call flow for %d dialogs", info->group->callcnt);
+    }
+
+    // Print color mode in title
+    if (is_option_enabled("color")) {
+        if (is_option_enabled("color.request")) sprintf(title, "%s (%s)", title, "Color by Request/Response");
+        if (is_option_enabled("color.callid")) sprintf(title, "%s (%s)", title, "Color by Call-Id");
+        if (is_option_enabled("color.cseq")) sprintf(title, "%s (%s)", title, "Color by CSeq");
+    }
+
+    mvwprintw(win, 1, (width - strlen(title))/2, "%s", title);
+
+    // Show some keybinding
     mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
     mvwprintw(win, height - 2, 16, "F1: Help");
     mvwprintw(win, height - 2, 27, "x: Call-Flow");
@@ -183,7 +202,6 @@ call_flow_draw(PANEL *panel)
     }
 
     // If there are only three columns, then draw the raw message on this panel
-    //if ((20 + info->columns->colpos * 30 + get_option_int_value("cf.rawminwidth") < width)
 	if (is_option_enabled("cf.forceraw")) {
         call_flow_draw_raw(panel, info->cur_msg);
     }
@@ -230,6 +248,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
+    sip_msg_t *prev;
     const char *msg_time;
     const char *msg_callid;
     const char *msg_method;
@@ -283,17 +302,38 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     int endpos = 20 + 30 * column2->colpos;
     int distance = abs(endpos - startpos) - 3;
 
+    // Highlight current message
     if (msg == info->cur_msg) wattron(win, A_BOLD);
 
-    if (is_option_enabled("color.callid")) {
-        wattron(win, COLOR_PAIR(call_group_color(info->group, msg->call)));
-    } else {
+    // Color the message
+    if (is_option_enabled("color.request")) {
         // Determine arrow color
         if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
             wattron(win, COLOR_PAIR(OUTGOING_COLOR));
         } else {
             wattron(win, COLOR_PAIR(INCOMING_COLOR));
         }
+    }
+    // Color by call-id
+    if (is_option_enabled("color.callid")) {
+        wattron(win, COLOR_PAIR(call_group_color(info->group, msg->call)));
+    }
+    // Color by CSeq within the same call
+    if (is_option_enabled("color.cseq")) {
+        if (msg->call->color == -1) {
+            msg->call->color = (info->group->color++ % 7) + 1;
+        }
+        if (msg->color == -1) {
+            if ((prev = call_get_prev_msg(msg->call, msg))) {
+                if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
+                    msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
+                    info->group->color = msg->call->color = (info->group->color++ % 7) + 1;
+                }
+            }
+            msg->color = msg->call->color;
+        }
+        // Turn on the message color
+        wattron(win, COLOR_PAIR(msg->color));
     }
 
     mvwprintw(win, cline, startpos + 2, "%.*s", distance, "");
@@ -302,12 +342,16 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (!strcasecmp(msg_src, column1->addr)) {
         mvwaddch(win, cline + 1, endpos - 2, ACS_RARROW);
-        if (msg_is_retrans(msg))
+        if (msg_is_retrans(msg)) {
             mvwaddch(win, cline + 1, endpos - 3, ACS_RARROW);
+            mvwaddch(win, cline + 1, endpos - 4, ACS_RARROW);
+        }
     } else {
         mvwaddch(win, cline + 1, startpos + 2, ACS_LARROW);
-        if (msg_is_retrans(msg))
-            mvwaddch(win, cline + 1, startpos + 2, ACS_LARROW);
+        if (msg_is_retrans(msg)) {
+            mvwaddch(win, cline + 1, startpos + 3, ACS_LARROW);
+            mvwaddch(win, cline + 1, startpos + 4, ACS_LARROW);
+        }
     }
 
     // Turn off colors
@@ -550,9 +594,9 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 9, 2, "F1          Show this screen.");
     mvwprintw(help_win, 10, 2, "q/Esc       Go back to Call list window.");
     mvwprintw(help_win, 11, 2, "c           Turn on/off window colours.");
-    mvwprintw(help_win, 12, 2, "C           Turn on/off colour by Call-ID.");
+    mvwprintw(help_win, 12, 2, "C           Cycle between available color modes");
     mvwprintw(help_win, 13, 2, "Up/Down     Move to previous/next message.");
-    mvwprintw(help_win, 14, 2, "x           Show call-flow (Normal) for original call.");
+    mvwprintw(help_win, 14, 2, "x           Show call-flow with X-CID/X-Call-ID dialog");
     mvwprintw(help_win, 15, 2, "r           Show original call messages in raw mode.");
     mvwprintw(help_win, 16, 2, "t           Toggle raw preview display");
     mvwprintw(help_win, 17, 2, "9/0         Increase/Decrease raw preview size");

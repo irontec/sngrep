@@ -96,6 +96,10 @@ static sip_attr_hdr_t attrs[] = {
         .name = "request",
         .desc = "Request" },
     {
+        .id = SIP_ATTR_CSEQ,
+        .name = "CSeq",
+        .desc = "CSeq" },
+    {
         .id = SIP_ATTR_SDP,
         .name = "sdp",
         .desc = "Has SDP"},
@@ -119,6 +123,7 @@ sip_msg_create(const char *header, const char *payload)
     msg->headerptr = strdup(header);
     msg->payloadptr = strdup(payload);
     msg->parsed = 0;
+    msg->color = -1;
     return msg;
 }
 
@@ -129,6 +134,7 @@ sip_call_create(char *callid)
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
     call->attrs = NULL;
+    call->color = -1;
 
     // Initialize call lock
     pthread_mutexattr_t attr;
@@ -627,12 +633,13 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             }
             continue;
         }
-        if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &irest, value)) {
+        if (sscanf(pch, "CSeq: %s %[^\t\n\r]", rest, value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
                 // ACK Messages are not considered requests
                 if (strcasecmp(value, "ACK")) msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
+            msg_set_attribute(msg, SIP_ATTR_CSEQ, rest);
             continue;
         }
         if (sscanf(pch, "From: %[^:]:%[^\t\n\r>;]", rest, value)) {

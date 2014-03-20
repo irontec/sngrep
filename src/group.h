@@ -54,6 +54,7 @@ struct sip_call_group
 {
     sip_call_t *calls[1024];
     int callcnt;
+    int color;
 };
 
 extern sip_call_group_t *

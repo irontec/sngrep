@@ -90,6 +90,9 @@ call_raw_draw(PANEL *panel)
 int
 call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 {
+    // Previous message pointer
+    sip_msg_t *prev;
+
     // Variables for drawing each message character
     int raw_line, raw_char, column;
 
@@ -111,16 +114,35 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
         info->pad = pad;
     }
 
-    // Determine arrow color
-    if (info->group && is_option_enabled("color.callid")) {
-        wattron(pad, COLOR_PAIR(call_group_color(info->group, msg->call)));
-    } else {
+    // Color the message
+    if (is_option_enabled("color.request")) {
         // Determine arrow color
         if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
             wattron(pad, COLOR_PAIR(OUTGOING_COLOR));
         } else {
             wattron(pad, COLOR_PAIR(INCOMING_COLOR));
         }
+    }
+    // Color by call-id
+    if (info->group && is_option_enabled("color.callid")) {
+        wattron(pad, COLOR_PAIR(call_group_color(info->group, msg->call)));
+    }
+    // Color by CSeq within the same call
+    if (info->group && is_option_enabled("color.cseq")) {
+        if (msg->call->color == -1) {
+            msg->call->color = (info->group->color++ % 7) + 1;
+        }
+        if (msg->color == -1) {
+            if ((prev = call_get_prev_msg(msg->call, msg))) {
+                if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
+                    msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
+                    info->group->color = msg->call->color = (info->group->color++ % 7) + 1;
+                }
+            }
+            msg->color = msg->call->color;
+        }
+        // Turn on the message color
+        wattron(pad, COLOR_PAIR(msg->color));
     }
 
     // Print msg header

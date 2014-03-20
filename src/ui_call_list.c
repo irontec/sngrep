@@ -154,7 +154,7 @@ call_list_draw(PANEL *panel)
     getmaxyx(win, height, width);
 
     // Print in the header if we're actually capturing
-    mvwprintw(win, 3, 23, "%s", is_option_enabled("sip.capture")?"          ":"(Paused)");
+    mvwprintw(win, 3, 23, "%s", is_option_enabled("sip.capture")?"          ":" (Paused)");
 
     // Get available calls counter (we'll use it here a couple of times)
     if (!(callcnt = sip_calls_count())) return 0;

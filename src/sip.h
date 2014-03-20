@@ -75,6 +75,8 @@ enum sip_attr_id
     SIP_ATTR_METHOD,
     //! SIP Message is a request
     SIP_ATTR_REQUEST,
+    //! SIP CSeq number
+    SIP_ATTR_CSEQ,
     //! SIP Message has sdp
     SIP_ATTR_SDP,
     //! SIP Call first message method
@@ -148,6 +150,8 @@ struct sip_msg
     sip_call_t *call;
     //! Messages linked list
     sip_msg_t *next;
+    //! Color for this message (in color.cseq mode)
+    int color;
 };
 
 /**
@@ -167,6 +171,8 @@ struct sip_call
     pthread_mutex_t lock;
     //! Calls double linked list
     sip_call_t *next, *prev;
+    //! Last used color (for color.cseq)
+    int color;
 };
 
 /**

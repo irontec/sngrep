@@ -280,11 +280,20 @@ wait_for_input(ui_t *ui)
         switch (c) {
         case 'c':
             // @todo general application config structure
-            set_option_value("color", is_option_enabled("color") ? "off" : "on");
+            toggle_option("color");
             toggle_color(is_option_enabled("color"));
             break;
         case 'C':
-            set_option_value("color.callid", is_option_enabled("color.callid") ? "off" : "on");
+            if (is_option_enabled("color.request")) {
+                toggle_option("color.request");
+                toggle_option("color.callid");
+            } else if (is_option_enabled("color.callid")) {
+                toggle_option("color.callid");
+                toggle_option("color.cseq");
+            } else if (is_option_enabled("color.cseq")) {
+                toggle_option("color.cseq");
+                toggle_option("color.request");
+            }
             break;
         case 'p':
             // Toggle capture option
@@ -295,6 +304,7 @@ wait_for_input(ui_t *ui)
             ui_help(ui);
             break;
         case 'q':
+        case 'Q':
         case 27: /* KEY_ESC */
             ui_destroy(ui);
             return 0;

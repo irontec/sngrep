@@ -38,6 +38,7 @@ call_group_create()
         return NULL;
     }
     memset(group, 0, sizeof(sip_call_group_t));
+    group->color = 0;
     return group;
 }
 
