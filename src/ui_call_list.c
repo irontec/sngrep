@@ -365,7 +365,7 @@ call_list_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 22; width = 65;
+    height = 23; width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
 
@@ -405,8 +405,9 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 14, 2, "Enter       Show selected call-flow.");
     mvwprintw(help_win, 15, 2, "x           Show selected call-flow (Extended) if available.");
     mvwprintw(help_win, 16, 2, "r           Show selected call messages in raw mode.");
-    mvwprintw(help_win, 17, 2, "p           Pause. Stop capturing packages");
-    mvwprintw(help_win, 18, 2, "F           Show filter options");
+    mvwprintw(help_win, 17, 2, "p           Pause. Stop parsing captured packages");
+    mvwprintw(help_win, 18, 2, "f/F         Show filter options");
+    mvwprintw(help_win, 19, 2, "s/S         Save captured packages to a file.");
 
     // Press any key to close
     wgetch(help_win);

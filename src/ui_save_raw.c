@@ -159,6 +159,8 @@ save_raw_handle_key(PANEL *panel, int key)
     case 27 /*KEY_ESC*/:
         return key;
         break;
+    case 8:
+    case 127:
     case KEY_BACKSPACE:
         if (strlen(field_value) > 0)
             form_driver(info->form, REQ_DEL_PREV);

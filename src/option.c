@@ -75,7 +75,7 @@ init_options()
 
     // Raw options for Call flow screen
     set_option_value("cf.forceraw", "on");
-    set_option_value("cf.rawminwidth", "100");
+    set_option_value("cf.rawminwidth", "40");
     set_option_value("cf.splitcallid", "off");
 
     // Allow dialogs to be incomplete

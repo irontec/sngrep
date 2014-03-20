@@ -68,7 +68,9 @@
 
 ##-----------------------------------------------------------------------------
 ## Default minimun size from Message info in Call Flow panel
-# set cf.rawminwidth 100
+# set cf.rawminwidth 40
+## Fixed raw preview size
+# set cf.rawfixedwidth 40
 
 ##-----------------------------------------------------------------------------
 ## Uncomment to display dialogs that does not start with a request method
