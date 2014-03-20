@@ -480,6 +480,9 @@ call_flow_handle_key(PANEL *panel, int key)
             set_option_int_value("cf.rawfixedwidth", raw_width + 2);
         }
         break;
+    case 'T':
+        set_option_int_value("cf.rawfixedwidth", -1);
+        break;
     case 't':
         set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
         break;
@@ -511,7 +514,7 @@ call_flow_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 21; width = 65;
+    height = 22; width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
 
@@ -553,6 +556,7 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 15, 2, "r           Show original call messages in raw mode.");
     mvwprintw(help_win, 16, 2, "t           Toggle raw preview display");
     mvwprintw(help_win, 17, 2, "9/0         Increase/Decrease raw preview size");
+    mvwprintw(help_win, 18, 2, "T           Restore raw preview size");
 
     // Press any key to close
     wgetch(help_win);
