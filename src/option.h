@@ -119,6 +119,17 @@ int
 get_option_int_value(const char *opt);
 
 /**
+ * @brief Sets a settings option value form an int
+ *
+ * Basic setter for 'set' directive attributes
+ *
+ * @param opt Name of configuration option
+ * @param value Value of configuration option
+ */
+void
+set_option_int_value(const char *opt, int value);
+
+/**
  * @brief Sets a settings option value
  *
  * Basic setter for 'set' directive attributes

@@ -171,6 +171,13 @@ get_option_int_value(const char *opt)
 }
 
 void
+set_option_int_value(const char *opt, int value) {
+    char cvalue[10];
+    sprintf(cvalue, "%d", value);
+    set_option_value(opt, cvalue);
+}
+
+void
 set_option_value(const char *opt, const char *value)
 {
     int i;

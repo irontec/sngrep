@@ -324,8 +324,8 @@ int
 call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 {
     call_flow_info_t *info;
-    WINDOW *win;
-    int raw_width, cline, i, height, width;
+    WINDOW *win, *raw_win;
+    int raw_width, raw_height, raw_line, raw_char, column, line, height, width;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -334,26 +334,66 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     win = panel_window(panel);
     getmaxyx(win, height, width);
 
-    // Calculate the raw data width
-    raw_width = 31 + 30 * info->columns->colpos;
-    if (width - raw_width < get_option_int_value("cf.rawminwidth")) {
-        raw_width = width - get_option_int_value("cf.rawminwidth") - 2;
+    // Calculate the raw data width (width - used columns for flow)
+    raw_width = width - (31 + 30 * info->columns->colpos) - 2;
+    // We can define a mininum size for rawminwidth
+    if (raw_width < get_option_int_value("cf.rawminwidth")) {
+        raw_width = get_option_int_value("cf.rawminwidth");
+    }
+    // We can configure an exact raw size
+    if (get_option_int_value("cf.rawfixedwidth") != -1) {
+        raw_width = get_option_int_value("cf.rawfixedwidth");
+    } else {
+        // Consider the calculated sized as the fixed one
+        set_option_int_value("cf.rawfixedwidth", raw_width);
+    }
+    // Height of raw window is always available size minus 6 lines for header/footer
+    raw_height = height - 3;
+
+    // If we already have a raw window
+    raw_win = info->raw_win;
+    if (raw_win) {
+        // Check it has the correct size
+        if (getmaxx(raw_win) != raw_width) {
+            // We need a new raw window
+            delwin(raw_win);
+            info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
+        } else {
+            // We have a valid raw win, clear its content
+            wclear(raw_win);
+        }
+    } else {
+        // Create the raw window of required size
+        info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
     }
 
     // Draw raw box lines
     wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
-    mvwaddch(win, 2, raw_width, ACS_TTEE);
-    mvwvline(win, 3, raw_width, ACS_VLINE, height - 6);
-    mvwaddch(win, height - 3, raw_width, ACS_BTEE);
+    mvwaddch(win, 2, width - raw_width, ACS_TTEE);
+    mvwvline(win, 3, width - raw_width, ACS_VLINE, height - 6);
+    mvwaddch(win, height - 3, width - raw_width, ACS_BTEE);
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
-    // Clean the message area
-    for (cline = 3, i = 0; i < info->msgs_height + 2; i++)
-        mvwprintw(win, cline++, raw_width + 1, "%*s", width - raw_width - 2, "");
+    // Print msg payload
+    for (line = 0, raw_line = 0; raw_line < msg->plines; raw_line++) {
+        // Add character by character
+        for (column = 0, raw_char = 0; raw_char < strlen(msg->payload[raw_line]); raw_char++) {
+            // Wrap at the end of the window
+            if (column == raw_width - 1) {
+                line++;
+                column = 0;
+            }
+            // Don't write out of the window
+            if (line >= raw_height) break;
+            // Put next character in position
+            mvwaddch(raw_win, line, column++, msg->payload[raw_line][raw_char]);
+        }
+        // Done with this payload line, go to the next one
+        line++;
+    }
 
-    // Print the message payload in the right side of the screen
-    for (cline = 3, i = 0; i < msg->plines && i < info->msgs_height + 2; i++)
-        mvwprintw(win, cline++, raw_width + 1, "%.*s", width - raw_width - 2, msg->payload[i]);
+    // Copy the raw_win contents into the panel
+    copywin(raw_win, win, 0, 0, 3, width - raw_width + 1, raw_height - 1, COLS - 2, 0);
 
     return 0;
 }
@@ -361,7 +401,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 int
 call_flow_handle_key(PANEL *panel, int key)
 {
-    int i, rnpag_steps = 4;
+    int i, rnpag_steps = 4, raw_width;
     call_flow_info_t *info = call_flow_info(panel);
     sip_msg_t *next = NULL, *prev = NULL;
     ui_t *next_panel;
@@ -429,6 +469,18 @@ call_flow_handle_key(PANEL *panel, int key)
         // TODO
         call_raw_set_group(info->group);
         wait_for_input(next_panel);
+        break;
+    case '0':
+        raw_width = get_option_int_value("cf.rawfixedwidth");
+        if (raw_width - 2 > 0) {
+            set_option_int_value("cf.rawfixedwidth", raw_width - 2);
+        }
+        break;
+    case '9':
+        raw_width = get_option_int_value("cf.rawfixedwidth");
+        if (raw_width + 2 < COLS) {
+            set_option_int_value("cf.rawfixedwidth", raw_width + 2);
+        }
         break;
     case 't':
         set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");

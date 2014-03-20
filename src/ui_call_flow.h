@@ -56,6 +56,7 @@ struct call_flow_column
  */
 struct call_flow_info
 {
+    WINDOW *raw_win;
     sip_call_group_t *group;
     sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
