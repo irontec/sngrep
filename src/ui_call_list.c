@@ -427,7 +427,7 @@ call_list_exit_confirm(PANEL *panel)
     int exit = get_option_int_value("cl.defexitbutton") ;
 
     // Create a new panel and show centered
-    exit_win = newwin(8, 40, (LINES - 20) / 2, (COLS - 65) / 2);
+    exit_win = newwin(8, 40, (LINES - 8) / 2, (COLS - 40) / 2);
     exit_panel = new_panel(exit_win);
     keypad(exit_win, TRUE);
 
