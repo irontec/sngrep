@@ -161,7 +161,7 @@ filter_destroy(PANEL *panel)
 int
 filter_handle_key(PANEL *panel, int key)
 {
-    int field_idx;
+    int field_idx, i;
     char field_value[30];
 
     // Get panel information
@@ -207,6 +207,17 @@ filter_handle_key(PANEL *panel, int key)
     case KEY_BACKSPACE:
         if (strlen(field_value) > 0)
             form_driver(info->form, REQ_DEL_PREV);
+        break;
+    case 'I':
+        for (i=0; i < FLD_FILTER_COUNT; i++) {
+            set_current_field(info->form, info->fields[i]);
+            if (i == FLD_FILTER_INVITE || i == FLD_FILTER_ENABLE) {
+               form_driver(info->form, '*');
+            } else {
+               form_driver(info->form, REQ_CLR_FIELD);
+            }
+        }
+        set_current_field(info->form, info->fields[FLD_FILTER_FILTER]);
         break;
     case ' ':
         switch(field_idx) {
