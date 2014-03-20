@@ -83,8 +83,8 @@ init_options()
     set_option_value("sip.capture", "on");
 
     // Set default temporal file
-    sprintf(tmpfile, "/tmp/sngrep-%u-XXXXXX", (unsigned)time(NULL));
-    set_option_value("sngrep.tmpfile", mktemp(tmpfile));
+    sprintf(tmpfile, "/tmp/sngrep-%u.pcap", (unsigned)time(NULL));
+    set_option_value("sngrep.tmpfile", tmpfile);
     set_option_value("sngrep.keeptmpfile", "off");
     set_option_value("sngrep.savepath", getenv("HOME"));
 
