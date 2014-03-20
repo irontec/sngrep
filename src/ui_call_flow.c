@@ -334,7 +334,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     win = panel_window(panel);
     getmaxyx(win, height, width);
 
-    // Calculate the raw data width (width - used columns for flow)
+    // Calculate the raw data width (width - used columns for flow - vertical lines)
     raw_width = width - (31 + 30 * info->columns->colpos) - 2;
     // We can define a mininum size for rawminwidth
     if (raw_width < get_option_int_value("cf.rawminwidth")) {
@@ -369,9 +369,9 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 
     // Draw raw box lines
     wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
-    mvwaddch(win, 2, width - raw_width, ACS_TTEE);
-    mvwvline(win, 3, width - raw_width, ACS_VLINE, height - 6);
-    mvwaddch(win, height - 3, width - raw_width, ACS_BTEE);
+    mvwaddch(win, 2, width - raw_width - 2 , ACS_TTEE);
+    mvwvline(win, 3, width - raw_width - 2 , ACS_VLINE, height - 6);
+    mvwaddch(win, height - 3, width - raw_width - 2, ACS_BTEE);
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
     // Print msg payload
@@ -379,7 +379,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
         // Add character by character
         for (column = 0, raw_char = 0; raw_char < strlen(msg->payload[raw_line]); raw_char++) {
             // Wrap at the end of the window
-            if (column == raw_width - 1) {
+            if (column == raw_width) {
                 line++;
                 column = 0;
             }
@@ -393,7 +393,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     }
 
     // Copy the raw_win contents into the panel
-    copywin(raw_win, win, 0, 0, 3, width - raw_width + 1, raw_height - 1, COLS - 2, 0);
+    copywin(raw_win, win, 0, 0, 3, width - raw_width - 1, raw_height - 1, width - 2, 0);
 
     return 0;
 }
@@ -472,13 +472,13 @@ call_flow_handle_key(PANEL *panel, int key)
         break;
     case '0':
         raw_width = get_option_int_value("cf.rawfixedwidth");
-        if (raw_width - 2 > 0) {
+        if (raw_width - 2 > 1) {
             set_option_int_value("cf.rawfixedwidth", raw_width - 2);
         }
         break;
     case '9':
         raw_width = get_option_int_value("cf.rawfixedwidth");
-        if (raw_width + 2 < COLS) {
+        if (raw_width + 2 < COLS - 1) {
             set_option_int_value("cf.rawfixedwidth", raw_width + 2);
         }
         break;
