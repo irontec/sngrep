@@ -69,8 +69,13 @@ online_capture(void *pargv)
     if (!is_option_disabled("sngrep.tmpfile"))
         sprintf(cmdline, "%s -O %s", cmdline, get_option_value("sngrep.tmpfile"));
 
-    while (argv[argc])
-        sprintf(cmdline, "%s \"%s\"", cmdline, argv[argc++]);
+    while (argv[argc]){
+        if (strchr(argv[argc], ' ')) {
+            sprintf(cmdline, "%s \"%s\"", cmdline, argv[argc++]);
+        } else {
+            sprintf(cmdline, "%s %s", cmdline, argv[argc++]);
+        }
+    }
 
     // Open the command for reading.
     fp = popen(cmdline, "r");
