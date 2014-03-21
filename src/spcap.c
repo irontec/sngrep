@@ -206,9 +206,10 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     strftime(timestr, sizeof(timestr), "%Y/%m/%d %T", time);
 
     // XXX Build a header string
-    sprintf(msg_header, "U %s.%06ld %s:%u -> %s:%u", timestr, ut_tv.tv_usec,
-        inet_ntoa(ip->ip_src), htons(udp->udp_sport),
-        inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
+    memset(msg_header, 0, sizeof(msg_header));
+    sprintf(msg_header, "U %s.%06ld ",  timestr, ut_tv.tv_usec);
+    sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(udp->udp_sport));
+    sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
 
     // Parse this header and payload
     if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp((const char*)mode, "Online") ) {
