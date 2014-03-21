@@ -171,9 +171,9 @@ call_flow_draw(PANEL *panel)
 
     // Print color mode in title
     if (is_option_enabled("color")) {
-        if (is_option_enabled("color.request")) sprintf(title, "%s (%s)", title, "Color by Request/Response");
-        if (is_option_enabled("color.callid")) sprintf(title, "%s (%s)", title, "Color by Call-Id");
-        if (is_option_enabled("color.cseq")) sprintf(title, "%s (%s)", title, "Color by CSeq");
+        if (is_option_enabled("color.request")) sprintf(title + strlen(title), " (%s)", "Color by Request/Response");
+        if (is_option_enabled("color.callid")) sprintf(title + strlen(title), " (%s)", "Color by Call-Id");
+        if (is_option_enabled("color.cseq")) sprintf(title + strlen(title), " (%s)", "Color by CSeq");
     }
 
     mvwprintw(win, 1, (width - strlen(title))/2, "%s", title);
@@ -281,7 +281,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     memset(method, 0, sizeof(method));
     sprintf(method, "%s", msg_method);
     if (msg_get_attribute(msg, SIP_ATTR_SDP))
-        sprintf(method, "%s (SDP)", method);
+        strcat(method, " (SDP)");
 
     // Draw message type or status and line
     int msglen = strlen(method);

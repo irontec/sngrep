@@ -587,7 +587,7 @@ msg_parse_header(sip_msg_t *msg, const char *header)
 
         // Convert to string
         strftime(time, 20, "%H:%M:%S", localtime(&timet));
-        sprintf(time, "%s.%06d", time, (int) msg->ts.tv_usec);
+        sprintf(time + strlen(time), ".%06d", (int) msg->ts.tv_usec);
 
         msg_set_attribute(msg, SIP_ATTR_TIME, time);
         msg_set_attribute(msg, SIP_ATTR_SRC, ipfrom);

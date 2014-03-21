@@ -58,22 +58,23 @@ online_capture(void *pargv)
 {
     char **argv = (char**) pargv;
     int argc = 1;
-    char cmdline[256];
+    char cmdline[512];
     FILE *fp;
     char stdout_line[2048] = "";
     char msg_header[256], msg_payload[20480];
 
     // Build the commald line to execute ngrep
+    memset(cmdline, 0, sizeof(cmdline));
     sprintf(cmdline, "%s %s %s %s", STDBUF_BIN, STDBUF_ARGS, NGREP_BIN, NGREP_ARGS);
     // Add save to temporal file (if option enabled)
     if (!is_option_disabled("sngrep.tmpfile"))
-        sprintf(cmdline, "%s -O %s", cmdline, get_option_value("sngrep.tmpfile"));
+        sprintf(cmdline + strlen(cmdline), " -O %s", get_option_value("sngrep.tmpfile"));
 
     while (argv[argc]){
         if (strchr(argv[argc], ' ')) {
-            sprintf(cmdline, "%s \"%s\"", cmdline, argv[argc++]);
+            sprintf(cmdline + strlen(cmdline), " \"%s\"", argv[argc++]);
         } else {
-            sprintf(cmdline, "%s %s", cmdline, argv[argc++]);
+            sprintf(cmdline + strlen(cmdline), " %s", argv[argc++]);
         }
     }
 
@@ -123,8 +124,7 @@ load_from_file(const char* file)
     char msg_header[256], msg_payload[20480];
 
     // Build the commald line to execute ngrep
-    sprintf(cmdline, "%s %s %s %s", STDBUF_BIN, STDBUF_ARGS, NGREP_BIN, NGREP_ARGS);
-    sprintf(cmdline, "%s -I %s", cmdline, file);
+    sprintf(cmdline, "%s %s %s %s -I %s", STDBUF_BIN, STDBUF_ARGS, NGREP_BIN, NGREP_ARGS, file);
 
     // Open the command for reading.
     fp = popen(cmdline, "r");

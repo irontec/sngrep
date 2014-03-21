@@ -69,7 +69,7 @@ online_capture(void *pargv)
     //! Build the filter options
     memset(filter_exp, 0, sizeof(filter_exp));
     while (argv[argc]) {
-        sprintf(filter_exp, "%s %s", filter_exp, argv[argc++]);
+        sprintf(filter_exp + strlen(filter_exp), " %s", argv[argc++]);
     }
 
     if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
@@ -206,9 +206,9 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     strftime(timestr, sizeof(timestr), "%Y/%m/%d %T", time);
 
     // XXX Build a header string
-    sprintf(msg_header, "U %s.%06ld", timestr, ut_tv.tv_usec);
-    sprintf(msg_header, "%s %s:%u", msg_header, inet_ntoa(ip->ip_src), htons(udp->udp_sport));
-    sprintf(msg_header, "%s -> %s:%u", msg_header, inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
+    sprintf(msg_header, "U %s.%06ld %s:%u -> %s:%u", timestr, ut_tv.tv_usec,
+        inet_ntoa(ip->ip_src), htons(udp->udp_sport),
+        inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
 
     // Parse this header and payload
     if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp((const char*)mode, "Online") ) {
