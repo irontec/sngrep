@@ -48,7 +48,7 @@ enum save_raw_field_list {
     FLD_SAVE_RAW_SAVE,
     FLD_SAVE_RAW_CANCEL,
     //! Never remove this field id @see save_info
-    FLD_SAVE_RAW_COUNT,
+    FLD_SAVE_RAW_COUNT
 };
 
 //! Sorter declaration of struct save_info
@@ -64,7 +64,7 @@ struct save_raw_info
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields
-    FIELD *fields[FLD_SAVE_RAW_COUNT];
+    FIELD *fields[FLD_SAVE_RAW_COUNT+1];
     //! Group of calls information
     sip_call_group_t *group;
 };
