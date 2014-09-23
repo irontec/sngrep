@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include "ui_manager.h"
 #include "ui_call_raw.h"
+#include "ui_save_raw.h"
 #include "option.h"
 
 PANEL *

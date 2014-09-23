@@ -57,7 +57,7 @@ enum filter_FLD_FILTER_list {
     FLD_FILTER_FILTER,
     FLD_FILTER_CANCEL,
     //! Never remove this field id @see filter_info
-    FLD_FILTER_COUNT,
+    FLD_FILTER_COUNT
 };
 
 //! Sorter declaration of struct filter_info
@@ -73,7 +73,7 @@ struct filter_info
     //! Form that contains the filter fields
     FORM *form;
     //! An array of fields
-    FIELD *fields[FLD_FILTER_COUNT];
+    FIELD *fields[FLD_FILTER_COUNT+1];
 };
 
 /**

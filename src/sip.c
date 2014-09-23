@@ -139,7 +139,11 @@ sip_call_create(char *callid)
     // Initialize call lock
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
+#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
+	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+#else
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+#endif
     pthread_mutex_init(&call->lock, &attr);
 
     //@todo Add the call to the end of the list.
