@@ -190,6 +190,18 @@ extern sip_msg_t *
 sip_msg_create(const char *header, const char *payload);
 
 /**
+ * @brief Destroy a SIP message and free its memory
+ *
+ * Deallocate memory of an existing SIP Message.
+ * This function will remove the message from the call and the
+ * passed pointer will be NULL.
+ *
+ * @param msg SIP message to be deleted
+ */
+extern void
+sip_msg_destroy(sip_msg_t *msg);
+
+/**
  * @brief Create a new call with the given callid (Minimum required data)
  *
  * Allocated required memory for a new SIP Call. The call acts as
@@ -200,6 +212,18 @@ sip_msg_create(const char *header, const char *payload);
  */
 extern sip_call_t *
 sip_call_create(char *callid);
+
+/**
+ * @brief Free all related memory from a call and remove from call list
+ *
+ * Deallocate memory of an existing SIP Call.
+ * This will also remove all messages, calling sip_msg_destroy for each
+ * one.
+ *
+ * @param call Call to be destroyed
+ */
+extern void
+sip_call_destroy(sip_call_t *call);
 
 /**
  * @brief Parses Call-ID header of a SIP message payload
@@ -528,5 +552,15 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id);
  */
 extern int
 msg_is_retrans(sip_msg_t *msg);
+
+/**
+ * @brief Remove al calls
+ *
+ * This funtion will clear the call list invoking the destroy
+ * function for each one.
+ */
+void
+sip_calls_clear();
+
 
 #endif

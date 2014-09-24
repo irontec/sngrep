@@ -127,6 +127,29 @@ sip_msg_create(const char *header, const char *payload)
     return msg;
 }
 
+void
+sip_msg_destroy(sip_msg_t *msg)
+{
+    sip_msg_t *prev = NULL;
+
+    if (!msg) return;
+
+    // If the message belongs to a call, remove it from
+    // its message list
+    if (msg->call) {
+        if ((prev = call_get_prev_msg(msg->call, msg))) {
+            prev->next = msg->next;
+        } else {
+            msg->call->msgs = msg->next;
+        }
+    }
+
+    // Free all memory
+    free(msg->headerptr);
+    free(msg->payload);
+    free(msg);
+}
+
 sip_call_t *
 sip_call_create(char *callid)
 {
@@ -161,6 +184,24 @@ sip_call_create(char *callid)
     pthread_mutex_unlock(&calls_lock);
     return call;
 }
+
+void
+sip_call_destroy(sip_call_t *call)
+{
+    sip_call_t *prev = NULL;
+    sip_msg_t *msg = NULL;
+
+    // No call to destroy
+    if (!call) return;
+
+    // Get previous message
+    //for (msg = call->msgs; msg; msg = msg->next)
+    //    sip_msg_destroy(msg);
+
+    // Free it!
+    free(call);
+}
+
 
 char *
 sip_get_callid(const char* payload)
@@ -216,14 +257,16 @@ sip_load_message(const char *header, const char *payload)
                 && strncasecmp(method, "REGISTER", 8) && strncasecmp(method, "SUBSCRIBE", 9)
                 && strncasecmp(method, "OPTIONS", 7) && strncasecmp(method, "PUBLISH", 7)
                 && strncasecmp(method, "MESSAGE", 7) && strncasecmp(method, "NOTIFY", 6)){
-                //@todo sip_msg_destroy();
+                // Deallocate message memory
+                sip_msg_destroy(msg);
                 return NULL;
             }
         }
 
         // Create the call if not found
         if (!(call = sip_call_create(callid))) {
-            //@todo sip_msg_destroy();
+            // Deallocate message memory
+            sip_msg_destroy(msg);
             return NULL;
         }
     }
@@ -242,11 +285,13 @@ int
 sip_calls_count()
 {
     int callcnt = 0;
+    pthread_mutex_lock(&calls_lock);
     sip_call_t *call = calls;
     while (call) {
         if (!sip_check_call_ignore(call)) callcnt++;
         call = call->next;
     }
+    pthread_mutex_unlock(&calls_lock);
     return callcnt;
 }
 
@@ -256,6 +301,7 @@ sip_check_call_ignore(sip_call_t *call)
     int i;
     char filter_option[80];
     const char *filter;
+
     // Check if an ignore option exists
     for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
         if (is_ignored_value(attrs[i].name, call_get_attribute(call, attrs[i].id))) {
@@ -312,7 +358,6 @@ const char *
 sip_attr_get_description(enum sip_attr_id id)
 {
     sip_attr_hdr_t *header;
-
     if ((header = sip_attr_get_header(id))) {
         return header->desc;
     }
@@ -323,7 +368,6 @@ const char *
 sip_attr_get_name(enum sip_attr_id id)
 {
     sip_attr_hdr_t *header;
-
     if ((header = sip_attr_get_header(id))) {
         return header->name;
     }
@@ -383,6 +427,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     pthread_mutex_lock(&call->lock);
     // Set the message owner
     msg->call = call;
+
     // XXX Put this msg at the end of the msg list
     // Order is important!!!
     if (!call->msgs) {
@@ -399,16 +444,18 @@ sip_call_t *
 call_find_by_callid(const char *callid)
 {
     const char *cur_callid;
+    pthread_mutex_lock(&calls_lock);
     sip_call_t *cur = calls;
-    // XXX LOCKING
 
     while (cur) {
         cur_callid = call_get_attribute(cur, SIP_ATTR_CALLID);
         if (cur_callid && !strcmp(cur_callid, callid)) {
+            pthread_mutex_unlock(&calls_lock);
             return cur;
         }
         cur = cur->next;
     }
+    pthread_mutex_unlock(&calls_lock);
     return NULL;
 }
 
@@ -416,15 +463,19 @@ sip_call_t *
 call_find_by_xcallid(const char *xcallid)
 {
     const char *cur_xcallid;
+
+    pthread_mutex_lock(&calls_lock);
     sip_call_t *cur = calls;
 
     while (cur) {
         cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
         if (cur_xcallid && !strcmp(cur_xcallid, xcallid)) {
+            pthread_mutex_unlock(&calls_lock);
             return cur;
         }
         cur = cur->next;
     }
+    pthread_mutex_unlock(&calls_lock);
     return NULL;
 }
 
@@ -609,7 +660,6 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     char * pch;
     char value[256];
     char rest[256];
-    int irest;
 
     // Sanity check
     if (!msg || !payload) return 1;
@@ -703,4 +753,20 @@ msg_is_retrans(sip_msg_t *msg) {
 
     // All check passed, this package is equal to its previous
     return 1;
+}
+
+void
+sip_calls_clear()
+{
+    sip_call_t *call = NULL;
+    pthread_mutex_lock(&calls_lock);
+
+    // Remove first call until no first call exists
+    for (call = calls; call; call = call->next)
+        sip_call_destroy(call);
+
+    // Initialize calls list header
+    calls = NULL;
+
+    pthread_mutex_unlock(&calls_lock);
 }

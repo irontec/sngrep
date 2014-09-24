@@ -327,7 +327,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
             if ((prev = call_get_prev_msg(msg->call, msg))) {
                 if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
                     msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
-                    info->group->color = msg->call->color = (info->group->color++ % 7) + 1;
+                    int color = info->group->color + 1;
+                    info->group->color = msg->call->color = (color % 7) + 1;
                 }
             }
             msg->color = msg->call->color;
