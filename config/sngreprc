@@ -86,3 +86,7 @@
 # ignore starting OPTIONS
 # ignore starting REGISTER
 # ignore starting BYE
+
+##-----------------------------------------------------------------------------
+## Uncomment to configure calls capture limit (0: disabled)
+# set capture.limit 200

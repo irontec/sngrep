@@ -43,6 +43,8 @@
 int linktype;
 //! FIXME Pointer to the dump file
 pcap_dumper_t *pd = NULL;
+//! FIXME Session handle
+pcap_t *handle;
 
 #ifndef WITH_NGREP
 
@@ -52,8 +54,6 @@ online_capture(void *pargv)
     char **argv = (char**) pargv;
     int argc = 1;
     char filter_exp[256];
-    //! Session handle
-    pcap_t *handle;
     //! Device to sniff on
     char dev[] = "any";
     //! Error string
@@ -215,6 +215,11 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp((const char*)mode, "Online") ) {
         ui_new_msg_refresh(msg);
     }
+
+    // Check if we should stop capturing
+    int limit = get_option_int_value("capture.limit");
+    if (limit &&  !strcasecmp((const char*)mode, "Online") && sip_calls_count() >= limit)
+        pcap_breakloop(handle);
 
     // Store this package in temporal file
     if (pd) {
