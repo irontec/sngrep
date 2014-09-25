@@ -144,9 +144,12 @@ sip_msg_destroy(sip_msg_t *msg)
         }
     }
 
+    // Free message payload pointer if not parsed
+    if (msg->payloadptr)
+        free(msg->payloadptr);
+
     // Free all memory
     free(msg->headerptr);
-    free(msg->payload);
     free(msg);
 }
 
@@ -611,6 +614,7 @@ msg_parse(sip_msg_t *msg)
     // Free message pointers
     //free(msg->headerptr);
     free(msg->payloadptr);
+    msg->payloadptr = NULL;
 
     // Mark as parsed
     msg->parsed = 1;
