@@ -102,12 +102,13 @@ online_capture(void *pargv)
     linktype = pcap_datalink(handle);
 
     // Parse available packages
-    pcap_loop(handle, -1, parse_packet, "Online");
+    pcap_loop(handle, -1, parse_packet, (u_char*)"Online");
 
     // Close temporal file
     pcap_dump_close(pd);
     // Close PCAP file
     pcap_close(handle);
+    return 0;
 }
 #endif
 
@@ -207,7 +208,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     // XXX Build a header string
     memset(msg_header, 0, sizeof(msg_header));
-    sprintf(msg_header, "U %s.%06ld ",  timestr, ut_tv.tv_usec);
+    sprintf(msg_header, "U %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
     sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(udp->udp_sport));
     sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
 
