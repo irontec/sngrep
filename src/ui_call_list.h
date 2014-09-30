@@ -196,4 +196,14 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
 extern void
 call_list_filter_update(PANEL *panel);
 
+
+/**
+ * @brief Remove all calls from the list and calls storage
+ *
+ * This funtion will clear all call lines in the list
+ * @param panel Call list panel pointer
+ */
+extern void
+call_list_clear(PANEL *panel);
+
 #endif

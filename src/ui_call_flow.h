@@ -32,6 +32,7 @@
 #ifndef __UI_CALL_FLOW_EX_H
 #define __UI_CALL_FLOW_EX_H
 #include "ui_manager.h"
+#include "group.h"
 
 //! Sorter declaration of struct call_flow_info
 typedef struct call_flow_info call_flow_info_t;

@@ -40,9 +40,7 @@ PANEL *
 call_raw_create()
 {
     PANEL *panel;
-    WINDOW *win;
     call_raw_info_t *info;
-    int height, width;
 
     // Create a new panel to fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
@@ -137,7 +135,8 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
             if ((prev = call_get_prev_msg(msg->call, msg))) {
                 if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
                     msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
-                    info->group->color = msg->call->color = (info->group->color++ % 7) + 1;
+                    int color = info->group->color + 1;
+                    info->group->color = msg->call->color = (color % 7) + 1;
                 }
             }
             msg->color = msg->call->color;
@@ -177,7 +176,6 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 int
 call_raw_handle_key(PANEL *panel, int key)
 {
-    int i, rnpag_steps = 10;
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
     ui_t *next_panel;
 

@@ -335,6 +335,12 @@ call_list_handle_key(PANEL *panel, int key)
             wait_for_input(next_panel);
         }
         break;
+    case KEY_F(5):
+        // Remove all stored calls
+        sip_calls_clear();
+        // Clear List
+        call_list_clear(panel);
+        break;
     case ' ':
         if (!info->cur_call) return -1;
         if (call_group_exists(info->group, info->cur_call)) {
@@ -469,7 +475,7 @@ call_list_exit_confirm(PANEL *panel)
         case KEY_LEFT:
             exit = 1;
             break;
-        case 9:
+       case 9:
             exit = (exit)?0:1;
             break;
         case 10:
@@ -502,8 +508,26 @@ call_list_filter_update(PANEL *panel)
 {
 
     WINDOW *win = panel_window(panel);
-    int height, width, i, startline = 8;
 
+    // Clear list
+    call_list_clear(panel);
+
+    // Get Window dimensions
+    int height, width;
+    getmaxyx(win, height, width);
+
+    // Print filter info
+    mvwprintw(win, 4, 2, "%*s", width - 4, "");
+    if (is_option_enabled("filter.enable"))
+        mvwprintw(win, 4, 2, "%s", "Display filter: TODO");
+}
+
+void
+call_list_clear(PANEL *panel)
+{
+    WINDOW *win = panel_window(panel);
+
+    int height, width, i, startline = 8;
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     if (!info) return;
@@ -520,9 +544,5 @@ call_list_filter_update(PANEL *panel)
     for (i=0; i < info->linescnt; i++) {
        mvwprintw(win, startline++, 5, "%*s", width - 6, "");
     }
-
-    // Print filter info
-    mvwprintw(win, 4, 2, "%*s", width - 4, "");
-    if (is_option_enabled("filter.enable"))
-        mvwprintw(win, 4, 2, "%s", "Display filter: TODO");
 }
+

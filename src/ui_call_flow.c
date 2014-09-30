@@ -171,9 +171,9 @@ call_flow_draw(PANEL *panel)
 
     // Print color mode in title
     if (is_option_enabled("color")) {
-        if (is_option_enabled("color.request")) sprintf(title + strlen(title), " (%s)", "Color by Request/Response");
-        if (is_option_enabled("color.callid")) sprintf(title + strlen(title), " (%s)", "Color by Call-Id");
-        if (is_option_enabled("color.cseq")) sprintf(title + strlen(title), " (%s)", "Color by CSeq");
+        if (is_option_enabled("color.request")) strcat(title, " (Color by Request/Response)");
+        if (is_option_enabled("color.callid")) strcat(title, " (Color by Call-Id)");
+        if (is_option_enabled("color.cseq")) strcat(title, " (Color by CSeq)");
     }
 
     mvwprintw(win, 1, (width - strlen(title))/2, "%s", title);
@@ -327,7 +327,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
             if ((prev = call_get_prev_msg(msg->call, msg))) {
                 if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
                     msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
-                    info->group->color = msg->call->color = (info->group->color++ % 7) + 1;
+                    int color = info->group->color + 1;
+                    info->group->color = msg->call->color = (color % 7) + 1;
                 }
             }
             msg->color = msg->call->color;

@@ -85,6 +85,9 @@ online_capture(void *pargv)
         return 1;
     }
 
+    // Get capture limit value
+    int limit = get_option_int_value("capture.limit");
+
     // Read the output a line at a time - output it.
     while (fgets(stdout_line, 1024, fp) != NULL) {
         if (!strncmp(stdout_line, "\n", 1) && strlen(msg_header) && strlen(msg_payload)) {
@@ -93,6 +96,12 @@ online_capture(void *pargv)
             if ((msg = sip_load_message(msg_header, strdup((const char*) msg_payload)))) {
                 // Update the ui
                 ui_new_msg_refresh(msg);
+
+                // Check if we have reach capture limit
+                if (limit && sip_calls_count() >= limit) {
+                    break;
+                }
+
             }
 
             // Initialize structures
