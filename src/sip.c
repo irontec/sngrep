@@ -191,18 +191,16 @@ sip_call_create(char *callid)
 void
 sip_call_destroy(sip_call_t *call)
 {
-    sip_call_t *prev = NULL;
-    sip_msg_t *msg = NULL;
-
     // No call to destroy
     if (!call) return;
 
-    // Get previous message
-    //for (msg = call->msgs; msg; msg = msg->next)
-    //    sip_msg_destroy(msg);
+    // Remove all messages 
+    while(call->msgs)
+        sip_msg_destroy(call->msgs);
 
     // Free it!
     free(call);
+    call = NULL;
 }
 
 
