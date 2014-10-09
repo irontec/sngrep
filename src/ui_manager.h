@@ -107,6 +107,10 @@ enum sngrep_colors
     DETAIL_BORDER_COLOR,
     //! Call-List selected color
     SELECTED_COLOR,
+    //! Keybinding key color for footers
+    KEYBINDINGS_KEY,
+    //! Keybinding key action for footers
+    KEYBINDINGS_ACTION,
 };
 
 /**
@@ -294,5 +298,24 @@ ui_new_msg_refresh(sip_msg_t *msg);
  */
 extern int
 ui_set_replace(ui_t *, ui_t*);
+
+/**
+ * @brief Draw keybinding info at the bottom of the panel
+ *
+ * This function will draw a line with the available keybindings
+ * in the last line of the given panel
+ *
+ */
+extern void
+draw_keybindings(PANEL *panel, const char *keybindings[], int count);
+
+/**
+ * @brief Draw a vertical scroll
+ *
+ * This function will draw a vertical scroll in the
+ * right or left side of the given window
+ */
+extern void
+draw_vscrollbar(WINDOW *win, int value, int max, bool left);
 
 #endif    // __SNGREP_UI_MANAGER_H

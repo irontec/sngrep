@@ -40,7 +40,6 @@
  *
  * +--------------------------------------------------------+
  * |                     Title                              |
- * +------------------------------+-------------------------+
  * |   addr1  addr2  addr3  addr4 | Selected Raw Message    |
  * |   -----  -----  -----  ----- | preview                 |
  * | Tmst|      |      |      |   |                         |
@@ -56,18 +55,11 @@
  * |     |      |      |      |   |                         |
  * |     |      |      |      |   |                         |
  * |     |      |      |      |   |                         |
- * +--------------------------------------------------------+
  * | Usefull hotkeys                                        |
  * +--------------------------------------------------------+
  *
  * Some values we have in mind, stored in the info structure of the panel:
  *
- *  - msgs_height: this represents the area's height where we can draw message arrows.
- *       It's calculated from the available screen height minus the space of title and
- *       hotkeys and headers.
- *  - msgs_width: this represents the area's width where we can draw message arrows.
- *       It's calculated from the available screen width minus the space of the borders
- *       and the raw message (if visible).
  *  - raw_width: this represents the raw message preview width if visible.
  */
 
@@ -92,8 +84,7 @@ call_flow_create()
     getmaxyx(win, height, width);
 
     // Calculate available printable area for messages
-    info->msgs_height = height /* top_bar */- 3 /* bottom_bar */- 3 /* Addrs headers */- 2;
-    info->msgs_width = width /* borders */- 2;
+    info->flow_win = subwin(win, height - 2 - 2 - 2, width - 2, 4, 0); // Header - Footer - Address
     info->raw_width = 0; // calculated with the available space after drawing columns
 
     return panel;
@@ -148,7 +139,7 @@ call_flow_draw(PANEL *panel)
     call_flow_info_t *info;
     sip_msg_t *msg;
     WINDOW *win;
-    int height, width, cline;
+    int height, width, cline = 0;
     char title[256];
 
     // Get panel information
@@ -158,9 +149,6 @@ call_flow_draw(PANEL *panel)
     win = panel_window(panel);
     getmaxyx(win, height, width);
     werase(win);
-    wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
-    title_foot_box(win);
-    wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
     // Set title
     if (info->group->callcnt == 1) {
@@ -176,27 +164,23 @@ call_flow_draw(PANEL *panel)
         if (is_option_enabled("color.cseq")) strcat(title, " (Color by CSeq)");
     }
 
-    mvwprintw(win, 1, (width - strlen(title))/2, "%s", title);
+    // Draw panel title
+    wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    mvwprintw(win, 0, 0,  "%*s", width, "");
+    mvwprintw(win, 0, (width - strlen(title))/2, "%s", title);
+    wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
 
     // Show some keybinding
-    mvwprintw(win, height - 2, 2, "Q/Esc: Quit");
-    mvwprintw(win, height - 2, 16, "F1: Help");
-    mvwprintw(win, height - 2, 27, "x: Call-Flow");
-    mvwprintw(win, height - 2, 42, "r: Call Raw");
-    mvwprintw(win, height - 2, 57, "cC: Colours");
-    mvwprintw(win, height - 2, 72, "t: Toggle Raw");
-    mvwprintw(win, height - 2, 87, "s: Split callid");
+    call_flow_draw_footer(panel);
 
     // Redraw columns
     call_flow_draw_columns(panel);
 
     // Let's start from the first displayed message (not the first in the call group)
-    cline = 5;
     for (msg = info->first_msg; msg; msg = call_group_get_next_msg(info->group, msg)) {
-        if (call_flow_draw_message(panel, msg, cline) != 0) {
-            mvwaddch(win, 4 + info->msgs_height, 20, ACS_DARROW);
+        // Draw messages until the Message height has been filled
+        if (call_flow_draw_message(panel, msg, cline) != 0)
             break;
-        }
         // One message fills 2 lines
         cline += 2;
     }
@@ -206,8 +190,32 @@ call_flow_draw(PANEL *panel)
         call_flow_draw_raw(panel, info->cur_msg);
     }
 
+    // Draw the scrollbar
+    draw_vscrollbar(info->flow_win,
+        call_group_msg_number(info->group, info->first_msg) * 2,
+        call_group_msg_count(info->group) * 2, true);
+
+    // Redraw flow win
+    wrefresh(info->flow_win);
+
     return 0;
 
+}
+
+void
+call_flow_draw_footer(PANEL *panel)
+{
+    const char *keybindings[] = {
+        "F1",       "Help",
+        "Esc/Q",    "Quit",
+        "X",        "Extended",
+        "R",        "Raw",
+        "C",        "Colours",
+        "S",        "Split Call-Id",
+        "T",        "Toggle Raw",
+        "9/0",      "Raw width" };
+
+    draw_keybindings(panel, keybindings, 16);
 }
 
 int
@@ -217,11 +225,13 @@ call_flow_draw_columns(PANEL *panel)
     call_flow_column_t *column;
     WINDOW *win;
     sip_msg_t *msg;
+    int flow_height, flow_width;
 
     // Get panel information
     info = call_flow_info(panel);
     // Get window of main panel
     win = panel_window(panel);
+    getmaxyx(info->flow_win, flow_height, flow_width);
 
     // Load columns if not loaded
     if (!info->columns) {
@@ -234,10 +244,10 @@ call_flow_draw_columns(PANEL *panel)
 
     // Draw vertical columns lines
     for (column = info->columns; column; column = column->next) {
-        mvwvline(win, 5, 20 + 30 * column->colpos, ACS_VLINE, info->msgs_height);
-        mvwhline(win, 4, 10 + 30 * column->colpos, ACS_HLINE, 20);
-        mvwaddch(win, 4, 20 + 30 * column->colpos, ACS_TTEE);
-        mvwprintw(win, 3, 7 + 30 * column->colpos, "%22s", column->addr);
+        mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
+        mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
+        mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
+        mvwprintw(win, 2, 7 + 30 * column->colpos, "%22s", column->addr);
     }
 
     return 0;
@@ -257,13 +267,16 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     const char *msg_src;
     const char *msg_dst;
     char method[80];
+    int height, width;
 
     // Get panel information
     info = call_flow_info(panel);
     // Get the messages window
-    win = panel_window(panel);
+    win = info->flow_win;
+    getmaxyx(win, height, width);
+
     // Get the current line in the win
-    if (cline > info->msgs_height + 3) return 1;
+    if (cline > height + 2) return 1;
 
     // Get message attributes
     msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
@@ -340,6 +353,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     mvwprintw(win, cline, startpos + 2, "%.*s", distance, "");
     mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
     mvwhline(win, cline + 1, startpos + 2, ACS_HLINE, distance);
+
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (!strcasecmp(msg_src, column1->addr)) {
         mvwaddch(win, cline + 1, endpos - 2, ACS_RARROW);
@@ -412,9 +426,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 
     // Draw raw box lines
     wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
-    mvwaddch(win, 2, width - raw_width - 2 , ACS_TTEE);
-    mvwvline(win, 3, width - raw_width - 2 , ACS_VLINE, height - 6);
-    mvwaddch(win, height - 3, width - raw_width - 2, ACS_BTEE);
+    mvwvline(win, 1, width - raw_width - 2 , ACS_VLINE, height - 2);
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
     // Print msg payload
@@ -436,7 +448,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     }
 
     // Copy the raw_win contents into the panel
-    copywin(raw_win, win, 0, 0, 3, width - raw_width - 1, raw_height - 1, width - 2, 0);
+    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height - 1, width - 2, 0);
 
     return 0;
 }
@@ -444,7 +456,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 int
 call_flow_handle_key(PANEL *panel, int key)
 {
-    int i, rnpag_steps = 4, raw_width;
+    int i, rnpag_steps = 4, raw_width, height, width;
     call_flow_info_t *info = call_flow_info(panel);
     sip_msg_t *next = NULL, *prev = NULL;
     ui_t *next_panel;
@@ -452,6 +464,8 @@ call_flow_handle_key(PANEL *panel, int key)
 
     // Sanity check, this should not happen
     if (!info) return -1;
+
+    getmaxyx(info->flow_win, height, width);
 
     switch (key) {
     case KEY_DOWN:
@@ -461,7 +475,7 @@ call_flow_handle_key(PANEL *panel, int key)
         info->cur_line += 2;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
-        if (info->cur_line >= info->msgs_height) {
+        if (info->cur_line >= height) {
             info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
             info->cur_line -= 2;
         }

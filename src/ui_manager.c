@@ -26,6 +26,7 @@
  * @brief Source of functions defined in ui_manager.h
  *
  */
+#include <string.h>
 #include "option.h"
 #include "ui_manager.h"
 #include "ui_call_list.h"
@@ -333,6 +334,8 @@ toggle_color(int on)
         init_pair(CALLID6_COLOR, COLOR_BLUE, COLOR_BLACK);
         init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(KEYBINDINGS_KEY, COLOR_WHITE, COLOR_CYAN);
+        init_pair(KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_CYAN);
     } else {
         init_pair(HIGHLIGHT_COLOR, COLOR_BLACK, COLOR_WHITE);
         init_pair(HELP_COLOR, COLOR_WHITE, COLOR_BLACK);
@@ -392,4 +395,59 @@ ui_set_replace(ui_t *original, ui_t *replace)
     original->replace = replace;
     return 0;
     pthread_mutex_unlock(&refresh_lock);
+}
+
+void
+draw_keybindings(PANEL *panel, const char *keybindings[], int count)
+{
+    int height, width, key, xpos = 0;
+
+    // Get window available space
+    WINDOW *win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Write a line all the footer width
+    wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    mvwprintw(win, height - 1, 0,  "%*s", width, "");
+    wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+
+    // Draw keys and their actions
+    for (key = 0; key < count; key+=2) {
+        wattron(win, A_BOLD);
+        wattron(win, COLOR_PAIR(KEYBINDINGS_KEY));
+        mvwprintw(win, height - 1, xpos,  "%-*s", strlen(keybindings[key]) + 1, keybindings[key]);
+        wattroff(win, A_BOLD);
+        xpos += strlen(keybindings[key]) + 1;
+        wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+        mvwprintw(win, height - 1, xpos,  "%-*s", strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);
+        wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+        xpos += strlen(keybindings[key+1]) + 3;
+    }
+}
+
+void
+draw_vscrollbar(WINDOW *win, int value, int max, bool left)
+{
+    int height, width, cline, scrollen, scrollypos, scrollxpos;
+
+    // Get window available space
+    getmaxyx(win, height, width);
+
+    // If no even a screen has been filled, don't draw it
+    if (max < height) return;
+
+    // Display the scrollbar left or right
+    scrollxpos = (left) ? 0 : width - 1;
+
+    // Initialize scrollbar line
+    mvwvline(win, 0, scrollxpos, ACS_VLINE, height);
+
+    // How long the scroll will be
+    scrollen = height * 100  / (max * 100 / height) ;
+    // Where will the scroll start
+    scrollypos = height * (value * 100 / max ) / 100;
+
+    // Draw the N blocks of the scrollbar
+    for (cline = 0; cline < scrollen; cline++)
+        mvwaddch(win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
 }

@@ -74,43 +74,37 @@ call_list_create()
     getmaxyx(win, height, width);
 
     // Calculate available printable area
-    info->linescnt = height - 11;
+    info->list_win = subwin(win, height - 6, width, 5, 0);
     info->group = call_group_create();
 
-    // Draw a box arround the window
-    title_foot_box(win);
-
     // Draw a header with APP_NAME and APP_LONG_DESC - FIXME /calculate a properly middle :P
-    mvwprintw(win, 1, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
-    mvwprintw(win, 3, 2, "Current Mode: %s", get_option_value("sngrep.mode"));
-    if (get_option_value("sngrep.file")) {
-        mvwprintw(win, 4, 2, "Filename: %s", get_option_value("sngrep.file"));
-    }
-    mvwaddch(win, 5, 0, ACS_LTEE);
-    mvwhline(win, 5, 1, ACS_HLINE, width - 2);
-    mvwaddch(win, 5, width - 1, ACS_RTEE);
-    mvwaddch(win, 7, 0, ACS_LTEE);
-    mvwhline(win, 7, 1, ACS_HLINE, width - 2);
-    mvwaddch(win, 7, width - 1, ACS_RTEE);
-    mvwprintw(win, height - 2, 2, "%s  %s  %s  %s  %s  %s  %s",
-        "F1:Help",
-        "ESC:Quit",
-        "Enter/x:Callf-Flow",
-        "P:Pause",
-        "Space:Select",
-        "F:Filter",
-        "S:Save");
+    // mvwprintw(win, 1, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
+    mvwprintw(win, 1, 2, "Current Mode: %s", get_option_value("sngrep.mode"));
+    if (get_option_value("sngrep.file"))
+        mvwprintw(win, 1, width - strlen (get_option_value("sngrep.file")) - 11, "Filename: %s", get_option_value("sngrep.file"));
+    mvwprintw(win, 3, 2, "Filter: ");
+
+    // Draw the footer of the window
+    call_list_draw_footer(panel);
+
+    wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    // Draw panel title
+    mvwprintw(win, 0, 0,  "%*s", width, "");
+    mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
 
     // Draw columns titles
+    mvwprintw(win, 4, 0,  "%*s", width, "");
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
         // Get current column width
         collen = info->columns[i].width;
 
         // Check if the column will fit in the remaining space of the screen
         if (colpos + collen >= width) break;
-        mvwprintw(win, 6, colpos, sip_attr_get_description(info->columns[i].id));
+        mvwprintw(win, 4, colpos, sip_attr_get_description(info->columns[i].id));
         colpos += collen + 1;
     }
+    wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+
     // Return the created panel
     return panel;
 }
@@ -130,6 +124,22 @@ call_list_destroy(PANEL *panel)
     del_panel(panel);
 }
 
+void
+call_list_draw_footer(PANEL *panel)
+{
+    const char *keybindings[] = {
+        "F1",       "Help",
+        "Esc/Q",    "Quit",
+        "Enter",    "Show",
+        "X",        "Extended",
+        "C",        "Colours",
+        "R",        "Raw",
+        "F",        "Filter",
+        "S",        "Save" };
+
+    draw_keybindings(panel, keybindings, 16);
+}
+
 int
 call_list_redraw_required(PANEL *panel, sip_msg_t *msg)
 {
@@ -140,7 +150,7 @@ call_list_redraw_required(PANEL *panel, sip_msg_t *msg)
 int
 call_list_draw(PANEL *panel)
 {
-    int height, width, i, colpos, collen, startline = 8;
+    int height, width, i, colpos, collen, cline = 0;
     struct sip_call *call;
     int callcnt;
     const char *call_attr, *ouraddr;
@@ -150,11 +160,8 @@ call_list_draw(PANEL *panel)
     if (!info) return -1;
 
     // Get window of call list panel
-    WINDOW *win = panel_window(panel);
+    WINDOW *win = info->list_win;
     getmaxyx(win, height, width);
-
-    // Print in the header if we're actually capturing
-    mvwprintw(win, 3, 23, "%s", is_option_enabled("sip.capture")?"          ":" (Paused)");
 
     // Get available calls counter (we'll use it here a couple of times)
     if (!(callcnt = sip_calls_count())) return 0;
@@ -166,13 +173,14 @@ call_list_draw(PANEL *panel)
     }
 
     // Fill the call list
-    int cline = startline;
     for (call = info->first_call; call; call = call_get_next(call)) {
         // Stop if we have reached the bottom of the list
-        if (cline >= info->linescnt + startline) break;
+        if (cline == height) break;
 
         // We only print calls with messages (In fact, all call should have msgs)
         if (!call_msg_count(call)) continue;
+
+        // TODO Useless feature :|
         if ((ouraddr = get_option_value("address"))) {
             if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_SRC))) {
                 wattron(win, COLOR_PAIR(OUTGOING_COLOR));
@@ -181,6 +189,7 @@ call_list_draw(PANEL *panel)
             }
         }
 
+        // Show bold selected rows
         if (call_group_exists(info->group, call)) {
             wattron(win, A_BOLD);
             wattron(win, COLOR_PAIR(SELECTED_COLOR));
@@ -190,7 +199,11 @@ call_list_draw(PANEL *panel)
         if (call == info->cur_call) {
             wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
         }
-        mvwprintw(win, cline, 5, "%*s", width - 6, "");
+
+        // Set current line background
+        mvwprintw(win, cline, 0, "%*s", width - 2, "");
+        // Set current line selection box
+        mvwprintw(win, cline, 2, call_group_exists(info->group, call)?"[*]":"[ ]");
 
         // Print requested columns
         for (colpos = 6, i = 0; i < info->columncnt; i++) {
@@ -202,7 +215,6 @@ call_list_draw(PANEL *panel)
             if ((call_attr = call_get_attribute(call, info->columns[i].id))) {
                 mvwprintw(win, cline, colpos, "%.*s", collen, call_attr);
             }
-
             colpos += collen + 1;
         }
         wattroff(win, COLOR_PAIR(SELECTED_COLOR));
@@ -211,35 +223,27 @@ call_list_draw(PANEL *panel)
         cline++;
     }
 
-    // Clean scroll information
-    mvwprintw(win, startline, 2, " ");
-    mvwprintw(win, startline + info->linescnt - 2, 1, "   ");
-    mvwprintw(win, startline + info->linescnt - 1, 2, " ");
+    // Draw scrollbar to the right
+    draw_vscrollbar(win, info->first_line, callcnt, false);
+    wrefresh(info->list_win);
 
-    // Update the scroll information
-    if (info->first_line > 1) mvwaddch(win, startline, 2, ACS_UARROW);
-    if (callcnt > info->first_line + info->linescnt) {
-        mvwaddch(win, startline + info->linescnt - 1, 2, ACS_DARROW);
-    }
-
-    // Set the current line % if we have more calls that available lines
-    int percentage = (info->first_line + info->cur_line) * 100 / callcnt;
-    if (callcnt > info->linescnt && percentage < 100) {
-        mvwprintw(win, startline + info->linescnt - 2, 1, "%2d%%", percentage);
-    }
     return 0;
 }
 
 int
 call_list_handle_key(PANEL *panel, int key)
 {
-    int i, rnpag_steps = get_option_int_value("cl.scrollstep");
+    int i, height, width, rnpag_steps = get_option_int_value("cl.scrollstep");
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     ui_t *next_panel;
     sip_call_group_t *group;
 
     // Sanity check, this should not happen
     if (!info) return -1;
+
+    // Get window of call list panel
+    WINDOW *win = info->list_win;
+    getmaxyx(win, height, width);
 
     switch (key) {
     case KEY_DOWN:
@@ -249,10 +253,10 @@ call_list_handle_key(PANEL *panel, int key)
         info->cur_line++;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
-        if (info->cur_line > info->linescnt) {
+        if (info->cur_line > height) {
             info->first_call = call_get_next(info->first_call);
             info->first_line++;
-            info->cur_line = info->linescnt;
+            info->cur_line = height;
         }
         break;
     case KEY_UP:
@@ -511,15 +515,6 @@ call_list_filter_update(PANEL *panel)
 
     // Clear list
     call_list_clear(panel);
-
-    // Get Window dimensions
-    int height, width;
-    getmaxyx(win, height, width);
-
-    // Print filter info
-    mvwprintw(win, 4, 2, "%*s", width - 4, "");
-    if (is_option_enabled("filter.enable"))
-        mvwprintw(win, 4, 2, "%s", "Display filter: TODO");
 }
 
 void
@@ -527,7 +522,6 @@ call_list_clear(PANEL *panel)
 {
     WINDOW *win = panel_window(panel);
 
-    int height, width, i, startline = 8;
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     if (!info) return;
@@ -537,12 +531,7 @@ call_list_clear(PANEL *panel)
     info->first_line = info->cur_line = 0;
     info->group->callcnt = 0;
 
-    // Get Window dimensions
-    getmaxyx(win, height, width);
-
     // Clear Displayed lines
-    for (i=0; i < info->linescnt; i++) {
-       mvwprintw(win, startline++, 5, "%*s", width - 6, "");
-    }
+    werase(info->list_win);
 }
 

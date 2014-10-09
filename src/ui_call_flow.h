@@ -58,11 +58,10 @@ struct call_flow_column
 struct call_flow_info
 {
     WINDOW *raw_win;
+    WINDOW *flow_win;
     sip_call_group_t *group;
     sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
-    int msgs_height;
-    int msgs_width;
     int raw_width;
     int cur_line;
     call_flow_column_t *columns;
@@ -115,6 +114,9 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg);
  */
 extern int
 call_flow_draw(PANEL *panel);
+
+extern void
+call_flow_draw_footer(PANEL *panel)
 
 extern int
 call_flow_draw_columns(PANEL *panel);

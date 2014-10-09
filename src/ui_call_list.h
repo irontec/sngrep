@@ -73,10 +73,10 @@ struct call_list_info
     call_list_column_t columns[10];
     //! Displayed column count.
     int columncnt;
-    //! Displayed lines in the list.
-    int linescnt;
     //! Stores the current selected line
     int cur_line;
+    //! List subwindow
+    WINDOW *list_win;
 };
 
 /**
@@ -97,10 +97,22 @@ call_list_create();
  *
  * This function will hide the panel and free all allocated memory.
  *
+ * @param panel Ncurses panel pointer
  * @return panel Ncurses panel pointer
  */
 extern void
 call_list_destroy(PANEL *panel);
+
+/**
+ * @brief Draw panel footer
+ * 
+ * This funtion will draw Call list footer that contains
+ * keybinginds
+ * 
+ * @param panel Ncurses panel pointer
+ */
+extern void
+call_list_draw_footer(PANEL *panel)
 
 /**
  * @brief Check if the panel requires to be redrawn
