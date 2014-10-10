@@ -116,7 +116,7 @@ extern int
 call_flow_draw(PANEL *panel);
 
 extern void
-call_flow_draw_footer(PANEL *panel)
+call_flow_draw_footer(PANEL *panel);
 
 extern int
 call_flow_draw_columns(PANEL *panel);

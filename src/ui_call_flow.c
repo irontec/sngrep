@@ -196,7 +196,7 @@ call_flow_draw(PANEL *panel)
         call_group_msg_count(info->group) * 2, true);
 
     // Redraw flow win
-    wrefresh(info->flow_win);
+    wnoutrefresh(info->flow_win);
 
     return 0;
 

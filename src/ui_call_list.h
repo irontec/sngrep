@@ -31,6 +31,7 @@
  */
 #ifndef __UI_CALL_LIST_H
 #define __UI_CALL_LIST_H
+#include <form.h>
 #include "ui_manager.h"
 
 //! Sorter declaration of call_list_column struct
@@ -77,6 +78,12 @@ struct call_list_info
     int cur_line;
     //! List subwindow
     WINDOW *list_win;
+    //! Form that contains the display filter
+    FORM *form;
+    //! An array of window form fields
+    FIELD *fields[2];
+    //! We're entering keys on form
+    bool form_active;
 };
 
 /**
@@ -112,7 +119,7 @@ call_list_destroy(PANEL *panel);
  * @param panel Ncurses panel pointer
  */
 extern void
-call_list_draw_footer(PANEL *panel)
+call_list_draw_footer(PANEL *panel);
 
 /**
  * @brief Check if the panel requires to be redrawn
@@ -140,6 +147,34 @@ extern int
 call_list_draw(PANEL *panel);
 
 /**
+ * @brief Enable/Disable Panel form focus
+ *
+ * Enable or disable form fields focus so the next input will be
+ * handled by call_list_handle_key or call_list_handle_form_key
+ * This will also set properties in fields to show them as focused
+ * and show/hide the cursor
+ *
+ * @param panel Ncurses panel pointer
+ * @param active Enable/Disable flag
+ */
+extern void
+call_list_form_activate(PANEL *panel, bool active);
+
+/**
+ * @brief Get List line from the given call
+ *
+ * Get the list line of the given call to display in the list
+ * This line is built using the configured columns and sizes
+ *
+ * @param panel Ncurses panel pointer
+ * @param call Call to get data from
+ * @return A string with the line text
+ */
+extern const char*
+call_list_line_text(PANEL *panel, sip_call_t *call);
+
+
+/**
  * @brief Handle Call list key strokes
  *
  * This function will manage the custom keybindings of the panel. If this
@@ -152,6 +187,18 @@ call_list_draw(PANEL *panel);
  */
 extern int
 call_list_handle_key(PANEL *panel, int key);
+
+/**
+ * @brief Handle Forms entries key strokes
+ *
+ * This function will manage the custom keybindings of the panel form.
+ *
+ * @param panel Ncurses panel pointer
+ * @param key Pressed keycode
+ * @return 0 if the function can handle the key, key otherwise
+ */
+extern int
+call_list_handle_form_key(PANEL *panel, int key);
 
 /**
  * @brief Request the panel to show its help
@@ -208,7 +255,6 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
 extern void
 call_list_filter_update(PANEL *panel);
 
-
 /**
  * @brief Remove all calls from the list and calls storage
  *
@@ -217,5 +263,45 @@ call_list_filter_update(PANEL *panel);
  */
 extern void
 call_list_clear(PANEL *panel);
+
+/**
+ * @brief Get call count after applying display fitering
+ *
+ * @param panel Ncurses panel pointer
+ * @return number of calls that match display filter
+ */
+extern int
+call_list_count(PANEL *panel);
+
+/**
+ * @brief Get next call after applying display fitering
+ *
+ * @param panel Ncurses panel pointer
+ * @param call Start searching from this call
+ * @return next matching call or NULL
+ */
+extern sip_call_t *
+call_list_get_next(PANEL *panel, sip_call_t *cur);
+
+/**
+ * @brief Get previous call after applying display fitering
+ *
+ * @param panel Ncurses panel pointer
+ * @param call Start searching from this call
+ * @return previous matching call or NULL
+ */
+extern sip_call_t *
+call_list_get_prev(PANEL *panel, sip_call_t *cur);
+
+/**
+ * @brief Check if call match display filter
+ *
+ * @param panel Ncurses panel pointer
+ * @param call Start searching from this call
+ * @return true if the call match display filters
+ */
+extern bool
+call_list_match_dfilter(PANEL *panel, sip_call_t *call);
+
 
 #endif

@@ -75,6 +75,9 @@ call_group_color(sip_call_group_t *group, sip_call_t *call);
 extern int
 call_group_msg_count(sip_call_group_t *group);
 
+extern int
+call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg);
+
 /**
  * @brief Finds the next msg in a call group.
  *
