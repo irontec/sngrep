@@ -89,7 +89,7 @@ call_group_color(sip_call_group_t *group, sip_call_t *call)
 int
 call_group_msg_count(sip_call_group_t *group)
 {
-    sip_msg_t *msg;
+    sip_msg_t *msg = NULL;
     int msgcnt = 0, i;
 
     for (i = 0; i < group->callcnt; i++) {
