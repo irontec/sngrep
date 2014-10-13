@@ -158,6 +158,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int size_ip;
     // UDP header data
     struct nread_udp *udp;
+    // TCP header data
+    struct nread_tcp *tcp;
     // XXX Fake header (Like the one from ngrep)
     char msg_header[256];
     // Packet payload data
@@ -187,30 +189,56 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     size_ip = IP_HL(ip) * 4;
 
     // Only interested in UDP packets
-    if (ip->ip_p != IPPROTO_UDP) return;
+    if (ip->ip_p == IPPROTO_UDP) {
+        // Get UDP header
+        udp = (struct nread_udp*) (packet + size_link + size_ip);
 
-    // Get UDP header
-    udp = (struct nread_udp*) (packet + size_link + size_ip);
+        // Get packet payload
+        msg_payload = (u_char *) (packet + size_link + size_ip + SIZE_UDP);
+        size_payload = htons(udp->udp_hlen) - SIZE_UDP;
+        msg_payload[size_payload] = '\0';
 
-    // Get package payload
-    msg_payload = (u_char *) (packet + size_link + size_ip + SIZE_UDP);
-    size_payload = htons(udp->udp_hlen) - SIZE_UDP;
-    msg_payload[size_payload] = '\0';
+        // XXX Process timestamp
+        struct timeval ut_tv = header->ts;
+        time_t t = (time_t) ut_tv.tv_sec;
 
-    // XXX Process timestamp
-    struct timeval ut_tv = header->ts;
-    time_t t = (time_t) ut_tv.tv_sec;
+        // XXX Get current time
+        char timestr[200];
+        struct tm *time = localtime(&t);
+        strftime(timestr, sizeof(timestr), "%Y/%m/%d %T", time);
 
-    // XXX Get current time
-    char timestr[200];
-    struct tm *time = localtime(&t);
-    strftime(timestr, sizeof(timestr), "%Y/%m/%d %T", time);
+        // XXX Build a header string
+        memset(msg_header, 0, sizeof(msg_header));
+        sprintf(msg_header, "U %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
+        sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(udp->udp_sport));
+        sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
+    } else if (ip->ip_p == IPPROTO_TCP) {
+        tcp = (struct nread_tcp*) (packet + size_link + size_ip);
 
-    // XXX Build a header string
-    memset(msg_header, 0, sizeof(msg_header));
-    sprintf(msg_header, "U %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
-    sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(udp->udp_sport));
-    sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
+        // Get packet payload
+        msg_payload = (u_char *) (packet + size_link + size_ip + SIZE_TCP);
+        size_payload = ntohs(ip->ip_len) - (size_ip + SIZE_TCP);
+        msg_payload[size_payload] = '\0';
+
+        // XXX Process timestamp
+        struct timeval ut_tv = header->ts;
+        time_t t = (time_t) ut_tv.tv_sec;
+
+        // XXX Get current time
+        char timestr[200];
+        struct tm *time = localtime(&t);
+        strftime(timestr, sizeof(timestr), "%Y/%m/%d %T", time);
+
+        // XXX Build a header string
+        memset(msg_header, 0, sizeof(msg_header));
+        sprintf(msg_header, "T %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
+        sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(tcp->th_sport));
+        sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(tcp->th_dport));
+
+    } else {
+        // Not handled protocol
+        return;
+    }
 
     // Parse this header and payload
     if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp((const char*)mode, "Online") ) {

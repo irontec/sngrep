@@ -627,11 +627,12 @@ msg_parse_header(sip_msg_t *msg, const char *header)
         0 };
     char time[20], ipfrom[22], ipto[22];
     time_t timet;
+    char proto;
 
     // Sanity check
     if (!msg || !header) return 1;
 
-    if (sscanf(header, "U %d/%d/%d %d:%d:%d.%d %s -> %s", &when.tm_year, &when.tm_mon,
+    if (sscanf(header, "%c %d/%d/%d %d:%d:%d.%d %s -> %s", &proto, &when.tm_year, &when.tm_mon,
             &when.tm_mday, &when.tm_hour, &when.tm_min, &when.tm_sec, (int*) &msg->ts.tv_usec,
             ipfrom, ipto)) {
 

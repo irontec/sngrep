@@ -108,7 +108,7 @@ online_capture(void *pargv)
             strcpy(msg_header, "");
             strcpy(msg_payload, "");
         } else {
-            if (!strncmp(stdout_line, "U ", 2)) {
+            if (!strncmp(stdout_line, "U ", 2) || !strncmp(stdout_line, "T ", 2)) {
                 strcpy(msg_header, stdout_line);
             } else {
                 if (strlen(msg_header)) {
