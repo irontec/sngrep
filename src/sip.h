@@ -79,6 +79,10 @@ enum sip_attr_id
     SIP_ATTR_CSEQ,
     //! SIP Message has sdp
     SIP_ATTR_SDP,
+    //! SDP Address
+    SIP_ATTR_SDP_ADDRESS,
+    //! SDP Port
+    SIP_ATTR_SDP_PORT,
     //! SIP Call first message method
     SIP_ATTR_STARTING,
     //! SIP Call message counter

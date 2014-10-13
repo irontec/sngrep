@@ -104,6 +104,14 @@ static sip_attr_hdr_t attrs[] = {
         .name = "sdp",
         .desc = "Has SDP"},
     {
+        .id = SIP_ATTR_SDP_ADDRESS,
+        .name = "sdpaddress",
+        .desc = "SDP Address"},
+    {
+        .id = SIP_ATTR_SDP_PORT,
+        .name = "sdpport",
+        .desc = "SDP Port"},
+    {
         .id = SIP_ATTR_STARTING,
         .name = "starting",
         .desc = "Starting" },
@@ -709,6 +717,14 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
         }
         if (!strncasecmp(pch, "Content-Type: application/sdp", 29)) {
             msg_set_attribute(msg, SIP_ATTR_SDP, "1");
+            continue;
+        }
+        if (sscanf(pch, "c=%*s %*s %s", value) == 1) {
+            msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, value);
+            continue;
+        }
+        if (sscanf(pch, "m=%*s %s", value) == 1) {
+            msg_set_attribute(msg, SIP_ATTR_SDP_PORT, value);
             continue;
         }
     }

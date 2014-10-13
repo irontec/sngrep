@@ -186,7 +186,7 @@ call_flow_draw(PANEL *panel)
     }
 
     // If there are only three columns, then draw the raw message on this panel
-	if (is_option_enabled("cf.forceraw")) {
+    if (is_option_enabled("cf.forceraw")) {
         call_flow_draw_raw(panel, info->cur_msg);
     }
 
@@ -209,6 +209,7 @@ call_flow_draw_footer(PANEL *panel)
         "Esc",      "Calls List",
         "Enter",    "Raw Message",
         "F1",       "Help",
+        "F2",       "SDP mode",
         "F3",       "Toggle Raw",
         "F4",       "Extended",
         "F5",       "Compressed",
@@ -217,7 +218,7 @@ call_flow_draw_footer(PANEL *panel)
         "F8",       "Colour on/off",
         "9/0",      "Raw width" };
 
-    draw_keybindings(panel, keybindings, 20);
+    draw_keybindings(panel, keybindings, 22);
 }
 
 int
@@ -295,8 +296,21 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     // Get Message method (include extra info)
     memset(method, 0, sizeof(method));
     sprintf(method, "%s", msg_method);
-    if (msg_get_attribute(msg, SIP_ATTR_SDP))
-        strcat(method, " (SDP)");
+
+    // If message has sdp information
+    if (msg_get_attribute(msg, SIP_ATTR_SDP)) {
+        if (is_option_enabled("cf.sdpinfo")) {
+            // Show message sdp in title
+            memset(method, 0, sizeof(method));
+            strncpy(method, msg_method, 3);
+            sprintf(method + strlen(method), " (%s:%s)",
+                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS),
+                msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
+        } else {
+            // Show sdp tag in tittle
+            strcat(method, " (SDP)");
+        }
+    }
 
     // Draw message type or status and line
     int msglen = strlen(method);
@@ -546,6 +560,15 @@ call_flow_handle_key(PANEL *panel, int key)
     case 'T':
         set_option_int_value("cf.rawfixedwidth", -1);
         break;
+    case 'd':
+    case KEY_F(2):
+        // Toggle SDP mode
+        info->group->sdp_only = !(info->group->sdp_only);
+        call_flow_set_group(info->group);
+        break;
+    case 'D':
+        set_option_value("cf.sdpinfo", is_option_enabled("cf.sdpinfo") ? "off" : "on");
+        break;
     case 't':
     case KEY_F(3):
         set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
@@ -579,7 +602,7 @@ call_flow_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 23; width = 65;
+    height = 24; width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
 
@@ -614,15 +637,17 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 8,  2, "Available keys:");
     mvwprintw(help_win, 9,  2, "Esc/Q       Go back to Call list window");
     mvwprintw(help_win, 10, 2, "Enter       Show current message Raw");
-    mvwprintw(help_win, 11,  2, "F1           Show this screen.");
+    mvwprintw(help_win, 11, 2, "F1          Show this screen");
+    mvwprintw(help_win, 11, 2, "F2/d        Only show SDP messages");
     mvwprintw(help_win, 12, 2, "F3/t        Toggle raw preview display");
     mvwprintw(help_win, 13, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
     mvwprintw(help_win, 14, 2, "F5/S        Toggle compressed view (One address <=> one column");
-    mvwprintw(help_win, 15, 2, "F6/R        Show original call messages in raw mode.");
+    mvwprintw(help_win, 15, 2, "F6/R        Show original call messages in raw mode");
     mvwprintw(help_win, 16, 2, "F7/C        Cycle between available color modes");
-    mvwprintw(help_win, 17, 2, "F8/c        Turn on/off window colours.");
+    mvwprintw(help_win, 17, 2, "F8/c        Turn on/off window colours");
     mvwprintw(help_win, 18, 2, "9/0         Increase/Decrease raw preview size");
     mvwprintw(help_win, 19, 2, "T           Restore raw preview size");
+    mvwprintw(help_win, 20, 2, "D           Toggle SDP Address:Port info");
 
     // Press any key to close
     wgetch(help_win);

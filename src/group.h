@@ -33,6 +33,7 @@
 #ifndef __SNGREP_GROUP_H_
 #define __SNGREP_GROUP_H_
 
+#include <stdbool.h>
 #include "sip.h"
 
 //! Shorter declaration of sip_call_group structure
@@ -55,6 +56,7 @@ struct sip_call_group
     sip_call_t *calls[1024];
     int callcnt;
     int color;
+    bool sdp_only;
 };
 
 extern sip_call_group_t *

@@ -168,7 +168,6 @@ call_list_draw(PANEL *panel)
     struct sip_call *call;
     int callcnt;
     const char *ouraddr;
-    char displayed[30];
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
