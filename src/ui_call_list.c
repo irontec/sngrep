@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdio.h>
+#include <ctype.h>
 #include "option.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
@@ -137,17 +139,19 @@ void
 call_list_draw_footer(PANEL *panel)
 {
     const char *keybindings[] = {
-        "F1",       "Help",
-        "Esc/Q",    "Quit",
+        "Esc",      "Quit",
         "Enter",    "Show",
-        "/",        "Display Filter",
-        "X",        "Extended",
-        "C",        "Colours",
-        "R",        "Raw",
-        "F",        "Filter",
-        "S",        "Save" };
+        "Space",    "Select",
+        "F1",       "Help",
+        "F2",       "Save",
+        "F3",       "Search",
+        "F4",       "Extended",
+        "F5",       "Clear",
+        "F6",       "Raw",
+        "F7",       "Filter",
+        "F8",       "Colours on/off" };
 
-    draw_keybindings(panel, keybindings, 18);
+    draw_keybindings(panel, keybindings, 22);
 }
 
 int
@@ -164,6 +168,7 @@ call_list_draw(PANEL *panel)
     struct sip_call *call;
     int callcnt;
     const char *ouraddr;
+    char displayed[30];
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -174,7 +179,10 @@ call_list_draw(PANEL *panel)
     getmaxyx(win, height, width);
 
     // Get available calls counter (we'll use it here a couple of times)
-    if (!(callcnt = call_list_count(panel))) return 0;
+    callcnt = call_list_count(panel);
+
+    // No calls, we've finished drawing
+    if (callcnt == 0) return 0;
 
     // If no active call, use the fist one (if exists)
     if (!info->first_call && call_list_get_next(panel, NULL)) {
@@ -243,9 +251,7 @@ call_list_form_activate(PANEL *panel, bool active)
         set_current_field(info->form, info->fields[0]);
         // Show cursor
         curs_set(1);
-        // Set default cursor position
-        wmove(panel_window(panel), 2, 18);
-        // Change current field background
+       // Change current field background
         set_field_back(info->fields[0], A_REVERSE);
     } else {
         set_current_field(info->form, NULL);
@@ -254,8 +260,8 @@ call_list_form_activate(PANEL *panel, bool active)
         // Change current field background
         set_field_back(info->fields[0], A_NORMAL);
     }
-    form_driver(info->form, REQ_END_LINE);
     post_form(info->form);
+    form_driver(info->form, REQ_END_LINE);
 }
 
 const char*
@@ -308,6 +314,7 @@ call_list_handle_key(PANEL *panel, int key)
     switch (key) {
     case '/':
     case 9 /*KEY_TAB*/:
+    case KEY_F(3):
         // Activate Form
         call_list_form_activate(panel, true);
         break;
@@ -362,6 +369,7 @@ call_list_handle_key(PANEL *panel, int key)
         wait_for_input(next_panel);
         break;
     case 'x':
+    case KEY_F(4):
         // KEY_X , Display current call flow (extended)
         next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
         if (info->group->callcnt) {
@@ -377,6 +385,7 @@ call_list_handle_key(PANEL *panel, int key)
         break;
     case 'r':
     case 'R':
+    case KEY_F(6):
         // KEY_R , Display current call flow (extended)
         next_panel = ui_create(ui_find_by_type(RAW_PANEL));
         if (info->group->callcnt) {
@@ -391,6 +400,7 @@ call_list_handle_key(PANEL *panel, int key)
         break;
     case 'f':
     case 'F':
+    case KEY_F(7):
         // KEY_F, Display filter panel
         next_panel = ui_create(ui_find_by_type(FILTER_PANEL));
         wait_for_input(next_panel);
@@ -398,6 +408,7 @@ call_list_handle_key(PANEL *panel, int key)
         break;
     case 's':
     case 'S':
+    case KEY_F(2):
         if (!is_option_disabled("sngrep.tmpfile")) {
             // KEY_S, Display save panel
             next_panel = ui_create(ui_find_by_type(SAVE_PANEL));
@@ -496,7 +507,7 @@ call_list_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 23; width = 65;
+    height = 24; width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
 
@@ -529,16 +540,17 @@ call_list_help(PANEL *panel)
 
     // A list of available keys in this window
     mvwprintw(help_win, 8, 2, "Available keys:");
-    mvwprintw(help_win, 10, 2, "F1          Show this screen.");
-    mvwprintw(help_win, 11, 2, "q/Esc       Exit sngrep.");
-    mvwprintw(help_win, 12, 2, "c           Turn on/off window colours.");
-    mvwprintw(help_win, 13, 2, "Up/Down     Move to previous/next call.");
-    mvwprintw(help_win, 14, 2, "Enter       Show selected call-flow.");
-    mvwprintw(help_win, 15, 2, "x           Show selected call-flow (Extended) if available.");
-    mvwprintw(help_win, 16, 2, "r           Show selected call messages in raw mode.");
-    mvwprintw(help_win, 17, 2, "p           Pause. Stop parsing captured packages");
-    mvwprintw(help_win, 18, 2, "f/F         Show filter options");
-    mvwprintw(help_win, 19, 2, "s/S         Save captured packages to a file.");
+    mvwprintw(help_win, 10, 2, "Esc/Q       Exit sngrep.");
+    mvwprintw(help_win, 11, 2, "Enter       Show selected calls message flow");
+    mvwprintw(help_win, 12, 2, "Space       Select call");
+    mvwprintw(help_win, 13, 2, "F1          Show this screen");
+    mvwprintw(help_win, 14, 2, "F2/S        Save captured packages to a file");
+    mvwprintw(help_win, 15, 2, "F3//        Display filtering (match string case insensitive)");
+    mvwprintw(help_win, 16, 2, "F4/X        Show selected call-flow (Extended) if available");
+    mvwprintw(help_win, 17, 2, "F5          Clear call list (can not be undone!)");
+    mvwprintw(help_win, 18, 2, "F6/R        Show selected call messages in raw mode");
+    mvwprintw(help_win, 19, 2, "F7/F        Show filter options");
+    mvwprintw(help_win, 20, 2, "F8/c        Turn on/off window colours");
 
     // Press any key to close
     wgetch(help_win);
@@ -688,18 +700,26 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur)
 bool
 call_list_match_dfilter(PANEL *panel, sip_call_t *call)
 {
+    char *upper;
     // Get panel information
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
 
     // Get Display filter
-    char dfilter[128];
+    char dfilter[128], linetext[512];
 
     // We trim spaces with sscanf because and empty field is stored as space characters
     memset(dfilter, 0, sizeof(dfilter));
     sscanf(field_buffer(info->fields[0], 0), "%[^ ]", dfilter);
 
     if (strlen(dfilter) == 0 ) return true;
+    strcpy(linetext, call_list_line_text(panel, call));
 
-    const char *linetext = call_list_line_text(panel, call);
+    // Upercase both strings
+    for(upper = dfilter; *upper != '\0'; upper++)
+        *upper = toupper((unsigned char)*upper);
+    for(upper = linetext; *upper != '\0'; upper++)
+        *upper = toupper((unsigned char)*upper);
+
+    // Check if line contains the filter text
     return strstr(linetext, dfilter) != NULL;
 }

@@ -280,11 +280,13 @@ wait_for_input(ui_t *ui)
         // Otherwise, use standard keybindings
         switch (c) {
         case 'c':
+        case KEY_F(8):
             // @todo general application config structure
             toggle_option("color");
             toggle_color(is_option_enabled("color"));
             break;
         case 'C':
+        case KEY_F(7):
             if (is_option_enabled("color.request")) {
                 toggle_option("color.request");
                 toggle_option("color.callid");
@@ -350,6 +352,8 @@ toggle_color(int on)
         init_pair(CALLID6_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(KEYBINDINGS_KEY, COLOR_WHITE, COLOR_BLACK);
+        init_pair(KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_WHITE);
     }
 }
 

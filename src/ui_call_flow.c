@@ -206,16 +206,18 @@ void
 call_flow_draw_footer(PANEL *panel)
 {
     const char *keybindings[] = {
+        "Esc",      "Calls List",
+        "Enter",    "Raw Message",
         "F1",       "Help",
-        "Esc/Q",    "Quit",
-        "X",        "Extended",
-        "R",        "Raw",
-        "C",        "Colours",
-        "S",        "Split Call-Id",
-        "T",        "Toggle Raw",
+        "F3",       "Toggle Raw",
+        "F4",       "Extended",
+        "F5",       "Compressed",
+        "F6",       "Raw",
+        "F7",       "Colour by",
+        "F8",       "Colour on/off",
         "9/0",      "Raw width" };
 
-    draw_keybindings(panel, keybindings, 16);
+    draw_keybindings(panel, keybindings, 20);
 }
 
 int
@@ -507,6 +509,7 @@ call_flow_handle_key(PANEL *panel, int key)
             call_flow_handle_key(panel, KEY_UP);
         break;
     case 'x':
+    case KEY_F(4):
         wclear(panel_window(panel));
         // KEY_X , Display current call flow
         if (info->group->callcnt == 1) {
@@ -521,6 +524,7 @@ call_flow_handle_key(PANEL *panel, int key)
         }
         break;
     case 'r':
+    case KEY_F(6):
         // KEY_R, display current call in raw mode
         next_panel = ui_create(ui_find_by_type(RAW_PANEL));
         // TODO
@@ -543,9 +547,11 @@ call_flow_handle_key(PANEL *panel, int key)
         set_option_int_value("cf.rawfixedwidth", -1);
         break;
     case 't':
+    case KEY_F(3):
         set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
         break;
     case 's':
+    case KEY_F(5):
         set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
         // Force columns reload
         info->columns = NULL;
@@ -573,7 +579,7 @@ call_flow_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 22; width = 65;
+    height = 23; width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
 
@@ -605,17 +611,18 @@ call_flow_help(PANEL *panel)
     wattroff(help_win, COLOR_PAIR(HELP_COLOR));
 
     // A list of available keys in this window
-    mvwprintw(help_win, 8, 2, "Available keys:");
-    mvwprintw(help_win, 9, 2, "F1          Show this screen.");
-    mvwprintw(help_win, 10, 2, "q/Esc       Go back to Call list window.");
-    mvwprintw(help_win, 11, 2, "c           Turn on/off window colours.");
-    mvwprintw(help_win, 12, 2, "C           Cycle between available color modes");
-    mvwprintw(help_win, 13, 2, "Up/Down     Move to previous/next message.");
-    mvwprintw(help_win, 14, 2, "x           Show call-flow with X-CID/X-Call-ID dialog");
-    mvwprintw(help_win, 15, 2, "r           Show original call messages in raw mode.");
-    mvwprintw(help_win, 16, 2, "t           Toggle raw preview display");
-    mvwprintw(help_win, 17, 2, "9/0         Increase/Decrease raw preview size");
-    mvwprintw(help_win, 18, 2, "T           Restore raw preview size");
+    mvwprintw(help_win, 8,  2, "Available keys:");
+    mvwprintw(help_win, 9,  2, "Esc/Q       Go back to Call list window");
+    mvwprintw(help_win, 10, 2, "Enter       Show current message Raw");
+    mvwprintw(help_win, 11,  2, "F1           Show this screen.");
+    mvwprintw(help_win, 12, 2, "F3/t        Toggle raw preview display");
+    mvwprintw(help_win, 13, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
+    mvwprintw(help_win, 14, 2, "F5/S        Toggle compressed view (One address <=> one column");
+    mvwprintw(help_win, 15, 2, "F6/R        Show original call messages in raw mode.");
+    mvwprintw(help_win, 16, 2, "F7/C        Cycle between available color modes");
+    mvwprintw(help_win, 17, 2, "F8/c        Turn on/off window colours.");
+    mvwprintw(help_win, 18, 2, "9/0         Increase/Decrease raw preview size");
+    mvwprintw(help_win, 19, 2, "T           Restore raw preview size");
 
     // Press any key to close
     wgetch(help_win);
