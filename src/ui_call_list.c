@@ -101,7 +101,7 @@ call_list_create()
     wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
     // Draw panel title
     mvwprintw(win, 0, 0,  "%*s", width, "");
-    mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
+    mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
 
     // Draw columns titles
     mvwprintw(win, 3, 0,  "%*s", width, "");

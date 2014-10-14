@@ -19,7 +19,6 @@
  ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
-#ifdef WITH_LIBPCAP
 /**
  * @file pcap.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
@@ -34,7 +33,7 @@
  * use other transports, uh.
  *
  */
-#include "spcap.h"
+#include "capture.h"
 #include "sip.h"
 #include "option.h"
 #include "ui_manager.h"
@@ -46,54 +45,55 @@ pcap_dumper_t *pd = NULL;
 //! FIXME Session handle
 pcap_t *handle;
 
-#ifndef WITH_NGREP
-
 int
-online_capture(void *pargv)
+capture_online()
 {
-    char **argv = (char**) pargv;
-    int argc = 1;
-    char filter_exp[256];
     //! Device to sniff on
-    char dev[] = "any";
+    const char *dev = get_option_value("capture.device");
+    //! The filter expression
+    const char *filter_exp = get_option_value("capture.filter");
+    //! Output PCAP File
+    const char *outfile = get_option_value("capture.outfile");
     //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
     //! The compiled filter expression
     struct bpf_program fp;
-    //! The filter expression
-    //char *filter_exp = (char *) pargs;
     //! Netmask of our sniffing device
     bpf_u_int32 mask;
     //! The IP of our sniffing device
     bpf_u_int32 net;
-    //! Build the filter options
-    memset(filter_exp, 0, sizeof(filter_exp));
-    while (argv[argc]) {
-        sprintf(filter_exp + strlen(filter_exp), " %s", argv[argc++]);
-    }
 
+    // Try to find capture device information
     if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
         fprintf(stderr, "Can't get netmask for device %s\n", dev);
         net = 0;
         mask = 0;
     }
+
+    // Open capture device
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
     }
-    if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
-        fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
-        return 2;
+
+    // Validate and set filter expresion
+    if (filter_exp) {
+        if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
+            fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
+        if (pcap_setfilter(handle, &fp) == -1) {
+            fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
     }
-    if (pcap_setfilter(handle, &fp) == -1) {
-        fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
-        return 2;
-    }
-    if (!is_option_disabled("sngrep.tmpfile")) {
-        if ((pd = pcap_dump_open(handle, get_option_value("sngrep.tmpfile"))) == NULL) {
+
+    // If requested store packets in a dump file
+    if ((outfile = get_option_value("capture.outfile"))) {
+        if ((pd = pcap_dump_open(handle, outfile)) == NULL) {
             fprintf(stderr, "Couldn't open temporal dump file %s: %s\n",
-                get_option_value("sngrep.tmpfile"), pcap_geterr(handle));
+                outfile, pcap_geterr(handle));
             return 2;
         }
     }
@@ -101,20 +101,30 @@ online_capture(void *pargv)
     // Get datalink to parse packages correctly
     linktype = pcap_datalink(handle);
 
+    return 0;
+}
+
+void
+capture_thread(void *none)
+{
     // Parse available packages
     pcap_loop(handle, -1, parse_packet, (u_char*)"Online");
 
-    // Close temporal file
-    pcap_dump_close(pd);
-    // Close PCAP file
+    // Close capture file if any
+    if (get_option_value("capture.outfile"))
+        pcap_dump_close(pd);
+
+    // Close pcap handle
     pcap_close(handle);
-    return 0;
 }
-#endif
 
 int
-load_from_file(const char* file)
+capture_offline()
 {
+    //! The filter expression
+    const char *filter_exp = get_option_value("capture.filter");
+    // PCAP input file name
+    const char *infile = get_option_value("capture.infile");
     // PCAP file handler
     pcap_t *handle;
     // Error text (in case of file open error)
@@ -123,11 +133,25 @@ load_from_file(const char* file)
     struct pcap_pkthdr header;
     // The actual packet
     const u_char *packet;
+    //! The compiled filter expression
+    struct bpf_program fp;
 
     // Open PCAP file
-    if ((handle = pcap_open_offline(file, errbuf)) == NULL) {
-        fprintf(stderr, "Couldn't open pcap file %s: %s\n", file, errbuf);
+    if ((handle = pcap_open_offline(infile, errbuf)) == NULL) {
+        fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
+    }
+
+    // Validate and set filter expresion
+    if (filter_exp) {
+        if (pcap_compile(handle, &fp, filter_exp, 0, 0) == -1) {
+            fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
+        if (pcap_setfilter(handle, &fp) == -1) {
+            fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
     }
 
     // Get datalink to parse packages correctly
@@ -256,4 +280,3 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         pcap_dump_flush(pd);
     }
 }
-#endif

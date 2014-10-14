@@ -128,21 +128,26 @@ struct nread_tcp {
     u_short th_urp;                 /* urgent pointer */
 };
 
-#ifndef WITH_NGREP
 /**
- * @brief Capture in background using libpcap functions
+ * @brief Online capture function
  *
- * This function is used as worker thread for capturing filtered packages and
- * pass them to the UI layer. We only use this if ngrep is not available
- * for capturing, becuause it has a lot more options.
+ * This function will validate capture options but will not capture any packet:
+ * - Capture device
+ * - BPF Filter
  *
- * @param pargv Filters for libpcap
  * @return 0 on spawn success, 1 otherwise
  */
 extern int
-online_capture(void *pargv);
+capture_online();
 
-#endif
+/**
+ * @brief PCAP Capture Thread
+ *
+ * This function is used as worker thread for capturing filtered packets and
+ * pass them to the UI layer.
+ */
+extern void
+capture_thread(void *none);
 
 /**
  * @brief Read from pcap file and fill sngrep sctuctures
@@ -152,12 +157,11 @@ online_capture(void *pargv);
  * This program is only focused in VoIP calls so we only consider
  * TCP/UDP packets with Ethernet or Linux coocked headers
  *
- * @param file Full path to PCAP file
  * @return 0 if load has been successfull, 1 otherwise
  *
  */
 extern int
-load_from_file(const char* file);
+capture_offline();
 
 /**
  * @brief Read the next package and parse SIP messages
