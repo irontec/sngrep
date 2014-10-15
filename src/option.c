@@ -92,7 +92,7 @@ init_options()
     set_option_value("sngrep.savepath", getenv("HOME"));
 
     // Set default capture options
-    set_option_value("capture.limit", "200");
+    set_option_value("capture.limit", "2000");
     set_option_value("capture.device", "any");
 
     // Set default filter options

@@ -89,6 +89,7 @@ static ui_t panel_pool[] = {
         .type = SAVE_PANEL,
         .panel = NULL,
         .create = save_create,
+        .draw = save_draw,
         .handle_key = save_handle_key,
         .destroy = save_destroy },
     {

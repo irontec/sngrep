@@ -74,6 +74,9 @@ call_group_exists(sip_call_group_t *group, sip_call_t *call);
 extern int
 call_group_color(sip_call_group_t *group, sip_call_t *call);
 
+extern sip_call_t *
+call_group_get_next(sip_call_group_t *group, sip_call_t *call);
+
 extern int
 call_group_msg_count(sip_call_group_t *group);
 

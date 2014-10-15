@@ -85,6 +85,34 @@ call_group_color(sip_call_group_t *group, sip_call_t *call)
     return -1;
 }
 
+sip_call_t *
+call_group_get_next(sip_call_group_t *group, sip_call_t *call)
+{
+    int i;
+
+    if (!group)
+        return NULL;
+
+    // Return first call
+    if (!call)
+        return group->calls[0];
+
+    for (i = 0; i < group->callcnt; i++) {
+        if (call == group->calls[i]) break;
+    }
+
+    // Reference is last call
+    if (i == group->callcnt - 1)
+        return NULL;
+
+    // Return next call
+    if (i < group->callcnt)
+        return group->calls[i+1];
+
+    return NULL;
+}
+
+
 int
 call_group_msg_count(sip_call_group_t *group)
 {

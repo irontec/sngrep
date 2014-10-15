@@ -34,6 +34,7 @@
 #include <form.h>
 #include "ui_save_pcap.h"
 #include "option.h"
+#include "capture.h"
 
 PANEL *
 save_create()
@@ -45,7 +46,7 @@ save_create()
     char savefile[128];
 
     // Calculate window dimensions
-    height = 8;
+    height = 10;
     width = 90;
 
     // Cerate a new indow for the panel and form
@@ -63,12 +64,16 @@ save_create()
 
     // Initialize the fields
     info->fields[FLD_SAVE_FILE]     = new_field(1, 68, 3, 15, 0, 0);
+    info->fields[FLD_SAVE_ALL]      = new_field(1, 1,  5, 4, 0, 0);
+    info->fields[FLD_SAVE_SELECTED] = new_field(1, 1,  6, 4, 0, 0);
     info->fields[FLD_SAVE_SAVE]     = new_field(1, 10, height - 2, 30, 0, 0);
     info->fields[FLD_SAVE_CANCEL]   = new_field(1, 10, height - 2, 50, 0, 0);
     info->fields[FLD_SAVE_COUNT]    = NULL;
 
     // Set fields options
     field_opts_off(info->fields[FLD_SAVE_FILE], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_SAVE_ALL], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_SAVE_SELECTED], O_AUTOSKIP);
 
     // Change background of input fields
     set_field_back(info->fields[FLD_SAVE_FILE], A_UNDERLINE);
@@ -100,7 +105,7 @@ save_create()
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_SAVE_FILE]);
-    wmove(win, 3, 15);
+    form_driver(info->form, REQ_END_LINE);
     curs_set(1);
 
     return panel;
@@ -111,6 +116,25 @@ save_destroy(PANEL *panel)
 {
     // Disable cursor position
     curs_set(0);
+}
+
+int
+save_draw(PANEL *panel)
+{
+    // Get panel information
+    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    WINDOW *win = panel_window(panel);
+
+    mvwprintw(win, 5, 3, "( ) Save all packets");
+    mvwprintw(win, 6, 3, "( ) Save selected packets (%d packets)", call_group_msg_count(info->group));
+
+    set_field_buffer(info->fields[FLD_SAVE_ALL],       0, is_option_enabled("sngrep.saveselected")?"":"*");
+    set_field_buffer(info->fields[FLD_SAVE_SELECTED],  0, is_option_enabled("sngrep.saveselected")?"*":"");
+
+    set_current_field(info->form, current_field(info->form));
+    form_driver(info->form, REQ_VALIDATION);
+
+    return 0;
 }
 
 int
@@ -165,6 +189,21 @@ save_handle_key(PANEL *panel, int key)
         if (strlen(field_value) > 0)
             form_driver(info->form, REQ_DEL_PREV);
         break;
+    case ' ':
+        switch(field_idx) {
+        case FLD_SAVE_ALL:
+            set_option_value("sngrep.saveselected", "off");
+            break;
+        case FLD_SAVE_SELECTED:
+            set_option_value("sngrep.saveselected", "on");
+            break;
+        case FLD_SAVE_FILE:
+            form_driver(info->form, key);
+            break;
+        default:
+            break;
+        }
+        break;
     case 10:    /* KEY_ENTER */
         if (field_idx != FLD_SAVE_CANCEL) {
             if (!strcasecmp(field_value, "")) {
@@ -203,6 +242,14 @@ save_handle_key(PANEL *panel, int key)
 }
 
 void
+save_set_group(PANEL *panel, sip_call_group_t *group)
+{
+    // Get panel information
+    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    info->group = group;
+}
+
+void
 save_error_message(PANEL *panel, const char *message)
 {
     WINDOW *win = panel_window(panel);
@@ -214,10 +261,8 @@ int
 save_to_file(PANEL *panel)
 {
     char field_value[48];
-    int fd_to, fd_from;
-    char buf[4096];
-    ssize_t nread;
-    int saved_errno;
+    sip_call_t *call = NULL;
+    sip_msg_t *msg = NULL;
 
     // Get panel information
     save_info_t *info = (save_info_t*) panel_userptr(panel);
@@ -228,54 +273,38 @@ save_to_file(PANEL *panel)
     memset(field_value, 0, sizeof(field_value));
     sscanf(field_buffer(info->fields[FLD_SAVE_FILE], 0), "%[^ ]", field_value);
 
-    fd_from = open(get_option_value("sngrep.tmpfile"), O_RDONLY);
-    if (fd_from < 0) {
-        save_error_message(panel, "Unable to open sngrep tempfile");
-        return 0;
+    // Don't allow to save no packets!
+    if (is_option_enabled("sngrep.saveselected") && call_group_msg_count(info->group) == 0) {
+        save_error_message(panel, "Unable to save no packets to selected file.");
+        return 1;
     }
 
-    fd_to = open(field_value, O_WRONLY | O_CREAT | O_EXCL, 0666);
-    if (fd_to < 0) {
-        save_error_message(panel, "Unable to open save file for writting");
-        goto out_error;
+    // Open dump file
+    pcap_dumper_t *pd = dump_open(field_value);
+    if (access(field_value, W_OK) != 0) {
+        save_error_message(panel, "Unable to save to selected file.");
+        return 1;
     }
 
-    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
-    {
-        char *out_ptr = buf;
-        ssize_t nwritten;
-
-        do {
-            nwritten = write(fd_to, out_ptr, nread);
-
-            if (nwritten >= 0) {
-                nread -= nwritten;
-                out_ptr += nwritten;
-            } else if (errno != EINTR) {
-                save_error_message(panel, "Write to file interrupted");
-                goto out_error;
+    if (is_option_enabled("sngrep.saveselected")) {
+        // Save selected packets to file
+        while ((call = call_group_get_next(info->group, call))) {
+            while((msg = call_get_next_msg(call, msg))) {
+                dump_packet(pd, msg->pcap_header, msg->pcap_packet);
             }
-        } while (nread > 0);
-    }
-
-    if (nread == 0) {
-        if (close(fd_to) < 0) {
-            fd_to = -1;
-            goto out_error;
         }
-        close(fd_from);
-        return 27;
+    } else {
+        // Save all packets to the file
+        while ((call = call_get_next(call))) {
+            while((msg = call_get_next_msg(call, msg))) {
+                dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+            }
+        }
     }
 
- out_error:
-    saved_errno = errno;
+    // Close dump file
+    dump_close(pd);
 
-    close(fd_from);
-    if (fd_to >= 0)
-        close(fd_to);
-
-    errno = saved_errno;
-    return 0;
-
+    return 27;
 }
 

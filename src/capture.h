@@ -175,4 +175,16 @@ capture_offline();
 extern void
 parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet);
 
+void
+capture_close();
+
+pcap_dumper_t *
+dump_open(const char *dumpfile);
+
+void
+dump_packet(pcap_dumper_t *pd, const struct pcap_pkthdr *header, const u_char *packet);
+
+void
+dump_close(pcap_dumper_t *pd);
+
 #endif

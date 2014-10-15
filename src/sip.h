@@ -32,6 +32,7 @@
 #ifndef __SNGREP_SIP_H
 #define __SNGREP_SIP_H
 
+#include <pcap.h>
 #include <sys/time.h>
 #include <pthread.h>
 
@@ -150,6 +151,10 @@ struct sip_msg
     int plines;
     //! Flag to mark if payload data has been parsed
     int parsed;
+    //! PCAP Packet Header data
+    struct pcap_pkthdr *pcap_header;
+    //! PCAP Packet data
+    u_char *pcap_packet;
     //! Message owner
     sip_call_t *call;
     //! Messages linked list

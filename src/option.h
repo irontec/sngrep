@@ -175,7 +175,6 @@ is_option_enabled(const char *opt);
 extern int
 is_option_disabled(const char *opt);
 
-
 /**
  * @brief Check if a exits an ignore directive for the given field and value
  *
