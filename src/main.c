@@ -103,7 +103,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hvd:I:O:";
+    char *options = "hvd:I:O:pqtW:";
     while ((opt = getopt (argc, argv, options)) != -1) {
         switch (opt) {
         case 'h':
@@ -120,6 +120,12 @@ main(int argc, char* argv[])
             break;
         case 'O':
             set_option_value("capture.outfile", optarg);
+            break;
+        // Dark options for dummy ones
+        case 'p':
+        case 'q':
+        case 't':
+        case 'W':
             break;
         case '?':
             if (strchr(options, optopt)) {
