@@ -126,8 +126,8 @@ save_draw(PANEL *panel)
     save_info_t *info = (save_info_t*) panel_userptr(panel);
     WINDOW *win = panel_window(panel);
 
-    mvwprintw(win, 5, 3, "( ) Save all packets");
-    mvwprintw(win, 6, 3, "( ) Save selected packets (%d packets)", call_group_msg_count(info->group));
+    mvwprintw(win, 5, 3, "( ) Save all messages");
+    mvwprintw(win, 6, 3, "( ) Save selected messages (%d messages)", call_group_msg_count(info->group));
 
     set_field_buffer(info->fields[FLD_SAVE_ALL],       0, is_option_enabled("sngrep.saveselected")?"":"*");
     set_field_buffer(info->fields[FLD_SAVE_SELECTED],  0, is_option_enabled("sngrep.saveselected")?"*":"");
@@ -261,7 +261,7 @@ save_error_message(PANEL *panel, const char *message)
 int
 save_to_file(PANEL *panel)
 {
-    char field_value[48];
+    char field_value[256];
     sip_call_t *call = NULL;
     sip_msg_t *msg = NULL;
     int i;
