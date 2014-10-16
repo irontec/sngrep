@@ -33,6 +33,7 @@
 #ifndef __UI_SAVE_PCAP_H
 #define __UI_SAVE_PCAP_H
 #include <form.h>
+#include "group.h"
 #include "ui_manager.h"
 
 /**
@@ -44,6 +45,8 @@
  */
 enum save_field_list {
     FLD_SAVE_FILE,
+    FLD_SAVE_ALL,
+    FLD_SAVE_SELECTED,
     FLD_SAVE_SAVE,
     FLD_SAVE_CANCEL,
     //! Never remove this field id @see save_info
@@ -64,6 +67,8 @@ struct save_info
     FORM *form;
     //! An array of fields
     FIELD *fields[FLD_SAVE_COUNT+1];
+    //! Call group to be saved
+    sip_call_group_t *group;
 };
 
 /**
@@ -88,6 +93,18 @@ extern void
 save_destroy();
 
 /**
+ * @brief Draw the Save panel
+ *
+ * This function will drawn the panel into the screen based on its stored
+ * status
+ *
+ * @param panel Ncurses panel pointer
+ * @return 0 if the panel has been drawn, -1 otherwise
+ */
+extern int
+save_draw(PANEL *panel);
+
+/**
  * @brief Manage pressed keys for save panel
  *
  * This function is called by UI manager every time a
@@ -103,6 +120,17 @@ save_destroy();
  */
 extern int
 save_handle_key(PANEL *panel, int key);
+
+/**
+ * @brief Set the group call of the panel
+ *
+ * This function will access the panel information and will set the
+ * group call pointer to the selected calls
+ *
+ * @param group Call group pointer to be set in the internal info struct
+ */
+extern void
+save_set_group(PANEL *panel, sip_call_group_t *group);
 
 /**
  * @brief Print an error message in Save panel

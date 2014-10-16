@@ -88,5 +88,5 @@
 # ignore starting BYE
 
 ##-----------------------------------------------------------------------------
-## Uncomment to configure calls capture limit (0: disabled)
-# set capture.limit 200
+## Uncomment to configure packet count capture limit (0: disabled)
+# set capture.limit 2000

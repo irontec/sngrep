@@ -1,7 +1,8 @@
 AC_PREREQ([2.59])
-AC_INIT([sngrep], [0.0-alpha], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
+AC_INIT([sngrep], [0.1.0], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
 AM_INIT_AUTOMAKE([1.10])
 AM_SILENT_RULES([yes])
+AC_CONFIG_HEADERS([src/config.h])
 
 AC_COPYRIGHT("Irontec S.L.")
 
@@ -27,22 +28,6 @@ AC_PROG_EGREP
 AC_LANG(C)
 
 #######################################################################
-# Add configurable options
-
-AC_ARG_ENABLE([ngrep],
-    AS_HELP_STRING([--disable-ngrep], [Disable ngrep for parsing messages]))
-
-
-AC_ARG_ENABLE([libpcap],
-    AS_HELP_STRING([--disable-libpcap], [Disable libpcap for parsing messages]))
-
-
-AS_IF([test "x$enable_ngrep" == "xno"], [
-	AS_IF([test "x$enable_libpcap" == "xno"], [
-    AC_MSG_ERROR([ You can not disable both ngrep and libpcap. Choose one. ])
-])])
-
-#######################################################################
 # Check for other REQUIRED libraries
 
 AC_CHECK_HEADER([ncurses.h], [], [
@@ -65,33 +50,11 @@ AC_CHECK_LIB([pthread], [pthread_create], [], [
     AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
 ])
 
-AS_IF([test "x$enable_libpcap" != "xno"], [
-	AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
-	    AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
-	])
-	AC_CHECK_HEADER([pcap.h], [], [
-	    AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
-	])
-	AC_DEFINE(WITH_LIBPCAP)
+AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
+    AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
 ])
-
-#######################################################################
-# Check for REQUIRED binaries
-AS_IF([test "x$enable_ngrep" != "xno"], [
-	AC_DEFINE(WITH_NGREP)
-
-	AC_PATH_PROG(STDBUF, stdbuf, [:], $PATH)
-	AS_IF([test "x$STDBUF" != "x:"],
-	    [AC_DEFINE_UNQUOTED([STDBUF_BIN], ["$STDBUF"])],
-	    [AC_MSG_ERROR([stdbuf (coreutils) is needed to run sngrep using ngrep.
-If you dont have stdbuf available in your distribution, you can disable ngrep support using --disable-ngrep flag.])]
-	)
-	AC_PATH_PROG(NGREP, ngrep, [:], $PATH)
-	AS_IF([test "x$NGREP" != "x:"],
-	    [AC_DEFINE_UNQUOTED([NGREP_BIN], ["$NGREP"])],
-	    [AC_MSG_ERROR([ngrep is required to run sngrep.
-If you dont have ngrep available in your distribution, you can disable ngrep support using --disable-ngrep flag.])]
-	)
+AC_CHECK_HEADER([pcap.h], [], [
+    AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
 ])
 
 ######################################################################
@@ -124,7 +87,6 @@ fi
 AC_MSG_NOTICE
 AC_MSG_NOTICE( ====================================================== )
 AC_MSG_NOTICE(   sngrep configure finished                            )
-AC_MSG_NOTICE(   Current Development stage: BETA                      )
 AC_MSG_NOTICE(  ----------------------------------------------------  )
 AC_MSG_NOTICE( ====================================================== )
 AC_MSG_NOTICE

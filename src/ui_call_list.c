@@ -37,6 +37,7 @@
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
+#include "ui_save_pcap.h"
 
 PANEL *
 call_list_create()
@@ -101,7 +102,7 @@ call_list_create()
     wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
     // Draw panel title
     mvwprintw(win, 0, 0,  "%*s", width, "");
-    mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP message interface for ngrep");
+    mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
 
     // Draw columns titles
     mvwprintw(win, 3, 0,  "%*s", width, "");
@@ -413,6 +414,7 @@ call_list_handle_key(PANEL *panel, int key)
         if (!is_option_disabled("sngrep.tmpfile")) {
             // KEY_S, Display save panel
             next_panel = ui_create(ui_find_by_type(SAVE_PANEL));
+            save_set_group(ui_get_panel(next_panel), info->group);
             wait_for_input(next_panel);
         }
         break;

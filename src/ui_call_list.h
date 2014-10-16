@@ -173,7 +173,6 @@ call_list_form_activate(PANEL *panel, bool active);
 extern const char*
 call_list_line_text(PANEL *panel, sip_call_t *call);
 
-
 /**
  * @brief Handle Call list key strokes
  *

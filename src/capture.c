@@ -19,7 +19,6 @@
  ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
-#ifdef WITH_LIBPCAP
 /**
  * @file pcap.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
@@ -34,7 +33,7 @@
  * use other transports, uh.
  *
  */
-#include "spcap.h"
+#include "capture.h"
 #include "sip.h"
 #include "option.h"
 #include "ui_manager.h"
@@ -46,54 +45,55 @@ pcap_dumper_t *pd = NULL;
 //! FIXME Session handle
 pcap_t *handle;
 
-#ifndef WITH_NGREP
-
 int
-online_capture(void *pargv)
+capture_online()
 {
-    char **argv = (char**) pargv;
-    int argc = 1;
-    char filter_exp[256];
     //! Device to sniff on
-    char dev[] = "any";
+    const char *dev = get_option_value("capture.device");
+    //! The filter expression
+    const char *filter_exp = get_option_value("capture.filter");
+    //! Output PCAP File
+    const char *outfile = get_option_value("capture.outfile");
     //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
     //! The compiled filter expression
     struct bpf_program fp;
-    //! The filter expression
-    //char *filter_exp = (char *) pargs;
     //! Netmask of our sniffing device
     bpf_u_int32 mask;
     //! The IP of our sniffing device
     bpf_u_int32 net;
-    //! Build the filter options
-    memset(filter_exp, 0, sizeof(filter_exp));
-    while (argv[argc]) {
-        sprintf(filter_exp + strlen(filter_exp), " %s", argv[argc++]);
-    }
 
+    // Try to find capture device information
     if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
         fprintf(stderr, "Can't get netmask for device %s\n", dev);
         net = 0;
         mask = 0;
     }
+
+    // Open capture device
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
     }
-    if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
-        fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
-        return 2;
+
+    // Validate and set filter expresion
+    if (filter_exp) {
+        if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
+            fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
+        if (pcap_setfilter(handle, &fp) == -1) {
+            fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
     }
-    if (pcap_setfilter(handle, &fp) == -1) {
-        fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
-        return 2;
-    }
-    if (!is_option_disabled("sngrep.tmpfile")) {
-        if ((pd = pcap_dump_open(handle, get_option_value("sngrep.tmpfile"))) == NULL) {
-            fprintf(stderr, "Couldn't open temporal dump file %s: %s\n",
-                get_option_value("sngrep.tmpfile"), pcap_geterr(handle));
+
+    // If requested store packets in a dump file
+    if ((outfile = get_option_value("capture.outfile"))) {
+        if ((pd = dump_open(outfile)) == NULL) {
+            fprintf(stderr, "Couldn't open output dump file %s: %s\n",
+                outfile, pcap_geterr(handle));
             return 2;
         }
     }
@@ -101,33 +101,48 @@ online_capture(void *pargv)
     // Get datalink to parse packages correctly
     linktype = pcap_datalink(handle);
 
-    // Parse available packages
-    pcap_loop(handle, -1, parse_packet, (u_char*)"Online");
-
-    // Close temporal file
-    pcap_dump_close(pd);
-    // Close PCAP file
-    pcap_close(handle);
     return 0;
 }
-#endif
+
+void
+capture_thread(void *none)
+{
+    // Parse available packages
+    pcap_loop(handle, -1, parse_packet, (u_char*)"Online");
+}
 
 int
-load_from_file(const char* file)
+capture_offline()
 {
-    // PCAP file handler
-    pcap_t *handle;
+    //! The filter expression
+    const char *filter_exp = get_option_value("capture.filter");
+    // PCAP input file name
+    const char *infile = get_option_value("capture.infile");
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
     // The header that pcap gives us
     struct pcap_pkthdr header;
     // The actual packet
     const u_char *packet;
+    //! The compiled filter expression
+    struct bpf_program fp;
 
     // Open PCAP file
-    if ((handle = pcap_open_offline(file, errbuf)) == NULL) {
-        fprintf(stderr, "Couldn't open pcap file %s: %s\n", file, errbuf);
+    if ((handle = pcap_open_offline(infile, errbuf)) == NULL) {
+        fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
+    }
+
+    // Validate and set filter expresion
+    if (filter_exp) {
+        if (pcap_compile(handle, &fp, filter_exp, 0, 0) == -1) {
+            fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
+        if (pcap_setfilter(handle, &fp) == -1) {
+            fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+            return 2;
+        }
     }
 
     // Get datalink to parse packages correctly
@@ -138,8 +153,6 @@ load_from_file(const char* file)
         // Parse package
         parse_packet((u_char*)"Offline", &header, packet);
     }
-    // Close PCAP file
-    pcap_close(handle);
     return 0;
 }
 
@@ -168,6 +181,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int size_payload;
     // Parsed message data
     sip_msg_t *msg;
+    // Total packet size
+    int size_packet;
 
     // Get link header size from datalink type
     if (linktype == DLT_EN10MB) {
@@ -198,6 +213,9 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         size_payload = htons(udp->udp_hlen) - SIZE_UDP;
         msg_payload[size_payload] = '\0';
 
+        // Total packet size
+        size_packet = size_link + size_ip + SIZE_UDP + size_payload;
+
         // XXX Process timestamp
         struct timeval ut_tv = header->ts;
         time_t t = (time_t) ut_tv.tv_sec;
@@ -212,6 +230,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         sprintf(msg_header, "U %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
         sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(udp->udp_sport));
         sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
+
     } else if (ip->ip_p == IPPROTO_TCP) {
         tcp = (struct nread_tcp*) (packet + size_link + size_ip);
 
@@ -219,6 +238,9 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         msg_payload = (u_char *) (packet + size_link + size_ip + SIZE_TCP);
         size_payload = ntohs(ip->ip_len) - (size_ip + SIZE_TCP);
         msg_payload[size_payload] = '\0';
+
+        // Total packet size
+        size_packet = size_link + size_ip + SIZE_TCP + size_payload;
 
         // XXX Process timestamp
         struct timeval ut_tv = header->ts;
@@ -241,19 +263,55 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     }
 
     // Parse this header and payload
-    if ((msg = sip_load_message(msg_header, (const char*) msg_payload)) && !strcasecmp((const char*)mode, "Online") ) {
+    if (!(msg = sip_load_message(msg_header, (const char*) msg_payload))) {
+        return;
+    }
+
+    // Set message PCAP data
+    msg->pcap_header = malloc(sizeof(struct pcap_pkthdr));
+    memcpy(msg->pcap_header, header, sizeof(struct pcap_pkthdr));
+    msg->pcap_packet = malloc(size_packet);
+    memcpy(msg->pcap_packet, packet, size_packet);
+
+    // Refresh current UI in online mode
+    if (!strcasecmp((const char*)mode, "Online")) {
         ui_new_msg_refresh(msg);
+        // Check if we should stop capturing
+        int limit = get_option_int_value("capture.limit");
+        if (limit && sip_calls_count() >= limit)
+            pcap_breakloop(handle);
     }
 
-    // Check if we should stop capturing
-    int limit = get_option_int_value("capture.limit");
-    if (limit &&  !strcasecmp((const char*)mode, "Online") && sip_calls_count() >= limit)
-        pcap_breakloop(handle);
-
-    // Store this package in temporal file
-    if (pd) {
-        pcap_dump((u_char*)pd, header, packet);
-        pcap_dump_flush(pd);
-    }
+    // Store this package in output file
+    dump_packet(pd, header, packet);
 }
-#endif
+
+void
+capture_close()
+{
+    //Close PCAP file
+    pcap_close(handle);
+    // Close dump file
+    dump_close(pd);
+}
+
+pcap_dumper_t *
+dump_open(const char *dumpfile)
+{
+    return pcap_dump_open(handle, dumpfile);
+}
+
+void
+dump_packet(pcap_dumper_t *pd, const struct pcap_pkthdr *header, const u_char *packet)
+{
+    if (!pd) return;
+    pcap_dump((u_char*)pd, header, packet);
+    pcap_dump_flush(pd);
+}
+
+void
+dump_close(pcap_dumper_t *pd)
+{
+    if (!pd) return;
+    pcap_dump_close(pd);
+}

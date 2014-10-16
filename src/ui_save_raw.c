@@ -45,7 +45,7 @@ save_raw_create()
     char savefile[128];
 
     // Calculate window dimensions
-    height = 8;
+    height = 10;
     width = 90;
 
     // Cerate a new indow for the panel and form
@@ -63,6 +63,7 @@ save_raw_create()
 
     // Initialize the fields
     info->fields[FLD_SAVE_RAW_FILE]     = new_field(1, 68, 3, 15, 0, 0);
+    info->fields[FLD_SAVE_RAW_SELECTED] = new_field(1, 1,  4, 5, 0, 0);
     info->fields[FLD_SAVE_RAW_SAVE]     = new_field(1, 10, height - 2, 30, 0, 0);
     info->fields[FLD_SAVE_RAW_CANCEL]   = new_field(1, 10, height - 2, 50, 0, 0);
     info->fields[FLD_SAVE_RAW_COUNT]    = NULL;
@@ -80,12 +81,14 @@ save_raw_create()
 
     // Fields labels
     mvwprintw(win, 3, 3, "Save file:");
+    mvwprintw(win, 4, 4, "[ ] Only save selected calls");
 
     // Set Default field values
     sprintf(savefile, "%s/sngrep-raw-%u.txt",
         get_option_value("sngrep.savepath"), (unsigned)time(NULL));
 
     set_field_buffer(info->fields[FLD_SAVE_RAW_FILE], 0, savefile);
+    set_field_buffer(info->fields[FLD_SAVE_RAW_SELECTED],  0, is_option_enabled("sngrep.saveselected")?"*":"");
     set_field_buffer(info->fields[FLD_SAVE_RAW_SAVE],      0, "[  Save  ]");
     set_field_buffer(info->fields[FLD_SAVE_RAW_CANCEL],    0, "[ Cancel ]");
 

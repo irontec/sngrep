@@ -45,6 +45,7 @@
  */
 enum save_raw_field_list {
     FLD_SAVE_RAW_FILE,
+    FLD_SAVE_RAW_SELECTED,
     FLD_SAVE_RAW_SAVE,
     FLD_SAVE_RAW_CANCEL,
     //! Never remove this field id @see save_info

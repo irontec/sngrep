@@ -1,23 +1,14 @@
 # sngrep
 
-This 'tool' aims to make easier the task of my workmates while using ngrep
-on heavy load production systems. When a lot of SIP messages are flowing
-in your screen, it's useful to have a tool that order them and print in a
-fashion way.
+sngrep is a tool for displaying SIP calls message flows.
 
-This can be also used as a PCAP file viewer, although will only show SIP
-packages.
-
-sngrep is a small development done in a couple of days. It has not been
-properly coded. It has not been propely tested. It should not even reach
-the alpha stage, but can be handy somehow in strange cases.
+It supports live capture to display realtime SIP packets and can also be used
+as PCAP viewer.
 
 ## Prerequisites
 
  - libncurse5 - for UI , windows, panels.
- - libpcap - for parsing pcap files. (Optional, see below)
- - ngrep - for live captures. (Optional, see below)
- - stdbuf - for piping ngrep output unbuffered. (Optional, see below)
+ - libpcap - for capturing packets.
 
 ## Installing
  
@@ -27,39 +18,21 @@ On most systems the commands to build will be the standard atotools procedure:
 	make
 	make install (as root)
 
-If you dont want to use ngrep (because is not available in your system or you 
-don't have stdbuf), you can use libpcap instead. You will lose all available
-options of ngrep (such as saving to .pcap while capturing) but both online and
-offline modes will work.
-
-	./configure --disable-ngrep
-	make
-	make install (as root)
-
 If you dont want to use libpcap (because is not available in your system or
-don't want to install more development libraries), you can use ngrep insted.
-Parsing with ngrep will be a slower, but both online and offline modes will
-work.
-
-	./configure --disable-libpcap
-	make
-	make install (as root)
-
+don't want to install more development libraries), you can use release 0.0.0
+available at https://github.com/irontec/sngrep/releases
 
 ## Usage
 
-sngrep can be used to view SIP packages from a pcap file 
+sngrep can be used to view SIP packets from a pcap file
 
     sngrep file.pcap
 
-or online parsing using ngrep filters and parameters (man ngrep for a full list) 
-
-    sngrep -O file.pcap port 5060 and udp and host 192.168.8.101
-
-if you compiled without ngrep support, use only the filters
+or live capturing
 
 	sngrep port 5060 and udp
 
+You can configure some options using a sngreprc file
 
 ## Frequent Asked Questions
  <dl>
