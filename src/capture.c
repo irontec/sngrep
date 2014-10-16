@@ -29,7 +29,7 @@
  * This file include the functions that uses libpcap to do so.
  *
  * @todo We could request libpcap to filter the file before being processed
- * and only read sip packages. We also allow UDP packages here, and SIP can
+ * and only read sip packets. We also allow UDP packets here, and SIP can
  * use other transports, uh.
  *
  */
@@ -98,8 +98,14 @@ capture_online()
         }
     }
 
-    // Get datalink to parse packages correctly
+    // Get datalink to parse packets correctly
     linktype = pcap_datalink(handle);
+
+    // Check linktypes sngrep knowns before start parsing packets
+    if (datalink_size(linktype) == -1) {
+        fprintf(stderr, "Unable to handle linktype %d\n", linktype);
+        return 3;
+    }
 
     return 0;
 }
@@ -107,7 +113,7 @@ capture_online()
 void
 capture_thread(void *none)
 {
-    // Parse available packages
+    // Parse available packets
     pcap_loop(handle, -1, parse_packet, (u_char*)"Online");
 }
 
@@ -145,12 +151,18 @@ capture_offline()
         }
     }
 
-    // Get datalink to parse packages correctly
+    // Get datalink to parse packets correctly
     linktype = pcap_datalink(handle);
 
-    // Loop through packages
+    // Check linktypes sngrep knowns before start parsing packets
+    if (datalink_size(linktype) == -1) {
+        fprintf(stderr, "Unable to handle linktype %d\n", linktype);
+        return 3;
+    }
+
+    // Loop through packets
     while ((packet = pcap_next(handle, &header))) {
-        // Parse package
+        // Parse packets
         parse_packet((u_char*)"Offline", &header, packet);
     }
     return 0;
@@ -161,10 +173,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 {
     // Datalink Header size
     int size_link;
-    // Ethernet header data
-    struct ether_header *eptr;
-    // Ethernet header type
-    u_short ether_type;
     // IP header data
     struct nread_ip *ip;
     // IP header size
@@ -185,19 +193,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int size_packet;
 
     // Get link header size from datalink type
-    if (linktype == DLT_EN10MB) {
-        eptr = (struct ether_header *) packet;
-        if ((ether_type = ntohs(eptr->ether_type)) != ETHERTYPE_IP) return;
-        size_link = SIZE_ETHERNET;
-    } else if (linktype == DLT_LINUX_SLL) {
-        size_link = SLL_HDR_LEN;
-    } else if (linktype == DLT_NULL) {
-        size_link = DLT_RAW;
-    } else {
-        // Something we are not prepared to parse :(
-        fprintf(stderr, "Error handing linktype %d\n", linktype);
-        return;
-    }
+    size_link = datalink_size(linktype);
 
     // Get IP header
     ip = (struct nread_ip*) (packet + size_link);
@@ -282,7 +278,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             pcap_breakloop(handle);
     }
 
-    // Store this package in output file
+    // Store this packets in output file
     dump_packet(pd, header, packet);
 }
 
@@ -293,6 +289,43 @@ capture_close()
     pcap_close(handle);
     // Close dump file
     dump_close(pd);
+}
+
+int
+datalink_size(int datalink)
+{
+    // Datalink header size
+    switch(datalink) {
+        case DLT_EN10MB:
+            return 14;
+        case DLT_IEEE802:
+            return 22;
+        case DLT_LOOP:
+        case DLT_NULL:
+            return 4;
+        case DLT_SLIP:
+        case DLT_SLIP_BSDOS:
+            return 16;
+        case DLT_PPP:
+        case DLT_PPP_BSDOS:
+        case DLT_PPP_SERIAL:
+        case DLT_PPP_ETHER:
+            return 4;
+        case DLT_RAW:
+            return 0;
+        case DLT_FDDI:
+            return 21;
+        case DLT_ENC:
+            return 12;
+        case DLT_LINUX_SLL:
+            return 16;
+        case DLT_IPNET:
+            return 24;
+        default:
+            // Not handled datalink type
+            return -1;
+    }
+
 }
 
 pcap_dumper_t *

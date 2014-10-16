@@ -43,10 +43,6 @@
 #include <netinet/if_ether.h>
 #include <time.h>
 
-//! Ethernet headers are always exactly 14 bytes
-#define SIZE_ETHERNET 14
-//! Linux cooked packages headers are 16 bytes
-#define SLL_HDR_LEN 16
 //! UDP headers are always exactly 8 bytes
 #define SIZE_UDP 8
 //! TCP headers size
@@ -177,6 +173,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
 void
 capture_close();
+
+/**
+ * @brief Get datalink header size
+ *
+ */
+extern int
+datalink_size(int datalink);
 
 pcap_dumper_t *
 dump_open(const char *dumpfile);
