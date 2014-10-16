@@ -192,6 +192,9 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Total packet size
     int size_packet;
 
+    // Store this packets in output file
+    dump_packet(pd, header, packet);
+
     // Get link header size from datalink type
     size_link = datalink_size(linktype);
 
@@ -278,8 +281,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             pcap_breakloop(handle);
     }
 
-    // Store this packets in output file
-    dump_packet(pd, header, packet);
 }
 
 void
