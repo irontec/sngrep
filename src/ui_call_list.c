@@ -111,7 +111,7 @@ call_list_create()
 
         // Check if the column will fit in the remaining space of the screen
         if (colpos + collen >= width) break;
-        mvwprintw(win, 3, colpos, sip_attr_get_description(info->columns[i].id));
+        mvwprintw(win, 3, colpos, "%.*s", collen, sip_attr_get_description(info->columns[i].id));
         colpos += collen + 1;
     }
     wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
@@ -269,6 +269,7 @@ call_list_line_text(PANEL *panel, sip_call_t *call)
     int i, collen;
     char *line;
     const char *call_attr;
+    char coltext[80];
 
     // Initialize line
     line = malloc(256);
@@ -283,7 +284,8 @@ call_list_line_text(PANEL *panel, sip_call_t *call)
         collen = info->columns[i].width;
         // Get call attribute for current column
         if ((call_attr = call_get_attribute(call, info->columns[i].id))) {
-            sprintf(line + strlen(line), "%-*s ", collen, call_attr);
+            sprintf(coltext, "%.*s", collen, call_attr);
+            sprintf(line + strlen(line), "%-*s ", collen, coltext);
         }
     }
 
