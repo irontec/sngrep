@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <form.h>
+#include <ctype.h>
 #include "ui_save_pcap.h"
 #include "option.h"
 #include "capture.h"
@@ -263,15 +264,17 @@ save_to_file(PANEL *panel)
     char field_value[48];
     sip_call_t *call = NULL;
     sip_msg_t *msg = NULL;
+    int i;
 
     // Get panel information
     save_info_t *info = (save_info_t*) panel_userptr(panel);
 
     // Get current field value.
-    // We trim spaces with sscanf because and empty field is stored as
-    // space characters
     memset(field_value, 0, sizeof(field_value));
-    sscanf(field_buffer(info->fields[FLD_SAVE_FILE], 0), "%[^ ]", field_value);
+    strcpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    // Trim trailing spaces
+    for (i = strlen(field_value) - 1; isspace(field_value[i]); i--)
+        field_value[i] = '\0';
 
     // Don't allow to save no packets!
     if (is_option_enabled("sngrep.saveselected") && call_group_msg_count(info->group) == 0) {
