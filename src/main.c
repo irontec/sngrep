@@ -92,12 +92,6 @@ main(int argc, char* argv[])
     //! ngrep running thread
     pthread_t exec_t;
 
-    // We need parameters!
-    if (argc == 1) {
-        usage();
-        return 0;
-    }
-
     // Initialize configuration options
     init_options();
 
