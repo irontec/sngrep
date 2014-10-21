@@ -1,22 +1,18 @@
 ToDo List
 =========
-This program is not even alpha stage, so there are TONS of improvements, which most 
-probably will not be done, or maybe yes, who knows. 
-
-=========
-exec:
-	* Capture SIP messages using libpcap
-		In online mode, we're spawning a ngrep process that is responsible
-		to write the captured messages to stdout.
-		If we dont use correct ngrep filters (like udp or port 5060), most
-		probably sngrep will fail to parse.
-		We could remove this thread and capture the packages ourself.
+capture:
+    * Add support for TLS (At least 1.0)
 
 sip:
+    * Remove all ngrep rubbish
+        We still use ngrep header format. I like that for displaying
+        raw data but not for parsing data from capture packets
+        into sip_message structures.
+
 	* Change parsing functions for something more efficient (osip2?)
 		Parsing with sscanf is not the best way, but the simplest. If
 		we require to parse more headers in the future, it will start 
-		to be worse and worse;
+		to be worse and worse
 		
 ui:
  	* Change panels initialization
@@ -24,9 +20,6 @@ ui:
 		each panel can only be invoked once (it is not possible to have
 		two call details panel right now)
 		
-	* Improve scrolling in all panels
-		Don't redraw panels if it's not required... just keep them.
-	
 	* Show call duration and Finish status
 		It would be great to show this two columns on main screean.
 		First one can be calculated from the difference between first

@@ -1,9 +1,9 @@
 /**************************************************************************
  **
- ** sngrep - SIP callflow viewer using ngrep
+ ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013 Ivan Alonso (Kaian)
- ** Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -250,6 +250,8 @@ sip_get_callid(const char* payload);
  *
  * Use this function to convert raw data into call and message
  * structures. This is mainly used to load data from a file or
+ *
+ * @todo This functions should stop using ngrep header format
  *
  * @param header Raw ngrep header
  * @param payload Raw ngrep payload

@@ -1,9 +1,9 @@
 /**************************************************************************
  **
- ** sngrep - SIP callflow viewer using ngrep
+ ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013 Ivan Alonso (Kaian)
- ** Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -281,7 +281,7 @@ title_foot_box(WINDOW *win);
  * @brief Update topmost panel with the newest readed message
  *
  * This function is invocked asynchronously from the
- * ngrep exec thread to notify a new message of the giving
+ * capture thread to notify a new message of the giving
  * callid. If the UI is displaying this call or it's
  * extended one, the topmost panel will be redraw again
  *

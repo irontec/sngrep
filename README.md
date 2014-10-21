@@ -38,26 +38,16 @@ You can configure some options using a sngreprc file
  <dl>
   <dt>Why a new tool from network filtering?</dt>
   <dd>Don't know. I didn't find any console tool that will display call flows.</dd>
-  <dt>Why dont you filter packages in online mode instead of using ngrep?</dt>
-  <dd>You can actually capture disabling ngrep using only pcap filters (see Installing options above)</dd>
-  <dt>Why only parsing SIP Messages?</dt>
-  <dd>Because it's useful for us</dd>
   <dt>Extended Call flow window doesn't work</dt>
   <dd>If you want to make relations between different dialogs (extended callflow)
    a header must be present in of the dialogs referencing the other one.
    This header can be X-CID or X-Call-ID and must contain the Call-ID of the 
    other related dialog.</dd>
-  <dt>I have found a bug, what should I do?</dt>
-  <dd>There are LOTS of bugs. The strange thing will be you haven't found one.
-   Just write an issue at github and I will try to fix it.</dd>
-  <dt>I think the idea is better than the tool.</dt>
-  <dd> I think that too. If you want to start a new tool with the same purpose
-   send me an email, I'll want to contribute.</dd>
 </dl>
 
 ## License 
-    sngrep - SIP callflow viewer using ngrep
-    Copyright (C) 2013 Irontec S.L.
+    sngrep - SIP Messages flow viewer
+    Copyright (C) 2013,2014 Irontec S.L.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

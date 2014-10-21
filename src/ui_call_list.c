@@ -1,9 +1,9 @@
 /**************************************************************************
  **
- ** sngrep - SIP callflow viewer using ngrep
+ ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013 Ivan Alonso (Kaian)
- ** Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -536,7 +536,7 @@ call_list_help(PANEL *panel)
     // Some brief explanation abotu what window shows
     wattron(help_win, COLOR_PAIR(HELP_COLOR));
     mvwprintw(help_win, 3, 2, "This windows show the list of parsed calls from a pcap file ");
-    mvwprintw(help_win, 4, 2, "(Offline) or a live capture with ngrep (Online).");
+    mvwprintw(help_win, 4, 2, "(Offline) or a live capture with libpcap functions (Online).");
     mvwprintw(help_win, 5, 2, "You can configure the columns shown in this screen and some");
     mvwprintw(help_win, 6, 2, "static filters using sngreprc resource file.");
     wattroff(help_win, COLOR_PAIR(HELP_COLOR));

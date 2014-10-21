@@ -1,9 +1,9 @@
 /**************************************************************************
  **
- ** sngrep - SIP callflow viewer using ngrep
+ ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013 Ivan Alonso (Kaian)
- ** Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -24,10 +24,6 @@
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of initial functions used by sngrep
- *
- * @todo This should be coded properly. We could use use -f flag argument to
- * load the pcap file (because ngrep has no -f flag) and assume any other
- * argument are ngrep arguments. Anyway, actual main code is awful.
  */
 
 #include <stdio.h>
@@ -50,6 +46,7 @@ usage()
     printf("Usage: %s <-IO pcap_dump> <-d dev> [<bpf filter>|<pcap_dump>]\n\n"
         "    -h  This usage\n"
         "    -v  Version information\n"
+        "    -d  Use this capture device insted of default\n"
         "    -I  Read captured data from pcap file\n"
         "    -O  Write captured data to pcap file\n\n",
         PACKAGE);
@@ -59,7 +56,7 @@ void
 version()
 {
     printf("%s - %s\n"
-        "Copyright (C) 2013,2014 Irontec S.L.\n"
+        "Copyright (C) 2013,2014,2014 Irontec S.L.\n"
         "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
         "This is free software: you are free to change and redistribute it.\n"
         "There is NO WARRANTY, to the extent permitted by law.\n\n"
@@ -70,12 +67,6 @@ version()
  * @brief Main function logic
  *
  * Parse command line options and start running threads
- *
- * @note There are no params actually... if you supply one
- *    param, I will assume we are running offline mode with
- *    a pcap file. Otherwise the args will be passed to ngrep
- *    without any type of validation.
- *
  */
 int
 main(int argc, char* argv[])
@@ -87,9 +78,9 @@ main(int argc, char* argv[])
     //! BPF arguments filter
     char bpf[512];
 
-    //! ngrep thread attributes
+    //! capture thread attributes
     pthread_attr_t attr;
-    //! ngrep running thread
+    //! capture thread
     pthread_t exec_t;
 
     // Initialize configuration options

@@ -6,13 +6,14 @@ Maintainer: Ivan Alonso <kaian@irontec.com>
 Package: sngrep
 Architecture: amd64
 Section: comm
-Depends: ngrep, libpcap0.8, libncurses5
+Depends: libpcap0.8, libncurses5
 Priority: optional
 Homepage: http://www.irontec.com
-Description: Ncurses ngrep interface for SIP packages
- sngrep is a small development done in a couple of days. It has not been
- properly coded. It has not been propely tested. It should not even reach
- the alpha stage, but can be handy somehow in strange cases.
- If you use this piece of code and find a bug or have a comment, write them
- to kaian@irontec.com
+Description: Ncurses SIP Messages flow viewer
+ sngrep displays SIP Messages grouped by Call-Id into flow
+ diagrams. It can be used as an offline pcap viewer or online
+ capture using libpcap functions.
+ .
+ It supports SIP UDP and TCP transports (when each message is
+ delivered in one packet).
  .

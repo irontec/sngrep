@@ -1,9 +1,9 @@
 /**************************************************************************
  **
- ** sngrep - SIP callflow viewer using ngrep
+ ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013 Ivan Alonso (Kaian)
- ** Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by

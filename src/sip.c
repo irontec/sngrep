@@ -1,9 +1,9 @@
 /**************************************************************************
  **
- ** sngrep - SIP callflow viewer using ngrep
+ ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013 Ivan Alonso (Kaian)
- ** Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -32,11 +32,13 @@
  *
  * @todo Replace structures for their typedef shorter names
  */
+#include "config.h"
 #include <regex.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <pthread.h>
 #include "sip.h"
 #include "option.h"
 
@@ -220,9 +222,6 @@ sip_get_callid(const char* payload)
     char value[256];
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
-        // fix last ngrep line character
-        if (pch[strlen(pch) - 1] == '.') pch[strlen(pch) - 1] = '\0';
-
         if (!strncasecmp(pch, "Call-ID", 7)) {
             if (sscanf(pch, "Call-ID: %[^@\n]", value) == 1) {
                 callid = strdup(value);
@@ -676,9 +675,6 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     if (!msg || !payload) return 1;
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
-        // fix last ngrep line character
-        if (pch[strlen(pch) - 1] == '.') pch[strlen(pch) - 1] = '\0';
-
         // Copy the payload line by line (easier to process by the UI)
         msg->payload[msg->plines++] = strdup(pch);
 
