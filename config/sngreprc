@@ -90,3 +90,8 @@
 ##-----------------------------------------------------------------------------
 ## Uncomment to configure packet count capture limit (0: disabled)
 # set capture.limit 2000
+
+##-----------------------------------------------------------------------------
+## Default capture keyfile for TLS transport
+set capture.keyfile /etc/ssl/asterisk/irontec.pem
+

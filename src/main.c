@@ -43,12 +43,13 @@
 void
 usage()
 {
-    printf("Usage: %s <-IO pcap_dump> <-d dev> [<bpf filter>|<pcap_dump>]\n\n"
+    printf("Usage: %s [-IO pcap_dump] [-d dev] [-k keyfile] [<bpf filter>|<pcap_dump>]\n\n"
         "    -h  This usage\n"
         "    -v  Version information\n"
         "    -d  Use this capture device insted of default\n"
         "    -I  Read captured data from pcap file\n"
-        "    -O  Write captured data to pcap file\n\n",
+        "    -O  Write captured data to pcap file\n"
+        "    -k  SSL keyfile to decrypt captured packets\n",
         PACKAGE);
 }
 
@@ -88,7 +89,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hvd:I:O:pqtW:";
+    char *options = "hvd:I:O:pqtW:k:";
     while ((opt = getopt (argc, argv, options)) != -1) {
         switch (opt) {
         case 'h':
@@ -105,6 +106,9 @@ main(int argc, char* argv[])
             break;
         case 'O':
             set_option_value("capture.outfile", optarg);
+            break;
+        case 'k':
+            set_option_value("capture.keyfile", optarg);
             break;
         // Dark options for dummy ones
         case 'p':

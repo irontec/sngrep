@@ -84,6 +84,8 @@ enum sip_attr_id
     SIP_ATTR_SDP_ADDRESS,
     //! SDP Port
     SIP_ATTR_SDP_PORT,
+    //! SIP Message transport
+    SIP_ATTR_TRANSPORT,
     //! SIP Call first message method
     SIP_ATTR_STARTING,
     //! SIP Call message counter

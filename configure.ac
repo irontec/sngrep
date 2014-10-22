@@ -57,6 +57,11 @@ AC_CHECK_HEADER([pcap.h], [], [
     AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
 ])
 
+AC_CHECK_LIB([ssl], [SSL_new], [], [
+    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep.])
+])
+
+
 ######################################################################
 
 if test "x${silent}" != "xyes" ; then

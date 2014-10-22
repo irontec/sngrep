@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file pcap.c
+ * @file capture.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in pcap.h
@@ -28,12 +28,11 @@
  * sngrep can parse a pcap file to display call flows.
  * This file include the functions that uses libpcap to do so.
  *
- * @todo We could request libpcap to filter the file before being processed
- * and only read sip packets. We also allow UDP packets here, and SIP can
- * use other transports, uh.
- *
  */
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include "capture.h"
+#include "capture_tls.h"
 #include "sip.h"
 #include "option.h"
 #include "ui_manager.h"
@@ -44,6 +43,7 @@ int linktype;
 pcap_dumper_t *pd = NULL;
 //! FIXME Session handle
 pcap_t *handle;
+int cnt = 0;
 
 int
 capture_online()
@@ -191,6 +191,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     sip_msg_t *msg;
     // Total packet size
     int size_packet;
+    // SIP message transport
+    int transport = 0;  /* 0 UDP, 1 TCP, 2 TLS */
 
     // Store this packets in output file
     dump_packet(pd, header, packet);
@@ -255,7 +257,20 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         sprintf(msg_header, "T %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
         sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(tcp->th_sport));
         sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(tcp->th_dport));
+        transport = 1;
 
+        if (!strstr((const char*) msg_payload, "SIP/2.0")) {
+            uint8 *decoded = malloc(2048);
+            int decoded_len = 0;
+            tls_process_segment(ip, &decoded, &decoded_len);
+            if (decoded_len) {
+                memcpy(msg_payload, decoded, decoded_len);
+                size_payload = decoded_len;                
+                msg_payload[size_payload] = '\0';
+                transport = 2;
+            }
+            free(decoded);
+        }
     } else {
         // Not handled protocol
         return;
@@ -264,6 +279,15 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Parse this header and payload
     if (!(msg = sip_load_message(msg_header, (const char*) msg_payload))) {
         return;
+    }
+
+    // Store Transport attribute
+    if (transport == 0) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
+    } else if (transport == 1) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
+    } else if (transport == 2) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
     }
 
     // Set message PCAP data

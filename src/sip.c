@@ -114,6 +114,10 @@ static sip_attr_hdr_t attrs[] = {
         .name = "sdpport",
         .desc = "SDP Port"},
     {
+        .id = SIP_ATTR_TRANSPORT,
+        .name = "transport",
+        .desc = "Trans" },
+    {
         .id = SIP_ATTR_STARTING,
         .name = "starting",
         .desc = "Starting" },

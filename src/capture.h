@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file pcap.h
+ * @file capture.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage pcap files
@@ -28,13 +28,9 @@
  * sngrep can parse a pcap file to display call flows.
  * This file include the functions that uses libpcap to do so.
  *
- * @todo We could request libpcap to filter the file before being processed
- * and only read sip packages. We also allow UDP packages here, and SIP can
- * use other transports, uh.
- *
  */
-#ifndef __SNGREP_PCAP_H
-#define __SNGREP_PCAP_H
+#ifndef __SNGREP_CAPTURE_H
+#define __SNGREP_CAPTURE_H
 
 #include <pcap.h>
 #include <string.h>
