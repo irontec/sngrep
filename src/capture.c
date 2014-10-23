@@ -211,10 +211,15 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Get UDP header
         udp = (struct nread_udp*) (packet + size_link + size_ip);
 
-        // Get packet payload
-        msg_payload = (u_char *) (packet + size_link + size_ip + SIZE_UDP);
+        // We're only interested in packets with payload
         size_payload = htons(udp->udp_hlen) - SIZE_UDP;
-        msg_payload[size_payload] = '\0';
+        if (size_payload <= 0)
+            return;
+
+        // Get packet payload
+        msg_payload = malloc(size_payload + 1);
+        memset(msg_payload, 0, size_payload + 1);
+        memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_UDP), size_payload);
 
         // Total packet size
         size_packet = size_link + size_ip + SIZE_UDP + size_payload;
@@ -242,10 +247,15 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     } else if (ip->ip_p == IPPROTO_TCP) {
         tcp = (struct nread_tcp*) (packet + size_link + size_ip);
 
-        // Get packet payload
-        msg_payload = (u_char *) (packet + size_link + size_ip + SIZE_TCP);
+        // We're only interested in packets with payload
         size_payload = ntohs(ip->ip_len) - (size_ip + SIZE_TCP);
-        msg_payload[size_payload] = '\0';
+        if (size_payload <= 0)
+            return;
+
+        // Get packet payload
+        msg_payload = malloc(size_payload + 1);
+        memset(msg_payload, 0, size_payload + 1);
+        memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_TCP), size_payload);
 
         // Total packet size
         size_packet = size_link + size_ip + SIZE_TCP + size_payload;
@@ -291,8 +301,10 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     // Parse this header and payload
     if (!(msg = sip_load_message(msg_header, (const char*) msg_payload))) {
+        free(msg_payload);
         return;
     }
+    free(msg_payload);
 
     // Store Transport attribute
     if (transport == 0) {
