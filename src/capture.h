@@ -121,6 +121,19 @@ struct nread_tcp {
 };
 
 /**
+ * @brief Storage for DNS resolved ips
+ *
+ * Structure to store resolved addresses when capture.lookup
+ * configuration option is enabled.
+ */
+struct dns_cache
+{
+    int count;
+    char addr[16][256];
+    char hostname[16][256];
+};
+
+/**
  * @brief Online capture function
  *
  * This function will validate capture options but will not capture any packet:
@@ -185,5 +198,15 @@ dump_packet(pcap_dumper_t *pd, const struct pcap_pkthdr *header, const u_char *p
 
 void
 dump_close(pcap_dumper_t *pd);
+
+/**
+ * @brief Try to get hostname from its address
+ *
+ * Try to get hostname from the given address, store it in
+ * dnscache. If hostname can not be resolved, then store the
+ * original address to avoid lookup again the same address.
+ */
+const char *
+lookup_hostname(struct in_addr *addr);
 
 #endif

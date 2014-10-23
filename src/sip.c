@@ -57,7 +57,6 @@ static sip_call_t *calls = NULL;
  * before single call locking, it will be used everytime a thread access
  * single call data.
  */
-
 static pthread_mutex_t calls_lock;
 
 static sip_attr_hdr_t attrs[] = {
@@ -634,8 +633,7 @@ msg_parse(sip_msg_t *msg)
 int
 msg_parse_header(sip_msg_t *msg, const char *header)
 {
-    struct tm when = {
-        0 };
+    struct tm when = { 0 };
     char time[20], ipfrom[22], ipto[22];
     time_t timet;
     char proto;

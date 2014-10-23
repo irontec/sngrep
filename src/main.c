@@ -75,6 +75,7 @@ main(int argc, char* argv[])
 
     int ret = 0, opt;
     const char *infile;
+    const char *keyfile;
 
     //! BPF arguments filter
     char bpf[512];
@@ -128,6 +129,13 @@ main(int argc, char* argv[])
         default:
             break;
         }
+    }
+
+    // Check if we have a keyfile and is valid
+    if ((keyfile = get_option_value("capture.keyfile")) &&
+        !tls_check_keyfile(keyfile)) {
+        fprintf(stderr, "%s does not contain a valid RSA private key.\n", keyfile);
+        return 1;
     }
 
     // Check if given argument is a file

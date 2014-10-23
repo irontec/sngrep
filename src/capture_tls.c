@@ -30,6 +30,7 @@
  *
  */
 
+#include <unistd.h>
 #include "capture_tls.h"
 #include "option.h"
 
@@ -139,6 +140,44 @@ tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr,
     connections = conn;
 
     return conn;
+}
+
+void
+tls_connection_destroy(struct SSLConnection *conn)
+{
+    // TODO
+}
+
+/**
+ * FIXME Replace this with a tls_load_key function and use it
+ * in tls_connection_create.
+ *
+ * Most probably we only need one context and key for all connections
+ */
+bool
+tls_check_keyfile(const char *keyfile)
+{
+    SSL *ssl;
+    SSL_CTX *ssl_ctx;
+
+    SSL_library_init();
+    ERR_load_crypto_strings();
+    OpenSSL_add_all_algorithms();
+
+    if (access(get_option_value("capture.keyfile"), R_OK) != 0)
+        return false;
+
+    if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
+        return false;
+
+    SSL_CTX_use_PrivateKey_file(ssl_ctx, get_option_value("capture.keyfile"), SSL_FILETYPE_PEM);
+    if (!(ssl = SSL_new(ssl_ctx)))
+        return false;
+
+    if (!SSL_get_privatekey(ssl))
+        return false;
+
+    return true;
 }
 
 int

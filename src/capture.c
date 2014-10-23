@@ -31,6 +31,7 @@
  */
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <netdb.h>
 #include "capture.h"
 #include "capture_tls.h"
 #include "sip.h"
@@ -43,7 +44,8 @@ int linktype;
 pcap_dumper_t *pd = NULL;
 //! FIXME Session handle
 pcap_t *handle;
-int cnt = 0;
+//! Cache for DNS lookups
+struct dns_cache dnscache;
 
 int
 capture_online()
@@ -229,8 +231,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // XXX Build a header string
         memset(msg_header, 0, sizeof(msg_header));
         sprintf(msg_header, "U %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
-        sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(udp->udp_sport));
-        sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
+        if (is_option_enabled("capture.lookup")) {
+            sprintf(msg_header + strlen(msg_header), "%s:%u ", lookup_hostname(&ip->ip_src), htons(udp->udp_sport));
+            sprintf(msg_header + strlen(msg_header), "-> %s:%u", lookup_hostname(&ip->ip_dst), htons(udp->udp_dport));
+        } else {
+            sprintf(msg_header + strlen(msg_header), "%s:%u ", inet_ntoa(ip->ip_src), htons(udp->udp_sport));
+            sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(udp->udp_dport));
+        }
 
     } else if (ip->ip_p == IPPROTO_TCP) {
         tcp = (struct nread_tcp*) (packet + size_link + size_ip);
@@ -255,9 +262,15 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // XXX Build a header string
         memset(msg_header, 0, sizeof(msg_header));
         sprintf(msg_header, "T %s.%06ld ",  timestr, (long)ut_tv.tv_usec);
-        sprintf(msg_header + strlen(msg_header), "%s:%u ",inet_ntoa(ip->ip_src), htons(tcp->th_sport));
-        sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(tcp->th_dport));
         transport = 1;
+
+        if (is_option_enabled("capture.lookup")) {
+            sprintf(msg_header + strlen(msg_header), "%s:%u ", lookup_hostname(&ip->ip_src), htons(tcp->th_sport));
+            sprintf(msg_header + strlen(msg_header), "-> %s:%u", lookup_hostname(&ip->ip_dst), htons(tcp->th_dport));
+        } else {
+            sprintf(msg_header + strlen(msg_header), "%s:%u ", inet_ntoa(ip->ip_src), htons(tcp->th_sport));
+            sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(tcp->th_dport));
+        }
 
         if (!strstr((const char*) msg_payload, "SIP/2.0")) {
             uint8 *decoded = malloc(2048);
@@ -372,4 +385,44 @@ dump_close(pcap_dumper_t *pd)
 {
     if (!pd) return;
     pcap_dump_close(pd);
+}
+
+const char *
+lookup_hostname(struct in_addr *addr)
+{
+    int i;
+    int hostlen;
+    struct hostent *host;
+    char *hostname;
+    char *address;
+
+    // Initialize values
+    address = (char *)inet_ntoa(*addr);
+
+    // Check if we have already tryied resolve this address
+    for (i=0; i < dnscache.count; i++) {
+        if (!strcmp(dnscache.addr[i], address)) {
+            return dnscache.hostname[i];
+        }
+    }
+
+    // Lookup this addres
+    host = gethostbyaddr(addr, 4, AF_INET);
+    if (!host) {
+        hostname = address;
+    } else {
+        hostname = host->h_name;
+    }
+
+    // Max hostname length set to 16 chars
+    hostlen = strlen(hostname);
+    if (hostlen > 16) hostlen = 16;
+
+    // Store this result in the dnscache
+    strcpy(dnscache.addr[dnscache.count], address);
+    strncpy(dnscache.hostname[dnscache.count], hostname, hostlen);
+    dnscache.count++;
+
+    // Return the stored value
+    return dnscache.hostname[dnscache.count - 1];
 }

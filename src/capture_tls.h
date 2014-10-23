@@ -37,6 +37,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <stdbool.h>
 #include "capture.h"
 
 #define UINT16_INT(i) ((i.x[0] << 8) | i.x[1])
@@ -169,17 +170,20 @@ struct SSLConnection {
     struct SSLConnection *next;
 };
 
-
-void 
-print_hash(const char *what, unsigned char *bytes, int len);
-void 
-print_ascii(const char *what, unsigned char *bytes, int len);
+int
+P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen, unsigned char *seed, int slen);
 
 int 
-PRF(unsigned char *dest,int len,unsigned char *pre_master_secret,int pms_len,unsigned char *label,unsigned char *seed,int seed_len);
+PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label, unsigned char *seed, int slen);
 
 struct SSLConnection *
 tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport);
+
+void
+tls_connection_destroy(struct SSLConnection *conn);
+
+bool
+tls_check_keyfile(const char *keyfile);
 
 int
 tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, u_short port);
