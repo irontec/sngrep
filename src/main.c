@@ -34,6 +34,7 @@
 #include "option.h"
 #include "ui_manager.h"
 #include "capture.h"
+#include "capture_tls.h"
 
 /**
  * @brief Usage function

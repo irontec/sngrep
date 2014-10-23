@@ -272,7 +272,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(tcp->th_dport));
         }
 
-        if (!strstr((const char*) msg_payload, "SIP/2.0")) {
+        if (get_option_value("capture.keyfile") && !strstr((const char*) msg_payload, "SIP/2.0")) {
             uint8 *decoded = malloc(2048);
             int decoded_len = 0;
             tls_process_segment(ip, &decoded, &decoded_len);

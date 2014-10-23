@@ -242,7 +242,7 @@ tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl)
             case TCP_STATE_FIN:
             case TCP_STATE_CLOSED:                
                 // We can delete this connection
-                //tls_connection_delete(conn);
+                tls_connection_destroy(conn);
                 break;
         }
     } else {
@@ -254,8 +254,6 @@ tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl)
 
     return 0;
 } 
-
-
 
 int
 tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out, int *outl)
@@ -286,8 +284,10 @@ tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int l
                 conn->encrypted = 1;
                 break;
             case application_data:
-                // Decrypt application data using MasterSecret
-                tls_process_record_data(conn, fragment, UINT16_INT(record->length), out, outl);
+                if (conn->encrypted) {
+                    // Decrypt application data using MasterSecret
+                    tls_process_record_data(conn, fragment, UINT16_INT(record->length), out, outl);
+                }
             default:
                 break;
         }
@@ -371,8 +371,8 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
             case finished:
                 break;
             default:
-                {
-                    // Encoded Hanshake Message
+                if (conn->encrypted) {
+                    // Encrypted Hanshake Message
                     unsigned char *decoded = malloc(48);
                     int decodedlen;
                     tls_process_record_data(conn, fragment, 48, &decoded, &decodedlen);
