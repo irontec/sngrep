@@ -250,7 +250,7 @@ call_flow_draw_columns(PANEL *panel)
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
         mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
-        mvwprintw(win, 2, 7 + 30 * column->colpos, "%22s", column->addr);
+        mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(column->addr))/2, "%s", column->addr);
     }
 
     return 0;
