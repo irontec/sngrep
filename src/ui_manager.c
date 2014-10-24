@@ -380,11 +380,13 @@ int
 ui_set_replace(ui_t *original, ui_t *replace)
 {
     pthread_mutex_lock (&refresh_lock);
-    if (!original || !replace)
+    if (!original || !replace) {
+        pthread_mutex_unlock (&refresh_lock);
         return -1;
+    }
     original->replace = replace;
-    return 0;
     pthread_mutex_unlock (&refresh_lock);
+    return 0;
 }
 
 void

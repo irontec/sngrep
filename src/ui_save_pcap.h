@@ -41,11 +41,14 @@
  *
  * Dialog form has a field array. Following enum represents the
  * order this fields are stored in panel info structure.
- *
  */
 enum save_field_list
 {
-    FLD_SAVE_FILE, FLD_SAVE_ALL, FLD_SAVE_SELECTED, FLD_SAVE_SAVE, FLD_SAVE_CANCEL,
+    FLD_SAVE_FILE = 1,
+    FLD_SAVE_ALL,
+    FLD_SAVE_SELECTED,
+    FLD_SAVE_CANCEL,
+    FLD_SAVE_SAVE,
     //! Never remove this field id @see save_info
     FLD_SAVE_COUNT
 };

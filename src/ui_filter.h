@@ -87,7 +87,7 @@ struct filter_info
  *
  * @return a panel pointer
  */
-extern PANEL *
+PANEL *
 filter_create();
 
 /**
@@ -95,7 +95,7 @@ filter_create();
  *
  * This function do the final cleanups for this panel
  */
-extern void
+void
 filter_destroy();
 
 /**
@@ -112,7 +112,7 @@ filter_destroy();
  * @param key   key code
  * @return 0 if the key is handled, keycode otherwise
  */
-extern int
+int
 filter_handle_key(PANEL *panel, int key);
 
 /**
@@ -123,7 +123,7 @@ filter_handle_key(PANEL *panel, int key);
  *
  * @param panel Filter panel pointer
  */
-extern void
+void
 filter_save_options(PANEL *panel);
 
 #endif

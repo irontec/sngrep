@@ -76,7 +76,7 @@ struct call_flow_info
  *
  * @return the allocated ncurses panel
  */
-extern PANEL *
+PANEL *
 call_flow_create();
 
 /**
@@ -86,7 +86,7 @@ call_flow_create();
  *
  * @return panel Ncurses panel pointer
  */
-extern void
+void
 call_flow_destroy(PANEL *panel);
 
 /**
@@ -99,7 +99,7 @@ call_flow_destroy(PANEL *panel);
  * @param msg New readed message
  * @return 0 if the panel needs to be redrawn, -1 otherwise
  */
-extern int
+int
 call_flow_redraw_required(PANEL *panel, sip_msg_t *msg);
 
 /**
@@ -111,19 +111,19 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg);
  * @param panel Ncurses panel pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-extern int
+int
 call_flow_draw(PANEL *panel);
 
-extern void
+void
 call_flow_draw_footer(PANEL *panel);
 
-extern int
+int
 call_flow_draw_columns(PANEL *panel);
 
-extern int
+int
 call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline);
 
-extern int
+int
 call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
 
 /**
@@ -137,7 +137,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
  * @param key Pressed keycode
  * @return 0 if the function can handle the key, key otherwise
  */
-extern int
+int
 call_flow_handle_key(PANEL *panel, int key);
 
 /**
@@ -149,7 +149,7 @@ call_flow_handle_key(PANEL *panel, int key);
  * @param panel Ncurses panel pointer
  * @return 0 if the screen has help, -1 otherwise
  */
-extern int
+int
 call_flow_help(PANEL *panel);
 
 /**
@@ -160,13 +160,13 @@ call_flow_help(PANEL *panel);
  *
  * @param group Call group pointer to be set in the internal info struct
  */
-extern int
+int
 call_flow_set_group(sip_call_group_t *group);
 
-extern void
+void
 call_flow_column_add(PANEL *panel, const char *callid, const char *addr);
 
-extern call_flow_column_t *
+call_flow_column_t *
 call_flow_column_get(PANEL *panel, const char *callid, const char *addr);
 
 #endif

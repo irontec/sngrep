@@ -110,7 +110,7 @@ enum sngrep_colors
     //! Keybinding key color for footers
     KEYBINDINGS_KEY,
     //! Keybinding key action for footers
-    KEYBINDINGS_ACTION,
+    KEYBINDINGS_ACTION
 };
 
 /**
@@ -144,7 +144,7 @@ enum panel_types
  *
  * @returns 0 on ncurses initialization success, 1 otherwise
  */
-extern int
+int
 init_interface();
 
 /**
@@ -156,7 +156,7 @@ init_interface();
  * @param ui UI structure
  * @return the ui structure with the panel pointer created
  */
-extern ui_t *
+ui_t *
 ui_create(ui_t *ui);
 
 /**
@@ -168,7 +168,7 @@ ui_create(ui_t *ui);
  *
  * @param ui UI structure
  */
-extern void
+void
 ui_destroy(ui_t *ui);
 
 /**
@@ -181,7 +181,7 @@ ui_destroy(ui_t *ui);
  * @param ui UI structure
  * @return ncurses panel pointer of given UI
  */
-extern PANEL *
+PANEL *
 ui_get_panel(ui_t *ui);
 
 /**
@@ -195,7 +195,7 @@ ui_get_panel(ui_t *ui);
  * @param msg las readed message
  * @return 0 in case of redraw required, -1 otherwise
  */
-extern int
+int
 ui_redraw_required(ui_t *ui, sip_msg_t *msg);
 
 /**
@@ -207,7 +207,7 @@ ui_redraw_required(ui_t *ui, sip_msg_t *msg);
  * @param ui UI structure
  * @return 0 if ui has been drawn, -1 otherwise
  */
-extern int
+int
 ui_draw_panel(ui_t *ui);
 
 /**
@@ -219,7 +219,7 @@ ui_draw_panel(ui_t *ui);
  *
  * @param ui UI structure
  */
-extern void
+void
 ui_help(ui_t *ui);
 
 /**
@@ -232,25 +232,26 @@ ui_help(ui_t *ui);
  * @param ui UI structure
  * @param key keycode sequence of the pressed keys and mods
  */
-extern int
+int
 ui_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Find a ui from its pannel pointer
  */
-extern ui_t *
+ui_t *
 ui_find_by_panel(PANEL *panel);
 
 /**
  * @brief Find a ui form its panel id
  */
-extern ui_t *
+ui_t *
 ui_find_by_type(int type);
+
 /**
  * @brief Toggle color mode on and off
  * @param on Pass 0 to turn all black&white
  */
-extern void
+void
 toggle_color(int on);
 
 /**
@@ -261,7 +262,7 @@ toggle_color(int on);
  *
  * @param ui the topmost panel ui structure
  */
-extern int
+int
 wait_for_input(ui_t *ui);
 
 /**
@@ -274,7 +275,7 @@ wait_for_input(ui_t *ui);
  *
  * @param win Window to draw borders on
  */
-extern void
+void
 title_foot_box(WINDOW *win);
 
 /**
@@ -287,7 +288,7 @@ title_foot_box(WINDOW *win);
  *
  * @param msg Last readed message in Online mode
  */
-extern void
+void
 ui_new_msg_refresh(sip_msg_t *msg);
 
 /**
@@ -296,7 +297,7 @@ ui_new_msg_refresh(sip_msg_t *msg);
  * This function can be handy when we want to destroy one UI element
  * and replace it for another in the next ui loop redraw.
  */
-extern int
+int
 ui_set_replace(ui_t *, ui_t*);
 
 /**
@@ -306,7 +307,7 @@ ui_set_replace(ui_t *, ui_t*);
  * in the last line of the given panel
  *
  */
-extern void
+void
 draw_keybindings(PANEL *panel, const char *keybindings[], int count);
 
 /**
@@ -315,7 +316,7 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count);
  * This function will draw a vertical scroll in the
  * right or left side of the given window
  */
-extern void
+void
 draw_vscrollbar(WINDOW *win, int value, int max, bool left);
 
 #endif    // __SNGREP_UI_MANAGER_H

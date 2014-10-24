@@ -60,7 +60,7 @@ struct call_raw_info
  *
  * @return the allocated ncurses panel
  */
-extern PANEL *
+PANEL *
 call_raw_create();
 
 /**
@@ -73,7 +73,7 @@ call_raw_create();
  * @param msg New readed message
  * @return 0 if the panel needs to be redrawn, -1 otherwise
  */
-extern int
+int
 call_raw_redraw_required(PANEL *panel, sip_msg_t *msg);
 
 /**
@@ -85,10 +85,10 @@ call_raw_redraw_required(PANEL *panel, sip_msg_t *msg);
  * @param panel Ncurses panel pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-extern int
+int
 call_raw_draw(PANEL *panel);
 
-extern int
+int
 call_raw_print_msg(PANEL *panel, sip_msg_t *msg);
 
 /**
@@ -102,7 +102,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg);
  * @param key Pressed keycode
  * @return 0 if the function can handle the key, key otherwise
  */
-extern int
+int
 call_raw_handle_key(PANEL *panel, int key);
 
 /**
@@ -113,7 +113,7 @@ call_raw_handle_key(PANEL *panel, int key);
  *
  * @param group Call Group pointer to be set in the internal info struct
  */
-extern int
+int
 call_raw_set_group(sip_call_group_t *group);
 
 /**
@@ -124,7 +124,7 @@ call_raw_set_group(sip_call_group_t *group);
  *
  * @param msg Message pointer to be set in the internal info struct
  */
-extern int
+int
 call_raw_set_msg(sip_msg_t *msg);
 
 #endif

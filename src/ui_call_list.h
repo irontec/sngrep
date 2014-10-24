@@ -96,7 +96,7 @@ struct call_list_info
  *
  * @return the allocated ncurses panel
  */
-extern PANEL *
+PANEL *
 call_list_create();
 
 /**
@@ -107,7 +107,7 @@ call_list_create();
  * @param panel Ncurses panel pointer
  * @return panel Ncurses panel pointer
  */
-extern void
+void
 call_list_destroy(PANEL *panel);
 
 /**
@@ -118,7 +118,7 @@ call_list_destroy(PANEL *panel);
  * 
  * @param panel Ncurses panel pointer
  */
-extern void
+void
 call_list_draw_footer(PANEL *panel);
 
 /**
@@ -131,7 +131,7 @@ call_list_draw_footer(PANEL *panel);
  * @param msg New readed message
  * @return 0 if the panel needs to be redrawn, -1 otherwise
  */
-extern int
+int
 call_list_redraw_required(PANEL *panel, sip_msg_t *msg);
 
 /**
@@ -143,7 +143,7 @@ call_list_redraw_required(PANEL *panel, sip_msg_t *msg);
  * @param panel Ncurses panel pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-extern int
+int
 call_list_draw(PANEL *panel);
 
 /**
@@ -157,7 +157,7 @@ call_list_draw(PANEL *panel);
  * @param panel Ncurses panel pointer
  * @param active Enable/Disable flag
  */
-extern void
+void
 call_list_form_activate(PANEL *panel, bool active);
 
 /**
@@ -170,7 +170,7 @@ call_list_form_activate(PANEL *panel, bool active);
  * @param call Call to get data from
  * @return A string with the line text
  */
-extern const char*
+const char*
 call_list_line_text(PANEL *panel, sip_call_t *call);
 
 /**
@@ -184,7 +184,7 @@ call_list_line_text(PANEL *panel, sip_call_t *call);
  * @param key Pressed keycode
  * @return 0 if the function can handle the key, key otherwise
  */
-extern int
+int
 call_list_handle_key(PANEL *panel, int key);
 
 /**
@@ -196,7 +196,7 @@ call_list_handle_key(PANEL *panel, int key);
  * @param key Pressed keycode
  * @return 0 if the function can handle the key, key otherwise
  */
-extern int
+int
 call_list_handle_form_key(PANEL *panel, int key);
 
 /**
@@ -208,7 +208,7 @@ call_list_handle_form_key(PANEL *panel, int key);
  * @param panel Ncurses panel pointer
  * @return 0 if the screen has help, -1 otherwise
  */
-extern int
+int
 call_list_help(PANEL *panel);
 
 /**
@@ -223,7 +223,7 @@ call_list_help(PANEL *panel);
  * @param panel Call list panel pointer
  * @return 27 if user confirmed exit, 0 otherwise
  */
-extern int
+int
 call_list_exit_confirm(PANEL *panel);
 
 /**
@@ -239,7 +239,7 @@ call_list_exit_confirm(PANEL *panel);
  * @param width Column Width
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
-extern int
+int
 call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title,
                      int width);
 
@@ -252,7 +252,7 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
  *
  * @param panel Call list panel pointer
  */
-extern void
+void
 call_list_filter_update(PANEL *panel);
 
 /**
@@ -261,7 +261,7 @@ call_list_filter_update(PANEL *panel);
  * This funtion will clear all call lines in the list
  * @param panel Call list panel pointer
  */
-extern void
+void
 call_list_clear(PANEL *panel);
 
 /**
@@ -270,7 +270,7 @@ call_list_clear(PANEL *panel);
  * @param panel Ncurses panel pointer
  * @return number of calls that match display filter
  */
-extern int
+int
 call_list_count(PANEL *panel);
 
 /**
@@ -280,7 +280,7 @@ call_list_count(PANEL *panel);
  * @param call Start searching from this call
  * @return next matching call or NULL
  */
-extern sip_call_t *
+sip_call_t *
 call_list_get_next(PANEL *panel, sip_call_t *cur);
 
 /**
@@ -290,7 +290,7 @@ call_list_get_next(PANEL *panel, sip_call_t *cur);
  * @param call Start searching from this call
  * @return previous matching call or NULL
  */
-extern sip_call_t *
+sip_call_t *
 call_list_get_prev(PANEL *panel, sip_call_t *cur);
 
 /**
@@ -300,7 +300,7 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur);
  * @param call Start searching from this call
  * @return true if the call match display filters
  */
-extern bool
+bool
 call_list_match_dfilter(PANEL *panel, sip_call_t *call);
 
 #endif

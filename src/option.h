@@ -47,7 +47,8 @@ typedef struct config_option option_opt_t;
 
 enum option_type
 {
-    SETTING = 0, IGNORE = 1,
+    SETTING = 0,
+    IGNORE = 1,
 };
 
 /**
@@ -75,7 +76,7 @@ struct config_option
  *
  * @return 0 in all cases
  */
-extern int
+int
 init_options();
 
 /**
@@ -88,7 +89,7 @@ init_options();
  * @param fname Full path configuration file name
  * @return 0 in case of parse success, -1 otherwise
  */
-extern int
+int
 read_options(const char *fname);
 
 /**
@@ -100,7 +101,7 @@ read_options(const char *fname);
  * @param opt Name of optionurable option
  * @return configuration option value or NULL if not found
  */
-extern const char*
+const char*
 get_option_value(const char *opt);
 
 /**
@@ -137,7 +138,7 @@ set_option_int_value(const char *opt, int value);
  * @param opt Name of configuration option
  * @param value Value of configuration option
  */
-extern void
+void
 set_option_value(const char *opt, const char *value);
 
 /**
@@ -148,7 +149,7 @@ set_option_value(const char *opt, const char *value);
  * @param opt Name of configuration option
  * @param value Value of configuration option
  */
-extern void
+void
 set_ignore_value(const char *opt, const char *value);
 
 /**
@@ -160,7 +161,7 @@ set_ignore_value(const char *opt, const char *value);
  * @param opt Name of configuration option
  * @return 1 if value is "on" or "1", 0 otherwise
  */
-extern int
+int
 is_option_enabled(const char *opt);
 
 /**
@@ -172,7 +173,7 @@ is_option_enabled(const char *opt);
  * @param opt Name of configuration option
  * @return 1 if value is "off" or "0", 0 otherwise
  */
-extern int
+int
 is_option_disabled(const char *opt);
 
 /**
@@ -185,10 +186,10 @@ is_option_disabled(const char *opt);
  * @param fvalue Value to check if it has an ignore directive
  * @return 1 if value for field exists
  */
-extern int
+int
 is_ignored_value(const char *field, const char *fvalue);
 
-extern void
+void
 toggle_option(const char *option);
 
 #endif

@@ -45,7 +45,10 @@
  */
 enum save_raw_field_list
 {
-    FLD_SAVE_RAW_FILE, FLD_SAVE_RAW_SELECTED, FLD_SAVE_RAW_SAVE, FLD_SAVE_RAW_CANCEL,
+    FLD_SAVE_RAW_FILE = 0,
+    FLD_SAVE_RAW_SELECTED,
+    FLD_SAVE_RAW_SAVE,
+    FLD_SAVE_RAW_CANCEL,
     //! Never remove this field id @see save_info
     FLD_SAVE_RAW_COUNT
 };
@@ -78,7 +81,7 @@ struct save_raw_info
  *
  * @return a panel pointer
  */
-extern PANEL *
+PANEL *
 save_raw_create();
 
 /**
@@ -86,7 +89,7 @@ save_raw_create();
  *
  * This function do the final cleanups for this panel
  */
-extern void
+void
 save_raw_destroy();
 
 /**
@@ -103,7 +106,7 @@ save_raw_destroy();
  * @param key   key code
  * @return 0 if the key is handled, keycode otherwise
  */
-extern int
+int
 save_raw_handle_key(PANEL *panel, int key);
 
 /**
@@ -113,7 +116,7 @@ save_raw_handle_key(PANEL *panel, int key);
  * @param panel Save panel pointer
  * @param message Message to be printed in the panel
  */
-extern void
+void
 save_raw_error_message(PANEL *panel, const char *message);
 
 /**
@@ -125,7 +128,7 @@ save_raw_error_message(PANEL *panel, const char *message);
  * @param panel Save Raw panel pointer
  * @param group Group of calls displayed in the raw panel
  */
-extern void
+void
 save_raw_set_group(PANEL *panel, sip_call_group_t *group);
 
 /**
@@ -136,7 +139,7 @@ save_raw_set_group(PANEL *panel, sip_call_group_t *group);
  *
  * @param panel Save panel pointer
  */
-extern int
+int
 save_raw_to_file(PANEL *panel);
 
 #endif

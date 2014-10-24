@@ -197,7 +197,7 @@ struct sip_call
  * @param payload Raw payload content
  * @return a new allocated message
  */
-extern sip_msg_t *
+sip_msg_t *
 sip_msg_create(const char *header, const char *payload);
 
 /**
@@ -209,7 +209,7 @@ sip_msg_create(const char *header, const char *payload);
  *
  * @param msg SIP message to be deleted
  */
-extern void
+void
 sip_msg_destroy(sip_msg_t *msg);
 
 /**
@@ -221,7 +221,7 @@ sip_msg_destroy(sip_msg_t *msg);
  * @param callid Call-ID Header value
  * @return pointer to the sip_call created
  */
-extern sip_call_t *
+sip_call_t *
 sip_call_create(char *callid);
 
 /**
@@ -233,7 +233,7 @@ sip_call_create(char *callid);
  *
  * @param call Call to be destroyed
  */
-extern void
+void
 sip_call_destroy(sip_call_t *call);
 
 /**
@@ -244,7 +244,7 @@ sip_call_destroy(sip_call_t *call);
  * @param payload SIP message payload
  * @return callid parsed from Call-ID header
  */
-extern char *
+char *
 sip_get_callid(const char* payload);
 
 /**
@@ -259,7 +259,7 @@ sip_get_callid(const char* payload);
  * @param payload Raw ngrep payload
  * @return a SIP msg structure pointer
  */
-extern sip_msg_t *
+sip_msg_t *
 sip_load_message(const char *header, const char *payload);
 
 /**
@@ -267,7 +267,7 @@ sip_load_message(const char *header, const char *payload);
  *
  * @return how many calls are linked in the list
  */
-extern int
+int
 sip_calls_count();
 
 /**
@@ -279,7 +279,7 @@ sip_calls_count();
  * @param call Call to check
  * @return 1 if call is filtered, 0 otherwise
  */
-extern int
+int
 sip_check_call_ignore(sip_call_t *call);
 
 /**
@@ -290,7 +290,7 @@ sip_check_call_ignore(sip_call_t *call);
  * @param id Attribute id
  * @return Attribute header data structure pointer
  */
-extern sip_attr_hdr_t *
+sip_attr_hdr_t *
 sip_attr_get_header(enum sip_attr_id id);
 
 /**
@@ -302,7 +302,7 @@ sip_attr_get_header(enum sip_attr_id id);
  * @param id Attribut id
  * @return Attribute description from its header
  */
-extern const char *
+const char *
 sip_attr_get_description(enum sip_attr_id id);
 
 /**
@@ -314,7 +314,7 @@ sip_attr_get_description(enum sip_attr_id id);
  * @param id Attribut id
  * @return Attribute name from its header
  */
-extern const char *
+const char *
 sip_attr_get_name(enum sip_attr_id id);
 
 /**
@@ -325,7 +325,7 @@ sip_attr_get_name(enum sip_attr_id id);
  * @param name Attribut name
  * @return Attribute id or 0 if not found
  */
-extern enum sip_attr_id
+enum sip_attr_id
 sip_attr_from_name(const char *name);
 
 /**
@@ -338,7 +338,7 @@ sip_attr_from_name(const char *name);
  * @param id Attribute id
  * @param value Attribute value
  */
-extern void
+void
 sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value);
 
 /**
@@ -348,7 +348,7 @@ sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value);
  * This can be used for calls and message attributes.
  *
  */
-extern const char *
+const char *
 sip_attr_get(sip_attr_t *list, enum sip_attr_id id);
 
 /**
@@ -360,7 +360,7 @@ sip_attr_get(sip_attr_t *list, enum sip_attr_id id);
  * @param call pointer to the call owner of the message
  * @param msg SIP message structure
  */
-extern void
+void
 call_add_message(sip_call_t *call, sip_msg_t *msg);
 
 /**
@@ -371,7 +371,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg);
  * @param callid Call-ID Header value
  * @return pointer to the sip_call structure found or NULL
  */
-extern sip_call_t *
+sip_call_t *
 call_find_by_callid(const char *callid);
 
 /**
@@ -383,7 +383,7 @@ call_find_by_callid(const char *callid);
  * @param xcallid X-Call-ID or X-CID Header value
  * @return pointer to the sip_call structure found or NULL
  */
-extern sip_call_t *
+sip_call_t *
 call_find_by_xcallid(const char *xcallid);
 
 /**
@@ -395,7 +395,7 @@ call_find_by_xcallid(const char *xcallid);
  * @param call SIP call structure
  * @return how many messages are in the call
  */
-extern int
+int
 call_msg_count(sip_call_t *call);
 
 /**
@@ -408,7 +408,7 @@ call_msg_count(sip_call_t *call);
  * @param call SIP call structure
  * @return The other call structure or NULL if none found
  */
-extern sip_call_t *
+sip_call_t *
 call_get_xcall(sip_call_t *call);
 
 /**
@@ -421,7 +421,7 @@ call_get_xcall(sip_call_t *call);
  * @param msg Actual SIP msg from the call (can be NULL)
  * @return Next chronological message in the call
  */
-extern sip_msg_t *
+sip_msg_t *
 call_get_next_msg(sip_call_t *call, sip_msg_t *msg);
 
 /**
@@ -434,7 +434,7 @@ call_get_next_msg(sip_call_t *call, sip_msg_t *msg);
  * @param msg Actual SIP msg from the call
  * @return Previous chronological message in the call
  */
-extern sip_msg_t *
+sip_msg_t *
 call_get_prev_msg(sip_call_t *call, sip_msg_t *msg);
 
 /**
@@ -446,7 +446,7 @@ call_get_prev_msg(sip_call_t *call, sip_msg_t *msg);
  * @param cur Current call. Pass NULL to get the first call.
  * @return Next call in the list or NULL if there is no next call
  */
-extern sip_call_t *
+sip_call_t *
 call_get_next(sip_call_t *cur);
 
 /**
@@ -458,7 +458,7 @@ call_get_next(sip_call_t *cur);
  * @param cur Current call
  * @return Prev call in the list or NULL if there is no previous call
  */
-extern sip_call_t *
+sip_call_t *
 call_get_prev(sip_call_t *cur);
 
 /**
@@ -470,7 +470,7 @@ call_get_prev(sip_call_t *cur);
  * @param id Attribute id
  * @param value Attribute value
  */
-extern void
+void
 call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value);
 
 /**
@@ -484,7 +484,7 @@ call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value);
  * @param id Attribute id
  * @return Attribute value or NULL if not found
  */
-extern const char *
+const char *
 call_get_attribute(sip_call_t *call, enum sip_attr_id id);
 
 /**
@@ -501,7 +501,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id);
  * @param header ngrep header generated by -qpt arguments
  * @return 0 on success, 1 on malformed header
  */
-extern int
+int
 msg_parse_header(sip_msg_t *msg, const char *header);
 
 /**
@@ -513,7 +513,7 @@ msg_parse_header(sip_msg_t *msg, const char *header);
  * @param payload SIP message payload
  * @return 0 in all cases
  */
-extern int
+int
 msg_parse_payload(sip_msg_t *msg, const char *payload);
 
 /**
@@ -526,7 +526,7 @@ msg_parse_payload(sip_msg_t *msg, const char *payload);
  * @param msg Not Parsed (or parsed) message
  * @return a parsed message
  */
-extern sip_msg_t *
+sip_msg_t *
 msg_parse(sip_msg_t *msg);
 
 /**
@@ -538,7 +538,7 @@ msg_parse(sip_msg_t *msg);
  * @param id Attribute id
  * @param value Attribute value
  */
-extern void
+void
 msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value);
 
 /**
@@ -551,7 +551,7 @@ msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value);
  * @param id Attribute id
  * @return Attribute value or NULL if not found
  */
-extern const char *
+const char *
 msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id);
 
 /**
@@ -563,7 +563,7 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id);
  * @param msg SIP message that will be checked
  * @return 1 if the previous message is equal to msg, 0 otherwise
  */
-extern int
+int
 msg_is_retrans(sip_msg_t *msg);
 
 /**

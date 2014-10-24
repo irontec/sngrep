@@ -143,7 +143,7 @@ struct dns_cache
  *
  * @return 0 on spawn success, 1 otherwise
  */
-extern int
+int
 capture_online();
 
 /**
@@ -152,7 +152,7 @@ capture_online();
  * This function is used as worker thread for capturing filtered packets and
  * pass them to the UI layer.
  */
-extern void
+void
 capture_thread(void *none);
 
 /**
@@ -166,7 +166,7 @@ capture_thread(void *none);
  * @return 0 if load has been successfull, 1 otherwise
  *
  */
-extern int
+int
 capture_offline();
 
 /**
@@ -178,7 +178,7 @@ capture_offline();
  *
  * @param handle LIBPCAP capture handler
  */
-extern void
+void
 parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet);
 
 void
@@ -188,7 +188,7 @@ capture_close();
  * @brief Get datalink header size
  *
  */
-extern int
+int
 datalink_size(int datalink);
 
 pcap_dumper_t *

@@ -59,28 +59,28 @@ struct sip_call_group
     bool sdp_only;
 };
 
-extern sip_call_group_t *
+sip_call_group_t *
 call_group_create();
 
-extern void
+void
 call_group_add(sip_call_group_t *group, sip_call_t *call);
 
-extern void
+void
 call_group_del(sip_call_group_t *group, sip_call_t *call);
 
-extern int
+int
 call_group_exists(sip_call_group_t *group, sip_call_t *call);
 
-extern int
+int
 call_group_color(sip_call_group_t *group, sip_call_t *call);
 
-extern sip_call_t *
+sip_call_t *
 call_group_get_next(sip_call_group_t *group, sip_call_t *call);
 
-extern int
+int
 call_group_msg_count(sip_call_group_t *group);
 
-extern int
+int
 call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg);
 
 /**
@@ -93,10 +93,10 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg);
  * @param msg Actual SIP msg from any call of the group (can be NULL)
  * @return Next chronological message in the group
  */
-extern sip_msg_t *
+sip_msg_t *
 call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg);
 
-extern int
+int
 sip_msg_is_older(sip_msg_t *one, sip_msg_t *two);
 
 #endif /* __SNGREP_GROUP_H_ */
