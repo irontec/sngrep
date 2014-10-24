@@ -186,7 +186,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // XXX Fake header (Like the one from ngrep)
     char msg_header[256];
     // Packet payload data
-    u_char *msg_payload;
+    u_char *msg_payload = NULL;
     // Packet payload size
     int size_payload;
     // Parsed message data
@@ -249,13 +249,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // We're only interested in packets with payload
         size_payload = ntohs(ip->ip_len) - (size_ip + SIZE_TCP);
-        if (size_payload <= 0)
-            return;
-
-        // Get packet payload
-        msg_payload = malloc(size_payload + 1);
-        memset(msg_payload, 0, size_payload + 1);
-        memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_TCP), size_payload);
+        if (size_payload > 0) {
+            // Get packet payload
+            msg_payload = malloc(size_payload + 1);
+            memset(msg_payload, 0, size_payload + 1);
+            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_TCP), size_payload);
+        }
 
         // Total packet size
         size_packet = size_link + size_ip + SIZE_TCP + size_payload;
@@ -282,22 +281,28 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             sprintf(msg_header + strlen(msg_header), "-> %s:%u", inet_ntoa(ip->ip_dst), htons(tcp->th_dport));
         }
 
-        if (get_option_value("capture.keyfile") && !strstr((const char*) msg_payload, "SIP/2.0")) {
-            uint8 *decoded = malloc(2048);
-            int decoded_len = 0;
-            tls_process_segment(ip, &decoded, &decoded_len);
-            if (decoded_len) {
-                memcpy(msg_payload, decoded, decoded_len);
-                size_payload = decoded_len;                
-                msg_payload[size_payload] = '\0';
-                transport = 2;
+        if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
+            if (get_option_value("capture.keyfile")) {
+                uint8 *decoded = malloc(2048);
+                int decoded_len = 0;
+                tls_process_segment(ip, &decoded, &decoded_len);
+                if (decoded_len) {
+                    memcpy(msg_payload, decoded, decoded_len);
+                    size_payload = decoded_len;
+                    msg_payload[size_payload] = '\0';
+                    transport = 2;
+                }
+                free(decoded);
             }
-            free(decoded);
         }
     } else {
         // Not handled protocol
         return;
     }
+
+    // We're only interested in packets with payload
+    if (size_payload <= 0)
+        return;
 
     // Parse this header and payload
     if (!(msg = sip_load_message(msg_header, (const char*) msg_payload))) {
