@@ -76,26 +76,26 @@ int
 init_interface()
 {
     // Initialize curses
-    if (!initscr ()) {
-        fprintf (stderr, "Unable to initialize ncurses mode.\n");
+    if (!initscr()) {
+        fprintf(stderr, "Unable to initialize ncurses mode.\n");
         return -1;
     }
-    cbreak ();
+    cbreak();
 
     // Dont write user input on screen
-    noecho ();
+    noecho();
     // Hide the cursor
-    curs_set (0);
+    curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
-    start_color ();
-    toggle_color (is_option_enabled ("color"));
+    start_color();
+    toggle_color(is_option_enabled("color"));
 
     // Start showing call list
-    wait_for_input (ui_create (ui_find_by_type (MAIN_PANEL)));
+    wait_for_input(ui_create(ui_find_by_type(MAIN_PANEL)));
 
     // End ncurses mode
-    endwin ();
+    endwin();
     return 0;
 }
 
@@ -103,12 +103,12 @@ ui_t *
 ui_create(ui_t *ui)
 {
     // If already has a panel, just return it
-    if (ui_get_panel (ui))
+    if (ui_get_panel(ui))
         return ui;
 
     // Otherwise, request the ui to create the panel
     if (ui->create) {
-        ui->panel = ui->create ();
+        ui->panel = ui->create();
     }
 
     // And return it
@@ -120,12 +120,12 @@ ui_destroy(ui_t *ui)
 {
     PANEL *panel;
     // If thre is no ui panel, we're done
-    if (!(panel = ui_get_panel (ui)))
+    if (!(panel = ui_get_panel(ui)))
         return;
 
     // If panel has a destructor function use it
     if (ui->destroy)
-        ui->destroy (panel);
+        ui->destroy(panel);
 
     // Initialize panel pointer
     ui->panel = NULL;
@@ -145,12 +145,12 @@ ui_redraw_required(ui_t *ui, sip_msg_t *msg)
     //! Sanity check, this should not happen
     if (!ui)
         return -1;
-    pthread_mutex_lock (&ui->lock);
+    pthread_mutex_lock(&ui->lock);
     // Request the panel to draw on the scren
     if (ui->redraw_required) {
-        ret = ui->redraw_required (ui_get_panel (ui), msg);
+        ret = ui->redraw_required(ui_get_panel(ui), msg);
     }
-    pthread_mutex_unlock (&ui->lock);
+    pthread_mutex_unlock(&ui->lock);
     // If no redraw capabilities, never redraw
     return ret;
 }
@@ -162,26 +162,26 @@ ui_draw_panel(ui_t *ui)
     if (!ui)
         return -1;
 
-    pthread_mutex_lock (&ui->lock);
+    pthread_mutex_lock(&ui->lock);
 
     // Create the panel if it does not exist
-    if (!(ui_create (ui)))
+    if (!(ui_create(ui)))
         return -1;
 
     // Make this panel the topmost panel
-    top_panel (ui_get_panel (ui));
+    top_panel(ui_get_panel(ui));
 
     // Request the panel to draw on the scren
     if (ui->draw) {
-        if (ui->draw (ui_get_panel (ui)) != 0) {
-            pthread_mutex_unlock (&ui->lock);
+        if (ui->draw(ui_get_panel(ui)) != 0) {
+            pthread_mutex_unlock(&ui->lock);
             return -1;
         }
     }
     // Update panel stack
-    update_panels ();
-    doupdate ();
-    pthread_mutex_unlock (&ui->lock);
+    update_panels();
+    doupdate();
+    pthread_mutex_unlock(&ui->lock);
     return 0;
 }
 
@@ -190,7 +190,7 @@ ui_help(ui_t *ui)
 {
     // If current ui has help function
     if (ui->help) {
-        ui->help (ui_get_panel (ui));
+        ui->help(ui_get_panel(ui));
     }
 }
 
@@ -198,7 +198,7 @@ int
 ui_handle_key(ui_t *ui, int key)
 {
     if (ui->handle_key)
-        return ui->handle_key (ui_get_panel (ui), key);
+        return ui->handle_key(ui_get_panel(ui), key);
     return -1;
 }
 
@@ -237,29 +237,29 @@ wait_for_input(ui_t *ui)
     WINDOW *win;
 
     // Keep getting keys until panel is destroyed
-    while (ui_get_panel (ui)) {
-        pthread_mutex_lock (&refresh_lock);
+    while (ui_get_panel(ui)) {
+        pthread_mutex_lock(&refresh_lock);
         // If ui requested replacement
         if (ui->replace) {
             replace = ui->replace;
             ui->replace = NULL;
-            ui_destroy (ui);
+            ui_destroy(ui);
             ui = replace;
         }
-        pthread_mutex_unlock (&refresh_lock);
+        pthread_mutex_unlock(&refresh_lock);
 
-        if (ui_draw_panel (ui) != 0)
+        if (ui_draw_panel(ui) != 0)
             return -1;
 
         // Enable key input on current panel
-        win = panel_window (ui_get_panel (ui));
-        keypad (win, TRUE);
+        win = panel_window(ui_get_panel(ui));
+        keypad(win, TRUE);
 
         // Get pressed key
-        int c = wgetch (win);
+        int c = wgetch(win);
 
         // Check if current panel has custom bindings for that key
-        if ((c = ui_handle_key (ui, c)) == 0)
+        if ((c = ui_handle_key(ui, c)) == 0)
             continue;
 
         // Otherwise, use standard keybindings
@@ -267,34 +267,34 @@ wait_for_input(ui_t *ui)
         case 'c':
         case KEY_F(8):
             // @todo general application config structure
-            toggle_option ("color");
-            toggle_color (is_option_enabled ("color"));
+            toggle_option("color");
+            toggle_color(is_option_enabled("color"));
             break;
         case 'C':
         case KEY_F(7):
-            if (is_option_enabled ("color.request")) {
-                toggle_option ("color.request");
-                toggle_option ("color.callid");
-            } else if (is_option_enabled ("color.callid")) {
-                toggle_option ("color.callid");
-                toggle_option ("color.cseq");
-            } else if (is_option_enabled ("color.cseq")) {
-                toggle_option ("color.cseq");
-                toggle_option ("color.request");
+            if (is_option_enabled("color.request")) {
+                toggle_option("color.request");
+                toggle_option("color.callid");
+            } else if (is_option_enabled("color.callid")) {
+                toggle_option("color.callid");
+                toggle_option("color.cseq");
+            } else if (is_option_enabled("color.cseq")) {
+                toggle_option("color.cseq");
+                toggle_option("color.request");
             }
             break;
         case 'p':
             // Toggle capture option
-            toggle_option ("sip.capture");
+            toggle_option("sip.capture");
             break;
         case 'h':
         case 265: /* KEY_F1 */
-            ui_help (ui);
+            ui_help(ui);
             break;
         case 'q':
         case 'Q':
         case 27: /* KEY_ESC */
-            ui_destroy (ui);
+            ui_destroy(ui);
             return 0;
             break;
         }
@@ -308,37 +308,37 @@ toggle_color(int on)
 {
     if (on) {
         // Initialize some colors
-        init_pair (HIGHLIGHT_COLOR, COLOR_WHITE, COLOR_BLUE);
-        init_pair (HELP_COLOR, COLOR_CYAN, COLOR_BLACK);
-        init_pair (OUTGOING_COLOR, COLOR_RED, COLOR_BLACK);
-        init_pair (INCOMING_COLOR, COLOR_GREEN, COLOR_BLACK);
-        init_pair (DETAIL_BORDER_COLOR, COLOR_BLUE, COLOR_BLACK);
-        init_pair (CALLID1_COLOR, COLOR_CYAN, COLOR_BLACK);
-        init_pair (CALLID2_COLOR, COLOR_YELLOW, COLOR_BLACK);
-        init_pair (CALLID3_COLOR, COLOR_MAGENTA, COLOR_BLACK);
-        init_pair (CALLID4_COLOR, COLOR_GREEN, COLOR_BLACK);
-        init_pair (CALLID5_COLOR, COLOR_RED, COLOR_BLACK);
-        init_pair (CALLID6_COLOR, COLOR_BLUE, COLOR_BLACK);
-        init_pair (CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (KEYBINDINGS_KEY, COLOR_WHITE, COLOR_CYAN);
-        init_pair (KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_CYAN);
+        init_pair(HIGHLIGHT_COLOR, COLOR_WHITE, COLOR_BLUE);
+        init_pair(HELP_COLOR, COLOR_CYAN, COLOR_BLACK);
+        init_pair(OUTGOING_COLOR, COLOR_RED, COLOR_BLACK);
+        init_pair(INCOMING_COLOR, COLOR_GREEN, COLOR_BLACK);
+        init_pair(DETAIL_BORDER_COLOR, COLOR_BLUE, COLOR_BLACK);
+        init_pair(CALLID1_COLOR, COLOR_CYAN, COLOR_BLACK);
+        init_pair(CALLID2_COLOR, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(CALLID3_COLOR, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(CALLID4_COLOR, COLOR_GREEN, COLOR_BLACK);
+        init_pair(CALLID5_COLOR, COLOR_RED, COLOR_BLACK);
+        init_pair(CALLID6_COLOR, COLOR_BLUE, COLOR_BLACK);
+        init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(KEYBINDINGS_KEY, COLOR_WHITE, COLOR_CYAN);
+        init_pair(KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_CYAN);
     } else {
-        init_pair (HIGHLIGHT_COLOR, COLOR_BLACK, COLOR_WHITE);
-        init_pair (HELP_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (OUTGOING_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (INCOMING_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (DETAIL_BORDER_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (CALLID1_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (CALLID2_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (CALLID3_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (CALLID4_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (CALLID5_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (CALLID6_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
-        init_pair (KEYBINDINGS_KEY, COLOR_WHITE, COLOR_BLACK);
-        init_pair (KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_WHITE);
+        init_pair(HIGHLIGHT_COLOR, COLOR_BLACK, COLOR_WHITE);
+        init_pair(HELP_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(OUTGOING_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(INCOMING_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(DETAIL_BORDER_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID1_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID2_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID3_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID4_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID5_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID6_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(KEYBINDINGS_KEY, COLOR_WHITE, COLOR_BLACK);
+        init_pair(KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_WHITE);
     }
 }
 
@@ -347,16 +347,16 @@ ui_new_msg_refresh(sip_msg_t *msg)
 {
     PANEL *panel;
 
-    pthread_mutex_lock (&refresh_lock);
+    pthread_mutex_lock(&refresh_lock);
     // Get the topmost panel
-    if ((panel = panel_below (NULL))) {
+    if ((panel = panel_below(NULL))) {
         // Get ui information for that panel
-        if (ui_redraw_required (ui_find_by_panel (panel), msg) == 0) {
+        if (ui_redraw_required(ui_find_by_panel(panel), msg) == 0) {
             // If ui needs to be update, redraw it
-            ui_draw_panel (ui_find_by_panel (panel));
+            ui_draw_panel(ui_find_by_panel(panel));
         }
     }
-    pthread_mutex_unlock (&refresh_lock);
+    pthread_mutex_unlock(&refresh_lock);
 }
 
 void
@@ -379,13 +379,13 @@ title_foot_box(WINDOW *win)
 int
 ui_set_replace(ui_t *original, ui_t *replace)
 {
-    pthread_mutex_lock (&refresh_lock);
+    pthread_mutex_lock(&refresh_lock);
     if (!original || !replace) {
-        pthread_mutex_unlock (&refresh_lock);
+        pthread_mutex_unlock(&refresh_lock);
         return -1;
     }
     original->replace = replace;
-    pthread_mutex_unlock (&refresh_lock);
+    pthread_mutex_unlock(&refresh_lock);
     return 0;
 }
 
@@ -395,26 +395,26 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
     int height, width, key, xpos = 0;
 
     // Get window available space
-    WINDOW *win = panel_window (panel);
+    WINDOW *win = panel_window(panel);
     getmaxyx(win, height, width);
 
     // Write a line all the footer width
     wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
-    mvwprintw (win, height - 1, 0, "%*s", width, "");
+    mvwprintw(win, height - 1, 0, "%*s", width, "");
     wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
         wattron(win, A_BOLD);
         wattron(win, COLOR_PAIR(KEYBINDINGS_KEY));
-        mvwprintw (win, height - 1, xpos, "%-*s", strlen (keybindings[key]) + 1, keybindings[key]);
+        mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key]) + 1, keybindings[key]);
         wattroff(win, A_BOLD);
-        xpos += strlen (keybindings[key]) + 1;
+        xpos += strlen(keybindings[key]) + 1;
         wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
-        mvwprintw (win, height - 1, xpos, "%-*s", strlen (keybindings[key + 1]) + 1,
-                   keybindings[key + 1]);
+        mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key + 1]) + 1,
+                  keybindings[key + 1]);
         wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
-        xpos += strlen (keybindings[key + 1]) + 3;
+        xpos += strlen(keybindings[key + 1]) + 3;
     }
 }
 

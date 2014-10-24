@@ -34,10 +34,10 @@ sip_call_group_t *
 call_group_create()
 {
     sip_call_group_t *group;
-    if (!(group = malloc (sizeof(sip_call_group_t)))) {
+    if (!(group = malloc(sizeof(sip_call_group_t)))) {
         return NULL;
     }
-    memset (group, 0, sizeof(sip_call_group_t));
+    memset(group, 0, sizeof(sip_call_group_t));
     return group;
 }
 
@@ -45,7 +45,7 @@ void
 call_group_add(sip_call_group_t *group, sip_call_t *call)
 {
 
-    if (!group || !call || call_group_exists (group, call))
+    if (!group || !call || call_group_exists(group, call))
         return;
     group->calls[group->callcnt++] = call;
 }
@@ -54,7 +54,7 @@ void
 call_group_del(sip_call_group_t *group, sip_call_t *call)
 {
     int i;
-    if (!group || !call || !call_group_exists (group, call))
+    if (!group || !call || !call_group_exists(group, call))
         return;
     for (i = 0; i < group->callcnt; i++) {
         if (call == group->calls[i]) {
@@ -123,8 +123,8 @@ call_group_msg_count(sip_call_group_t *group)
     int msgcnt = 0, i;
 
     for (i = 0; i < group->callcnt; i++) {
-        while ((msg = call_get_next_msg (group->calls[i], msg))) {
-            if (group->sdp_only && !msg_get_attribute (msg, SIP_ATTR_SDP))
+        while ((msg = call_get_next_msg(group->calls[i], msg))) {
+            if (group->sdp_only && !msg_get_attribute(msg, SIP_ATTR_SDP))
                 continue;
             msgcnt++;
         }
@@ -137,8 +137,8 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg)
 {
     int number = 0;
     sip_msg_t *cur = NULL;
-    while ((cur = call_group_get_next_msg (group, cur))) {
-        if (group->sdp_only && !msg_get_attribute (cur, SIP_ATTR_SDP))
+    while ((cur = call_group_get_next_msg(group, cur))) {
+        if (group->sdp_only && !msg_get_attribute(cur, SIP_ATTR_SDP))
             continue;
 
         if (cur == msg)
@@ -157,12 +157,12 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
 
     for (i = 0; i < group->callcnt; i++) {
         cand = NULL;
-        while ((cand = call_get_next_msg (group->calls[i], cand))) {
-            if (group->sdp_only && !msg_get_attribute (cand, SIP_ATTR_SDP))
+        while ((cand = call_get_next_msg(group->calls[i], cand))) {
+            if (group->sdp_only && !msg_get_attribute(cand, SIP_ATTR_SDP))
                 continue;
 
             // candidate must be between msg and next
-            if (sip_msg_is_older (cand, msg) && (!next || !sip_msg_is_older (cand, next))) {
+            if (sip_msg_is_older(cand, msg) && (!next || !sip_msg_is_older(cand, next))) {
                 next = cand;
                 break;
             }
@@ -173,7 +173,7 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     // ignore the flag
     if (msg == NULL && next == NULL) {
         group->sdp_only = false;
-        return call_group_get_next_msg (group, msg);
+        return call_group_get_next_msg(group, msg);
     }
 
     return next;

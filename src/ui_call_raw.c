@@ -43,17 +43,17 @@ call_raw_create()
     call_raw_info_t *info;
 
     // Create a new panel to fill all the screen
-    panel = new_panel (newwin (LINES, COLS, 0, 0));
+    panel = new_panel(newwin(LINES, COLS, 0, 0));
 
     // Initialize Call List specific data
-    info = malloc (sizeof(call_raw_info_t));
-    memset (info, 0, sizeof(call_raw_info_t));
+    info = malloc(sizeof(call_raw_info_t));
+    memset(info, 0, sizeof(call_raw_info_t));
 
     // Store it into panel userptr
-    set_panel_userptr (panel, (void*) info);
+    set_panel_userptr(panel, (void*) info);
 
     // Create a initial pad of 1000 lines
-    info->pad = newpad (500, COLS);
+    info->pad = newpad(500, COLS);
     info->padline = 0;
     info->scroll = 0;
 
@@ -65,14 +65,14 @@ call_raw_redraw_required(PANEL *panel, sip_msg_t *msg)
 {
     call_raw_info_t *info;
     // Get panel info
-    if (!(info = (call_raw_info_t*) panel_userptr (panel)))
+    if (!(info = (call_raw_info_t*) panel_userptr(panel)))
         return -1;
     // Check if we're displaying a group
     if (!info->group)
         return -1;
     // If this message belongs to one of the printed calls
-    if (call_group_exists (info->group, msg->call)) {
-        call_raw_print_msg (panel, msg_parse (msg));
+    if (call_group_exists(info->group, msg->call)) {
+        call_raw_print_msg(panel, msg_parse(msg));
         return 0;
     }
     return -1;
@@ -82,9 +82,9 @@ int
 call_raw_draw(PANEL *panel)
 {
     // Get panel information
-    call_raw_info_t *info = (call_raw_info_t*) panel_userptr (panel);
+    call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
     // Copy the visible part of the pad into the panel window
-    copywin (info->pad, panel_window (panel), info->scroll, 0, 0, 0, LINES - 1, COLS - 1, 0);
+    copywin(info->pad, panel_window(panel), info->scroll, 0, 0, 0, LINES - 1, COLS - 1, 0);
     return 0;
 }
 
@@ -98,7 +98,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     int raw_line, raw_char, column;
 
     // Get panel information
-    call_raw_info_t *info = (call_raw_info_t*) panel_userptr (panel);
+    call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
 
     // Get the pad window
     WINDOW *pad = info->pad;
@@ -109,34 +109,34 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     int height = getmaxy(pad);
     if (line + msg->plines + 10 > height) {
         // Create a new pad with more lines!
-        pad = newpad (height + 500, COLS);
+        pad = newpad(height + 500, COLS);
         // And copy all previous information
-        overwrite (info->pad, pad);
+        overwrite(info->pad, pad);
         info->pad = pad;
     }
 
     // Color the message
-    if (is_option_enabled ("color.request")) {
+    if (is_option_enabled("color.request")) {
         // Determine arrow color
-        if (msg_get_attribute (msg, SIP_ATTR_REQUEST)) {
+        if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
             wattron(pad, COLOR_PAIR(OUTGOING_COLOR));
         } else {
             wattron(pad, COLOR_PAIR(INCOMING_COLOR));
         }
     }
     // Color by call-id
-    if (info->group && is_option_enabled ("color.callid")) {
+    if (info->group && is_option_enabled("color.callid")) {
         wattron(pad, COLOR_PAIR(call_group_color(info->group, msg->call)));
     }
     // Color by CSeq within the same call
-    if (info->group && is_option_enabled ("color.cseq")) {
+    if (info->group && is_option_enabled("color.cseq")) {
         if (msg->call->color == -1) {
             msg->call->color = (info->group->color++ % 7) + 1;
         }
         if (msg->color == -1) {
-            if ((prev = call_get_prev_msg (msg->call, msg))) {
-                if (strcmp (msg_get_attribute (msg, SIP_ATTR_CSEQ),
-                            msg_get_attribute (prev, SIP_ATTR_CSEQ))) {
+            if ((prev = call_get_prev_msg(msg->call, msg))) {
+                if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
+                           msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
                     int color = info->group->color + 1;
                     info->group->color = msg->call->color = (color % 7) + 1;
                 }
@@ -149,15 +149,15 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 
     // Print msg header
     wattron(pad, A_BOLD);
-    mvwprintw (pad, line++, 0, "%s %s %s -> %s", msg_get_attribute (msg, SIP_ATTR_DATE),
-               msg_get_attribute (msg, SIP_ATTR_TIME), msg_get_attribute (msg, SIP_ATTR_SRC),
-               msg_get_attribute (msg, SIP_ATTR_DST));
+    mvwprintw(pad, line++, 0, "%s %s %s -> %s", msg_get_attribute(msg, SIP_ATTR_DATE),
+              msg_get_attribute(msg, SIP_ATTR_TIME), msg_get_attribute(msg, SIP_ATTR_SRC),
+              msg_get_attribute(msg, SIP_ATTR_DST));
     wattroff(pad, A_BOLD);
 
     // Print msg payload
     for (raw_line = 0; raw_line < msg->plines; raw_line++) {
         // Add character by character
-        for (column = 0, raw_char = 0; raw_char < strlen (msg->payload[raw_line]); raw_char++) {
+        for (column = 0, raw_char = 0; raw_char < strlen(msg->payload[raw_line]); raw_char++) {
             // Wrap at the end of the window
             if (column == COLS) {
                 line++;
@@ -180,7 +180,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 int
 call_raw_handle_key(PANEL *panel, int key)
 {
-    call_raw_info_t *info = (call_raw_info_t*) panel_userptr (panel);
+    call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
     ui_t *next_panel;
 
     // Sanity check, this should not happen
@@ -207,9 +207,9 @@ call_raw_handle_key(PANEL *panel, int key)
     case 'S':
         if (info->group) {
             // KEY_S, Display save panel
-            next_panel = ui_create (ui_find_by_type (SAVE_RAW_PANEL));
-            save_raw_set_group (next_panel->panel, info->group);
-            wait_for_input (next_panel);
+            next_panel = ui_create(ui_find_by_type(SAVE_RAW_PANEL));
+            save_raw_set_group(next_panel->panel, info->group);
+            wait_for_input(next_panel);
         }
         break;
     default:
@@ -236,13 +236,13 @@ call_raw_set_group(sip_call_group_t *group)
     if (!group)
         return -1;
 
-    if (!(raw_panel = ui_find_by_type (RAW_PANEL)))
+    if (!(raw_panel = ui_find_by_type(RAW_PANEL)))
         return -1;
 
     if (!(panel = raw_panel->panel))
         return -1;
 
-    if (!(info = (call_raw_info_t*) panel_userptr (panel)))
+    if (!(info = (call_raw_info_t*) panel_userptr(panel)))
         return -1;
 
     // Set call raw call group
@@ -250,11 +250,11 @@ call_raw_set_group(sip_call_group_t *group)
 
     // Initialize internal pad
     info->padline = info->scroll = 0;
-    wclear (info->pad);
+    wclear(info->pad);
 
     // Print the call group messages into the pad
-    while ((msg = call_group_get_next_msg (info->group, msg)))
-        call_raw_print_msg (panel, msg);
+    while ((msg = call_group_get_next_msg(info->group, msg)))
+        call_raw_print_msg(panel, msg);
 
     return 0;
 }
@@ -269,13 +269,13 @@ call_raw_set_msg(sip_msg_t *msg)
     if (!msg)
         return -1;
 
-    if (!(raw_panel = ui_find_by_type (RAW_PANEL)))
+    if (!(raw_panel = ui_find_by_type(RAW_PANEL)))
         return -1;
 
     if (!(panel = raw_panel->panel))
         return -1;
 
-    if (!(info = (call_raw_info_t*) panel_userptr (panel)))
+    if (!(info = (call_raw_info_t*) panel_userptr(panel)))
         return -1;
 
     // Set call raw message
@@ -283,10 +283,10 @@ call_raw_set_msg(sip_msg_t *msg)
 
     // Initialize internal pad
     info->padline = info->scroll = 0;
-    wclear (info->pad);
+    wclear(info->pad);
 
     // Print the message in the pad
-    call_raw_print_msg (panel, msg);
+    call_raw_print_msg(panel, msg);
 
     return 0;
 

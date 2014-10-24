@@ -72,19 +72,19 @@ call_flow_create()
     call_flow_info_t *info;
 
     // Create a new panel to fill all the screen
-    panel = new_panel (newwin (LINES, COLS, 0, 0));
+    panel = new_panel(newwin(LINES, COLS, 0, 0));
     // Initialize Call List specific data
-    info = malloc (sizeof(call_flow_info_t));
-    memset (info, 0, sizeof(call_flow_info_t));
+    info = malloc(sizeof(call_flow_info_t));
+    memset(info, 0, sizeof(call_flow_info_t));
     // Store it into panel userptr
-    set_panel_userptr (panel, (void*) info);
+    set_panel_userptr(panel, (void*) info);
 
     // Let's draw the fixed elements of the screen
-    win = panel_window (panel);
+    win = panel_window(panel);
     getmaxyx(win, height, width);
 
     // Calculate available printable area for messages
-    info->flow_win = subwin (win, height - 2 - 2 - 2, width - 2, 4, 0); // Header - Footer - Address
+    info->flow_win = subwin(win, height - 2 - 2 - 2, width - 2, 4, 0); // Header - Footer - Address
     info->raw_width = 0; // calculated with the available space after drawing columns
 
     return panel;
@@ -93,7 +93,7 @@ call_flow_create()
 call_flow_info_t *
 call_flow_info(PANEL *panel)
 {
-    return (call_flow_info_t*) panel_userptr (panel);
+    return (call_flow_info_t*) panel_userptr(panel);
 }
 
 void
@@ -101,14 +101,14 @@ call_flow_destroy(PANEL *panel)
 {
     call_flow_info_t *info;
     // Hide the panel
-    hide_panel (panel);
+    hide_panel(panel);
     // Free the panel information
-    if ((info = call_flow_info (panel)))
-        free (info);
+    if ((info = call_flow_info(panel)))
+        free(info);
     // Delete panel window
-    delwin (panel_window (panel));
+    delwin(panel_window(panel));
     // Delete panel
-    del_panel (panel);
+    del_panel(panel);
 }
 
 int
@@ -119,16 +119,16 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg)
     call_flow_info_t *info;
 
     // Check we have panel info
-    if (!(info = call_flow_info (panel)))
+    if (!(info = call_flow_info(panel)))
         return -1;
 
     // Check if the owner of the message is in the displayed group
     for (i = 0; i < info->group->callcnt; i++) {
         if (info->group->calls[i] == msg->call) {
             if (!msg->parsed)
-                msg_parse (msg);
-            call_flow_column_add (panel, CALLID(msg), SRC(msg));
-            call_flow_column_add (panel, CALLID(msg), DST(msg));
+                msg_parse(msg);
+            call_flow_column_add(panel, CALLID(msg), SRC(msg));
+            call_flow_column_add(panel, CALLID(msg), DST(msg));
             return 0;
         }
     }
@@ -146,63 +146,63 @@ call_flow_draw(PANEL *panel)
     char title[256];
 
     // Get panel information
-    info = call_flow_info (panel);
+    info = call_flow_info(panel);
 
     // Get window of main panel
-    win = panel_window (panel);
+    win = panel_window(panel);
     getmaxyx(win, height, width);
-    werase (win);
+    werase(win);
 
     // Set title
     if (info->group->callcnt == 1) {
-        sprintf (title, "Call flow for %s",
-                 call_get_attribute (*info->group->calls, SIP_ATTR_CALLID));
+        sprintf(title, "Call flow for %s",
+                call_get_attribute(*info->group->calls, SIP_ATTR_CALLID));
     } else {
-        sprintf (title, "Call flow for %d dialogs", info->group->callcnt);
+        sprintf(title, "Call flow for %d dialogs", info->group->callcnt);
     }
 
     // Print color mode in title
-    if (is_option_enabled ("color")) {
-        if (is_option_enabled ("color.request"))
-            strcat (title, " (Color by Request/Response)");
-        if (is_option_enabled ("color.callid"))
-            strcat (title, " (Color by Call-Id)");
-        if (is_option_enabled ("color.cseq"))
-            strcat (title, " (Color by CSeq)");
+    if (is_option_enabled("color")) {
+        if (is_option_enabled("color.request"))
+            strcat(title, " (Color by Request/Response)");
+        if (is_option_enabled("color.callid"))
+            strcat(title, " (Color by Call-Id)");
+        if (is_option_enabled("color.cseq"))
+            strcat(title, " (Color by CSeq)");
     }
 
     // Draw panel title
     wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
-    mvwprintw (win, 0, 0, "%*s", width, "");
-    mvwprintw (win, 0, (width - strlen (title)) / 2, "%s", title);
+    mvwprintw(win, 0, 0, "%*s", width, "");
+    mvwprintw(win, 0, (width - strlen(title)) / 2, "%s", title);
     wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
 
     // Show some keybinding
-    call_flow_draw_footer (panel);
+    call_flow_draw_footer(panel);
 
     // Redraw columns
-    call_flow_draw_columns (panel);
+    call_flow_draw_columns(panel);
 
     // Let's start from the first displayed message (not the first in the call group)
-    for (msg = info->first_msg; msg; msg = call_group_get_next_msg (info->group, msg)) {
+    for (msg = info->first_msg; msg; msg = call_group_get_next_msg(info->group, msg)) {
         // Draw messages until the Message height has been filled
-        if (call_flow_draw_message (panel, msg, cline) != 0)
+        if (call_flow_draw_message(panel, msg, cline) != 0)
             break;
         // One message fills 2 lines
         cline += 2;
     }
 
     // If there are only three columns, then draw the raw message on this panel
-    if (is_option_enabled ("cf.forceraw")) {
-        call_flow_draw_raw (panel, info->cur_msg);
+    if (is_option_enabled("cf.forceraw")) {
+        call_flow_draw_raw(panel, info->cur_msg);
     }
 
     // Draw the scrollbar
-    draw_vscrollbar (info->flow_win, call_group_msg_number (info->group, info->first_msg) * 2,
-                     call_group_msg_count (info->group) * 2, true);
+    draw_vscrollbar(info->flow_win, call_group_msg_number(info->group, info->first_msg) * 2,
+                    call_group_msg_count(info->group) * 2, true);
 
     // Redraw flow win
-    wnoutrefresh (info->flow_win);
+    wnoutrefresh(info->flow_win);
 
     return 0;
 
@@ -216,7 +216,7 @@ call_flow_draw_footer(PANEL *panel)
                 "Toggle Raw", "F4", "Extended", "F5", "Compressed", "F6", "Raw", "F7", "Colour by",
                 "F8", "Colour on/off", "9/0", "Raw width" };
 
-    draw_keybindings (panel, keybindings, 22);
+    draw_keybindings(panel, keybindings, 22);
 }
 
 int
@@ -229,17 +229,17 @@ call_flow_draw_columns(PANEL *panel)
     int flow_height, flow_width;
 
     // Get panel information
-    info = call_flow_info (panel);
+    info = call_flow_info(panel);
     // Get window of main panel
-    win = panel_window (panel);
+    win = panel_window(panel);
     getmaxyx(info->flow_win, flow_height, flow_width);
 
     // Load columns if not loaded
     if (!info->columns) {
-        for (msg = call_group_get_next_msg (info->group, NULL); msg;
-                msg = call_group_get_next_msg (info->group, msg)) {
-            call_flow_column_add (panel, CALLID(msg), SRC(msg));
-            call_flow_column_add (panel, CALLID(msg), DST(msg));
+        for (msg = call_group_get_next_msg(info->group, NULL); msg;
+                msg = call_group_get_next_msg(info->group, msg)) {
+            call_flow_column_add(panel, CALLID(msg), SRC(msg));
+            call_flow_column_add(panel, CALLID(msg), DST(msg));
         }
     }
 
@@ -248,8 +248,8 @@ call_flow_draw_columns(PANEL *panel)
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
         mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
-        mvwprintw (win, 2, 10 + 30 * column->colpos + (22 - strlen (column->addr)) / 2, "%s",
-                   column->addr);
+        mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(column->addr)) / 2, "%s",
+                  column->addr);
     }
 
     return 0;
@@ -272,7 +272,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     int height, width;
 
     // Get panel information
-    info = call_flow_info (panel);
+    info = call_flow_info(panel);
     // Get the messages window
     win = info->flow_win;
     getmaxyx(win, height, width);
@@ -282,44 +282,44 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         return 1;
 
     // Get message attributes
-    msg_time = msg_get_attribute (msg, SIP_ATTR_TIME);
-    msg_callid = msg_get_attribute (msg, SIP_ATTR_CALLID);
-    msg_method = msg_get_attribute (msg, SIP_ATTR_METHOD);
-    msg_from = msg_get_attribute (msg, SIP_ATTR_SIPFROM);
-    msg_to = msg_get_attribute (msg, SIP_ATTR_SIPTO);
-    msg_src = msg_get_attribute (msg, SIP_ATTR_SRC);
-    msg_dst = msg_get_attribute (msg, SIP_ATTR_DST);
+    msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
+    msg_callid = msg_get_attribute(msg, SIP_ATTR_CALLID);
+    msg_method = msg_get_attribute(msg, SIP_ATTR_METHOD);
+    msg_from = msg_get_attribute(msg, SIP_ATTR_SIPFROM);
+    msg_to = msg_get_attribute(msg, SIP_ATTR_SIPTO);
+    msg_src = msg_get_attribute(msg, SIP_ATTR_SRC);
+    msg_dst = msg_get_attribute(msg, SIP_ATTR_DST);
 
     // Print timestamp
-    mvwprintw (win, cline, 2, "%s", msg_time);
+    mvwprintw(win, cline, 2, "%s", msg_time);
 
     // Get Message method (include extra info)
-    memset (method, 0, sizeof(method));
-    sprintf (method, "%s", msg_method);
+    memset(method, 0, sizeof(method));
+    sprintf(method, "%s", msg_method);
 
     // If message has sdp information
-    if (msg_get_attribute (msg, SIP_ATTR_SDP)) {
-        if (is_option_enabled ("cf.sdpinfo")) {
+    if (msg_get_attribute(msg, SIP_ATTR_SDP)) {
+        if (is_option_enabled("cf.sdpinfo")) {
             // Show message sdp in title
-            memset (method, 0, sizeof(method));
-            strncpy (method, msg_method, 3);
-            sprintf (method + strlen (method), " (%s:%s)",
-                     msg_get_attribute (msg, SIP_ATTR_SDP_ADDRESS),
-                     msg_get_attribute (msg, SIP_ATTR_SDP_PORT));
+            memset(method, 0, sizeof(method));
+            strncpy(method, msg_method, 3);
+            sprintf(method + strlen(method), " (%s:%s)",
+                    msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS),
+                    msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
         } else {
             // Show sdp tag in tittle
-            strcat (method, " (SDP)");
+            strcat(method, " (SDP)");
         }
     }
 
     // Draw message type or status and line
-    int msglen = strlen (method);
+    int msglen = strlen(method);
     if (msglen > 24)
         msglen = 24;
 
     // Get origin and destiny column
-    call_flow_column_t *column1 = call_flow_column_get (panel, msg_callid, msg_src);
-    call_flow_column_t *column2 = call_flow_column_get (panel, msg_callid, msg_dst);
+    call_flow_column_t *column1 = call_flow_column_get(panel, msg_callid, msg_src);
+    call_flow_column_t *column2 = call_flow_column_get(panel, msg_callid, msg_dst);
 
     call_flow_column_t *tmp;
     if (column1->colpos > column2->colpos) {
@@ -330,34 +330,34 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
-    int distance = abs (endpos - startpos) - 3;
+    int distance = abs(endpos - startpos) - 3;
 
     // Highlight current message
     if (msg == info->cur_msg)
         wattron(win, A_BOLD);
 
     // Color the message
-    if (is_option_enabled ("color.request")) {
+    if (is_option_enabled("color.request")) {
         // Determine arrow color
-        if (msg_get_attribute (msg, SIP_ATTR_REQUEST)) {
+        if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
             wattron(win, COLOR_PAIR(OUTGOING_COLOR));
         } else {
             wattron(win, COLOR_PAIR(INCOMING_COLOR));
         }
     }
     // Color by call-id
-    if (is_option_enabled ("color.callid")) {
+    if (is_option_enabled("color.callid")) {
         wattron(win, COLOR_PAIR(call_group_color(info->group, msg->call)));
     }
     // Color by CSeq within the same call
-    if (is_option_enabled ("color.cseq")) {
+    if (is_option_enabled("color.cseq")) {
         if (msg->call->color == -1) {
             msg->call->color = (info->group->color++ % 7) + 1;
         }
         if (msg->color == -1) {
-            if ((prev = call_get_prev_msg (msg->call, msg))) {
-                if (strcmp (msg_get_attribute (msg, SIP_ATTR_CSEQ),
-                            msg_get_attribute (prev, SIP_ATTR_CSEQ))) {
+            if ((prev = call_get_prev_msg(msg->call, msg))) {
+                if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
+                           msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
                     int color = info->group->color + 1;
                     info->group->color = msg->call->color = (color % 7) + 1;
                 }
@@ -368,20 +368,20 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         wattron(win, COLOR_PAIR(msg->color));
     }
 
-    mvwprintw (win, cline, startpos + 2, "%.*s", distance, "");
-    mvwprintw (win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
+    mvwprintw(win, cline, startpos + 2, "%.*s", distance, "");
+    mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
     mvwhline(win, cline + 1, startpos + 2, ACS_HLINE, distance);
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
-    if (!strcasecmp (msg_src, column1->addr)) {
+    if (!strcasecmp(msg_src, column1->addr)) {
         mvwaddch(win, cline + 1, endpos - 2, ACS_RARROW);
-        if (msg_is_retrans (msg)) {
+        if (msg_is_retrans(msg)) {
             mvwaddch(win, cline + 1, endpos - 3, ACS_RARROW);
             mvwaddch(win, cline + 1, endpos - 4, ACS_RARROW);
         }
     } else {
         mvwaddch(win, cline + 1, startpos + 2, ACS_LARROW);
-        if (msg_is_retrans (msg)) {
+        if (msg_is_retrans(msg)) {
             mvwaddch(win, cline + 1, startpos + 3, ACS_LARROW);
             mvwaddch(win, cline + 1, startpos + 4, ACS_LARROW);
         }
@@ -405,21 +405,21 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     int raw_width, raw_height, raw_line, raw_char, column, line, height, width;
 
     // Get panel information
-    info = call_flow_info (panel);
+    info = call_flow_info(panel);
 
     // Get window of main panel
-    win = panel_window (panel);
+    win = panel_window(panel);
     getmaxyx(win, height, width);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
     raw_width = width - (31 + 30 * info->columns->colpos) - 2;
     // We can define a mininum size for rawminwidth
-    if (raw_width < get_option_int_value ("cf.rawminwidth")) {
-        raw_width = get_option_int_value ("cf.rawminwidth");
+    if (raw_width < get_option_int_value("cf.rawminwidth")) {
+        raw_width = get_option_int_value("cf.rawminwidth");
     }
     // We can configure an exact raw size
-    if (get_option_int_value ("cf.rawfixedwidth") != -1) {
-        raw_width = get_option_int_value ("cf.rawfixedwidth");
+    if (get_option_int_value("cf.rawfixedwidth") != -1) {
+        raw_width = get_option_int_value("cf.rawfixedwidth");
     }
 
     // Height of raw window is always available size minus 6 lines for header/footer
@@ -431,15 +431,15 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
         // Check it has the correct size
         if (getmaxx(raw_win) != raw_width) {
             // We need a new raw window
-            delwin (raw_win);
-            info->raw_win = raw_win = newwin (raw_height, raw_width, 0, 0);
+            delwin(raw_win);
+            info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
         } else {
             // We have a valid raw win, clear its content
-            wclear (raw_win);
+            wclear(raw_win);
         }
     } else {
         // Create the raw window of required size
-        info->raw_win = raw_win = newwin (raw_height, raw_width, 0, 0);
+        info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
     }
 
     // Draw raw box lines
@@ -450,7 +450,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     // Print msg payload
     for (line = 0, raw_line = 0; raw_line < msg->plines; raw_line++) {
         // Add character by character
-        for (column = 0, raw_char = 0; raw_char < strlen (msg->payload[raw_line]); raw_char++) {
+        for (column = 0, raw_char = 0; raw_char < strlen(msg->payload[raw_line]); raw_char++) {
             // Wrap at the end of the window
             if (column == raw_width) {
                 line++;
@@ -467,7 +467,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     }
 
     // Copy the raw_win contents into the panel
-    copywin (raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height - 1, width - 2, 0);
+    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height - 1, width - 2, 0);
 
     return 0;
 }
@@ -476,7 +476,7 @@ int
 call_flow_handle_key(PANEL *panel, int key)
 {
     int i, rnpag_steps = 4, raw_width, height, width;
-    call_flow_info_t *info = call_flow_info (panel);
+    call_flow_info_t *info = call_flow_info(panel);
     sip_msg_t *next = NULL, *prev = NULL;
     ui_t *next_panel;
     sip_call_group_t *group;
@@ -490,21 +490,21 @@ call_flow_handle_key(PANEL *panel, int key)
     switch (key) {
     case KEY_DOWN:
         // Check if there is a call below us
-        if (!(next = call_group_get_next_msg (info->group, info->cur_msg)))
+        if (!(next = call_group_get_next_msg(info->group, info->cur_msg)))
             break;
         info->cur_msg = next;
         info->cur_line += 2;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
         if (info->cur_line >= height) {
-            info->first_msg = call_group_get_next_msg (info->group, info->first_msg);
+            info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
             info->cur_line -= 2;
         }
         break;
     case KEY_UP:
         // Loop through messages until we found current message
         // storing the previous one
-        while ((next = call_group_get_next_msg (info->group, next))) {
+        while ((next = call_group_get_next_msg(info->group, next))) {
             if (next == info->cur_msg)
                 break;
             prev = next;
@@ -522,77 +522,77 @@ call_flow_handle_key(PANEL *panel, int key)
     case KEY_NPAGE:
         // Next page => N key down strokes
         for (i = 0; i < rnpag_steps; i++)
-            call_flow_handle_key (panel, KEY_DOWN);
+            call_flow_handle_key(panel, KEY_DOWN);
         break;
     case KEY_PPAGE:
         // Prev page => N key up strokes
         for (i = 0; i < rnpag_steps; i++)
-            call_flow_handle_key (panel, KEY_UP);
+            call_flow_handle_key(panel, KEY_UP);
         break;
     case 'x':
     case KEY_F(4):
-        wclear (panel_window (panel));
+        wclear(panel_window(panel));
         // KEY_X , Display current call flow
         if (info->group->callcnt == 1) {
-            group = call_group_create ();
-            call_group_add (group, info->group->calls[0]);
-            call_group_add (group, call_get_xcall (info->group->calls[0]));
-            call_flow_set_group (group);
+            group = call_group_create();
+            call_group_add(group, info->group->calls[0]);
+            call_group_add(group, call_get_xcall(info->group->calls[0]));
+            call_flow_set_group(group);
         } else {
-            group = call_group_create ();
-            call_group_add (group, info->group->calls[0]);
-            call_flow_set_group (group);
+            group = call_group_create();
+            call_group_add(group, info->group->calls[0]);
+            call_flow_set_group(group);
         }
         break;
     case 'r':
     case KEY_F(6):
         // KEY_R, display current call in raw mode
-        next_panel = ui_create (ui_find_by_type (RAW_PANEL));
+        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
         // TODO
-        call_raw_set_group (info->group);
-        wait_for_input (next_panel);
+        call_raw_set_group(info->group);
+        wait_for_input(next_panel);
         break;
     case '0':
         raw_width = getmaxx(info->raw_win);
         if (raw_width - 2 > 1) {
-            set_option_int_value ("cf.rawfixedwidth", raw_width - 2);
+            set_option_int_value("cf.rawfixedwidth", raw_width - 2);
         }
         break;
     case '9':
         raw_width = getmaxx(info->raw_win);
         if (raw_width + 2 < COLS - 1) {
-            set_option_int_value ("cf.rawfixedwidth", raw_width + 2);
+            set_option_int_value("cf.rawfixedwidth", raw_width + 2);
         }
         break;
     case 'T':
-        set_option_int_value ("cf.rawfixedwidth", -1);
+        set_option_int_value("cf.rawfixedwidth", -1);
         break;
     case 'd':
     case KEY_F(2):
         // Toggle SDP mode
         info->group->sdp_only = !(info->group->sdp_only);
-        call_flow_set_group (info->group);
+        call_flow_set_group(info->group);
         break;
     case 'D':
-        set_option_value ("cf.sdpinfo", is_option_enabled ("cf.sdpinfo") ? "off" : "on");
+        set_option_value("cf.sdpinfo", is_option_enabled("cf.sdpinfo") ? "off" : "on");
         break;
     case 't':
     case KEY_F(3):
-        set_option_value ("cf.forceraw", is_option_enabled ("cf.forceraw") ? "off" : "on");
+        set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
         break;
     case 's':
     case KEY_F(5):
-        set_option_value ("cf.splitcallid", is_option_enabled ("cf.splitcallid") ? "off" : "on");
+        set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
         // Force columns reload
         info->columns = NULL;
         break;
     case 10:
         // KEY_ENTER, display current message in raw mode
-        next_panel = ui_create (ui_find_by_type (RAW_PANEL));
+        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
         // TODO
-        call_raw_set_group (info->group);
-        call_raw_set_msg (info->cur_msg);
-        wait_for_input (next_panel);
+        call_raw_set_group(info->group);
+        call_raw_set_msg(info->cur_msg);
+        wait_for_input(next_panel);
         break;
     default:
         return key;
@@ -611,11 +611,11 @@ call_flow_help(PANEL *panel)
     // Create a new panel and show centered
     height = 24;
     width = 65;
-    help_win = newwin (height, width, (LINES - height) / 2, (COLS - width) / 2);
-    help_panel = new_panel (help_win);
+    help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
+    help_panel = new_panel(help_win);
 
     // Set the window title
-    mvwprintw (help_win, 1, 18, "Call Flow Help");
+    mvwprintw(help_win, 1, 18, "Call Flow Help");
 
     // Write border and boxes around the window
     wattron(help_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
@@ -631,36 +631,36 @@ call_flow_help(PANEL *panel)
     mvwaddch(help_win, height - 3, 64, ACS_RTEE);
 
     // Set the window footer (nice blue?)
-    mvwprintw (help_win, height - 2, 20, "Press any key to continue");
+    mvwprintw(help_win, height - 2, 20, "Press any key to continue");
 
     // Some brief explanation abotu what window shows
     wattron(help_win, COLOR_PAIR(HELP_COLOR));
-    mvwprintw (help_win, 3, 2, "This window shows the messages from a call and its relative");
-    mvwprintw (help_win, 4, 2, "ordered by sent or received time.");
-    mvwprintw (help_win, 5, 2, "This panel is mosly used when capturing at proxy systems that");
-    mvwprintw (help_win, 6, 2, "manages incoming and outgoing request between calls.");
+    mvwprintw(help_win, 3, 2, "This window shows the messages from a call and its relative");
+    mvwprintw(help_win, 4, 2, "ordered by sent or received time.");
+    mvwprintw(help_win, 5, 2, "This panel is mosly used when capturing at proxy systems that");
+    mvwprintw(help_win, 6, 2, "manages incoming and outgoing request between calls.");
     wattroff(help_win, COLOR_PAIR(HELP_COLOR));
 
     // A list of available keys in this window
-    mvwprintw (help_win, 8, 2, "Available keys:");
-    mvwprintw (help_win, 9, 2, "Esc/Q       Go back to Call list window");
-    mvwprintw (help_win, 10, 2, "Enter       Show current message Raw");
-    mvwprintw (help_win, 11, 2, "F1          Show this screen");
-    mvwprintw (help_win, 11, 2, "F2/d        Only show SDP messages");
-    mvwprintw (help_win, 12, 2, "F3/t        Toggle raw preview display");
-    mvwprintw (help_win, 13, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
-    mvwprintw (help_win, 14, 2, "F5/S        Toggle compressed view (One address <=> one column");
-    mvwprintw (help_win, 15, 2, "F6/R        Show original call messages in raw mode");
-    mvwprintw (help_win, 16, 2, "F7/C        Cycle between available color modes");
-    mvwprintw (help_win, 17, 2, "F8/c        Turn on/off window colours");
-    mvwprintw (help_win, 18, 2, "9/0         Increase/Decrease raw preview size");
-    mvwprintw (help_win, 19, 2, "T           Restore raw preview size");
-    mvwprintw (help_win, 20, 2, "D           Toggle SDP Address:Port info");
+    mvwprintw(help_win, 8, 2, "Available keys:");
+    mvwprintw(help_win, 9, 2, "Esc/Q       Go back to Call list window");
+    mvwprintw(help_win, 10, 2, "Enter       Show current message Raw");
+    mvwprintw(help_win, 11, 2, "F1          Show this screen");
+    mvwprintw(help_win, 11, 2, "F2/d        Only show SDP messages");
+    mvwprintw(help_win, 12, 2, "F3/t        Toggle raw preview display");
+    mvwprintw(help_win, 13, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
+    mvwprintw(help_win, 14, 2, "F5/S        Toggle compressed view (One address <=> one column");
+    mvwprintw(help_win, 15, 2, "F6/R        Show original call messages in raw mode");
+    mvwprintw(help_win, 16, 2, "F7/C        Cycle between available color modes");
+    mvwprintw(help_win, 17, 2, "F8/c        Turn on/off window colours");
+    mvwprintw(help_win, 18, 2, "9/0         Increase/Decrease raw preview size");
+    mvwprintw(help_win, 19, 2, "T           Restore raw preview size");
+    mvwprintw(help_win, 20, 2, "D           Toggle SDP Address:Port info");
 
     // Press any key to close
-    wgetch (help_win);
-    update_panels ();
-    doupdate ();
+    wgetch(help_win);
+    update_panels();
+    doupdate();
 
     return 0;
 }
@@ -671,14 +671,14 @@ call_flow_set_group(sip_call_group_t *group)
     PANEL *panel;
     call_flow_info_t *info;
 
-    if (!(panel = ui_get_panel (ui_find_by_type (DETAILS_PANEL))))
+    if (!(panel = ui_get_panel(ui_find_by_type(DETAILS_PANEL))))
         return -1;
 
-    if (!(info = call_flow_info (panel)))
+    if (!(info = call_flow_info(panel)))
         return -1;
 
     info->group = group;
-    info->cur_msg = info->first_msg = call_group_get_next_msg (group, NULL);
+    info->cur_msg = info->first_msg = call_group_get_next_msg(group, NULL);
     info->cur_line = 1;
     info->columns = NULL;
 
@@ -692,15 +692,15 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
     call_flow_column_t *column;
     int colpos = 0;
 
-    if (!(info = call_flow_info (panel)))
+    if (!(info = call_flow_info(panel)))
         return;
 
-    if (call_flow_column_get (panel, callid, addr))
+    if (call_flow_column_get(panel, callid, addr))
         return;
 
     column = info->columns;
     while (column) {
-        if (!strcasecmp (addr, column->addr) && column->colpos != 0 && !column->callid2) {
+        if (!strcasecmp(addr, column->addr) && column->colpos != 0 && !column->callid2) {
             column->callid2 = callid;
             return;
         }
@@ -710,8 +710,8 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
     if (info->columns)
         colpos = info->columns->colpos + 1;
 
-    column = malloc (sizeof(call_flow_column_t));
-    memset (column, 0, sizeof(call_flow_column_t));
+    column = malloc(sizeof(call_flow_column_t));
+    memset(column, 0, sizeof(call_flow_column_t));
     column->callid = callid;
     column->addr = addr;
     column->colpos = colpos;
@@ -725,17 +725,17 @@ call_flow_column_get(PANEL *panel, const char *callid, const char *addr)
     call_flow_info_t *info;
     call_flow_column_t *columns;
 
-    if (!(info = call_flow_info (panel)))
+    if (!(info = call_flow_info(panel)))
         return NULL;
 
     columns = info->columns;
     while (columns) {
-        if (!strcasecmp (addr, columns->addr)) {
-            if (is_option_enabled ("cf.splitcallid"))
+        if (!strcasecmp(addr, columns->addr)) {
+            if (is_option_enabled("cf.splitcallid"))
                 return columns;
-            if (columns->callid && !strcasecmp (callid, columns->callid))
+            if (columns->callid && !strcasecmp(callid, columns->callid))
                 return columns;
-            if (columns->callid2 && !strcasecmp (callid, columns->callid2))
+            if (columns->callid2 && !strcasecmp(callid, columns->callid2))
                 return columns;
         }
         columns = columns->next;
