@@ -183,8 +183,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     struct nread_udp *udp;
     // TCP header data
     struct nread_tcp *tcp;
-    // XXX Fake header (Like the one from ngrep)
-    char msg_header[256];
     // Packet payload data
     u_char *msg_payload = NULL;
     // Packet payload size
@@ -195,6 +193,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int size_packet;
     // SIP message transport
     int transport = 0; /* 0 UDP, 1 TCP, 2 TLS */
+    // Source and Destiny Ports
+    u_short sport, dport;
 
     // Store this packets in output file
     dump_packet (pd, header, packet);
@@ -208,8 +208,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     // Only interested in UDP packets
     if (ip->ip_p == IPPROTO_UDP) {
+        transport = 0;
+
         // Get UDP header
         udp = (struct nread_udp*) (packet + size_link + size_ip);
+        // Set packet ports
+        sport = udp->udp_sport;
+        dport = udp->udp_dport;
 
         // We're only interested in packets with payload
         size_payload = htons (udp->udp_hlen) - SIZE_UDP;
@@ -224,32 +229,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Total packet size
         size_packet = size_link + size_ip + SIZE_UDP + size_payload;
 
-        // XXX Process timestamp
-        struct timeval ut_tv = header->ts;
-        time_t t = (time_t) ut_tv.tv_sec;
-
-        // XXX Get current time
-        char timestr[200];
-        struct tm *time = localtime (&t);
-        strftime (timestr, sizeof(timestr), "%Y/%m/%d %T", time);
-
-        // XXX Build a header string
-        memset (msg_header, 0, sizeof(msg_header));
-        sprintf (msg_header, "U %s.%06ld ", timestr, (long) ut_tv.tv_usec);
-        if (is_option_enabled ("capture.lookup")) {
-            sprintf (msg_header + strlen (msg_header), "%s:%u ", lookup_hostname (&ip->ip_src),
-                     htons (udp->udp_sport));
-            sprintf (msg_header + strlen (msg_header), "-> %s:%u", lookup_hostname (&ip->ip_dst),
-                     htons (udp->udp_dport));
-        } else {
-            sprintf (msg_header + strlen (msg_header), "%s:%u ", inet_ntoa (ip->ip_src),
-                     htons (udp->udp_sport));
-            sprintf (msg_header + strlen (msg_header), "-> %s:%u", inet_ntoa (ip->ip_dst),
-                     htons (udp->udp_dport));
-        }
-
     } else if (ip->ip_p == IPPROTO_TCP) {
+        transport = 1;
+
         tcp = (struct nread_tcp*) (packet + size_link + size_ip);
+        // Set packet ports
+        sport = tcp->th_sport;
+        dport = tcp->th_dport;
 
         // We're only interested in packets with payload
         size_payload = ntohs (ip->ip_len) - (size_ip + SIZE_TCP);
@@ -263,32 +249,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // Total packet size
         size_packet = size_link + size_ip + SIZE_TCP + size_payload;
-
-        // XXX Process timestamp
-        struct timeval ut_tv = header->ts;
-        time_t t = (time_t) ut_tv.tv_sec;
-
-        // XXX Get current time
-        char timestr[200];
-        struct tm *time = localtime (&t);
-        strftime (timestr, sizeof(timestr), "%Y/%m/%d %T", time);
-
-        // XXX Build a header string
-        memset (msg_header, 0, sizeof(msg_header));
-        sprintf (msg_header, "T %s.%06ld ", timestr, (long) ut_tv.tv_usec);
-        transport = 1;
-
-        if (is_option_enabled ("capture.lookup")) {
-            sprintf (msg_header + strlen (msg_header), "%s:%u ", lookup_hostname (&ip->ip_src),
-                     htons (tcp->th_sport));
-            sprintf (msg_header + strlen (msg_header), "-> %s:%u", lookup_hostname (&ip->ip_dst),
-                     htons (tcp->th_dport));
-        } else {
-            sprintf (msg_header + strlen (msg_header), "%s:%u ", inet_ntoa (ip->ip_src),
-                     htons (tcp->th_sport));
-            sprintf (msg_header + strlen (msg_header), "-> %s:%u", inet_ntoa (ip->ip_dst),
-                     htons (tcp->th_dport));
-        }
 
         if (!msg_payload || !strstr ((const char*) msg_payload, "SIP/2.0")) {
             if (get_option_value ("capture.keyfile")) {
@@ -314,11 +274,11 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Parse this header and payload
-    if (!(msg = sip_load_message (msg_header, (const char*) msg_payload))) {
-        free (msg_payload);
-        return;
-    }
+    msg = sip_load_message (header->ts, ip->ip_src, sport, ip->ip_dst, dport, msg_payload);
     free (msg_payload);
+
+    // This is not a sip message, Bye!
+    if (!msg) return;
 
     // Store Transport attribute
     if (transport == 0) {
@@ -343,7 +303,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         if (limit && sip_calls_count () >= limit)
             pcap_breakloop (handle);
     }
-
 }
 
 void

@@ -502,8 +502,8 @@ call_flow_handle_key(PANEL *panel, int key)
         }
         break;
     case KEY_UP:
-        // FIXME We start searching from the fist one
-        // FIXME This wont work well with a lot of msg
+        // Loop through messages until we found current message
+        // storing the previous one
         while ((next = call_group_get_next_msg (info->group, next))) {
             if (next == info->cur_msg)
                 break;

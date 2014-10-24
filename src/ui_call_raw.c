@@ -149,7 +149,9 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 
     // Print msg header
     wattron(pad, A_BOLD);
-    mvwprintw (pad, line++, 0, "%s", msg->headerptr);
+    mvwprintw (pad, line++, 0, "%s %s %s -> %s", msg_get_attribute (msg, SIP_ATTR_DATE),
+               msg_get_attribute (msg, SIP_ATTR_TIME), msg_get_attribute (msg, SIP_ATTR_SRC),
+               msg_get_attribute (msg, SIP_ATTR_DST));
     wattroff(pad, A_BOLD);
 
     // Print msg payload

@@ -64,9 +64,12 @@ static sip_attr_hdr_t attrs[] =
         { .id = SIP_ATTR_SIPFROM, .name = "sipfrom", .desc = "SIP From" },
         { .id = SIP_ATTR_SIPTO, .name = "sipto", .desc = "SIP To" },
         { .id = SIP_ATTR_SRC, .name = "src", .desc = "Source" },
+        { .id = SIP_ATTR_SRC_HOST, .name = "srchost", .desc = "Source" },
         { .id = SIP_ATTR_DST, .name = "dst", .desc = "Destiny" },
+        { .id = SIP_ATTR_DST_HOST, .name = "dsthost", .desc = "Destiny" },
         { .id = SIP_ATTR_CALLID, .name = "callid", .desc = "Call-ID" },
         { .id = SIP_ATTR_XCALLID, .name = "xcallid", .desc = "X-Call-ID" },
+        { .id = SIP_ATTR_DATE, .name = "date", .desc = "Date" },
         { .id = SIP_ATTR_TIME, .name = "time", .desc = "Time" },
         { .id = SIP_ATTR_METHOD, .name = "method", .desc = "Method" },
         { .id = SIP_ATTR_REQUEST, .name = "request", .desc = "Request" },
@@ -79,7 +82,7 @@ static sip_attr_hdr_t attrs[] =
         { .id = SIP_ATTR_MSGCNT, .name = "msgcnt", .desc = "Msgs" }, };
 
 sip_msg_t *
-sip_msg_create(const char *header, const char *payload)
+sip_msg_create(const char *payload)
 {
     sip_msg_t *msg;
 
@@ -87,7 +90,6 @@ sip_msg_create(const char *header, const char *payload)
         return NULL;
     memset (msg, 0, sizeof(sip_msg_t));
     msg->attrs = NULL;
-    msg->headerptr = strdup (header);
     msg->payloadptr = strdup (payload);
     msg->parsed = 0;
     msg->color = -1;
@@ -117,7 +119,6 @@ sip_msg_destroy(sip_msg_t *msg)
         free (msg->payloadptr);
 
     // Free all memory
-    free (msg->headerptr);
     free (msg);
 }
 
@@ -191,11 +192,13 @@ sip_get_callid(const char* payload)
 }
 
 sip_msg_t *
-sip_load_message(const char *header, const char *payload)
+sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in_addr dst,
+                 u_short dport, u_char *payload)
 {
     sip_msg_t *msg;
     sip_call_t *call;
     char *callid;
+    char date[12], time[20], from_addr[22], to_addr[22];
 
     // Skip messages if capture is disabled
     if (!is_option_enabled ("sip.capture")) {
@@ -203,14 +206,38 @@ sip_load_message(const char *header, const char *payload)
     }
 
     // Get the Call-ID of this message
-    if (!(callid = sip_get_callid (payload))) {
+    if (!(callid = sip_get_callid ((const char*)payload))) {
         return NULL;
     }
 
     // Create a new message from this data
-    if (!(msg = sip_msg_create (header, payload))) {
+    if (!(msg = sip_msg_create ((const char*)payload))) {
         return NULL;
     }
+
+    // Fill message data
+    msg->ts = tv;
+    msg->src = src;
+    msg->sport = sport;
+    msg->dst = dst;
+    msg->dport = dport;
+
+    // Set Source and Destiny attributes
+    sprintf (from_addr, "%s:%u", inet_ntoa (src), htons (sport));
+    msg_set_attribute (msg, SIP_ATTR_SRC, from_addr);
+    sprintf (to_addr, "%s:%u", inet_ntoa (dst), htons (dport));
+    msg_set_attribute (msg, SIP_ATTR_DST, to_addr);
+
+    // Set message Date attribute
+    time_t t = (time_t) msg->ts.tv_sec;
+    struct tm *timestamp = localtime (&t);
+    strftime (date, sizeof(date), "%Y/%m/%d", timestamp);
+    msg_set_attribute (msg, SIP_ATTR_DATE, date);
+
+    // Set message Time attribute
+    strftime (time, sizeof(time), "%H:%M:%S", timestamp);
+    sprintf (time + 8, ".%06d", (int) msg->ts.tv_usec);
+    msg_set_attribute (msg, SIP_ATTR_TIME, time);
 
     // Find the call for this msg
     if (!(call = call_find_by_callid (callid))) {
@@ -573,16 +600,11 @@ msg_parse(sip_msg_t *msg)
     if (msg->parsed)
         return msg;
 
-    // Parse message header
-    if (msg_parse_header (msg, msg->headerptr) != 0)
-        return NULL;
-
     // Parse message payload
     if (msg_parse_payload (msg, msg->payloadptr) != 0)
         return NULL;
 
     // Free message pointers
-    //free(msg->headerptr);
     free (msg->payloadptr);
     msg->payloadptr = NULL;
 

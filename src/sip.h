@@ -35,6 +35,7 @@
 #include <pcap.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 
 /* Some very used macros */
 #define CALLID(msg) msg_get_attribute(msg, SIP_ATTR_CALLID)
@@ -64,13 +65,19 @@ enum sip_attr_id
     SIP_ATTR_SIPTO,
     //! Package IP source address and port
     SIP_ATTR_SRC,
+    //! Package source lookup and port
+    SIP_ATTR_SRC_HOST,
     //! Package IP destiny address and port
     SIP_ATTR_DST,
+    //! Package destiny lookup and port
+    SIP_ATTR_DST_HOST,
     //! SIP Message Call-ID header
     SIP_ATTR_CALLID,
     //! SIP Message X-Call-ID or X-CID header
     SIP_ATTR_XCALLID,
-    //! SIP Message timestamp
+    //! SIP Message Date
+    SIP_ATTR_DATE,
+    //! SIP Message Time
     SIP_ATTR_TIME,
     //! SIP Message Method or Response code
     SIP_ATTR_METHOD,
@@ -141,10 +148,16 @@ struct sip_msg
 {
     //! Message attribute list
     sip_attr_t *attrs;
-    //! Timestamp of current message
+    //! Timestamp
     struct timeval ts;
-    //! Temporal header data before being parsed
-    char *headerptr;
+    //! Source address
+    struct in_addr src;
+    //! Source port
+    u_short sport;
+    //! Destiny address
+    struct in_addr dst;
+    //! Destiny port
+    u_short dport;
     //! Temporal payload data before being parsed
     char *payloadptr;
     //! FIXME Payload in one struct
@@ -153,16 +166,18 @@ struct sip_msg
     int plines;
     //! Flag to mark if payload data has been parsed
     int parsed;
+    //! Color for this message (in color.cseq mode)
+    int color;
+
     //! PCAP Packet Header data
     struct pcap_pkthdr *pcap_header;
     //! PCAP Packet data
     u_char *pcap_packet;
     //! Message owner
     sip_call_t *call;
+
     //! Messages linked list
     sip_msg_t *next;
-    //! Color for this message (in color.cseq mode)
-    int color;
 };
 
 /**
@@ -193,12 +208,11 @@ struct sip_call
  * will only store the given information, but wont parse it until
  * needed.
  *
- * @param header Raw header text
  * @param payload Raw payload content
  * @return a new allocated message
  */
 sip_msg_t *
-sip_msg_create(const char *header, const char *payload);
+sip_msg_create(const char *payload);
 
 /**
  * @brief Destroy a SIP message and free its memory
@@ -260,7 +274,8 @@ sip_get_callid(const char* payload);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_load_message(const char *header, const char *payload);
+sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in_addr dst,
+                 u_short dport, u_char *payload);
 
 /**
  * @brief Getter for calls linked list size

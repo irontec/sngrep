@@ -61,6 +61,10 @@ AC_CHECK_LIB([ssl], [SSL_new], [], [
     AC_MSG_ERROR([ You need to have libssl installed to compile sngrep.])
 ])
 
+AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
+    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep.])
+])
+
 
 ######################################################################
 

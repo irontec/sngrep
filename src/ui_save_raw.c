@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <form.h>
 #include "ui_save_raw.h"
+#include "sip.h"
 #include "option.h"
 
 PANEL *
@@ -245,7 +246,9 @@ save_raw_to_file(PANEL *panel)
 
     // Print the call group messages into the pad
     while ((msg = call_group_get_next_msg (info->group, msg))) {
-        fprintf (f, "%s\n", msg->headerptr);
+        fprintf (f, "%s %s %s -> %s\n", msg_get_attribute (msg, SIP_ATTR_DATE),
+                 msg_get_attribute (msg, SIP_ATTR_TIME), msg_get_attribute (msg, SIP_ATTR_SRC),
+                 msg_get_attribute (msg, SIP_ATTR_DST));
         for (i = 0; i < msg->plines; i++) {
             fprintf (f, "%s\n", msg->payload[i]);
         }
