@@ -51,67 +51,67 @@ init_options()
     char userconf[128];
 
     // Set default color options
-    set_option_value("color", "on");
-    set_option_value("color.request", "on");
-    set_option_value("color.callid", "off");
-    set_option_value("color.cseq", "off");
+    set_option_value ("color", "on");
+    set_option_value ("color.request", "on");
+    set_option_value ("color.callid", "off");
+    set_option_value ("color.cseq", "off");
 
     // Add Call list column options
-    set_option_value("cl.columns", "6");
-    set_option_value("cl.column0", "sipfrom");
-    set_option_value("cl.column0.width", "40");
-    set_option_value("cl.column1", "sipto");
-    set_option_value("cl.column1.width", "40");
-    set_option_value("cl.column2", "msgcnt");
-    set_option_value("cl.column2.width", "5");
-    set_option_value("cl.column3", "src");
-    set_option_value("cl.column3.width", "22");
-    set_option_value("cl.column4", "dst");
-    set_option_value("cl.column4.width", "22");
-    set_option_value("cl.column5", "starting");
-    set_option_value("cl.column5.width", "15");
+    set_option_value ("cl.columns", "6");
+    set_option_value ("cl.column0", "sipfrom");
+    set_option_value ("cl.column0.width", "40");
+    set_option_value ("cl.column1", "sipto");
+    set_option_value ("cl.column1.width", "40");
+    set_option_value ("cl.column2", "msgcnt");
+    set_option_value ("cl.column2.width", "5");
+    set_option_value ("cl.column3", "src");
+    set_option_value ("cl.column3.width", "22");
+    set_option_value ("cl.column4", "dst");
+    set_option_value ("cl.column4.width", "22");
+    set_option_value ("cl.column5", "starting");
+    set_option_value ("cl.column5.width", "15");
 
     // Set Autoscroll in call list
-    set_option_value("cl.autoscroll", "on");
-    set_option_value("cl.scrollstep", "10");
-    set_option_value("cl.defexitbutton", "1");
+    set_option_value ("cl.autoscroll", "on");
+    set_option_value ("cl.scrollstep", "10");
+    set_option_value ("cl.defexitbutton", "1");
 
     // Raw options for Call flow screen
-    set_option_value("cf.forceraw", "on");
-    set_option_value("cf.rawminwidth", "40");
-    set_option_value("cf.splitcallid", "off");
+    set_option_value ("cf.forceraw", "on");
+    set_option_value ("cf.rawminwidth", "40");
+    set_option_value ("cf.splitcallid", "off");
 
     // Allow dialogs to be incomplete
-    set_option_value("sip.ignoreincomlete", "on");
-    set_option_value("sip.capture", "on");
+    set_option_value ("sip.ignoreincomlete", "on");
+    set_option_value ("sip.capture", "on");
 
     // Set default temporal file
-    sprintf(tmpfile, "/tmp/sngrep-%u.pcap", (unsigned)time(NULL));
-    set_option_value("sngrep.tmpfile", tmpfile);
-    set_option_value("sngrep.keeptmpfile", "off");
-    set_option_value("sngrep.savepath", getenv("HOME"));
+    sprintf (tmpfile, "/tmp/sngrep-%u.pcap", (unsigned) time (NULL));
+    set_option_value ("sngrep.tmpfile", tmpfile);
+    set_option_value ("sngrep.keeptmpfile", "off");
+    set_option_value ("sngrep.savepath", getenv ("HOME"));
 
     // Set default capture options
-    set_option_value("capture.limit", "2000");
-    set_option_value("capture.device", "any");
+    set_option_value ("capture.limit", "2000");
+    set_option_value ("capture.device", "any");
 
     // Set default filter options
-    set_option_value("filter.enable",   "off");
-    set_option_value("filter.REGISTER", "on");
-    set_option_value("filter.INVITE",   "on");
-    set_option_value("filter.SUBSCRIBE", "on");
-    set_option_value("filter.NOTIFY",   "on");
-    set_option_value("filter.OPTIONS",  "on");
-    set_option_value("filter.PUBLISH",  "on");
-    set_option_value("filter.MESSAGE",  "on");
+    set_option_value ("filter.enable", "off");
+    set_option_value ("filter.REGISTER", "on");
+    set_option_value ("filter.INVITE", "on");
+    set_option_value ("filter.SUBSCRIBE", "on");
+    set_option_value ("filter.NOTIFY", "on");
+    set_option_value ("filter.OPTIONS", "on");
+    set_option_value ("filter.PUBLISH", "on");
+    set_option_value ("filter.MESSAGE", "on");
 
     // Read options from configuration files
-    read_options("/etc/sngreprc");
-    read_options("/usr/local/etc/sngreprc");
+    read_options ("/etc/sngreprc");
+    read_options ("/usr/local/etc/sngreprc");
     // Get user homedir configuration
-    if (getenv("HOME")) {
-        sprintf(userconf, "%s/.sngreprc", getenv("HOME"));
-        read_options(userconf);
+    if (getenv ("HOME")) {
+        sprintf (userconf, "%s/.sngreprc", getenv ("HOME"));
+        read_options (userconf);
     }
 
     return 0;
@@ -125,33 +125,35 @@ read_options(const char *fname)
     regmatch_t matches[4];
     char line[1024], *type, *option, *value;
 
-    if (!(fh = fopen(fname, "rt"))) return -1;
+    if (!(fh = fopen (fname, "rt")))
+        return -1;
 
     // Compile expression matching
-    regcomp(&empty, "^#|^\\s*$", REG_EXTENDED | REG_NOSUB);
-    regcomp(&setting, "^\\s*(\\S+)\\s+(\\S*)\\s+(\\S+)\\s*$", REG_EXTENDED);
+    regcomp (&empty, "^#|^\\s*$", REG_EXTENDED | REG_NOSUB);
+    regcomp (&setting, "^\\s*(\\S+)\\s+(\\S*)\\s+(\\S+)\\s*$", REG_EXTENDED);
 
-    while (fgets(line, 1024, fh) != NULL) {
+    while (fgets (line, 1024, fh) != NULL) {
         // Check if this line is a commentary or empty line
-        if (!regexec(&empty, line, 0, NULL, 0)) continue;
+        if (!regexec (&empty, line, 0, NULL, 0))
+            continue;
         // Get configuration option from setting line
-        if (!regexec(&setting, line, 4, matches, 0)) {
+        if (!regexec (&setting, line, 4, matches, 0)) {
             type = line + matches[1].rm_so;
             line[matches[1].rm_eo] = '\0';
             option = line + matches[2].rm_so;
             line[matches[2].rm_eo] = '\0';
             value = line + matches[3].rm_so;
             line[matches[3].rm_eo] = '\0';
-            if (!strcasecmp(type, "set")) {
-                set_option_value(strdup(option), strdup(value));
-            } else if (!strcasecmp(type, "ignore")) {
-                set_ignore_value(strdup(option), strdup(value));
+            if (!strcasecmp (type, "set")) {
+                set_option_value (strdup (option), strdup (value));
+            } else if (!strcasecmp (type, "ignore")) {
+                set_ignore_value (strdup (option), strdup (value));
             }
         }
     }
-    regfree(&empty);
-    regfree(&setting);
-    fclose(fh);
+    regfree (&empty);
+    regfree (&setting);
+    fclose (fh);
     return 0;
 }
 
@@ -160,7 +162,7 @@ get_option_value(const char *opt)
 {
     int i;
     for (i = 0; i < optscnt; i++) {
-        if (!strcasecmp(opt, options[i].opt)) {
+        if (!strcasecmp (opt, options[i].opt)) {
             return options[i].value;
         }
     }
@@ -171,32 +173,33 @@ int
 get_option_int_value(const char *opt)
 {
     const char *value;
-    if ((value = get_option_value(opt))) {
-        return atoi(value);
+    if ((value = get_option_value (opt))) {
+        return atoi (value);
     }
     return -1;
 }
 
 void
-set_option_int_value(const char *opt, int value) {
+set_option_int_value(const char *opt, int value)
+{
     char cvalue[10];
-    sprintf(cvalue, "%d", value);
-    set_option_value(opt, cvalue);
+    sprintf (cvalue, "%d", value);
+    set_option_value (opt, cvalue);
 }
 
 void
 set_option_value(const char *opt, const char *value)
 {
     int i;
-    if (!get_option_value(opt)) {
+    if (!get_option_value (opt)) {
         options[optscnt].type = SETTING;
         options[optscnt].opt = opt;
-        options[optscnt].value = strdup(value);
+        options[optscnt].value = strdup (value);
         optscnt++;
     } else {
         for (i = 0; i < optscnt; i++) {
-            if (!strcasecmp(opt, options[i].opt)) {
-                options[i].value = strdup(value);
+            if (!strcasecmp (opt, options[i].opt)) {
+                options[i].value = strdup (value);
             }
         }
     }
@@ -206,10 +209,10 @@ int
 is_option_enabled(const char *opt)
 {
     const char *value;
-    if ((value = get_option_value(opt))) {
-        if (!strcasecmp(value, "on"))
+    if ((value = get_option_value (opt))) {
+        if (!strcasecmp (value, "on"))
             return 1;
-        if (!strcasecmp(value, "1"))
+        if (!strcasecmp (value, "1"))
             return 1;
     }
     return 0;
@@ -219,10 +222,10 @@ int
 is_option_disabled(const char *opt)
 {
     const char *value;
-    if ((value = get_option_value(opt))) {
-        if (!strcasecmp(value, "off"))
+    if ((value = get_option_value (opt))) {
+        if (!strcasecmp (value, "off"))
             return 1;
-        if (!strcasecmp(value, "0"))
+        if (!strcasecmp (value, "0"))
             return 1;
     }
     return 0;
@@ -242,7 +245,7 @@ is_ignored_value(const char *field, const char *fvalue)
 {
     int i;
     for (i = 0; i < optscnt; i++) {
-        if (!strcasecmp(options[i].opt, field) && !strcasecmp(options[i].value, fvalue)) {
+        if (!strcasecmp (options[i].opt, field) && !strcasecmp (options[i].value, fvalue)) {
             return 1;
         }
     }
@@ -252,5 +255,5 @@ is_ignored_value(const char *field, const char *fvalue)
 void
 toggle_option(const char *option)
 {
-    set_option_value(option, is_option_enabled(option) ? "off" : "on");
+    set_option_value (option, is_option_enabled (option) ? "off" : "on");
 }

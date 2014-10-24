@@ -240,7 +240,8 @@ call_list_exit_confirm(PANEL *panel);
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
 extern int
-call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title, int width);
+call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title,
+                     int width);
 
 /**
  * @brief Update list information after a filter has been set
@@ -301,6 +302,5 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur);
  */
 extern bool
 call_list_match_dfilter(PANEL *panel, sip_call_t *call);
-
 
 #endif

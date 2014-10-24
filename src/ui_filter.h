@@ -41,7 +41,8 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum filter_FLD_FILTER_list {
+enum filter_FLD_FILTER_list
+{
     FLD_FILTER_ENABLE = 0,
     FLD_FILTER_SIPFROM,
     FLD_FILTER_SIPTO,
@@ -73,7 +74,7 @@ struct filter_info
     //! Form that contains the filter fields
     FORM *form;
     //! An array of fields
-    FIELD *fields[FLD_FILTER_COUNT+1];
+    FIELD *fields[FLD_FILTER_COUNT + 1];
 };
 
 /**

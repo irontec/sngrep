@@ -1,9 +1,9 @@
 /**************************************************************************
  **
- ** sngrep - SIP callflow viewer using ngrep
+ ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013 Ivan Alonso (Kaian)
- ** Copyright (C) 2013 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -44,12 +44,25 @@
 #define UINT24_INT(i) ((i.x[0] << 16) | (i.x[1] << 8) | i.x[2])
 
 typedef unsigned char uint8;
-typedef struct uint16 { unsigned char x[2]; } uint16;
-typedef struct uint24 { unsigned char x[3]; } uint24;
-typedef struct uint32 { unsigned char x[4]; } uint32;
+
+typedef struct uint16
+{
+    unsigned char x[2];
+} uint16;
+
+typedef struct uint24
+{
+    unsigned char x[3];
+} uint24;
+
+typedef struct uint32
+{
+    unsigned char x[4];
+} uint32;
 typedef unsigned char opaque;
 
-enum SSLConnectionState {
+enum SSLConnectionState
+{
     TCP_STATE_SYN = 0,
     TCP_STATE_SYN_ACK,
     TCP_STATE_ACK,
@@ -58,82 +71,94 @@ enum SSLConnectionState {
     TCP_STATE_CLOSED
 };
 
-enum ContentType {
-    change_cipher_spec      = SSL3_RT_CHANGE_CIPHER_SPEC,
-    alert                   = SSL3_RT_ALERT,
-    handshake               = SSL3_RT_HANDSHAKE,
-    application_data        = SSL3_RT_APPLICATION_DATA
+enum ContentType
+{
+    change_cipher_spec = SSL3_RT_CHANGE_CIPHER_SPEC,
+    alert = SSL3_RT_ALERT,
+    handshake = SSL3_RT_HANDSHAKE,
+    application_data = SSL3_RT_APPLICATION_DATA
 };
 
-enum HandshakeType {
-    hello_request           = SSL3_MT_HELLO_REQUEST,
-    client_hello            = SSL3_MT_CLIENT_HELLO,
-    server_hello            = SSL3_MT_SERVER_HELLO,
-    certificate             = SSL3_MT_CERTIFICATE,
-    certificate_request     = SSL3_MT_CERTIFICATE_REQUEST,
-    server_hello_done       = SSL3_MT_SERVER_DONE,
-    certificate_verify      = SSL3_MT_CERTIFICATE_VERIFY,
-    client_key_exchange     = SSL3_MT_CLIENT_KEY_EXCHANGE,
-    finished                = SSL3_MT_FINISHED
+enum HandshakeType
+{
+    hello_request = SSL3_MT_HELLO_REQUEST,
+    client_hello = SSL3_MT_CLIENT_HELLO,
+    server_hello = SSL3_MT_SERVER_HELLO,
+    certificate = SSL3_MT_CERTIFICATE,
+    certificate_request = SSL3_MT_CERTIFICATE_REQUEST,
+    server_hello_done = SSL3_MT_SERVER_DONE,
+    certificate_verify = SSL3_MT_CERTIFICATE_VERIFY,
+    client_key_exchange = SSL3_MT_CLIENT_KEY_EXCHANGE,
+    finished = SSL3_MT_FINISHED
 };
 
-struct ProtocolVersion {
+struct ProtocolVersion
+{
     uint8 major;
     uint8 minor;
 };
 
-struct TLSPlaintext {
+struct TLSPlaintext
+{
     uint8 type;
     struct ProtocolVersion version;
     uint16 length;
 };
 
-struct Handshake {
+struct Handshake
+{
     uint8 type;
     uint24 length;
 };
 
-struct Random {
+struct Random
+{
     uint32 gmt_unix_time;
     opaque random_bytes[28];
 };
 
-struct ClientHello {
+struct ClientHello
+{
     struct ProtocolVersion client_version;
     struct Random random;
-    // SessionID session_id;
-    // CipherSuite cipher_suite;
-    // Extension extensions;
+// SessionID session_id;
+// CipherSuite cipher_suite;
+// Extension extensions;
 };
 
-struct ServerHello {
+struct ServerHello
+{
     struct ProtocolVersion server_version;
     struct Random random;
-    // SessionID session_id;
-    // CipherSuite cipher_suite;
-    // CompressionMethod compression_method;
+// SessionID session_id;
+// CipherSuite cipher_suite;
+// CompressionMethod compression_method;
 };
 
-struct MasterSecret {
+struct MasterSecret
+{
     uint8 random[48];
 };
 
-struct PreMasterSecret {
+struct PreMasterSecret
+{
     struct ProtocolVersion client_version;
     uint8 random[46];
 };
 
-struct EncryptedPreMasterSecret {
+struct EncryptedPreMasterSecret
+{
     uint8 pre_master_secret[128];
 };
 
-struct ClientKeyExchange {
+struct ClientKeyExchange
+{
     uint16 length;
     struct EncryptedPreMasterSecret exchange_keys;
 };
 
-
-struct SSLConnection {
+struct SSLConnection
+{
     //! Connection status
     enum SSLConnectionState state;
     //! Current packet direction
@@ -142,8 +167,8 @@ struct SSLConnection {
     int encrypted;
 
     //! Source and Destiny IP:port 
-    struct in_addr client_addr; 
-    struct in_addr server_addr; 
+    struct in_addr client_addr;
+    struct in_addr server_addr;
     u_short client_port;
     u_short server_port;
 
@@ -155,7 +180,8 @@ struct SSLConnection {
     struct PreMasterSecret pre_master_secret;
     struct PreMasterSecret master_secret;
 
-    struct tls_data {
+    struct tls_data
+    {
         uint8 client_write_MAC_key[20];
         uint8 server_write_MAC_key[20];
         uint8 client_write_key[32];
@@ -171,10 +197,12 @@ struct SSLConnection {
 };
 
 int
-P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen, unsigned char *seed, int slen);
+P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
+       unsigned char *seed, int slen);
 
-int 
-PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label, unsigned char *seed, int slen);
+int
+PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label,
+    unsigned char *seed, int slen);
 
 struct SSLConnection *
 tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport);
@@ -195,12 +223,14 @@ int
 tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl);
 
 int
-tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out, int *outl);
+tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out,
+                   int *outl);
 
 int
 tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment);
 
 int
-tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len, uint8 **out, int *outl);
+tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
+                        uint8 **out, int *outl);
 
 #endif

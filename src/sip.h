@@ -575,5 +575,4 @@ msg_is_retrans(sip_msg_t *msg);
 void
 sip_calls_clear();
 
-
 #endif

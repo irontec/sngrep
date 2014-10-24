@@ -43,12 +43,9 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum save_field_list {
-    FLD_SAVE_FILE,
-    FLD_SAVE_ALL,
-    FLD_SAVE_SELECTED,
-    FLD_SAVE_SAVE,
-    FLD_SAVE_CANCEL,
+enum save_field_list
+{
+    FLD_SAVE_FILE, FLD_SAVE_ALL, FLD_SAVE_SELECTED, FLD_SAVE_SAVE, FLD_SAVE_CANCEL,
     //! Never remove this field id @see save_info
     FLD_SAVE_COUNT
 };
@@ -66,7 +63,7 @@ struct save_info
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields
-    FIELD *fields[FLD_SAVE_COUNT+1];
+    FIELD *fields[FLD_SAVE_COUNT + 1];
     //! Call group to be saved
     sip_call_group_t *group;
 };

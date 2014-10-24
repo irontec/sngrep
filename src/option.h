@@ -45,9 +45,9 @@
 //! Shorter declarartion of attribute struct
 typedef struct config_option option_opt_t;
 
-enum option_type{
-    SETTING = 0,
-    IGNORE = 1,
+enum option_type
+{
+    SETTING = 0, IGNORE = 1,
 };
 
 /**

@@ -50,69 +50,72 @@ call_list_create()
     const char *field, *title;
 
     // Create a new panel that fill all the screen
-    panel = new_panel(newwin(LINES, COLS, 0, 0));
+    panel = new_panel (newwin (LINES, COLS, 0, 0));
     // Initialize Call List specific data
-    info = malloc(sizeof(call_list_info_t));
-    memset(info, 0, sizeof(call_list_info_t));
+    info = malloc (sizeof(call_list_info_t));
+    memset (info, 0, sizeof(call_list_info_t));
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
+    set_panel_userptr (panel, (void*) info);
 
     // Add configured columns
-    colcnt = get_option_int_value("cl.columns");
+    colcnt = get_option_int_value ("cl.columns");
     for (i = 0; i < colcnt; i++) {
         // Get column attribute name
-        sprintf(option, "cl.column%d", i);
-        field = get_option_value(option);
+        sprintf (option, "cl.column%d", i);
+        field = get_option_value (option);
         // Get column width
-        sprintf(option, "cl.column%d.width", i);
-        collen = get_option_int_value(option);
-        if (!(attrid = sip_attr_from_name(field))) continue;
-        title = sip_attr_get_description(attrid);
+        sprintf (option, "cl.column%d.width", i);
+        collen = get_option_int_value (option);
+        if (!(attrid = sip_attr_from_name (field)))
+            continue;
+        title = sip_attr_get_description (attrid);
         // Add column to the list
-        call_list_add_column(panel, attrid, field, title, collen);
+        call_list_add_column (panel, attrid, field, title, collen);
     }
 
     // Let's draw the fixed elements of the screen
-    win = panel_window(panel);
+    win = panel_window (panel);
     getmaxyx(win, height, width);
 
     // Initialize the fields
-    info->fields[0] = new_field(1, width - 19, 2, 18, 0, 0);
+    info->fields[0] = new_field (1, width - 19, 2, 18, 0, 0);
     info->fields[1] = NULL;
 
     // Create the form and post it
-    info->form = new_form(info->fields);
-    set_form_sub(info->form, win);
+    info->form = new_form (info->fields);
+    set_form_sub (info->form, win);
     // Form starts inactive
-    call_list_form_activate(panel, false);
+    call_list_form_activate (panel, false);
 
     // Calculate available printable area
-    info->list_win = subwin(win, height - 5, width, 4, 0);
-    info->group = call_group_create();
+    info->list_win = subwin (win, height - 5, width, 4, 0);
+    info->group = call_group_create ();
 
     // Draw a Panel header lines
-    mvwprintw(win, 1, 2, "Current Mode: %s", get_option_value("sngrep.mode"));
-    if (get_option_value("sngrep.file"))
-        mvwprintw(win, 1, width - strlen (get_option_value("sngrep.file")) - 11, "Filename: %s", get_option_value("sngrep.file"));
-    mvwprintw(win, 2, 2, "Display Filter: ");
+    mvwprintw (win, 1, 2, "Current Mode: %s", get_option_value ("sngrep.mode"));
+    if (get_option_value ("sngrep.file"))
+        mvwprintw (win, 1, width - strlen (get_option_value ("sngrep.file")) - 11, "Filename: %s",
+                   get_option_value ("sngrep.file"));
+    mvwprintw (win, 2, 2, "Display Filter: ");
 
     // Draw the footer of the window
-    call_list_draw_footer(panel);
+    call_list_draw_footer (panel);
 
     wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
     // Draw panel title
-    mvwprintw(win, 0, 0,  "%*s", width, "");
-    mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
+    mvwprintw (win, 0, 0, "%*s", width, "");
+    mvwprintw (win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
 
     // Draw columns titles
-    mvwprintw(win, 3, 0,  "%*s", width, "");
+    mvwprintw (win, 3, 0, "%*s", width, "");
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
         // Get current column width
         collen = info->columns[i].width;
 
         // Check if the column will fit in the remaining space of the screen
-        if (colpos + collen >= width) break;
-        mvwprintw(win, 3, colpos, "%.*s", collen, sip_attr_get_description(info->columns[i].id));
+        if (colpos + collen >= width)
+            break;
+        mvwprintw (win, 3, colpos, "%.*s", collen, sip_attr_get_description (info->columns[i].id));
         colpos += collen + 1;
     }
     wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
@@ -127,32 +130,25 @@ call_list_destroy(PANEL *panel)
     call_list_info_t *info;
 
     // Hide the panel
-    hide_panel(panel);
+    hide_panel (panel);
 
     // Free its status data
-    if ((info = (call_list_info_t*) panel_userptr(panel))) free(info);
+    if ((info = (call_list_info_t*) panel_userptr (panel)))
+        free (info);
 
     // Finally free the panel memory
-    del_panel(panel);
+    del_panel (panel);
 }
 
 void
 call_list_draw_footer(PANEL *panel)
 {
-    const char *keybindings[] = {
-        "Esc",      "Quit",
-        "Enter",    "Show",
-        "Space",    "Select",
-        "F1",       "Help",
-        "F2",       "Save",
-        "F3",       "Search",
-        "F4",       "Extended",
-        "F5",       "Clear",
-        "F6",       "Raw",
-        "F7",       "Filter",
-        "F8",       "Colours on/off" };
+    const char *keybindings[] =
+        { "Esc", "Quit", "Enter", "Show", "Space", "Select", "F1", "Help", "F2", "Save", "F3",
+                "Search", "F4", "Extended", "F5", "Clear", "F6", "Raw", "F7", "Filter", "F8",
+                "Colours on/off" };
 
-    draw_keybindings(panel, keybindings, 22);
+    draw_keybindings (panel, keybindings, 22);
 }
 
 int
@@ -171,44 +167,48 @@ call_list_draw(PANEL *panel)
     const char *ouraddr;
 
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    if (!info) return -1;
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
+    if (!info)
+        return -1;
 
     // Get window of call list panel
     WINDOW *win = info->list_win;
     getmaxyx(win, height, width);
 
     // Get available calls counter (we'll use it here a couple of times)
-    callcnt = call_list_count(panel);
+    callcnt = call_list_count (panel);
 
     // No calls, we've finished drawing
-    if (callcnt == 0) return 0;
+    if (callcnt == 0)
+        return 0;
 
     // If no active call, use the fist one (if exists)
-    if (!info->first_call && call_list_get_next(panel, NULL)) {
-        info->cur_call = info->first_call = call_list_get_next(panel, NULL);
+    if (!info->first_call && call_list_get_next (panel, NULL)) {
+        info->cur_call = info->first_call = call_list_get_next (panel, NULL);
         info->cur_line = info->first_line = 1;
     }
 
     // Fill the call list
-    for (call = info->first_call; call; call = call_list_get_next(panel, call)) {
+    for (call = info->first_call; call; call = call_list_get_next (panel, call)) {
         // Stop if we have reached the bottom of the list
-        if (cline == height) break;
+        if (cline == height)
+            break;
 
         // We only print calls with messages (In fact, all call should have msgs)
-        if (!call_msg_count(call)) continue;
+        if (!call_msg_count (call))
+            continue;
 
         // TODO Useless feature :|
-        if ((ouraddr = get_option_value("address"))) {
-            if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_SRC))) {
+        if ((ouraddr = get_option_value ("address"))) {
+            if (!strcasecmp (ouraddr, call_get_attribute (call, SIP_ATTR_SRC))) {
                 wattron(win, COLOR_PAIR(OUTGOING_COLOR));
-            } else if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_DST))) {
+            } else if (!strcasecmp (ouraddr, call_get_attribute (call, SIP_ATTR_DST))) {
                 wattron(win, COLOR_PAIR(INCOMING_COLOR));
             }
         }
 
         // Show bold selected rows
-        if (call_group_exists(info->group, call)) {
+        if (call_group_exists (info->group, call)) {
             wattron(win, A_BOLD);
             wattron(win, COLOR_PAIR(SELECTED_COLOR));
         }
@@ -219,12 +219,12 @@ call_list_draw(PANEL *panel)
         }
 
         // Set current line background
-        mvwprintw(win, cline, 0, "%*s", width, "");
+        mvwprintw (win, cline, 0, "%*s", width, "");
         // Set current line selection box
-        mvwprintw(win, cline, 2, call_group_exists(info->group, call)?"[*]":"[ ]");
+        mvwprintw (win, cline, 2, call_group_exists (info->group, call) ? "[*]" : "[ ]");
 
         // Print call line if no filter is active or it matchs the filter
-        mvwprintw(win, cline, 6, "%s", call_list_line_text(panel, call));
+        mvwprintw (win, cline, 6, "%s", call_list_line_text (panel, call));
         cline++;
 
         wattroff(win, COLOR_PAIR(SELECTED_COLOR));
@@ -233,8 +233,8 @@ call_list_draw(PANEL *panel)
     }
 
     // Draw scrollbar to the right
-    draw_vscrollbar(win, info->first_line, callcnt, true);
-    wnoutrefresh(info->list_win);
+    draw_vscrollbar (win, info->first_line, callcnt, true);
+    wnoutrefresh (info->list_win);
 
     return 0;
 }
@@ -242,26 +242,26 @@ call_list_draw(PANEL *panel)
 void
 call_list_form_activate(PANEL *panel, bool active)
 {
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
 
     // Store form state
     info->form_active = active;
 
     if (active) {
-        set_current_field(info->form, info->fields[0]);
+        set_current_field (info->form, info->fields[0]);
         // Show cursor
-        curs_set(1);
-       // Change current field background
-        set_field_back(info->fields[0], A_REVERSE);
-    } else {
-        set_current_field(info->form, NULL);
-        // Hide cursor
-        curs_set(0);
+        curs_set (1);
         // Change current field background
-        set_field_back(info->fields[0], A_NORMAL);
+        set_field_back (info->fields[0], A_REVERSE);
+    } else {
+        set_current_field (info->form, NULL);
+        // Hide cursor
+        curs_set (0);
+        // Change current field background
+        set_field_back (info->fields[0], A_NORMAL);
     }
-    post_form(info->form);
-    form_driver(info->form, REQ_END_LINE);
+    post_form (info->form);
+    form_driver (info->form, REQ_END_LINE);
 }
 
 const char*
@@ -273,20 +273,20 @@ call_list_line_text(PANEL *panel, sip_call_t *call)
     char coltext[80];
 
     // Initialize line
-    line = malloc(256);
-    memset(line, 0, 256);
+    line = malloc (256);
+    memset (line, 0, 256);
 
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
 
     // Print requested columns
-    for ( i = 0; i < info->columncnt; i++) {
+    for (i = 0; i < info->columncnt; i++) {
         // Get current column width
         collen = info->columns[i].width;
         // Get call attribute for current column
-        if ((call_attr = call_get_attribute(call, info->columns[i].id))) {
-            sprintf(coltext, "%.*s", collen, call_attr);
-            sprintf(line + strlen(line), "%-*s ", collen, coltext);
+        if ((call_attr = call_get_attribute (call, info->columns[i].id))) {
+            sprintf (coltext, "%.*s", collen, call_attr);
+            sprintf (line + strlen (line), "%-*s ", collen, coltext);
         }
     }
 
@@ -297,17 +297,18 @@ call_list_line_text(PANEL *panel, sip_call_t *call)
 int
 call_list_handle_key(PANEL *panel, int key)
 {
-    int i, height, width, rnpag_steps = get_option_int_value("cl.scrollstep");
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    int i, height, width, rnpag_steps = get_option_int_value ("cl.scrollstep");
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
     ui_t *next_panel;
     sip_call_group_t *group;
 
     // Sanity check, this should not happen
-    if (!info) return -1;
+    if (!info)
+        return -1;
 
     // Handle form key
     if (info->form_active)
-        return call_list_handle_form_key(panel, key);
+        return call_list_handle_form_key (panel, key);
 
     // Get window of call list panel
     WINDOW *win = info->list_win;
@@ -318,25 +319,27 @@ call_list_handle_key(PANEL *panel, int key)
     case 9 /*KEY_TAB*/:
     case KEY_F(3):
         // Activate Form
-        call_list_form_activate(panel, true);
+        call_list_form_activate (panel, true);
         break;
     case KEY_DOWN:
         // Check if there is a call below us
-        if (!info->cur_call || !call_list_get_next(panel, info->cur_call)) break;
-        info->cur_call = call_list_get_next(panel, info->cur_call);
+        if (!info->cur_call || !call_list_get_next (panel, info->cur_call))
+            break;
+        info->cur_call = call_list_get_next (panel, info->cur_call);
         info->cur_line++;
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
         if (info->cur_line > height) {
-            info->first_call = call_list_get_next(panel, info->first_call);
+            info->first_call = call_list_get_next (panel, info->first_call);
             info->first_line++;
             info->cur_line = height;
         }
         break;
     case KEY_UP:
         // Check if there is a call above us
-        if (!info->cur_call || !call_list_get_prev(panel, info->cur_call)) break;
-        info->cur_call = call_list_get_prev(panel, info->cur_call);
+        if (!info->cur_call || !call_list_get_prev (panel, info->cur_call))
+            break;
+        info->cur_call = call_list_get_prev (panel, info->cur_call);
         info->cur_line--;
         // If we are out of the top of the displayed list
         // refresh it starting in the previous (in fact current) call
@@ -349,94 +352,99 @@ call_list_handle_key(PANEL *panel, int key)
     case KEY_NPAGE:
         // Next page => N key down strokes
         for (i = 0; i < rnpag_steps; i++)
-            call_list_handle_key(panel, KEY_DOWN);
+            call_list_handle_key (panel, KEY_DOWN);
         break;
     case KEY_PPAGE:
         // Prev page => N key up strokes
         for (i = 0; i < rnpag_steps; i++)
-            call_list_handle_key(panel, KEY_UP);
+            call_list_handle_key (panel, KEY_UP);
         break;
     case 10:
-        if (!info->cur_call) return -1;
+        if (!info->cur_call)
+            return -1;
         // KEY_ENTER , Display current call flow
-        next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
+        next_panel = ui_create (ui_find_by_type (DETAILS_PANEL));
         if (info->group->callcnt) {
             group = info->group;
         } else {
-            if (!info->cur_call) return -1;
-            group = call_group_create();
-            call_group_add(group, info->cur_call);
+            if (!info->cur_call)
+                return -1;
+            group = call_group_create ();
+            call_group_add (group, info->cur_call);
         }
-        call_flow_set_group(group);
-        wait_for_input(next_panel);
+        call_flow_set_group (group);
+        wait_for_input (next_panel);
         break;
     case 'x':
     case KEY_F(4):
         // KEY_X , Display current call flow (extended)
-        next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
+        next_panel = ui_create (ui_find_by_type (DETAILS_PANEL));
         if (info->group->callcnt) {
             group = info->group;
         } else {
-            if (!info->cur_call) return -1;
-            group = call_group_create();
-            call_group_add(group, info->cur_call);
-            call_group_add(group, call_get_xcall(info->cur_call));
+            if (!info->cur_call)
+                return -1;
+            group = call_group_create ();
+            call_group_add (group, info->cur_call);
+            call_group_add (group, call_get_xcall (info->cur_call));
         }
-        call_flow_set_group(group);
-        wait_for_input(next_panel);
+        call_flow_set_group (group);
+        wait_for_input (next_panel);
         break;
     case 'r':
     case 'R':
     case KEY_F(6):
         // KEY_R , Display current call flow (extended)
-        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
+        next_panel = ui_create (ui_find_by_type (RAW_PANEL));
         if (info->group->callcnt) {
             group = info->group;
         } else {
-            if (!info->cur_call) return -1;
-            group = call_group_create();
-            call_group_add(group, info->cur_call);
+            if (!info->cur_call)
+                return -1;
+            group = call_group_create ();
+            call_group_add (group, info->cur_call);
         }
-        call_raw_set_group(group);
-        wait_for_input(next_panel);
+        call_raw_set_group (group);
+        wait_for_input (next_panel);
         break;
     case 'f':
     case 'F':
     case KEY_F(7):
         // KEY_F, Display filter panel
-        next_panel = ui_create(ui_find_by_type(FILTER_PANEL));
-        wait_for_input(next_panel);
-        call_list_filter_update(panel);
+        next_panel = ui_create (ui_find_by_type (FILTER_PANEL));
+        wait_for_input (next_panel);
+        call_list_filter_update (panel);
         break;
     case 's':
     case 'S':
     case KEY_F(2):
-        if (!is_option_disabled("sngrep.tmpfile")) {
+        if (!is_option_disabled ("sngrep.tmpfile")) {
             // KEY_S, Display save panel
-            next_panel = ui_create(ui_find_by_type(SAVE_PANEL));
-            save_set_group(ui_get_panel(next_panel), info->group);
-            wait_for_input(next_panel);
+            next_panel = ui_create (ui_find_by_type (SAVE_PANEL));
+            save_set_group (ui_get_panel (next_panel), info->group);
+            wait_for_input (next_panel);
         }
         break;
     case KEY_F(5):
         // Remove all stored calls
-        sip_calls_clear();
+        sip_calls_clear ();
         // Clear List
-        call_list_clear(panel);
+        call_list_clear (panel);
         break;
     case ' ':
-        if (!info->cur_call) return -1;
-        if (call_group_exists(info->group, info->cur_call)) {
-            call_group_del(info->group, info->cur_call);
+        if (!info->cur_call)
+            return -1;
+        if (call_group_exists (info->group, info->cur_call)) {
+            call_group_del (info->group, info->cur_call);
         } else {
-            call_group_add(info->group, info->cur_call);
+            call_group_add (info->group, info->cur_call);
         }
         break;
     case 'q':
     case 27: /* KEY_ESC */
         // Handle quit from this screen unless requested
-        if (!is_option_enabled("cl.noexitprompt")) {
-            return call_list_exit_confirm(panel);
+        if (!is_option_enabled ("cl.noexitprompt")) {
+            return call_list_exit_confirm (panel);
         }
         break;
     default:
@@ -452,52 +460,52 @@ call_list_handle_form_key(PANEL *panel, int key)
     int field_idx;
 
     // Get panel information
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
 
     // Get current field id
-    field_idx = field_index(current_field(info->form));
+    field_idx = field_index (current_field (info->form));
 
-    switch(key)  {
+    switch (key) {
     case 27: /* KEY_ESC */
     case 9 /* KEY_TAB */:
     case 10 /* KEY_ENTER */:
     case KEY_DOWN:
     case KEY_UP:
         // Activate list
-        call_list_form_activate(panel, false);
+        call_list_form_activate (panel, false);
         break;
     case KEY_RIGHT:
-        form_driver(info->form, REQ_RIGHT_CHAR);
+        form_driver (info->form, REQ_RIGHT_CHAR);
         break;
     case KEY_LEFT:
-        form_driver(info->form, REQ_LEFT_CHAR);
+        form_driver (info->form, REQ_LEFT_CHAR);
         break;
     case KEY_HOME:
-        form_driver(info->form, REQ_BEG_LINE);
+        form_driver (info->form, REQ_BEG_LINE);
         break;
     case KEY_END:
-        form_driver(info->form, REQ_END_LINE);
+        form_driver (info->form, REQ_END_LINE);
         break;
     case KEY_DC:
-        form_driver(info->form, REQ_DEL_CHAR);
+        form_driver (info->form, REQ_DEL_CHAR);
         break;
     case 8:
     case 127:
     case KEY_BACKSPACE:
-        form_driver(info->form, REQ_DEL_PREV);
+        form_driver (info->form, REQ_DEL_PREV);
         // Updated displayed results
-        call_list_filter_update(panel);
+        call_list_filter_update (panel);
         break;
     default:
         // If this is a normal character on input field, print it
-        form_driver(info->form, key);
+        form_driver (info->form, key);
         // Updated displayed results
-        call_list_filter_update(panel);
+        call_list_filter_update (panel);
         break;
     }
 
     // Validate all input data
-    form_driver(info->form, REQ_VALIDATION);
+    form_driver (info->form, REQ_VALIDATION);
 
     return 0;
 }
@@ -510,55 +518,56 @@ call_list_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 24; width = 65;
-    help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
-    help_panel = new_panel(help_win);
+    height = 24;
+    width = 65;
+    help_win = newwin (height, width, (LINES - height) / 2, (COLS - width) / 2);
+    help_panel = new_panel (help_win);
 
     // Set the window title
-    mvwprintw(help_win, 1, 25, "Call List Help");
+    mvwprintw (help_win, 1, 25, "Call List Help");
 
     // Write border and boxes around the window
     wattron(help_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
     box(help_win, 0, 0);
-    mvwhline(help_win, 2, 1, ACS_HLINE, width-2);
-    mvwhline(help_win, 7, 1, ACS_HLINE, width-2);
-    mvwhline(help_win, height-3, 1, ACS_HLINE, width-2);
+    mvwhline(help_win, 2, 1, ACS_HLINE, width - 2);
+    mvwhline(help_win, 7, 1, ACS_HLINE, width - 2);
+    mvwhline(help_win, height - 3, 1, ACS_HLINE, width - 2);
     mvwaddch(help_win, 2, 0, ACS_LTEE);
     mvwaddch(help_win, 7, 0, ACS_LTEE);
-    mvwaddch(help_win, height-3, 0, ACS_LTEE);
+    mvwaddch(help_win, height - 3, 0, ACS_LTEE);
     mvwaddch(help_win, 2, 64, ACS_RTEE);
     mvwaddch(help_win, 7, 64, ACS_RTEE);
-    mvwaddch(help_win, height-3, 64, ACS_RTEE);
+    mvwaddch(help_win, height - 3, 64, ACS_RTEE);
 
     // Set the window footer (nice blue?)
-    mvwprintw(help_win, height-2, 20, "Press any key to continue");
+    mvwprintw (help_win, height - 2, 20, "Press any key to continue");
 
     // Some brief explanation abotu what window shows
     wattron(help_win, COLOR_PAIR(HELP_COLOR));
-    mvwprintw(help_win, 3, 2, "This windows show the list of parsed calls from a pcap file ");
-    mvwprintw(help_win, 4, 2, "(Offline) or a live capture with libpcap functions (Online).");
-    mvwprintw(help_win, 5, 2, "You can configure the columns shown in this screen and some");
-    mvwprintw(help_win, 6, 2, "static filters using sngreprc resource file.");
+    mvwprintw (help_win, 3, 2, "This windows show the list of parsed calls from a pcap file ");
+    mvwprintw (help_win, 4, 2, "(Offline) or a live capture with libpcap functions (Online).");
+    mvwprintw (help_win, 5, 2, "You can configure the columns shown in this screen and some");
+    mvwprintw (help_win, 6, 2, "static filters using sngreprc resource file.");
     wattroff(help_win, COLOR_PAIR(HELP_COLOR));
 
     // A list of available keys in this window
-    mvwprintw(help_win, 8, 2, "Available keys:");
-    mvwprintw(help_win, 10, 2, "Esc/Q       Exit sngrep.");
-    mvwprintw(help_win, 11, 2, "Enter       Show selected calls message flow");
-    mvwprintw(help_win, 12, 2, "Space       Select call");
-    mvwprintw(help_win, 13, 2, "F1          Show this screen");
-    mvwprintw(help_win, 14, 2, "F2/S        Save captured packages to a file");
-    mvwprintw(help_win, 15, 2, "F3//        Display filtering (match string case insensitive)");
-    mvwprintw(help_win, 16, 2, "F4/X        Show selected call-flow (Extended) if available");
-    mvwprintw(help_win, 17, 2, "F5          Clear call list (can not be undone!)");
-    mvwprintw(help_win, 18, 2, "F6/R        Show selected call messages in raw mode");
-    mvwprintw(help_win, 19, 2, "F7/F        Show filter options");
-    mvwprintw(help_win, 20, 2, "F8/c        Turn on/off window colours");
+    mvwprintw (help_win, 8, 2, "Available keys:");
+    mvwprintw (help_win, 10, 2, "Esc/Q       Exit sngrep.");
+    mvwprintw (help_win, 11, 2, "Enter       Show selected calls message flow");
+    mvwprintw (help_win, 12, 2, "Space       Select call");
+    mvwprintw (help_win, 13, 2, "F1          Show this screen");
+    mvwprintw (help_win, 14, 2, "F2/S        Save captured packages to a file");
+    mvwprintw (help_win, 15, 2, "F3//        Display filtering (match string case insensitive)");
+    mvwprintw (help_win, 16, 2, "F4/X        Show selected call-flow (Extended) if available");
+    mvwprintw (help_win, 17, 2, "F5          Clear call list (can not be undone!)");
+    mvwprintw (help_win, 18, 2, "F6/R        Show selected call messages in raw mode");
+    mvwprintw (help_win, 19, 2, "F7/F        Show filter options");
+    mvwprintw (help_win, 20, 2, "F8/c        Turn on/off window colours");
 
     // Press any key to close
-    wgetch(help_win);
-    update_panels();
-    doupdate();
+    wgetch (help_win);
+    update_panels ();
+    doupdate ();
 
     return 0;
 }
@@ -570,15 +579,15 @@ call_list_exit_confirm(PANEL *panel)
     PANEL *exit_panel;
     int c;
     // Initial exit status
-    int exit = get_option_int_value("cl.defexitbutton") ;
+    int exit = get_option_int_value ("cl.defexitbutton");
 
     // Create a new panel and show centered
-    exit_win = newwin(8, 40, (LINES - 8) / 2, (COLS - 40) / 2);
-    exit_panel = new_panel(exit_win);
-    keypad(exit_win, TRUE);
+    exit_win = newwin (8, 40, (LINES - 8) / 2, (COLS - 40) / 2);
+    exit_panel = new_panel (exit_win);
+    keypad (exit_win, TRUE);
 
     // Set the window title
-    mvwprintw(exit_win, 1, 13, "Confirm exit");
+    mvwprintw (exit_win, 1, 13, "Confirm exit");
 
     // Write border and boxes around the window
     wattron(exit_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
@@ -592,22 +601,24 @@ call_list_exit_confirm(PANEL *panel)
 
     // Exit confirmation message message
     wattron(exit_win, COLOR_PAIR(HELP_COLOR));
-    mvwprintw(exit_win, 3, 2, "Are you sure you want to quit?");
+    mvwprintw (exit_win, 3, 2, "Are you sure you want to quit?");
     wattroff(exit_win, COLOR_PAIR(HELP_COLOR));
 
-    for(;;) {
+    for (;;) {
         // A list of available keys in this window
-        if (exit) wattron(exit_win, A_REVERSE);
-        mvwprintw(exit_win, 6, 10, "[  Yes  ]");
+        if (exit)
+            wattron(exit_win, A_REVERSE);
+        mvwprintw (exit_win, 6, 10, "[  Yes  ]");
         wattroff(exit_win, A_REVERSE);
-        if (!exit) wattron(exit_win, A_REVERSE);
-        mvwprintw(exit_win, 6, 20, "[  No   ]");
+        if (!exit)
+            wattron(exit_win, A_REVERSE);
+        mvwprintw (exit_win, 6, 20, "[  No   ]");
         wattroff(exit_win, A_REVERSE);
 
-        update_panels();
-        doupdate();
+        update_panels ();
+        doupdate ();
 
-        c = wgetch(exit_win);
+        c = wgetch (exit_win);
         switch (c) {
         case KEY_RIGHT:
             exit = 0;
@@ -615,13 +626,13 @@ call_list_exit_confirm(PANEL *panel)
         case KEY_LEFT:
             exit = 1;
             break;
-       case 9:
-            exit = (exit)?0:1;
+        case 9:
+            exit = (exit) ? 0 : 1;
             break;
         case 10:
             // If we return ESC, we let ui_manager to handle this
             // key and exit sngrep gracefully
-            return (exit)?27:0;
+            return (exit) ? 27 : 0;
         }
     }
 
@@ -630,10 +641,11 @@ call_list_exit_confirm(PANEL *panel)
 
 int
 call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title,
-        int width)
+                     int width)
 {
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    if (!info) return 1;
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
+    if (!info)
+        return 1;
 
     info->columns[info->columncnt].id = id;
     info->columns[info->columncnt].attr = attr;
@@ -648,15 +660,16 @@ call_list_filter_update(PANEL *panel)
 {
     // TODO
     // Clear list
-    call_list_clear(panel);
+    call_list_clear (panel);
 }
 
 void
 call_list_clear(PANEL *panel)
 {
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    if (!info) return;
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
+    if (!info)
+        return;
 
     // Initialize structures
     info->first_call = info->cur_call = NULL;
@@ -664,8 +677,8 @@ call_list_clear(PANEL *panel)
     info->group->callcnt = 0;
 
     // Clear Displayed lines
-    werase(info->list_win);
-    wnoutrefresh(info->list_win);
+    werase (info->list_win);
+    wnoutrefresh (info->list_win);
 }
 
 int
@@ -673,7 +686,7 @@ call_list_count(PANEL *panel)
 {
     int count = 0;
     sip_call_t *call = NULL;
-    while((call = call_list_get_next(panel, call)))
+    while ((call = call_list_get_next (panel, call)))
         count++;
     return count;
 }
@@ -682,8 +695,8 @@ sip_call_t *
 call_list_get_next(PANEL *panel, sip_call_t *cur)
 {
     sip_call_t *next = cur;
-    while(( next = call_get_next(next))) {
-        if (call_list_match_dfilter(panel, next))
+    while ((next = call_get_next (next))) {
+        if (call_list_match_dfilter (panel, next))
             return next;
     }
     return NULL;
@@ -693,8 +706,8 @@ sip_call_t *
 call_list_get_prev(PANEL *panel, sip_call_t *cur)
 {
     sip_call_t *prev = cur;
-    while(( prev = call_get_prev(prev))) {
-        if (call_list_match_dfilter(panel, prev))
+    while ((prev = call_get_prev (prev))) {
+        if (call_list_match_dfilter (panel, prev))
             return prev;
     }
     return NULL;
@@ -705,24 +718,25 @@ call_list_match_dfilter(PANEL *panel, sip_call_t *call)
 {
     char *upper;
     // Get panel information
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = (call_list_info_t*) panel_userptr (panel);
 
     // Get Display filter
     char dfilter[128], linetext[512];
 
     // We trim spaces with sscanf because and empty field is stored as space characters
-    memset(dfilter, 0, sizeof(dfilter));
-    sscanf(field_buffer(info->fields[0], 0), "%[^ ]", dfilter);
+    memset (dfilter, 0, sizeof(dfilter));
+    sscanf (field_buffer (info->fields[0], 0), "%[^ ]", dfilter);
 
-    if (strlen(dfilter) == 0 ) return true;
-    strcpy(linetext, call_list_line_text(panel, call));
+    if (strlen (dfilter) == 0)
+        return true;
+    strcpy (linetext, call_list_line_text (panel, call));
 
     // Upercase both strings
-    for(upper = dfilter; *upper != '\0'; upper++)
-        *upper = toupper((unsigned char)*upper);
-    for(upper = linetext; *upper != '\0'; upper++)
-        *upper = toupper((unsigned char)*upper);
+    for (upper = dfilter; *upper != '\0'; upper++)
+        *upper = toupper ((unsigned char) *upper);
+    for (upper = linetext; *upper != '\0'; upper++)
+        *upper = toupper ((unsigned char) *upper);
 
     // Check if line contains the filter text
-    return strstr(linetext, dfilter) != NULL;
+    return strstr (linetext, dfilter) != NULL;
 }
