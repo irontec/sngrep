@@ -253,16 +253,16 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 #ifdef WITH_OPENSSL
         if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
             if (get_option_value("capture.keyfile")) {
-                uint8 *decoded = malloc(2048);
-                int decoded_len = 0;
-                tls_process_segment(ip, &decoded, &decoded_len);
-                if (decoded_len) {
-                    memcpy(msg_payload, decoded, decoded_len);
-                    size_payload = decoded_len;
-                    msg_payload[size_payload] = '\0';
-                    transport = 2;
-                }
-                free(decoded);
+                // Allocate memory for the payload
+                msg_payload = malloc(size_payload + 1);
+                memset(msg_payload, 0, size_payload + 1);
+                // Try to decrypt the packet
+                tls_process_segment(ip, &msg_payload, &size_payload);
+                // Check if we have decoded payload
+                if (size_payload <= 0)
+                    free(msg_payload);
+                // Set Transport TLS
+                transport = 2;
             }
         }
 #endif

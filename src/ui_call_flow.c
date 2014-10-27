@@ -103,8 +103,10 @@ call_flow_destroy(PANEL *panel)
     // Hide the panel
     hide_panel(panel);
     // Free the panel information
-    if ((info = call_flow_info(panel)))
+    if ((info = call_flow_info(panel))) {
+        // Deallocate group memory
         free(info);
+    }
     // Delete panel window
     delwin(panel_window(panel));
     // Delete panel

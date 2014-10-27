@@ -100,6 +100,7 @@ void
 sip_msg_destroy(sip_msg_t *msg)
 {
     sip_msg_t *prev = NULL;
+    int i;
 
     if (!msg)
         return;
@@ -114,9 +115,20 @@ sip_msg_destroy(sip_msg_t *msg)
         }
     }
 
+    // Free message attribute list
+    sip_attr_list_destroy(msg->attrs);
+
     // Free message payload pointer if not parsed
     if (msg->payloadptr)
         free(msg->payloadptr);
+
+    // Free message payload
+    for (i=0; i<msg->plines; i++)
+        free(msg->payload[i]);
+
+    // Free packet data
+    free(msg->pcap_header);
+    free(msg->pcap_packet);
 
     // Free all memory
     free(msg);
@@ -167,6 +179,9 @@ sip_call_destroy(sip_call_t *call)
     // Remove all messages 
     while (call->msgs)
         sip_msg_destroy(call->msgs);
+
+    // Remove all call attributes
+    sip_attr_list_destroy(call->attrs);
 
     // Free it!
     free(call);
@@ -266,6 +281,8 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
     // Set message callid
     msg_set_attribute(msg, SIP_ATTR_CALLID, callid);
+    // Dellocate callid memory
+    free(callid);
 
     // Add the message to the found/created call
     call_add_message(call, msg);
@@ -381,6 +398,22 @@ sip_attr_from_name(const char *name)
 }
 
 void
+sip_attr_list_destroy(sip_attr_t *list)
+{
+    sip_attr_t *attr;
+
+    // If attribute already exists change its value
+    while (list) {
+        attr = list;
+        list = attr->next;
+        // Free attribute value
+        free(attr->value);
+        // Free attribute structure
+        free(attr);
+    }
+}
+
+void
 sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value)
 {
     sip_attr_t *attr;
@@ -388,6 +421,9 @@ sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value)
     // If attribute already exists change its value
     for (attr = *list; attr; attr = attr->next) {
         if (id == attr->hdr->id) {
+            // Free previous value
+            free(attr->value);
+            // Store the new value
             attr->value = strdup(value);
             return;
         }
@@ -396,6 +432,7 @@ sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value)
     // Otherwise add a new attribute
     if (!(attr = malloc(sizeof(sip_attr_t))))
         return;
+
     attr->hdr = sip_attr_get_header(id);
     attr->value = strdup(value);
     attr->next = *list;
@@ -418,6 +455,7 @@ void
 call_add_message(sip_call_t *call, sip_msg_t *msg)
 {
     sip_msg_t *cur, *prev;
+    char msgcnt[5];
 
     pthread_mutex_lock(&call->lock);
     // Set the message owner
@@ -432,6 +470,9 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
             ;
         prev->next = msg;
     }
+    // Store message count
+    sprintf(msgcnt, "%d", call_msg_count(call));
+    call_set_attribute(call, SIP_ATTR_MSGCNT, msgcnt);
     pthread_mutex_unlock(&call->lock);
 }
 
@@ -576,11 +617,8 @@ call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value)
 const char *
 call_get_attribute(sip_call_t *call, enum sip_attr_id id)
 {
-    char value[80];
     if (id == SIP_ATTR_MSGCNT) {
-        // FIXME REALLY
-        sprintf(value, "%d", call_msg_count(call));
-        return strdup(value);
+        return sip_attr_get(call->attrs, id);
     }
     if (id == SIP_ATTR_STARTING) {
         return msg_get_attribute(call_get_next_msg(call, NULL), SIP_ATTR_METHOD);
@@ -654,14 +692,17 @@ msg_parse_header(sip_msg_t *msg, const char *header)
 int
 msg_parse_payload(sip_msg_t *msg, const char *payload)
 {
-    char *body = strdup(payload);
-    char * pch;
+    char *body;
+    char *pch;
     char value[256];
     char rest[256];
 
     // Sanity check
     if (!msg || !payload)
         return 1;
+
+    // Duplicate payload to cut into lines
+    body = strdup(payload);
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
         // Copy the payload line by line (easier to process by the UI)

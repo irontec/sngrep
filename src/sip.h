@@ -131,7 +131,7 @@ struct sip_attr
     //! Attribute header pointer
     sip_attr_hdr_t *hdr;
     //! Attribute value
-    const char *value;
+    char *value;
     //! Next attribute in the linked list
     sip_attr_t *next;
 };
@@ -161,7 +161,7 @@ struct sip_msg
     //! Temporal payload data before being parsed
     char *payloadptr;
     //! FIXME Payload in one struct
-    const char *payload[256];
+    char *payload[256];
     //!! FIXME not required
     int plines;
     //! Flag to mark if payload data has been parsed
@@ -342,6 +342,14 @@ sip_attr_get_name(enum sip_attr_id id);
  */
 enum sip_attr_id
 sip_attr_from_name(const char *name);
+
+/**
+ * @brief Deallocate all attributes of a list
+ *
+ * @param list Pointer to the attribute list
+ */
+void
+sip_attr_list_destroy(sip_attr_t *list);
 
 /**
  * @brief Sets the given attribute value to an attribute

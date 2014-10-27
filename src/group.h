@@ -65,11 +65,18 @@ struct sip_call_group
  *
  * Allocate memory to create a new calls group
  *
- * @todo Create a call group destructor
  * @return Pointer to a new group
  */
 sip_call_group_t *
 call_group_create();
+
+/**
+ * @brief Deallocate memory of an existing group
+ *
+ * @param Pointer to an existing group
+ */
+void
+call_group_destroy(sip_call_group_t *group);
 
 /**
  * @brief Add a Call to the group

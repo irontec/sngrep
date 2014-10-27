@@ -168,10 +168,11 @@ call_list_form_activate(PANEL *panel, bool active);
  *
  * @param panel Ncurses panel pointer
  * @param call Call to get data from
- * @return A string with the line text
+ * @param text Text pointer to store the generated line
+ * @return A pointer to text
  */
 const char*
-call_list_line_text(PANEL *panel, sip_call_t *call);
+call_list_line_text(PANEL *panel, sip_call_t *call, char *text);
 
 /**
  * @brief Handle Call list key strokes

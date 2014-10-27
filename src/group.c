@@ -42,6 +42,12 @@ call_group_create()
 }
 
 void
+call_group_destroy(sip_call_group_t *group)
+{
+    free(group);
+}
+
+void
 call_group_add(sip_call_group_t *group, sip_call_t *call)
 {
 

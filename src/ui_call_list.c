@@ -133,8 +133,20 @@ call_list_destroy(PANEL *panel)
     hide_panel(panel);
 
     // Free its status data
-    if ((info = (call_list_info_t*) panel_userptr(panel)))
+    if ((info = (call_list_info_t*) panel_userptr(panel))) {
+
+        // Deallocate forms data
+        if (info->form) {
+            unpost_form(info->form);
+            free_form(info->form);
+            free_field(info->fields[0]);
+        }
+
+        // Deallocate group data
+        if (info->group)
+            call_group_destroy(info->group);
         free(info);
+    }
 
     // Finally free the panel memory
     del_panel(panel);
@@ -165,6 +177,7 @@ call_list_draw(PANEL *panel)
     struct sip_call *call;
     int callcnt;
     const char *ouraddr;
+    char linetext[256];
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -224,7 +237,8 @@ call_list_draw(PANEL *panel)
         mvwprintw(win, cline, 2, call_group_exists(info->group, call) ? "[*]" : "[ ]");
 
         // Print call line if no filter is active or it matchs the filter
-        mvwprintw(win, cline, 6, "%s", call_list_line_text(panel, call));
+        memset(linetext, 0, sizeof(linetext));
+        mvwprintw(win, cline, 6, "%s", call_list_line_text(panel, call, linetext));
         cline++;
 
         wattroff(win, COLOR_PAIR(SELECTED_COLOR));
@@ -264,17 +278,12 @@ call_list_form_activate(PANEL *panel, bool active)
     form_driver(info->form, REQ_END_LINE);
 }
 
-const char*
-call_list_line_text(PANEL *panel, sip_call_t *call)
+const char *
+call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 {
     int i, collen;
-    char *line;
     const char *call_attr;
     char coltext[80];
-
-    // Initialize line
-    line = malloc(256);
-    memset(line, 0, 256);
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -286,12 +295,11 @@ call_list_line_text(PANEL *panel, sip_call_t *call)
         // Get call attribute for current column
         if ((call_attr = call_get_attribute(call, info->columns[i].id))) {
             sprintf(coltext, "%.*s", collen, call_attr);
-            sprintf(line + strlen(line), "%-*s ", collen, coltext);
+            sprintf(text + strlen(text), "%-*s ", collen, coltext);
         }
     }
 
-    // FIX Memory leaking return
-    return line;
+    return text;
 }
 
 int
@@ -729,7 +737,9 @@ call_list_match_dfilter(PANEL *panel, sip_call_t *call)
 
     if (strlen(dfilter) == 0)
         return true;
-    strcpy(linetext, call_list_line_text(panel, call));
+
+    memset(linetext, 0, sizeof(linetext));
+    call_list_line_text(panel, call, linetext);
 
     // Upercase both strings
     for (upper = dfilter; *upper != '\0'; upper++)
