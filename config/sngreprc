@@ -9,17 +9,22 @@
 # set color on
 
 ##-----------------------------------------------------------------------------
-## Enable temporal file usage
-## By default, sngrep uses a random tempfile in /tmp for storing packages
-## in case user want to save them to another file. This files are removed
-## when sngep exits
+## Uncomment to configure packet count capture limit (0: disabled)
+# set capture.limit 2000
 
-## Uncomment this to disable temporal pcap file while sngrep is running or
-## change the used file
-# set sngrep.tmpfile off
-# set sngrep.tmpfile /tmp/last-sngrep-capture.pcap
-## Uncomment this to keep temporal files
-# set sngrep.keeptmpfile on
+## Default capture keyfile for TLS transport
+# set capture.keyfile /etc/ssl/key.pem
+
+## Uncommnet to lookup hostnames from packets ips
+# set capture.lookup on
+
+## Set default capture device
+# set capture.device any
+
+## Set default dump file
+# set capture.outfile /tmp/last_capture.pcap
+
+##-----------------------------------------------------------------------------
 ## Default path in save dialog
 # set sngrep.savepath /tmp/sngrep-captures
 
@@ -50,6 +55,7 @@
 ##    - xcallid
 ##    - msgcnt
 ##    - starting
+##	  - transport
 
 # set cl.columns 6
 # set cl.column0 sipfrom
@@ -65,10 +71,10 @@
 # set cl.column5 starting
 # set cl.column5.width 15
 
-
 ##-----------------------------------------------------------------------------
-## Default minimun size from Message info in Call Flow panel
+## Default minimun size from Message payload in Call Flow panel
 # set cf.rawminwidth 40
+
 ## Fixed raw preview size
 # set cf.rawfixedwidth 40
 
@@ -82,17 +88,7 @@
 ##
 ## ignore {field} {value}
 ##
-
 # ignore starting OPTIONS
 # ignore starting REGISTER
 # ignore starting BYE
 
-##-----------------------------------------------------------------------------
-## Uncomment to configure packet count capture limit (0: disabled)
-# set capture.limit 2000
-
-## Default capture keyfile for TLS transport
-#set capture.keyfile /etc/ssl/key.pem
-
-## Uncommnet to lookup hostnames from packets ips
-# set capture.lookup on

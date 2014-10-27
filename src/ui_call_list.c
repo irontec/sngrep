@@ -93,9 +93,9 @@ call_list_create()
 
     // Draw a Panel header lines
     mvwprintw(win, 1, 2, "Current Mode: %s", get_option_value("sngrep.mode"));
-    if (get_option_value("sngrep.file"))
-        mvwprintw(win, 1, width - strlen(get_option_value("sngrep.file")) - 11, "Filename: %s",
-                  get_option_value("sngrep.file"));
+    if (get_option_value("capture.infile"))
+        mvwprintw(win, 1, width - strlen(get_option_value("capture.infile")) - 11, "Filename: %s",
+                  get_option_value("capture.infile"));
     mvwprintw(win, 2, 2, "Display Filter: ");
 
     // Draw the footer of the window
