@@ -20,7 +20,7 @@
 # iconv built into libc) for the transcoding. See
 # http://www.gnu.org/software/libiconv for the list of possible encodings.
 
-DOXYFILE_ENCODING = ISO-8859-1
+DOXYFILE_ENCODING = UTF-8
 
 # The PROJECT_NAME tag is a single word (or sequence of words) that should
 # identify the project. Note that if you do not use Doxywizard you need
@@ -32,13 +32,13 @@ PROJECT_NAME = sngrep
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-PROJECT_NUMBER = 0.1
+PROJECT_NUMBER = 
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer
 # a quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF = 
+PROJECT_BRIEF = "SIP Messages flow viewer"
 
 # With the PROJECT_LOGO tag one can specify an logo or icon that is
 # included in the documentation. The maximum height of the logo should not
@@ -356,7 +356,7 @@ EXTRACT_PRIVATE = YES
 # If the EXTRACT_STATIC tag is set to YES all static members of a file
 # will be included in the documentation.
 
-EXTRACT_STATIC = NO
+EXTRACT_STATIC = YES
 
 # If the EXTRACT_LOCAL_CLASSES tag is set to YES classes (and structs)
 # defined locally in source files will be included in the documentation.
@@ -544,7 +544,7 @@ SHOW_USED_FILES = YES
 # then setting the SHOW_DIRECTORIES tag to YES will show the directory hierarchy
 # in the documentation. The default is NO.
 
-#SHOW_DIRECTORIES = NO
+SHOW_DIRECTORIES = NO
 
 # Set the SHOW_FILES tag to NO to disable the generation of the Files page.
 # This will remove the Files entry from the Quick Index and from the
@@ -648,7 +648,7 @@ WARN_LOGFILE =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT = src doc 
+INPUT = src/
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -656,7 +656,7 @@ INPUT = src doc
 # into libc) for the transcoding. See http://www.gnu.org/software/libiconv for
 # the list of possible encodings.
 
-INPUT_ENCODING = ISO-8859-1
+INPUT_ENCODING = UTF-8
 
 # If the value of the INPUT tag contains directories, you can use the
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
@@ -750,7 +750,7 @@ INPUT_FILTER =
 # info on how filters are used. If FILTER_PATTERNS is empty or if
 # non of the patterns match the file name, INPUT_FILTER is applied.
 
-FILTER_PATTERNS = *.lua=/usr/bin/lua2dox
+FILTER_PATTERNS = *.lua=/usr/bin/lua2dox 
 
 # If the FILTER_SOURCE_FILES tag is set to YES, the input filter (if set using
 # INPUT_FILTER) will be used to filter the input files when producing source
@@ -938,7 +938,7 @@ HTML_TIMESTAMP = YES
 # files or namespaces will be aligned in HTML using tables. If set to
 # NO a bullet list will be used.
 
-#HTML_ALIGN_MEMBERS = YES
+HTML_ALIGN_MEMBERS = YES
 
 # If the HTML_DYNAMIC_SECTIONS tag is set to YES then the generated HTML
 # documentation will contain sections that can be hidden and shown after the
@@ -1129,7 +1129,7 @@ ENUM_VALUES_PER_LINE = 4
 # By enabling USE_INLINE_TREES, doxygen will generate the Groups, Directories,
 # and Class Hierarchy pages using a tree view instead of an ordered list.
 
-#USE_INLINE_TREES = NO
+USE_INLINE_TREES = NO
 
 # If the treeview is enabled (see GENERATE_TREEVIEW) then this tag can be
 # used to set the initial width (in pixels) of the frame in which the tree
@@ -1779,4 +1779,3 @@ GENERATE_LEGEND = YES
 # the various graphs.
 
 DOT_CLEANUP = YES
-

@@ -114,15 +114,47 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg);
 int
 call_flow_draw(PANEL *panel);
 
+
+/**
+ * @brief Draw the footer of the panel with keybindings info
+ *
+ * @param panel Ncurses panel pointer
+ */
 void
 call_flow_draw_footer(PANEL *panel);
 
+/**
+ * @brief Draw the visible columns in panel window
+ *
+ * @param panel Ncurses panel pointer
+ */
 int
 call_flow_draw_columns(PANEL *panel);
 
+/**
+ * @brief Draw the message arrow in the given line
+ *
+ * Draw the given message arrow in the given line.
+ * This function will calculate origin and destriny coordinates
+ * base on message information. Each message use two lines
+ *
+ * @param panel Ncurses panel pointer
+ * @param msg Message data to draw
+ * @param cline Window line to draw the message
+ * @return 0 if arrow is drawn, 1 otherwise
+ */
 int
 call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline);
 
+/**
+ * @brief Draw raw panel with message payload
+ *
+ * Draw the given message payload into the raw window.
+ *
+ * @param panel Ncurses panel pointer
+ * @param msg Message data to draw
+ * @return 0 in all cases
+ */
 int
 call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
 
@@ -163,9 +195,29 @@ call_flow_help(PANEL *panel);
 int
 call_flow_set_group(sip_call_group_t *group);
 
+/**
+ * @brief Add a new column (if required)
+ *
+ * Check if the given callid and address has already a column.
+ * If not, create a new call for that callid/address
+ * Each column has one address and two callids (unless split mode
+ * is disabled)
+ *
+ * @param panel Ncurses panel pointer
+ * @param callid Call-Id header of SIP payload
+ * @param addr Address:port string
+ */
 void
 call_flow_column_add(PANEL *panel, const char *callid, const char *addr);
 
+/**
+ * @brief Get a flow column data
+ *
+ * @param panel Ncurses panel pointer
+ * @param callid Call-Id header of SIP payload
+ * @param addr Address:port string
+ * @return column structure pointer or NULL if not found
+ */
 call_flow_column_t *
 call_flow_column_get(PANEL *panel, const char *callid, const char *addr);
 

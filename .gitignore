@@ -4,3 +4,4 @@
 
 # Ignore Doxygen generated files
 doc/html
+/autom4te.cache

@@ -181,6 +181,9 @@ capture_offline();
 void
 parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet);
 
+/**
+ * @brief Close pcap handler
+ */
 void
 capture_close();
 
@@ -191,12 +194,23 @@ capture_close();
 int
 datalink_size(int datalink);
 
+/**
+ * @brief Open a new dumper file for capture handler
+ */
 pcap_dumper_t *
 dump_open(const char *dumpfile);
 
+/**
+ * @brief Store a packet in dump file
+ *
+ * File must be previously opened with dump_open
+ */
 void
 dump_packet(pcap_dumper_t *pd, const struct pcap_pkthdr *header, const u_char *packet);
 
+/**
+ * @brief Close a dump file
+ */
 void
 dump_close(pcap_dumper_t *pd);
 

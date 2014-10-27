@@ -105,7 +105,7 @@ PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, u
     for (i = 0; i < dlen; i++)
         dest[i] = h_md5[i] ^ h_sha[i];
 
-    return 1;
+    return 0;
 }
 
 struct SSLConnection *
@@ -354,7 +354,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                 (unsigned char *) "master secret", SEED, sizeof(struct Random) * 2);
 
             memcpy(SEED, &conn->server_random, sizeof(struct Random));
-            memcpy(SEED + sizeof(struct Random), &conn->client_random, 32);
+            memcpy(SEED + sizeof(struct Random), &conn->client_random, sizeof(struct Random));
 
             // Generate MACs, Write Keys and IVs
             PRF((unsigned char *) &conn->key_material, sizeof(struct tls_data),

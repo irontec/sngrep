@@ -88,6 +88,15 @@ call_raw_redraw_required(PANEL *panel, sip_msg_t *msg);
 int
 call_raw_draw(PANEL *panel);
 
+/**
+ * @brief Draw a message in call Raw
+ *
+ * Draw a new message in the Raw pad.
+ *
+ * @param panel Ncurses panel pointer
+ * @param msg New message to be printed
+ * @return 0 in call cases
+ */
 int
 call_raw_print_msg(PANEL *panel, sip_msg_t *msg);
 

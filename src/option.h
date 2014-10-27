@@ -189,6 +189,18 @@ is_option_disabled(const char *opt);
 int
 is_ignored_value(const char *field, const char *fvalue);
 
+/**
+ * @brief Toggle a boolean option
+ *
+ * An option is considered disabled if it has "off" or "0" as value,
+ * otherwise will be enabled.
+ * This function will set off for those options with on value, and
+ * viceversa.
+ *
+ * @todo Implement also for "1"/"0" options
+ *
+ * @param option Name of configuration option
+ */
 void
 toggle_option(const char *option);
 

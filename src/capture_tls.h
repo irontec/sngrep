@@ -40,37 +40,60 @@
 #include <stdbool.h>
 #include "capture.h"
 
+//! Cast two bytes into decimal (Big Endian)
 #define UINT16_INT(i) ((i.x[0] << 8) | i.x[1])
+//! Cast three bytes into decimal (Big Endian)
 #define UINT24_INT(i) ((i.x[0] << 16) | (i.x[1] << 8) | i.x[2])
 
+//! One byte unsigned integer
 typedef unsigned char uint8;
 
+//! Two bytes unsigned integer
 typedef struct uint16
 {
     unsigned char x[2];
 } uint16;
 
+//! Three bytes unsigned integer
 typedef struct uint24
 {
     unsigned char x[3];
 } uint24;
 
+//! Four bytes unsigned interger
 typedef struct uint32
 {
     unsigned char x[4];
 } uint32;
+
+//! One byte generic type
 typedef unsigned char opaque;
 
+//! SSLConnections states
 enum SSLConnectionState
 {
+    //! Initial SYN packet has been received from client
     TCP_STATE_SYN = 0,
+    //! SYN/ACK packet has been sent from the server
     TCP_STATE_SYN_ACK,
+    //! Client ACK'ed the connection
     TCP_STATE_ACK,
+    //! Connection is up, now SSL handshake should start!
     TCP_STATE_ESTABLISHED,
+    //! Connection about to end
     TCP_STATE_FIN,
+    //! Connection closed
     TCP_STATE_CLOSED
 };
 
+/**
+ * XXX We could remove this enum and HandshakeType because
+ * they are not really used as enums.
+ * Enumerated values are, in most cases, stored as 4 bytes integer
+ * while the value it represents in SSL headers is only one byte,
+ * so we may use SSL3_ defines instead.
+ */
+//! ContentType values as defined in RFC5246
 enum ContentType
 {
     change_cipher_spec = SSL3_RT_CHANGE_CIPHER_SPEC,
@@ -79,6 +102,7 @@ enum ContentType
     application_data = SSL3_RT_APPLICATION_DATA
 };
 
+//! HanshakeType values as defined in RFC5246
 enum HandshakeType
 {
     hello_request = SSL3_MT_HELLO_REQUEST,
@@ -92,12 +116,14 @@ enum HandshakeType
     finished = SSL3_MT_FINISHED
 };
 
+//! ProtocolVersion header as defined in RFC5246
 struct ProtocolVersion
 {
     uint8 major;
     uint8 minor;
 };
 
+//! TLSPlaintext record structure
 struct TLSPlaintext
 {
     uint8 type;
@@ -105,18 +131,21 @@ struct TLSPlaintext
     uint16 length;
 };
 
+//! Hanshake record structure
 struct Handshake
 {
     uint8 type;
     uint24 length;
 };
 
+//! Handshake random structure
 struct Random
 {
     uint32 gmt_unix_time;
     opaque random_bytes[28];
 };
 
+//! ClientHello type in Handshake records
 struct ClientHello
 {
     struct ProtocolVersion client_version;
@@ -126,6 +155,7 @@ struct ClientHello
 // Extension extensions;
 };
 
+//! ServerHello type in Handshake records
 struct ServerHello
 {
     struct ProtocolVersion server_version;
@@ -151,12 +181,18 @@ struct EncryptedPreMasterSecret
     uint8 pre_master_secret[128];
 };
 
+//! ClientKeyExchange type in Handshake records
 struct ClientKeyExchange
 {
     uint16 length;
     struct EncryptedPreMasterSecret exchange_keys;
 };
 
+/**
+ * Structure to store all information from a TLS
+ * connection. This is also used as linked list
+ * node.
+ */
 struct SSLConnection
 {
     //! Connection status
@@ -166,10 +202,13 @@ struct SSLConnection
     //! Data is encrypted flag
     int encrypted;
 
-    //! Source and Destiny IP:port 
+    //! Client IP address
     struct in_addr client_addr;
+    //! Server IP address
     struct in_addr server_addr;
+    //! Client port
     u_short client_port;
+    //! Server port
     u_short server_port;
 
     SSL *ssl;
@@ -196,39 +235,166 @@ struct SSLConnection
     struct SSLConnection *next;
 };
 
+/**
+ * @brief P_hash expansion function as defined in RFC5246
+ *
+ * This function will expand Secret and Seed into output using digest
+ * hash function. The amount of data generated will be determined by output
+ * length (dlen).
+ *
+ * @param digest Digest name to get the hash function
+ * @param dest Destiny of hash function result. Memory must be already allocated
+ * @param dlen Destiny length in bytes
+ * @param secret Input for the hash function
+ * @param sslen Secret length in bytes
+ * @param seed Input for the hash function
+ * @param slen Seed length in bytes
+ * @return Output bytes
+ */
 int
 P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
        unsigned char *seed, int slen);
 
+/**
+ * @brief Pseudorandom Function as defined in RFC5246
+ *
+ * This function will generate MasterSecret and KeyMaterial data from PreMasterSecret and Seed
+ *
+ * @param dest Destiny of PRF function result. Memory must be already allocated
+ * @param dlen Destiny length in bytes
+ * @param pre_master_secret PreMasterSecret decrypted from ClientKeyExchange Handhsake record
+ * @param pslen PreMasterSecret length in bytes
+ * @param label Fixed ASCII string
+ * @param seed Concatenation of Random data from Hello Handshake records
+ * @param slen Seed length in bytes
+ * @return 0 in call cases
+ */
 int
 PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label,
     unsigned char *seed, int slen);
 
+/**
+ * @brief Create a new SSLConnection
+ *
+ * This will allocate enough memory to store all connection data
+ * from a detected SSL connection. This will also add this structure to
+ * the connections linked list.
+ *
+ * @param caddr Client address
+ * @param cport Client port
+ * @param saddr Server address
+ * @param sport Server port
+ * @return a pointer to a new allocated SSLConnection structure
+ */
 struct SSLConnection *
 tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport);
 
+/**
+ * @brief Destroys an existing SSLConnection
+ *
+ * This will free all allocated memory of SSLConnection also removing
+ * the connection from connections list.
+ *
+ * @param conn Existing connection pointer
+ */
 void
 tls_connection_destroy(struct SSLConnection *conn);
 
+/**
+ * @brief Check if given keyfile is valid
+ *
+ * This can be used to check if a file contains valid RSA data
+ *
+ * @param keyfile Absolute path the keyfile
+ * @return true if file contains RSA private info, false otherwise
+ */
 bool
 tls_check_keyfile(const char *keyfile);
 
+/**
+ * @brief Determines packet direction
+ *
+ * Determine if the given address is from client or server.
+ *
+ * @param conn Existing connection pointer
+ * @param addr Client or server address
+ * @param port Client or server port
+ * @return 0 if address belongs to client, 1 to server or -1 otherwise
+ */
 int
 tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, u_short port);
 
+/**
+ * @brief Find a connection
+ *
+ * Try to find connection data for a given address and port.
+ * This address:port convination can be the client or server one.
+ *
+ * @param addr Client or server address
+ * @param port Client or server port
+ * @return an existing Connection pointer or NULL if not found
+ */
 struct SSLConnection*
 tls_connection_find(struct in_addr addr, u_short port);
 
+/**
+ * @brief Process a TCP segment to check TLS data
+ *
+ * Check if a TCP segment contains TLS data. In case a TLS record is found
+ * process it and return decrypted data if case of application_data record.
+ *
+ * @param ip Pointer to ip header of the packet
+ * @param out Pointer to the output char array. Memory must be already allocated
+ * @param out Number of bytes returned by this function
+ * @return 0 in all cases
+ */
 int
 tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl);
 
+/**
+ * @brief Process TLS record data
+ *
+ * Process a TLS record
+ *  - If the record type is Handshake process it in tls_process_record_handshake
+ *  - If the record type is Application Data process it in tls_process_record_data
+ *
+ * @param conn Existing connection pointer
+ * @param payload Packet peyload
+ * @param len Payload length
+ * @param out pointer to store decryted data
+ * @param outl decrypted data length
+ * @return Decrypted data length
+ */
 int
 tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out,
                    int *outl);
 
+/**
+ * @brief Process TLS Handshake record types
+ *
+ * Process all types of Handshake records to store and compute all required
+ * data to decrypt application data packets
+ *
+ * @param conn Existing connection pointer
+ * @param fragment Handshake record data
+ * @return 0 in all cases
+ */
 int
 tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment);
 
+/**
+ * @brief Process TLS ApplicationData record types
+ *
+ * Process application data record, trying to decrypt it with connection
+ * information
+ *
+ * @param conn Existing connection pointer
+ * @param fragment Application record data
+ * @param len record length in bytes
+ * @param out pointer to store decryted data
+ * @param outl decrypted data length
+ * @return decoded data length
+ */
 int
 tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
                         uint8 **out, int *outl);
