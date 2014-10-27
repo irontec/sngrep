@@ -5605,7 +5605,7 @@ _ACEOF
 
 else
 
-	    as_fn_error $? " You need to have libssl installed to compile sngrep." "$LINENO" 5
+	    as_fn_error $? " You need to have libssl installed to compile sngrep (or use --disable-openssl)" "$LINENO" 5
 
 fi
 
@@ -5655,7 +5655,7 @@ _ACEOF
 
 else
 
-	    as_fn_error $? " You need to have libcrypto installed to compile sngrep." "$LINENO" 5
+	    as_fn_error $? " You need to have libcrypto installed to compile sngrep (or use --disable-openssl)" "$LINENO" 5
 
 fi
 

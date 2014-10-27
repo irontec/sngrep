@@ -64,11 +64,11 @@ AC_ARG_ENABLE([openssl],
 AS_IF([test "x$enable_openssl" != "xno"], [
 
 	AC_CHECK_LIB([ssl], [SSL_new], [], [
-	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep.])
+	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep (or use --disable-openssl)])
 	])
 	
 	AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
-	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep.])
+	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep (or use --disable-openssl)])
 	])
 	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
 ], [])
