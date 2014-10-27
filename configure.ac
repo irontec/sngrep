@@ -57,13 +57,24 @@ AC_CHECK_HEADER([pcap.h], [], [
     AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
 ])
 
-AC_CHECK_LIB([ssl], [SSL_new], [], [
-    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep.])
-])
+# Check for SSL dependencies
+AC_ARG_ENABLE([openssl],
+    AC_HELP_STRING([--disable-openssl], [Disable TLS SIP Transport]))
+    
+AS_IF([test "x$enable_openssl" != "xno"], [
 
-AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
-    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep.])
-])
+	AC_CHECK_LIB([ssl], [SSL_new], [], [
+	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep.])
+	])
+	
+	AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
+	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep.])
+	])
+	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
+], [])
+
+# Conditional Source inclusion 
+AM_CONDITIONAL([WITH_OPENSSL], [test "x$enable_openssl" != "xno"])
 
 
 ######################################################################

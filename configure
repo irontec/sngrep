@@ -627,6 +627,8 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+WITH_OPENSSL_FALSE
+WITH_OPENSSL_TRUE
 LN_S
 am__fastdepCXX_FALSE
 am__fastdepCXX_TRUE
@@ -725,6 +727,7 @@ enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
 enable_debug
+enable_openssl
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1357,6 +1360,7 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-debug          Debug compilation (Default = no)
+  --disable-openssl       Disable TLS SIP Transport
 
 Some influential environment variables:
   CC          C compiler command
@@ -5546,7 +5550,17 @@ fi
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_new in -lssl" >&5
+# Check for SSL dependencies
+# Check whether --enable-openssl was given.
+if test "${enable_openssl+set}" = set; then :
+  enableval=$enable_openssl;
+fi
+
+
+if test "x$enable_openssl" != "xno"; then :
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_new in -lssl" >&5
 $as_echo_n "checking for SSL_new in -lssl... " >&6; }
 if ${ac_cv_lib_ssl_SSL_new+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -5591,12 +5605,12 @@ _ACEOF
 
 else
 
-    as_fn_error $? " You need to have libssl installed to compile sngrep." "$LINENO" 5
+	    as_fn_error $? " You need to have libssl installed to compile sngrep." "$LINENO" 5
 
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for EVP_get_cipherbyname in -lcrypto" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for EVP_get_cipherbyname in -lcrypto" >&5
 $as_echo_n "checking for EVP_get_cipherbyname in -lcrypto... " >&6; }
 if ${ac_cv_lib_crypto_EVP_get_cipherbyname+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -5641,8 +5655,23 @@ _ACEOF
 
 else
 
-    as_fn_error $? " You need to have libcrypto installed to compile sngrep." "$LINENO" 5
+	    as_fn_error $? " You need to have libcrypto installed to compile sngrep." "$LINENO" 5
 
+fi
+
+
+$as_echo "#define WITH_OPENSSL /**/" >>confdefs.h
+
+
+fi
+
+# Conditional Source inclusion
+ if test "x$enable_openssl" != "xno"; then
+  WITH_OPENSSL_TRUE=
+  WITH_OPENSSL_FALSE='#'
+else
+  WITH_OPENSSL_TRUE='#'
+  WITH_OPENSSL_FALSE=
 fi
 
 
@@ -5825,6 +5854,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${WITH_OPENSSL_TRUE}" && test -z "${WITH_OPENSSL_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_OPENSSL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

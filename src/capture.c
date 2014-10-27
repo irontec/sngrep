@@ -29,11 +29,12 @@
  * This file include the functions that uses libpcap to do so.
  *
  */
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+
 #include <netdb.h>
 #include "capture.h"
+#ifdef WITH_OPENSSL
 #include "capture_tls.h"
+#endif
 #include "sip.h"
 #include "option.h"
 #include "ui_manager.h"
@@ -249,6 +250,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Total packet size
         size_packet = size_link + size_ip + SIZE_TCP + size_payload;
 
+#ifdef WITH_OPENSSL
         if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
             if (get_option_value("capture.keyfile")) {
                 uint8 *decoded = malloc(2048);
@@ -263,6 +265,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                 free(decoded);
             }
         }
+#endif
     } else {
         // Not handled protocol
         return;

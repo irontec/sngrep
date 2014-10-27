@@ -50,6 +50,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = sngrep$(EXEEXT)
+@WITH_OPENSSL_TRUE@am__append_1 = capture_tls.c 
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/config.h.in
@@ -63,12 +64,15 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_sngrep_OBJECTS = capture.$(OBJEXT) capture_tls.$(OBJEXT) \
-	sip.$(OBJEXT) main.$(OBJEXT) option.$(OBJEXT) group.$(OBJEXT) \
-	ui_manager.$(OBJEXT) ui_call_list.$(OBJEXT) \
-	ui_call_flow.$(OBJEXT) ui_call_raw.$(OBJEXT) \
-	ui_filter.$(OBJEXT) ui_save_pcap.$(OBJEXT) \
-	ui_save_raw.$(OBJEXT)
+am__sngrep_SOURCES_DIST = capture.c sip.c main.c option.c group.c \
+	ui_manager.c ui_call_list.c ui_call_flow.c ui_call_raw.c \
+	ui_filter.c ui_save_pcap.c ui_save_raw.c capture_tls.c
+@WITH_OPENSSL_TRUE@am__objects_1 = capture_tls.$(OBJEXT)
+am_sngrep_OBJECTS = capture.$(OBJEXT) sip.$(OBJEXT) main.$(OBJEXT) \
+	option.$(OBJEXT) group.$(OBJEXT) ui_manager.$(OBJEXT) \
+	ui_call_list.$(OBJEXT) ui_call_flow.$(OBJEXT) \
+	ui_call_raw.$(OBJEXT) ui_filter.$(OBJEXT) \
+	ui_save_pcap.$(OBJEXT) ui_save_raw.$(OBJEXT) $(am__objects_1)
 sngrep_OBJECTS = $(am_sngrep_OBJECTS)
 sngrep_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -92,7 +96,7 @@ AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(sngrep_SOURCES)
-DIST_SOURCES = $(sngrep_SOURCES)
+DIST_SOURCES = $(am__sngrep_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -193,7 +197,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-sngrep_SOURCES = capture.c capture_tls.c sip.c main.c option.c group.c ui_manager.c ui_call_list.c ui_call_flow.c ui_call_raw.c ui_filter.c ui_save_pcap.c ui_save_raw.c
+sngrep_SOURCES = capture.c sip.c main.c option.c group.c ui_manager.c \
+	ui_call_list.c ui_call_flow.c ui_call_raw.c ui_filter.c \
+	ui_save_pcap.c ui_save_raw.c $(am__append_1)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 

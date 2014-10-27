@@ -97,6 +97,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* Compile With Openssl compatibility */
+#undef WITH_OPENSSL
+
 /* Define to 1 if on MINIX. */
 #undef _MINIX
 

@@ -34,7 +34,9 @@
 #include "option.h"
 #include "ui_manager.h"
 #include "capture.h"
+#ifdef WITH_OPENSSL
 #include "capture_tls.h"
+#endif
 
 /**
  * @brief Usage function
@@ -44,14 +46,20 @@
 void
 usage()
 {
-    printf("Usage: %s [-IO pcap_dump] [-d dev] [-k keyfile] [<bpf filter>|<pcap_dump>]\n\n"
+    printf("Usage: %s [-IO pcap_dump] [-d dev]"
+#ifdef WITH_OPENSSL
+           " [-k keyfile]"
+#endif
+           " [<bpf filter>|<pcap_dump>]\n\n"
            "    -h  This usage\n"
            "    -v  Version information\n"
            "    -d  Use this capture device insted of default\n"
            "    -I  Read captured data from pcap file\n"
            "    -O  Write captured data to pcap file\n"
-           "    -k  SSL keyfile to decrypt captured packets\n",
-           PACKAGE);
+#ifdef WITH_OPENSSL
+           "    -k  SSL keyfile to decrypt captured packets\n"
+#endif
+           ,PACKAGE);
 }
 
 void
@@ -133,11 +141,13 @@ main(int argc, char* argv[])
         }
     }
 
+#ifdef WITH_OPENSSL
     // Check if we have a keyfile and is valid
     if ((keyfile = get_option_value("capture.keyfile")) && !tls_check_keyfile(keyfile)) {
         fprintf(stderr, "%s does not contain a valid RSA private key.\n", keyfile);
         return 1;
     }
+#endif
 
     // Check if given argument is a file
     if (argc == 2 && (access(argv[1], F_OK) == 0)) {
