@@ -35,6 +35,7 @@
 
 #include "config.h"
 #include <openssl/ssl.h>
+#include <openssl/tls1.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <stdbool.h>
@@ -145,12 +146,18 @@ struct Random
     opaque random_bytes[28];
 };
 
+struct CipherSuite
+{
+    uint8 cs1;
+    uint8 cs2;
+};
+
 //! ClientHello type in Handshake records
 struct ClientHello
 {
     struct ProtocolVersion client_version;
     struct Random random;
-// SessionID session_id;
+//    uint8 session_id_length;
 // CipherSuite cipher_suite;
 // Extension extensions;
 };
@@ -160,6 +167,7 @@ struct ServerHello
 {
     struct ProtocolVersion server_version;
     struct Random random;
+    uint8 session_id_length;
 // SessionID session_id;
 // CipherSuite cipher_suite;
 // CompressionMethod compression_method;
@@ -214,10 +222,12 @@ struct SSLConnection
     SSL *ssl;
     SSL_CTX *ssl_ctx;
     EVP_PKEY *server_private_key;
+    const EVP_CIPHER *ciph;
     struct Random client_random;
     struct Random server_random;
+    struct CipherSuite cipher_suite;
     struct PreMasterSecret pre_master_secret;
-    struct PreMasterSecret master_secret;
+    struct MasterSecret master_secret;
 
     struct tls_data
     {
@@ -267,7 +277,7 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
  * @param label Fixed ASCII string
  * @param seed Concatenation of Random data from Hello Handshake records
  * @param slen Seed length in bytes
- * @return 0 in call cases
+ * @return destiny length in bytes
  */
 int
 PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label,
@@ -377,7 +387,7 @@ tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int l
  *
  * @param conn Existing connection pointer
  * @param fragment Handshake record data
- * @return 0 in all cases
+ * @return 0 on valid record processed, 1 otherwise
  */
 int
 tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment);
@@ -398,5 +408,19 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
 int
 tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
                         uint8 **out, int *outl);
+
+
+/**
+ * @brief Get the cipher data from the given connection
+ *
+ * Load cipher pointer depending on the selected cipher in
+ * Handshake messages.
+ *
+ * This function can be used to test is a cipher decrypting is supported
+ * @param conn Existing connection pointer
+ * @return 0 on valid cipher, 1 otherwise
+ */
+int
+tls_connection_load_cipher(struct SSLConnection *conn);
 
 #endif

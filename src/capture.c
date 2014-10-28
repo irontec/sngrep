@@ -30,6 +30,7 @@
  *
  */
 
+#include "config.h"
 #include <netdb.h>
 #include "capture.h"
 #ifdef WITH_OPENSSL
@@ -193,7 +194,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Total packet size
     int size_packet;
     // SIP message transport
-    int transport = 0; /* 0 UDP, 1 TCP, 2 TLS */
+    int transport; /* 0 UDP, 1 TCP, 2 TLS */
     // Source and Destiny Ports
     u_short sport, dport;
 
@@ -209,6 +210,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     // Only interested in UDP packets
     if (ip->ip_p == IPPROTO_UDP) {
+        // Set transport UDP
         transport = 0;
 
         // Get UDP header
@@ -231,6 +233,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         size_packet = size_link + size_ip + SIZE_UDP + size_payload;
 
     } else if (ip->ip_p == IPPROTO_TCP) {
+        // Set transport TCP
         transport = 1;
 
         tcp = (struct nread_tcp*) (packet + size_link + size_ip);
@@ -249,18 +252,20 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // Total packet size
         size_packet = size_link + size_ip + SIZE_TCP + size_payload;
-
 #ifdef WITH_OPENSSL
         if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
             if (get_option_value("capture.keyfile")) {
                 // Allocate memory for the payload
                 msg_payload = malloc(size_payload + 1);
                 memset(msg_payload, 0, size_payload + 1);
+
                 // Try to decrypt the packet
                 tls_process_segment(ip, &msg_payload, &size_payload);
+
                 // Check if we have decoded payload
                 if (size_payload <= 0)
                     free(msg_payload);
+
                 // Set Transport TLS
                 transport = 2;
             }

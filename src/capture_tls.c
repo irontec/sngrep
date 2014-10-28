@@ -36,6 +36,11 @@
 
 struct SSLConnection *connections;
 
+struct CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA =
+    { 0x00, 0x2F };
+struct CipherSuite TLS_RSA_WITH_AES_256_CBC_SHA =
+    { 0x00, 0x35 };
+
 int
 P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
        unsigned char *seed, int slen)
@@ -64,7 +69,7 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
         HMAC_Update(&hm, seed, slen);
         HMAC_Final(&hm, hmac, &hlen);
 
-        hlen = (dlen > hlen) ? hlen : dlen;
+        hlen = (hlen > pending) ? pending : hlen;
         memcpy(out, hmac, hlen);
         out += hlen;
         pending -= hlen;
@@ -105,7 +110,7 @@ PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, u
     for (i = 0; i < dlen; i++)
         dest[i] = h_md5[i] ^ h_sha[i];
 
-    return 0;
+    return dlen;
 }
 
 struct SSLConnection *
@@ -324,11 +329,24 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
             // Store client random
             clienthello = (struct ClientHello *) body;
             memcpy(&conn->client_random, &clienthello->random, sizeof(struct Random));
+
+            // Check we have a TLS handshake
+            if (!(clienthello->client_version.major == 0x03
+                    && clienthello->client_version.minor == 0x01)) {
+                tls_connection_destroy(conn);
+            }
             break;
         case server_hello:
             // Store server random
             serverhello = (struct ServerHello *) body;
             memcpy(&conn->server_random, &serverhello->random, sizeof(struct Random));
+            // Get the selected cipher
+            memcpy(&conn->cipher_suite,
+                   body + sizeof(struct ServerHello) + serverhello->session_id_length,
+                   sizeof(uint16));
+            // Check if we have a handled cipher
+            if (tls_connection_load_cipher(conn) != 0)
+                tls_connection_destroy(conn);
             break;
         case certificate:
         case certificate_request:
@@ -344,31 +362,36 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                                 (unsigned char *) &conn->pre_master_secret,
                                 conn->server_private_key->pkey.rsa, RSA_PKCS1_PADDING);
 
-            unsigned char *SEED = malloc(sizeof(struct Random) * 2);
-            memcpy(SEED, &conn->client_random, sizeof(struct Random));
-            memcpy(SEED + sizeof(struct Random), &conn->server_random, sizeof(struct Random));
+            unsigned char *seed = malloc(sizeof(struct Random) * 2);
+            memcpy(seed, &conn->client_random, sizeof(struct Random));
+            memcpy(seed + sizeof(struct Random), &conn->server_random, sizeof(struct Random));
 
             // Get MasterSecret
             PRF((unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
-                (unsigned char *) &conn->pre_master_secret, sizeof(struct MasterSecret),
-                (unsigned char *) "master secret", SEED, sizeof(struct Random) * 2);
+                (unsigned char *) &conn->pre_master_secret, sizeof(struct PreMasterSecret),
+                (unsigned char *) "master secret", seed, sizeof(struct Random) * 2);
 
-            memcpy(SEED, &conn->server_random, sizeof(struct Random));
-            memcpy(SEED + sizeof(struct Random), &conn->client_random, sizeof(struct Random));
+            memcpy(seed, &conn->server_random, sizeof(struct Random));
+            memcpy(seed + sizeof(struct Random), &conn->client_random, sizeof(struct Random));
 
             // Generate MACs, Write Keys and IVs
             PRF((unsigned char *) &conn->key_material, sizeof(struct tls_data),
                 (unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
-                (unsigned char *) "key expansion", SEED, sizeof(struct Random) * 2);
+                (unsigned char *) "key expansion", seed, sizeof(struct Random) * 2);
+
+            // Done with the seed
+            free(seed);
 
             // Create Client decoder
-            const EVP_CIPHER *ciph = EVP_get_cipherbyname("AES256");
             EVP_CIPHER_CTX_init(&conn->client_cipher_ctx);
-            EVP_CipherInit(&conn->client_cipher_ctx, ciph, conn->key_material.client_write_key,
-                           conn->key_material.client_write_IV, 0);
+            EVP_CipherInit(&conn->client_cipher_ctx, conn->ciph,
+                           conn->key_material.client_write_key, conn->key_material.client_write_IV,
+                           0);
+
             EVP_CIPHER_CTX_init(&conn->server_cipher_ctx);
-            EVP_CipherInit(&conn->server_cipher_ctx, ciph, conn->key_material.server_write_key,
-                           conn->key_material.server_write_IV, 0);
+            EVP_CipherInit(&conn->server_cipher_ctx, conn->ciph,
+                           conn->key_material.server_write_key, conn->key_material.server_write_IV,
+                           0);
 
             break;
         case finished:
@@ -420,3 +443,18 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
     return *outl;
 }
 
+int
+tls_connection_load_cipher(struct SSLConnection *conn)
+{
+    if (conn->cipher_suite.cs1 != 0x00)
+        return 1;
+
+    if (conn->cipher_suite.cs2 == TLS_RSA_WITH_AES_256_CBC_SHA.cs2) {
+        conn->ciph = EVP_get_cipherbyname("AES256");
+    } else if (conn->cipher_suite.cs2 == TLS_RSA_WITH_AES_128_CBC_SHA.cs2) {
+        conn->ciph = EVP_get_cipherbyname("AES128");
+    } else {
+        return 1;
+    }
+    return 0;
+}

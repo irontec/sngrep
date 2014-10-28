@@ -32,6 +32,7 @@
 #ifndef __SNGREP_CAPTURE_H
 #define __SNGREP_CAPTURE_H
 
+#include "config.h"
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>

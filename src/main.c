@@ -26,11 +26,11 @@
  * @brief Source of initial functions used by sngrep
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "config.h"
 #include "option.h"
 #include "ui_manager.h"
 #include "capture.h"
@@ -57,7 +57,7 @@ usage()
            "    -I  Read captured data from pcap file\n"
            "    -O  Write captured data to pcap file\n"
 #ifdef WITH_OPENSSL
-           "    -k  SSL keyfile to decrypt captured packets\n"
+           "    -k  RSA private keyfile to decrypt captured packets\n"
 #endif
            ,PACKAGE);
 }
