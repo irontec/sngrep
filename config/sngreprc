@@ -29,6 +29,10 @@
 # set sngrep.savepath /tmp/sngrep-captures
 
 ##-----------------------------------------------------------------------------
+## Default host addr/dnsname displaying in panels (can be toggled in runtime)
+# set sngrep dnsname on 	
+
+##-----------------------------------------------------------------------------
 ## Change default scrolling in call list
 # set cl.scrollstep 20
 ## Disable exit prompt

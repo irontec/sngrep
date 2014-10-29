@@ -41,6 +41,7 @@
 #include <pthread.h>
 #include "sip.h"
 #include "option.h"
+#include "capture.h"
 
 /**
  * @brief Linked list of parsed calls
@@ -123,7 +124,7 @@ sip_msg_destroy(sip_msg_t *msg)
         free(msg->payloadptr);
 
     // Free message payload
-    for (i=0; i<msg->plines; i++)
+    for (i = 0; i < msg->plines; i++)
         free(msg->payload[i]);
 
     // Free packet data
@@ -242,6 +243,14 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     msg_set_attribute(msg, SIP_ATTR_SRC, from_addr);
     sprintf(to_addr, "%s:%u", inet_ntoa(dst), htons(dport));
     msg_set_attribute(msg, SIP_ATTR_DST, to_addr);
+
+    // Set Source and Destiny lookpued hosts
+    if (is_option_enabled("capture.lookup")) {
+        sprintf(from_addr, "%s:%u", lookup_hostname(&src), htons(sport));
+        sprintf(to_addr, "%s:%u", lookup_hostname(&dst), htons(dport));
+    }
+    msg_set_attribute(msg, SIP_ATTR_SRC_HOST, from_addr);
+    msg_set_attribute(msg, SIP_ATTR_DST_HOST, to_addr);
 
     // Set message Date attribute
     time_t t = (time_t) msg->ts.tv_sec;
@@ -771,6 +780,17 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
 {
     if (!msg)
         return NULL;
+
+    // Swap some attributes depending on enabled options
+    // You can still use sip_attr_get to access the attribute
+    // list directly without any type of swapping logic
+    if (is_option_enabled("sngrep.dnsname")) {
+        if (id == SIP_ATTR_SRC)
+            id = SIP_ATTR_SRC_HOST;
+        if (id == SIP_ATTR_DST)
+            id = SIP_ATTR_DST_HOST;
+    }
+
     return sip_attr_get(msg->attrs, id);
 }
 

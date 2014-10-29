@@ -283,6 +283,9 @@ wait_for_input(ui_t *ui)
                 toggle_option("color.request");
             }
             break;
+        case 'l':
+            toggle_option("sngrep.dnsname");
+            break;
         case 'p':
             // Toggle capture option
             toggle_option("sip.capture");

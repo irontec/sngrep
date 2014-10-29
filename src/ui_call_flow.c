@@ -482,6 +482,7 @@ call_flow_handle_key(PANEL *panel, int key)
     sip_msg_t *next = NULL, *prev = NULL;
     ui_t *next_panel;
     sip_call_group_t *group;
+    call_flow_column_t *col;
 
     // Sanity check, this should not happen
     if (!info)
@@ -582,6 +583,14 @@ call_flow_handle_key(PANEL *panel, int key)
     case KEY_F(3):
         set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
         break;
+    case 'l':
+        // Force new columns redraw
+        while((col = info->columns)) {
+            info->columns = col->next;
+            free(col);
+        }
+        // Handle default key logic
+        return key;
     case 's':
     case KEY_F(5):
         set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");

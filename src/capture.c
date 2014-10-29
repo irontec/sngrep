@@ -411,8 +411,8 @@ lookup_hostname(struct in_addr *addr)
 
     // Max hostname length set to 16 chars
     hostlen = strlen(hostname);
-    if (hostlen > 16)
-        hostlen = 16;
+    if (hostlen > 15)
+        hostlen = 15;
 
     // Store this result in the dnscache
     strcpy(dnscache.addr[dnscache.count], address);
