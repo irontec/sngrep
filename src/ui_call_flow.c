@@ -469,7 +469,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     }
 
     // Copy the raw_win contents into the panel
-    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height - 1, width - 2, 0);
+    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);
 
     return 0;
 }
