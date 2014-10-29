@@ -169,6 +169,9 @@ capture_offline()
         // Parse packets
         parse_packet((u_char*) "Offline", &header, packet);
     }
+
+    pcap_close(handle);
+    handle = NULL;
     return 0;
 }
 
@@ -308,8 +311,11 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         ui_new_msg_refresh(msg);
         // Check if we should stop capturing
         int limit = get_option_int_value("capture.limit");
-        if (limit && sip_calls_count() >= limit)
+        if (limit && sip_calls_count() >= limit) {
             pcap_breakloop(handle);
+            pcap_close(handle);
+            handle = NULL;
+        }
     }
 }
 
@@ -317,9 +323,15 @@ void
 capture_close()
 {
     //Close PCAP file
-    pcap_close(handle);
+    if (handle) {
+        pcap_breakloop(handle);
+        pcap_close(handle);
+    }
+
     // Close dump file
-    dump_close(pd);
+    if (pd) {
+        dump_close(pd);
+    }
 }
 
 int
