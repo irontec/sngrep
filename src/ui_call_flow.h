@@ -62,6 +62,7 @@ struct call_flow_info
     sip_call_group_t *group;
     sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
+    sip_msg_t *selected;
     int raw_width;
     int cur_line;
     call_flow_column_t *columns;

@@ -66,13 +66,15 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__sngrep_SOURCES_DIST = capture.c sip.c main.c option.c group.c \
 	ui_manager.c ui_call_list.c ui_call_flow.c ui_call_raw.c \
-	ui_filter.c ui_save_pcap.c ui_save_raw.c capture_tls.c
+	ui_filter.c ui_save_pcap.c ui_save_raw.c ui_msg_diff.c \
+	capture_tls.c
 @WITH_OPENSSL_TRUE@am__objects_1 = capture_tls.$(OBJEXT)
 am_sngrep_OBJECTS = capture.$(OBJEXT) sip.$(OBJEXT) main.$(OBJEXT) \
 	option.$(OBJEXT) group.$(OBJEXT) ui_manager.$(OBJEXT) \
 	ui_call_list.$(OBJEXT) ui_call_flow.$(OBJEXT) \
 	ui_call_raw.$(OBJEXT) ui_filter.$(OBJEXT) \
-	ui_save_pcap.$(OBJEXT) ui_save_raw.$(OBJEXT) $(am__objects_1)
+	ui_save_pcap.$(OBJEXT) ui_save_raw.$(OBJEXT) \
+	ui_msg_diff.$(OBJEXT) $(am__objects_1)
 sngrep_OBJECTS = $(am_sngrep_OBJECTS)
 sngrep_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -199,7 +201,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 sngrep_SOURCES = capture.c sip.c main.c option.c group.c ui_manager.c \
 	ui_call_list.c ui_call_flow.c ui_call_raw.c ui_filter.c \
-	ui_save_pcap.c ui_save_raw.c $(am__append_1)
+	ui_save_pcap.c ui_save_raw.c ui_msg_diff.c $(am__append_1)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -311,6 +313,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_call_raw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_filter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_msg_diff.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_save_pcap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ui_save_raw.Po@am__quote@
 

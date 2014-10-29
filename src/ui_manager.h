@@ -134,6 +134,8 @@ enum panel_types
     SAVE_PANEL,
     //! Save to txt panel
     SAVE_RAW_PANEL,
+    //! Message comprare
+    MSG_DIFF_PANEL,
 };
 
 /**

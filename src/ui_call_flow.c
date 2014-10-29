@@ -32,6 +32,7 @@
 #include <string.h>
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
+#include "ui_msg_diff.h"
 #include "option.h"
 
 /***
@@ -73,9 +74,11 @@ call_flow_create()
 
     // Create a new panel to fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
+
     // Initialize Call List specific data
     info = malloc(sizeof(call_flow_info_t));
     memset(info, 0, sizeof(call_flow_info_t));
+
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
 
@@ -374,7 +377,11 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 
     mvwprintw(win, cline, startpos + 2, "%.*s", distance, "");
     mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
-    mvwhline(win, cline + 1, startpos + 2, ACS_HLINE, distance);
+    if (msg == info->selected) {
+        mvwhline(win, cline + 1, startpos + 2, '=', distance);
+    } else {
+        mvwhline(win, cline + 1, startpos + 2, ACS_HLINE, distance);
+    }
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (!strcasecmp(msg_src, column1->addr)) {
@@ -589,6 +596,20 @@ call_flow_handle_key(PANEL *panel, int key)
         set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
         // Force columns reload
         info->columns = NULL;
+        break;
+    case ' ':
+        if (!info->selected) {
+            info->selected = info->cur_msg;
+        } else {
+            if (info->selected == info->cur_msg) {
+                info->selected = NULL;
+            } else {
+                // Show diff panel
+                next_panel = ui_create(ui_find_by_type(MSG_DIFF_PANEL));
+                msg_diff_set_msgs(ui_get_panel(next_panel), info->selected, info->cur_msg);
+                wait_for_input(next_panel);
+            }
+        }
         break;
     case 10:
         // KEY_ENTER, display current message in raw mode

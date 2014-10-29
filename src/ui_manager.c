@@ -35,6 +35,7 @@
 #include "ui_filter.h"
 #include "ui_save_pcap.h"
 #include "ui_save_raw.h"
+#include "ui_msg_diff.h"
 
 /**
  * @brief Warranty thread-safe ui refresh
@@ -70,7 +71,9 @@ static ui_t panel_pool[] =
                 { .type = SAVE_PANEL, .panel = NULL, .create = save_create, .draw = save_draw,
                         .handle_key = save_handle_key, .destroy = save_destroy },
                 { .type = SAVE_RAW_PANEL, .panel = NULL, .create = save_raw_create, .handle_key =
-                        save_raw_handle_key, .destroy = save_raw_destroy } };
+                        save_raw_handle_key, .destroy = save_raw_destroy },
+                { .type = MSG_DIFF_PANEL, .panel = NULL, .create = msg_diff_create, .handle_key =
+                        msg_diff_handle_key, .destroy = msg_diff_destroy, .draw = msg_diff_draw, .help = msg_diff_help } };
 
 int
 init_interface()
