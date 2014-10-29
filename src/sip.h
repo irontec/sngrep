@@ -41,6 +41,10 @@
 #define CALLID(msg) msg_get_attribute(msg, SIP_ATTR_CALLID)
 #define SRC(msg) msg_get_attribute(msg, SIP_ATTR_SRC)
 #define DST(msg) msg_get_attribute(msg, SIP_ATTR_DST)
+#define SRCHOST(msg) msg_get_attribute(msg, SIP_ATTR_SRC_HOST)
+#define DSTHOST(msg) msg_get_attribute(msg, SIP_ATTR_DST_HOST)
+#define TIME(msg) msg_get_attribute(msg, SIP_ATTR_TIME)
+#define DATE(msg) msg_get_attribute(msg, SIP_ATTR_DATE)
 
 //! Shorter declaration of sip_call structure
 typedef struct sip_call sip_call_t;

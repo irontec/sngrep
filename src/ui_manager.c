@@ -284,7 +284,7 @@ wait_for_input(ui_t *ui)
             }
             break;
         case 'l':
-            toggle_option("sngrep.dnsname");
+            toggle_option("sngrep.displayhost");
             break;
         case 'p':
             // Toggle capture option

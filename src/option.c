@@ -114,6 +114,11 @@ init_options()
         read_options(userconf);
     }
 
+    // Unless specified, when capturing with lookup, display
+    // hostnames where addresses are printed
+    if (!get_option_value("sngrep.displayhost"))
+        set_option_value("sngrep.displayhost", is_option_enabled("capture.lookup")?"on":"off");
+
     return 0;
 }
 

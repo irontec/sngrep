@@ -214,7 +214,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     sip_msg_t *msg;
     sip_call_t *call;
     char *callid;
-    char date[12], time[20], from_addr[22], to_addr[22];
+    char date[12], time[20], from_addr[80], to_addr[80];
 
     // Skip messages if capture is disabled
     if (!is_option_enabled("sip.capture")) {
@@ -246,8 +246,8 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
     // Set Source and Destiny lookpued hosts
     if (is_option_enabled("capture.lookup")) {
-        sprintf(from_addr, "%s:%u", lookup_hostname(&src), htons(sport));
-        sprintf(to_addr, "%s:%u", lookup_hostname(&dst), htons(dport));
+        sprintf(from_addr, "%.15s:%u", lookup_hostname(&src), htons(sport));
+        sprintf(to_addr, "%.15s:%u", lookup_hostname(&dst), htons(dport));
     }
     msg_set_attribute(msg, SIP_ATTR_SRC_HOST, from_addr);
     msg_set_attribute(msg, SIP_ATTR_DST_HOST, to_addr);
@@ -780,16 +780,6 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
 {
     if (!msg)
         return NULL;
-
-    // Swap some attributes depending on enabled options
-    // You can still use sip_attr_get to access the attribute
-    // list directly without any type of swapping logic
-    if (is_option_enabled("sngrep.dnsname")) {
-        if (id == SIP_ATTR_SRC)
-            id = SIP_ATTR_SRC_HOST;
-        if (id == SIP_ATTR_DST)
-            id = SIP_ATTR_DST_HOST;
-    }
 
     return sip_attr_get(msg->attrs, id);
 }

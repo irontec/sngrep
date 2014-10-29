@@ -284,16 +284,32 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
     int i, collen;
     const char *call_attr;
     char coltext[80];
+    int colid;
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
 
     // Print requested columns
     for (i = 0; i < info->columncnt; i++) {
+
+        // Swappable columns
+        switch (info->columns[i].id) {
+        case SIP_ATTR_SRC:
+        case SIP_ATTR_SRC_HOST:
+            colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_SRC_HOST : SIP_ATTR_SRC;
+            break;
+        case SIP_ATTR_DST:
+        case SIP_ATTR_DST_HOST:
+            colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_DST_HOST : SIP_ATTR_DST;
+            break;
+        default:
+            colid = info->columns[i].id;
+        }
+
         // Get current column width
         collen = info->columns[i].width;
         // Get call attribute for current column
-        if ((call_attr = call_get_attribute(call, info->columns[i].id))) {
+        if ((call_attr = call_get_attribute(call, colid))) {
             sprintf(coltext, "%.*s", collen, call_attr);
             sprintf(text + strlen(text), "%-*s ", collen, coltext);
         }
@@ -526,7 +542,7 @@ call_list_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 24;
+    height = 25;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
@@ -563,7 +579,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 10, 2, "Esc/Q       Exit sngrep.");
     mvwprintw(help_win, 11, 2, "Enter       Show selected calls message flow");
     mvwprintw(help_win, 12, 2, "Space       Select call");
-    mvwprintw(help_win, 13, 2, "F1          Show this screen");
+    mvwprintw(help_win, 13, 2, "F1/h        Show this screen");
     mvwprintw(help_win, 14, 2, "F2/S        Save captured packages to a file");
     mvwprintw(help_win, 15, 2, "F3//        Display filtering (match string case insensitive)");
     mvwprintw(help_win, 16, 2, "F4/X        Show selected call-flow (Extended) if available");
@@ -571,6 +587,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 18, 2, "F6/R        Show selected call messages in raw mode");
     mvwprintw(help_win, 19, 2, "F7/F        Show filter options");
     mvwprintw(help_win, 20, 2, "F8/c        Turn on/off window colours");
+    mvwprintw(help_win, 21, 2, "F9/l        Turn on/off resolved addresses");
 
     // Press any key to close
     wgetch(help_win);

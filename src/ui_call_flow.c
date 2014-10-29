@@ -129,8 +129,8 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg)
         if (info->group->calls[i] == msg->call) {
             if (!msg->parsed)
                 msg_parse(msg);
-            call_flow_column_add(panel, CALLID(msg), SRC(msg));
-            call_flow_column_add(panel, CALLID(msg), DST(msg));
+            call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
+            call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
             return 0;
         }
     }
@@ -229,6 +229,7 @@ call_flow_draw_columns(PANEL *panel)
     WINDOW *win;
     sip_msg_t *msg;
     int flow_height, flow_width;
+    const char *coltext;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -240,8 +241,8 @@ call_flow_draw_columns(PANEL *panel)
     if (!info->columns) {
         for (msg = call_group_get_next_msg(info->group, NULL); msg;
                 msg = call_group_get_next_msg(info->group, msg)) {
-            call_flow_column_add(panel, CALLID(msg), SRC(msg));
-            call_flow_column_add(panel, CALLID(msg), DST(msg));
+            call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
+            call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
         }
     }
 
@@ -250,8 +251,9 @@ call_flow_draw_columns(PANEL *panel)
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
         mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
-        mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(column->addr)) / 2, "%s",
-                  column->addr);
+        coltext = (is_option_enabled("sngrep.displayhost"))?column->host:column->addr;
+        mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s",
+                  coltext);
     }
 
     return 0;
@@ -482,7 +484,6 @@ call_flow_handle_key(PANEL *panel, int key)
     sip_msg_t *next = NULL, *prev = NULL;
     ui_t *next_panel;
     sip_call_group_t *group;
-    call_flow_column_t *col;
 
     // Sanity check, this should not happen
     if (!info)
@@ -583,14 +584,6 @@ call_flow_handle_key(PANEL *panel, int key)
     case KEY_F(3):
         set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
         break;
-    case 'l':
-        // Force new columns redraw
-        while((col = info->columns)) {
-            info->columns = col->next;
-            free(col);
-        }
-        // Handle default key logic
-        return key;
     case 's':
     case KEY_F(5):
         set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
@@ -620,7 +613,7 @@ call_flow_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 24;
+    height = 26;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
@@ -656,17 +649,19 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 8, 2, "Available keys:");
     mvwprintw(help_win, 9, 2, "Esc/Q       Go back to Call list window");
     mvwprintw(help_win, 10, 2, "Enter       Show current message Raw");
-    mvwprintw(help_win, 11, 2, "F1          Show this screen");
-    mvwprintw(help_win, 11, 2, "F2/d        Only show SDP messages");
-    mvwprintw(help_win, 12, 2, "F3/t        Toggle raw preview display");
-    mvwprintw(help_win, 13, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
-    mvwprintw(help_win, 14, 2, "F5/S        Toggle compressed view (One address <=> one column");
-    mvwprintw(help_win, 15, 2, "F6/R        Show original call messages in raw mode");
-    mvwprintw(help_win, 16, 2, "F7/C        Cycle between available color modes");
-    mvwprintw(help_win, 17, 2, "F8/c        Turn on/off window colours");
-    mvwprintw(help_win, 18, 2, "9/0         Increase/Decrease raw preview size");
-    mvwprintw(help_win, 19, 2, "T           Restore raw preview size");
-    mvwprintw(help_win, 20, 2, "D           Toggle SDP Address:Port info");
+    mvwprintw(help_win, 11, 2, "F1/h        Show this screen");
+    mvwprintw(help_win, 12, 2, "F2/d        Only show SDP messages");
+    mvwprintw(help_win, 13, 2, "F3/t        Toggle raw preview display");
+    mvwprintw(help_win, 14, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
+    mvwprintw(help_win, 15, 2, "F5/S        Toggle compressed view (One address <=> one column");
+    mvwprintw(help_win, 16, 2, "F6/R        Show original call messages in raw mode");
+    mvwprintw(help_win, 17, 2, "F7/C        Cycle between available color modes");
+    mvwprintw(help_win, 18, 2, "F8/c        Turn on/off window colours");
+    mvwprintw(help_win, 19, 2, "F9/l        Turn on/off resolved addresses");
+    mvwprintw(help_win, 20, 2, "9/0         Increase/Decrease raw preview size");
+    mvwprintw(help_win, 21, 2, "T           Restore raw preview size");
+    mvwprintw(help_win, 22, 2, "D           Toggle SDP Address:Port info");
+
 
     // Press any key to close
     wgetch(help_win);
@@ -697,7 +692,7 @@ call_flow_set_group(sip_call_group_t *group)
 }
 
 void
-call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
+call_flow_column_add(PANEL *panel, const char *callid, const char *addr, const char *host)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
@@ -725,6 +720,7 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
     memset(column, 0, sizeof(call_flow_column_t));
     column->callid = callid;
     column->addr = addr;
+    column->host = host;
     column->colpos = colpos;
     column->next = info->columns;
     info->columns = column;

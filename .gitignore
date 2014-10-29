@@ -2,6 +2,19 @@
 .*project
 .settings
 
+# Build files
+src/sngrep
+src/*.o
+src/.deps
+src/config.h
+src/config.h.in~
+src/stamp-h1
+
+.autotools
+config.log
+config.status
+*Makefile
+autom4te.cache
+
 # Ignore Doxygen generated files
 doc/html
-/autom4te.cache

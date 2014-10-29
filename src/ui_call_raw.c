@@ -35,6 +35,7 @@
 #include "ui_call_raw.h"
 #include "ui_save_raw.h"
 #include "option.h"
+#include "capture.h"
 
 PANEL *
 call_raw_create()
@@ -93,9 +94,10 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 {
     // Previous message pointer
     sip_msg_t *prev;
-
     // Variables for drawing each message character
     int raw_line, raw_char, column;
+    // Source and Destiny address
+    char from_addr[80], to_addr[80];
 
     // Get panel information
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
@@ -147,11 +149,19 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
         wattron(pad, COLOR_PAIR(msg->color));
     }
 
+    // We dont use Message attributes here because it contains truncated data
+    // This should not overload too much as all results should be already cached
+    if (is_option_enabled("capture.lookup") && is_option_enabled("sngrep.displayhost")) {
+        sprintf(from_addr, "%s:%u", lookup_hostname(&msg->src), htons(msg->sport));
+        sprintf(to_addr, "%s:%u", lookup_hostname(&msg->dst), htons(msg->dport));
+    } else {
+        sprintf(from_addr, "%s:%u", inet_ntoa(msg->src), htons(msg->sport));
+        sprintf(to_addr, "%s:%u", inet_ntoa(msg->dst), htons(msg->dport));
+    }
+
     // Print msg header
     wattron(pad, A_BOLD);
-    mvwprintw(pad, line++, 0, "%s %s %s -> %s", msg_get_attribute(msg, SIP_ATTR_DATE),
-              msg_get_attribute(msg, SIP_ATTR_TIME), msg_get_attribute(msg, SIP_ATTR_SRC),
-              msg_get_attribute(msg, SIP_ATTR_DST));
+    mvwprintw(pad, line++, 0, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
     wattroff(pad, A_BOLD);
 
     // Print msg payload
@@ -203,6 +213,16 @@ call_raw_handle_key(PANEL *panel, int key)
         // Prev page => N key up strokes
         info->scroll -= 10;
         break;
+    case 'l':
+        // Tooggle Host/Address display
+        toggle_option("sngrep.displayhost");
+        // Force refresh panel
+        if (info->group) {
+            call_raw_set_group(info->group);
+        } else {
+            call_raw_set_msg(info->msg);
+        }
+        break;
     case 's':
     case 'S':
         if (info->group) {
@@ -247,9 +267,10 @@ call_raw_set_group(sip_call_group_t *group)
 
     // Set call raw call group
     info->group = group;
+    info->msg = NULL;
 
     // Initialize internal pad
-    info->padline = info->scroll = 0;
+    info->padline = 0;
     wclear(info->pad);
 
     // Print the call group messages into the pad
@@ -280,9 +301,10 @@ call_raw_set_msg(sip_msg_t *msg)
 
     // Set call raw message
     info->group = NULL;
+    info->msg = msg;
 
     // Initialize internal pad
-    info->padline = info->scroll = 0;
+    info->padline = 0;
     wclear(info->pad);
 
     // Print the message in the pad
