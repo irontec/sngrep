@@ -44,7 +44,7 @@
  */
 enum save_field_list
 {
-    FLD_SAVE_FILE = 1,
+    FLD_SAVE_FILE = 0,
     FLD_SAVE_ALL,
     FLD_SAVE_SELECTED,
     FLD_SAVE_CANCEL,

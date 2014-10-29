@@ -34,6 +34,17 @@
 #include <form.h>
 #include "ui_manager.h"
 
+/**
+ * @brief Enum of available fields
+ *
+ */
+enum call_list_field_list
+{
+    FLD_LIST_FILTER = 0,
+    //! Never remove this field id
+    FLD_LIST_COUNT
+};
+
 //! Sorter declaration of call_list_column struct
 typedef struct call_list_column call_list_column_t;
 //! Sorter declaration of call_list_info struct
@@ -81,7 +92,7 @@ struct call_list_info
     //! Form that contains the display filter
     FORM *form;
     //! An array of window form fields
-    FIELD *fields[2];
+    FIELD *fields[FLD_LIST_COUNT + 1];
     //! We're entering keys on form
     bool form_active;
 };

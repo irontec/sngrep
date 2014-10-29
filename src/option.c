@@ -45,8 +45,6 @@ int optscnt = 0;
 int
 init_options()
 {
-    // Template for temporal file
-    char tmpfile[32];
     // Custom user conf file
     char userconf[128];
 
@@ -85,10 +83,7 @@ init_options()
     set_option_value("sip.ignoreincomlete", "on");
     set_option_value("sip.capture", "on");
 
-    // Set default temporal file
-    sprintf(tmpfile, "/tmp/sngrep-%u.pcap", (unsigned) time(NULL));
-    set_option_value("sngrep.tmpfile", tmpfile);
-    set_option_value("sngrep.keeptmpfile", "off");
+    // Set default save file location
     set_option_value("sngrep.savepath", getenv("HOME"));
 
     // Set default capture options

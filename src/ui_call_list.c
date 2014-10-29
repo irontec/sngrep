@@ -78,8 +78,8 @@ call_list_create()
     getmaxyx(win, height, width);
 
     // Initialize the fields
-    info->fields[0] = new_field(1, width - 19, 2, 18, 0, 0);
-    info->fields[1] = NULL;
+    info->fields[FLD_LIST_FILTER] = new_field(1, width - 19, 2, 18, 0, 0);
+    info->fields[FLD_LIST_COUNT] = NULL;
 
     // Create the form and post it
     info->form = new_form(info->fields);
