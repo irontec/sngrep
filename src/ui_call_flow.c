@@ -251,9 +251,8 @@ call_flow_draw_columns(PANEL *panel)
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
         mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
-        coltext = (is_option_enabled("sngrep.displayhost"))?column->host:column->addr;
-        mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s",
-                  coltext);
+        coltext = (is_option_enabled("sngrep.displayhost")) ? column->host : column->addr;
+        mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s", coltext);
     }
 
     return 0;
@@ -299,7 +298,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 
     // Get Message method (include extra info)
     memset(method, 0, sizeof(method));
-    sprintf(method, "%s", msg_method);
+    if (msg_method)
+        sprintf(method, "%s", msg_method);
 
     // If message has sdp information
     if (msg_get_attribute(msg, SIP_ATTR_SDP)) {
@@ -661,7 +661,6 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 20, 2, "9/0         Increase/Decrease raw preview size");
     mvwprintw(help_win, 21, 2, "T           Restore raw preview size");
     mvwprintw(help_win, 22, 2, "D           Toggle SDP Address:Port info");
-
 
     // Press any key to close
     wgetch(help_win);
