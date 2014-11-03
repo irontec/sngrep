@@ -449,6 +449,12 @@ call_list_handle_key(PANEL *panel, int key)
             wait_for_input(next_panel);
         }
         break;
+    case 'i':
+    case 'I':
+        // Set Display filter text
+        set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
+        call_list_filter_update(panel);
+        break;
     case KEY_F(5):
         // Remove all stored calls
         sip_calls_clear();
@@ -542,7 +548,7 @@ call_list_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 25;
+    height = 26;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
@@ -588,6 +594,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 19, 2, "F7/F        Show filter options");
     mvwprintw(help_win, 20, 2, "F8/c        Turn on/off window colours");
     mvwprintw(help_win, 21, 2, "F9/l        Turn on/off resolved addresses");
+    mvwprintw(help_win, 22, 2, "i/I         Set display filter to invite");
 
     // Press any key to close
     wgetch(help_win);
