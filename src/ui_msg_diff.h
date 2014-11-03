@@ -115,7 +115,7 @@ msg_diff_draw_footer(PANEL *panel);
  *
  */
 int
-msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, int *highlight);
+msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight);
 
 /**
  * @brief Handle key strokes

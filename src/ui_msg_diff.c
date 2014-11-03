@@ -110,11 +110,10 @@ msg_diff_info(PANEL *panel)
 }
 
 int
-msg_diff_line_highlight(const char* payload1, const char* payload2, int *highlight)
+msg_diff_line_highlight(const char* payload1, const char* payload2, char *highlight)
 {
     char search[512];
-    int len;
-    int i, j, found;
+    int len, i;
 
     // Initialize search terms
     memset(search, 0, sizeof(search));
@@ -126,11 +125,10 @@ msg_diff_line_highlight(const char* payload1, const char* payload2, int *highlig
         // If we have a full line in search array
         if (payload1[i] == '\n') {
             // Check if this line is in the other payload
-            found = (strstr(payload2, search) == NULL);
-
-            // Highlight this line as different from the other payload
-            for (j = i - len; j < i; j++)
-                highlight[j] = found;
+            if (strstr(payload2, search) == NULL) {
+                // Highlight this line as different from the other payload
+                memset(highlight + i - len + 1, '1', len);
+            }
 
             // Reset search terms
             memset(search, 0, sizeof(search));
@@ -142,15 +140,17 @@ msg_diff_line_highlight(const char* payload1, const char* payload2, int *highlig
 }
 
 void
-msg_diff_highlight(sip_msg_t *one, sip_msg_t *two, int *highlight)
+msg_diff_highlight(sip_msg_t *one, sip_msg_t *two, char *highlight)
 {
-    // Select proper highlight logic
-    if (!strcasecmp(get_option_value("diff.mode"), "lcs")) {
-        // @todo msg_diff_lcs_highlight(one->payloadptr, two->payloadptr, highlight);
-    } else if (!strcasecmp(get_option_value("diff.mode"), "line")) {
-        msg_diff_line_highlight(one->payloadptr, two->payloadptr, highlight);
-    } else {
-        // No hightlight enabled
+    if (get_option_value("diff.mode")) {
+        // Select proper highlight logic
+        if (!strcasecmp(get_option_value("diff.mode"), "lcs")) {
+            // @todo msg_diff_lcs_highlight(one->payloadptr, two->payloadptr, highlight);
+        } else if (!strcasecmp(get_option_value("diff.mode"), "line")) {
+            msg_diff_line_highlight(one->payloadptr, two->payloadptr, highlight);
+        } else {
+            // Unknown hightlight enabled
+        }
     }
 }
 
@@ -159,12 +159,14 @@ msg_diff_draw(PANEL *panel)
 {
     // Get panel information
     msg_diff_info_t *info = msg_diff_info(panel);
-    int highlight[4086];
+    char highlight[4086];
 
     // Draw first message
+    memset(highlight, 0 , sizeof(highlight));
     msg_diff_highlight(info->one, info->two, highlight);
     msg_diff_draw_message(info->one_win, info->one, highlight);
     // Draw second message
+    memset(highlight, 0 , sizeof(highlight));
     msg_diff_highlight(info->two, info->one, highlight);
     msg_diff_draw_message(info->two_win, info->two, highlight);
 
@@ -181,7 +183,7 @@ msg_diff_draw_footer(PANEL *panel)
 }
 
 int
-msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, int *highlight)
+msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
 {
     int height, width, line, column, i;
 
@@ -207,7 +209,7 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, int *highlight)
         if (line == height)
             break;
 
-        if (highlight[i]) {
+        if (highlight[i] == '1') {
             wattron(win, COLOR_PAIR(DIFF_HIGHLIGHT));
         } else {
             wattroff(win, COLOR_PAIR(DIFF_HIGHLIGHT));
