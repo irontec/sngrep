@@ -110,7 +110,9 @@ enum sngrep_colors
     //! Keybinding key color for footers
     KEYBINDINGS_KEY,
     //! Keybinding key action for footers
-    KEYBINDINGS_ACTION
+    KEYBINDINGS_ACTION,
+    //! Diff hightlight color
+    DIFF_HIGHLIGHT
 };
 
 /**

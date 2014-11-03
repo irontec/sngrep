@@ -170,8 +170,6 @@ capture_offline()
         parse_packet((u_char*) "Offline", &header, packet);
     }
 
-    pcap_close(handle);
-    handle = NULL;
     return 0;
 }
 

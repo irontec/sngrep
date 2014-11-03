@@ -79,6 +79,9 @@ init_options()
     set_option_value("cf.rawminwidth", "40");
     set_option_value("cf.splitcallid", "off");
 
+    // Set default mode in message diff screen
+    set_option_value("diff.mode", "line");
+
     // Allow dialogs to be incomplete
     set_option_value("sip.ignoreincomlete", "on");
     set_option_value("sip.capture", "on");
