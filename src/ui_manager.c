@@ -329,7 +329,7 @@ toggle_color(int on)
         init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_BLACK);
         init_pair(KEYBINDINGS_KEY, COLOR_WHITE, COLOR_CYAN);
         init_pair(KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_CYAN);
-        init_pair(DIFF_HIGHLIGHT, COLOR_WHITE, COLOR_RED);
+        init_pair(DIFF_HIGHLIGHT, COLOR_YELLOW, COLOR_BLACK);
     } else {
         init_pair(HIGHLIGHT_COLOR, COLOR_BLACK, COLOR_WHITE);
         init_pair(HELP_COLOR, COLOR_WHITE, COLOR_BLACK);

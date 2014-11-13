@@ -594,6 +594,19 @@ int
 msg_is_retrans(sip_msg_t *msg);
 
 /**
+ * @brief Get summary of message header data
+ *
+ * For raw prints, it's handy to have the ngrep header style message
+ * data.
+ *
+ * @param msg SIP message
+ * @param out pointer to allocated memory to contain the header output
+ * @returns pointer to out
+ */
+char *
+msg_get_header(sip_msg_t *msg, char *out);
+
+/**
  * @brief Remove al calls
  *
  * This funtion will clear the call list invoking the destroy

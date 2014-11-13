@@ -96,8 +96,8 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     sip_msg_t *prev;
     // Variables for drawing each message character
     int raw_line, raw_char, column;
-    // Source and Destiny address
-    char from_addr[80], to_addr[80];
+    // Message ngrep style Header
+    char header[256];
 
     // Get panel information
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
@@ -149,19 +149,9 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
         wattron(pad, COLOR_PAIR(msg->color));
     }
 
-    // We dont use Message attributes here because it contains truncated data
-    // This should not overload too much as all results should be already cached
-    if (is_option_enabled("capture.lookup") && is_option_enabled("sngrep.displayhost")) {
-        sprintf(from_addr, "%s:%u", lookup_hostname(&msg->src), htons(msg->sport));
-        sprintf(to_addr, "%s:%u", lookup_hostname(&msg->dst), htons(msg->dport));
-    } else {
-        sprintf(from_addr, "%s:%u", inet_ntoa(msg->src), htons(msg->sport));
-        sprintf(to_addr, "%s:%u", inet_ntoa(msg->dst), htons(msg->dport));
-    }
-
     // Print msg header
     wattron(pad, A_BOLD);
-    mvwprintw(pad, line++, 0, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
+    mvwprintw(pad, line++, 0, "%s", msg_get_header(msg, header));
     wattroff(pad, A_BOLD);
 
     // Print msg payload

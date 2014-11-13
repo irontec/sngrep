@@ -186,6 +186,7 @@ int
 msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
 {
     int height, width, line, column, i;
+    char header[256];
 
     // Clear the window
     werase(win);
@@ -193,8 +194,10 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
     // Get window of main panel
     getmaxyx(win, height, width);
 
+    mvwprintw(win, 0, 0, msg_get_header(msg, header));
+
     // Print msg payload
-    line = 0;
+    line = 2;
     column = 0;
     for (i = 0; i < strlen(msg->payloadptr); i++) {
         if (msg->payloadptr[i] == '\r')

@@ -817,6 +817,27 @@ msg_is_retrans(sip_msg_t *msg)
     return 1;
 }
 
+char *
+msg_get_header(sip_msg_t *msg, char *out)
+{
+    // Source and Destiny address
+    char from_addr[80], to_addr[80];
+
+    // We dont use Message attributes here because it contains truncated data
+    // This should not overload too much as all results should be already cached
+    if (is_option_enabled("capture.lookup") && is_option_enabled("sngrep.displayhost")) {
+        sprintf(from_addr, "%s:%u", lookup_hostname(&msg->src), htons(msg->sport));
+        sprintf(to_addr, "%s:%u", lookup_hostname(&msg->dst), htons(msg->dport));
+    } else {
+        sprintf(from_addr, "%s:%u", inet_ntoa(msg->src), htons(msg->sport));
+        sprintf(to_addr, "%s:%u", inet_ntoa(msg->dst), htons(msg->dport));
+    }
+
+    // Get msg header
+    sprintf(out,  "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
+    return out;
+}
+
 void
 sip_calls_clear()
 {
