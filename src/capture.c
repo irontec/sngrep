@@ -332,8 +332,10 @@ datalink_size(int datalink)
             return 12;
         case DLT_LINUX_SLL:
             return 16;
+#ifdef DLT_IPNET
         case DLT_IPNET:
             return 24;
+#endif
         default:
             // Not handled datalink type
             return -1;
