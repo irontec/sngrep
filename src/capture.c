@@ -336,35 +336,37 @@ int
 datalink_size(int datalink)
 {
     // Datalink header size
-    switch (datalink) {
-    case DLT_EN10MB:
-        return 14;
-    case DLT_IEEE802:
-        return 22;
-    case DLT_LOOP:
-    case DLT_NULL:
-        return 4;
-    case DLT_SLIP:
-    case DLT_SLIP_BSDOS:
-        return 16;
-    case DLT_PPP:
-    case DLT_PPP_BSDOS:
-    case DLT_PPP_SERIAL:
-    case DLT_PPP_ETHER:
-        return 4;
-    case DLT_RAW:
-        return 0;
-    case DLT_FDDI:
-        return 21;
-    case DLT_ENC:
-        return 12;
-    case DLT_LINUX_SLL:
-        return 16;
-    case DLT_IPNET:
-        return 24;
-    default:
-        // Not handled datalink type
-        return -1;
+    switch(datalink) {
+        case DLT_EN10MB:
+            return 14;
+        case DLT_IEEE802:
+            return 22;
+        case DLT_LOOP:
+        case DLT_NULL:
+            return 4;
+        case DLT_SLIP:
+        case DLT_SLIP_BSDOS:
+            return 16;
+        case DLT_PPP:
+        case DLT_PPP_BSDOS:
+        case DLT_PPP_SERIAL:
+        case DLT_PPP_ETHER:
+            return 4;
+        case DLT_RAW:
+            return 0;
+        case DLT_FDDI:
+            return 21;
+        case DLT_ENC:
+            return 12;
+        case DLT_LINUX_SLL:
+            return 16;
+#ifdef DLT_IPNET
+        case DLT_IPNET:
+            return 24;
+#endif
+        default:
+            // Not handled datalink type
+            return -1;
     }
 
 }
