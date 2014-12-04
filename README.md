@@ -1,4 +1,4 @@
-# sngrep
+# sngrep [![Build Status](https://travis-ci.org/irontec/sngrep.svg)](https://travis-ci.org/irontec/sngrep)
 
 sngrep is a tool for displaying SIP calls message flows.
 

@@ -1,0 +1,17 @@
+language: c
+compiler:
+  - clang
+  - gcc
+notifications:
+  recipients:
+    - kaian@irontec.com
+before_script:
+    - sudo apt-get update
+install:
+    - sudo apt-get install -y libncurses5-dev libpcap-dev libssl-dev
+script: 
+    - ./configure 
+    - make
+branches:
+  only:
+    - master
