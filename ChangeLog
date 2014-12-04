@@ -1,21 +1,29 @@
+2014-12-04 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.2.0 released
+
+	* Added Initial TLS Support (No compression, AES)
+	* Added an option to resolve IP addresses
+	* Added a new panel to compare two SIP messages
+	* Fixed multiples memory leaks
+
 2014-10-21 Ivan Alonso <kaian@irontec.com>
 
-    * sngrep 0.1.0 released
+	* sngrep 0.1.0 released
 
-    * Remove ngrep compatibility. Force libpcap during compilation
-    * Added TCP support
-    * Allow saving selected dialogs into pcap
-    * New UI design to maximize screen usage
-    * Added a serach box in Call List window
-    * Added Funtion Keys keybindings
-    * Added command line arguments
-    * Fixed some memory bugs
+	* Remove ngrep compatibility. Force libpcap during compilation
+	* Added TCP support
+	* Allow saving selected dialogs into pcap
+	* New UI design to maximize screen usage
+	* Added a serach box in Call List window
+	* Added Funtion Keys keybindings
+	* Added command line arguments
+	* Fixed some memory bugs
 
 
 2013-04-22 Ivan Alonso <kaian@irontec.com>
 
-    * sngrep 0.0-alpha released.
+	* sngrep 0.0-alpha released.
 
-    * Initial version, code is just a mere stub with global variables, without
-      sanity checks... expect the worst.
+	* Initial version, code is just a mere stub with global variables, without
+	  sanity checks... expect the worst.
 
