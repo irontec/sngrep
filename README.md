@@ -9,6 +9,7 @@ as PCAP viewer.
 
  - libncurse5 - for UI , windows, panels.
  - libpcap - for capturing packets.
+ - libssl - (optional) for tls decrypt
 
 ## Installing
  
