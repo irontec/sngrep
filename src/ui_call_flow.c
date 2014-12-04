@@ -217,9 +217,9 @@ void
 call_flow_draw_footer(PANEL *panel)
 {
     const char *keybindings[] =
-        { "Esc", "Calls List", "Enter", "Raw Message", "F1", "Help", "F2", "SDP mode", "F3",
-                "Toggle Raw", "F4", "Extended", "F5", "Compressed", "F6", "Raw", "F7", "Colour by",
-                "F8", "Colour on/off", "9/0", "Raw width" };
+        { "Esc", "Calls List", "Enter", "Raw Message", "Space", "Compare", "F1", "Help", "F2",
+                "SDP mode", "F3", "Toggle Raw", "F4", "Extended", "F5", "Compressed", "F6", "Raw",
+                "F7", "Colour by", "9/0", "Raw width" };
 
     draw_keybindings(panel, keybindings, 22);
 }
