@@ -1,14 +1,17 @@
 Source: sngrep
 Section: comm
+Build-Depends: debhelper, libpcap-dev, libncurses5-dev, libssl-dev
 Priority: optional
+Standards-Version: 0.2.0
+Homepage: http://github.com/irontec/sngrep
 Maintainer: Ivan Alonso <kaian@irontec.com>
 
 Package: sngrep
 Architecture: amd64
 Section: comm
-Depends: libpcap0.8, libncurses5
+Depends:  ${shlibs:Depends}, libpcap0.8, libncurses5, libssl1.0.0 | libssl0.9.8
 Priority: optional
-Homepage: http://www.irontec.com
+Homepage: http://github.com/irontec/sngrep
 Description: Ncurses SIP Messages flow viewer
  sngrep displays SIP Messages grouped by Call-Id into flow
  diagrams. It can be used as an offline pcap viewer or online

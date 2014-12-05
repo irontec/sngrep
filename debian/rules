@@ -24,6 +24,7 @@ install:
 	dh_prep
 	dh_installdirs
 	dh_auto_install	
+	dh_strip
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -38,6 +39,7 @@ binary-indep: build install
 	dh_compress
 	dh_fixperms
 	dh_installdeb
+	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb 
