@@ -5,6 +5,8 @@ sngrep is a tool for displaying SIP calls message flows.
 It supports live capture to display realtime SIP packets and can also be used
 as PCAP viewer.
 
+[Some screenshots of sngrep](https://github.com/irontec/sngrep/wiki/Screenshots)
+
 ## Prerequisites
 
  - libncurse5 - for UI , windows, panels.
@@ -36,15 +38,7 @@ or live capturing
 You can configure some options using a sngreprc file
 
 ## Frequent Asked Questions
- <dl>
-  <dt>Why a new tool from network filtering?</dt>
-  <dd>Don't know. I didn't find any console tool that will display call flows.</dd>
-  <dt>Extended Call flow window doesn't work</dt>
-  <dd>If you want to make relations between different dialogs (extended callflow)
-   a header must be present in of the dialogs referencing the other one.
-   This header can be X-CID or X-Call-ID and must contain the Call-ID of the 
-   other related dialog.</dd>
-</dl>
+See FAQ on [Github Wiki](https://github.com/irontec/sngrep/wiki#frequent-asked-questions)
 
 ## License 
     sngrep - SIP Messages flow viewer
