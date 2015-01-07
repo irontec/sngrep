@@ -240,7 +240,7 @@ save_raw_to_file(PANEL *panel)
     sscanf(field_buffer(info->fields[FLD_SAVE_RAW_FILE], 0), "%[^ ]", field_value);
 
     if (!(f = fopen(field_value, "w"))) {
-        save_raw_error_message(panel, "Unable to open save file for writting");
+        save_raw_error_message(panel, "Unable to open save file for writing");
         return 0;
     }
 

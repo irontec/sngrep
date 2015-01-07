@@ -53,7 +53,7 @@ usage()
            " [<bpf filter>|<pcap_dump>]\n\n"
            "    -h  This usage\n"
            "    -v  Version information\n"
-           "    -d  Use this capture device insted of default\n"
+           "    -d  Use this capture device instead of default\n"
            "    -I  Read captured data from pcap file\n"
            "    -O  Write captured data to pcap file\n"
 #ifdef WITH_OPENSSL

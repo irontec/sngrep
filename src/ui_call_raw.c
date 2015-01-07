@@ -165,7 +165,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
             }
             mvwaddch(pad, line, column++, msg->payload[raw_line][raw_char]);
         }
-        // Increase line after writting it
+        // Increase line after writing it
         line++;
     }
     // Extra line between messages
