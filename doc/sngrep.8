@@ -1,0 +1,137 @@
+.\" Man page for the sngrep
+.\"
+.\" Copyright (c) 2013-2015  Ivan Alonso <kaian@irontec.com>
+.\" Copyright (c) 2013-2015  Irontec S.L.
+
+.TH SNGREP 8 "January 2015" "sngrep 0.2.0"
+
+.SH NAME
+
+sngrep \- SIP Messages flow viewer
+
+.SH SYNOPSIS
+
+.B sngrep [ -IO 
+.I pcap_dump
+.B ] [ -d 
+.I dev
+.B ] [ -k 
+.I keyfile
+.B ] [
+.I <bpf filter>
+|
+.I <pcap_dump>
+.B ]
+
+.SH DESCRIPTION
+sngrep is a terminal tool that groups SIP (Session Initiation Protocol)
+Messages by Call-Id, and displays them in arrow flows similar to the used in
+SIP RFCs. The aim of this tool is to make easier the process of learnig or
+debugging SIP. It recognizes UDP, TCP and partially TLS SIP packets and
+understands bpf filter logic in the same way 
+.B ngrep (8)
+and
+.B tcpdump (1)
+does.
+
+.SH OPTIONS
+.TP
+.I \-h
+Display help and usage information.
+
+.TP
+.I \-v
+Display version information.
+
+.TP
+.I \-I pcap_dump
+Read packets from pcap file instead of network devices. This option can be used
+with bpf filters.
+
+.TP 
+.I \-O pcap_dump
+Save all captured packets to a pcap file. This option can be used 
+with bpf filters.
+
+.TP 
+.I \-d dev
+Use this capture device instead of default (\fIany\fP).
+
+.TP
+.I -k keyfile
+Use private keyfile to decrypt TLS packets.
+
+.TP
+.I pcap_dump
+If sngrep only argument is a pcap file, read packets from it. This is a
+shortcut for \-I.
+
+.TP
+.I bpf filter
+Selects a filter that specifies what packets will be parsed.  If no
+\fIbpf filter\fP is given, all SIP packets seen on the selected
+interface or pcap file will be displayed.  Otherwise, only packets for which
+\fIbpf filter\fP is `true' will be displayed.
+
+.SH Interface
+There are multiple windows to provide different information. Most of the
+program windows have a help dialog with a brief description and useful
+keybindings.
+
+.SH "    Call List Window"
+.PP
+The first window that sngrep shows is Call List window and display the
+different SIP Call-Ids found in messages. The displayed columns depends on your
+terminal width and your custom configuration.  You can move between dialogs
+with arrow keys and selected them using Spacebar. Selecting multiple dialogs
+will display all them in Call flow window and Call Raw window, and will allow
+to save only the selected message dialogs to a PCAP file.
+
+.SH "    Call Flow Window"
+.PP
+This window will a flow diagram of the selected dialogs' messages. The selected
+message payload will be displayed in the right side of the window. You can move
+between messages using arrow keys and select them using Spacebar. Selecting
+multiple messages will display the Message Diff Window.
+
+.SH "    Call Raw Window"
+.PP
+This window will display the selected dialog messages in plain text. It was
+designed to allow copying the messages payload easily.
+
+.SH "    Message Diff Window"
+.PP
+This window will compare two messages. Right now the comparison is done
+searching each line in the other message, highlighting those not found exactly.
+You can reach this window by selecting two messages using Spacebar in Call Flow
+window
+
+.SH FILES
+Full paths below may vary between installations.
+
+.PP
+.I /etc/sngreprc
+.IP
+System\-wide configuration file. Some sngrep options can be overridden using
+this file.
+
+.PP
+.I ~/.sngreprc
+.IP
+User's configuration file. If this file is present, options will be override
+system\-wide configurations.
+
+.SH BUGS
+
+Please report bugs to the sngrep github project at
+
+    http://github.com/irontec/sngrep
+
+Non-bug, non-feature-request general feedback should be sent to the
+author directly by email.
+
+.SH AUTHOR
+
+Written by Ivan Alonso <kaian@irontec.com>.
+
+

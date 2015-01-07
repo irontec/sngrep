@@ -78,7 +78,6 @@ AM_CONDITIONAL([WITH_OPENSSL], [test "x$enable_openssl" != "xno"])
 
 
 ######################################################################
-
 if test "x${silent}" != "xyes" ; then
     echo
     echo '             OZZZO                 ' 
@@ -115,4 +114,5 @@ AC_MSG_NOTICE
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([src/Makefile])
 AC_CONFIG_FILES([config/Makefile])
+AC_CONFIG_FILES([doc/Makefile])
 AC_OUTPUT
