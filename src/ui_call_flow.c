@@ -358,19 +358,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     }
     // Color by CSeq within the same call
     if (is_option_enabled("color.cseq")) {
-        if (msg->call->color == -1) {
-            msg->call->color = (info->group->color++ % 7) + 1;
-        }
-        if (msg->color == -1) {
-            if ((prev = call_get_prev_msg(msg->call, msg))) {
-                if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
-                           msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
-                    int color = info->group->color + 1;
-                    info->group->color = msg->call->color = (color % 7) + 1;
-                }
-            }
-            msg->color = msg->call->color;
-        }
+        if (msg->color == -1)
+            msg->color = atoi(msg_get_attribute(msg, SIP_ATTR_CSEQ)) % 7 + 1;
         // Turn on the message color
         wattron(win, COLOR_PAIR(msg->color));
     }
