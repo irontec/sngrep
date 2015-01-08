@@ -104,12 +104,14 @@ init_interface()
 #endif
     pthread_mutex_init(&refresh_lock, &attr);
 
-    // Start showing call list
-    wait_for_input(ui_create(ui_find_by_type(MAIN_PANEL)));
-
-    // End ncurses mode
-    endwin();
     return 0;
+}
+
+int
+deinit_interface()
+{
+    // End ncurses mode
+    return endwin();
 }
 
 ui_t *

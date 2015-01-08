@@ -143,13 +143,22 @@ enum panel_types
 /**
  * @brief Initialize ncurses mode
  *
- * This functions will initialize ncurses mode and show a
- * Call List panel.
+ * This functions will initialize ncurses mode
  *
  * @returns 0 on ncurses initialization success, 1 otherwise
  */
 int
 init_interface();
+
+/**
+ * @brief Stops ncurses mode
+ *
+ * This functions will deinitialize ncurse mode
+ *
+ * @returns 0 on ncurses initialization success, 1 otherwise
+ */
+int
+deinit_interface();
 
 /**
  * @brief Create a panel structure

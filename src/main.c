@@ -84,7 +84,6 @@ main(int argc, char* argv[])
 {
 
     int ret = 0, opt;
-    const char *infile;
     const char *keyfile;
 
     //! BPF arguments filter
@@ -164,7 +163,7 @@ main(int argc, char* argv[])
     }
 
     // If we have an input file, load it
-    if ((infile = get_option_value("capture.infile"))) {
+    if (get_option_value("capture.infile")) {
         // Set mode to display on interface
         set_option_value("sngrep.mode", "Offline");
         // Try to load file
@@ -177,23 +176,31 @@ main(int argc, char* argv[])
         // Check if all capture data is valid
         if (capture_online() != 0)
             return 1;
-
-        // Launch capture thread
-        pthread_attr_init(&attr);
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-        if (pthread_create(&exec_t, &attr, (void *) capture_thread, NULL)) {
-            fprintf(stderr, "Unable to create Capture Thread!\n");
-            return 1;
-        }
-        pthread_attr_destroy(&attr);
     }
 
     // Initialize interface
-    // This is a blocking call. Interface have user action loops.
     init_interface();
+
+    // Start a capture thread for Online mode
+    if (get_option_value("capture.infile") == NULL) {
+       pthread_attr_init(&attr);
+       pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+       if (pthread_create(&exec_t, &attr, (void *) capture_thread, NULL)) {
+           fprintf(stderr, "Unable to create Capture Thread!\n");
+           return 1;
+       }
+       pthread_attr_destroy(&attr);
+    }
+
+    // This is a blocking call.
+    // Create the first panel and wait for user input
+    wait_for_input(ui_create(ui_find_by_type(MAIN_PANEL)));
 
     // Close pcap handler
     capture_close();
+
+    // Deinitialize interface
+    deinit_interface();
 
     // Leaving!
     return ret;
