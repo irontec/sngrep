@@ -135,6 +135,7 @@ capture_thread(void *none)
 {
     // Parse available packets
     pcap_loop(handle, -1, parse_packet, (u_char*) "Online");
+    pcap_close(handle);
 }
 
 int
@@ -342,7 +343,6 @@ capture_close()
     if (handle) {
         pcap_breakloop(handle);
         pthread_join(capture_t, &ret);
-        pcap_close(handle);
     }
 
     // Close dump file
