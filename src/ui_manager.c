@@ -94,6 +94,16 @@ init_interface()
     start_color();
     toggle_color(is_option_enabled("color"));
 
+    // Initialize refresh lock
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+#else
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+#endif
+    pthread_mutex_init(&refresh_lock, &attr);
+
     // Start showing call list
     wait_for_input(ui_create(ui_find_by_type(MAIN_PANEL)));
 
@@ -261,9 +271,15 @@ wait_for_input(ui_t *ui)
         // Get pressed key
         int c = wgetch(win);
 
+        // Avoid processing user action while screen is being updated
+        pthread_mutex_lock(&refresh_lock);
+
         // Check if current panel has custom bindings for that key
-        if ((c = ui_handle_key(ui, c)) == 0)
+        if ((c = ui_handle_key(ui, c)) == 0) {
+            // Key has been handled by panel
+            pthread_mutex_unlock(&refresh_lock);
             continue;
+        }
 
         // Otherwise, use standard keybindings
         switch (c) {
@@ -301,9 +317,11 @@ wait_for_input(ui_t *ui)
         case 'Q':
         case 27: /* KEY_ESC */
             ui_destroy(ui);
-            return 0;
             break;
         }
+
+        // Allow the ui to refresh
+        pthread_mutex_unlock(&refresh_lock);
     }
 
     return -1;

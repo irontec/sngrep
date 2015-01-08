@@ -186,7 +186,6 @@ sip_call_destroy(sip_call_t *call)
 
     // Free it!
     free(call);
-    call = NULL;
 }
 
 char *
@@ -841,12 +840,15 @@ msg_get_header(sip_msg_t *msg, char *out)
 void
 sip_calls_clear()
 {
-    sip_call_t *call = NULL;
     pthread_mutex_lock(&calls_lock);
+    sip_call_t *call = calls, *next = NULL;
 
     // Remove first call until no first call exists
-    for (call = calls; call; call = call->next)
+    while(call) {
+        next = call->next;
         sip_call_destroy(call);
+        call = next;
+    }
 
     // Initialize calls list header
     calls = NULL;
