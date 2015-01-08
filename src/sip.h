@@ -201,8 +201,6 @@ struct sip_call
     pthread_mutex_t lock;
     //! Calls double linked list
     sip_call_t *next, *prev;
-    //! Last used color (for color.cseq)
-    int color;
 };
 
 /**

@@ -93,7 +93,7 @@ sip_msg_create(const char *payload)
     msg->attrs = NULL;
     msg->payloadptr = strdup(payload);
     msg->parsed = 0;
-    msg->color = -1;
+    msg->color = 0;
     return msg;
 }
 
@@ -142,7 +142,6 @@ sip_call_create(char *callid)
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
     call->attrs = NULL;
-    call->color = -1;
 
     // Initialize call lock
     pthread_mutexattr_t attr;

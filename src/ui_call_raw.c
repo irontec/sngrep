@@ -117,37 +117,24 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
         info->pad = pad;
     }
 
-    // Color the message
+    // Color the message {
     if (is_option_enabled("color.request")) {
         // Determine arrow color
         if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
-            wattron(pad, COLOR_PAIR(OUTGOING_COLOR));
+            msg->color = OUTGOING_COLOR;
         } else {
-            wattron(pad, COLOR_PAIR(INCOMING_COLOR));
+            msg->color = INCOMING_COLOR;
         }
+    } else if (info->group && is_option_enabled("color.callid")) {
+        // Color by call-id
+        msg->color = call_group_color(info->group, msg->call);
+    } else if (is_option_enabled("color.cseq")) {
+        // Color by CSeq within the same call
+        msg->color = atoi(msg_get_attribute(msg, SIP_ATTR_CSEQ)) % 7 + 1;
     }
-    // Color by call-id
-    if (info->group && is_option_enabled("color.callid")) {
-        wattron(pad, COLOR_PAIR(call_group_color(info->group, msg->call)));
-    }
-    // Color by CSeq within the same call
-    if (info->group && is_option_enabled("color.cseq")) {
-        if (msg->call->color == -1) {
-            msg->call->color = (info->group->color++ % 7) + 1;
-        }
-        if (msg->color == -1) {
-            if ((prev = call_get_prev_msg(msg->call, msg))) {
-                if (strcmp(msg_get_attribute(msg, SIP_ATTR_CSEQ),
-                           msg_get_attribute(prev, SIP_ATTR_CSEQ))) {
-                    int color = info->group->color + 1;
-                    info->group->color = msg->call->color = (color % 7) + 1;
-                }
-            }
-            msg->color = msg->call->color;
-        }
-        // Turn on the message color
-        wattron(pad, COLOR_PAIR(msg->color));
-    }
+
+    // Turn on the message color
+    wattron(pad, COLOR_PAIR(msg->color));
 
     // Print msg header
     wattron(pad, A_BOLD);

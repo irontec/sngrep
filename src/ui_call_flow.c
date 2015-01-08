@@ -343,26 +343,24 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     if (msg == info->cur_msg)
         wattron(win, A_BOLD);
 
-    // Color the message
+    // Color the message {
     if (is_option_enabled("color.request")) {
         // Determine arrow color
         if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
-            wattron(win, COLOR_PAIR(OUTGOING_COLOR));
+            msg->color = OUTGOING_COLOR;
         } else {
-            wattron(win, COLOR_PAIR(INCOMING_COLOR));
+            msg->color = INCOMING_COLOR;
         }
+    } else if (is_option_enabled("color.callid")) {
+        // Color by call-id
+        msg->color = call_group_color(info->group, msg->call);
+    } else if (is_option_enabled("color.cseq")) {
+        // Color by CSeq within the same call
+        msg->color = atoi(msg_get_attribute(msg, SIP_ATTR_CSEQ)) % 7 + 1;
     }
-    // Color by call-id
-    if (is_option_enabled("color.callid")) {
-        wattron(win, COLOR_PAIR(call_group_color(info->group, msg->call)));
-    }
-    // Color by CSeq within the same call
-    if (is_option_enabled("color.cseq")) {
-        if (msg->color == -1)
-            msg->color = atoi(msg_get_attribute(msg, SIP_ATTR_CSEQ)) % 7 + 1;
-        // Turn on the message color
-        wattron(win, COLOR_PAIR(msg->color));
-    }
+
+    // Turn on the message color
+    wattron(win, COLOR_PAIR(msg->color));
 
     mvwprintw(win, cline, startpos + 2, "%.*s", distance, "");
     mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
