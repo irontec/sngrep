@@ -341,8 +341,12 @@ capture_close()
 
     //Close PCAP file
     if (handle) {
-        pcap_breakloop(handle);
-        pthread_join(capture_t, &ret);
+        if(get_option_value("capture.infile")) {
+            pcap_close(handle);
+        } else {
+            pcap_breakloop(handle);
+            pthread_join(capture_t, &ret);
+        }
     }
 
     // Close dump file
