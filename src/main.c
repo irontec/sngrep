@@ -89,11 +89,6 @@ main(int argc, char* argv[])
     //! BPF arguments filter
     char bpf[512];
 
-    //! capture thread attributes
-    pthread_attr_t attr;
-    //! capture thread
-    pthread_t exec_t;
-
     // Initialize configuration options
     init_options();
 
@@ -183,13 +178,10 @@ main(int argc, char* argv[])
 
     // Start a capture thread for Online mode
     if (get_option_value("capture.infile") == NULL) {
-       pthread_attr_init(&attr);
-       pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-       if (pthread_create(&exec_t, &attr, (void *) capture_thread, NULL)) {
-           fprintf(stderr, "Unable to create Capture Thread!\n");
-           return 1;
-       }
-       pthread_attr_destroy(&attr);
+        if (capture_launch_thread() != 0) {
+            deinit_interface();
+            return 1;
+        }
     }
 
     // This is a blocking call.

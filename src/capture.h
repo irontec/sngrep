@@ -147,6 +147,15 @@ struct dns_cache
 int
 capture_online();
 
+
+/**
+ * @brief Create a capture thread for online mode
+ *
+ * @return 0 on success, 1 otherwise
+ */
+int
+capture_launch_thread();
+
 /**
  * @brief PCAP Capture Thread
  *

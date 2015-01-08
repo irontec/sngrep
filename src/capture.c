@@ -46,6 +46,8 @@ int linktype;
 pcap_dumper_t *pd = NULL;
 //! FIXME Session handle
 pcap_t *handle;
+//! FIXME capture thread
+pthread_t capture_t;
 //! Cache for DNS lookups
 struct dns_cache dnscache;
 
@@ -111,6 +113,20 @@ capture_online()
         return 3;
     }
 
+    return 0;
+}
+
+int
+capture_launch_thread()
+{
+    //! capture thread attributes
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if (pthread_create(&capture_t, &attr, (void *) capture_thread, NULL)) {
+        return 1;
+    }
+    pthread_attr_destroy(&attr);
     return 0;
 }
 
@@ -320,9 +336,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 void
 capture_close()
 {
+    void* ret = NULL;
+
     //Close PCAP file
     if (handle) {
         pcap_breakloop(handle);
+        pthread_join(capture_t, &ret);
         pcap_close(handle);
     }
 
