@@ -565,13 +565,13 @@ call_flow_handle_key(PANEL *panel, int key)
     case 'T':
         set_option_int_value("cf.rawfixedwidth", -1);
         break;
-    case 'd':
-    case KEY_F(2):
+    case 'D':
         // Toggle SDP mode
         info->group->sdp_only = !(info->group->sdp_only);
         call_flow_set_group(info->group);
         break;
-    case 'D':
+    case KEY_F(2):
+    case 'd':
         set_option_value("cf.sdpinfo", is_option_enabled("cf.sdpinfo") ? "off" : "on");
         break;
     case 't':
@@ -658,7 +658,7 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 9, 2, "Esc/Q       Go back to Call list window");
     mvwprintw(help_win, 10, 2, "Enter       Show current message Raw");
     mvwprintw(help_win, 11, 2, "F1/h        Show this screen");
-    mvwprintw(help_win, 12, 2, "F2/d        Only show SDP messages");
+    mvwprintw(help_win, 12, 2, "F2/d        Toggle SDP Address:Port info");
     mvwprintw(help_win, 13, 2, "F3/t        Toggle raw preview display");
     mvwprintw(help_win, 14, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
     mvwprintw(help_win, 15, 2, "F5/S        Toggle compressed view (One address <=> one column");
@@ -668,7 +668,7 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 19, 2, "F9/l        Turn on/off resolved addresses");
     mvwprintw(help_win, 20, 2, "9/0         Increase/Decrease raw preview size");
     mvwprintw(help_win, 21, 2, "T           Restore raw preview size");
-    mvwprintw(help_win, 22, 2, "D           Toggle SDP Address:Port info");
+    mvwprintw(help_win, 22, 2, "D           Only show SDP messages");
 
     // Press any key to close
     wgetch(help_win);
