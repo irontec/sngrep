@@ -47,9 +47,9 @@
  * @brief Linked list of parsed calls
  *
  * All parsed calls will be added to this list, only accesible from
- * this awesome pointer, so, keep it thread-safe.
+ * this awesome structure, so, keep it thread-safe.
  */
-static sip_call_t *calls = NULL;
+static sip_call_list_t calls = { .first = NULL, .last = NULL, .count = 0 };
 
 /**
  * @brief Warranty thread-safe access to the calls list.
@@ -152,18 +152,15 @@ sip_call_create(char *callid)
 #endif
     pthread_mutex_init(&call->lock, &attr);
 
-    //@todo Add the call to the end of the list.
-    //@todo This should be improved
     pthread_mutex_lock(&calls_lock);
-    sip_call_t *cur, *prev;
-    if (!calls) {
-        calls = call;
+    if (!calls.count) {
+        calls.first = call;
     } else {
-        for (cur = calls; cur; prev = cur, cur = cur->next)
-            ;
-        prev->next = call;
-        call->prev = prev;
+        call->prev = calls.last;
+        calls.last->next = call;
     }
+    calls.last = call;
+    calls.count++;
     pthread_mutex_unlock(&calls_lock);
     return call;
 }
@@ -176,9 +173,15 @@ sip_call_destroy(sip_call_t *call)
         return;
 
     // If removing the first call, update list head
-    if (!call->prev)
-        calls = call->next;
-    // If there is next call, update its previous pointer
+    if (call == calls.first)
+        calls.first = call->next;
+    // If removing the last call, update the list tail
+    if (call == calls.last)
+        calls.last = call->prev;
+    // Update previous call
+    if (call->prev)
+        call->prev->next = call->next;
+    // Update next call
     if (call->next)
         call->next->prev = call->prev;
 
@@ -307,16 +310,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 int
 sip_calls_count()
 {
-    int callcnt = 0;
-    pthread_mutex_lock(&calls_lock);
-    sip_call_t *call = calls;
-    while (call) {
-        if (!sip_check_call_ignore(call))
-            callcnt++;
-        call = call->next;
-    }
-    pthread_mutex_unlock(&calls_lock);
-    return callcnt;
+    return calls.count;
 }
 
 int
@@ -494,7 +488,7 @@ call_find_by_callid(const char *callid)
 {
     const char *cur_callid;
     pthread_mutex_lock(&calls_lock);
-    sip_call_t *cur = calls;
+    sip_call_t *cur = calls.first;
 
     while (cur) {
         cur_callid = call_get_attribute(cur, SIP_ATTR_CALLID);
@@ -514,7 +508,7 @@ call_find_by_xcallid(const char *xcallid)
     const char *cur_xcallid;
 
     pthread_mutex_lock(&calls_lock);
-    sip_call_t *cur = calls;
+    sip_call_t *cur = calls.first;
 
     while (cur) {
         cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
@@ -593,7 +587,7 @@ call_get_next(sip_call_t *cur)
 
     sip_call_t * next;
     if (!cur) {
-        next = calls;
+        next = calls.first;
     } else {
         next = cur->next;
     }
@@ -610,7 +604,7 @@ call_get_prev(sip_call_t *cur)
 
     sip_call_t *prev;
     if (!cur) {
-        prev = calls;
+        prev = calls.first;
     } else {
         prev = cur->prev;
     }
@@ -847,8 +841,8 @@ sip_calls_clear()
 {
     pthread_mutex_lock(&calls_lock);
     // Remove first call until no first call exists
-    while(calls) {
-        sip_call_destroy(calls);
+    while(calls.first) {
+        sip_call_destroy(calls.first);
     }
 
     pthread_mutex_unlock(&calls_lock);

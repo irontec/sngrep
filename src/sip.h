@@ -54,6 +54,8 @@ typedef struct sip_msg sip_msg_t;
 typedef struct sip_attr_hdr sip_attr_hdr_t;
 //! Shorter declaration of sip_attr structure
 typedef struct sip_attr sip_attr_t;
+//! Shorter declaration of sip_call_list structure
+typedef struct sip_call_list sip_call_list_t;
 
 /**
  * @brief Available SIP Attributes
@@ -201,6 +203,18 @@ struct sip_call
     pthread_mutex_t lock;
     //! Calls double linked list
     sip_call_t *next, *prev;
+};
+
+/**
+ * @brief call structures head list
+ *
+ * This structure acts as header of calls list
+ */
+struct sip_call_list
+{
+    sip_call_t *first;
+    sip_call_t *last;
+    int count;
 };
 
 /**
