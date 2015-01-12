@@ -34,32 +34,107 @@
 
 static sip_attr_hdr_t attrs[] =
     {
-        { .id = SIP_ATTR_SIPFROM, .name = "sipfrom", .desc = "SIP From" },
-        { .id = SIP_ATTR_SIPTO, .name = "sipto", .desc = "SIP To" },
-        { .id = SIP_ATTR_SRC, .name = "src", .desc = "Source" },
-        { .id = SIP_ATTR_SRC_HOST, .name = "srchost", .desc = "Source" },
-        { .id = SIP_ATTR_DST, .name = "dst", .desc = "Destiny" },
-        { .id = SIP_ATTR_DST_HOST, .name = "dsthost", .desc = "Destiny" },
-        { .id = SIP_ATTR_CALLID, .name = "callid", .desc = "Call-ID" },
-        { .id = SIP_ATTR_XCALLID, .name = "xcallid", .desc = "X-Call-ID" },
-        { .id = SIP_ATTR_DATE, .name = "date", .desc = "Date" },
-        { .id = SIP_ATTR_TIME, .name = "time", .desc = "Time" },
-        { .id = SIP_ATTR_METHOD, .name = "method", .desc = "Method" },
-        { .id = SIP_ATTR_REQUEST, .name = "request", .desc = "Request" },
-        { .id = SIP_ATTR_CSEQ, .name = "CSeq", .desc = "CSeq" },
-        { .id = SIP_ATTR_SDP, .name = "sdp", .desc = "Has SDP" },
-        { .id = SIP_ATTR_SDP_ADDRESS, .name = "sdpaddress", .desc = "SDP Address" },
-        { .id = SIP_ATTR_SDP_PORT, .name = "sdpport", .desc = "SDP Port" },
-        { .id = SIP_ATTR_TRANSPORT, .name = "transport", .desc = "Trans" },
-        { .id = SIP_ATTR_STARTING, .name = "starting", .desc = "Starting" },
-        { .id = SIP_ATTR_MSGCNT, .name = "msgcnt", .desc = "Msgs" }, };
-
+          {
+            .id = SIP_ATTR_SIPFROM,
+            .name = "sipfrom",
+            .desc = "SIP From",
+            .dwidth = 40, },
+          {
+            .id = SIP_ATTR_SIPTO,
+            .name = "sipto",
+            .desc = "SIP To",
+            .dwidth = 40, },
+          {
+            .id = SIP_ATTR_SRC,
+            .name = "src",
+            .desc = "Source",
+            .dwidth = 22, },
+          {
+            .id = SIP_ATTR_SRC_HOST,
+            .name = "srchost",
+            .desc = "Source",
+            .dwidth = 16, },
+          {
+            .id = SIP_ATTR_DST,
+            .name = "dst",
+            .desc = "Destiny",
+            .dwidth = 22, },
+          {
+            .id = SIP_ATTR_DST_HOST,
+            .name = "dsthost",
+            .desc = "Destiny",
+            .dwidth = 16, },
+          {
+            .id = SIP_ATTR_CALLID,
+            .name = "callid",
+            .desc = "Call-ID",
+            .dwidth = 50, },
+          {
+            .id = SIP_ATTR_XCALLID,
+            .name = "xcallid",
+            .desc = "X-Call-ID",
+            .dwidth = 50, },
+          {
+            .id = SIP_ATTR_DATE,
+            .name = "date",
+            .desc = "Date",
+            .dwidth = 10, },
+          {
+            .id = SIP_ATTR_TIME,
+            .name = "time",
+            .desc = "Time",
+            .dwidth = 8, },
+          {
+            .id = SIP_ATTR_METHOD,
+            .name = "method",
+            .desc = "Method",
+            .dwidth = 15, },
+          {
+            .id = SIP_ATTR_REQUEST,
+            .name = "request",
+            .desc = "Request",
+            .dwidth = 3, },
+          {
+            .id = SIP_ATTR_CSEQ,
+            .name = "CSeq",
+            .desc = "CSeq",
+            .dwidth = 6, },
+          {
+            .id = SIP_ATTR_SDP,
+            .name = "sdp",
+            .desc = "Has SDP",
+            .dwidth = 3, },
+          {
+            .id = SIP_ATTR_SDP_ADDRESS,
+            .name = "sdpaddress",
+            .desc = "SDP Address",
+            .dwidth = 22, },
+          {
+            .id = SIP_ATTR_SDP_PORT,
+            .name = "sdpport",
+            .desc = "SDP Port",
+            .dwidth = 5, },
+          {
+            .id = SIP_ATTR_TRANSPORT,
+            .name = "transport",
+            .desc = "Trans",
+            .dwidth = 3, },
+          {
+            .id = SIP_ATTR_STARTING,
+            .name = "starting",
+            .desc = "Starting",
+            .dwidth = 15, },
+          {
+            .id = SIP_ATTR_MSGCNT,
+            .name = "msgcnt",
+            .desc = "Msgs",
+            .dwidth = 5, }, };
 
 sip_attr_hdr_t *
 sip_attr_get_header(enum sip_attr_id id)
 {
     int i;
-    for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
+    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
         if (id == attrs[i].id) {
             return &attrs[i];
         }
@@ -87,16 +162,26 @@ sip_attr_get_name(enum sip_attr_id id)
     return NULL;
 }
 
+int
+sip_attr_get_width(enum sip_attr_id id)
+{
+    sip_attr_hdr_t *header;
+    if ((header = sip_attr_get_header(id))) {
+        return header->dwidth;
+    }
+    return 0;
+}
+
 enum sip_attr_id
 sip_attr_from_name(const char *name)
 {
     int i;
-    for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
+    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
         if (!strcasecmp(name, attrs[i].name)) {
             return attrs[i].id;
         }
     }
-    return 0;
+    return -1;
 }
 
 void
@@ -153,7 +238,6 @@ sip_attr_get(sip_attr_t *list, enum sip_attr_id id)
     return NULL;
 }
 
-
 void
 call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value)
 {
@@ -171,7 +255,6 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
     }
     return msg_get_attribute(call_get_next_msg(call, NULL), id);
 }
-
 
 void
 msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value)
@@ -196,7 +279,7 @@ sip_check_call_ignore(sip_call_t *call)
     const char *filter;
 
     // Check if an ignore option exists
-    for (i = 0; i < sizeof(attrs) / sizeof(*attrs); i++) {
+    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
         if (is_ignored_value(attrs[i].name, call_get_attribute(call, attrs[i].id))) {
             return 1;
         }

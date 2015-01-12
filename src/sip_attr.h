@@ -58,7 +58,7 @@ typedef struct sip_attr sip_attr_t;
 enum sip_attr_id
 {
     //! SIP Message From: header
-    SIP_ATTR_SIPFROM = 1,
+    SIP_ATTR_SIPFROM = 0,
     //! SIP Message To: header
     SIP_ATTR_SIPTO,
     //! Package IP source address and port
@@ -95,6 +95,8 @@ enum sip_attr_id
     SIP_ATTR_STARTING,
     //! SIP Call message counter
     SIP_ATTR_MSGCNT,
+    //! SIP Attribute count
+    SIP_ATTR_SENTINEL
 };
 
 /**
@@ -114,6 +116,8 @@ struct sip_attr_hdr
     char *name;
     //! Attribute description
     char *desc;
+    //! Attribute default display width
+    int dwidth;
 };
 
 /**
@@ -151,7 +155,7 @@ sip_attr_get_header(enum sip_attr_id id);
  * Retrieve description of given attribute from its
  * header structure.
  *
- * @param id Attribut id
+ * @param id Attribute id
  * @return Attribute description from its header
  */
 const char *
@@ -163,11 +167,20 @@ sip_attr_get_description(enum sip_attr_id id);
  * Retrieve name of given attribute from its
  * header structure.
  *
- * @param id Attribut id
+ * @param id Attribute id
  * @return Attribute name from its header
  */
 const char *
 sip_attr_get_name(enum sip_attr_id id);
+
+/**
+ * @brief Get Attribute prefered display width
+ *
+ * @param id Attribute id
+ * @return prefered attribute width
+ */
+int
+sip_attr_get_width(enum sip_attr_id id);
 
 /**
  * @brief Get Attribute id from its name
@@ -175,7 +188,7 @@ sip_attr_get_name(enum sip_attr_id id);
  * Retrieve attribute id of the given attribute name.
  *
  * @param name Attribut name
- * @return Attribute id or 0 if not found
+ * @return Attribute id or -1 if not found
  */
 enum sip_attr_id
 sip_attr_from_name(const char *name);

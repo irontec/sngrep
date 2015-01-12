@@ -44,7 +44,7 @@ call_list_create()
 {
     PANEL *panel;
     WINDOW *win;
-    int height, width, i, colpos, collen, colcnt, attrid;
+    int height, width, i, colpos, collen, attrid;
     call_list_info_t *info;
     char option[80];
     const char *field, *title;
@@ -58,19 +58,21 @@ call_list_create()
     set_panel_userptr(panel, (void*) info);
 
     // Add configured columns
-    colcnt = get_option_int_value("cl.columns");
-    for (i = 0; i < colcnt; i++) {
-        // Get column attribute name
+    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
+        // Get column attribute name from options
         sprintf(option, "cl.column%d", i);
-        field = get_option_value(option);
-        // Get column width
-        sprintf(option, "cl.column%d.width", i);
-        collen = get_option_int_value(option);
-        if (!(attrid = sip_attr_from_name(field)))
-            continue;
-        title = sip_attr_get_description(attrid);
-        // Add column to the list
-        call_list_add_column(panel, attrid, field, title, collen);
+        if ((field = get_option_value(option))) {
+            if ((attrid = sip_attr_from_name(field)) == -1)
+                continue;
+            // Get column width from options
+            sprintf(option, "cl.column%d.width", i);
+            if ((collen = get_option_int_value(option)) == -1)
+                collen = sip_attr_get_width(attrid);
+            // Get column title
+            title = sip_attr_get_description(attrid);
+            // Add column to the list
+            call_list_add_column(panel, attrid, field, title, collen);
+        }
     }
 
     // Let's draw the fixed elements of the screen
@@ -156,9 +158,29 @@ void
 call_list_draw_footer(PANEL *panel)
 {
     const char *keybindings[] =
-        { "Esc", "Quit", "Enter", "Show", "Space", "Select", "F1", "Help", "F2", "Save", "F3",
-                "Search", "F4", "Extended", "F5", "Clear", "F6", "Raw", "F7", "Filter", "F8",
-                "Colours on/off" };
+        {
+          "Esc",
+          "Quit",
+          "Enter",
+          "Show",
+          "Space",
+          "Select",
+          "F1",
+          "Help",
+          "F2",
+          "Save",
+          "F3",
+          "Search",
+          "F4",
+          "Extended",
+          "F5",
+          "Clear",
+          "F6",
+          "Raw",
+          "F7",
+          "Filter",
+          "F8",
+          "Colours on/off" };
 
     draw_keybindings(panel, keybindings, 22);
 }

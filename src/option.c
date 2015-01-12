@@ -55,19 +55,13 @@ init_options()
     set_option_value("color.cseq", "off");
 
     // Add Call list column options
-    set_option_value("cl.columns", "6");
+    set_option_value("cl.column0", "time");
     set_option_value("cl.column0", "sipfrom");
-    set_option_value("cl.column0.width", "40");
     set_option_value("cl.column1", "sipto");
-    set_option_value("cl.column1.width", "40");
     set_option_value("cl.column2", "msgcnt");
-    set_option_value("cl.column2.width", "5");
     set_option_value("cl.column3", "src");
-    set_option_value("cl.column3.width", "22");
     set_option_value("cl.column4", "dst");
-    set_option_value("cl.column4.width", "22");
     set_option_value("cl.column5", "starting");
-    set_option_value("cl.column5.width", "15");
 
     // Set Autoscroll in call list
     set_option_value("cl.autoscroll", "on");
