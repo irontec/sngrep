@@ -407,13 +407,10 @@ title_foot_box(WINDOW *win)
 int
 ui_set_replace(ui_t *original, ui_t *replace)
 {
-    pthread_mutex_lock(&refresh_lock);
     if (!original || !replace) {
-        pthread_mutex_unlock(&refresh_lock);
         return -1;
     }
     original->replace = replace;
-    pthread_mutex_unlock(&refresh_lock);
     return 0;
 }
 
