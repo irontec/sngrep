@@ -141,7 +141,6 @@ sip_call_create(char *callid)
     // Initialize a new call structure
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
-    call->attrs = NULL;
 
     // Initialize call lock
     pthread_mutexattr_t attr;
@@ -176,7 +175,14 @@ sip_call_destroy(sip_call_t *call)
     if (!call)
         return;
 
-    // Remove all messages 
+    // If removing the first call, update list head
+    if (!call->prev)
+        calls = call->next;
+    // If there is next call, update its previous pointer
+    if (call->next)
+        call->next->prev = call->prev;
+
+    // Remove all messages
     while (call->msgs)
         sip_msg_destroy(call->msgs);
 
@@ -840,17 +846,10 @@ void
 sip_calls_clear()
 {
     pthread_mutex_lock(&calls_lock);
-    sip_call_t *call = calls, *next = NULL;
-
     // Remove first call until no first call exists
-    while(call) {
-        next = call->next;
-        sip_call_destroy(call);
-        call = next;
+    while(calls) {
+        sip_call_destroy(calls);
     }
-
-    // Initialize calls list header
-    calls = NULL;
 
     pthread_mutex_unlock(&calls_lock);
 }
