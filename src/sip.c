@@ -184,6 +184,8 @@ sip_call_destroy(sip_call_t *call)
     // Update next call
     if (call->next)
         call->next->prev = call->prev;
+    // Update call counter
+    calls.count--;
 
     // Remove all messages
     while (call->msgs)
