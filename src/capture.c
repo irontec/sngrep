@@ -216,6 +216,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Source and Destiny Ports
     u_short sport, dport;
 
+    // Check if we have reached capture limit
+    int limit = get_option_int_value("capture.limit");
+    if (limit && sip_calls_count() >= limit) {
+        return ;
+    }
+
     // Store this packets in output file
     dump_packet(pd, header, packet);
 
@@ -324,13 +330,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Refresh current UI in online mode
     if (!strcasecmp((const char*) mode, "Online")) {
         ui_new_msg_refresh(msg);
-        // Check if we should stop capturing
-        int limit = get_option_int_value("capture.limit");
-        if (limit && sip_calls_count() >= limit) {
-            pcap_breakloop(handle);
-            pcap_close(handle);
-            handle = NULL;
-        }
     }
 }
 
