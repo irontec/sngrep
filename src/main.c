@@ -194,6 +194,12 @@ main(int argc, char* argv[])
     // Deinitialize interface
     deinit_interface();
 
+    // Deinitialize configuration options
+    deinit_options();
+
+    // Deallocate sip stored messages
+    sip_calls_clear();
+
     // Leaving!
     return ret;
 }

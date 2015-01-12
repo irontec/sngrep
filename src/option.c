@@ -92,6 +92,7 @@ init_options()
     // Set default capture options
     set_option_value("capture.limit", "2000");
     set_option_value("capture.device", "any");
+    set_option_value("capture.lookup", "off");
 
     // Set default filter options
     set_option_value("filter.enable", "off");
@@ -118,6 +119,17 @@ init_options()
         set_option_value("sngrep.displayhost", is_option_enabled("capture.lookup")?"on":"off");
 
     return 0;
+}
+
+void
+deinit_options()
+{
+    int i;
+    // Deallocate options memory
+    for (i = 0; i < optscnt; i++) {
+        free(options[i].opt);
+        free(options[i].value);
+    }
 }
 
 int
@@ -148,9 +160,9 @@ read_options(const char *fname)
             value = line + matches[3].rm_so;
             line[matches[3].rm_eo] = '\0';
             if (!strcasecmp(type, "set")) {
-                set_option_value(strdup(option), strdup(value));
+                set_option_value(option, value);
             } else if (!strcasecmp(type, "ignore")) {
-                set_ignore_value(strdup(option), strdup(value));
+                set_ignore_value(option, value);
             }
         }
     }
@@ -196,12 +208,13 @@ set_option_value(const char *opt, const char *value)
     int i;
     if (!get_option_value(opt)) {
         options[optscnt].type = SETTING;
-        options[optscnt].opt = opt;
+        options[optscnt].opt = strdup(opt);
         options[optscnt].value = strdup(value);
         optscnt++;
     } else {
         for (i = 0; i < optscnt; i++) {
             if (!strcasecmp(opt, options[i].opt)) {
+                free(options[i].value);
                 options[i].value = strdup(value);
             }
         }
@@ -238,8 +251,8 @@ void
 set_ignore_value(const char *opt, const char *value)
 {
     options[optscnt].type = IGNORE;
-    options[optscnt].opt = opt;
-    options[optscnt].value = value;
+    options[optscnt].opt = strdup(opt);
+    options[optscnt].value = strdup(value);
     optscnt++;
 }
 

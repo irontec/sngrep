@@ -62,13 +62,13 @@ struct config_option
     //! Setting type
     enum option_type type;
     //! Name of attribute
-    const char *opt;
+    char *opt;
     //! Value of attribute
-    const char *value;
+    char *value;
 };
 
 /**
- * @brief Initialize all application attributes
+ * @brief Initialize all program options
  *
  * This function will give all available settings an initial value.
  * This values can be overriden using resources files, either from system dir
@@ -78,6 +78,14 @@ struct config_option
  */
 int
 init_options();
+
+/**
+ * @brief Deallocate options memory
+ *
+ * Deallocate memory used for program configurations
+ */
+void
+deinit_options();
 
 /**
  * @brief Read optionuration directives from file
