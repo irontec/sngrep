@@ -92,8 +92,6 @@ call_raw_draw(PANEL *panel)
 int
 call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 {
-    // Previous message pointer
-    sip_msg_t *prev;
     // Variables for drawing each message character
     int raw_line, raw_char, column;
     // Message ngrep style Header

@@ -266,7 +266,6 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
-    sip_msg_t *prev;
     const char *msg_time;
     const char *msg_callid;
     const char *msg_method;
