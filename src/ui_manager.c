@@ -372,20 +372,23 @@ toggle_color(int on)
 void
 ui_new_msg_refresh(sip_msg_t *msg)
 {
-    PANEL *panel;
+    ui_t * ui;
+    PANEL * panel;
 
     // Ensure panels won't change while updating
     pthread_mutex_lock(&refresh_lock);
     // Get the topmost panel
     if ((panel = panel_below(NULL))) {
-        ui_t *ui = ui_find_by_panel(panel);
-        pthread_mutex_lock(&ui->lock);
-        // Get ui information for that panel
-        if (ui_redraw_required(ui, msg) == 0) {
-            // If ui needs to be update, redraw it
-            ui_draw_panel(ui_find_by_panel(panel));
+        // If topmost panel does not has an UI, it can not be refreshed
+        if ((ui = ui_find_by_panel(panel))) {
+            pthread_mutex_lock(&ui->lock);
+            // Get ui information for that panel
+            if (ui_redraw_required(ui, msg) == 0) {
+                // If ui needs to be update, redraw it
+                ui_draw_panel(ui_find_by_panel(panel));
+            }
+            pthread_mutex_unlock(&ui->lock);
         }
-        pthread_mutex_unlock(&ui->lock);
     }
     pthread_mutex_unlock(&refresh_lock);
 }
