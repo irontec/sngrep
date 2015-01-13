@@ -77,8 +77,6 @@ struct sip_msg
     char *payload[256];
     //!! FIXME not required
     int plines;
-    //! Flag to mark if payload data has been parsed
-    int parsed;
     //! Color for this message (in color.cseq mode)
     int color;
 
@@ -350,19 +348,6 @@ msg_parse_header(sip_msg_t *msg, const char *header);
  */
 int
 msg_parse_payload(sip_msg_t *msg, const char *payload);
-
-/**
- * @brief Parse internal header and payload
- *
- * By default, only the first message of each call is parsed.
- * This function will parse the message (if it's not already parsed)
- * filling all internal fields.
- *
- * @param msg Not Parsed (or parsed) message
- * @return a parsed message
- */
-sip_msg_t *
-msg_parse(sip_msg_t *msg);
 
 /**
  * @brief Check if a package is a retransmission

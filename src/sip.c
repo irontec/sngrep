@@ -65,7 +65,6 @@ sip_msg_create(const char *payload)
     memset(msg, 0, sizeof(sip_msg_t));
     msg->attrs = NULL;
     msg->payloadptr = strdup(payload);
-    msg->parsed = 0;
     msg->color = 0;
     return msg;
 }
@@ -101,8 +100,10 @@ sip_msg_destroy(sip_msg_t *msg)
         free(msg->payload[i]);
 
     // Free packet data
-    free(msg->pcap_header);
-    free(msg->pcap_packet);
+    if (msg->pcap_header)
+        free(msg->pcap_header);
+    if (msg->pcap_packet)
+        free(msg->pcap_packet);
 
     // Free all memory
     free(msg);
@@ -213,6 +214,12 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
         return NULL;
     }
 
+    // Parse the package payload to fill message attributes
+    if (msg_parse_payload(msg, (const char*) payload) != 0) {
+        sip_msg_destroy(msg);
+        return NULL;
+    }
+
     // Fill message data
     msg->ts = tv;
     msg->src = src;
@@ -251,7 +258,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
         // Only create a new call if the first msg
         // is a request message in the following gorup
         if (get_option_int_value("sip.ignoreincomplete")) {
-            const char *method = msg_get_attribute(msg_parse(msg), SIP_ATTR_METHOD);
+            const char *method = msg_get_attribute(msg, SIP_ATTR_METHOD);
             if (method && strncasecmp(method, "INVITE", 6) && strncasecmp(method, "REGISTER", 8)
                     && strncasecmp(method, "SUBSCRIBE", 9) && strncasecmp(method, "OPTIONS", 7)
                     && strncasecmp(method, "PUBLISH", 7) && strncasecmp(method, "MESSAGE", 7)
@@ -301,7 +308,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     // XXX Put this msg at the end of the msg list
     // Order is important!!!
     if (!call->msgs) {
-        call->msgs = msg_parse(msg);
+        call->msgs = msg;
     } else {
         for (cur = call->msgs; cur; prev = cur, cur = cur->next)
             ;
@@ -385,7 +392,7 @@ call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
     if (msg == NULL) {
         ret = call->msgs;
     } else {
-        ret = msg_parse(msg->next);
+        ret = msg->next;
     }
     pthread_mutex_unlock(&call->lock);
     return ret;
@@ -408,7 +415,7 @@ call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
         }
     }
     pthread_mutex_unlock(&call->lock);
-    return msg_parse(ret);
+    return ret;
 }
 
 sip_call_t *
@@ -443,32 +450,6 @@ call_get_prev(sip_call_t *cur)
         return call_get_prev(prev);
     }
     return prev;
-}
-
-sip_msg_t *
-msg_parse(sip_msg_t *msg)
-{
-
-    // Nothing to parse
-    if (!msg)
-        return NULL;
-
-    // Message already parsed
-    if (msg->parsed)
-        return msg;
-
-    // Parse message payload
-    if (msg_parse_payload(msg, msg->payloadptr) != 0)
-        return NULL;
-
-    // Free message pointers
-    //free(msg->payloadptr);
-    //msg->payloadptr = NULL;
-
-    // Mark as parsed
-    msg->parsed = 1;
-    // Return the parsed message
-    return msg;
 }
 
 int

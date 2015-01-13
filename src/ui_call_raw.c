@@ -73,7 +73,7 @@ call_raw_redraw_required(PANEL *panel, sip_msg_t *msg)
         return -1;
     // If this message belongs to one of the printed calls
     if (call_group_exists(info->group, msg->call)) {
-        call_raw_print_msg(panel, msg_parse(msg));
+        call_raw_print_msg(panel, msg);
         return 0;
     }
     return -1;

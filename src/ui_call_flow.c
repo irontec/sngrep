@@ -130,8 +130,6 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg)
     // Check if the owner of the message is in the displayed group
     for (i = 0; i < info->group->callcnt; i++) {
         if (info->group->calls[i] == msg->call) {
-            if (!msg->parsed)
-                msg_parse(msg);
             call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
             call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
             return 0;
