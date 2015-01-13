@@ -49,16 +49,11 @@
  * All parsed calls will be added to this list, only accesible from
  * this awesome structure, so, keep it thread-safe.
  */
-static sip_call_list_t calls = { .first = NULL, .last = NULL, .count = 0 };
-
-/**
- * @brief Warranty thread-safe access to the calls list.
- *
- * This lock should be used whenever the calls pointer is updated, but
- * before single call locking, it will be used everytime a thread access
- * single call data.
- */
-static pthread_mutex_t calls_lock;
+static sip_call_list_t calls =
+    {
+      .first = NULL,
+      .last = NULL,
+      .count = 0 };
 
 sip_msg_t *
 sip_msg_create(const char *payload)
@@ -130,7 +125,7 @@ sip_call_create(char *callid)
 #endif
     pthread_mutex_init(&call->lock, &attr);
 
-    pthread_mutex_lock(&calls_lock);
+    pthread_mutex_lock(&calls.lock);
     if (!calls.count) {
         calls.first = call;
     } else {
@@ -139,7 +134,7 @@ sip_call_create(char *callid)
     }
     calls.last = call;
     calls.count++;
-    pthread_mutex_unlock(&calls_lock);
+    pthread_mutex_unlock(&calls.lock);
     return call;
 }
 
@@ -322,18 +317,18 @@ sip_call_t *
 call_find_by_callid(const char *callid)
 {
     const char *cur_callid;
-    pthread_mutex_lock(&calls_lock);
+    pthread_mutex_lock(&calls.lock);
     sip_call_t *cur = calls.first;
 
     while (cur) {
         cur_callid = call_get_attribute(cur, SIP_ATTR_CALLID);
         if (cur_callid && !strcmp(cur_callid, callid)) {
-            pthread_mutex_unlock(&calls_lock);
+            pthread_mutex_unlock(&calls.lock);
             return cur;
         }
         cur = cur->next;
     }
-    pthread_mutex_unlock(&calls_lock);
+    pthread_mutex_unlock(&calls.lock);
     return NULL;
 }
 
@@ -342,18 +337,18 @@ call_find_by_xcallid(const char *xcallid)
 {
     const char *cur_xcallid;
 
-    pthread_mutex_lock(&calls_lock);
+    pthread_mutex_lock(&calls.lock);
     sip_call_t *cur = calls.first;
 
     while (cur) {
         cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
         if (cur_xcallid && !strcmp(cur_xcallid, xcallid)) {
-            pthread_mutex_unlock(&calls_lock);
+            pthread_mutex_unlock(&calls.lock);
             return cur;
         }
         cur = cur->next;
     }
-    pthread_mutex_unlock(&calls_lock);
+    pthread_mutex_unlock(&calls.lock);
     return NULL;
 }
 
@@ -480,7 +475,8 @@ int
 msg_parse_header(sip_msg_t *msg, const char *header)
 {
     struct tm when =
-        { 0 };
+        {
+          0 };
     char time[20], ipfrom[22], ipto[22];
     time_t timet;
     char proto;
@@ -634,18 +630,18 @@ msg_get_header(sip_msg_t *msg, char *out)
     }
 
     // Get msg header
-    sprintf(out,  "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
+    sprintf(out, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
     return out;
 }
 
 void
 sip_calls_clear()
 {
-    pthread_mutex_lock(&calls_lock);
+    pthread_mutex_lock(&calls.lock);
     // Remove first call until no first call exists
-    while(calls.first) {
+    while (calls.first) {
         sip_call_destroy(calls.first);
     }
 
-    pthread_mutex_unlock(&calls_lock);
+    pthread_mutex_unlock(&calls.lock);
 }

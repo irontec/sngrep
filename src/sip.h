@@ -119,9 +119,13 @@ struct sip_call
  */
 struct sip_call_list
 {
+    // First and Last calls of the list
     sip_call_t *first;
     sip_call_t *last;
+    // Call counter
     int count;
+    // Warranty thread-safe access to the calls list
+    pthread_mutex_t lock;
 };
 
 /**
