@@ -47,6 +47,7 @@ init_options()
 {
     // Custom user conf file
     char userconf[128];
+    char *home = getenv("HOME");
 
     // Set default color options
     set_option_value("color", "on");
@@ -81,7 +82,7 @@ init_options()
     set_option_value("sip.capture", "on");
 
     // Set default save file location
-    set_option_value("sngrep.savepath", getenv("HOME"));
+    set_option_value("sngrep.savepath", home);
 
     // Set default capture options
     set_option_value("capture.limit", "2000");
@@ -102,8 +103,8 @@ init_options()
     read_options("/etc/sngreprc");
     read_options("/usr/local/etc/sngreprc");
     // Get user homedir configuration
-    if (getenv("HOME")) {
-        sprintf(userconf, "%s/.sngreprc", getenv("HOME"));
+    if (home) {
+        sprintf(userconf, "%s/.sngreprc", home);
         read_options(userconf);
     }
 
@@ -199,6 +200,9 @@ set_option_int_value(const char *opt, int value)
 void
 set_option_value(const char *opt, const char *value)
 {
+    if (!opt || !value)
+        return;
+
     int i;
     if (!get_option_value(opt)) {
         options[optscnt].type = SETTING;
