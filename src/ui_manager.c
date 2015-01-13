@@ -57,23 +57,57 @@ pthread_mutex_t refresh_lock;
  */
 static ui_t panel_pool[] =
     {
-        { .type = MAIN_PANEL, .panel = NULL, .create = call_list_create, .redraw_required =
-                call_list_redraw_required, .draw = call_list_draw, .handle_key =
-                call_list_handle_key, .help = call_list_help, .destroy = call_list_destroy, },
-        { .type = DETAILS_PANEL, .panel = NULL, .create = call_flow_create, .redraw_required =
-                call_flow_redraw_required, .draw = call_flow_draw, .handle_key =
-                call_flow_handle_key, .help = call_flow_help },
-                { .type = RAW_PANEL, .panel = NULL, .create = call_raw_create, .redraw_required =
-                        call_raw_redraw_required, .draw = call_raw_draw, .handle_key =
-                        call_raw_handle_key },
-                { .type = FILTER_PANEL, .panel = NULL, .create = filter_create, .handle_key =
-                        filter_handle_key, .destroy = filter_destroy },
-                { .type = SAVE_PANEL, .panel = NULL, .create = save_create, .draw = save_draw,
-                        .handle_key = save_handle_key, .destroy = save_destroy },
-                { .type = SAVE_RAW_PANEL, .panel = NULL, .create = save_raw_create, .handle_key =
-                        save_raw_handle_key, .destroy = save_raw_destroy },
-                { .type = MSG_DIFF_PANEL, .panel = NULL, .create = msg_diff_create, .handle_key =
-                        msg_diff_handle_key, .destroy = msg_diff_destroy, .draw = msg_diff_draw, .help = msg_diff_help } };
+          {
+            .type = MAIN_PANEL,
+            .panel = NULL,
+            .create = call_list_create,
+            .redraw_required = call_list_redraw_required,
+            .draw = call_list_draw,
+            .handle_key = call_list_handle_key,
+            .help = call_list_help,
+            .destroy = call_list_destroy, },
+          {
+            .type = DETAILS_PANEL,
+            .panel = NULL,
+            .create = call_flow_create,
+            .redraw_required = call_flow_redraw_required,
+            .draw = call_flow_draw,
+            .handle_key = call_flow_handle_key,
+            .help = call_flow_help },
+          {
+            .type = RAW_PANEL,
+            .panel = NULL,
+            .create = call_raw_create,
+            .redraw_required = call_raw_redraw_required,
+            .draw = call_raw_draw,
+            .handle_key = call_raw_handle_key },
+          {
+            .type = FILTER_PANEL,
+            .panel = NULL,
+            .create = filter_create,
+            .handle_key = filter_handle_key,
+            .destroy = filter_destroy },
+          {
+            .type = SAVE_PANEL,
+            .panel = NULL,
+            .create = save_create,
+            .draw = save_draw,
+            .handle_key = save_handle_key,
+            .destroy = save_destroy },
+          {
+            .type = SAVE_RAW_PANEL,
+            .panel = NULL,
+            .create = save_raw_create,
+            .handle_key = save_raw_handle_key,
+            .destroy = save_raw_destroy },
+          {
+            .type = MSG_DIFF_PANEL,
+            .panel = NULL,
+            .create = msg_diff_create,
+            .handle_key = msg_diff_handle_key,
+            .destroy = msg_diff_destroy,
+            .draw = msg_diff_draw,
+            .help = msg_diff_help } };
 
 int
 init_interface()
@@ -250,18 +284,9 @@ wait_for_input(ui_t *ui)
     // Keep getting keys until panel is destroyed
     while (ui_get_panel(ui)) {
         pthread_mutex_lock(&refresh_lock);
-        // If ui requested replacement
-        if (ui->replace) {
-            replace = ui->replace;
-            ui->replace = NULL;
-            ui_destroy(ui);
-            ui = replace;
-        }
-
         // Redraw this panel
         if (ui_draw_panel(ui) != 0)
             return -1;
-
         pthread_mutex_unlock(&refresh_lock);
 
         // Enable key input on current panel
@@ -408,16 +433,6 @@ title_foot_box(WINDOW *win)
     mvwhline(win, height - 3, 1, ACS_HLINE, width - 2);
     mvwaddch(win, height - 3, width - 1, ACS_RTEE);
 
-}
-
-int
-ui_set_replace(ui_t *original, ui_t *replace)
-{
-    if (!original || !replace) {
-        return -1;
-    }
-    original->replace = replace;
-    return 0;
 }
 
 void

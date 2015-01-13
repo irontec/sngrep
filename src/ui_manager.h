@@ -74,8 +74,7 @@ struct ui
     //! Show help window for this panel (if any)
     int
     (*help)(PANEL *);
-    //! Replace current UI with the following in the next update
-    ui_t *replace;
+
     //! UI lock. Avoid multi-thread update on this UI
     pthread_mutex_t lock;
 
@@ -303,15 +302,6 @@ title_foot_box(WINDOW *win);
  */
 void
 ui_new_msg_refresh(sip_msg_t *msg);
-
-/**
- * @brief Replace one UI with another
- *
- * This function can be handy when we want to destroy one UI element
- * and replace it for another in the next ui loop redraw.
- */
-int
-ui_set_replace(ui_t *, ui_t*);
 
 /**
  * @brief Draw keybinding info at the bottom of the panel
