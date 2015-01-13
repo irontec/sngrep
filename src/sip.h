@@ -321,6 +321,14 @@ sip_call_t *
 call_get_prev(sip_call_t *cur);
 
 /**
+ * @brief Update Call State attribute with its last parsed message
+ *
+ * @param call Call structure to be updated
+ */
+void
+call_update_state(sip_call_t *call);
+
+/**
  * @brief Parse ngrep header line to get timestamps and ip addresses
  *
  * This function will convert the ngrep header line in format:

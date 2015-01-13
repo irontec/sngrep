@@ -123,12 +123,17 @@ static sip_attr_hdr_t attrs[] =
             .id = SIP_ATTR_STARTING,
             .name = "starting",
             .desc = "Starting",
-            .dwidth = 15, },
+            .dwidth = 10, },
           {
             .id = SIP_ATTR_MSGCNT,
             .name = "msgcnt",
             .desc = "Msgs",
-            .dwidth = 5, }, };
+            .dwidth = 5, },
+          {
+            .id = SIP_ATTR_CALLSTATE,
+            .name = "state",
+            .desc = "State",
+            .dwidth = 10 } };
 
 sip_attr_hdr_t *
 sip_attr_get_header(enum sip_attr_id id)
@@ -247,13 +252,20 @@ call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value)
 const char *
 call_get_attribute(sip_call_t *call, enum sip_attr_id id)
 {
-    if (id == SIP_ATTR_MSGCNT) {
+    if (!call)
+        return NULL;
+
+    switch (id) {
+    case SIP_ATTR_MSGCNT:
+    case SIP_ATTR_CALLSTATE:
         return sip_attr_get(call->attrs, id);
-    }
-    if (id == SIP_ATTR_STARTING) {
+    case SIP_ATTR_STARTING:
         return msg_get_attribute(call_get_next_msg(call, NULL), SIP_ATTR_METHOD);
+    default:
+        return msg_get_attribute(call_get_next_msg(call, NULL), id);
     }
-    return msg_get_attribute(call_get_next_msg(call, NULL), id);
+
+    return NULL;
 }
 
 void

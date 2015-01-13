@@ -63,6 +63,7 @@ init_options()
     set_option_value("cl.column3", "src");
     set_option_value("cl.column4", "dst");
     set_option_value("cl.column5", "starting");
+    set_option_value("cl.column6", "state");
 
     // Set Autoscroll in call list
     set_option_value("cl.autoscroll", "on");

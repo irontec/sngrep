@@ -254,10 +254,10 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
     // Find the call for this msg
     if (!(call = call_find_by_callid(callid))) {
-
         // Only create a new call if the first msg
         // is a request message in the following gorup
         if (get_option_int_value("sip.ignoreincomplete")) {
+            // Get Message method / response code
             const char *method = msg_get_attribute(msg, SIP_ATTR_METHOD);
             if (method && strncasecmp(method, "INVITE", 6) && strncasecmp(method, "REGISTER", 8)
                     && strncasecmp(method, "SUBSCRIBE", 9) && strncasecmp(method, "OPTIONS", 7)
@@ -284,6 +284,9 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
     // Add the message to the found/created call
     call_add_message(call, msg);
+
+    // Update Call State
+    call_update_state(call);
 
     // Return the loaded message
     return msg;
@@ -450,6 +453,51 @@ call_get_prev(sip_call_t *cur)
         return call_get_prev(prev);
     }
     return prev;
+}
+
+void
+call_update_state(sip_call_t *call)
+{
+    sip_msg_t *msg;
+    const char *callstate;
+    const char *method;
+
+    // Sanity check
+    if (!call || !call->msgs)
+        return;
+
+    // Get Last call message
+    msg = call->msgs;
+    while (msg->next) {
+        msg = msg->next;
+    }
+
+    // Get Message method / response code
+    if (!(method = msg_get_attribute(msg, SIP_ATTR_METHOD))) {
+        return;
+    }
+
+    // If this message is actually a call, get its current state
+    if ((callstate = call_get_attribute(call, SIP_ATTR_CALLSTATE))) {
+        if (!strcmp(callstate, "CALL SETUP")) {
+            if (!strncasecmp(method, "200", 3)) {
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, "IN CALL");
+            } else if (!strncasecmp(method, "CANCEL", 6)) {
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, "CANCELLED");
+            } else if (!strncasecmp(method, "486", 3) || !strncasecmp(method, "603", 3)) {
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, "REJECTED");
+            }
+        } else if (!strcmp(callstate, "IN CALL")) {
+            if (!strncasecmp(method, "BYE", 3)) {
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, "COMPLETED");
+            }
+        }
+    } else {
+        // This is actually a call
+        if (!strncasecmp(method, "INVITE", 6))
+            call_set_attribute(call, SIP_ATTR_CALLSTATE, "CALL SETUP");
+    }
+
 }
 
 int
