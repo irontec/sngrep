@@ -40,14 +40,14 @@
 #define TIME(msg) msg_get_attribute(msg, SIP_ATTR_TIME)
 #define DATE(msg) msg_get_attribute(msg, SIP_ATTR_DATE)
 
-//! Shorter declaration of sip_call structure
-typedef struct sip_call sip_call_t;
-//! Shorter declaration of sip_msg structure
-typedef struct sip_msg sip_msg_t;
 //! Shorter declaration of sip_attr structure
 typedef struct sip_attr_hdr sip_attr_hdr_t;
 //! Shorter declaration of sip_attr structure
 typedef struct sip_attr sip_attr_t;
+
+// Forward struct declaration for calls and messages
+struct sip_call;
+struct sip_msg;
 
 /**
  * @brief Available SIP Attributes
@@ -234,7 +234,7 @@ sip_attr_get(sip_attr_t *list, enum sip_attr_id id);
  * @param value Attribute value
  */
 void
-call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value);
+call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *value);
 
 /**
  * @brief Return a call attribute value
@@ -248,7 +248,7 @@ call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value);
  * @return Attribute value or NULL if not found
  */
 const char *
-call_get_attribute(sip_call_t *call, enum sip_attr_id id);
+call_get_attribute(struct sip_call *call, enum sip_attr_id id);
 
 /**
  * @brief Sets the attribute value for a given message
@@ -260,7 +260,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id);
  * @param value Attribute value
  */
 void
-msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value);
+msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *value);
 
 /**
  * @brief Return a message attribute value
@@ -273,7 +273,7 @@ msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value);
  * @return Attribute value or NULL if not found
  */
 const char *
-msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id);
+msg_get_attribute(struct sip_msg *msg, enum sip_attr_id id);
 
 /**
  * @brief Check if this call is affected by filters
@@ -285,6 +285,6 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id);
  * @return 1 if call is filtered, 0 otherwise
  */
 int
-sip_check_call_ignore(sip_call_t *call);
+sip_check_call_ignore(struct sip_call *call);
 
 #endif /* __SNGREP_SIP_ATTR_H */

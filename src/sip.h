@@ -42,12 +42,12 @@
 typedef struct sip_call sip_call_t;
 //! Shorter declaration of sip_msg structure
 typedef struct sip_msg sip_msg_t;
-//! Shorter declaration of sip_attr structure
-typedef struct sip_attr_hdr sip_attr_hdr_t;
-//! Shorter declaration of sip_attr structure
-typedef struct sip_attr sip_attr_t;
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
+
+// Forward struct declaration for attributes
+struct sip_attr_hdr;
+struct sip_attr;
 
 /**
  * @brief Information of a single message withing a dialog.
@@ -60,7 +60,7 @@ typedef struct sip_call_list sip_call_list_t;
 struct sip_msg
 {
     //! Message attribute list
-    sip_attr_t *attrs;
+    struct sip_attr *attrs;
     //! Timestamp
     struct timeval ts;
     //! Source address
@@ -103,7 +103,7 @@ struct sip_msg
 struct sip_call
 {
     //! Call attribute list
-    sip_attr_t *attrs;
+    struct sip_attr *attrs;
     //! List of messages of this call
     sip_msg_t *msgs;
     // Call Lock
