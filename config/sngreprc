@@ -38,38 +38,41 @@
 
 ##-----------------------------------------------------------------------------
 ## You can change the default number of columns in call list
-##    set cl.columns {count}
 ##
 ## Set displayed columns in call list screen
 ##    set cl.column{num} {field}
 ##
-## You can also configure the column width using
-##    set cl.column{num}.width {cols}
+## You can optionally configure the column width using
+##    set cl.column{num}.width {num}
 ##
 ## Available columns fields are:
 ##    - sipfrom
 ##    - sipto
 ##    - src
+##    - srchost
 ##    - dst
+##    - dsthost
 ##    - callid
 ##    - xcallid
+##    - date
+##    - time
+##    - sdp
 ##    - msgcnt
 ##    - starting
-##	  - transport
-
-# set cl.columns 6
+##    - transport
+##    - state
+##
+## Examples:
 # set cl.column0 sipfrom
-# set cl.column0.width 40
+# set cl.column0.width 30
 # set cl.column1 sipto
-# set cl.column1.width 40
 # set cl.column2 msgcnt
-# set cl.column2.width 5
 # set cl.column3 src
-# set cl.column3.width 22
 # set cl.column4 dst
 # set cl.column4.width 22
 # set cl.column5 starting
 # set cl.column5.width 15
+# set cl.column6 state
 
 ##-----------------------------------------------------------------------------
 ## Default minimun size from Message payload in Call Flow panel
@@ -88,7 +91,9 @@
 ##
 ## ignore {field} {value}
 ##
+## Examples:
 # ignore starting OPTIONS
 # ignore starting REGISTER
 # ignore starting BYE
-
+# ignore srchost 192.168.1.1
+# ignore transport TCP

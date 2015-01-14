@@ -1,30 +1,29 @@
 ToDo List
 =========
-capture:
-    * Add support for TLS (At least 1.0)
-
 sip:
-    * Remove all ngrep rubbish
-        We still use ngrep header format. I like that for displaying
-        raw data but not for parsing data from capture packets
-        into sip_message structures.
-
 	* Change parsing functions for something more efficient (osip2?)
 		Parsing with sscanf is not the best way, but the simplest. If
 		we require to parse more headers in the future, it will start 
 		to be worse and worse
 		
+	* Improve the way payload is stored
+		Payload is included two times. One in the msg->payload pointer
+		and also in msg->pcap_packet content. This doubles the required
+		memory.
+
 ui:
  	* Change panels initialization
 		Right now, all panels are initializated at the same, because
 		each panel can only be invoked once (it is not possible to have
 		two call details panel right now)
 		
-	* Show call duration and Finish status
+	* Show call duration
 		It would be great to show this two columns on main screean.
 		First one can be calculated from the difference between first
 		and last messages timestamps.
-		The second one, depends on the messages in the callflow. But the
-		idea is something like: BYE (Normal Clearing), CANCEL (Canceled),
-		486 Busy Here (Busy), ...
+
+	* Change List columns in runtime
+		Sometimes its useful to filter the list for some column that is
+		not being displayed (like time, transport, ...), so it would be
+		nice to allow choosing the columns during runtime
 
