@@ -47,8 +47,8 @@ enum save_field_list
     FLD_SAVE_FILE = 0,
     FLD_SAVE_ALL,
     FLD_SAVE_SELECTED,
-    FLD_SAVE_CANCEL,
     FLD_SAVE_SAVE,
+    FLD_SAVE_CANCEL,
     //! Never remove this field id @see save_info
     FLD_SAVE_COUNT
 };
