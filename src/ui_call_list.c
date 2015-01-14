@@ -94,7 +94,6 @@ call_list_create()
     info->group = call_group_create();
 
     // Draw a Panel header lines
-    mvwprintw(win, 1, 2, "Current Mode: %s", get_option_value("sngrep.mode"));
     if (get_option_value("capture.infile"))
         mvwprintw(win, 1, width - strlen(get_option_value("capture.infile")) - 11, "Filename: %s",
                   get_option_value("capture.infile"));
@@ -205,6 +204,10 @@ call_list_draw(PANEL *panel)
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     if (!info)
         return -1;
+
+    // Update current mode information
+    mvwprintw(panel_window(panel), 1, 2, "Current Mode: %s %9s", get_option_value("sngrep.mode"),
+              (is_option_enabled("sip.capture")?"":"(Stopped)"));
 
     // Get window of call list panel
     WINDOW *win = info->list_win;
