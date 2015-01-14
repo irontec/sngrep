@@ -283,7 +283,6 @@ ui_find_by_type(int type)
 int
 wait_for_input(ui_t *ui)
 {
-    ui_t *replace;
     WINDOW *win;
 
     // Keep getting keys until panel is destroyed
@@ -484,4 +483,44 @@ draw_vscrollbar(WINDOW *win, int value, int max, bool left)
     // Draw the N blocks of the scrollbar
     for (cline = 0; cline < scrollen; cline++)
         mvwaddch(win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
+}
+
+int
+draw_message(WINDOW *win, sip_msg_t *msg)
+{
+    return draw_message_pos(win, msg, 0);
+}
+
+int
+draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
+{
+    int height, width, line, column, i;
+
+    // Get window of main panel
+    getmaxyx(win, height, width);
+
+    // Print msg payload
+    line = starting;
+    column = 0;
+    for (i = 0; i < strlen(msg->payload); i++) {
+        if (msg->payload[i] == '\r')
+            continue;
+
+        if (column == width || msg->payload[i] == '\n') {
+            line++;
+            column = 0;
+            continue;
+        }
+
+        if (line == height)
+            break;
+
+        // Put next character in position
+        mvwaddch(win, line, column++, msg->payload[i]);
+    }
+
+    // Redraw raw win
+    wnoutrefresh(win);
+
+    return line - starting;
 }

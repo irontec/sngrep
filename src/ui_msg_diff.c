@@ -147,7 +147,7 @@ msg_diff_highlight(sip_msg_t *one, sip_msg_t *two, char *highlight)
         if (!strcasecmp(get_option_value("diff.mode"), "lcs")) {
             // @todo msg_diff_lcs_highlight(one->payloadptr, two->payloadptr, highlight);
         } else if (!strcasecmp(get_option_value("diff.mode"), "line")) {
-            msg_diff_line_highlight(one->payloadptr, two->payloadptr, highlight);
+            msg_diff_line_highlight(one->payload, two->payload, highlight);
         } else {
             // Unknown hightlight enabled
         }
@@ -194,16 +194,18 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
     // Get window of main panel
     getmaxyx(win, height, width);
 
+    wattron(win, A_BOLD);
     mvwprintw(win, 0, 0, msg_get_header(msg, header));
+    wattroff(win, A_BOLD);
 
     // Print msg payload
     line = 2;
     column = 0;
-    for (i = 0; i < strlen(msg->payloadptr); i++) {
-        if (msg->payloadptr[i] == '\r')
+    for (i = 0; i < strlen(msg->payload); i++) {
+        if (msg->payload[i] == '\r')
             continue;
 
-        if (column == width || msg->payloadptr[i] == '\n') {
+        if (column == width || msg->payload[i] == '\n') {
             line++;
             column = 0;
             continue;
@@ -219,7 +221,7 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
         }
 
         // Put next character in position
-        mvwaddch(win, line, column++, msg->payloadptr[i]);
+        mvwaddch(win, line, column++, msg->payload[i]);
     }
 
     // Redraw raw win

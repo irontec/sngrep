@@ -72,11 +72,7 @@ struct sip_msg
     //! Destiny port
     u_short dport;
     //! Temporal payload data before being parsed
-    char *payloadptr;
-    //! FIXME Payload in one struct
-    char *payload[256];
-    //!! FIXME not required
-    int plines;
+    char *payload;
     //! Color for this message (in color.cseq mode)
     int color;
 

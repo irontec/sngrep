@@ -397,7 +397,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 {
     call_flow_info_t *info;
     WINDOW *win, *raw_win;
-    int raw_width, raw_height, raw_line, raw_char, column, line, height, width;
+    int raw_width, raw_height, height, width;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -443,23 +443,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
 
     // Print msg payload
-    for (line = 0, raw_line = 0; raw_line < msg->plines; raw_line++) {
-        // Add character by character
-        for (column = 0, raw_char = 0; raw_char < strlen(msg->payload[raw_line]); raw_char++) {
-            // Wrap at the end of the window
-            if (column == raw_width) {
-                line++;
-                column = 0;
-            }
-            // Don't write out of the window
-            if (line >= raw_height)
-                break;
-            // Put next character in position
-            mvwaddch(raw_win, line, column++, msg->payload[raw_line][raw_char]);
-        }
-        // Done with this payload line, go to the next one
-        line++;
-    }
+    draw_message(info->raw_win, msg);
 
     // Copy the raw_win contents into the panel
     copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);

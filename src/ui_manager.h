@@ -325,4 +325,30 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count);
 void
 draw_vscrollbar(WINDOW *win, int value, int max, bool left);
 
+/**
+ * @brief Draw a message payload in a window
+ *
+ * Generic drawing function for payload. This function will start
+ * writting at 0,0 and return the number of lines written.
+ *
+ * @param win Ncurses window to draw payload
+ * @param msg Msg to be drawn
+ */
+int
+draw_message(WINDOW *win, sip_msg_t *msg);
+
+/**
+ * @brief Draw a message payload in a window starting at a given line
+ *
+ * Generic drawing function for payload. This function will start
+ * writting at line starting and first column and return the number
+ * of lines written.
+ *
+ * @param win Ncurses window to draw payload
+ * @param msg Msg to be drawn
+ * @param starting Number of win line to start writting payload
+ */
+int
+draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting);
+
 #endif    // __SNGREP_UI_MANAGER_H

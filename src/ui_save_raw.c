@@ -228,7 +228,6 @@ save_raw_to_file(PANEL *panel)
     char field_value[48];
     FILE *f;
     sip_msg_t *msg = NULL;
-    int i;
 
     // Get panel information
     save_raw_info_t *info = (save_raw_info_t*) panel_userptr(panel);
@@ -246,13 +245,9 @@ save_raw_to_file(PANEL *panel)
 
     // Print the call group messages into the pad
     while ((msg = call_group_get_next_msg(info->group, msg))) {
-        fprintf(f, "%s %s %s -> %s\n", msg_get_attribute(msg, SIP_ATTR_DATE),
+        fprintf(f, "%s %s %s -> %s\n%s\n\n", msg_get_attribute(msg, SIP_ATTR_DATE),
                 msg_get_attribute(msg, SIP_ATTR_TIME), msg_get_attribute(msg, SIP_ATTR_SRC),
-                msg_get_attribute(msg, SIP_ATTR_DST));
-        for (i = 0; i < msg->plines; i++) {
-            fprintf(f, "%s\n", msg->payload[i]);
-        }
-        fprintf(f, "\n");
+                msg_get_attribute(msg, SIP_ATTR_DST), msg->payload);
     }
 
     fclose(f);

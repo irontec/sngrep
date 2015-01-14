@@ -64,7 +64,7 @@ sip_msg_create(const char *payload)
         return NULL;
     memset(msg, 0, sizeof(sip_msg_t));
     msg->attrs = NULL;
-    msg->payloadptr = strdup(payload);
+    msg->payload = strdup(payload);
     msg->color = 0;
     return msg;
 }
@@ -73,7 +73,6 @@ void
 sip_msg_destroy(sip_msg_t *msg)
 {
     sip_msg_t *prev = NULL;
-    int i;
 
     if (!msg)
         return;
@@ -92,12 +91,8 @@ sip_msg_destroy(sip_msg_t *msg)
     sip_attr_list_destroy(msg->attrs);
 
     // Free message payload pointer if not parsed
-    if (msg->payloadptr)
-        free(msg->payloadptr);
-
-    // Free message payload
-    for (i = 0; i < msg->plines; i++)
-        free(msg->payload[i]);
+    if (msg->payload)
+        free(msg->payload);
 
     // Free packet data
     if (msg->pcap_header)
@@ -554,9 +549,6 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     body = strdup(payload);
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
-        // Copy the payload line by line (easier to process by the UI)
-        msg->payload[msg->plines++] = strdup(pch);
-
         if (!strlen(pch))
             continue;
 
@@ -613,33 +605,20 @@ int
 msg_is_retrans(sip_msg_t *msg)
 {
     sip_msg_t *prev = NULL;
-    int i;
 
     // Sanity check
-    if (!msg || !msg->call)
+    if (!msg || !msg->call || !msg->payload)
         return 0;
 
     // Get previous message
     prev = call_get_prev_msg(msg->call, msg);
 
     // No previous message, this can not be a retransmission
-    if (!prev)
+    if (!prev || !prev->payload)
         return 0;
 
-    // Not even the same lines in playload
-    if (msg->plines != prev->plines)
-        return 0;
-
-    // Check if they have the same payload
-    for (i = 0; i < msg->plines; i++) {
-        // If any line of payload is different, this is not a retrans
-        if (strcasecmp(msg->payload[i], prev->payload[i])) {
-            return 0;
-        }
-    }
-
-    // All check passed, this package is equal to its previous
-    return 1;
+    // Check payloads
+    return !strcasecmp(msg->payload, prev->payload);
 }
 
 char *

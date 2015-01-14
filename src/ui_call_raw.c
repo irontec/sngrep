@@ -92,8 +92,7 @@ call_raw_draw(PANEL *panel)
 int
 call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 {
-    // Variables for drawing each message character
-    int raw_line, raw_char, column;
+    int payload_lines, i, column, height, width;
     // Message ngrep style Header
     char header[256];
 
@@ -102,12 +101,24 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 
     // Get the pad window
     WINDOW *pad = info->pad;
-    // Get the pad's current line
-    int line = info->padline;
+
+    // Get current pad dimensions
+    getmaxyx(pad, height, width);
+
+    // Check how many lines we well need to draw this message
+    payload_lines = 0;
+    column = 0;
+    for (i = 0; i < strlen(msg->payload); i++) {
+        if (column == width || msg->payload[i] == '\n') {
+            payload_lines++;
+            column = 0;
+            continue;
+        }
+        column++;
+    }
 
     // Check if we have enough space in our huge pad to store this message
-    int height = getmaxy(pad);
-    if (line + msg->plines + 10 > height) {
+    if (info->padline + payload_lines > height) {
         // Create a new pad with more lines!
         pad = newpad(height + 500, COLS);
         // And copy all previous information
@@ -136,28 +147,13 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 
     // Print msg header
     wattron(pad, A_BOLD);
-    mvwprintw(pad, line++, 0, "%s", msg_get_header(msg, header));
+    mvwprintw(pad, info->padline++, 0, "%s", msg_get_header(msg, header));
     wattroff(pad, A_BOLD);
 
     // Print msg payload
-    for (raw_line = 0; raw_line < msg->plines; raw_line++) {
-        // Add character by character
-        for (column = 0, raw_char = 0; raw_char < strlen(msg->payload[raw_line]); raw_char++) {
-            // Wrap at the end of the window
-            if (column == COLS) {
-                line++;
-                column = 0;
-            }
-            mvwaddch(pad, line, column++, msg->payload[raw_line][raw_char]);
-        }
-        // Increase line after writing it
-        line++;
-    }
+    info->padline += draw_message_pos(pad, msg, info->padline);
     // Extra line between messages
-    line++;
-
-    // Store current pad position
-    info->padline = line;
+    info->padline++;
 
     return 0;
 }
