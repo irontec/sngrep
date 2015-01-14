@@ -305,8 +305,13 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 {
     int i, collen;
     const char *call_attr;
-    char coltext[80];
+    char coltext[256];
     int colid;
+    int width;
+
+    WINDOW *win = panel_window(panel);;
+    // Get window width
+    width = getmaxx(win);
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -330,6 +335,11 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 
         // Get current column width
         collen = info->columns[i].width;
+
+        // Check if next column fits on window width
+        if (strlen(text) + collen >= width)
+            break;
+
         // Get call attribute for current column
         if ((call_attr = call_get_attribute(call, colid))) {
             sprintf(coltext, "%.*s", collen, call_attr);
