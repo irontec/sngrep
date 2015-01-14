@@ -7,6 +7,8 @@
 ##-----------------------------------------------------------------------------
 ## Enable color on or off
 # set color on
+## Use white/black as foreground/background instead of terminal defaults
+# set background dark
 
 ##-----------------------------------------------------------------------------
 ## Uncomment to configure packet count capture limit (0: disabled)

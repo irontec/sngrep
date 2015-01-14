@@ -118,7 +118,12 @@ init_interface()
         return -1;
     }
 
-    use_default_colors();
+    // Check if user wants a black background
+    if (is_option_value("background", "dark")) {
+        assume_default_colors(COLOR_WHITE, COLOR_BLACK);
+    } else {
+        use_default_colors();
+    }
     start_color();
     cbreak();
 
@@ -350,41 +355,50 @@ wait_for_input(ui_t *ui)
 void
 toggle_color(int on)
 {
+    int bg, fg;
+    if (is_option_value("background", "dark")) {
+        fg = COLOR_WHITE;
+        bg = COLOR_BLACK;
+    } else {
+        fg = COLOR_DEFAULT;
+        bg = COLOR_DEFAULT;
+    }
+
     if (on) {
         // Initialize some colors
-        init_pair(HIGHLIGHT_COLOR, COLOR_WHITE, COLOR_BLUE);
-        init_pair(HELP_COLOR, COLOR_CYAN, COLOR_NONE);
-        init_pair(OUTGOING_COLOR, COLOR_RED, COLOR_NONE);
-        init_pair(INCOMING_COLOR, COLOR_GREEN, COLOR_NONE);
-        init_pair(DETAIL_BORDER_COLOR, COLOR_BLUE, COLOR_NONE);
-        init_pair(CALLID1_COLOR, COLOR_CYAN, COLOR_NONE);
-        init_pair(CALLID2_COLOR, COLOR_YELLOW, COLOR_NONE);
-        init_pair(CALLID3_COLOR, COLOR_MAGENTA, COLOR_NONE);
-        init_pair(CALLID4_COLOR, COLOR_GREEN, COLOR_NONE);
-        init_pair(CALLID5_COLOR, COLOR_RED, COLOR_NONE);
-        init_pair(CALLID6_COLOR, COLOR_BLUE, COLOR_NONE);
-        init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(KEYBINDINGS_KEY, COLOR_WHITE, COLOR_CYAN);
-        init_pair(KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_CYAN);
-        init_pair(DIFF_HIGHLIGHT, COLOR_YELLOW, COLOR_NONE);
+        init_pair(HIGHLIGHT_COLOR, fg, COLOR_BLUE);
+        init_pair(HELP_COLOR, COLOR_CYAN, bg);
+        init_pair(OUTGOING_COLOR, COLOR_RED, bg);
+        init_pair(INCOMING_COLOR, COLOR_GREEN, bg);
+        init_pair(DETAIL_BORDER_COLOR, COLOR_BLUE, bg);
+        init_pair(CALLID1_COLOR, COLOR_CYAN, bg);
+        init_pair(CALLID2_COLOR, COLOR_YELLOW, bg);
+        init_pair(CALLID3_COLOR, COLOR_MAGENTA, bg);
+        init_pair(CALLID4_COLOR, COLOR_GREEN, bg);
+        init_pair(CALLID5_COLOR, COLOR_RED, bg);
+        init_pair(CALLID6_COLOR, COLOR_BLUE, bg);
+        init_pair(CALLID7_COLOR, COLOR_WHITE, bg);
+        init_pair(SELECTED_COLOR, COLOR_WHITE, bg);
+        init_pair(KEYBINDINGS_KEY, fg, COLOR_CYAN);
+        init_pair(KEYBINDINGS_ACTION, bg, COLOR_CYAN);
+        init_pair(DIFF_HIGHLIGHT, COLOR_YELLOW, bg);
     } else {
-        init_pair(HIGHLIGHT_COLOR, COLOR_BLACK, COLOR_WHITE);
-        init_pair(HELP_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(OUTGOING_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(INCOMING_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(DETAIL_BORDER_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(CALLID1_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(CALLID2_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(CALLID3_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(CALLID4_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(CALLID5_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(CALLID6_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(CALLID7_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(SELECTED_COLOR, COLOR_WHITE, COLOR_NONE);
-        init_pair(KEYBINDINGS_KEY, COLOR_WHITE, COLOR_NONE);
-        init_pair(KEYBINDINGS_ACTION, COLOR_BLACK, COLOR_WHITE);
-        init_pair(DIFF_HIGHLIGHT, COLOR_BLACK, COLOR_WHITE);
+        init_pair(HIGHLIGHT_COLOR, bg, fg);
+        init_pair(HELP_COLOR, fg, bg);
+        init_pair(OUTGOING_COLOR, fg, bg);
+        init_pair(INCOMING_COLOR, fg, bg);
+        init_pair(DETAIL_BORDER_COLOR, fg, bg);
+        init_pair(CALLID1_COLOR, fg, bg);
+        init_pair(CALLID2_COLOR, fg, bg);
+        init_pair(CALLID3_COLOR, fg, bg);
+        init_pair(CALLID4_COLOR, fg, bg);
+        init_pair(CALLID5_COLOR, fg, bg);
+        init_pair(CALLID6_COLOR, fg, bg);
+        init_pair(CALLID7_COLOR, fg, bg);
+        init_pair(SELECTED_COLOR, fg, bg);
+        init_pair(KEYBINDINGS_KEY, bg, fg);
+        init_pair(KEYBINDINGS_ACTION, bg, fg);
+        init_pair(DIFF_HIGHLIGHT, fg, bg);
     }
 }
 

@@ -161,6 +161,15 @@ void
 set_ignore_value(const char *opt, const char *value);
 
 /**
+ * @brief Check if a configuration option has a specific value
+ *
+ * @param opt Name of configuration option
+ * @return 1 if value is "on" or "1", 0 otherwise
+ */
+int
+is_option_value(const char *opt, const char *value);
+
+/**
  * @brief Check if a configuration option is "enabled"
  *
  * An option is considered enabled if it has "on" or "1" as value,

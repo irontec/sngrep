@@ -115,7 +115,7 @@ enum sngrep_colors
 };
 
 // Used to configure color pairs only with fg color
-#define COLOR_NONE -1
+#define COLOR_DEFAULT -1
 
 /**
  * @brief Enum for available panel types

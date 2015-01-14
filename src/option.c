@@ -112,7 +112,7 @@ init_options()
     // Unless specified, when capturing with lookup, display
     // hostnames where addresses are printed
     if (!get_option_value("sngrep.displayhost"))
-        set_option_value("sngrep.displayhost", is_option_enabled("capture.lookup")?"on":"off");
+        set_option_value("sngrep.displayhost", is_option_enabled("capture.lookup") ? "on" : "off");
 
     return 0;
 }
@@ -253,6 +253,15 @@ set_ignore_value(const char *opt, const char *value)
     options[optscnt].opt = strdup(opt);
     options[optscnt].value = strdup(value);
     optscnt++;
+}
+
+int
+is_option_value(const char *opt, const char *expected)
+{
+    const char *value;
+    if ((value = get_option_value(opt)))
+        return !strcasecmp(value, expected);
+    return 0;
 }
 
 int
