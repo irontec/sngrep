@@ -430,7 +430,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
             info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
         } else {
             // We have a valid raw win, clear its content
-            wclear(raw_win);
+            werase(raw_win);
         }
     } else {
         // Create the raw window of required size
@@ -510,7 +510,7 @@ call_flow_handle_key(PANEL *panel, int key)
         break;
     case 'x':
     case KEY_F(4):
-        wclear(panel_window(panel));
+        werase(panel_window(panel));
         // KEY_X , Display current call flow
         if (info->group->callcnt == 1) {
             group = call_group_create();
