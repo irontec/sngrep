@@ -9,6 +9,11 @@
 # set color on
 ## Use white/black as foreground/background instead of terminal defaults
 # set background dark
+## Disable syntax highlighting
+# set syntax off
+## Or enable branch/tag highlighting
+# set syntax.tag on
+# set syntax.branch on
 
 ##-----------------------------------------------------------------------------
 ## Uncomment to configure packet count capture limit (0: disabled)
