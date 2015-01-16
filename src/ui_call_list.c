@@ -25,8 +25,6 @@
  *
  * @brief Source of functions defined in ui_call_list.h
  *
- * @todo Recode help screen. Please.
- * @todo Replace calls structure this for a iterator at sip.h
  */
 #include <stdlib.h>
 #include <unistd.h>
@@ -121,6 +119,12 @@ call_list_create()
     }
     wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
 
+    // Set defualt filter text if configured
+    if (get_option_value("cl.filter")) {
+        set_field_buffer(info->fields[FLD_LIST_FILTER], 0, get_option_value("cl.filter"));
+        call_list_form_activate(panel, false);
+    }
+
     // Return the created panel
     return panel;
 }
@@ -140,7 +144,7 @@ call_list_destroy(PANEL *panel)
         if (info->form) {
             unpost_form(info->form);
             free_form(info->form);
-            free_field(info->fields[0]);
+            free_field(info->fields[FLD_LIST_FILTER]);
         }
 
         // Deallocate group data
@@ -206,8 +210,10 @@ call_list_draw(PANEL *panel)
         return -1;
 
     // Update current mode information
-    mvwprintw(panel_window(panel), 1, 2, "Current Mode: %s %9s", get_option_value("sngrep.mode"),
-              (is_option_enabled("sip.capture")?"":"(Stopped)"));
+    if (!info->form_active) {
+        mvwprintw(panel_window(panel), 1, 2, "Current Mode: %s %9s", get_option_value("sngrep.mode"),
+                  (is_option_enabled("sip.capture") ? "" : "(Stopped)"));
+    }
 
     // Get window of call list panel
     WINDOW *win = info->list_win;
@@ -287,17 +293,17 @@ call_list_form_activate(PANEL *panel, bool active)
     info->form_active = active;
 
     if (active) {
-        set_current_field(info->form, info->fields[0]);
+        set_current_field(info->form, info->fields[FLD_LIST_FILTER]);
         // Show cursor
         curs_set(1);
         // Change current field background
-        set_field_back(info->fields[0], A_REVERSE);
+        set_field_back(info->fields[FLD_LIST_FILTER], A_REVERSE);
     } else {
         set_current_field(info->form, NULL);
         // Hide cursor
         curs_set(0);
         // Change current field background
-        set_field_back(info->fields[0], A_NORMAL);
+        set_field_back(info->fields[FLD_LIST_FILTER], A_NORMAL);
     }
     post_form(info->form);
     form_driver(info->form, REQ_END_LINE);
@@ -312,7 +318,8 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
     int colid;
     int width;
 
-    WINDOW *win = panel_window(panel);;
+    WINDOW *win = panel_window(panel);
+
     // Get window width
     width = getmaxx(win);
 
@@ -792,7 +799,7 @@ call_list_match_dfilter(PANEL *panel, sip_call_t *call)
 
     // We trim spaces with sscanf because and empty field is stored as space characters
     memset(dfilter, 0, sizeof(dfilter));
-    sscanf(field_buffer(info->fields[0], 0), "%[^ ]", dfilter);
+    sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", dfilter);
 
     if (strlen(dfilter) == 0)
         return true;
