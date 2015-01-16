@@ -310,47 +310,54 @@ wait_for_input(ui_t *ui)
             continue;
         }
 
-        // Otherwise, use standard keybindings
-        switch (c) {
-        case 'c':
-        case KEY_F(8):
-            // @todo general application config structure
-            toggle_option("color");
-            toggle_color(is_option_enabled("color"));
-            break;
-        case 'C':
-        case KEY_F(7):
-            if (is_option_enabled("color.request")) {
-                toggle_option("color.request");
-                toggle_option("color.callid");
-            } else if (is_option_enabled("color.callid")) {
-                toggle_option("color.callid");
-                toggle_option("color.cseq");
-            } else if (is_option_enabled("color.cseq")) {
-                toggle_option("color.cseq");
-                toggle_option("color.request");
-            }
-            break;
-        case 'l':
-            toggle_option("sngrep.displayhost");
-            break;
-        case 'p':
-            // Toggle capture option
-            toggle_option("sip.capture");
-            break;
-        case 'h':
-        case 265: /* KEY_F1 */
-            ui_help(ui);
-            break;
-        case 'q':
-        case 'Q':
-        case 27: /* KEY_ESC */
-            ui_destroy(ui);
-            break;
-        }
+        // Key not handled by UI, try default handler
+        default_handle_key(ui, c);
     }
 
     return -1;
+}
+
+int
+default_handle_key(ui_t *ui, int key)
+{
+    // Otherwise, use standard keybindings
+    switch (key) {
+    case 'c':
+    case KEY_F(8):
+        toggle_option("syntax");
+        break;
+    case 'C':
+    case KEY_F(7):
+        if (is_option_enabled("color.request")) {
+            toggle_option("color.request");
+            toggle_option("color.callid");
+        } else if (is_option_enabled("color.callid")) {
+            toggle_option("color.callid");
+            toggle_option("color.cseq");
+        } else if (is_option_enabled("color.cseq")) {
+            toggle_option("color.cseq");
+            toggle_option("color.request");
+        }
+        break;
+    case 'l':
+        toggle_option("sngrep.displayhost");
+        break;
+    case 'p':
+        // Toggle capture option
+        toggle_option("sip.capture");
+        break;
+    case 'h':
+    case 265: /* KEY_F1 */
+        ui_help(ui);
+        break;
+    case 'q':
+    case 'Q':
+    case 27: /* KEY_ESC */
+        ui_destroy(ui);
+        break;
+    }
+
+    return key;
 }
 
 void

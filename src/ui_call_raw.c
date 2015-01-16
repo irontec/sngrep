@@ -119,6 +119,8 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 
     // Check if we have enough space in our huge pad to store this message
     if (info->padline + payload_lines > height) {
+        // Delete previous pad
+        delwin(info->pad);
         // Create a new pad with more lines!
         pad = newpad(height + 500, COLS);
         // And copy all previous information
@@ -201,6 +203,20 @@ call_raw_handle_key(PANEL *panel, int key)
             next_panel = ui_create(ui_find_by_type(SAVE_RAW_PANEL));
             save_raw_set_group(next_panel->panel, info->group);
             wait_for_input(next_panel);
+        }
+        break;
+    case 'C':
+    case 'c':
+        // Handle colors using default handler
+        default_handle_key(ui_find_by_panel(panel), key);
+        // Create a new pad (forces messages draw)
+        delwin(info->pad);
+        info->pad = newpad(500, COLS);
+        // Force refresh panel
+        if (info->group) {
+            call_raw_set_group(info->group);
+        } else {
+            call_raw_set_msg(info->msg);
         }
         break;
     default:

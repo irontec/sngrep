@@ -282,6 +282,18 @@ int
 wait_for_input(ui_t *ui);
 
 /**
+ * @brief Default handler for keys
+ *
+ * If ui doesn't handle the given key (ui_handle_key returns -1)
+ * then the default handler will be invoked
+ *
+ * @param ui Current displayed UI structure
+ * @param key key pressed by user
+ */
+int
+default_handle_key(ui_t *ui, int key);
+
+/**
  * @brief Draw a box around passed windows
  *
  * Draw a box around passed windows  with two bars

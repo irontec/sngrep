@@ -181,11 +181,9 @@ call_list_draw_footer(PANEL *panel)
           "F6",
           "Raw",
           "F7",
-          "Filter",
-          "F8",
-          "Colours on/off" };
+          "Filter" };
 
-    draw_keybindings(panel, keybindings, 22);
+    draw_keybindings(panel, keybindings, 20);
 }
 
 int
