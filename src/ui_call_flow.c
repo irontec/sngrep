@@ -644,8 +644,8 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 14, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
     mvwprintw(help_win, 15, 2, "F5/S        Toggle compressed view (One address <=> one column");
     mvwprintw(help_win, 16, 2, "F6/R        Show original call messages in raw mode");
-    mvwprintw(help_win, 17, 2, "F7/C        Cycle between available color modes");
-    mvwprintw(help_win, 18, 2, "F8/c        Turn on/off message syntax highlighting");
+    mvwprintw(help_win, 17, 2, "F7/c        Cycle between available color modes");
+    mvwprintw(help_win, 18, 2, "F8/C        Turn on/off message syntax highlighting");
     mvwprintw(help_win, 19, 2, "F9/l        Turn on/off resolved addresses");
     mvwprintw(help_win, 20, 2, "9/0         Increase/Decrease raw preview size");
     mvwprintw(help_win, 21, 2, "T           Restore raw preview size");

@@ -322,11 +322,11 @@ default_handle_key(ui_t *ui, int key)
 {
     // Otherwise, use standard keybindings
     switch (key) {
-    case 'c':
+    case 'C':
     case KEY_F(8):
         toggle_option("syntax");
         break;
-    case 'C':
+    case 'c':
     case KEY_F(7):
         if (is_option_enabled("color.request")) {
             toggle_option("color.request");
