@@ -55,6 +55,11 @@ init_options()
     set_option_value("color.callid", "off");
     set_option_value("color.cseq", "off");
 
+    // Highlight options
+    set_option_value("syntax", "on");
+    set_option_value("syntax.branch", "off");
+    set_option_value("syntax.tag", "off");
+
     // Add Call list column options
     set_option_value("cl.column0", "time");
     set_option_value("cl.column0", "sipfrom");

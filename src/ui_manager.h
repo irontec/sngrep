@@ -87,7 +87,8 @@ struct ui
  */
 enum sngrep_colors
 {
-    CALLID1_COLOR = 1,
+    DEFAULT_COLOR = 0,
+    CALLID1_COLOR,
     CALLID2_COLOR,
     CALLID3_COLOR,
     CALLID4_COLOR,

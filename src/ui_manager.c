@@ -26,6 +26,7 @@
  * @brief Source of functions defined in ui_manager.h
  *
  */
+#include <ctype.h>
 #include <string.h>
 #include "option.h"
 #include "ui_manager.h"
@@ -509,6 +510,13 @@ int
 draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
 {
     int height, width, line, column, i;
+    char *cur_line = msg->payload;
+    int syntax = is_option_enabled("syntax");
+
+    // Default text format
+    int attrs = A_NORMAL | COLOR_PAIR(DEFAULT_COLOR);
+    if (syntax)
+        wattrset(win, attrs);
 
     // Get window of main panel
     getmaxyx(win, height, width);
@@ -517,21 +525,97 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
     line = starting;
     column = 0;
     for (i = 0; i < strlen(msg->payload); i++) {
+        // If syntax highlighting is enabled
+        if (syntax) {
+            // First line highlight
+            if (line == starting) {
+                // Request syntax
+                if (i == 0 && strncmp(cur_line, "SIP/2.0", 7))
+                    attrs = A_BOLD | COLOR_PAIR(CALLID2_COLOR);
+
+                // Response syntax
+                if (i == 8 && !strncmp(cur_line, "SIP/2.0", 7))
+                    attrs = A_BOLD | COLOR_PAIR(CALLID5_COLOR);
+
+                // SIP URI syntax
+                if (!strncasecmp(msg->payload + i, "sip:", 4)) {
+                    attrs = A_BOLD | COLOR_PAIR(CALLID1_COLOR);
+                }
+            } else {
+
+                // Header syntax
+                if (column == 0 && strcspn(cur_line, ":") < 30)
+                    attrs = A_NORMAL | COLOR_PAIR(CALLID4_COLOR);
+
+                // Call-ID Header syntax
+                if (!strncasecmp(cur_line, "Call-ID:", 8) && column > 8)
+                    attrs = A_BOLD | COLOR_PAIR(CALLID3_COLOR);
+
+                // CSeq Heaedr syntax
+                if (!strncasecmp(cur_line, "CSeq:", 5) && column > 5 && !isdigit(msg->payload[i]))
+                    attrs = A_NORMAL | COLOR_PAIR(CALLID2_COLOR);
+
+                // tag and branch syntax
+                if (i > 0 && msg->payload[i - 1] == ';') {
+                    // Highlight branch if requested
+                    if (is_option_enabled("syntax.branch")) {
+                        if (!strncasecmp(msg->payload + i, "branch", 6)) {
+                            attrs = A_BOLD | COLOR_PAIR(CALLID1_COLOR);
+                        }
+                    }
+                    // Highlight tag if requested
+                    if (is_option_enabled("syntax.tag")) {
+                        if (!strncasecmp(msg->payload + i, "tag", 3)) {
+                            if (!strncasecmp(cur_line, "From:", 5)) {
+                                attrs = A_BOLD | COLOR_PAIR(CALLID6_COLOR);
+                            } else {
+                                attrs = A_BOLD | COLOR_PAIR(CALLID4_COLOR);
+                            }
+                        }
+                    }
+                }
+
+                // SDP syntax
+                if (strcspn(cur_line, "=") == 1)
+                    attrs = A_NORMAL | COLOR_PAIR(DEFAULT_COLOR);
+            }
+
+            // Remove previous syntax
+            if (strcspn(msg->payload + i, " \n;<>") == 0) {
+                wattroff(win, attrs);
+                attrs = A_NORMAL | COLOR_PAIR(DEFAULT_COLOR);
+            }
+
+            // Syntax hightlight text!
+            wattron(win, attrs);
+        }
+
+        // Dont print this characters
         if (msg->payload[i] == '\r')
             continue;
 
+        // Store where the line begins
+        if (msg->payload[i] == '\n')
+            cur_line = msg->payload + i + 1;
+
+        // Move to the next line if line is filled or a we reach a line break
         if (column == width || msg->payload[i] == '\n') {
             line++;
             column = 0;
             continue;
         }
 
+        // Stop if we've reached the bottom of the window
         if (line == height)
             break;
 
         // Put next character in position
         mvwaddch(win, line, column++, msg->payload[i]);
     }
+
+    // Disable syntax when leaving
+    if (syntax)
+        wattroff(win, attrs);
 
     // Redraw raw win
     wnoutrefresh(win);
