@@ -443,7 +443,7 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key + 1]) + 1,
                   keybindings[key + 1]);
-		wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+        wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
         xpos += strlen(keybindings[key + 1]) + 3;
     }
 }
@@ -520,7 +520,7 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
             } else {
 
                 // Header syntax
-                if (column == 0 && strcspn(cur_line, ":") < 30)
+                if (strchr(cur_line, ':') && msg->payload + i < strchr(cur_line, ':'))
                     attrs = A_NORMAL | COLOR_PAIR(CP_GREEN_ON_DEF);
 
                 // Call-ID Header syntax
@@ -575,18 +575,18 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
             cur_line = msg->payload + i + 1;
 
         // Move to the next line if line is filled or a we reach a line break
-        if (column == width || msg->payload[i] == '\n') {
+        if (column > width || msg->payload[i] == '\n') {
             line++;
             column = 0;
             continue;
         }
 
+        // Put next character in position
+        mvwaddch(win, line, column++, msg->payload[i]);
+
         // Stop if we've reached the bottom of the window
         if (line == height)
             break;
-
-        // Put next character in position
-        mvwaddch(win, line, column++, msg->payload[i]);
     }
 
     // Disable syntax when leaving
