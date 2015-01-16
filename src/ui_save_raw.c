@@ -96,12 +96,12 @@ save_raw_create()
 
     // Set the window title and boxes
     mvwprintw(win, 1, 28, "Save raw data to file");
-    wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     title_foot_box(panel_window(panel));
     mvwhline(win, height - 3, 1, ACS_HLINE, width - 1);
     mvwaddch(win, height - 3, 0, ACS_LTEE);
     mvwaddch(win, height - 3, width - 1, ACS_RTEE);
-    wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_SAVE_RAW_FILE]);

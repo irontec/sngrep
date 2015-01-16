@@ -175,10 +175,10 @@ call_flow_draw(PANEL *panel)
     }
 
     // Draw panel title
-    wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(win, 0, 0, "%*s", width, "");
     mvwprintw(win, 0, (width - strlen(title)) / 2, "%s", title);
-    wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Show some keybinding
     call_flow_draw_footer(panel);
@@ -344,9 +344,9 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     if (is_option_enabled("color.request")) {
         // Determine arrow color
         if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
-            msg->color = OUTGOING_COLOR;
+            msg->color = CP_RED_ON_DEF;
         } else {
-            msg->color = INCOMING_COLOR;
+            msg->color = CP_GREEN_ON_DEF;
         }
     } else if (is_option_enabled("color.callid")) {
         // Color by call-id
@@ -383,10 +383,10 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     }
 
     // Turn off colors
-    wattroff(win, COLOR_PAIR(OUTGOING_COLOR));
-    wattroff(win, COLOR_PAIR(INCOMING_COLOR));
-    wattroff(win, COLOR_PAIR(CALLID1_COLOR));
-    wattroff(win, COLOR_PAIR(CALLID2_COLOR));
+    wattroff(win, COLOR_PAIR(CP_RED_ON_DEF));
+    wattroff(win, COLOR_PAIR(CP_GREEN_ON_DEF));
+    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
     wattroff(win, A_BOLD);
 
     return 0;
@@ -438,9 +438,9 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     }
 
     // Draw raw box lines
-    wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     mvwvline(win, 1, width - raw_width - 2, ACS_VLINE, height - 2);
-    wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Print msg payload
     draw_message(info->raw_win, msg);
@@ -611,7 +611,7 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, 1, 18, "Call Flow Help");
 
     // Write border and boxes around the window
-    wattron(help_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattron(help_win, COLOR_PAIR(CP_BLUE_ON_DEF));
     box(help_win, 0, 0);
     mvwhline(help_win, 2, 1, ACS_HLINE, 63);
     mvwhline(help_win, 7, 1, ACS_HLINE, 63);
@@ -627,12 +627,12 @@ call_flow_help(PANEL *panel)
     mvwprintw(help_win, height - 2, 20, "Press any key to continue");
 
     // Some brief explanation abotu what window shows
-    wattron(help_win, COLOR_PAIR(HELP_COLOR));
+    wattron(help_win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(help_win, 3, 2, "This window shows the messages from a call and its relative");
     mvwprintw(help_win, 4, 2, "ordered by sent or received time.");
     mvwprintw(help_win, 5, 2, "This panel is mosly used when capturing at proxy systems that");
     mvwprintw(help_win, 6, 2, "manages incoming and outgoing request between calls.");
-    wattroff(help_win, COLOR_PAIR(HELP_COLOR));
+    wattroff(help_win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     // A list of available keys in this window
     mvwprintw(help_win, 8, 2, "Available keys:");

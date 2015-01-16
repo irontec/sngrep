@@ -140,7 +140,7 @@ filter_create()
 
     // Set the window title and boxes
     mvwprintw(win, 1, 18, "Filter options");
-    wattron(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     title_foot_box(panel_window(panel));
     mvwhline(win, 4, 1, ACS_HLINE, 49);
     mvwaddch(win, 4, 0, ACS_LTEE);
@@ -148,7 +148,7 @@ filter_create()
     mvwhline(win, 9, 1, ACS_HLINE, 49);
     mvwaddch(win, 9, 0, ACS_LTEE);
     mvwaddch(win, 9, 49, ACS_RTEE);
-    wattroff(win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);

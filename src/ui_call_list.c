@@ -100,7 +100,7 @@ call_list_create()
     // Draw the footer of the window
     call_list_draw_footer(panel);
 
-    wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
     // Draw panel title
     mvwprintw(win, 0, 0, "%*s", width, "");
     mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
@@ -117,7 +117,7 @@ call_list_create()
         mvwprintw(win, 3, colpos, "%.*s", collen, sip_attr_get_description(info->columns[i].id));
         colpos += collen + 1;
     }
-    wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Set defualt filter text if configured
     if (get_option_value("cl.filter")) {
@@ -243,21 +243,21 @@ call_list_draw(PANEL *panel)
         // TODO Useless feature :|
         if ((ouraddr = get_option_value("address"))) {
             if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_SRC))) {
-                wattron(win, COLOR_PAIR(OUTGOING_COLOR));
+                wattron(win, COLOR_PAIR(CP_RED_ON_DEF));
             } else if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_DST))) {
-                wattron(win, COLOR_PAIR(INCOMING_COLOR));
+                wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
             }
         }
 
         // Show bold selected rows
         if (call_group_exists(info->group, call)) {
             wattron(win, A_BOLD);
-            wattron(win, COLOR_PAIR(SELECTED_COLOR));
+            wattron(win, COLOR_PAIR(CP_DEFAULT));
         }
 
         // Highlight active call
         if (call == info->cur_call) {
-            wattron(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+            wattron(win, COLOR_PAIR(CP_DEF_ON_BLUE));
         }
 
         // Set current line background
@@ -270,8 +270,8 @@ call_list_draw(PANEL *panel)
         mvwprintw(win, cline, 6, "%s", call_list_line_text(panel, call, linetext));
         cline++;
 
-        wattroff(win, COLOR_PAIR(SELECTED_COLOR));
-        wattroff(win, COLOR_PAIR(HIGHLIGHT_COLOR));
+        wattroff(win, COLOR_PAIR(CP_DEFAULT));
+        wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
         wattroff(win, A_BOLD);
     }
 
@@ -597,7 +597,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 1, 25, "Call List Help");
 
     // Write border and boxes around the window
-    wattron(help_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattron(help_win, COLOR_PAIR(CP_BLUE_ON_DEF));
     box(help_win, 0, 0);
     mvwhline(help_win, 2, 1, ACS_HLINE, width - 2);
     mvwhline(help_win, 7, 1, ACS_HLINE, width - 2);
@@ -613,12 +613,12 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, height - 2, 20, "Press any key to continue");
 
     // Some brief explanation abotu what window shows
-    wattron(help_win, COLOR_PAIR(HELP_COLOR));
+    wattron(help_win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(help_win, 3, 2, "This windows show the list of parsed calls from a pcap file ");
     mvwprintw(help_win, 4, 2, "(Offline) or a live capture with libpcap functions (Online).");
     mvwprintw(help_win, 5, 2, "You can configure the columns shown in this screen and some");
     mvwprintw(help_win, 6, 2, "static filters using sngreprc resource file.");
-    wattroff(help_win, COLOR_PAIR(HELP_COLOR));
+    wattroff(help_win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     // A list of available keys in this window
     mvwprintw(help_win, 8, 2, "Available keys:");
@@ -662,7 +662,7 @@ call_list_exit_confirm(PANEL *panel)
     mvwprintw(exit_win, 1, 13, "Confirm exit");
 
     // Write border and boxes around the window
-    wattron(exit_win, COLOR_PAIR(DETAIL_BORDER_COLOR));
+    wattron(exit_win, COLOR_PAIR(CP_BLUE_ON_DEF));
     box(exit_win, 0, 0);
     mvwhline(exit_win, 2, 1, ACS_HLINE, 40);
     mvwhline(exit_win, 5, 1, ACS_HLINE, 40);
@@ -672,9 +672,9 @@ call_list_exit_confirm(PANEL *panel)
     mvwaddch(exit_win, 5, 39, ACS_RTEE);
 
     // Exit confirmation message message
-    wattron(exit_win, COLOR_PAIR(HELP_COLOR));
+    wattron(exit_win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(exit_win, 3, 2, "Are you sure you want to quit?");
-    wattroff(exit_win, COLOR_PAIR(HELP_COLOR));
+    wattroff(exit_win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     for (;;) {
         // A list of available keys in this window

@@ -82,37 +82,20 @@ struct ui
 
 /**
  * @brief Enum for available color pairs
- *
- * Colors for each pair are chosen in toggle_colors function
  */
-enum sngrep_colors
+enum sngrep_colors_pairs
 {
-    DEFAULT_COLOR = 0,
-    CALLID1_COLOR,
-    CALLID2_COLOR,
-    CALLID3_COLOR,
-    CALLID4_COLOR,
-    CALLID5_COLOR,
-    CALLID6_COLOR,
-    CALLID7_COLOR,
-    //! Highlight color for Call List
-    HIGHLIGHT_COLOR,
-    //! Key name color in help screens
-    HELP_COLOR,
-    //! Outgoing messages color
-    OUTGOING_COLOR,
-    //! Incoming messages color
-    INCOMING_COLOR,
-    //! Call-Flow border color
-    DETAIL_BORDER_COLOR,
-    //! Call-List selected color
-    SELECTED_COLOR,
-    //! Keybinding key color for footers
-    KEYBINDINGS_KEY,
-    //! Keybinding key action for footers
-    KEYBINDINGS_ACTION,
-    //! Diff hightlight color
-    DIFF_HIGHLIGHT
+    CP_DEFAULT = 0,
+    CP_CYAN_ON_DEF,
+    CP_YELLOW_ON_DEF,
+    CP_MAGENTA_ON_DEF,
+    CP_GREEN_ON_DEF,
+    CP_RED_ON_DEF,
+    CP_BLUE_ON_DEF,
+    CP_WHITE_ON_DEF,
+    CP_DEF_ON_CYAN,
+    CP_DEF_ON_BLUE,
+    CP_BLACK_ON_CYAN,
 };
 
 // Used to configure color pairs only with fg color
@@ -262,13 +245,6 @@ ui_find_by_panel(PANEL *panel);
  */
 ui_t *
 ui_find_by_type(int type);
-
-/**
- * @brief Toggle color mode on and off
- * @param on Pass 0 to turn all black&white
- */
-void
-toggle_color(int on);
 
 /**
  * @brief Wait for user input.

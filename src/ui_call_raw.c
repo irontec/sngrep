@@ -132,9 +132,9 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     if (is_option_enabled("color.request")) {
         // Determine arrow color
         if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
-            msg->color = OUTGOING_COLOR;
+            msg->color = CP_RED_ON_DEF;
         } else {
-            msg->color = INCOMING_COLOR;
+            msg->color = CP_GREEN_ON_DEF;
         }
     } else if (info->group && is_option_enabled("color.callid")) {
         // Color by call-id

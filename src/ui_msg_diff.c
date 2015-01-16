@@ -85,10 +85,10 @@ msg_diff_create()
     mvwvline(win, 0, hwidth, ACS_VLINE, height);
 
     // Draw title
-    wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(win, 0, 0, "%*s", width, "");
     mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
-    wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Draw keybindings
     msg_diff_draw_footer(panel);
@@ -215,9 +215,9 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
             break;
 
         if (highlight[i] == '1') {
-            wattron(win, COLOR_PAIR(DIFF_HIGHLIGHT));
+            wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
         } else {
-            wattroff(win, COLOR_PAIR(DIFF_HIGHLIGHT));
+            wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
         }
 
         // Put next character in position

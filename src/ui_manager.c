@@ -113,6 +113,8 @@ static ui_t panel_pool[] =
 int
 init_interface()
 {
+    int bg, fg;
+
     // Initialize curses
     if (!initscr()) {
         fprintf(stderr, "Unable to initialize ncurses mode.\n");
@@ -134,8 +136,26 @@ init_interface()
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
-    // Enable Color/BW
-    toggle_color(is_option_enabled("color"));
+    // Enable Colors
+
+    if (is_option_value("background", "dark")) {
+        fg = COLOR_WHITE;
+        bg = COLOR_BLACK;
+    } else {
+        fg = COLOR_DEFAULT;
+        bg = COLOR_DEFAULT;
+    }
+
+    init_pair(CP_CYAN_ON_DEF, COLOR_CYAN, bg);
+    init_pair(CP_YELLOW_ON_DEF, COLOR_YELLOW, bg);
+    init_pair(CP_MAGENTA_ON_DEF, COLOR_MAGENTA, bg);
+    init_pair(CP_GREEN_ON_DEF, COLOR_GREEN, bg);
+    init_pair(CP_RED_ON_DEF, COLOR_RED, bg);
+    init_pair(CP_BLUE_ON_DEF, COLOR_BLUE, bg);
+    init_pair(CP_WHITE_ON_DEF, COLOR_WHITE, bg);
+    init_pair(CP_DEF_ON_CYAN, fg, COLOR_CYAN);
+    init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
+    init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
 
     return 0;
 }
@@ -361,56 +381,6 @@ default_handle_key(ui_t *ui, int key)
 }
 
 void
-toggle_color(int on)
-{
-    int bg, fg;
-    if (is_option_value("background", "dark")) {
-        fg = COLOR_WHITE;
-        bg = COLOR_BLACK;
-    } else {
-        fg = COLOR_DEFAULT;
-        bg = COLOR_DEFAULT;
-    }
-
-    if (on) {
-        // Initialize some colors
-        init_pair(HIGHLIGHT_COLOR, fg, COLOR_BLUE);
-        init_pair(HELP_COLOR, COLOR_CYAN, bg);
-        init_pair(OUTGOING_COLOR, COLOR_RED, bg);
-        init_pair(INCOMING_COLOR, COLOR_GREEN, bg);
-        init_pair(DETAIL_BORDER_COLOR, COLOR_BLUE, bg);
-        init_pair(CALLID1_COLOR, COLOR_CYAN, bg);
-        init_pair(CALLID2_COLOR, COLOR_YELLOW, bg);
-        init_pair(CALLID3_COLOR, COLOR_MAGENTA, bg);
-        init_pair(CALLID4_COLOR, COLOR_GREEN, bg);
-        init_pair(CALLID5_COLOR, COLOR_RED, bg);
-        init_pair(CALLID6_COLOR, COLOR_BLUE, bg);
-        init_pair(CALLID7_COLOR, COLOR_WHITE, bg);
-        init_pair(SELECTED_COLOR, COLOR_WHITE, bg);
-        init_pair(KEYBINDINGS_KEY, fg, COLOR_CYAN);
-        init_pair(KEYBINDINGS_ACTION, bg, COLOR_CYAN);
-        init_pair(DIFF_HIGHLIGHT, COLOR_YELLOW, bg);
-    } else {
-        init_pair(HIGHLIGHT_COLOR, bg, fg);
-        init_pair(HELP_COLOR, fg, bg);
-        init_pair(OUTGOING_COLOR, fg, bg);
-        init_pair(INCOMING_COLOR, fg, bg);
-        init_pair(DETAIL_BORDER_COLOR, fg, bg);
-        init_pair(CALLID1_COLOR, fg, bg);
-        init_pair(CALLID2_COLOR, fg, bg);
-        init_pair(CALLID3_COLOR, fg, bg);
-        init_pair(CALLID4_COLOR, fg, bg);
-        init_pair(CALLID5_COLOR, fg, bg);
-        init_pair(CALLID6_COLOR, fg, bg);
-        init_pair(CALLID7_COLOR, fg, bg);
-        init_pair(SELECTED_COLOR, fg, bg);
-        init_pair(KEYBINDINGS_KEY, bg, fg);
-        init_pair(KEYBINDINGS_ACTION, bg, fg);
-        init_pair(DIFF_HIGHLIGHT, fg, bg);
-    }
-}
-
-void
 ui_new_msg_refresh(sip_msg_t *msg)
 {
     ui_t * ui;
@@ -460,21 +430,20 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
     getmaxyx(win, height, width);
 
     // Write a line all the footer width
-    wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(win, height - 1, 0, "%*s", width, "");
-    wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
         wattron(win, A_BOLD);
-        wattron(win, COLOR_PAIR(KEYBINDINGS_KEY));
+        wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key]) + 1, keybindings[key]);
         wattroff(win, A_BOLD);
         xpos += strlen(keybindings[key]) + 1;
-        wattron(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+        wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key + 1]) + 1,
                   keybindings[key + 1]);
-        wattroff(win, COLOR_PAIR(KEYBINDINGS_ACTION));
+		wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
         xpos += strlen(keybindings[key + 1]) + 3;
     }
 }
@@ -521,7 +490,7 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
     int syntax = is_option_enabled("syntax");
 
     // Default text format
-    int attrs = A_NORMAL | COLOR_PAIR(DEFAULT_COLOR);
+    int attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
     if (syntax)
         wattrset(win, attrs);
 
@@ -538,45 +507,45 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
             if (line == starting) {
                 // Request syntax
                 if (i == 0 && strncmp(cur_line, "SIP/2.0", 7))
-                    attrs = A_BOLD | COLOR_PAIR(CALLID2_COLOR);
+                    attrs = A_BOLD | COLOR_PAIR(CP_YELLOW_ON_DEF);
 
                 // Response syntax
                 if (i == 8 && !strncmp(cur_line, "SIP/2.0", 7))
-                    attrs = A_BOLD | COLOR_PAIR(CALLID5_COLOR);
+                    attrs = A_BOLD | COLOR_PAIR(CP_RED_ON_DEF);
 
                 // SIP URI syntax
                 if (!strncasecmp(msg->payload + i, "sip:", 4)) {
-                    attrs = A_BOLD | COLOR_PAIR(CALLID1_COLOR);
+                    attrs = A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF);
                 }
             } else {
 
                 // Header syntax
                 if (column == 0 && strcspn(cur_line, ":") < 30)
-                    attrs = A_NORMAL | COLOR_PAIR(CALLID4_COLOR);
+                    attrs = A_NORMAL | COLOR_PAIR(CP_GREEN_ON_DEF);
 
                 // Call-ID Header syntax
                 if (!strncasecmp(cur_line, "Call-ID:", 8) && column > 8)
-                    attrs = A_BOLD | COLOR_PAIR(CALLID3_COLOR);
+                    attrs = A_BOLD | COLOR_PAIR(CP_MAGENTA_ON_DEF);
 
                 // CSeq Heaedr syntax
                 if (!strncasecmp(cur_line, "CSeq:", 5) && column > 5 && !isdigit(msg->payload[i]))
-                    attrs = A_NORMAL | COLOR_PAIR(CALLID2_COLOR);
+                    attrs = A_NORMAL | COLOR_PAIR(CP_YELLOW_ON_DEF);
 
                 // tag and branch syntax
                 if (i > 0 && msg->payload[i - 1] == ';') {
                     // Highlight branch if requested
                     if (is_option_enabled("syntax.branch")) {
                         if (!strncasecmp(msg->payload + i, "branch", 6)) {
-                            attrs = A_BOLD | COLOR_PAIR(CALLID1_COLOR);
+                            attrs = A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF);
                         }
                     }
                     // Highlight tag if requested
                     if (is_option_enabled("syntax.tag")) {
                         if (!strncasecmp(msg->payload + i, "tag", 3)) {
                             if (!strncasecmp(cur_line, "From:", 5)) {
-                                attrs = A_BOLD | COLOR_PAIR(CALLID6_COLOR);
+                                attrs = A_BOLD | COLOR_PAIR(CP_DEFAULT);
                             } else {
-                                attrs = A_BOLD | COLOR_PAIR(CALLID4_COLOR);
+                                attrs = A_BOLD | COLOR_PAIR(CP_GREEN_ON_DEF);
                             }
                         }
                     }
@@ -584,13 +553,13 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
 
                 // SDP syntax
                 if (strcspn(cur_line, "=") == 1)
-                    attrs = A_NORMAL | COLOR_PAIR(DEFAULT_COLOR);
+                    attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
             }
 
             // Remove previous syntax
             if (strcspn(msg->payload + i, " \n;<>") == 0) {
                 wattroff(win, attrs);
-                attrs = A_NORMAL | COLOR_PAIR(DEFAULT_COLOR);
+                attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
             }
 
             // Syntax hightlight text!
