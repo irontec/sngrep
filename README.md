@@ -25,6 +25,8 @@ If you dont want to use libpcap (because is not available in your system or
 don't want to install more development libraries), you can use release 0.0.0
 available at https://github.com/irontec/sngrep/releases
 
+You can find [detailed instructions for some distributions] (https://github.com/irontec/sngrep/wiki/Building) on wiki.
+
 ## Usage
 
 sngrep can be used to view SIP packets from a pcap file
