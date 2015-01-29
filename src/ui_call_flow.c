@@ -127,6 +127,10 @@ call_flow_redraw_required(PANEL *panel, sip_msg_t *msg)
     if (!(info = call_flow_info(panel)))
         return -1;
 
+    // Check we have calls in this panel
+    if (!info->group)
+        return -1;
+
     // Check if the owner of the message is in the displayed group
     for (i = 0; i < info->group->callcnt; i++) {
         if (info->group->calls[i] == msg->call) {
