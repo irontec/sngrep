@@ -176,7 +176,7 @@ sip_get_callid(const char* payload)
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
         if (!strncasecmp(pch, "Call-ID", 7)) {
-            if (sscanf(pch, "Call-ID: %[^@\n]", value) == 1) {
+            if (sscanf(pch, "Call-ID: %[^@\r\n]", value) == 1) {
                 callid = strdup(value);
             }
         }
