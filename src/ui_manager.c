@@ -212,10 +212,12 @@ ui_get_panel(ui_t *ui)
 int
 ui_redraw_required(ui_t *ui, sip_msg_t *msg)
 {
-    int ret = 0;
+    // By default ui does not require redrawing
+    int ret = -1;
+
     //! Sanity check, this should not happen
     if (!ui)
-        return -1;
+        return ret;
 
     // Ensure no panel content is being updated while we check redraw
     pthread_mutex_lock(&ui->lock);
