@@ -91,6 +91,9 @@
 ## Fixed raw preview size
 # set cf.rawfixedwidth 40
 
+## Set selected highlight mode in call flow (bold, reverse or reversebold)
+# set cf.highlight reverse
+
 ##-----------------------------------------------------------------------------
 ## Uncomment to display dialogs that does not start with a request method
 # set sip.ignoreincomplete off

@@ -341,8 +341,18 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     int distance = abs(endpos - startpos) - 3;
 
     // Highlight current message
-    if (msg == info->cur_msg)
-        wattron(win, A_BOLD);
+    if (msg == info->cur_msg) {
+        if (is_option_value("cf.highlight", "reverse")) {
+            wattron(win, A_REVERSE);
+        }
+        if (is_option_value("cf.highlight", "bold")) {
+            wattron(win, A_BOLD);
+        }
+        if (is_option_value("cf.highlight", "reversebold")) {
+            wattron(win, A_REVERSE);
+            wattron(win, A_BOLD);
+        }
+    }
 
     // Color the message {
     if (is_option_enabled("color.request")) {
@@ -363,7 +373,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     // Turn on the message color
     wattron(win, COLOR_PAIR(msg->color));
 
-    mvwprintw(win, cline, startpos + 2, "%.*s", distance, "");
+    mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
     mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
     if (msg == info->selected) {
         mvwhline(win, cline + 1, startpos + 2, '=', distance);
@@ -392,6 +402,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
     wattroff(win, A_BOLD);
+    wattroff(win, A_REVERSE);
 
     return 0;
 }

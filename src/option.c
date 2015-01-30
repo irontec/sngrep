@@ -79,6 +79,7 @@ init_options()
     set_option_value("cf.forceraw", "on");
     set_option_value("cf.rawminwidth", "40");
     set_option_value("cf.splitcallid", "off");
+    set_option_value("cf.highlight", "bold");
 
     // Set default mode in message diff screen
     set_option_value("diff.mode", "line");
