@@ -30,6 +30,10 @@ AC_LANG(C)
 #######################################################################
 # Check for other REQUIRED libraries
 
+AC_CHECK_LIB([m],[ceil],[],[
+    AC_MSG_ERROR([ Your glibc version does not support math functions.])
+])
+
 AC_CHECK_HEADER([ncurses.h], [], [
     AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
 ])

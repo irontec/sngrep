@@ -28,6 +28,7 @@
  */
 #include <ctype.h>
 #include <string.h>
+#include <math.h>
 #include "option.h"
 #include "ui_manager.h"
 #include "ui_call_list.h"
@@ -469,9 +470,10 @@ draw_vscrollbar(WINDOW *win, int value, int max, bool left)
     mvwvline(win, 0, scrollxpos, ACS_VLINE, height);
 
     // How long the scroll will be
-    scrollen = height * 100 / (max * 100 / height);
+    scrollen = ceil(height * 1.0f / max * height);
+
     // Where will the scroll start
-    scrollypos = height * (value * 100 / max) / 100;
+    scrollypos = height * (value * 1.0f / max);
 
     // Draw the N blocks of the scrollbar
     for (cline = 0; cline < scrollen; cline++)
