@@ -610,15 +610,18 @@ msg_is_retrans(sip_msg_t *msg)
     if (!msg || !msg->call || !msg->payload)
         return 0;
 
-    // Get previous message
-    prev = call_get_prev_msg(msg->call, msg);
+    // Start on previous message
+    prev = msg;
 
-    // No previous message, this can not be a retransmission
-    if (!prev || !prev->payload)
-        return 0;
+    // Check previous messages in same call
+    while((prev = call_get_prev_msg(msg->call, prev))) {
+        // Check if the payload is exactly the same
+        if (!strcasecmp(msg->payload, prev->payload)) {
+            return 1;
+        }
+    }
 
-    // Check payloads
-    return !strcasecmp(msg->payload, prev->payload);
+    return 0;
 }
 
 char *
