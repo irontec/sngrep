@@ -486,7 +486,6 @@ draw_vscrollbar(WINDOW *win, int value, int max, bool left)
     for (cline = 0; cline < scrollen; cline++)
         mvwaddch(win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
 
-    mvwprintw(win, 0, 0, "%d/%d [%d] %d/%d", scrollypos, height, scrollen, value, max);
 }
 
 int
