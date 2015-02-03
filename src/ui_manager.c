@@ -38,6 +38,7 @@
 #include "ui_save_pcap.h"
 #include "ui_save_raw.h"
 #include "ui_msg_diff.h"
+#include "ui_column_select.h"
 
 /**
  * @brief Warranty thread-safe ui refresh
@@ -109,7 +110,13 @@ static ui_t panel_pool[] =
             .handle_key = msg_diff_handle_key,
             .destroy = msg_diff_destroy,
             .draw = msg_diff_draw,
-            .help = msg_diff_help } };
+            .help = msg_diff_help },
+          {
+            .type = COLUMN_SELECT_PANEL,
+            .panel = NULL,
+            .create = column_select_create,
+            .handle_key = column_select_handle_key,
+            .destroy = column_select_destroy } };
 
 int
 init_interface()
@@ -470,7 +477,7 @@ draw_vscrollbar(WINDOW *win, int value, int max, bool left)
     mvwvline(win, 0, scrollxpos, ACS_VLINE, height);
 
     // How long the scroll will be
-    scrollen = ceil(height * 1.0f / max * height);
+    scrollen = (height * 1.0f / max * height) + 0.5;
 
     // Where will the scroll start
     scrollypos = height * (value * 1.0f / max);
@@ -478,6 +485,8 @@ draw_vscrollbar(WINDOW *win, int value, int max, bool left)
     // Draw the N blocks of the scrollbar
     for (cline = 0; cline < scrollen; cline++)
         mvwaddch(win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
+
+    mvwprintw(win, 0, 0, "%d/%d [%d] %d/%d", scrollypos, height, scrollen, value, max);
 }
 
 int

@@ -42,7 +42,7 @@ call_list_create()
 {
     PANEL *panel;
     WINDOW *win;
-    int height, width, i, colpos, collen, attrid;
+    int height, width, i, attrid, collen;
     call_list_info_t *info;
     char option[80];
     const char *field, *title;
@@ -104,19 +104,6 @@ call_list_create()
     // Draw panel title
     mvwprintw(win, 0, 0, "%*s", width, "");
     mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
-
-    // Draw columns titles
-    mvwprintw(win, 3, 0, "%*s", width, "");
-    for (colpos = 6, i = 0; i < info->columncnt; i++) {
-        // Get current column width
-        collen = info->columns[i].width;
-
-        // Check if the column will fit in the remaining space of the screen
-        if (colpos + collen >= width)
-            break;
-        mvwprintw(win, 3, colpos, "%.*s", collen, sip_attr_get_description(info->columns[i].id));
-        colpos += collen + 1;
-    }
     wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Set defualt filter text if configured
@@ -181,9 +168,11 @@ call_list_draw_footer(PANEL *panel)
           "F6",
           "Raw",
           "F7",
-          "Filter" };
+          "Filter",
+          "F10",
+          "Columns" };
 
-    draw_keybindings(panel, keybindings, 20);
+    draw_keybindings(panel, keybindings, 22);
 }
 
 int
@@ -196,10 +185,11 @@ call_list_redraw_required(PANEL *panel, sip_msg_t *msg)
 int
 call_list_draw(PANEL *panel)
 {
-    int height, width, cline = 0;
+    int height, width, cline = 0, i, colpos, collen;
     struct sip_call *call;
     int callcnt;
     const char *ouraddr;
+    const char *coldesc;
     char linetext[256];
 
     // Get panel info
@@ -207,14 +197,35 @@ call_list_draw(PANEL *panel)
     if (!info)
         return -1;
 
+    // Get window of call list panel
+    WINDOW *win = panel_window(panel);
+    getmaxyx(win, height, width);
+
     // Update current mode information
     if (!info->form_active) {
-        mvwprintw(panel_window(panel), 1, 2, "Current Mode: %s %9s", get_option_value("sngrep.mode"),
+        mvwprintw(win, 1, 2, "Current Mode: %s %9s", get_option_value("sngrep.mode"),
                   (is_option_enabled("sip.capture") ? "" : "(Stopped)"));
     }
 
+    // Draw columns titles
+    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    mvwprintw(win, 3, 0, "%*s", width, "");
+    for (colpos = 6, i = 0; i < info->columncnt; i++) {
+        // Get current column width
+        collen = info->columns[i].width;
+        // Get current column title
+        coldesc = sip_attr_get_description(info->columns[i].id);
+
+        // Check if the column will fit in the remaining space of the screen
+        if (colpos + strlen(coldesc) >= width)
+            break;
+        mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
+        colpos += collen + 1;
+    }
+    wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+
     // Get window of call list panel
-    WINDOW *win = info->list_win;
+    win = info->list_win;
     getmaxyx(win, height, width);
 
     // Get available calls counter (we'll use it here a couple of times)
@@ -346,13 +357,20 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 
         // Check if next column fits on window width
         if (strlen(text) + collen >= width)
+            collen -= width - strlen(text);
+
+        // If no space left on the screen stop processing columns
+        if (collen <= 0)
             break;
 
+        // Initialize column text
+        memset(coltext, 0, sizeof(coltext));
         // Get call attribute for current column
         if ((call_attr = call_get_attribute(call, colid))) {
             sprintf(coltext, "%.*s", collen, call_attr);
-            sprintf(text + strlen(text), "%-*s ", collen, coltext);
         }
+        // Add the column text to the existing columns
+        sprintf(text + strlen(text), "%-*s ", collen, coltext);
     }
 
     return text;
@@ -479,6 +497,14 @@ call_list_handle_key(PANEL *panel, int key)
         wait_for_input(next_panel);
         call_list_filter_update(panel);
         break;
+    case 't':
+    case 'T':
+    case KEY_F(10):
+        // Display column selection panel
+        next_panel = ui_create(ui_find_by_type(COLUMN_SELECT_PANEL));
+        wait_for_input(next_panel);
+        call_list_filter_update(panel);
+        break;
     case 's':
     case 'S':
     case KEY_F(2):
@@ -588,7 +614,7 @@ call_list_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 26;
+    height = 27;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
@@ -634,7 +660,8 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 19, 2, "F7/F        Show filter options");
     mvwprintw(help_win, 20, 2, "F8/c        Turn on/off window colours");
     mvwprintw(help_win, 21, 2, "F9/l        Turn on/off resolved addresses");
-    mvwprintw(help_win, 22, 2, "i/I         Set display filter to invite");
+    mvwprintw(help_win, 22, 2, "F10/t       Select displayed columns");
+    mvwprintw(help_win, 23, 2, "i/I         Set display filter to invite");
 
     // Press any key to close
     wgetch(help_win);

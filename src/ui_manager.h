@@ -124,6 +124,8 @@ enum panel_types
     SAVE_RAW_PANEL,
     //! Message comprare
     MSG_DIFF_PANEL,
+    //! Column selector panel
+    COLUMN_SELECT_PANEL,
 };
 
 /**

@@ -29,11 +29,6 @@ AC_LANG(C)
 
 #######################################################################
 # Check for other REQUIRED libraries
-
-AC_CHECK_LIB([m],[ceil],[],[
-    AC_MSG_ERROR([ Your glibc version does not support math functions.])
-])
-
 AC_CHECK_HEADER([ncurses.h], [], [
     AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
 ])
@@ -48,6 +43,10 @@ AC_CHECK_LIB([panel], [new_panel], [], [
 
 AC_CHECK_LIB([form], [new_form], [], [
     AC_MSG_ERROR([ You need to have ncurses forms library installed to compile sngrep.])
+])
+
+AC_CHECK_LIB([menu], [new_item], [], [
+    AC_MSG_ERROR([ You need to have ncurses menu library installed to compile sngrep.])
 ])
 
 AC_CHECK_LIB([pthread], [pthread_create], [], [

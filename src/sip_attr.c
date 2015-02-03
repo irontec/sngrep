@@ -52,7 +52,7 @@ static sip_attr_hdr_t attrs[] =
           {
             .id = SIP_ATTR_SRC_HOST,
             .name = "srchost",
-            .desc = "Source",
+            .desc = "Source Host",
             .dwidth = 16, },
           {
             .id = SIP_ATTR_DST,
@@ -62,7 +62,7 @@ static sip_attr_hdr_t attrs[] =
           {
             .id = SIP_ATTR_DST_HOST,
             .name = "dsthost",
-            .desc = "Destiny",
+            .desc = "Destiny Host",
             .dwidth = 16, },
           {
             .id = SIP_ATTR_CALLID,
@@ -132,7 +132,7 @@ static sip_attr_hdr_t attrs[] =
           {
             .id = SIP_ATTR_CALLSTATE,
             .name = "state",
-            .desc = "State",
+            .desc = "Call State",
             .dwidth = 10 } };
 
 sip_attr_hdr_t *
