@@ -9,8 +9,8 @@
 /* Define to 1 if you have the `form' library (-lform). */
 #undef HAVE_LIBFORM
 
-/* Define to 1 if you have the `m' library (-lm). */
-#undef HAVE_LIBM
+/* Define to 1 if you have the `menu' library (-lmenu). */
+#undef HAVE_LIBMENU
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
 #undef HAVE_LIBNCURSES
