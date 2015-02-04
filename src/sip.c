@@ -568,9 +568,7 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
         }
         if (sscanf(pch, "CSeq: %s %[^\t\n\r]", rest, value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
-                // ACK Messages are not considered requests
-                if (strcasecmp(value, "ACK"))
-                    msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
+                msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
             msg_set_attribute(msg, SIP_ATTR_CSEQ, rest);
