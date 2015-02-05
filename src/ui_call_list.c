@@ -278,7 +278,7 @@ call_list_draw(PANEL *panel)
 
         // Print call line if no filter is active or it matchs the filter
         memset(linetext, 0, sizeof(linetext));
-        mvwprintw(win, cline, 6, "%s", call_list_line_text(panel, call, linetext));
+        mvwprintw(win, cline, 6, "%.*s", width - 6, call_list_line_text(panel, call, linetext));
         cline++;
 
         wattroff(win, COLOR_PAIR(CP_DEFAULT));
