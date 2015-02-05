@@ -100,11 +100,11 @@ call_list_create()
     // Draw the footer of the window
     call_list_draw_footer(panel);
 
-    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     // Draw panel title
     mvwprintw(win, 0, 0, "%*s", width, "");
     mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
-    wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattroff(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Set defualt filter text if configured
     if (get_option_value("cl.filter")) {
@@ -208,7 +208,7 @@ call_list_draw(PANEL *panel)
     }
 
     // Draw columns titles
-    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattron(win, A_BOLD |COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(win, 3, 0, "%*s", width, "");
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
         // Get current column width
@@ -222,7 +222,7 @@ call_list_draw(PANEL *panel)
         mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
         colpos += collen + 1;
     }
-    wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattroff(win, A_BOLD |COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Get window of call list panel
     win = info->list_win;
