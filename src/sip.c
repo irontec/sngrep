@@ -479,13 +479,15 @@ call_update_state(sip_call_t *call)
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "IN CALL");
             } else if (!strncasecmp(method, "CANCEL", 6)) {
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "CANCELLED");
-            } else if (!strncasecmp(method, "486", 3) || !strncasecmp(method, "603", 3)) {
+            } else if (*method == '4' || *method == '5' || *method == '6') {
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "REJECTED");
             }
         } else if (!strcmp(callstate, "IN CALL")) {
             if (!strncasecmp(method, "BYE", 3)) {
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "COMPLETED");
             }
+        } else if (!strncasecmp(method, "INVITE", 6)) {
+            call_set_attribute(call, SIP_ATTR_CALLSTATE, "CALL SETUP");
         }
     } else {
         // This is actually a call
