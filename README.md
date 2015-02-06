@@ -17,6 +17,7 @@ as PCAP viewer.
  
 On most systems the commands to build will be the standard atotools procedure: 
 
+    ./bootstrap.sh
 	./configure
 	make
 	make install (as root)

@@ -11,10 +11,13 @@ src/config.h.in~
 src/stamp-h1
 
 .autotools
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache
 config.log
 config.status
-*Makefile
-autom4te.cache
+configure
 
 # Ignore Doxygen generated files
 doc/html
