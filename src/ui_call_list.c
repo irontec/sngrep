@@ -268,7 +268,7 @@ call_list_draw(PANEL *panel)
 
         // Highlight active call
         if (call == info->cur_call) {
-            wattron(win, COLOR_PAIR(CP_DEF_ON_BLUE));
+            wattron(win, A_REVERSE | COLOR_PAIR(CP_BLUE_ON_WHITE));
         }
 
         // Set current line background
@@ -282,8 +282,9 @@ call_list_draw(PANEL *panel)
         cline++;
 
         wattroff(win, COLOR_PAIR(CP_DEFAULT));
-        wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+        wattroff(win, COLOR_PAIR(CP_BLUE_ON_WHITE));
         wattroff(win, A_BOLD);
+        wattroff(win, A_REVERSE);
     }
 
     // Draw scrollbar to the right

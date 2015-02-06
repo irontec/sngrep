@@ -164,6 +164,7 @@ init_interface()
     init_pair(CP_DEF_ON_CYAN, fg, COLOR_CYAN);
     init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
     init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
+    init_pair(CP_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
 
     return 0;
 }
