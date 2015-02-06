@@ -6,8 +6,7 @@
 src/sngrep
 src/*.o
 src/.deps
-src/config.h
-src/config.h.in~
+src/config.h*
 src/stamp-h1
 
 .autotools
