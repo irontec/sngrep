@@ -165,6 +165,8 @@ init_interface()
     init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
     init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
     init_pair(CP_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
+    init_pair(CP_CYAN_ON_WHITE, COLOR_CYAN, COLOR_BLUE);
+    init_pair(CP_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
 
     return 0;
 }
@@ -441,19 +443,19 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
     getmaxyx(win, height, width);
 
     // Write a line all the footer width
-    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
     mvwprintw(win, height - 1, 0, "%*s", width, "");
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
-        wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key]) + 1, keybindings[key]);
         xpos += strlen(keybindings[key]) + 1;
-        wattroff(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
+        wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
+        wattron(win, A_BOLD |A_REVERSE | COLOR_PAIR(CP_CYAN_ON_WHITE));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key + 1]) + 1,
                   keybindings[key + 1]);
-        wattroff(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
+        wattroff(win, A_BOLD |A_REVERSE| COLOR_PAIR(CP_CYAN_ON_WHITE));
         xpos += strlen(keybindings[key + 1]) + 3;
     }
 }

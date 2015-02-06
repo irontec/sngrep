@@ -85,10 +85,10 @@ msg_diff_create()
     mvwvline(win, 0, hwidth, ACS_VLINE, height);
 
     // Draw title
-    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattron(win, A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
     mvwprintw(win, 0, 0, "%*s", width, "");
     mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
-    wattroff(win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattroff(win, A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
 
     // Draw keybindings
     msg_diff_draw_footer(panel);

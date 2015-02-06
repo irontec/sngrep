@@ -97,6 +97,8 @@ enum sngrep_colors_pairs
     CP_DEF_ON_BLUE,
     CP_BLACK_ON_CYAN,
     CP_BLUE_ON_WHITE,
+    CP_CYAN_ON_BLACK,
+    CP_CYAN_ON_WHITE,
 };
 
 // Used to configure color pairs only with fg color
