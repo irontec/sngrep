@@ -58,7 +58,7 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
     memcpy(tmpseed, seed, slen);
     tmpslen = slen;
 
-    // Calculate enough data to fill destiny
+    // Calculate enough data to fill destination
     while (pending > 0) {
         HMAC_Init(&hm, secret, sslen, md);
         HMAC_Update(&hm, tmpseed, tmpslen);

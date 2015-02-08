@@ -231,7 +231,7 @@ column_select_move_item(PANEL *panel, ITEM *item, int pos)
     if (pos == item_count(info->menu) || pos < 0)
         return;
 
-    // Swap position with destiny
+    // Swap position with destination
     int item_pos = item_index(item);
     info->items[item_pos] = info->items[pos];
     info->items[item_pos]->index = item_pos;

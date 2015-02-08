@@ -290,7 +290,7 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
  * @param label Fixed ASCII string
  * @param seed Concatenation of Random data from Hello Handshake records
  * @param slen Seed length in bytes
- * @return destiny length in bytes
+ * @return destination length in bytes
  */
 int
 PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label,

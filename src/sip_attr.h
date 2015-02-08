@@ -65,9 +65,9 @@ enum sip_attr_id
     SIP_ATTR_SRC,
     //! Package source lookup and port
     SIP_ATTR_SRC_HOST,
-    //! Package IP destiny address and port
+    //! Package IP destination address and port
     SIP_ATTR_DST,
-    //! Package destiny lookup and port
+    //! Package destination lookup and port
     SIP_ATTR_DST_HOST,
     //! SIP Message Call-ID header
     SIP_ATTR_CALLID,

@@ -325,7 +325,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     if (msglen > 24)
         msglen = 24;
 
-    // Get origin and destiny column
+    // Get origin and destination column
     call_flow_column_t *column1 = call_flow_column_get(panel, msg_callid, msg_src);
     call_flow_column_t *column2 = call_flow_column_get(panel, msg_callid, msg_dst);
 
