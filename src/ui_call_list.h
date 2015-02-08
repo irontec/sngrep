@@ -82,7 +82,7 @@ struct call_list_info
     //! Selected calls with space
     sip_call_group_t *group;
     //! Displayed column list, make it configurable in the future
-    call_list_column_t columns[10];
+    call_list_column_t columns[SIP_ATTR_SENTINEL];
     //! Displayed column count.
     int columncnt;
     //! Stores the current selected line
