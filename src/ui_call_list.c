@@ -358,7 +358,7 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 
         // Check if next column fits on window width
         if (strlen(text) + collen >= width)
-            collen -= width - strlen(text);
+            collen = width - strlen(text);
 
         // If no space left on the screen stop processing columns
         if (collen <= 0)
