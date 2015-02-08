@@ -17,6 +17,9 @@ autom4te.cache
 config.log
 config.status
 configure
+missing
+install-sh
+depcomp
 
 # Ignore Doxygen generated files
 doc/html
