@@ -100,11 +100,11 @@ call_list_create()
     // Draw the footer of the window
     call_list_draw_footer(panel);
 
-    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     // Draw panel title
+    wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
     mvwprintw(win, 0, 0, "%*s", width, "");
     mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
-    wattroff(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
 
     // Set defualt filter text if configured
     if (get_option_value("cl.filter")) {
@@ -208,7 +208,7 @@ call_list_draw(PANEL *panel)
     }
 
     // Draw columns titles
-    wattron(win, A_BOLD |COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
     mvwprintw(win, 3, 0, "%*s", width, "");
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
         // Get current column width
@@ -222,7 +222,7 @@ call_list_draw(PANEL *panel)
         mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
         colpos += collen + 1;
     }
-    wattroff(win, A_BOLD |COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
 
     // Get window of call list panel
     win = info->list_win;
@@ -268,7 +268,7 @@ call_list_draw(PANEL *panel)
 
         // Highlight active call
         if (call == info->cur_call) {
-            wattron(win, COLOR_PAIR(CP_DEF_ON_BLUE));
+            wattron(win, A_REVERSE | COLOR_PAIR(CP_BLUE_ON_WHITE));
         }
 
         // Set current line background
@@ -282,8 +282,9 @@ call_list_draw(PANEL *panel)
         cline++;
 
         wattroff(win, COLOR_PAIR(CP_DEFAULT));
-        wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+        wattroff(win, COLOR_PAIR(CP_BLUE_ON_WHITE));
         wattroff(win, A_BOLD);
+        wattroff(win, A_REVERSE);
     }
 
     // Draw scrollbar to the right
@@ -357,7 +358,7 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 
         // Check if next column fits on window width
         if (strlen(text) + collen >= width)
-            collen -= width - strlen(text);
+            collen = width - strlen(text);
 
         // If no space left on the screen stop processing columns
         if (collen <= 0)

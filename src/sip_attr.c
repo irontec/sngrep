@@ -38,12 +38,12 @@ static sip_attr_hdr_t attrs[] =
             .id = SIP_ATTR_SIPFROM,
             .name = "sipfrom",
             .desc = "SIP From",
-            .dwidth = 40, },
+            .dwidth = 30, },
           {
             .id = SIP_ATTR_SIPTO,
             .name = "sipto",
             .desc = "SIP To",
-            .dwidth = 40, },
+            .dwidth = 30, },
           {
             .id = SIP_ATTR_SRC,
             .name = "src",
@@ -57,12 +57,12 @@ static sip_attr_hdr_t attrs[] =
           {
             .id = SIP_ATTR_DST,
             .name = "dst",
-            .desc = "Destiny",
+            .desc = "Destination",
             .dwidth = 22, },
           {
             .id = SIP_ATTR_DST_HOST,
             .name = "dsthost",
-            .desc = "Destiny Host",
+            .desc = "Destination Host",
             .dwidth = 16, },
           {
             .id = SIP_ATTR_CALLID,
