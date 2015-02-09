@@ -1,3 +1,30 @@
+2015-02-09 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.2.2 released
+
+	* Added a new panel to configure Call List columns during runtime
+	  (static configuration can still be done using sngreprc file)
+	* Added a configuration option to change selected message
+	  highlight in Call Flow (bold is not properly displayed in some terminals)
+	* Fixed message retransmission detection (-->>>)
+	* Fixed some drawing issues on small screens
+	* Fixed a crash when capturing while saving pcap dialog was being displayed
+	* Fixed a bug that considered ACK as a response instead of a request
+	* Fixed Call state for REJECTED calls
+	* Fixed Colors for monochrome terminals
+	* Changed default column width for SIP To/From to 30 characters
+	* Other minor fixes
+
+2015-01-22 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.2.1 released
+
+	* Added SIP message color syntax options
+	* Improved Call Flow refreshing logic
+	* Fixed multiple locking problems with UI
+	* Respect terminals colors (can be overridden with background dark option)
+	* Improve offline pcap file reading to respect capture limit option
+	* Swapped some keybindings
+	* Multiple minor fixes and code refactoring
+
 2014-12-04 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.2.0 released
 
