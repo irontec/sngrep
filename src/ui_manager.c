@@ -450,19 +450,19 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
         wattron(win, A_REVERSE);
 
     // Write a line all the footer width
-    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(win, height - 1, 0, "%*s", width, "");
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
-        wattron(win, A_BOLD | COLOR_PAIR(CP_BLACK_ON_CYAN));
+        wattron(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key]) + 1, keybindings[key]);
         xpos += strlen(keybindings[key]) + 1;
-        wattroff(win, A_BOLD | COLOR_PAIR(CP_BLACK_ON_CYAN));
-        wattron(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        wattroff(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key + 1]) + 1,
                   keybindings[key + 1]);
-        wattroff(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        wattroff(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         xpos += strlen(keybindings[key + 1]) + 3;
     }
 
