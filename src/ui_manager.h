@@ -96,6 +96,8 @@ enum sngrep_colors_pairs
     CP_DEF_ON_CYAN,
     CP_DEF_ON_BLUE,
     CP_BLACK_ON_CYAN,
+    CP_WHITE_ON_CYAN,
+    CP_BLUE_ON_CYAN,
     CP_BLUE_ON_WHITE,
     CP_CYAN_ON_BLACK,
     CP_CYAN_ON_WHITE,
@@ -299,6 +301,19 @@ title_foot_box(WINDOW *win);
  */
 void
 ui_new_msg_refresh(sip_msg_t *msg);
+
+
+/**
+ * @brief Draw title at the top of the panel
+ *
+ * This function will draw a line with the title on the first
+ * row of the panel's window
+ *
+ * @param panel PANEL pointer to draw title on
+ * @param title String containing the title
+ */
+void
+draw_title(PANEL *panel, const char *title);
 
 /**
  * @brief Draw keybinding info at the bottom of the panel

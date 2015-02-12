@@ -101,10 +101,7 @@ call_list_create()
     call_list_draw_footer(panel);
 
     // Draw panel title
-    wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
-    mvwprintw(win, 0, 0, "%*s", width, "");
-    mvwprintw(win, 0, (width - 45) / 2, "sngrep - SIP messages flow viewer");
-    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
+    draw_title(panel, "sngrep - SIP messages flow viewer");
 
     // Set defualt filter text if configured
     if (get_option_value("cl.filter")) {
@@ -207,8 +204,12 @@ call_list_draw(PANEL *panel)
                   (is_option_enabled("sip.capture") ? "" : "(Stopped)"));
     }
 
+    // Reverse colors on monochrome terminals
+    if (!has_colors())
+        wattron(win, A_REVERSE);
+
     // Draw columns titles
-    wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
+    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(win, 3, 0, "%*s", width, "");
     for (colpos = 6, i = 0; i < info->columncnt; i++) {
         // Get current column width
@@ -222,7 +223,7 @@ call_list_draw(PANEL *panel)
         mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
         colpos += collen + 1;
     }
-    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
+    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Get window of call list panel
     win = info->list_win;
@@ -268,7 +269,10 @@ call_list_draw(PANEL *panel)
 
         // Highlight active call
         if (call == info->cur_call) {
-            wattron(win, A_REVERSE | COLOR_PAIR(CP_BLUE_ON_WHITE));
+            // Reverse colors on monochrome terminals
+            if (!has_colors())
+                wattron(win, A_REVERSE);
+            wattron(win, COLOR_PAIR(CP_DEF_ON_BLUE));
         }
 
         // Set current line background
@@ -282,9 +286,8 @@ call_list_draw(PANEL *panel)
         cline++;
 
         wattroff(win, COLOR_PAIR(CP_DEFAULT));
-        wattroff(win, COLOR_PAIR(CP_BLUE_ON_WHITE));
-        wattroff(win, A_BOLD);
-        wattroff(win, A_REVERSE);
+        wattroff(win, COLOR_PAIR(CP_DEF_ON_BLUE));
+        wattroff(win, A_BOLD | A_REVERSE);
     }
 
     // Draw scrollbar to the right

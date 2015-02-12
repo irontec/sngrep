@@ -179,10 +179,7 @@ call_flow_draw(PANEL *panel)
     }
 
     // Draw panel title
-    wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
-    mvwprintw(win, 0, 0, "%*s", width, "");
-    mvwprintw(win, 0, (width - strlen(title)) / 2, "%s", title);
-    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
+    draw_title(panel, title);
 
     // Show some keybinding
     call_flow_draw_footer(panel);

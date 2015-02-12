@@ -135,6 +135,7 @@ init_interface()
     } else {
         use_default_colors();
     }
+    // Enable Colors
     start_color();
     cbreak();
 
@@ -144,7 +145,6 @@ init_interface()
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
-    // Enable Colors
 
     if (is_option_value("background", "dark")) {
         fg = COLOR_WHITE;
@@ -154,6 +154,7 @@ init_interface()
         bg = COLOR_DEFAULT;
     }
 
+    // Initialize colorpairs
     init_pair(CP_CYAN_ON_DEF, COLOR_CYAN, bg);
     init_pair(CP_YELLOW_ON_DEF, COLOR_YELLOW, bg);
     init_pair(CP_MAGENTA_ON_DEF, COLOR_MAGENTA, bg);
@@ -164,8 +165,10 @@ init_interface()
     init_pair(CP_DEF_ON_CYAN, fg, COLOR_CYAN);
     init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
     init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
+    init_pair(CP_WHITE_ON_CYAN, COLOR_WHITE, COLOR_CYAN);
+    init_pair(CP_BLUE_ON_CYAN, COLOR_BLUE, COLOR_CYAN);
     init_pair(CP_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
-    init_pair(CP_CYAN_ON_WHITE, COLOR_CYAN, COLOR_BLUE);
+    init_pair(CP_CYAN_ON_WHITE, COLOR_CYAN, COLOR_WHITE);
     init_pair(CP_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
 
     return 0;
@@ -442,22 +445,50 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
     WINDOW *win = panel_window(panel);
     getmaxyx(win, height, width);
 
+    // Reverse colors on monochrome terminals
+    if (!has_colors())
+        wattron(win, A_REVERSE);
+
     // Write a line all the footer width
-    wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
+    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(win, height - 1, 0, "%*s", width, "");
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
-        wattron(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
+        wattron(win, A_BOLD | COLOR_PAIR(CP_BLACK_ON_CYAN));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key]) + 1, keybindings[key]);
         xpos += strlen(keybindings[key]) + 1;
-        wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_CYAN_ON_BLACK));
-        wattron(win, A_BOLD |A_REVERSE | COLOR_PAIR(CP_CYAN_ON_WHITE));
+        wattroff(win, A_BOLD | COLOR_PAIR(CP_BLACK_ON_CYAN));
+        wattron(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
         mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key + 1]) + 1,
                   keybindings[key + 1]);
-        wattroff(win, A_BOLD |A_REVERSE| COLOR_PAIR(CP_CYAN_ON_WHITE));
+        wattroff(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
         xpos += strlen(keybindings[key + 1]) + 3;
     }
+
+    // Disable reverse mode in all cases
+    wattroff(win, A_REVERSE);
+}
+
+void
+draw_title(PANEL *panel, const char *title)
+{
+    int height, width, key, xpos = 0;
+
+    // Get window available space
+    WINDOW *win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Reverse colors on monochrome terminals
+    if (!has_colors())
+        wattron(win, A_REVERSE);
+
+    // Center the title on the window
+    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    mvwprintw(win, 0, 0, "%*s", width, "");
+    mvwprintw(win, 0, (width - strlen(title)) / 2, "%s", title);
+    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
+
 }
 
 void
