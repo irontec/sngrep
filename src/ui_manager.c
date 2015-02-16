@@ -177,6 +177,8 @@ init_interface()
 int
 deinit_interface()
 {
+    // Clear screen before leaving
+    refresh();
     // End ncurses mode
     return endwin();
 }
