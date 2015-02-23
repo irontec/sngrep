@@ -33,19 +33,19 @@ AC_CHECK_HEADER([ncurses.h], [], [
     AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
 ])
 
-AC_CHECK_LIB([ncurses], [initscr], [], [
+AC_CHECK_LIB([ncursesw], [initscr], [], [
     AC_MSG_ERROR([ You need to have libncurses installed to compile sngrep.])
 ])
 
-AC_CHECK_LIB([panel], [new_panel], [], [
+AC_CHECK_LIB([panelw], [new_panel], [], [
     AC_MSG_ERROR([ You need to have ncurses panel library installed to compile sngrep.])
 ])
 
-AC_CHECK_LIB([form], [new_form], [], [
+AC_CHECK_LIB([formw], [new_form], [], [
     AC_MSG_ERROR([ You need to have ncurses forms library installed to compile sngrep.])
 ])
 
-AC_CHECK_LIB([menu], [new_item], [], [
+AC_CHECK_LIB([menuw], [new_item], [], [
     AC_MSG_ERROR([ You need to have ncurses menu library installed to compile sngrep.])
 ])
 

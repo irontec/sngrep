@@ -35,8 +35,8 @@
  */
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
-
-#include <ncurses.h>
+#define _X_OPEN_SOURCE_EXTENDED
+#include <ncursesw/ncurses.h>
 #include <panel.h>
 #include "sip.h"
 #include "group.h"

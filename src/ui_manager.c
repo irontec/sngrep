@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include <locale.h>
 #include "option.h"
 #include "ui_manager.h"
 #include "ui_call_list.h"
@@ -122,6 +123,8 @@ int
 init_interface()
 {
     int bg, fg;
+    // Set Locale
+    setlocale(LC_CTYPE, "");
 
     // Initialize curses
     if (!initscr()) {
