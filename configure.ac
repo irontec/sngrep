@@ -1,13 +1,13 @@
 AC_PREREQ([2.59])
 AC_INIT([sngrep], [0.2.2], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
-AM_INIT_AUTOMAKE([1.10])
-AM_SILENT_RULES([yes])
+AM_INIT_AUTOMAKE([1.9])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_HEADERS([src/config.h])
 
 AC_COPYRIGHT("Irontec S.L.")
 
 # Define _GNU_SOURCE etc.
-AC_USE_SYSTEM_EXTENSIONS
+m4_ifdef([AC_USE_SYSTEM_EXTENSIONS], [AC_USE_SYSTEM_EXTENSIONS])
 
 # debug compilation
 AC_ARG_ENABLE(debug,
