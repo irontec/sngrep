@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 #include "option.h"
 #include "ui_manager.h"
 #include "ui_call_list.h"
@@ -122,6 +123,7 @@ int
 init_interface()
 {
     int bg, fg;
+    const char *term;
 
     // Initialize curses
     if (!initscr()) {
@@ -145,6 +147,22 @@ init_interface()
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
+
+    // Redefine some keys
+    term = getenv("TERM");
+    if (term && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
+       define_key("\033[H", KEY_HOME);
+       define_key("\033[F", KEY_END);
+       define_key("\033OP", KEY_F(1));
+       define_key("\033OQ", KEY_F(2));
+       define_key("\033OR", KEY_F(3));
+       define_key("\033OS", KEY_F(4));
+       define_key("\033[11~", KEY_F(1));
+       define_key("\033[12~", KEY_F(2));
+       define_key("\033[13~", KEY_F(3));
+       define_key("\033[14~", KEY_F(4));
+       define_key("\033[17;2~", KEY_F(18));
+    }
 
     if (is_option_value("background", "dark")) {
         fg = COLOR_WHITE;
@@ -384,8 +402,9 @@ default_handle_key(ui_t *ui, int key)
         // Toggle capture option
         toggle_option("sip.capture");
         break;
+    case KEY_F(1):
     case 'h':
-    case 265: /* KEY_F1 */
+    case '?':
         ui_help(ui);
         break;
     case 'q':
