@@ -30,6 +30,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <locale.h>
 #include "option.h"
 #include "ui_manager.h"
 #include "ui_call_list.h"
@@ -124,6 +125,8 @@ init_interface()
 {
     int bg, fg;
     const char *term;
+    // Set Locale
+    setlocale(LC_CTYPE, "");
 
     // Initialize curses
     if (!initscr()) {
