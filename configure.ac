@@ -33,20 +33,50 @@ AC_CHECK_HEADER([ncurses.h], [], [
     AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
 ])
 
-AC_CHECK_LIB([ncursesw], [initscr], [], [
-    AC_MSG_ERROR([ You need to have libncurses installed to compile sngrep.])
-])
+# Check for Ncurses Wide character support
+AC_ARG_ENABLE([unicode],
+	AC_HELP_STRING([--enable-unicode], [Enable Ncurses Unicode support]),
+	[AC_SUBST(UNICODE, $enableval)],
+	[AC_SUBST(UNICODE, no)]
+)
 
-AC_CHECK_LIB([panelw], [new_panel], [], [
-    AC_MSG_ERROR([ You need to have ncurses panel library installed to compile sngrep.])
-])
+AS_IF([test "x$enable_unicode" == "xyes"], [
+	# Ncurses with wide-character support
+	AC_DEFINE([WITH_UNICODE], [], [Compile With Unicode compatibility])
 
-AC_CHECK_LIB([formw], [new_form], [], [
-    AC_MSG_ERROR([ You need to have ncurses forms library installed to compile sngrep.])
-])
+	AC_CHECK_LIB([ncursesw], [initscr], [], [
+	    AC_MSG_ERROR([ You need to have libncursesw installed to compile sngrep.])
+	])
 
-AC_CHECK_LIB([menuw], [new_item], [], [
-    AC_MSG_ERROR([ You need to have ncurses menu library installed to compile sngrep.])
+	AC_CHECK_LIB([panelw], [new_panel], [], [
+	    AC_MSG_ERROR([ You need to have ncurses panelw library installed to compile sngrep.])
+	])
+
+	AC_CHECK_LIB([formw], [new_form], [], [
+	    AC_MSG_ERROR([ You need to have ncurses formsw library installed to compile sngrep.])
+	])
+
+	AC_CHECK_LIB([menuw], [new_item], [], [
+	    AC_MSG_ERROR([ You need to have ncurses menuw library installed to compile sngrep.])
+	])
+	], [
+
+	# Ncurses without wide-character support
+	AC_CHECK_LIB([ncurses], [initscr], [], [
+	    AC_MSG_ERROR([ You need to have libncurses installed to compile sngrep.])
+	])
+
+	AC_CHECK_LIB([panel], [new_panel], [], [
+	    AC_MSG_ERROR([ You need to have ncurses panel library installed to compile sngrep.])
+	])
+
+	AC_CHECK_LIB([form], [new_form], [], [
+	    AC_MSG_ERROR([ You need to have ncurses forms library installed to compile sngrep.])
+	])
+
+	AC_CHECK_LIB([menu], [new_item], [], [
+	    AC_MSG_ERROR([ You need to have ncurses menu library installed to compile sngrep.])
+	])
 ])
 
 AC_CHECK_LIB([pthread], [pthread_create], [], [
@@ -62,8 +92,11 @@ AC_CHECK_HEADER([pcap.h], [], [
 
 # Check for SSL dependencies
 AC_ARG_ENABLE([openssl],
-    AC_HELP_STRING([--disable-openssl], [Disable TLS SIP Transport]))
-    
+    AC_HELP_STRING([--disable-openssl], [Disable SSL Support (TLS SIP Transport)]),
+	[AC_SUBST(OPENSSL, $enableval)],
+	[AC_SUBST(OPENSSL, yes)]
+)
+
 AS_IF([test "x$enable_openssl" != "xno"], [
 
 	AC_CHECK_LIB([ssl], [SSL_new], [], [
@@ -105,12 +138,12 @@ if test "x${silent}" != "xyes" ; then
     echo
 fi
 
-
 AC_MSG_NOTICE
-AC_MSG_NOTICE( ====================================================== )
-AC_MSG_NOTICE(   sngrep configure finished                            )
-AC_MSG_NOTICE(  ----------------------------------------------------  )
-AC_MSG_NOTICE( ====================================================== )
+AC_MSG_NOTICE(   sngrep configure finished                            	)
+AC_MSG_NOTICE( ====================================================== 	)
+AC_MSG_NOTICE( OpenSSL Support		: ${OPENSSL}  						)
+AC_MSG_NOTICE( Unicode Support		: ${UNICODE}  						)
+AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE
 
 
