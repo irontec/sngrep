@@ -92,12 +92,12 @@ AC_CHECK_HEADER([pcap.h], [], [
 
 # Check for SSL dependencies
 AC_ARG_ENABLE([openssl],
-    AC_HELP_STRING([--disable-openssl], [Disable SSL Support (TLS SIP Transport)]),
+    AC_HELP_STRING([--enable-openssl], [Disable SSL Support (TLS SIP Transport)]),
 	[AC_SUBST(OPENSSL, $enableval)],
-	[AC_SUBST(OPENSSL, yes)]
+	[AC_SUBST(OPENSSL, no)]
 )
 
-AS_IF([test "x$enable_openssl" != "xno"], [
+AS_IF([test "x$enable_openssl" == "xyes"], [
 
 	AC_CHECK_LIB([ssl], [SSL_new], [], [
 	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep (or use --disable-openssl)])

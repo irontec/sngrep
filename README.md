@@ -1,36 +1,46 @@
 # sngrep [![Build Status](https://travis-ci.org/irontec/sngrep.svg)](https://travis-ci.org/irontec/sngrep)
 
-sngrep is a tool for displaying SIP calls message flows.
+sngrep is a tool for displaying SIP calls message flows from terminal.
 
 It supports live capture to display realtime SIP packets and can also be used
 as PCAP viewer.
 
 [Some screenshots of sngrep](https://github.com/irontec/sngrep/wiki/Screenshots)
 
-## Prerequisites
-
- - libncurse5 - for UI , windows, panels.
- - libpcap - for capturing packets.
- - libssl - (optional) for tls decrypt
-
 ## Installing
- 
-On most systems the commands to build will be the standard atotools procedure: 
+
+# Building from sources
+Prerequisites
+
+ - libncurse5 - for UI, windows, panels.
+ - libpcap - for capturing packets.
+ - libssl - (optional) for TLS transport decrypt
+ - libncursesw5 - (optional) for UI, windows, panels (wide-character support)
+
+On most systems the commands to build will be the standard autotools procedure:
 
     ./bootstrap.sh
 	./configure
 	make
 	make install (as root)
 
-If you dont want to use libpcap (because is not available in your system or
-don't want to install more development libraries), you can use release 0.0.0
-available at https://github.com/irontec/sngrep/releases
+You can pass following flags to ./configure to enable some features
+
+  - --enable-openssl : Adds OpenSSL support, allows sngrep to parse TLS captured messages
+  - --enable-unicode : Adds Ncurses wide-character support, for UTF-8 terminals
 
 You can find [detailed instructions for some distributions] (https://github.com/irontec/sngrep/wiki/Building) on wiki.
 
+# Binaries
+OSX users can install sngrep using [homebrew](https://github.com/Homebrew/homebrew)
+
+    brew install sngrep
+
 ## Usage
 
-sngrep can be used to view SIP packets from a pcap file
+See `--help` for a list of available flags and their syntax
+
+For example, sngrep can be used to view SIP packets from a pcap file
 
     sngrep file.pcap
 
@@ -38,7 +48,7 @@ or live capturing
 
 	sngrep port 5060 and udp
 
-You can configure some options using a sngreprc file
+You can configure some options using `sngreprc` file
 
 ## Frequent Asked Questions
 See FAQ on [Github Wiki](https://github.com/irontec/sngrep/wiki#frequent-asked-questions)
