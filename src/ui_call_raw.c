@@ -215,6 +215,7 @@ call_raw_handle_key(PANEL *panel, int key)
         // Create a new pad (forces messages draw)
         delwin(info->pad);
         info->pad = newpad(500, COLS);
+        info->last = NULL;
         // Force refresh panel
         if (info->group) {
             call_raw_set_group(info->group);
