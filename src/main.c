@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <getopt.h>
 #include "option.h"
 #include "ui_manager.h"
 #include "capture.h"
@@ -83,10 +84,20 @@ int
 main(int argc, char* argv[])
 {
 
-    int ret = 0, opt;
+    int ret = 0, opt, idx;
 #ifdef WITH_OPENSSL
     const char *keyfile;
 #endif
+    // Program otptions
+    static struct option long_options[] =
+        {
+            { "help", no_argument, 0, 'h' },
+            { "version", no_argument, 0, 'v' },
+            { "device", required_argument, 0, 'd' },
+            { "input", required_argument, 0, 'I' },
+            { "output", required_argument, 0, 'O' },
+            { "keyfile", required_argument, 0, 'k' },
+        };
 
     //! BPF arguments filter
     char bpf[512];
@@ -97,7 +108,7 @@ main(int argc, char* argv[])
     // Parse command line arguments
     opterr = 0;
     char *options = "hvd:I:O:pqtW:k:";
-    while ((opt = getopt(argc, argv, options)) != -1) {
+    while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
         case 'h':
             usage();
