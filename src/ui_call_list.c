@@ -635,7 +635,7 @@ call_list_help(PANEL *panel)
     int height, width;
 
     // Create a new panel and show centered
-    height = 27;
+    height = 28;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     help_panel = new_panel(help_win);
@@ -683,6 +683,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 21, 2, "F9/l        Turn on/off resolved addresses");
     mvwprintw(help_win, 22, 2, "F10/t       Select displayed columns");
     mvwprintw(help_win, 23, 2, "i/I         Set display filter to invite");
+    mvwprintw(help_win, 24, 2, "p           Stop/Resume packet capture");
 
     // Press any key to close
     wgetch(help_win);
