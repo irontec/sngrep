@@ -46,10 +46,20 @@ static sip_attr_hdr_t attrs[] =
             .desc = "SIP From",
             .dwidth = 30, },
           {
+            .id = SIP_ATTR_SIPFROMUSER,
+            .name = "sipfromuser",
+            .desc = "SIP From User",
+            .dwidth = 20, },
+          {
             .id = SIP_ATTR_SIPTO,
             .name = "sipto",
             .desc = "SIP To",
             .dwidth = 30, },
+          {
+            .id = SIP_ATTR_SIPTOUSER,
+            .name = "siptouser",
+            .desc = "SIP To User",
+            .dwidth = 20, },
           {
             .id = SIP_ATTR_SRC,
             .name = "src",
@@ -256,7 +266,7 @@ call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *fmt, ...)
 
     // Get the actual value for the attribute
     va_list ap;
-    va_start( ap, fmt );
+    va_start(ap, fmt);
     vsprintf(value, fmt, ap);
     va_end(ap);
 
@@ -290,7 +300,7 @@ msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *fmt, ...)
 
     // Get the actual value for the attribute
     va_list ap;
-    va_start( ap, fmt );
+    va_start(ap, fmt);
     vsprintf(value, fmt, ap);
     va_end(ap);
 

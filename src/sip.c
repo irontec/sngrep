@@ -536,9 +536,15 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             msg_set_attribute(msg, SIP_ATTR_CSEQ, rest);
             continue;
         }
+        if (sscanf(pch, "From: %*[^:]:%[^@]@%[^\t\n\r]", value, rest) == 2) {
+            msg_set_attribute(msg, SIP_ATTR_SIPFROMUSER, value);
+        }
         if (sscanf(pch, "From: %[^:]:%[^\t\n\r>;]", rest, value)) {
             msg_set_attribute(msg, SIP_ATTR_SIPFROM, value);
             continue;
+        }
+        if (sscanf(pch, "To: %*[^:]:%[^@]@%[^\t\n\r]", value, rest) == 2) {
+            msg_set_attribute(msg, SIP_ATTR_SIPTOUSER, value);
         }
         if (sscanf(pch, "To: %[^:]:%[^\t\n\r>;]", rest, value)) {
             msg_set_attribute(msg, SIP_ATTR_SIPTO, value);

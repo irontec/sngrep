@@ -61,8 +61,12 @@ enum sip_attr_id
     SIP_ATTR_CALLINDEX = 0,
     //! SIP Message From: header
     SIP_ATTR_SIPFROM,
+    //! SIP Message User of From: header
+    SIP_ATTR_SIPFROMUSER,
     //! SIP Message To: header
     SIP_ATTR_SIPTO,
+    //! SIP Message User of To: header
+    SIP_ATTR_SIPTOUSER,
     //! Package IP source address and port
     SIP_ATTR_SRC,
     //! Package source lookup and port
