@@ -110,7 +110,7 @@ AS_IF([test "x$enable_openssl" == "xyes"], [
 ], [])
 
 # Conditional Source inclusion 
-AM_CONDITIONAL([WITH_OPENSSL], [test "x$enable_openssl" != "xno"])
+AM_CONDITIONAL([WITH_OPENSSL], [test "x$enable_openssl" == "xyes"])
 
 
 ######################################################################

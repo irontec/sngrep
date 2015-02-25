@@ -84,7 +84,9 @@ main(int argc, char* argv[])
 {
 
     int ret = 0, opt;
+#ifdef WITH_OPENSSL
     const char *keyfile;
+#endif
 
     //! BPF arguments filter
     char bpf[512];
