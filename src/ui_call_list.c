@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <regex.h>
 #include <ctype.h>
 #include "option.h"
 #include "ui_call_list.h"
@@ -832,10 +833,13 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur)
     return NULL;
 }
 
-bool
+int
 call_list_match_dfilter(PANEL *panel, sip_call_t *call)
 {
-    char *upper;
+    regex_t regex;
+    int cflags = REG_EXTENDED | REG_ICASE;
+    int ret;
+
     // Get panel information
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
 
@@ -847,17 +851,19 @@ call_list_match_dfilter(PANEL *panel, sip_call_t *call)
     sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", dfilter);
 
     if (strlen(dfilter) == 0)
-        return true;
+        return 1;
 
     memset(linetext, 0, sizeof(linetext));
     call_list_line_text(panel, call, linetext);
 
-    // Upercase both strings
-    for (upper = dfilter; *upper != '\0'; upper++)
-        *upper = toupper((unsigned char) *upper);
-    for (upper = linetext; *upper != '\0'; upper++)
-        *upper = toupper((unsigned char) *upper);
+    // Check the expresion is a compilable regexp
+    if (regcomp(&regex, dfilter, cflags) != 0) {
+        return 0;
+    }
+    // Check if line matches the given expresion
+    ret = (regexec(&regex, linetext, 0, NULL, 0) == 0);
 
-    // Check if line contains the filter text
-    return strstr(linetext, dfilter) != NULL;
+    // Free the expression memory
+    regfree(&regex);
+    return ret;
 }

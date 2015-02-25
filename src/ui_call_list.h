@@ -310,9 +310,9 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur);
  *
  * @param panel Ncurses panel pointer
  * @param call Start searching from this call
- * @return true if the call match display filters
+ * @return 1 if the call match display filters, 0 otherwise
  */
-bool
+int
 call_list_match_dfilter(PANEL *panel, sip_call_t *call);
 
 #endif
