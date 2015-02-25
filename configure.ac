@@ -92,25 +92,30 @@ AC_CHECK_HEADER([pcap.h], [], [
 
 # Check for SSL dependencies
 AC_ARG_ENABLE([openssl],
-    AC_HELP_STRING([--enable-openssl], [Disable SSL Support (TLS SIP Transport)]),
-	[AC_SUBST(OPENSSL, $enableval)],
-	[AC_SUBST(OPENSSL, no)]
+    AC_HELP_STRING([--enable-openssl], [Enable SSL Support (TLS SIP Transport)]),
+	[AC_SUBST(WITH_OPENSSL, $enableval)],
+	[AC_SUBST(WITH_OPENSSL, no)]
 )
 
-AS_IF([test "x$enable_openssl" == "xyes"], [
+AC_ARG_WITH([openssl],
+    AS_HELP_STRING([--with-openssl], [Enable SSL Support (TLS SIP Transport)]),
+	[AC_SUBST(WITH_OPENSSL, $withval)],
+	[AC_SUBST(WITH_OPENSSL, no)]
+)
 
+AS_IF([test "x$WITH_OPENSSL" == "xyes"],
 	AC_CHECK_LIB([ssl], [SSL_new], [], [
-	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep (or use --disable-openssl)])
+	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep])
 	])
 	
 	AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
-	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep (or use --disable-openssl)])
+	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep])
 	])
 	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
 ], [])
 
 # Conditional Source inclusion 
-AM_CONDITIONAL([WITH_OPENSSL], [test "x$enable_openssl" == "xyes"])
+AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" == "xyes"])
 
 
 ######################################################################
@@ -141,7 +146,7 @@ fi
 AC_MSG_NOTICE
 AC_MSG_NOTICE(   sngrep configure finished                            	)
 AC_MSG_NOTICE( ====================================================== 	)
-AC_MSG_NOTICE( OpenSSL Support		: ${OPENSSL}  						)
+AC_MSG_NOTICE( OpenSSL Support		: ${WITH_OPENSSL}  					)
 AC_MSG_NOTICE( Unicode Support		: ${UNICODE}  						)
 AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE
