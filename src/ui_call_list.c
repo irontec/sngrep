@@ -47,7 +47,6 @@ ui_t ui_call_list =
       .type = PANEL_CALL_LIST,
       .panel = NULL,
       .create = call_list_create,
-      .redraw_required = call_list_redraw_required,
       .draw = call_list_draw,
       .handle_key = call_list_handle_key,
       .help = call_list_help,
@@ -187,13 +186,6 @@ call_list_draw_footer(PANEL *panel)
           "Columns" };
 
     draw_keybindings(panel, keybindings, 22);
-}
-
-int
-call_list_redraw_required(PANEL *panel, sip_msg_t *msg)
-{
-    //@todo alway redraw this screen on new messages
-    return 0;
 }
 
 int

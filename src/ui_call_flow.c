@@ -72,7 +72,6 @@ ui_t ui_call_flow =
       .type = PANEL_CALL_FLOW,
       .panel = NULL,
       .create = call_flow_create,
-      .redraw_required = call_flow_redraw_required,
       .draw = call_flow_draw,
       .handle_key = call_flow_handle_key,
       .help = call_flow_help };
@@ -127,33 +126,6 @@ call_flow_destroy(PANEL *panel)
     delwin(panel_window(panel));
     // Delete panel
     del_panel(panel);
-}
-
-int
-call_flow_redraw_required(PANEL *panel, sip_msg_t *msg)
-{
-    int i;
-    // Get panel information
-    call_flow_info_t *info;
-
-    // Check we have panel info
-    if (!(info = call_flow_info(panel)))
-        return -1;
-
-    // Check we have calls in this panel
-    if (!info->group)
-        return -1;
-
-    // Check if the owner of the message is in the displayed group
-    for (i = 0; i < info->group->callcnt; i++) {
-        if (info->group->calls[i] == msg->call) {
-            call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
-            call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
-            return 0;
-        }
-    }
-
-    return -1;
 }
 
 int

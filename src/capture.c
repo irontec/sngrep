@@ -362,9 +362,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     msg->pcap_packet = malloc(size_packet);
     memcpy(msg->pcap_packet, packet, size_packet);
 
-    // Refresh current UI in online mode
-    if (capture_is_online())
-        ui_new_msg_refresh(msg);
 }
 
 void

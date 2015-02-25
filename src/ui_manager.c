@@ -44,14 +44,6 @@
 #include "ui_column_select.h"
 
 /**
- * @brief Warranty thread-safe ui refresh
- *
- * This lock should be used whenever the ui is replaced or updated
- * preventing the ui swap during the screen refresh
- */
-pthread_mutex_t refresh_lock;
-
-/**
  * @brief Available panel windows list
  *
  * This list contains the available list of windows
@@ -99,6 +91,8 @@ init_interface()
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
+    // Set character input timeout 200 ms
+    halfdelay(2);
 
     // Redefine some keys
     term = getenv("TERM");
@@ -157,10 +151,6 @@ deinit_interface()
 ui_t *
 ui_create(ui_t *ui)
 {
-    // Creating a panel changes the panel stack, so we must be sure
-    // that during this process, noone requests stack status
-    // p.e. topmost panel
-    pthread_mutex_lock(&refresh_lock);
     // If ui has no panel
     if (!ui_get_panel(ui)) {
         // Create the new panel for this ui
@@ -168,7 +158,7 @@ ui_create(ui_t *ui)
             ui->panel = ui->create();
         }
     }
-    pthread_mutex_unlock(&refresh_lock);
+
     // And return it
     return ui;
 }
@@ -197,27 +187,6 @@ ui_get_panel(ui_t *ui)
 }
 
 int
-ui_redraw_required(ui_t *ui, sip_msg_t *msg)
-{
-    // By default ui does not require redrawing
-    int ret = -1;
-
-    //! Sanity check, this should not happen
-    if (!ui)
-        return ret;
-
-    // Ensure no panel content is being updated while we check redraw
-    pthread_mutex_lock(&ui->lock);
-    // Request the panel to draw on the scren
-    if (ui->redraw_required) {
-        ret = ui->redraw_required(ui_get_panel(ui), msg);
-    }
-    pthread_mutex_unlock(&ui->lock);
-    // If no redraw capabilities, never redraw
-    return ret;
-}
-
-int
 ui_draw_panel(ui_t *ui)
 {
     int ret = 0;
@@ -229,9 +198,6 @@ ui_draw_panel(ui_t *ui)
     // Make this panel the topmost panel
     top_panel(ui_get_panel(ui));
 
-    // Ensure no other thread access panel content while drawing
-    pthread_mutex_lock(&ui->lock);
-
     // Request the panel to draw on the scren
     if (ui->draw) {
         ret = ui->draw(ui_get_panel(ui));
@@ -240,7 +206,6 @@ ui_draw_panel(ui_t *ui)
     // Update panel stack
     update_panels();
     doupdate();
-    pthread_mutex_unlock(&ui->lock);
 
     return ret;
 }
@@ -258,12 +223,10 @@ int
 ui_handle_key(ui_t *ui, int key)
 {
     int ret = 0;
-    // Avoid processing user action while screen is being updated
-    // from capture thread
-    pthread_mutex_lock(&ui->lock);
+
     if (ui->handle_key)
         ret = ui->handle_key(ui_get_panel(ui), key);
-    pthread_mutex_unlock(&ui->lock);
+
     return ret;
 }
 
@@ -364,29 +327,6 @@ default_handle_key(ui_t *ui, int key)
     }
 
     return key;
-}
-
-void
-ui_new_msg_refresh(sip_msg_t *msg)
-{
-    ui_t * ui;
-    PANEL * panel;
-
-    // Ensure panel stack won't change while updating.
-    // This can only happen when a new panel has been created due to
-    // some user iteraction
-    pthread_mutex_lock(&refresh_lock);
-    // Get the topmost panel
-    if ((panel = panel_below(NULL))) {
-        // If topmost panel does not has an UI, it can not be refreshed
-        if ((ui = ui_find_by_panel(panel))) {
-            // If ui needs to be update, redraw it
-            if (ui_redraw_required(ui, msg) == 0) {
-                ui_draw_panel(ui);
-            }
-        }
-    }
-    pthread_mutex_unlock(&refresh_lock);
 }
 
 void

@@ -45,7 +45,6 @@ ui_t ui_call_raw =
       .type = PANEL_CALL_RAW,
       .panel = NULL,
       .create = call_raw_create,
-      .redraw_required = call_raw_redraw_required,
       .draw = call_raw_draw,
       .handle_key = call_raw_handle_key };
 
@@ -71,24 +70,6 @@ call_raw_create()
     info->scroll = 0;
 
     return panel;
-}
-
-int
-call_raw_redraw_required(PANEL *panel, sip_msg_t *msg)
-{
-    call_raw_info_t *info;
-    // Get panel info
-    if (!(info = (call_raw_info_t*) panel_userptr(panel)))
-        return -1;
-    // Check if we're displaying a group
-    if (!info->group)
-        return -1;
-    // If this message belongs to one of the printed calls
-    if (call_group_exists(info->group, msg->call)) {
-        call_raw_print_msg(panel, msg);
-        return 0;
-    }
-    return -1;
 }
 
 int

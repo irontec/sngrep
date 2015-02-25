@@ -69,19 +69,12 @@ struct ui
     //! Request the panel to redraw its data
     int
     (*draw)(PANEL*);
-    //! Check if the panel request redraw with given msg
-    int
-    (*redraw_required)(PANEL *, sip_msg_t *);
     //! Handle a custom keybind on this panel
     int
     (*handle_key)(PANEL*, int key);
     //! Show help window for this panel (if any)
     int
     (*help)(PANEL *);
-
-    //! UI lock. Avoid multi-thread update on this UI
-    pthread_mutex_t lock;
-
 };
 
 /**
@@ -209,20 +202,6 @@ PANEL *
 ui_get_panel(ui_t *ui);
 
 /**
- * @brief Check if the given msg makes the UI redraw
- *
- * This function is ivoked every time a new package is readed
- * in online mode. Check if the ui needs to be redrawn with the
- * message to avioid not needed work.
- *
- * @param ui UI structure
- * @param msg las readed message
- * @return 0 in case of redraw required, -1 otherwise
- */
-int
-ui_redraw_required(ui_t *ui, sip_msg_t *msg);
-
-/**
  * @brief Redrawn current ui
  *
  * This function acts as wrapper to custom ui draw functions
@@ -306,20 +285,6 @@ default_handle_key(ui_t *ui, int key);
  */
 void
 title_foot_box(WINDOW *win);
-
-/**
- * @brief Update topmost panel with the newest readed message
- *
- * This function is invocked asynchronously from the
- * capture thread to notify a new message of the giving
- * callid. If the UI is displaying this call or it's
- * extended one, the topmost panel will be redraw again
- *
- * @param msg Last readed message in Online mode
- */
-void
-ui_new_msg_refresh(sip_msg_t *msg);
-
 
 /**
  * @brief Draw title at the top of the panel

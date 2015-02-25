@@ -65,19 +65,6 @@ PANEL *
 call_raw_create();
 
 /**
- * @brief Check if the panel requires to be redrawn
- *
- * During online mode, this function will be invoked if this is the topmost
- * panel every time a new message has been readed.
- *
- * @param panel Ncurses panel pointer
- * @param msg New readed message
- * @return 0 if the panel needs to be redrawn, -1 otherwise
- */
-int
-call_raw_redraw_required(PANEL *panel, sip_msg_t *msg);
-
-/**
  * @brief Draw the Call Raw panel
  *
  * This function will drawn the panel into the screen based on its stored
