@@ -37,6 +37,18 @@
 #include "option.h"
 #include "capture.h"
 
+/**
+ * Ui Structure definition for Save panel
+ */
+ui_t ui_save =
+    {
+      .type = PANEL_SAVE,
+      .panel = NULL,
+      .create = save_create,
+      .draw = save_draw,
+      .handle_key = save_handle_key,
+      .destroy = save_destroy };
+
 PANEL *
 save_create()
 {

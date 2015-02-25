@@ -120,22 +120,36 @@ enum sngrep_colors_pairs
 enum panel_types
 {
     //! Call List ui screen
-    MAIN_PANEL = 0,
+    PANEL_CALL_LIST = 0,
     //! Call-Flow ui screen
-    DETAILS_PANEL,
+    PANEL_CALL_FLOW,
     //! Raw SIP messages ui screen
-    RAW_PANEL,
+    PANEL_CALL_RAW,
     //! Filters panel
-    FILTER_PANEL,
+    PANEL_FILTER,
     //! Save to pcap panel
-    SAVE_PANEL,
+    PANEL_SAVE,
     //! Save to txt panel
-    SAVE_RAW_PANEL,
+    PANEL_SAVE_RAW,
     //! Message comprare
-    MSG_DIFF_PANEL,
+    PANEL_MSG_DIFF,
     //! Column selector panel
-    COLUMN_SELECT_PANEL,
+    PANEL_COLUMN_SELECT,
+    //! Panel Counter
+    PANEL_COUNT,
 };
+
+/**
+ * Define existing panels
+ */
+extern ui_t ui_call_list;
+extern ui_t ui_call_flow;
+extern ui_t ui_call_raw;
+extern ui_t ui_filter;
+extern ui_t ui_save;
+extern ui_t ui_save_raw;
+extern ui_t ui_msg_diff;
+extern ui_t ui_column_select;
 
 /**
  * @brief Initialize ncurses mode

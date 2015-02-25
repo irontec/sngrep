@@ -36,6 +36,17 @@
 #include "sip.h"
 #include "option.h"
 
+/**
+ * Ui Structure definition for Save Raw panel
+ */
+ui_t ui_save_raw =
+    {
+      .type = PANEL_SAVE_RAW,
+      .panel = NULL,
+      .create = save_raw_create,
+      .handle_key = save_raw_handle_key,
+      .destroy = save_raw_destroy };
+
 PANEL *
 save_raw_create()
 {

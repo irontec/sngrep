@@ -32,6 +32,17 @@
 #include "ui_call_list.h"
 #include "ui_column_select.h"
 
+/**
+ * Ui Structure definition for Message Diff panel
+ */
+ui_t ui_column_select =
+    {
+      .type = PANEL_COLUMN_SELECT,
+      .panel = NULL,
+      .create = column_select_create,
+      .handle_key = column_select_handle_key,
+      .destroy = column_select_destroy };
+
 PANEL *
 column_select_create()
 {
@@ -75,7 +86,7 @@ column_select_create()
 
     // Set current enabled fields
     call_list_info_t *list_info = (call_list_info_t*) panel_userptr(
-            ui_get_panel(ui_find_by_type(MAIN_PANEL)));
+            ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
 
     // Enable current enabled fields and move them to the top
     for (column = 0; column < list_info->columncnt; column++) {
@@ -201,7 +212,7 @@ column_select_update_columns(PANEL *panel)
     column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
 
     // Set enabled fields
-    PANEL *list_panel = ui_get_panel(ui_find_by_type(MAIN_PANEL));
+    PANEL *list_panel = ui_get_panel(ui_find_by_type(PANEL_CALL_LIST));
     call_list_info_t *list_info = (call_list_info_t*) panel_userptr(list_panel);
 
     // Reset column count

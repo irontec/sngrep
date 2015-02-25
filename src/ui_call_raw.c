@@ -37,6 +37,18 @@
 #include "option.h"
 #include "capture.h"
 
+/**
+ * Ui Structure definition for Call Raw panel
+ */
+ui_t ui_call_raw =
+    {
+      .type = PANEL_CALL_RAW,
+      .panel = NULL,
+      .create = call_raw_create,
+      .redraw_required = call_raw_redraw_required,
+      .draw = call_raw_draw,
+      .handle_key = call_raw_handle_key };
+
 PANEL *
 call_raw_create()
 {
@@ -200,7 +212,7 @@ call_raw_handle_key(PANEL *panel, int key)
     case 'S':
         if (info->group) {
             // KEY_S, Display save panel
-            next_panel = ui_create(ui_find_by_type(SAVE_RAW_PANEL));
+            next_panel = ui_create(ui_find_by_type(PANEL_SAVE_RAW));
             save_raw_set_group(next_panel->panel, info->group);
             wait_for_input(next_panel);
         }
@@ -243,7 +255,7 @@ call_raw_set_group(sip_call_group_t *group)
     if (!group)
         return -1;
 
-    if (!(raw_panel = ui_find_by_type(RAW_PANEL)))
+    if (!(raw_panel = ui_find_by_type(PANEL_CALL_RAW)))
         return -1;
 
     if (!(panel = raw_panel->panel))
@@ -277,7 +289,7 @@ call_raw_set_msg(sip_msg_t *msg)
     if (!msg)
         return -1;
 
-    if (!(raw_panel = ui_find_by_type(RAW_PANEL)))
+    if (!(raw_panel = ui_find_by_type(PANEL_CALL_RAW)))
         return -1;
 
     if (!(panel = raw_panel->panel))

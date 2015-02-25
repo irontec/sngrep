@@ -53,72 +53,20 @@ pthread_mutex_t refresh_lock;
 /**
  * @brief Available panel windows list
  *
- * This list contein the available list of windows
+ * This list contains the available list of windows
  * and pointer to their main functions.
- *
- * XXX If the panel count increase a lot, it will be required to
- *     load panels as modules and provide a way to register
- *     themselfs into the panel pool dynamically.
+
  */
-static ui_t panel_pool[] =
+static ui_t *panel_pool[] =
     {
-          {
-            .type = MAIN_PANEL,
-            .panel = NULL,
-            .create = call_list_create,
-            .redraw_required = call_list_redraw_required,
-            .draw = call_list_draw,
-            .handle_key = call_list_handle_key,
-            .help = call_list_help,
-            .destroy = call_list_destroy, },
-          {
-            .type = DETAILS_PANEL,
-            .panel = NULL,
-            .create = call_flow_create,
-            .redraw_required = call_flow_redraw_required,
-            .draw = call_flow_draw,
-            .handle_key = call_flow_handle_key,
-            .help = call_flow_help },
-          {
-            .type = RAW_PANEL,
-            .panel = NULL,
-            .create = call_raw_create,
-            .redraw_required = call_raw_redraw_required,
-            .draw = call_raw_draw,
-            .handle_key = call_raw_handle_key },
-          {
-            .type = FILTER_PANEL,
-            .panel = NULL,
-            .create = filter_create,
-            .handle_key = filter_handle_key,
-            .destroy = filter_destroy },
-          {
-            .type = SAVE_PANEL,
-            .panel = NULL,
-            .create = save_create,
-            .draw = save_draw,
-            .handle_key = save_handle_key,
-            .destroy = save_destroy },
-          {
-            .type = SAVE_RAW_PANEL,
-            .panel = NULL,
-            .create = save_raw_create,
-            .handle_key = save_raw_handle_key,
-            .destroy = save_raw_destroy },
-          {
-            .type = MSG_DIFF_PANEL,
-            .panel = NULL,
-            .create = msg_diff_create,
-            .handle_key = msg_diff_handle_key,
-            .destroy = msg_diff_destroy,
-            .draw = msg_diff_draw,
-            .help = msg_diff_help },
-          {
-            .type = COLUMN_SELECT_PANEL,
-            .panel = NULL,
-            .create = column_select_create,
-            .handle_key = column_select_handle_key,
-            .destroy = column_select_destroy } };
+      &ui_call_list,
+      &ui_call_flow,
+      &ui_call_raw,
+      &ui_filter,
+      &ui_save,
+      &ui_save_raw,
+      &ui_msg_diff,
+      &ui_column_select, };
 
 int
 init_interface()
@@ -153,18 +101,19 @@ init_interface()
 
     // Redefine some keys
     term = getenv("TERM");
-    if (term && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
-       define_key("\033[H", KEY_HOME);
-       define_key("\033[F", KEY_END);
-       define_key("\033OP", KEY_F(1));
-       define_key("\033OQ", KEY_F(2));
-       define_key("\033OR", KEY_F(3));
-       define_key("\033OS", KEY_F(4));
-       define_key("\033[11~", KEY_F(1));
-       define_key("\033[12~", KEY_F(2));
-       define_key("\033[13~", KEY_F(3));
-       define_key("\033[14~", KEY_F(4));
-       define_key("\033[17;2~", KEY_F(18));
+    if (term
+            && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
+        define_key("\033[H", KEY_HOME);
+        define_key("\033[F", KEY_END);
+        define_key("\033OP", KEY_F(1));
+        define_key("\033OQ", KEY_F(2));
+        define_key("\033OR", KEY_F(3));
+        define_key("\033OS", KEY_F(4));
+        define_key("\033[11~", KEY_F(1));
+        define_key("\033[12~", KEY_F(2));
+        define_key("\033[13~", KEY_F(3));
+        define_key("\033[14~", KEY_F(4));
+        define_key("\033[17;2~", KEY_F(18));
     }
 
     if (is_option_value("background", "dark")) {
@@ -321,12 +270,10 @@ ui_t *
 ui_find_by_panel(PANEL *panel)
 {
     int i;
-    // Panel pool is fixed size
-    int panelcnt = sizeof(panel_pool) / sizeof(ui_t);
     // Return ui pointer if found
-    for (i = 0; i < panelcnt; i++) {
-        if (panel_pool[i].panel == panel)
-            return &panel_pool[i];
+    for (i = 0; i < PANEL_COUNT; i++) {
+        if (panel_pool[i]->panel == panel)
+            return panel_pool[i];
     }
     return NULL;
 }
@@ -335,12 +282,10 @@ ui_t *
 ui_find_by_type(int type)
 {
     int i;
-    // Panel pool is fixed size
-    int panelcnt = sizeof(panel_pool) / sizeof(ui_t);
     // Return ui pointer if found
-    for (i = 0; i < panelcnt; i++) {
-        if (panel_pool[i].type == type)
-            return &panel_pool[i];
+    for (i = 0; i < PANEL_COUNT; i++) {
+        if (panel_pool[i]->type == type)
+            return panel_pool[i];
     }
     return NULL;
 }
@@ -497,7 +442,7 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
 void
 draw_title(PANEL *panel, const char *title)
 {
-    int height, width, key, xpos = 0;
+    int height, width;
 
     // Get window available space
     WINDOW *win = panel_window(panel);

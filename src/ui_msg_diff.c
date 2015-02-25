@@ -52,6 +52,19 @@
  *
  */
 
+/**
+ * Ui Structure definition for Message Diff panel
+ */
+ui_t ui_msg_diff =
+    {
+      .type = PANEL_MSG_DIFF,
+      .panel = NULL,
+      .create = msg_diff_create,
+      .handle_key = msg_diff_handle_key,
+      .destroy = msg_diff_destroy,
+      .draw = msg_diff_draw,
+      .help = msg_diff_help };
+
 PANEL *
 msg_diff_create()
 {
@@ -116,7 +129,7 @@ msg_diff_line_highlight(const char* payload1, const char* payload2, char *highli
     memset(search, 0, sizeof(search));
     len = 0;
 
-    for (i=0; i < strlen(payload1); i++) {
+    for (i = 0; i < strlen(payload1); i++) {
         // Store this char in the search term
         search[len++] = payload1[i];
         // If we have a full line in search array
@@ -159,11 +172,11 @@ msg_diff_draw(PANEL *panel)
     char highlight[4086];
 
     // Draw first message
-    memset(highlight, 0 , sizeof(highlight));
+    memset(highlight, 0, sizeof(highlight));
     msg_diff_highlight(info->one, info->two, highlight);
     msg_diff_draw_message(info->one_win, info->one, highlight);
     // Draw second message
-    memset(highlight, 0 , sizeof(highlight));
+    memset(highlight, 0, sizeof(highlight));
     msg_diff_highlight(info->two, info->one, highlight);
     msg_diff_draw_message(info->two_win, info->two, highlight);
 
@@ -174,7 +187,11 @@ void
 msg_diff_draw_footer(PANEL *panel)
 {
     const char *keybindings[] =
-        { "Esc", "Calls Flow", "F1", "Help" };
+        {
+          "Esc",
+          "Calls Flow",
+          "F1",
+          "Help" };
 
     draw_keybindings(panel, keybindings, 4);
 }
@@ -251,116 +268,4 @@ msg_diff_set_msgs(PANEL *panel, sip_msg_t *one, sip_msg_t *two)
 
     return 0;
 }
-
-/*
-int
-msg_diff_lcs_sequence(const char* s1, const char* s2, int *highlight)
-{
-    size_t l1 = strlen(s1), l2 = strlen(s2);
-    size_t sz = (l1 + 1) * (l2 + 1) * sizeof(size_t);
-    size_t w = l2 + 1;
-    size_t* dpt;
-    size_t i1, i2;
-    int distance = 0;
-
-    if (sz / (l1 + 1) / (l2 + 1) != sizeof(size_t) || (dpt = malloc(sz)) == NULL)
-        return 1;
-
-    for (i1 = 0; i1 <= l1; i1++)
-        dpt[w * i1 + 0] = 0;
-    for (i2 = 0; i2 <= l2; i2++)
-        dpt[w * 0 + i2] = 0;
-
-    for (i1 = 1; i1 <= l1; i1++) {
-        for (i2 = 1; i2 <= l2; i2++) {
-            if (s1[l1 - i1] == s2[l2 - i2]) {
-                dpt[w * i1 + i2] = dpt[w * (i1 - 1) + (i2 - 1)] + 1;
-            } else if (dpt[w * (i1 - 1) + i2] > dpt[w * i1 + (i2 - 1)]) {
-                dpt[w * i1 + i2] = dpt[w * (i1 - 1) + i2];
-            } else {
-                dpt[w * i1 + i2] = dpt[w * i1 + (i2 - 1)];
-            }
-        }
-    }
-
-    i1 = l1;
-    i2 = l2;
-    for (;;) {
-        if ((i1 > 0) && (i2 > 0) && (s1[l1 - i1] == s2[l2 - i2])) {
-            highlight[l1 - i1] = 0;
-            i1--;
-            i2--;
-            continue;
-        } else {
-            if (i1 > 0 && (i2 == 0 || dpt[w * (i1 - 1) + i2] >= dpt[w * i1 + (i2 - 1)])) {
-                highlight[l1 - i1] = 1;
-                i1--;
-                distance++;
-                continue;
-            } else if (i2 > 0 && (i1 == 0 || dpt[w * (i1 - 1) + i2] < dpt[w * i1 + (i2 - 1)])) {
-                i2--;
-                distance++;
-                continue;
-            }
-        }
-        break;
-    }
-
-    free(dpt);
-    return distance;
-}
-
-int
-msg_diff_lcs_highlight(const char* s1, const char* s2, int *highlight)
-{
-    // Split payload into lines
-    char *p1[256];
-    char *p2[256];
-    int p1l = 0, p2l = 0, i, j, best, distance;
-    int tmp_highlight[256], *out_highlight;
-    char *pch;
-    char *payload1 = strdup(s1);
-    char *payload2 = strdup(s2);
-    int outpos = 0;
-
-    for (pch = strtok(payload1, "\n"); pch; pch = strtok(NULL, "\n")) {
-        p1[p1l] = strdup(pch);
-        p1l++;
-    }
-
-    for (pch = strtok(payload2, "\n"); pch; pch = strtok(NULL, "\n")) {
-        p2[p2l] = strdup(pch);
-        p2l++;
-    }
-
-    out_highlight = highlight;
-    int r;
-
-    for (i = 0; i < p1l; i++) {
-        best = 256;
-        for (j = 0; j < p2l; j++) {
-
-            if (strncasecmp(p1[i], p2[j], 3))
-                continue;
-
-            distance = msg_diff_lcs_sequence(p1[i], p2[j], tmp_highlight);
-            if (distance < best) {
-                best = distance;
-                for (r = 0; r < strlen(p1[i]); r++)
-                    highlight[outpos + r] = tmp_highlight[r];
-            }
-        }
-
-        if (best == 256) {
-            for (r = 0; r < strlen(p1[i]); r++)
-                highlight[outpos + r] = 1;
-        }
-        outpos += strlen(p1[i]) + 1;
-    }
-
-    free(payload1);
-    free(payload2);
-    return 0;
-}
-*/
 

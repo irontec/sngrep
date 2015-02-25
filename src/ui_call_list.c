@@ -37,6 +37,22 @@
 #include "ui_call_raw.h"
 #include "ui_save_pcap.h"
 
+/**
+ * Ui Structure definition for Call List panel
+ */
+ui_t ui_call_list =
+    {
+      .type = PANEL_CALL_LIST,
+      .panel = NULL,
+      .create = call_list_create,
+      .redraw_required = call_list_redraw_required,
+      .draw = call_list_draw,
+      .handle_key = call_list_handle_key,
+      .help = call_list_help,
+      .destroy = call_list_destroy,
+
+    };
+
 PANEL *
 call_list_create()
 {
@@ -449,7 +465,7 @@ call_list_handle_key(PANEL *panel, int key)
         if (!info->cur_call)
             return -1;
         // KEY_ENTER , Display current call flow
-        next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
+        next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
         if (info->group->callcnt) {
             group = info->group;
         } else {
@@ -464,7 +480,7 @@ call_list_handle_key(PANEL *panel, int key)
     case 'x':
     case KEY_F(4):
         // KEY_X , Display current call flow (extended)
-        next_panel = ui_create(ui_find_by_type(DETAILS_PANEL));
+        next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
         if (info->group->callcnt) {
             group = info->group;
         } else {
@@ -481,7 +497,7 @@ call_list_handle_key(PANEL *panel, int key)
     case 'R':
     case KEY_F(6):
         // KEY_R , Display current call flow (extended)
-        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
+        next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
         if (info->group->callcnt) {
             group = info->group;
         } else {
@@ -497,7 +513,7 @@ call_list_handle_key(PANEL *panel, int key)
     case 'F':
     case KEY_F(7):
         // KEY_F, Display filter panel
-        next_panel = ui_create(ui_find_by_type(FILTER_PANEL));
+        next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
         wait_for_input(next_panel);
         call_list_filter_update(panel);
         break;
@@ -505,7 +521,7 @@ call_list_handle_key(PANEL *panel, int key)
     case 'T':
     case KEY_F(10):
         // Display column selection panel
-        next_panel = ui_create(ui_find_by_type(COLUMN_SELECT_PANEL));
+        next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
         wait_for_input(next_panel);
         call_list_filter_update(panel);
         break;
@@ -514,7 +530,7 @@ call_list_handle_key(PANEL *panel, int key)
     case KEY_F(2):
         if (!is_option_disabled("sngrep.tmpfile")) {
             // KEY_S, Display save panel
-            next_panel = ui_create(ui_find_by_type(SAVE_PANEL));
+            next_panel = ui_create(ui_find_by_type(PANEL_SAVE));
             save_set_group(ui_get_panel(next_panel), info->group);
             wait_for_input(next_panel);
         }

@@ -186,7 +186,7 @@ main(int argc, char* argv[])
 
     // This is a blocking call.
     // Create the first panel and wait for user input
-    wait_for_input(ui_create(ui_find_by_type(MAIN_PANEL)));
+    wait_for_input(ui_create(ui_find_by_type(PANEL_CALL_LIST)));
 
     // Close pcap handler
     capture_close();

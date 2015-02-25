@@ -64,6 +64,19 @@
  *  - raw_width: this represents the raw message preview width if visible.
  */
 
+/**
+ * Ui Structure definition for Call Flow panel
+ */
+ui_t ui_call_flow =
+    {
+      .type = PANEL_CALL_FLOW,
+      .panel = NULL,
+      .create = call_flow_create,
+      .redraw_required = call_flow_redraw_required,
+      .draw = call_flow_draw,
+      .handle_key = call_flow_handle_key,
+      .help = call_flow_help };
+
 PANEL *
 call_flow_create()
 {
@@ -216,9 +229,29 @@ void
 call_flow_draw_footer(PANEL *panel)
 {
     const char *keybindings[] =
-        { "Esc", "Calls List", "Enter", "Raw Message", "Space", "Compare", "F1", "Help", "F2",
-                "SDP mode", "F3", "Toggle Raw", "F4", "Extended", "F5", "Compressed", "F6", "Raw",
-                "F7", "Colour by", "9/0", "Raw width" };
+        {
+          "Esc",
+          "Calls List",
+          "Enter",
+          "Raw Message",
+          "Space",
+          "Compare",
+          "F1",
+          "Help",
+          "F2",
+          "SDP mode",
+          "F3",
+          "Toggle Raw",
+          "F4",
+          "Extended",
+          "F5",
+          "Compressed",
+          "F6",
+          "Raw",
+          "F7",
+          "Colour by",
+          "9/0",
+          "Raw width" };
 
     draw_keybindings(panel, keybindings, 22);
 }
@@ -538,7 +571,7 @@ call_flow_handle_key(PANEL *panel, int key)
     case 'r':
     case KEY_F(6):
         // KEY_R, display current call in raw mode
-        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
+        next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
         // TODO
         call_raw_set_group(info->group);
         wait_for_input(next_panel);
@@ -585,7 +618,7 @@ call_flow_handle_key(PANEL *panel, int key)
                 info->selected = NULL;
             } else {
                 // Show diff panel
-                next_panel = ui_create(ui_find_by_type(MSG_DIFF_PANEL));
+                next_panel = ui_create(ui_find_by_type(PANEL_MSG_DIFF));
                 msg_diff_set_msgs(ui_get_panel(next_panel), info->selected, info->cur_msg);
                 wait_for_input(next_panel);
             }
@@ -593,7 +626,7 @@ call_flow_handle_key(PANEL *panel, int key)
         break;
     case 10:
         // KEY_ENTER, display current message in raw mode
-        next_panel = ui_create(ui_find_by_type(RAW_PANEL));
+        next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
         // TODO
         call_raw_set_group(info->group);
         call_raw_set_msg(info->cur_msg);
@@ -677,7 +710,7 @@ call_flow_set_group(sip_call_group_t *group)
     PANEL *panel;
     call_flow_info_t *info;
 
-    if (!(panel = ui_get_panel(ui_find_by_type(DETAILS_PANEL))))
+    if (!(panel = ui_get_panel(ui_find_by_type(PANEL_CALL_FLOW))))
         return -1;
 
     if (!(info = call_flow_info(panel)))

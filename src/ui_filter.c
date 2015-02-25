@@ -32,6 +32,17 @@
 #include "ui_filter.h"
 #include "option.h"
 
+/**
+ * Ui Structure definition for Filter panel
+ */
+ui_t ui_filter =
+    {
+      .type = PANEL_FILTER,
+      .panel = NULL,
+      .create = filter_create,
+      .handle_key = filter_handle_key,
+      .destroy = filter_destroy };
+
 PANEL *
 filter_create()
 {
