@@ -117,7 +117,7 @@ filter_create()
     mvwprintw(win, 5, 3, "SIP From:");
     mvwprintw(win, 6, 3, "SIP To:");
     mvwprintw(win, 7, 3, "Source:");
-    mvwprintw(win, 8, 3, "Destiny:");
+    mvwprintw(win, 8, 3, "Destination:");
     mvwprintw(win, 10, 3, "REGISTER   [ ]");
     mvwprintw(win, 11, 3, "INVITE     [ ]");
     mvwprintw(win, 12, 3, "SUBSCRIBE  [ ]");

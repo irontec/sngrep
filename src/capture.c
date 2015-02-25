@@ -213,7 +213,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int size_packet;
     // SIP message transport
     int transport; /* 0 UDP, 1 TCP, 2 TLS */
-    // Source and Destiny Ports
+    // Source and Destination Ports
     u_short sport, dport;
 
     // Check if we have reached capture limit

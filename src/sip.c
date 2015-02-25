@@ -224,11 +224,11 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     msg->dst = dst;
     msg->dport = dport;
 
-    // Set Source and Destiny attributes
+    // Set Source and Destination attributes
     msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", inet_ntoa(src), htons(sport));
     msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", inet_ntoa(dst), htons(dport));
 
-    // Set Source and Destiny lookpued hosts
+    // Set Source and Destination lookpued hosts
     if (is_option_enabled("capture.lookup")) {
         msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%.15s:%u", lookup_hostname(&src), htons(sport));
         msg_set_attribute(msg, SIP_ATTR_DST_HOST, lookup_hostname(&dst), htons(dport));
@@ -593,7 +593,7 @@ msg_is_retrans(sip_msg_t *msg)
 char *
 msg_get_header(sip_msg_t *msg, char *out)
 {
-    // Source and Destiny address
+    // Source and Destination address
     char from_addr[80], to_addr[80];
 
     // We dont use Message attributes here because it contains truncated data

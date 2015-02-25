@@ -266,8 +266,8 @@ struct SSLConnection
  * length (dlen).
  *
  * @param digest Digest name to get the hash function
- * @param dest Destiny of hash function result. Memory must be already allocated
- * @param dlen Destiny length in bytes
+ * @param dest Destination of hash function result. Memory must be already allocated
+ * @param dlen Destination length in bytes
  * @param secret Input for the hash function
  * @param sslen Secret length in bytes
  * @param seed Input for the hash function
@@ -283,8 +283,8 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
  *
  * This function will generate MasterSecret and KeyMaterial data from PreMasterSecret and Seed
  *
- * @param dest Destiny of PRF function result. Memory must be already allocated
- * @param dlen Destiny length in bytes
+ * @param dest Destination of PRF function result. Memory must be already allocated
+ * @param dlen Destination length in bytes
  * @param pre_master_secret PreMasterSecret decrypted from ClientKeyExchange Handhsake record
  * @param pslen PreMasterSecret length in bytes
  * @param label Fixed ASCII string

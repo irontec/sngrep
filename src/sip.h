@@ -67,9 +67,9 @@ struct sip_msg
     struct in_addr src;
     //! Source port
     u_short sport;
-    //! Destiny address
+    //! Destination address
     struct in_addr dst;
-    //! Destiny port
+    //! Destination port
     u_short dport;
     //! Temporal payload data before being parsed
     char *payload;
