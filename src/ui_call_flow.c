@@ -244,13 +244,11 @@ call_flow_draw_columns(PANEL *panel)
     win = panel_window(panel);
     getmaxyx(info->flow_win, flow_height, flow_width);
 
-    // Load columns if not loaded
-    if (!info->columns) {
-        for (msg = call_group_get_next_msg(info->group, NULL); msg;
-                msg = call_group_get_next_msg(info->group, msg)) {
-            call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
-            call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
-        }
+    // Load columns
+    for (msg = call_group_get_next_msg(info->group, NULL); msg;
+            msg = call_group_get_next_msg(info->group, msg)) {
+        call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
+        call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
     }
 
     // Draw vertical columns lines

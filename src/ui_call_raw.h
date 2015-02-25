@@ -46,6 +46,7 @@ struct call_raw_info
 {
     sip_call_group_t *group;
     sip_msg_t *msg;
+    sip_msg_t *last;
     WINDOW *pad;
     int padline;
     int scroll;

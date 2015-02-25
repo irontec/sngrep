@@ -75,8 +75,15 @@ call_raw_create()
 int
 call_raw_draw(PANEL *panel)
 {
+    sip_msg_t *msg = NULL;
+
     // Get panel information
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
+
+    // Print the call group messages into the pad
+    while ((msg = call_group_get_next_msg(info->group, info->last)))
+        call_raw_print_msg(panel, msg);
+
     // Copy the visible part of the pad into the panel window
     copywin(info->pad, panel_window(panel), info->scroll, 0, 0, 0, LINES - 1, COLS - 1, 0);
     return 0;
@@ -149,6 +156,9 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     info->padline += draw_message_pos(pad, msg, info->padline);
     // Extra line between messages
     info->padline++;
+
+    // Set this as the last printed message
+    info->last = msg;
 
     return 0;
 }
@@ -231,7 +241,6 @@ call_raw_set_group(sip_call_group_t *group)
     ui_t *raw_panel;
     PANEL *panel;
     call_raw_info_t *info;
-    sip_msg_t *msg = NULL;
 
     if (!group)
         return -1;
@@ -252,10 +261,6 @@ call_raw_set_group(sip_call_group_t *group)
     // Initialize internal pad
     info->padline = 0;
     wclear(info->pad);
-
-    // Print the call group messages into the pad
-    while ((msg = call_group_get_next_msg(info->group, msg)))
-        call_raw_print_msg(panel, msg);
 
     return 0;
 }
