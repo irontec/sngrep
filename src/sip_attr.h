@@ -57,8 +57,10 @@ struct sip_msg;
  */
 enum sip_attr_id
 {
+    //! Call index in the Call List
+    SIP_ATTR_CALLINDEX = 0,
     //! SIP Message From: header
-    SIP_ATTR_SIPFROM = 0,
+    SIP_ATTR_SIPFROM,
     //! SIP Message To: header
     SIP_ATTR_SIPTO,
     //! Package IP source address and port
@@ -236,7 +238,7 @@ sip_attr_get(sip_attr_t *list, enum sip_attr_id id);
  * @param value Attribute value
  */
 void
-call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *value);
+call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *fmt, ...);
 
 /**
  * @brief Return a call attribute value
@@ -262,7 +264,7 @@ call_get_attribute(struct sip_call *call, enum sip_attr_id id);
  * @param value Attribute value
  */
 void
-msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *value);
+msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *fmt, ...);
 
 /**
  * @brief Return a message attribute value

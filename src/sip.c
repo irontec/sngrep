@@ -130,6 +130,8 @@ sip_call_create(char *callid)
     }
     calls.last = call;
     calls.count++;
+    // Store current call Index
+    call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", calls.count);
     pthread_mutex_unlock(&calls.lock);
     return call;
 }
@@ -192,7 +194,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     sip_msg_t *msg;
     sip_call_t *call;
     char *callid;
-    char date[12], time[20], from_addr[80], to_addr[80];
+    char date[12], time[20];
 
     // Skip messages if capture is disabled
     if (!is_option_enabled("sip.capture")) {
@@ -223,18 +225,16 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     msg->dport = dport;
 
     // Set Source and Destiny attributes
-    sprintf(from_addr, "%s:%u", inet_ntoa(src), htons(sport));
-    msg_set_attribute(msg, SIP_ATTR_SRC, from_addr);
-    sprintf(to_addr, "%s:%u", inet_ntoa(dst), htons(dport));
-    msg_set_attribute(msg, SIP_ATTR_DST, to_addr);
+    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", inet_ntoa(src), htons(sport));
+    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", inet_ntoa(dst), htons(dport));
 
     // Set Source and Destiny lookpued hosts
     if (is_option_enabled("capture.lookup")) {
-        sprintf(from_addr, "%.15s:%u", lookup_hostname(&src), htons(sport));
-        sprintf(to_addr, "%.15s:%u", lookup_hostname(&dst), htons(dport));
+        msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%.15s:%u", lookup_hostname(&src), htons(sport));
+        msg_set_attribute(msg, SIP_ATTR_DST_HOST, lookup_hostname(&dst), htons(dport));
     }
-    msg_set_attribute(msg, SIP_ATTR_SRC_HOST, from_addr);
-    msg_set_attribute(msg, SIP_ATTR_DST_HOST, to_addr);
+    msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%s:%u", inet_ntoa(src), htons(sport));
+    msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%s:%u", inet_ntoa(dst), htons(dport));
 
     // Set message Date attribute
     time_t t = (time_t) msg->ts.tv_sec;
@@ -297,7 +297,6 @@ void
 call_add_message(sip_call_t *call, sip_msg_t *msg)
 {
     sip_msg_t *cur, *prev;
-    char msgcnt[5];
 
     pthread_mutex_lock(&call->lock);
     // Set the message owner
@@ -313,8 +312,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
         prev->next = msg;
     }
     // Store message count
-    sprintf(msgcnt, "%d", call_msg_count(call));
-    call_set_attribute(call, SIP_ATTR_MSGCNT, msgcnt);
+    call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", call_msg_count(call));
     pthread_mutex_unlock(&call->lock);
 }
 
@@ -498,44 +496,6 @@ call_update_state(sip_call_t *call)
 }
 
 int
-msg_parse_header(sip_msg_t *msg, const char *header)
-{
-    struct tm when =
-        {
-          0 };
-    char time[20], ipfrom[22], ipto[22];
-    time_t timet;
-    char proto;
-
-    // Sanity check
-    if (!msg || !header)
-        return 1;
-
-    if (sscanf(header, "%c %d/%d/%d %d:%d:%d.%d %s -> %s", &proto, &when.tm_year, &when.tm_mon,
-               &when.tm_mday, &when.tm_hour, &when.tm_min, &when.tm_sec, (int*) &msg->ts.tv_usec,
-               ipfrom, ipto)) {
-
-        // Fix some time data
-        when.tm_isdst = 1; // Daylight saving time flag
-        when.tm_year -= 1900; // C99 Years since 1900
-        when.tm_mon--; // C99 0-11
-        timet = mktime(&when);
-        msg->ts.tv_sec = (long int) timet;
-
-        // Convert to string
-        strftime(time, 20, "%H:%M:%S", localtime(&timet));
-        sprintf(time + strlen(time), ".%06d", (int) msg->ts.tv_usec);
-
-        msg_set_attribute(msg, SIP_ATTR_TIME, time);
-        msg_set_attribute(msg, SIP_ATTR_SRC, ipfrom);
-        msg_set_attribute(msg, SIP_ATTR_DST, ipto);
-
-        return 0;
-    }
-    return 1;
-}
-
-int
 msg_parse_payload(sip_msg_t *msg, const char *payload)
 {
     char *body;
@@ -614,7 +574,7 @@ msg_is_retrans(sip_msg_t *msg)
     prev = msg;
 
     // Check previous messages in same call
-    while((prev = call_get_prev_msg(msg->call, prev))) {
+    while ((prev = call_get_prev_msg(msg->call, prev))) {
         // Check if the payload is exactly the same
         if (!strcasecmp(msg->payload, prev->payload)) {
             return 1;

@@ -29,11 +29,17 @@
 #include "config.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "option.h"
 #include "sip_attr.h"
 
 static sip_attr_hdr_t attrs[] =
     {
+          {
+            .id = SIP_ATTR_CALLINDEX,
+            .name = "index",
+            .desc = "Idx",
+            .dwidth = 4 },
           {
             .id = SIP_ATTR_SIPFROM,
             .name = "sipfrom",
@@ -244,8 +250,16 @@ sip_attr_get(sip_attr_t *list, enum sip_attr_id id)
 }
 
 void
-call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *value)
+call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *fmt, ...)
 {
+    char value[512];
+
+    // Get the actual value for the attribute
+    va_list ap;
+    va_start( ap, fmt );
+    vsprintf(value, fmt, ap);
+    va_end(ap);
+
     sip_attr_set(&call->attrs, id, value);
 }
 
@@ -256,6 +270,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
         return NULL;
 
     switch (id) {
+    case SIP_ATTR_CALLINDEX:
     case SIP_ATTR_MSGCNT:
     case SIP_ATTR_CALLSTATE:
         return sip_attr_get(call->attrs, id);
@@ -269,8 +284,16 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
 }
 
 void
-msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *value)
+msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *fmt, ...)
 {
+    char value[512];
+
+    // Get the actual value for the attribute
+    va_list ap;
+    va_start( ap, fmt );
+    vsprintf(value, fmt, ap);
+    va_end(ap);
+
     sip_attr_set(&msg->attrs, id, value);
 }
 
