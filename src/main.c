@@ -97,6 +97,7 @@ main(int argc, char* argv[])
             { "input", required_argument, 0, 'I' },
             { "output", required_argument, 0, 'O' },
             { "keyfile", required_argument, 0, 'k' },
+            { "calls", no_argument, 0, 'c' },
         };
 
     //! BPF arguments filter
@@ -107,7 +108,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hvd:I:O:pqtW:k:";
+    char *options = "hvd:I:O:pqtW:k:c";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
         case 'h':
@@ -127,6 +128,9 @@ main(int argc, char* argv[])
             break;
         case 'k':
             set_option_value("capture.keyfile", optarg);
+            break;
+        case 'c':
+            set_option_value("sip.calls", "on");
             break;
             // Dark options for dummy ones
         case 'p':

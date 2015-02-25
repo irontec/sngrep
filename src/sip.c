@@ -264,6 +264,17 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
             }
         }
 
+        // User requested only INVITE starting dialogs
+        if (is_option_enabled("sip.calls")) {
+            // Get Message method / response code
+            const char *method = msg_get_attribute(msg, SIP_ATTR_METHOD);
+            if (method && strncasecmp(method, "INVITE", 6)) {
+                // Deallocate message memory
+                sip_msg_destroy(msg);
+                return NULL;
+            }
+        }
+
         // Create the call if not found
         if (!(call = sip_call_create(callid))) {
             // Deallocate message memory
