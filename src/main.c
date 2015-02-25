@@ -52,15 +52,16 @@ usage()
            " [-k keyfile]"
 #endif
            " [<bpf filter>|<pcap_dump>]\n\n"
-           "    -h  This usage\n"
-           "    -v  Version information\n"
-           "    -d  Use this capture device instead of default\n"
-           "    -I  Read captured data from pcap file\n"
-           "    -O  Write captured data to pcap file\n"
+           "    -h --help\t\t This usage\n"
+           "    -v --version\t Version information\n"
+           "    -d --device\t\t Use this capture device instead of default\n"
+           "    -I --input\t\t Read captured data from pcap file\n"
+           "    -O --output\t\t Write captured data to pcap file\n"
+           "    -c --calls\t\t Only display dialogs starting with INVITE\n"
 #ifdef WITH_OPENSSL
            "    -k  RSA private keyfile to decrypt captured packets\n"
 #endif
-           ,PACKAGE);
+           "\n",PACKAGE);
 }
 
 void
