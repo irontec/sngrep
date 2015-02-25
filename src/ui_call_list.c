@@ -219,28 +219,29 @@ call_list_draw(PANEL *panel)
     if (!info->form_active) {
         mvwprintw(win, 1, 2, "Current Mode: %s %9s", get_option_value("sngrep.mode"),
                   (is_option_enabled("sip.capture") ? "" : "(Stopped)"));
+
+        // Reverse colors on monochrome terminals
+        if (!has_colors())
+            wattron(win, A_REVERSE);
+
+        // Draw columns titles
+        wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        mvwprintw(win, 3, 0, "%*s", width, "");
+        for (colpos = 6, i = 0; i < info->columncnt; i++) {
+            // Get current column width
+            collen = info->columns[i].width;
+            // Get current column title
+            coldesc = sip_attr_get_description(info->columns[i].id);
+
+            // Check if the column will fit in the remaining space of the screen
+            if (colpos + strlen(coldesc) >= width)
+                break;
+            mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
+            colpos += collen + 1;
+        }
+        wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
+
     }
-
-    // Reverse colors on monochrome terminals
-    if (!has_colors())
-        wattron(win, A_REVERSE);
-
-    // Draw columns titles
-    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    mvwprintw(win, 3, 0, "%*s", width, "");
-    for (colpos = 6, i = 0; i < info->columncnt; i++) {
-        // Get current column width
-        collen = info->columns[i].width;
-        // Get current column title
-        coldesc = sip_attr_get_description(info->columns[i].id);
-
-        // Check if the column will fit in the remaining space of the screen
-        if (colpos + strlen(coldesc) >= width)
-            break;
-        mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
-        colpos += collen + 1;
-    }
-    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Get window of call list panel
     win = info->list_win;
