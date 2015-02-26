@@ -175,9 +175,10 @@ struct nread_tcp
 /**
  * @brief Online capture function
  *
- * This function will validate capture options but will not capture any packet:
- * - Capture device
- * - BPF Filter
+ * @param device Device to start capture from
+ * @param bpf string containing BPF filter
+ * @param outfile Dumpfile for captured packets
+ * @param limit max number of calls to capture
  *
  * @return 0 on spawn success, 1 otherwise
  */
@@ -208,11 +209,14 @@ capture_thread(void *none);
  * This function will use libpcap files and previous structures to
  * parse the pcap file.
  *
- * @return 0 if load has been successfull, 1 otherwise
+ * @param infile File to read packets from
+ * @param bpf string containing BPF filter
+ * @param limit max number of calls to capture
  *
+ * @return 0 if load has been successfull, 1 otherwise
  */
 int
-capture_offline(const char *infile, const char *bpf);
+capture_offline(const char *infile, const char *bpf, int limit);
 
 /**
  * @brief Check if capture is in Online mode

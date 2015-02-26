@@ -47,7 +47,7 @@
 void
 usage()
 {
-    printf("Usage: %s [-IO pcap_dump] [-d dev]"
+    printf("Usage: %s [-c][-IO pcap_dump] [-d dev] [-l limit]"
 #ifdef WITH_OPENSSL
            " [-k keyfile]"
 #endif
@@ -58,6 +58,7 @@ usage()
            "    -I --input\t\t Read captured data from pcap file\n"
            "    -O --output\t\t Write captured data to pcap file\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
+           "    -l --limit\t\t Set capture limit to N dialogs\n"
 #ifdef WITH_OPENSSL
            "    -k  RSA private keyfile to decrypt captured packets\n"
 #endif
@@ -106,6 +107,7 @@ main(int argc, char* argv[])
             { "output", required_argument, 0, 'O' },
             { "keyfile", required_argument, 0, 'k' },
             { "calls", no_argument, 0, 'c' },
+            { "limit", no_argument, 0, 'l' },
         };
 
     // Initialize configuration options
@@ -120,7 +122,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hvd:I:O:pqtW:k:c";
+    char *options = "hvd:I:O:pqtW:k:cl:";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
         case 'h':
@@ -137,6 +139,9 @@ main(int argc, char* argv[])
             break;
         case 'O':
             outfile = optarg;
+            break;
+        case 'l':
+            limit = atoi(optarg);
             break;
         case 'k':
             keyfile = optarg;
@@ -188,7 +193,7 @@ main(int argc, char* argv[])
     // If we have an input file, load it
     if (infile) {
         // Try to load file
-        if (capture_offline(infile, bpf) != 0)
+        if (capture_offline(infile, bpf, limit) != 0)
             return 1;
     } else {
         // Check if all capture data is valid

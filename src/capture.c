@@ -57,7 +57,6 @@ capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
 
     // Set capture mode
     capinfo.mode = CAPTURE_ONLINE;
-
     // Set capture limit
     capinfo.limit = limit;
 
@@ -131,7 +130,7 @@ capture_thread(void *none)
 }
 
 int
-capture_offline(const char *infile, const char *bpf)
+capture_offline(const char *infile, const char *bpf, int limit)
 {
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -146,6 +145,8 @@ capture_offline(const char *infile, const char *bpf)
     capinfo.mode = CAPTURE_OFFLINE;
     // Set capture input file
     capinfo.infile = infile;
+    // Set capture limit
+    capinfo.limit = limit;
 
     // Open PCAP file
     if ((capinfo.handle = pcap_open_offline(infile, errbuf)) == NULL) {
