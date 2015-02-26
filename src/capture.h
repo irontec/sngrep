@@ -78,6 +78,8 @@ struct capture_info
     int limit;
     //! Input file in Offline capture
     const char *infile;
+    //! Key file for TLS decrypt
+    const char *keyfile;
     //! libpcap capture handler
     pcap_t *handle;
     //! libpcap dump file handler
@@ -185,6 +187,20 @@ struct nread_tcp
 int
 capture_online(const char *dev, const char *bpf, const char *outfile, int limit);
 
+/**
+ * @brief Read from pcap file and fill sngrep sctuctures
+ *
+ * This function will use libpcap files and previous structures to
+ * parse the pcap file.
+ *
+ * @param infile File to read packets from
+ * @param bpf string containing BPF filter
+ * @param limit max number of calls to capture
+ *
+ * @return 0 if load has been successfull, 1 otherwise
+ */
+int
+capture_offline(const char *infile, const char *bpf, int limit);
 
 /**
  * @brief Create a capture thread for online mode
@@ -202,21 +218,6 @@ capture_launch_thread();
  */
 void
 capture_thread(void *none);
-
-/**
- * @brief Read from pcap file and fill sngrep sctuctures
- *
- * This function will use libpcap files and previous structures to
- * parse the pcap file.
- *
- * @param infile File to read packets from
- * @param bpf string containing BPF filter
- * @param limit max number of calls to capture
- *
- * @return 0 if load has been successfull, 1 otherwise
- */
-int
-capture_offline(const char *infile, const char *bpf, int limit);
 
 /**
  * @brief Check if capture is in Online mode
@@ -250,6 +251,22 @@ capture_is_paused();
  */
 const char*
 capture_get_infile();
+
+/**
+ * @brief Get Key file from decrypting TLS packets
+ *
+ * @return given keyfile
+ */
+const char*
+capture_get_keyfile();
+
+/**
+ * @brief Set Keyfile to decrypt TLS packets
+ *
+ * @param keyfile Full path to keyfile
+ */
+void
+capture_set_keyfile(const char *keyfile);
 
 /**
  * @brief Read the next package and parse SIP messages

@@ -170,6 +170,8 @@ main(int argc, char* argv[])
     }
 
 #ifdef WITH_OPENSSL
+    // Set capture decrypt key file
+    capture_set_keyfile(keyfile);
     // Check if we have a keyfile and is valid
     if (keyfile && !tls_check_keyfile(keyfile)) {
         fprintf(stderr, "%s does not contain a valid RSA private key.\n", keyfile);
@@ -197,7 +199,7 @@ main(int argc, char* argv[])
             return 1;
     } else {
         // Check if all capture data is valid
-        if (capture_online(device, outfile, bpf, limit) != 0)
+        if (capture_online(device, bpf, outfile, limit) != 0)
             return 1;
     }
 

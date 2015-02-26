@@ -31,6 +31,7 @@
  */
 
 #include <unistd.h>
+#include "capture.h"
 #include "capture_tls.h"
 #include "option.h"
 
@@ -132,7 +133,7 @@ tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr,
     if (!(conn->ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return NULL;
 
-    SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, get_option_value("capture.keyfile"),
+    SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_get_keyfile(),
     SSL_FILETYPE_PEM);
     if (!(conn->ssl = SSL_new(conn->ssl_ctx)))
         return NULL;
@@ -168,13 +169,13 @@ tls_check_keyfile(const char *keyfile)
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
-    if (access(get_option_value("capture.keyfile"), R_OK) != 0)
+    if (access(capture_get_keyfile(), R_OK) != 0)
         return false;
 
     if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return false;
 
-    SSL_CTX_use_PrivateKey_file(ssl_ctx, get_option_value("capture.keyfile"), SSL_FILETYPE_PEM);
+    SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_get_keyfile(), SSL_FILETYPE_PEM);
     if (!(ssl = SSL_new(ssl_ctx)))
         return false;
 

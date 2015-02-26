@@ -87,7 +87,7 @@ capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
     }
 
     // If requested store packets in a dump file
-    if ((outfile = get_option_value("capture.outfile"))) {
+    if (outfile) {
         if ((capinfo.pd = dump_open(outfile)) == NULL) {
             fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
                     pcap_geterr(capinfo.handle));
@@ -105,28 +105,6 @@ capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
     }
 
     return 0;
-}
-
-int
-capture_launch_thread()
-{
-    //! capture thread attributes
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (pthread_create(&capinfo.capture_t, &attr, (void *) capture_thread, NULL)) {
-        return 1;
-    }
-    pthread_attr_destroy(&attr);
-    return 0;
-}
-
-void
-capture_thread(void *none)
-{
-    // Parse available packets
-    pcap_loop(capinfo.handle, -1, parse_packet, NULL);
-    pcap_close(capinfo.handle);
 }
 
 int
@@ -184,6 +162,29 @@ capture_offline(const char *infile, const char *bpf, int limit)
     return 0;
 }
 
+
+int
+capture_launch_thread()
+{
+    //! capture thread attributes
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if (pthread_create(&capinfo.capture_t, &attr, (void *) capture_thread, NULL)) {
+        return 1;
+    }
+    pthread_attr_destroy(&attr);
+    return 0;
+}
+
+void
+capture_thread(void *none)
+{
+    // Parse available packets
+    pcap_loop(capinfo.handle, -1, parse_packet, NULL);
+    pcap_close(capinfo.handle);
+}
+
 int
 capture_is_online()
 {
@@ -208,6 +209,18 @@ const char*
 capture_get_infile()
 {
     return capinfo.infile;
+}
+
+const char*
+capture_get_keyfile()
+{
+    return capinfo.keyfile;
+}
+
+void
+capture_set_keyfile(const char *keyfile)
+{
+    capinfo.keyfile = keyfile;
 }
 
 void
