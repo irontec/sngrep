@@ -51,7 +51,7 @@ usage()
 #ifdef WITH_OPENSSL
            " [-k keyfile]"
 #endif
-           " <bpf filter>\n\n"
+           " [<bpf filter>]\n\n"
            "    -h --help\t\t This usage\n"
            "    -v --version\t Version information\n"
            "    -d --device\t\t Use this capture device instead of default\n"
@@ -68,12 +68,19 @@ void
 version()
 {
     printf("%s - %s\n"
-           "Copyright (C) 2013,2014,2014 Irontec S.L.\n"
+           "Copyright (C) 2013-2015 Irontec S.L.\n"
            "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
            "This is free software: you are free to change and redistribute it.\n"
-           "There is NO WARRANTY, to the extent permitted by law.\n\n"
-           "Written by Ivan Alonso [aka Kaian]\n",
-           PACKAGE, VERSION);
+           "There is NO WARRANTY, to the extent permitted by law.\n"
+
+#ifdef WITH_OPENSSL
+            " * Compiled with OpenSSL support.\n"
+#endif
+#ifdef WITH_UNICODE
+            " * Compiled with Wide-character support.\n"
+#endif
+            "\nWritten by Ivan Alonso [aka Kaian]\n",
+            PACKAGE, VERSION);
 }
 
 /**
