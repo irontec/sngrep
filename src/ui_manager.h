@@ -45,6 +45,9 @@
 #include "sip.h"
 #include "group.h"
 
+//! Refresh UI every 200 ms
+#define REFRESHTHSECS   2
+
 //! Shorter declaration of ui structure
 typedef struct ui ui_t;
 

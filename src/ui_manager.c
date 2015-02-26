@@ -92,7 +92,7 @@ init_interface()
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
     // Set character input timeout 200 ms
-    halfdelay(2);
+    halfdelay(REFRESHTHSECS);
 
     // Redefine some keys
     term = getenv("TERM");
@@ -213,10 +213,15 @@ ui_draw_panel(ui_t *ui)
 void
 ui_help(ui_t *ui)
 {
+    // Disable input timeout
+    nocbreak();
+    cbreak();
     // If current ui has help function
     if (ui->help) {
         ui->help(ui_get_panel(ui));
     }
+    // Enable input timeout
+    halfdelay(REFRESHTHSECS);
 }
 
 int
