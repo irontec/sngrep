@@ -51,7 +51,7 @@ usage()
 #ifdef WITH_OPENSSL
            " [-k keyfile]"
 #endif
-           " [<bpf filter>|<pcap_dump>]\n\n"
+           " <bpf filter>\n\n"
            "    -h --help\t\t This usage\n"
            "    -v --version\t Version information\n"
            "    -d --device\t\t Use this capture device instead of default\n"
@@ -163,8 +163,9 @@ main(int argc, char* argv[])
 
     // Check if given argument is a file
     if (argc == 2 && (access(argv[1], F_OK) == 0)) {
-        // Show offline mode in ui
-        set_option_value("capture.infile", argv[1]);
+        // Old legacy option to open pcaps without other arguments
+        printf("%s seems to be a file: You forgot -I flag?\n", argv[1]);
+        exit(0);
     } else {
         // Build the bpf filter string
         memset(bpf, 0, sizeof(bpf));
