@@ -40,13 +40,15 @@ OSX users can install sngrep using [homebrew](https://github.com/Homebrew/homebr
 
 See `--help` for a list of available flags and their syntax
 
-For example, sngrep can be used to view SIP packets from a pcap file
+For example, sngrep can be used to view SIP packets from a pcap file, also applying filters
 
-    sngrep file.pcap
+    sngrep -I file.pcap host 192.168.1.1 and port 5060
 
-or live capturing
+or live capturing, saving packets to a new file
 
-	sngrep port 5060 and udp
+	sngrep -d eth0 -O save.pcap port 5060 and udp
+
+
 
 You can configure some options using `sngreprc` file
 
