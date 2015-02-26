@@ -91,11 +91,11 @@ version()
 int
 main(int argc, char* argv[])
 {
-
     int ret = 0, opt, idx;
-#ifdef WITH_OPENSSL
+    const char *device, *infile, *outfile;
+    char bpf[512];
     const char *keyfile;
-#endif
+
     // Program otptions
     static struct option long_options[] =
         {
@@ -108,11 +108,14 @@ main(int argc, char* argv[])
             { "calls", no_argument, 0, 'c' },
         };
 
-    //! BPF arguments filter
-    char bpf[512];
-
     // Initialize configuration options
     init_options();
+
+    // Get initial values for configurable arguments
+    device = get_option_value("capture.device");
+    infile = get_option_value("capture.infile");
+    outfile = get_option_value("capture.outfile");
+    keyfile = get_option_value("capture.keyfile");
 
     // Parse command line arguments
     opterr = 0;
@@ -126,16 +129,16 @@ main(int argc, char* argv[])
             version();
             return 0;
         case 'd':
-            set_option_value("capture.device", optarg);
+            device = optarg;
             break;
         case 'I':
-            set_option_value("capture.infile", optarg);
+            infile = optarg;
             break;
         case 'O':
-            set_option_value("capture.outfile", optarg);
+            outfile = optarg;
             break;
         case 'k':
-            set_option_value("capture.keyfile", optarg);
+            keyfile = optarg;
             break;
         case 'c':
             set_option_value("sip.calls", "on");
@@ -162,7 +165,7 @@ main(int argc, char* argv[])
 
 #ifdef WITH_OPENSSL
     // Check if we have a keyfile and is valid
-    if ((keyfile = get_option_value("capture.keyfile")) && !tls_check_keyfile(keyfile)) {
+    if (keyfile && !tls_check_keyfile(keyfile)) {
         fprintf(stderr, "%s does not contain a valid RSA private key.\n", keyfile);
         return 1;
     }
@@ -179,23 +182,16 @@ main(int argc, char* argv[])
         for (; optind < argc; optind++) {
             sprintf(bpf + strlen(bpf), "%s ", argv[optind]);
         }
-        // Set the capture filter
-        set_option_value("capture.filter", bpf);
     }
 
     // If we have an input file, load it
-    if (get_option_value("capture.infile")) {
-        // Set mode to display on interface
-        set_option_value("sngrep.mode", "Offline");
+    if (infile) {
         // Try to load file
-        if (capture_offline() != 0)
+        if (capture_offline(infile, bpf) != 0)
             return 1;
     } else {
-        // Show online mode on interface
-        set_option_value("sngrep.mode", "Online");
-
         // Check if all capture data is valid
-        if (capture_online() != 0)
+        if (capture_online(device, outfile, bpf) != 0)
             return 1;
     }
 
@@ -203,7 +199,7 @@ main(int argc, char* argv[])
     init_interface();
 
     // Start a capture thread for Online mode
-    if (get_option_value("capture.infile") == NULL) {
+    if (!infile) {
         if (capture_launch_thread() != 0) {
             deinit_interface();
             return 1;

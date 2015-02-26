@@ -217,7 +217,8 @@ call_list_draw(PANEL *panel)
 
     // Update current mode information
     if (!info->form_active) {
-        mvwprintw(win, 1, 2, "Current Mode: %s %9s", get_option_value("sngrep.mode"),
+        mvwprintw(win, 1, 2, "Current Mode: %s %9s",
+                  (capture_is_online() ? "Online" : "Offline"),
                   (is_option_enabled("sip.capture") ? "" : "(Stopped)"));
 
         // Reverse colors on monochrome terminals

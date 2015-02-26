@@ -40,6 +40,52 @@
 #include <netinet/if_ether.h>
 #include <time.h>
 
+//! Capture modes
+#define CAPTURE_OFFLINE 0
+#define CAPTURE_ONLINE  1
+
+//! Shorter declaration of capture_info structure
+typedef struct capture_info capture_info_t;
+//! Shorter declaration of dns_cache structure
+typedef struct dns_cache dns_cache_t;
+
+/**
+ * @brief Storage for DNS resolved ips
+ *
+ * Structure to store resolved addresses when capture.lookup
+ * configuration option is enabled.
+ */
+struct dns_cache
+{
+    int count;
+    char addr[16][256];
+    char hostname[16][256];
+};
+
+/**
+ * @brief store all information related with packet capture
+ *
+ * All required information to capture and process packets
+ * will be stored in this
+ */
+struct capture_info
+{
+    //! Capture mode: Online, Offline
+    int mode;
+    //! Flag to pause/resume capture
+    int paused;
+    //! libpcap capture handler
+    pcap_t *handle;
+    //! libpcap dump file handler
+    pcap_dumper_t *pd;
+    //! libpcap link type
+    int link;
+    //! Cache for DNS lookups
+    dns_cache_t dnscache;
+    //! Capture thread for online capturing
+    pthread_t capture_t;
+};
+
 //! UDP headers are always exactly 8 bytes
 #define SIZE_UDP 8
 //! TCP headers size
@@ -123,19 +169,6 @@ struct nread_tcp
 };
 
 /**
- * @brief Storage for DNS resolved ips
- *
- * Structure to store resolved addresses when capture.lookup
- * configuration option is enabled.
- */
-struct dns_cache
-{
-    int count;
-    char addr[16][256];
-    char hostname[16][256];
-};
-
-/**
  * @brief Online capture function
  *
  * This function will validate capture options but will not capture any packet:
@@ -145,7 +178,7 @@ struct dns_cache
  * @return 0 on spawn success, 1 otherwise
  */
 int
-capture_online();
+capture_online(const char *dev, const char *bpf, const char *outfile);
 
 
 /**
@@ -170,14 +203,20 @@ capture_thread(void *none);
  *
  * This function will use libpcap files and previous structures to
  * parse the pcap file.
- * This program is only focused in VoIP calls so we only consider
- * TCP/UDP packets with Ethernet or Linux coocked headers
  *
  * @return 0 if load has been successfull, 1 otherwise
  *
  */
 int
-capture_offline();
+capture_offline(const char *infile, const char *bpf);
+
+/**
+ * @brief Check if capture is in Online mode
+ *
+ * @return 1 if capture is online, 0 if offline
+ */
+int
+capture_is_online();
 
 /**
  * @brief Read the next package and parse SIP messages

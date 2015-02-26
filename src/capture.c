@@ -40,26 +40,13 @@
 #include "option.h"
 #include "ui_manager.h"
 
-//! FIXME Link type
-int linktype;
-//! FIXME Pointer to the dump file
-pcap_dumper_t *pd = NULL;
-//! FIXME Session handle
-pcap_t *handle;
-//! FIXME capture thread
-pthread_t capture_t;
-//! Cache for DNS lookups
-struct dns_cache dnscache;
+
+// Capture information
+capture_info_t capinfo;
 
 int
-capture_online()
+capture_online(const char *dev, const char *bpf, const char *outfile)
 {
-    //! Device to sniff on
-    const char *dev = get_option_value("capture.device");
-    //! The filter expression
-    const char *filter_exp = get_option_value("capture.filter");
-    //! Output PCAP File
-    const char *outfile = get_option_value("capture.outfile");
     //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
     //! The compiled filter expression
@@ -69,6 +56,9 @@ capture_online()
     //! The IP of our sniffing device
     bpf_u_int32 net;
 
+    // Set capture mode
+    capinfo.mode = CAPTURE_ONLINE;
+
     // Try to find capture device information
     if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
         fprintf(stderr, "Can't get netmask for device %s\n", dev);
@@ -77,39 +67,39 @@ capture_online()
     }
 
     // Open capture device
-    handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
-    if (handle == NULL) {
+    capinfo.handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
+    if (capinfo.handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
     }
 
     // Validate and set filter expresion
-    if (filter_exp) {
-        if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
-            fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+    if (bpf) {
+        if (pcap_compile(capinfo.handle, &fp, bpf, 0, net) == -1) {
+            fprintf(stderr, "Couldn't parse filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
             return 2;
         }
-        if (pcap_setfilter(handle, &fp) == -1) {
-            fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+        if (pcap_setfilter(capinfo.handle, &fp) == -1) {
+            fprintf(stderr, "Couldn't install filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
             return 2;
         }
     }
 
     // If requested store packets in a dump file
     if ((outfile = get_option_value("capture.outfile"))) {
-        if ((pd = dump_open(outfile)) == NULL) {
+        if ((capinfo.pd = dump_open(outfile)) == NULL) {
             fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(handle));
+                    pcap_geterr(capinfo.handle));
             return 2;
         }
     }
 
     // Get datalink to parse packets correctly
-    linktype = pcap_datalink(handle);
+    capinfo.link = pcap_datalink(capinfo.handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if (datalink_size(linktype) == -1) {
-        fprintf(stderr, "Unable to handle linktype %d\n", linktype);
+    if (datalink_size(capinfo.link) == -1) {
+        fprintf(stderr, "Unable to handle linktype %d\n", capinfo.link);
         return 3;
     }
 
@@ -123,7 +113,7 @@ capture_launch_thread()
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (pthread_create(&capture_t, &attr, (void *) capture_thread, NULL)) {
+    if (pthread_create(&capinfo.capture_t, &attr, (void *) capture_thread, NULL)) {
         return 1;
     }
     pthread_attr_destroy(&attr);
@@ -134,17 +124,13 @@ void
 capture_thread(void *none)
 {
     // Parse available packets
-    pcap_loop(handle, -1, parse_packet, (u_char*) "Online");
-    pcap_close(handle);
+    pcap_loop(capinfo.handle, -1, parse_packet, (u_char*) "Online");
+    pcap_close(capinfo.handle);
 }
 
 int
-capture_offline()
+capture_offline(const char *infile, const char *bpf)
 {
-    //! The filter expression
-    const char *filter_exp = get_option_value("capture.filter");
-    // PCAP input file name
-    const char *infile = get_option_value("capture.infile");
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
     // The header that pcap gives us
@@ -154,40 +140,49 @@ capture_offline()
     //! The compiled filter expression
     struct bpf_program fp;
 
+    // Set capture mode
+    capinfo.mode = CAPTURE_OFFLINE;
+
     // Open PCAP file
-    if ((handle = pcap_open_offline(infile, errbuf)) == NULL) {
+    if ((capinfo.handle = pcap_open_offline(infile, errbuf)) == NULL) {
         fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
     }
 
     // Validate and set filter expresion
-    if (filter_exp) {
-        if (pcap_compile(handle, &fp, filter_exp, 0, 0) == -1) {
-            fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+    if (bpf) {
+        if (pcap_compile(capinfo.handle, &fp, bpf, 0, 0) == -1) {
+            fprintf(stderr, "Couldn't parse filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
             return 2;
         }
-        if (pcap_setfilter(handle, &fp) == -1) {
-            fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+        if (pcap_setfilter(capinfo.handle, &fp) == -1) {
+            fprintf(stderr, "Couldn't install filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
             return 2;
         }
     }
 
     // Get datalink to parse packets correctly
-    linktype = pcap_datalink(handle);
+    capinfo.link = pcap_datalink(capinfo.handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if (datalink_size(linktype) == -1) {
-        fprintf(stderr, "Unable to handle linktype %d\n", linktype);
+    if (datalink_size(capinfo.link) == -1) {
+        fprintf(stderr, "Unable to handle linktype %d\n", capinfo.link);
         return 3;
     }
 
     // Loop through packets
-    while ((packet = pcap_next(handle, &header))) {
+    while ((packet = pcap_next(capinfo.handle, &header))) {
         // Parse packets
         parse_packet((u_char*) "Offline", &header, packet);
     }
 
     return 0;
+}
+
+int
+capture_is_online()
+{
+    return (capinfo.mode == CAPTURE_ONLINE);
 }
 
 void
@@ -223,10 +218,10 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     }
 
     // Store this packets in output file
-    dump_packet(pd, header, packet);
+    dump_packet(capinfo.pd, header, packet);
 
     // Get link header size from datalink type
-    size_link = datalink_size(linktype);
+    size_link = datalink_size(capinfo.link);
 
     // Get IP header
     ip = (struct nread_ip*) (packet + size_link);
@@ -339,18 +334,18 @@ capture_close()
     void* ret = NULL;
 
     //Close PCAP file
-    if (handle) {
-        if(get_option_value("capture.infile")) {
-            pcap_close(handle);
+    if (capinfo.handle) {
+        if(capture_is_online()) {
+            pcap_breakloop(capinfo.handle);
+            pthread_join(capinfo.capture_t, &ret);
         } else {
-            pcap_breakloop(handle);
-            pthread_join(capture_t, &ret);
+            pcap_close(capinfo.handle);
         }
     }
 
     // Close dump file
-    if (pd) {
-        dump_close(pd);
+    if (capinfo.pd) {
+        dump_close(capinfo.pd);
     }
 }
 
@@ -396,7 +391,7 @@ datalink_size(int datalink)
 pcap_dumper_t *
 dump_open(const char *dumpfile)
 {
-    return pcap_dump_open(handle, dumpfile);
+    return pcap_dump_open(capinfo.handle, dumpfile);
 }
 
 void
@@ -429,9 +424,9 @@ lookup_hostname(struct in_addr *addr)
     address = (char *) inet_ntoa(*addr);
 
     // Check if we have already tryied resolve this address
-    for (i = 0; i < dnscache.count; i++) {
-        if (!strcmp(dnscache.addr[i], address)) {
-            return dnscache.hostname[i];
+    for (i = 0; i < capinfo.dnscache.count; i++) {
+        if (!strcmp(capinfo.dnscache.addr[i], address)) {
+            return capinfo.dnscache.hostname[i];
         }
     }
 
@@ -447,10 +442,10 @@ lookup_hostname(struct in_addr *addr)
     hostlen = strlen(hostname);
 
     // Store this result in the dnscache
-    strcpy(dnscache.addr[dnscache.count], address);
-    strncpy(dnscache.hostname[dnscache.count], hostname, hostlen);
-    dnscache.count++;
+    strcpy(capinfo.dnscache.addr[capinfo.dnscache.count], address);
+    strncpy(capinfo.dnscache.hostname[capinfo.dnscache.count], hostname, hostlen);
+    capinfo.dnscache.count++;
 
     // Return the stored value
-    return dnscache.hostname[dnscache.count - 1];
+    return capinfo.dnscache.hostname[capinfo.dnscache.count - 1];
 }
