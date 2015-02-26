@@ -33,6 +33,7 @@
 #include <regex.h>
 #include <ctype.h>
 #include "option.h"
+#include "capture.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
@@ -62,7 +63,7 @@ call_list_create()
     int height, width, i, attrid, collen;
     call_list_info_t *info;
     char option[80];
-    const char *field, *title;
+    const char *field, *title, *infile;
 
     // Create a new panel that fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
@@ -109,9 +110,8 @@ call_list_create()
     info->group = call_group_create();
 
     // Draw a Panel header lines
-    if (get_option_value("capture.infile"))
-        mvwprintw(win, 1, width - strlen(get_option_value("capture.infile")) - 11, "Filename: %s",
-                  get_option_value("capture.infile"));
+    if ((infile = capture_get_infile()))
+        mvwprintw(win, 1, width - strlen(infile) - 11, "Filename: %s", infile);
     mvwprintw(win, 2, 2, "Display Filter: ");
 
     // Draw the footer of the window
@@ -217,9 +217,9 @@ call_list_draw(PANEL *panel)
 
     // Update current mode information
     if (!info->form_active) {
-        mvwprintw(win, 1, 2, "Current Mode: %s %9s",
+        mvwprintw(win, 1, 2, "Current Mode: %s %8s",
                   (capture_is_online() ? "Online" : "Offline"),
-                  (is_option_enabled("sip.capture") ? "" : "(Stopped)"));
+                  (capture_is_paused() ? "(Paused)" : ""));
 
         // Reverse colors on monochrome terminals
         if (!has_colors())

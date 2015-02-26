@@ -40,12 +40,11 @@
 #include "option.h"
 #include "ui_manager.h"
 
-
 // Capture information
-capture_info_t capinfo;
+capture_info_t capinfo = { 0 };
 
 int
-capture_online(const char *dev, const char *bpf, const char *outfile)
+capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
 {
     //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -58,6 +57,9 @@ capture_online(const char *dev, const char *bpf, const char *outfile)
 
     // Set capture mode
     capinfo.mode = CAPTURE_ONLINE;
+
+    // Set capture limit
+    capinfo.limit = limit;
 
     // Try to find capture device information
     if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
@@ -124,7 +126,7 @@ void
 capture_thread(void *none)
 {
     // Parse available packets
-    pcap_loop(capinfo.handle, -1, parse_packet, (u_char*) "Online");
+    pcap_loop(capinfo.handle, -1, parse_packet, NULL);
     pcap_close(capinfo.handle);
 }
 
@@ -142,6 +144,8 @@ capture_offline(const char *infile, const char *bpf)
 
     // Set capture mode
     capinfo.mode = CAPTURE_OFFLINE;
+    // Set capture input file
+    capinfo.infile = infile;
 
     // Open PCAP file
     if ((capinfo.handle = pcap_open_offline(infile, errbuf)) == NULL) {
@@ -186,6 +190,26 @@ capture_is_online()
 }
 
 void
+capture_set_paused(int pause)
+{
+    if (capture_is_online()) {
+        capinfo.paused = pause;
+    }
+}
+
+int
+capture_is_paused()
+{
+    return capinfo.paused;
+}
+
+const char*
+capture_get_infile()
+{
+    return capinfo.infile;
+}
+
+void
 parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet)
 {
     // Datalink Header size
@@ -211,11 +235,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Source and Destination Ports
     u_short sport, dport;
 
+    // Ignore packets while capture is paused
+    if (capture_is_paused())
+        return;
+
     // Check if we have reached capture limit
-    int limit = get_option_int_value("capture.limit");
-    if (limit && sip_calls_count() >= limit) {
-        return ;
-    }
+    if (capinfo.limit && sip_calls_count() >= capinfo.limit)
+        return;
 
     // Store this packets in output file
     dump_packet(capinfo.pd, header, packet);
@@ -323,9 +349,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     memcpy(msg->pcap_packet, packet, size_packet);
 
     // Refresh current UI in online mode
-    if (!strcasecmp((const char*) mode, "Online")) {
+    if (capture_is_online())
         ui_new_msg_refresh(msg);
-    }
 }
 
 void

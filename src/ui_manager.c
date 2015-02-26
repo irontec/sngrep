@@ -33,6 +33,7 @@
 #include <locale.h>
 #include "option.h"
 #include "ui_manager.h"
+#include "capture.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
@@ -347,8 +348,8 @@ default_handle_key(ui_t *ui, int key)
         toggle_option("sngrep.displayhost");
         break;
     case 'p':
-        // Toggle capture option
-        toggle_option("sip.capture");
+        // Pause/Resume capture
+        capture_set_paused(!capture_is_paused());
         break;
     case KEY_F(1):
     case 'h':

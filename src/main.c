@@ -91,7 +91,7 @@ version()
 int
 main(int argc, char* argv[])
 {
-    int ret = 0, opt, idx;
+    int opt, idx, limit;
     const char *device, *infile, *outfile;
     char bpf[512];
     const char *keyfile;
@@ -116,6 +116,7 @@ main(int argc, char* argv[])
     infile = get_option_value("capture.infile");
     outfile = get_option_value("capture.outfile");
     keyfile = get_option_value("capture.keyfile");
+    limit = get_option_int_value("capture.limit");
 
     // Parse command line arguments
     opterr = 0;
@@ -175,7 +176,7 @@ main(int argc, char* argv[])
     if (argc == 2 && (access(argv[1], F_OK) == 0)) {
         // Old legacy option to open pcaps without other arguments
         printf("%s seems to be a file: You forgot -I flag?\n", argv[1]);
-        exit(0);
+        return 0;
     } else {
         // Build the bpf filter string
         memset(bpf, 0, sizeof(bpf));
@@ -191,7 +192,7 @@ main(int argc, char* argv[])
             return 1;
     } else {
         // Check if all capture data is valid
-        if (capture_online(device, outfile, bpf) != 0)
+        if (capture_online(device, outfile, bpf, limit) != 0)
             return 1;
     }
 
@@ -199,9 +200,10 @@ main(int argc, char* argv[])
     init_interface();
 
     // Start a capture thread for Online mode
-    if (!infile) {
+    if (capture_is_online()) {
         if (capture_launch_thread() != 0) {
             deinit_interface();
+            fprintf(stderr, "Failed to launch capture thread.\n");
             return 1;
         }
     }
@@ -223,5 +225,5 @@ main(int argc, char* argv[])
     sip_calls_clear();
 
     // Leaving!
-    return ret;
+    return 0;
 }

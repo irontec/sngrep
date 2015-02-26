@@ -196,11 +196,6 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     char *callid;
     char date[12], time[20];
 
-    // Skip messages if capture is disabled
-    if (!is_option_enabled("sip.capture")) {
-        return NULL;
-    }
-
     // Get the Call-ID of this message
     if (!(callid = sip_get_callid((const char*) payload))) {
         return NULL;

@@ -74,6 +74,10 @@ struct capture_info
     int mode;
     //! Flag to pause/resume capture
     int paused;
+    //! Calls capture limit. 0 for disabling
+    int limit;
+    //! Input file in Offline capture
+    const char *infile;
     //! libpcap capture handler
     pcap_t *handle;
     //! libpcap dump file handler
@@ -178,7 +182,7 @@ struct nread_tcp
  * @return 0 on spawn success, 1 otherwise
  */
 int
-capture_online(const char *dev, const char *bpf, const char *outfile);
+capture_online(const char *dev, const char *bpf, const char *outfile, int limit);
 
 
 /**
@@ -217,6 +221,31 @@ capture_offline(const char *infile, const char *bpf);
  */
 int
 capture_is_online();
+
+/**
+ * @brief Pause/Resume capture
+ *
+ * @param pause 1 to pause capture, 0 to resume
+ */
+void
+capture_set_paused(int pause);
+
+/**
+ * @brief Check if capture is actually running
+ *
+ * @return 1 if capture is paused, 0 otherwise
+ */
+int
+capture_is_paused();
+
+/**
+ * @brief Get Input file from Offline mode
+ *
+ * @return Input file in Offline mode
+ * @return NULL in Online mode
+ */
+const char*
+capture_get_infile();
 
 /**
  * @brief Read the next package and parse SIP messages

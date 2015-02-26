@@ -86,7 +86,6 @@ init_options()
 
     // Allow dialogs to be incomplete
     set_option_value("sip.ignoreincomlete", "on");
-    set_option_value("sip.capture", "on");
 
     // Set default save file location
     set_option_value("sngrep.savepath", home);
