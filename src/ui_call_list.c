@@ -193,7 +193,7 @@ call_list_draw(PANEL *panel)
 {
     int height, width, cline = 0, i, colpos, collen;
     struct sip_call *call;
-    int callcnt;
+    int callcnt, cury, curx;
     const char *ouraddr;
     const char *coldesc;
     char linetext[256];
@@ -207,8 +207,12 @@ call_list_draw(PANEL *panel)
     WINDOW *win = panel_window(panel);
     getmaxyx(win, height, width);
 
+    // Store cursor position
+    getyx(win, cury, curx);
+
     // Update current mode information
     if (!info->form_active) {
+        // Print current running mode information
         mvwprintw(win, 1, 2, "Current Mode: %s %8s",
                   (capture_is_online() ? "Online" : "Offline"),
                   (capture_is_paused() ? "(Paused)" : ""));
@@ -233,15 +237,25 @@ call_list_draw(PANEL *panel)
             colpos += collen + 1;
         }
         wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
-
     }
+
+    // Get available calls counter (we'll use it here a couple of times)
+    callcnt = call_list_count(panel);
+
+    // Print calls count (also filtered)
+    mvwprintw(win, 1, 35, "%*s", 35, "");
+    if (strlen(info->dfilter)) {
+        mvwprintw(win, 1, 35, "Calls: %d (%d matching)", sip_calls_count(), callcnt);
+    } else {
+        mvwprintw(win, 1, 35, "Calls: %d", sip_calls_count());
+    }
+
+    // Restore cursor position
+    wmove(win, cury, curx);
 
     // Get window of call list panel
     win = info->list_win;
     getmaxyx(win, height, width);
-
-    // Get available calls counter (we'll use it here a couple of times)
-    callcnt = call_list_count(panel);
 
     // No calls, we've finished drawing
     if (callcnt == 0)
@@ -618,6 +632,11 @@ call_list_handle_form_key(PANEL *panel, int key)
     // Validate all input data
     form_driver(info->form, REQ_VALIDATION);
 
+    // Store dfilter input
+    // We trim spaces with sscanf because and empty field is stored as space characters
+    memset(info->dfilter, 0, sizeof(info->dfilter));
+    sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", info->dfilter);
+
     return 0;
 }
 
@@ -831,6 +850,7 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur)
 int
 call_list_match_dfilter(PANEL *panel, sip_call_t *call)
 {
+    char linetext[512];
     regex_t regex;
     int cflags = REG_EXTENDED | REG_ICASE;
     int ret;
@@ -839,22 +859,17 @@ call_list_match_dfilter(PANEL *panel, sip_call_t *call)
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
 
     // Get Display filter
-    char dfilter[128], linetext[512];
 
-    // We trim spaces with sscanf because and empty field is stored as space characters
-    memset(dfilter, 0, sizeof(dfilter));
-    sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", dfilter);
-
-    if (strlen(dfilter) == 0)
+    if (strlen(info->dfilter) == 0)
         return 1;
 
     memset(linetext, 0, sizeof(linetext));
     call_list_line_text(panel, call, linetext);
 
     // Check the expresion is a compilable regexp
-    if (regcomp(&regex, dfilter, cflags) != 0) {
+    if (regcomp(&regex, info->dfilter, cflags) != 0)
         return 0;
-    }
+
     // Check if line matches the given expresion
     ret = (regexec(&regex, linetext, 0, NULL, 0) == 0);
 

@@ -93,6 +93,8 @@ struct call_list_info
     FORM *form;
     //! An array of window form fields
     FIELD *fields[FLD_LIST_COUNT + 1];
+    //! Display filter text
+    char dfilter[256];
     //! We're entering keys on form
     bool form_active;
 };
