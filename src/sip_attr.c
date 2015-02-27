@@ -329,46 +329,13 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
 }
 
 int
-sip_check_call_ignore(sip_call_t *call)
+sip_check_msg_ignore(sip_msg_t *msg)
 {
     int i;
-    char filter_option[80];
-    const char *filter;
 
     // Check if an ignore option exists
     for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
-        if (is_ignored_value(attrs[i].name, call_get_attribute(call, attrs[i].id))) {
-            return 1;
-        }
-    }
-
-    // Check enabled filters
-    if (is_option_enabled("filter.enable")) {
-        if ((filter = get_option_value("filter.sipfrom")) && strlen(filter)) {
-            if (strstr(call_get_attribute(call, SIP_ATTR_SIPFROM), filter) == NULL) {
-                return 1;
-            }
-        }
-        if ((filter = get_option_value("filter.sipto")) && strlen(filter)) {
-            if (strstr(call_get_attribute(call, SIP_ATTR_SIPTO), filter) == NULL) {
-                return 1;
-            }
-        }
-        if ((filter = get_option_value("filter.src")) && strlen(filter)) {
-            if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_SRC), strlen(filter))) {
-                return 1;
-            }
-        }
-        if ((filter = get_option_value("filter.dst")) && strlen(filter)) {
-            if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_DST), strlen(filter))) {
-                return 1;
-            }
-        }
-
-        // Check if a filter option exists
-        memset(filter_option, 0, sizeof(filter_option));
-        sprintf(filter_option, "filter.%s", call_get_attribute(call, SIP_ATTR_STARTING));
-        if (!is_option_enabled(filter_option)) {
+        if (is_ignored_value(attrs[i].name, msg_get_attribute(msg, attrs[i].id))) {
             return 1;
         }
     }

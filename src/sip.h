@@ -96,6 +96,8 @@ struct sip_msg
  */
 struct sip_call
 {
+    //! Flag this call as filtered so won't be displayed
+    int filtered;
     //! Call attribute list
     struct sip_attr *attrs;
     //! List of messages of this call
@@ -391,5 +393,6 @@ sip_calls_clear();
  */
 const char *
 sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur);
+
 
 #endif

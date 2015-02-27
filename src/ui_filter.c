@@ -299,6 +299,7 @@ filter_handle_key(PANEL *panel, int key)
 void
 filter_save_options(PANEL *panel)
 {
+    sip_call_t *call = NULL;
     char field_value[30];
     int i;
 
@@ -353,5 +354,9 @@ filter_save_options(PANEL *panel)
             break;
         }
     }
+
+    // Force filter evaluation
+    while((call = call_get_next(call)))
+        call->filtered = -1;
 }
 

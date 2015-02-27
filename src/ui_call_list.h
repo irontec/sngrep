@@ -298,10 +298,20 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur);
  * @brief Check if call match display filter
  *
  * @param panel Ncurses panel pointer
- * @param call Start searching from this call
+ * @param call Call to Check
  * @return 1 if the call match display filters, 0 otherwise
  */
 int
 call_list_match_dfilter(PANEL *panel, sip_call_t *call);
+
+/**
+ * @brief Check if call matches custom filters
+ *
+ * @param panel Ncurses panel pointer
+ * @param call Call to check
+ * @return 0 if call mismatchs a filter
+ */
+int
+call_list_match_filters(PANEL *panel, sip_call_t *call);
 
 #endif

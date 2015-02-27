@@ -141,6 +141,9 @@ sip_call_create(char *callid)
     entry.data = (void *) call;
     hsearch(entry, ENTER);
 
+    // Initialize call filter status
+    call->filtered = -1;
+
     // Store current call Index
     call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", calls.count);
 
@@ -280,6 +283,13 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
                 sip_msg_destroy(msg);
                 return NULL;
             }
+        }
+
+        // Check if this message is ignored by configuration directive
+        if (sip_check_msg_ignore(msg)) {
+            // Deallocate message memory
+            sip_msg_destroy(msg);
+            return NULL;
         }
 
         // Create the call if not found
@@ -435,10 +445,6 @@ call_get_next(sip_call_t *cur)
     } else {
         next = cur->next;
     }
-
-    if (next && sip_check_call_ignore(next)) {
-        return call_get_next(next);
-    }
     return next;
 }
 
@@ -451,10 +457,6 @@ call_get_prev(sip_call_t *cur)
         prev = calls.first;
     } else {
         prev = cur->prev;
-    }
-
-    if (prev && sip_check_call_ignore(prev)) {
-        return call_get_prev(prev);
     }
     return prev;
 }

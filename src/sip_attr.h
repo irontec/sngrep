@@ -288,15 +288,12 @@ const char *
 msg_get_attribute(struct sip_msg *msg, enum sip_attr_id id);
 
 /**
- * @brief Check if this call is affected by filters
+ * @brief Check if this msg is affected by filters
  *
- * This function is internally used to check if the call should not
- * be returned by general getters because is filtered.
- *
- * @param call Call to check
- * @return 1 if call is filtered, 0 otherwise
+ * @param call Message to check
+ * @return 1 if msg is filtered, 0 otherwise
  */
 int
-sip_check_call_ignore(struct sip_call *call);
+sip_check_msg_ignore(struct sip_msg *msg);
 
 #endif /* __SNGREP_SIP_ATTR_H */
