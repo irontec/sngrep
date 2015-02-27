@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
+#include <search.h>
 #include "sip.h"
 #include "option.h"
 #include "capture.h"
@@ -49,11 +50,14 @@
  * All parsed calls will be added to this list, only accesible from
  * this awesome structure, so, keep it thread-safe.
  */
-static sip_call_list_t calls =
-    {
-      .first = NULL,
-      .last = NULL,
-      .count = 0 };
+static sip_call_list_t calls = { 0 };
+
+void
+sip_init(int limit)
+{
+    // Create hash table for callid search
+    hcreate(limit);
+}
 
 sip_msg_t *
 sip_msg_create(const char *payload)
@@ -107,6 +111,7 @@ sip_msg_destroy(sip_msg_t *msg)
 sip_call_t *
 sip_call_create(char *callid)
 {
+    ENTRY entry;
     // Initialize a new call structure
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
@@ -130,8 +135,15 @@ sip_call_create(char *callid)
     }
     calls.last = call;
     calls.count++;
+
+    // Store this call in hash table
+    entry.key = callid;
+    entry.data = (void *) call;
+    hsearch(entry, ENTER);
+
     // Store current call Index
     call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", calls.count);
+
     pthread_mutex_unlock(&calls.lock);
     return call;
 }
@@ -325,19 +337,12 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
 sip_call_t *
 call_find_by_callid(const char *callid)
 {
-    const char *cur_callid;
-    pthread_mutex_lock(&calls.lock);
-    sip_call_t *cur = calls.first;
+    ENTRY entry, *eptr;
 
-    while (cur) {
-        cur_callid = call_get_attribute(cur, SIP_ATTR_CALLID);
-        if (cur_callid && !strcmp(cur_callid, callid)) {
-            pthread_mutex_unlock(&calls.lock);
-            return cur;
-        }
-        cur = cur->next;
-    }
-    pthread_mutex_unlock(&calls.lock);
+    entry.key = (char *) callid;
+    if ((eptr = hsearch(entry, FIND)))
+        return eptr->data;
+
     return NULL;
 }
 

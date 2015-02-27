@@ -192,6 +192,9 @@ main(int argc, char* argv[])
         }
     }
 
+    // Initialize SIP Messages Storage
+    sip_init(limit);
+
     // If we have an input file, load it
     if (infile) {
         // Try to load file

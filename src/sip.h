@@ -125,6 +125,15 @@ struct sip_call_list
 };
 
 /**
+ * @brief Initialize SIP Storage structures
+ *
+ * @param limit Max number of Stored calls
+ */
+void
+sip_init(int limit);
+
+
+/**
  * @brief Create a new message from the readed header and payload
  *
  * Allocate required memory for a new SIP message. This function
