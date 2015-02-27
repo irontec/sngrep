@@ -313,7 +313,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         size_packet = size_link + size_ip + SIZE_TCP + size_payload;
 #ifdef WITH_OPENSSL
         if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
-            if (get_option_value("capture.keyfile")) {
+            if (capture_get_keyfile()) {
                 // Allocate memory for the payload
                 msg_payload = malloc(size_payload + 1);
                 memset(msg_payload, 0, size_payload + 1);
