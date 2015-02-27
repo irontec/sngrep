@@ -116,16 +116,6 @@ sip_call_create(char *callid)
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
 
-    // Initialize call lock
-    pthread_mutexattr_t attr;
-    pthread_mutexattr_init(&attr);
-#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-#else
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
-#endif
-    pthread_mutex_init(&call->lock, &attr);
-
     pthread_mutex_lock(&calls.lock);
     if (!calls.count) {
         calls.first = call;
@@ -146,8 +136,8 @@ sip_call_create(char *callid)
 
     // Store current call Index
     call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", calls.count);
-
     pthread_mutex_unlock(&calls.lock);
+
     return call;
 }
 
@@ -326,7 +316,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
 {
     sip_msg_t *cur, *prev;
 
-    pthread_mutex_lock(&call->lock);
+    pthread_mutex_lock(&calls.lock);
     // Set the message owner
     msg->call = call;
 
@@ -341,7 +331,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     }
     // Store message count
     call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", call_msg_count(call));
-    pthread_mutex_unlock(&call->lock);
+    pthread_mutex_unlock(&calls.lock);
 }
 
 sip_call_t *
@@ -381,13 +371,13 @@ int
 call_msg_count(sip_call_t *call)
 {
     int msgcnt = 0;
-    pthread_mutex_lock(&call->lock);
+    pthread_mutex_lock(&calls.lock);
     sip_msg_t *msg = call->msgs;
     while (msg) {
         msgcnt++;
         msg = msg->next;
     }
-    pthread_mutex_unlock(&call->lock);
+    pthread_mutex_unlock(&calls.lock);
     return msgcnt;
 }
 
@@ -405,13 +395,13 @@ sip_msg_t *
 call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
 {
     sip_msg_t *ret;
-    pthread_mutex_lock(&call->lock);
+    pthread_mutex_lock(&calls.lock);
     if (msg == NULL) {
         ret = call->msgs;
     } else {
         ret = msg->next;
     }
-    pthread_mutex_unlock(&call->lock);
+    pthread_mutex_unlock(&calls.lock);
     return ret;
 }
 
@@ -419,7 +409,7 @@ sip_msg_t *
 call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
 {
     sip_msg_t *ret = NULL, *cur;
-    pthread_mutex_lock(&call->lock);
+    pthread_mutex_lock(&calls.lock);
     if (msg == NULL) {
         // No message, no previous
         ret = NULL;
@@ -431,7 +421,7 @@ call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
                 break;
         }
     }
-    pthread_mutex_unlock(&call->lock);
+    pthread_mutex_unlock(&calls.lock);
     return ret;
 }
 
@@ -440,11 +430,13 @@ call_get_next(sip_call_t *cur)
 {
 
     sip_call_t * next;
+    pthread_mutex_lock(&calls.lock);
     if (!cur) {
         next = calls.first;
     } else {
         next = cur->next;
     }
+    pthread_mutex_unlock(&calls.lock);
     return next;
 }
 
@@ -453,11 +445,13 @@ call_get_prev(sip_call_t *cur)
 {
 
     sip_call_t *prev;
+    pthread_mutex_lock(&calls.lock);
     if (!cur) {
         prev = calls.first;
     } else {
         prev = cur->prev;
     }
+    pthread_mutex_unlock(&calls.lock);
     return prev;
 }
 

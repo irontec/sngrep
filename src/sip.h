@@ -102,8 +102,6 @@ struct sip_call {
     sip_msg_t *msgs;
     //! Message when conversation started
     sip_msg_t *cstart_msg;
-    // Call Lock
-    pthread_mutex_t lock;
     //! Calls double linked list
     sip_call_t *next, *prev;
 };
