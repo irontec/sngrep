@@ -41,8 +41,7 @@ typedef struct column_select_info column_select_info_t;
  *
  * This structure contains the durable data of column selection panel.
  */
-struct column_select_info
-{
+struct column_select_info {
     // Section of panel where menu is being displayed
     WINDOW *menu_win;
     // Columns menu

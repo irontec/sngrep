@@ -50,16 +50,16 @@
  * and pointer to their main functions.
 
  */
-static ui_t *panel_pool[] =
-    {
-      &ui_call_list,
-      &ui_call_flow,
-      &ui_call_raw,
-      &ui_filter,
-      &ui_save,
-      &ui_save_raw,
-      &ui_msg_diff,
-      &ui_column_select, };
+static ui_t *panel_pool[] = {
+    &ui_call_list,
+    &ui_call_flow,
+    &ui_call_raw,
+    &ui_filter,
+    &ui_save,
+    &ui_save_raw,
+    &ui_msg_diff,
+    &ui_column_select,
+};
 
 int
 init_interface()
@@ -97,7 +97,7 @@ init_interface()
     // Redefine some keys
     term = getenv("TERM");
     if (term
-            && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
+        && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
         define_key("\033[H", KEY_HOME);
         define_key("\033[F", KEY_END);
         define_key("\033OP", KEY_F(1));
@@ -295,40 +295,40 @@ default_handle_key(ui_t *ui, int key)
 {
     // Otherwise, use standard keybindings
     switch (key) {
-    case 'C':
-    case KEY_F(8):
-        toggle_option("syntax");
-        break;
-    case 'c':
-    case KEY_F(7):
-        if (is_option_enabled("color.request")) {
-            toggle_option("color.request");
-            toggle_option("color.callid");
-        } else if (is_option_enabled("color.callid")) {
-            toggle_option("color.callid");
-            toggle_option("color.cseq");
-        } else if (is_option_enabled("color.cseq")) {
-            toggle_option("color.cseq");
-            toggle_option("color.request");
-        }
-        break;
-    case 'l':
-        toggle_option("sngrep.displayhost");
-        break;
-    case 'p':
-        // Pause/Resume capture
-        capture_set_paused(!capture_is_paused());
-        break;
-    case KEY_F(1):
-    case 'h':
-    case '?':
-        ui_help(ui);
-        break;
-    case 'q':
-    case 'Q':
-    case 27: /* KEY_ESC */
-        ui_destroy(ui);
-        break;
+        case 'C':
+        case KEY_F(8):
+            toggle_option("syntax");
+            break;
+        case 'c':
+        case KEY_F(7):
+            if (is_option_enabled("color.request")) {
+                toggle_option("color.request");
+                toggle_option("color.callid");
+            } else if (is_option_enabled("color.callid")) {
+                toggle_option("color.callid");
+                toggle_option("color.cseq");
+            } else if (is_option_enabled("color.cseq")) {
+                toggle_option("color.cseq");
+                toggle_option("color.request");
+            }
+            break;
+        case 'l':
+            toggle_option("sngrep.displayhost");
+            break;
+        case 'p':
+            // Pause/Resume capture
+            capture_set_paused(!capture_is_paused());
+            break;
+        case KEY_F(1):
+        case 'h':
+        case '?':
+            ui_help(ui);
+            break;
+        case 'q':
+        case 'Q':
+        case 27: /* KEY_ESC */
+            ui_destroy(ui);
+            break;
     }
 
     return key;

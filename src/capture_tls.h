@@ -40,7 +40,7 @@
  *
  * This file contains the functions and structures to manage the SIP messages
  * that use TLS as transport.
- * 
+ *
  */
 
 #ifndef __SNGREP_CAPTURE_TLS_
@@ -63,20 +63,17 @@
 typedef unsigned char uint8;
 
 //! Two bytes unsigned integer
-typedef struct uint16
-{
+typedef struct uint16 {
     unsigned char x[2];
 } uint16;
 
 //! Three bytes unsigned integer
-typedef struct uint24
-{
+typedef struct uint24 {
     unsigned char x[3];
 } uint24;
 
 //! Four bytes unsigned interger
-typedef struct uint32
-{
+typedef struct uint32 {
     unsigned char x[4];
 } uint32;
 
@@ -84,8 +81,7 @@ typedef struct uint32
 typedef unsigned char opaque;
 
 //! SSLConnections states
-enum SSLConnectionState
-{
+enum SSLConnectionState {
     //! Initial SYN packet has been received from client
     TCP_STATE_SYN = 0,
     //! SYN/ACK packet has been sent from the server
@@ -108,8 +104,7 @@ enum SSLConnectionState
  * so we may use SSL3_ defines instead.
  */
 //! ContentType values as defined in RFC5246
-enum ContentType
-{
+enum ContentType {
     change_cipher_spec = SSL3_RT_CHANGE_CIPHER_SPEC,
     alert = SSL3_RT_ALERT,
     handshake = SSL3_RT_HANDSHAKE,
@@ -117,8 +112,7 @@ enum ContentType
 };
 
 //! HanshakeType values as defined in RFC5246
-enum HandshakeType
-{
+enum HandshakeType {
     hello_request = SSL3_MT_HELLO_REQUEST,
     client_hello = SSL3_MT_CLIENT_HELLO,
     server_hello = SSL3_MT_SERVER_HELLO,
@@ -131,43 +125,37 @@ enum HandshakeType
 };
 
 //! ProtocolVersion header as defined in RFC5246
-struct ProtocolVersion
-{
+struct ProtocolVersion {
     uint8 major;
     uint8 minor;
 };
 
 //! TLSPlaintext record structure
-struct TLSPlaintext
-{
+struct TLSPlaintext {
     uint8 type;
     struct ProtocolVersion version;
     uint16 length;
 };
 
 //! Hanshake record structure
-struct Handshake
-{
+struct Handshake {
     uint8 type;
     uint24 length;
 };
 
 //! Handshake random structure
-struct Random
-{
+struct Random {
     uint32 gmt_unix_time;
     opaque random_bytes[28];
 };
 
-struct CipherSuite
-{
+struct CipherSuite {
     uint8 cs1;
     uint8 cs2;
 };
 
 //! ClientHello type in Handshake records
-struct ClientHello
-{
+struct ClientHello {
     struct ProtocolVersion client_version;
     struct Random random;
 //    uint8 session_id_length;
@@ -176,8 +164,7 @@ struct ClientHello
 };
 
 //! ServerHello type in Handshake records
-struct ServerHello
-{
+struct ServerHello {
     struct ProtocolVersion server_version;
     struct Random random;
     uint8 session_id_length;
@@ -186,25 +173,21 @@ struct ServerHello
 // CompressionMethod compression_method;
 };
 
-struct MasterSecret
-{
+struct MasterSecret {
     uint8 random[48];
 };
 
-struct PreMasterSecret
-{
+struct PreMasterSecret {
     struct ProtocolVersion client_version;
     uint8 random[46];
 };
 
-struct EncryptedPreMasterSecret
-{
+struct EncryptedPreMasterSecret {
     uint8 pre_master_secret[128];
 };
 
 //! ClientKeyExchange type in Handshake records
-struct ClientKeyExchange
-{
+struct ClientKeyExchange {
     uint16 length;
     struct EncryptedPreMasterSecret exchange_keys;
 };
@@ -214,8 +197,7 @@ struct ClientKeyExchange
  * connection. This is also used as linked list
  * node.
  */
-struct SSLConnection
-{
+struct SSLConnection {
     //! Connection status
     enum SSLConnectionState state;
     //! Current packet direction
@@ -242,8 +224,7 @@ struct SSLConnection
     struct PreMasterSecret pre_master_secret;
     struct MasterSecret master_secret;
 
-    struct tls_data
-    {
+    struct tls_data {
         uint8 client_write_MAC_key[20];
         uint8 server_write_MAC_key[20];
         uint8 client_write_key[32];

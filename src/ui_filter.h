@@ -41,8 +41,7 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum filter_FLD_FILTER_list
-{
+enum filter_FLD_FILTER_list {
     FLD_FILTER_ENABLE = 0,
     FLD_FILTER_SIPFROM,
     FLD_FILTER_SIPTO,
@@ -69,8 +68,7 @@ typedef struct filter_info filter_info_t;
  *
  * This structure contains the durable data of filter panel.
  */
-struct filter_info
-{
+struct filter_info {
     //! Form that contains the filter fields
     FORM *form;
     //! An array of fields

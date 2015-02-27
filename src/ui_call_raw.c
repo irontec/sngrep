@@ -40,13 +40,13 @@
 /**
  * Ui Structure definition for Call Raw panel
  */
-ui_t ui_call_raw =
-    {
-      .type = PANEL_CALL_RAW,
-      .panel = NULL,
-      .create = call_raw_create,
-      .draw = call_raw_draw,
-      .handle_key = call_raw_handle_key };
+ui_t ui_call_raw = {
+    .type = PANEL_CALL_RAW,
+    .panel = NULL,
+    .create = call_raw_create,
+    .draw = call_raw_draw,
+    .handle_key = call_raw_handle_key
+};
 
 PANEL *
 call_raw_create()
@@ -179,56 +179,56 @@ call_raw_handle_key(PANEL *panel, int key)
 
     // Move scroll depending on key pressed
     switch (key) {
-    case KEY_DOWN:
-        info->scroll++;
-        break;
-    case KEY_UP:
-        info->scroll--;
-        break;
-    case KEY_NPAGE:
-        // Next page => N key down strokes
-        info->scroll += 10;
-        break;
-    case KEY_PPAGE:
-        // Prev page => N key up strokes
-        info->scroll -= 10;
-        break;
-    case 'l':
-        // Tooggle Host/Address display
-        toggle_option("sngrep.displayhost");
-        // Force refresh panel
-        if (info->group) {
-            call_raw_set_group(info->group);
-        } else {
-            call_raw_set_msg(info->msg);
-        }
-        break;
-    case 's':
-    case 'S':
-        if (info->group) {
-            // KEY_S, Display save panel
-            next_panel = ui_create(ui_find_by_type(PANEL_SAVE_RAW));
-            save_raw_set_group(next_panel->panel, info->group);
-            wait_for_input(next_panel);
-        }
-        break;
-    case 'C':
-    case 'c':
-        // Handle colors using default handler
-        default_handle_key(ui_find_by_panel(panel), key);
-        // Create a new pad (forces messages draw)
-        delwin(info->pad);
-        info->pad = newpad(500, COLS);
-        info->last = NULL;
-        // Force refresh panel
-        if (info->group) {
-            call_raw_set_group(info->group);
-        } else {
-            call_raw_set_msg(info->msg);
-        }
-        break;
-    default:
-        return key;
+        case KEY_DOWN:
+            info->scroll++;
+            break;
+        case KEY_UP:
+            info->scroll--;
+            break;
+        case KEY_NPAGE:
+            // Next page => N key down strokes
+            info->scroll += 10;
+            break;
+        case KEY_PPAGE:
+            // Prev page => N key up strokes
+            info->scroll -= 10;
+            break;
+        case 'l':
+            // Tooggle Host/Address display
+            toggle_option("sngrep.displayhost");
+            // Force refresh panel
+            if (info->group) {
+                call_raw_set_group(info->group);
+            } else {
+                call_raw_set_msg(info->msg);
+            }
+            break;
+        case 's':
+        case 'S':
+            if (info->group) {
+                // KEY_S, Display save panel
+                next_panel = ui_create(ui_find_by_type(PANEL_SAVE_RAW));
+                save_raw_set_group(next_panel->panel, info->group);
+                wait_for_input(next_panel);
+            }
+            break;
+        case 'C':
+        case 'c':
+            // Handle colors using default handler
+            default_handle_key(ui_find_by_panel(panel), key);
+            // Create a new pad (forces messages draw)
+            delwin(info->pad);
+            info->pad = newpad(500, COLS);
+            info->last = NULL;
+            // Force refresh panel
+            if (info->group) {
+                call_raw_set_group(info->group);
+            } else {
+                call_raw_set_msg(info->msg);
+            }
+            break;
+        default:
+            return key;
     }
 
     if (info->scroll < 0 || info->padline < LINES) {

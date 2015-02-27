@@ -265,9 +265,9 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
             // Get Message method / response code
             const char *method = msg_get_attribute(msg, SIP_ATTR_METHOD);
             if (method && strncasecmp(method, "INVITE", 6) && strncasecmp(method, "REGISTER", 8)
-                    && strncasecmp(method, "SUBSCRIBE", 9) && strncasecmp(method, "OPTIONS", 7)
-                    && strncasecmp(method, "PUBLISH", 7) && strncasecmp(method, "MESSAGE", 7)
-                    && strncasecmp(method, "NOTIFY", 6)) {
+                && strncasecmp(method, "SUBSCRIBE", 9) && strncasecmp(method, "OPTIONS", 7)
+                && strncasecmp(method, "PUBLISH", 7) && strncasecmp(method, "MESSAGE", 7)
+                && strncasecmp(method, "NOTIFY", 6)) {
                 // Deallocate message memory
                 sip_msg_destroy(msg);
                 return NULL;

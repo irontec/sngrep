@@ -42,8 +42,7 @@
  * Dialog form has a field array. Following enum represents the
  * order this fields are stored in panel info structure.
  */
-enum save_field_list
-{
+enum save_field_list {
     FLD_SAVE_FILE = 0,
     FLD_SAVE_ALL,
     FLD_SAVE_SELECTED,
@@ -61,8 +60,7 @@ typedef struct save_info save_info_t;
  *
  * This structure contains the durable data of save panel.
  */
-struct save_info
-{
+struct save_info {
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields

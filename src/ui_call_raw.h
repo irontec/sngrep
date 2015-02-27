@@ -42,8 +42,7 @@ typedef struct call_raw_info call_raw_info_t;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct call_raw_info
-{
+struct call_raw_info {
     sip_call_group_t *group;
     sip_msg_t *msg;
     sip_msg_t *last;

@@ -55,8 +55,7 @@ struct sip_msg;
  * This enum contains the list of available attributes
  * a call or message can have.
  */
-enum sip_attr_id
-{
+enum sip_attr_id {
     //! Call index in the Call List
     SIP_ATTR_CALLINDEX = 0,
     //! SIP Message From: header
@@ -120,8 +119,7 @@ enum sip_attr_id
  * attributes pointer to its type.
  *
  */
-struct sip_attr_hdr
-{
+struct sip_attr_hdr {
     //! Attribute id
     enum sip_attr_id id;
     //! Attribute name
@@ -140,8 +138,7 @@ struct sip_attr_hdr
  * Right now, all the attributed are stored as strings, which may
  * not be the better option, but will fit our actual needs.
  */
-struct sip_attr
-{
+struct sip_attr {
     //! Attribute header pointer
     sip_attr_hdr_t *hdr;
     //! Attribute value

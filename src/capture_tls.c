@@ -38,9 +38,9 @@
 struct SSLConnection *connections;
 
 struct CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA =
-    { 0x00, 0x2F };
+{ 0x00, 0x2F };
 struct CipherSuite TLS_RSA_WITH_AES_256_CBC_SHA =
-    { 0x00, 0x35 };
+{ 0x00, 0x35 };
 
 int
 P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
@@ -134,7 +134,7 @@ tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr,
         return NULL;
 
     SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_get_keyfile(),
-    SSL_FILETYPE_PEM);
+                                SSL_FILETYPE_PEM);
     if (!(conn->ssl = SSL_new(conn->ssl_ctx)))
         return NULL;
 
@@ -224,30 +224,30 @@ tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl)
         // Update last connection direction
         conn->direction = tls_connection_dir(conn, ip->ip_src, tcp->th_sport);
 
-        // Check current connection state  
+        // Check current connection state
         switch (conn->state) {
-        case TCP_STATE_SYN:
-            // First SYN received, this package must be SYN/ACK
-            if (tcp->th_flags & TH_SYN & ~TH_ACK)
-                conn->state = TCP_STATE_SYN_ACK;
-            break;
-        case TCP_STATE_SYN_ACK:
-            // We expect an ACK packet here
-            if (tcp->th_flags & ~TH_SYN & TH_ACK)
-                conn->state = TCP_STATE_ESTABLISHED;
-            break;
-        case TCP_STATE_ACK:
-        case TCP_STATE_ESTABLISHED:
-            // Process data segment!
-            payload = (uint8 *) tcp + SIZE_TCP;
-            len = ntohs(ip->ip_len) - (IP_HL(ip) * 4) - SIZE_TCP;
-            tls_process_record(conn, payload, len, out, outl);
-            break;
-        case TCP_STATE_FIN:
-        case TCP_STATE_CLOSED:
-            // We can delete this connection
-            tls_connection_destroy(conn);
-            break;
+            case TCP_STATE_SYN:
+                // First SYN received, this package must be SYN/ACK
+                if (tcp->th_flags & TH_SYN & ~TH_ACK)
+                    conn->state = TCP_STATE_SYN_ACK;
+                break;
+            case TCP_STATE_SYN_ACK:
+                // We expect an ACK packet here
+                if (tcp->th_flags & ~TH_SYN & TH_ACK)
+                    conn->state = TCP_STATE_ESTABLISHED;
+                break;
+            case TCP_STATE_ACK:
+            case TCP_STATE_ESTABLISHED:
+                // Process data segment!
+                payload = (uint8 *) tcp + SIZE_TCP;
+                len = ntohs(ip->ip_len) - (IP_HL(ip) * 4) - SIZE_TCP;
+                tls_process_record(conn, payload, len, out, outl);
+                break;
+            case TCP_STATE_FIN:
+            case TCP_STATE_CLOSED:
+                // We can delete this connection
+                tls_connection_destroy(conn);
+                break;
         }
     } else {
         if (tcp->th_flags & TH_SYN & ~TH_ACK) {
@@ -277,26 +277,26 @@ tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int l
 
     // Process record fragment
     if (UINT16_INT(record->length) > 0) {
-        // TLSPlaintext fragment pointer 
+        // TLSPlaintext fragment pointer
         fragment = (opaque *) payload + sizeof(struct TLSPlaintext);
 
         switch (record->type) {
-        case handshake:
-            // Hanshake Record, Try to get MasterSecret data
-            tls_process_record_handshake(conn, fragment);
-            break;
-        case change_cipher_spec:
-            // From now on, this connection will be encrypted using MasterSecret
-            conn->encrypted = 1;
-            break;
-        case application_data:
-            if (conn->encrypted) {
-                // Decrypt application data using MasterSecret
-                tls_process_record_data(conn, fragment, UINT16_INT(record->length), out, outl);
-            }
-            break;
-        default:
-            break;
+            case handshake:
+                // Hanshake Record, Try to get MasterSecret data
+                tls_process_record_handshake(conn, fragment);
+                break;
+            case change_cipher_spec:
+                // From now on, this connection will be encrypted using MasterSecret
+                conn->encrypted = 1;
+                break;
+            case application_data:
+                if (conn->encrypted) {
+                    // Decrypt application data using MasterSecret
+                    tls_process_record_data(conn, fragment, UINT16_INT(record->length), out, outl);
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -320,92 +320,92 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
     handshake = (struct Handshake *) fragment;
 
     if (UINT24_INT(handshake->length) > 0) {
-        // Hanshake body pointer 
+        // Hanshake body pointer
         body = fragment + sizeof(struct Handshake);
 
         switch (handshake->type) {
-        case hello_request:
-            break;
-        case client_hello:
-            // Store client random
-            clienthello = (struct ClientHello *) body;
-            memcpy(&conn->client_random, &clienthello->random, sizeof(struct Random));
+            case hello_request:
+                break;
+            case client_hello:
+                // Store client random
+                clienthello = (struct ClientHello *) body;
+                memcpy(&conn->client_random, &clienthello->random, sizeof(struct Random));
 
-            // Check we have a TLS handshake
-            if (!(clienthello->client_version.major == 0x03
-                    && clienthello->client_version.minor == 0x01)) {
-                tls_connection_destroy(conn);
-            }
-            break;
-        case server_hello:
-            // Store server random
-            serverhello = (struct ServerHello *) body;
-            memcpy(&conn->server_random, &serverhello->random, sizeof(struct Random));
-            // Get the selected cipher
-            memcpy(&conn->cipher_suite,
-                   body + sizeof(struct ServerHello) + serverhello->session_id_length,
-                   sizeof(uint16));
-            // Check if we have a handled cipher
-            if (tls_connection_load_cipher(conn) != 0)
-                tls_connection_destroy(conn);
-            break;
-        case certificate:
-        case certificate_request:
-        case server_hello_done:
-        case certificate_verify:
-            break;
-        case client_key_exchange:
-            // Decrypt PreMasterKey
-            clientkeyex = (struct ClientKeyExchange *) body;
+                // Check we have a TLS handshake
+                if (!(clienthello->client_version.major == 0x03
+                      && clienthello->client_version.minor == 0x01)) {
+                    tls_connection_destroy(conn);
+                }
+                break;
+            case server_hello:
+                // Store server random
+                serverhello = (struct ServerHello *) body;
+                memcpy(&conn->server_random, &serverhello->random, sizeof(struct Random));
+                // Get the selected cipher
+                memcpy(&conn->cipher_suite,
+                       body + sizeof(struct ServerHello) + serverhello->session_id_length,
+                       sizeof(uint16));
+                // Check if we have a handled cipher
+                if (tls_connection_load_cipher(conn) != 0)
+                    tls_connection_destroy(conn);
+                break;
+            case certificate:
+            case certificate_request:
+            case server_hello_done:
+            case certificate_verify:
+                break;
+            case client_key_exchange:
+                // Decrypt PreMasterKey
+                clientkeyex = (struct ClientKeyExchange *) body;
 
-            RSA_private_decrypt(UINT16_INT(clientkeyex->length),
-                                (const unsigned char *) &clientkeyex->exchange_keys,
-                                (unsigned char *) &conn->pre_master_secret,
-                                conn->server_private_key->pkey.rsa, RSA_PKCS1_PADDING);
+                RSA_private_decrypt(UINT16_INT(clientkeyex->length),
+                                    (const unsigned char *) &clientkeyex->exchange_keys,
+                                    (unsigned char *) &conn->pre_master_secret,
+                                    conn->server_private_key->pkey.rsa, RSA_PKCS1_PADDING);
 
-            unsigned char *seed = malloc(sizeof(struct Random) * 2);
-            memcpy(seed, &conn->client_random, sizeof(struct Random));
-            memcpy(seed + sizeof(struct Random), &conn->server_random, sizeof(struct Random));
+                unsigned char *seed = malloc(sizeof(struct Random) * 2);
+                memcpy(seed, &conn->client_random, sizeof(struct Random));
+                memcpy(seed + sizeof(struct Random), &conn->server_random, sizeof(struct Random));
 
-            // Get MasterSecret
-            PRF((unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
-                (unsigned char *) &conn->pre_master_secret, sizeof(struct PreMasterSecret),
-                (unsigned char *) "master secret", seed, sizeof(struct Random) * 2);
+                // Get MasterSecret
+                PRF((unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
+                    (unsigned char *) &conn->pre_master_secret, sizeof(struct PreMasterSecret),
+                    (unsigned char *) "master secret", seed, sizeof(struct Random) * 2);
 
-            memcpy(seed, &conn->server_random, sizeof(struct Random));
-            memcpy(seed + sizeof(struct Random), &conn->client_random, sizeof(struct Random));
+                memcpy(seed, &conn->server_random, sizeof(struct Random));
+                memcpy(seed + sizeof(struct Random), &conn->client_random, sizeof(struct Random));
 
-            // Generate MACs, Write Keys and IVs
-            PRF((unsigned char *) &conn->key_material, sizeof(struct tls_data),
-                (unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
-                (unsigned char *) "key expansion", seed, sizeof(struct Random) * 2);
+                // Generate MACs, Write Keys and IVs
+                PRF((unsigned char *) &conn->key_material, sizeof(struct tls_data),
+                    (unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
+                    (unsigned char *) "key expansion", seed, sizeof(struct Random) * 2);
 
-            // Done with the seed
-            free(seed);
+                // Done with the seed
+                free(seed);
 
-            // Create Client decoder
-            EVP_CIPHER_CTX_init(&conn->client_cipher_ctx);
-            EVP_CipherInit(&conn->client_cipher_ctx, conn->ciph,
-                           conn->key_material.client_write_key, conn->key_material.client_write_IV,
-                           0);
+                // Create Client decoder
+                EVP_CIPHER_CTX_init(&conn->client_cipher_ctx);
+                EVP_CipherInit(&conn->client_cipher_ctx, conn->ciph,
+                               conn->key_material.client_write_key, conn->key_material.client_write_IV,
+                               0);
 
-            EVP_CIPHER_CTX_init(&conn->server_cipher_ctx);
-            EVP_CipherInit(&conn->server_cipher_ctx, conn->ciph,
-                           conn->key_material.server_write_key, conn->key_material.server_write_IV,
-                           0);
+                EVP_CIPHER_CTX_init(&conn->server_cipher_ctx);
+                EVP_CipherInit(&conn->server_cipher_ctx, conn->ciph,
+                               conn->key_material.server_write_key, conn->key_material.server_write_IV,
+                               0);
 
-            break;
-        case finished:
-            break;
-        default:
-            if (conn->encrypted) {
-                // Encrypted Hanshake Message
-                unsigned char *decoded = malloc(48);
-                int decodedlen;
-                tls_process_record_data(conn, fragment, 48, &decoded, &decodedlen);
-                free(decoded);
-            }
-            break;
+                break;
+            case finished:
+                break;
+            default:
+                if (conn->encrypted) {
+                    // Encrypted Hanshake Message
+                    unsigned char *decoded = malloc(48);
+                    int decodedlen;
+                    tls_process_record_data(conn, fragment, 48, &decoded, &decodedlen);
+                    free(decoded);
+                }
+                break;
         }
     }
 

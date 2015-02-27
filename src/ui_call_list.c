@@ -42,17 +42,16 @@
 /**
  * Ui Structure definition for Call List panel
  */
-ui_t ui_call_list =
-    {
-      .type = PANEL_CALL_LIST,
-      .panel = NULL,
-      .create = call_list_create,
-      .draw = call_list_draw,
-      .handle_key = call_list_handle_key,
-      .help = call_list_help,
-      .destroy = call_list_destroy,
+ui_t ui_call_list = {
+    .type = PANEL_CALL_LIST,
+    .panel = NULL,
+    .create = call_list_create,
+    .draw = call_list_draw,
+    .handle_key = call_list_handle_key,
+    .help = call_list_help,
+    .destroy = call_list_destroy,
 
-    };
+};
 
 PANEL *
 call_list_create()
@@ -160,30 +159,19 @@ call_list_destroy(PANEL *panel)
 void
 call_list_draw_footer(PANEL *panel)
 {
-    const char *keybindings[] =
-        {
-          "Esc",
-          "Quit",
-          "Enter",
-          "Show",
-          "Space",
-          "Select",
-          "F1",
-          "Help",
-          "F2",
-          "Save",
-          "F3",
-          "Search",
-          "F4",
-          "Extended",
-          "F5",
-          "Clear",
-          "F6",
-          "Raw",
-          "F7",
-          "Filter",
-          "F10",
-          "Columns" };
+    const char *keybindings[] = {
+        "Esc", "Quit",
+        "Enter", "Show",
+        "Space", "Select",
+        "F1", "Help",
+        "F2", "Save",
+        "F3", "Search",
+        "F4", "Extended",
+        "F5", "Clear",
+        "F6", "Raw",
+        "F7", "Filter",
+        "F10", "Columns"
+    };
 
     draw_keybindings(panel, keybindings, 22);
 }
@@ -369,16 +357,16 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 
         // Swappable columns
         switch (info->columns[i].id) {
-        case SIP_ATTR_SRC:
-        case SIP_ATTR_SRC_HOST:
-            colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_SRC_HOST : SIP_ATTR_SRC;
-            break;
-        case SIP_ATTR_DST:
-        case SIP_ATTR_DST_HOST:
-            colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_DST_HOST : SIP_ATTR_DST;
-            break;
-        default:
-            colid = info->columns[i].id;
+            case SIP_ATTR_SRC:
+            case SIP_ATTR_SRC_HOST:
+                colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_SRC_HOST : SIP_ATTR_SRC;
+                break;
+            case SIP_ATTR_DST:
+            case SIP_ATTR_DST_HOST:
+                colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_DST_HOST : SIP_ATTR_DST;
+                break;
+            default:
+                colid = info->columns[i].id;
         }
 
         // Get current column width
@@ -426,154 +414,154 @@ call_list_handle_key(PANEL *panel, int key)
     getmaxyx(win, height, width);
 
     switch (key) {
-    case '/':
-    case 9 /*KEY_TAB*/:
-    case KEY_F(3):
-        // Activate Form
-        call_list_form_activate(panel, true);
-        break;
-    case KEY_DOWN:
-        // Check if there is a call below us
-        if (!info->cur_call || !call_list_get_next(panel, info->cur_call))
+        case '/':
+        case 9 /*KEY_TAB*/:
+        case KEY_F(3):
+            // Activate Form
+            call_list_form_activate(panel, true);
             break;
-        info->cur_call = call_list_get_next(panel, info->cur_call);
-        info->cur_line++;
-        // If we are out of the bottom of the displayed list
-        // refresh it starting in the next call
-        if (info->cur_line > height) {
-            info->first_call = call_list_get_next(panel, info->first_call);
-            info->first_line++;
-            info->cur_line = height;
-        }
-        break;
-    case KEY_UP:
-        // Check if there is a call above us
-        if (!info->cur_call || !call_list_get_prev(panel, info->cur_call))
+        case KEY_DOWN:
+            // Check if there is a call below us
+            if (!info->cur_call || !call_list_get_next(panel, info->cur_call))
+                break;
+            info->cur_call = call_list_get_next(panel, info->cur_call);
+            info->cur_line++;
+            // If we are out of the bottom of the displayed list
+            // refresh it starting in the next call
+            if (info->cur_line > height) {
+                info->first_call = call_list_get_next(panel, info->first_call);
+                info->first_line++;
+                info->cur_line = height;
+            }
             break;
-        info->cur_call = call_list_get_prev(panel, info->cur_call);
-        info->cur_line--;
-        // If we are out of the top of the displayed list
-        // refresh it starting in the previous (in fact current) call
-        if (info->cur_line <= 0) {
-            info->first_call = info->cur_call;
-            info->first_line--;
-            info->cur_line = 1;
-        }
-        break;
-    case KEY_NPAGE:
-        // Next page => N key down strokes
-        for (i = 0; i < rnpag_steps; i++)
-            call_list_handle_key(panel, KEY_DOWN);
-        break;
-    case KEY_PPAGE:
-        // Prev page => N key up strokes
-        for (i = 0; i < rnpag_steps; i++)
-            call_list_handle_key(panel, KEY_UP);
-        break;
-    case 10:
-        if (!info->cur_call)
-            return -1;
-        // KEY_ENTER , Display current call flow
-        next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
-        if (info->group->callcnt) {
-            group = info->group;
-        } else {
+        case KEY_UP:
+            // Check if there is a call above us
+            if (!info->cur_call || !call_list_get_prev(panel, info->cur_call))
+                break;
+            info->cur_call = call_list_get_prev(panel, info->cur_call);
+            info->cur_line--;
+            // If we are out of the top of the displayed list
+            // refresh it starting in the previous (in fact current) call
+            if (info->cur_line <= 0) {
+                info->first_call = info->cur_call;
+                info->first_line--;
+                info->cur_line = 1;
+            }
+            break;
+        case KEY_NPAGE:
+            // Next page => N key down strokes
+            for (i = 0; i < rnpag_steps; i++)
+                call_list_handle_key(panel, KEY_DOWN);
+            break;
+        case KEY_PPAGE:
+            // Prev page => N key up strokes
+            for (i = 0; i < rnpag_steps; i++)
+                call_list_handle_key(panel, KEY_UP);
+            break;
+        case 10:
             if (!info->cur_call)
                 return -1;
-            group = call_group_create();
-            call_group_add(group, info->cur_call);
-        }
-        call_flow_set_group(group);
-        wait_for_input(next_panel);
-        break;
-    case 'x':
-    case KEY_F(4):
-        // KEY_X , Display current call flow (extended)
-        next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
-        if (info->group->callcnt) {
-            group = info->group;
-        } else {
-            if (!info->cur_call)
-                return -1;
-            group = call_group_create();
-            call_group_add(group, info->cur_call);
-            call_group_add(group, call_get_xcall(info->cur_call));
-        }
-        call_flow_set_group(group);
-        wait_for_input(next_panel);
-        break;
-    case 'r':
-    case 'R':
-    case KEY_F(6):
-        // KEY_R , Display current call flow (extended)
-        next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
-        if (info->group->callcnt) {
-            group = info->group;
-        } else {
-            if (!info->cur_call)
-                return -1;
-            group = call_group_create();
-            call_group_add(group, info->cur_call);
-        }
-        call_raw_set_group(group);
-        wait_for_input(next_panel);
-        break;
-    case 'f':
-    case 'F':
-    case KEY_F(7):
-        // KEY_F, Display filter panel
-        next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
-        wait_for_input(next_panel);
-        call_list_filter_update(panel);
-        break;
-    case 't':
-    case 'T':
-    case KEY_F(10):
-        // Display column selection panel
-        next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
-        wait_for_input(next_panel);
-        call_list_filter_update(panel);
-        break;
-    case 's':
-    case 'S':
-    case KEY_F(2):
-        if (!is_option_disabled("sngrep.tmpfile")) {
-            // KEY_S, Display save panel
-            next_panel = ui_create(ui_find_by_type(PANEL_SAVE));
-            save_set_group(ui_get_panel(next_panel), info->group);
+            // KEY_ENTER , Display current call flow
+            next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
+            if (info->group->callcnt) {
+                group = info->group;
+            } else {
+                if (!info->cur_call)
+                    return -1;
+                group = call_group_create();
+                call_group_add(group, info->cur_call);
+            }
+            call_flow_set_group(group);
             wait_for_input(next_panel);
-        }
-        break;
-    case 'i':
-    case 'I':
-        // Set Display filter text
-        set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
-        call_list_filter_update(panel);
-        break;
-    case KEY_F(5):
-        // Remove all stored calls
-        sip_calls_clear();
-        // Clear List
-        call_list_clear(panel);
-        break;
-    case ' ':
-        if (!info->cur_call)
-            return -1;
-        if (call_group_exists(info->group, info->cur_call)) {
-            call_group_del(info->group, info->cur_call);
-        } else {
-            call_group_add(info->group, info->cur_call);
-        }
-        break;
-    case 'q':
-    case 27: /* KEY_ESC */
-        // Handle quit from this screen unless requested
-        if (!is_option_enabled("cl.noexitprompt")) {
-            return call_list_exit_confirm(panel);
-        }
-        break;
-    default:
-        return key;
+            break;
+        case 'x':
+        case KEY_F(4):
+            // KEY_X , Display current call flow (extended)
+            next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
+            if (info->group->callcnt) {
+                group = info->group;
+            } else {
+                if (!info->cur_call)
+                    return -1;
+                group = call_group_create();
+                call_group_add(group, info->cur_call);
+                call_group_add(group, call_get_xcall(info->cur_call));
+            }
+            call_flow_set_group(group);
+            wait_for_input(next_panel);
+            break;
+        case 'r':
+        case 'R':
+        case KEY_F(6):
+            // KEY_R , Display current call flow (extended)
+            next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
+            if (info->group->callcnt) {
+                group = info->group;
+            } else {
+                if (!info->cur_call)
+                    return -1;
+                group = call_group_create();
+                call_group_add(group, info->cur_call);
+            }
+            call_raw_set_group(group);
+            wait_for_input(next_panel);
+            break;
+        case 'f':
+        case 'F':
+        case KEY_F(7):
+            // KEY_F, Display filter panel
+            next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
+            wait_for_input(next_panel);
+            call_list_filter_update(panel);
+            break;
+        case 't':
+        case 'T':
+        case KEY_F(10):
+            // Display column selection panel
+            next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
+            wait_for_input(next_panel);
+            call_list_filter_update(panel);
+            break;
+        case 's':
+        case 'S':
+        case KEY_F(2):
+            if (!is_option_disabled("sngrep.tmpfile")) {
+                // KEY_S, Display save panel
+                next_panel = ui_create(ui_find_by_type(PANEL_SAVE));
+                save_set_group(ui_get_panel(next_panel), info->group);
+                wait_for_input(next_panel);
+            }
+            break;
+        case 'i':
+        case 'I':
+            // Set Display filter text
+            set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
+            call_list_filter_update(panel);
+            break;
+        case KEY_F(5):
+            // Remove all stored calls
+            sip_calls_clear();
+            // Clear List
+            call_list_clear(panel);
+            break;
+        case ' ':
+            if (!info->cur_call)
+                return -1;
+            if (call_group_exists(info->group, info->cur_call)) {
+                call_group_del(info->group, info->cur_call);
+            } else {
+                call_group_add(info->group, info->cur_call);
+            }
+            break;
+        case 'q':
+        case 27: /* KEY_ESC */
+            // Handle quit from this screen unless requested
+            if (!is_option_enabled("cl.noexitprompt")) {
+                return call_list_exit_confirm(panel);
+            }
+            break;
+        default:
+            return key;
     }
 
     return 0;
@@ -591,42 +579,42 @@ call_list_handle_form_key(PANEL *panel, int key)
     field_idx = field_index(current_field(info->form));
 
     switch (key) {
-    case 27: /* KEY_ESC */
-    case 9 /* KEY_TAB */:
-    case 10 /* KEY_ENTER */:
-    case KEY_DOWN:
-    case KEY_UP:
-        // Activate list
-        call_list_form_activate(panel, false);
-        break;
-    case KEY_RIGHT:
-        form_driver(info->form, REQ_RIGHT_CHAR);
-        break;
-    case KEY_LEFT:
-        form_driver(info->form, REQ_LEFT_CHAR);
-        break;
-    case KEY_HOME:
-        form_driver(info->form, REQ_BEG_LINE);
-        break;
-    case KEY_END:
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_DC:
-        form_driver(info->form, REQ_DEL_CHAR);
-        break;
-    case 8:
-    case 127:
-    case KEY_BACKSPACE:
-        form_driver(info->form, REQ_DEL_PREV);
-        // Updated displayed results
-        call_list_filter_update(panel);
-        break;
-    default:
-        // If this is a normal character on input field, print it
-        form_driver(info->form, key);
-        // Updated displayed results
-        call_list_filter_update(panel);
-        break;
+        case 27: /* KEY_ESC */
+        case 9 /* KEY_TAB */:
+        case 10 /* KEY_ENTER */:
+        case KEY_DOWN:
+        case KEY_UP:
+            // Activate list
+            call_list_form_activate(panel, false);
+            break;
+        case KEY_RIGHT:
+            form_driver(info->form, REQ_RIGHT_CHAR);
+            break;
+        case KEY_LEFT:
+            form_driver(info->form, REQ_LEFT_CHAR);
+            break;
+        case KEY_HOME:
+            form_driver(info->form, REQ_BEG_LINE);
+            break;
+        case KEY_END:
+            form_driver(info->form, REQ_END_LINE);
+            break;
+        case KEY_DC:
+            form_driver(info->form, REQ_DEL_CHAR);
+            break;
+        case 8:
+        case 127:
+        case KEY_BACKSPACE:
+            form_driver(info->form, REQ_DEL_PREV);
+            // Updated displayed results
+            call_list_filter_update(panel);
+            break;
+        default:
+            // If this is a normal character on input field, print it
+            form_driver(info->form, key);
+            // Updated displayed results
+            call_list_filter_update(panel);
+            break;
     }
 
     // Validate all input data
@@ -754,19 +742,19 @@ call_list_exit_confirm(PANEL *panel)
 
         c = wgetch(exit_win);
         switch (c) {
-        case KEY_RIGHT:
-            exit = 0;
-            break;
-        case KEY_LEFT:
-            exit = 1;
-            break;
-        case 9:
-            exit = (exit) ? 0 : 1;
-            break;
-        case 10:
-            // If we return ESC, we let ui_manager to handle this
-            // key and exit sngrep gracefully
-            return (exit) ? 27 : 0;
+            case KEY_RIGHT:
+                exit = 0;
+                break;
+            case KEY_LEFT:
+                exit = 1;
+                break;
+            case 9:
+                exit = (exit) ? 0 : 1;
+                break;
+            case 10:
+                // If we return ESC, we let ui_manager to handle this
+                // key and exit sngrep gracefully
+                return (exit) ? 27 : 0;
         }
     }
 
@@ -924,33 +912,33 @@ call_list_match_filters(PANEL *panel, sip_call_t *call)
 
     // Check enabled filters
     if (is_option_enabled("filter.enable")) {
-       if ((filter = get_option_value("filter.sipfrom")) && strlen(filter)) {
-           if (strstr(call_get_attribute(call, SIP_ATTR_SIPFROM), filter) == NULL) {
-               return 0;
-           }
-       }
-       if ((filter = get_option_value("filter.sipto")) && strlen(filter)) {
-           if (strstr(call_get_attribute(call, SIP_ATTR_SIPTO), filter) == NULL) {
-               return 0;
-           }
-       }
-       if ((filter = get_option_value("filter.src")) && strlen(filter)) {
-           if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_SRC), strlen(filter))) {
-               return 0;
-           }
-       }
-       if ((filter = get_option_value("filter.dst")) && strlen(filter)) {
-           if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_DST), strlen(filter))) {
-               return 0;
-           }
-       }
+        if ((filter = get_option_value("filter.sipfrom")) && strlen(filter)) {
+            if (strstr(call_get_attribute(call, SIP_ATTR_SIPFROM), filter) == NULL) {
+                return 0;
+            }
+        }
+        if ((filter = get_option_value("filter.sipto")) && strlen(filter)) {
+            if (strstr(call_get_attribute(call, SIP_ATTR_SIPTO), filter) == NULL) {
+                return 0;
+            }
+        }
+        if ((filter = get_option_value("filter.src")) && strlen(filter)) {
+            if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_SRC), strlen(filter))) {
+                return 0;
+            }
+        }
+        if ((filter = get_option_value("filter.dst")) && strlen(filter)) {
+            if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_DST), strlen(filter))) {
+                return 0;
+            }
+        }
 
-       // Check if a filter option exists
-       memset(filter_option, 0, sizeof(filter_option));
-       sprintf(filter_option, "filter.%s", call_get_attribute(call, SIP_ATTR_STARTING));
-       if (!is_option_enabled(filter_option)) {
-           return 0;
-       }
+        // Check if a filter option exists
+        memset(filter_option, 0, sizeof(filter_option));
+        sprintf(filter_option, "filter.%s", call_get_attribute(call, SIP_ATTR_STARTING));
+        if (!is_option_enabled(filter_option)) {
+            return 0;
+        }
     }
 
     return 1;

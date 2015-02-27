@@ -48,8 +48,7 @@ typedef struct sip_call_group sip_call_group_t;
  *
  * @fixme Remove 1024 "limitation"
  */
-struct sip_call_group
-{
+struct sip_call_group {
     //! Calls array in the group
     sip_call_t *calls[1024];
     //! Calls counter

@@ -35,13 +35,13 @@
 /**
  * Ui Structure definition for Filter panel
  */
-ui_t ui_filter =
-    {
-      .type = PANEL_FILTER,
-      .panel = NULL,
-      .create = filter_create,
-      .handle_key = filter_handle_key,
-      .destroy = filter_destroy };
+ui_t ui_filter = {
+    .type = PANEL_FILTER,
+    .panel = NULL,
+    .create = filter_create,
+    .handle_key = filter_handle_key,
+    .destroy = filter_destroy
+};
 
 PANEL *
 filter_create()
@@ -195,87 +195,87 @@ filter_handle_key(PANEL *panel, int key)
     sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
 
     switch (key) {
-    case 9 /*KEY_TAB*/:
-    case KEY_DOWN:
-        form_driver(info->form, REQ_NEXT_FIELD);
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_UP:
-        form_driver(info->form, REQ_PREV_FIELD);
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_RIGHT:
-        form_driver(info->form, REQ_RIGHT_CHAR);
-        break;
-    case KEY_LEFT:
-        form_driver(info->form, REQ_LEFT_CHAR);
-        break;
-    case KEY_HOME:
-        form_driver(info->form, REQ_BEG_LINE);
-        break;
-    case KEY_END:
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_DC:
-        form_driver(info->form, REQ_DEL_CHAR);
-        break;
-    case 27 /*KEY_ESC*/:
-        return key;
-        break;
-    case 8:
-    case 127:
-    case KEY_BACKSPACE:
-        if (strlen(field_value) > 0)
-            form_driver(info->form, REQ_DEL_PREV);
-        break;
-    case 'I':
-        for (i = 0; i < FLD_FILTER_COUNT; i++) {
-            set_current_field(info->form, info->fields[i]);
-            if (i == FLD_FILTER_INVITE || i == FLD_FILTER_ENABLE) {
-                form_driver(info->form, '*');
-            } else {
-                form_driver(info->form, REQ_CLR_FIELD);
-            }
-        }
-        set_current_field(info->form, info->fields[FLD_FILTER_FILTER]);
-        break;
-    case ' ':
-        switch (field_idx) {
-        case FLD_FILTER_ENABLE:
-        case FLD_FILTER_REGISTER:
-        case FLD_FILTER_INVITE:
-        case FLD_FILTER_SUBSCRIBE:
-        case FLD_FILTER_NOTIFY:
-        case FLD_FILTER_OPTIONS:
-        case FLD_FILTER_PUBLISH:
-        case FLD_FILTER_MESSAGE:
-            if (field_value[0] == '*') {
-                form_driver(info->form, REQ_DEL_CHAR);
-            } else {
-                form_driver(info->form, '*');
-            }
-            break;
-        default:
+        case 9 /*KEY_TAB*/:
+        case KEY_DOWN:
             form_driver(info->form, REQ_NEXT_FIELD);
             form_driver(info->form, REQ_END_LINE);
             break;
-        }
-        break;
-    case 10: /* KEY_ENTER */
-        if (field_idx != FLD_FILTER_CANCEL)
-            filter_save_options(panel);
-        return 27;
-    default:
-        // If this is a normal character on input field, print it
-        switch (field_idx) {
-        case FLD_FILTER_SIPFROM:
-        case FLD_FILTER_SIPTO:
-        case FLD_FILTER_SRC:
-        case FLD_FILTER_DST:
-            form_driver(info->form, key);
+        case KEY_UP:
+            form_driver(info->form, REQ_PREV_FIELD);
+            form_driver(info->form, REQ_END_LINE);
             break;
-        }
-        break;
+        case KEY_RIGHT:
+            form_driver(info->form, REQ_RIGHT_CHAR);
+            break;
+        case KEY_LEFT:
+            form_driver(info->form, REQ_LEFT_CHAR);
+            break;
+        case KEY_HOME:
+            form_driver(info->form, REQ_BEG_LINE);
+            break;
+        case KEY_END:
+            form_driver(info->form, REQ_END_LINE);
+            break;
+        case KEY_DC:
+            form_driver(info->form, REQ_DEL_CHAR);
+            break;
+        case 27 /*KEY_ESC*/:
+            return key;
+            break;
+        case 8:
+        case 127:
+        case KEY_BACKSPACE:
+            if (strlen(field_value) > 0)
+                form_driver(info->form, REQ_DEL_PREV);
+            break;
+        case 'I':
+            for (i = 0; i < FLD_FILTER_COUNT; i++) {
+                set_current_field(info->form, info->fields[i]);
+                if (i == FLD_FILTER_INVITE || i == FLD_FILTER_ENABLE) {
+                    form_driver(info->form, '*');
+                } else {
+                    form_driver(info->form, REQ_CLR_FIELD);
+                }
+            }
+            set_current_field(info->form, info->fields[FLD_FILTER_FILTER]);
+            break;
+        case ' ':
+            switch (field_idx) {
+                case FLD_FILTER_ENABLE:
+                case FLD_FILTER_REGISTER:
+                case FLD_FILTER_INVITE:
+                case FLD_FILTER_SUBSCRIBE:
+                case FLD_FILTER_NOTIFY:
+                case FLD_FILTER_OPTIONS:
+                case FLD_FILTER_PUBLISH:
+                case FLD_FILTER_MESSAGE:
+                    if (field_value[0] == '*') {
+                        form_driver(info->form, REQ_DEL_CHAR);
+                    } else {
+                        form_driver(info->form, '*');
+                    }
+                    break;
+                default:
+                    form_driver(info->form, REQ_NEXT_FIELD);
+                    form_driver(info->form, REQ_END_LINE);
+                    break;
+            }
+            break;
+        case 10: /* KEY_ENTER */
+            if (field_idx != FLD_FILTER_CANCEL)
+                filter_save_options(panel);
+            return 27;
+        default:
+            // If this is a normal character on input field, print it
+            switch (field_idx) {
+                case FLD_FILTER_SIPFROM:
+                case FLD_FILTER_SIPTO:
+                case FLD_FILTER_SRC:
+                case FLD_FILTER_DST:
+                    form_driver(info->form, key);
+                    break;
+            }
+            break;
     }
 
     // Validate all input data
@@ -314,44 +314,44 @@ filter_save_options(PANEL *panel)
         sscanf(field_buffer(info->fields[i], 0), "%[^ ]", field_value);
 
         switch (i) {
-        case FLD_FILTER_ENABLE:
-            set_option_value("filter.enable", strlen(field_value) ? "on" : "off");
-            break;
-        case FLD_FILTER_SIPFROM:
-            set_option_value("filter.sipfrom", field_value);
-            break;
-        case FLD_FILTER_SIPTO:
-            set_option_value("filter.sipto", field_value);
-            break;
-        case FLD_FILTER_SRC:
-            set_option_value("filter.src", field_value);
-            break;
-        case FLD_FILTER_DST:
-            set_option_value("filter.dst", field_value);
-            break;
-        case FLD_FILTER_REGISTER:
-            set_option_value("filter.REGISTER", strlen(field_value) ? "on" : "off");
-            break;
-        case FLD_FILTER_INVITE:
-            set_option_value("filter.INVITE", strlen(field_value) ? "on" : "off");
-            break;
-        case FLD_FILTER_SUBSCRIBE:
-            set_option_value("filter.SUBSCRIBE", strlen(field_value) ? "on" : "off");
-            break;
-        case FLD_FILTER_NOTIFY:
-            set_option_value("filter.NOTIFY", strlen(field_value) ? "on" : "off");
-            break;
-        case FLD_FILTER_OPTIONS:
-            set_option_value("filter.OPTIONS", strlen(field_value) ? "on" : "off");
-            break;
-        case FLD_FILTER_PUBLISH:
-            set_option_value("filter.PUBLISH", strlen(field_value) ? "on" : "off");
-            break;
-        case FLD_FILTER_MESSAGE:
-            set_option_value("filter.MESSAGE", strlen(field_value) ? "on" : "off");
-            break;
-        default:
-            break;
+            case FLD_FILTER_ENABLE:
+                set_option_value("filter.enable", strlen(field_value) ? "on" : "off");
+                break;
+            case FLD_FILTER_SIPFROM:
+                set_option_value("filter.sipfrom", field_value);
+                break;
+            case FLD_FILTER_SIPTO:
+                set_option_value("filter.sipto", field_value);
+                break;
+            case FLD_FILTER_SRC:
+                set_option_value("filter.src", field_value);
+                break;
+            case FLD_FILTER_DST:
+                set_option_value("filter.dst", field_value);
+                break;
+            case FLD_FILTER_REGISTER:
+                set_option_value("filter.REGISTER", strlen(field_value) ? "on" : "off");
+                break;
+            case FLD_FILTER_INVITE:
+                set_option_value("filter.INVITE", strlen(field_value) ? "on" : "off");
+                break;
+            case FLD_FILTER_SUBSCRIBE:
+                set_option_value("filter.SUBSCRIBE", strlen(field_value) ? "on" : "off");
+                break;
+            case FLD_FILTER_NOTIFY:
+                set_option_value("filter.NOTIFY", strlen(field_value) ? "on" : "off");
+                break;
+            case FLD_FILTER_OPTIONS:
+                set_option_value("filter.OPTIONS", strlen(field_value) ? "on" : "off");
+                break;
+            case FLD_FILTER_PUBLISH:
+                set_option_value("filter.PUBLISH", strlen(field_value) ? "on" : "off");
+                break;
+            case FLD_FILTER_MESSAGE:
+                set_option_value("filter.MESSAGE", strlen(field_value) ? "on" : "off");
+                break;
+            default:
+                break;
         }
     }
 

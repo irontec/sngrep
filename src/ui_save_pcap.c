@@ -40,14 +40,14 @@
 /**
  * Ui Structure definition for Save panel
  */
-ui_t ui_save =
-    {
-      .type = PANEL_SAVE,
-      .panel = NULL,
-      .create = save_create,
-      .draw = save_draw,
-      .handle_key = save_handle_key,
-      .destroy = save_destroy };
+ui_t ui_save = {
+    .type = PANEL_SAVE,
+    .panel = NULL,
+    .create = save_create,
+    .draw = save_draw,
+    .handle_key = save_handle_key,
+    .destroy = save_destroy
+};
 
 PANEL *
 save_create()
@@ -172,71 +172,71 @@ save_handle_key(PANEL *panel, int key)
     sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
 
     switch (key) {
-    case 9 /*KEY_TAB*/:
-    case KEY_DOWN:
-        form_driver(info->form, REQ_NEXT_FIELD);
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_UP:
-        form_driver(info->form, REQ_PREV_FIELD);
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_RIGHT:
-        form_driver(info->form, REQ_RIGHT_CHAR);
-        break;
-    case KEY_LEFT:
-        form_driver(info->form, REQ_LEFT_CHAR);
-        break;
-    case KEY_HOME:
-        form_driver(info->form, REQ_BEG_LINE);
-        break;
-    case KEY_END:
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_DC:
-        form_driver(info->form, REQ_DEL_CHAR);
-        break;
-    case 27 /*KEY_ESC*/:
-        return key;
-        break;
-    case 8:
-    case 127:
-    case KEY_BACKSPACE:
-        if (strlen(field_value) > 0)
-            form_driver(info->form, REQ_DEL_PREV);
-        break;
-    case ' ':
-        switch (field_idx) {
-        case FLD_SAVE_ALL:
-            set_option_value("sngrep.saveselected", "off");
+        case 9 /*KEY_TAB*/:
+        case KEY_DOWN:
+            form_driver(info->form, REQ_NEXT_FIELD);
+            form_driver(info->form, REQ_END_LINE);
             break;
-        case FLD_SAVE_SELECTED:
-            set_option_value("sngrep.saveselected", "on");
+        case KEY_UP:
+            form_driver(info->form, REQ_PREV_FIELD);
+            form_driver(info->form, REQ_END_LINE);
             break;
-        case FLD_SAVE_FILE:
-            form_driver(info->form, key);
+        case KEY_RIGHT:
+            form_driver(info->form, REQ_RIGHT_CHAR);
             break;
-        default:
+        case KEY_LEFT:
+            form_driver(info->form, REQ_LEFT_CHAR);
             break;
-        }
-        break;
-    case 10: /* KEY_ENTER */
-        if (field_idx != FLD_SAVE_CANCEL) {
-            if (!strcasecmp(field_value, "")) {
-                save_error_message(panel, "Invalid filename");
-                return 0;
+        case KEY_HOME:
+            form_driver(info->form, REQ_BEG_LINE);
+            break;
+        case KEY_END:
+            form_driver(info->form, REQ_END_LINE);
+            break;
+        case KEY_DC:
+            form_driver(info->form, REQ_DEL_CHAR);
+            break;
+        case 27 /*KEY_ESC*/:
+            return key;
+            break;
+        case 8:
+        case 127:
+        case KEY_BACKSPACE:
+            if (strlen(field_value) > 0)
+                form_driver(info->form, REQ_DEL_PREV);
+            break;
+        case ' ':
+            switch (field_idx) {
+                case FLD_SAVE_ALL:
+                    set_option_value("sngrep.saveselected", "off");
+                    break;
+                case FLD_SAVE_SELECTED:
+                    set_option_value("sngrep.saveselected", "on");
+                    break;
+                case FLD_SAVE_FILE:
+                    form_driver(info->form, key);
+                    break;
+                default:
+                    break;
             }
-            return save_to_file(panel);
-        }
-        return 27;
-    default:
-        // If this is a normal character on input field, print it
-        switch (field_idx) {
-        case FLD_SAVE_FILE:
-            form_driver(info->form, key);
             break;
-        }
-        break;
+        case 10: /* KEY_ENTER */
+            if (field_idx != FLD_SAVE_CANCEL) {
+                if (!strcasecmp(field_value, "")) {
+                    save_error_message(panel, "Invalid filename");
+                    return 0;
+                }
+                return save_to_file(panel);
+            }
+            return 27;
+        default:
+            // If this is a normal character on input field, print it
+            switch (field_idx) {
+                case FLD_SAVE_FILE:
+                    form_driver(info->form, key);
+                    break;
+            }
+            break;
     }
 
     // Validate all input data

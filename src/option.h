@@ -45,8 +45,7 @@
 //! Shorter declarartion of attribute struct
 typedef struct config_option option_opt_t;
 
-enum option_type
-{
+enum option_type {
     SETTING = 0,
     IGNORE = 1,
 };
@@ -57,8 +56,7 @@ enum option_type
  * sngrep is optionured by a group of attributes that can be
  * modified using resource files.
  */
-struct config_option
-{
+struct config_option {
     //! Setting type
     enum option_type type;
     //! Name of attribute

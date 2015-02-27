@@ -57,8 +57,7 @@ struct sip_attr;
  * purpose. It also works as a linked lists of messages in a
  * call.
  */
-struct sip_msg
-{
+struct sip_msg {
     //! Message attribute list
     struct sip_attr *attrs;
     //! Timestamp
@@ -94,8 +93,7 @@ struct sip_msg
  * callid (considered a dialog). It contains some replicated
  * data from its messages to speed up searches.
  */
-struct sip_call
-{
+struct sip_call {
     //! Flag this call as filtered so won't be displayed
     int filtered;
     //! Call attribute list
@@ -115,8 +113,7 @@ struct sip_call
  *
  * This structure acts as header of calls list
  */
-struct sip_call_list
-{
+struct sip_call_list {
     // First and Last calls of the list
     sip_call_t *first;
     sip_call_t *last;

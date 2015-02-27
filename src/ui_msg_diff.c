@@ -55,15 +55,15 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_t ui_msg_diff =
-    {
-      .type = PANEL_MSG_DIFF,
-      .panel = NULL,
-      .create = msg_diff_create,
-      .handle_key = msg_diff_handle_key,
-      .destroy = msg_diff_destroy,
-      .draw = msg_diff_draw,
-      .help = msg_diff_help };
+ui_t ui_msg_diff = {
+    .type = PANEL_MSG_DIFF,
+    .panel = NULL,
+    .create = msg_diff_create,
+    .handle_key = msg_diff_handle_key,
+    .destroy = msg_diff_destroy,
+    .draw = msg_diff_draw,
+    .help = msg_diff_help
+};
 
 PANEL *
 msg_diff_create()
@@ -186,12 +186,12 @@ msg_diff_draw(PANEL *panel)
 void
 msg_diff_draw_footer(PANEL *panel)
 {
-    const char *keybindings[] =
-        {
-          "Esc",
-          "Calls Flow",
-          "F1",
-          "Help" };
+    const char *keybindings[] = {
+        "Esc",
+        "Calls Flow",
+        "F1",
+        "Help"
+    };
 
     draw_keybindings(panel, keybindings, 4);
 }

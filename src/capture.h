@@ -55,8 +55,7 @@ typedef struct dns_cache dns_cache_t;
  * Structure to store resolved addresses when capture.lookup
  * configuration option is enabled.
  */
-struct dns_cache
-{
+struct dns_cache {
     int count;
     char addr[16][256];
     char hostname[16][256];
@@ -68,8 +67,7 @@ struct dns_cache
  * All required information to capture and process packets
  * will be stored in this
  */
-struct capture_info
-{
+struct capture_info {
     //! Capture mode: Online, Offline
     int mode;
     //! Flag to pause/resume capture
@@ -100,8 +98,7 @@ struct capture_info
 /**
  * @brief IP data structure
  */
-struct nread_ip
-{
+struct nread_ip {
     //! header length, version
     u_int8_t ip_vhl;
     //! type of service
@@ -136,8 +133,7 @@ struct nread_ip
 /**
  * @brief UDP data structure
  */
-struct nread_udp
-{
+struct nread_udp {
     //! source port
     u_short udp_sport;
     //! destination port
@@ -151,8 +147,7 @@ struct nread_udp
 /* TCP header */
 typedef u_int tcp_seq;
 
-struct nread_tcp
-{
+struct nread_tcp {
     u_short th_sport; /* source port */
     u_short th_dport; /* destination port */
     tcp_seq th_seq; /* sequence number */

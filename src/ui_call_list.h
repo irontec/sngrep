@@ -38,8 +38,7 @@
  * @brief Enum of available fields
  *
  */
-enum call_list_field_list
-{
+enum call_list_field_list {
     FLD_LIST_FILTER = 0,
     //! Never remove this field id
     FLD_LIST_COUNT
@@ -57,8 +56,7 @@ typedef struct call_list_info call_list_info_t;
  * in which order a configurable option.
  * This structure is one step towards configurable stuff
  */
-struct call_list_column
-{
+struct call_list_column {
     enum sip_attr_id id;
     const char *attr;
     const char *title;
@@ -71,8 +69,7 @@ struct call_list_column
  * This data stores the actual status of the panel. It's stored in the
  * panel pointer.
  */
-struct call_list_info
-{
+struct call_list_info {
     //! First displayed call, for drawing faster
     sip_call_t *first_call;
     //! First displayed call counter, for drawing scroll arrow faster
@@ -125,10 +122,10 @@ call_list_destroy(PANEL *panel);
 
 /**
  * @brief Draw panel footer
- * 
+ *
  * This funtion will draw Call list footer that contains
  * keybinginds
- * 
+ *
  * @param panel Ncurses panel pointer
  */
 void

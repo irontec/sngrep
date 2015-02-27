@@ -43,8 +43,7 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum save_raw_field_list
-{
+enum save_raw_field_list {
     FLD_SAVE_RAW_FILE = 0,
     FLD_SAVE_RAW_SELECTED,
     FLD_SAVE_RAW_SAVE,
@@ -61,8 +60,7 @@ typedef struct save_raw_info save_raw_info_t;
  *
  * This structure contains the durable data of save panel.
  */
-struct save_raw_info
-{
+struct save_raw_info {
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields

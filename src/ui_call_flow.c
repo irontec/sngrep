@@ -67,14 +67,14 @@
 /**
  * Ui Structure definition for Call Flow panel
  */
-ui_t ui_call_flow =
-    {
-      .type = PANEL_CALL_FLOW,
-      .panel = NULL,
-      .create = call_flow_create,
-      .draw = call_flow_draw,
-      .handle_key = call_flow_handle_key,
-      .help = call_flow_help };
+ui_t ui_call_flow = {
+    .type = PANEL_CALL_FLOW,
+    .panel = NULL,
+    .create = call_flow_create,
+    .draw = call_flow_draw,
+    .handle_key = call_flow_handle_key,
+    .help = call_flow_help
+};
 
 PANEL *
 call_flow_create()
@@ -200,30 +200,19 @@ call_flow_draw(PANEL *panel)
 void
 call_flow_draw_footer(PANEL *panel)
 {
-    const char *keybindings[] =
-        {
-          "Esc",
-          "Calls List",
-          "Enter",
-          "Raw Message",
-          "Space",
-          "Compare",
-          "F1",
-          "Help",
-          "F2",
-          "SDP mode",
-          "F3",
-          "Toggle Raw",
-          "F4",
-          "Extended",
-          "F5",
-          "Compressed",
-          "F6",
-          "Raw",
-          "F7",
-          "Colour by",
-          "9/0",
-          "Raw width" };
+    const char *keybindings[] = {
+        "Esc",  "Calls List",
+        "Enter", "Raw Message",
+        "Space", "Compare",
+        "F1", "Help",
+        "F2", "SDP mode",
+        "F3", "Toggle Raw",
+        "F4", "Extended",
+        "F5", "Compressed",
+        "F6", "Raw",
+        "F7", "Colour by",
+        "9/0", "Raw width"
+    };
 
     draw_keybindings(panel, keybindings, 22);
 }
@@ -246,7 +235,7 @@ call_flow_draw_columns(PANEL *panel)
 
     // Load columns
     for (msg = call_group_get_next_msg(info->group, NULL); msg;
-            msg = call_group_get_next_msg(info->group, msg)) {
+         msg = call_group_get_next_msg(info->group, msg)) {
         call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
         call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
     }
@@ -482,128 +471,128 @@ call_flow_handle_key(PANEL *panel, int key)
     getmaxyx(info->flow_win, height, width);
 
     switch (key) {
-    case KEY_DOWN:
-        // Check if there is a call below us
-        if (!(next = call_group_get_next_msg(info->group, info->cur_msg)))
-            break;
-        info->cur_msg = next;
-        info->cur_line += 2;
-        // If we are out of the bottom of the displayed list
-        // refresh it starting in the next call
-        if (info->cur_line >= height) {
-            info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
-            info->cur_line -= 2;
-        }
-        break;
-    case KEY_UP:
-        // Loop through messages until we found current message
-        // storing the previous one
-        while ((next = call_group_get_next_msg(info->group, next))) {
-            if (next == info->cur_msg)
+        case KEY_DOWN:
+            // Check if there is a call below us
+            if (!(next = call_group_get_next_msg(info->group, info->cur_msg)))
                 break;
-            prev = next;
-        }
-        // We're at the first message already
-        if (!prev)
-            break;
-        info->cur_msg = prev;
-        info->cur_line -= 2;
-        if (info->cur_line <= 0) {
-            info->first_msg = info->cur_msg;
+            info->cur_msg = next;
             info->cur_line += 2;
-        }
-        break;
-    case KEY_NPAGE:
-        // Next page => N key down strokes
-        for (i = 0; i < rnpag_steps; i++)
-            call_flow_handle_key(panel, KEY_DOWN);
-        break;
-    case KEY_PPAGE:
-        // Prev page => N key up strokes
-        for (i = 0; i < rnpag_steps; i++)
-            call_flow_handle_key(panel, KEY_UP);
-        break;
-    case 'x':
-    case KEY_F(4):
-        werase(panel_window(panel));
-        // KEY_X , Display current call flow
-        if (info->group->callcnt == 1) {
-            group = call_group_create();
-            call_group_add(group, info->group->calls[0]);
-            call_group_add(group, call_get_xcall(info->group->calls[0]));
-            call_flow_set_group(group);
-        } else {
-            group = call_group_create();
-            call_group_add(group, info->group->calls[0]);
-            call_flow_set_group(group);
-        }
-        break;
-    case 'r':
-    case KEY_F(6):
-        // KEY_R, display current call in raw mode
-        next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
-        // TODO
-        call_raw_set_group(info->group);
-        wait_for_input(next_panel);
-        break;
-    case '0':
-        raw_width = getmaxx(info->raw_win);
-        if (raw_width - 2 > 1) {
-            set_option_int_value("cf.rawfixedwidth", raw_width - 2);
-        }
-        break;
-    case '9':
-        raw_width = getmaxx(info->raw_win);
-        if (raw_width + 2 < COLS - 1) {
-            set_option_int_value("cf.rawfixedwidth", raw_width + 2);
-        }
-        break;
-    case 'T':
-        set_option_int_value("cf.rawfixedwidth", -1);
-        break;
-    case 'D':
-        // Toggle SDP mode
-        info->group->sdp_only = !(info->group->sdp_only);
-        call_flow_set_group(info->group);
-        break;
-    case KEY_F(2):
-    case 'd':
-        set_option_value("cf.sdpinfo", is_option_enabled("cf.sdpinfo") ? "off" : "on");
-        break;
-    case 't':
-    case KEY_F(3):
-        set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
-        break;
-    case 's':
-    case KEY_F(5):
-        set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
-        // Force columns reload
-        info->columns = NULL;
-        break;
-    case ' ':
-        if (!info->selected) {
-            info->selected = info->cur_msg;
-        } else {
-            if (info->selected == info->cur_msg) {
-                info->selected = NULL;
-            } else {
-                // Show diff panel
-                next_panel = ui_create(ui_find_by_type(PANEL_MSG_DIFF));
-                msg_diff_set_msgs(ui_get_panel(next_panel), info->selected, info->cur_msg);
-                wait_for_input(next_panel);
+            // If we are out of the bottom of the displayed list
+            // refresh it starting in the next call
+            if (info->cur_line >= height) {
+                info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
+                info->cur_line -= 2;
             }
-        }
-        break;
-    case 10:
-        // KEY_ENTER, display current message in raw mode
-        next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
-        // TODO
-        call_raw_set_group(info->group);
-        call_raw_set_msg(info->cur_msg);
-        wait_for_input(next_panel);
-        break;
-    default:
-        return key;
+            break;
+        case KEY_UP:
+            // Loop through messages until we found current message
+            // storing the previous one
+            while ((next = call_group_get_next_msg(info->group, next))) {
+                if (next == info->cur_msg)
+                    break;
+                prev = next;
+            }
+            // We're at the first message already
+            if (!prev)
+                break;
+            info->cur_msg = prev;
+            info->cur_line -= 2;
+            if (info->cur_line <= 0) {
+                info->first_msg = info->cur_msg;
+                info->cur_line += 2;
+            }
+            break;
+        case KEY_NPAGE:
+            // Next page => N key down strokes
+            for (i = 0; i < rnpag_steps; i++)
+                call_flow_handle_key(panel, KEY_DOWN);
+            break;
+        case KEY_PPAGE:
+            // Prev page => N key up strokes
+            for (i = 0; i < rnpag_steps; i++)
+                call_flow_handle_key(panel, KEY_UP);
+            break;
+        case 'x':
+        case KEY_F(4):
+            werase(panel_window(panel));
+            // KEY_X , Display current call flow
+            if (info->group->callcnt == 1) {
+                group = call_group_create();
+                call_group_add(group, info->group->calls[0]);
+                call_group_add(group, call_get_xcall(info->group->calls[0]));
+                call_flow_set_group(group);
+            } else {
+                group = call_group_create();
+                call_group_add(group, info->group->calls[0]);
+                call_flow_set_group(group);
+            }
+            break;
+        case 'r':
+        case KEY_F(6):
+            // KEY_R, display current call in raw mode
+            next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
+            // TODO
+            call_raw_set_group(info->group);
+            wait_for_input(next_panel);
+            break;
+        case '0':
+            raw_width = getmaxx(info->raw_win);
+            if (raw_width - 2 > 1) {
+                set_option_int_value("cf.rawfixedwidth", raw_width - 2);
+            }
+            break;
+        case '9':
+            raw_width = getmaxx(info->raw_win);
+            if (raw_width + 2 < COLS - 1) {
+                set_option_int_value("cf.rawfixedwidth", raw_width + 2);
+            }
+            break;
+        case 'T':
+            set_option_int_value("cf.rawfixedwidth", -1);
+            break;
+        case 'D':
+            // Toggle SDP mode
+            info->group->sdp_only = !(info->group->sdp_only);
+            call_flow_set_group(info->group);
+            break;
+        case KEY_F(2):
+        case 'd':
+            set_option_value("cf.sdpinfo", is_option_enabled("cf.sdpinfo") ? "off" : "on");
+            break;
+        case 't':
+        case KEY_F(3):
+            set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
+            break;
+        case 's':
+        case KEY_F(5):
+            set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
+            // Force columns reload
+            info->columns = NULL;
+            break;
+        case ' ':
+            if (!info->selected) {
+                info->selected = info->cur_msg;
+            } else {
+                if (info->selected == info->cur_msg) {
+                    info->selected = NULL;
+                } else {
+                    // Show diff panel
+                    next_panel = ui_create(ui_find_by_type(PANEL_MSG_DIFF));
+                    msg_diff_set_msgs(ui_get_panel(next_panel), info->selected, info->cur_msg);
+                    wait_for_input(next_panel);
+                }
+            }
+            break;
+        case 10:
+            // KEY_ENTER, display current message in raw mode
+            next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
+            // TODO
+            call_raw_set_group(info->group);
+            call_raw_set_msg(info->cur_msg);
+            wait_for_input(next_panel);
+            break;
+        default:
+            return key;
     }
 
     return 0;

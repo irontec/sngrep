@@ -39,8 +39,7 @@ typedef struct msg_diff_info msg_diff_info_t;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct msg_diff_info
-{
+struct msg_diff_info {
     sip_msg_t *one;
     sip_msg_t *two;
     WINDOW *one_win;

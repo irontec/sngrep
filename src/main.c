@@ -75,13 +75,13 @@ version()
            "There is NO WARRANTY, to the extent permitted by law.\n"
 
 #ifdef WITH_OPENSSL
-            " * Compiled with OpenSSL support.\n"
+           " * Compiled with OpenSSL support.\n"
 #endif
 #ifdef WITH_UNICODE
-            " * Compiled with Wide-character support.\n"
+           " * Compiled with Wide-character support.\n"
 #endif
-            "\nWritten by Ivan Alonso [aka Kaian]\n",
-            PACKAGE, VERSION);
+           "\nWritten by Ivan Alonso [aka Kaian]\n",
+           PACKAGE, VERSION);
 }
 
 /**
@@ -98,17 +98,16 @@ main(int argc, char* argv[])
     const char *keyfile;
 
     // Program otptions
-    static struct option long_options[] =
-        {
-            { "help", no_argument, 0, 'h' },
-            { "version", no_argument, 0, 'v' },
-            { "device", required_argument, 0, 'd' },
-            { "input", required_argument, 0, 'I' },
-            { "output", required_argument, 0, 'O' },
-            { "keyfile", required_argument, 0, 'k' },
-            { "calls", no_argument, 0, 'c' },
-            { "limit", no_argument, 0, 'l' },
-        };
+    static struct option long_options[] = {
+        { "help", no_argument, 0, 'h' },
+        { "version", no_argument, 0, 'v' },
+        { "device", required_argument, 0, 'd' },
+        { "input", required_argument, 0, 'I' },
+        { "output", required_argument, 0, 'O' },
+        { "keyfile", required_argument, 0, 'k' },
+        { "calls", no_argument, 0, 'c' },
+        { "limit", no_argument, 0, 'l' },
+    };
 
     // Initialize configuration options
     init_options();
@@ -125,47 +124,47 @@ main(int argc, char* argv[])
     char *options = "hvd:I:O:pqtW:k:cl:";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
-        case 'h':
-            usage();
-            return 0;
-        case 'v':
-            version();
-            return 0;
-        case 'd':
-            device = optarg;
-            break;
-        case 'I':
-            infile = optarg;
-            break;
-        case 'O':
-            outfile = optarg;
-            break;
-        case 'l':
-            limit = atoi(optarg);
-            break;
-        case 'k':
-            keyfile = optarg;
-            break;
-        case 'c':
-            set_option_value("sip.calls", "on");
-            break;
+            case 'h':
+                usage();
+                return 0;
+            case 'v':
+                version();
+                return 0;
+            case 'd':
+                device = optarg;
+                break;
+            case 'I':
+                infile = optarg;
+                break;
+            case 'O':
+                outfile = optarg;
+                break;
+            case 'l':
+                limit = atoi(optarg);
+                break;
+            case 'k':
+                keyfile = optarg;
+                break;
+            case 'c':
+                set_option_value("sip.calls", "on");
+                break;
             // Dark options for dummy ones
-        case 'p':
-        case 'q':
-        case 't':
-        case 'W':
-            break;
-        case '?':
-            if (strchr(options, optopt)) {
-                fprintf(stderr, "-%c option requires an argument.\n", optopt);
-            } else if (isprint(optopt)) {
-                fprintf(stderr, "Unknown option -%c.\n", optopt);
-            } else {
-                fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
-            }
-            return 1;
-        default:
-            break;
+            case 'p':
+            case 'q':
+            case 't':
+            case 'W':
+                break;
+            case '?':
+                if (strchr(options, optopt)) {
+                    fprintf(stderr, "-%c option requires an argument.\n", optopt);
+                } else if (isprint(optopt)) {
+                    fprintf(stderr, "Unknown option -%c.\n", optopt);
+                } else {
+                    fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
+                }
+                return 1;
+            default:
+                break;
         }
     }
 

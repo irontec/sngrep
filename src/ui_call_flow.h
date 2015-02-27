@@ -39,8 +39,7 @@ typedef struct call_flow_info call_flow_info_t;
 //! Sorter declaration of struct call_flow_column
 typedef struct call_flow_column call_flow_column_t;
 
-struct call_flow_column
-{
+struct call_flow_column {
     const char *addr;
     const char *host;
     const char *callid;
@@ -55,8 +54,7 @@ struct call_flow_column
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct call_flow_info
-{
+struct call_flow_info {
     WINDOW *raw_win;
     WINDOW *flow_win;
     sip_call_group_t *group;

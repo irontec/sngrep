@@ -39,13 +39,13 @@
 /**
  * Ui Structure definition for Save Raw panel
  */
-ui_t ui_save_raw =
-    {
-      .type = PANEL_SAVE_RAW,
-      .panel = NULL,
-      .create = save_raw_create,
-      .handle_key = save_raw_handle_key,
-      .destroy = save_raw_destroy };
+ui_t ui_save_raw = {
+    .type = PANEL_SAVE_RAW,
+    .panel = NULL,
+    .create = save_raw_create,
+    .handle_key = save_raw_handle_key,
+    .destroy = save_raw_destroy
+};
 
 PANEL *
 save_raw_create()
@@ -148,56 +148,56 @@ save_raw_handle_key(PANEL *panel, int key)
     sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
 
     switch (key) {
-    case 9 /*KEY_TAB*/:
-    case KEY_DOWN:
-        form_driver(info->form, REQ_NEXT_FIELD);
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_UP:
-        form_driver(info->form, REQ_PREV_FIELD);
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_RIGHT:
-        form_driver(info->form, REQ_RIGHT_CHAR);
-        break;
-    case KEY_LEFT:
-        form_driver(info->form, REQ_LEFT_CHAR);
-        break;
-    case KEY_HOME:
-        form_driver(info->form, REQ_BEG_LINE);
-        break;
-    case KEY_END:
-        form_driver(info->form, REQ_END_LINE);
-        break;
-    case KEY_DC:
-        form_driver(info->form, REQ_DEL_CHAR);
-        break;
-    case 27 /*KEY_ESC*/:
-        return key;
-        break;
-    case 8:
-    case 127:
-    case KEY_BACKSPACE:
-        if (strlen(field_value) > 0)
-            form_driver(info->form, REQ_DEL_PREV);
-        break;
-    case 10: /* KEY_ENTER */
-        if (field_idx != FLD_SAVE_RAW_CANCEL) {
-            if (!strcasecmp(field_value, "")) {
-                save_raw_error_message(panel, "Invalid filename");
-                return 0;
-            }
-            return save_raw_to_file(panel);
-        }
-        return 27;
-    default:
-        // If this is a normal character on input field, print it
-        switch (field_idx) {
-        case FLD_SAVE_RAW_FILE:
-            form_driver(info->form, key);
+        case 9 /*KEY_TAB*/:
+        case KEY_DOWN:
+            form_driver(info->form, REQ_NEXT_FIELD);
+            form_driver(info->form, REQ_END_LINE);
             break;
-        }
-        break;
+        case KEY_UP:
+            form_driver(info->form, REQ_PREV_FIELD);
+            form_driver(info->form, REQ_END_LINE);
+            break;
+        case KEY_RIGHT:
+            form_driver(info->form, REQ_RIGHT_CHAR);
+            break;
+        case KEY_LEFT:
+            form_driver(info->form, REQ_LEFT_CHAR);
+            break;
+        case KEY_HOME:
+            form_driver(info->form, REQ_BEG_LINE);
+            break;
+        case KEY_END:
+            form_driver(info->form, REQ_END_LINE);
+            break;
+        case KEY_DC:
+            form_driver(info->form, REQ_DEL_CHAR);
+            break;
+        case 27 /*KEY_ESC*/:
+            return key;
+            break;
+        case 8:
+        case 127:
+        case KEY_BACKSPACE:
+            if (strlen(field_value) > 0)
+                form_driver(info->form, REQ_DEL_PREV);
+            break;
+        case 10: /* KEY_ENTER */
+            if (field_idx != FLD_SAVE_RAW_CANCEL) {
+                if (!strcasecmp(field_value, "")) {
+                    save_raw_error_message(panel, "Invalid filename");
+                    return 0;
+                }
+                return save_raw_to_file(panel);
+            }
+            return 27;
+        default:
+            // If this is a normal character on input field, print it
+            switch (field_idx) {
+                case FLD_SAVE_RAW_FILE:
+                    form_driver(info->form, key);
+                    break;
+            }
+            break;
     }
 
     // Validate all input data

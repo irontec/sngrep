@@ -57,8 +57,7 @@ typedef struct ui ui_t;
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct ui
-{
+struct ui {
     //! Panel Type @see panel_types enum
     int type;
     //! The actual ncurses panel pointer
@@ -83,8 +82,7 @@ struct ui
 /**
  * @brief Enum for available color pairs
  */
-enum sngrep_colors_pairs
-{
+enum sngrep_colors_pairs {
     CP_DEFAULT = 0,
     CP_CYAN_ON_DEF,
     CP_YELLOW_ON_DEF,
@@ -113,8 +111,7 @@ enum sngrep_colors_pairs
  *
  * FIXME Replace this IDs for something more representative
  */
-enum panel_types
-{
+enum panel_types {
     //! Call List ui screen
     PANEL_CALL_LIST = 0,
     //! Call-Flow ui screen

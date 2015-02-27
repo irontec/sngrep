@@ -35,13 +35,13 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_t ui_column_select =
-    {
-      .type = PANEL_COLUMN_SELECT,
-      .panel = NULL,
-      .create = column_select_create,
-      .handle_key = column_select_handle_key,
-      .destroy = column_select_destroy };
+ui_t ui_column_select = {
+    .type = PANEL_COLUMN_SELECT,
+    .panel = NULL,
+    .create = column_select_create,
+    .handle_key = column_select_handle_key,
+    .destroy = column_select_destroy
+};
 
 PANEL *
 column_select_create()
@@ -86,7 +86,7 @@ column_select_create()
 
     // Set current enabled fields
     call_list_info_t *list_info = (call_list_info_t*) panel_userptr(
-            ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
+                                      ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
 
     // Enable current enabled fields and move them to the top
     for (column = 0; column < list_info->columncnt; column++) {
@@ -165,35 +165,35 @@ column_select_handle_key(PANEL *panel, int key)
     current_idx = item_index(current);
 
     switch (key) {
-    case KEY_DOWN:
-        menu_driver(menu, REQ_DOWN_ITEM);
-        break;
-    case KEY_UP:
-        menu_driver(menu, REQ_UP_ITEM);
-        break;
-    case KEY_NPAGE:
-        menu_driver(menu, REQ_SCR_DPAGE);
-        break;
-    case KEY_PPAGE:
-        menu_driver(menu, REQ_SCR_UPAGE);
-        break;
-    case ' ':
-        column_select_toggle_item(panel, current);
-        column_select_update_menu(panel);
-        break;
-    case '+':
-        column_select_move_item(panel, current, current_idx + 1);
-        column_select_update_menu(panel);
-        break;
-    case '-':
-        column_select_move_item(panel, current, current_idx - 1);
-        column_select_update_menu(panel);
-        break;
-    case 10:
-        column_select_update_columns(panel);
-        return 27;
-    default:
-        return key;
+        case KEY_DOWN:
+            menu_driver(menu, REQ_DOWN_ITEM);
+            break;
+        case KEY_UP:
+            menu_driver(menu, REQ_UP_ITEM);
+            break;
+        case KEY_NPAGE:
+            menu_driver(menu, REQ_SCR_DPAGE);
+            break;
+        case KEY_PPAGE:
+            menu_driver(menu, REQ_SCR_UPAGE);
+            break;
+        case ' ':
+            column_select_toggle_item(panel, current);
+            column_select_update_menu(panel);
+            break;
+        case '+':
+            column_select_move_item(panel, current, current_idx + 1);
+            column_select_update_menu(panel);
+            break;
+        case '-':
+            column_select_move_item(panel, current, current_idx - 1);
+            column_select_update_menu(panel);
+            break;
+        case 10:
+            column_select_update_columns(panel);
+            return 27;
+        default:
+            return key;
     }
 
     // Draw a scrollbar to the right
