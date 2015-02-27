@@ -287,7 +287,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     call_add_message(call, msg);
 
     // Update Call State
-    call_update_state(call);
+    call_update_state(call, msg);
 
     // Return the loaded message
     return msg;
@@ -455,21 +455,14 @@ call_get_prev(sip_call_t *cur)
 }
 
 void
-call_update_state(sip_call_t *call)
+call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
-    sip_msg_t *msg;
     const char *callstate;
     const char *method;
 
     // Sanity check
-    if (!call || !call->msgs)
+    if (!call || !call->msgs || !msg)
         return;
-
-    // Get Last call message
-    msg = call->msgs;
-    while (msg->next) {
-        msg = msg->next;
-    }
 
     // Get Message method / response code
     if (!(method = msg_get_attribute(msg, SIP_ATTR_METHOD))) {

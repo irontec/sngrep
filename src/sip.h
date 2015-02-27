@@ -320,9 +320,10 @@ call_get_prev(sip_call_t *cur);
  * @brief Update Call State attribute with its last parsed message
  *
  * @param call Call structure to be updated
+ * @param msg Last received message of this call
  */
 void
-call_update_state(sip_call_t *call);
+call_update_state(sip_call_t *call, sip_msg_t *msg);
 
 /**
  * @brief Parse SIP Message payload to fill sip_msg structe
