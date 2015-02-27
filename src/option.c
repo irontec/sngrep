@@ -91,7 +91,7 @@ init_options()
     set_option_value("sngrep.savepath", home);
 
     // Set default capture options
-    set_option_value("capture.limit", "10000");
+    set_option_value("capture.limit", "100000");
     set_option_value("capture.device", "any");
     set_option_value("capture.lookup", "off");
 

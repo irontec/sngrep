@@ -792,7 +792,12 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
 void
 call_list_filter_update(PANEL *panel)
 {
-    // TODO
+    sip_call_t *call = NULL;
+
+    // Force filter evaluation
+    while((call = call_get_next(call)))
+        call->filtered = -1;
+
     // Clear list
     call_list_clear(panel);
 }
@@ -841,11 +846,12 @@ call_list_get_next(PANEL *panel, sip_call_t *cur)
                 next->filtered = 1;
                 continue;
             }
+            // This call doesnt match display
+            if (!call_list_match_dfilter(panel, next)) {
+                next->filtered = 1;
+                continue;
+            }
         }
-
-        // This call doesnt match display
-        if (!call_list_match_dfilter(panel, next))
-            continue;
 
         return next;
     }
@@ -868,12 +874,12 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur)
                 prev->filtered = 1;
                 continue;
             }
+            // This call doesnt match display
+            if (!call_list_match_dfilter(panel, prev)) {
+                prev->filtered = 1;
+                continue;
+            }
         }
-
-        // This call doesnt match display
-        if (!call_list_match_dfilter(panel, prev))
-            continue;
-
         return prev;
     }
     return NULL;

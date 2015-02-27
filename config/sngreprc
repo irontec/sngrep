@@ -16,8 +16,8 @@
 # set syntax.branch on
 
 ##-----------------------------------------------------------------------------
-## Uncomment to configure packet count capture limit (0: disabled)
-# set capture.limit 2000
+## Uncomment to configure packet count capture limit (can't be disabled)
+# set capture.limit 100000
 
 ## Default capture keyfile for TLS transport
 # set capture.keyfile /etc/ssl/key.pem
