@@ -103,6 +103,10 @@ enum sip_attr_id
     SIP_ATTR_MSGCNT,
     //! SIP Call state
     SIP_ATTR_CALLSTATE,
+    //! Conversation duration
+    SIP_ATTR_CONVDUR,
+    //! Total call duration
+    SIP_ATTR_TOTALDUR,
     //! SIP Attribute count
     SIP_ATTR_SENTINEL
 };

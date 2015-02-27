@@ -57,7 +57,9 @@
 ##
 ## Available columns fields are:
 ##    - sipfrom
+##    - sipfromuser
 ##    - sipto
+##    - siptouser
 ##    - src
 ##    - srchost
 ##    - dst
@@ -71,6 +73,8 @@
 ##    - starting
 ##    - transport
 ##    - state
+##    - convdur
+##    - totaldur
 ##
 ## Examples:
 # set cl.column0 sipfrom

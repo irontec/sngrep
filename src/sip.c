@@ -459,6 +459,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
     const char *callstate;
     const char *method;
+    char dur[20];
 
     // Sanity check
     if (!call || !call->msgs || !msg)
@@ -473,18 +474,34 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     if ((callstate = call_get_attribute(call, SIP_ATTR_CALLSTATE))) {
         if (!strcmp(callstate, "CALL SETUP")) {
             if (!strncasecmp(method, "200", 3)) {
+                // Alice and Bob are talking
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "IN CALL");
+                // Store the timestap where call has started
+                call->cstart_msg = msg;
             } else if (!strncasecmp(method, "CANCEL", 6)) {
+                // Alice is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "CANCELLED");
+                // Store total call duration
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
             } else if (*method == '4' || *method == '5' || *method == '6') {
+                // Bob is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "REJECTED");
+                // Store total call duration
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
             }
         } else if (!strcmp(callstate, "IN CALL")) {
             if (!strncasecmp(method, "BYE", 3)) {
+                // Thanks for all the fish!
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, "COMPLETED");
+                // Store Conversation duration
+                call_set_attribute(call, SIP_ATTR_CONVDUR, sip_calculate_duration(call->cstart_msg, msg, dur));
             }
-        } else if (!strncasecmp(method, "INVITE", 6)) {
+        } else if (!strncasecmp(method, "INVITE", 6) && strcmp(callstate, "IN CALL")) {
+            // Call is being setup (after proper authentication)
             call_set_attribute(call, SIP_ATTR_CALLSTATE, "CALL SETUP");
+        } else {
+            // Store total call duration
+            call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
         }
     } else {
         // This is actually a call
@@ -620,4 +637,17 @@ sip_calls_clear()
     }
 
     pthread_mutex_unlock(&calls.lock);
+}
+
+const char *
+sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur)
+{
+    int seconds;
+    char duration[20];
+    // Differnce in secons
+    seconds = end->ts.tv_sec - start->ts.tv_sec;
+    // Set Human readable format
+    sprintf(duration, "%d:%02d", seconds / 60, seconds % 60);
+    sprintf(dur, "%7s", duration);
+    return dur;
 }

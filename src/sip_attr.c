@@ -149,7 +149,17 @@ static sip_attr_hdr_t attrs[] =
             .id = SIP_ATTR_CALLSTATE,
             .name = "state",
             .desc = "Call State",
-            .dwidth = 10 } };
+            .dwidth = 10 },
+          {
+            .id = SIP_ATTR_CONVDUR,
+            .name = "convdur",
+            .desc = "ConvDur",
+            .dwidth = 7 },
+          {
+            .id = SIP_ATTR_TOTALDUR,
+            .name = "totaldur",
+            .desc = "TotalDur",
+            .dwidth = 8 }};
 
 sip_attr_hdr_t *
 sip_attr_get_header(enum sip_attr_id id)
@@ -283,6 +293,8 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
     case SIP_ATTR_CALLINDEX:
     case SIP_ATTR_MSGCNT:
     case SIP_ATTR_CALLSTATE:
+    case SIP_ATTR_CONVDUR:
+    case SIP_ATTR_TOTALDUR:
         return sip_attr_get(call->attrs, id);
     case SIP_ATTR_STARTING:
         return msg_get_attribute(call_get_next_msg(call, NULL), SIP_ATTR_METHOD);

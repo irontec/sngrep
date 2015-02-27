@@ -100,6 +100,8 @@ struct sip_call
     struct sip_attr *attrs;
     //! List of messages of this call
     sip_msg_t *msgs;
+    //! Message when conversation started
+    sip_msg_t *cstart_msg;
     // Call Lock
     pthread_mutex_t lock;
     //! Calls double linked list
@@ -370,5 +372,15 @@ msg_get_header(sip_msg_t *msg, char *out);
  */
 void
 sip_calls_clear();
+
+/**
+ * @brief Calculate the time difference between two messages
+ *
+ * @param start First cronological message
+ * @param start Second cronological message
+ * @return Human readable time difference in MMM:SS format
+ */
+const char *
+sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur);
 
 #endif
