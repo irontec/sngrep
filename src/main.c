@@ -140,7 +140,10 @@ main(int argc, char* argv[])
                 outfile = optarg;
                 break;
             case 'l':
-                limit = atoi(optarg);
+                if(!(limit = atoi(optarg))) {
+                    fprintf(stderr, "Invalid limit value.\n");
+                    return 0;
+                }
                 break;
             case 'k':
                 keyfile = optarg;
