@@ -80,9 +80,13 @@ call_raw_draw(PANEL *panel)
     // Get panel information
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
 
-    // Print the call group messages into the pad
-    while ((msg = call_group_get_next_msg(info->group, info->last)))
-        call_raw_print_msg(panel, msg);
+    if (info->group) {
+        // Print the call group messages into the pad
+        while ((msg = call_group_get_next_msg(info->group, info->last)))
+            call_raw_print_msg(panel, msg);
+    } else {
+        call_raw_set_msg(info->msg);
+    }
 
     // Copy the visible part of the pad into the panel window
     copywin(info->pad, panel_window(panel), info->scroll, 0, 0, 0, LINES - 1, COLS - 1, 0);
