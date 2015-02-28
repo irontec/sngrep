@@ -54,7 +54,6 @@ static sip_attr_hdr_t attrs[] = {
     { .id = SIP_ATTR_SDP_ADDRESS,   .name = "sdpaddress", .desc = "SDP Address", .dwidth = 22 },
     { .id = SIP_ATTR_SDP_PORT,      .name = "sdpport", .desc = "SDP Port", .dwidth = 5 },
     { .id = SIP_ATTR_TRANSPORT,     .name = "transport", .title = "Trans", .desc = "Transport", .dwidth = 3 },
-    { .id = SIP_ATTR_STARTING,      .name = "starting", .desc = "Starting", .dwidth = 10 },
     { .id = SIP_ATTR_MSGCNT,        .name = "msgcnt", .title = "Msgs", .desc = "Message Count", .dwidth = 5 },
     { .id = SIP_ATTR_CALLSTATE,     .name = "state", .desc = "Call State", .dwidth = 10 },
     { .id = SIP_ATTR_CONVDUR,       .name = "convdur", .title = "ConvDur", .desc = "Conversation Duration", .dwidth = 7 },
@@ -208,8 +207,6 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
         case SIP_ATTR_CONVDUR:
         case SIP_ATTR_TOTALDUR:
             return sip_attr_get(call->attrs, id);
-        case SIP_ATTR_STARTING:
-            return msg_get_attribute(call_get_next_msg(call, NULL), SIP_ATTR_METHOD);
         default:
             return msg_get_attribute(call_get_next_msg(call, NULL), id);
     }

@@ -70,7 +70,6 @@
 ##    - time
 ##    - sdp
 ##    - msgcnt
-##    - starting
 ##    - transport
 ##    - state
 ##    - convdur
@@ -109,8 +108,8 @@
 ## ignore {field} {value}
 ##
 ## Examples:
-# ignore starting OPTIONS
-# ignore starting REGISTER
-# ignore starting BYE
+# ignore method OPTIONS
+# ignore method REGISTER
+# ignore method BYE
 # ignore srchost 192.168.1.1
 # ignore transport TCP

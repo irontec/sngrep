@@ -935,7 +935,7 @@ call_list_match_filters(PANEL *panel, sip_call_t *call)
 
         // Check if a filter option exists
         memset(filter_option, 0, sizeof(filter_option));
-        sprintf(filter_option, "filter.%s", call_get_attribute(call, SIP_ATTR_STARTING));
+        sprintf(filter_option, "filter.%s", call_get_attribute(call, SIP_ATTR_METHOD));
         if (!is_option_enabled(filter_option)) {
             return 0;
         }
