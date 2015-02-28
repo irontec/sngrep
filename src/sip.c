@@ -127,7 +127,7 @@ sip_call_create(char *callid)
     calls.count++;
 
     // Store this call in hash table
-    entry.key = callid;
+    entry.key = strdup(callid);
     entry.data = (void *) call;
     hsearch(entry, ENTER);
 
