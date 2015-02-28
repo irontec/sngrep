@@ -44,27 +44,19 @@
 capture_info_t capinfo = { 0 };
 
 int
-capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
+capture_online(const char *dev, const char *outfile)
 {
     //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
-    //! The compiled filter expression
-    struct bpf_program fp;
-    //! Netmask of our sniffing device
-    bpf_u_int32 mask;
-    //! The IP of our sniffing device
-    bpf_u_int32 net;
 
     // Set capture mode
     capinfo.mode = CAPTURE_ONLINE;
-    // Set capture limit
-    capinfo.limit = limit;
 
     // Try to find capture device information
-    if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
+    if (pcap_lookupnet(dev, &capinfo.net, &capinfo.mask, errbuf) == -1) {
         fprintf(stderr, "Can't get netmask for device %s\n", dev);
-        net = 0;
-        mask = 0;
+        capinfo.net = 0;
+        capinfo.mask = 0;
     }
 
     // Open capture device
@@ -72,18 +64,6 @@ capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
     if (capinfo.handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
-    }
-
-    // Validate and set filter expresion
-    if (bpf) {
-        if (pcap_compile(capinfo.handle, &fp, bpf, 0, net) == -1) {
-            fprintf(stderr, "Couldn't parse filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
-            return 2;
-        }
-        if (pcap_setfilter(capinfo.handle, &fp) == -1) {
-            fprintf(stderr, "Couldn't install filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
-            return 2;
-        }
     }
 
     // If requested store packets in a dump file
@@ -108,40 +88,22 @@ capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
 }
 
 int
-capture_offline(const char *infile, const char *bpf, int limit)
+capture_offline(const char *infile)
 {
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
     // The header that pcap gives us
     struct pcap_pkthdr header;
-    // The actual packet
-    const u_char *packet;
-    //! The compiled filter expression
-    struct bpf_program fp;
 
     // Set capture mode
     capinfo.mode = CAPTURE_OFFLINE;
     // Set capture input file
     capinfo.infile = infile;
-    // Set capture limit
-    capinfo.limit = limit;
 
     // Open PCAP file
     if ((capinfo.handle = pcap_open_offline(infile, errbuf)) == NULL) {
         fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
-    }
-
-    // Validate and set filter expresion
-    if (bpf) {
-        if (pcap_compile(capinfo.handle, &fp, bpf, 0, 0) == -1) {
-            fprintf(stderr, "Couldn't parse filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
-            return 2;
-        }
-        if (pcap_setfilter(capinfo.handle, &fp) == -1) {
-            fprintf(stderr, "Couldn't install filter %s: %s\n", bpf, pcap_geterr(capinfo.handle));
-            return 2;
-        }
     }
 
     // Get datalink to parse packets correctly
@@ -153,74 +115,7 @@ capture_offline(const char *infile, const char *bpf, int limit)
         return 3;
     }
 
-    // Loop through packets
-    while ((packet = pcap_next(capinfo.handle, &header))) {
-        // Parse packets
-        parse_packet((u_char*) "Offline", &header, packet);
-    }
-
     return 0;
-}
-
-
-int
-capture_launch_thread()
-{
-    //! capture thread attributes
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (pthread_create(&capinfo.capture_t, &attr, (void *) capture_thread, NULL)) {
-        return 1;
-    }
-    pthread_attr_destroy(&attr);
-    return 0;
-}
-
-void
-capture_thread(void *none)
-{
-    // Parse available packets
-    pcap_loop(capinfo.handle, -1, parse_packet, NULL);
-    pcap_close(capinfo.handle);
-}
-
-int
-capture_is_online()
-{
-    return (capinfo.mode == CAPTURE_ONLINE);
-}
-
-void
-capture_set_paused(int pause)
-{
-    if (capture_is_online()) {
-        capinfo.paused = pause;
-    }
-}
-
-int
-capture_is_paused()
-{
-    return capinfo.paused;
-}
-
-const char*
-capture_get_infile()
-{
-    return capinfo.infile;
-}
-
-const char*
-capture_get_keyfile()
-{
-    return capinfo.keyfile;
-}
-
-void
-capture_set_keyfile(const char *keyfile)
-{
-    capinfo.keyfile = keyfile;
 }
 
 void
@@ -374,8 +269,6 @@ capture_close()
         if(capture_is_online()) {
             pcap_breakloop(capinfo.handle);
             pthread_join(capinfo.capture_t, &ret);
-        } else {
-            pcap_close(capinfo.handle);
         }
     }
 
@@ -383,6 +276,119 @@ capture_close()
     if (capinfo.pd) {
         dump_close(capinfo.pd);
     }
+}
+
+int
+capture_launch_thread()
+{
+    //! capture thread attributes
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if (pthread_create(&capinfo.capture_t, &attr, (void *) capture_thread, NULL)) {
+        return 1;
+    }
+    pthread_attr_destroy(&attr);
+    return 0;
+}
+
+void
+capture_thread(void *none)
+{
+    // Parse available packets
+    pcap_loop(capinfo.handle, -1, parse_packet, NULL);
+    pcap_close(capinfo.handle);
+}
+
+int
+capture_is_online()
+{
+    return (capinfo.mode == CAPTURE_ONLINE);
+}
+
+int
+capture_set_bpf_filter(const char *filter)
+{
+    //! Check if filter compiles
+    if (pcap_compile(capinfo.handle, &capinfo.fp, filter, 0, capinfo.mask) == -1)
+        return 1;
+
+    // Set capture filter
+    if (pcap_setfilter(capinfo.handle, &capinfo.fp) == -1)
+        return 1;
+
+    return 0;
+}
+
+void
+capture_set_limit(int limit)
+{
+    capinfo.limit = limit;
+}
+
+void
+capture_set_paused(int pause)
+{
+    capinfo.paused = pause;
+}
+
+int
+capture_is_paused()
+{
+    return capinfo.paused;
+}
+
+const char*
+capture_get_infile()
+{
+    return capinfo.infile;
+}
+
+const char*
+capture_get_keyfile()
+{
+    return capinfo.keyfile;
+}
+
+void
+capture_set_keyfile(const char *keyfile)
+{
+    capinfo.keyfile = keyfile;
+}
+
+char *
+capture_last_error()
+{
+    return pcap_geterr(capinfo.handle);
+}
+
+int
+capture_set_match_expression(const char *expr, int insensitive, int invert)
+{
+    int cflags = REG_EXTENDED;
+
+    // Store expression text
+    capinfo.match_expr = expr;
+    // Set invert flag
+    capinfo.match_invert = invert;
+
+    // Case insensitive requested
+    if (insensitive)
+        cflags |= REG_ICASE;
+
+    // Check the expresion is a compilable regexp
+    return (regcomp(&capinfo.match_regex, expr, cflags) != 0);
+}
+
+int
+capture_check_match_expression(const char *payload)
+{
+    // Everything matches when there is no match
+    if (!capinfo.match_expr)
+        return 1;
+
+    // Check if payload matches the given expresion
+    return (regexec(&capinfo.match_regex, payload, 0, NULL, 0) == capinfo.match_invert);
 }
 
 int

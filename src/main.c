@@ -47,18 +47,20 @@
 void
 usage()
 {
-    printf("Usage: %s [-c][-IO pcap_dump] [-d dev] [-l limit]"
+    printf("Usage: %s [-hVciv] [-IO pcap_dump] [-d dev] [-l limit]"
 #ifdef WITH_OPENSSL
            " [-k keyfile]"
 #endif
-           " [<bpf filter>]\n\n"
+           " [<match expression>] [<bpf filter>]\n\n"
            "    -h --help\t\t This usage\n"
-           "    -v --version\t Version information\n"
+           "    -V --version\t Version information\n"
            "    -d --device\t\t Use this capture device instead of default\n"
            "    -I --input\t\t Read captured data from pcap file\n"
            "    -O --output\t\t Write captured data to pcap file\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
+           "    -i --icase\t\t Make <match expression> case insensitive\n"
+           "    -v --invert\t\t Invert <match expression>\n"
 #ifdef WITH_OPENSSL
            "    -k  RSA private keyfile to decrypt captured packets\n"
 #endif
@@ -92,21 +94,25 @@ version()
 int
 main(int argc, char* argv[])
 {
-    int opt, idx, limit;
+    int opt, idx, limit, i;
     const char *device, *infile, *outfile;
     char bpf[512];
     const char *keyfile;
+    const char *match_expr;
+    int match_insensitive = 0, match_invert = 0;
 
     // Program otptions
     static struct option long_options[] = {
         { "help", no_argument, 0, 'h' },
-        { "version", no_argument, 0, 'v' },
+        { "version", no_argument, 0, 'V' },
         { "device", required_argument, 0, 'd' },
         { "input", required_argument, 0, 'I' },
         { "output", required_argument, 0, 'O' },
         { "keyfile", required_argument, 0, 'k' },
         { "calls", no_argument, 0, 'c' },
         { "limit", no_argument, 0, 'l' },
+        { "icase", no_argument, 0, 'i' },
+        { "invert", no_argument, 0, 'v' },
     };
 
     // Initialize configuration options
@@ -121,13 +127,13 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hvd:I:O:pqtW:k:cl:";
+    char *options = "hVd:I:O:pqtW:k:cl:iv";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
                 usage();
                 return 0;
-            case 'v':
+            case 'V':
                 version();
                 return 0;
             case 'd':
@@ -150,6 +156,12 @@ main(int argc, char* argv[])
                 break;
             case 'c':
                 set_option_value("sip.calls", "on");
+                break;
+            case 'i':
+                match_insensitive++;
+                break;
+            case 'v':
+                match_invert++;
                 break;
             // Dark options for dummy ones
             case 'p':
@@ -186,38 +198,65 @@ main(int argc, char* argv[])
         // Old legacy option to open pcaps without other arguments
         printf("%s seems to be a file: You forgot -I flag?\n", argv[1]);
         return 0;
-    } else {
-        // Build the bpf filter string
-        memset(bpf, 0, sizeof(bpf));
-        for (; optind < argc; optind++) {
-            sprintf(bpf + strlen(bpf), "%s ", argv[optind]);
-        }
     }
 
     // Initialize SIP Messages Storage
     sip_init(limit);
 
+    // Set capture Calls limit
+    capture_set_limit(limit);
+
     // If we have an input file, load it
     if (infile) {
         // Try to load file
-        if (capture_offline(infile, bpf, limit) != 0)
+        if (capture_offline(infile) != 0)
             return 1;
     } else {
         // Check if all capture data is valid
-        if (capture_online(device, bpf, outfile, limit) != 0)
+        if (capture_online(device, outfile) != 0)
             return 1;
+    }
+
+    // More arguments pending!
+    if (argv[optind]) {
+        // Assume first pending argument is  match expression
+        match_expr = argv[optind++];
+
+        // Try to build the bpf filter string with the rest
+        memset(bpf, 0, sizeof(bpf));
+        for (i = optind; i < argc; i++)
+            sprintf(bpf + strlen(bpf), "%s ", argv[i]);
+
+        // Check if this BPF filter is valid
+        if (capture_set_bpf_filter(bpf) != 0) {
+            // BPF Filter invalid, check incluiding match_expr
+            match_expr = 0;
+
+            // Build the bpf filter string
+            memset(bpf, 0, sizeof(bpf));
+            for (i = optind - 1; i < argc; i++)
+                sprintf(bpf + strlen(bpf), "%s ", argv[i]);
+
+            // Check bpf filter is valid again
+            if (capture_set_bpf_filter(bpf) != 0) {
+                fprintf(stderr, "Couldn't install filter %s: %s\n", bpf, capture_last_error());
+                return 1;
+            }
+        }
+
+        // Set the capture filter
+        if (match_expr)
+            capture_set_match_expression(match_expr, match_insensitive, match_invert);
     }
 
     // Initialize interface
     init_interface();
 
-    // Start a capture thread for Online mode
-    if (capture_is_online()) {
-        if (capture_launch_thread() != 0) {
-            deinit_interface();
-            fprintf(stderr, "Failed to launch capture thread.\n");
-            return 1;
-        }
+    // Start a capture thread
+    if (capture_launch_thread() != 0) {
+        deinit_interface();
+        fprintf(stderr, "Failed to launch capture thread.\n");
+        return 1;
     }
 
     // This is a blocking call.

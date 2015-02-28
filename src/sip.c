@@ -249,6 +249,14 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
     // Find the call for this msg
     if (!(call = call_find_by_callid(callid))) {
+
+        // Check if payload matches expression
+        if (!capture_check_match_expression((const char*) payload)) {
+            // Deallocate message memory
+            sip_msg_destroy(msg);
+            return NULL;
+        }
+
         // Only create a new call if the first msg
         // is a request message in the following gorup
         if (get_option_int_value("sip.ignoreincomplete")) {
@@ -371,13 +379,11 @@ int
 call_msg_count(sip_call_t *call)
 {
     int msgcnt = 0;
-    pthread_mutex_lock(&calls.lock);
     sip_msg_t *msg = call->msgs;
     while (msg) {
         msgcnt++;
         msg = msg->next;
     }
-    pthread_mutex_unlock(&calls.lock);
     return msgcnt;
 }
 
@@ -631,13 +637,10 @@ msg_get_header(sip_msg_t *msg, char *out)
 void
 sip_calls_clear()
 {
-    pthread_mutex_lock(&calls.lock);
     // Remove first call until no first call exists
     while (calls.first) {
         sip_call_destroy(calls.first);
     }
-
-    pthread_mutex_unlock(&calls.lock);
 }
 
 const char *

@@ -36,6 +36,7 @@
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>
+#include <regex.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <time.h>
@@ -78,12 +79,24 @@ struct capture_info {
     const char *infile;
     //! Key file for TLS decrypt
     const char *keyfile;
+    //! The compiled filter expression
+    struct bpf_program fp;
+    //! Netmask of our sniffing device
+    bpf_u_int32 mask;
+    //! The IP of our sniffing device
+    bpf_u_int32 net;
     //! libpcap capture handler
     pcap_t *handle;
     //! libpcap dump file handler
     pcap_dumper_t *pd;
     //! libpcap link type
     int link;
+    //! match expression text
+    const char *match_expr;
+    //! Compiled match expression
+    regex_t match_regex;
+    //! Invert match expression result
+    int match_invert;
     //! Cache for DNS lookups
     dns_cache_t dnscache;
     //! Capture thread for online capturing
@@ -173,14 +186,12 @@ struct nread_tcp {
  * @brief Online capture function
  *
  * @param device Device to start capture from
- * @param bpf string containing BPF filter
  * @param outfile Dumpfile for captured packets
- * @param limit max number of calls to capture
  *
  * @return 0 on spawn success, 1 otherwise
  */
 int
-capture_online(const char *dev, const char *bpf, const char *outfile, int limit);
+capture_online(const char *dev, const char *outfile);
 
 /**
  * @brief Read from pcap file and fill sngrep sctuctures
@@ -189,13 +200,23 @@ capture_online(const char *dev, const char *bpf, const char *outfile, int limit)
  * parse the pcap file.
  *
  * @param infile File to read packets from
- * @param bpf string containing BPF filter
- * @param limit max number of calls to capture
  *
  * @return 0 if load has been successfull, 1 otherwise
  */
 int
-capture_offline(const char *infile, const char *bpf, int limit);
+capture_offline(const char *infile);
+
+/**
+ * @brief Read the next package and parse SIP messages
+ *
+ * This function is shared between online and offline capture
+ * methods using pcap. This will get the payload from a package and
+ * add it to the SIP storage layer.
+ *
+ * @param handle LIBPCAP capture handler
+ */
+void
+parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet);
 
 /**
  * @brief Create a capture thread for online mode
@@ -221,6 +242,24 @@ capture_thread(void *none);
  */
 int
 capture_is_online();
+
+/**
+ * @brief Set a bpf filter in open capture
+ *
+ * @param filter String containing the BPF filter text
+ * @return 0 if valid, 1 otherwise
+ */
+int
+capture_set_bpf_filter(const char *filter);
+
+/**
+ * @brief Limit the number of calls will be captured
+ *
+ * @param limit Numbers of calls >0
+ * @return void
+ */
+void
+capture_set_limit(int limit);
 
 /**
  * @brief Pause/Resume capture
@@ -264,16 +303,30 @@ void
 capture_set_keyfile(const char *keyfile);
 
 /**
- * @brief Read the next package and parse SIP messages
- *
- * This function is shared between online and offline capture
- * methods using pcap. This will get the payload from a package and
- * add it to the SIP storage layer.
- *
- * @param handle LIBPCAP capture handler
+ * @brief Return the last capture error
  */
-void
-parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet);
+char *
+capture_last_error();
+
+/**
+ * @brief Set Capture Matching expression
+ *
+ * @param expr String containing matching expreson
+ * @param insensitive 1 for case insensitive matching
+ * @param invert 1 for reverse matching
+ * @return 0 if expresion is valid, 1 otherwise
+ */
+int
+capture_set_match_expression(const char *expr, int insensitive, int invert);
+
+/**
+ * @brief Checks if a given payload matches expression
+ *
+ * @param payload Packet payload
+ * @return 1 if matches, 0 otherwise
+ */
+int
+capture_check_match_expression(const char *payload);
 
 /**
  * @brief Close pcap handler
