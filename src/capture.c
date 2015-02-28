@@ -268,6 +268,7 @@ capture_close()
             pcap_breakloop(capinfo.handle);
             pthread_join(capinfo.capture_t, &ret);
         }
+        pcap_close(capinfo.handle);
     }
 
     // Close dump file
@@ -295,7 +296,6 @@ capture_thread(void *none)
 {
     // Parse available packets
     pcap_loop(capinfo.handle, -1, parse_packet, NULL);
-    pcap_close(capinfo.handle);
 }
 
 int

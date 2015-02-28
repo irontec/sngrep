@@ -300,7 +300,7 @@ save_to_file(PANEL *panel)
     // Open dump file
     pcap_dumper_t *pd = dump_open(field_value);
     if (access(field_value, W_OK) != 0) {
-        save_error_message(panel, "Unable to save to selected file.");
+        save_error_message(panel, capture_last_error());
         return 1;
     }
 
