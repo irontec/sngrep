@@ -523,6 +523,7 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
 {
     char *body;
     char *pch;
+    int ivalue;
     char value[256];
     char rest[256];
 
@@ -551,12 +552,12 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             }
             continue;
         }
-        if (sscanf(pch, "CSeq: %s %[^\t\n\r]", rest, value)) {
+        if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &ivalue, value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
                 msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
-            msg_set_attribute(msg, SIP_ATTR_CSEQ, rest);
+            msg->cseq = ivalue;
             continue;
         }
         if (sscanf(pch, "From: %*[^:]:%[^@]@%[^\t\n\r]", value, rest) == 2) {

@@ -77,6 +77,8 @@ struct sip_msg {
     int color;
     //! This message contains sdp data
     int sdp;
+    //! Message Cseq
+    int cseq;
 
     //! PCAP Packet Header data
     struct pcap_pkthdr *pcap_header;

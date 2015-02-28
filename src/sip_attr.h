@@ -86,8 +86,6 @@ enum sip_attr_id {
     SIP_ATTR_METHOD,
     //! SIP Message is a request
     SIP_ATTR_REQUEST,
-    //! SIP CSeq number
-    SIP_ATTR_CSEQ,
     //! SDP Address
     SIP_ATTR_SDP_ADDRESS,
     //! SDP Port

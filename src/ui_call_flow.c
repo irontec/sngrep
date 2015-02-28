@@ -356,7 +356,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         msg->color = call_group_color(info->group, msg->call);
     } else if (is_option_enabled("color.cseq")) {
         // Color by CSeq within the same call
-        msg->color = atoi(msg_get_attribute(msg, SIP_ATTR_CSEQ)) % 7 + 1;
+        msg->color = msg->cseq % 7 + 1;
     }
 
     // Turn on the message color
