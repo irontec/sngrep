@@ -277,6 +277,10 @@ wait_for_input(ui_t *ui)
         // Get pressed key
         int c = wgetch(win);
 
+        // Timeout, no key pressed
+        if (c == ERR)
+            continue;
+
         // Check if current panel has custom bindings for that key
         if ((c = ui_handle_key(ui, c)) == 0) {
             // Key has been handled by panel

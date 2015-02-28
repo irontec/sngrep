@@ -121,8 +121,6 @@ filter_check_call(sip_call_t *call)
                 return 0;
         }
 
-        fprintf(stderr, "%s\n", data);
-
         // Call doesn't match this filter
         if (regexec(&filters[i].regex, data, 0, NULL, 0)) {
             // Mak as filtered
