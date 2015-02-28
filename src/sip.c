@@ -359,18 +359,15 @@ call_find_by_xcallid(const char *xcallid)
 {
     const char *cur_xcallid;
 
-    pthread_mutex_lock(&calls.lock);
     sip_call_t *cur = calls.first;
 
     while (cur) {
         cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
         if (cur_xcallid && !strcmp(cur_xcallid, xcallid)) {
-            pthread_mutex_unlock(&calls.lock);
             return cur;
         }
         cur = cur->next;
     }
-    pthread_mutex_unlock(&calls.lock);
     return NULL;
 }
 
