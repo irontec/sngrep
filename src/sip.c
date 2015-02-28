@@ -231,7 +231,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     // Set Source and Destination lookpued hosts
     if (is_option_enabled("capture.lookup")) {
         msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%.15s:%u", lookup_hostname(&src), htons(sport));
-        msg_set_attribute(msg, SIP_ATTR_DST_HOST, lookup_hostname(&dst), htons(dport));
+        msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%.15s:%u", lookup_hostname(&dst), htons(dport));
     }
     msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%s:%u", inet_ntoa(src), htons(sport));
     msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%s:%u", inet_ntoa(dst), htons(dport));
@@ -251,7 +251,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     if (!(call = call_find_by_callid(callid))) {
 
         // Check if payload matches expression
-        if (!capture_check_match_expression((const char*) payload)) {
+        if (!sip_check_match_expression((const char*) payload)) {
             // Deallocate message memory
             sip_msg_destroy(msg);
             return NULL;
@@ -654,4 +654,33 @@ sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur)
     sprintf(duration, "%d:%02d", seconds / 60, seconds % 60);
     sprintf(dur, "%7s", duration);
     return dur;
+}
+
+int
+sip_set_match_expression(const char *expr, int insensitive, int invert)
+{
+    int cflags = REG_EXTENDED;
+
+    // Store expression text
+    calls.match_expr = expr;
+    // Set invert flag
+    calls.match_invert = invert;
+
+    // Case insensitive requested
+    if (insensitive)
+        cflags |= REG_ICASE;
+
+    // Check the expresion is a compilable regexp
+    return (regcomp(&calls.match_regex, expr, cflags) != 0);
+}
+
+int
+sip_check_match_expression(const char *payload)
+{
+    // Everything matches when there is no match
+    if (!calls.match_expr)
+        return 1;
+
+    // Check if payload matches the given expresion
+    return (regexec(&calls.match_regex, payload, 0, NULL, 0) == calls.match_invert);
 }

@@ -36,6 +36,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#include <regex.h>
 #include "sip_attr.h"
 
 //! Shorter declaration of sip_call structure
@@ -117,6 +118,12 @@ struct sip_call_list {
     sip_call_t *last;
     // Call counter
     int count;
+    //! match expression text
+    const char *match_expr;
+    //! Compiled match expression
+    regex_t match_regex;
+    //! Invert match expression result
+    int match_invert;
     // Warranty thread-safe access to the calls list
     pthread_mutex_t lock;
 };
@@ -389,5 +396,24 @@ sip_calls_clear();
 const char *
 sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur);
 
+/**
+ * @brief Set Capture Matching expression
+ *
+ * @param expr String containing matching expreson
+ * @param insensitive 1 for case insensitive matching
+ * @param invert 1 for reverse matching
+ * @return 0 if expresion is valid, 1 otherwise
+ */
+int
+sip_set_match_expression(const char *expr, int insensitive, int invert);
+
+/**
+ * @brief Checks if a given payload matches expression
+ *
+ * @param payload Packet payload
+ * @return 1 if matches, 0 otherwise
+ */
+int
+sip_check_match_expression(const char *payload);
 
 #endif

@@ -92,8 +92,6 @@ capture_offline(const char *infile)
 {
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
-    // The header that pcap gives us
-    struct pcap_pkthdr header;
 
     // Set capture mode
     capinfo.mode = CAPTURE_OFFLINE;
@@ -360,35 +358,6 @@ char *
 capture_last_error()
 {
     return pcap_geterr(capinfo.handle);
-}
-
-int
-capture_set_match_expression(const char *expr, int insensitive, int invert)
-{
-    int cflags = REG_EXTENDED;
-
-    // Store expression text
-    capinfo.match_expr = expr;
-    // Set invert flag
-    capinfo.match_invert = invert;
-
-    // Case insensitive requested
-    if (insensitive)
-        cflags |= REG_ICASE;
-
-    // Check the expresion is a compilable regexp
-    return (regcomp(&capinfo.match_regex, expr, cflags) != 0);
-}
-
-int
-capture_check_match_expression(const char *payload)
-{
-    // Everything matches when there is no match
-    if (!capinfo.match_expr)
-        return 1;
-
-    // Check if payload matches the given expresion
-    return (regexec(&capinfo.match_regex, payload, 0, NULL, 0) == capinfo.match_invert);
 }
 
 int

@@ -36,7 +36,6 @@
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>
-#include <regex.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <time.h>
@@ -91,12 +90,6 @@ struct capture_info {
     pcap_dumper_t *pd;
     //! libpcap link type
     int link;
-    //! match expression text
-    const char *match_expr;
-    //! Compiled match expression
-    regex_t match_regex;
-    //! Invert match expression result
-    int match_invert;
     //! Cache for DNS lookups
     dns_cache_t dnscache;
     //! Capture thread for online capturing
@@ -307,26 +300,6 @@ capture_set_keyfile(const char *keyfile);
  */
 char *
 capture_last_error();
-
-/**
- * @brief Set Capture Matching expression
- *
- * @param expr String containing matching expreson
- * @param insensitive 1 for case insensitive matching
- * @param invert 1 for reverse matching
- * @return 0 if expresion is valid, 1 otherwise
- */
-int
-capture_set_match_expression(const char *expr, int insensitive, int invert);
-
-/**
- * @brief Checks if a given payload matches expression
- *
- * @param payload Packet payload
- * @return 1 if matches, 0 otherwise
- */
-int
-capture_check_match_expression(const char *payload);
 
 /**
  * @brief Close pcap handler

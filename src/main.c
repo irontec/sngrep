@@ -246,7 +246,7 @@ main(int argc, char* argv[])
 
         // Set the capture filter
         if (match_expr)
-            capture_set_match_expression(match_expr, match_insensitive, match_invert);
+            sip_set_match_expression(match_expr, match_insensitive, match_invert);
     }
 
     // Initialize interface
