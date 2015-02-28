@@ -53,7 +53,7 @@ filter_create()
     filter_info_t *info;
 
     // Calculate window dimensions
-    height = 17;
+    height = 15;
     width = 50;
 
     // Cerate a new indow for the panel and form
@@ -70,24 +70,22 @@ filter_create()
     set_panel_userptr(panel, (void*) info);
 
     // Initialize the fields
-    info->fields[FLD_FILTER_ENABLE] = new_field(1, 1, 3, 19, 0, 0);
-    info->fields[FLD_FILTER_SIPFROM] = new_field(1, 28, 5, 18, 0, 0);
-    info->fields[FLD_FILTER_SIPTO] = new_field(1, 28, 6, 18, 0, 0);
-    info->fields[FLD_FILTER_SRC] = new_field(1, 18, 7, 18, 0, 0);
-    info->fields[FLD_FILTER_DST] = new_field(1, 18, 8, 18, 0, 0);
-    info->fields[FLD_FILTER_REGISTER] = new_field(1, 1, 10, 15, 0, 0);
-    info->fields[FLD_FILTER_INVITE] = new_field(1, 1, 11, 15, 0, 0);
-    info->fields[FLD_FILTER_SUBSCRIBE] = new_field(1, 1, 12, 15, 0, 0);
-    info->fields[FLD_FILTER_NOTIFY] = new_field(1, 1, 13, 15, 0, 0);
-    info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 10, 37, 0, 0);
-    info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 11, 37, 0, 0);
-    info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 12, 37, 0, 0);
+    info->fields[FLD_FILTER_SIPFROM] = new_field(1, 28, 3, 18, 0, 0);
+    info->fields[FLD_FILTER_SIPTO] = new_field(1, 28, 4, 18, 0, 0);
+    info->fields[FLD_FILTER_SRC] = new_field(1, 18, 5, 18, 0, 0);
+    info->fields[FLD_FILTER_DST] = new_field(1, 18, 6, 18, 0, 0);
+    info->fields[FLD_FILTER_REGISTER] = new_field(1, 1, 8, 15, 0, 0);
+    info->fields[FLD_FILTER_INVITE] = new_field(1, 1, 9, 15, 0, 0);
+    info->fields[FLD_FILTER_SUBSCRIBE] = new_field(1, 1, 10, 15, 0, 0);
+    info->fields[FLD_FILTER_NOTIFY] = new_field(1, 1, 11, 15, 0, 0);
+    info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 8, 37, 0, 0);
+    info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 9, 37, 0, 0);
+    info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 10, 37, 0, 0);
     info->fields[FLD_FILTER_FILTER] = new_field(1, 10, height - 2, 11, 0, 0);
     info->fields[FLD_FILTER_CANCEL] = new_field(1, 10, height - 2, 30, 0, 0);
     info->fields[FLD_FILTER_COUNT] = NULL;
 
     // Set fields options
-    field_opts_off(info->fields[FLD_FILTER_ENABLE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SIPFROM], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SIPTO], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SRC], O_AUTOSKIP);
@@ -114,21 +112,19 @@ filter_create()
     post_form(info->form);
 
     // Fields labels
-    mvwprintw(win, 3, 3, "Enable filters [ ]");
-    mvwprintw(win, 5, 3, "SIP From:");
-    mvwprintw(win, 6, 3, "SIP To:");
-    mvwprintw(win, 7, 3, "Source:");
-    mvwprintw(win, 8, 3, "Destination:");
-    mvwprintw(win, 10, 3, "REGISTER   [ ]");
-    mvwprintw(win, 11, 3, "INVITE     [ ]");
-    mvwprintw(win, 12, 3, "SUBSCRIBE  [ ]");
-    mvwprintw(win, 13, 3, "NOTIFY     [ ]");
-    mvwprintw(win, 10, 25, "OPTIONS    [ ]");
-    mvwprintw(win, 11, 25, "PUBLISH    [ ]");
-    mvwprintw(win, 12, 25, "MESSAGE    [ ]");
+    mvwprintw(win, 3, 3, "SIP From:");
+    mvwprintw(win, 4, 3, "SIP To:");
+    mvwprintw(win, 5, 3, "Source:");
+    mvwprintw(win, 6, 3, "Destination:");
+    mvwprintw(win, 8, 3, "REGISTER   [ ]");
+    mvwprintw(win, 9, 3, "INVITE     [ ]");
+    mvwprintw(win, 10, 3, "SUBSCRIBE  [ ]");
+    mvwprintw(win, 11, 3, "NOTIFY     [ ]");
+    mvwprintw(win, 8, 25, "OPTIONS    [ ]");
+    mvwprintw(win, 9, 25, "PUBLISH    [ ]");
+    mvwprintw(win, 10, 25, "MESSAGE    [ ]");
 
     // Set Default field values
-    set_field_buffer(info->fields[FLD_FILTER_ENABLE], 0, "*");
     set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));
     set_field_buffer(info->fields[FLD_FILTER_SIPTO], 0, filter_get(FILTER_SIPTO));
     set_field_buffer(info->fields[FLD_FILTER_SRC], 0, filter_get(FILTER_SOURCE));
@@ -154,17 +150,14 @@ filter_create()
     mvwprintw(win, 1, 18, "Filter options");
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     title_foot_box(panel_window(panel));
-    mvwhline(win, 4, 1, ACS_HLINE, 49);
-    mvwaddch(win, 4, 0, ACS_LTEE);
-    mvwaddch(win, 4, 49, ACS_RTEE);
-    mvwhline(win, 9, 1, ACS_HLINE, 49);
-    mvwaddch(win, 9, 0, ACS_LTEE);
-    mvwaddch(win, 9, 49, ACS_RTEE);
+    mvwhline(win, 7, 1, ACS_HLINE, 49);
+    mvwaddch(win, 7, 0, ACS_LTEE);
+    mvwaddch(win, 7, 49, ACS_RTEE);
     wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);
-    wmove(win, 5, 18);
+    wmove(win, 3, 18);
     curs_set(1);
 
     return panel;
@@ -232,7 +225,7 @@ filter_handle_key(PANEL *panel, int key)
         case 'I':
             for (i = 0; i < FLD_FILTER_COUNT; i++) {
                 set_current_field(info->form, info->fields[i]);
-                if (i == FLD_FILTER_INVITE || i == FLD_FILTER_ENABLE) {
+                if (i == FLD_FILTER_INVITE) {
                     form_driver(info->form, '*');
                 } else {
                     form_driver(info->form, REQ_CLR_FIELD);
@@ -242,7 +235,6 @@ filter_handle_key(PANEL *panel, int key)
             break;
         case ' ':
             switch (field_idx) {
-                case FLD_FILTER_ENABLE:
                 case FLD_FILTER_REGISTER:
                 case FLD_FILTER_INVITE:
                 case FLD_FILTER_SUBSCRIBE:
@@ -322,9 +314,6 @@ filter_save_options(PANEL *panel)
         }
 
         switch (field_id) {
-            case FLD_FILTER_ENABLE:
-                set_option_value("filter.enable", strlen(field_value) ? "on" : "off");
-                break;
             case FLD_FILTER_SIPFROM:
                 filter_set(FILTER_SIPFROM, expr);
                 break;

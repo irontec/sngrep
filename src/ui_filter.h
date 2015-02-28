@@ -42,8 +42,7 @@
  *
  */
 enum filter_FLD_FILTER_list {
-    FLD_FILTER_ENABLE = 0,
-    FLD_FILTER_SIPFROM,
+    FLD_FILTER_SIPFROM = 0,
     FLD_FILTER_SIPTO,
     FLD_FILTER_SRC,
     FLD_FILTER_DST,
