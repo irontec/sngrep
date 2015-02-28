@@ -46,10 +46,20 @@ enum save_field_list {
     FLD_SAVE_FILE = 0,
     FLD_SAVE_ALL,
     FLD_SAVE_SELECTED,
+    FLD_SAVE_DISPLAYED,
     FLD_SAVE_SAVE,
     FLD_SAVE_CANCEL,
     //! Never remove this field id @see save_info
     FLD_SAVE_COUNT
+};
+
+/**
+ * @brief Available save modes
+ */
+enum save_mode {
+    SAVE_ALL = 0,
+    SAVE_SELECTED,
+    SAVE_DISPLAYED,
 };
 
 //! Sorter declaration of struct save_info
@@ -65,6 +75,8 @@ struct save_info {
     FORM *form;
     //! An array of fields
     FIELD *fields[FLD_SAVE_COUNT + 1];
+    //! Save mode @see save_modes
+    int savemode;
     //! Call group to be saved
     sip_call_group_t *group;
 };

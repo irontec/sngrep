@@ -33,9 +33,11 @@
 #include <errno.h>
 #include <form.h>
 #include <ctype.h>
+#include "ui_call_list.h"
 #include "ui_save_pcap.h"
 #include "option.h"
 #include "capture.h"
+#include "filter.h"
 
 /**
  * Ui Structure definition for Save panel
@@ -59,7 +61,7 @@ save_create()
     char savefile[128];
 
     // Calculate window dimensions
-    height = 10;
+    height = 11;
     width = 90;
 
     // Cerate a new indow for the panel and form
@@ -79,6 +81,7 @@ save_create()
     info->fields[FLD_SAVE_FILE] = new_field(1, 68, 3, 15, 0, 0);
     info->fields[FLD_SAVE_ALL] = new_field(1, 1, 5, 4, 0, 0);
     info->fields[FLD_SAVE_SELECTED] = new_field(1, 1, 6, 4, 0, 0);
+    info->fields[FLD_SAVE_DISPLAYED] = new_field(1, 1, 7, 4, 0, 0);
     info->fields[FLD_SAVE_SAVE] = new_field(1, 10, height - 2, 30, 0, 0);
     info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, height - 2, 50, 0, 0);
     info->fields[FLD_SAVE_COUNT] = NULL;
@@ -87,6 +90,7 @@ save_create()
     field_opts_off(info->fields[FLD_SAVE_FILE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_ALL], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_SELECTED], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_AUTOSKIP);
 
     // Change background of input fields
     set_field_back(info->fields[FLD_SAVE_FILE], A_UNDERLINE);
@@ -121,12 +125,18 @@ save_create()
     form_driver(info->form, REQ_END_LINE);
     curs_set(1);
 
+    // Pause the capture while saving
+    capture_set_paused(1);
+
     return panel;
 }
 
 void
 save_destroy(PANEL *panel)
 {
+    // Unpause capture
+    capture_set_paused(0);
+
     // Disable cursor position
     curs_set(0);
 }
@@ -138,14 +148,18 @@ save_draw(PANEL *panel)
     save_info_t *info = (save_info_t*) panel_userptr(panel);
     WINDOW *win = panel_window(panel);
 
-    mvwprintw(win, 5, 3, "( ) Save all messages");
-    mvwprintw(win, 6, 3, "( ) Save selected messages (%d messages)",
-              call_group_msg_count(info->group));
+    mvwprintw(win, 5, 3, "( ) Save all dialogs");
+    mvwprintw(win, 6, 3, "( ) Save selected dialogs (%d dialogs)",
+              call_group_count(info->group));
+    mvwprintw(win, 7, 3, "( ) Save displayed dialogs (%d dialogs)",
+              filter_display_count());
 
     set_field_buffer(info->fields[FLD_SAVE_ALL], 0,
-                     is_option_enabled("sngrep.saveselected") ? "" : "*");
+                     (info->savemode == SAVE_ALL) ? "*" : "");
     set_field_buffer(info->fields[FLD_SAVE_SELECTED], 0,
-                     is_option_enabled("sngrep.saveselected") ? "*" : "");
+                     (info->savemode == SAVE_SELECTED) ? "*" : "");
+    set_field_buffer(info->fields[FLD_SAVE_DISPLAYED], 0,
+                     (info->savemode == SAVE_DISPLAYED) ? "*" : "");
 
     set_current_field(info->form, current_field(info->form));
     form_driver(info->form, REQ_VALIDATION);
@@ -208,10 +222,13 @@ save_handle_key(PANEL *panel, int key)
         case ' ':
             switch (field_idx) {
                 case FLD_SAVE_ALL:
-                    set_option_value("sngrep.saveselected", "off");
+                    info->savemode = SAVE_ALL;
                     break;
                 case FLD_SAVE_SELECTED:
-                    set_option_value("sngrep.saveselected", "on");
+                    info->savemode = SAVE_SELECTED;
+                    break;
+                case FLD_SAVE_DISPLAYED:
+                    info->savemode = SAVE_DISPLAYED;
                     break;
                 case FLD_SAVE_FILE:
                     form_driver(info->form, key);
@@ -292,7 +309,7 @@ save_to_file(PANEL *panel)
         field_value[i] = '\0';
 
     // Don't allow to save no packets!
-    if (is_option_enabled("sngrep.saveselected") && call_group_msg_count(info->group) == 0) {
+    if (info->savemode == SAVE_SELECTED && call_group_msg_count(info->group) == 0) {
         save_error_message(panel, "Unable to save no packets to selected file.");
         return 1;
     }
@@ -304,20 +321,31 @@ save_to_file(PANEL *panel)
         return 1;
     }
 
-    if (is_option_enabled("sngrep.saveselected")) {
-        // Save selected packets to file
-        while ((call = call_group_get_next(info->group, call))) {
-            while ((msg = call_get_next_msg(call, msg))) {
-                dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+    switch(info->savemode) {
+        case SAVE_ALL:
+            // Save all packets to the file
+            while ((call = call_get_next(call))) {
+                while ((msg = call_get_next_msg(call, msg))) {
+                    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+                }
             }
-        }
-    } else {
-        // Save all packets to the file
-        while ((call = call_get_next(call))) {
-            while ((msg = call_get_next_msg(call, msg))) {
-                dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+            break;
+        case SAVE_SELECTED:
+            // Save selected packets to file
+            while ((call = call_group_get_next(info->group, call))) {
+                while ((msg = call_get_next_msg(call, msg))) {
+                    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+                }
             }
-        }
+            break;
+        case SAVE_DISPLAYED:
+            // Save selected packets to file
+            while ((call = call_get_next_filtered(call))) {
+                while ((msg = call_get_next_msg(call, msg))) {
+                    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+                }
+            }
+            break;
     }
 
     // Close dump file
