@@ -33,7 +33,7 @@
 #include "filter.h"
 
 //! Storage of filter information
-filter_t filters[FILTER_COUNT] = { { 0 } };
+filter_t filters[FILTER_COUNT];
 
 int
 filter_set(int type, const char *expr)
@@ -50,6 +50,8 @@ filter_set(int type, const char *expr)
         filters[type].expr = strdup(expr);
         // Compile regexp for this filter
         regcomp(&filters[type].regex, expr, REG_EXTENDED | REG_ICASE);
+    } else {
+        filters[type].expr = NULL;
     }
 
     return 0;

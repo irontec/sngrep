@@ -631,6 +631,7 @@ call_list_handle_form_key(PANEL *panel, int key)
 
     // Store dfilter input
     // We trim spaces with sscanf because and empty field is stored as space characters
+    memset(dfilter, 0, sizeof(dfilter));
     sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", dfilter);
 
     // Set display filter
