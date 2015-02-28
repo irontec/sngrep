@@ -135,7 +135,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     // Color the message {
     if (is_option_enabled("color.request")) {
         // Determine arrow color
-        if (msg_get_attribute(msg, SIP_ATTR_REQUEST)) {
+        if (msg->request) {
             msg->color = CP_RED_ON_DEF;
         } else {
             msg->color = CP_GREEN_ON_DEF;

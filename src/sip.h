@@ -75,11 +75,12 @@ struct sip_msg {
     char *payload;
     //! Color for this message (in color.cseq mode)
     int color;
+    //! Request: 1, Response: 0
+    int request;
     //! This message contains sdp data
     int sdp;
     //! Message Cseq
     int cseq;
-
     //! PCAP Packet Header data
     struct pcap_pkthdr *pcap_header;
     //! PCAP Packet data

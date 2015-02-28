@@ -548,13 +548,14 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
         }
         if (sscanf(pch, "SIP/2.0 %[^\t\n\r]", value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
+                msg->request = 0;
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
             continue;
         }
         if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &ivalue, value)) {
             if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
-                msg_set_attribute(msg, SIP_ATTR_REQUEST, "1");
+                msg->request = 1;
                 msg_set_attribute(msg, SIP_ATTR_METHOD, value);
             }
             msg->cseq = ivalue;
