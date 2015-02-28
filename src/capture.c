@@ -260,14 +260,10 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 void
 capture_close()
 {
-    void* ret = NULL;
-
     //Close PCAP file
     if (capinfo.handle) {
-        if(capture_is_online()) {
-            pcap_breakloop(capinfo.handle);
-            pthread_join(capinfo.capture_t, &ret);
-        }
+        pcap_breakloop(capinfo.handle);
+        pthread_join(capinfo.capture_t, NULL);
         pcap_close(capinfo.handle);
     }
 
