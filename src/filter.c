@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sip.h"
+#include "ui_call_list.h"
 #include "filter.h"
 
 //! Storage of filter information
@@ -78,6 +79,7 @@ filter_check_call(sip_call_t *call)
 {
     int i;
     const char *data;
+    char linetext[256];
 
     // Filter for this call has already be processed
     if (call->filtered != -1)
@@ -109,10 +111,17 @@ filter_check_call(sip_call_t *call)
             case FILTER_METHOD:
                 data = call_get_attribute(call, SIP_ATTR_METHOD);
                 break;
+            case FILTER_CALL_LIST:
+                // FIXME Maybe call should know hot to calculate this line
+                memset(linetext, 0, sizeof(linetext));
+                data = call_list_line_text(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)), call, linetext);
+                break;
             default:
                 // Unknown filter id
                 return 0;
         }
+
+        fprintf(stderr, "%s\n", data);
 
         // Call doesn't match this filter
         if (regexec(&filters[i].regex, data, 0, NULL, 0)) {

@@ -252,13 +252,13 @@ call_list_draw(PANEL *panel)
         return 0;
 
     // If no active call, use the fist one (if exists)
-    if (!info->first_call && call_list_get_next(panel, NULL)) {
-        info->cur_call = info->first_call = call_list_get_next(panel, NULL);
+    if (!info->first_call && call_get_next_filtered(NULL)) {
+        info->cur_call = info->first_call = call_get_next_filtered(NULL);
         info->cur_line = info->first_line = 1;
     }
 
     // Fill the call list
-    for (call = info->first_call; call; call = call_list_get_next(panel, call)) {
+    for (call = info->first_call; call; call = call_get_next_filtered(call)) {
         // Stop if we have reached the bottom of the list
         if (cline == height)
             break;
@@ -424,23 +424,23 @@ call_list_handle_key(PANEL *panel, int key)
             break;
         case KEY_DOWN:
             // Check if there is a call below us
-            if (!info->cur_call || !call_list_get_next(panel, info->cur_call))
+            if (!info->cur_call || !call_get_next_filtered(info->cur_call))
                 break;
-            info->cur_call = call_list_get_next(panel, info->cur_call);
+            info->cur_call = call_get_next_filtered(info->cur_call);
             info->cur_line++;
             // If we are out of the bottom of the displayed list
             // refresh it starting in the next call
             if (info->cur_line > height) {
-                info->first_call = call_list_get_next(panel, info->first_call);
+                info->first_call = call_get_next_filtered(info->first_call);
                 info->first_line++;
                 info->cur_line = height;
             }
             break;
         case KEY_UP:
             // Check if there is a call above us
-            if (!info->cur_call || !call_list_get_prev(panel, info->cur_call))
+            if (!info->cur_call || !call_get_prev_filtered(info->cur_call))
                 break;
-            info->cur_call = call_list_get_prev(panel, info->cur_call);
+            info->cur_call = call_get_prev_filtered(info->cur_call);
             info->cur_line--;
             // If we are out of the top of the displayed list
             // refresh it starting in the previous (in fact current) call
@@ -514,7 +514,7 @@ call_list_handle_key(PANEL *panel, int key)
             // KEY_F, Display filter panel
             next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
             wait_for_input(next_panel);
-            call_list_filter_update(panel);
+            call_list_clear(panel);
             break;
         case 't':
         case 'T':
@@ -522,7 +522,7 @@ call_list_handle_key(PANEL *panel, int key)
             // Display column selection panel
             next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
             wait_for_input(next_panel);
-            call_list_filter_update(panel);
+            call_list_clear(panel);
             break;
         case 's':
         case 'S':
@@ -538,7 +538,9 @@ call_list_handle_key(PANEL *panel, int key)
         case 'I':
             // Set Display filter text
             set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
-            call_list_filter_update(panel);
+            filter_set(FILTER_CALL_LIST, "invite");
+            call_list_clear(panel);
+            filter_reset_calls();
             break;
         case KEY_F(5):
             // Remove all stored calls
@@ -573,6 +575,7 @@ int
 call_list_handle_form_key(PANEL *panel, int key)
 {
     int field_idx;
+    char dfilter[256];
 
     // Get panel information
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -609,13 +612,17 @@ call_list_handle_form_key(PANEL *panel, int key)
         case KEY_BACKSPACE:
             form_driver(info->form, REQ_DEL_PREV);
             // Updated displayed results
-            call_list_filter_update(panel);
+            call_list_clear(panel);
+            // Reset filters on each key stroke
+            filter_reset_calls();
             break;
         default:
             // If this is a normal character on input field, print it
             form_driver(info->form, key);
             // Updated displayed results
-            call_list_filter_update(panel);
+            call_list_clear(panel);
+            // Reset filters on each key stroke
+            filter_reset_calls();
             break;
     }
 
@@ -624,8 +631,10 @@ call_list_handle_form_key(PANEL *panel, int key)
 
     // Store dfilter input
     // We trim spaces with sscanf because and empty field is stored as space characters
-    memset(info->dfilter, 0, sizeof(info->dfilter));
-    sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", info->dfilter);
+    sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", dfilter);
+
+    // Set display filter
+    filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);
 
     return 0;
 }
@@ -780,13 +789,6 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
 }
 
 void
-call_list_filter_update(PANEL *panel)
-{
-    // Clear list
-    call_list_clear(panel);
-}
-
-void
 call_list_clear(PANEL *panel)
 {
     // Get panel info
@@ -802,63 +804,4 @@ call_list_clear(PANEL *panel)
     // Clear Displayed lines
     werase(info->list_win);
     wnoutrefresh(info->list_win);
-}
-
-sip_call_t *
-call_list_get_next(PANEL *panel, sip_call_t *cur)
-{
-    sip_call_t *next = cur;
-    while ((next = call_get_next_filtered(next))) {
-        // This call doesnt match display
-        if (!call_list_match_dfilter(panel, next)) {
-            continue;
-        }
-        return next;
-    }
-    return NULL;
-}
-
-sip_call_t *
-call_list_get_prev(PANEL *panel, sip_call_t *cur)
-{
-    sip_call_t *prev = cur;
-    while ((prev = call_get_prev_filtered(prev))) {
-        // This call doesnt match display
-        if (!call_list_match_dfilter(panel, prev)) {
-            continue;
-        }
-        return prev;
-    }
-    return NULL;
-}
-
-int
-call_list_match_dfilter(PANEL *panel, sip_call_t *call)
-{
-    char linetext[512];
-    regex_t regex;
-    int cflags = REG_EXTENDED | REG_ICASE;
-    int ret;
-
-    // Get panel information
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-
-    // Get Display filter
-
-    if (strlen(info->dfilter) == 0)
-        return 1;
-
-    memset(linetext, 0, sizeof(linetext));
-    call_list_line_text(panel, call, linetext);
-
-    // Check the expresion is a compilable regexp
-    if (regcomp(&regex, info->dfilter, cflags) != 0)
-        return 0;
-
-    // Check if line matches the given expresion
-    ret = (regexec(&regex, linetext, 0, NULL, 0) == 0);
-
-    // Free the expression memory
-    regfree(&regex);
-    return ret;
 }

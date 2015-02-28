@@ -91,8 +91,6 @@ struct call_list_info {
     FORM *form;
     //! An array of window form fields
     FIELD *fields[FLD_LIST_COUNT + 1];
-    //! Display filter text
-    char dfilter[256];
     //! We're entering keys on form
     bool form_active;
 };
@@ -243,18 +241,6 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
                      int width);
 
 /**
- * @brief Update list information after a filter has been set
- *
- * This function is called after showing the filter dialog (@see ui_filter.h)
- * and resets the displayed information to force a new call list
- * load.
- *
- * @param panel Call list panel pointer
- */
-void
-call_list_filter_update(PANEL *panel);
-
-/**
  * @brief Remove all calls from the list and calls storage
  *
  * This funtion will clear all call lines in the list
@@ -263,34 +249,5 @@ call_list_filter_update(PANEL *panel);
 void
 call_list_clear(PANEL *panel);
 
-/**
- * @brief Get next call after applying display fitering
- *
- * @param panel Ncurses panel pointer
- * @param call Start searching from this call
- * @return next matching call or NULL
- */
-sip_call_t *
-call_list_get_next(PANEL *panel, sip_call_t *cur);
-
-/**
- * @brief Get previous call after applying display fitering
- *
- * @param panel Ncurses panel pointer
- * @param call Start searching from this call
- * @return previous matching call or NULL
- */
-sip_call_t *
-call_list_get_prev(PANEL *panel, sip_call_t *cur);
-
-/**
- * @brief Check if call match display filter
- *
- * @param panel Ncurses panel pointer
- * @param call Call to Check
- * @return 1 if the call match display filters, 0 otherwise
- */
-int
-call_list_match_dfilter(PANEL *panel, sip_call_t *call);
 
 #endif

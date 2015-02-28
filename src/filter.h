@@ -59,6 +59,8 @@ enum filter_type {
     FILTER_DESTINATION,
     //! SIP Method in packet payload
     FILTER_METHOD,
+    //! Displayed line in call list
+    FILTER_CALL_LIST,
     //! Number of available filter types
     FILTER_COUNT,
 };
