@@ -135,6 +135,15 @@ struct sip_call_list {
     pthread_mutex_t lock;
 };
 
+//! SIP Methods
+#define SIP_METHOD_REGISTER     "REGISTER"
+#define SIP_METHOD_INVITE       "INVITE"
+#define SIP_METHOD_SUBSCRIBE    "SUBSCRIBE"
+#define SIP_METHOD_NOTIFY       "NOTIFY"
+#define SIP_METHOD_OPTIONS      "OPTIONS"
+#define SIP_METHOD_PUBLISH      "PUBLISH"
+#define SIP_METHOD_MESSAGE      "MESSAGE"
+
 /**
  * @brief Initialize SIP Storage structures
  *

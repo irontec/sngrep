@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <form.h>
 #include "ui_filter.h"
+#include "sip.h"
 #include "filter.h"
 #include "option.h"
 
@@ -51,6 +52,7 @@ filter_create()
     WINDOW *win;
     int height, width;
     filter_info_t *info;
+    const char *method;
 
     // Calculate window dimensions
     height = 15;
@@ -124,25 +126,29 @@ filter_create()
     mvwprintw(win, 9, 25, "PUBLISH    [ ]");
     mvwprintw(win, 10, 25, "MESSAGE    [ ]");
 
+    // Get Method filter
+    if (!(method = filter_get(FILTER_METHOD)))
+        method = "";
+
     // Set Default field values
     set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));
     set_field_buffer(info->fields[FLD_FILTER_SIPTO], 0, filter_get(FILTER_SIPTO));
     set_field_buffer(info->fields[FLD_FILTER_SRC], 0, filter_get(FILTER_SOURCE));
     set_field_buffer(info->fields[FLD_FILTER_DST], 0, filter_get(FILTER_DESTINATION));
     set_field_buffer(info->fields[FLD_FILTER_REGISTER], 0,
-                     filter_get(FILTER_METHOD) ? "*" : "");
+                     strstr(method, SIP_METHOD_REGISTER) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_INVITE], 0,
-                     is_option_enabled("filter.INVITE") ? "*" : "");
+                     strstr(method, SIP_METHOD_INVITE) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_SUBSCRIBE], 0,
-                     is_option_enabled("filter.SUBSCRIBE") ? "*" : "");
+                     strstr(method, SIP_METHOD_SUBSCRIBE) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_NOTIFY], 0,
-                     is_option_enabled("filter.NOTIFY") ? "*" : "");
+                     strstr(method, SIP_METHOD_NOTIFY) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_OPTIONS], 0,
-                     is_option_enabled("filter.OPTIONS") ? "*" : "");
+                     strstr(method, SIP_METHOD_OPTIONS) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_PUBLISH], 0,
-                     is_option_enabled("filter.PUBLISH") ? "*" : "");
+                     strstr(method, SIP_METHOD_PUBLISH) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_MESSAGE], 0,
-                     is_option_enabled("filter.MESSAGE") ? "*" : "");
+                     strstr(method, SIP_METHOD_MESSAGE) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_FILTER], 0, "[ Filter ]");
     set_field_buffer(info->fields[FLD_FILTER_CANCEL], 0, "[ Cancel ]");
 
@@ -295,6 +301,7 @@ filter_save_options(PANEL *panel)
     char field_value[30];
     char *expr;
     int field_id;
+    char method_expr[256];
 
     // Get panel information
     filter_info_t *info = (filter_info_t*) panel_userptr(panel);
@@ -327,32 +334,63 @@ filter_save_options(PANEL *panel)
                 filter_set(FILTER_DESTINATION, expr);
                 break;
             case FLD_FILTER_REGISTER:
-                set_option_value("filter.REGISTER", strlen(field_value) ? "on" : "off");
-                break;
             case FLD_FILTER_INVITE:
-                set_option_value("filter.INVITE", strlen(field_value) ? "on" : "off");
-                break;
             case FLD_FILTER_SUBSCRIBE:
-                set_option_value("filter.SUBSCRIBE", strlen(field_value) ? "on" : "off");
-                break;
             case FLD_FILTER_NOTIFY:
-                set_option_value("filter.NOTIFY", strlen(field_value) ? "on" : "off");
-                break;
             case FLD_FILTER_OPTIONS:
-                set_option_value("filter.OPTIONS", strlen(field_value) ? "on" : "off");
-                break;
             case FLD_FILTER_PUBLISH:
-                set_option_value("filter.PUBLISH", strlen(field_value) ? "on" : "off");
-                break;
             case FLD_FILTER_MESSAGE:
-                set_option_value("filter.MESSAGE", strlen(field_value) ? "on" : "off");
+                if (!strcmp(field_value, "*"))
+                    sprintf(method_expr + strlen(method_expr), "|%s", filter_field_method(field_id));
                 break;
             default:
                 break;
         }
     }
 
+    // Set Method filter
+    if (strlen(method_expr)) {
+        method_expr[0] = '(';
+        method_expr[strlen(method_expr)+1] = '\0';
+        method_expr[strlen(method_expr)] = ')';
+        filter_set(FILTER_METHOD, method_expr);
+    } else {
+        filter_set(FILTER_METHOD, NULL);
+    }
+
     // Force filter evaluation
     filter_reset_calls();
 }
 
+const char*
+filter_field_method(int field_id)
+{
+    const char *method = NULL;
+    switch(field_id) {
+        case FLD_FILTER_REGISTER:
+            method = SIP_METHOD_REGISTER;
+            break;
+        case FLD_FILTER_INVITE:
+            method = SIP_METHOD_INVITE;
+            break;
+        case FLD_FILTER_SUBSCRIBE:
+            method = SIP_METHOD_SUBSCRIBE;
+            break;
+        case FLD_FILTER_NOTIFY:
+            method = SIP_METHOD_NOTIFY;
+            break;
+        case FLD_FILTER_OPTIONS:
+            method = SIP_METHOD_OPTIONS;
+            break;
+        case FLD_FILTER_PUBLISH:
+            method = SIP_METHOD_PUBLISH;
+            break;
+        case FLD_FILTER_MESSAGE:
+            method = SIP_METHOD_MESSAGE;
+            break;
+        default:
+            return "";
+    }
+
+    return method;
+}

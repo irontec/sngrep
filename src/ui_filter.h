@@ -123,4 +123,12 @@ filter_handle_key(PANEL *panel, int key);
 void
 filter_save_options(PANEL *panel);
 
+/**
+ * @brief Return String value for a filter field
+ *
+ * @return method name
+ */
+const char*
+filter_field_method(int field_id);
+
 #endif
