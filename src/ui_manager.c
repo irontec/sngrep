@@ -425,7 +425,8 @@ draw_vscrollbar(WINDOW *win, int value, int max, bool left)
     mvwvline(win, 0, scrollxpos, ACS_VLINE, height);
 
     // How long the scroll will be
-    scrollen = (height * 1.0f / max * height) + 0.5;
+    if (!(scrollen = (height * 1.0f / max * height) + 0.5))
+        scrollen = 1;
 
     // Where will the scroll start
     scrollypos = height * (value * 1.0f / max);
