@@ -295,7 +295,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         sprintf(method, "%s", msg_method);
 
     // If message has sdp information
-    if (msg_get_attribute(msg, SIP_ATTR_SDP)) {
+    if (msg->sdp) {
         if (is_option_enabled("cf.sdpinfo")) {
             // Show message sdp in title
             memset(method, 0, sizeof(method));

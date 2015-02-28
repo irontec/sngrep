@@ -130,7 +130,7 @@ call_group_msg_count(sip_call_group_t *group)
 
     for (i = 0; i < group->callcnt; i++) {
         while ((msg = call_get_next_msg(group->calls[i], msg))) {
-            if (group->sdp_only && !msg_get_attribute(msg, SIP_ATTR_SDP))
+            if (group->sdp_only && !msg->sdp)
                 continue;
             msgcnt++;
         }
@@ -144,7 +144,7 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg)
     int number = 0;
     sip_msg_t *cur = NULL;
     while ((cur = call_group_get_next_msg(group, cur))) {
-        if (group->sdp_only && !msg_get_attribute(cur, SIP_ATTR_SDP))
+        if (group->sdp_only && !msg->sdp)
             continue;
 
         if (cur == msg)
@@ -164,7 +164,7 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     for (i = 0; i < group->callcnt; i++) {
         cand = NULL;
         while ((cand = call_get_next_msg(group->calls[i], cand))) {
-            if (group->sdp_only && !msg_get_attribute(cand, SIP_ATTR_SDP))
+            if (group->sdp_only && !msg->sdp)
                 continue;
 
             // candidate must be between msg and next

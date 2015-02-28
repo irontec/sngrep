@@ -50,7 +50,6 @@ static sip_attr_hdr_t attrs[] = {
     { .id = SIP_ATTR_METHOD,        .name = "method", .desc = "Method", .dwidth = 15 },
     { .id = SIP_ATTR_REQUEST,       .name = "request", .desc = "Request", .dwidth = 3 },
     { .id = SIP_ATTR_CSEQ,          .name = "cseq", .desc = "CSeq", .dwidth = 6 },
-    { .id = SIP_ATTR_SDP,           .name = "sdp", .desc = "Has SDP", .dwidth = 3 },
     { .id = SIP_ATTR_SDP_ADDRESS,   .name = "sdpaddress", .desc = "SDP Address", .dwidth = 22 },
     { .id = SIP_ATTR_SDP_PORT,      .name = "sdpport", .desc = "SDP Port", .dwidth = 5 },
     { .id = SIP_ATTR_TRANSPORT,     .name = "transport", .title = "Trans", .desc = "Transport", .dwidth = 3 },

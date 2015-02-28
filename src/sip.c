@@ -574,7 +574,7 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             continue;
         }
         if (!strncasecmp(pch, "Content-Type: application/sdp", 29)) {
-            msg_set_attribute(msg, SIP_ATTR_SDP, "1");
+            msg->sdp = 1;
             continue;
         }
         if (sscanf(pch, "c=%*s %*s %s", value) == 1) {
