@@ -123,6 +123,13 @@ call_group_get_next(sip_call_group_t *group, sip_call_t *call)
 }
 
 int
+call_group_count(sip_call_group_t *group)
+{
+    return group->callcnt;
+}
+
+
+int
 call_group_msg_count(sip_call_group_t *group)
 {
     sip_msg_t *msg = NULL;

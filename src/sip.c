@@ -43,6 +43,7 @@
 #include "sip.h"
 #include "option.h"
 #include "capture.h"
+#include "filter.h"
 
 /**
  * @brief Linked list of parsed calls
@@ -328,8 +329,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     // Set the message owner
     msg->call = call;
 
-    // XXX Put this msg at the end of the msg list
-    // Order is important!!!
+    // Put this msg at the end of the msg list
     if (!call->msgs) {
         call->msgs = msg;
     } else {
@@ -337,8 +337,13 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
             ;
         prev->next = msg;
     }
+
+    // Increase message count
+    call->msgcnt++;
+
     // Store message count
-    call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", call_msg_count(call));
+    call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", call->msgcnt);
+
     pthread_mutex_unlock(&calls.lock);
 }
 
@@ -371,17 +376,10 @@ call_find_by_xcallid(const char *xcallid)
     return NULL;
 }
 
-//@todo replace this for Msgcnt attribute
 int
 call_msg_count(sip_call_t *call)
 {
-    int msgcnt = 0;
-    sip_msg_t *msg = call->msgs;
-    while (msg) {
-        msgcnt++;
-        msg = msg->next;
-    }
-    return msgcnt;
+    return call->msgcnt;
 }
 
 sip_call_t *
@@ -455,6 +453,29 @@ call_get_prev(sip_call_t *cur)
         prev = cur->prev;
     }
     pthread_mutex_unlock(&calls.lock);
+    return prev;
+}
+
+sip_call_t *
+call_get_next_filtered(sip_call_t *cur)
+{
+    sip_call_t *next = call_get_next(cur);
+
+    // Return next not filtered call
+    if (next && filter_check_call(next))
+        return call_get_next_filtered(next);
+
+    return next;
+}
+
+sip_call_t *
+call_get_prev_filtered(sip_call_t *cur)
+{
+
+    sip_call_t *prev = call_get_prev(cur);
+    // Return previous call if this one is filtered
+    if (prev && filter_check_call(prev))
+        return call_get_prev_filtered(prev);
     return prev;
 }
 

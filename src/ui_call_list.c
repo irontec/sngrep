@@ -33,6 +33,7 @@
 #include <regex.h>
 #include <ctype.h>
 #include "option.h"
+#include "filter.h"
 #include "capture.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
@@ -181,7 +182,7 @@ call_list_draw(PANEL *panel)
 {
     int height, width, cline = 0, i, colpos, collen;
     struct sip_call *call;
-    int callcnt, cury, curx;
+    int dispcallcnt, callcnt, cury, curx;
     const char *ouraddr;
     const char *coldesc;
     char linetext[256];
@@ -227,15 +228,16 @@ call_list_draw(PANEL *panel)
         wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
     }
 
-    // Get available calls counter (we'll use it here a couple of times)
-    callcnt = call_list_count(panel);
+    // Store call counters
+    callcnt = sip_calls_count();
+    dispcallcnt = filter_display_count();
 
     // Print calls count (also filtered)
     mvwprintw(win, 1, 35, "%*s", 35, "");
-    if (callcnt != sip_calls_count()) {
-        mvwprintw(win, 1, 35, "Calls: %d (%d displayed)", sip_calls_count(), callcnt);
+    if (callcnt != dispcallcnt) {
+        mvwprintw(win, 1, 35, "Dialogs: %d (%d displayed)", callcnt, dispcallcnt);
     } else {
-        mvwprintw(win, 1, 35, "Calls: %d", sip_calls_count());
+        mvwprintw(win, 1, 35, "Dialogs: %d", callcnt);
     }
 
     // Restore cursor position
@@ -246,7 +248,7 @@ call_list_draw(PANEL *panel)
     getmaxyx(win, height, width);
 
     // No calls, we've finished drawing
-    if (callcnt == 0)
+    if (dispcallcnt == 0)
         return 0;
 
     // If no active call, use the fist one (if exists)
@@ -304,7 +306,7 @@ call_list_draw(PANEL *panel)
     }
 
     // Draw scrollbar to the right
-    draw_vscrollbar(win, info->first_line, callcnt, true);
+    draw_vscrollbar(win, info->first_line, dispcallcnt, true);
     wnoutrefresh(info->list_win);
 
     return 0;
@@ -780,12 +782,6 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
 void
 call_list_filter_update(PANEL *panel)
 {
-    sip_call_t *call = NULL;
-
-    // Force filter evaluation
-    while((call = call_get_next(call)))
-        call->filtered = -1;
-
     // Clear list
     call_list_clear(panel);
 }
@@ -808,39 +804,15 @@ call_list_clear(PANEL *panel)
     wnoutrefresh(info->list_win);
 }
 
-int
-call_list_count(PANEL *panel)
-{
-    int count = 0;
-    sip_call_t *call = NULL;
-    while ((call = call_list_get_next(panel, call)))
-        count++;
-    return count;
-}
-
 sip_call_t *
 call_list_get_next(PANEL *panel, sip_call_t *cur)
 {
     sip_call_t *next = cur;
-    while ((next = call_get_next(next))) {
-        // Filtered call skip
-        if (next->filtered == 1)
+    while ((next = call_get_next_filtered(next))) {
+        // This call doesnt match display
+        if (!call_list_match_dfilter(panel, next)) {
             continue;
-
-        // Not evaluated call, check for filters
-        if (next->filtered == -1) {
-            // This call doesnt match filters
-            if (!call_list_match_filters(panel, next)) {
-                next->filtered = 1;
-                continue;
-            }
-            // This call doesnt match display
-            if (!call_list_match_dfilter(panel, next)) {
-                next->filtered = 1;
-                continue;
-            }
         }
-
         return next;
     }
     return NULL;
@@ -850,23 +822,10 @@ sip_call_t *
 call_list_get_prev(PANEL *panel, sip_call_t *cur)
 {
     sip_call_t *prev = cur;
-    while ((prev = call_get_prev(prev))) {
-        // Filtered call skip
-        if (prev->filtered == 1)
+    while ((prev = call_get_prev_filtered(prev))) {
+        // This call doesnt match display
+        if (!call_list_match_dfilter(panel, prev)) {
             continue;
-
-        // Not evaluated call, check for filters
-        if (prev->filtered == -1) {
-            // This call doesnt match filters
-            if (!call_list_match_filters(panel, prev)) {
-                prev->filtered = 1;
-                continue;
-            }
-            // This call doesnt match display
-            if (!call_list_match_dfilter(panel, prev)) {
-                prev->filtered = 1;
-                continue;
-            }
         }
         return prev;
     }
@@ -902,44 +861,4 @@ call_list_match_dfilter(PANEL *panel, sip_call_t *call)
     // Free the expression memory
     regfree(&regex);
     return ret;
-}
-
-int
-call_list_match_filters(PANEL *panel, sip_call_t *call)
-{
-    char filter_option[80];
-    const char *filter;
-
-    // Check enabled filters
-    if (is_option_enabled("filter.enable")) {
-        if ((filter = get_option_value("filter.sipfrom")) && strlen(filter)) {
-            if (strstr(call_get_attribute(call, SIP_ATTR_SIPFROM), filter) == NULL) {
-                return 0;
-            }
-        }
-        if ((filter = get_option_value("filter.sipto")) && strlen(filter)) {
-            if (strstr(call_get_attribute(call, SIP_ATTR_SIPTO), filter) == NULL) {
-                return 0;
-            }
-        }
-        if ((filter = get_option_value("filter.src")) && strlen(filter)) {
-            if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_SRC), strlen(filter))) {
-                return 0;
-            }
-        }
-        if ((filter = get_option_value("filter.dst")) && strlen(filter)) {
-            if (strncasecmp(filter, call_get_attribute(call, SIP_ATTR_DST), strlen(filter))) {
-                return 0;
-            }
-        }
-
-        // Check if a filter option exists
-        memset(filter_option, 0, sizeof(filter_option));
-        sprintf(filter_option, "filter.%s", call_get_attribute(call, SIP_ATTR_METHOD));
-        if (!is_option_enabled(filter_option)) {
-            return 0;
-        }
-    }
-
-    return 1;
 }

@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <form.h>
 #include "ui_filter.h"
+#include "filter.h"
 #include "option.h"
 
 /**
@@ -128,12 +129,12 @@ filter_create()
 
     // Set Default field values
     set_field_buffer(info->fields[FLD_FILTER_ENABLE], 0, "*");
-    set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, get_option_value("filter.sipfrom"));
-    set_field_buffer(info->fields[FLD_FILTER_SIPTO], 0, get_option_value("filter.sipto"));
-    set_field_buffer(info->fields[FLD_FILTER_SRC], 0, get_option_value("filter.src"));
-    set_field_buffer(info->fields[FLD_FILTER_DST], 0, get_option_value("filter.dst"));
+    set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));
+    set_field_buffer(info->fields[FLD_FILTER_SIPTO], 0, filter_get(FILTER_SIPTO));
+    set_field_buffer(info->fields[FLD_FILTER_SRC], 0, filter_get(FILTER_SOURCE));
+    set_field_buffer(info->fields[FLD_FILTER_DST], 0, filter_get(FILTER_DESTINATION));
     set_field_buffer(info->fields[FLD_FILTER_REGISTER], 0,
-                     is_option_enabled("filter.REGISTER") ? "*" : "");
+                     filter_get(FILTER_METHOD) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_INVITE], 0,
                      is_option_enabled("filter.INVITE") ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_SUBSCRIBE], 0,
@@ -299,35 +300,42 @@ filter_handle_key(PANEL *panel, int key)
 void
 filter_save_options(PANEL *panel)
 {
-    sip_call_t *call = NULL;
     char field_value[30];
-    int i;
+    char *expr;
+    int field_id;
 
     // Get panel information
     filter_info_t *info = (filter_info_t*) panel_userptr(panel);
 
-    for (i = 0; i < FLD_FILTER_COUNT; i++) {
+    for (field_id = 0; field_id < FLD_FILTER_COUNT; field_id++) {
         // Get current field value.
         // We trim spaces with sscanf because and empty field is stored as
         // space characters
         memset(field_value, 0, sizeof(field_value));
-        sscanf(field_buffer(info->fields[i], 0), "%[^ ]", field_value);
+        sscanf(field_buffer(info->fields[field_id], 0), "%[^ ]", field_value);
 
-        switch (i) {
+        // Set filter expression
+        if (strlen(field_value)) {
+            expr = field_value;
+        } else {
+            expr = NULL;
+        }
+
+        switch (field_id) {
             case FLD_FILTER_ENABLE:
                 set_option_value("filter.enable", strlen(field_value) ? "on" : "off");
                 break;
             case FLD_FILTER_SIPFROM:
-                set_option_value("filter.sipfrom", field_value);
+                filter_set(FILTER_SIPFROM, expr);
                 break;
             case FLD_FILTER_SIPTO:
-                set_option_value("filter.sipto", field_value);
+                filter_set(FILTER_SIPTO, expr);
                 break;
             case FLD_FILTER_SRC:
-                set_option_value("filter.src", field_value);
+                filter_set(FILTER_SOURCE, expr);
                 break;
             case FLD_FILTER_DST:
-                set_option_value("filter.dst", field_value);
+                filter_set(FILTER_DESTINATION, expr);
                 break;
             case FLD_FILTER_REGISTER:
                 set_option_value("filter.REGISTER", strlen(field_value) ? "on" : "off");
@@ -356,7 +364,6 @@ filter_save_options(PANEL *panel)
     }
 
     // Force filter evaluation
-    while((call = call_get_next(call)))
-        call->filtered = -1;
+    filter_reset_calls();
 }
 

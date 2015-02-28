@@ -32,6 +32,7 @@
 #ifndef __UI_CALL_LIST_H
 #define __UI_CALL_LIST_H
 #include <form.h>
+#include "sip.h"
 #include "ui_manager.h"
 
 /**
@@ -263,15 +264,6 @@ void
 call_list_clear(PANEL *panel);
 
 /**
- * @brief Get call count after applying display fitering
- *
- * @param panel Ncurses panel pointer
- * @return number of calls that match display filter
- */
-int
-call_list_count(PANEL *panel);
-
-/**
  * @brief Get next call after applying display fitering
  *
  * @param panel Ncurses panel pointer
@@ -300,15 +292,5 @@ call_list_get_prev(PANEL *panel, sip_call_t *cur);
  */
 int
 call_list_match_dfilter(PANEL *panel, sip_call_t *call);
-
-/**
- * @brief Check if call matches custom filters
- *
- * @param panel Ncurses panel pointer
- * @param call Call to check
- * @return 0 if call mismatchs a filter
- */
-int
-call_list_match_filters(PANEL *panel, sip_call_t *call);
 
 #endif

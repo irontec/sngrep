@@ -106,6 +106,8 @@ struct sip_call {
     struct sip_attr *attrs;
     //! List of messages of this call
     sip_msg_t *msgs;
+    //! How many messages has this call
+    int msgcnt;
     //! Message when conversation started
     sip_msg_t *cstart_msg;
     //! Calls double linked list
@@ -313,7 +315,7 @@ sip_msg_t *
 call_get_prev_msg(sip_call_t *call, sip_msg_t *msg);
 
 /**
- * @brief Get next call after applying filters and ignores
+ * @brief Get next call
  *
  * General getter for call list. Never access calls list
  * directly, use this instead.
@@ -325,7 +327,7 @@ sip_call_t *
 call_get_next(sip_call_t *cur);
 
 /**
- * @brief Get previous call after applying filters and ignores
+ * @brief Get previous call
  *
  * General getter for call list. Never access calls list
  * directly, use this instead.
@@ -335,6 +337,27 @@ call_get_next(sip_call_t *cur);
  */
 sip_call_t *
 call_get_prev(sip_call_t *cur);
+
+/**
+ * @brief Get next call after applying filters and ignores
+ *
+ * @param cur Current call. Pass NULL to get the first call.
+ * @return Next call in the list or NULL if there is no next call
+ */
+sip_call_t *
+call_get_next_filtered(sip_call_t *cur);
+
+/**
+ * @brief Get previous call applying filters and ignores
+ *
+ * General getter for call list. Never access calls list
+ * directly, use this instead.
+ *
+ * @param cur Current call
+ * @return Prev call in the list or NULL if there is no previous call
+ */
+sip_call_t *
+call_get_prev_filtered(sip_call_t *cur);
 
 /**
  * @brief Update Call State attribute with its last parsed message

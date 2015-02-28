@@ -134,6 +134,15 @@ sip_call_t *
 call_group_get_next(sip_call_group_t *group, sip_call_t *call);
 
 /**
+ * @brief Return number of calls in a group
+ *
+ * @param group Pointer to an existing group
+ * @return How many calls the group has
+ */
+int
+call_group_count(sip_call_group_t *group);
+
+/**
  * @brief Return message count in the group
  *
  * Return the sum of messages of all calls in the group
