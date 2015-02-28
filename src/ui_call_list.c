@@ -83,7 +83,7 @@ call_list_create()
             if ((collen = get_option_int_value(option)) == -1)
                 collen = sip_attr_get_width(attrid);
             // Get column title
-            title = sip_attr_get_description(attrid);
+            title = sip_attr_get_title(attrid);
             // Add column to the list
             call_list_add_column(panel, attrid, field, title, collen);
         }
@@ -216,7 +216,7 @@ call_list_draw(PANEL *panel)
             // Get current column width
             collen = info->columns[i].width;
             // Get current column title
-            coldesc = sip_attr_get_description(info->columns[i].id);
+            coldesc = sip_attr_get_title(info->columns[i].id);
 
             // Check if the column will fit in the remaining space of the screen
             if (colpos + strlen(coldesc) >= width)

@@ -124,6 +124,8 @@ struct sip_attr_hdr {
     enum sip_attr_id id;
     //! Attribute name
     char *name;
+    //! Attribute column title
+    char *title;
     //! Attribute description
     char *desc;
     //! Attribute default display width
@@ -169,6 +171,18 @@ sip_attr_get_header(enum sip_attr_id id);
  */
 const char *
 sip_attr_get_description(enum sip_attr_id id);
+
+/**
+ * @brief Get Attribute title
+ *
+ * Retrieve title of given attribute from its
+ * header structure.
+ *
+ * @param id Attribute id
+ * @return Attribute title from its header
+ */
+const char *
+sip_attr_get_title(enum sip_attr_id id);
 
 /**
  * @brief Get Attribute name

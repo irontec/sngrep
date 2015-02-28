@@ -90,9 +90,9 @@ column_select_create()
 
     // Enable current enabled fields and move them to the top
     for (column = 0; column < list_info->columncnt; column++) {
-        const char *desc = list_info->columns[column].title;
+        const char *attr = list_info->columns[column].attr;
         for (attr_id = 0; attr_id < item_count(menu); attr_id++) {
-            if (!strcmp(item_description(info->items[attr_id]), desc)) {
+            if (!strcmp(item_userptr(info->items[attr_id]), attr)) {
                 column_select_toggle_item(panel, info->items[attr_id]);
                 column_select_move_item(panel, info->items[attr_id], column);
                 break;
@@ -228,7 +228,7 @@ column_select_update_columns(PANEL *panel)
         attr_id = sip_attr_from_name(item_userptr(info->items[column]));
         // Add a new column to the list
         call_list_add_column(list_panel, attr_id, sip_attr_get_name(attr_id),
-                             sip_attr_get_description(attr_id), sip_attr_get_width(attr_id));
+                             sip_attr_get_title(attr_id), sip_attr_get_width(attr_id));
     }
 }
 
