@@ -183,7 +183,6 @@ call_list_draw(PANEL *panel)
     int height, width, cline = 0, i, colpos, collen;
     struct sip_call *call;
     int dispcallcnt, callcnt, cury, curx;
-    const char *ouraddr;
     const char *coldesc;
     char linetext[256];
 
@@ -265,15 +264,6 @@ call_list_draw(PANEL *panel)
         // We only print calls with messages (In fact, all call should have msgs)
         if (!call_msg_count(call))
             continue;
-
-        // TODO Useless feature :|
-        if ((ouraddr = get_option_value("address"))) {
-            if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_SRC))) {
-                wattron(win, COLOR_PAIR(CP_RED_ON_DEF));
-            } else if (!strcasecmp(ouraddr, call_get_attribute(call, SIP_ATTR_DST))) {
-                wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
-            }
-        }
 
         // Show bold selected rows
         if (call_group_exists(info->group, call)) {
