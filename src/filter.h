@@ -99,12 +99,13 @@ const char *
 filter_get(int type);
 
 /**
- * @brief Number of calls that not have been filtered
+ * @brief Get Filtered calls
  *
- * @return Number of calls without filtered flag
+ * @param total Total calls processed
+ * @param displayed number of calls matching filters
  */
-int
-filter_display_count();
+void
+filter_stats(int *total, int *displayed);
 
 /**
  * @brief Check if a call if filtered

@@ -63,18 +63,21 @@ filter_get(int type)
     return filters[type].expr;
 }
 
-int
-filter_display_count()
+void
+filter_stats(int *total, int *displayed)
 {
     sip_call_t *call = NULL;
-    int filtered_cnt = 0;
 
-    while ((call = call_get_next_filtered(call))) {
-        filtered_cnt++;
+    // Initialize stats
+    *total = 0;
+    *displayed = 0;
+
+    while ((call = call_get_next(call))) {
+        (*total)++;
+        if (filter_check_call(call) == 0)
+            (*displayed)++;
     }
-    return filtered_cnt;
 }
-
 
 int
 filter_check_call(sip_call_t *call)

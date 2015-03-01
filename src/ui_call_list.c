@@ -226,9 +226,8 @@ call_list_draw(PANEL *panel)
         wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
     }
 
-    // Store call counters
-    callcnt = sip_calls_count();
-    dispcallcnt = filter_display_count();
+    // Get filter call counters
+    filter_stats(&callcnt, &dispcallcnt);
 
     // Print calls count (also filtered)
     mvwprintw(win, 1, 35, "%*s", 35, "");

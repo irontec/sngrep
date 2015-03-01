@@ -144,15 +144,19 @@ save_destroy(PANEL *panel)
 int
 save_draw(PANEL *panel)
 {
+    int total, displayed;
+
     // Get panel information
     save_info_t *info = (save_info_t*) panel_userptr(panel);
     WINDOW *win = panel_window(panel);
 
+    // Get filter stats
+    filter_stats(&total, &displayed);
+
     mvwprintw(win, 5, 3, "( ) Save all dialogs");
     mvwprintw(win, 6, 3, "( ) Save selected dialogs (%d dialogs)",
               call_group_count(info->group));
-    mvwprintw(win, 7, 3, "( ) Save displayed dialogs (%d dialogs)",
-              filter_display_count());
+    mvwprintw(win, 7, 3, "( ) Save displayed dialogs (%d dialogs)", displayed);
 
     set_field_buffer(info->fields[FLD_SAVE_ALL], 0,
                      (info->savemode == SAVE_ALL) ? "*" : "");
