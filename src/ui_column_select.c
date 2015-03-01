@@ -28,6 +28,7 @@
  */
 #include <string.h>
 #include <stdlib.h>
+#include <regex.h>
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_column_select.h"
@@ -54,7 +55,7 @@ column_select_create()
     column_select_info_t *info;
 
     // Calculate window dimensions
-    height = 20;
+    height = 22;
     width = 60;
 
     // Cerate a new indow for the panel and form
@@ -69,6 +70,21 @@ column_select_create()
 
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
+
+    // Initialize the fields
+    info->fields[FLD_COLUMNS_SNGREPRC] = new_field(1, 1, height - 4, 3, 0, 0);
+    info->fields[FLD_COLUMNS_SAVE] = new_field(1, 10, height - 2, 15, 0, 0);
+    info->fields[FLD_COLUMNS_CANCEL] = new_field(1, 10, height - 2, 35, 0, 0);
+    info->fields[FLD_COLUMNS_COUNT] = NULL;
+
+    // Field Labels
+    set_field_buffer(info->fields[FLD_COLUMNS_SAVE], 0, "[  Save  ]");
+    set_field_buffer(info->fields[FLD_COLUMNS_CANCEL], 0, "[ Cancel ]");
+
+    // Create the form and post it
+    info->form = new_form(info->fields);
+    set_form_sub(info->form, win);
+    post_form(info->form);
 
     // Create a subwin for the menu area
     info->menu_win = derwin(win, 10, width - 2, 7, 0);
@@ -119,15 +135,22 @@ column_select_create()
     mvwhline(win, 6, 1, ACS_HLINE, width - 1);
     mvwaddch(win, 6, 0, ACS_LTEE);
     mvwaddch(win, 6, width - 1, ACS_RTEE);
+    mvwhline(win, height - 5, 1, ACS_HLINE, width - 1);
+    mvwaddch(win, height - 5, 0, ACS_LTEE);
+    mvwaddch(win, height - 5, width - 1, ACS_RTEE);
     wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+
+    // Set field labels
+    mvwprintw(win, 18, 2, "[ ] Remember columns state");
 
     // Some brief explanation abotu what window shows
     wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(win, 3, 2, "This windows show the list of columns displayed on Call");
     mvwprintw(win, 4, 2, "List. You can enable/disable using Space Bar and reorder");
     mvwprintw(win, 5, 2, "them using + and - keys.");
-    mvwprintw(win, height - 2, 12, "Press Enter when done. Esc to exit.");
     wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+
+    info->form_active = 0;
 
     return panel;
 }
@@ -153,14 +176,28 @@ column_select_destroy(PANEL *panel)
 int
 column_select_handle_key(PANEL *panel, int key)
 {
+    // Get panel information
+    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+
+    if (info->form_active) {
+        return column_select_handle_key_form(panel, key);
+    } else {
+        return column_select_handle_key_menu(panel, key);
+    }
+    return 0;
+}
+
+int
+column_select_handle_key_menu(PANEL *panel, int key)
+{
     MENU *menu;
     ITEM *current;
     int current_idx;
 
     // Get panel information
     column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
-    menu = info->menu;
 
+    menu = info->menu;
     current = current_item(menu);
     current_idx = item_index(current);
 
@@ -177,6 +214,7 @@ column_select_handle_key(PANEL *panel, int key)
         case KEY_PPAGE:
             menu_driver(menu, REQ_SCR_UPAGE);
             break;
+        case 10:
         case ' ':
             column_select_toggle_item(panel, current);
             column_select_update_menu(panel);
@@ -189,9 +227,12 @@ column_select_handle_key(PANEL *panel, int key)
             column_select_move_item(panel, current, current_idx - 1);
             column_select_update_menu(panel);
             break;
-        case 10:
-            column_select_update_columns(panel);
-            return 27;
+        case 9 /*KEY_TAB*/:
+            info->form_active = 1;
+            set_menu_fore(menu, COLOR_PAIR(CP_DEFAULT));
+            form_driver(info->form, REQ_VALIDATION);
+            curs_set(1);
+            break;
         default:
             return key;
     }
@@ -199,6 +240,81 @@ column_select_handle_key(PANEL *panel, int key)
     // Draw a scrollbar to the right
     draw_vscrollbar(info->menu_win, top_row(menu), item_count(menu) - 1, 0);
     wnoutrefresh(info->menu_win);
+    return 0;
+}
+
+int
+column_select_handle_key_form(PANEL *panel, int key)
+{
+    int field_idx, new_field_idx;
+    char field_value[48];
+
+    // Get panel information
+    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+
+    // Get current field id
+    field_idx = field_index(current_field(info->form));
+
+    // Get current field value.
+    // We trim spaces with sscanf because and empty field is stored as
+    // space characters
+    memset(field_value, 0, sizeof(field_value));
+    sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
+
+    switch (key) {
+        case 9 /*KEY_TAB*/:
+        case KEY_DOWN:
+            form_driver(info->form, REQ_NEXT_FIELD);
+            break;
+        case KEY_UP:
+            form_driver(info->form, REQ_PREV_FIELD);
+            break;
+        case 27 /*KEY_ESC*/:
+            return key;
+            break;
+        case ' ':
+        case 10: /* KEY_ENTER */
+            switch(field_idx) {
+                case FLD_COLUMNS_SAVE:
+                    column_select_update_columns(panel);
+                    return 27;
+                case FLD_COLUMNS_CANCEL:
+                    return 27;
+                case FLD_COLUMNS_SNGREPRC:
+                    info->remember = info->remember ? 0 : 1;
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+
+    // Set field values
+    set_field_buffer(info->fields[FLD_COLUMNS_SNGREPRC], 0,
+                     (info->remember) ? "*" : "");
+
+    // Validate all input data
+    form_driver(info->form, REQ_VALIDATION);
+
+    // Change background and cursor of "button fields"
+    set_field_back(info->fields[FLD_COLUMNS_SAVE], A_NORMAL);
+    set_field_back(info->fields[FLD_COLUMNS_CANCEL], A_NORMAL);
+    curs_set(1);
+
+    // Change current field background
+    new_field_idx = field_index(current_field(info->form));
+    if (new_field_idx == FLD_COLUMNS_SAVE || new_field_idx == FLD_COLUMNS_CANCEL) {
+        set_field_back(info->fields[new_field_idx], A_REVERSE);
+        curs_set(0);
+    }
+
+    // Swap between menu and form
+    if (field_idx == FLD_COLUMNS_CANCEL && new_field_idx == FLD_COLUMNS_SNGREPRC) {
+        set_menu_fore(info->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
+        curs_set(0);
+        info->form_active = 0;
+    }
+
 
     return 0;
 }
@@ -230,7 +346,71 @@ column_select_update_columns(PANEL *panel)
         call_list_add_column(list_panel, attr_id, sip_attr_get_name(attr_id),
                              sip_attr_get_title(attr_id), sip_attr_get_width(attr_id));
     }
+
+    // Store columns in configuretion if requested
+    if (info->remember)
+        column_select_save_columns(panel);
 }
+
+void
+column_select_save_columns(PANEL *panel)
+{
+    int column;
+    FILE *fi, *fo;
+    regex_t setting;
+    char columnopt[128];
+    char line[1024];
+    char *home = getenv("HOME");
+    char userconf[128], tmpfile[128];
+
+    // No home dir...
+    if (!home)
+        return;
+
+    // Read current $HOME/.sngreprc file
+    sprintf(userconf, "%s/.sngreprc", home);
+    sprintf(tmpfile, "%s/.sngreprc.old", home);
+
+    // Move home file to temporal dir
+    rename(userconf, tmpfile);
+
+    // Create a new user conf file
+    if (!(fo = fopen(userconf, "w")))  {
+        return;
+    }
+
+    // Read all lines of old sngreprc file
+    if ((fi = fopen(tmpfile, "r"))) {
+        // Compile expression matching
+        regcomp(&setting, "^\\s*set\\s+cl.column[0-9]+\\s+\\S+\\s*$", REG_EXTENDED);
+        // Read all configuration file
+        while (fgets(line, 1024, fi) != NULL) {
+            // Dont copy set cl.columns lines
+            if (regexec(&setting, line, 0, 0, 0) == 0)
+                continue;
+            // Put everyting in new .sngreprc file
+            fputs(line, fo);
+        }
+        fclose(fi);
+        regfree(&setting);
+    }
+
+    // Get panel information
+    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+
+    // Add all selected columns
+    for (column = 0; column < item_count(info->menu); column++) {
+        // If column is active
+        if (!strncmp(item_name(info->items[column]), "[ ]", 3))
+            continue;
+
+        // Add the columns settings
+        sprintf(columnopt, "set cl.column%d %s\n", column, (const char*) item_userptr(info->items[column]));
+        fputs(columnopt, fo);
+    }
+    fclose(fo);
+}
+
 
 void
 column_select_move_item(PANEL *panel, ITEM *item, int pos)

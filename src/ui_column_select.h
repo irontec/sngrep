@@ -31,8 +31,21 @@
 
 #include "config.h"
 #include <menu.h>
+#include <form.h>
 #include "ui_manager.h"
 #include "sip_attr.h"
+
+/**
+ * @brief Enum of available fields
+ */
+enum column_select_field_list {
+    FLD_COLUMNS_SNGREPRC = 0,
+    FLD_COLUMNS_SAVE,
+    FLD_COLUMNS_CANCEL,
+    //! Never remove this field id
+    FLD_COLUMNS_COUNT
+};
+
 
 //! Sorter declaration of struct columns_select_info
 typedef struct column_select_info column_select_info_t;
@@ -49,6 +62,14 @@ struct column_select_info {
     MENU *menu;
     // Columns Items
     ITEM *items[SIP_ATTR_SENTINEL + 1];
+    //! Form that contains the save fields
+    FORM *form;
+    //! An array of window form fields
+    FIELD *fields[FLD_COLUMNS_COUNT + 1];
+    //! Flag to handle key inputs
+    int form_active;
+    //! Flag to save column state to file
+    int remember;
 };
 
 /**
@@ -90,6 +111,34 @@ int
 column_select_handle_key(PANEL *panel, int key);
 
 /**
+ * @brief Manage pressed keys for column selection panel
+ *
+ * This function will handle keys when menu is active.
+ * You can switch between menu and rest of the components
+ * using TAB
+ *
+ * @param panel Column selection panel pointer
+ * @param key   key code
+ * @return 0 if the key is handled, keycode otherwise
+ */
+int
+column_select_handle_key_menu(PANEL *panel, int key);
+
+/**
+ * @brief Manage pressed keys for column selection panel
+ *
+ * This function will handle keys when form is active.
+ * You can switch between menu and rest of the components
+ * using TAB
+ *
+ * @param panel Column selection panel pointer
+ * @param key   key code
+ * @return 0 if the key is handled, keycode otherwise
+ */
+int
+column_select_handle_key_form(PANEL *panel, int key);
+
+/**
  * @brief Update Call List columns
  *
  * This function will update the columns of Call List
@@ -98,6 +147,17 @@ column_select_handle_key(PANEL *panel, int key);
  */
 void
 column_select_update_columns(PANEL *panel);
+
+/**
+ * @brief Save selected columns to user config file
+ *
+ * Remove previously configurated columns from user's
+ * $HOME/.sngreprc and add new ones
+ *
+ * @param panel Column selection panel pointer
+ */
+void
+column_select_save_columns(PANEL *panel);
 
 /**
  * @brief Move a item to a new position
