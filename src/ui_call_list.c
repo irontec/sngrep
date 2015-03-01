@@ -202,9 +202,8 @@ call_list_draw(PANEL *panel)
     // Update current mode information
     if (!info->form_active) {
         // Print current running mode information
-        mvwprintw(win, 1, 2, "Current Mode: %s %8s",
-                  (capture_is_online() ? "Online" : "Offline"),
-                  (capture_is_paused() ? "(Paused)" : ""));
+        mvwprintw(win, 1, 2, "%*s", 35, "");
+        mvwprintw(win, 1, 2, "Current Mode: %s", capture_status());
 
         // Reverse colors on monochrome terminals
         if (!has_colors())

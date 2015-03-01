@@ -41,8 +41,12 @@
 #include <time.h>
 
 //! Capture modes
-#define CAPTURE_OFFLINE 0
-#define CAPTURE_ONLINE  1
+enum capture_status {
+    CAPTURE_ONLINE = 0,
+    CAPTURE_ONLINE_PAUSED,
+    CAPTURE_OFFLINE,
+    CAPTURE_OFFLINE_LOADING,
+};
 
 //! Shorter declaration of capture_info structure
 typedef struct capture_info capture_info_t;
@@ -68,10 +72,8 @@ struct dns_cache {
  * will be stored in this
  */
 struct capture_info {
-    //! Capture mode: Online, Offline
-    int mode;
-    //! Flag to pause/resume capture
-    int paused;
+    //! Capture status
+    int status;
     //! Calls capture limit. 0 for disabling
     int limit;
     //! Input file in Offline capture
@@ -269,6 +271,12 @@ capture_set_paused(int pause);
  */
 int
 capture_is_paused();
+
+/**
+ * @brief Return a string representing current capture status
+ */
+const char *
+capture_status();
 
 /**
  * @brief Get Input file from Offline mode

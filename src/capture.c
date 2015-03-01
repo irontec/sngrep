@@ -50,7 +50,7 @@ capture_online(const char *dev, const char *outfile)
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Set capture mode
-    capinfo.mode = CAPTURE_ONLINE;
+    capinfo.status = CAPTURE_ONLINE;
 
     // Try to find capture device information
     if (pcap_lookupnet(dev, &capinfo.net, &capinfo.mask, errbuf) == -1) {
@@ -94,7 +94,7 @@ capture_offline(const char *infile)
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Set capture mode
-    capinfo.mode = CAPTURE_OFFLINE;
+    capinfo.status = CAPTURE_OFFLINE_LOADING;
     // Set capture input file
     capinfo.infile = infile;
 
@@ -292,12 +292,15 @@ capture_thread(void *none)
 {
     // Parse available packets
     pcap_loop(capinfo.handle, -1, parse_packet, NULL);
+    // In offline mode, set capture to fully loaded
+    if (!capture_is_online())
+        capinfo.status = CAPTURE_OFFLINE;
 }
 
 int
 capture_is_online()
 {
-    return (capinfo.mode == CAPTURE_ONLINE);
+    return (capinfo.status == CAPTURE_ONLINE || capinfo.status == CAPTURE_ONLINE_PAUSED);
 }
 
 int
@@ -323,13 +326,34 @@ capture_set_limit(int limit)
 void
 capture_set_paused(int pause)
 {
-    capinfo.paused = pause;
+    if (capture_is_online()) {
+        if (pause)
+            capinfo.status = CAPTURE_ONLINE_PAUSED;
+        else
+            capinfo.status = CAPTURE_ONLINE;
+    }
 }
 
 int
 capture_is_paused()
 {
-    return capinfo.paused;
+    return capinfo.status == CAPTURE_ONLINE_PAUSED;
+}
+
+const char *
+capture_status()
+{
+    switch(capinfo.status) {
+        case CAPTURE_ONLINE:
+            return "Online";
+        case CAPTURE_ONLINE_PAUSED:
+            return "Online (Paused)";
+        case CAPTURE_OFFLINE:
+            return "Offline";
+        case CAPTURE_OFFLINE_LOADING:
+            return "Offline (Loading)";
+    }
+    return "";
 }
 
 const char*
