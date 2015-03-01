@@ -303,6 +303,9 @@ filter_save_options(PANEL *panel)
     int field_id;
     char method_expr[256];
 
+    // Initialize variables
+    memset(method_expr, 0, sizeof(method_expr));
+
     // Get panel information
     filter_info_t *info = (filter_info_t*) panel_userptr(panel);
 
