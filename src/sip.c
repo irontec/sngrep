@@ -63,14 +63,14 @@ sip_init(int limit)
     hcreate(calls.limit);
 
     // Initialize calls lock
-     pthread_mutexattr_t attr;
-     pthread_mutexattr_init(&attr);
- #if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
-     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
- #else
-     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
- #endif
-     pthread_mutex_init(&calls.lock, &attr);
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+#else
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+#endif
+    pthread_mutex_init(&calls.lock, &attr);
 }
 
 sip_msg_t *
@@ -707,19 +707,32 @@ sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur)
 int
 sip_set_match_expression(const char *expr, int insensitive, int invert)
 {
-    int cflags = REG_EXTENDED;
-
     // Store expression text
     calls.match_expr = expr;
     // Set invert flag
     calls.match_invert = invert;
+
+#ifdef WITH_PCRE
+    const char *re_err = NULL;
+    int32_t err_offset;
+    int32_t pflags = PCRE_UNGREEDY;
+
+    if (insensitive)
+        pflags |= PCRE_CASELESS;
+
+    // Check if we have a valid expression
+    calls.match_regex = pcre_compile(expr, pflags, &re_err, &err_offset, 0);
+    return calls.match_regex == NULL;
+#else
+    int cflags = REG_EXTENDED;
 
     // Case insensitive requested
     if (insensitive)
         cflags |= REG_ICASE;
 
     // Check the expresion is a compilable regexp
-    return (regcomp(&calls.match_regex, expr, cflags) != 0);
+    return regcomp(&calls.match_regex, expr, cflags) != 0;
+#endif
 }
 
 int
@@ -729,6 +742,10 @@ sip_check_match_expression(const char *payload)
     if (!calls.match_expr)
         return 1;
 
+#ifdef WITH_PCRE
+    return (pcre_exec(calls.match_regex, 0, payload, strlen(payload), 0, 0, 0, 0) == 0);
+#else
     // Check if payload matches the given expresion
     return (regexec(&calls.match_regex, payload, 0, NULL, 0) == calls.match_invert);
+#endif
 }

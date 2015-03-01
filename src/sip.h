@@ -32,11 +32,16 @@
 #ifndef __SNGREP_SIP_H
 #define __SNGREP_SIP_H
 
+#include "config.h"
 #include <pcap.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#ifdef WITH_PCRE
+#include <pcre.h>
+#else
 #include <regex.h>
+#endif
 #include "sip_attr.h"
 
 //! Shorter declaration of sip_call structure
@@ -129,8 +134,13 @@ struct sip_call_list {
     int limit;
     //! match expression text
     const char *match_expr;
+#ifdef WITH_PCRE
+    //! Compiled match expression
+    pcre *match_regex;
+#else
     //! Compiled match expression
     regex_t match_regex;
+#endif
     //! Invert match expression result
     int match_invert;
     // Warranty thread-safe access to the calls list

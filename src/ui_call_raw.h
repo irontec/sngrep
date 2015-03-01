@@ -31,6 +31,8 @@
  */
 #ifndef __UI_CALL_RAW_H
 #define __UI_CALL_RAW_H
+
+#include "config.h"
 #include "ui_manager.h"
 
 //! Sorter declaration of struct call_raw_info

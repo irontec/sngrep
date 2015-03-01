@@ -33,7 +33,20 @@ AC_CHECK_HEADER([ncurses.h], [], [
     AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
 ])
 
-# Check for Ncurses Wide character support
+AC_CHECK_LIB([pthread], [pthread_create], [], [
+    AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
+])
+
+AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
+    AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
+])
+AC_CHECK_HEADER([pcap.h], [], [
+    AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
+])
+
+####
+#### Ncurses Wide character support
+####
 AC_ARG_ENABLE([unicode],
 	AC_HELP_STRING([--enable-unicode], [Enable Ncurses Unicode support]),
 	[AC_SUBST(UNICODE, $enableval)],
@@ -79,17 +92,9 @@ AS_IF([test "x$enable_unicode" == "xyes"], [
 	])
 ])
 
-AC_CHECK_LIB([pthread], [pthread_create], [], [
-    AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
-])
-
-AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
-    AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
-])
-AC_CHECK_HEADER([pcap.h], [], [
-    AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
-])
-
+####
+#### OpenSSL Support
+####
 AC_ARG_WITH([openssl],
     AS_HELP_STRING([--with-openssl], [Enable SSL Support (TLS SIP Transport)]),
     [AC_SUBST(WITH_OPENSSL, $withval)],
@@ -114,6 +119,25 @@ AS_IF([test "x$WITH_OPENSSL" == "xyes"], [
 	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep])
 	])
 	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
+], [])
+
+####
+#### PCRE Support
+####
+AC_ARG_WITH([pcre],
+    AS_HELP_STRING([--with-pcre], [Enable Perl compatible regular expressions]),
+    [AC_SUBST(WITH_PCRE, $withval)],
+    [AC_SUBST(WITH_PCRE, no)]
+)
+
+AS_IF([test "x$WITH_PCRE" == "xyes"], [
+	AC_CHECK_HEADER([pcre.h], [], [
+	    AC_MSG_ERROR([ You need libpcre development files installed to compile with pcre support.])
+	])
+	AC_CHECK_LIB([pcre], [pcre_exec], [], [
+	    AC_MSG_ERROR([ You need libpcre library installed to compile with pcre support.])
+	])
+	AC_DEFINE([WITH_PCRE],[],[Compile With Perl Compatible regular expressions support])
 ], [])
 
 # Conditional Source inclusion 
@@ -148,8 +172,9 @@ fi
 AC_MSG_NOTICE
 AC_MSG_NOTICE(   sngrep configure finished                            	)
 AC_MSG_NOTICE( ====================================================== 	)
-AC_MSG_NOTICE( OpenSSL Support		: ${WITH_OPENSSL}  					)
-AC_MSG_NOTICE( Unicode Support		: ${UNICODE}  						)
+AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
+AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  				)
+AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
 AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE
 

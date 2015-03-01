@@ -38,21 +38,49 @@ filter_t filters[FILTER_COUNT];
 int
 filter_set(int type, const char *expr)
 {
-    // If previous value
+#ifdef WITH_PCRE
+    pcre *regex = NULL;
+
+    // If we have an expression, check if compiles before changing the filter
+    if (expr) {
+        const char *re_err = NULL;
+        int32_t err_offset;
+        int32_t pcre_options = PCRE_UNGREEDY |  PCRE_CASELESS;
+
+        // Check if we have a valid expression
+        if (!(regex = pcre_compile(expr, pcre_options, &re_err, &err_offset, 0)))
+            return 1;
+    }
+
+    // Remove previous value
     if (filters[type].expr) {
         free(filters[type].expr);
-        filters[type].expr = NULL;
+        pcre_free(filters[type].regex);
+    }
+
+    // Set new expresion values
+    filters[type].expr = (expr) ? strdup(expr) : NULL;
+    filters[type].regex = regex;
+
+#else
+    regex_t regex;
+    // If we have an expression, check if compiles before changing the filter
+    if (expr) {
+        // Check if we have a valid expression
+        if (regcomp(&regex, expr, REG_EXTENDED | REG_ICASE) != 0)
+            return 1;
+    }
+
+    // Remove previous value
+    if (filters[type].expr) {
+        free(filters[type].expr);
         regfree(&filters[type].regex);
     }
 
-    if (expr) {
-        // Set the filter text
-        filters[type].expr = strdup(expr);
-        // Compile regexp for this filter
-        regcomp(&filters[type].regex, expr, REG_EXTENDED | REG_ICASE);
-    } else {
-        filters[type].expr = NULL;
-    }
+    // Set new expresion values
+    filters[type].expr = (expr) ? strdup(expr) : NULL;
+    memcpy(&filters[type].regex, &regex, sizeof(regex));
+#endif
 
     return 0;
 }
@@ -126,12 +154,20 @@ filter_check_call(sip_call_t *call)
                 return 0;
         }
 
+#ifdef WITH_PCRE
+        if (pcre_exec(filters[i].regex, 0, data, strlen(data), 0, 0, 0, 0)) {
+            // Mak as filtered
+            call->filtered = 1;
+            break;
+        }
+#else
         // Call doesn't match this filter
         if (regexec(&filters[i].regex, data, 0, NULL, 0)) {
             // Mak as filtered
             call->filtered = 1;
             break;
         }
+#endif
     }
 
     // Return the final filter status

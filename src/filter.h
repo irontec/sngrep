@@ -40,6 +40,12 @@
 #ifndef __SNGREP_FILTER_H_
 #define __SNGREP_FILTER_H_
 
+#include "config.h"
+#ifdef WITH_PCRE
+#include <pcre.h>
+#else
+#include <regex.h>
+#endif
 #include "sip.h"
 
 //! Shorter declaration of sip_call_group structure
@@ -71,8 +77,13 @@ enum filter_type {
 struct filter {
     //! The filter text
     char *expr;
+#ifdef WITH_PCRE
+    //! The filter compiled expression
+    pcre *regex;
+#else
     //! The filter compiled expression
     regex_t regex;
+#endif
 };
 
 /**

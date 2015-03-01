@@ -33,6 +33,7 @@
 #ifndef __SNGREP_GROUP_H_
 #define __SNGREP_GROUP_H_
 
+#include "config.h"
 #include <stdbool.h>
 #include "sip.h"
 

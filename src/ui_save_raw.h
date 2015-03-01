@@ -32,6 +32,8 @@
 
 #ifndef __UI_SAVE_RAW_H
 #define __UI_SAVE_RAW_H
+
+#include "config.h"
 #include <form.h>
 #include "group.h"
 #include "ui_manager.h"

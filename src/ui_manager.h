@@ -35,6 +35,7 @@
  */
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
+#include "config.h"
 #ifdef WITH_UNICODE
 #define _X_OPEN_SOURCE_EXTENDED
 #include <ncursesw/ncurses.h>

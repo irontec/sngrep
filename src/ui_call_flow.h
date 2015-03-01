@@ -31,6 +31,8 @@
  */
 #ifndef __UI_CALL_FLOW_EX_H
 #define __UI_CALL_FLOW_EX_H
+
+#include "config.h"
 #include "ui_manager.h"
 #include "group.h"
 

@@ -29,6 +29,7 @@
 #ifndef __UI_COLUMN_SELECT_H
 #define __UI_COLUMN_SELECT_H
 
+#include "config.h"
 #include <menu.h>
 #include "ui_manager.h"
 #include "sip_attr.h"

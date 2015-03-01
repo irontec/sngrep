@@ -31,6 +31,8 @@
 
 #ifndef __UI_FILTER_H
 #define __UI_FILTER_H
+
+#include "config.h"
 #include <form.h>
 #include "ui_manager.h"
 

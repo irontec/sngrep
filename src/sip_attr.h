@@ -29,6 +29,7 @@
 #ifndef __SNGREP_SIP_ATTR_H
 #define __SNGREP_SIP_ATTR_H
 
+#include "config.h"
 #include "sip.h"
 
 /* Some very used macros */

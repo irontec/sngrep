@@ -82,6 +82,9 @@ version()
 #ifdef WITH_UNICODE
            " * Compiled with Wide-character support.\n"
 #endif
+#ifdef WITH_PCRE
+           " * Compiled with Perl Compatible regular expressions support.\n"
+#endif
            "\nWritten by Ivan Alonso [aka Kaian]\n",
            PACKAGE, VERSION);
 }
@@ -246,7 +249,10 @@ main(int argc, char* argv[])
 
         // Set the capture filter
         if (match_expr)
-            sip_set_match_expression(match_expr, match_insensitive, match_invert);
+            if (sip_set_match_expression(match_expr, match_insensitive, match_invert)) {
+                fprintf(stderr, "Unable to parse expression %s\n", match_expr);
+                return 1;
+            }
     }
 
     // Initialize interface
