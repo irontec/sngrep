@@ -56,8 +56,21 @@ static sip_call_list_t calls = { 0 };
 void
 sip_init(int limit)
 {
+    // Store capture limit
+    calls.limit = limit;
+
     // Create hash table for callid search
-    hcreate(limit);
+    hcreate(calls.limit);
+
+    // Initialize calls lock
+     pthread_mutexattr_t attr;
+     pthread_mutexattr_init(&attr);
+ #if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
+     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+ #else
+     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+ #endif
+     pthread_mutex_init(&calls.lock, &attr);
 }
 
 sip_msg_t *
@@ -117,7 +130,6 @@ sip_call_create(char *callid)
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
 
-    pthread_mutex_lock(&calls.lock);
     if (!calls.count) {
         calls.first = call;
     } else {
@@ -137,7 +149,6 @@ sip_call_create(char *callid)
 
     // Store current call Index
     call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", calls.count);
-    pthread_mutex_unlock(&calls.lock);
 
     return call;
 }
@@ -248,6 +259,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
     sprintf(time + 8, ".%06d", (int) msg->ts.tv_usec);
     msg_set_attribute(msg, SIP_ATTR_TIME, time);
 
+    pthread_mutex_lock(&calls.lock);
     // Find the call for this msg
     if (!(call = call_find_by_callid(callid))) {
 
@@ -255,6 +267,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
         if (!sip_check_match_expression((const char*) payload)) {
             // Deallocate message memory
             sip_msg_destroy(msg);
+            pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
 
@@ -269,6 +282,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
                 && strncasecmp(method, "NOTIFY", 6)) {
                 // Deallocate message memory
                 sip_msg_destroy(msg);
+                pthread_mutex_unlock(&calls.lock);
                 return NULL;
             }
         }
@@ -280,6 +294,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
             if (method && strncasecmp(method, "INVITE", 6)) {
                 // Deallocate message memory
                 sip_msg_destroy(msg);
+                pthread_mutex_unlock(&calls.lock);
                 return NULL;
             }
         }
@@ -288,6 +303,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
         if (sip_check_msg_ignore(msg)) {
             // Deallocate message memory
             sip_msg_destroy(msg);
+            pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
 
@@ -295,6 +311,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
         if (!(call = sip_call_create(callid))) {
             // Deallocate message memory
             sip_msg_destroy(msg);
+            pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
     }
@@ -309,6 +326,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
     // Update Call State
     call_update_state(call, msg);
+    pthread_mutex_unlock(&calls.lock);
 
     // Return the loaded message
     return msg;
@@ -325,7 +343,6 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
 {
     sip_msg_t *cur, *prev;
 
-    pthread_mutex_lock(&calls.lock);
     // Set the message owner
     msg->call = call;
 
@@ -343,8 +360,6 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
 
     // Store message count
     call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", call->msgcnt);
-
-    pthread_mutex_unlock(&calls.lock);
 }
 
 sip_call_t *
@@ -365,7 +380,6 @@ call_find_by_xcallid(const char *xcallid)
     const char *cur_xcallid;
 
     sip_call_t *cur = calls.first;
-
     while (cur) {
         cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
         if (cur_xcallid && !strcmp(cur_xcallid, xcallid)) {
@@ -385,11 +399,15 @@ call_msg_count(sip_call_t *call)
 sip_call_t *
 call_get_xcall(sip_call_t *call)
 {
+    sip_call_t *xcall;
+    pthread_mutex_lock(&calls.lock);
     if (call_get_attribute(call, SIP_ATTR_XCALLID)) {
-        return call_find_by_callid(call_get_attribute(call, SIP_ATTR_XCALLID));
+        xcall = call_find_by_callid(call_get_attribute(call, SIP_ATTR_XCALLID));
     } else {
-        return call_find_by_xcallid(call_get_attribute(call, SIP_ATTR_CALLID));
+        xcall = call_find_by_xcallid(call_get_attribute(call, SIP_ATTR_CALLID));
     }
+    pthread_mutex_unlock(&calls.lock);
+    return xcall;
 }
 
 sip_msg_t *
@@ -461,9 +479,11 @@ call_get_next_filtered(sip_call_t *cur)
 {
     sip_call_t *next = call_get_next(cur);
 
+    pthread_mutex_lock(&calls.lock);
     // Return next not filtered call
     if (next && filter_check_call(next))
-        return call_get_next_filtered(next);
+        next = call_get_next_filtered(next);
+    pthread_mutex_unlock(&calls.lock);
 
     return next;
 }
@@ -471,11 +491,13 @@ call_get_next_filtered(sip_call_t *cur)
 sip_call_t *
 call_get_prev_filtered(sip_call_t *cur)
 {
-
     sip_call_t *prev = call_get_prev(cur);
+
+    pthread_mutex_lock(&calls.lock);
     // Return previous call if this one is filtered
     if (prev && filter_check_call(prev))
-        return call_get_prev_filtered(prev);
+        prev = call_get_prev_filtered(prev);
+    pthread_mutex_unlock(&calls.lock);
     return prev;
 }
 
@@ -658,9 +680,15 @@ void
 sip_calls_clear()
 {
     // Remove first call until no first call exists
+    pthread_mutex_lock(&calls.lock);
     while (calls.first) {
         sip_call_destroy(calls.first);
     }
+    // Create again the callid hash table
+    hdestroy();
+    hcreate(calls.limit);
+
+    pthread_mutex_unlock(&calls.lock);
 }
 
 const char *

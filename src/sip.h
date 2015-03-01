@@ -125,6 +125,8 @@ struct sip_call_list {
     sip_call_t *last;
     // Call counter
     int count;
+    // Max call limit
+    int limit;
     //! match expression text
     const char *match_expr;
     //! Compiled match expression
