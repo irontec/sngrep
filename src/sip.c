@@ -743,7 +743,12 @@ sip_check_match_expression(const char *payload)
         return 1;
 
 #ifdef WITH_PCRE
-    return (pcre_exec(calls.match_regex, 0, payload, strlen(payload), 0, 0, 0, 0) == 0);
+    switch(pcre_exec(calls.match_regex, 0, payload, strlen(payload), 0, 0, 0, 0)) {
+        case PCRE_ERROR_NOMATCH:
+            return 1 == calls.match_invert;
+    }
+
+    return 0 == calls.match_invert;
 #else
     // Check if payload matches the given expresion
     return (regexec(&calls.match_regex, payload, 0, NULL, 0) == calls.match_invert);
