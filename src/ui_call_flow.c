@@ -372,16 +372,16 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (!strcasecmp(msg_src, column1->addr)) {
-        mvwaddch(win, cline + 1, endpos - 2, ACS_RARROW);
+        mvwaddch(win, cline + 1, endpos - 2, '>');
         if (msg_is_retrans(msg)) {
-            mvwaddch(win, cline + 1, endpos - 3, ACS_RARROW);
-            mvwaddch(win, cline + 1, endpos - 4, ACS_RARROW);
+            mvwaddch(win, cline + 1, endpos - 3, '>');
+            mvwaddch(win, cline + 1, endpos - 4, '>');
         }
     } else {
-        mvwaddch(win, cline + 1, startpos + 2, ACS_LARROW);
+        mvwaddch(win, cline + 1, startpos + 2, '<');
         if (msg_is_retrans(msg)) {
-            mvwaddch(win, cline + 1, startpos + 3, ACS_LARROW);
-            mvwaddch(win, cline + 1, startpos + 4, ACS_LARROW);
+            mvwaddch(win, cline + 1, startpos + 3, '<');
+            mvwaddch(win, cline + 1, startpos + 4, '<');
         }
     }
 
