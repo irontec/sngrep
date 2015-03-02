@@ -1,3 +1,28 @@
+2015-03-02 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.3.0 released
+
+	* Added command line option -c to only display calls
+	* Added command line option -l to change capture limit
+	* Added command line match expression for packet payload
+	* Converted all filters to regular expressions (POSIX or PCRE)
+	* Added optional PCRE support (Perl Compatible Regular Expressions)
+	* Added optional UTF-8 / Unicode compatible terminals support
+	* Added current displayed and total dialogs counters in Call list
+	* Added an option to save displayed dialogs (after filtering)
+	* Added an option to save current columns layout
+	* Added new attributes:
+		- sipfromuser: User in From: Header
+		- siptouser: User in To: header
+		- convdur: Total conversation duration (from 200 to BYE)
+		- totaldur: Total call duration (from first to last message)
+	* Interface will now be displayed while pcaps are loading
+	* Reworked Interface refresh process
+	* Reworked Filtering process
+	* Fixed general performance issues
+	* Disable OpenSSL support by default
+	* Removed command line option to read pcap without flags
+	* Added long versions of command line flags
+
 2015-02-09 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.2.2 released
 

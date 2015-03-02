@@ -3,7 +3,7 @@
 .\" Copyright (c) 2013-2015  Ivan Alonso <kaian@irontec.com>
 .\" Copyright (c) 2013-2015  Irontec S.L.
 
-.TH SNGREP 8 "January 2015" "sngrep 0.2.0"
+.TH SNGREP 8 "March 2015" "sngrep 0.3.0"
 
 .SH NAME
 
@@ -11,16 +11,18 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [ -IO 
+.B sngrep [-hVciv] [ -IO
 .I pcap_dump
 .B ] [ -d 
 .I dev
-.B ] [ -k 
+.B ] [ -l
+.I limit
+.B ] [ -k
 .I keyfile
 .B ] [
+.I <match expression>
+.B ] [
 .I <bpf filter>
-|
-.I <pcap_dump>
 .B ]
 
 .SH DESCRIPTION
@@ -40,8 +42,20 @@ does.
 Display help and usage information.
 
 .TP
-.I \-v
+.I \-V
 Display version information.
+
+.TP
+.I \-c
+Only capture dialogs starting with an INVITE request.
+
+.TP
+.I \-i
+Make match expression case insensitive.
+
+.TP
+.I \-i
+Invert match expression.
 
 .TP
 .I \-I pcap_dump
@@ -62,9 +76,14 @@ Use this capture device instead of default (\fIany\fP).
 Use private keyfile to decrypt TLS packets.
 
 .TP
-.I pcap_dump
-If sngrep only argument is a pcap file, read packets from it. This is a
-shortcut for \-I.
+.I -l limit
+Change default capture limit (10000 dialogs)
+
+.TP
+.I match expression
+Match given expression in Messages' payload. If one request message matches the
+given expression, the following messages within the same dialog will be also
+captured.
 
 .TP
 .I bpf filter
@@ -97,7 +116,14 @@ multiple messages will display the Message Diff Window.
 .SH "    Call Raw Window"
 .PP
 This window will display the selected dialog messages in plain text. It was
-designed to allow copying the messages payload easily.
+designed to allow copying the messages payload easily. You can also save the
+displayed information to a text file from this screen.
+
+.SH "    Column selection Window"
+.PP
+Columns displayed in Call List can be updated in this window. You can add or
+remove columns or change their order in the list. Additionaly, you can save
+column state to be use in next sngrep execution.
 
 .SH "    Message Diff Window"
 .PP
@@ -132,6 +158,6 @@ author directly by email.
 
 .SH AUTHOR
 
-Written by Ivan Alonso <kaian@irontec.com>.
+Written by Ivan Alonso [a.k.a. Kaian] <kaian@irontec.com>.
 
 
