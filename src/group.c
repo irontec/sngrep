@@ -171,7 +171,7 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     for (i = 0; i < group->callcnt; i++) {
         cand = NULL;
         while ((cand = call_get_next_msg(group->calls[i], cand))) {
-            if (group->sdp_only && !msg->sdp)
+            if (group->sdp_only && !cand->sdp)
                 continue;
 
             // candidate must be between msg and next
