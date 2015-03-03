@@ -316,7 +316,7 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count);
  * right or left side of the given window
  */
 void
-draw_vscrollbar(WINDOW *win, int value, int max, bool left);
+draw_vscrollbar(WINDOW *win, int value, int max, int left);
 
 /**
  * @brief Draw a message payload in a window

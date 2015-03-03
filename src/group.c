@@ -185,7 +185,7 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     // If sdp_only is enabled but no message has been found with SDP, just
     // ignore the flag
     if (msg == NULL && next == NULL) {
-        group->sdp_only = false;
+        group->sdp_only = 0;
         return call_group_get_next_msg(group, msg);
     }
 

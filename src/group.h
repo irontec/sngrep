@@ -34,7 +34,6 @@
 #define __SNGREP_GROUP_H_
 
 #include "config.h"
-#include <stdbool.h>
 #include "sip.h"
 
 //! Shorter declaration of sip_call_group structure
@@ -57,7 +56,7 @@ struct sip_call_group {
     //! Color of the last printed call in mode Color-by-Call
     int color;
     //! Only consider SDP messages from Calls
-    bool sdp_only;
+    int sdp_only;
 };
 
 /**

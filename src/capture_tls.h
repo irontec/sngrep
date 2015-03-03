@@ -51,7 +51,6 @@
 #include <openssl/tls1.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
-#include <stdbool.h>
 #include "capture.h"
 
 //! Cast two bytes into decimal (Big Endian)
@@ -312,7 +311,7 @@ tls_connection_destroy(struct SSLConnection *conn);
  * @param keyfile Absolute path the keyfile
  * @return true if file contains RSA private info, false otherwise
  */
-bool
+int
 tls_check_keyfile(const char *keyfile);
 
 /**

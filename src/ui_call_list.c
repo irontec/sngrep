@@ -301,7 +301,7 @@ call_list_draw(PANEL *panel)
 }
 
 void
-call_list_form_activate(PANEL *panel, bool active)
+call_list_form_activate(PANEL *panel, int active)
 {
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
 

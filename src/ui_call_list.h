@@ -94,7 +94,7 @@ struct call_list_info {
     //! An array of window form fields
     FIELD *fields[FLD_LIST_COUNT + 1];
     //! We're entering keys on form
-    bool form_active;
+    int form_active;
 };
 
 /**
@@ -156,7 +156,7 @@ call_list_draw(PANEL *panel);
  * @param active Enable/Disable flag
  */
 void
-call_list_form_activate(PANEL *panel, bool active);
+call_list_form_activate(PANEL *panel, int active);
 
 /**
  * @brief Get List line from the given call

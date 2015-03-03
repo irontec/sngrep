@@ -159,7 +159,7 @@ tls_connection_destroy(struct SSLConnection *conn)
  *
  * Most probably we only need one context and key for all connections
  */
-bool
+int
 tls_check_keyfile(const char *keyfile)
 {
     SSL *ssl;

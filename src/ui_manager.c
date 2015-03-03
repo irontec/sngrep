@@ -411,7 +411,7 @@ draw_title(PANEL *panel, const char *title)
 }
 
 void
-draw_vscrollbar(WINDOW *win, int value, int max, bool left)
+draw_vscrollbar(WINDOW *win, int value, int max, int left)
 {
     int height, width, cline, scrollen, scrollypos, scrollxpos;
 
