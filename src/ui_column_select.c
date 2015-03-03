@@ -78,7 +78,7 @@ column_select_create()
     info->fields[FLD_COLUMNS_COUNT] = NULL;
 
     // Field Labels
-    set_field_buffer(info->fields[FLD_COLUMNS_SAVE], 0, "[  Save  ]");
+    set_field_buffer(info->fields[FLD_COLUMNS_SAVE], 0, "[ Accept ]");
     set_field_buffer(info->fields[FLD_COLUMNS_CANCEL], 0, "[ Cancel ]");
 
     // Create the form and post it
