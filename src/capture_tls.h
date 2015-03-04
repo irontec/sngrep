@@ -309,7 +309,7 @@ tls_connection_destroy(struct SSLConnection *conn);
  * This can be used to check if a file contains valid RSA data
  *
  * @param keyfile Absolute path the keyfile
- * @return true if file contains RSA private info, false otherwise
+ * @return 1 if file contains RSA private info, 0 otherwise
  */
 int
 tls_check_keyfile(const char *keyfile);

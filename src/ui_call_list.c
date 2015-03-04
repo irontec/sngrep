@@ -102,7 +102,7 @@ call_list_create()
     info->form = new_form(info->fields);
     set_form_sub(info->form, win);
     // Form starts inactive
-    call_list_form_activate(panel, false);
+    call_list_form_activate(panel, 0);
 
     // Calculate available printable area
     info->list_win = subwin(win, height - 5, width, 4, 0);
@@ -122,7 +122,7 @@ call_list_create()
     // Set defualt filter text if configured
     if (get_option_value("cl.filter")) {
         set_field_buffer(info->fields[FLD_LIST_FILTER], 0, get_option_value("cl.filter"));
-        call_list_form_activate(panel, false);
+        call_list_form_activate(panel, 0);
     }
 
     // Return the created panel
@@ -294,7 +294,7 @@ call_list_draw(PANEL *panel)
     }
 
     // Draw scrollbar to the right
-    draw_vscrollbar(win, info->first_line, dispcallcnt, true);
+    draw_vscrollbar(win, info->first_line, dispcallcnt, 1);
     wnoutrefresh(info->list_win);
 
     return 0;
@@ -408,7 +408,7 @@ call_list_handle_key(PANEL *panel, int key)
         case 9 /*KEY_TAB*/:
         case KEY_F(3):
             // Activate Form
-            call_list_form_activate(panel, true);
+            call_list_form_activate(panel, 1);
             break;
         case KEY_DOWN:
             // Check if there is a call below us
@@ -578,7 +578,7 @@ call_list_handle_form_key(PANEL *panel, int key)
         case KEY_DOWN:
         case KEY_UP:
             // Activate list
-            call_list_form_activate(panel, false);
+            call_list_form_activate(panel, 0);
             break;
         case KEY_RIGHT:
             form_driver(info->form, REQ_RIGHT_CHAR);

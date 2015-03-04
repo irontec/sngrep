@@ -188,7 +188,7 @@ call_flow_draw(PANEL *panel)
 
     // Draw the scrollbar
     draw_vscrollbar(info->flow_win, call_group_msg_number(info->group, info->first_msg) * 2,
-                    call_group_msg_count(info->group) * 2, true);
+                    call_group_msg_count(info->group) * 2, 1);
 
     // Redraw flow win
     wnoutrefresh(info->flow_win);

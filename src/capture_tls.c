@@ -170,19 +170,19 @@ tls_check_keyfile(const char *keyfile)
     OpenSSL_add_all_algorithms();
 
     if (access(capture_get_keyfile(), R_OK) != 0)
-        return false;
+        return 0;
 
     if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
-        return false;
+        return 0;
 
     SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_get_keyfile(), SSL_FILETYPE_PEM);
     if (!(ssl = SSL_new(ssl_ctx)))
-        return false;
+        return 0;
 
     if (!SSL_get_privatekey(ssl))
-        return false;
+        return 0;
 
-    return true;
+    return 1;
 }
 
 int
