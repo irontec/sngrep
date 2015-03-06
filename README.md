@@ -10,13 +10,17 @@ as PCAP viewer.
 ## Installing
 
 ### Binaries
-#### Debian
-You can use Irontec repositories for Debian Squeeze (6.0), Wheezy (7.0) and Jessie (8.0).
+#### Debian/Ubuntu
+You can use Irontec repositories for some of Debian and Ubuntu releases.
 Binaries are built only for amd64 and i386 architectures.
 
-Add Irontec repository to your sources.list Replace _**squeeze**_ with your debian distribution
+Add your distribution release repository of the following repositories to your _/etc/apt/sources.list_
 
     deb http://packages.irontec.com/debian squeeze main
+    deb http://packages.irontec.com/debian wheezy main
+    deb http://packages.irontec.com/debian jessie main
+    deb http://packages.irontec.com/ubuntu precise main
+    deb http://packages.irontec.com/ubuntu trusty main
 
 Install the package
 
