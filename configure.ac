@@ -29,10 +29,6 @@ AC_LANG(C)
 
 #######################################################################
 # Check for other REQUIRED libraries
-AC_CHECK_HEADER([ncurses.h], [], [
-    AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
-])
-
 AC_CHECK_LIB([pthread], [pthread_create], [], [
     AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
 ])
@@ -57,6 +53,10 @@ AS_IF([test "x$enable_unicode" == "xyes"], [
 	# Ncurses with wide-character support
 	AC_DEFINE([WITH_UNICODE], [], [Compile With Unicode compatibility])
 
+	AC_CHECK_HEADER([ncursesw/ncurses.h], [], [
+	    AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
+	])
+
 	AC_CHECK_LIB([ncursesw], [initscr], [], [
 	    AC_MSG_ERROR([ You need to have libncursesw installed to compile sngrep.])
 	])
@@ -75,6 +75,10 @@ AS_IF([test "x$enable_unicode" == "xyes"], [
 	], [
 
 	# Ncurses without wide-character support
+	AC_CHECK_HEADER([ncurses.h], [], [
+	    AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
+	])
+
 	AC_CHECK_LIB([ncurses], [initscr], [], [
 	    AC_MSG_ERROR([ You need to have libncurses installed to compile sngrep.])
 	])
