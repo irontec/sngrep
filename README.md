@@ -9,7 +9,23 @@ as PCAP viewer.
 
 ## Installing
 
-# Building from sources
+### Binaries
+#### Debian
+You can use Irontec repositories for Debian Squeeze (6.0), Wheezy (7.0) and Jessie (8.0).
+Binaries are built only for amd64 and i386 architectures.
+
+    # Replace squeeze with your debian distribution
+    echo deb http://packages.irontec.com/debian squeeze main > /etc/apt/sources.list.d/irontec.list
+    apt-get update
+    apt-get install -y sngrep
+
+
+#### OSX
+OSX users can install sngrep using [homebrew](https://github.com/Homebrew/homebrew)
+
+    brew install sngrep
+
+### Building from sources
 Prerequisites
 
  - libncurse5 - for UI, windows, panels.
@@ -32,11 +48,6 @@ You can pass following flags to ./configure to enable some features
   - --enable-unicode : Adds Ncurses wide-character support, for UTF-8 terminals (requires libncursesw5)
 
 You can find [detailed instructions for some distributions] (https://github.com/irontec/sngrep/wiki/Building) on wiki.
-
-# Binaries
-OSX users can install sngrep using [homebrew](https://github.com/Homebrew/homebrew)
-
-    brew install sngrep
 
 ## Usage
 
