@@ -21,7 +21,7 @@ Add Irontec repository to your sources.list Replace _**squeeze**_ with your debi
 Install the package
 
     apt-get update
-    apt-get install -y sngrep
+    apt-get install sngrep
 
 
 #### OSX
