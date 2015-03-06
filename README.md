@@ -14,8 +14,12 @@ as PCAP viewer.
 You can use Irontec repositories for Debian Squeeze (6.0), Wheezy (7.0) and Jessie (8.0).
 Binaries are built only for amd64 and i386 architectures.
 
-    # Replace squeeze with your debian distribution
-    echo deb http://packages.irontec.com/debian squeeze main > /etc/apt/sources.list.d/irontec.list
+Add Irontec repository to your sources.list Replace _**squeeze**_ with your debian distribution
+
+    deb http://packages.irontec.com/debian squeeze main
+
+Install the package
+
     apt-get update
     apt-get install -y sngrep
 
