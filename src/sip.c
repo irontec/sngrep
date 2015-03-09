@@ -205,7 +205,7 @@ sip_get_callid(const char* payload)
 }
 
 sip_msg_t *
-sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in_addr dst,
+sip_load_message(struct timeval tv, const char *src, u_short sport, const char* dst,
                  u_short dport, u_char *payload)
 {
     sip_msg_t *msg;
@@ -231,22 +231,24 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
     // Fill message data
     msg->ts = tv;
-    msg->src = src;
     msg->sport = sport;
-    msg->dst = dst;
     msg->dport = dport;
 
+    // Store sorce and destination address
+    strcpy(msg->src, (strlen(src) > 15)? src + strlen(src) - 15 : src);
+    strcpy(msg->dst, (strlen(dst) > 15)? dst + strlen(dst) - 15 : dst);
+
     // Set Source and Destination attributes
-    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", inet_ntoa(src), htons(sport));
-    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", inet_ntoa(dst), htons(dport));
+    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg->src, htons(sport));
+    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg->dst, htons(dport));
 
     // Set Source and Destination lookpued hosts
     if (is_option_enabled("capture.lookup")) {
-        msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%.15s:%u", lookup_hostname(&src), htons(sport));
-        msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%.15s:%u", lookup_hostname(&dst), htons(dport));
+        msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%.15s:%u", lookup_hostname(msg->src), htons(sport));
+        msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%.15s:%u", lookup_hostname(msg->dst), htons(dport));
     }
-    msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%s:%u", inet_ntoa(src), htons(sport));
-    msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%s:%u", inet_ntoa(dst), htons(dport));
+    msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%s:%u", msg->src, htons(sport));
+    msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%s:%u", msg->dst, htons(dport));
 
     // Set message Date attribute
     time_t t = (time_t) msg->ts.tv_sec;
@@ -620,7 +622,10 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             continue;
         }
         if (sscanf(pch, "c=%*s %*s %s", value) == 1) {
-            msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, value);
+            if (strlen(value) > 15)
+                msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, value + strlen(value) - 15);
+            else
+                msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, value);
             continue;
         }
         if (sscanf(pch, "m=%*s %s", value) == 1) {
@@ -664,11 +669,11 @@ msg_get_header(sip_msg_t *msg, char *out)
     // We dont use Message attributes here because it contains truncated data
     // This should not overload too much as all results should be already cached
     if (is_option_enabled("capture.lookup") && is_option_enabled("sngrep.displayhost")) {
-        sprintf(from_addr, "%s:%u", lookup_hostname(&msg->src), htons(msg->sport));
-        sprintf(to_addr, "%s:%u", lookup_hostname(&msg->dst), htons(msg->dport));
+        sprintf(from_addr, "%s:%u", lookup_hostname(msg->src), htons(msg->sport));
+        sprintf(to_addr, "%s:%u", lookup_hostname(msg->dst), htons(msg->dport));
     } else {
-        sprintf(from_addr, "%s:%u", inet_ntoa(msg->src), htons(msg->sport));
-        sprintf(to_addr, "%s:%u", inet_ntoa(msg->dst), htons(msg->dport));
+        sprintf(from_addr, "%s:%u", msg->src, htons(msg->sport));
+        sprintf(to_addr, "%s:%u", msg->dst, htons(msg->dport));
     }
 
     // Get msg header

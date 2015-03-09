@@ -39,6 +39,9 @@
 #include "sip.h"
 #include "option.h"
 #include "ui_manager.h"
+#ifdef WITH_IPV6
+#include <netinet/ip6.h>
+#endif
 
 // Capture information
 capture_info_t capinfo = { 0 };
@@ -122,9 +125,21 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Datalink Header size
     int size_link;
     // IP header data
-    struct nread_ip *ip;
+    struct ip *ip4;
+#ifdef WITH_IPV6
+    // IPv6 header data
+    struct ip6_hdr *ip6;
+#endif
+    // IP protocol
+    uint8_t ip_proto;
+    // IP segment length
+    uint32_t ip_len;
     // IP header size
     int size_ip;
+    //! Source Address
+    char ip_src[50];
+    //! Destination Address
+    char ip_dst[50];
     // UDP header data
     struct nread_udp *udp;
     // TCP header data
@@ -157,11 +172,34 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     size_link = datalink_size(capinfo.link);
 
     // Get IP header
-    ip = (struct nread_ip*) (packet + size_link);
-    size_ip = IP_HL(ip) * 4;
+    ip4 = (struct ip*) (packet + size_link);
+
+#ifdef WITH_IPV6
+    // Get IPv6 header
+    ip6 = (struct ip6_hdr*)(packet + size_link);
+#endif
+
+    switch(ip4->ip_v) {
+        case 4:
+            size_ip = ip4->ip_hl * 4;
+            ip_proto = ip4->ip_p;
+            ip_len = ntohs(ip4->ip_len);
+            strncpy(ip_src, inet_ntoa(ip4->ip_src), INET_ADDRSTRLEN);
+            strncpy(ip_dst, inet_ntoa(ip4->ip_dst), INET_ADDRSTRLEN);
+            break;
+#ifdef WITH_IPV6
+        case 6:
+            size_ip = sizeof(struct ip6_hdr);
+            ip_proto = ip6->ip6_nxt;
+            ip_len = ntohs(ip6->ip6_plen);
+            inet_ntop(AF_INET6, &ip6->ip6_src, ip_src, INET6_ADDRSTRLEN);
+            inet_ntop(AF_INET6, &ip6->ip6_dst, ip_dst, INET6_ADDRSTRLEN);
+            break;
+#endif
+    }
 
     // Only interested in UDP packets
-    if (ip->ip_p == IPPROTO_UDP) {
+    if (ip_proto == IPPROTO_UDP) {
         // Set transport UDP
         transport = 0;
 
@@ -184,7 +222,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Total packet size
         size_packet = size_link + size_ip + SIZE_UDP + size_payload;
 
-    } else if (ip->ip_p == IPPROTO_TCP) {
+    } else if (ip_proto == IPPROTO_TCP) {
         // Set transport TCP
         transport = 1;
 
@@ -194,7 +232,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         dport = tcp->th_dport;
 
         // We're only interested in packets with payload
-        size_payload = ntohs(ip->ip_len) - (size_ip + SIZE_TCP);
+        size_payload = ip_len - (size_ip + SIZE_TCP);
         if (size_payload > 0) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
@@ -233,7 +271,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Parse this header and payload
-    msg = sip_load_message(header->ts, ip->ip_src, sport, ip->ip_dst, dport, msg_payload);
+    msg = sip_load_message(header->ts, ip_src, sport, ip_dst, dport, msg_payload);
     free(msg_payload);
 
     // This is not a sip message, Bye!
@@ -443,16 +481,12 @@ dump_close(pcap_dumper_t *pd)
 }
 
 const char *
-lookup_hostname(struct in_addr *addr)
+lookup_hostname(const char *address)
 {
     int i;
     int hostlen;
     struct hostent *host;
-    char *hostname;
-    char *address;
-
-    // Initialize values
-    address = (char *) inet_ntoa(*addr);
+    const char *hostname;
 
     // Check if we have already tryied resolve this address
     for (i = 0; i < capinfo.dnscache.count; i++) {
@@ -462,7 +496,7 @@ lookup_hostname(struct in_addr *addr)
     }
 
     // Lookup this addres
-    host = gethostbyaddr(addr, 4, AF_INET);
+    host = gethostbyaddr(address, 4, AF_INET);
     if (!host) {
         hostname = address;
     } else {
