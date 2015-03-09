@@ -1,5 +1,13 @@
 ToDo List
 =========
+
+capture:
+	* Add compatibility with IPv6
+		Capturing and parsing IPv6 packets should not be a problem but
+		all interfaces are designed for a max address length of 15
+		characters so the impact in UI makes this improvement no so
+		easy to implement.
+
 sip:
 	* Change parsing functions for something more efficient (osip2?)
 		Parsing with sscanf is not the best way, but the simplest. If
@@ -16,14 +24,12 @@ ui:
 		Right now, all panels are initializated at the same, because
 		each panel can only be invoked once (it is not possible to have
 		two call details panel right now)
-		
-	* Show call duration
-		It would be great to show this two columns on main screean.
-		First one can be calculated from the difference between first
-		and last messages timestamps.
 
-	* Change List columns in runtime
-		Sometimes its useful to filter the list for some column that is
-		not being displayed (like time, transport, ...), so it would be
-		nice to allow choosing the columns during runtime
+	* Add horizontal scrolling
+		It should be nice to be able to scroll horizontaly (with unused
+		right and left keys) in Call List and Call flow.
 
+	* Interface resize
+		When the terminal size changes, the ui is not properly redraw.
+		It would be nice to handle KEY_RESIZE event and change all displayed
+		panels.
