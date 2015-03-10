@@ -234,9 +234,19 @@ sip_load_message(struct timeval tv, const char *src, u_short sport, const char* 
     msg->sport = sport;
     msg->dport = dport;
 
-    // Store sorce and destination address
-    strcpy(msg->src, (strlen(src) > 15)? src + strlen(src) - 15 : src);
-    strcpy(msg->dst, (strlen(dst) > 15)? dst + strlen(dst) - 15 : dst);
+    // Store sorce address. Prefix too long IPv6 addresses with two dots
+    if (strlen(src) > 15) {
+        sprintf(msg->src, "..%s", src + strlen(src) - 13);
+    } else {
+        strcpy(msg->src, src);
+    }
+
+    // Store destination address. Prefix too long IPv6 addresses with two dots
+    if (strlen(dst) > 15) {
+        sprintf(msg->dst, "..%s", dst + strlen(dst) - 13);
+    } else {
+        strcpy(msg->dst, dst);
+    }
 
     // Set Source and Destination attributes
     msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg->src, htons(sport));
@@ -622,10 +632,11 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
             continue;
         }
         if (sscanf(pch, "c=%*s %*s %s", value) == 1) {
-            if (strlen(value) > 15)
-                msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, value + strlen(value) - 15);
-            else
+            if (strlen(value) > 15) {
+                msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, "..%s", value + strlen(value) - 13);
+            } else {
                 msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, value);
+            }
             continue;
         }
         if (sscanf(pch, "m=%*s %s", value) == 1) {
