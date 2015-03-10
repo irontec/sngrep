@@ -149,29 +149,22 @@ AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" == "xyes"])
 
 
 ######################################################################
-if test "x${silent}" != "xyes" ; then
-    echo
-    echo '             OZZZO                 ' 
-    echo '             OZZZO                 ' 
-    echo '         .:  OZZZO  :.             ' 
-    echo '       :DDD. OZZZO  DDD~           ' 
-    echo '     :DDDDD. OZZZO  DDDDD:         ' 
-    echo '    DDDDDDD. OZZZO  DDDDDDD.       ' 
-    echo '  .DDDDDD    OZZZO   .DDDDDD.      ' 
-    echo '  ODDDD?.    OZZZO    .~DDDDZ.     ' 
-    echo '  DDDDD.     OZZZO      8DDDD      ' 
-    echo ' ,DDDD.      .....       DDDD,     ' 
-    echo ' ~DDDD                   DDDD+     ' 
-    echo ' :DDDD.                  DDDD,     ' 
-    echo '  DDDDD                 8DDDD.     ' 
-    echo '  ODDDD?               ~DDDDZ      ' 
-    echo '  .DDDDDD.           .DDDDDD.      ' 
-    echo '   .DDDDDD8.       .8DDDDDD        ' 
-    echo '    .:DDDDDDDDDDDDDDDDDDD:.        ' 
-    echo '      .~DDDDDDDDDDDDDDD~.          ' 
-    echo '         .:DDDDDDDDD,.             ' 
-    echo
-fi
+# Print Logo
+AC_ARG_ENABLE(logo,
+    AC_HELP_STRING(--disable-logo, [Disable Irontec Logo from Summary menu]),
+    [ enable_logo=$enableval],
+    [ enable_logo=yes])
+
+AS_IF([test "x$enable_logo" == "xyes"], [
+    echo ''
+    echo ' ██╗██████╗  ██████╗ ███╗   ██╗████████╗███████╗ ██████╗'
+    echo ' ██║██╔══██╗██╔═══██╗████╗  ██║╚══██╔══╝██╔════╝██╔════╝'
+    echo ' ██║██████╔╝██║   ██║██╔██╗ ██║   ██║   █████╗  ██║     '
+    echo ' ██║██╔══██╗██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██║     '
+    echo ' ██║██║  ██║╚██████╔╝██║ ╚████║   ██║   ███████╗╚██████╗'
+    echo ' ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝ ╚═════╝'
+    echo ''
+])
 
 AC_MSG_NOTICE
 AC_MSG_NOTICE(   sngrep configure finished                            	)
