@@ -39,3 +39,8 @@ ui:
 		It would be nice to handle KEY_RESIZE event and change all displayed
 		panels.
 
+    * Improve colors for white background terminals
+        The best approach for colors should be use terminal defaults.
+        Right now, white background terminals must set background dark option
+        in order to see colors properly.
+
