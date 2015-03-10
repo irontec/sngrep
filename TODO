@@ -8,6 +8,11 @@ capture:
 		characters so the impact in UI makes this improvement no so
 		easy to implement.
 
+    * Handle Packet fragmentation
+        Right now capture process only handle packets with SIP payload,
+        so if a packet is marked as fragmented, part of its payload
+        will not be displayed.
+
 sip:
 	* Change parsing functions for something more efficient (osip2?)
 		Parsing with sscanf is not the best way, but the simplest. If
@@ -33,3 +38,4 @@ ui:
 		When the terminal size changes, the ui is not properly redraw.
 		It would be nice to handle KEY_RESIZE event and change all displayed
 		panels.
+
