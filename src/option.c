@@ -54,6 +54,7 @@ init_options()
     set_option_value("color.request", "on");
     set_option_value("color.callid", "off");
     set_option_value("color.cseq", "off");
+    set_option_value("background", "dark");
 
     // Highlight options
     set_option_value("syntax", "on");
