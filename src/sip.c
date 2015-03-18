@@ -194,8 +194,12 @@ sip_get_callid(const char* payload)
     char value[256];
 
     for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
-        if (!strncasecmp(pch, "Call-ID", 7)) {
-            if (sscanf(pch, "Call-ID: %[^@\r\n]", value) == 1) {
+        if (!strncasecmp(pch, "Call-ID:", 8)) {
+            if (sscanf(&pch[8], " %[^@\r\n]", value) == 1) {
+                callid = strdup(value);
+            }
+        } else if (!strncasecmp(pch, "i:", 2)) {
+            if (sscanf(&pch[2], "%[^@\r\n]", value) == 1) {
                 callid = strdup(value);
             }
         }
