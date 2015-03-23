@@ -39,9 +39,8 @@
 #include <arpa/inet.h>
 #ifdef WITH_PCRE
 #include <pcre.h>
-#else
-#include <regex.h>
 #endif
+#include <regex.h>
 #include "sip_attr.h"
 
 //! Shorter declaration of sip_call structure
