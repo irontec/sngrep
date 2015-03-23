@@ -86,7 +86,7 @@ init_options()
     set_option_value("diff.mode", "line");
 
     // Allow dialogs to be incomplete
-    set_option_value("sip.ignoreincomlete", "on");
+    set_option_value("sip.ignoreincomplete", "on");
 
     // Set default save file location
     set_option_value("sngrep.savepath", home);

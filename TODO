@@ -14,11 +14,6 @@ capture:
         will not be displayed.
 
 sip:
-	* Change parsing functions for something more efficient (osip2?)
-		Parsing with sscanf is not the best way, but the simplest. If
-		we require to parse more headers in the future, it will start 
-		to be worse and worse
-		
 	* Improve the way payload is stored
 		Payload is included two times. One in the msg->payload pointer
 		and also in msg->pcap_packet content. This doubles the required

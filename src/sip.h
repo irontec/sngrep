@@ -143,6 +143,17 @@ struct sip_call_list {
 #endif
     //! Invert match expression result
     int match_invert;
+
+    //! Regexp for payload matching
+    regex_t reg_callid;
+    regex_t reg_xcallid;
+    regex_t reg_response;
+    regex_t reg_cseq;
+    regex_t reg_from;
+    regex_t reg_to;
+    regex_t reg_sdp_addr;
+    regex_t reg_sdp_port;
+
     // Warranty thread-safe access to the calls list
     pthread_mutex_t lock;
 };

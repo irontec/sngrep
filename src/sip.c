@@ -25,11 +25,6 @@
  *
  * @brief Source of functions defined in sip.h
  *
- * @todo This functions should be recoded. They parse the payload searching
- * for fields with sscanf and can fail easily.
- * We could use an external parser library (osip maybe?) but I prefer recoding
- * this to avoid more dependencies.
- *
  * @todo Replace structures for their typedef shorter names
  */
 #include "config.h"
@@ -56,6 +51,8 @@ static sip_call_list_t calls = { 0 };
 void
 sip_init(int limit)
 {
+    int match_flags;
+
     // Store capture limit
     calls.limit = limit;
 
@@ -71,6 +68,18 @@ sip_init(int limit)
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
 #endif
     pthread_mutex_init(&calls.lock, &attr);
+
+    // Initialize payload parsing regexp
+    match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
+    regcomp(&calls.reg_callid, "^(Call-ID|i): (.+)\r$", match_flags);
+    regcomp(&calls.reg_xcallid, "^(X-Call-ID|X-CID): (.+)\r$", match_flags);
+    regcomp(&calls.reg_response, "^SIP/2.0 ([0-9]{3} .+)\r$", match_flags);
+    regcomp(&calls.reg_cseq, "CSeq: ([0-9]+) (.+)\r$", match_flags);
+    regcomp(&calls.reg_from, "(From|f): [^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
+    regcomp(&calls.reg_to, "(To|t): [^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
+    regcomp(&calls.reg_sdp_addr, "^c=[^[:space:]]+ [^[:space:]]+ (.+)\r$", match_flags);
+    regcomp(&calls.reg_sdp_port, "^m=[^[:space:]]+ ([0-9]+)", match_flags);
+
 }
 
 sip_msg_t *
@@ -189,22 +198,19 @@ sip_call_destroy(sip_call_t *call)
 char *
 sip_get_callid(const char* payload)
 {
-    char *body = strdup(payload);
-    char *pch, *callid = NULL;
-    char value[256];
+    char *callid = NULL;
+    regmatch_t pmatch[2];
 
-    for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
-        if (!strncasecmp(pch, "Call-ID:", 8)) {
-            if (sscanf(&pch[8], " %[^@\r\n]", value) == 1) {
-                callid = strdup(value);
-            }
-        } else if (!strncasecmp(pch, "i:", 2)) {
-            if (sscanf(&pch[2], "%[^@\r\n]", value) == 1) {
-                callid = strdup(value);
-            }
-        }
+    // Try to get Call-ID from payload
+    if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
+        // Call-ID is the firts regexp match
+        callid = malloc(pmatch[2].rm_eo - pmatch[2].rm_so + 1);
+        // Allocate memory for Call-Id (caller MUST free it)
+        memset(callid, 0, pmatch[2].rm_eo - pmatch[2].rm_so + 1);
+        // Copy the matching part of payload
+        strncpy(callid, payload + pmatch[2].rm_so, pmatch[2].rm_eo - pmatch[2].rm_so);
     }
-    free(body);
+
     return callid;
 }
 
@@ -277,7 +283,7 @@ sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (get_option_int_value("sip.ignoreincomplete")) {
+        if (is_option_enabled("sip.ignoreincomplete")) {
             // Get Message method / response code
             const char *method = msg_get_attribute(msg, SIP_ATTR_METHOD);
             if (method && strncasecmp(method, "INVITE", 6) && strncasecmp(method, "REGISTER", 8)
@@ -565,74 +571,51 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
 int
 msg_parse_payload(sip_msg_t *msg, const char *payload)
 {
-    char *body;
-    char *pch;
-    int ivalue;
-    char value[256];
-    char rest[256];
+    regmatch_t pmatch[4];
+    char cseq[11];
 
-    // Sanity check
-    if (!msg || !payload)
-        return 1;
-
-    // Duplicate payload to cut into lines
-    body = strdup(payload);
-
-    for (pch = strtok(body, "\n"); pch; pch = strtok(NULL, "\n")) {
-        if (!strlen(pch))
-            continue;
-
-        if (sscanf(pch, "X-Call-ID: %[^@\t\n\r]", value) == 1) {
-            msg_set_attribute(msg, SIP_ATTR_XCALLID, value);
-            continue;
-        }
-        if (sscanf(pch, "X-CID: %[^@\t\n\r]", value) == 1) {
-            msg_set_attribute(msg, SIP_ATTR_XCALLID, value);
-            continue;
-        }
-        if (sscanf(pch, "SIP/2.0 %[^\t\n\r]", value)) {
-            if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
-                msg->request = 0;
-                msg_set_attribute(msg, SIP_ATTR_METHOD, value);
-            }
-            continue;
-        }
-        if (sscanf(pch, "CSeq: %d %[^\t\n\r]", &ivalue, value)) {
-            if (!msg_get_attribute(msg, SIP_ATTR_METHOD)) {
-                msg->request = 1;
-                msg_set_attribute(msg, SIP_ATTR_METHOD, value);
-            }
-            msg->cseq = ivalue;
-            continue;
-        }
-        if (sscanf(pch, "From: %*[^:]:%[^@]@%[^\t\n\r]", value, rest) == 2) {
-            msg_set_attribute(msg, SIP_ATTR_SIPFROMUSER, value);
-        }
-        if (sscanf(pch, "From: %[^:]:%[^\t\n\r>;]", rest, value)) {
-            msg_set_attribute(msg, SIP_ATTR_SIPFROM, value);
-            continue;
-        }
-        if (sscanf(pch, "To: %*[^:]:%[^@]@%[^\t\n\r]", value, rest) == 2) {
-            msg_set_attribute(msg, SIP_ATTR_SIPTOUSER, value);
-        }
-        if (sscanf(pch, "To: %[^:]:%[^\t\n\r>;]", rest, value)) {
-            msg_set_attribute(msg, SIP_ATTR_SIPTO, value);
-            continue;
-        }
-        if (!strncasecmp(pch, "Content-Type: application/sdp", 29)) {
-            msg->sdp = 1;
-            continue;
-        }
-        if (sscanf(pch, "c=%*s %*s %s", value) == 1) {
-            msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, value);
-            continue;
-        }
-        if (sscanf(pch, "m=%*s %s", value) == 1) {
-            msg_set_attribute(msg, SIP_ATTR_SDP_PORT, value);
-            continue;
-        }
+    // X-Call-Id
+    if (regexec(&calls.reg_xcallid, payload, 3, pmatch, 0) == 0) {
+        msg_set_attribute(msg, SIP_ATTR_XCALLID, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
     }
-    free(body);
+
+    // Method
+    if (regexec(&calls.reg_cseq, payload, 3, pmatch, 0) == 0) {
+        sprintf(cseq, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+        msg->cseq = atoi(cseq);
+        msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
+    }
+
+    // Response code
+    if (regexec(&calls.reg_response, payload, 2, pmatch, 0) == 0) {
+        msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+        msg->request = 1;
+    }
+
+    // From
+    if (regexec(&calls.reg_from, payload, 4, pmatch, 0) == 0) {
+        msg_set_attribute(msg, SIP_ATTR_SIPFROM, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
+        msg_set_attribute(msg, SIP_ATTR_SIPFROMUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so, payload + pmatch[3].rm_so);
+    }
+
+    // To
+    if (regexec(&calls.reg_to, payload, 4, pmatch, 0) == 0) {
+        msg_set_attribute(msg, SIP_ATTR_SIPTO, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
+        msg_set_attribute(msg, SIP_ATTR_SIPTOUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so, payload + pmatch[3].rm_so);
+    }
+
+    // SDP Address
+    if (regexec(&calls.reg_sdp_addr, payload, 2, pmatch, 0) == 0) {
+        msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+        msg->sdp = 1;
+    }
+
+    // SDP Port
+    if (regexec(&calls.reg_sdp_port, payload, 2, pmatch, 0) == 0) {
+        msg_set_attribute(msg, SIP_ATTR_SDP_PORT, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+        msg->sdp = 1;
+    }
+
     return 0;
 }
 
