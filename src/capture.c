@@ -250,7 +250,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                 memset(msg_payload, 0, size_payload + 1);
 
                 // Try to decrypt the packet
-                tls_process_segment(ip, &msg_payload, &size_payload);
+                tls_process_segment(ip4, &msg_payload, &size_payload);
 
                 // Check if we have decoded payload
                 if (size_payload <= 0)

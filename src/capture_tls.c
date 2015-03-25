@@ -209,7 +209,7 @@ tls_connection_find(struct in_addr addr, u_short port)
 }
 
 int
-tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl)
+tls_process_segment(const struct ip *ip, uint8 **out, int *outl)
 {
     struct SSLConnection *conn;
     struct nread_tcp *tcp;
@@ -217,7 +217,7 @@ tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl)
     int len;
 
     // Get TCP header
-    tcp = (struct nread_tcp *) ((uint8 *) ip + (IP_HL(ip) * 4));
+    tcp = (struct nread_tcp *) ((uint8 *) ip + (ip->ip_hl * 4));
 
     // Try to find a session for this ip
     if ((conn = tls_connection_find(ip->ip_src, tcp->th_sport))) {
@@ -240,7 +240,7 @@ tls_process_segment(const struct nread_ip *ip, uint8 **out, int *outl)
             case TCP_STATE_ESTABLISHED:
                 // Process data segment!
                 payload = (uint8 *) tcp + SIZE_TCP;
-                len = ntohs(ip->ip_len) - (IP_HL(ip) * 4) - SIZE_TCP;
+                len = ntohs(ip->ip_len) - (ip->ip_hl * 4) - SIZE_TCP;
                 tls_process_record(conn, payload, len, out, outl);
                 break;
             case TCP_STATE_FIN:
