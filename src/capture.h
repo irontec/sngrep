@@ -36,10 +36,24 @@
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+
+#if defined(__linux__)
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
-#include <time.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
+#endif
+
+#if defined(BSD) || defined (__OpenBSD__)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <netinet/if_ether.h>
+#endif
 
 //! Capture modes
 enum capture_status {
