@@ -144,6 +144,23 @@ AS_IF([test "x$WITH_PCRE" == "xyes"], [
 	AC_DEFINE([WITH_PCRE],[],[Compile With Perl Compatible regular expressions support])
 ], [])
 
+####
+#### IPv6 Support
+####
+AC_ARG_ENABLE([ipv6],
+    AS_HELP_STRING([--enable-ipv6], [Enable IPv6 Support]),
+    [AC_SUBST(WITH_IPV6, $enableval)],
+    [AC_SUBST(WITH_IPV6, no)]
+)
+
+AS_IF([test "x$WITH_IPV6" == "xyes"], [
+	AC_CHECK_HEADER([netinet/ip6.h], [], [
+	    AC_MSG_ERROR([ You dont seem to have ipv6 support (no ip6.h found).])
+	])
+	AC_DEFINE([WITH_IPV6],[],[Compile With IPv6 support])
+], [])
+
+
 # Conditional Source inclusion 
 AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" == "xyes"])
 
@@ -172,6 +189,7 @@ AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
 AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  				)
 AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
+AC_MSG_NOTICE( IPv6 Support                 : ${WITH_IPV6}              )
 AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE
 

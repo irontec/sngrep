@@ -39,6 +39,7 @@
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <time.h>
+#include <netinet/ip.h>
 
 //! Capture modes
 enum capture_status {
@@ -102,41 +103,6 @@ struct capture_info {
 #define SIZE_UDP 8
 //! TCP headers size
 #define SIZE_TCP TH_OFF(tcp)*4
-
-/**
- * @brief IP data structure
- */
-struct nread_ip {
-    //! header length, version
-    u_int8_t ip_vhl;
-    //! type of service
-    u_int8_t ip_tos;
-    //! total length
-    u_int16_t ip_len;
-    //! identification
-    u_int16_t ip_id;
-    //! fragment offset field
-    u_int16_t ip_off;
-    //! reserved fragment flag
-#define IP_RF 0x8000
-    //! dont fragment flag
-#define IP_DF 0x4000
-    //! more fragments flag
-#define IP_MF 0x2000
-    //!  mask for fragmenting bits
-#define IP_OFFMASK 0x1fff
-    //! time to live
-    u_int8_t ip_ttl;
-    //! protocol
-    u_int8_t ip_p;
-    //! checksum
-    u_int16_t ip_sum;
-    //! source and dest addresses
-    struct in_addr ip_src, ip_dst;
-};
-
-#define IP_HL(ip)               (((ip)->ip_vhl) & 0x0f)
-#define IP_V(ip)                (((ip)->ip_vhl) >> 4)
 
 /**
  * @brief UDP data structure
@@ -350,6 +316,6 @@ dump_close(pcap_dumper_t *pd);
  * original address to avoid lookup again the same address.
  */
 const char *
-lookup_hostname(struct in_addr *addr);
+lookup_hostname(const char *address);
 
 #endif

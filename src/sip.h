@@ -68,11 +68,11 @@ struct sip_msg {
     //! Timestamp
     struct timeval ts;
     //! Source address
-    struct in_addr src;
+    char src[50];
     //! Source port
     u_short sport;
     //! Destination address
-    struct in_addr dst;
+    char dst[50];
     //! Destination port
     u_short dport;
     //! Temporal payload data before being parsed
@@ -248,7 +248,7 @@ sip_get_callid(const char* payload);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_load_message(struct timeval tv, struct in_addr src, u_short sport, struct in_addr dst,
+sip_load_message(struct timeval tv, const char *src, u_short sport, const char *dst,
                  u_short dport, u_char *payload);
 
 /**
