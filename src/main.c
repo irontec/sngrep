@@ -97,7 +97,7 @@ version()
 int
 main(int argc, char* argv[])
 {
-    int opt, idx, limit, i;
+    int opt, idx, limit, only_calls, i;
     const char *device, *infile, *outfile;
     char bpf[512];
     const char *keyfile;
@@ -127,6 +127,7 @@ main(int argc, char* argv[])
     outfile = get_option_value("capture.outfile");
     keyfile = get_option_value("capture.keyfile");
     limit = get_option_int_value("capture.limit");
+    only_calls = is_option_enabled("sip.calls");
 
     // Parse command line arguments
     opterr = 0;
@@ -158,7 +159,7 @@ main(int argc, char* argv[])
                 keyfile = optarg;
                 break;
             case 'c':
-                set_option_value("sip.calls", "on");
+                only_calls = 1;
                 break;
             case 'i':
                 match_insensitive++;
@@ -185,6 +186,10 @@ main(int argc, char* argv[])
                 break;
         }
     }
+
+    // Capture only dialogs with voip calls?
+    set_option_value("sip.calls", (only_calls)?"on":"off");
+
 
 #ifdef WITH_OPENSSL
     // Set capture decrypt key file
