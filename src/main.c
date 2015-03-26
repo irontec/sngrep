@@ -85,6 +85,9 @@ version()
 #ifdef WITH_PCRE
            " * Compiled with Perl Compatible regular expressions support.\n"
 #endif
+#ifdef WITH_IPV6
+           " * Compiled with IPv6 support.\n"
+#endif
            "\nWritten by Ivan Alonso [aka Kaian]\n",
            PACKAGE, VERSION);
 }
