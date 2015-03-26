@@ -95,6 +95,10 @@ struct call_list_info {
     FIELD *fields[FLD_LIST_COUNT + 1];
     //! We're entering keys on form
     int form_active;
+    //! Number of calls displayed in the list
+    int dispcallcnt;
+    //! Total number of calls without filtering
+    int callcnt;
 };
 
 /**
@@ -122,6 +126,27 @@ void
 call_list_destroy(PANEL *panel);
 
 /**
+ * @brief Resize the windows of Call List
+ *
+ * This function will be invoked when the ui size has changed
+ *
+ * @param panel Ncurses panel pointer
+ * @return 0 if the panel has been resized, -1 otherwise
+ */
+int
+call_list_resize(PANEL *panel);
+
+/**
+ * @brief Draw panel header
+ *
+ * This funtion will draw Call list header
+ *
+ * @param panel Ncurses panel pointer
+ */
+void
+call_list_draw_header(PANEL *panel);
+
+/**
  * @brief Draw panel footer
  *
  * This funtion will draw Call list footer that contains
@@ -131,6 +156,16 @@ call_list_destroy(PANEL *panel);
  */
 void
 call_list_draw_footer(PANEL *panel);
+
+/**
+ * @brief Draw panel list contents
+ *
+ * This funtion will draw Call list dialogs list
+ *
+ * @param panel Ncurses panel pointer
+ */
+void
+call_list_draw_list(PANEL *panel);
 
 /**
  * @brief Draw the Call list panel

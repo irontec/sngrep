@@ -72,6 +72,9 @@ struct ui {
     //! Request the panel to redraw its data
     int
     (*draw)(PANEL*);
+    //! Notifies the panel the screen has changed
+    int
+    (*resize)(PANEL*);
     //! Handle a custom keybind on this panel
     int
     (*handle_key)(PANEL*, int key);
@@ -212,6 +215,18 @@ ui_get_panel(ui_t *ui);
  * @return 0 if ui has been drawn, -1 otherwise
  */
 int
+ui_resize_panel(ui_t *ui);
+
+/**
+ * @brief Notifies current ui the screen size has changed
+ *
+ * This function acts as wrapper to custom ui resize functions
+ * with some checks
+ *
+ * @param ui UI structure
+ * @return 0 if ui has been resize, -1 otherwise
+ */
+int
 ui_draw_panel(ui_t *ui);
 
 /**
@@ -317,6 +332,15 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count);
  */
 void
 draw_vscrollbar(WINDOW *win, int value, int max, int left);
+
+/**
+ * @brief Clear a given window line
+ *
+ * This function can be used to clear a given line on the
+ * screen.
+ */
+void
+clear_line(WINDOW *win, int line);
 
 /**
  * @brief Draw a message payload in a window

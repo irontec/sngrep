@@ -210,6 +210,23 @@ ui_draw_panel(ui_t *ui)
     return ret;
 }
 
+int
+ui_resize_panel(ui_t *ui)
+{
+    int ret = 0;
+
+    //! Sanity check, this should not happen
+    if (!ui)
+        return -1;
+
+    // Notify the panel screen size has changed
+    if (ui->resize) {
+        ret = ui->resize(ui_get_panel(ui));
+    }
+
+    return ret;
+}
+
 void
 ui_help(ui_t *ui)
 {
@@ -299,6 +316,9 @@ default_handle_key(ui_t *ui, int key)
 {
     // Otherwise, use standard keybindings
     switch (key) {
+        case KEY_RESIZE:
+            ui_resize_panel(ui);
+            break;
         case 'C':
         case KEY_F(8):
             toggle_option("syntax");
@@ -370,7 +390,7 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
 
     // Write a line all the footer width
     wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    mvwprintw(win, height - 1, 0, "%*s", width, "");
+    clear_line(win, height-1);
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
@@ -404,7 +424,7 @@ draw_title(PANEL *panel, const char *title)
 
     // Center the title on the window
     wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    mvwprintw(win, 0, 0, "%*s", width, "");
+    clear_line(win, 0);
     mvwprintw(win, 0, (width - strlen(title)) / 2, "%s", title);
     wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
@@ -439,6 +459,15 @@ draw_vscrollbar(WINDOW *win, int value, int max, int left)
     for (cline = 0; cline < scrollen; cline++)
         mvwaddch(win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
 
+}
+
+void
+clear_line(WINDOW *win, int line)
+{
+    // We could do this with wcleartoel but we want to
+    // preserve previous window attributes. That way we
+    // can set the background of the line.
+    mvwprintw(win, line, 0, "%*s", getmaxx(win), "");
 }
 
 int

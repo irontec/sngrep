@@ -48,6 +48,7 @@ ui_t ui_call_list = {
     .panel = NULL,
     .create = call_list_create,
     .draw = call_list_draw,
+    .resize = call_list_resize,
     .handle_key = call_list_handle_key,
     .help = call_list_help,
     .destroy = call_list_destroy,
@@ -62,7 +63,7 @@ call_list_create()
     int height, width, i, attrid, collen;
     call_list_info_t *info;
     char option[80];
-    const char *field, *title, *infile;
+    const char *field, *title;
 
     // Create a new panel that fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
@@ -101,23 +102,13 @@ call_list_create()
     // Create the form and post it
     info->form = new_form(info->fields);
     set_form_sub(info->form, win);
+
     // Form starts inactive
     call_list_form_activate(panel, 0);
 
     // Calculate available printable area
     info->list_win = subwin(win, height - 5, width, 4, 0);
     info->group = call_group_create();
-
-    // Draw a Panel header lines
-    if ((infile = capture_get_infile()))
-        mvwprintw(win, 1, width - strlen(infile) - 11, "Filename: %s", infile);
-    mvwprintw(win, 2, 2, "Display Filter: ");
-
-    // Draw the footer of the window
-    call_list_draw_footer(panel);
-
-    // Draw panel title
-    draw_title(panel, "sngrep - SIP messages flow viewer");
 
     // Set defualt filter text if configured
     if (get_option_value("cl.filter")) {
@@ -157,96 +148,132 @@ call_list_destroy(PANEL *panel)
     del_panel(panel);
 }
 
+int
+call_list_resize(PANEL *panel)
+{
+    int maxx, maxy;
+
+    // Get panel info
+    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    // Get current screen dimensions
+    getmaxyx(stdscr, maxy, maxx);
+
+    // Change the main window size
+    wresize(panel_window(panel), maxy, maxx);
+    // Calculate available printable area
+    wresize(info->list_win, maxy - 5, maxx - 4);
+    // Force list redraw
+    call_list_clear(panel);
+
+    return 0;
+}
+
+void
+call_list_draw_header(PANEL *panel)
+{
+    const char *infile, *coldesc;
+    int height, width, colpos, collen, i;
+
+    // Get panel info
+    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+
+    // Let's draw the fixed elements of the screen
+    WINDOW *win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Draw panel title
+    draw_title(panel, "sngrep - SIP messages flow viewer");
+
+    // Draw a Panel header lines
+    clear_line(win, 1);
+    if ((infile = capture_get_infile()))
+        mvwprintw(win, 1, width - strlen(infile) - 11, "Filename: %s", infile);
+    mvwprintw(win, 2, 2, "Display Filter: ");
+    mvwprintw(win, 1, 2, "Current Mode: %s", capture_status());
+
+    // Reverse colors on monochrome terminals
+    if (!has_colors())
+        wattron(win, A_REVERSE);
+
+    // Draw columns titles
+    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    mvwprintw(win, 3, 0, "%*s", width, "");
+    for (colpos = 6, i = 0; i < info->columncnt; i++) {
+        // Get current column width
+        collen = info->columns[i].width;
+        // Get current column title
+        coldesc = sip_attr_get_title(info->columns[i].id);
+
+        // Check if the column will fit in the remaining space of the screen
+        if (colpos + strlen(coldesc) >= width)
+            break;
+        mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
+        colpos += collen + 1;
+    }
+    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
+
+    // Get filter call counters
+    filter_stats(&info->callcnt, &info->dispcallcnt);
+
+    // Print calls count (also filtered)
+    mvwprintw(win, 1, 35, "%*s", 35, "");
+    if (info->callcnt != info->dispcallcnt) {
+        mvwprintw(win, 1, 35, "Dialogs: %d (%d displayed)", info->callcnt, info->dispcallcnt);
+    } else {
+        mvwprintw(win, 1, 35, "Dialogs: %d", info->callcnt);
+    }
+}
+
 void
 call_list_draw_footer(PANEL *panel)
 {
     const char *keybindings[] = {
-        "Esc", "Quit",
-        "Enter", "Show",
-        "Space", "Select",
-        "F1", "Help",
-        "F2", "Save",
-        "F3", "Search",
-        "F4", "Extended",
-        "F5", "Clear",
-        "F6", "Raw",
-        "F7", "Filter",
-        "F10", "Columns"
+        "Esc",
+        "Quit",
+        "Enter",
+        "Show",
+        "Space",
+        "Select",
+        "F1",
+        "Help",
+        "F2",
+        "Save",
+        "F3",
+        "Search",
+        "F4",
+        "Extended",
+        "F5",
+        "Clear",
+        "F6",
+        "Raw",
+        "F7",
+        "Filter",
+        "F10",
+        "Columns"
     };
 
     draw_keybindings(panel, keybindings, 22);
 }
 
-int
-call_list_draw(PANEL *panel)
+void
+call_list_draw_list(PANEL *panel)
 {
-    int height, width, cline = 0, i, colpos, collen;
+
+    int height, width, cline = 0;
     struct sip_call *call;
-    int dispcallcnt, callcnt, cury, curx;
-    const char *coldesc;
     char linetext[256];
+    WINDOW *win;
 
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    if (!info)
-        return -1;
 
-    // Get window of call list panel
-    WINDOW *win = panel_window(panel);
-    getmaxyx(win, height, width);
-
-    // Store cursor position
-    getyx(win, cury, curx);
-
-    // Update current mode information
-    if (!info->form_active) {
-        // Print current running mode information
-        mvwprintw(win, 1, 2, "%*s", 35, "");
-        mvwprintw(win, 1, 2, "Current Mode: %s", capture_status());
-
-        // Reverse colors on monochrome terminals
-        if (!has_colors())
-            wattron(win, A_REVERSE);
-
-        // Draw columns titles
-        wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        mvwprintw(win, 3, 0, "%*s", width, "");
-        for (colpos = 6, i = 0; i < info->columncnt; i++) {
-            // Get current column width
-            collen = info->columns[i].width;
-            // Get current column title
-            coldesc = sip_attr_get_title(info->columns[i].id);
-
-            // Check if the column will fit in the remaining space of the screen
-            if (colpos + strlen(coldesc) >= width)
-                break;
-            mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
-            colpos += collen + 1;
-        }
-        wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
-    }
-
-    // Get filter call counters
-    filter_stats(&callcnt, &dispcallcnt);
-
-    // Print calls count (also filtered)
-    mvwprintw(win, 1, 35, "%*s", 35, "");
-    if (callcnt != dispcallcnt) {
-        mvwprintw(win, 1, 35, "Dialogs: %d (%d displayed)", callcnt, dispcallcnt);
-    } else {
-        mvwprintw(win, 1, 35, "Dialogs: %d", callcnt);
-    }
-
-    // Restore cursor position
-    wmove(win, cury, curx);
+    // No calls, we've finished drawing the list
+    if (info->dispcallcnt == 0)
+        return;
 
     // Get window of call list panel
     win = info->list_win;
     getmaxyx(win, height, width);
-
-    // No calls, we've finished drawing
-    if (dispcallcnt == 0)
-        return 0;
 
     // If no active call, use the fist one (if exists)
     if (!info->first_call && call_get_next_filtered(NULL)) {
@@ -265,10 +292,8 @@ call_list_draw(PANEL *panel)
             continue;
 
         // Show bold selected rows
-        if (call_group_exists(info->group, call)) {
-            wattron(win, A_BOLD);
-            wattron(win, COLOR_PAIR(CP_DEFAULT));
-        }
+        if (call_group_exists(info->group, call))
+            wattron(win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
         if (call == info->cur_call) {
@@ -279,13 +304,13 @@ call_list_draw(PANEL *panel)
         }
 
         // Set current line background
-        mvwprintw(win, cline, 0, "%*s", width, "");
+        clear_line(win, cline);
         // Set current line selection box
         mvwprintw(win, cline, 2, call_group_exists(info->group, call) ? "[*]" : "[ ]");
 
-        // Print call line if no filter is active or it matchs the filter
+        // Print call line
         memset(linetext, 0, sizeof(linetext));
-        mvwprintw(win, cline, 6, "%.*s", width - 6, call_list_line_text(panel, call, linetext));
+        mvwprintw(win, cline, 6, "%-*s", width - 6, call_list_line_text(panel, call, linetext));
         cline++;
 
         wattroff(win, COLOR_PAIR(CP_DEFAULT));
@@ -294,8 +319,27 @@ call_list_draw(PANEL *panel)
     }
 
     // Draw scrollbar to the right
-    draw_vscrollbar(win, info->first_line, dispcallcnt, 1);
+    draw_vscrollbar(win, info->first_line, info->dispcallcnt, 1);
     wnoutrefresh(info->list_win);
+}
+
+int
+call_list_draw(PANEL *panel)
+{
+    int cury, curx;
+
+    // Store cursor position
+    getyx(panel_window(panel), cury, curx);
+
+    // Draw the header
+    call_list_draw_header(panel);
+    // Draw the footer
+    call_list_draw_footer(panel);
+    // Draw the list content
+    call_list_draw_list(panel);
+
+    // Restore cursor position
+    wmove(panel_window(panel), cury, curx);
 
     return 0;
 }
