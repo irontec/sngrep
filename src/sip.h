@@ -246,8 +246,8 @@ sip_get_callid(const char* payload);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_load_message(const char *src, u_short sport, const char *dst,
-                 u_short dport, u_char *payload);
+sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short sport,
+                 const char *dst, u_short dport, u_char *payload);
 
 /**
  * @brief Getter for calls linked list size

@@ -215,8 +215,8 @@ sip_get_callid(const char* payload)
 }
 
 sip_msg_t *
-sip_load_message(const char *src, u_short sport, const char* dst,
-                 u_short dport, u_char *payload)
+sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short sport,
+                 const char* dst, u_short dport, u_char *payload)
 {
     sip_msg_t *msg;
     sip_call_t *call;
@@ -232,6 +232,10 @@ sip_load_message(const char *src, u_short sport, const char* dst,
     if (!(msg = sip_msg_create((const char*) payload))) {
         return NULL;
     }
+
+    // Set message PCAP header
+    msg->pcap_header = malloc(sizeof(struct pcap_pkthdr));
+    memcpy(msg->pcap_header, header, sizeof(struct pcap_pkthdr));
 
     // Parse the package payload to fill message attributes
     if (msg_parse_payload(msg, (const char*) payload) != 0) {

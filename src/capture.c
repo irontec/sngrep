@@ -271,7 +271,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Parse this header and payload
-    msg = sip_load_message(ip_src, sport, ip_dst, dport, msg_payload);
+    msg = sip_load_message(header, ip_src, sport, ip_dst, dport, msg_payload);
     free(msg_payload);
 
     // This is not a sip message, Bye!
@@ -288,8 +288,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     }
 
     // Set message PCAP data
-    msg->pcap_header = malloc(sizeof(struct pcap_pkthdr));
-    memcpy(msg->pcap_header, header, sizeof(struct pcap_pkthdr));
     msg->pcap_packet = malloc(size_packet);
     memcpy(msg->pcap_packet, packet, size_packet);
 
