@@ -271,7 +271,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Parse this header and payload
-    msg = sip_load_message(header->ts, ip_src, sport, ip_dst, dport, msg_payload);
+    msg = sip_load_message(ip_src, sport, ip_dst, dport, msg_payload);
     free(msg_payload);
 
     // This is not a sip message, Bye!

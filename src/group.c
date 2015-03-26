@@ -199,10 +199,10 @@ sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)
     if (!two)
         return 1;
     // Compare seconds
-    if (one->ts.tv_sec > two->ts.tv_sec)
+    if (one->pcap_header->ts.tv_sec > two->pcap_header->ts.tv_sec)
         return 1;
     // Compare useconds if seconds are equal
-    if (one->ts.tv_sec == two->ts.tv_sec && one->ts.tv_usec > two->ts.tv_usec)
+    if (one->pcap_header->ts.tv_sec == two->pcap_header->ts.tv_sec && one->pcap_header->ts.tv_usec > two->pcap_header->ts.tv_usec)
         return 1;
     // Otherwise
     return 0;

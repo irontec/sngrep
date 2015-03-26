@@ -62,7 +62,7 @@ sip_init(int limit)
     // Initialize calls lock
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
-#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
+#if !defined(PTHREAD_MUTEX_RECURSIVE_NP)
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 #else
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
@@ -215,7 +215,7 @@ sip_get_callid(const char* payload)
 }
 
 sip_msg_t *
-sip_load_message(struct timeval tv, const char *src, u_short sport, const char* dst,
+sip_load_message(const char *src, u_short sport, const char* dst,
                  u_short dport, u_char *payload)
 {
     sip_msg_t *msg;
@@ -240,7 +240,6 @@ sip_load_message(struct timeval tv, const char *src, u_short sport, const char* 
     }
 
     // Fill message data
-    msg->ts = tv;
     msg->sport = sport;
     msg->dport = dport;
 
@@ -271,14 +270,14 @@ sip_load_message(struct timeval tv, const char *src, u_short sport, const char* 
     msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%s:%u", msg->dst, htons(dport));
 
     // Set message Date attribute
-    time_t t = (time_t) msg->ts.tv_sec;
+    time_t t = (time_t) msg->pcap_header->ts.tv_sec;
     struct tm *timestamp = localtime(&t);
     strftime(date, sizeof(date), "%Y/%m/%d", timestamp);
     msg_set_attribute(msg, SIP_ATTR_DATE, date);
 
     // Set message Time attribute
     strftime(time, sizeof(time), "%H:%M:%S", timestamp);
-    sprintf(time + 8, ".%06d", (int) msg->ts.tv_usec);
+    sprintf(time + 8, ".%06d", (int) msg->pcap_header->ts.tv_usec);
     msg_set_attribute(msg, SIP_ATTR_TIME, time);
 
     pthread_mutex_lock(&calls.lock);
@@ -696,7 +695,7 @@ sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur)
     int seconds;
     char duration[20];
     // Differnce in secons
-    seconds = end->ts.tv_sec - start->ts.tv_sec;
+    seconds = end->pcap_header->ts.tv_sec - start->pcap_header->ts.tv_sec;
     // Set Human readable format
     sprintf(duration, "%d:%02d", seconds / 60, seconds % 60);
     sprintf(dur, "%7s", duration);

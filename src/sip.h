@@ -65,8 +65,6 @@ struct sip_attr;
 struct sip_msg {
     //! Message attribute list
     struct sip_attr *attrs;
-    //! Timestamp
-    struct timeval ts;
     //! Source address
     char src[50];
     //! Source port
@@ -248,7 +246,7 @@ sip_get_callid(const char* payload);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_load_message(struct timeval tv, const char *src, u_short sport, const char *dst,
+sip_load_message(const char *src, u_short sport, const char *dst,
                  u_short dport, u_char *payload);
 
 /**

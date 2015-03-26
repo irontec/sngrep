@@ -33,6 +33,7 @@
 #define __SNGREP_CAPTURE_H
 
 #include "config.h"
+#include <pthread.h>
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>
@@ -46,10 +47,12 @@
 #endif
 
 #if defined(BSD) || defined (__OpenBSD__)
+#define bpf_timeval timeval
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
