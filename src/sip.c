@@ -199,7 +199,7 @@ char *
 sip_get_callid(const char* payload)
 {
     char *callid = NULL;
-    regmatch_t pmatch[2];
+    regmatch_t pmatch[3];
 
     // Try to get Call-ID from payload
     if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
