@@ -81,6 +81,10 @@ struct sip_msg {
     int request;
     //! This message contains sdp data
     int sdp;
+    //! Message RTP position indicator
+    int rtp_pos;
+    //! Message RTP packet count
+    int rtp_count;
     //! Message Cseq
     int cseq;
     //! PCAP Packet Header data

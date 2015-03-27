@@ -112,6 +112,12 @@ struct capture_info {
     int link;
     //! Cache for DNS lookups
     dns_cache_t dnscache;
+    //! Local devices pointer
+    pcap_if_t *devices;
+    //! Incoming Packets per port
+    int local_ports[65535];
+    //! Outgoint Packets per port
+    int remote_ports[65535];
     //! Capture thread for online capturing
     pthread_t capture_t;
 };
@@ -334,5 +340,32 @@ dump_close(pcap_dumper_t *pd);
  */
 const char *
 lookup_hostname(const char *address);
+
+/**
+ * @brief Check if a given address belongs to a local device
+ *
+ * @param address IPv4 string format for address
+ * @return 1 if address is local, 0 otherwise
+ */
+int
+is_local_address_str(const char *address);
+
+/**
+ * @brief Check if a given address belongs to a local device
+ *
+ * @param address IPv4 format for address
+ * @return 1 if address is local, 0 otherwise
+ */
+int
+is_local_address(in_addr_t address);
+
+/**
+ * @brief Return the packet count on a given port
+ *
+ * @param type 1 for local ports, 0 for remote
+ * @return the packet count on requested port
+ */
+int
+capture_packet_count_port(int type, int port);
 
 #endif

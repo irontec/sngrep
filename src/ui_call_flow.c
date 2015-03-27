@@ -30,6 +30,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include "capture.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_msg_diff.h"
@@ -266,6 +267,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     const char *msg_dst;
     char method[80];
     int height, width;
+    int rtp_count, sdp_port, sdp_local;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -296,6 +298,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 
     // If message has sdp information
     if (msg->sdp) {
+        // Change method text if sdpinfo mode is requested
         if (is_option_enabled("cf.sdpinfo")) {
             // Show message sdp in title
             memset(method, 0, sizeof(method));
@@ -368,6 +371,28 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         mvwhline(win, cline + 1, startpos + 2, '=', distance);
     } else {
         mvwhline(win, cline + 1, startpos + 2, ACS_HLINE, distance);
+    }
+
+
+    // If message has SDP check if packet count in SDP Port has changed
+    if (info->show_rtp && msg->sdp) {
+        // Check if SDP address is local
+        sdp_local = is_local_address_str(msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS));
+        // Check if packet count has changed in SDP port
+        sdp_port = atoi(msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
+        // Retrieve packet count for SDP port
+        rtp_count = capture_packet_count_port(sdp_local, sdp_port);
+
+        if (msg->rtp_count != rtp_count) {
+            msg->rtp_count = rtp_count;
+            msg->rtp_pos = (msg->rtp_pos + 1) % distance;
+
+            if (!strcasecmp(msg_src, column1->addr)) {
+                mvwaddch(win, cline + 1, startpos + distance - msg->rtp_pos, '<');
+            } else {
+                mvwaddch(win, cline + 1, startpos + 2 + msg->rtp_pos, '>');
+            }
+        }
     }
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
@@ -512,6 +537,9 @@ call_flow_handle_key(PANEL *panel, int key)
             for (i = 0; i < rnpag_steps; i++)
                 call_flow_handle_key(panel, KEY_UP);
             break;
+        case 'f':
+             info->show_rtp = (info->show_rtp)?0:1;
+             break;
         case 'x':
         case KEY_F(4):
             werase(panel_window(panel));

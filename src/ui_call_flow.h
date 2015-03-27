@@ -65,6 +65,7 @@ struct call_flow_info {
     sip_msg_t *selected;
     int raw_width;
     int cur_line;
+    int show_rtp;
     call_flow_column_t *columns;
 };
 

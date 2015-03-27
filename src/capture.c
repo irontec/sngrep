@@ -87,6 +87,9 @@ capture_online(const char *dev, const char *outfile)
         return 3;
     }
 
+    // Get Local devices addresses
+    pcap_findalldevs(&capinfo.devices, errbuf);
+
     return 0;
 }
 
@@ -135,11 +138,11 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // IP segment length
     uint32_t ip_len;
     // IP header size
-    int size_ip;
+    uint32_t size_ip;
     //! Source Address
-    char ip_src[50];
+    char ip_src[INET6_ADDRSTRLEN + 1];
     //! Destination Address
-    char ip_dst[50];
+    char ip_dst[INET6_ADDRSTRLEN + 1];
     // UDP header data
     struct nread_udp *udp;
     // TCP header data
@@ -147,11 +150,11 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Packet payload data
     u_char *msg_payload = NULL;
     // Packet payload size
-    int size_payload;
+    uint32_t size_payload;
     // Parsed message data
     sip_msg_t *msg;
     // Total packet size
-    int size_packet;
+    uint32_t size_packet;
     // SIP message transport
     int transport; /* 0 UDP, 1 TCP, 2 TLS */
     // Source and Destination Ports
@@ -184,8 +187,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             size_ip = ip4->ip_hl * 4;
             ip_proto = ip4->ip_p;
             ip_len = ntohs(ip4->ip_len);
-            strncpy(ip_src, inet_ntoa(ip4->ip_src), INET_ADDRSTRLEN);
-            strncpy(ip_dst, inet_ntoa(ip4->ip_dst), INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, &ip4->ip_src, ip_src, sizeof(ip_src));
+            inet_ntop(AF_INET, &ip4->ip_dst, ip_dst, sizeof(ip_dst));
             break;
 #ifdef WITH_IPV6
         case 6:
@@ -209,15 +212,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         sport = udp->udp_sport;
         dport = udp->udp_dport;
 
-        // We're only interested in packets with payload
         size_payload = htons(udp->udp_hlen) - SIZE_UDP;
-        if (size_payload <= 0)
-            return;
-
-        // Get packet payload
-        msg_payload = malloc(size_payload + 1);
-        memset(msg_payload, 0, size_payload + 1);
-        memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_UDP), size_payload);
+        if (size_payload > 0 ) {
+            // Get packet payload
+            msg_payload = malloc(size_payload + 1);
+            memset(msg_payload, 0, size_payload + 1);
+            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_UDP), size_payload);
+        }
 
         // Total packet size
         size_packet = size_link + size_ip + SIZE_UDP + size_payload;
@@ -264,6 +265,17 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     } else {
         // Not handled protocol
         return;
+    }
+
+    // Increase capture stats
+    if (ip4->ip_v == 4 && capinfo.devices) {
+        if(is_local_address(ip4->ip_src.s_addr)) {
+            capinfo.local_ports[htons(sport)]++;
+            capinfo.remote_ports[htons(dport)]++;
+        } else {
+            capinfo.remote_ports[htons(sport)]++;
+            capinfo.local_ports[htons(dport)]++;
+        }
     }
 
     // We're only interested in packets with payload
@@ -513,4 +525,33 @@ lookup_hostname(const char *address)
 
     // Return the stored value
     return capinfo.dnscache.hostname[capinfo.dnscache.count - 1];
+}
+
+int
+is_local_address_str(const char *address)
+{
+    return is_local_address(inet_addr(address));
+}
+
+int
+is_local_address(in_addr_t address)
+{
+    pcap_if_t *device;
+    pcap_addr_t *dev_addr;
+
+    for (device = capinfo.devices; device; device = device->next) {
+        for (dev_addr = device->addresses; dev_addr; dev_addr = dev_addr->next)
+            if (((struct sockaddr_in*)dev_addr)->sin_addr.s_addr == address)
+                return 1;
+    }
+    return 0;
+}
+
+int
+capture_packet_count_port(int type, int port)
+{
+    if (type == 0)
+        return capinfo.remote_ports[port];
+    else
+        return capinfo.local_ports[port];
 }
