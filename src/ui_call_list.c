@@ -454,6 +454,7 @@ call_list_handle_key(PANEL *panel, int key)
             // Activate Form
             call_list_form_activate(panel, 1);
             break;
+        case 'k':
         case KEY_DOWN:
             // Check if there is a call below us
             if (!info->cur_call || !call_get_next_filtered(info->cur_call))
@@ -468,6 +469,7 @@ call_list_handle_key(PANEL *panel, int key)
                 info->cur_line = height;
             }
             break;
+        case 'j':
         case KEY_UP:
             // Check if there is a call above us
             if (!info->cur_call || !call_get_prev_filtered(info->cur_call))
@@ -482,11 +484,17 @@ call_list_handle_key(PANEL *panel, int key)
                 info->cur_line = 1;
             }
             break;
+        case KEY_CTRL_D:
+            rnpag_steps = rnpag_steps / 2;
+        case KEY_CTRL_F:
         case KEY_NPAGE:
             // Next page => N key down strokes
             for (i = 0; i < rnpag_steps; i++)
                 call_list_handle_key(panel, KEY_DOWN);
             break;
+        case KEY_CTRL_U:
+            rnpag_steps = rnpag_steps / 2;
+        case KEY_CTRL_B:
         case KEY_PPAGE:
             // Prev page => N key up strokes
             for (i = 0; i < rnpag_steps; i++)
@@ -630,11 +638,17 @@ call_list_handle_form_key(PANEL *panel, int key)
         case KEY_LEFT:
             form_driver(info->form, REQ_LEFT_CHAR);
             break;
+        case KEY_CTRL_A:
         case KEY_HOME:
             form_driver(info->form, REQ_BEG_LINE);
             break;
+        case KEY_CTRL_E:
         case KEY_END:
             form_driver(info->form, REQ_END_LINE);
+            break;
+        case KEY_CTRL_U:
+            form_driver(info->form, REQ_BEG_LINE);
+            form_driver(info->form, REQ_CLR_EOL);
             break;
         case KEY_DC:
             form_driver(info->form, REQ_DEL_CHAR);

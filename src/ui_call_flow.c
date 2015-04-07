@@ -483,11 +483,12 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 int
 call_flow_handle_key(PANEL *panel, int key)
 {
-    int i, rnpag_steps = 4, raw_width, height, width;
+    int i, raw_width, height, width;
     call_flow_info_t *info = call_flow_info(panel);
     sip_msg_t *next = NULL, *prev = NULL;
     ui_t *next_panel;
     sip_call_group_t *group;
+    int rnpag_steps = get_option_int_value("cf.scrollstep");
 
     // Sanity check, this should not happen
     if (!info)
@@ -496,6 +497,7 @@ call_flow_handle_key(PANEL *panel, int key)
     getmaxyx(info->flow_win, height, width);
 
     switch (key) {
+        case 'k':
         case KEY_DOWN:
             // Check if there is a call below us
             if (!(next = call_group_get_next_msg(info->group, info->cur_msg)))
@@ -509,6 +511,7 @@ call_flow_handle_key(PANEL *panel, int key)
                 info->cur_line -= 2;
             }
             break;
+        case 'j':
         case KEY_UP:
             // Loop through messages until we found current message
             // storing the previous one
@@ -527,11 +530,17 @@ call_flow_handle_key(PANEL *panel, int key)
                 info->cur_line += 2;
             }
             break;
+        case KEY_CTRL_D:
+            rnpag_steps = rnpag_steps / 2;
+        case KEY_CTRL_F:
         case KEY_NPAGE:
             // Next page => N key down strokes
             for (i = 0; i < rnpag_steps; i++)
                 call_flow_handle_key(panel, KEY_DOWN);
             break;
+        case KEY_CTRL_U:
+            rnpag_steps = rnpag_steps / 2;
+        case KEY_CTRL_B:
         case KEY_PPAGE:
             // Prev page => N key up strokes
             for (i = 0; i < rnpag_steps; i++)

@@ -210,11 +210,16 @@ filter_handle_key(PANEL *panel, int key)
         case KEY_LEFT:
             form_driver(info->form, REQ_LEFT_CHAR);
             break;
+        case KEY_CTRL_A:
         case KEY_HOME:
             form_driver(info->form, REQ_BEG_LINE);
             break;
+        case KEY_CTRL_E:
         case KEY_END:
             form_driver(info->form, REQ_END_LINE);
+            break;
+        case KEY_CTRL_U:
+            form_driver(info->form, REQ_CLR_FIELD);
             break;
         case KEY_DC:
             form_driver(info->form, REQ_DEL_CHAR);

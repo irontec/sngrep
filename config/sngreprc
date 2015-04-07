@@ -36,8 +36,9 @@
 # set sngrep.savepath /tmp/sngrep-captures
 
 ##-----------------------------------------------------------------------------
-## Change default scrolling in call list
+## Change default scrolling in call list and call flow
 # set cl.scrollstep 20
+# set cf.scrollstep 4
 ## Disable exit prompt
 # set cl.noexitprompt off
 ## Or set its default button
