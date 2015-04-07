@@ -39,3 +39,7 @@ ui:
         Right now, white background terminals must set background dark option
         in order to see colors properly.
 
+    * Add configurable keybindings
+        Allow user configurable keybindings for existing actions in ui screens.
+        It will be also nice to be able to change bottom hint bar with configured keys.
+
