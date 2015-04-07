@@ -486,6 +486,7 @@ call_list_handle_key(PANEL *panel, int key)
             break;
         case KEY_CTRL_D:
             rnpag_steps = rnpag_steps / 2;
+            /* no break */
         case KEY_CTRL_F:
         case KEY_NPAGE:
             // Next page => N key down strokes
@@ -494,6 +495,7 @@ call_list_handle_key(PANEL *panel, int key)
             break;
         case KEY_CTRL_U:
             rnpag_steps = rnpag_steps / 2;
+            /* no break */
         case KEY_CTRL_B:
         case KEY_PPAGE:
             // Prev page => N key up strokes
