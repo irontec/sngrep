@@ -47,7 +47,7 @@
 void
 usage()
 {
-    printf("Usage: %s [-hVciv] [-IO pcap_dump] [-d dev] [-l limit]"
+    printf("Usage: %s [-hVcivNq] [-IO pcap_dump] [-d dev] [-l limit]"
 #ifdef WITH_OPENSSL
            " [-k keyfile]"
 #endif

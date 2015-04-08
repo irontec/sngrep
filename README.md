@@ -44,6 +44,7 @@ You can pass following flags to ./configure to enable some features
 | `--with-openssl` | Adds OpenSSL support to parse TLS captured messages (req. libssl)  |
 | `--with-pcre`|  Adds Perl Compatible regular expressions support in regexp fields |
 | `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
+| `--enable-ipv6`   | Enables IPv6 packet capture support. |
 
 You can find [detailed instructions for some distributions] (https://github.com/irontec/sngrep/wiki/Building) on wiki.
 
