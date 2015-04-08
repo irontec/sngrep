@@ -45,9 +45,17 @@
 #include <panel.h>
 #include "sip.h"
 #include "group.h"
+#include "keybinding.h"
 
 //! Refresh UI every 200 ms
 #define REFRESHTHSECS   2
+
+//! Some undefined key codes
+#define KEY_ESC         27
+#define KEY_INTRO       10
+#define KEY_TAB         9
+#define KEY_BACKSPACE2  8
+#define KEY_BACKSPACE3  127
 
 //! Define Some Ctrl Modified keybindings
 //! TODO This will be replaced for keyname function in future

@@ -32,6 +32,8 @@
 #include <string.h>
 #include <time.h>
 #include "option.h"
+#include "ui_manager.h"
+#include "keybinding.h"
 
 /**
  * @brief Configuration options array
@@ -106,6 +108,72 @@ init_options()
     set_option_value("filter.OPTIONS", "on");
     set_option_value("filter.PUBLISH", "on");
     set_option_value("filter.MESSAGE", "on");
+
+    // Set default keybindings
+    key_bind_action(ACTION_UP, KEY_UP);
+    key_bind_action(ACTION_UP, 'j');
+    key_bind_action(ACTION_DOWN, KEY_DOWN);
+    key_bind_action(ACTION_DOWN, 'k');
+    key_bind_action(ACTION_LEFT, KEY_LEFT);
+    key_bind_action(ACTION_RIGHT, KEY_RIGHT);
+    key_bind_action(ACTION_DELETE, KEY_DC);
+    key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE);
+    key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE2);
+    key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE3);
+    key_bind_action(ACTION_NPAGE, KEY_NPAGE);
+    key_bind_action(ACTION_NPAGE, KEY_CTRL_F);
+    key_bind_action(ACTION_PPAGE, KEY_PPAGE);
+    key_bind_action(ACTION_PPAGE, KEY_CTRL_B);
+    key_bind_action(ACTION_HNPAGE, KEY_CTRL_D);
+    key_bind_action(ACTION_HPPAGE, KEY_CTRL_U);
+    key_bind_action(ACTION_BEGIN, KEY_HOME);
+    key_bind_action(ACTION_BEGIN, KEY_CTRL_A);
+    key_bind_action(ACTION_END, KEY_END);
+    key_bind_action(ACTION_END, KEY_CTRL_E);
+    key_bind_action(ACTION_NEXT_FIELD, KEY_TAB);
+    key_bind_action(ACTION_CLEAR, KEY_CTRL_U);
+    key_bind_action(ACTION_CLEAR_CALLS, KEY_F(5));
+    key_bind_action(ACTION_TOGGLE_SYNTAX, 'C');
+    key_bind_action(ACTION_TOGGLE_COLOR, KEY_F(7));
+    key_bind_action(ACTION_SHOW_HOSTNAMES, KEY_F(9));
+    key_bind_action(ACTION_TOGGLE_PAUSE, 'p');
+    key_bind_action(ACTION_PREV_SCREEN, KEY_ESC);
+    key_bind_action(ACTION_PREV_SCREEN, 'Q');
+    key_bind_action(ACTION_PREV_SCREEN, 'q');
+    key_bind_action(ACTION_SHOW_HELP, KEY_F(1));
+    key_bind_action(ACTION_SHOW_HELP, 'H');
+    key_bind_action(ACTION_SHOW_HELP, 'h');
+    key_bind_action(ACTION_SHOW_RAW, KEY_F(6));
+    key_bind_action(ACTION_SHOW_RAW, 'r');
+    key_bind_action(ACTION_SHOW_RAW, 'R');
+    key_bind_action(ACTION_SHOW_FLOW, KEY_INTRO);
+    key_bind_action(ACTION_SHOW_FLOW_EX, KEY_F(4));
+    key_bind_action(ACTION_SHOW_FLOW_EX, 'x');
+    key_bind_action(ACTION_SHOW_FLOW_EX, 'X');
+    key_bind_action(ACTION_SHOW_FILTERS, KEY_F(7));
+    key_bind_action(ACTION_SHOW_FILTERS, 'f');
+    key_bind_action(ACTION_SHOW_FILTERS, 'F');
+    key_bind_action(ACTION_SHOW_COLUMNS, KEY_F(10));
+    key_bind_action(ACTION_SHOW_COLUMNS, 't');
+    key_bind_action(ACTION_SHOW_COLUMNS, 'T');
+    key_bind_action(ACTION_DISP_FILTER, KEY_F(3));
+    key_bind_action(ACTION_DISP_FILTER, KEY_TAB);
+    key_bind_action(ACTION_DISP_FILTER, '/');
+    key_bind_action(ACTION_DISP_INVITE, 'i');
+    key_bind_action(ACTION_DISP_INVITE, 'I');
+    key_bind_action(ACTION_SAVE, KEY_F(2));
+    key_bind_action(ACTION_SAVE, 's');
+    key_bind_action(ACTION_SAVE, 'S');
+    key_bind_action(ACTION_SELECT, ' ');
+    key_bind_action(ACTION_CONFIRM, KEY_INTRO);
+    key_bind_action(ACTION_TOGGLE_RTP, 'f');
+    key_bind_action(ACTION_TOGGLE_RAW, KEY_F(3));
+    key_bind_action(ACTION_INCREASE_RAW, '9');
+    key_bind_action(ACTION_DECREASE_RAW, '0');
+    key_bind_action(ACTION_RESET_RAW, 'T');
+    key_bind_action(ACTION_ONLY_SDP, 'D');
+    key_bind_action(ACTION_SDP_INFO, KEY_F(2));
+    key_bind_action(ACTION_COMPRESS, KEY_F(5));
 
     // Read options from configuration files
     read_options("/etc/sngreprc");

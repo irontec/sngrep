@@ -434,6 +434,7 @@ call_list_handle_key(PANEL *panel, int key)
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     ui_t *next_panel;
     sip_call_group_t *group;
+    int action = 0;
 
     // Sanity check, this should not happen
     if (!info)
@@ -447,170 +448,155 @@ call_list_handle_key(PANEL *panel, int key)
     WINDOW *win = info->list_win;
     getmaxyx(win, height, width);
 
-    switch (key) {
-        case '/':
-        case 9 /*KEY_TAB*/:
-        case KEY_F(3):
-            // Activate Form
-            call_list_form_activate(panel, 1);
-            break;
-        case 'k':
-        case KEY_DOWN:
-            // Check if there is a call below us
-            if (!info->cur_call || !call_get_next_filtered(info->cur_call))
+    // Check actions for this key
+    while((action = key_find_action(key, action)) != ERR) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_DOWN:
+                // Check if there is a call below us
+                if (!info->cur_call || !call_get_next_filtered(info->cur_call))
+                    return 0;
+                info->cur_call = call_get_next_filtered(info->cur_call);
+                info->cur_line++;
+                // If we are out of the bottom of the displayed list
+                // refresh it starting in the next call
+                if (info->cur_line > height) {
+                    info->first_call = call_get_next_filtered(info->first_call);
+                    info->first_line++;
+                    info->cur_line = height;
+                }
+                return 0;
+            case ACTION_UP:
+                // Check if there is a call above us
+                if (!info->cur_call || !call_get_prev_filtered(info->cur_call))
+                    return 0;
+                info->cur_call = call_get_prev_filtered(info->cur_call);
+                info->cur_line--;
+                // If we are out of the top of the displayed list
+                // refresh it starting in the previous (in fact current) call
+                if (info->cur_line <= 0) {
+                    info->first_call = info->cur_call;
+                    info->first_line--;
+                    info->cur_line = 1;
+                }
                 break;
-            info->cur_call = call_get_next_filtered(info->cur_call);
-            info->cur_line++;
-            // If we are out of the bottom of the displayed list
-            // refresh it starting in the next call
-            if (info->cur_line > height) {
-                info->first_call = call_get_next_filtered(info->first_call);
-                info->first_line++;
-                info->cur_line = height;
-            }
-            break;
-        case 'j':
-        case KEY_UP:
-            // Check if there is a call above us
-            if (!info->cur_call || !call_get_prev_filtered(info->cur_call))
-                break;
-            info->cur_call = call_get_prev_filtered(info->cur_call);
-            info->cur_line--;
-            // If we are out of the top of the displayed list
-            // refresh it starting in the previous (in fact current) call
-            if (info->cur_line <= 0) {
-                info->first_call = info->cur_call;
-                info->first_line--;
-                info->cur_line = 1;
-            }
-            break;
-        case KEY_CTRL_D:
-            rnpag_steps = rnpag_steps / 2;
-            /* no break */
-        case KEY_CTRL_F:
-        case KEY_NPAGE:
-            // Next page => N key down strokes
-            for (i = 0; i < rnpag_steps; i++)
-                call_list_handle_key(panel, KEY_DOWN);
-            break;
-        case KEY_CTRL_U:
-            rnpag_steps = rnpag_steps / 2;
-            /* no break */
-        case KEY_CTRL_B:
-        case KEY_PPAGE:
-            // Prev page => N key up strokes
-            for (i = 0; i < rnpag_steps; i++)
-                call_list_handle_key(panel, KEY_UP);
-            break;
-        case 10:
-            if (!info->cur_call)
-                return -1;
-            // KEY_ENTER , Display current call flow
-            next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
-            if (info->group->callcnt) {
-                group = info->group;
-            } else {
+            case ACTION_HNPAGE:
+                rnpag_steps = rnpag_steps / 2;
+                /* no break */
+            case ACTION_NPAGE:
+                // Next page => N key down strokes
+                for (i = 0; i < rnpag_steps; i++)
+                    call_list_handle_key(panel, KEY_DOWN);
+                return 0;
+            case ACTION_HPPAGE:
+                rnpag_steps = rnpag_steps / 2;
+                /* no break */
+            case ACTION_PPAGE:
+                // Prev page => N key up strokes
+                for (i = 0; i < rnpag_steps; i++)
+                    call_list_handle_key(panel, KEY_UP);
+                return 0;
+            case ACTION_DISP_FILTER:
+                // Activate Form
+                call_list_form_activate(panel, 1);
+                return 0;
+            case ACTION_SHOW_FLOW:
+                // Display current call flow
                 if (!info->cur_call)
                     return -1;
-                group = call_group_create();
-                call_group_add(group, info->cur_call);
-            }
-            call_flow_set_group(group);
-            wait_for_input(next_panel);
-            break;
-        case 'x':
-        case KEY_F(4):
-            // KEY_X , Display current call flow (extended)
-            next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
-            if (info->group->callcnt) {
-                group = info->group;
-            } else {
-                if (!info->cur_call)
-                    return -1;
-                group = call_group_create();
-                call_group_add(group, info->cur_call);
-                call_group_add(group, call_get_xcall(info->cur_call));
-            }
-            call_flow_set_group(group);
-            wait_for_input(next_panel);
-            break;
-        case 'r':
-        case 'R':
-        case KEY_F(6):
-            // KEY_R , Display current call flow (extended)
-            next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
-            if (info->group->callcnt) {
-                group = info->group;
-            } else {
-                if (!info->cur_call)
-                    return -1;
-                group = call_group_create();
-                call_group_add(group, info->cur_call);
-            }
-            call_raw_set_group(group);
-            wait_for_input(next_panel);
-            break;
-        case 'f':
-        case 'F':
-        case KEY_F(7):
-            // KEY_F, Display filter panel
-            next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
-            wait_for_input(next_panel);
-            call_list_clear(panel);
-            break;
-        case 't':
-        case 'T':
-        case KEY_F(10):
-            // Display column selection panel
-            next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
-            wait_for_input(next_panel);
-            call_list_clear(panel);
-            break;
-        case 's':
-        case 'S':
-        case KEY_F(2):
-            if (!is_option_disabled("sngrep.tmpfile")) {
-                // KEY_S, Display save panel
-                next_panel = ui_create(ui_find_by_type(PANEL_SAVE));
-                save_set_group(ui_get_panel(next_panel), info->group);
+                                next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
+                if (info->group->callcnt) {
+                    group = info->group;
+                } else {
+                    if (!info->cur_call)
+                        return -1;
+                    group = call_group_create();
+                    call_group_add(group, info->cur_call);
+                }
+                call_flow_set_group(group);
                 wait_for_input(next_panel);
-            }
-            break;
-        case 'i':
-        case 'I':
-            // Set Display filter text
-            set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
-            filter_set(FILTER_CALL_LIST, "invite");
-            call_list_clear(panel);
-            filter_reset_calls();
-            break;
-        case KEY_F(5):
-            // Remove all stored calls
-            sip_calls_clear();
-            // Clear List
-            call_list_clear(panel);
-            break;
-        case ' ':
-            if (!info->cur_call)
-                return -1;
-            if (call_group_exists(info->group, info->cur_call)) {
-                call_group_del(info->group, info->cur_call);
-            } else {
-                call_group_add(info->group, info->cur_call);
-            }
-            break;
-        case 'q':
-        case 27: /* KEY_ESC */
-            // Handle quit from this screen unless requested
-            if (!is_option_enabled("cl.noexitprompt")) {
-                return call_list_exit_confirm(panel);
-            }
-            break;
-        default:
-            return key;
+                return 0;
+            case ACTION_SHOW_FLOW_EX:
+                // Display current call flow (extended)
+                next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
+                if (info->group->callcnt) {
+                    group = info->group;
+                } else {
+                    if (!info->cur_call)
+                        return -1;
+                    group = call_group_create();
+                    call_group_add(group, info->cur_call);
+                    call_group_add(group, call_get_xcall(info->cur_call));
+                }
+                call_flow_set_group(group);
+                wait_for_input(next_panel);
+                return 0;
+            case ACTION_SHOW_RAW:
+                // KEY_R , Display current call flow (extended)
+                next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
+                if (info->group->callcnt) {
+                    group = info->group;
+                } else {
+                    if (!info->cur_call)
+                        return -1;
+                    group = call_group_create();
+                    call_group_add(group, info->cur_call);
+                }
+                call_raw_set_group(group);
+                wait_for_input(next_panel);
+                return 0;
+            case ACTION_SHOW_FILTERS:
+                // KEY_F, Display filter panel
+                next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
+                wait_for_input(next_panel);
+                call_list_clear(panel);
+                return 0;
+            case ACTION_SHOW_COLUMNS:
+                // Display column selection panel
+                next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
+                wait_for_input(next_panel);
+                call_list_clear(panel);
+                return 0;
+            case ACTION_SAVE:
+                if (!is_option_disabled("sngrep.tmpfile")) {
+                    // KEY_S, Display save panel
+                    next_panel = ui_create(ui_find_by_type(PANEL_SAVE));
+                    save_set_group(ui_get_panel(next_panel), info->group);
+                    wait_for_input(next_panel);
+                }
+                return 0;
+            case ACTION_DISP_INVITE:
+                // Set Display filter text
+                set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
+                filter_set(FILTER_CALL_LIST, "invite");
+                call_list_clear(panel);
+                filter_reset_calls();
+                return 0;
+            case ACTION_CLEAR_CALLS:
+                // Remove all stored calls
+                sip_calls_clear();
+                // Clear List
+                call_list_clear(panel);
+                return 0;
+            case ACTION_SELECT:
+                if (!info->cur_call)
+                    return -1;
+                if (call_group_exists(info->group, info->cur_call)) {
+                    call_group_del(info->group, info->cur_call);
+                } else {
+                    call_group_add(info->group, info->cur_call);
+                }
+                return 0;
+            case ACTION_PREV_SCREEN:
+                // Handle quit from this screen unless requested
+                if (!is_option_enabled("cl.noexitprompt")) {
+                    return call_list_exit_confirm(panel);
+                }
+                break;
+        }
     }
 
-    return 0;
+    return key;
 }
 
 int
@@ -618,6 +604,7 @@ call_list_handle_form_key(PANEL *panel, int key)
 {
     int field_idx;
     char dfilter[256];
+    int action = 0;
 
     // Get panel information
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -625,53 +612,54 @@ call_list_handle_form_key(PANEL *panel, int key)
     // Get current field id
     field_idx = field_index(current_field(info->form));
 
-    switch (key) {
-        case 27: /* KEY_ESC */
-        case 9 /* KEY_TAB */:
-        case 10 /* KEY_ENTER */:
-        case KEY_DOWN:
-        case KEY_UP:
-            // Activate list
-            call_list_form_activate(panel, 0);
-            break;
-        case KEY_RIGHT:
-            form_driver(info->form, REQ_RIGHT_CHAR);
-            break;
-        case KEY_LEFT:
-            form_driver(info->form, REQ_LEFT_CHAR);
-            break;
-        case KEY_CTRL_A:
-        case KEY_HOME:
-            form_driver(info->form, REQ_BEG_LINE);
-            break;
-        case KEY_CTRL_E:
-        case KEY_END:
-            form_driver(info->form, REQ_END_LINE);
-            break;
-        case KEY_CTRL_U:
-            form_driver(info->form, REQ_BEG_LINE);
-            form_driver(info->form, REQ_CLR_EOL);
-            break;
-        case KEY_DC:
-            form_driver(info->form, REQ_DEL_CHAR);
-            break;
-        case 8:
-        case 127:
-        case KEY_BACKSPACE:
-            form_driver(info->form, REQ_DEL_PREV);
-            // Updated displayed results
-            call_list_clear(panel);
-            // Reset filters on each key stroke
-            filter_reset_calls();
-            break;
-        default:
-            // If this is a normal character on input field, print it
-            form_driver(info->form, key);
-            // Updated displayed results
-            call_list_clear(panel);
-            // Reset filters on each key stroke
-            filter_reset_calls();
-            break;
+    if (/* key is ascii */ key > 33 && key < 126) {
+        // If this is a normal character on input field, print it
+        form_driver(info->form, key);
+        // Updated displayed results
+        call_list_clear(panel);
+        // Reset filters on each key stroke
+        filter_reset_calls();
+    } else {
+        // Check actions for this key
+        while((action = key_find_action(key, action)) != ERR) {
+            switch (action) {
+                case ACTION_PREV_SCREEN:
+                case ACTION_NEXT_FIELD:
+                case ACTION_CONFIRM:
+                case ACTION_SELECT:
+                case ACTION_UP:
+                case ACTION_DOWN:
+                    // Activate list
+                    call_list_form_activate(panel, 0);
+                    break;
+                case ACTION_RIGHT:
+                    form_driver(info->form, REQ_RIGHT_CHAR);
+                    break;
+                case ACTION_LEFT:
+                    form_driver(info->form, REQ_LEFT_CHAR);
+                    break;
+                case ACTION_BEGIN:
+                    form_driver(info->form, REQ_BEG_LINE);
+                    break;
+                case ACTION_END:
+                    form_driver(info->form, REQ_END_LINE);
+                    break;
+                case ACTION_CLEAR:
+                    form_driver(info->form, REQ_BEG_LINE);
+                    form_driver(info->form, REQ_CLR_EOL);
+                    break;
+                case ACTION_DELETE:
+                    form_driver(info->form, REQ_DEL_CHAR);
+                    break;
+                case ACTION_BACKSPACE:
+                    form_driver(info->form, REQ_DEL_PREV);
+                    // Updated displayed results
+                    call_list_clear(panel);
+                    // Reset filters on each key stroke
+                    filter_reset_calls();
+                    break;
+            }
+        }
     }
 
     // Validate all input data
