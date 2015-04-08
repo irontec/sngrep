@@ -200,10 +200,6 @@ main(int argc, char* argv[])
         }
     }
 
-    // Capture only dialogs with voip calls?
-    set_option_value("sip.calls", (only_calls)?"on":"off");
-
-
 #ifdef WITH_OPENSSL
     // Set capture decrypt key file
     capture_set_keyfile(keyfile);
@@ -222,7 +218,7 @@ main(int argc, char* argv[])
     }
 
     // Initialize SIP Messages Storage
-    sip_init(limit);
+    sip_init(limit, only_calls);
 
     // Set capture Calls limit
     capture_set_limit(limit);

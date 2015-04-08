@@ -50,12 +50,13 @@
 static sip_call_list_t calls = { 0 };
 
 void
-sip_init(int limit)
+sip_init(int limit, int only_calls)
 {
     int match_flags;
 
     // Store capture limit
     calls.limit = limit;
+    calls.only_calls = only_calls;
 
     // Create hash table for callid search
     hcreate(calls.limit);
@@ -271,7 +272,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
         msg_get_reqresp(msg);
 
         // User requested only INVITE starting dialogs
-        if (is_option_enabled("sip.calls")) {
+        if (calls.only_calls) {
             if (msg->reqresp != SIP_METHOD_INVITE) {
                 // Deallocate message memory
                 sip_msg_destroy(msg);

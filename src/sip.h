@@ -149,6 +149,8 @@ struct sip_call_list {
     int count;
     // Max call limit
     int limit;
+    //! Only capture dialogs starting with INVITE
+    int only_calls;
     //! match expression text
     const char *match_expr;
 #ifdef WITH_PCRE
@@ -181,7 +183,7 @@ struct sip_call_list {
  * @param limit Max number of Stored calls
  */
 void
-sip_init(int limit);
+sip_init(int limit, int only_calls);
 
 
 /**
