@@ -188,7 +188,7 @@ capture_online(const char *dev, const char *outfile);
  * @return 0 if load has been successfull, 1 otherwise
  */
 int
-capture_offline(const char *infile);
+capture_offline(const char *infile, const char *outfile);
 
 /**
  * @brief Read the next package and parse SIP messages
@@ -262,10 +262,16 @@ int
 capture_is_paused();
 
 /**
+ * @brief Get capture status value
+ */
+int
+capture_get_status();
+
+/**
  * @brief Return a string representing current capture status
  */
 const char *
-capture_status();
+capture_get_status_desc();
 
 /**
  * @brief Get Input file from Offline mode

@@ -94,7 +94,7 @@ capture_online(const char *dev, const char *outfile)
 }
 
 int
-capture_offline(const char *infile)
+capture_offline(const char *infile, const char *outfile)
 {
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -108,6 +108,15 @@ capture_offline(const char *infile)
     if ((capinfo.handle = pcap_open_offline(infile, errbuf)) == NULL) {
         fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
+    }
+
+    // If requested store packets in a dump file
+    if (outfile) {
+        if ((capinfo.pd = dump_open(outfile)) == NULL) {
+            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
+                    pcap_geterr(capinfo.handle));
+            return 2;
+        }
     }
 
     // Get datalink to parse packets correctly
@@ -167,9 +176,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Check if we have reached capture limit
     if (capinfo.limit && sip_calls_count() >= capinfo.limit)
         return;
-
-    // Store this packets in output file
-    dump_packet(capinfo.pd, header, packet);
 
     // Get link header size from datalink type
     size_link = datalink_size(capinfo.link);
@@ -303,6 +309,9 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     msg->pcap_packet = malloc(size_packet);
     memcpy(msg->pcap_packet, packet, size_packet);
 
+    // Store this packets in output file
+    dump_packet(capinfo.pd, header, packet);
+
 }
 
 void
@@ -388,8 +397,14 @@ capture_is_paused()
     return capinfo.status == CAPTURE_ONLINE_PAUSED;
 }
 
+int
+capture_get_status()
+{
+    return capinfo.status;
+}
+
 const char *
-capture_status()
+capture_get_status_desc()
 {
     switch(capinfo.status) {
         case CAPTURE_ONLINE:

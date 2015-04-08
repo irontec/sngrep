@@ -106,6 +106,7 @@ main(int argc, char* argv[])
     const char *keyfile;
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
+    int no_interface = 0, quiet = 0;
 
     // Program otptions
     static struct option long_options[] = {
@@ -119,6 +120,8 @@ main(int argc, char* argv[])
         { "limit", no_argument, 0, 'l' },
         { "icase", no_argument, 0, 'i' },
         { "invert", no_argument, 0, 'v' },
+        { "no-interface", no_argument, 0, 'N' },
+        { "quiet", no_argument, 0, 'q' },
     };
 
     // Initialize configuration options
@@ -134,7 +137,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:cl:iv";
+    char *options = "hVd:I:O:pqtW:k:cl:ivNq";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -170,9 +173,14 @@ main(int argc, char* argv[])
             case 'v':
                 match_invert++;
                 break;
+            case 'N':
+                no_interface = 1;
+                break;
+            case 'q':
+                quiet = 1;
+                break;
             // Dark options for dummy ones
             case 'p':
-            case 'q':
             case 't':
             case 'W':
                 break;
@@ -220,7 +228,7 @@ main(int argc, char* argv[])
     // If we have an input file, load it
     if (infile) {
         // Try to load file
-        if (capture_offline(infile) != 0)
+        if (capture_offline(infile, outfile) != 0)
             return 1;
     } else {
         // Check if all capture data is valid
@@ -241,7 +249,8 @@ main(int argc, char* argv[])
         // Check if this BPF filter is valid
         if (capture_set_bpf_filter(bpf) != 0) {
             // BPF Filter invalid, check incluiding match_expr
-            match_expr = 0;
+            match_expr = 0;    // There is no need to parse all payload at this point
+
 
             // Build the bpf filter string
             memset(bpf, 0, sizeof(bpf));
@@ -263,9 +272,6 @@ main(int argc, char* argv[])
             }
     }
 
-    // Initialize interface
-    init_interface();
-
     // Start a capture thread
     if (capture_launch_thread() != 0) {
         deinit_interface();
@@ -273,9 +279,22 @@ main(int argc, char* argv[])
         return 1;
     }
 
-    // This is a blocking call.
-    // Create the first panel and wait for user input
-    wait_for_input(ui_create(ui_find_by_type(PANEL_CALL_LIST)));
+    if (!no_interface) {
+        // Initialize interface
+        init_interface();
+        // This is a blocking call.
+        // Create the first panel and wait for user input
+        wait_for_input(ui_create(ui_find_by_type(PANEL_CALL_LIST)));
+    } else {
+        setbuf(stdout, NULL);
+        while(capture_get_status() != CAPTURE_OFFLINE) {
+            if (!quiet)
+                printf("\rDialog count: %d", sip_calls_count());
+            usleep(500 * 1000);
+        }
+        if (!quiet)
+            printf("\rDialog count: %d\n", sip_calls_count());
+    }
 
     // Close pcap handler
     capture_close();

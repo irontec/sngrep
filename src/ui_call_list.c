@@ -189,7 +189,7 @@ call_list_draw_header(PANEL *panel)
     if ((infile = capture_get_infile()))
         mvwprintw(win, 1, width - strlen(infile) - 11, "Filename: %s", infile);
     mvwprintw(win, 2, 2, "Display Filter: ");
-    mvwprintw(win, 1, 2, "Current Mode: %s", capture_status());
+    mvwprintw(win, 1, 2, "Current Mode: %s", capture_get_status_desc());
 
     // Reverse colors on monochrome terminals
     if (!has_colors())
