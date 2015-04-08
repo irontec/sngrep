@@ -290,7 +290,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
                 return NULL;
             }
         }
-#if 0
+
         // Check if this message is ignored by configuration directive
         if (sip_check_msg_ignore(msg)) {
             // Deallocate message memory
@@ -298,7 +298,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
             pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
-#endif
+
         // Create the call if not found
         if (!(call = sip_call_create(callid))) {
             // Deallocate message memory
