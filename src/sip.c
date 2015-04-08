@@ -523,33 +523,33 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
 
     // If this message is actually a call, get its current state
     if ((callstate = call_get_attribute(call, SIP_ATTR_CALLSTATE))) {
-        if (!strcmp(callstate, "CALL SETUP")) {
+        if (!strcmp(callstate, SIP_CALLSTATE_CALLSETUP)) {
             if (reqresp == 200) {
                 // Alice and Bob are talking
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, "IN CALL");
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_INCALL);
                 // Store the timestap where call has started
                 call->cstart_msg = msg;
             } else if (reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, "CANCELLED");
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CANCELLED);
                 // Store total call duration
                 call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
             } else if (reqresp > 400) {
                 // Bob is not in the mood
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, "REJECTED");
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
                 // Store total call duration
                 call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
             }
-        } else if (!strcmp(callstate, "IN CALL")) {
+        } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
             if (reqresp == SIP_METHOD_BYE) {
                 // Thanks for all the fish!
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, "COMPLETED");
+                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_COMPLETED);
                 // Store Conversation duration
                 call_set_attribute(call, SIP_ATTR_CONVDUR, sip_calculate_duration(call->cstart_msg, msg, dur));
             }
-        } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, "IN CALL")) {
+        } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, SIP_CALLSTATE_INCALL)) {
             // Call is being setup (after proper authentication)
-            call_set_attribute(call, SIP_ATTR_CALLSTATE, "CALL SETUP");
+            call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
         } else {
             // Store total call duration
             call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
@@ -557,7 +557,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     } else {
         // This is actually a call
         if (reqresp == SIP_METHOD_INVITE)
-            call_set_attribute(call, SIP_ATTR_CALLSTATE, "CALL SETUP");
+            call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
     }
 
 }

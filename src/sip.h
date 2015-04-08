@@ -58,6 +58,12 @@ enum sip_methods {
     SIP_METHOD_SENTINEL,
 };
 
+//! SIP Call State
+#define SIP_CALLSTATE_CALLSETUP "CALL SETUP"
+#define SIP_CALLSTATE_INCALL    "IN CALL"
+#define SIP_CALLSTATE_CANCELLED "CANCELLED"
+#define SIP_CALLSTATE_REJECTED  "REJECTED"
+#define SIP_CALLSTATE_COMPLETED "COMPLETED"
 
 //! Shorter declaration of sip_call structure
 typedef struct sip_call sip_call_t;
