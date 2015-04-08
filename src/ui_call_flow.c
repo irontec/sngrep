@@ -349,7 +349,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     // Color the message {
     if (is_option_enabled("color.request")) {
         // Determine arrow color
-        if (msg->request) {
+        if (msg_is_request(msg)) {
             msg->color = CP_RED_ON_DEF;
         } else {
             msg->color = CP_GREEN_ON_DEF;

@@ -43,16 +43,28 @@
 #include <regex.h>
 #include "sip_attr.h"
 
+//! SIP Methods
+enum sip_methods {
+    SIP_METHOD_REGISTER = 1,
+    SIP_METHOD_INVITE,
+    SIP_METHOD_SUBSCRIBE,
+    SIP_METHOD_NOTIFY,
+    SIP_METHOD_OPTIONS,
+    SIP_METHOD_PUBLISH,
+    SIP_METHOD_MESSAGE,
+    SIP_METHOD_CANCEL,
+    SIP_METHOD_BYE,
+    SIP_METHOD_ACK,
+    SIP_METHOD_SENTINEL,
+};
+
+
 //! Shorter declaration of sip_call structure
 typedef struct sip_call sip_call_t;
 //! Shorter declaration of sip_msg structure
 typedef struct sip_msg sip_msg_t;
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
-
-// Forward struct declaration for attributes
-struct sip_attr_hdr;
-struct sip_attr;
 
 /**
  * @brief Information of a single message withing a dialog.
@@ -64,7 +76,7 @@ struct sip_attr;
  */
 struct sip_msg {
     //! Message attribute list
-    struct sip_attr *attrs;
+    char *attrs[SIP_ATTR_SENTINEL];
     //! Source address
     char src[50];
     //! Source port
@@ -75,10 +87,12 @@ struct sip_msg {
     u_short dport;
     //! Temporal payload data before being parsed
     char *payload;
+    //! Flag to determine if message payload has been parsed
+    int parsed;
     //! Color for this message (in color.cseq mode)
     int color;
-    //! Request: 1, Response: 0
-    int request;
+    //! Request Method or Response Code @see sip_methods
+    int reqresp;
     //! This message contains sdp data
     int sdp;
     //! Message RTP position indicator
@@ -106,12 +120,14 @@ struct sip_msg {
  * data from its messages to speed up searches.
  */
 struct sip_call {
+    //! Call attribute list
+    char *attrs[SIP_ATTR_SENTINEL];
     //! Flag this call as filtered so won't be displayed
     int filtered;
-    //! Call attribute list
-    struct sip_attr *attrs;
     //! List of messages of this call
     sip_msg_t *msgs;
+    //! Pointer to the last added message
+    sip_msg_t *last_msg;
     //! How many messages has this call
     int msgcnt;
     //! Message when conversation started
@@ -158,15 +174,6 @@ struct sip_call_list {
     // Warranty thread-safe access to the calls list
     pthread_mutex_t lock;
 };
-
-//! SIP Methods
-#define SIP_METHOD_REGISTER     "REGISTER"
-#define SIP_METHOD_INVITE       "INVITE"
-#define SIP_METHOD_SUBSCRIBE    "SUBSCRIBE"
-#define SIP_METHOD_NOTIFY       "NOTIFY"
-#define SIP_METHOD_OPTIONS      "OPTIONS"
-#define SIP_METHOD_PUBLISH      "PUBLISH"
-#define SIP_METHOD_MESSAGE      "MESSAGE"
 
 /**
  * @brief Initialize SIP Storage structures
@@ -402,6 +409,17 @@ void
 call_update_state(sip_call_t *call, sip_msg_t *msg);
 
 /**
+ * @brief Get message Request/Response code
+ *
+ * Parse Payload to get Message Request/Response code.
+ *
+ * @param msg SIP Message to be parsed
+ * @return numeric representation of Request/ResponseCode
+ */
+int
+msg_get_reqresp(sip_msg_t *msg);
+
+/**
  * @brief Parse SIP Message payload to fill sip_msg structe
  *
  * Parse the payload content to set message attributes.
@@ -424,6 +442,15 @@ msg_parse_payload(sip_msg_t *msg, const char *payload);
  */
 int
 msg_is_retrans(sip_msg_t *msg);
+
+/**
+ * @brief Check if a message is a Request or response
+ *
+ * @param msg SIP message that will be checked
+ * @return 1 if the message is a request, 0 if a response
+ */
+int
+msg_is_request(sip_msg_t *msg);
 
 /**
  * @brief Get summary of message header data
@@ -476,5 +503,87 @@ sip_set_match_expression(const char *expr, int insensitive, int invert);
  */
 int
 sip_check_match_expression(const char *payload);
+
+/**
+ * @brief Sets the attribute value for a given call
+ *
+ * This function acts as wrapper of sip call attributes
+ *
+ * @param call SIP call structure
+ * @param id Attribute id
+ * @param value Attribute value
+ */
+void
+call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *fmt, ...);
+
+/**
+ * @brief Return a call attribute value
+ *
+ * This function will be used to avoid accessing call structure
+ * fields directly.
+ * @todo Code a proper way to store this information
+ *
+ * @param call SIP call structure
+ * @param id Attribute id
+ * @return Attribute value or NULL if not found
+ */
+const char *
+call_get_attribute(struct sip_call *call, enum sip_attr_id id);
+
+/**
+ * @brief Sets the attribute value for a given message
+ *
+ * This function acts as wrapper of sip message attributes
+ *
+ * @param msg SIP message structure
+ * @param id Attribute id
+ * @param value Attribute value
+ */
+void
+msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *fmt, ...);
+
+/**
+ * @brief Return a message attribute value
+ *
+ * This function will be used to avoid accessing call structure
+ * fields directly.
+ *
+ * @param msg SIP message structure
+ * @param id Attribute id
+ * @return Attribute value or NULL if not found
+ */
+const char *
+msg_get_attribute(struct sip_msg *msg, enum sip_attr_id id);
+
+/**
+ * @brief Check if this msg is affected by filters
+ *
+ * @param call Message to check
+ * @return 1 if msg is filtered, 0 otherwise
+ */
+int
+sip_check_msg_ignore(struct sip_msg *msg);
+
+/**
+ * @brief Get String value for a Method
+ *
+ * @param method One of the methods defined in @sip_methods
+ * @return a string representing the method text
+ */
+const char *
+sip_method_str(enum sip_methods method);
+
+/**
+ * @brief Converts Request Name or Response code to number
+ *
+ * If the argument is a method, the corresponding value of @sip_methods
+ * will be returned. If a Resposne code, the numeric value of the code
+ * will be returned.
+ *
+ * @param a string representing the Request/Resposne code text
+ * @return numeric representation of Request/Response code
+ */
+int
+sip_method_from_str(const char *method);
 
 #endif

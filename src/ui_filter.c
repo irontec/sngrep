@@ -136,19 +136,19 @@ filter_create()
     set_field_buffer(info->fields[FLD_FILTER_SRC], 0, filter_get(FILTER_SOURCE));
     set_field_buffer(info->fields[FLD_FILTER_DST], 0, filter_get(FILTER_DESTINATION));
     set_field_buffer(info->fields[FLD_FILTER_REGISTER], 0,
-                     strstr(method, SIP_METHOD_REGISTER) ? "*" : "");
+                     strstr(method, sip_method_str(SIP_METHOD_REGISTER)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_INVITE], 0,
-                     strstr(method, SIP_METHOD_INVITE) ? "*" : "");
+                     strstr(method, sip_method_str(SIP_METHOD_INVITE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_SUBSCRIBE], 0,
-                     strstr(method, SIP_METHOD_SUBSCRIBE) ? "*" : "");
+                     strstr(method,sip_method_str(SIP_METHOD_SUBSCRIBE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_NOTIFY], 0,
-                     strstr(method, SIP_METHOD_NOTIFY) ? "*" : "");
+                     strstr(method, sip_method_str(SIP_METHOD_NOTIFY)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_OPTIONS], 0,
-                     strstr(method, SIP_METHOD_OPTIONS) ? "*" : "");
+                     strstr(method, sip_method_str(SIP_METHOD_OPTIONS)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_PUBLISH], 0,
-                     strstr(method, SIP_METHOD_PUBLISH) ? "*" : "");
+                     strstr(method,  sip_method_str(SIP_METHOD_PUBLISH)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_MESSAGE], 0,
-                     strstr(method, SIP_METHOD_MESSAGE) ? "*" : "");
+                     strstr(method,  sip_method_str(SIP_METHOD_MESSAGE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_FILTER], 0, "[ Filter ]");
     set_field_buffer(info->fields[FLD_FILTER_CANCEL], 0, "[ Cancel ]");
 
@@ -373,7 +373,7 @@ filter_save_options(PANEL *panel)
 const char*
 filter_field_method(int field_id)
 {
-    const char *method = NULL;
+    int method;
     switch(field_id) {
         case FLD_FILTER_REGISTER:
             method = SIP_METHOD_REGISTER;
@@ -396,9 +396,7 @@ filter_field_method(int field_id)
         case FLD_FILTER_MESSAGE:
             method = SIP_METHOD_MESSAGE;
             break;
-        default:
-            return "";
     }
 
-    return method;
+    return sip_method_str(method);
 }

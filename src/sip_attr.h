@@ -30,7 +30,6 @@
 #define __SNGREP_SIP_ATTR_H
 
 #include "config.h"
-#include "sip.h"
 
 /* Some very used macros */
 #define CALLID(msg) msg_get_attribute(msg, SIP_ATTR_CALLID)
@@ -43,12 +42,6 @@
 
 //! Shorter declaration of sip_attr structure
 typedef struct sip_attr_hdr sip_attr_hdr_t;
-//! Shorter declaration of sip_attr structure
-typedef struct sip_attr sip_attr_t;
-
-// Forward struct declaration for calls and messages
-struct sip_call;
-struct sip_msg;
 
 /**
  * @brief Available SIP Attributes
@@ -126,23 +119,6 @@ struct sip_attr_hdr {
 };
 
 /**
- * @brief Attribute data structure
- *
- * This structure contains a single attribute value and acts
- * as a linked list for all attributes of a message (or call)
- * Right now, all the attributed are stored as strings, which may
- * not be the better option, but will fit our actual needs.
- */
-struct sip_attr {
-    //! Attribute header pointer
-    sip_attr_hdr_t *hdr;
-    //! Attribute value
-    char *value;
-    //! Next attribute in the linked list
-    sip_attr_t *next;
-};
-
-/**
  * @brief Get the header information of an Attribute
  *
  * Retrieve header data from attribute list
@@ -215,7 +191,7 @@ sip_attr_from_name(const char *name);
  * @param list Pointer to the attribute list
  */
 void
-sip_attr_list_destroy(sip_attr_t *list);
+sip_attr_list_destroy(char *attrs[]);
 
 /**
  * @brief Sets the given attribute value to an attribute
@@ -228,7 +204,7 @@ sip_attr_list_destroy(sip_attr_t *list);
  * @param value Attribute value
  */
 void
-sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value);
+sip_attr_set(char *attrs[], enum sip_attr_id id, const char *value);
 
 /**
  * @brief Gets the given attribute value to an attribute
@@ -238,66 +214,6 @@ sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value);
  *
  */
 const char *
-sip_attr_get(sip_attr_t *list, enum sip_attr_id id);
-
-/**
- * @brief Sets the attribute value for a given call
- *
- * This function acts as wrapper of sip call attributes
- *
- * @param call SIP call structure
- * @param id Attribute id
- * @param value Attribute value
- */
-void
-call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *fmt, ...);
-
-/**
- * @brief Return a call attribute value
- *
- * This function will be used to avoid accessing call structure
- * fields directly.
- * @todo Code a proper way to store this information
- *
- * @param call SIP call structure
- * @param id Attribute id
- * @return Attribute value or NULL if not found
- */
-const char *
-call_get_attribute(struct sip_call *call, enum sip_attr_id id);
-
-/**
- * @brief Sets the attribute value for a given message
- *
- * This function acts as wrapper of sip message attributes
- *
- * @param msg SIP message structure
- * @param id Attribute id
- * @param value Attribute value
- */
-void
-msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *fmt, ...);
-
-/**
- * @brief Return a message attribute value
- *
- * This function will be used to avoid accessing call structure
- * fields directly.
- *
- * @param msg SIP message structure
- * @param id Attribute id
- * @return Attribute value or NULL if not found
- */
-const char *
-msg_get_attribute(struct sip_msg *msg, enum sip_attr_id id);
-
-/**
- * @brief Check if this msg is affected by filters
- *
- * @param call Message to check
- * @return 1 if msg is filtered, 0 otherwise
- */
-int
-sip_check_msg_ignore(struct sip_msg *msg);
+sip_attr_get(char *attrs[], enum sip_attr_id id);
 
 #endif /* __SNGREP_SIP_ATTR_H */

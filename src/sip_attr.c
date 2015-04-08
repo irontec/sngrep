@@ -33,7 +33,7 @@
 #include "option.h"
 #include "sip_attr.h"
 
-static sip_attr_hdr_t attrs[] = {
+static sip_attr_hdr_t attrs[SIP_ATTR_SENTINEL] = {
     { .id = SIP_ATTR_CALLINDEX,     .name = "index", .title = "Idx", .desc = "Call Index", .dwidth = 4 },
     { .id = SIP_ATTR_SIPFROM,       .name = "sipfrom", .desc = "SIP From", .dwidth = 30 },
     { .id = SIP_ATTR_SIPFROMUSER,   .name = "sipfromuser", .desc = "SIP From User", .dwidth = 20 },
@@ -60,13 +60,7 @@ static sip_attr_hdr_t attrs[] = {
 sip_attr_hdr_t *
 sip_attr_get_header(enum sip_attr_id id)
 {
-    int i;
-    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
-        if (id == attrs[i].id) {
-            return &attrs[i];
-        }
-    }
-    return NULL;
+    return &attrs[id];
 }
 
 const char *
@@ -124,126 +118,25 @@ sip_attr_from_name(const char *name) {
 }
 
 void
-sip_attr_list_destroy(sip_attr_t *list)
-{
-    sip_attr_t *attr;
-
-    // If attribute already exists change its value
-    while (list) {
-        attr = list;
-        list = attr->next;
-        // Free attribute value
-        free(attr->value);
-        // Free attribute structure
-        free(attr);
-    }
-}
-
-void
-sip_attr_set(sip_attr_t **list, enum sip_attr_id id, const char *value)
-{
-    sip_attr_t *attr;
-
-    // If attribute already exists change its value
-    for (attr = *list; attr; attr = attr->next) {
-        if (id == attr->hdr->id) {
-            // Free previous value
-            free(attr->value);
-            // Store the new value
-            attr->value = strdup(value);
-            return;
-        }
-    }
-
-    // Otherwise add a new attribute
-    if (!(attr = malloc(sizeof(sip_attr_t))))
-        return;
-
-    attr->hdr = sip_attr_get_header(id);
-    attr->value = strdup(value);
-    attr->next = *list;
-    *list = attr;
-}
-
-const char *
-sip_attr_get(sip_attr_t *list, enum sip_attr_id id)
-{
-    sip_attr_t *attr;
-    for (attr = list; attr; attr = attr->next) {
-        if (id == attr->hdr->id) {
-            return attr->value;
-        }
-    }
-    return NULL;
-}
-
-void
-call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *fmt, ...)
-{
-    char value[512];
-
-    // Get the actual value for the attribute
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf(value, fmt, ap);
-    va_end(ap);
-
-    sip_attr_set(&call->attrs, id, value);
-}
-
-const char *
-call_get_attribute(sip_call_t *call, enum sip_attr_id id)
-{
-    if (!call)
-        return NULL;
-
-    switch (id) {
-        case SIP_ATTR_CALLINDEX:
-        case SIP_ATTR_MSGCNT:
-        case SIP_ATTR_CALLSTATE:
-        case SIP_ATTR_CONVDUR:
-        case SIP_ATTR_TOTALDUR:
-            return sip_attr_get(call->attrs, id);
-        default:
-            return msg_get_attribute(call_get_next_msg(call, NULL), id);
-    }
-
-    return NULL;
-}
-
-void
-msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *fmt, ...)
-{
-    char value[512];
-
-    // Get the actual value for the attribute
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf(value, fmt, ap);
-    va_end(ap);
-
-    sip_attr_set(&msg->attrs, id, value);
-}
-
-const char *
-msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
-{
-    if (!msg)
-        return NULL;
-
-    return sip_attr_get(msg->attrs, id);
-}
-
-int
-sip_check_msg_ignore(sip_msg_t *msg)
+sip_attr_list_destroy(char *attrs[])
 {
     int i;
-
-    // Check if an ignore option exists
     for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
-        if (is_ignored_value(attrs[i].name, msg_get_attribute(msg, attrs[i].id))) {
-            return 1;
-        }
+        if (attrs[i])
+            free(attrs[i]);
     }
-    return 0;
 }
+
+void
+sip_attr_set(char *attrs[], enum sip_attr_id id, const char *value)
+{
+    attrs[id] = strdup(value);
+}
+
+const char *
+sip_attr_get(char *attrs[], enum sip_attr_id id)
+{
+    return attrs[id];
+}
+
+
