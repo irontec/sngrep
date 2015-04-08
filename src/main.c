@@ -61,6 +61,8 @@ usage()
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
            "    -v --invert\t\t Invert <match expression>\n"
+           "    -N --no-interface\t Don't display sngrep interface, just capture\n"
+           "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
 #ifdef WITH_OPENSSL
            "    -k  RSA private keyfile to decrypt captured packets\n"
 #endif
