@@ -50,13 +50,14 @@
 static sip_call_list_t calls = { 0 };
 
 void
-sip_init(int limit, int only_calls)
+sip_init(int limit, int only_calls, int no_incomplete)
 {
     int match_flags;
 
     // Store capture limit
     calls.limit = limit;
     calls.only_calls = only_calls;
+    calls.ignore_incomplete = no_incomplete;
 
     // Create hash table for callid search
     hcreate(calls.limit);
@@ -283,7 +284,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (is_option_enabled("sip.ignoreincomplete")) {
+        if (calls.ignore_incomplete) {
             if (msg->reqresp > SIP_METHOD_MESSAGE) {
                 // Deallocate message memory
                 sip_msg_destroy(msg);

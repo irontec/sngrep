@@ -102,7 +102,7 @@ version()
 int
 main(int argc, char* argv[])
 {
-    int opt, idx, limit, only_calls, i;
+    int opt, idx, limit, only_calls, no_incomplete, i;
     const char *device, *infile, *outfile;
     char bpf[512];
     const char *keyfile;
@@ -136,6 +136,7 @@ main(int argc, char* argv[])
     keyfile = get_option_value("capture.keyfile");
     limit = get_option_int_value("capture.limit");
     only_calls = is_option_enabled("sip.calls");
+    no_incomplete = is_option_enabled("sip.ignoreincomplete");
 
     // Parse command line arguments
     opterr = 0;
@@ -218,7 +219,7 @@ main(int argc, char* argv[])
     }
 
     // Initialize SIP Messages Storage
-    sip_init(limit, only_calls);
+    sip_init(limit, only_calls, no_incomplete);
 
     // Set capture Calls limit
     capture_set_limit(limit);

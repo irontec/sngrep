@@ -155,8 +155,10 @@ struct sip_call_list {
     int count;
     // Max call limit
     int limit;
-    //! Only capture dialogs starting with INVITE
+    //! Only store dialogs starting with INVITE
     int only_calls;
+    //! Only store dialogs starting with some Methods
+    int ignore_incomplete;
     //! match expression text
     const char *match_expr;
 #ifdef WITH_PCRE
@@ -187,9 +189,11 @@ struct sip_call_list {
  * @brief Initialize SIP Storage structures
  *
  * @param limit Max number of Stored calls
+ * @param only_calls only parse dialogs starting with INVITE
+ * @param no_incomplete only parse dialog starting with some methods
  */
 void
-sip_init(int limit, int only_calls);
+sip_init(int limit, int only_calls, int no_incomplete);
 
 
 /**
