@@ -64,7 +64,7 @@ usage()
            "    -N --no-interface\t Don't display sngrep interface, just capture\n"
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
 #ifdef WITH_OPENSSL
-           "    -k  RSA private keyfile to decrypt captured packets\n"
+           "    -k --keyfile\t RSA private keyfile to decrypt captured packets\n"
 #endif
            "\n",PACKAGE);
 }
