@@ -228,28 +228,17 @@ void
 call_list_draw_footer(PANEL *panel)
 {
     const char *keybindings[] = {
-        "Esc",
-        "Quit",
-        "Enter",
-        "Show",
-        "Space",
-        "Select",
-        "F1",
-        "Help",
-        "F2",
-        "Save",
-        "F3",
-        "Search",
-        "F4",
-        "Extended",
-        "F5",
-        "Clear",
-        "F6",
-        "Raw",
-        "F7",
-        "Filter",
-        "F10",
-        "Columns"
+        key_action_key_str(ACTION_PREV_SCREEN), "Quit",
+        key_action_key_str(ACTION_SHOW_FLOW), "Show",
+        key_action_key_str(ACTION_SELECT), "Select",
+        key_action_key_str(ACTION_SHOW_HELP), "Help",
+        key_action_key_str(ACTION_SAVE), "Save",
+        key_action_key_str(ACTION_DISP_FILTER), "Search",
+        key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
+        key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
+        key_action_key_str(ACTION_SHOW_RAW), "Raw",
+        key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
+        key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
     draw_keybindings(panel, keybindings, 22);

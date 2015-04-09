@@ -164,6 +164,17 @@ msg_diff_highlight(sip_msg_t *one, sip_msg_t *two, char *highlight)
     }
 }
 
+void
+msg_diff_draw_footer(PANEL *panel)
+{
+    const char *keybindings[] = {
+        key_action_key_str(ACTION_PREV_SCREEN), "Calls Flow",
+        key_action_key_str(ACTION_SHOW_HELP), "Help"
+    };
+
+    draw_keybindings(panel, keybindings, 4);
+}
+
 int
 msg_diff_draw(PANEL *panel)
 {
@@ -180,20 +191,10 @@ msg_diff_draw(PANEL *panel)
     msg_diff_highlight(info->two, info->one, highlight);
     msg_diff_draw_message(info->two_win, info->two, highlight);
 
+    // Redraw footer
+    msg_diff_draw_footer(panel);
+
     return 0;
-}
-
-void
-msg_diff_draw_footer(PANEL *panel)
-{
-    const char *keybindings[] = {
-        "Esc",
-        "Calls Flow",
-        "F1",
-        "Help"
-    };
-
-    draw_keybindings(panel, keybindings, 4);
 }
 
 int

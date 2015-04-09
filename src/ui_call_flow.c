@@ -202,17 +202,17 @@ void
 call_flow_draw_footer(PANEL *panel)
 {
     const char *keybindings[] = {
-        "Esc",  "Calls List",
-        "Enter", "Raw Message",
-        "Space", "Compare",
-        "F1", "Help",
-        "F2", "SDP mode",
-        "F3", "Toggle Raw",
-        "F4", "Extended",
-        "F5", "Compressed",
-        "F6", "Raw",
-        "F7", "Colour by",
-        "9/0", "Raw width"
+        key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
+        key_action_key_str(ACTION_CONFIRM), "Raw Message",
+        key_action_key_str(ACTION_SELECT), "Compare",
+        key_action_key_str(ACTION_SHOW_HELP), "Help",
+        key_action_key_str(ACTION_SDP_INFO), "SDP mode",
+        key_action_key_str(ACTION_TOGGLE_RAW), "Toggle Raw",
+        key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
+        key_action_key_str(ACTION_COMPRESS), "Compressed",
+        key_action_key_str(ACTION_SHOW_RAW), "Raw",
+        key_action_key_str(ACTION_CYCLE_COLOR), "Colour by",
+        key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
     };
 
     draw_keybindings(panel, keybindings, 22);

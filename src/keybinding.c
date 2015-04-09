@@ -30,6 +30,7 @@
 #include "config.h"
 #include <string.h>
 #include "ui_manager.h"
+#include "option.h"
 #include "keybinding.h"
 
 //! sngrep keybindings
@@ -75,11 +76,11 @@ key_bindings_init()
     key_bind_action(ACTION_SHOW_HOSTNAMES, KEY_F(9));
     key_bind_action(ACTION_TOGGLE_PAUSE, 'p');
     key_bind_action(ACTION_PREV_SCREEN, KEY_ESC);
-    key_bind_action(ACTION_PREV_SCREEN, 'Q');
     key_bind_action(ACTION_PREV_SCREEN, 'q');
+    key_bind_action(ACTION_PREV_SCREEN, 'Q');
     key_bind_action(ACTION_SHOW_HELP, KEY_F(1));
-    key_bind_action(ACTION_SHOW_HELP, 'H');
     key_bind_action(ACTION_SHOW_HELP, 'h');
+    key_bind_action(ACTION_SHOW_HELP, 'H');
     key_bind_action(ACTION_SHOW_HELP, '?');
     key_bind_action(ACTION_SHOW_RAW, KEY_F(6));
     key_bind_action(ACTION_SHOW_RAW, 'r');
@@ -97,8 +98,8 @@ key_bindings_init()
     key_bind_action(ACTION_COLUMN_MOVE_UP, '-');
     key_bind_action(ACTION_COLUMN_MOVE_DOWN, '+');
     key_bind_action(ACTION_DISP_FILTER, KEY_F(3));
-    key_bind_action(ACTION_DISP_FILTER, KEY_TAB);
     key_bind_action(ACTION_DISP_FILTER, '/');
+    key_bind_action(ACTION_DISP_FILTER, KEY_TAB);
     key_bind_action(ACTION_DISP_INVITE, 'i');
     key_bind_action(ACTION_DISP_INVITE, 'I');
     key_bind_action(ACTION_SAVE, KEY_F(2));
@@ -117,7 +118,7 @@ key_bindings_init()
     key_bind_action(ACTION_SDP_INFO, 'd');
     key_bind_action(ACTION_COMPRESS, KEY_F(5));
     key_bind_action(ACTION_COMPRESS, 's');
-
+    key_bind_action(ACTION_TOGGLE_HINT, 'K');
 }
 
 void
@@ -149,4 +150,49 @@ int
 key_is_printable(int key)
 {
     return (key > 33 && key < 126) || (key > 160 && key < 255);
+}
+
+const char *
+key_to_str(int key)
+{
+    //! Check if we already have a human readable key
+    if (key_is_printable(key))
+        return keyname(key);
+
+    //! Check function keys and Special keys
+    switch(key) {
+        case KEY_F(1): return "F1";
+        case KEY_F(2): return "F2";
+        case KEY_F(3): return "F3";
+        case KEY_F(4): return "F4";
+        case KEY_F(5): return "F5";
+        case KEY_F(6): return "F6";
+        case KEY_F(7): return "F7";
+        case KEY_F(8): return "F8";
+        case KEY_F(9): return "F9";
+        case KEY_F(10): return "F10";
+        case KEY_ESC: return "Esc";
+        case KEY_INTRO: return "Enter";
+        case ' ': return "Space";
+    }
+
+    return "";
+}
+
+int
+key_from_str(const char *key)
+{
+    return 0;
+}
+
+const char *
+key_action_key_str(int action)
+{
+    if (is_option_enabled("hint_key_alt") && bindings[action].bindcnt > 1) {
+        // First alt keybinding
+        return key_to_str(bindings[action].keys[1]);
+    } else {
+        // Default keybinding
+        return key_to_str(bindings[action].keys[0]);
+    }
 }

@@ -111,6 +111,9 @@ init_options()
     set_option_value("filter.PUBLISH", "on");
     set_option_value("filter.MESSAGE", "on");
 
+    // Print defualt keys in bottom bar
+    set_option_value("hint_key_alt", "off");
+
     // Initialize keybindings
     key_bindings_init();
 

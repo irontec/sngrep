@@ -326,6 +326,9 @@ default_handle_key(ui_t *ui, int key)
             case ACTION_TOGGLE_SYNTAX:
                 toggle_option("syntax");
                 break;
+            case ACTION_TOGGLE_HINT:
+                toggle_option("hint_key_alt");
+                break;
             case ACTION_CYCLE_COLOR:
                 if (is_option_enabled("color.request")) {
                     toggle_option("color.request");

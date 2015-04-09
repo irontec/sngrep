@@ -105,6 +105,7 @@ enum key_actions
     ACTION_ONLY_SDP,
     ACTION_SDP_INFO,
     ACTION_COMPRESS,
+    ACTION_TOGGLE_HINT,
     ACTION_SENTINEL
 };
 
@@ -148,5 +149,23 @@ key_find_action(int key, int start);
  */
 int
 key_is_printable(int key);
+
+/**
+ * @brief Return a Human readable representation of a key
+ */
+const char *
+key_to_str(int key);
+
+/**
+ * @brief Parse Human key declaration to curses key
+ */
+int
+key_from_str(const char *key);
+
+/**
+ * @brief Return Human readable key for an action
+ */
+const char *
+key_action_key_str(int action);
 
 #endif /* __SNGREP_KEYBINDING_H_ */
