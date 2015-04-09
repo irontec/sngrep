@@ -314,48 +314,53 @@ wait_for_input(ui_t *ui)
 int
 default_handle_key(ui_t *ui, int key)
 {
-    // Otherwise, use standard keybindings
-    switch (key) {
-        case KEY_RESIZE:
-            ui_resize_panel(ui);
-            break;
-        case 'C':
-        case KEY_F(8):
-            toggle_option("syntax");
-            break;
-        case 'c':
-        case KEY_F(7):
-            if (is_option_enabled("color.request")) {
-                toggle_option("color.request");
-                toggle_option("color.callid");
-            } else if (is_option_enabled("color.callid")) {
-                toggle_option("color.callid");
-                toggle_option("color.cseq");
-            } else if (is_option_enabled("color.cseq")) {
-                toggle_option("color.cseq");
-                toggle_option("color.request");
-            }
-            break;
-        case 'l':
-            toggle_option("sngrep.displayhost");
-            break;
-        case 'p':
-            // Pause/Resume capture
-            capture_set_paused(!capture_is_paused());
-            break;
-        case KEY_F(1):
-        case 'h':
-        case '?':
-            ui_help(ui);
-            break;
-        case 'q':
-        case 'Q':
-        case 27: /* KEY_ESC */
-            ui_destroy(ui);
-            break;
+    int action = -1;
+
+    // Check actions for this key
+    while ((action = key_find_action(key, action)) != ERR) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_RESIZE_SCREEN:
+                ui_resize_panel(ui);
+                break;
+            case ACTION_TOGGLE_SYNTAX:
+                toggle_option("syntax");
+                break;
+            case ACTION_CYCLE_COLOR:
+                if (is_option_enabled("color.request")) {
+                    toggle_option("color.request");
+                    toggle_option("color.callid");
+                } else if (is_option_enabled("color.callid")) {
+                    toggle_option("color.callid");
+                    toggle_option("color.cseq");
+                } else if (is_option_enabled("color.cseq")) {
+                    toggle_option("color.cseq");
+                    toggle_option("color.request");
+                }
+                break;
+            case ACTION_SHOW_HOSTNAMES:
+                toggle_option("sngrep.displayhost");
+                break;
+            case ACTION_TOGGLE_PAUSE:
+                // Pause/Resume capture
+                capture_set_paused(!capture_is_paused());
+                break;
+            case ACTION_SHOW_HELP:
+                ui_help(ui);
+                break;
+            case ACTION_PREV_SCREEN:
+                ui_destroy(ui);
+                break;
+            default:
+                // Parse next action
+                continue;
+        }
+        // Default handler has handled the key
+        break;
     }
 
-    return key;
+    // Return this is a valid handled key
+    return (action == ERR) ? key : 0;
 }
 
 void

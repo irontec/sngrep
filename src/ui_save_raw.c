@@ -134,6 +134,7 @@ save_raw_handle_key(PANEL *panel, int key)
 {
     int field_idx;
     char field_value[48];
+    int action = -1;
 
     // Get panel information
     save_raw_info_t *info = (save_raw_info_t*) panel_userptr(panel);
@@ -147,57 +148,60 @@ save_raw_handle_key(PANEL *panel, int key)
     memset(field_value, 0, sizeof(field_value));
     sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
 
-    switch (key) {
-        case 9 /*KEY_TAB*/:
-        case KEY_DOWN:
-            form_driver(info->form, REQ_NEXT_FIELD);
-            form_driver(info->form, REQ_END_LINE);
-            break;
-        case KEY_UP:
-            form_driver(info->form, REQ_PREV_FIELD);
-            form_driver(info->form, REQ_END_LINE);
-            break;
-        case KEY_RIGHT:
-            form_driver(info->form, REQ_RIGHT_CHAR);
-            break;
-        case KEY_LEFT:
-            form_driver(info->form, REQ_LEFT_CHAR);
-            break;
-        case KEY_HOME:
-            form_driver(info->form, REQ_BEG_LINE);
-            break;
-        case KEY_END:
-            form_driver(info->form, REQ_END_LINE);
-            break;
-        case KEY_DC:
-            form_driver(info->form, REQ_DEL_CHAR);
-            break;
-        case 27 /*KEY_ESC*/:
-            return key;
-            break;
-        case 8:
-        case 127:
-        case KEY_BACKSPACE:
-            if (strlen(field_value) > 0)
-                form_driver(info->form, REQ_DEL_PREV);
-            break;
-        case 10: /* KEY_ENTER */
-            if (field_idx != FLD_SAVE_RAW_CANCEL) {
-                if (!strcasecmp(field_value, "")) {
-                    save_raw_error_message(panel, "Invalid filename");
-                    return 0;
-                }
-                return save_raw_to_file(panel);
-            }
-            return 27;
-        default:
-            // If this is a normal character on input field, print it
-            switch (field_idx) {
-                case FLD_SAVE_RAW_FILE:
+    // Check actions for this key
+    while ((action = key_find_action(key, action)) != ERR) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_PRINTABLE:
+                if (field_idx == FLD_SAVE_RAW_SAVE)
                     form_driver(info->form, key);
-                    break;
-            }
-            break;
+                break;
+            case ACTION_NEXT_FIELD:
+                form_driver(info->form, REQ_NEXT_FIELD);
+                form_driver(info->form, REQ_END_LINE);
+                break;
+            case ACTION_PREV_FIELD:
+                form_driver(info->form, REQ_PREV_FIELD);
+                form_driver(info->form, REQ_END_LINE);
+                break;
+            case ACTION_RIGHT:
+                form_driver(info->form, REQ_RIGHT_CHAR);
+                break;
+            case ACTION_LEFT:
+                form_driver(info->form, REQ_LEFT_CHAR);
+                break;
+            case ACTION_BEGIN:
+                form_driver(info->form, REQ_BEG_LINE);
+                break;
+            case ACTION_END:
+                form_driver(info->form, REQ_END_LINE);
+                break;
+            case ACTION_DELETE:
+                form_driver(info->form, REQ_DEL_CHAR);
+                break;
+            case ACTION_BACKSPACE:
+                if (strlen(field_value) > 0)
+                    form_driver(info->form, REQ_DEL_PREV);
+                break;
+            case ACTION_CLEAR:
+                form_driver(info->form, REQ_CLR_FIELD);
+                break;
+            case ACTION_CONFIRM:
+                if (field_idx != FLD_SAVE_RAW_CANCEL) {
+                    if (!strcasecmp(field_value, "")) {
+                        save_raw_error_message(panel, "Invalid filename");
+                        return 0;
+                    }
+                    return save_raw_to_file(panel);
+                }
+                return 27;
+            default:
+                // Parse next action
+                continue;
+        }
+
+        // We've handled this key, stop checking actions
+        break;
     }
 
     // Validate all input data
@@ -215,7 +219,8 @@ save_raw_handle_key(PANEL *panel, int key)
         curs_set(0);
     }
 
-    return 0;
+    // Return if this panel has handled or not the key
+    return (action == ERR) ? key : 0;
 }
 
 void

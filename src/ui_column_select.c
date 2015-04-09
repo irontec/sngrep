@@ -193,6 +193,7 @@ column_select_handle_key_menu(PANEL *panel, int key)
     MENU *menu;
     ITEM *current;
     int current_idx;
+    int action = -1;
 
     // Get panel information
     column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
@@ -201,46 +202,54 @@ column_select_handle_key_menu(PANEL *panel, int key)
     current = current_item(menu);
     current_idx = item_index(current);
 
-    switch (key) {
-        case KEY_DOWN:
-            menu_driver(menu, REQ_DOWN_ITEM);
-            break;
-        case KEY_UP:
-            menu_driver(menu, REQ_UP_ITEM);
-            break;
-        case KEY_NPAGE:
-            menu_driver(menu, REQ_SCR_DPAGE);
-            break;
-        case KEY_PPAGE:
-            menu_driver(menu, REQ_SCR_UPAGE);
-            break;
-        case 10:
-        case ' ':
-            column_select_toggle_item(panel, current);
-            column_select_update_menu(panel);
-            break;
-        case '+':
-            column_select_move_item(panel, current, current_idx + 1);
-            column_select_update_menu(panel);
-            break;
-        case '-':
-            column_select_move_item(panel, current, current_idx - 1);
-            column_select_update_menu(panel);
-            break;
-        case 9 /*KEY_TAB*/:
-            info->form_active = 1;
-            set_menu_fore(menu, COLOR_PAIR(CP_DEFAULT));
-            form_driver(info->form, REQ_VALIDATION);
-            curs_set(1);
-            break;
-        default:
-            return key;
+    // Check actions for this key
+    while ((action = key_find_action(key, action)) != ERR) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_DOWN:
+                menu_driver(menu, REQ_DOWN_ITEM);
+                break;
+            case ACTION_UP:
+                menu_driver(menu, REQ_UP_ITEM);
+                break;
+            case ACTION_NPAGE:
+                menu_driver(menu, REQ_SCR_DPAGE);
+                break;
+            case ACTION_PPAGE:
+                menu_driver(menu, REQ_SCR_UPAGE);
+                break;
+            case ACTION_SELECT:
+                column_select_toggle_item(panel, current);
+                column_select_update_menu(panel);
+                break;
+            case ACTION_COLUMN_MOVE_DOWN:
+                column_select_move_item(panel, current, current_idx + 1);
+                column_select_update_menu(panel);
+                break;
+            case ACTION_COLUMN_MOVE_UP:
+                column_select_move_item(panel, current, current_idx - 1);
+                column_select_update_menu(panel);
+                break;
+            case ACTION_NEXT_FIELD:
+                info->form_active = 1;
+                set_menu_fore(menu, COLOR_PAIR(CP_DEFAULT));
+                form_driver(info->form, REQ_VALIDATION);
+                curs_set(1);
+                break;
+            default:
+                // Parse next action
+                continue;
+        }
+
+        // This panel has handled the key successfully
+        break;
     }
 
     // Draw a scrollbar to the right
     draw_vscrollbar(info->menu_win, top_row(menu), item_count(menu) - 1, 0);
     wnoutrefresh(info->menu_win);
-    return 0;
+    // Return if this panel has handled or not the key
+    return (action == ERR) ? key : 0;
 }
 
 int
@@ -248,6 +257,7 @@ column_select_handle_key_form(PANEL *panel, int key)
 {
     int field_idx, new_field_idx;
     char field_value[48];
+    int action = -1;
 
     // Get panel information
     column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
@@ -261,32 +271,36 @@ column_select_handle_key_form(PANEL *panel, int key)
     memset(field_value, 0, sizeof(field_value));
     sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
 
-    switch (key) {
-        case 9 /*KEY_TAB*/:
-        case KEY_DOWN:
-            form_driver(info->form, REQ_NEXT_FIELD);
-            break;
-        case KEY_UP:
-            form_driver(info->form, REQ_PREV_FIELD);
-            break;
-        case 27 /*KEY_ESC*/:
-            return key;
-            break;
-        case ' ':
-        case 10: /* KEY_ENTER */
-            switch(field_idx) {
-                case FLD_COLUMNS_SAVE:
-                    column_select_update_columns(panel);
-                    return 27;
-                case FLD_COLUMNS_CANCEL:
-                    return 27;
-                case FLD_COLUMNS_SNGREPRC:
-                    info->remember = info->remember ? 0 : 1;
-                    break;
-            }
-            break;
-        default:
-            break;
+    // Check actions for this key
+    while ((action = key_find_action(key, action)) != ERR) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_NEXT_FIELD:
+                form_driver(info->form, REQ_NEXT_FIELD);
+                break;
+            case ACTION_PREV_FIELD:
+                form_driver(info->form, REQ_PREV_FIELD);
+                break;
+            case ACTION_SELECT:
+            case ACTION_CONFIRM:
+                switch(field_idx) {
+                    case FLD_COLUMNS_SAVE:
+                        column_select_update_columns(panel);
+                        return 27;
+                    case FLD_COLUMNS_CANCEL:
+                        return 27;
+                    case FLD_COLUMNS_SNGREPRC:
+                        info->remember = info->remember ? 0 : 1;
+                        break;
+                }
+                break;
+            default:
+                // Parse next action
+                continue;
+        }
+
+        // This panel has handled the key successfully
+        break;
     }
 
     // Set field values
@@ -315,8 +329,8 @@ column_select_handle_key_form(PANEL *panel, int key)
         info->form_active = 0;
     }
 
-
-    return 0;
+    // Return if this panel has handled or not the key
+    return (action == ERR) ? key : 0;
 }
 
 void

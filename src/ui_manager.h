@@ -50,22 +50,6 @@
 //! Refresh UI every 200 ms
 #define REFRESHTHSECS   2
 
-//! Some undefined key codes
-#define KEY_ESC         27
-#define KEY_INTRO       10
-#define KEY_TAB         9
-#define KEY_BACKSPACE2  8
-#define KEY_BACKSPACE3  127
-
-//! Define Some Ctrl Modified keybindings
-//! TODO This will be replaced for keyname function in future
-#define KEY_CTRL_A  1
-#define KEY_CTRL_B  2
-#define KEY_CTRL_D  4
-#define KEY_CTRL_E  5
-#define KEY_CTRL_F  6
-#define KEY_CTRL_U  21
-
 //! Shorter declaration of ui structure
 typedef struct ui ui_t;
 

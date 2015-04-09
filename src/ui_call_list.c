@@ -434,7 +434,7 @@ call_list_handle_key(PANEL *panel, int key)
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
     ui_t *next_panel;
     sip_call_group_t *group;
-    int action = 0;
+    int action = -1;
 
     // Sanity check, this should not happen
     if (!info)
@@ -449,13 +449,13 @@ call_list_handle_key(PANEL *panel, int key)
     getmaxyx(win, height, width);
 
     // Check actions for this key
-    while((action = key_find_action(key, action)) != ERR) {
+    while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
                 // Check if there is a call below us
                 if (!info->cur_call || !call_get_next_filtered(info->cur_call))
-                    return 0;
+                    break;
                 info->cur_call = call_get_next_filtered(info->cur_call);
                 info->cur_line++;
                 // If we are out of the bottom of the displayed list
@@ -465,11 +465,11 @@ call_list_handle_key(PANEL *panel, int key)
                     info->first_line++;
                     info->cur_line = height;
                 }
-                return 0;
+                break;
             case ACTION_UP:
                 // Check if there is a call above us
                 if (!info->cur_call || !call_get_prev_filtered(info->cur_call))
-                    return 0;
+                    break;
                 info->cur_call = call_get_prev_filtered(info->cur_call);
                 info->cur_line--;
                 // If we are out of the top of the displayed list
@@ -487,7 +487,7 @@ call_list_handle_key(PANEL *panel, int key)
                 // Next page => N key down strokes
                 for (i = 0; i < rnpag_steps; i++)
                     call_list_handle_key(panel, KEY_DOWN);
-                return 0;
+                break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
                 /* no break */
@@ -495,27 +495,27 @@ call_list_handle_key(PANEL *panel, int key)
                 // Prev page => N key up strokes
                 for (i = 0; i < rnpag_steps; i++)
                     call_list_handle_key(panel, KEY_UP);
-                return 0;
+                break;
             case ACTION_DISP_FILTER:
                 // Activate Form
                 call_list_form_activate(panel, 1);
-                return 0;
+                break;
             case ACTION_SHOW_FLOW:
                 // Display current call flow
                 if (!info->cur_call)
-                    return -1;
-                                next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
+                    break;
+                next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
                 if (info->group->callcnt) {
                     group = info->group;
                 } else {
                     if (!info->cur_call)
-                        return -1;
+                        break;
                     group = call_group_create();
                     call_group_add(group, info->cur_call);
                 }
                 call_flow_set_group(group);
                 wait_for_input(next_panel);
-                return 0;
+                break;
             case ACTION_SHOW_FLOW_EX:
                 // Display current call flow (extended)
                 next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
@@ -523,14 +523,14 @@ call_list_handle_key(PANEL *panel, int key)
                     group = info->group;
                 } else {
                     if (!info->cur_call)
-                        return -1;
+                        break;
                     group = call_group_create();
                     call_group_add(group, info->cur_call);
                     call_group_add(group, call_get_xcall(info->cur_call));
                 }
                 call_flow_set_group(group);
                 wait_for_input(next_panel);
-                return 0;
+                break;
             case ACTION_SHOW_RAW:
                 // KEY_R , Display current call flow (extended)
                 next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
@@ -538,25 +538,25 @@ call_list_handle_key(PANEL *panel, int key)
                     group = info->group;
                 } else {
                     if (!info->cur_call)
-                        return -1;
+                        break;
                     group = call_group_create();
                     call_group_add(group, info->cur_call);
                 }
                 call_raw_set_group(group);
                 wait_for_input(next_panel);
-                return 0;
+                break;
             case ACTION_SHOW_FILTERS:
                 // KEY_F, Display filter panel
                 next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
                 wait_for_input(next_panel);
                 call_list_clear(panel);
-                return 0;
+                break;
             case ACTION_SHOW_COLUMNS:
                 // Display column selection panel
                 next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
                 wait_for_input(next_panel);
                 call_list_clear(panel);
-                return 0;
+                break;
             case ACTION_SAVE:
                 if (!is_option_disabled("sngrep.tmpfile")) {
                     // KEY_S, Display save panel
@@ -564,39 +564,46 @@ call_list_handle_key(PANEL *panel, int key)
                     save_set_group(ui_get_panel(next_panel), info->group);
                     wait_for_input(next_panel);
                 }
-                return 0;
+                break;
             case ACTION_DISP_INVITE:
                 // Set Display filter text
                 set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
                 filter_set(FILTER_CALL_LIST, "invite");
                 call_list_clear(panel);
                 filter_reset_calls();
-                return 0;
+                break;
             case ACTION_CLEAR_CALLS:
                 // Remove all stored calls
                 sip_calls_clear();
                 // Clear List
                 call_list_clear(panel);
-                return 0;
+                break;
             case ACTION_SELECT:
                 if (!info->cur_call)
-                    return -1;
+                    break;
                 if (call_group_exists(info->group, info->cur_call)) {
                     call_group_del(info->group, info->cur_call);
                 } else {
                     call_group_add(info->group, info->cur_call);
                 }
-                return 0;
+                break;
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested
                 if (!is_option_enabled("cl.noexitprompt")) {
                     return call_list_exit_confirm(panel);
                 }
                 break;
+            default:
+                // Parse next action
+                continue;
         }
+
+        // This panel has handled the key successfully
+        break;
     }
 
-    return key;
+    // Return if this panel has handled or not the key
+    return (action == ERR) ? key : 0;
 }
 
 int
@@ -604,7 +611,7 @@ call_list_handle_form_key(PANEL *panel, int key)
 {
     int field_idx;
     char dfilter[256];
-    int action = 0;
+    int action = -1;
 
     // Get panel information
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
@@ -612,54 +619,60 @@ call_list_handle_form_key(PANEL *panel, int key)
     // Get current field id
     field_idx = field_index(current_field(info->form));
 
-    if (/* key is ascii */ key > 33 && key < 126) {
-        // If this is a normal character on input field, print it
-        form_driver(info->form, key);
-        // Updated displayed results
-        call_list_clear(panel);
-        // Reset filters on each key stroke
-        filter_reset_calls();
-    } else {
-        // Check actions for this key
-        while((action = key_find_action(key, action)) != ERR) {
-            switch (action) {
-                case ACTION_PREV_SCREEN:
-                case ACTION_NEXT_FIELD:
-                case ACTION_CONFIRM:
-                case ACTION_SELECT:
-                case ACTION_UP:
-                case ACTION_DOWN:
-                    // Activate list
-                    call_list_form_activate(panel, 0);
-                    break;
-                case ACTION_RIGHT:
-                    form_driver(info->form, REQ_RIGHT_CHAR);
-                    break;
-                case ACTION_LEFT:
-                    form_driver(info->form, REQ_LEFT_CHAR);
-                    break;
-                case ACTION_BEGIN:
-                    form_driver(info->form, REQ_BEG_LINE);
-                    break;
-                case ACTION_END:
-                    form_driver(info->form, REQ_END_LINE);
-                    break;
-                case ACTION_CLEAR:
-                    form_driver(info->form, REQ_BEG_LINE);
-                    form_driver(info->form, REQ_CLR_EOL);
-                    break;
-                case ACTION_DELETE:
-                    form_driver(info->form, REQ_DEL_CHAR);
-                    break;
-                case ACTION_BACKSPACE:
-                    form_driver(info->form, REQ_DEL_PREV);
-                    // Updated displayed results
-                    call_list_clear(panel);
-                    // Reset filters on each key stroke
-                    filter_reset_calls();
-                    break;
-            }
+    // Check actions for this key
+    while ((action = key_find_action(key, action)) != ERR) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_PRINTABLE:
+                // If this is a normal character on input field, print it
+                form_driver(info->form, key);
+                // Updated displayed results
+                call_list_clear(panel);
+                // Reset filters on each key stroke
+                filter_reset_calls();
+                break;
+            case ACTION_PREV_SCREEN:
+            case ACTION_NEXT_FIELD:
+            case ACTION_CONFIRM:
+            case ACTION_SELECT:
+            case ACTION_UP:
+            case ACTION_DOWN:
+                // Activate list
+                call_list_form_activate(panel, 0);
+                break;
+            case ACTION_RIGHT:
+                form_driver(info->form, REQ_RIGHT_CHAR);
+                break;
+            case ACTION_LEFT:
+                form_driver(info->form, REQ_LEFT_CHAR);
+                break;
+            case ACTION_BEGIN:
+                form_driver(info->form, REQ_BEG_LINE);
+                break;
+            case ACTION_END:
+                form_driver(info->form, REQ_END_LINE);
+                break;
+            case ACTION_CLEAR:
+                form_driver(info->form, REQ_BEG_LINE);
+                form_driver(info->form, REQ_CLR_EOL);
+                break;
+            case ACTION_DELETE:
+                form_driver(info->form, REQ_DEL_CHAR);
+                break;
+            case ACTION_BACKSPACE:
+                form_driver(info->form, REQ_DEL_PREV);
+                // Updated displayed results
+                call_list_clear(panel);
+                // Reset filters on each key stroke
+                filter_reset_calls();
+                break;
+            default:
+                // Parse next action
+                continue;
         }
+
+        // We've handled this key, stop checking actions
+        break;
     }
 
     // Validate all input data
@@ -673,7 +686,8 @@ call_list_handle_form_key(PANEL *panel, int key)
     // Set display filter
     filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);
 
-    return 0;
+    // Return if this panel has handled or not the key
+    return (action == ERR) ? key : 0;
 }
 
 int

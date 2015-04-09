@@ -40,12 +40,29 @@
 #ifndef __SNGREP_KEYBINDING_H_
 #define __SNGREP_KEYBINDING_H_
 
+//! Number of keybindings per action
+#define MAX_BINDINGS    5
+
+//! Some undefined key codes
+#define KEY_CTRL_A      1
+#define KEY_CTRL_B      2
+#define KEY_CTRL_D      4
+#define KEY_CTRL_E      5
+#define KEY_CTRL_F      6
+#define KEY_CTRL_U      21
+#define KEY_ESC         27
+#define KEY_INTRO       10
+#define KEY_TAB         9
+#define KEY_BACKSPACE2  8
+#define KEY_BACKSPACE3  127
+
 /**
  * @brief Available Key actions
  */
 enum key_actions
 {
-    ACTION_UP = 1,
+    ACTION_PRINTABLE = 0,
+    ACTION_UP,
     ACTION_DOWN,
     ACTION_LEFT,
     ACTION_RIGHT,
@@ -57,11 +74,13 @@ enum key_actions
     ACTION_HPPAGE,
     ACTION_BEGIN,
     ACTION_END,
+    ACTION_PREV_FIELD,
     ACTION_NEXT_FIELD,
+    ACTION_RESIZE_SCREEN,
     ACTION_CLEAR,
     ACTION_CLEAR_CALLS,
     ACTION_TOGGLE_SYNTAX,
-    ACTION_TOGGLE_COLOR,
+    ACTION_CYCLE_COLOR,
     ACTION_SHOW_HOSTNAMES,
     ACTION_TOGGLE_PAUSE,
     ACTION_PREV_SCREEN,
@@ -71,6 +90,8 @@ enum key_actions
     ACTION_SHOW_FLOW_EX,
     ACTION_SHOW_FILTERS,
     ACTION_SHOW_COLUMNS,
+    ACTION_COLUMN_MOVE_UP,
+    ACTION_COLUMN_MOVE_DOWN,
     ACTION_DISP_FILTER,
     ACTION_DISP_INVITE,
     ACTION_SAVE,
@@ -96,15 +117,36 @@ typedef struct key_binding key_binding_t;
 struct key_binding
 {
     //! keybindings for this action
-    int keys[5];
+    int keys[MAX_BINDINGS];
     //! How many keys are binded to this action
     int bindcnt;
 };
 
+/**
+ * @brief Initialize default keybindings
+ */
+void
+key_bindings_init();
+
+/**
+ * @brief Bind a key to an action
+ */
 void
 key_bind_action(int action, int key);
 
+/**
+ * @brief Find the next action for a given key
+ *
+ * Set start parameter to -1 for start searching the
+ * first action.
+ */
 int
 key_find_action(int key, int start);
+
+/**
+ * @brief Check if key is a printable ascii character
+ */
+int
+key_is_printable(int key);
 
 #endif /* __SNGREP_KEYBINDING_H_ */

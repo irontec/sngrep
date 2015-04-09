@@ -172,63 +172,77 @@ call_raw_handle_key(PANEL *panel, int key)
 {
     call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
     ui_t *next_panel;
+    int rnpag_steps = get_option_int_value("cr.scrollstep");
+    int action = -1;
 
     // Sanity check, this should not happen
     if (!info)
         return -1;
 
-    // Move scroll depending on key pressed
-    switch (key) {
-        case KEY_DOWN:
-            info->scroll++;
-            break;
-        case KEY_UP:
-            info->scroll--;
-            break;
-        case KEY_NPAGE:
-            // Next page => N key down strokes
-            info->scroll += 10;
-            break;
-        case KEY_PPAGE:
-            // Prev page => N key up strokes
-            info->scroll -= 10;
-            break;
-        case 'l':
-            // Tooggle Host/Address display
-            toggle_option("sngrep.displayhost");
-            // Force refresh panel
-            if (info->group) {
-                call_raw_set_group(info->group);
-            } else {
-                call_raw_set_msg(info->msg);
-            }
-            break;
-        case 's':
-        case 'S':
-            if (info->group) {
-                // KEY_S, Display save panel
-                next_panel = ui_create(ui_find_by_type(PANEL_SAVE_RAW));
-                save_raw_set_group(next_panel->panel, info->group);
-                wait_for_input(next_panel);
-            }
-            break;
-        case 'C':
-        case 'c':
-            // Handle colors using default handler
-            default_handle_key(ui_find_by_panel(panel), key);
-            // Create a new pad (forces messages draw)
-            delwin(info->pad);
-            info->pad = newpad(500, COLS);
-            info->last = NULL;
-            // Force refresh panel
-            if (info->group) {
-                call_raw_set_group(info->group);
-            } else {
-                call_raw_set_msg(info->msg);
-            }
-            break;
-        default:
-            return key;
+    // Check actions for this key
+    while ((action = key_find_action(key, action)) != ERR) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_DOWN:
+                info->scroll++;
+                break;
+            case ACTION_UP:
+                info->scroll--;
+                break;
+            case ACTION_HNPAGE:
+                rnpag_steps = rnpag_steps / 2;
+                /* no break */
+            case ACTION_NPAGE:
+                // Next page => N key down strokes
+                info->scroll += rnpag_steps;
+                break;
+            case ACTION_HPPAGE:
+                rnpag_steps = rnpag_steps / 2;
+                /* no break */
+            case ACTION_PPAGE:
+                // Prev page => N key up strokes
+                info->scroll -= rnpag_steps;
+                break;
+            case ACTION_SHOW_HOSTNAMES:
+                // Tooggle Host/Address display
+                toggle_option("sngrep.displayhost");
+                // Force refresh panel
+                if (info->group) {
+                    call_raw_set_group(info->group);
+                } else {
+                    call_raw_set_msg(info->msg);
+                }
+                break;
+            case ACTION_SAVE:
+                if (info->group) {
+                    // KEY_S, Display save panel
+                    next_panel = ui_create(ui_find_by_type(PANEL_SAVE_RAW));
+                    save_raw_set_group(next_panel->panel, info->group);
+                    wait_for_input(next_panel);
+                }
+                break;
+            case ACTION_TOGGLE_SYNTAX:
+            case ACTION_CYCLE_COLOR:
+                // Handle colors using default handler
+                default_handle_key(ui_find_by_panel(panel), key);
+                // Create a new pad (forces messages draw)
+                delwin(info->pad);
+                info->pad = newpad(500, COLS);
+                info->last = NULL;
+                // Force refresh panel
+                if (info->group) {
+                    call_raw_set_group(info->group);
+                } else {
+                    call_raw_set_msg(info->msg);
+                }
+                break;
+            default:
+                // Parse next action
+                continue;
+        }
+
+        // This panel has handled the key successfully
+        break;
     }
 
     if (info->scroll < 0 || info->padline < LINES) {
@@ -237,7 +251,9 @@ call_raw_handle_key(PANEL *panel, int key)
         if (info->scroll + LINES / 2 > info->padline)
             info->scroll = info->padline - LINES / 2;
     }
-    return 0;
+
+    // Return if this panel has handled or not the key
+    return (action == ERR) ? key : 0;
 }
 
 int
