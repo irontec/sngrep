@@ -179,7 +179,7 @@ filter_destroy(PANEL *panel)
 int
 filter_handle_key(PANEL *panel, int key)
 {
-    int field_idx, i;
+    int field_idx;
     char field_value[30];
     int action = -1;
 

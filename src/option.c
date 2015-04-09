@@ -31,8 +31,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "keybinding.h"
 #include "option.h"
-
 
 /**
  * @brief Configuration options array
