@@ -61,8 +61,9 @@ or live capturing, saving packets to a new file
 	sngrep -d eth0 -O save.pcap port 5060 and udp
 
 
+## Configuration
 
-You can configure some options using `sngreprc` file
+You can configure some options using [sngreprc] (https://github.com/irontec/sngrep/wiki/Configuration) file
 
 ## Frequent Asked Questions
 See FAQ on [Github Wiki](https://github.com/irontec/sngrep/wiki#frequent-asked-questions)
