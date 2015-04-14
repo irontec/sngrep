@@ -44,12 +44,7 @@
 #define MAX_BINDINGS    5
 
 //! Some undefined key codes
-#define KEY_CTRL_A      1
-#define KEY_CTRL_B      2
-#define KEY_CTRL_D      4
-#define KEY_CTRL_E      5
-#define KEY_CTRL_F      6
-#define KEY_CTRL_U      21
+#define KEY_CTRL(n)     ((n)-64)
 #define KEY_ESC         27
 #define KEY_INTRO       10
 #define KEY_TAB         9
@@ -136,6 +131,12 @@ void
 key_bind_action(int action, int key);
 
 /**
+ * @brief Unbind a key to an action
+ */
+void
+key_unbind_action(int action, int key);
+
+/**
  * @brief Find the next action for a given key
  *
  * Set start parameter to -1 for start searching the
@@ -143,6 +144,12 @@ key_bind_action(int action, int key);
  */
 int
 key_find_action(int key, int start);
+
+/**
+ * @brief Return the action id associate to an action str
+ */
+int
+key_action_id(const char *action);
 
 /**
  * @brief Check if key is a printable ascii character

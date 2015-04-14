@@ -28,6 +28,7 @@
  */
 
 #include "config.h"
+#include <ctype.h>
 #include <string.h>
 #include "ui_manager.h"
 #include "option.h"
@@ -54,20 +55,20 @@ key_bindings_init()
     key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE2);
     key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE3);
     key_bind_action(ACTION_NPAGE, KEY_NPAGE);
-    key_bind_action(ACTION_NPAGE, KEY_CTRL_F);
+    key_bind_action(ACTION_NPAGE, KEY_CTRL('F'));
     key_bind_action(ACTION_PPAGE, KEY_PPAGE);
-    key_bind_action(ACTION_PPAGE, KEY_CTRL_B);
-    key_bind_action(ACTION_HNPAGE, KEY_CTRL_D);
-    key_bind_action(ACTION_HPPAGE, KEY_CTRL_U);
+    key_bind_action(ACTION_PPAGE, KEY_CTRL('B'));
+    key_bind_action(ACTION_HNPAGE, KEY_CTRL('D'));
+    key_bind_action(ACTION_HPPAGE, KEY_CTRL('U'));
     key_bind_action(ACTION_BEGIN, KEY_HOME);
-    key_bind_action(ACTION_BEGIN, KEY_CTRL_A);
+    key_bind_action(ACTION_BEGIN, KEY_CTRL('A'));
     key_bind_action(ACTION_END, KEY_END);
-    key_bind_action(ACTION_END, KEY_CTRL_E);
+    key_bind_action(ACTION_END, KEY_CTRL('E'));
     key_bind_action(ACTION_PREV_FIELD, KEY_TAB);
     key_bind_action(ACTION_NEXT_FIELD, KEY_TAB);
     key_bind_action(ACTION_NEXT_FIELD, KEY_DOWN);
     key_bind_action(ACTION_RESIZE_SCREEN, KEY_RESIZE);
-    key_bind_action(ACTION_CLEAR, KEY_CTRL_U);
+    key_bind_action(ACTION_CLEAR, KEY_CTRL('U'));
     key_bind_action(ACTION_CLEAR_CALLS, KEY_F(5));
     key_bind_action(ACTION_TOGGLE_SYNTAX, KEY_F(8));
     key_bind_action(ACTION_TOGGLE_SYNTAX, 'C');
@@ -124,10 +125,36 @@ key_bindings_init()
 void
 key_bind_action(int action, int key)
 {
+    if (action < 0)
+        return;
+
     if (bindings[action].bindcnt == MAX_BINDINGS)
         return;
 
     bindings[action].keys[bindings[action].bindcnt++] = key;
+}
+
+void
+key_unbind_action(int action, int key)
+{
+    key_binding_t bind;
+    int i;
+
+    // Action is not valid
+    if (action < 0)
+        return;
+
+    // Copy binding to temporal struct
+    memcpy(&bind, &bindings[action], sizeof(key_binding_t));
+    // Reset bindings for this action
+    memset(&bindings[action], 0, sizeof(key_binding_t));
+
+    // Add all bindings but the unbinded
+    for (i=0; i < bind.bindcnt; i++) {
+        if (bind.keys[i] != key) {
+            key_bind_action(action, bind.keys[i]);
+        }
+    }
 }
 
 int
@@ -143,6 +170,55 @@ key_find_action(int key, int start)
             if (bindings[i].keys[j] == key)
                 return i;
     }
+    return -1;
+}
+
+int
+key_action_id(const char *action)
+{
+
+    if (!strcmp(action, "up")) return ACTION_UP;
+    if (!strcmp(action, "down")) return ACTION_DOWN;
+    if (!strcmp(action, "left")) return ACTION_LEFT;
+    if (!strcmp(action, "right")) return ACTION_RIGHT;
+    if (!strcmp(action, "delete")) return ACTION_DELETE;
+    if (!strcmp(action, "backspace")) return ACTION_BACKSPACE;
+    if (!strcmp(action, "npage")) return ACTION_NPAGE;
+    if (!strcmp(action, "ppage")) return ACTION_PPAGE;
+    if (!strcmp(action, "hnpage")) return ACTION_HNPAGE;
+    if (!strcmp(action, "hppage")) return ACTION_HPPAGE;
+    if (!strcmp(action, "begin")) return ACTION_BEGIN;
+    if (!strcmp(action, "end")) return ACTION_END;
+    if (!strcmp(action, "pfield")) return ACTION_PREV_FIELD;
+    if (!strcmp(action, "nfield")) return ACTION_NEXT_FIELD;
+    if (!strcmp(action, "clear")) return ACTION_CLEAR;
+    if (!strcmp(action, "clearcalls")) return ACTION_CLEAR_CALLS;
+    if (!strcmp(action, "togglesyntax")) return ACTION_TOGGLE_SYNTAX;
+    if (!strcmp(action, "colormode")) return ACTION_CYCLE_COLOR;
+    if (!strcmp(action, "togglehostname")) return ACTION_SHOW_HOSTNAMES;
+    if (!strcmp(action, "pause")) return ACTION_TOGGLE_PAUSE;
+    if (!strcmp(action, "prevscreen")) return ACTION_PREV_SCREEN;
+    if (!strcmp(action, "help")) return ACTION_SHOW_HELP;
+    if (!strcmp(action, "raw")) return ACTION_SHOW_RAW;
+    if (!strcmp(action, "flow")) return ACTION_SHOW_FLOW;
+    if (!strcmp(action, "flowex")) return ACTION_SHOW_FLOW_EX;
+    if (!strcmp(action, "filters")) return ACTION_SHOW_FILTERS;
+    if (!strcmp(action, "columns")) return ACTION_SHOW_COLUMNS;
+    if (!strcmp(action, "columnup")) return ACTION_COLUMN_MOVE_UP;
+    if (!strcmp(action, "columndown")) return ACTION_COLUMN_MOVE_DOWN;
+    if (!strcmp(action, "search")) return ACTION_DISP_FILTER;
+    if (!strcmp(action, "save")) return ACTION_SAVE;
+    if (!strcmp(action, "select")) return ACTION_SELECT;
+    if (!strcmp(action, "confirm")) return ACTION_CONFIRM;
+    if (!strcmp(action, "rtp")) return ACTION_TOGGLE_RTP;
+    if (!strcmp(action, "rawpreview")) return ACTION_TOGGLE_RAW;
+    if (!strcmp(action, "morerawpreview")) return ACTION_INCREASE_RAW;
+    if (!strcmp(action, "lessrawpreview")) return ACTION_DECREASE_RAW;
+    if (!strcmp(action, "resetrawpreview")) return ACTION_RESET_RAW;
+    if (!strcmp(action, "onlysdp")) return ACTION_ONLY_SDP;
+    if (!strcmp(action, "sdpinfo")) return ACTION_SDP_INFO;
+    if (!strcmp(action, "compress")) return ACTION_COMPRESS;
+    if (!strcmp(action, "hintalt")) return ACTION_TOGGLE_HINT;
     return -1;
 }
 
@@ -182,6 +258,31 @@ key_to_str(int key)
 int
 key_from_str(const char *key)
 {
+    if (!key)
+        return 0;
+
+    // Single character string
+    if (strlen(key) == 1)
+        return *key;
+
+    // Function keys
+    if (*key == 'F')
+        return KEY_F(atoi(key+1));
+
+    // Control Secuences
+    if (*key == '^')
+        return KEY_CTRL(toupper(*(key+1)));
+    if (!strncasecmp(key, "Ctrl-", 5))
+        return KEY_CTRL(toupper(*(key+5)));
+
+    // Special Name characters
+    if (!strcasecmp(key, "Esc"))
+        return KEY_ESC;
+    if (!strcasecmp(key, "Space"))
+        return ' ';
+    if (!strcasecmp(key, "Enter"))
+        return KEY_INTRO;
+
     return 0;
 }
 

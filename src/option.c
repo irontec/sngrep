@@ -176,6 +176,10 @@ read_options(const char *fname)
                 set_option_value(option, value);
             } else if (!strcasecmp(type, "ignore")) {
                 set_ignore_value(option, value);
+            } else if (!strcasecmp(type, "bind")) {
+                key_bind_action(key_action_id(option), key_from_str(value));
+            } else if (!strcasecmp(type, "unbind")) {
+                key_unbind_action(key_action_id(option), key_from_str(value));
             }
         }
     }
