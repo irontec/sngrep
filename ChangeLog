@@ -1,3 +1,18 @@
+2015-04-14 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.3.1 released
+
+	* Added command line option -N to not display ncurses interface
+	* Added command line option -q to dont print any stdout output
+	* Added optional IPv6 support
+	* Added SIP compact headers support
+	* Fixed autotools templates for OpenBSD 5
+	* Set dark background by default
+	* Repladed SIP payload function with regexp
+	* Implemented configurable keybindings via sngreprc
+	* Added more default keybindings
+	* Implement basic RTP detection
+	* Improved parsing payload performance
+
 2015-03-02 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.3.0 released
 

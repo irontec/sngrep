@@ -2,12 +2,6 @@ ToDo List
 =========
 
 capture:
-	* Add compatibility with IPv6
-		Capturing and parsing IPv6 packets should not be a problem but
-		all interfaces are designed for a max address length of 15
-		characters so the impact in UI makes this improvement no so
-		easy to implement.
-
     * Handle Packet fragmentation
         Right now capture process only handle packets with SIP payload,
         so if a packet is marked as fragmented, part of its payload
@@ -39,7 +33,8 @@ ui:
         Right now, white background terminals must set background dark option
         in order to see colors properly.
 
-    * Add configurable keybindings
-        Allow user configurable keybindings for existing actions in ui screens.
-        It will be also nice to be able to change bottom hint bar with configured keys.
+	* Improve compatibility with IPv6
+        IPv6 packets are captured but IPv6 addresses can be 45 chars
+        long, so current UI is not ready to display that kind of
+        addresses
 
