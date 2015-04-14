@@ -65,10 +65,10 @@ sip_init(int limit, int only_calls, int no_incomplete)
     // Initialize calls lock
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
-#if !defined(PTHREAD_MUTEX_RECURSIVE_NP)
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-#else
+#if defined(PTHREAD_MUTEX_RECURSIVE_NP)
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+#else
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 #endif
     pthread_mutex_init(&calls.lock, &attr);
 
