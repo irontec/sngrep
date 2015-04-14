@@ -112,7 +112,7 @@ init_options()
     set_option_value("filter.MESSAGE", "on");
 
     // Print defualt keys in bottom bar
-    set_option_value("hint_key_alt", "off");
+    set_option_value("hintkeyalt", "off");
 
     // Initialize keybindings
     key_bindings_init();

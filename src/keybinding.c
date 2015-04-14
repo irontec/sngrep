@@ -188,7 +188,7 @@ key_from_str(const char *key)
 const char *
 key_action_key_str(int action)
 {
-    if (is_option_enabled("hint_key_alt") && bindings[action].bindcnt > 1) {
+    if (is_option_enabled("hintkeyalt") && bindings[action].bindcnt > 1) {
         // First alt keybinding
         return key_to_str(bindings[action].keys[1]);
     } else {
