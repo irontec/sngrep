@@ -64,7 +64,7 @@ key_bindings_init()
     key_bind_action(ACTION_BEGIN, KEY_CTRL('A'));
     key_bind_action(ACTION_END, KEY_END);
     key_bind_action(ACTION_END, KEY_CTRL('E'));
-    key_bind_action(ACTION_PREV_FIELD, KEY_TAB);
+    key_bind_action(ACTION_PREV_FIELD, KEY_UP);
     key_bind_action(ACTION_NEXT_FIELD, KEY_TAB);
     key_bind_action(ACTION_NEXT_FIELD, KEY_DOWN);
     key_bind_action(ACTION_RESIZE_SCREEN, KEY_RESIZE);
