@@ -65,7 +65,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     // Initialize calls lock
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
-#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__)
+#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__) || defined(BSD) || defined (__OpenBSD__)
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 #else
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
