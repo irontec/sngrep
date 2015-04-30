@@ -172,6 +172,7 @@ struct sip_call_list {
     int match_invert;
 
     //! Regexp for payload matching
+    regex_t reg_method;
     regex_t reg_callid;
     regex_t reg_xcallid;
     regex_t reg_response;

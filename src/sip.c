@@ -74,10 +74,11 @@ sip_init(int limit, int only_calls, int no_incomplete)
 
     // Initialize payload parsing regexp
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
+    regcomp(&calls.reg_method, "^([a-zA-Z]+) sip:[^ ]+ SIP/2.0\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_callid, "^(Call-ID|i): (.+)\r$", match_flags);
     regcomp(&calls.reg_xcallid, "^(X-Call-ID|X-CID): (.+)\r$", match_flags);
-    regcomp(&calls.reg_response, "^SIP/2.0 (([0-9]{3}) .+)\r$", match_flags);
-    regcomp(&calls.reg_cseq, "CSeq: ([0-9]+) (.+)\r$", match_flags);
+    regcomp(&calls.reg_response, "^SIP/2.0 (([0-9]{3}) [^\r]+)\r", match_flags & ~REG_NEWLINE);
+    regcomp(&calls.reg_cseq, "^CSeq: ([0-9]+) .+\r$", match_flags);
     regcomp(&calls.reg_from, "(From|f): [^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_to, "(To|t): [^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_sdp_addr, "^c=[^[:space:]]+ [^[:space:]]+ (.+)\r$", match_flags);
@@ -234,6 +235,15 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
         return NULL;
     }
 
+    // Get Method and request for the following checks
+    // There is no need to parse all payload at this point
+    // If no response or request code is found, this is not a SIP message
+    if (!msg_get_reqresp(msg)) {
+        // Deallocate message memory
+        sip_msg_destroy(msg);
+        return NULL;
+    }
+
     // Store sorce address. Prefix too long IPv6 addresses with two dots
     if (strlen(src) > 15) {
         sprintf(msg->src, "..%s", src + strlen(src) - 13);
@@ -267,10 +277,6 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
             pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
-
-        // Get Method and request for the following checks
-        // There is no need to parse all payload at this point
-        msg_get_reqresp(msg);
 
         // User requested only INVITE starting dialogs
         if (calls.only_calls) {
@@ -567,7 +573,7 @@ int
 msg_get_reqresp(sip_msg_t *msg)
 {
     regmatch_t pmatch[3];
-    char reqresp[20], cseq[11];
+    char reqresp[20];
     const char *payload = msg->payload;
 
     // If not already parsed
@@ -576,10 +582,8 @@ msg_get_reqresp(sip_msg_t *msg)
         memset(reqresp, 0, sizeof(reqresp));
 
         // Method & CSeq
-        if (regexec(&calls.reg_cseq, payload, 3, pmatch, 0) == 0) {
-            sprintf(cseq, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
-            msg->cseq = atoi(cseq);
-            sprintf(reqresp, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
+        if (regexec(&calls.reg_method, payload, 2, pmatch, 0) == 0) {
+            sprintf(reqresp, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
             msg_set_attribute(msg, SIP_ATTR_METHOD, reqresp);
         }
 
@@ -600,7 +604,7 @@ int
 msg_parse_payload(sip_msg_t *msg, const char *payload)
 {
     regmatch_t pmatch[4];
-    char date[12], time[20];
+    char date[12], time[20], cseq[11];
 
     // If message has already been parsed, we've finished
     if (msg->parsed)
@@ -608,6 +612,12 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
 
     // Get Method and request for the following checks
     msg_get_reqresp(msg);
+
+    // CSeq
+    if (regexec(&calls.reg_cseq, payload, 2, pmatch, 0) == 0) {
+        sprintf(cseq, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+        msg->cseq = atoi(cseq);
+    }
 
     // X-Call-Id
     if (regexec(&calls.reg_xcallid, payload, 3, pmatch, 0) == 0) {
