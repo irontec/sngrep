@@ -227,6 +227,7 @@ call_flow_draw_columns(PANEL *panel)
     sip_msg_t *msg;
     int flow_height, flow_width;
     const char *coltext;
+    char address[50], *end;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -246,8 +247,17 @@ call_flow_draw_columns(PANEL *panel)
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
         mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
+
+        // Set bold to this address if it's local
+        strcpy(address, column->addr);
+        if ((end = strchr(address, ':')))
+            *end = '\0';
+        if (is_local_address_str(address))
+            wattron(win, A_BOLD);
+
         coltext = (is_option_enabled("sngrep.displayhost")) ? column->host : column->addr;
         mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s", coltext);
+        wattroff(win, A_BOLD);
     }
 
     return 0;
