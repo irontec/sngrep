@@ -42,6 +42,7 @@
 #endif
 #include <regex.h>
 #include "sip_attr.h"
+#include "media.h"
 
 //! SIP Methods
 enum sip_methods {
@@ -143,6 +144,8 @@ struct sip_call {
     int msgcnt;
     //! Message when conversation started
     sip_msg_t *cstart_msg;
+    //! Media Streams for this call
+    sdp_media_t *medias;
     //! Calls double linked list
     sip_call_t *next, *prev;
 };
@@ -426,6 +429,9 @@ call_get_prev_filtered(sip_call_t *cur);
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg);
 
+void
+call_add_media(sip_call_t *call, sdp_media_t *media);
+
 /**
  * @brief Get message Request/Response code
  *
@@ -449,6 +455,18 @@ msg_get_reqresp(sip_msg_t *msg);
 int
 msg_parse_payload(sip_msg_t *msg, const char *payload);
 
+
+/**
+ * @brief Parse SIP Message payload for SDP media streams
+ *
+ * Parse the payload content to get SDP information
+ *
+ * @param msg SIP message structure
+ * @return 0 in all cases
+ */
+void
+msg_parse_media(sip_msg_t *msg);
+
 /**
  * @brief Check if a package is a retransmission
  *
@@ -469,6 +487,10 @@ msg_is_retrans(sip_msg_t *msg);
  */
 int
 msg_is_request(sip_msg_t *msg);
+
+
+sip_msg_t *
+msg_get_request(sip_msg_t *msg);
 
 /**
  * @brief Get summary of message header data

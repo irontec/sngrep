@@ -45,7 +45,8 @@
 #endif
 
 // Capture information
-capture_info_t capinfo = { 0 };
+capture_info_t capinfo =
+    { 0 };
 
 int
 capture_online(const char *dev, const char *outfile)
@@ -198,13 +199,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
 #ifdef WITH_IPV6
     // Get IPv6 header
-    ip6 = (struct ip6_hdr*)(packet + size_link);
+    ip6 = (struct ip6_hdr*) (packet + size_link);
 #endif
 
     // Get IP version
     ip_ver = ip4->ip_v;
 
-    switch(ip_ver) {
+    switch (ip_ver) {
         case 4:
             size_ip = ip4->ip_hl * 4;
             ip_proto = ip4->ip_p;
@@ -248,7 +249,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         dport = udp->uh_dport;
 
         size_payload = htons(udp->uh_ulen) - udp_size;
-        if ((int32_t)size_payload > 0 ) {
+        if ((int32_t) size_payload > 0) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
             memset(msg_payload, 0, size_payload + 1);
@@ -271,7 +272,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // We're only interested in packets with payload
         size_payload = ip_len - (size_ip + tcp_size);
-        if ((int32_t)size_payload > 0) {
+        if ((int32_t) size_payload > 0) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
             memset(msg_payload, 0, size_payload + 1);
@@ -291,7 +292,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                 tls_process_segment(ip4, &msg_payload, &size_payload);
 
                 // Check if we have decoded payload
-                if ((int32_t)size_payload <= 0) {
+                if ((int32_t) size_payload <= 0) {
                     free(msg_payload);
                     return;
                 }
@@ -310,47 +311,65 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         return;
     }
 
-    // Increase capture stats
-    if (ip4->ip_v == 4 && capinfo.devices) {
-        if(is_local_address(ip4->ip_src.s_addr)) {
-            capinfo.local_ports[htons(sport)]++;
-            capinfo.remote_ports[htons(dport)]++;
-        } else {
-            capinfo.remote_ports[htons(sport)]++;
-            capinfo.local_ports[htons(dport)]++;
-        }
-    }
-
     // We're only interested in packets with payload
-    if ((int32_t)size_payload <= 0)
+    if ((int32_t) size_payload <= 0)
         return;
 
     // Parse this header and payload
-    msg = sip_load_message(header, ip_src, sport, ip_dst, dport, msg_payload);
-    free(msg_payload);
+    if ((msg = sip_load_message(header, ip_src, htons(sport), ip_dst, htons(dport), msg_payload))) {
+        // Store Transport attribute
+        if (transport == 0) {
+            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
+        } else if (transport == 1) {
+            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
+        } else if (transport == 2) {
+            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
+        } else if (transport == 3) {
+            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
+        }
 
-    // This is not a sip message, Bye!
-    if (!msg)
-        return;
+        // Set message PCAP data
+        msg->pcap_packet = malloc(size_packet);
+        memcpy(msg->pcap_packet, packet, size_packet);
 
-    // Store Transport attribute
-    if (transport == 0) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
-    } else if (transport == 1) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
-    } else if (transport == 2) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
-    } else if (transport == 3) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
+        // Store this packets in output file
+        dump_packet(capinfo.pd, header, packet);
+    } else {
+#if 0
+        // Check if this is a RTP packet from active calls
+        sip_call_t *call;
+        for (call = call_get_next(NULL); call; call = call_get_next(call)) {
+            sdp_media_t *media = media_find(call->medias, ip_src, htons(sport), ip_dst, htons(dport));
+            if (media) {
+                if (!media->addr2) {
+                    media->addr2 = strdup(ip_dst);
+                    media->port2 = htons(dport);
+                }
+
+                if (!strcmp(media->addr1, ip_src) && media->port1 == htons(sport))
+                    media->txcnt++;
+                else
+                    media->rvcnt++;
+            } else {
+                sdp_media_t *media = media_find(call->medias, ip_dst, htons(dport), ip_src, htons(sport));
+                if (media) {
+                    if (!media->addr2) {
+                        media->addr2 = strdup(ip_src);
+                        media->port2 = htons(sport);
+                    }
+
+                    if (!strcmp(media->addr1, ip_dst) && media->port1 == htons(dport))
+                        media->txcnt++;
+                    else
+                        media->rvcnt++;
+                }
+            }
+        }
+#endif
     }
 
-    // Set message PCAP data
-    msg->pcap_packet = malloc(size_packet);
-    memcpy(msg->pcap_packet, packet, size_packet);
-
-    // Store this packets in output file
-    dump_packet(capinfo.pd, header, packet);
-
+    // Deallocate packet duplicated payload
+    free(msg_payload);
 }
 
 void
@@ -445,7 +464,7 @@ capture_get_status()
 const char *
 capture_get_status_desc()
 {
-    switch(capinfo.status) {
+    switch (capinfo.status) {
         case CAPTURE_ONLINE:
             return "Online";
         case CAPTURE_ONLINE_PAUSED:
@@ -486,7 +505,7 @@ int
 datalink_size(int datalink)
 {
     // Datalink header size
-    switch(datalink) {
+    switch (datalink) {
         case DLT_EN10MB:
             return 14;
         case DLT_IEEE802:
@@ -601,17 +620,8 @@ is_local_address(in_addr_t address)
     for (device = capinfo.devices; device; device = device->next) {
         for (dev_addr = device->addresses; dev_addr; dev_addr = dev_addr->next)
             if (dev_addr->addr && dev_addr->addr->sa_family == AF_INET
-                    && ((struct sockaddr_in*)dev_addr->addr)->sin_addr.s_addr == address)
+                    && ((struct sockaddr_in*) dev_addr->addr)->sin_addr.s_addr == address)
                 return 1;
     }
     return 0;
-}
-
-int
-capture_packet_count_port(int type, int port)
-{
-    if (type == 0)
-        return capinfo.remote_ports[port];
-    else
-        return capinfo.local_ports[port];
 }

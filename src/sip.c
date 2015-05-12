@@ -47,7 +47,8 @@
  * All parsed calls will be added to this list, only accesible from
  * this awesome structure, so, keep it thread-safe.
  */
-static sip_call_list_t calls = { 0 };
+static sip_call_list_t calls =
+    { 0 };
 
 void
 sip_init(int limit, int only_calls, int no_incomplete)
@@ -221,8 +222,8 @@ sip_get_callid(const char* payload)
 }
 
 sip_msg_t *
-sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short sport,
-                 const char* dst, u_short dport, u_char *payload)
+sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst,
+                 u_short dport, u_char *payload)
 {
     sip_msg_t *msg;
     sip_call_t *call;
@@ -326,6 +327,9 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
 
     // Add the message to the found/created call
     call_add_message(call, msg);
+
+    // Parse media data
+    msg_parse_media(msg);
 
     // Update Call State
     call_update_state(call, msg);
@@ -541,26 +545,30 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 // Alice is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CANCELLED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR,
+                                   sip_calculate_duration(call->msgs, msg, dur));
             } else if (reqresp > 400) {
                 // Bob is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR,
+                                   sip_calculate_duration(call->msgs, msg, dur));
             }
         } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
             if (reqresp == SIP_METHOD_BYE) {
                 // Thanks for all the fish!
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_COMPLETED);
                 // Store Conversation duration
-                call_set_attribute(call, SIP_ATTR_CONVDUR, sip_calculate_duration(call->cstart_msg, msg, dur));
+                call_set_attribute(call, SIP_ATTR_CONVDUR,
+                                   sip_calculate_duration(call->cstart_msg, msg, dur));
             }
         } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, SIP_CALLSTATE_INCALL)) {
             // Call is being setup (after proper authentication)
             call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
         } else {
             // Store total call duration
-            call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(call->msgs, msg, dur));
+            call_set_attribute(call, SIP_ATTR_TOTALDUR,
+                               sip_calculate_duration(call->msgs, msg, dur));
         }
     } else {
         // This is actually a call
@@ -568,6 +576,26 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
     }
 
+}
+
+void
+call_add_media(sip_call_t *call, sdp_media_t *media)
+{
+    sdp_media_t *tmp;
+
+    //! Sanity check
+    if (!call || !media)
+        return;
+
+    //! Add the first media to the call
+    if (!call->medias) {
+        call->medias = media;
+    } else {
+        //! Look for the last media of the call
+        for (tmp = call->medias; tmp->next; tmp = tmp->next)
+            ;
+        tmp->next = media;
+    }
 }
 
 int
@@ -590,7 +618,8 @@ msg_get_reqresp(sip_msg_t *msg)
 
         // Response code
         if (regexec(&calls.reg_response, payload, 3, pmatch, 0) == 0) {
-            msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+            msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so,
+                              payload + pmatch[1].rm_so);
             sprintf(reqresp, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
         }
 
@@ -622,36 +651,29 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
 
     // X-Call-Id
     if (regexec(&calls.reg_xcallid, payload, 3, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_XCALLID, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
+        msg_set_attribute(msg, SIP_ATTR_XCALLID, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
+                          payload + pmatch[2].rm_so);
     }
 
     // From
     if (regexec(&calls.reg_from, payload, 4, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_SIPFROM, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
-        msg_set_attribute(msg, SIP_ATTR_SIPFROMUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so, payload + pmatch[3].rm_so);
+        msg_set_attribute(msg, SIP_ATTR_SIPFROM, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
+                          payload + pmatch[2].rm_so);
+        msg_set_attribute(msg, SIP_ATTR_SIPFROMUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so,
+                          payload + pmatch[3].rm_so);
     }
 
     // To
     if (regexec(&calls.reg_to, payload, 4, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_SIPTO, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
-        msg_set_attribute(msg, SIP_ATTR_SIPTOUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so, payload + pmatch[3].rm_so);
-    }
-
-    // SDP Address
-    if (regexec(&calls.reg_sdp_addr, payload, 2, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
-        msg->sdp = 1;
-    }
-
-    // SDP Port
-    if (regexec(&calls.reg_sdp_port, payload, 2, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_SDP_PORT, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
-        msg->sdp = 1;
+        msg_set_attribute(msg, SIP_ATTR_SIPTO, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
+                          payload + pmatch[2].rm_so);
+        msg_set_attribute(msg, SIP_ATTR_SIPTOUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so,
+                          payload + pmatch[3].rm_so);
     }
 
     // Set Source and Destination attributes
-    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg->src, htons(msg->sport));
-    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg->dst, htons(msg->dport));
+    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg->src, msg->sport);
+    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg->dst, msg->dport);
 
     // Set message Date attribute
     time_t t = (time_t) msg->pcap_header->ts.tv_sec;
@@ -668,6 +690,63 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     msg->parsed = 1;
 
     return 0;
+}
+
+void
+msg_parse_media(sip_msg_t *msg)
+{
+    sdp_media_t *media;
+    regmatch_t pmatch[4];
+    sip_msg_t *req;
+    char address[50];
+    int port;
+
+    // Check if this message has sdp
+    if (!strstr(msg->payload, "application/sdp"))
+        return;
+
+    // Message has SDP
+    msg->sdp = 1;
+
+    // SDP Address
+    if (regexec(&calls.reg_sdp_addr, msg->payload, 2, pmatch, 0) == 0) {
+        sprintf(address, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, msg->payload + pmatch[1].rm_so);
+        msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, address);
+    }
+
+    // SDP Port
+    if (regexec(&calls.reg_sdp_port, msg->payload, 2, pmatch, 0) == 0) {
+        msg_set_attribute(msg, SIP_ATTR_SDP_PORT, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so,
+                          msg->payload + pmatch[1].rm_so);
+        port = atoi(msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
+    }
+
+    if (!strcmp(address, "0.0.0.0"))
+        return;
+
+    fprintf(stderr, "%s:%d\n", address, port);
+
+    // Request methods create new media
+    if (msg_is_request(msg)) {
+        // Check if we have already added this media
+        if (!media_find(msg->call->medias, address, port)) {
+            call_add_media(msg->call, media_create(address, port));
+        }
+    } else {
+        // Try to find the request for this response
+        if ((req = msg_get_request(msg))) {
+            const char *reqaddr = msg_get_attribute(req, SIP_ATTR_SDP_ADDRESS);
+            int reqport = atoi(msg_get_attribute(req, SIP_ATTR_SDP_PORT));
+            // Check if this media already exists
+            if (!(media = media_find_pair(msg->call->medias, reqaddr, reqport, address, port))) {
+                // Check if a media is pending to be completed
+                if ((media = media_find_pair(msg->call->medias, reqaddr, reqport, 0, 0))) {
+                    fprintf(stderr, "  -> %s:%d\n", reqaddr, reqport);
+                    media_add(media, address, port);
+                }
+            }
+        }
+    }
 }
 
 int
@@ -699,6 +778,28 @@ msg_is_request(sip_msg_t *msg)
     return msg->reqresp < SIP_METHOD_SENTINEL;
 }
 
+sip_msg_t *
+msg_get_request(sip_msg_t *msg)
+{
+    sip_msg_t *tmp = msg;
+
+    if (!msg)
+        return NULL;
+
+    if (msg_is_request(msg))
+        return NULL;
+
+    for (tmp = call_get_prev_msg(msg->call, tmp); tmp; tmp = call_get_prev_msg(msg->call, tmp)) {
+        if (!msg_is_request(tmp))
+            continue;
+
+        if (!strcmp(tmp->src, msg->dst) && tmp->sport == msg->dport)
+            return tmp;
+    }
+
+    return NULL;
+}
+
 char *
 msg_get_header(sip_msg_t *msg, char *out)
 {
@@ -707,8 +808,8 @@ msg_get_header(sip_msg_t *msg, char *out)
 
     // We dont use Message attributes here because it contains truncated data
     // This should not overload too much as all results should be already cached
-    sprintf(from_addr, "%s:%u", sip_address_format(msg->src), htons(msg->sport));
-    sprintf(to_addr, "%s:%u", sip_address_format(msg->dst), htons(msg->dport));
+    sprintf(from_addr, "%s:%u", sip_address_format(msg->src), msg->sport);
+    sprintf(to_addr, "%s:%u", sip_address_format(msg->dst), msg->dport);
 
     // Get msg header
     sprintf(out, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
@@ -767,7 +868,7 @@ sip_set_match_expression(const char *expr, int insensitive, int invert)
 
     // Case insensitive requested
     if (insensitive)
-        cflags |= REG_ICASE;
+    cflags |= REG_ICASE;
 
     // Check the expresion is a compilable regexp
     return regcomp(&calls.match_regex, expr, cflags) != 0;
@@ -782,7 +883,7 @@ sip_check_match_expression(const char *payload)
         return 1;
 
 #ifdef WITH_PCRE
-    switch(pcre_exec(calls.match_regex, 0, payload, strlen(payload), 0, 0, 0, 0)) {
+    switch (pcre_exec(calls.match_regex, 0, payload, strlen(payload), 0, 0, 0, 0)) {
         case PCRE_ERROR_NOMATCH:
             return 1 == calls.match_invert;
     }
@@ -793,7 +894,6 @@ sip_check_match_expression(const char *payload)
     return (regexec(&calls.match_regex, payload, 0, NULL, 0) == calls.match_invert);
 #endif
 }
-
 
 void
 call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *fmt, ...)
@@ -871,37 +971,37 @@ sip_check_msg_ignore(sip_msg_t *msg)
 const char *
 sip_method_str(enum sip_methods method)
 {
-    switch(method) {
-    case SIP_METHOD_REGISTER:
-        return "REGISTER";
-    case SIP_METHOD_INVITE:
-        return "INVITE";
-    case SIP_METHOD_SUBSCRIBE:
-        return "SUBSCRIBE";
-    case SIP_METHOD_NOTIFY:
-        return "NOTIFY";
-    case SIP_METHOD_OPTIONS:
-        return "OPTIONS";
-    case SIP_METHOD_PUBLISH:
-        return "PUBLISH";
-    case SIP_METHOD_MESSAGE:
-        return "MESSAGE";
-    case SIP_METHOD_CANCEL:
-        return "CANCEL";
-    case SIP_METHOD_BYE:
-        return "BYE";
-    case SIP_METHOD_ACK:
-        return "ACK";
-    case SIP_METHOD_PRACK:
-        return "PRACK";
-    case SIP_METHOD_INFO:
-        return "INFO";
-    case SIP_METHOD_REFER:
-        return "REFER";
-    case SIP_METHOD_UPDATE:
-        return "UPDATE";
-    case SIP_METHOD_SENTINEL:
-        return "";
+    switch (method) {
+        case SIP_METHOD_REGISTER:
+            return "REGISTER";
+        case SIP_METHOD_INVITE:
+            return "INVITE";
+        case SIP_METHOD_SUBSCRIBE:
+            return "SUBSCRIBE";
+        case SIP_METHOD_NOTIFY:
+            return "NOTIFY";
+        case SIP_METHOD_OPTIONS:
+            return "OPTIONS";
+        case SIP_METHOD_PUBLISH:
+            return "PUBLISH";
+        case SIP_METHOD_MESSAGE:
+            return "MESSAGE";
+        case SIP_METHOD_CANCEL:
+            return "CANCEL";
+        case SIP_METHOD_BYE:
+            return "BYE";
+        case SIP_METHOD_ACK:
+            return "ACK";
+        case SIP_METHOD_PRACK:
+            return "PRACK";
+        case SIP_METHOD_INFO:
+            return "INFO";
+        case SIP_METHOD_REFER:
+            return "REFER";
+        case SIP_METHOD_UPDATE:
+            return "UPDATE";
+        case SIP_METHOD_SENTINEL:
+            return "";
     }
     return NULL;
 }
@@ -917,7 +1017,8 @@ sip_method_from_str(const char *method)
 }
 
 const char *
-sip_address_format(const char *address) {
+sip_address_format(const char *address)
+{
 
     // Return address formatted depending on active settings
     if (is_option_enabled("sngrep.displayalias")) {
@@ -930,7 +1031,8 @@ sip_address_format(const char *address) {
 }
 
 const char *
-sip_address_port_format(const char *addrport) {
+sip_address_port_format(const char *addrport)
+{
     static char aport[50];
     char address[50];
     int port;

@@ -26,4 +26,79 @@
  * @brief Source of functions defined in media.h
  */
 
+#include "config.h"
+#include <string.h>
+#include <stdlib.h>
+#include "media.h"
+
+void
+media_init()
+{
+
+}
+
+sdp_media_t *
+media_create(const char *address, int port)
+{
+    sdp_media_t *media = malloc(sizeof(sdp_media_t));
+
+    if (!media)
+        return NULL;
+
+    memset(media, 0, sizeof(sdp_media_t));
+
+    media->addr1 = strdup(address);
+    media->port1 = port;
+    return media;
+
+}
+
+sdp_media_t *
+media_add(sdp_media_t *media, const char *addr2, int port2)
+{
+    if (!media || !addr2)
+        return NULL;
+
+    media->addr2 = strdup(addr2);
+    media->port2 = port2;
+    return media;
+
+}
+
+sdp_media_t *
+media_find(sdp_media_t *media, const char *addr, int port)
+{
+    sdp_media_t *m;
+
+    if (!media)
+        return NULL;
+
+    for (m = media; m; m = m->next) {
+        if (!strcmp(m->addr1, addr) && m->port1 == port)
+            return m;
+        if (m->addr2 && !strcmp(m->addr2, addr) && m->port2 == port)
+            return m;
+    }
+
+    return NULL;
+}
+
+sdp_media_t *
+media_find_pair(sdp_media_t *media, const char *addr1, int port1, const char *addr2, int port2)
+{
+    sdp_media_t *m;
+
+    if (!media)
+        return NULL;
+
+    for (m = media; m; m = m->next) {
+        if (!strcmp(m->addr1, addr1)  && m->port1 == port1)
+            if (m->addr2 && addr2 && !strcmp(m->addr2, addr2) && m->port2 == port2)
+                return m;
+            if (!m->addr2 && !addr2 && m->port2 == port2)
+                return m;
+    }
+
+    return NULL;
+}
 

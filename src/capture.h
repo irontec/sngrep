@@ -121,10 +121,6 @@ struct capture_info {
     dns_cache_t dnscache;
     //! Local devices pointer
     pcap_if_t *devices;
-    //! Incoming Packets per port
-    int local_ports[65535];
-    //! Outgoint Packets per port
-    int remote_ports[65535];
     //! Capture thread for online capturing
     pthread_t capture_t;
 };
@@ -327,14 +323,5 @@ is_local_address_str(const char *address);
  */
 int
 is_local_address(in_addr_t address);
-
-/**
- * @brief Return the packet count on a given port
- *
- * @param type 1 for local ports, 0 for remote
- * @return the packet count on requested port
- */
-int
-capture_packet_count_port(int type, int port);
 
 #endif
