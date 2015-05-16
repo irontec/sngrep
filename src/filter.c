@@ -33,7 +33,7 @@
 #include "filter.h"
 
 //! Storage of filter information
-filter_t filters[FILTER_COUNT];
+filter_t filters[FILTER_COUNT] = {};
 
 int
 filter_set(int type, const char *expr)

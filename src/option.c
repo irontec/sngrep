@@ -102,14 +102,7 @@ init_options()
     set_option_value("capture.lookup", "off");
 
     // Set default filter options
-    set_option_value("filter.enable", "off");
-    set_option_value("filter.REGISTER", "on");
-    set_option_value("filter.INVITE", "on");
-    set_option_value("filter.SUBSCRIBE", "on");
-    set_option_value("filter.NOTIFY", "on");
-    set_option_value("filter.OPTIONS", "on");
-    set_option_value("filter.PUBLISH", "on");
-    set_option_value("filter.MESSAGE", "on");
+    set_option_value("filter.methods", "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE");
 
     // Print defualt keys in bottom bar
     set_option_value("hintkeyalt", "off");

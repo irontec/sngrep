@@ -128,7 +128,7 @@ filter_create()
 
     // Get Method filter
     if (!(method = filter_get(FILTER_METHOD)))
-        method = "";
+        method = get_option_value("filter.methods");
 
     // Set Default field values
     set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));
