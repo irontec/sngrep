@@ -236,6 +236,9 @@ column_select_handle_key_menu(PANEL *panel, int key)
                 form_driver(info->form, REQ_VALIDATION);
                 curs_set(1);
                 break;
+            case ACTION_CONFIRM:
+                column_select_update_columns(panel);
+                return 27;
             default:
                 // Parse next action
                 continue;
