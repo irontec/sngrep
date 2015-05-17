@@ -252,7 +252,7 @@ call_flow_draw_columns(PANEL *panel)
         strcpy(address, column->addr);
         if ((end = strchr(address, ':')))
             *end = '\0';
-        if (is_local_address_str(address))
+        if (is_local_address_str(address) && is_option_enabled("cf.localhighlight"))
             wattron(win, A_BOLD);
 
         coltext = (is_option_enabled("sngrep.displayhost")) ? column->host : column->addr;

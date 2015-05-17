@@ -83,6 +83,7 @@ init_options()
     set_option_value("cf.splitcallid", "off");
     set_option_value("cf.highlight", "bold");
     set_option_value("cf.scrollstep", "4");
+    set_option_value("cf.localhighlight", "on");
 
     // Default options for Call Raw screen
     set_option_value("cr.scrollstep", "10");
