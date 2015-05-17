@@ -1,3 +1,12 @@
+2015-05-17 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.3.2 released
+
+	* Fixed sources compilation for BSD systems
+	* Fixed a bug where Contact header was displayed in SIP From column
+	* Fixed some keybindings in filter and save panels
+	* Improved SIP packet detection from payload
+	* Highlight local address columns in Call Flow
+
 2015-04-14 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.3.1 released
 

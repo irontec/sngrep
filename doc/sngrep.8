@@ -3,7 +3,7 @@
 .\" Copyright (c) 2013-2015  Ivan Alonso <kaian@irontec.com>
 .\" Copyright (c) 2013-2015  Irontec S.L.
 
-.TH SNGREP 8 "March 2015" "sngrep 0.3.1"
+.TH SNGREP 8 "March 2015" "sngrep 0.3.2"
 
 .SH NAME
 
@@ -11,7 +11,7 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [-hVciv] [ -IO
+.B sngrep [-hVcivlkNq] [ -IO
 .I pcap_dump
 .B ] [ -d 
 .I dev
@@ -78,6 +78,14 @@ Use private keyfile to decrypt TLS packets.
 .TP
 .I -l limit
 Change default capture limit (10000 dialogs)
+
+.TP
+.I -N
+Don't display sngrep interface, just capture
+
+.TP
+.I -q
+Don't print captured dialogs in no interface mode
 
 .TP
 .I match expression
