@@ -181,8 +181,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Source and Destination Ports
     u_short sport, dport;
 
-    struct tcphdr a;
-
     // Ignore packets while capture is paused
     if (capture_is_paused())
         return;
