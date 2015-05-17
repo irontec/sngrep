@@ -212,12 +212,22 @@ int
 tls_process_segment(const struct ip *ip, uint8 **out, int *outl)
 {
     struct SSLConnection *conn;
-    struct nread_tcp *tcp;
+    struct tcphdr *tcp;
+    uint16_t tcp_size;
     const uint8 *payload;
+    uint16_t ip_off;
+    uint8_t ip_frag;
+    uint16_t ip_frag_off;
     int len;
 
+    // Process IP offset
+    ip_off = ntohs(ip->ip_off);
+    ip_frag = ip_off & (IP_MF | IP_OFFMASK);
+    ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
+
     // Get TCP header
-    tcp = (struct nread_tcp *) ((uint8 *) ip + (ip->ip_hl * 4));
+    tcp = (struct tcphdr *) ((uint8 *) ip + (ip->ip_hl * 4));
+    tcp_size = (ip_frag_off) ? 0 : (tcp->th_off * 4);
 
     // Try to find a session for this ip
     if ((conn = tls_connection_find(ip->ip_src, tcp->th_sport))) {
@@ -239,8 +249,8 @@ tls_process_segment(const struct ip *ip, uint8 **out, int *outl)
             case TCP_STATE_ACK:
             case TCP_STATE_ESTABLISHED:
                 // Process data segment!
-                payload = (uint8 *) tcp + SIZE_TCP;
-                len = ntohs(ip->ip_len) - (ip->ip_hl * 4) - SIZE_TCP;
+                payload = (uint8 *) tcp + tcp_size;
+                len = ntohs(ip->ip_len) - (ip->ip_hl * 4) - tcp_size;
                 tls_process_record(conn, payload, len, out, outl);
                 break;
             case TCP_STATE_FIN:

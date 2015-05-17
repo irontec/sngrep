@@ -136,6 +136,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 {
     // Datalink Header size
     int size_link;
+    // IP version
+    uint32_t ip_ver;
     // IP header data
     struct ip *ip4;
 #ifdef WITH_IPV6
@@ -148,14 +150,24 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     uint32_t ip_len;
     // IP header size
     uint32_t size_ip;
+    // Fragment offset
+    uint16_t ip_off;
+    // Fragmentation flag
+    uint8_t ip_frag;
+    // Fragmentation offset
+    uint16_t ip_frag_off;
     //! Source Address
     char ip_src[INET6_ADDRSTRLEN + 1];
     //! Destination Address
     char ip_dst[INET6_ADDRSTRLEN + 1];
     // UDP header data
-    struct nread_udp *udp;
+    struct udphdr *udp;
+    // UDP header size
+    uint16_t udp_size;
     // TCP header data
-    struct nread_tcp *tcp;
+    struct tcphdr *tcp;
+    // TCP header size
+    uint16_t tcp_size;
     // Packet payload data
     u_char *msg_payload = NULL;
     // Packet payload size
@@ -168,6 +180,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int transport; /* 0 UDP, 1 TCP, 2 TLS */
     // Source and Destination Ports
     u_short sport, dport;
+
+    struct tcphdr a;
 
     // Ignore packets while capture is paused
     if (capture_is_paused())
@@ -188,13 +202,20 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     ip6 = (struct ip6_hdr*)(packet + size_link);
 #endif
 
-    switch(ip4->ip_v) {
+    // Get IP version
+    ip_ver = ip4->ip_v;
+
+    switch(ip_ver) {
         case 4:
             size_ip = ip4->ip_hl * 4;
             ip_proto = ip4->ip_p;
             ip_len = ntohs(ip4->ip_len);
             inet_ntop(AF_INET, &ip4->ip_src, ip_src, sizeof(ip_src));
             inet_ntop(AF_INET, &ip4->ip_dst, ip_dst, sizeof(ip_dst));
+
+            ip_off = ntohs(ip4->ip_off);
+            ip_frag = ip_off & (IP_MF | IP_OFFMASK);
+            ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
             break;
 #ifdef WITH_IPV6
         case 6:
@@ -203,6 +224,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             ip_len = ntohs(ip6->ip6_plen);
             inet_ntop(AF_INET6, &ip6->ip6_src, ip_src, INET6_ADDRSTRLEN);
             inet_ntop(AF_INET6, &ip6->ip6_dst, ip_dst, INET6_ADDRSTRLEN);
+
+            if (ip_proto == IPPROTO_FRAGMENT) {
+                struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_len);
+                ip_frag  = 1;
+                ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
+            }
             break;
 #endif
     }
@@ -213,42 +240,55 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         transport = 0;
 
         // Get UDP header
-        udp = (struct nread_udp*) (packet + size_link + size_ip);
-        // Set packet ports
-        sport = udp->udp_sport;
-        dport = udp->udp_dport;
+        udp = (struct udphdr*) (packet + size_link + size_ip);
+        udp_size = (ip_frag_off) ? 0 : sizeof(struct udphdr);
 
-        size_payload = htons(udp->udp_hlen) - SIZE_UDP;
-        if (size_payload > 0 ) {
+        // Set packet ports
+        sport = udp->uh_sport;
+        dport = udp->uh_dport;
+
+        size_payload = htons(udp->uh_ulen) - udp_size;
+#ifdef WITH_IPV6
+        if (ip_ver == 6)
+            size_payload -= ntohs(ip6->ip6_plen);
+#endif
+        if ((int32_t)size_payload > 0 ) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
             memset(msg_payload, 0, size_payload + 1);
-            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_UDP), size_payload);
+            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + udp_size), size_payload);
         }
 
         // Total packet size
-        size_packet = size_link + size_ip + SIZE_UDP + size_payload;
+        size_packet = size_link + size_ip + udp_size + size_payload;
 
     } else if (ip_proto == IPPROTO_TCP) {
         // Set transport TCP
         transport = 1;
 
-        tcp = (struct nread_tcp*) (packet + size_link + size_ip);
+        tcp = (struct tcphdr*) (packet + size_link + size_ip);
+        tcp_size = (ip_frag_off) ? 0 : (tcp->th_off * 4);
+
         // Set packet ports
         sport = tcp->th_sport;
         dport = tcp->th_dport;
 
         // We're only interested in packets with payload
-        size_payload = ip_len - (size_ip + SIZE_TCP);
-        if (size_payload > 0) {
+        size_payload = ip_len - (size_ip + tcp_size);
+#ifdef WITH_IPV6
+        if (ip_ver == 6)
+            size_payload -= ntohs(ip6->ip6_plen);
+#endif
+
+        if ((int32_t)size_payload > 0) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
             memset(msg_payload, 0, size_payload + 1);
-            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + SIZE_TCP), size_payload);
+            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + tcp_size), size_payload);
         }
 
         // Total packet size
-        size_packet = size_link + size_ip + SIZE_TCP + size_payload;
+        size_packet = size_link + size_ip + tcp_size + size_payload;
 #ifdef WITH_OPENSSL
         if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
             if (capture_get_keyfile()) {

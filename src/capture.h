@@ -40,10 +40,13 @@
 #include <time.h>
 
 #if defined(__linux__)
-#include <arpa/inet.h>
-#include <netinet/if_ether.h>
-#include <netinet/ip.h>
-#include <arpa/inet.h>
+#ifndef __FAVOR_BSD
+#define __FAVOR_BSD
+#endif
+
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE 1
+#endif
 #endif
 
 #if defined(BSD) || defined (__OpenBSD__)
@@ -52,11 +55,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
-#include <netinet/ip.h>
 #include <net/if.h>
 #include <arpa/inet.h>
-#include <netinet/if_ether.h>
 #endif
+
+#include <arpa/inet.h>
+#include <netinet/if_ether.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
 //! Capture modes
 enum capture_status {
@@ -120,50 +127,6 @@ struct capture_info {
     int remote_ports[65535];
     //! Capture thread for online capturing
     pthread_t capture_t;
-};
-
-//! UDP headers are always exactly 8 bytes
-#define SIZE_UDP 8
-//! TCP headers size
-#define SIZE_TCP TH_OFF(tcp)*4
-
-/**
- * @brief UDP data structure
- */
-struct nread_udp {
-    //! source port
-    u_short udp_sport;
-    //! destination port
-    u_short udp_dport;
-    //! UDP header length
-    u_short udp_hlen;
-    //! UDP Checksum
-    u_short udp_chksum;
-};
-
-/* TCP header */
-typedef u_int tcp_seq;
-
-struct nread_tcp {
-    u_short th_sport; /* source port */
-    u_short th_dport; /* destination port */
-    tcp_seq th_seq; /* sequence number */
-    tcp_seq th_ack; /* acknowledgement number */
-    u_char th_offx2; /* data offset, rsvd */
-#define TH_OFF(th)      (((th)->th_offx2 & 0xf0) >> 4)
-    u_char th_flags;
-#define TH_FIN  0x01
-#define TH_SYN  0x02
-#define TH_RST  0x04
-#define TH_PUSH 0x08
-#define TH_ACK  0x10
-#define TH_URG  0x20
-#define TH_ECE  0x40
-#define TH_CWR  0x80
-#define TH_FLAGS        (TH_FIN|TH_SYN|TH_RST|TH_ACK|TH_URG|TH_ECE|TH_CWR)
-    u_short th_win; /* window */
-    u_short th_sum; /* checksum */
-    u_short th_urp; /* urgent pointer */
 };
 
 /**
