@@ -74,7 +74,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
 
     // Initialize payload parsing regexp
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
-    regcomp(&calls.reg_method, "^([a-zA-Z]+) sip:[^ ]+ SIP/2.0\r", match_flags & ~REG_NEWLINE);
+    regcomp(&calls.reg_method, "^([a-zA-Z]+) sip:[^[:space:]]+ SIP/2.0\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_callid, "^(Call-ID|i): (.+)\r$", match_flags);
     regcomp(&calls.reg_xcallid, "^(X-Call-ID|X-CID): (.+)\r$", match_flags);
     regcomp(&calls.reg_response, "^SIP/2.0 (([0-9]{3}) [^\r]+)\r", match_flags & ~REG_NEWLINE);
@@ -904,6 +904,14 @@ sip_method_str(enum sip_methods method)
         return "BYE";
     case SIP_METHOD_ACK:
         return "ACK";
+    case SIP_METHOD_PRACK:
+        return "PRACK";
+    case SIP_METHOD_INFO:
+        return "INFO";
+    case SIP_METHOD_REFER:
+        return "REFER";
+    case SIP_METHOD_UPDATE:
+        return "UPDATE";
     case SIP_METHOD_SENTINEL:
         return "";
     }
