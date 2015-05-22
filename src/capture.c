@@ -290,14 +290,20 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                 tls_process_segment(ip4, &msg_payload, &size_payload);
 
                 // Check if we have decoded payload
-                if (size_payload <= 0)
+                if ((int32_t)size_payload <= 0) {
                     free(msg_payload);
+                    return;
+                }
 
                 // Set Transport TLS
                 transport = 2;
             }
         }
 #endif
+        // Check if packet is Websocket
+        if (msg_payload && capture_ws_check_packet(msg_payload, &size_payload)) {
+            transport = 3;
+        }
     } else {
         // Not handled protocol
         return;
@@ -315,7 +321,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     }
 
     // We're only interested in packets with payload
-    if (size_payload <= 0)
+    if ((int32_t)size_payload <= 0)
         return;
 
     // Parse this header and payload
@@ -333,6 +339,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
     } else if (transport == 2) {
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
+    } else if (transport == 3) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
     }
 
     // Set message PCAP data
