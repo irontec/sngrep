@@ -230,6 +230,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             }
             break;
 #endif
+        default:
+            return;
     }
 
     // Only interested in UDP packets
