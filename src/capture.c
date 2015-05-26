@@ -151,11 +151,11 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // IP header size
     uint32_t size_ip;
     // Fragment offset
-    uint16_t ip_off;
+    uint16_t ip_off = 0;
     // Fragmentation flag
-    uint8_t ip_frag;
+    uint8_t ip_frag = 0;
     // Fragmentation offset
-    uint16_t ip_frag_off;
+    uint16_t ip_frag_off = 0;
     //! Source Address
     char ip_src[INET6_ADDRSTRLEN + 1];
     //! Destination Address
@@ -225,7 +225,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
             if (ip_proto == IPPROTO_FRAGMENT) {
                 struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_len);
-                ip_frag  = 1;
                 ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
             }
             break;
