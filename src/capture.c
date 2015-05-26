@@ -248,10 +248,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         dport = udp->uh_dport;
 
         size_payload = htons(udp->uh_ulen) - udp_size;
-#ifdef WITH_IPV6
-        if (ip_ver == 6)
-            size_payload -= ntohs(ip6->ip6_plen);
-#endif
         if ((int32_t)size_payload > 0 ) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
@@ -275,11 +271,6 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // We're only interested in packets with payload
         size_payload = ip_len - (size_ip + tcp_size);
-#ifdef WITH_IPV6
-        if (ip_ver == 6)
-            size_payload -= ntohs(ip6->ip6_plen);
-#endif
-
         if ((int32_t)size_payload > 0) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
