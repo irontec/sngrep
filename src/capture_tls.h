@@ -352,7 +352,7 @@ tls_connection_find(struct in_addr addr, u_short port);
  * @return 0 in all cases
  */
 int
-tls_process_segment(const struct ip *ip, uint8 **out, int *outl);
+tls_process_segment(const struct ip *ip, uint8 **out, uint32_t *outl);
 
 /**
  * @brief Process TLS record data
@@ -370,7 +370,7 @@ tls_process_segment(const struct ip *ip, uint8 **out, int *outl);
  */
 int
 tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out,
-                   int *outl);
+                   uint32_t *outl);
 
 /**
  * @brief Process TLS Handshake record types
@@ -400,7 +400,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
  */
 int
 tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
-                        uint8 **out, int *outl);
+                        uint8 **out, uint32_t *outl);
 
 
 /**

@@ -150,7 +150,24 @@ tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr,
 void
 tls_connection_destroy(struct SSLConnection *conn)
 {
-    // TODO
+    struct SSLConnection *c;
+
+    // Remove connection from connections list
+    if (conn == connections) {
+        connections = conn->next;
+    } else {
+        for (c = connections; c; c = c->next) {
+            if (c->next == conn) {
+                c->next = conn->next;
+                break;
+            }
+        }
+    }
+
+    // Deallocate connection memory
+    SSL_CTX_free(conn->ssl_ctx);
+    SSL_free(conn->ssl);
+    free(conn);
 }
 
 /**
@@ -209,7 +226,7 @@ tls_connection_find(struct in_addr addr, u_short port)
 }
 
 int
-tls_process_segment(const struct ip *ip, uint8 **out, int *outl)
+tls_process_segment(const struct ip *ip, uint8 **out, uint32_t *outl)
 {
     struct SSLConnection *conn;
     struct tcphdr *tcp;
@@ -251,7 +268,8 @@ tls_process_segment(const struct ip *ip, uint8 **out, int *outl)
                 // Process data segment!
                 payload = (uint8 *) tcp + tcp_size;
                 len = ntohs(ip->ip_len) - (ip->ip_hl * 4) - tcp_size;
-                tls_process_record(conn, payload, len, out, outl);
+                if (tls_process_record(conn, payload, len, out, outl) != 0)
+                    return 1;
                 break;
             case TCP_STATE_FIN:
             case TCP_STATE_CLOSED:
@@ -271,7 +289,7 @@ tls_process_segment(const struct ip *ip, uint8 **out, int *outl)
 
 int
 tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out,
-                   int *outl)
+                   uint32_t *outl)
 {
     struct TLSPlaintext *record;
     int record_len;
@@ -293,7 +311,8 @@ tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int l
         switch (record->type) {
             case handshake:
                 // Hanshake Record, Try to get MasterSecret data
-                tls_process_record_handshake(conn, fragment);
+                if (tls_process_record_handshake(conn, fragment) != 0)
+                    return 1;
                 break;
             case change_cipher_spec:
                 // From now on, this connection will be encrypted using MasterSecret
@@ -314,7 +333,7 @@ tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int l
     if (len > record_len)
         return tls_process_record(conn, payload + record_len, len - record_len, out, outl);
 
-    return *outl;
+    return 0;
 }
 
 int
@@ -345,6 +364,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                 if (!(clienthello->client_version.major == 0x03
                       && clienthello->client_version.minor == 0x01)) {
                     tls_connection_destroy(conn);
+                    return 1;
                 }
                 break;
             case server_hello:
@@ -356,8 +376,10 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                        body + sizeof(struct ServerHello) + serverhello->session_id_length,
                        sizeof(uint16));
                 // Check if we have a handled cipher
-                if (tls_connection_load_cipher(conn) != 0)
+                if (tls_connection_load_cipher(conn) != 0) {
                     tls_connection_destroy(conn);
+                    return 1;
+                }
                 break;
             case certificate:
             case certificate_request:
@@ -411,7 +433,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                 if (conn->encrypted) {
                     // Encrypted Hanshake Message
                     unsigned char *decoded = malloc(48);
-                    int decodedlen;
+                    uint32_t decodedlen;
                     tls_process_record_data(conn, fragment, 48, &decoded, &decodedlen);
                     free(decoded);
                 }
@@ -424,7 +446,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
 
 int
 tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
-                        uint8 **out, int *outl)
+                        uint8 **out, uint32_t *outl)
 {
     EVP_CIPHER_CTX *evp;
     unsigned char pad;

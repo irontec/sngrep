@@ -30,6 +30,7 @@
 #include "config.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 #include "ui_manager.h"
 #include "option.h"
 #include "keybinding.h"
