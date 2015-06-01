@@ -37,6 +37,15 @@
 
 #define WS_OPCODE_TEXT 0x1
 
+/**
+ * @brief Check if given payload belongs to a Websocket connection
+ *
+ * Parse the given payload and determine if given payload could belong
+ * to a Websocket packet. This function will change the payload pointer
+ * apnd size content to point to the SIP payload data.
+ *
+ * @return 0 if packet is websocket, 1 otherwise
+ */
 int
 capture_ws_check_packet(u_char *msg_payload, uint32_t *size_payload);
 

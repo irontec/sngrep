@@ -33,6 +33,7 @@
 #include "config.h"
 #include <netdb.h>
 #include "capture.h"
+#include "capture_ws.h"
 #ifdef WITH_OPENSSL
 #include "capture_tls.h"
 #endif
