@@ -143,9 +143,6 @@ call_list_destroy(PANEL *panel)
             call_group_destroy(info->group);
         free(info);
     }
-
-    // Finally free the panel memory
-    del_panel(panel);
 }
 
 int
@@ -256,10 +253,6 @@ call_list_draw_list(PANEL *panel)
     // Get panel info
     call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
 
-    // No calls, we've finished drawing the list
-    if (info->dispcallcnt == 0)
-        return;
-
     // Get window of call list panel
     win = info->list_win;
     getmaxyx(win, height, width);
@@ -310,6 +303,7 @@ call_list_draw_list(PANEL *panel)
     // Draw scrollbar to the right
     draw_vscrollbar(win, info->first_line, info->dispcallcnt, 1);
     wnoutrefresh(info->list_win);
+
 }
 
 int
@@ -482,7 +476,7 @@ call_list_handle_key(PANEL *panel, int key)
                 // Display current call flow
                 if (!info->cur_call)
                     break;
-                next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
+                next_panel = ui_create_panel(PANEL_CALL_FLOW);
                 if (info->group->callcnt) {
                     group = info->group;
                 } else {
@@ -492,11 +486,10 @@ call_list_handle_key(PANEL *panel, int key)
                     call_group_add(group, info->cur_call);
                 }
                 call_flow_set_group(group);
-                wait_for_input(next_panel);
                 break;
             case ACTION_SHOW_FLOW_EX:
                 // Display current call flow (extended)
-                next_panel = ui_create(ui_find_by_type(PANEL_CALL_FLOW));
+                ui_create_panel(PANEL_CALL_FLOW);
                 if (info->group->callcnt) {
                     group = info->group;
                 } else {
@@ -507,11 +500,9 @@ call_list_handle_key(PANEL *panel, int key)
                     call_group_add(group, call_get_xcall(info->cur_call));
                 }
                 call_flow_set_group(group);
-                wait_for_input(next_panel);
                 break;
             case ACTION_SHOW_RAW:
-                // KEY_R , Display current call flow (extended)
-                next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
+                ui_create_panel(PANEL_CALL_RAW);
                 if (info->group->callcnt) {
                     group = info->group;
                 } else {
@@ -521,26 +512,19 @@ call_list_handle_key(PANEL *panel, int key)
                     call_group_add(group, info->cur_call);
                 }
                 call_raw_set_group(group);
-                wait_for_input(next_panel);
                 break;
             case ACTION_SHOW_FILTERS:
-                // KEY_F, Display filter panel
-                next_panel = ui_create(ui_find_by_type(PANEL_FILTER));
-                wait_for_input(next_panel);
+                ui_create_panel(PANEL_FILTER);
                 call_list_clear(panel);
                 break;
             case ACTION_SHOW_COLUMNS:
-                // Display column selection panel
-                next_panel = ui_create(ui_find_by_type(PANEL_COLUMN_SELECT));
-                wait_for_input(next_panel);
+                ui_create_panel(PANEL_COLUMN_SELECT);
                 call_list_clear(panel);
                 break;
             case ACTION_SAVE:
                 if (!is_option_disabled("sngrep.tmpfile")) {
-                    // KEY_S, Display save panel
-                    next_panel = ui_create(ui_find_by_type(PANEL_SAVE));
+                    next_panel = ui_create_panel(PANEL_SAVE);
                     save_set_group(ui_get_panel(next_panel), info->group);
-                    wait_for_input(next_panel);
                 }
                 break;
             case ACTION_DISP_INVITE:
@@ -672,14 +656,12 @@ int
 call_list_help(PANEL *panel)
 {
     WINDOW *help_win;
-    PANEL *help_panel;
     int height, width;
 
     // Create a new panel and show centered
     height = 28;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
-    help_panel = new_panel(help_win);
 
     // Set the window title
     mvwprintw(help_win, 1, 25, "Call List Help");
@@ -728,8 +710,6 @@ call_list_help(PANEL *panel)
 
     // Press any key to close
     wgetch(help_win);
-    update_panels();
-    doupdate();
 
     return 0;
 }
@@ -738,14 +718,12 @@ int
 call_list_exit_confirm(PANEL *panel)
 {
     WINDOW *exit_win;
-    PANEL *exit_panel;
     int c;
     // Initial exit status
     int exit = get_option_int_value("cl.defexitbutton");
 
     // Create a new panel and show centered
     exit_win = newwin(8, 40, (LINES - 8) / 2, (COLS - 40) / 2);
-    exit_panel = new_panel(exit_win);
     keypad(exit_win, TRUE);
 
     // Set the window title
@@ -776,9 +754,6 @@ call_list_exit_confirm(PANEL *panel)
             wattron(exit_win, A_REVERSE);
         mvwprintw(exit_win, 6, 20, "[  No   ]");
         wattroff(exit_win, A_REVERSE);
-
-        update_panels();
-        doupdate();
 
         c = wgetch(exit_win);
         switch (c) {
@@ -832,5 +807,4 @@ call_list_clear(PANEL *panel)
 
     // Clear Displayed lines
     werase(info->list_win);
-    wnoutrefresh(info->list_win);
 }

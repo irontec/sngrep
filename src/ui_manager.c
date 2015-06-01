@@ -163,6 +163,13 @@ ui_create(ui_t *ui)
     return ui;
 }
 
+ui_t *
+ui_create_panel(enum panel_types type)
+{
+    // Find the panel of given type and create it
+    return ui_create(ui_find_by_type(type));
+}
+
 void
 ui_destroy(ui_t *ui)
 {
@@ -175,6 +182,8 @@ ui_destroy(ui_t *ui)
     if (ui->destroy)
         ui->destroy(panel);
 
+    // Deallocate panel pointer
+    del_panel(ui->panel);
     // Initialize panel pointer
     ui->panel = NULL;
 }
@@ -194,9 +203,6 @@ ui_draw_panel(ui_t *ui)
     //! Sanity check, this should not happen
     if (!ui)
         return -1;
-
-    // Make this panel the topmost panel
-    top_panel(ui_get_panel(ui));
 
     // Request the panel to draw on the scren
     if (ui->draw) {
@@ -265,7 +271,7 @@ ui_find_by_panel(PANEL *panel)
 }
 
 ui_t *
-ui_find_by_type(int type)
+ui_find_by_type(enum panel_types type)
 {
     int i;
     // Return ui pointer if found
@@ -277,18 +283,24 @@ ui_find_by_type(int type)
 }
 
 int
-wait_for_input(ui_t *ui)
+wait_for_input()
 {
+    ui_t *ui;
     WINDOW *win;
+    PANEL *panel;
 
-    // Keep getting keys until panel is destroyed
-    while (ui_get_panel(ui)) {
+    // Get topmost panel
+    while ((panel = panel_below(NULL))) {
+
+        // Get panel interface structure
+        ui = ui_find_by_panel(panel);
+
         // Redraw this panel
         if (ui_draw_panel(ui) != 0)
             return -1;
 
         // Enable key input on current panel
-        win = panel_window(ui_get_panel(ui));
+        win = panel_window(panel);
         keypad(win, TRUE);
 
         // Get pressed key

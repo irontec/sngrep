@@ -125,8 +125,6 @@ call_flow_destroy(PANEL *panel)
     }
     // Delete panel window
     delwin(panel_window(panel));
-    // Delete panel
-    del_panel(panel);
 }
 
 int
@@ -577,10 +575,8 @@ call_flow_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode
-                next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
-                // TODO
+                ui_create_panel(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
-                wait_for_input(next_panel);
                 break;
             case ACTION_INCREASE_RAW:
                 raw_width = getmaxx(info->raw_win);
@@ -621,19 +617,16 @@ call_flow_handle_key(PANEL *panel, int key)
                         info->selected = NULL;
                     } else {
                         // Show diff panel
-                        next_panel = ui_create(ui_find_by_type(PANEL_MSG_DIFF));
+                        next_panel = ui_create_panel(PANEL_MSG_DIFF);
                         msg_diff_set_msgs(ui_get_panel(next_panel), info->selected, info->cur_msg);
-                        wait_for_input(next_panel);
                     }
                 }
                 break;
             case ACTION_CONFIRM:
                 // KEY_ENTER, display current message in raw mode
-                next_panel = ui_create(ui_find_by_type(PANEL_CALL_RAW));
-                // TODO
+                ui_create_panel(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
                 call_raw_set_msg(info->cur_msg);
-                wait_for_input(next_panel);
                 break;
             default:
                 // Parse next action
@@ -652,14 +645,12 @@ int
 call_flow_help(PANEL *panel)
 {
     WINDOW *help_win;
-    PANEL *help_panel;
     int height, width;
 
     // Create a new panel and show centered
     height = 26;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
-    help_panel = new_panel(help_win);
 
     // Set the window title
     mvwprintw(help_win, 1, 18, "Call Flow Help");
@@ -707,8 +698,6 @@ call_flow_help(PANEL *panel)
 
     // Press any key to close
     wgetch(help_win);
-    update_panels();
-    doupdate();
 
     return 0;
 }

@@ -283,7 +283,8 @@ main(int argc, char* argv[])
         init_interface();
         // This is a blocking call.
         // Create the first panel and wait for user input
-        wait_for_input(ui_create(ui_find_by_type(PANEL_CALL_LIST)));
+        ui_create_panel(PANEL_CALL_LIST);
+        wait_for_input();
     } else {
         setbuf(stdout, NULL);
         while(capture_get_status() != CAPTURE_OFFLINE) {

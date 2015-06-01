@@ -182,6 +182,18 @@ ui_t *
 ui_create(ui_t *ui);
 
 /**
+ * @brief Create a panel of a given type
+ *
+ * Create a ncurses panel of the given type.
+ * This function is a small wrapper for panel create function
+ *
+ * @param type Panel Type
+ * @return the ui structure with the panel pointer created*
+ */
+ui_t *
+ui_create_panel(enum panel_types type);
+
+/**
  * @brief Destroy a panel structure
  *
  * Removes the panel associatet to the given ui and free
@@ -265,18 +277,17 @@ ui_find_by_panel(PANEL *panel);
  * @brief Find a ui form its panel id
  */
 ui_t *
-ui_find_by_type(int type);
+ui_find_by_type(enum panel_types type);
 
 /**
- * @brief Wait for user input.
+ * @brief Wait for user input in topmost panel
  *
  * This function manages all user input in all panel types and
  * redraws the panel using its own draw function
  *
- * @param ui the topmost panel ui structure
  */
 int
-wait_for_input(ui_t *ui);
+wait_for_input();
 
 /**
  * @brief Default handler for keys
