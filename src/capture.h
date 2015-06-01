@@ -49,7 +49,7 @@
 #endif
 #endif
 
-#if defined(BSD) || defined (__OpenBSD__)
+#if defined(BSD) || defined (__OpenBSD__) || defined(__FreeBSD__)
 #define bpf_timeval timeval
 #include <sys/types.h>
 #include <sys/socket.h>
