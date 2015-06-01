@@ -238,8 +238,8 @@ call_flow_draw_columns(PANEL *panel)
     // Load columns
     for (msg = call_group_get_next_msg(info->group, NULL); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
-        call_flow_column_add(panel, CALLID(msg), SRC(msg), SRCHOST(msg));
-        call_flow_column_add(panel, CALLID(msg), DST(msg), DSTHOST(msg));
+        call_flow_column_add(panel, CALLID(msg), SRC(msg));
+        call_flow_column_add(panel, CALLID(msg), DST(msg));
     }
 
     // Draw vertical columns lines
@@ -255,7 +255,7 @@ call_flow_draw_columns(PANEL *panel)
         if (is_local_address_str(address) && is_option_enabled("cf.localhighlight"))
             wattron(win, A_BOLD);
 
-        coltext = (is_option_enabled("sngrep.displayhost")) ? column->host : column->addr;
+        coltext = sip_address_port_format(column->addr);
         mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s", coltext);
         wattroff(win, A_BOLD);
     }
@@ -734,7 +734,7 @@ call_flow_set_group(sip_call_group_t *group)
 }
 
 void
-call_flow_column_add(PANEL *panel, const char *callid, const char *addr, const char *host)
+call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
@@ -762,7 +762,6 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr, const c
     memset(column, 0, sizeof(call_flow_column_t));
     column->callid = callid;
     column->addr = addr;
-    column->host = host;
     column->colpos = colpos;
     column->next = info->columns;
     info->columns = column;

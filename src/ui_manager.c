@@ -344,6 +344,9 @@ default_handle_key(ui_t *ui, int key)
             case ACTION_SHOW_HOSTNAMES:
                 toggle_option("sngrep.displayhost");
                 break;
+            case ACTION_SHOW_ALIAS:
+                toggle_option("sngrep.displayalias");
+                break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
                 capture_set_paused(!capture_is_paused());

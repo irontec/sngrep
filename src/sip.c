@@ -652,14 +652,6 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg->src, htons(msg->sport));
     msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg->dst, htons(msg->dport));
 
-    // Set Source and Destination lookpued hosts
-    if (is_option_enabled("capture.lookup")) {
-        msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%.15s:%u", lookup_hostname(msg->src), htons(msg->sport));
-        msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%.15s:%u", lookup_hostname(msg->dst), htons(msg->dport));
-    }
-    msg_set_attribute(msg, SIP_ATTR_SRC_HOST, "%s:%u", msg->src, htons(msg->sport));
-    msg_set_attribute(msg, SIP_ATTR_DST_HOST, "%s:%u", msg->dst, htons(msg->dport));
-
     // Set message Date attribute
     time_t t = (time_t) msg->pcap_header->ts.tv_sec;
     struct tm *timestamp = localtime(&t);
@@ -714,13 +706,8 @@ msg_get_header(sip_msg_t *msg, char *out)
 
     // We dont use Message attributes here because it contains truncated data
     // This should not overload too much as all results should be already cached
-    if (is_option_enabled("capture.lookup") && is_option_enabled("sngrep.displayhost")) {
-        sprintf(from_addr, "%s:%u", lookup_hostname(msg->src), htons(msg->sport));
-        sprintf(to_addr, "%s:%u", lookup_hostname(msg->dst), htons(msg->dport));
-    } else {
-        sprintf(from_addr, "%s:%u", msg->src, htons(msg->sport));
-        sprintf(to_addr, "%s:%u", msg->dst, htons(msg->dport));
-    }
+    sprintf(from_addr, "%s:%u", sip_address_format(msg->src), htons(msg->sport));
+    sprintf(to_addr, "%s:%u", sip_address_format(msg->dst), htons(msg->dport));
 
     // Get msg header
     sprintf(out, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
@@ -926,4 +913,31 @@ sip_method_from_str(const char *method)
         if (!strcmp(method, sip_method_str(i)))
             return i;
     return atoi(method);
+}
+
+const char *
+sip_address_format(const char *address) {
+
+    // Return address formatted depending on active settings
+    if (is_option_enabled("sngrep.displayalias")) {
+        return get_alias_value(address);
+    } else if (is_option_enabled("capture.lookup") && is_option_enabled("sngrep.displayhost")) {
+        return lookup_hostname(address);
+    } else {
+        return address;
+    }
+}
+
+const char *
+sip_address_port_format(const char *addrport) {
+    static char aport[50];
+    char address[50];
+    int port;
+
+    strncpy(aport, addrport, 50);
+    if (sscanf(aport, "%[^:]:%d", address, &port) == 2) {
+        sprintf(aport, "%s:%d", sip_address_format(address), port);
+    }
+
+    return aport;
 }

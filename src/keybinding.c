@@ -76,6 +76,7 @@ key_bindings_init()
     key_bind_action(ACTION_CYCLE_COLOR, KEY_F(7));
     key_bind_action(ACTION_CYCLE_COLOR, 'c');
     key_bind_action(ACTION_SHOW_HOSTNAMES, KEY_F(9));
+    key_bind_action(ACTION_SHOW_ALIAS, 'a');
     key_bind_action(ACTION_TOGGLE_PAUSE, 'p');
     key_bind_action(ACTION_PREV_SCREEN, KEY_ESC);
     key_bind_action(ACTION_PREV_SCREEN, 'q');
@@ -197,6 +198,7 @@ key_action_id(const char *action)
     if (!strcmp(action, "togglesyntax")) return ACTION_TOGGLE_SYNTAX;
     if (!strcmp(action, "colormode")) return ACTION_CYCLE_COLOR;
     if (!strcmp(action, "togglehostname")) return ACTION_SHOW_HOSTNAMES;
+    if (!strcmp(action, "togglealias")) return ACTION_SHOW_ALIAS;
     if (!strcmp(action, "pause")) return ACTION_TOGGLE_PAUSE;
     if (!strcmp(action, "prevscreen")) return ACTION_PREV_SCREEN;
     if (!strcmp(action, "help")) return ACTION_SHOW_HELP;

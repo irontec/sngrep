@@ -378,19 +378,8 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
     // Print requested columns
     for (i = 0; i < info->columncnt; i++) {
 
-        // Swappable columns
-        switch (info->columns[i].id) {
-            case SIP_ATTR_SRC:
-            case SIP_ATTR_SRC_HOST:
-                colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_SRC_HOST : SIP_ATTR_SRC;
-                break;
-            case SIP_ATTR_DST:
-            case SIP_ATTR_DST_HOST:
-                colid = (is_option_enabled("sngrep.displayhost")) ? SIP_ATTR_DST_HOST : SIP_ATTR_DST;
-                break;
-            default:
-                colid = info->columns[i].id;
-        }
+        // Get current column id
+        colid = info->columns[i].id;
 
         // Get current column width
         collen = info->columns[i].width;

@@ -43,7 +43,6 @@ typedef struct call_flow_column call_flow_column_t;
 
 struct call_flow_column {
     const char *addr;
-    const char *host;
     const char *callid;
     const char *callid2;
     int colpos;
@@ -195,10 +194,9 @@ call_flow_set_group(sip_call_group_t *group);
  * @param panel Ncurses panel pointer
  * @param callid Call-Id header of SIP payload
  * @param addr Address:port string
- * @param host ResolvedAddr:port string
  */
 void
-call_flow_column_add(PANEL *panel, const char *callid, const char *addr, const char *host);
+call_flow_column_add(PANEL *panel, const char *callid, const char *addr);
 
 /**
  * @brief Get a flow column data

@@ -47,7 +47,8 @@ typedef struct config_option option_opt_t;
 
 enum option_type {
     SETTING = 0,
-    IGNORE = 1,
+    IGNORE,
+    ALIAS
 };
 
 /**
@@ -159,6 +160,15 @@ void
 set_ignore_value(const char *opt, const char *value);
 
 /**
+ * @brief Sets an alias for a given address
+ *
+ * @param address IP Address
+ * @param string representing the alias
+ */
+void
+set_alias_value(const char *address, const char *alias);
+
+/**
  * @brief Check if a configuration option has a specific value
  *
  * @param opt Name of configuration option
@@ -203,6 +213,15 @@ is_option_disabled(const char *opt);
  */
 int
 is_ignored_value(const char *field, const char *fvalue);
+
+/**
+ * @brief Get alias for a given address (string)
+ *
+ * @param address IP Address
+ * @return configured alias or address if not alias found
+ */
+const char *
+get_alias_value(const char *address);
 
 /**
  * @brief Toggle a boolean option

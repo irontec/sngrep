@@ -35,8 +35,6 @@
 #define CALLID(msg) msg_get_attribute(msg, SIP_ATTR_CALLID)
 #define SRC(msg) msg_get_attribute(msg, SIP_ATTR_SRC)
 #define DST(msg) msg_get_attribute(msg, SIP_ATTR_DST)
-#define SRCHOST(msg) msg_get_attribute(msg, SIP_ATTR_SRC_HOST)
-#define DSTHOST(msg) msg_get_attribute(msg, SIP_ATTR_DST_HOST)
 #define TIME(msg) msg_get_attribute(msg, SIP_ATTR_TIME)
 #define DATE(msg) msg_get_attribute(msg, SIP_ATTR_DATE)
 
@@ -62,12 +60,8 @@ enum sip_attr_id {
     SIP_ATTR_SIPTOUSER,
     //! Package IP source address and port
     SIP_ATTR_SRC,
-    //! Package source lookup and port
-    SIP_ATTR_SRC_HOST,
     //! Package IP destination address and port
     SIP_ATTR_DST,
-    //! Package destination lookup and port
-    SIP_ATTR_DST_HOST,
     //! SIP Message Call-ID header
     SIP_ATTR_CALLID,
     //! SIP Message X-Call-ID or X-CID header

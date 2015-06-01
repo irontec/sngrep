@@ -170,6 +170,8 @@ read_options(const char *fname)
                 set_option_value(option, value);
             } else if (!strcasecmp(type, "ignore")) {
                 set_ignore_value(option, value);
+            } else if (!strcasecmp(type, "alias")) {
+                set_alias_value(option, value);
             } else if (!strcasecmp(type, "bind")) {
                 key_bind_action(key_action_id(option), key_from_str(value));
             } else if (!strcasecmp(type, "unbind")) {
@@ -270,6 +272,15 @@ set_ignore_value(const char *opt, const char *value)
     optscnt++;
 }
 
+void
+set_alias_value(const char *address, const char *alias)
+{
+    options[optscnt].type = ALIAS;
+    options[optscnt].opt = strdup(address);
+    options[optscnt].value = strdup(alias);
+    optscnt++;
+}
+
 int
 is_option_value(const char *opt, const char *expected)
 {
@@ -290,6 +301,25 @@ is_ignored_value(const char *field, const char *fvalue)
     }
     return 0;
 }
+
+const char *
+get_alias_value(const char *address)
+{
+    int i;
+
+    if (!address)
+        return NULL;
+
+    for (i = 0; i < optscnt; i++) {
+        if (options[i].type != ALIAS)
+            continue;
+        if (!strcmp(options[i].opt, address))
+            return options[i].value;
+    }
+
+    return address;
+}
+
 
 void
 toggle_option(const char *option)
