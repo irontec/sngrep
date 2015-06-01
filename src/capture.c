@@ -551,6 +551,7 @@ lookup_hostname(const char *address)
 {
     int i;
     int hostlen;
+    in_addr_t netaddress;
     struct hostent *host;
     const char *hostname;
 
@@ -561,8 +562,12 @@ lookup_hostname(const char *address)
         }
     }
 
+    // Convert the address to network byte order
+    if ((netaddress = inet_addr(address)) == -1)
+        return address;
+
     // Lookup this addres
-    host = gethostbyaddr(address, 4, AF_INET);
+    host = gethostbyaddr(&netaddress, sizeof(netaddress), AF_INET);
     if (!host) {
         hostname = address;
     } else {
@@ -595,7 +600,8 @@ is_local_address(in_addr_t address)
 
     for (device = capinfo.devices; device; device = device->next) {
         for (dev_addr = device->addresses; dev_addr; dev_addr = dev_addr->next)
-            if (dev_addr->addr && dev_addr->addr->sa_family == AF_INET && ((struct sockaddr_in*)dev_addr->addr)->sin_addr.s_addr == address)
+            if (dev_addr->addr && dev_addr->addr->sa_family == AF_INET
+                    && ((struct sockaddr_in*)dev_addr->addr)->sin_addr.s_addr == address)
                 return 1;
     }
     return 0;
