@@ -578,13 +578,13 @@ call_flow_handle_key(PANEL *panel, int key)
                 ui_create_panel(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
                 break;
-            case ACTION_INCREASE_RAW:
+            case ACTION_DECREASE_RAW:
                 raw_width = getmaxx(info->raw_win);
                 if (raw_width - 2 > 1) {
                     set_option_int_value("cf.rawfixedwidth", raw_width - 2);
                 }
                 break;
-            case ACTION_DECREASE_RAW:
+            case ACTION_INCREASE_RAW:
                 raw_width = getmaxx(info->raw_win);
                 if (raw_width + 2 < COLS - 1) {
                     set_option_int_value("cf.rawfixedwidth", raw_width + 2);
