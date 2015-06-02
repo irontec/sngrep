@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include "ui_manager.h"
 #include "ui_call_raw.h"
-#include "ui_save_raw.h"
+#include "ui_save.h"
 #include "option.h"
 #include "capture.h"
 
@@ -216,8 +216,8 @@ call_raw_handle_key(PANEL *panel, int key)
             case ACTION_SAVE:
                 if (info->group) {
                     // KEY_S, Display save panel
-                    next_panel = ui_create_panel(PANEL_SAVE_RAW);
-                    save_raw_set_group(ui_get_panel(next_panel), info->group);
+                    next_panel = ui_create_panel(PANEL_SAVE);
+                    save_set_group(ui_get_panel(next_panel), info->group);
                 }
                 break;
             case ACTION_TOGGLE_SYNTAX:

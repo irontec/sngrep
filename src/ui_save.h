@@ -44,23 +44,33 @@
  * order this fields are stored in panel info structure.
  */
 enum save_field_list {
-    FLD_SAVE_FILE = 0,
+    FLD_SAVE_PATH = 0,
+    FLD_SAVE_FILE,
     FLD_SAVE_ALL,
     FLD_SAVE_SELECTED,
     FLD_SAVE_DISPLAYED,
+    FLD_SAVE_PCAP,
+    FLD_SAVE_TXT,
     FLD_SAVE_SAVE,
     FLD_SAVE_CANCEL,
-    //! Never remove this field id @see save_info
     FLD_SAVE_COUNT
 };
 
 /**
- * @brief Available save modes
+ * @brief Dialogs to be saved
  */
 enum save_mode {
     SAVE_ALL = 0,
     SAVE_SELECTED,
-    SAVE_DISPLAYED,
+    SAVE_DISPLAYED
+};
+
+/**
+ * @brief Save file formats
+ */
+enum save_format {
+    SAVE_PCAP = 0,
+    SAVE_TXT
 };
 
 //! Sorter declaration of struct save_info
@@ -77,7 +87,9 @@ struct save_info {
     //! An array of fields
     FIELD *fields[FLD_SAVE_COUNT + 1];
     //! Save mode @see save_modes
-    int savemode;
+    enum save_mode savemode;
+    //! Save format @see save_formats
+    enum save_format saveformat;
     //! Call group to be saved
     sip_call_group_t *group;
 };
@@ -163,5 +175,23 @@ save_error_message(PANEL *panel, const char *message);
  */
 extern int
 save_to_file(PANEL *panel);
+
+/**
+ * @brief Save one SIP message into dump file
+ *
+ * @param pd Dump file opened with dump_open
+ * @param msg a SIP Message
+ */
+void
+save_msg_pcap(pcap_dumper_t *pd, sip_msg_t *msg);
+
+/**
+ * @brief Save one SIP message into open file
+ *
+ * @param f File opened with fopen
+ * @param msg a SIP Message
+ */
+void
+save_msg_txt(FILE *f, sip_msg_t *msg);
 
 #endif

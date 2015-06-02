@@ -95,7 +95,7 @@ init_options()
     set_option_value("sip.ignoreincomplete", "on");
 
     // Set default save file location
-    set_option_value("sngrep.savepath", home);
+    set_option_value("savepath", home);
 
     // Set default capture options
     set_option_value("capture.limit", "50000");

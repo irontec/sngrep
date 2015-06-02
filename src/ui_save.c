@@ -33,8 +33,7 @@
 #include <errno.h>
 #include <form.h>
 #include <ctype.h>
-#include "ui_call_list.h"
-#include "ui_save_pcap.h"
+#include "ui_save.h"
 #include "option.h"
 #include "capture.h"
 #include "filter.h"
@@ -58,11 +57,14 @@ save_create()
     WINDOW *win;
     int height, width;
     save_info_t *info;
-    char savefile[128];
+    char savepath[128];
+
+    // Pause the capture while saving
+    capture_set_paused(1);
 
     // Calculate window dimensions
-    height = 11;
-    width = 90;
+    height = 14;
+    width = 68;
 
     // Cerate a new indow for the panel and form
     win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
@@ -78,12 +80,15 @@ save_create()
     set_panel_userptr(panel, (void*) info);
 
     // Initialize the fields
-    info->fields[FLD_SAVE_FILE] = new_field(1, 68, 3, 15, 0, 0);
-    info->fields[FLD_SAVE_ALL] = new_field(1, 1, 5, 4, 0, 0);
-    info->fields[FLD_SAVE_SELECTED] = new_field(1, 1, 6, 4, 0, 0);
-    info->fields[FLD_SAVE_DISPLAYED] = new_field(1, 1, 7, 4, 0, 0);
-    info->fields[FLD_SAVE_SAVE] = new_field(1, 10, height - 2, 30, 0, 0);
-    info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, height - 2, 50, 0, 0);
+    info->fields[FLD_SAVE_PATH] = new_field(1, 52, 3, 13, 0, 0);
+    info->fields[FLD_SAVE_FILE] = new_field(1, 47, 4, 13, 0, 0);
+    info->fields[FLD_SAVE_ALL] = new_field(1, 1, 7, 4, 0, 0);
+    info->fields[FLD_SAVE_SELECTED] = new_field(1, 1, 8, 4, 0, 0);
+    info->fields[FLD_SAVE_DISPLAYED] = new_field(1, 1, 9, 4, 0, 0);
+    info->fields[FLD_SAVE_PCAP] = new_field(1, 1, 7, 36, 0, 0);
+    info->fields[FLD_SAVE_TXT] = new_field(1, 1, 8, 36, 0, 0);
+    info->fields[FLD_SAVE_SAVE] = new_field(1, 10, height - 2, 20, 0, 0);
+    info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, height - 2, 40, 0, 0);
     info->fields[FLD_SAVE_COUNT] = NULL;
 
     // Set fields options
@@ -93,6 +98,7 @@ save_create()
     field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_AUTOSKIP);
 
     // Change background of input fields
+    set_field_back(info->fields[FLD_SAVE_PATH], A_UNDERLINE);
     set_field_back(info->fields[FLD_SAVE_FILE], A_UNDERLINE);
 
     // Create the form and post it
@@ -100,33 +106,63 @@ save_create()
     set_form_sub(info->form, win);
     post_form(info->form);
 
-    // Fields labels
-    mvwprintw(win, 3, 3, "Save file:");
-
     // Set Default field values
-    sprintf(savefile, "%s/sngrep-capture-%u.pcap", get_option_value("sngrep.savepath"),
-            (unsigned) time(NULL));
+    sprintf(savepath, "%s", get_option_value("savepath"));
 
-    set_field_buffer(info->fields[FLD_SAVE_FILE], 0, savefile);
+    set_field_buffer(info->fields[FLD_SAVE_PATH], 0, savepath);
     set_field_buffer(info->fields[FLD_SAVE_SAVE], 0, "[  Save  ]");
     set_field_buffer(info->fields[FLD_SAVE_CANCEL], 0, "[ Cancel ]");
 
-    // Set the window title and boxes
-    mvwprintw(win, 1, 32, "Save capture to file");
+    // Set window boxes
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    // Window border
     title_foot_box(panel_window(panel));
+
+    // Header and footer lines
     mvwhline(win, height - 3, 1, ACS_HLINE, width - 1);
     mvwaddch(win, height - 3, 0, ACS_LTEE);
     mvwaddch(win, height - 3, width - 1, ACS_RTEE);
+
+    // Save mode box
+    mvwaddch(win, 6, 2, ACS_ULCORNER);
+    mvwhline(win, 6, 3, ACS_HLINE, 30);
+    mvwaddch(win, 6, 32, ACS_URCORNER);
+    mvwvline(win, 7, 2, ACS_VLINE, 3);
+    mvwvline(win, 7, 32, ACS_VLINE, 3);
+    mvwaddch(win, 10, 2, ACS_LLCORNER);
+    mvwhline(win, 10, 3, ACS_HLINE, 30);
+    mvwaddch(win, 10, 32, ACS_LRCORNER);
+
+    // Save mode box
+    mvwaddch(win, 6, 34, ACS_ULCORNER);
+    mvwhline(win, 6, 35, ACS_HLINE, 30);
+    mvwaddch(win, 6, 64, ACS_URCORNER);
+    mvwvline(win, 7, 34, ACS_VLINE, 3);
+    mvwvline(win, 7, 64, ACS_VLINE, 3);
+    mvwaddch(win, 10, 34, ACS_LLCORNER);
+    mvwhline(win, 10, 35, ACS_HLINE, 30);
+    mvwaddch(win, 10, 64, ACS_LRCORNER);
+
     wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+
+    // Set screen labels
+    mvwprintw(win, 1, 27, "Save capture");
+    mvwprintw(win, 3, 3, "Path:");
+    mvwprintw(win, 4, 3, "Filename:");
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwprintw(win, 6, 4, " Dialogs ");
+    mvwprintw(win, 6, 36, " Format ");
+    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_SAVE_FILE]);
     form_driver(info->form, REQ_END_LINE);
     curs_set(1);
 
-    // Pause the capture while saving
-    capture_set_paused(1);
+    // Set default save modes
+    info->savemode = SAVE_ALL;
+    info->saveformat = SAVE_PCAP;
 
     return panel;
 }
@@ -153,17 +189,28 @@ save_draw(PANEL *panel)
     // Get filter stats
     filter_stats(&total, &displayed);
 
-    mvwprintw(win, 5, 3, "( ) Save all dialogs");
-    mvwprintw(win, 6, 3, "( ) Save selected dialogs (%d dialogs)",
-              call_group_count(info->group));
-    mvwprintw(win, 7, 3, "( ) Save displayed dialogs (%d dialogs)", displayed);
+    mvwprintw(win, 7, 3, "( ) all dialogs ");
+    mvwprintw(win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
+    mvwprintw(win, 9, 3, "( ) filtered dialogs [%d]", displayed);
+
+    mvwprintw(win, 7, 35, "( ) .pcap");
+    mvwprintw(win, 8, 35, "( ) .txt");
+
+    if (info->saveformat == SAVE_PCAP)
+        mvwprintw(win, 4, 60, ".pcap");
+    else
+        mvwprintw(win, 4, 60, ".txt ");
 
     set_field_buffer(info->fields[FLD_SAVE_ALL], 0,
-                     (info->savemode == SAVE_ALL) ? "*" : "");
+                     (info->savemode == SAVE_ALL) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_SELECTED], 0,
-                     (info->savemode == SAVE_SELECTED) ? "*" : "");
+                     (info->savemode == SAVE_SELECTED) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_DISPLAYED], 0,
-                     (info->savemode == SAVE_DISPLAYED) ? "*" : "");
+                     (info->savemode == SAVE_DISPLAYED) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_PCAP], 0,
+                     (info->saveformat == SAVE_PCAP) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_TXT], 0,
+                     (info->saveformat == SAVE_TXT) ? "*" : " ");
 
     set_current_field(info->form, current_field(info->form));
     form_driver(info->form, REQ_VALIDATION);
@@ -195,8 +242,10 @@ save_handle_key(PANEL *panel, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_PRINTABLE:
-                if (field_idx == FLD_SAVE_FILE)
+                if (field_idx == FLD_SAVE_PATH || field_idx == FLD_SAVE_FILE)
                     form_driver(info->form, key);
+                else
+                    continue;
                 break;
             case ACTION_NEXT_FIELD:
                 form_driver(info->form, REQ_NEXT_FIELD);
@@ -239,6 +288,12 @@ save_handle_key(PANEL *panel, int key)
                     case FLD_SAVE_DISPLAYED:
                         info->savemode = SAVE_DISPLAYED;
                         break;
+                    case FLD_SAVE_PCAP:
+                        info->saveformat = SAVE_PCAP;
+                        break;
+                    case FLD_SAVE_TXT:
+                        info->saveformat = SAVE_TXT;
+                        break;
                     case FLD_SAVE_FILE:
                         form_driver(info->form, key);
                         break;
@@ -248,10 +303,6 @@ save_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_SAVE_CANCEL) {
-                    if (!strcasecmp(field_value, "")) {
-                        save_error_message(panel, "Invalid filename");
-                        return 0;
-                    }
                     return save_to_file(panel);
                 }
                 return KEY_ESC;
@@ -291,75 +342,120 @@ save_set_group(PANEL *panel, sip_call_group_t *group)
     info->group = group;
 }
 
-void
-save_error_message(PANEL *panel, const char *message)
-{
-    WINDOW *win = panel_window(panel);
-    mvwprintw(win, 4, 3, "Error: %s", message);
-    wmove(win, 3, 15);
-}
-
 int
 save_to_file(PANEL *panel)
 {
-    char field_value[256];
+    char savepath[256];
+    char savefile[256];
+    char fullfile[512];
     sip_call_t *call = NULL;
     sip_msg_t *msg = NULL;
+    pcap_dumper_t *pd = NULL;
+    FILE *f = NULL;
     int i;
 
     // Get panel information
     save_info_t *info = (save_info_t*) panel_userptr(panel);
 
-    // Get current field value.
-    memset(field_value, 0, sizeof(field_value));
-    strcpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    // Get current path field value.
+    memset(savepath, 0, sizeof(savepath));
+    strcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0));
     // Trim trailing spaces
-    for (i = strlen(field_value) - 1; isspace(field_value[i]); i--)
-        field_value[i] = '\0';
+    for (i = strlen(savepath) - 1; isspace(savepath[i]); i--)
+        savepath[i] = '\0';
+    if (strlen(savepath))
+        strcat(savepath, "/");
 
-    // Don't allow to save no packets!
-    if (info->savemode == SAVE_SELECTED && call_group_msg_count(info->group) == 0) {
-        save_error_message(panel, "Unable to save no packets to selected file.");
+    // Get current file field value.
+    memset(savefile, 0, sizeof(savefile));
+    strcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    // Trim trailing spaces
+    for (i = strlen(savefile) - 1; isspace(savefile[i]); i--)
+        savefile[i] = '\0';
+
+    if (!strlen(savefile)) {
+        dialog_run("Please enter a valid filename");
         return 1;
     }
 
-    // Open dump file
-    pcap_dumper_t *pd = dump_open(field_value);
-    if (access(field_value, W_OK) != 0) {
-        save_error_message(panel, capture_last_error());
+    if (info->saveformat == SAVE_PCAP)
+        strcat(savefile, ".pcap");
+    else
+        strcat(savefile, ".txt");
+
+    // Absolute filename
+    sprintf(fullfile, "%s%s", savepath, savefile);
+
+    if (access(fullfile, R_OK) == 0) {
+        dialog_run("Error: file %s already exists.", fullfile);
         return 1;
+    }
+
+    // Don't allow to save no packets!
+    if (info->savemode == SAVE_SELECTED && call_group_msg_count(info->group) == 0) {
+        dialog_run("Unable to save: No selected dialogs.");
+        return 1;
+    }
+
+    if (info->saveformat == SAVE_PCAP) {
+        // Open dump file
+        pd = dump_open(fullfile);
+        if (access(fullfile, W_OK) != 0) {
+            dialog_run(capture_last_error());
+            return 1;
+        }
+    } else {
+        // Open a text file
+        if (!(f = fopen(fullfile, "w"))) {
+            dialog_run("Error: %s", strerror(errno));
+            return 0;
+        }
     }
 
     switch(info->savemode) {
         case SAVE_ALL:
             // Save all packets to the file
-            while ((call = call_get_next(call))) {
-                while ((msg = call_get_next_msg(call, msg))) {
-                    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
-                }
-            }
+            while ((call = call_get_next(call)))
+                while ((msg = call_get_next_msg(call, msg)))
+                    (info->saveformat == SAVE_PCAP) ? save_msg_pcap(pd, msg) : save_msg_txt(f, msg);
             break;
         case SAVE_SELECTED:
             // Save selected packets to file
-            while ((call = call_group_get_next(info->group, call))) {
-                while ((msg = call_get_next_msg(call, msg))) {
-                    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
-                }
-            }
+            while ((call = call_group_get_next(info->group, call)))
+                while ((msg = call_get_next_msg(call, msg)))
+                    (info->saveformat == SAVE_PCAP) ? save_msg_pcap(pd, msg) : save_msg_txt(f, msg);
             break;
         case SAVE_DISPLAYED:
             // Save selected packets to file
-            while ((call = call_get_next_filtered(call))) {
-                while ((msg = call_get_next_msg(call, msg))) {
-                    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
-                }
-            }
+            while ((call = call_get_next_filtered(call)))
+                while ((msg = call_get_next_msg(call, msg)))
+                    (info->saveformat == SAVE_PCAP) ? save_msg_pcap(pd, msg) : save_msg_txt(f, msg);
             break;
     }
 
-    // Close dump file
-    dump_close(pd);
+    // Close saved file
+    if (info->saveformat == SAVE_PCAP) {
+        dump_close(pd);
+    } else {
+        fclose(f);
+    }
+
+    // Show success popup
+    dialog_run("Successfully saved dialogs to %s", savefile);
 
     return 27;
 }
 
+void
+save_msg_pcap(pcap_dumper_t *pd, sip_msg_t *msg)
+{
+    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+}
+
+void
+save_msg_txt(FILE *f, sip_msg_t *msg)
+{
+    fprintf(f, "%s %s %s -> %s\n%s\n\n", msg_get_attribute(msg, SIP_ATTR_DATE),
+            msg_get_attribute(msg, SIP_ATTR_TIME), msg_get_attribute(msg, SIP_ATTR_SRC),
+            msg_get_attribute(msg, SIP_ATTR_DST), msg->payload);
+}

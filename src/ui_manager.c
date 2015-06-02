@@ -27,6 +27,7 @@
  *
  */
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
@@ -38,10 +39,9 @@
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_filter.h"
-#include "ui_save_pcap.h"
-#include "ui_save_raw.h"
 #include "ui_msg_diff.h"
 #include "ui_column_select.h"
+#include "ui_save.h"
 
 /**
  * @brief Available panel windows list
@@ -50,16 +50,15 @@
  * and pointer to their main functions.
 
  */
-static ui_t *panel_pool[] = {
-    &ui_call_list,
-    &ui_call_flow,
-    &ui_call_raw,
-    &ui_filter,
-    &ui_save,
-    &ui_save_raw,
-    &ui_msg_diff,
-    &ui_column_select,
-};
+static ui_t *panel_pool[] =
+    {
+      &ui_call_list,
+      &ui_call_flow,
+      &ui_call_raw,
+      &ui_filter,
+      &ui_save,
+      &ui_msg_diff,
+      &ui_column_select, };
 
 int
 init_interface()
@@ -97,7 +96,7 @@ init_interface()
     // Redefine some keys
     term = getenv("TERM");
     if (term
-        && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
+            && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
         define_key("\033[H", KEY_HOME);
         define_key("\033[F", KEY_END);
         define_key("\033OP", KEY_F(1));
@@ -413,7 +412,7 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count)
 
     // Write a line all the footer width
     wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    clear_line(win, height-1);
+    clear_line(win, height - 1);
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
@@ -614,4 +613,64 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
     wnoutrefresh(win);
 
     return line - starting;
+}
+
+int
+dialog_run(const char *fmt, ...)
+{
+    char textva[2048];
+    va_list ap;
+    int height, width;
+    WINDOW *win;
+    char *word;
+    int col = 2;
+    int line = 2;
+
+    // Get the message from the format string
+    va_start(ap, fmt);
+    vsprintf(textva, fmt, ap);
+    va_end(ap);
+
+    // Determine dialog dimensions
+    height = 6 + (strlen(textva) / 50);
+    width = strlen(textva);
+
+    // Check we don't have a too big or small window
+    if (width > DIALOG_MAX_WIDTH)
+        width = DIALOG_MAX_WIDTH;
+    if (width < DIALOG_MIN_WIDTH)
+        width = DIALOG_MIN_WIDTH;
+
+    // Create the window
+    win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
+    box(win, 0, 0);
+
+    // Write the message into the screen
+    for (word = strtok(textva, " "); word; word = strtok(NULL, " ")) {
+        if (col + strlen(word) > width - 2) {
+            line++;
+            col = 2;
+        }
+        mvwprintw(win, line, col, "%s", word);
+        col += strlen(word) + 1;
+    }
+
+    // Write Accept button
+    wattron(win, A_REVERSE);
+    mvwprintw(win, height - 2, width/2 - 5, "[ Accept ]");
+
+    curs_set(0);
+    // Disable input timeout
+    nocbreak();
+    cbreak();
+
+    // Wait for input
+    wgetch(win);
+
+    // Enable input timeout
+    halfdelay(REFRESHTHSECS);
+
+    delwin(win);
+    return 1;
+
 }

@@ -49,6 +49,9 @@
 
 //! Refresh UI every 200 ms
 #define REFRESHTHSECS   2
+//! Default dialog dimensions
+#define DIALOG_MAX_WIDTH 120
+#define DIALOG_MIN_WIDTH 40
 
 //! Shorter declaration of ui structure
 typedef struct ui ui_t;
@@ -127,8 +130,6 @@ enum panel_types {
     PANEL_FILTER,
     //! Save to pcap panel
     PANEL_SAVE,
-    //! Save to txt panel
-    PANEL_SAVE_RAW,
     //! Message comprare
     PANEL_MSG_DIFF,
     //! Column selector panel
@@ -145,7 +146,6 @@ extern ui_t ui_call_flow;
 extern ui_t ui_call_raw;
 extern ui_t ui_filter;
 extern ui_t ui_save;
-extern ui_t ui_save_raw;
 extern ui_t ui_msg_diff;
 extern ui_t ui_column_select;
 
@@ -379,5 +379,19 @@ draw_message(WINDOW *win, sip_msg_t *msg);
  */
 int
 draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting);
+
+/**
+ * @brief Draw a centered dialog with a message
+ *
+ * Create a centered dialog with a message.
+ * TODO improvements
+ *  - Icon
+ *  - Buttons
+ *  - Dimensions
+ *
+ * @param msg Message to be drawn
+ */
+int
+dialog_run(const char *fmt, ...);
 
 #endif    // __SNGREP_UI_MANAGER_H

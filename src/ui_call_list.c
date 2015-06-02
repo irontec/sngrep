@@ -38,7 +38,7 @@
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
-#include "ui_save_pcap.h"
+#include "ui_save.h"
 
 /**
  * Ui Structure definition for Call List panel
@@ -710,6 +710,7 @@ call_list_help(PANEL *panel)
 
     // Press any key to close
     wgetch(help_win);
+    delwin(help_win);
 
     return 0;
 }

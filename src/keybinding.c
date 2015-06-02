@@ -70,6 +70,7 @@ key_bindings_init()
     key_bind_action(ACTION_NEXT_FIELD, KEY_DOWN);
     key_bind_action(ACTION_RESIZE_SCREEN, KEY_RESIZE);
     key_bind_action(ACTION_CLEAR, KEY_CTRL('U'));
+    key_bind_action(ACTION_CLEAR, KEY_CTRL('W'));
     key_bind_action(ACTION_CLEAR_CALLS, KEY_F(5));
     key_bind_action(ACTION_TOGGLE_SYNTAX, KEY_F(8));
     key_bind_action(ACTION_TOGGLE_SYNTAX, 'C');
@@ -108,7 +109,7 @@ key_bindings_init()
     key_bind_action(ACTION_SAVE, KEY_F(2));
     key_bind_action(ACTION_SAVE, 's');
     key_bind_action(ACTION_SAVE, 'S');
-    key_bind_action(ACTION_SELECT, ' ');
+    key_bind_action(ACTION_SELECT, KEY_SPACE);
     key_bind_action(ACTION_CONFIRM, KEY_INTRO);
     key_bind_action(ACTION_TOGGLE_RTP, 'f');
     key_bind_action(ACTION_TOGGLE_RAW, KEY_F(3));
@@ -228,16 +229,12 @@ key_action_id(const char *action)
 int
 key_is_printable(int key)
 {
-    return (key > 33 && key < 126) || (key > 160 && key < 255);
+    return key == ' ' || (key > 33 && key < 126) || (key > 160 && key < 255);
 }
 
 const char *
 key_to_str(int key)
 {
-    //! Check if we already have a human readable key
-    if (key_is_printable(key))
-        return keyname(key);
-
     //! Check function keys and Special keys
     switch(key) {
         case KEY_F(1): return "F1";
@@ -253,6 +250,9 @@ key_to_str(int key)
         case KEY_ESC: return "Esc";
         case KEY_INTRO: return "Enter";
         case ' ': return "Space";
+        default:
+            if (key_is_printable(key))
+                return keyname(key);
     }
 
     return "";
