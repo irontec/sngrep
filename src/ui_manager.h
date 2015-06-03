@@ -50,8 +50,8 @@
 //! Refresh UI every 200 ms
 #define REFRESHTHSECS   2
 //! Default dialog dimensions
-#define DIALOG_MAX_WIDTH 120
-#define DIALOG_MIN_WIDTH 40
+#define DIALOG_MAX_WIDTH 100
+#define DIALOG_MIN_WIDTH 60
 
 //! Shorter declaration of ui structure
 typedef struct ui ui_t;
