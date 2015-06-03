@@ -765,9 +765,11 @@ call_list_exit_confirm(PANEL *panel)
                 exit = 1;
                 break;
             case 9:
+                delwin(exit_win);
                 exit = (exit) ? 0 : 1;
                 break;
             case 10:
+                delwin(exit_win);
                 // If we return ESC, we let ui_manager to handle this
                 // key and exit sngrep gracefully
                 return (exit) ? 27 : 0;
