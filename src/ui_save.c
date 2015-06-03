@@ -242,11 +242,11 @@ save_handle_key(PANEL *panel, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_PRINTABLE:
-                if (field_idx == FLD_SAVE_PATH || field_idx == FLD_SAVE_FILE)
+                if (field_idx == FLD_SAVE_PATH || field_idx == FLD_SAVE_FILE) {
                     form_driver(info->form, key);
-                else
-                    continue;
-                break;
+                    break;
+                }
+                continue;
             case ACTION_NEXT_FIELD:
                 form_driver(info->form, REQ_NEXT_FIELD);
                 form_driver(info->form, REQ_END_LINE);

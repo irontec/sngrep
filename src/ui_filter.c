@@ -208,8 +208,10 @@ filter_handle_key(PANEL *panel, int key)
                      case FLD_FILTER_DST:
                          form_driver(info->form, key);
                          break;
+                     default:
+                         continue;
                  }
-                 break;
+                 /* no break */
             case ACTION_NEXT_FIELD:
                 form_driver(info->form, REQ_NEXT_FIELD);
                 form_driver(info->form, REQ_END_LINE);
