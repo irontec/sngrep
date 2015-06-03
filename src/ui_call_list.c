@@ -263,6 +263,9 @@ call_list_draw_list(PANEL *panel)
         info->cur_line = info->first_line = 1;
     }
 
+    // Clear call list before redrawing
+    werase(win);
+
     // Fill the call list
     for (call = info->first_call; call; call = call_get_next_filtered(call)) {
         // Stop if we have reached the bottom of the list
@@ -764,15 +767,16 @@ call_list_exit_confirm(PANEL *panel)
             case KEY_LEFT:
                 exit = 1;
                 break;
-            case 9:
-                delwin(exit_win);
+            case KEY_TAB:
                 exit = (exit) ? 0 : 1;
                 break;
-            case 10:
+            case KEY_SPACE:
+            case KEY_ENTER:
+            case KEY_INTRO:
                 delwin(exit_win);
                 // If we return ESC, we let ui_manager to handle this
                 // key and exit sngrep gracefully
-                return (exit) ? 27 : 0;
+                return (exit) ? KEY_ESC : 0;
         }
     }
 
