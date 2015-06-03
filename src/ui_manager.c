@@ -90,8 +90,6 @@ init_interface()
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
-    // Set character input timeout 200 ms
-    halfdelay(REFRESHTHSECS);
 
     // Redefine some keys
     term = getenv("TERM");
@@ -203,6 +201,9 @@ ui_draw_panel(ui_t *ui)
     if (!ui)
         return -1;
 
+    // Set character input timeout 200 ms
+    halfdelay(REFRESHTHSECS);
+
     // Request the panel to draw on the scren
     if (ui->draw) {
         ret = ui->draw(ui_get_panel(ui));
@@ -238,12 +239,11 @@ ui_help(ui_t *ui)
     // Disable input timeout
     nocbreak();
     cbreak();
+
     // If current ui has help function
     if (ui->help) {
         ui->help(ui_get_panel(ui));
     }
-    // Enable input timeout
-    halfdelay(REFRESHTHSECS);
 }
 
 int
@@ -666,9 +666,6 @@ dialog_run(const char *fmt, ...)
 
     // Wait for input
     wgetch(win);
-
-    // Enable input timeout
-    halfdelay(REFRESHTHSECS);
 
     delwin(win);
     return 1;
