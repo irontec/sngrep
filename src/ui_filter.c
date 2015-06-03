@@ -200,18 +200,13 @@ filter_handle_key(PANEL *panel, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_PRINTABLE:
-                // If this is a normal character on input field, print it
-                 switch (field_idx) {
-                     case FLD_FILTER_SIPFROM:
-                     case FLD_FILTER_SIPTO:
-                     case FLD_FILTER_SRC:
-                     case FLD_FILTER_DST:
-                         form_driver(info->form, key);
-                         break;
-                     default:
-                         continue;
-                 }
-                 /* no break */
+                 // If this is a normal character on input field, print it
+                if (field_idx == FLD_FILTER_SIPFROM || field_idx == FLD_FILTER_SIPTO
+                        || field_idx == FLD_FILTER_SRC || field_idx == FLD_FILTER_DST) {
+                    form_driver(info->form, key);
+                    break;
+                }
+                continue;
             case ACTION_NEXT_FIELD:
                 form_driver(info->form, REQ_NEXT_FIELD);
                 form_driver(info->form, REQ_END_LINE);
@@ -260,9 +255,11 @@ filter_handle_key(PANEL *panel, int key)
                             form_driver(info->form, '*');
                         }
                         break;
-                    default:
-                        form_driver(info->form, ' ');
-                        break;
+                    case FLD_FILTER_CANCEL:
+                        return KEY_ESC;
+                    case FLD_FILTER_FILTER:
+                        filter_save_options(panel);
+                        return KEY_ESC;
                 }
                 break;
             case ACTION_CONFIRM:
