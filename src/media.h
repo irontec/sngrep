@@ -41,8 +41,8 @@ struct sdp_media
     char *addr1;
     char *addr2;
     //! SDP ports
-    int port1;
-    int port2;
+    u_short port1;
+    u_short port2;
     //! Packets from addr1 to addt2
     int txcnt;
     //! Packets from addr2 to addr1
@@ -53,15 +53,18 @@ struct sdp_media
 };
 
 sdp_media_t *
-media_create(const char *address, int port);
+media_create(const char *address, u_short port);
 
 sdp_media_t *
-media_add(sdp_media_t *media, const char *addr2, int port2);
+media_add(sdp_media_t *media, const char *address, u_short port);
 
 sdp_media_t *
-media_find(sdp_media_t *media, const char *addr, int port);
+media_find(sdp_media_t *media, const char *address, u_short port);
 
 sdp_media_t *
-media_find_pair(sdp_media_t *media, const char *addr1, int port1, const char *addr2, int port2);
+media_find_unpair(sdp_media_t *media, const char *address, u_short port);
+
+sdp_media_t *
+media_find_pair(sdp_media_t *media, const char *addr1, u_short port1, const char *addr2, u_short port2);
 
 #endif /* __SNGREP_MEDIA_H_ */

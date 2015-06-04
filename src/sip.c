@@ -724,8 +724,6 @@ msg_parse_media(sip_msg_t *msg)
     if (!strcmp(address, "0.0.0.0"))
         return;
 
-    fprintf(stderr, "%s:%d\n", address, port);
-
     // Request methods create new media
     if (msg_is_request(msg)) {
         // Check if we have already added this media
@@ -740,8 +738,7 @@ msg_parse_media(sip_msg_t *msg)
             // Check if this media already exists
             if (!(media = media_find_pair(msg->call->medias, reqaddr, reqport, address, port))) {
                 // Check if a media is pending to be completed
-                if ((media = media_find_pair(msg->call->medias, reqaddr, reqport, 0, 0))) {
-                    fprintf(stderr, "  -> %s:%d\n", reqaddr, reqport);
+                if ((media = media_find_unpair(msg->call->medias, reqaddr, reqport))) {
                     media_add(media, address, port);
                 }
             }

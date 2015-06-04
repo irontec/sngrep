@@ -38,7 +38,7 @@ media_init()
 }
 
 sdp_media_t *
-media_create(const char *address, int port)
+media_create(const char *address, u_short port)
 {
     sdp_media_t *media = malloc(sizeof(sdp_media_t));
 
@@ -54,19 +54,19 @@ media_create(const char *address, int port)
 }
 
 sdp_media_t *
-media_add(sdp_media_t *media, const char *addr2, int port2)
+media_add(sdp_media_t *media, const char *address, u_short port)
 {
-    if (!media || !addr2)
+    if (!media || !address)
         return NULL;
 
-    media->addr2 = strdup(addr2);
-    media->port2 = port2;
+    media->addr2 = strdup(address);
+    media->port2 = port;
     return media;
 
 }
 
 sdp_media_t *
-media_find(sdp_media_t *media, const char *addr, int port)
+media_find(sdp_media_t *media, const char *address, u_short port)
 {
     sdp_media_t *m;
 
@@ -74,9 +74,9 @@ media_find(sdp_media_t *media, const char *addr, int port)
         return NULL;
 
     for (m = media; m; m = m->next) {
-        if (!strcmp(m->addr1, addr) && m->port1 == port)
+        if (!strcmp(m->addr1, address) && m->port1 == port)
             return m;
-        if (m->addr2 && !strcmp(m->addr2, addr) && m->port2 == port)
+        if (m->addr2 && !strcmp(m->addr2, address) && m->port2 == port)
             return m;
     }
 
@@ -84,7 +84,7 @@ media_find(sdp_media_t *media, const char *addr, int port)
 }
 
 sdp_media_t *
-media_find_pair(sdp_media_t *media, const char *addr1, int port1, const char *addr2, int port2)
+media_find_unpair(sdp_media_t *media, const char *address, u_short port)
 {
     sdp_media_t *m;
 
@@ -92,11 +92,34 @@ media_find_pair(sdp_media_t *media, const char *addr1, int port1, const char *ad
         return NULL;
 
     for (m = media; m; m = m->next) {
-        if (!strcmp(m->addr1, addr1)  && m->port1 == port1)
-            if (m->addr2 && addr2 && !strcmp(m->addr2, addr2) && m->port2 == port2)
+        if (!m->addr2 && !strcmp(m->addr1, address)  && m->port1 == port) {
+            return m;
+        }
+    }
+
+    return NULL;
+}
+
+sdp_media_t *
+media_find_pair(sdp_media_t *media, const char *addr1, u_short port1, const char *addr2, u_short port2)
+{
+    sdp_media_t *m;
+
+    if (!media)
+        return NULL;
+
+    for (m = media; m; m = m->next) {
+        if (m->port1 == port1 && m->port2 == port2) {
+            if (!strcmp(m->addr1, addr1) && !strcmp(m->addr2, addr2)) {
                 return m;
-            if (!m->addr2 && !addr2 && m->port2 == port2)
+            }
+        }
+
+        if (m->port2 == port1 && m->port1 == port2) {
+            if (!strcmp(m->addr2, addr1) && !strcmp(m->addr1, addr2)) {
                 return m;
+            }
+        }
     }
 
     return NULL;

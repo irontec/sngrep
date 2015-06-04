@@ -172,9 +172,6 @@ call_media_draw_media(PANEL *panel, sdp_media_t *media, int cline)
     // Get panel window
     win = panel_window(panel);
 
-
-    fprintf(stderr, "M %s:%u -- %s:%u\n", media->addr1, media->port1, media->addr2, media->port2);
-
     // Get origin and destination column
     call_media_column_t *column1 = call_media_column_get(panel, media->addr1);
     call_media_column_t *column2 = call_media_column_get(panel, media->addr2);

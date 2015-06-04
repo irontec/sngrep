@@ -245,8 +245,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         udp_size = (ip_frag_off) ? 0 : sizeof(struct udphdr);
 
         // Set packet ports
-        sport = udp->uh_sport;
-        dport = udp->uh_dport;
+        sport = htons(udp->uh_sport);
+        dport = htons(udp->uh_dport);
 
         size_payload = htons(udp->uh_ulen) - udp_size;
         if ((int32_t) size_payload > 0) {
@@ -267,8 +267,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         tcp_size = (ip_frag_off) ? 0 : (tcp->th_off * 4);
 
         // Set packet ports
-        sport = tcp->th_sport;
-        dport = tcp->th_dport;
+        sport = htons(tcp->th_sport);
+        dport = htons(tcp->th_dport);
 
         // We're only interested in packets with payload
         size_payload = ip_len - (size_ip + tcp_size);
@@ -316,7 +316,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Parse this header and payload
-    if ((msg = sip_load_message(header, ip_src, htons(sport), ip_dst, htons(dport), msg_payload))) {
+    if ((msg = sip_load_message(header, ip_src, sport, ip_dst, dport, msg_payload))) {
         // Store Transport attribute
         if (transport == 0) {
             msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
@@ -335,37 +335,17 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
     } else {
-#if 0
         // Check if this is a RTP packet from active calls
         sip_call_t *call;
         for (call = call_get_next(NULL); call; call = call_get_next(call)) {
-            sdp_media_t *media = media_find(call->medias, ip_src, htons(sport), ip_dst, htons(dport));
+            sdp_media_t *media = media_find_pair(call->medias, ip_src, sport, ip_dst, dport);
             if (media) {
-                if (!media->addr2) {
-                    media->addr2 = strdup(ip_dst);
-                    media->port2 = htons(dport);
-                }
-
-                if (!strcmp(media->addr1, ip_src) && media->port1 == htons(sport))
+                if (!strcmp(media->addr1, ip_src) && media->port1 == sport)
                     media->txcnt++;
                 else
                     media->rvcnt++;
-            } else {
-                sdp_media_t *media = media_find(call->medias, ip_dst, htons(dport), ip_src, htons(sport));
-                if (media) {
-                    if (!media->addr2) {
-                        media->addr2 = strdup(ip_src);
-                        media->port2 = htons(sport);
-                    }
-
-                    if (!strcmp(media->addr1, ip_dst) && media->port1 == htons(dport))
-                        media->txcnt++;
-                    else
-                        media->rvcnt++;
-                }
             }
         }
-#endif
     }
 
     // Deallocate packet duplicated payload
