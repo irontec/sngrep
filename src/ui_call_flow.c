@@ -234,8 +234,9 @@ call_flow_draw_columns(PANEL *panel)
     getmaxyx(info->flow_win, flow_height, flow_width);
 
     // Load columns
-    for (msg = call_group_get_next_msg(info->group, NULL); msg;
+    for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
+        info->last_msg = msg;
         call_flow_column_add(panel, CALLID(msg), SRC(msg));
         call_flow_column_add(panel, CALLID(msg), DST(msg));
     }
@@ -523,13 +524,8 @@ call_flow_handle_key(PANEL *panel, int key)
                 }
                 break;
             case ACTION_UP:
-                // Loop through messages until we found current message
-                // storing the previous one
-                while ((next = call_group_get_next_msg(info->group, next))) {
-                    if (next == info->cur_msg)
-                        break;
-                    prev = next;
-                }
+                // Get previous message
+                prev = call_group_get_prev_msg(info->group, info->cur_msg);
                 // We're at the first message already
                 if (!prev)
                     break;
@@ -555,6 +551,14 @@ call_flow_handle_key(PANEL *panel, int key)
                 // Prev page => N key up strokes
                 for (i = 0; i < rnpag_steps; i++)
                     call_flow_handle_key(panel, KEY_UP);
+                break;
+            case ACTION_BEGIN:
+                call_flow_set_group(info->group);
+                break;
+            case ACTION_END:
+                call_flow_set_group(info->group);
+                for (i=0; i < call_group_msg_count(info->group); i++)
+                    call_flow_handle_key(panel, KEY_DOWN);
                 break;
             case ACTION_TOGGLE_RTP:
                  info->show_rtp = (info->show_rtp)?0:1;
@@ -718,6 +722,7 @@ call_flow_set_group(sip_call_group_t *group)
     info->cur_msg = info->first_msg = call_group_get_next_msg(group, NULL);
     info->cur_line = 1;
     info->columns = NULL;
+    info->last_msg = NULL;
 
     return 0;
 }

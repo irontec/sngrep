@@ -62,6 +62,7 @@ struct call_flow_info {
     sip_msg_t *first_msg;
     sip_msg_t *cur_msg;
     sip_msg_t *selected;
+    sip_msg_t *last_msg;
     int raw_width;
     int cur_line;
     int show_rtp;

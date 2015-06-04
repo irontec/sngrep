@@ -118,7 +118,8 @@ struct sip_msg {
     //! Message owner
     sip_call_t *call;
 
-    //! Messages linked list
+    //! Messages Double linked list
+    sip_msg_t *prev;
     sip_msg_t *next;
 };
 

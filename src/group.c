@@ -136,10 +136,13 @@ call_group_msg_count(sip_call_group_t *group)
     int msgcnt = 0, i;
 
     for (i = 0; i < group->callcnt; i++) {
-        while ((msg = call_get_next_msg(group->calls[i], msg))) {
-            if (group->sdp_only && !msg->sdp)
-                continue;
-            msgcnt++;
+        if (group->sdp_only) {
+            while ((msg = call_get_next_msg(group->calls[i], msg))) {
+                if (!msg->sdp) continue;
+                msgcnt++;
+            }
+        } else {
+            msgcnt += call_msg_count(group->calls[i]);
         }
     }
     return msgcnt;
@@ -168,6 +171,15 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     sip_msg_t *cand;
     int i;
 
+    if (group->callcnt == 1) {
+        while ((cand = call_get_next_msg(group->calls[0], msg))) {
+            if (group->sdp_only && !cand->sdp)
+                continue;
+            break;
+        }
+        return cand;
+    }
+
     for (i = 0; i < group->callcnt; i++) {
         cand = NULL;
         while ((cand = call_get_next_msg(group->calls[i], cand))) {
@@ -191,6 +203,47 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
 
     return next;
 }
+
+sip_msg_t *
+call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
+{
+    sip_msg_t *prev = NULL;
+    sip_msg_t *cand;
+    int i;
+
+    if (group->callcnt == 1) {
+        while ((cand = call_get_prev_msg(group->calls[0], msg))) {
+            if (group->sdp_only && !cand->sdp)
+                continue;
+            break;
+        }
+        return cand;
+    }
+
+    for (i = 0; i < group->callcnt; i++) {
+        cand = group->calls[i]->last_msg;
+        while ((cand = call_get_prev_msg(group->calls[i], cand))) {
+            if (group->sdp_only && !cand->sdp)
+                continue;
+
+            // candidate must newer than current message and older than previous candidate
+            if (sip_msg_is_older(msg, cand) && (!prev || sip_msg_is_older(cand, prev))) {
+                prev = cand;
+                break;
+            }
+        }
+    }
+
+    // If sdp_only is enabled but no message has been found with SDP, just
+    // ignore the flag
+    if (msg == NULL && prev == NULL) {
+        group->sdp_only = 0;
+        return call_group_get_prev_msg(group, msg);
+    }
+
+    return prev;
+}
+
 
 int
 sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)

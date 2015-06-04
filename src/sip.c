@@ -115,6 +115,9 @@ sip_msg_destroy(sip_msg_t *msg)
         } else {
             msg->call->msgs = msg->next;
         }
+        if (msg->next) {
+            msg->next->prev = msg->prev;
+        }
     }
 
     // Free message attribute list
@@ -348,8 +351,10 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     // Put this msg at the end of the msg list
     if (!call->msgs) {
         call->msgs = msg;
+        msg->prev = NULL;
     } else {
         call->last_msg->next = msg;
+        msg->prev = call->last_msg;
     }
     call->last_msg = msg;
 
@@ -430,18 +435,14 @@ call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
 sip_msg_t *
 call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
 {
-    sip_msg_t *ret = NULL, *cur;
+    sip_msg_t *ret = NULL;
     pthread_mutex_lock(&calls.lock);
     if (msg == NULL) {
         // No message, no previous
         ret = NULL;
     } else {
         // Get previous message
-        for (cur = call->msgs; cur; ret = cur, cur = cur->next) {
-            // If cur is the message, ret will be the previous one
-            if (cur == msg)
-                break;
-        }
+        ret = msg->prev;
     }
 
     // Parse message if not parsed

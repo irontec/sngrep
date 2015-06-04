@@ -179,6 +179,10 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg);
 sip_msg_t *
 call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg);
 
+
+sip_msg_t *
+call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg);
+
 /**
  * @brief Check if a message is older than other
  *
