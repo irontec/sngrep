@@ -170,7 +170,7 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     sip_msg_t *next = NULL;
     sip_msg_t *cand;
     int i;
-
+    // FIXME Performance hack for huge dialogs
     if (group->callcnt == 1) {
         cand = msg;
         while ((cand = call_get_next_msg(group->calls[0], cand))) {
@@ -195,13 +195,6 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
         }
     }
 
-    // If sdp_only is enabled but no message has been found with SDP, just
-    // ignore the flag
-    if (msg == NULL && next == NULL) {
-        group->sdp_only = 0;
-        return call_group_get_next_msg(group, msg);
-    }
-
     return next;
 }
 
@@ -212,6 +205,7 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
     sip_msg_t *cand;
     int i;
 
+    // FIXME Performance hack for huge dialogs
     if (group->callcnt == 1) {
         cand = msg;
         while ((cand = call_get_prev_msg(group->calls[0], cand))) {
@@ -234,13 +228,6 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
                 break;
             }
         }
-    }
-
-    // If sdp_only is enabled but no message has been found with SDP, just
-    // ignore the flag
-    if (msg == NULL && prev == NULL) {
-        group->sdp_only = 0;
-        return call_group_get_prev_msg(group, msg);
     }
 
     return prev;

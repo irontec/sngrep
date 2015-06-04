@@ -600,6 +600,10 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_ONLY_SDP:
                 // Toggle SDP mode
                 info->group->sdp_only = !(info->group->sdp_only);
+                // Disable sdp_only if there are not messages with sdp
+                if (call_group_msg_count(info->group) == 0)
+                    info->group->sdp_only = 0;
+                // Reset screen
                 call_flow_set_group(info->group);
                 break;
             case ACTION_SDP_INFO:
