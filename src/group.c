@@ -172,7 +172,8 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     int i;
 
     if (group->callcnt == 1) {
-        while ((cand = call_get_next_msg(group->calls[0], msg))) {
+        cand = msg;
+        while ((cand = call_get_next_msg(group->calls[0], cand))) {
             if (group->sdp_only && !cand->sdp)
                 continue;
             break;
@@ -212,7 +213,8 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
     int i;
 
     if (group->callcnt == 1) {
-        while ((cand = call_get_prev_msg(group->calls[0], msg))) {
+        cand = msg;
+        while ((cand = call_get_prev_msg(group->calls[0], cand))) {
             if (group->sdp_only && !cand->sdp)
                 continue;
             break;
