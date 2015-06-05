@@ -211,10 +211,6 @@ ui_draw_panel(ui_t *ui)
         ret = ui->draw(ui_get_panel(ui));
     }
 
-    // Update panel stack
-    update_panels();
-    doupdate();
-
     return ret;
 }
 
@@ -289,16 +285,27 @@ wait_for_input()
     ui_t *ui;
     WINDOW *win;
     PANEL *panel;
+    PANEL *stack;
 
-    // Get topmost panel
-    while ((panel = panel_below(NULL))) {
+    // While there are still panels
+    while (panel_below(NULL)) {
 
-        // Get panel interface structure
-        ui = ui_find_by_panel(panel);
+        // Redraw all panels
+        panel = NULL;
+        while ((panel = panel_above(panel))) {
+            // Get panel interface structure
+            ui = ui_find_by_panel(panel);
+            // Redraw this panel
+            if (ui_draw_panel(ui) != 0)
+                return -1;
+        }
 
-        // Redraw this panel
-        if (ui_draw_panel(ui) != 0)
-            return -1;
+        // Update panel stack
+        update_panels();
+        doupdate();
+
+        // Get topmost panel
+        panel = panel_below(NULL);
 
         // Enable key input on current panel
         win = panel_window(panel);
