@@ -168,6 +168,8 @@ call_media_draw_media(PANEL *panel, sdp_media_t *media, int cline)
 {
     WINDOW *win;
     char packetcnt[30];
+    int cnt;
+    chtype hline;
 
     // Get panel window
     win = panel_window(panel);
@@ -180,16 +182,22 @@ call_media_draw_media(PANEL *panel, sdp_media_t *media, int cline)
         int distance = 20 * abs(column1->colpos - column2->colpos) - 1;
         sprintf(packetcnt, "%d/%d", media->rvcnt, media->txcnt);
 
+        cnt = media->rvcnt + media->txcnt;
+        if (cnt)
+            hline = ACS_HLINE;
+        else
+            hline = '~';
+
         if (column1->colpos <= column2->colpos) {
             mvwprintw(win, cline + 1, 3 + 10 - 6 + 20 * column1->colpos, "%d", media->port1);
             mvwprintw(win, cline + 1, 3 + 10 + 2 + 20 * column2->colpos, "%d", media->port2);
-            mvwhline(win, cline + 1, 14 + 20 * column1->colpos, ACS_HLINE, distance);
-            mvwprintw(win, cline, 3 + 10 + 20 * column1->colpos + distance / 2 - strlen(packetcnt) / 2, packetcnt);
+            mvwhline(win, cline + 1, 14 + 20 * column1->colpos, hline, distance);
+            if (cnt) mvwprintw(win, cline, 3 + 10 + 20 * column1->colpos + distance / 2 - strlen(packetcnt) / 2, packetcnt);
         } else {
             mvwprintw(win, cline + 1, 3 + 10 - 6 + 20 * column2->colpos, "%d", media->port2);
             mvwprintw(win, cline + 1, 3 + 10 + 2 + 20 * column1->colpos, "%d", media->port1);
-            mvwhline(win, cline + 1, 14 + 20 * column2->colpos, ACS_HLINE, distance);
-            mvwprintw(win, cline, 3 + 10 + 20 * column2->colpos + distance / 2 - strlen(packetcnt) / 2, packetcnt);
+            mvwhline(win, cline + 1, 14 + 20 * column2->colpos, hline, distance);
+            if (cnt) mvwprintw(win, cline, 3 + 10 + 20 * column2->colpos + distance / 2 - strlen(packetcnt) / 2, packetcnt);
         }
     } else {
         mvwprintw(win, cline + 1, 7 + 20 * column1->colpos, "%d", media->port1);

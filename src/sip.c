@@ -82,6 +82,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]+) .+\r$", match_flags);
     regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
+    regcomp(&calls.reg_sdp, "^Content-Type:[ ]* application/sdp\r$", match_flags);
     regcomp(&calls.reg_sdp_addr, "^c=[^ ]+ [^ ]+ (.+)\r$", match_flags);
     regcomp(&calls.reg_sdp_port, "^m=[^ ]+ ([0-9]+)", match_flags);
 
@@ -702,7 +703,7 @@ msg_parse_media(sip_msg_t *msg)
     int port;
 
     // Check if this message has sdp
-    if (!strstr(msg->payload, "application/sdp"))
+    if (regexec(&calls.reg_sdp, msg->payload, 0, 0, 0) != 0)
         return;
 
     // Message has SDP
@@ -732,7 +733,7 @@ msg_parse_media(sip_msg_t *msg)
         }
     } else {
         // Try to find the request for this response
-        if ((req = msg_get_request(msg))) {
+        if ((req = msg_get_request_sdp(msg))) {
             const char *reqaddr = msg_get_attribute(req, SIP_ATTR_SDP_ADDRESS);
             int reqport = atoi(msg_get_attribute(req, SIP_ATTR_SDP_PORT));
             // Check if this media already exists
@@ -795,6 +796,19 @@ msg_get_request(sip_msg_t *msg)
     }
 
     return NULL;
+}
+
+sip_msg_t *
+msg_get_request_sdp(sip_msg_t *msg)
+{
+    sip_msg_t *tmp = msg;
+    while (tmp) {
+        if ((tmp = msg_get_request(tmp)) && tmp->sdp)
+            return tmp;
+    }
+
+    return NULL;
+
 }
 
 char *

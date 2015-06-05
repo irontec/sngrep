@@ -122,6 +122,17 @@ call_media_handle_key(PANEL *panel, int key);
 int
 call_media_help(PANEL *panel);
 
+/**
+ * @brief Draw a line for a given media
+ *
+ * Draws media ports and packets in two lines on given panel at
+ * given line.
+ *
+ * @param panel Ncurses panel pointer
+ * @param media Media structure to be drawn
+ * @param line line of the panels window to draw the media info
+ * @return 0 in all cases
+ */
 int
 call_media_draw_media(PANEL *panel, sdp_media_t *media, int line);
 

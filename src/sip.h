@@ -187,6 +187,7 @@ struct sip_call_list {
     regex_t reg_cseq;
     regex_t reg_from;
     regex_t reg_to;
+    regex_t reg_sdp;
     regex_t reg_sdp_addr;
     regex_t reg_sdp_port;
 
@@ -491,6 +492,9 @@ msg_is_request(sip_msg_t *msg);
 
 sip_msg_t *
 msg_get_request(sip_msg_t *msg);
+
+sip_msg_t *
+msg_get_request_sdp(sip_msg_t *msg);
 
 /**
  * @brief Get summary of message header data
