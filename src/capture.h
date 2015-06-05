@@ -56,7 +56,6 @@
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <net/if.h>
-#include <arpa/inet.h>
 #endif
 
 #include <arpa/inet.h>
