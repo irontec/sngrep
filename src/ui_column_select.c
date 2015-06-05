@@ -90,12 +90,12 @@ column_select_create()
     info->menu_win = derwin(win, 10, width - 2, 7, 0);
 
     // Initialize one field for each attribute
-    for (attr_id = 0; attr_id < SIP_ATTR_SENTINEL; attr_id++) {
+    for (attr_id = 0; attr_id < SIP_ATTR_COUNT; attr_id++) {
         // Create a new field for this column
         info->items[attr_id] = new_item("[ ]", sip_attr_get_description(attr_id));
         set_item_userptr(info->items[attr_id], (void*) sip_attr_get_name(attr_id));
     }
-    info->items[SIP_ATTR_SENTINEL] = NULL;
+    info->items[SIP_ATTR_COUNT] = NULL;
 
     // Create the columns menu and post it
     info->menu = menu = new_menu(info->items);

@@ -61,7 +61,7 @@ struct column_select_info {
     // Columns menu
     MENU *menu;
     // Columns Items
-    ITEM *items[SIP_ATTR_SENTINEL + 1];
+    ITEM *items[SIP_ATTR_COUNT + 1];
     //! Form that contains the save fields
     FORM *form;
     //! An array of window form fields

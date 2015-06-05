@@ -33,7 +33,7 @@
 #include "option.h"
 #include "sip_attr.h"
 
-static sip_attr_hdr_t attrs[SIP_ATTR_SENTINEL] = {
+static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { .id = SIP_ATTR_CALLINDEX,     .name = "index", .title = "Idx", .desc = "Call Index", .dwidth = 4 },
     { .id = SIP_ATTR_SIPFROM,       .name = "sipfrom", .desc = "SIP From", .dwidth = 30 },
     { .id = SIP_ATTR_SIPFROMUSER,   .name = "sipfromuser", .desc = "SIP From User", .dwidth = 20 },
@@ -106,7 +106,7 @@ sip_attr_get_width(enum sip_attr_id id)
 enum sip_attr_id
 sip_attr_from_name(const char *name) {
     int i;
-    for (i = 0; i < SIP_ATTR_SENTINEL; i++)
+    for (i = 0; i < SIP_ATTR_COUNT; i++)
     {
         if (!strcasecmp(name, attrs[i].name)) {
             return attrs[i].id;
@@ -119,7 +119,7 @@ void
 sip_attr_list_destroy(char *attrs[])
 {
     int i;
-    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
+    for (i = 0; i < SIP_ATTR_COUNT; i++) {
         if (attrs[i])
             free(attrs[i]);
     }

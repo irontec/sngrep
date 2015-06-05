@@ -75,7 +75,7 @@ call_list_create()
     set_panel_userptr(panel, (void*) info);
 
     // Add configured columns
-    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
+    for (i = 0; i < SIP_ATTR_COUNT; i++) {
         // Get column attribute name from options
         sprintf(option, "cl.column%d", i);
         if ((field = get_option_value(option))) {

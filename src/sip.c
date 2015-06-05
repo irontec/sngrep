@@ -970,7 +970,7 @@ sip_check_msg_ignore(sip_msg_t *msg)
     sip_attr_hdr_t *header;
 
     // Check if an ignore option exists
-    for (i = 0; i < SIP_ATTR_SENTINEL; i++) {
+    for (i = 0; i < SIP_ATTR_COUNT; i++) {
         header = sip_attr_get_header(i);
         if (is_ignored_value(header->name, msg_get_attribute(msg, header->id))) {
             return 1;

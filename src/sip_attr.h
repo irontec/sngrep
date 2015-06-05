@@ -87,7 +87,7 @@ enum sip_attr_id {
     //! Total call duration
     SIP_ATTR_TOTALDUR,
     //! SIP Attribute count
-    SIP_ATTR_SENTINEL
+    SIP_ATTR_COUNT
 };
 
 /**

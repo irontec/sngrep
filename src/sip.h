@@ -87,7 +87,7 @@ typedef struct sip_call_list sip_call_list_t;
  */
 struct sip_msg {
     //! Message attribute list
-    char *attrs[SIP_ATTR_SENTINEL];
+    char *attrs[SIP_ATTR_COUNT];
     //! Source address
     char src[50];
     //! Source port
@@ -106,10 +106,6 @@ struct sip_msg {
     int reqresp;
     //! This message contains sdp data
     int sdp;
-    //! Message RTP position indicator
-    int rtp_pos;
-    //! Message RTP packet count
-    int rtp_count;
     //! Message Cseq
     int cseq;
     //! PCAP Packet Header data
@@ -133,7 +129,7 @@ struct sip_msg {
  */
 struct sip_call {
     //! Call attribute list
-    char *attrs[SIP_ATTR_SENTINEL];
+    char *attrs[SIP_ATTR_COUNT];
     //! Flag this call as filtered so won't be displayed
     int filtered;
     //! List of messages of this call
@@ -430,6 +426,12 @@ call_get_prev_filtered(sip_call_t *cur);
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg);
 
+/**
+ * @brief Add a media structure to call
+ *
+ * @param call Call structure to be updated
+ * @param media Media structure to be added
+ */
 void
 call_add_media(sip_call_t *call, sdp_media_t *media);
 
