@@ -180,7 +180,7 @@ call_media_draw_media(PANEL *panel, sdp_media_t *media, int cline)
 
     if (column2) {
         int distance = 20 * abs(column1->colpos - column2->colpos) - 1;
-        sprintf(packetcnt, "%d/%d", media->rvcnt, media->txcnt);
+        sprintf(packetcnt, "%d/%d", media->txcnt, media->rvcnt);
 
         cnt = media->rvcnt + media->txcnt;
         if (cnt)
