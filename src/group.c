@@ -97,29 +97,39 @@ call_group_color(sip_call_group_t *group, sip_call_t *call)
 sip_call_t *
 call_group_get_next(sip_call_group_t *group, sip_call_t *call)
 {
+    sip_msg_t *next, *first;
     int i;
 
     if (!group)
         return NULL;
 
-    // Return first call
-    if (!call)
-        return group->calls[0];
-
-    for (i = 0; i < group->callcnt; i++) {
-        if (call == group->calls[i])
-            break;
+    // Get call of the first message in group
+    if (!call) {
+        if ((next = call_group_get_next_msg(group, NULL))) {
+            return next->call;
+        }
+        return NULL;
     }
 
-    // Reference is last call
-    if (i == group->callcnt - 1)
-        return NULL;
+    // Initialize candidate
+    next = NULL;
 
-    // Return next call
-    if (i < group->callcnt)
-        return group->calls[i + 1];
+    // Get the call with the next chronological message
+    for (i = 0; i < group->callcnt; i++) {
+        if (group->calls[i] == call)
+            continue;
 
-    return NULL;
+        // Get first message
+        first = call_get_next_msg(group->calls[i], NULL);
+
+        // Is first message of this call older?
+        if (sip_msg_is_older(first, call->msgs) && (!next || !sip_msg_is_older(first, next))) {
+            next = first;
+            break;
+        }
+    }
+
+    return (next) ? next->call : NULL;
 }
 
 int
@@ -127,7 +137,6 @@ call_group_count(sip_call_group_t *group)
 {
     return group->callcnt;
 }
-
 
 int
 call_group_msg_count(sip_call_group_t *group)
@@ -138,7 +147,8 @@ call_group_msg_count(sip_call_group_t *group)
     for (i = 0; i < group->callcnt; i++) {
         if (group->sdp_only) {
             while ((msg = call_get_next_msg(group->calls[i], msg))) {
-                if (!msg->sdp) continue;
+                if (!msg->sdp)
+                    continue;
                 msgcnt++;
             }
         } else {
@@ -233,7 +243,6 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
     return prev;
 }
 
-
 int
 sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)
 {
@@ -244,7 +253,8 @@ sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)
     if (one->pcap_header->ts.tv_sec > two->pcap_header->ts.tv_sec)
         return 1;
     // Compare useconds if seconds are equal
-    if (one->pcap_header->ts.tv_sec == two->pcap_header->ts.tv_sec && one->pcap_header->ts.tv_usec > two->pcap_header->ts.tv_usec)
+    if (one->pcap_header->ts.tv_sec == two->pcap_header->ts.tv_sec
+            && one->pcap_header->ts.tv_usec > two->pcap_header->ts.tv_usec)
         return 1;
     // Otherwise
     return 0;
