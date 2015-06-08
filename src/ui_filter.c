@@ -362,6 +362,9 @@ filter_save_options(PANEL *panel)
 
     // Force filter evaluation
     filter_reset_calls();
+    // TODO FIXME Refresh call list FIXME
+    call_list_clear(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
+
 }
 
 const char*

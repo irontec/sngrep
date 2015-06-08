@@ -532,17 +532,13 @@ call_list_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_SHOW_FILTERS:
                 ui_create_panel(PANEL_FILTER);
-                call_list_clear(panel);
                 break;
             case ACTION_SHOW_COLUMNS:
                 ui_create_panel(PANEL_COLUMN_SELECT);
-                call_list_clear(panel);
                 break;
             case ACTION_SAVE:
-                if (!is_option_disabled("sngrep.tmpfile")) {
-                    next_panel = ui_create_panel(PANEL_SAVE);
-                    save_set_group(ui_get_panel(next_panel), info->group);
-                }
+                next_panel = ui_create_panel(PANEL_SAVE);
+                save_set_group(ui_get_panel(next_panel), info->group);
                 break;
             case ACTION_DISP_INVITE:
                 // Set Display filter text

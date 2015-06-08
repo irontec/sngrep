@@ -56,7 +56,7 @@ static ui_t *panel_pool[] =
       &ui_call_list,
       &ui_call_flow,
       &ui_call_raw,
-    &ui_call_media,
+      &ui_call_media,
       &ui_filter,
       &ui_save,
       &ui_msg_diff,
@@ -197,10 +197,15 @@ ui_get_panel(ui_t *ui)
 int
 ui_draw_panel(ui_t *ui)
 {
+    PANEL *panel = NULL;
     int ret = 0;
 
     //! Sanity check, this should not happen
     if (!ui)
+        return -1;
+
+    // Get ui panel pointer
+    if (!(panel = ui_get_panel(ui)))
         return -1;
 
     // Set character input timeout 200 ms
@@ -208,7 +213,9 @@ ui_draw_panel(ui_t *ui)
 
     // Request the panel to draw on the scren
     if (ui->draw) {
-        ret = ui->draw(ui_get_panel(ui));
+        ret = ui->draw(panel);
+    } else {
+        touchwin(panel_window(panel));
     }
 
     return ret;
