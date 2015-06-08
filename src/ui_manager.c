@@ -292,7 +292,6 @@ wait_for_input()
     ui_t *ui;
     WINDOW *win;
     PANEL *panel;
-    PANEL *stack;
 
     // While there are still panels
     while (panel_below(NULL)) {

@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <form.h>
 #include "ui_filter.h"
+#include "ui_call_list.h"
 #include "sip.h"
 #include "filter.h"
 #include "option.h"
