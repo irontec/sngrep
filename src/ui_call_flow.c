@@ -598,7 +598,7 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_COMPRESS:
                 set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
                 // Force columns reload
-                info->columns = NULL;
+                call_flow_set_group(info->group);
                 break;
             case ACTION_SELECT:
                 if (!info->selected) {
