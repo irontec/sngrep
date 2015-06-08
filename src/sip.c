@@ -700,14 +700,14 @@ msg_parse_media(sip_msg_t *msg)
     regmatch_t pmatch[4];
     sip_msg_t *req;
     char address[50];
-    int port;
+    int port = 0;
 
     // Check if this message has sdp
     if (regexec(&calls.reg_sdp, msg->payload, 0, 0, 0) != 0)
         return;
 
-    // Message has SDP
-    msg->sdp = 1;
+    // Initialize variables
+    memset(address, 0, sizeof(address));
 
     // SDP Address
     if (regexec(&calls.reg_sdp_addr, msg->payload, 2, pmatch, 0) == 0) {
@@ -721,6 +721,12 @@ msg_parse_media(sip_msg_t *msg)
                           msg->payload + pmatch[1].rm_so);
         port = atoi(msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
     }
+
+    if (!strlen(address) || !port)
+        return;
+
+    // Message has SDP
+    msg->sdp = 1;
 
     if (!strcmp(address, "0.0.0.0"))
         return;
