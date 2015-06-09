@@ -6,7 +6,7 @@
 
 ##-----------------------------------------------------------------------------
 ## Enable color on or off
-set color off
+# set color off
 ## Use default foreground and background colors of your terminal
 # set background default
 ## Disable syntax highlighting
