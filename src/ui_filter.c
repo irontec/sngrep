@@ -323,11 +323,7 @@ filter_save_options(PANEL *panel)
         sscanf(field_buffer(info->fields[field_id], 0), "%[^ ]", field_value);
 
         // Set filter expression
-        if (strlen(field_value)) {
-            expr = field_value;
-        } else {
-            expr = NULL;
-        }
+        expr = strlen(field_value) ? field_value : NULL;
 
         switch (field_id) {
             case FLD_FILTER_SIPFROM:

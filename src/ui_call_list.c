@@ -483,7 +483,7 @@ call_list_handle_key(PANEL *panel, int key)
                 call_list_form_activate(panel, 1);
                 break;
             case ACTION_SHOW_FLOW:
-                // Display current call flow
+                // Check we have calls in the list
                 if (!info->cur_call)
                     break;
                 next_panel = ui_create_panel(PANEL_CALL_FLOW);
@@ -498,6 +498,9 @@ call_list_handle_key(PANEL *panel, int key)
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_FLOW_EX:
+                // Check we have calls in the list
+                if (!info->cur_call)
+                    break;
                 // Display current call flow (extended)
                 ui_create_panel(PANEL_CALL_FLOW);
                 if (info->group->callcnt) {
@@ -512,6 +515,9 @@ call_list_handle_key(PANEL *panel, int key)
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_MEDIA:
+                // Check we have calls in the list
+                if (!info->cur_call)
+                    break;
                 // Display current call media
                 ui_create_panel(PANEL_CALL_MEDIA);
                 if (info->group->callcnt) {
@@ -525,6 +531,9 @@ call_list_handle_key(PANEL *panel, int key)
                 call_media_set_group(group);
                 break;
             case ACTION_SHOW_RAW:
+                // Check we have calls in the list
+                if (!info->cur_call)
+                    break;
                 ui_create_panel(PANEL_CALL_RAW);
                 if (info->group->callcnt) {
                     group = info->group;

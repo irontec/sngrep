@@ -98,6 +98,7 @@ call_raw_draw(PANEL *panel)
 
     // Copy the visible part of the pad into the panel window
     copywin(info->pad, panel_window(panel), info->scroll, 0, 0, 0, LINES - 1, COLS - 1, 0);
+    touchwin(panel_window(panel));
     return 0;
 }
 
