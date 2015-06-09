@@ -107,12 +107,6 @@ call_flow_create()
     return panel;
 }
 
-call_flow_info_t *
-call_flow_info(PANEL *panel)
-{
-    return (call_flow_info_t*) panel_userptr(panel);
-}
-
 void
 call_flow_destroy(PANEL *panel)
 {
@@ -126,6 +120,12 @@ call_flow_destroy(PANEL *panel)
     }
     // Delete panel window
     delwin(panel_window(panel));
+}
+
+call_flow_info_t *
+call_flow_info(PANEL *panel)
+{
+    return (call_flow_info_t*) panel_userptr(panel);
 }
 
 int

@@ -67,6 +67,18 @@ PANEL *
 call_raw_create();
 
 /**
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
+ */
+call_raw_info_t *
+call_raw_info(PANEL *panel);
+
+/**
  * @brief Draw the Call Raw panel
  *
  * This function will drawn the panel into the screen based on its stored

@@ -94,6 +94,18 @@ void
 column_select_destroy();
 
 /**
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
+ */
+column_select_info_t *
+column_select_info(PANEL *panel);
+
+/**
  * @brief Manage pressed keys for column selection panel
  *
  * This function is called by UI manager every time a

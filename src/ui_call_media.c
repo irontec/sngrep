@@ -57,8 +57,14 @@
  * Ui Structure definition for Call media panel
  */
 ui_t ui_call_media =
-            { .type = PANEL_CALL_MEDIA, .panel = NULL, .create = call_media_create, .draw =
-                      call_media_draw, .handle_key = call_media_handle_key, .help = call_media_help };
+{
+  .type = PANEL_CALL_MEDIA,
+  .panel = NULL,
+  .create = call_media_create,
+  .draw = call_media_draw,
+  .handle_key = call_media_handle_key,
+  .help = call_media_help
+};
 
 PANEL *
 call_media_create()
@@ -103,11 +109,6 @@ call_media_info_t *
 call_media_info(PANEL *panel)
 {
     return (call_media_info_t*) panel_userptr(panel);
-}
-
-void
-call_media_destroy(PANEL *panel)
-{
 }
 
 int
@@ -192,12 +193,18 @@ call_media_draw_media(PANEL *panel, sdp_media_t *media, int cline)
             mvwprintw(win, cline + 1, 3 + 10 - 6 + 20 * column1->colpos, "%d", media->port1);
             mvwprintw(win, cline + 1, 3 + 10 + 2 + 20 * column2->colpos, "%d", media->port2);
             mvwhline(win, cline + 1, 14 + 20 * column1->colpos, hline, distance);
-            if (cnt) mvwprintw(win, cline, 3 + 10 + 20 * column1->colpos + distance / 2 - strlen(packetcnt) / 2, packetcnt);
+            if (cnt)
+                mvwprintw(win, cline,
+                          3 + 10 + 20 * column1->colpos + distance / 2 - strlen(packetcnt) / 2,
+                          packetcnt);
         } else {
             mvwprintw(win, cline + 1, 3 + 10 - 6 + 20 * column2->colpos, "%d", media->port2);
             mvwprintw(win, cline + 1, 3 + 10 + 2 + 20 * column1->colpos, "%d", media->port1);
             mvwhline(win, cline + 1, 14 + 20 * column2->colpos, hline, distance);
-            if (cnt) mvwprintw(win, cline, 3 + 10 + 20 * column2->colpos + distance / 2 - strlen(packetcnt) / 2, packetcnt);
+            if (cnt)
+                mvwprintw(win, cline,
+                          3 + 10 + 20 * column2->colpos + distance / 2 - strlen(packetcnt) / 2,
+                          packetcnt);
         }
     } else {
         mvwprintw(win, cline + 1, 7 + 20 * column1->colpos, "%d", media->port1);

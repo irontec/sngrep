@@ -116,6 +116,18 @@ extern void
 save_destroy();
 
 /**
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
+ */
+save_info_t *
+save_info(PANEL *panel);
+
+/**
  * @brief Draw the Save panel
  *
  * This function will drawn the panel into the screen based on its stored

@@ -72,13 +72,21 @@ call_raw_create()
     return panel;
 }
 
+call_raw_info_t *
+call_raw_info(PANEL *panel)
+{
+    return (call_raw_info_t*) panel_userptr(panel);
+}
+
 int
 call_raw_draw(PANEL *panel)
 {
+    call_raw_info_t *info;
     sip_msg_t *msg = NULL;
 
     // Get panel information
-    call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
+    if(!(info = call_raw_info(panel)))
+        return -1;
 
     if (info->group) {
         // Print the call group messages into the pad
@@ -96,12 +104,14 @@ call_raw_draw(PANEL *panel)
 int
 call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 {
+    call_raw_info_t *info;
     int payload_lines, i, column, height, width;
     // Message ngrep style Header
     char header[256];
 
     // Get panel information
-    call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
+    if (!(info = call_raw_info(panel)))
+        return -1;
 
     // Get the pad window
     WINDOW *pad = info->pad;
@@ -170,13 +180,13 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 int
 call_raw_handle_key(PANEL *panel, int key)
 {
-    call_raw_info_t *info = (call_raw_info_t*) panel_userptr(panel);
+    call_raw_info_t *info;
     ui_t *next_panel;
     int rnpag_steps = get_option_int_value("cr.scrollstep");
     int action = -1;
 
     // Sanity check, this should not happen
-    if (!info)
+    if (!(info  = call_raw_info(panel)))
         return -1;
 
     // Check actions for this key
@@ -271,7 +281,7 @@ call_raw_set_group(sip_call_group_t *group)
     if (!(panel = raw_panel->panel))
         return -1;
 
-    if (!(info = (call_raw_info_t*) panel_userptr(panel)))
+    if (!(info = call_raw_info(panel)))
         return -1;
 
     // Set call raw call group
@@ -301,7 +311,7 @@ call_raw_set_msg(sip_msg_t *msg)
     if (!(panel = raw_panel->panel))
         return -1;
 
-    if (!(info = (call_raw_info_t*) panel_userptr(panel)))
+    if (!(info = call_raw_info(panel)))
         return -1;
 
     // Set call raw message

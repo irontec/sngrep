@@ -101,8 +101,8 @@ column_select_create()
     info->menu = menu = new_menu(info->items);
 
     // Set current enabled fields
-    call_list_info_t *list_info = (call_list_info_t*) panel_userptr(
-                                      ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
+    // FIXME Stealing Call list columns :/
+    call_list_info_t *list_info = call_list_info(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
 
     // Enable current enabled fields and move them to the top
     for (column = 0; column < list_info->columncnt; column++) {
@@ -159,7 +159,7 @@ void
 column_select_destroy(PANEL *panel)
 {
     int i, itemcnt;
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
 
     // Get item count
     itemcnt = item_count(info->menu);
@@ -173,11 +173,18 @@ column_select_destroy(PANEL *panel)
     }
 }
 
+
+column_select_info_t *
+column_select_info(PANEL *panel)
+{
+    return (column_select_info_t*) panel_userptr(panel);
+}
+
 int
 column_select_handle_key(PANEL *panel, int key)
 {
     // Get panel information
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
 
     if (info->form_active) {
         return column_select_handle_key_form(panel, key);
@@ -196,7 +203,7 @@ column_select_handle_key_menu(PANEL *panel, int key)
     int action = -1;
 
     // Get panel information
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
 
     menu = info->menu;
     current = current_item(menu);
@@ -263,7 +270,7 @@ column_select_handle_key_form(PANEL *panel, int key)
     int action = -1;
 
     // Get panel information
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -342,11 +349,11 @@ column_select_update_columns(PANEL *panel)
     int column, attr_id;
 
     // Get panel information
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
 
     // Set enabled fields
     PANEL *list_panel = ui_get_panel(ui_find_by_type(PANEL_CALL_LIST));
-    call_list_info_t *list_info = (call_list_info_t*) panel_userptr(list_panel);
+    call_list_info_t *list_info = call_list_info(list_panel);
 
     // Reset column count
     list_info->columncnt = 0;
@@ -413,7 +420,7 @@ column_select_save_columns(PANEL *panel)
     }
 
     // Get panel information
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
 
     // Add all selected columns
     for (column = 0; column < item_count(info->menu); column++) {
@@ -433,7 +440,7 @@ void
 column_select_move_item(PANEL *panel, ITEM *item, int pos)
 {
     // Get panel information
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
 
     // Check we have a valid position
     if (pos == item_count(info->menu) || pos < 0)
@@ -462,7 +469,7 @@ void
 column_select_update_menu(PANEL *panel)
 {
     // Get panel information
-    column_select_info_t *info = (column_select_info_t*) panel_userptr(panel);
+    column_select_info_t *info = column_select_info(panel);
     ITEM *current = current_item(info->menu);
     int top_idx = top_row(info->menu);
 

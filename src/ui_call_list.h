@@ -126,6 +126,18 @@ void
 call_list_destroy(PANEL *panel);
 
 /**
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
+ */
+call_list_info_t *
+call_list_info(PANEL *panel);
+
+/**
  * @brief Resize the windows of Call List
  *
  * This function will be invoked when the ui size has changed

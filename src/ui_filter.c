@@ -170,6 +170,12 @@ filter_create()
     return panel;
 }
 
+filter_info_t *
+filter_info(PANEL *panel)
+{
+    return (filter_info_t*) panel_userptr(panel);
+}
+
 void
 filter_destroy(PANEL *panel)
 {
@@ -185,7 +191,7 @@ filter_handle_key(PANEL *panel, int key)
     int action = -1;
 
     // Get panel information
-    filter_info_t *info = (filter_info_t*) panel_userptr(panel);
+    filter_info_t *info = filter_info(panel);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -307,7 +313,7 @@ filter_save_options(PANEL *panel)
     memset(method_expr, 0, sizeof(method_expr));
 
     // Get panel information
-    filter_info_t *info = (filter_info_t*) panel_userptr(panel);
+    filter_info_t *info = filter_info(panel);
 
     for (field_id = 0; field_id < FLD_FILTER_COUNT; field_id++) {
         // Get current field value.

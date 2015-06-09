@@ -130,7 +130,7 @@ call_list_destroy(PANEL *panel)
     hide_panel(panel);
 
     // Free its status data
-    if ((info = (call_list_info_t*) panel_userptr(panel))) {
+    if ((info = call_list_info(panel))) {
 
         // Deallocate forms data
         if (info->form) {
@@ -146,13 +146,19 @@ call_list_destroy(PANEL *panel)
     }
 }
 
+call_list_info_t *
+call_list_info(PANEL *panel)
+{
+    return (call_list_info_t*) panel_userptr(panel);
+}
+
 int
 call_list_resize(PANEL *panel)
 {
     int maxx, maxy;
 
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = call_list_info(panel);
     // Get current screen dimensions
     getmaxyx(stdscr, maxy, maxx);
 
@@ -173,7 +179,7 @@ call_list_draw_header(PANEL *panel)
     int height, width, colpos, collen, i;
 
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = call_list_info(panel);
 
     // Let's draw the fixed elements of the screen
     WINDOW *win = panel_window(panel);
@@ -252,7 +258,7 @@ call_list_draw_list(PANEL *panel)
     WINDOW *win;
 
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = call_list_info(panel);
 
     // Get window of call list panel
     win = info->list_win;
@@ -334,7 +340,7 @@ call_list_draw(PANEL *panel)
 void
 call_list_form_activate(PANEL *panel, int active)
 {
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = call_list_info(panel);
 
     // Store form state
     info->form_active = active;
@@ -371,7 +377,7 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
     width = getmaxx(win);
 
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = call_list_info(panel);
 
     // Print requested columns
     for (i = 0; i < info->columncnt; i++) {
@@ -407,13 +413,13 @@ int
 call_list_handle_key(PANEL *panel, int key)
 {
     int i, height, width, rnpag_steps = get_option_int_value("cl.scrollstep");
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info;
     ui_t *next_panel;
     sip_call_group_t *group;
     int action = -1;
 
     // Sanity check, this should not happen
-    if (!info)
+    if (!(info  = call_list_info(panel)))
         return -1;
 
     // Handle form key
@@ -589,7 +595,7 @@ call_list_handle_form_key(PANEL *panel, int key)
     int action = -1;
 
     // Get panel information
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
+    call_list_info_t *info = call_list_info(panel);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -797,8 +803,9 @@ int
 call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title,
                      int width)
 {
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    if (!info)
+    call_list_info_t *info;
+
+    if (!(info = call_list_info(panel)))
         return 1;
 
     info->columns[info->columncnt].id = id;
@@ -812,9 +819,10 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
 void
 call_list_clear(PANEL *panel)
 {
+    call_list_info_t *info;
+
     // Get panel info
-    call_list_info_t *info = (call_list_info_t*) panel_userptr(panel);
-    if (!info)
+    if (!(info = call_list_info(panel)))
         return;
 
     // Initialize structures

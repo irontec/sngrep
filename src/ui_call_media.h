@@ -75,14 +75,16 @@ PANEL *
 call_media_create();
 
 /**
- * @brief Destroy panel
+ * @brief Get custom information of given panel
  *
- * This function will hide the panel and free all allocated memory.
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
  *
- * @return panel Ncurses panel pointer
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
  */
-void
-call_media_destroy(PANEL *panel);
+call_media_info_t *
+call_media_info(PANEL *panel);
 
 /**
  * @brief Draw the Call media panel

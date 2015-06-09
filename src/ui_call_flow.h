@@ -93,6 +93,18 @@ void
 call_flow_destroy(PANEL *panel);
 
 /**
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
+ */
+call_flow_info_t *
+call_flow_info(PANEL *panel);
+
+/**
  * @brief Draw the Call flow extended panel
  *
  * This function will drawn the panel into the screen based on its stored

@@ -177,13 +177,19 @@ save_destroy(PANEL *panel)
     curs_set(0);
 }
 
+save_info_t *
+save_info(PANEL *panel)
+{
+    return (save_info_t*) panel_userptr(panel);
+}
+
 int
 save_draw(PANEL *panel)
 {
     int total, displayed;
 
     // Get panel information
-    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    save_info_t *info = save_info(panel);
     WINDOW *win = panel_window(panel);
 
     // Get filter stats
@@ -226,7 +232,7 @@ save_handle_key(PANEL *panel, int key)
     int action = -1;
 
     // Get panel information
-    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    save_info_t *info = save_info(panel);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -338,7 +344,7 @@ void
 save_set_group(PANEL *panel, sip_call_group_t *group)
 {
     // Get panel information
-    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    save_info_t *info = save_info(panel);
     info->group = group;
 }
 
@@ -355,7 +361,7 @@ save_to_file(PANEL *panel)
     int i;
 
     // Get panel information
-    save_info_t *info = (save_info_t*) panel_userptr(panel);
+    save_info_t *info = save_info(panel);
 
     // Get current path field value.
     memset(savepath, 0, sizeof(savepath));

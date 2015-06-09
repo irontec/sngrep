@@ -34,25 +34,25 @@
 #include "sip_attr.h"
 
 static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
-    { .id = SIP_ATTR_CALLINDEX,     .name = "index", .title = "Idx", .desc = "Call Index", .dwidth = 4 },
-    { .id = SIP_ATTR_SIPFROM,       .name = "sipfrom", .desc = "SIP From", .dwidth = 30 },
-    { .id = SIP_ATTR_SIPFROMUSER,   .name = "sipfromuser", .desc = "SIP From User", .dwidth = 20 },
-    { .id = SIP_ATTR_SIPTO,         .name = "sipto", .desc = "SIP To", .dwidth = 30 },
-    { .id = SIP_ATTR_SIPTOUSER,     .name = "siptouser", .desc = "SIP To User", .dwidth = 20 },
-    { .id = SIP_ATTR_SRC,           .name = "src", .desc = "Source", .dwidth = 22 },
-    { .id = SIP_ATTR_DST,           .name = "dst", .desc = "Destination", .dwidth = 22 },
-    { .id = SIP_ATTR_CALLID,        .name = "callid", .desc = "Call-ID", .dwidth = 50 },
-    { .id = SIP_ATTR_XCALLID,       .name = "xcallid", .desc = "X-Call-ID", .dwidth = 50 },
-    { .id = SIP_ATTR_DATE,          .name = "date", .desc = "Date", .dwidth = 10 },
-    { .id = SIP_ATTR_TIME,          .name = "time", .desc = "Time", .dwidth = 8 },
-    { .id = SIP_ATTR_METHOD,        .name = "method", .desc = "Method", .dwidth = 15 },
-    { .id = SIP_ATTR_SDP_ADDRESS,   .name = "sdpaddress", .desc = "SDP Address", .dwidth = 22 },
-    { .id = SIP_ATTR_SDP_PORT,      .name = "sdpport", .desc = "SDP Port", .dwidth = 5 },
-    { .id = SIP_ATTR_TRANSPORT,     .name = "transport", .title = "Trans", .desc = "Transport", .dwidth = 3 },
-    { .id = SIP_ATTR_MSGCNT,        .name = "msgcnt", .title = "Msgs", .desc = "Message Count", .dwidth = 5 },
-    { .id = SIP_ATTR_CALLSTATE,     .name = "state", .desc = "Call State", .dwidth = 10 },
-    { .id = SIP_ATTR_CONVDUR,       .name = "convdur", .title = "ConvDur", .desc = "Conversation Duration", .dwidth = 7 },
-    { .id = SIP_ATTR_TOTALDUR,      .name = "totaldur", .title = "TotalDur", .desc = "Total Duration", .dwidth = 8 }
+    { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 },
+    { SIP_ATTR_SIPFROM,     "sipfrom",     NULL,   "SIP From",      30 },
+    { SIP_ATTR_SIPFROMUSER, "sipfromuser", NULL,   "SIP From User", 20 },
+    { SIP_ATTR_SIPTO,       "sipto",       NULL,   "SIP To",        30 },
+    { SIP_ATTR_SIPTOUSER,   "siptouser",   NULL,   "SIP To User",   20 },
+    { SIP_ATTR_SRC,         "src",         NULL,   "Source",        22 },
+    { SIP_ATTR_DST,         "dst",         NULL,   "Destination",   22 },
+    { SIP_ATTR_CALLID,      "callid",      NULL,   "Call-ID",       50 },
+    { SIP_ATTR_XCALLID,     "xcallid",     NULL,   "X-Call-ID",     50 },
+    { SIP_ATTR_DATE,        "date",        NULL,   "Date",          10 },
+    { SIP_ATTR_TIME,        "time",        NULL,   "Time",          8 },
+    { SIP_ATTR_METHOD,      "method",      NULL,   "Method",        15 },
+    { SIP_ATTR_SDP_ADDRESS, "sdpaddress",  NULL,   "SDP Address",   22 },
+    { SIP_ATTR_SDP_PORT,    "sdpport",     NULL,   "SDP Port",      5 },
+    { SIP_ATTR_TRANSPORT,   "transport",   "Trans", "Transport",    3 },
+    { SIP_ATTR_MSGCNT,      "msgcnt",      "Msgs", "Message Count", 5 },
+    { SIP_ATTR_CALLSTATE,   "state",       NULL,   "Call State",    10 },
+    { SIP_ATTR_CONVDUR,     "convdur",     "ConvDur", "Conversation Duration", 7 },
+    { SIP_ATTR_TOTALDUR,    "totaldur",    "TotalDur", "Total Duration", 8 }
 };
 
 sip_attr_hdr_t *

@@ -43,7 +43,7 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum filter_FLD_FILTER_list {
+enum filter_field_list {
     FLD_FILTER_SIPFROM = 0,
     FLD_FILTER_SIPTO,
     FLD_FILTER_SRC,
@@ -96,6 +96,18 @@ filter_create();
  */
 void
 filter_destroy();
+
+/**
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
+ */
+filter_info_t *
+filter_info(PANEL *panel);
 
 /**
  * @brief Manage pressed keys for filter panel

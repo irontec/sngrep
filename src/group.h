@@ -179,7 +179,13 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg);
 sip_msg_t *
 call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg);
 
-
+/**
+ * @brief Find the previous message in a call group
+ *
+ * @param callgroup SIP call group structure
+ * @param msg Actual SIP msg from any call of the group
+ * @return Previous chronological message in the group or NULL
+ */
 sip_msg_t *
 call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg);
 
