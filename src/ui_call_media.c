@@ -100,8 +100,6 @@ call_media_create()
     win = panel_window(panel);
     getmaxyx(win, height, width);
 
-    mvwprintw(win, 1, width / 2 - 10, "Media flows screen");
-
     return panel;
 }
 
@@ -129,6 +127,9 @@ call_media_draw(PANEL *panel)
     getmaxyx(win, height, width);
     werase(win);
 
+    // Print panel title
+    mvwprintw(win, 1, width / 2 - 10, "Media flows screen");
+
     // Draw a box around the panel window
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     title_foot_box(win);
@@ -148,14 +149,37 @@ call_media_draw(PANEL *panel)
         }
     }
 
+    // Print close "botton"
+    wattron(win, A_REVERSE);
+    mvwprintw(win, height - 2, width / 2 - 4, "[ Close ]");
+    wattroff(win, A_REVERSE);
+
     return 0;
 }
 
 int
 call_media_handle_key(PANEL *panel, int key)
 {
+    int action = -1;
+
+    // Check actions for this key
+    while ((action = key_find_action(key, action)) != ERR) {
+       // Check if we handle this action
+       switch (action) {
+           case ACTION_SELECT:
+           case ACTION_CONFIRM:
+               return KEY_ESC;
+           default:
+               // Parse next action
+               continue;
+       }
+
+       // This panel has handled the key successfully
+       break;
+    }
+
     // Return if this panel has handled or not the key
-    return key;
+    return (action == ERR) ? key : 0;
 }
 
 int
