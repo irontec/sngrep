@@ -104,7 +104,7 @@ struct save_info {
  *
  * @return a panel pointer
  */
-extern PANEL *
+PANEL *
 save_create();
 
 /**
@@ -112,7 +112,7 @@ save_create();
  *
  * This function do the final cleanups for this panel
  */
-extern void
+void
 save_destroy();
 
 /**
@@ -136,7 +136,7 @@ save_info(PANEL *panel);
  * @param panel Ncurses panel pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-extern int
+int
 save_draw(PANEL *panel);
 
 /**
@@ -153,7 +153,7 @@ save_draw(PANEL *panel);
  * @param key   key code
  * @return 0 if the key is handled, keycode otherwise
  */
-extern int
+int
 save_handle_key(PANEL *panel, int key);
 
 /**
@@ -164,7 +164,7 @@ save_handle_key(PANEL *panel, int key);
  *
  * @param group Call group pointer to be set in the internal info struct
  */
-extern void
+void
 save_set_group(PANEL *panel, sip_call_group_t *group);
 
 /**
@@ -174,7 +174,7 @@ save_set_group(PANEL *panel, sip_call_group_t *group);
  * @param panel Save panel pointer
  * @param message Message to be printed in the panel
  */
-extern void
+void
 save_error_message(PANEL *panel, const char *message);
 
 /**
@@ -185,7 +185,7 @@ save_error_message(PANEL *panel, const char *message);
  *
  * @param panel Save panel pointer
  */
-extern int
+int
 save_to_file(PANEL *panel);
 
 /**
