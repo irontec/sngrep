@@ -130,13 +130,13 @@ main(int argc, char* argv[])
     init_options();
 
     // Get initial values for configurable arguments
-    device = get_option_value("capture.device");
-    infile = get_option_value("capture.infile");
-    outfile = get_option_value("capture.outfile");
-    keyfile = get_option_value("capture.keyfile");
-    limit = get_option_int_value("capture.limit");
-    only_calls = is_option_enabled("sip.calls");
-    no_incomplete = is_option_enabled("sip.ignoreincomplete");
+    device = setting_get_value(SETTING_CAPTURE_DEVICE);
+    infile = setting_get_value(SETTING_CAPTURE_INFILE);
+    outfile = setting_get_value(SETTING_CAPTURE_OUTFILE);
+    keyfile = setting_get_value(SETTING_CAPTURE_KEYFILE);
+    limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
+    only_calls = setting_enabled(SETTING_SIP_CALLS);
+    no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
 
     // Parse command line arguments
     opterr = 0;

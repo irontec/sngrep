@@ -150,21 +150,6 @@ msg_diff_line_highlight(const char* payload1, const char* payload2, char *highli
 }
 
 void
-msg_diff_highlight(sip_msg_t *one, sip_msg_t *two, char *highlight)
-{
-    if (get_option_value("diff.mode")) {
-        // Select proper highlight logic
-        if (!strcasecmp(get_option_value("diff.mode"), "lcs")) {
-            // @todo msg_diff_lcs_highlight(one->payloadptr, two->payloadptr, highlight);
-        } else if (!strcasecmp(get_option_value("diff.mode"), "line")) {
-            msg_diff_line_highlight(one->payload, two->payload, highlight);
-        } else {
-            // Unknown hightlight enabled
-        }
-    }
-}
-
-void
 msg_diff_draw_footer(PANEL *panel)
 {
     const char *keybindings[] = {
@@ -184,11 +169,11 @@ msg_diff_draw(PANEL *panel)
 
     // Draw first message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_highlight(info->one, info->two, highlight);
+    msg_diff_line_highlight(info->one->payload, info->two->payload, highlight);
     msg_diff_draw_message(info->one_win, info->one, highlight);
     // Draw second message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_highlight(info->two, info->one, highlight);
+    msg_diff_line_highlight(info->two->payload, info->one->payload, highlight);
     msg_diff_draw_message(info->two_win, info->two, highlight);
 
     // Redraw footer

@@ -43,9 +43,11 @@
 #include <ncurses.h>
 #endif
 #include <panel.h>
+#include <form.h>
 #include "sip.h"
 #include "group.h"
 #include "keybinding.h"
+#include "setting.h"
 
 //! Refresh UI every 200 ms
 #define REFRESHTHSECS   2

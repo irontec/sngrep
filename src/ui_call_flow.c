@@ -31,11 +31,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "capture.h"
+#include "ui_manager.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_call_media.h"
 #include "ui_msg_diff.h"
-#include "option.h"
 
 /***
  *
@@ -154,14 +154,12 @@ call_flow_draw(PANEL *panel)
     }
 
     // Print color mode in title
-    if (is_option_enabled("color")) {
-        if (is_option_enabled("color.request"))
-            strcat(title, " (Color by Request/Response)");
-        if (is_option_enabled("color.callid"))
-            strcat(title, " (Color by Call-Id)");
-        if (is_option_enabled("color.cseq"))
-            strcat(title, " (Color by CSeq)");
-    }
+    if (setting_has_value(SETTING_COLORMODE, "request"))
+        strcat(title, " (Color by Request/Response)");
+    if (setting_has_value(SETTING_COLORMODE, "callid"))
+        strcat(title, " (Color by Call-Id)");
+    if (setting_has_value(SETTING_COLORMODE, "cseq"))
+        strcat(title, " (Color by CSeq)");
 
     // Draw panel title
     draw_title(panel, title);
@@ -182,7 +180,7 @@ call_flow_draw(PANEL *panel)
     }
 
     // If there are only three columns, then draw the raw message on this panel
-    if (is_option_enabled("cf.forceraw")) {
+    if (setting_enabled(SETTING_CF_FORCERAW)) {
         call_flow_draw_raw(panel, info->cur_msg);
     }
 
@@ -252,7 +250,7 @@ call_flow_draw_columns(PANEL *panel)
         strcpy(address, column->addr);
         if ((end = strchr(address, ':')))
             *end = '\0';
-        if (is_local_address_str(address) && is_option_enabled("cf.localhighlight"))
+        if (is_local_address_str(address) && setting_enabled(SETTING_CF_LOCALHIGHLIGHT))
             wattron(win, A_BOLD);
 
         coltext = sip_address_port_format(column->addr);
@@ -308,7 +306,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     // If message has sdp information
     if (msg->sdp) {
         // Change method text if sdpinfo mode is requested
-        if (is_option_enabled("cf.sdpinfo")) {
+        if (setting_enabled(SETTING_CF_SDP_ONLY)) {
             // Show message sdp in title
             memset(method, 0, sizeof(method));
             strncpy(method, msg_method, 3);
@@ -343,30 +341,30 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 
     // Highlight current message
     if (msg == info->cur_msg) {
-        if (is_option_value("cf.highlight", "reverse")) {
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
             wattron(win, A_REVERSE);
         }
-        if (is_option_value("cf.highlight", "bold")) {
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
             wattron(win, A_BOLD);
         }
-        if (is_option_value("cf.highlight", "reversebold")) {
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
             wattron(win, A_REVERSE);
             wattron(win, A_BOLD);
         }
     }
 
     // Color the message {
-    if (is_option_enabled("color.request")) {
+    if (setting_has_value(SETTING_COLORMODE, "request")) {
         // Determine arrow color
         if (msg_is_request(msg)) {
             msg->color = CP_RED_ON_DEF;
         } else {
             msg->color = CP_GREEN_ON_DEF;
         }
-    } else if (is_option_enabled("color.callid")) {
+    } else if (setting_has_value(SETTING_COLORMODE, "callid")) {
         // Color by call-id
         msg->color = call_group_color(info->group, msg->call);
-    } else if (is_option_enabled("color.cseq")) {
+    } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
         msg->color = msg->cseq % 7 + 1;
     }
@@ -425,12 +423,12 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     // Calculate the raw data width (width - used columns for flow - vertical lines)
     raw_width = width - (31 + 30 * info->columns->colpos) - 2;
     // We can define a mininum size for rawminwidth
-    if (raw_width < get_option_int_value("cf.rawminwidth")) {
-        raw_width = get_option_int_value("cf.rawminwidth");
+    if (raw_width < setting_get_intvalue(SETTING_CF_RAWMINWIDTH)) {
+        raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
     }
     // We can configure an exact raw size
-    if (get_option_int_value("cf.rawfixedwidth") != -1) {
-        raw_width = get_option_int_value("cf.rawfixedwidth");
+    if (setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH) > 0) {
+        raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
     }
 
     // Height of raw window is always available size minus 6 lines for header/footer
@@ -475,7 +473,7 @@ call_flow_handle_key(PANEL *panel, int key)
     sip_msg_t *next = NULL, *prev = NULL;
     ui_t *next_panel;
     sip_call_group_t *group;
-    int rnpag_steps = get_option_int_value("cf.scrollstep");
+    int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
 
     // Sanity check, this should not happen
@@ -568,17 +566,17 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_DECREASE_RAW:
                 raw_width = getmaxx(info->raw_win);
                 if (raw_width - 2 > 1) {
-                    set_option_int_value("cf.rawfixedwidth", raw_width - 2);
+                    setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, raw_width - 2);
                 }
                 break;
             case ACTION_INCREASE_RAW:
                 raw_width = getmaxx(info->raw_win);
                 if (raw_width + 2 < COLS - 1) {
-                    set_option_int_value("cf.rawfixedwidth", raw_width + 2);
+                    setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, raw_width + 2);
                 }
                 break;
             case ACTION_RESET_RAW:
-                set_option_int_value("cf.rawfixedwidth", -1);
+                setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, -1);
                 break;
             case ACTION_ONLY_SDP:
                 // Toggle SDP mode
@@ -590,13 +588,13 @@ call_flow_handle_key(PANEL *panel, int key)
                 call_flow_set_group(info->group);
                 break;
             case ACTION_SDP_INFO:
-                set_option_value("cf.sdpinfo", is_option_enabled("cf.sdpinfo") ? "off" : "on");
+                setting_toggle(SETTING_CF_SDP_ONLY);
                 break;
             case ACTION_TOGGLE_RAW:
-                set_option_value("cf.forceraw", is_option_enabled("cf.forceraw") ? "off" : "on");
+                setting_toggle(SETTING_CF_FORCERAW);
                 break;
             case ACTION_COMPRESS:
-                set_option_value("cf.splitcallid", is_option_enabled("cf.splitcallid") ? "off" : "on");
+                setting_toggle(SETTING_CF_SPLITCALLID);
                 // Force columns reload
                 call_flow_set_group(info->group);
                 break;
@@ -760,7 +758,7 @@ call_flow_column_get(PANEL *panel, const char *callid, const char *addr)
     columns = info->columns;
     while (columns) {
         if (!strcasecmp(addr, columns->addr)) {
-            if (is_option_enabled("cf.splitcallid"))
+            if (setting_enabled(SETTING_CF_SPLITCALLID))
                 return columns;
             if (columns->callid && !strcasecmp(callid, columns->callid))
                 return columns;

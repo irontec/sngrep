@@ -42,11 +42,12 @@
 #ifndef __SNGREP_CONFIG_H
 #define __SNGREP_CONFIG_H
 
-//! Shorter declarartion of attribute struct
+//! Shorter declarartion of config_option struct
 typedef struct config_option option_opt_t;
 
+//! Option types
 enum option_type {
-    SETTING = 0,
+    COLUMN = 0,
     IGNORE,
     ALIAS
 };
@@ -127,17 +128,6 @@ int
 get_option_int_value(const char *opt);
 
 /**
- * @brief Sets a settings option value form an int
- *
- * Basic setter for 'set' directive attributes
- *
- * @param opt Name of configuration option
- * @param value Value of configuration option
- */
-void
-set_option_int_value(const char *opt, int value);
-
-/**
  * @brief Sets a settings option value
  *
  * Basic setter for 'set' directive attributes
@@ -160,48 +150,6 @@ void
 set_ignore_value(const char *opt, const char *value);
 
 /**
- * @brief Sets an alias for a given address
- *
- * @param address IP Address
- * @param string representing the alias
- */
-void
-set_alias_value(const char *address, const char *alias);
-
-/**
- * @brief Check if a configuration option has a specific value
- *
- * @param opt Name of configuration option
- * @return 1 if value is "on" or "1", 0 otherwise
- */
-int
-is_option_value(const char *opt, const char *value);
-
-/**
- * @brief Check if a configuration option is "enabled"
- *
- * An option is considered enabled if it has "on" or "1" as value,
- * otherwise will return disabled (0)
- *
- * @param opt Name of configuration option
- * @return 1 if value is "on" or "1", 0 otherwise
- */
-int
-is_option_enabled(const char *opt);
-
-/**
- * @brief Check if a configuration option is "disabled"
- *
- * An option is considered disabled if it has "off" or "0" as value,
- * otherwise will return enabled (1);
- *
- * @param opt Name of configuration option
- * @return 1 if value is "off" or "0", 0 otherwise
- */
-int
-is_option_disabled(const char *opt);
-
-/**
  * @brief Check if a exits an ignore directive for the given field and value
  *
  * Like is_option_enabled, this check if there is a match in configuration
@@ -215,6 +163,15 @@ int
 is_ignored_value(const char *field, const char *fvalue);
 
 /**
+ * @brief Sets an alias for a given address
+ *
+ * @param address IP Address
+ * @param string representing the alias
+ */
+void
+set_alias_value(const char *address, const char *alias);
+
+/**
  * @brief Get alias for a given address (string)
  *
  * @param address IP Address
@@ -223,19 +180,5 @@ is_ignored_value(const char *field, const char *fvalue);
 const char *
 get_alias_value(const char *address);
 
-/**
- * @brief Toggle a boolean option
- *
- * An option is considered disabled if it has "off" or "0" as value,
- * otherwise will be enabled.
- * This function will set off for those options with on value, and
- * viceversa.
- *
- * @todo Implement also for "1"/"0" options
- *
- * @param option Name of configuration option
- */
-void
-toggle_option(const char *option);
 
 #endif

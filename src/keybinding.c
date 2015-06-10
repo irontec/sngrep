@@ -32,7 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ui_manager.h"
-#include "option.h"
+#include "setting.h"
 #include "keybinding.h"
 
 //! sngrep keybindings
@@ -293,7 +293,7 @@ key_from_str(const char *key)
 const char *
 key_action_key_str(int action)
 {
-    if (is_option_enabled("hintkeyalt") && bindings[action].bindcnt > 1) {
+    if (setting_enabled(SETTING_ALTKEY_HINT) && bindings[action].bindcnt > 1) {
         // First alt keybinding
         return key_to_str(bindings[action].keys[1]);
     } else {

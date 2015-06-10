@@ -38,7 +38,7 @@
 #include "capture_tls.h"
 #endif
 #include "sip.h"
-#include "option.h"
+#include "setting.h"
 #include "ui_manager.h"
 #ifdef WITH_IPV6
 #include <netinet/ip6.h>
@@ -553,6 +553,10 @@ lookup_hostname(const char *address)
     in_addr_t netaddress;
     struct hostent *host;
     const char *hostname;
+
+    // No lookup enabled, return address as is
+    if (!setting_enabled(SETTING_CAPTURE_LOOKUP))
+        return address;
 
     // Check if we have already tryied resolve this address
     for (i = 0; i < capinfo.dnscache.count; i++) {

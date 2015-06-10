@@ -29,9 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "capture.h"
+#include "ui_manager.h"
 #include "ui_call_media.h"
-#include "group.h"
-#include "option.h"
 
 /***
  *
@@ -290,7 +289,7 @@ call_media_draw_columns(PANEL *panel)
         strcpy(address, column->addr);
         if ((end = strchr(address, ':')))
             *end = '\0';
-        if (is_local_address_str(address) && is_option_enabled("cf.localhighlight"))
+        if (is_local_address_str(address) && setting_enabled(SETTING_CF_LOCALHIGHLIGHT))
             wattron(win, A_BOLD);
 
         coltext = sip_address_port_format(column->addr);

@@ -33,6 +33,7 @@
 #include <time.h>
 #include "keybinding.h"
 #include "option.h"
+#include "setting.h"
 
 /**
  * @brief Configuration options array
@@ -50,17 +51,9 @@ init_options()
     char userconf[128];
     char *home = getenv("HOME");
 
-    // Set default color options
-    set_option_value("color", "on");
-    set_option_value("color.request", "on");
-    set_option_value("color.callid", "off");
-    set_option_value("color.cseq", "off");
-    set_option_value("background", "dark");
-
-    // Highlight options
-    set_option_value("syntax", "on");
-    set_option_value("syntax.branch", "off");
-    set_option_value("syntax.tag", "off");
+    // Initialize settings
+    setting_set_value(SETTING_SAVEPATH, home);
+    setting_set_value(SETTING_FILTER_METHODS, "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE");
 
     // Add Call list column options
     set_option_value("cl.column0", "time");
@@ -71,42 +64,6 @@ init_options()
     set_option_value("cl.column4", "dst");
     set_option_value("cl.column5", "method");
     set_option_value("cl.column6", "state");
-
-    // Set Autoscroll in call list
-    set_option_value("cl.autoscroll", "on");
-    set_option_value("cl.scrollstep", "10");
-    set_option_value("cl.defexitbutton", "1");
-
-    // Raw options for Call flow screen
-    set_option_value("cf.forceraw", "on");
-    set_option_value("cf.rawminwidth", "40");
-    set_option_value("cf.splitcallid", "off");
-    set_option_value("cf.highlight", "bold");
-    set_option_value("cf.scrollstep", "4");
-    set_option_value("cf.localhighlight", "on");
-
-    // Default options for Call Raw screen
-    set_option_value("cr.scrollstep", "10");
-
-    // Set default mode in message diff screen
-    set_option_value("diff.mode", "line");
-
-    // Allow dialogs to be incomplete
-    set_option_value("sip.ignoreincomplete", "on");
-
-    // Set default save file location
-    set_option_value("savepath", home);
-
-    // Set default capture options
-    set_option_value("capture.limit", "50000");
-    set_option_value("capture.device", "any");
-    set_option_value("capture.lookup", "off");
-
-    // Set default filter options
-    set_option_value("filter.methods", "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE");
-
-    // Print defualt keys in bottom bar
-    set_option_value("hintkeyalt", "off");
 
     // Initialize keybindings
     key_bindings_init();
@@ -119,11 +76,6 @@ init_options()
         sprintf(userconf, "%s/.sngreprc", home);
         read_options(userconf);
     }
-
-    // Unless specified, when capturing with lookup, display
-    // hostnames where addresses are printed
-    if (!get_option_value("sngrep.displayhost"))
-        set_option_value("sngrep.displayhost", is_option_enabled("capture.lookup") ? "on" : "off");
 
     return 0;
 }
@@ -146,6 +98,7 @@ read_options(const char *fname)
     regex_t empty, setting;
     regmatch_t matches[4];
     char line[1024], *type, *option, *value;
+    enum setting_id id;
 
     if (!(fh = fopen(fname, "rt")))
         return -1;
@@ -167,7 +120,11 @@ read_options(const char *fname)
             value = line + matches[3].rm_so;
             line[matches[3].rm_eo] = '\0';
             if (!strcasecmp(type, "set")) {
-                set_option_value(option, value);
+                if ((id = setting_id(option)) > 0) {
+                    setting_set_value(id, value);
+                } else {
+                    set_option_value(option, value);
+                }
             } else if (!strcasecmp(type, "ignore")) {
                 set_ignore_value(option, value);
             } else if (!strcasecmp(type, "alias")) {
@@ -208,14 +165,6 @@ get_option_int_value(const char *opt)
 }
 
 void
-set_option_int_value(const char *opt, int value)
-{
-    char cvalue[10];
-    sprintf(cvalue, "%d", value);
-    set_option_value(opt, cvalue);
-}
-
-void
 set_option_value(const char *opt, const char *value)
 {
     if (!opt || !value)
@@ -223,7 +172,7 @@ set_option_value(const char *opt, const char *value)
 
     int i;
     if (!get_option_value(opt)) {
-        options[optscnt].type = SETTING;
+        options[optscnt].type = COLUMN;
         options[optscnt].opt = strdup(opt);
         options[optscnt].value = strdup(value);
         optscnt++;
@@ -237,32 +186,6 @@ set_option_value(const char *opt, const char *value)
     }
 }
 
-int
-is_option_enabled(const char *opt)
-{
-    const char *value;
-    if ((value = get_option_value(opt))) {
-        if (!strcasecmp(value, "on"))
-            return 1;
-        if (!strcasecmp(value, "1"))
-            return 1;
-    }
-    return 0;
-}
-
-int
-is_option_disabled(const char *opt)
-{
-    const char *value;
-    if ((value = get_option_value(opt))) {
-        if (!strcasecmp(value, "off"))
-            return 1;
-        if (!strcasecmp(value, "0"))
-            return 1;
-    }
-    return 0;
-}
-
 void
 set_ignore_value(const char *opt, const char *value)
 {
@@ -270,24 +193,6 @@ set_ignore_value(const char *opt, const char *value)
     options[optscnt].opt = strdup(opt);
     options[optscnt].value = strdup(value);
     optscnt++;
-}
-
-void
-set_alias_value(const char *address, const char *alias)
-{
-    options[optscnt].type = ALIAS;
-    options[optscnt].opt = strdup(address);
-    options[optscnt].value = strdup(alias);
-    optscnt++;
-}
-
-int
-is_option_value(const char *opt, const char *expected)
-{
-    const char *value;
-    if ((value = get_option_value(opt)))
-        return !strcasecmp(value, expected);
-    return 0;
 }
 
 int
@@ -300,6 +205,15 @@ is_ignored_value(const char *field, const char *fvalue)
         }
     }
     return 0;
+}
+
+void
+set_alias_value(const char *address, const char *alias)
+{
+    options[optscnt].type = ALIAS;
+    options[optscnt].opt = strdup(address);
+    options[optscnt].value = strdup(alias);
+    optscnt++;
 }
 
 const char *
@@ -320,9 +234,3 @@ get_alias_value(const char *address)
     return address;
 }
 
-
-void
-toggle_option(const char *option)
-{
-    set_option_value(option, is_option_enabled(option) ? "off" : "on");
-}

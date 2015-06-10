@@ -34,7 +34,6 @@
 #include "ui_manager.h"
 #include "ui_call_raw.h"
 #include "ui_save.h"
-#include "option.h"
 #include "capture.h"
 
 /**
@@ -144,17 +143,17 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     }
 
     // Color the message {
-    if (is_option_enabled("color.request")) {
+    if (setting_has_value(SETTING_COLORMODE, "request")) {
         // Determine arrow color
         if (msg_is_request(msg)) {
             msg->color = CP_RED_ON_DEF;
         } else {
             msg->color = CP_GREEN_ON_DEF;
         }
-    } else if (info->group && is_option_enabled("color.callid")) {
+    } else if (info->group && setting_has_value(SETTING_COLORMODE, "callid")) {
         // Color by call-id
         msg->color = call_group_color(info->group, msg->call);
-    } else if (is_option_enabled("color.cseq")) {
+    } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
         msg->color = msg->cseq % 7 + 1;
     }
@@ -183,7 +182,7 @@ call_raw_handle_key(PANEL *panel, int key)
 {
     call_raw_info_t *info;
     ui_t *next_panel;
-    int rnpag_steps = get_option_int_value("cr.scrollstep");
+    int rnpag_steps = setting_get_intvalue(SETTING_CR_SCROLLSTEP);
     int action = -1;
 
     // Sanity check, this should not happen
@@ -216,7 +215,7 @@ call_raw_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_SHOW_HOSTNAMES:
                 // Tooggle Host/Address display
-                toggle_option("sngrep.displayhost");
+                setting_toggle(SETTING_DISPLAY_HOST);
                 // Force refresh panel
                 if (info->group) {
                     call_raw_set_group(info->group);

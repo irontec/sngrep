@@ -35,6 +35,7 @@
 #include "option.h"
 #include "filter.h"
 #include "capture.h"
+#include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_media.h"
@@ -112,8 +113,8 @@ call_list_create()
     info->group = call_group_create();
 
     // Set defualt filter text if configured
-    if (get_option_value("cl.filter")) {
-        set_field_buffer(info->fields[FLD_LIST_FILTER], 0, get_option_value("cl.filter"));
+    if (setting_get_value(SETTING_CL_FILTER)) {
+        set_field_buffer(info->fields[FLD_LIST_FILTER], 0, setting_get_value(SETTING_CL_FILTER));
         call_list_form_activate(panel, 0);
     }
 
@@ -412,7 +413,7 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 int
 call_list_handle_key(PANEL *panel, int key)
 {
-    int i, height, width, rnpag_steps = get_option_int_value("cl.scrollstep");
+    int i, height, width, rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     call_list_info_t *info;
     ui_t *next_panel;
     sip_call_group_t *group;
@@ -579,7 +580,7 @@ call_list_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested
-                if (!is_option_enabled("cl.noexitprompt")) {
+                if (setting_enabled(SETTING_CL_EXITPROMPT)) {
                     return call_list_exit_confirm(panel);
                 }
                 break;
@@ -748,8 +749,9 @@ call_list_exit_confirm(PANEL *panel)
 {
     WINDOW *exit_win;
     int c;
+
     // Initial exit status
-    int exit = get_option_int_value("cl.defexitbutton");
+    int exit = 1;
 
     // Create a new panel and show centered
     exit_win = newwin(8, 40, (LINES - 8) / 2, (COLS - 40) / 2);

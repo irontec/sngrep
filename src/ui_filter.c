@@ -33,7 +33,7 @@
 #include "ui_call_list.h"
 #include "sip.h"
 #include "filter.h"
-#include "option.h"
+#include "setting.h"
 
 /**
  * Ui Structure definition for Filter panel
@@ -129,7 +129,7 @@ filter_create()
 
     // Get Method filter
     if (!(method = filter_get(FILTER_METHOD)))
-        method = get_option_value("filter.methods");
+        method = setting_get_value(SETTING_FILTER_METHODS);
 
     // Set Default field values
     set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));

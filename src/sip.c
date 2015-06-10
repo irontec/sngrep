@@ -38,6 +38,7 @@
 #include <stdarg.h>
 #include "sip.h"
 #include "option.h"
+#include "setting.h"
 #include "capture.h"
 #include "filter.h"
 
@@ -1038,9 +1039,9 @@ sip_address_format(const char *address)
 {
 
     // Return address formatted depending on active settings
-    if (is_option_enabled("sngrep.displayalias")) {
+    if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
         return get_alias_value(address);
-    } else if (is_option_enabled("capture.lookup") && is_option_enabled("sngrep.displayhost")) {
+    } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
         return lookup_hostname(address);
     } else {
         return address;

@@ -32,7 +32,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <locale.h>
-#include "option.h"
+#include "setting.h"
 #include "ui_manager.h"
 #include "capture.h"
 #include "ui_call_list.h"
@@ -77,7 +77,7 @@ init_interface()
     }
 
     // Check if user wants a black background
-    if (is_option_value("background", "dark")) {
+    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
         assume_default_colors(COLOR_WHITE, COLOR_BLACK);
     } else {
         use_default_colors();
@@ -110,7 +110,7 @@ init_interface()
         define_key("\033[17;2~", KEY_F(18));
     }
 
-    if (is_option_value("background", "dark")) {
+    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
         fg = COLOR_WHITE;
         bg = COLOR_BLACK;
     } else {
@@ -350,28 +350,19 @@ default_handle_key(ui_t *ui, int key)
                 ui_resize_panel(ui);
                 break;
             case ACTION_TOGGLE_SYNTAX:
-                toggle_option("syntax");
+                setting_toggle(SETTING_SYNTAX);
                 break;
             case ACTION_TOGGLE_HINT:
-                toggle_option("hintkeyalt");
+                setting_toggle(SETTING_ALTKEY_HINT);
                 break;
             case ACTION_CYCLE_COLOR:
-                if (is_option_enabled("color.request")) {
-                    toggle_option("color.request");
-                    toggle_option("color.callid");
-                } else if (is_option_enabled("color.callid")) {
-                    toggle_option("color.callid");
-                    toggle_option("color.cseq");
-                } else if (is_option_enabled("color.cseq")) {
-                    toggle_option("color.cseq");
-                    toggle_option("color.request");
-                }
+                setting_toggle(SETTING_COLORMODE);
                 break;
             case ACTION_SHOW_HOSTNAMES:
-                toggle_option("sngrep.displayhost");
+                setting_toggle(SETTING_DISPLAY_HOST);
                 break;
             case ACTION_SHOW_ALIAS:
-                toggle_option("sngrep.displayalias");
+                setting_toggle(SETTING_DISPLAY_ALIAS);
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
@@ -518,7 +509,7 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
 {
     int height, width, line, column, i;
     char *cur_line = msg->payload;
-    int syntax = is_option_enabled("syntax");
+    int syntax = setting_enabled(SETTING_SYNTAX);
 
     // Default text format
     int attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
@@ -565,13 +556,13 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
                 // tag and branch syntax
                 if (i > 0 && msg->payload[i - 1] == ';') {
                     // Highlight branch if requested
-                    if (is_option_enabled("syntax.branch")) {
+                    if (setting_enabled(SETTING_SYNTAX_BRANCH)) {
                         if (!strncasecmp(msg->payload + i, "branch", 6)) {
                             attrs = A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF);
                         }
                     }
                     // Highlight tag if requested
-                    if (is_option_enabled("syntax.tag")) {
+                    if (setting_enabled(SETTING_SYNTAX_TAG)) {
                         if (!strncasecmp(msg->payload + i, "tag", 3)) {
                             if (!strncasecmp(cur_line, "From:", 5)) {
                                 attrs = A_BOLD | COLOR_PAIR(CP_DEFAULT);

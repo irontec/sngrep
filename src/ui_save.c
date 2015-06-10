@@ -34,7 +34,7 @@
 #include <form.h>
 #include <ctype.h>
 #include "ui_save.h"
-#include "option.h"
+#include "setting.h"
 #include "capture.h"
 #include "filter.h"
 
@@ -107,7 +107,7 @@ save_create()
     post_form(info->form);
 
     // Set Default field values
-    sprintf(savepath, "%s", get_option_value("savepath"));
+    sprintf(savepath, "%s", setting_get_value(SETTING_SAVEPATH));
 
     set_field_buffer(info->fields[FLD_SAVE_PATH], 0, savepath);
     set_field_buffer(info->fields[FLD_SAVE_SAVE], 0, "[  Save  ]");
