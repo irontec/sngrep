@@ -43,6 +43,7 @@
 #include "ui_msg_diff.h"
 #include "ui_column_select.h"
 #include "ui_save.h"
+#include "ui_settings.h"
 
 /**
  * @brief Available panel windows list
@@ -52,15 +53,17 @@
 
  */
 static ui_t *panel_pool[] =
-    {
-      &ui_call_list,
-      &ui_call_flow,
-      &ui_call_raw,
-      &ui_call_media,
-      &ui_filter,
-      &ui_save,
-      &ui_msg_diff,
-      &ui_column_select, };
+{
+    &ui_call_list,
+    &ui_call_flow,
+    &ui_call_raw,
+    &ui_call_media,
+    &ui_filter,
+    &ui_save,
+    &ui_msg_diff,
+    &ui_column_select,
+    &ui_settings
+};
 
 int
 init_interface()
@@ -363,6 +366,9 @@ default_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_SHOW_ALIAS:
                 setting_toggle(SETTING_DISPLAY_ALIAS);
+                break;
+            case ACTION_SHOW_SETTINGS:
+                ui_create_panel(PANEL_SETTINGS);
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture

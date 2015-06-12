@@ -733,7 +733,7 @@ msg_parse_media(sip_msg_t *msg)
         return;
 
     // Request methods create new media
-    if (msg_is_request(msg)) {
+    if (!msg_is_request(msg)) {
         // Check if we have already added this media
         if (!media_find(msg->call->medias, address, port)) {
             call_add_media(msg->call, media_create(address, port));
@@ -791,11 +791,11 @@ msg_get_request(sip_msg_t *msg)
     if (!msg)
         return NULL;
 
-    if (msg_is_request(msg))
+    if (!msg_is_request(msg))
         return NULL;
 
     for (tmp = call_get_prev_msg(msg->call, tmp); tmp; tmp = call_get_prev_msg(msg->call, tmp)) {
-        if (!msg_is_request(tmp))
+        if (msg_is_request(tmp))
             continue;
 
         if (!strcmp(tmp->src, msg->dst) && tmp->sport == msg->dport)

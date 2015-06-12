@@ -45,11 +45,11 @@
 typedef struct setting_option setting_t;
 
 //! Generic setting formats
-#define SETTING_ENUM_ONOFF      "on,off"
-#define SETTING_ENUM_YESNO      "yes,no"
-#define SETTING_ENUM_BACKGROUND "dark,default"
-#define SETTING_ENUM_COLORMODE  "request,cseq,callid"
-#define SETTING_ENUM_HIGHLIGHT  "bold,reverse,reversebold"
+#define SETTING_ENUM_ONOFF       (const char *[]){ "on", "off", NULL }
+#define SETTING_ENUM_YESNO       (const char *[]){ "yes", "no", NULL }
+#define SETTING_ENUM_BACKGROUND  (const char *[]){ "dark" , "default", NULL }
+#define SETTING_ENUM_COLORMODE   (const char *[]){ "request", "cseq", "callid", NULL }
+#define SETTING_ENUM_HIGHLIGHT   (const char *[]){ "bold", "reverse", "reversebold", NULL }
 
 //! Available setting Options
 enum setting_id
@@ -60,6 +60,7 @@ enum setting_id
     SETTING_SYNTAX_TAG,
     SETTING_SYNTAX_BRANCH,
     SETTING_ALTKEY_HINT,
+    SETTING_EXITPROMPT,
     SETTING_CAPTURE_LIMIT,
     SETTING_CAPTURE_LOOKUP,
     SETTING_CAPTURE_DEVICE,
@@ -72,7 +73,6 @@ enum setting_id
     SETTING_DISPLAY_HOST,
     SETTING_DISPLAY_ALIAS,
     SETTING_CL_FILTER,
-    SETTING_CL_EXITPROMPT,
     SETTING_CL_SCROLLSTEP,
     SETTING_CF_FORCERAW,
     SETTING_CF_RAWMINWIDTH,
@@ -108,7 +108,7 @@ struct setting_option {
     //! Value of the setting
     char *value;
     //! Compa separated valid values
-    const char *vvalues;
+    const char **valuelist;
 };
 
 
@@ -139,6 +139,9 @@ setting_name(enum setting_id id);
 enum setting_fmt
 setting_format(enum setting_id id);
 
+const char **
+setting_valid_values(enum setting_id id);
+
 const char*
 setting_get_value(enum setting_id id);
 
@@ -162,8 +165,5 @@ setting_toggle(enum setting_id id);
 
 const char *
 setting_enum_next(enum setting_id id, const char *value);
-
-const char *
-setting_enum_prev(enum setting_id id, const char *value);
 
 #endif /* __SNGREP_SETTING_H */

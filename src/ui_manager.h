@@ -138,6 +138,8 @@ enum panel_types {
     PANEL_MSG_DIFF,
     //! Column selector panel
     PANEL_COLUMN_SELECT,
+    //! Settings panel
+    PANEL_SETTINGS,
     //! Panel Counter
     PANEL_COUNT,
 };
@@ -153,6 +155,7 @@ extern ui_t ui_filter;
 extern ui_t ui_save;
 extern ui_t ui_msg_diff;
 extern ui_t ui_column_select;
+extern ui_t ui_settings;
 
 /**
  * @brief Initialize ncurses mode

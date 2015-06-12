@@ -241,8 +241,8 @@ call_list_draw_footer(PANEL *panel)
         key_action_key_str(ACTION_DISP_FILTER), "Search",
         key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
         key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
-        key_action_key_str(ACTION_SHOW_RAW), "Raw",
         key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
+        key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
@@ -569,6 +569,9 @@ call_list_handle_key(PANEL *panel, int key)
                 // Clear List
                 call_list_clear(panel);
                 break;
+            case ACTION_SHOW_SETTINGS:
+                ui_create_panel(PANEL_SETTINGS);
+                break;
             case ACTION_SELECT:
                 if (!info->cur_call)
                     break;
@@ -580,8 +583,10 @@ call_list_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested
-                if (setting_enabled(SETTING_CL_EXITPROMPT)) {
+                if (setting_enabled(SETTING_EXITPROMPT)) {
                     return call_list_exit_confirm(panel);
+                } else {
+                    return KEY_ESC;
                 }
                 break;
             default:

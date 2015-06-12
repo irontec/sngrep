@@ -56,7 +56,6 @@ init_options()
     setting_set_value(SETTING_FILTER_METHODS, "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE");
 
     // Add Call list column options
-    set_option_value("cl.column0", "time");
     set_option_value("cl.column0", "sipfrom");
     set_option_value("cl.column1", "sipto");
     set_option_value("cl.column2", "msgcnt");
@@ -98,7 +97,7 @@ read_options(const char *fname)
     regex_t empty, setting;
     regmatch_t matches[4];
     char line[1024], *type, *option, *value;
-    enum setting_id id;
+    int id;
 
     if (!(fh = fopen(fname, "rt")))
         return -1;
@@ -120,7 +119,7 @@ read_options(const char *fname)
             value = line + matches[3].rm_so;
             line[matches[3].rm_eo] = '\0';
             if (!strcasecmp(type, "set")) {
-                if ((id = setting_id(option)) > 0) {
+                if ((id = setting_id(option)) >= 0) {
                     setting_set_value(id, value);
                 } else {
                     set_option_value(option, value);

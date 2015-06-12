@@ -50,7 +50,9 @@ key_bindings_init()
     key_bind_action(ACTION_DOWN, KEY_DOWN);
     key_bind_action(ACTION_DOWN, 'k');
     key_bind_action(ACTION_LEFT, KEY_LEFT);
+    key_bind_action(ACTION_LEFT, 'h');
     key_bind_action(ACTION_RIGHT, KEY_RIGHT);
+    key_bind_action(ACTION_RIGHT, 'l');
     key_bind_action(ACTION_DELETE, KEY_DC);
     key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE);
     key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE2);
@@ -100,6 +102,9 @@ key_bindings_init()
     key_bind_action(ACTION_SHOW_COLUMNS, KEY_F(10));
     key_bind_action(ACTION_SHOW_COLUMNS, 't');
     key_bind_action(ACTION_SHOW_COLUMNS, 'T');
+    key_bind_action(ACTION_SHOW_SETTINGS, KEY_F(8));
+    key_bind_action(ACTION_SHOW_SETTINGS, 'o');
+    key_bind_action(ACTION_SHOW_SETTINGS, 'O');
     key_bind_action(ACTION_COLUMN_MOVE_UP, '-');
     key_bind_action(ACTION_COLUMN_MOVE_DOWN, '+');
     key_bind_action(ACTION_DISP_FILTER, KEY_F(3));
