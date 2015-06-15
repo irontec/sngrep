@@ -27,6 +27,7 @@
  */
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "ui_manager.h"
 #include "ui_settings.h"
 #include "setting.h"
@@ -61,6 +62,8 @@ settings_entry_t entries[] = {
  { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_ALTKEY_HINT,        SETTING_ALTKEY_HINT,        "Alternative keybinding hints .............." },
  { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_COLORMODE,          SETTING_COLORMODE,          "Default message color mode ................" },
  { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_EXITPROMPT,         SETTING_EXITPROMPT,         "Always prompt on quit ....................." },
+ { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_DISPLAY_HOST,      SETTING_DISPLAY_HOST,       "Replace addresses with resolved hosts ....." },
+ { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_DISPLAY_ALIAS,     SETTING_DISPLAY_ALIAS,      "Replace addresses with alias .............." },
  { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_LIMIT,      SETTING_CAPTURE_LIMIT,      "Max dialogs * ............................." },
  { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_DEVICE,     SETTING_CAPTURE_DEVICE,     "Capture device * .........................." },
  { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_LOOKUP,     SETTING_CAPTURE_LOOKUP,     "Resolved IP Addresses * ..................." },
@@ -71,10 +74,8 @@ settings_entry_t entries[] = {
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_FORCERAW,        SETTING_CF_FORCERAW,        "Show message preview panel ................" },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_HIGHTLIGHT,      SETTING_CF_HIGHTLIGHT,      "Selected message hightlight ..............." },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_LOCALHIGHLIGHT,  SETTING_CF_LOCALHIGHLIGHT,  "Highlight local addresses ................." },
- { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DISPLAY_HOST,    SETTING_CF_LOCALHIGHLIGHT,  "Show resolved addresses on columns ........" },
- { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DISPLAY_ALIAS,   SETTING_CF_LOCALHIGHLIGHT,  "Show alias name on columns ................" },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SPLITCACALLID,   SETTING_CF_SPLITCALLID,     "Merge columns with same address ..........." },
- { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SDPONLY,         SETTING_CF_SPLITCALLID,     "Only print messages with SDP .............." },
+ { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SDPONLY,         SETTING_CF_SDP_ONLY,        "Only print messages with SDP .............." },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DELTA,           SETTING_CF_DELTA,           "Show delta time between messages .........." },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SCROLLSTEP,      SETTING_CF_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
  { CAT_SETTINGS_CALL_RAW,   FLD_SETTINGS_CR_SCROLLSTEP,      SETTING_CR_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
@@ -474,6 +475,9 @@ ui_settings_save(PANEL *panel)
     // Read current $HOME/.sngreprc file
     sprintf(userconf, "%s/.sngreprc", home);
     sprintf(tmpfile, "%s/.sngreprc.old", home);
+
+    // Remove old config file
+    unlink(tmpfile);
 
     // Move home file to temporal dir
     rename(userconf, tmpfile);

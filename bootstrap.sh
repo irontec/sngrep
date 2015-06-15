@@ -17,11 +17,13 @@ case `uname -sr` in
                 export AUTOCONF_VERSION=2.63
                 export AUTOMAKE_VERSION=1.9
                 ;;
-        *)
-                AUTOCONF_VERSION=2.60
-                AUTOMAKE_VERSION=1.9
+        FreeBSD*)
+                AUTOCONF_VERSION=2.69
+                AUTOMAKE_VERSION=1.12
                 export AUTOCONF_VERSION
                 export AUTOMAKE_VERSION
+                ;;
+        *)
                 ;;
 esac
 

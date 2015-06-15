@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <regex.h>
+#include <unistd.h>
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_column_select.h"
@@ -394,6 +395,9 @@ column_select_save_columns(PANEL *panel)
     // Read current $HOME/.sngreprc file
     sprintf(userconf, "%s/.sngreprc", home);
     sprintf(tmpfile, "%s/.sngreprc.old", home);
+
+    // Remove old config file
+    unlink(tmpfile);
 
     // Move home file to temporal dir
     rename(userconf, tmpfile);
