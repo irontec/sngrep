@@ -70,7 +70,7 @@ setting_t settings[SETTING_COUNT] =
 };
 
 setting_t *
-setting_by_id(enum setting_id id)
+setting_by_id(int id)
 {
     int i;
     for (i = 0; i < SETTING_COUNT; i++) {
@@ -91,7 +91,7 @@ setting_by_name(const char *name)
     return NULL;
 }
 
-enum setting_id
+int
 setting_id(const char *name)
 {
     const setting_t *sett = setting_by_name(name);
@@ -99,42 +99,42 @@ setting_id(const char *name)
 }
 
 const char *
-setting_name(enum setting_id id)
+setting_name(int id)
 {
     const setting_t *sett = setting_by_id(id);
     return (sett) ? sett->name : NULL;
 }
 
-enum setting_fmt
-setting_format(enum setting_id id)
+int
+setting_format(int id)
 {
     const setting_t *sett = setting_by_id(id);
     return (sett) ? sett->fmt : -1;
 }
 
 const char **
-setting_valid_values(enum setting_id id)
+setting_valid_values(int id)
 {
     const setting_t *sett = setting_by_id(id);
     return (sett) ? sett->valuelist : NULL;
 }
 
 const char *
-setting_get_value(enum setting_id id)
+setting_get_value(int id)
 {
     const setting_t *sett = setting_by_id(id);
     return (sett) ? sett->value : NULL;
 }
 
 int
-setting_get_intvalue(enum setting_id id)
+setting_get_intvalue(int id)
 {
     const setting_t *sett = setting_by_id(id);
     return (sett && sett->value) ? atoi(sett->value) : -1;
 }
 
 void
-setting_set_value(enum setting_id id, const char *value)
+setting_set_value(int id, const char *value)
 {
     setting_t *sett = setting_by_id(id);
     if (sett) {
@@ -143,7 +143,7 @@ setting_set_value(enum setting_id id, const char *value)
 }
 
 void
-setting_set_intvalue(enum setting_id id, int value)
+setting_set_intvalue(int id, int value)
 {
     char strvalue[80];
     sprintf(strvalue, "%d", value);
@@ -151,7 +151,7 @@ setting_set_intvalue(enum setting_id id, int value)
 }
 
 int
-setting_enabled(enum setting_id id)
+setting_enabled(int id)
 {
 
     return setting_has_value(id, "on") ||
@@ -159,7 +159,7 @@ setting_enabled(enum setting_id id)
 }
 
 int
-setting_has_value(enum setting_id id, const char *value)
+setting_has_value(int id, const char *value)
 {
     setting_t *sett = setting_by_id(id);
     if (sett && sett->value) {
@@ -170,7 +170,7 @@ setting_has_value(enum setting_id id, const char *value)
 }
 
 void
-setting_toggle(enum setting_id id)
+setting_toggle(int id)
 {
     setting_t *sett = setting_by_id(id);
 
@@ -186,7 +186,7 @@ setting_toggle(enum setting_id id)
 }
 
 const char *
-setting_enum_next(enum setting_id id, const char *value)
+setting_enum_next(int id, const char *value)
 {
     int i;
     const char *vnext;

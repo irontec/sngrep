@@ -114,7 +114,7 @@ struct setting_option {
 
 
 setting_t *
-setting_by_id(enum setting_id id);
+setting_by_id(int id);
 
 setting_t *
 setting_by_name(const char *name);
@@ -125,7 +125,7 @@ setting_by_name(const char *name);
  * @param name String representing configurable setting
  * @return setting id or -1 if setting is not found
  */
-enum setting_id
+int
 setting_id(const char *name);
 
 /**
@@ -135,36 +135,36 @@ setting_id(const char *name);
  * @return string representation of setting or NULL
  */
 const char *
-setting_name(enum setting_id id);
+setting_name(int id);
 
-enum setting_fmt
-setting_format(enum setting_id id);
+int
+setting_format(int id);
 
 const char **
-setting_valid_values(enum setting_id id);
+setting_valid_values(int id);
 
 const char*
-setting_get_value(enum setting_id id);
+setting_get_value(int id);
 
 int
-setting_get_intvalue(enum setting_id id);
+setting_get_intvalue(int id);
 
 void
-setting_set_value(enum setting_id id, const char *value);
+setting_set_value(int id, const char *value);
 
 void
-setting_set_intvalue(enum setting_id id, int value);
+setting_set_intvalue(int id, int value);
 
 int
-setting_enabled(enum setting_id id);
+setting_enabled(int id);
 
 int
-setting_has_value(enum setting_id id, const char *value);
+setting_has_value(int id, const char *value);
 
 void
-setting_toggle(enum setting_id id);
+setting_toggle(int id);
 
 const char *
-setting_enum_next(enum setting_id id, const char *value);
+setting_enum_next(int id, const char *value);
 
 #endif /* __SNGREP_SETTING_H */
