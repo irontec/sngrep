@@ -841,16 +841,22 @@ msg_get_header(sip_msg_t *msg, char *out)
 const char *
 msg_get_time_delta(sip_msg_t *one, sip_msg_t *two, char *out)
 {
+    long diff;
+    int nsec, nusec;
+    int sign;
+
     if (!one || !two || !out)
         return NULL;
 
-    int nsecs = two->pcap_header->ts.tv_sec - one->pcap_header->ts.tv_sec;
-    int usecs = two->pcap_header->ts.tv_usec - one->pcap_header->ts.tv_usec;
-    if (usecs < 0) {
-        usecs = 1000000 - abs(usecs);
-        nsecs--;
-    }
-    sprintf(out, "%+d.%06d", nsecs, usecs);
+    diff = two->pcap_header->ts.tv_sec  * 1000000 + two->pcap_header->ts.tv_usec;
+    diff -= one->pcap_header->ts.tv_sec * 1000000 + one->pcap_header->ts.tv_usec;
+
+    nsec = diff / 1000000;
+    nusec = abs(diff - (nsec * 1000000));
+
+    sign = (diff >= 0) ? '+' : '-';
+
+    sprintf(out, "%c%d.%06d", sign, abs(nsec), nusec);
     return out;
 }
 

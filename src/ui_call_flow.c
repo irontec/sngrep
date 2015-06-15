@@ -293,6 +293,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     msg_dst = msg_get_attribute(msg, SIP_ATTR_DST);
 
     // Print timestamp
+    if (info->selected == msg)
+        wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(win, cline, 2, "%s", msg_time);
 
     // Print delta from selected message
@@ -306,9 +308,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     if (strlen(delta)) {
         wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
         mvwprintw(win, cline + 1 , 2, "%15s", delta);
-        wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     }
-
+    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     // Get Message method (include extra info)
     memset(method, 0, sizeof(method));
@@ -716,6 +717,7 @@ call_flow_set_group(sip_call_group_t *group)
     info->cur_line = 1;
     info->columns = NULL;
     info->last_msg = NULL;
+    info->selected = NULL;
 
     return 0;
 }
