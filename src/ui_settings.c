@@ -456,7 +456,6 @@ ui_settings_save(PANEL *panel)
 {
     int i;
     FILE *fi, *fo;
-    regex_t setting;
     char line[1024];
     char *home = getenv("HOME");
     char userconf[128], tmpfile[128];
@@ -489,18 +488,15 @@ ui_settings_save(PANEL *panel)
 
     // Read all lines of old sngreprc file
     if ((fi = fopen(tmpfile, "r"))) {
-        // Compile expression matching
-        regcomp(&setting, "^\\s*set\\s+\\S+\\s+\\S+\\s*$", REG_EXTENDED);
         // Read all configuration file
         while (fgets(line, 1024, fi) != NULL) {
-            // Dont copy original settings
-            if ((regexec(&setting, line, 0, 0, 0) == 0) && !strstr(line, "column"))
-                continue;
-            // Put everyting in new .sngreprc file
-            fputs(line, fo);
+            // Ignore lines starting with set (but keep set column ones)
+            if (strncmp(line, "set ", 4) || !strncmp(line, "set cl.column", 13)) {
+                // Put everyting in new .sngreprc file
+                fputs(line, fo);
+            }
         }
         fclose(fi);
-        regfree(&setting);
     }
 
     for (i=0; i < FLD_SETTINGS_COUNT; i++) {

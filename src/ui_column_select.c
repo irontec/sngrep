@@ -382,7 +382,6 @@ column_select_save_columns(PANEL *panel)
 {
     int column;
     FILE *fi, *fo;
-    regex_t setting;
     char columnopt[128];
     char line[1024];
     char *home = getenv("HOME");
@@ -409,18 +408,16 @@ column_select_save_columns(PANEL *panel)
 
     // Read all lines of old sngreprc file
     if ((fi = fopen(tmpfile, "r"))) {
-        // Compile expression matching
-        regcomp(&setting, "^\\s*set\\s+cl.column[0-9]+\\s+\\S+\\s*$", REG_EXTENDED);
+
         // Read all configuration file
         while (fgets(line, 1024, fi) != NULL) {
-            // Dont copy set cl.columns lines
-            if (regexec(&setting, line, 0, 0, 0) == 0)
-                continue;
-            // Put everyting in new .sngreprc file
-            fputs(line, fo);
+            // Ignore lines starting with set (but keep settings)
+            if (strncmp(line, "set ", 4) || strncmp(line, "set cl.column", 13)) {
+                // Put everyting in new .sngreprc file
+                fputs(line, fo);
+            }
         }
         fclose(fi);
-        regfree(&setting);
     }
 
     // Get panel information
