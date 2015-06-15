@@ -31,6 +31,7 @@
 #define __SNGREP_MEDIA_H_
 
 #include "config.h"
+#include <sys/types.h>
 
 //! Shorter declaration of sip_media structure
 typedef struct sdp_media sdp_media_t;
