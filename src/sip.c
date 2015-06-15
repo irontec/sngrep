@@ -834,6 +834,22 @@ msg_get_header(sip_msg_t *msg, char *out)
     return out;
 }
 
+const char *
+msg_get_time_delta(sip_msg_t *one, sip_msg_t *two, char *out)
+{
+    if (!one || !two || !out)
+        return NULL;
+
+    int nsecs = two->pcap_header->ts.tv_sec - one->pcap_header->ts.tv_sec;
+    int usecs = two->pcap_header->ts.tv_usec - one->pcap_header->ts.tv_usec;
+    if (usecs < 0) {
+        usecs = 1000000 - abs(usecs);
+        nsecs--;
+    }
+    sprintf(out, "%+d.%06d", nsecs, usecs);
+    return out;
+}
+
 void
 sip_calls_clear()
 {

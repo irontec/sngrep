@@ -269,11 +269,10 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     const char *msg_time;
     const char *msg_callid;
     const char *msg_method;
-    const char *msg_from;
-    const char *msg_to;
     const char *msg_src;
     const char *msg_dst;
     char method[80];
+    char delta[15] = {};
     int height, width;
 
     // Get panel information
@@ -290,13 +289,26 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
     msg_callid = msg_get_attribute(msg, SIP_ATTR_CALLID);
     msg_method = msg_get_attribute(msg, SIP_ATTR_METHOD);
-    msg_from = msg_get_attribute(msg, SIP_ATTR_SIPFROM);
-    msg_to = msg_get_attribute(msg, SIP_ATTR_SIPTO);
     msg_src = msg_get_attribute(msg, SIP_ATTR_SRC);
     msg_dst = msg_get_attribute(msg, SIP_ATTR_DST);
 
     // Print timestamp
     mvwprintw(win, cline, 2, "%s", msg_time);
+
+    // Print delta from selected message
+    if (!info->selected) {
+        if (setting_enabled(SETTING_CF_DELTA))
+            msg_get_time_delta(msg, call_group_get_next_msg(info->group, msg), delta);
+    } else if (info->cur_msg == msg) {
+        msg_get_time_delta(info->selected, msg, delta);
+    }
+
+    if (strlen(delta)) {
+        wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+        mvwprintw(win, cline + 1 , 2, "%15s", delta);
+        wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    }
+
 
     // Get Message method (include extra info)
     memset(method, 0, sizeof(method));
@@ -355,12 +367,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 
     // Color the message {
     if (setting_has_value(SETTING_COLORMODE, "request")) {
-        // Determine arrow color
-        if (msg_is_request(msg)) {
-            msg->color = CP_RED_ON_DEF;
-        } else {
-            msg->color = CP_GREEN_ON_DEF;
-        }
+        // Color by request / response
+        msg->color = (msg_is_request(msg)) ? CP_RED_ON_DEF : CP_GREEN_ON_DEF;
     } else if (setting_has_value(SETTING_COLORMODE, "callid")) {
         // Color by call-id
         msg->color = call_group_color(info->group, msg->call);

@@ -75,6 +75,7 @@ settings_entry_t entries[] = {
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DISPLAY_ALIAS,   SETTING_CF_LOCALHIGHLIGHT,  "Show alias name on columns ................" },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SPLITCACALLID,   SETTING_CF_SPLITCALLID,     "Merge columns with same address ..........." },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SDPONLY,         SETTING_CF_SPLITCALLID,     "Only print messages with SDP .............." },
+ { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DELTA,           SETTING_CF_DELTA,           "Show delta time between messages .........." },
  { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SCROLLSTEP,      SETTING_CF_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
  { CAT_SETTINGS_CALL_RAW,   FLD_SETTINGS_CR_SCROLLSTEP,      SETTING_CR_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
  { 0 , 0, 0, NULL },
@@ -91,7 +92,7 @@ settings_create()
     int field = 0;
 
     // Calculate window dimensions
-    height = 20;
+    height = 21;
     width = 70;
 
     // Cerate a new window for the panel and form

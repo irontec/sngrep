@@ -511,6 +511,9 @@ msg_get_request_sdp(sip_msg_t *msg);
 char *
 msg_get_header(sip_msg_t *msg, char *out);
 
+const char *
+msg_get_time_delta(sip_msg_t *one, sip_msg_t *two, char *out);
+
 /**
  * @brief Remove al calls
  *
