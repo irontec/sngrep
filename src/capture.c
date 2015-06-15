@@ -334,6 +334,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
+#ifdef ENABLED_MEDIA_TESTING
     } else {
         // Check if this is a RTP packet from active calls
         sip_call_t *call;
@@ -346,6 +347,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                     media->rvcnt++;
             }
         }
+#endif
     }
 
     // Deallocate packet duplicated payload

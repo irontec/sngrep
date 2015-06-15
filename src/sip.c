@@ -697,9 +697,11 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
 void
 msg_parse_media(sip_msg_t *msg)
 {
-    sdp_media_t *media;
     regmatch_t pmatch[4];
+#ifdef ENABLED_MEDIA_TESTING
+    sdp_media_t *media;
     sip_msg_t *req;
+#endif
     char address[50];
     int port = 0;
 
@@ -729,6 +731,7 @@ msg_parse_media(sip_msg_t *msg)
     // Message has SDP
     msg->sdp = 1;
 
+#ifdef ENABLED_MEDIA_TESTING
     if (!strcmp(address, "0.0.0.0"))
         return;
 
@@ -752,6 +755,7 @@ msg_parse_media(sip_msg_t *msg)
             }
         }
     }
+#endif
 }
 
 int
