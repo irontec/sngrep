@@ -26,7 +26,6 @@
  * @brief Source code of functions defined in option.h
  *
  */
-#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,30 +93,19 @@ int
 read_options(const char *fname)
 {
     FILE *fh;
-    regex_t empty, setting;
-    regmatch_t matches[4];
-    char line[1024], *type, *option, *value;
+    char line[1024], type[20], option[50], value[50];
     int id;
 
     if (!(fh = fopen(fname, "rt")))
         return -1;
 
-    // Compile expression matching
-    regcomp(&empty, "^#|^\\s*$", REG_EXTENDED | REG_NOSUB);
-    regcomp(&setting, "^\\s*(\\S+)\\s+(\\S*)\\s+(\\S+)\\s*$", REG_EXTENDED);
-
     while (fgets(line, 1024, fh) != NULL) {
         // Check if this line is a commentary or empty line
-        if (!regexec(&empty, line, 0, NULL, 0))
+        if (!strlen(line) || *line == '#')
             continue;
+
         // Get configuration option from setting line
-        if (!regexec(&setting, line, 4, matches, 0)) {
-            type = line + matches[1].rm_so;
-            line[matches[1].rm_eo] = '\0';
-            option = line + matches[2].rm_so;
-            line[matches[2].rm_eo] = '\0';
-            value = line + matches[3].rm_so;
-            line[matches[3].rm_eo] = '\0';
+        if (sscanf(line, "%s %s %s", type, option, value) == 3) {
             if (!strcasecmp(type, "set")) {
                 if ((id = setting_id(option)) >= 0) {
                     setting_set_value(id, value);
@@ -135,8 +123,6 @@ read_options(const char *fname)
             }
         }
     }
-    regfree(&empty);
-    regfree(&setting);
     fclose(fh);
     return 0;
 }
