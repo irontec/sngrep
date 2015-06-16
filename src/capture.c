@@ -159,9 +159,9 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Fragmentation offset
     uint16_t ip_frag_off = 0;
     //! Source Address
-    char ip_src[INET6_ADDRSTRLEN + 1];
+    char ip_src[ADDRESSLEN];
     //! Destination Address
-    char ip_dst[INET6_ADDRSTRLEN + 1];
+    char ip_dst[ADDRESSLEN];
     // UDP header data
     struct udphdr *udp;
     // UDP header size
@@ -335,18 +335,18 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
 #ifdef ENABLED_MEDIA_TESTING
-    } else {
-        // Check if this is a RTP packet from active calls
-        sip_call_t *call;
-        for (call = call_get_next(NULL); call; call = call_get_next(call)) {
-            sdp_media_t *media = media_find_pair(call->medias, ip_src, sport, ip_dst, dport);
-            if (media) {
-                if (!strcmp(media->addr1, ip_src) && media->port1 == sport)
-                    media->txcnt++;
-                else
-                    media->rvcnt++;
-            }
-        }
+//    } else {
+//        // Check if this is a RTP packet from active calls
+//        sip_call_t *call;
+//        for (call = call_get_next(NULL); call; call = call_get_next(call)) {
+//            sdp_media_t *media = media_find_pair(call->medias, ip_src, sport, ip_dst, dport);
+//            if (media) {
+//                if (!strcmp(media->addr1, ip_src) && media->port1 == sport)
+//                    media->txcnt++;
+//                else
+//                    media->rvcnt++;
+//            }
+//        }
 #endif
     }
 

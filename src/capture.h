@@ -64,6 +64,13 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
+#ifdef INET6_ADDRSTRLEN
+#define ADDRESSLEN INET6_ADDRSTRLEN + 1
+#else
+#define ADDRESSLEN 47
+#endif
+
+
 //! Capture modes
 enum capture_status {
     CAPTURE_ONLINE = 0,
@@ -85,7 +92,7 @@ typedef struct dns_cache dns_cache_t;
  */
 struct dns_cache {
     int count;
-    char addr[16][256];
+    char addr[ADDRESSLEN][256];
     char hostname[16][256];
 };
 

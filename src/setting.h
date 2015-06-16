@@ -50,6 +50,7 @@ typedef struct setting_option setting_t;
 #define SETTING_ENUM_BACKGROUND  (const char *[]){ "dark" , "default", NULL }
 #define SETTING_ENUM_COLORMODE   (const char *[]){ "request", "cseq", "callid", NULL }
 #define SETTING_ENUM_HIGHLIGHT   (const char *[]){ "bold", "reverse", "reversebold", NULL }
+#define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", NULL}
 
 //! Available setting Options
 enum setting_id
@@ -81,7 +82,7 @@ enum setting_id
     SETTING_CF_HIGHTLIGHT,
     SETTING_CF_SCROLLSTEP,
     SETTING_CF_LOCALHIGHLIGHT,
-    SETTING_CF_SDP_ONLY,
+    SETTING_CF_SDP_INFO,
     SETTING_CF_DELTA,
     SETTING_CR_SCROLLSTEP,
     SETTING_FILTER_METHODS,

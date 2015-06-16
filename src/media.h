@@ -32,40 +32,90 @@
 
 #include "config.h"
 #include <sys/types.h>
+#include "capture.h"
 
-//! Shorter declaration of sip_media structure
+//! Shorter declaration of sdp_media structure
 typedef struct sdp_media sdp_media_t;
+//! Shorter declaration of rtp_encoding structure
+typedef struct rtp_encoding rtp_encoding_t;
 
+enum media_type
+{
+    MEDIA_TYPE_AUDIO,
+    MEDIA_TYPE_VIDEO,
+    MEDIA_TYPE_TEXT,
+    MEDIA_TYPE_APPLICATION,
+    MEDIA_TYPE_MESSAGE,
+    MEDIA_TYPE_UNKNOWN,
+};
+
+struct rtp_encoding
+{
+    int id;
+    const char *name;
+    const char *format;
+};
+
+struct sip_msg;
 struct sdp_media
 {
-    //! SDP Addresses
-    char *addr1;
-    char *addr2;
-    //! SDP ports
-    u_short port1;
-    u_short port2;
-    //! Packets from addr1 to addt2
-    int txcnt;
-    //! Packets from addr2 to addr1
-    int rvcnt;
+    //! SDP Addresses information
+    char address[ADDRESSLEN];
+    u_short port;
+    char type[15];
+    char format[50];
+
+    //! Remote address and port
+    char remote_address[ADDRESSLEN];
+    u_short remote_port;
+
+    //! Packets sent to sdp address/port
+    int pktcnt;
+
+    //! Message with this SDP content
+    struct sip_msg *msg;
 
     //! Next media in same call
     sdp_media_t *next;
 };
 
 sdp_media_t *
-media_create(const char *address, u_short port);
+media_create(struct sip_msg *msg);
 
-sdp_media_t *
-media_add(sdp_media_t *media, const char *address, u_short port);
+void
+media_set_port(sdp_media_t *media, u_short port);
 
-sdp_media_t *
-media_find(sdp_media_t *media, const char *address, u_short port);
+void
+media_set_type(sdp_media_t *media, const char *type);
 
-sdp_media_t *
-media_find_unpair(sdp_media_t *media, const char *address, u_short port);
+void
+media_set_address(sdp_media_t *media, const char *address);
 
-sdp_media_t *
-media_find_pair(sdp_media_t *media, const char *addr1, u_short port1, const char *addr2, u_short port2);
+void
+media_set_format(sdp_media_t *media, const char *format);
+
+const char *
+media_get_address(sdp_media_t *media);
+
+u_short
+media_get_port(sdp_media_t *media);
+
+const char *
+media_get_remote_address(sdp_media_t *media);
+
+u_short
+media_get_remote_port(sdp_media_t *media);
+
+const char *
+media_get_type(sdp_media_t *media);
+
+const char *
+media_get_format(sdp_media_t *media);
+
+int
+media_get_pkt_count(sdp_media_t *media);
+
+const char *
+media_codec_from_encoding(const char *encoding);
 
 #endif /* __SNGREP_MEDIA_H_ */

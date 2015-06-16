@@ -31,97 +31,139 @@
 #include <stdlib.h>
 #include "media.h"
 
-void
-media_init()
-{
-
-}
+/**
+ * @brief Known RTP encodings
+ */
+rtp_encoding_t encodings[] = {
+      { 0,  "PCMU/8000",    "g711u" },
+      { 3,  "GSM/8000",     "gsm" },
+      { 4,  "G723/8000",    "g723" },
+      { 5,  "DVI4/8000",    "dvi" },
+      { 6,  "DVI4/16000",   "dvi" },
+      { 7,  "LPC/8000",     "lpc" },
+      { 8,  "PCMA/8000",    "g711a" },
+      { 9,  "G722/8000",    "g722" },
+      { 10, "L16/44100",    "l16" },
+      { 11, "L16/44100",    "l16" },
+      { 12, "QCELP/8000",   "qcelp" },
+      { 13, "CN/8000",      "cn" },
+      { 14, "MPA/90000",    "mpa" },
+      { 15, "G728/8000",    "g728" },
+      { 16, "DVI4/11025",   "dvi" },
+      { 17, "DVI4/22050",   "dvi" },
+      { 18, "G729/8000",    "g729" },
+      { 25, "CelB/90000",   "celb" },
+      { 26, "JPEG/90000",   "jpeg" },
+      { 28, "nv/90000",     "nv" },
+      { 31, "H261/90000",   "h261" },
+      { 32, "MPV/90000",    "mpv" },
+      { 33, "MP2T/90000",   "mp2t" },
+      { 34, "H263/90000",   "h263" },
+      { -1, NULL }
+};
 
 sdp_media_t *
-media_create(const char *address, u_short port)
+media_create(struct sip_msg *msg)
 {
-    sdp_media_t *media = malloc(sizeof(sdp_media_t));
+    sdp_media_t *media;;
 
-    if (!media)
+    // Allocate memory for this media structure
+    if (!(media = malloc(sizeof(sdp_media_t))))
         return NULL;
 
+    // Initialize all fields
     memset(media, 0, sizeof(sdp_media_t));
-
-    media->addr1 = strdup(address);
-    media->port1 = port;
+    media->msg = msg;
     return media;
-
 }
 
-sdp_media_t *
-media_add(sdp_media_t *media, const char *address, u_short port)
+void
+media_set_port(sdp_media_t *media, u_short port)
 {
-    if (!media || !address)
-        return NULL;
-
-    media->addr2 = strdup(address);
-    media->port2 = port;
-    return media;
-
+    media->port = port;
 }
 
-sdp_media_t *
-media_find(sdp_media_t *media, const char *address, u_short port)
+void
+media_set_type(sdp_media_t *media, const char *type)
 {
-    sdp_media_t *m;
+    strcpy(media->type, type);
+}
 
-    if (!media)
+void
+media_set_address(sdp_media_t *media, const char *address)
+{
+    strcpy(media->address, address);
+}
+
+void
+media_set_format(sdp_media_t *media, const char *format)
+{
+    strcpy(media->format, format);
+}
+
+const char *
+media_get_address(sdp_media_t *media)
+{
+    return media->address;
+}
+
+u_short
+media_get_port(sdp_media_t *media)
+{
+    return media->port;
+}
+
+const char *
+media_get_remote_address(sdp_media_t *media)
+{
+    return media->remote_address;
+}
+
+u_short
+media_get_remote_port(sdp_media_t *media)
+{
+    return media->remote_port;
+}
+
+const char *
+media_get_type(sdp_media_t *media)
+{
+    return media->type;
+}
+
+const char *
+media_get_format(sdp_media_t *media)
+{
+    return media_codec_from_encoding(media->format);
+}
+
+int
+media_get_pkt_count(sdp_media_t *media)
+{
+    return media->pktcnt;
+}
+
+const char *
+media_codec_from_encoding(const char *encoding)
+{
+    int id, i;
+
+    if (!encoding)
         return NULL;
 
-    for (m = media; m; m = m->next) {
-        if (!strcmp(m->addr1, address) && m->port1 == port)
-            return m;
-        if (m->addr2 && !strcmp(m->addr2, address) && m->port2 == port)
-            return m;
+    for (i = 0; encodings[i].id >= 0; i++) {
+        if (!strcmp(encodings[i].name, encoding))
+            return encodings[i].format;
     }
 
-    return NULL;
-}
+    // Get numeric encoding id
+    id = atoi(encoding);
 
-sdp_media_t *
-media_find_unpair(sdp_media_t *media, const char *address, u_short port)
-{
-    sdp_media_t *m;
-
-    if (!media)
-        return NULL;
-
-    for (m = media; m; m = m->next) {
-        if (!m->addr2 && !strcmp(m->addr1, address)  && m->port1 == port) {
-            return m;
-        }
+    for (i = 0; encodings[i].id >= 0; i++) {
+        if (encodings[i].id == id)
+            return encodings[i].format;
     }
 
-    return NULL;
-}
-
-sdp_media_t *
-media_find_pair(sdp_media_t *media, const char *addr1, u_short port1, const char *addr2, u_short port2)
-{
-    sdp_media_t *m;
-
-    if (!media)
-        return NULL;
-
-    for (m = media; m; m = m->next) {
-        if (m->port1 == port1 && m->port2 == port2) {
-            if (!strcmp(m->addr1, addr1) && !strcmp(m->addr2, addr2)) {
-                return m;
-            }
-        }
-
-        if (m->port2 == port1 && m->port1 == port2) {
-            if (!strcmp(m->addr2, addr1) && !strcmp(m->addr1, addr2)) {
-                return m;
-            }
-        }
-    }
-
-    return NULL;
+    return encoding;
 }
 

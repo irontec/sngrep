@@ -128,8 +128,6 @@ enum panel_types {
     PANEL_CALL_FLOW,
     //! Raw SIP messages ui screen
     PANEL_CALL_RAW,
-    //! Media Flow ui screen
-    PANEL_CALL_MEDIA,
     //! Filters panel
     PANEL_FILTER,
     //! Save to pcap panel
@@ -150,7 +148,6 @@ enum panel_types {
 extern ui_t ui_call_list;
 extern ui_t ui_call_flow;
 extern ui_t ui_call_raw;
-extern ui_t ui_call_media;
 extern ui_t ui_filter;
 extern ui_t ui_save;
 extern ui_t ui_msg_diff;

@@ -34,7 +34,6 @@
 #include "ui_manager.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
-#include "ui_call_media.h"
 #include "ui_msg_diff.h"
 
 /***
@@ -134,7 +133,7 @@ call_flow_draw(PANEL *panel)
     call_flow_info_t *info;
     sip_msg_t *msg;
     WINDOW *win;
-    int height, width, cline = 0;
+    int height, width, msg_lines, cline = 0;
     char title[256];
 
     // Get panel information
@@ -173,10 +172,10 @@ call_flow_draw(PANEL *panel)
     // Let's start from the first displayed message (not the first in the call group)
     for (msg = info->first_msg; msg; msg = call_group_get_next_msg(info->group, msg)) {
         // Draw messages until the Message height has been filled
-        if (call_flow_draw_message(panel, msg, cline) != 0)
+        if ((msg_lines = call_flow_draw_message(panel, msg, cline)) == 0)
             break;
         // One message fills 2 lines
-        cline += 2;
+        cline += msg_lines;
     }
 
     // If there are only three columns, then draw the raw message on this panel
@@ -266,6 +265,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
+    sdp_media_t *media;
     const char *msg_time;
     const char *msg_callid;
     const char *msg_method;
@@ -273,7 +273,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     const char *msg_dst;
     char method[80];
     char delta[15] = {};
-    int height, width;
+    int height, width, msg_lines;
+    char mediastr[40];
 
     // Get panel information
     info = call_flow_info(panel);
@@ -281,9 +282,12 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     win = info->flow_win;
     getmaxyx(win, height, width);
 
-    // Get the current line in the win
-    if (cline > height + 2)
-        return 1;
+    // Calculate how many lines this message requires
+    msg_lines = call_flow_message_height(panel, msg);
+
+    // Check this message fits on the panel
+    if (cline > height + msg_lines)
+        return 0;
 
     // Get message attributes
     msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
@@ -291,6 +295,10 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     msg_method = msg_get_attribute(msg, SIP_ATTR_METHOD);
     msg_src = msg_get_attribute(msg, SIP_ATTR_SRC);
     msg_dst = msg_get_attribute(msg, SIP_ATTR_DST);
+
+    // Check method has value. We prefer empty arrows rather than crashes
+    if (!msg_method)
+        msg_method = "";
 
     // Print timestamp
     if (info->selected == msg)
@@ -312,24 +320,24 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     // Get Message method (include extra info)
-    memset(method, 0, sizeof(method));
-    if (msg_method)
-        sprintf(method, "%s", msg_method);
+    sprintf(method, "%s", msg_method);
 
     // If message has sdp information
-    if (msg->sdp) {
-        // Change method text if sdpinfo mode is requested
-        if (setting_enabled(SETTING_CF_SDP_ONLY)) {
-            // Show message sdp in title
-            memset(method, 0, sizeof(method));
-            strncpy(method, msg_method, 3);
-            sprintf(method + strlen(method), " (%s:%s)",
-                    msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS),
-                    msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
-        } else {
-            // Show sdp tag in tittle
-            strcat(method, " (SDP)");
-        }
+    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
+        // Show sdp tag in tittle
+        sprintf(method, "%s (SDP)", msg_method);
+    }
+
+    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
+        sprintf(method, "%.3s (%s:%s)",
+                msg_method,
+                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS),
+                msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
+    }
+    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+        sprintf(method, "%.3s (%s)",
+                msg_method,
+                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS));
     }
 
     // Draw message type or status and line
@@ -381,26 +389,42 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     // Turn on the message color
     wattron(win, COLOR_PAIR(msg->color));
 
+    // Clear the line
     mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
+    // Draw method
     mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
+    cline ++;
+    // Draw media information
+    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+        for (media = msg->call->medias; media; media = media->next) {
+            if (media->msg == msg) {
+                sprintf(mediastr, "%s %d (%s)",
+                          media_get_type(media),
+                          media_get_port(media),
+                          media_get_format(media));
+                mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
+            }
+        }
+    }
+
     if (msg == info->selected) {
-        mvwhline(win, cline + 1, startpos + 2, '=', distance);
+        mvwhline(win, cline, startpos + 2, '=', distance);
     } else {
-        mvwhline(win, cline + 1, startpos + 2, ACS_HLINE, distance);
+        mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
     }
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (!strcasecmp(msg_src, column1->addr)) {
-        mvwaddch(win, cline + 1, endpos - 2, '>');
+        mvwaddch(win, cline, endpos - 2, '>');
         if (msg_is_retrans(msg)) {
-            mvwaddch(win, cline + 1, endpos - 3, '>');
-            mvwaddch(win, cline + 1, endpos - 4, '>');
+            mvwaddch(win, cline, endpos - 3, '>');
+            mvwaddch(win, cline, endpos - 4, '>');
         }
     } else {
-        mvwaddch(win, cline + 1, startpos + 2, '<');
+        mvwaddch(win, cline, startpos + 2, '<');
         if (msg_is_retrans(msg)) {
-            mvwaddch(win, cline + 1, startpos + 3, '<');
-            mvwaddch(win, cline + 1, startpos + 4, '<');
+            mvwaddch(win, cline, startpos + 3, '<');
+            mvwaddch(win, cline, startpos + 4, '<');
         }
     }
 
@@ -409,8 +433,22 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     wattroff(win, COLOR_PAIR(CP_GREEN_ON_DEF));
     wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    wattroff(win, A_BOLD);
-    wattroff(win, A_REVERSE);
+    wattroff(win, A_BOLD | A_REVERSE);
+
+    return msg_lines;
+}
+
+int
+call_flow_message_height(PANEL *panel, sip_msg_t *msg)
+{
+    if (!msg->sdp)
+        return 2;
+    if (setting_has_value(SETTING_CF_SDP_INFO, "off"))
+        return 2;
+    if (setting_has_value(SETTING_CF_SDP_INFO, "first"))
+        return 2;
+    if (setting_has_value(SETTING_CF_SDP_INFO, "full"))
+        return msg_media_count(msg) + 2;
 
     return 0;
 }
@@ -421,23 +459,29 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     call_flow_info_t *info;
     WINDOW *win, *raw_win;
     int raw_width, raw_height, height, width;
+    int min_raw_width, fixed_raw_width;
 
     // Get panel information
-    info = call_flow_info(panel);
+    if (!(info = call_flow_info(panel)))
+            return 1;
 
     // Get window of main panel
     win = panel_window(panel);
     getmaxyx(win, height, width);
 
+    // Get min raw width
+    min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
+    fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
+
     // Calculate the raw data width (width - used columns for flow - vertical lines)
     raw_width = width - (31 + 30 * info->columns->colpos) - 2;
     // We can define a mininum size for rawminwidth
-    if (raw_width < setting_get_intvalue(SETTING_CF_RAWMINWIDTH)) {
-        raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
+    if (raw_width < min_raw_width) {
+        raw_width = min_raw_width;
     }
     // We can configure an exact raw size
-    if (setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH) > 0) {
-        raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
+    if (fixed_raw_width > 0) {
+        raw_width = fixed_raw_width;
     }
 
     // Height of raw window is always available size minus 6 lines for header/footer
@@ -499,14 +543,14 @@ call_flow_handle_key(PANEL *panel, int key)
                 // Check if there is a call below us
                 if (!(next = call_group_get_next_msg(info->group, info->cur_msg)))
                     break;
-                info->cur_msg = next;
-                info->cur_line += 2;
+                info->cur_line += call_flow_message_height(panel, info->cur_msg);
                 // If we are out of the bottom of the displayed list
                 // refresh it starting in the next call
                 if (info->cur_line >= height) {
                     info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
-                    info->cur_line -= 2;
+                    info->cur_line -= call_flow_message_height(panel, info->cur_msg);
                 }
+                info->cur_msg = next;
                 break;
             case ACTION_UP:
                 // Get previous message
@@ -514,11 +558,11 @@ call_flow_handle_key(PANEL *panel, int key)
                 // We're at the first message already
                 if (!prev)
                     break;
+                info->cur_line -= call_flow_message_height(panel, info->cur_msg);;
                 info->cur_msg = prev;
-                info->cur_line -= 2;
                 if (info->cur_line <= 0) {
                     info->first_msg = info->cur_msg;
-                    info->cur_line += 2;
+                    info->cur_line = 0;
                 }
                 break;
             case ACTION_HNPAGE:
@@ -567,11 +611,6 @@ call_flow_handle_key(PANEL *panel, int key)
                 ui_create_panel(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
                 break;
-            case ACTION_SHOW_MEDIA:
-                // Display current call media
-                ui_create_panel(PANEL_CALL_MEDIA);
-                call_media_set_group(info->group);
-                break;
             case ACTION_DECREASE_RAW:
                 raw_width = getmaxx(info->raw_win);
                 if (raw_width - 2 > 1) {
@@ -597,7 +636,7 @@ call_flow_handle_key(PANEL *panel, int key)
                 call_flow_set_group(info->group);
                 break;
             case ACTION_SDP_INFO:
-                setting_toggle(SETTING_CF_SDP_ONLY);
+                setting_toggle(SETTING_CF_SDP_INFO);
                 break;
             case ACTION_TOGGLE_RAW:
                 setting_toggle(SETTING_CF_FORCERAW);

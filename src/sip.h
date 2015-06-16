@@ -334,6 +334,18 @@ int
 call_msg_count(sip_call_t *call);
 
 /**
+ * @brief Getter for media of given messages
+ *
+ * Return the number of media structures of given msg
+ * stored in this call.
+ *
+ * @param msg SIP message structure
+ * @return how many media structures are in the msg
+ */
+int
+msg_media_count(sip_msg_t *msg);
+
+/**
  * @brief Finds the other leg of this call.
  *
  * If this call has a X-CID or X-Call-ID header, that call will be

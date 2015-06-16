@@ -405,6 +405,19 @@ call_msg_count(sip_call_t *call)
     return call->msgcnt;
 }
 
+int
+msg_media_count(sip_msg_t *msg)
+{
+    sdp_media_t *media;
+    int count = 0;
+    for (media = msg->call->medias; media; media = media->next) {
+        if (media->msg == msg)
+            count++;
+    }
+
+    return count;
+}
+
 sip_call_t *
 call_get_xcall(sip_call_t *call)
 {
@@ -698,12 +711,16 @@ void
 msg_parse_media(sip_msg_t *msg)
 {
     regmatch_t pmatch[4];
-#ifdef ENABLED_MEDIA_TESTING
-    sdp_media_t *media;
-    sip_msg_t *req;
-#endif
-    char address[50];
+    char address[ADDRESSLEN];
+    char media_address[ADDRESSLEN] = { };
+    char media_type[15] = { };
+    char media_format[30] = { };
+    int media_port;
+    char media_fmt_pref[5];
+    char media_fmt_code[5];
+    sdp_media_t *media = NULL;
     int port = 0;
+    char *payload, *tofree, *line;
 
     // Check if this message has sdp
     if (regexec(&calls.reg_sdp, msg->payload, 0, 0, 0) != 0)
@@ -731,31 +748,40 @@ msg_parse_media(sip_msg_t *msg)
     // Message has SDP
     msg->sdp = 1;
 
-#ifdef ENABLED_MEDIA_TESTING
-    if (!strcmp(address, "0.0.0.0"))
-        return;
-
-    // Request methods create new media
-    if (!msg_is_request(msg)) {
-        // Check if we have already added this media
-        if (!media_find(msg->call->medias, address, port)) {
-            call_add_media(msg->call, media_create(address, port));
+    // Parse each line of payload looking for sdp information
+    tofree = payload = strdup(msg->payload);
+    while ((line = strsep(&payload, "\r\n")) != NULL) {
+        // Check if we have a media string
+        if (!strncmp(line, "m=", 2)) {
+            if (sscanf(line, "m=%s %d RTP/AVP %s", media_type, &media_port, media_fmt_pref) == 3) {
+                // Create a new media structure for this message
+                if ((media = media_create(msg))) {
+                    media_set_type(media, media_type);
+                    media_set_port(media, media_port);
+                    media_set_address(media, media_address);
+                    media_set_format(media, media_fmt_pref);
+                    call_add_media(msg->call, media);
+                }
+            }
         }
-    } else {
-        // Try to find the request for this response
-        if ((req = msg_get_request_sdp(msg))) {
-            const char *reqaddr = msg_get_attribute(req, SIP_ATTR_SDP_ADDRESS);
-            int reqport = atoi(msg_get_attribute(req, SIP_ATTR_SDP_PORT));
-            // Check if this media already exists
-            if (!(media = media_find_pair(msg->call->medias, reqaddr, reqport, address, port))) {
-                // Check if a media is pending to be completed
-                if ((media = media_find_unpair(msg->call->medias, reqaddr, reqport))) {
-                    media_add(media, address, port);
+
+        // Check if we have a connection string
+        if (!strncmp(line, "c=", 2)) {
+            if (sscanf(line, "c=IN IP4 %s", media_address) && media) {
+                    media_set_address(media, media_address);
+            }
+        }
+
+        // Check if we have attribute format string
+        if (!strncmp(line, "a=rtpmap:", 9)) {
+            if (sscanf(line, "a=rtpmap:%s %[^ ]", media_fmt_code, media_format)) {
+                if (media && !strcmp(media_fmt_pref, media_fmt_code)) {
+                    media_set_format(media, media_format);
                 }
             }
         }
     }
-#endif
+    free(tofree);
 }
 
 int

@@ -147,6 +147,9 @@ call_flow_draw_columns(PANEL *panel);
 int
 call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline);
 
+int
+call_flow_message_height(PANEL *panel, sip_msg_t *msg);
+
 /**
  * @brief Draw raw panel with message payload
  *
