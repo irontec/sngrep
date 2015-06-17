@@ -108,6 +108,8 @@ struct sip_msg {
     int sdp;
     //! Message Cseq
     int cseq;
+    //! SDP payload information
+    sdp_media_t *medias;
 
     //! PCAP Packet Header data
     struct pcap_pkthdr *pcap_header;
@@ -143,8 +145,8 @@ struct sip_call {
     int msgcnt;
     //! Message when conversation started
     sip_msg_t *cstart_msg;
-    //! Media Streams for this call
-    sdp_media_t *medias;
+    //! RTP streams for this call
+    rtp_stream_t *streams;
     //! Calls double linked list
     sip_call_t *next, *prev;
 };
@@ -445,16 +447,19 @@ void
 call_update_state(sip_call_t *call, sip_msg_t *msg);
 
 /**
- * @brief Add a media structure to call
+ * @brief Add a media structure to a msg
  *
- * @param call Call structure to be updated
+ * @param cmsg SIP Message to be updated
  * @param media Media structure to be added
  */
 void
-call_add_media(sip_call_t *call, sdp_media_t *media);
+msg_add_media(sip_msg_t *msg, sdp_media_t *media);
 
-sdp_media_t *
-call_find_media(sip_call_t *call, const char *address, u_short port);
+void
+call_add_stream(sip_call_t *call, rtp_stream_t *stream);
+
+rtp_stream_t *
+call_find_stream(sip_call_t *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
 
 /**
  * @brief Get message Request/Response code
@@ -681,4 +686,10 @@ sip_address_format(const char *address);
 const char *
 sip_address_port_format(const char *address);
 
+
+const char *
+timeval_to_date(struct timeval time, char *out);
+
+const char *
+timeval_to_time(struct timeval time, char *out);
 #endif

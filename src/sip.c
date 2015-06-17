@@ -330,6 +330,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
     // Add the message to the found/created call
     call_add_message(call, msg);
 
+    msg_parse_payload(msg, msg->payload);
     // Parse media data
     msg_parse_media(msg);
 
@@ -410,11 +411,9 @@ msg_media_count(sip_msg_t *msg)
 {
     sdp_media_t *media;
     int count = 0;
-    for (media = msg->call->medias; media; media = media->next) {
-        if (media->msg == msg)
-            count++;
+    for (media = msg->medias; media; media = media->next) {
+        count++;
     }
-
     return count;
 }
 
@@ -616,33 +615,53 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
 }
 
 void
-call_add_media(sip_call_t *call, sdp_media_t *media)
+msg_add_media(sip_msg_t *msg, sdp_media_t *media)
 {
+    sdp_media_t *tmp;
+
     //! Sanity check
-    if (!call || !media)
+    if (!msg || !media)
         return;
 
-    // Add media to the call
-    media->next = call->medias;
-    call->medias = media;
+    if (!msg->medias) {
+        // Add the first media of the call
+        msg->medias = media;
+    } else {
+        // Add media to the call
+        for (tmp = msg->medias; tmp->next; tmp = tmp->next);
+        tmp->next = media;
+    }
 }
 
-sdp_media_t *
-call_find_media(sip_call_t *call, const char *address, u_short port)
+void
+call_add_stream(sip_call_t *call, rtp_stream_t *stream)
 {
-    sdp_media_t *media;
+//    rtp_stream_t *tmp;
+    //! Sanity check
+    if (!call || !stream)
+        return;
+
+    //! Add stream to call stream list
+    stream->next = call->streams;
+    call->streams = stream;
+}
+
+rtp_stream_t *
+call_find_stream(sip_call_t *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport)
+{
+    rtp_stream_t *stream;
 
     //! Sanity check
-    if (!call || !address)
+    if (!call || !call->streams || !ip_src || !ip_dst)
         return NULL;
 
-    for(media = call->medias; media; media = media->next) {
-        if (!strcmp(address, media_get_address(media)) && port == media_get_port(media)) {
-            return media;
+    for (stream = call->streams; stream; stream = stream->next) {
+        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
+            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
+            return stream;
         }
     }
-
-    return media;
+    return NULL;
 }
 
 int
@@ -722,16 +741,9 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg->src, msg->sport);
     msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg->dst, msg->dport);
 
-    // Set message Date attribute
-    time_t t = (time_t) msg->pcap_header->ts.tv_sec;
-    struct tm *timestamp = localtime(&t);
-    strftime(date, sizeof(date), "%Y/%m/%d", timestamp);
-    msg_set_attribute(msg, SIP_ATTR_DATE, date);
-
-    // Set message Time attribute
-    strftime(time, sizeof(time), "%H:%M:%S", timestamp);
-    sprintf(time + 8, ".%06d", (int) msg->pcap_header->ts.tv_usec);
-    msg_set_attribute(msg, SIP_ATTR_TIME, time);
+    // Set message Date and Time attribute
+    msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg->pcap_header->ts, date));
+    msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg->pcap_header->ts, time));
 
     // Message payload has been parsed
     msg->parsed = 1;
@@ -751,6 +763,7 @@ msg_parse_media(sip_msg_t *msg)
     int media_fmt_pref;
     int media_fmt_code;
     sdp_media_t *media = NULL;
+    rtp_stream_t *stream, *active;
     int port = 0;
     char *payload, *tofree, *line;
 
@@ -792,7 +805,58 @@ msg_parse_media(sip_msg_t *msg)
                     media_set_port(media, media_port);
                     media_set_address(media, media_address);
                     media_set_format_code(media, media_fmt_pref);
-                    call_add_media(msg->call, media);
+                    msg_add_media(msg, media);
+
+                    if (!msg_is_retrans(msg)) {
+                        // Create a new stream with this dest address:port
+                        stream = stream_create(media);
+                        strcpy(stream->ip_dst, media_address);
+                        stream->dport = media_port;
+                        call_add_stream(msg->call, stream);
+
+                        // If there is a pending stream to confirm
+                        for (active = msg->call->streams; active; active = active->next) {
+                            // Only consider confirmation of other stream with different message type
+                            if (msg_is_request(active->media->msg) == msg_is_request(msg))
+                                continue;
+                            // Only consider confirmation of stream in same transaction
+                            if (active->media->msg->cseq != msg->cseq)
+                                continue;
+                            // Created from the other side of this dialog
+                            if (strcmp(msg->dst, active->media->msg->src))
+                                continue;
+                            // That is not still completed
+                            if (active->complete)
+                                continue;
+
+                            // Complete current stream
+                            strcpy(stream->ip_src, active->ip_dst);
+                            stream->sport = active->dport;
+                            stream->complete = 1;
+
+                            // Complete pending stream
+                            strcpy(active->ip_src, stream->ip_dst);
+                            active->sport = stream->dport;
+                            active->complete = 1;
+                            break;
+                        }
+
+                        // If no stream to complete has been found to complete
+                        if (!active) {
+                            // Check if there was an active stream previously configured
+                            for (active = msg->call->streams; active; active = active->next) {
+                                // We're looking for a confirmed stream
+                                if (!active->complete)
+                                    continue;
+                                // That was confirmed from us
+                                if (strcmp(msg->dst, active->media->msg->dst))
+                                    continue;
+                                // Assume that source address, but not mark this as completed
+                                strcpy(stream->ip_src, active->ip_src);
+                                stream->sport = active->sport;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1145,4 +1209,24 @@ sip_address_port_format(const char *addrport)
     }
 
     return aport;
+}
+
+const char *
+timeval_to_date(struct timeval time, char *out)
+{
+    time_t t = (time_t) time.tv_sec;
+    struct tm *timestamp = localtime(&t);
+    strftime(out, 11, "%Y/%m/%d", timestamp);
+    return out;
+}
+
+
+const char *
+timeval_to_time(struct timeval time, char *out)
+{
+    time_t t = (time_t) time.tv_sec;
+    struct tm *timestamp = localtime(&t);
+    strftime(out, 11, "%H:%M:%S", timestamp);
+    sprintf(out + 8, ".%06d", (int) time.tv_usec);
+    return out;
 }

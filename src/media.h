@@ -38,16 +38,9 @@
 typedef struct sdp_media sdp_media_t;
 //! Shorter declaration of rtp_encoding structure
 typedef struct rtp_encoding rtp_encoding_t;
+//! Shorter declaration of rtp_stream structure
+typedef struct rtp_stream rtp_stream_t;
 
-enum media_type
-{
-    MEDIA_TYPE_AUDIO,
-    MEDIA_TYPE_VIDEO,
-    MEDIA_TYPE_TEXT,
-    MEDIA_TYPE_APPLICATION,
-    MEDIA_TYPE_MESSAGE,
-    MEDIA_TYPE_UNKNOWN,
-};
 
 struct rtp_encoding
 {
@@ -65,23 +58,39 @@ struct sdp_media
     char type[15];
     char format[50];
     int fmtcode;
-
-    //! Remote address and port
-    char remote_address[ADDRESSLEN];
-    u_short remote_port;
-    int stream_format;
-    int pktcnt;
-
-
     //! Message with this SDP content
     struct sip_msg *msg;
-
     //! Next media in same call
     sdp_media_t *next;
 };
 
+struct rtp_stream
+{
+    //! Source address and port
+    char ip_src[ADDRESSLEN];
+    u_short sport;
+    //! Destination address and port
+    char ip_dst[ADDRESSLEN];
+    u_short dport;
+    //! Format of first received packet of stre
+    int format;
+    //! Time of first received packet of stream
+    struct timeval time;
+    //! Packet count for this stream
+    int pktcnt;
+    //!
+    int complete;
+    //! SDP media that setup this stream
+    sdp_media_t *media;
+    //! Next stream in the call
+    rtp_stream_t *next;
+};
+
 sdp_media_t *
 media_create(struct sip_msg *msg);
+
+rtp_stream_t *
+stream_create(sdp_media_t *media);
 
 void
 media_set_port(sdp_media_t *media, u_short port);
@@ -99,19 +108,13 @@ void
 media_set_format_code(sdp_media_t *media, int code);
 
 void
-media_increase_pkt_count(sdp_media_t *media);
+stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, int format, struct timeval time);
 
 const char *
 media_get_address(sdp_media_t *media);
 
 u_short
 media_get_port(sdp_media_t *media);
-
-const char *
-media_get_remote_address(sdp_media_t *media);
-
-u_short
-media_get_remote_port(sdp_media_t *media);
 
 const char *
 media_get_type(sdp_media_t *media);
@@ -123,7 +126,7 @@ int
 media_get_format_code(sdp_media_t *media);
 
 int
-media_get_pkt_count(sdp_media_t *media);
+stream_get_count(rtp_stream_t *stream);
 
 const char *
 media_codec_from_encoding(int code, const char *format);

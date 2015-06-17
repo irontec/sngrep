@@ -200,7 +200,6 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
             // candidate must be between msg and next
             if (sip_msg_is_older(cand, msg) && (!next || !sip_msg_is_older(cand, next))) {
                 next = cand;
-                break;
             }
         }
     }
@@ -224,6 +223,28 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
     return prev;
 }
 
+rtp_stream_t *
+call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream)
+{
+    rtp_stream_t *next = NULL;
+    rtp_stream_t *cand;
+    int i;
+
+    for (i = 0; i < group->callcnt; i++) {
+        for (cand = group->calls[i]->streams; cand; cand = cand->next) {
+            if (!stream_get_count(cand))
+                continue;
+
+            // candidate must be between msg and next
+            if (rtp_stream_is_older(cand, stream) && (!next || rtp_stream_is_older(next, cand))) {
+                next = cand;
+            }
+        }
+    }
+
+    return next;
+}
+
 int
 timeval_is_older(struct timeval t1, struct timeval t2)
 {
@@ -244,4 +265,14 @@ sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)
     return timeval_is_older(one->pcap_header->ts, two->pcap_header->ts);
 }
 
+int
+rtp_stream_is_older(rtp_stream_t *one, rtp_stream_t *two)
+{
+    // Yes, you are older than nothing
+    if (!two)
+        return 1;
+
+    // Otherwise
+    return timeval_is_older(one->time, two->time);
+}
 

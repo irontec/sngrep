@@ -77,6 +77,22 @@ media_create(struct sip_msg *msg)
     return media;
 }
 
+
+rtp_stream_t *
+stream_create(sdp_media_t *media)
+{
+    rtp_stream_t *stream;;
+
+    // Allocate memory for this stream structure
+    if (!(stream = malloc(sizeof(rtp_stream_t))))
+        return NULL;
+
+    // Initialize all fields
+    memset(stream, 0, sizeof(rtp_stream_t));
+    stream->media = media;
+    return stream;
+}
+
 void
 media_set_port(sdp_media_t *media, u_short port)
 {
@@ -108,9 +124,17 @@ media_set_format_code(sdp_media_t *media, int code)
 }
 
 void
-media_increase_pkt_count(sdp_media_t *media)
+stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, int format, struct timeval time)
 {
-    media->pktcnt++;
+    if (stream->pktcnt) {
+        stream->pktcnt++;
+        return;
+    }
+
+    stream->format = format;
+    stream->time = time;
+    stream->pktcnt++;
+
 }
 
 const char *
@@ -123,18 +147,6 @@ u_short
 media_get_port(sdp_media_t *media)
 {
     return media->port;
-}
-
-const char *
-media_get_remote_address(sdp_media_t *media)
-{
-    return media->remote_address;
-}
-
-u_short
-media_get_remote_port(sdp_media_t *media)
-{
-    return media->remote_port;
 }
 
 const char *
@@ -156,9 +168,9 @@ media_get_format_code(sdp_media_t *media)
 }
 
 int
-media_get_pkt_count(sdp_media_t *media)
+stream_get_count(rtp_stream_t *stream)
 {
-    return media->pktcnt;
+    return stream->pktcnt;
 }
 
 const char *
@@ -166,16 +178,16 @@ media_codec_from_encoding(int code, const char *format)
 {
     int i;
 
+    // Format from RTP codec id
+    for (i = 0; encodings[i].id >= 0; i++) {
+        if (encodings[i].id == code)
+            return encodings[i].format;
+    }
+
     if (format && strlen(format)) {
         // Format from RTP codec name
         for (i = 0; encodings[i].id >= 0; i++) {
             if (!strcmp(encodings[i].name, format))
-                return encodings[i].format;
-        }
-    } else {
-        // Format from RTP codec id
-        for (i = 0; encodings[i].id >= 0; i++) {
-            if (encodings[i].id == code)
                 return encodings[i].format;
         }
     }

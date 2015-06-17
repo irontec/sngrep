@@ -131,9 +131,9 @@ int
 call_flow_draw(PANEL *panel)
 {
     call_flow_info_t *info;
-    sip_msg_t *msg;
     WINDOW *win;
-    int height, width, msg_lines, cline = 0;
+    call_flow_arrow_t *arrow = NULL;
+    int height, width, cline = 0;
     char title[256];
 
     // Get panel information
@@ -169,22 +169,25 @@ call_flow_draw(PANEL *panel)
     // Redraw columns
     call_flow_draw_columns(panel);
 
-    // Let's start from the first displayed message (not the first in the call group)
-    for (msg = info->first_msg; msg; msg = call_group_get_next_msg(info->group, msg)) {
-        // Draw messages until the Message height has been filled
-        if ((msg_lines = call_flow_draw_message(panel, msg, cline)) == 0)
-            break;
-        // One message fills 2 lines
-        cline += msg_lines;
+    for (arrow = info->first_arrow; arrow; arrow = call_flow_next_arrow(panel, arrow)) {
+        if (arrow->type == CF_ARROW_SIP) {
+            if (!call_flow_draw_message(panel, arrow, cline))
+                break;
+        } else if (arrow->type == CF_ARROW_RTP) {
+            if (!call_flow_draw_stream(panel, arrow, cline))
+                break;
+        }
+        cline += arrow->height;
     }
 
     // If there are only three columns, then draw the raw message on this panel
     if (setting_enabled(SETTING_CF_FORCERAW)) {
-        call_flow_draw_raw(panel, info->cur_msg);
+        call_flow_draw_raw(panel, call_flow_arrow_message(info->cur_arrow));
     }
 
     // Draw the scrollbar
-    draw_vscrollbar(info->flow_win, call_group_msg_number(info->group, info->first_msg) * 2,
+    draw_vscrollbar(info->flow_win,
+                    call_group_msg_number(info->group, call_flow_arrow_message(info->first_arrow)) * 2,
                     call_group_msg_count(info->group) * 2, 1);
 
     // Redraw flow win
@@ -219,6 +222,8 @@ call_flow_draw_columns(PANEL *panel)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
+    sip_call_t *call = NULL;
+    rtp_stream_t *stream;
     WINDOW *win;
     sip_msg_t *msg;
     int flow_height, flow_width;
@@ -232,11 +237,22 @@ call_flow_draw_columns(PANEL *panel)
     getmaxyx(info->flow_win, flow_height, flow_width);
 
     // Load columns
-    for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
+    for (msg = call_group_get_next_msg(info->group, NULL); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
-        info->last_msg = msg;
         call_flow_column_add(panel, CALLID(msg), SRC(msg));
         call_flow_column_add(panel, CALLID(msg), DST(msg));
+    }
+
+    // Add RTP columns FIXME Really
+    if (setting_enabled(SETTING_CF_MEDIA)) {
+        while ((call = call_group_get_next(info->group, call)) ) {
+            for (stream = call->streams; stream; stream = stream->next) {
+                if (stream_get_count(stream)) {
+                    call_flow_column_add(panel, NULL, stream->ip_src);
+                    call_flow_column_add(panel, NULL, stream->ip_dst);
+                }
+            }
+        }
     }
 
     // Draw vertical columns lines
@@ -260,8 +276,8 @@ call_flow_draw_columns(PANEL *panel)
     return 0;
 }
 
-int
-call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
+call_flow_arrow_t *
+call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
@@ -273,8 +289,9 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     const char *msg_dst;
     char method[80];
     char delta[15] = {};
-    int height, width, msg_lines;
+    int height, width;
     char mediastr[40];
+    sip_msg_t *msg = arrow->msg;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -282,12 +299,15 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     win = info->flow_win;
     getmaxyx(win, height, width);
 
+    // Store arrow start line
+    arrow->line = cline;
+
     // Calculate how many lines this message requires
-    msg_lines = call_flow_message_height(panel, msg);
+    arrow->height = call_flow_arrow_height(panel, arrow);
 
     // Check this message fits on the panel
-    if (cline > height + msg_lines)
-        return 0;
+    if (cline > height + arrow->height)
+        return NULL;
 
     // Get message attributes
     msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
@@ -301,7 +321,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         msg_method = "";
 
     // Print timestamp
-    if (info->selected == msg)
+    if (info->selected == arrow)
         wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(win, cline, 2, "%s", msg_time);
 
@@ -309,8 +329,8 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     if (!info->selected) {
         if (setting_enabled(SETTING_CF_DELTA))
             msg_get_time_delta(msg, call_group_get_next_msg(info->group, msg), delta);
-    } else if (info->cur_msg == msg) {
-        msg_get_time_delta(info->selected, msg, delta);
+    } else if (info->cur_arrow == arrow) {
+        msg_get_time_delta(call_flow_arrow_message(info->selected), msg, delta);
     }
 
     if (strlen(delta)) {
@@ -356,12 +376,16 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         column2 = tmp;
     }
 
+    // Store columns in arrow
+    arrow->column1 = column1;
+    arrow->column2 = column2;
+
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
     int distance = abs(endpos - startpos) - 3;
 
     // Highlight current message
-    if (msg == info->cur_msg) {
+    if (arrow == info->cur_arrow) {
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
             wattron(win, A_REVERSE);
         }
@@ -396,7 +420,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     cline ++;
     // Draw media information
     if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        for (media = msg->call->medias; media; media = media->next) {
+        for (media = msg->medias; media; media = media->next) {
             if (media->msg == msg) {
                 sprintf(mediastr, "%s %d (%s)",
                           media_get_type(media),
@@ -407,7 +431,7 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
         }
     }
 
-    if (msg == info->selected) {
+    if (arrow == info->selected) {
         mvwhline(win, cline, startpos + 2, '=', distance);
     } else {
         mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
@@ -435,22 +459,247 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
     wattroff(win, A_BOLD | A_REVERSE);
 
-    return msg_lines;
+    return arrow;
+}
+
+
+call_flow_arrow_t *
+call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
+{
+    call_flow_info_t *info;
+    WINDOW *win;
+    char time[10];
+    char codec[50];
+    int height, width;
+    rtp_stream_t *stream = arrow->stream;
+
+    // Get panel information
+    info = call_flow_info(panel);
+    // Get the messages window
+    win = info->flow_win;
+    getmaxyx(win, height, width);
+
+    // Store arrow start line
+    arrow->line = cline;
+
+    // Calculate how many lines this message requires
+    arrow->height = call_flow_arrow_height(panel, arrow);
+
+    // Check this media fits on the panel
+    if (cline > height + arrow->height)
+        return NULL;
+
+    // Print timestamp
+    mvwprintw(win, cline, 2, "%s", timeval_to_time(stream->time, time));
+
+    // Get Message method (include extra info)
+    sprintf(codec, "RTP (%s) %d", media_codec_from_encoding(stream->format, NULL), stream_get_count(stream));
+
+    // Get origin and destination column
+    call_flow_column_t *column1 = call_flow_column_get(panel, 0, stream->ip_src);
+    call_flow_column_t *column2 = call_flow_column_get(panel, 0, stream->ip_dst);
+
+    call_flow_column_t *tmp;
+    if (column1->colpos > column2->colpos) {
+        tmp = column1;
+        column1 = column2;
+        column2 = tmp;
+    }
+
+    // Store columns in arrow
+    arrow->column1 = column1;
+    arrow->column2 = column2;
+
+    int startpos = 20 + 30 * column1->colpos;
+    int endpos = 20 + 30 * column2->colpos;
+    int distance = abs(endpos - startpos) - 10;
+
+    // Highlight current message
+    if (arrow == info->cur_arrow) {
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
+            wattron(win, A_REVERSE);
+        }
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
+            wattron(win, A_BOLD);
+        }
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
+            wattron(win, A_REVERSE);
+            wattron(win, A_BOLD);
+        }
+    }
+
+    // Clear the line
+    mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
+    // Draw method
+    mvwprintw(win, cline, startpos + (distance + 8) / 2 - strlen(codec) / 2 + 2, "%s", codec);
+    cline ++;
+    // Draw line between columns
+    mvwhline(win, cline, startpos + 5, ACS_HLINE, distance);
+    // Write the arrow at the end of the message (two arros if this is a retrans)
+    if (call_flow_column_get(panel, 0, stream->ip_src) == column1) {
+        mvwprintw(win, cline, startpos - 1, "%d", stream->sport);
+        mvwaddch(win, cline, startpos + 5, '<');
+        mvwprintw(win, cline, endpos - 3, "%d", stream->dport);
+    } else {
+        mvwprintw(win, cline, endpos  - 3, "%d", stream->sport);
+        mvwaddch(win, cline, endpos - 5, '>');
+        mvwprintw(win, cline, startpos - 1, "%d", stream->dport);
+    }
+
+    wattroff(win, A_BOLD | A_REVERSE);
+
+    return arrow;
+}
+
+call_flow_arrow_t *
+call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
+{
+    sip_msg_t *msg = NULL;
+    rtp_stream_t *stream = NULL;
+    struct timeval cur_time;
+    call_flow_info_t *info;
+    call_flow_arrow_t *next, *tmp;
+
+    // Get panel information
+    info = call_flow_info(panel);
+
+    if (!cur) {
+        memset(&cur_time, 0, sizeof(struct timeval));
+    } else if (cur->type == CF_ARROW_SIP) {
+        cur_time = cur->msg->pcap_header->ts;
+    } else if (cur->type == CF_ARROW_RTP) {
+        cur_time = cur->stream->time;
+    }
+
+    // Look for the next message
+    while ((msg = call_group_get_next_msg(info->group, msg))) {
+        if (timeval_is_older(msg->pcap_header->ts, cur_time)) {
+            break;
+        }
+    }
+
+    if (setting_enabled(SETTING_CF_MEDIA)) {
+        // Look for the next stream
+        while ((stream = call_group_get_next_stream(info->group, stream))) {
+            if (timeval_is_older(stream->time, cur_time)) {
+                break;
+            }
+        }
+    }
+
+    if (!msg && !stream)
+        return NULL;  /* Nothing goes next */
+
+    /* a rtp stream goes next */
+    if (!msg) {
+        if ((next = call_flow_arrow_find(panel, stream)))
+            return next;
+        // Create a new arrow to store next info
+        next = malloc(sizeof(call_flow_arrow_t));
+        memset(next, 0, sizeof(call_flow_arrow_t));
+        next->type = CF_ARROW_RTP;
+        next->stream = stream;
+    } else if (!stream) {
+        /* a sip message goes next */
+        if ((next = call_flow_arrow_find(panel, msg)))
+            return next;
+        // Create a new arrow to store next info
+        next = malloc(sizeof(call_flow_arrow_t));
+        memset(next, 0, sizeof(call_flow_arrow_t));
+        next->type = CF_ARROW_SIP;
+        next->msg = msg;
+    } else {
+        /* Determine what goes next */
+        if (timeval_is_older(msg->pcap_header->ts, stream->time)) {
+            if ((next = call_flow_arrow_find(panel, stream)))
+                return next;
+            // Create a new arrow to store next info
+            next = malloc(sizeof(call_flow_arrow_t));
+            memset(next, 0, sizeof(call_flow_arrow_t));
+            next->type = CF_ARROW_RTP;
+            next->stream = stream;
+        } else {
+            if ((next = call_flow_arrow_find(panel, msg)))
+                return next;
+            // Create a new arrow to store next info
+            next = malloc(sizeof(call_flow_arrow_t));
+            memset(next, 0, sizeof(call_flow_arrow_t));
+            next->type = CF_ARROW_SIP;
+            next->msg = msg;
+        }
+    }
+
+    // Add this arrow to the list and return it
+    if (!info->arrows) {
+        info->arrows = next;
+    } else {
+        for (tmp = info->arrows; tmp->next; tmp = tmp->next);
+        tmp->next = next;
+    }
+    return next;
+}
+
+call_flow_arrow_t *
+call_flow_prev_arrow(PANEL *panel, const call_flow_arrow_t *cur)
+{
+    call_flow_arrow_t *arrow = NULL, *prev = NULL;
+    while ((arrow = call_flow_next_arrow(panel, arrow))) {
+        if (arrow == cur) {
+            return prev;
+        }
+        prev = arrow;
+    }
+    return NULL;
 }
 
 int
-call_flow_message_height(PANEL *panel, sip_msg_t *msg)
+call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow)
 {
-    if (!msg->sdp)
+    if (arrow->type == CF_ARROW_SIP) {
+        if (!arrow->msg->sdp)
+            return 2;
+        if (setting_has_value(SETTING_CF_SDP_INFO, "off"))
+            return 2;
+        if (setting_has_value(SETTING_CF_SDP_INFO, "first"))
+            return 2;
+        if (setting_has_value(SETTING_CF_SDP_INFO, "full"))
+            return msg_media_count(arrow->msg) + 2;
+    } else if (arrow->type == CF_ARROW_RTP) {
         return 2;
-    if (setting_has_value(SETTING_CF_SDP_INFO, "off"))
-        return 2;
-    if (setting_has_value(SETTING_CF_SDP_INFO, "first"))
-        return 2;
-    if (setting_has_value(SETTING_CF_SDP_INFO, "full"))
-        return msg_media_count(msg) + 2;
+    }
 
     return 0;
+}
+
+call_flow_arrow_t *
+call_flow_arrow_find(PANEL *panel, const void *data)
+{
+    call_flow_info_t *info;
+    call_flow_arrow_t *arrow;
+
+    if (!data)
+        return NULL;
+
+    if (!(info = call_flow_info(panel)))
+        return NULL;
+
+    for (arrow = info->arrows; arrow; arrow = arrow->next)
+        if (arrow->msg == data || arrow->stream == data)
+            return arrow;
+
+    return arrow;
+}
+
+sip_msg_t *
+call_flow_arrow_message(const  call_flow_arrow_t *arrow)
+{
+    if (!arrow)
+        return NULL;
+    if (arrow->type == CF_ARROW_SIP)
+        return arrow->msg;
+    if (arrow->type == CF_ARROW_RTP)
+        return arrow->stream->media->msg;
+    return NULL;
 }
 
 int
@@ -523,7 +772,7 @@ call_flow_handle_key(PANEL *panel, int key)
 {
     int i, raw_width, height, width;
     call_flow_info_t *info = call_flow_info(panel);
-    sip_msg_t *next = NULL, *prev = NULL;
+    call_flow_arrow_t *next, *prev;
     ui_t *next_panel;
     sip_call_group_t *group;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
@@ -541,33 +790,28 @@ call_flow_handle_key(PANEL *panel, int key)
         switch(action) {
             case ACTION_DOWN:
                 // Check if there is a call below us
-                if (!(next = call_group_get_next_msg(info->group, info->cur_msg)))
+                if (!(next = call_flow_next_arrow(panel, info->cur_arrow)))
                     break;
-                info->cur_line += call_flow_message_height(panel, info->cur_msg);
+                info->cur_line += call_flow_arrow_height(panel, info->cur_arrow);
+
+                fprintf(stderr, "%d %d\n", info->cur_line, height);
                 // If we are out of the bottom of the displayed list
                 // refresh it starting in the next call
                 if (info->cur_line >= height) {
-                    info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
-                    info->cur_line -= call_flow_message_height(panel, info->cur_msg);
+                    info->cur_line -= call_flow_arrow_height(panel, info->first_arrow);
+                    info->first_arrow = call_flow_next_arrow(panel, info->first_arrow);
                 }
-                info->cur_msg = next;
-                // Check the whole next message is displayed on panel
-                if (info->cur_line +  call_flow_message_height(panel, next) > height) {
-                    info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
-                    info->cur_line -= call_flow_message_height(panel, next);
-                }
+                info->cur_arrow = next;
                 break;
             case ACTION_UP:
                 // Get previous message
-                prev = call_group_get_prev_msg(info->group, info->cur_msg);
-                // We're at the first message already
-                if (!prev)
+                if (!(prev = call_flow_prev_arrow(panel, info->cur_arrow)))
                     break;
-                info->cur_line -= call_flow_message_height(panel, info->cur_msg);;
-                info->cur_msg = prev;
+                info->cur_line -= call_flow_arrow_height(panel, info->cur_arrow);
+                info->cur_arrow = prev;
                 if (info->cur_line <= 0) {
-                    info->first_msg = info->cur_msg;
-                    info->cur_line = 0;
+                    info->cur_line += call_flow_arrow_height(panel, prev);
+                    info->first_arrow = prev;
                 }
                 break;
             case ACTION_HNPAGE:
@@ -594,9 +838,6 @@ call_flow_handle_key(PANEL *panel, int key)
                 for (i=0; i < call_group_msg_count(info->group); i++)
                     call_flow_handle_key(panel, KEY_DOWN);
                 break;
-            case ACTION_TOGGLE_RTP:
-                 info->show_rtp = (info->show_rtp)?0:1;
-                 break;
             case ACTION_SHOW_FLOW_EX:
                 werase(panel_window(panel));
                 // KEY_X , Display current call flow
@@ -643,6 +884,9 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_SDP_INFO:
                 setting_toggle(SETTING_CF_SDP_INFO);
                 break;
+            case ACTION_TOGGLE_MEDIA:
+                setting_toggle(SETTING_CF_MEDIA);
+                break;
             case ACTION_TOGGLE_RAW:
                 setting_toggle(SETTING_CF_FORCERAW);
                 break;
@@ -653,14 +897,16 @@ call_flow_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_SELECT:
                 if (!info->selected) {
-                    info->selected = info->cur_msg;
+                    info->selected = info->cur_arrow;
                 } else {
-                    if (info->selected == info->cur_msg) {
+                    if (info->selected == info->cur_arrow) {
                         info->selected = NULL;
                     } else {
                         // Show diff panel
                         next_panel = ui_create_panel(PANEL_MSG_DIFF);
-                        msg_diff_set_msgs(ui_get_panel(next_panel), info->selected, info->cur_msg);
+                        msg_diff_set_msgs(ui_get_panel(next_panel),
+                                          call_flow_arrow_message(info->selected),
+                                          call_flow_arrow_message(info->cur_arrow));
                     }
                 }
                 break;
@@ -668,7 +914,7 @@ call_flow_handle_key(PANEL *panel, int key)
                 // KEY_ENTER, display current message in raw mode
                 ui_create_panel(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
-                call_raw_set_msg(info->cur_msg);
+                call_raw_set_msg(call_flow_arrow_message(info->cur_arrow));
                 break;
             default:
                 // Parse next action
@@ -757,10 +1003,9 @@ call_flow_set_group(sip_call_group_t *group)
         return -1;
 
     info->group = group;
-    info->cur_msg = info->first_msg = call_group_get_next_msg(group, NULL);
+    info->cur_arrow = info->first_arrow = call_flow_next_arrow(panel, NULL);
     info->cur_line = 1;
     info->columns = NULL;
-    info->last_msg = NULL;
     info->selected = NULL;
 
     return 0;
@@ -774,6 +1019,9 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
     int colpos = 0;
 
     if (!(info = call_flow_info(panel)))
+        return;
+
+    if (!addr || !strlen(addr))
         return;
 
     if (call_flow_column_get(panel, callid, addr))
@@ -805,13 +1053,28 @@ call_flow_column_get(PANEL *panel, const char *callid, const char *addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *columns;
+    int match_port;
+    char coladdr[ADDRESSLEN + 6];
+    char *dots;
 
     if (!(info = call_flow_info(panel)))
         return NULL;
 
+    // Look for address or address:port ?
+    match_port = (strchr(addr, ':') != NULL);
+
     columns = info->columns;
     while (columns) {
-        if (!strcasecmp(addr, columns->addr)) {
+        // Copy address:port column label
+        strcpy(coladdr, columns->addr);
+
+        // Remove port if we want to match only address
+        if (!match_port && (dots = strchr(coladdr, ':')))
+            *dots = '\0';
+
+        if (!strcasecmp(addr, coladdr)) {
+            if (!match_port)
+                return columns;
             if (setting_enabled(SETTING_CF_SPLITCALLID))
                 return columns;
             if (columns->callid && !strcasecmp(callid, columns->callid))

@@ -95,9 +95,6 @@ key_bindings_init()
     key_bind_action(ACTION_SHOW_FLOW_EX, KEY_F(4));
     key_bind_action(ACTION_SHOW_FLOW_EX, 'x');
     key_bind_action(ACTION_SHOW_FLOW_EX, 'X');
-#ifdef ENABLED_MEDIA_TESTING
-    key_bind_action(ACTION_SHOW_MEDIA, 'm');
-#endif
     key_bind_action(ACTION_SHOW_FILTERS, KEY_F(7));
     key_bind_action(ACTION_SHOW_FILTERS, 'f');
     key_bind_action(ACTION_SHOW_FILTERS, 'F');
@@ -119,9 +116,9 @@ key_bindings_init()
     key_bind_action(ACTION_SAVE, 'S');
     key_bind_action(ACTION_SELECT, KEY_SPACE);
     key_bind_action(ACTION_CONFIRM, KEY_INTRO);
-    key_bind_action(ACTION_TOGGLE_RTP, 'f');
     key_bind_action(ACTION_TOGGLE_RAW, KEY_F(3));
     key_bind_action(ACTION_TOGGLE_RAW, 't');
+    key_bind_action(ACTION_TOGGLE_MEDIA, 'm');
     key_bind_action(ACTION_INCREASE_RAW, '9');
     key_bind_action(ACTION_DECREASE_RAW, '0');
     key_bind_action(ACTION_RESET_RAW, 'T');
@@ -222,7 +219,6 @@ key_action_id(const char *action)
     if (!strcmp(action, "save")) return ACTION_SAVE;
     if (!strcmp(action, "select")) return ACTION_SELECT;
     if (!strcmp(action, "confirm")) return ACTION_CONFIRM;
-    if (!strcmp(action, "rtp")) return ACTION_TOGGLE_RTP;
     if (!strcmp(action, "rawpreview")) return ACTION_TOGGLE_RAW;
     if (!strcmp(action, "morerawpreview")) return ACTION_INCREASE_RAW;
     if (!strcmp(action, "lessrawpreview")) return ACTION_DECREASE_RAW;

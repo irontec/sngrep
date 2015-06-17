@@ -40,13 +40,40 @@
 typedef struct call_flow_info call_flow_info_t;
 //! Sorter declaration of struct call_flow_column
 typedef struct call_flow_column call_flow_column_t;
+//! Sorter declaration of struct call_flow_arrow
+typedef struct call_flow_arrow call_flow_arrow_t;
 
+/**
+ * @brief Structure to hold one column information
+ */
 struct call_flow_column {
     const char *addr;
     const char *callid;
     const char *callid2;
     int colpos;
     call_flow_column_t *next;
+};
+
+/**
+ * @brief Call flow arrow types
+ */
+enum call_flow_arrow_type {
+    CF_ARROW_SIP,
+    CF_ARROW_RTP,
+};
+
+/**
+ * @brief Call Flow arrow information
+ */
+struct call_flow_arrow {
+    int type;
+    sip_msg_t *msg;
+    rtp_stream_t *stream;
+    int height;
+    int line;
+    call_flow_column_t *column1;
+    call_flow_column_t *column2;
+    call_flow_arrow_t *next;
 };
 
 /**
@@ -59,13 +86,12 @@ struct call_flow_info {
     WINDOW *raw_win;
     WINDOW *flow_win;
     sip_call_group_t *group;
-    sip_msg_t *first_msg;
-    sip_msg_t *cur_msg;
-    sip_msg_t *selected;
-    sip_msg_t *last_msg;
+    call_flow_arrow_t *arrows;
+    call_flow_arrow_t *first_arrow;
+    call_flow_arrow_t *cur_arrow;
+    call_flow_arrow_t *selected;
     int raw_width;
     int cur_line;
-    int show_rtp;
     call_flow_column_t *columns;
 };
 
@@ -144,11 +170,26 @@ call_flow_draw_columns(PANEL *panel);
  * @param cline Window line to draw the message
  * @return 0 if arrow is drawn, 1 otherwise
  */
-int
-call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline);
+call_flow_arrow_t *
+call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline);
+
+call_flow_arrow_t *
+call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
+
+call_flow_arrow_t *
+call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur);
+
+call_flow_arrow_t *
+call_flow_prev_arrow(PANEL *panel, const call_flow_arrow_t *cur);
 
 int
-call_flow_message_height(PANEL *panel, sip_msg_t *msg);
+call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow);
+
+call_flow_arrow_t *
+call_flow_arrow_find(PANEL *panel, const void *data);
+
+sip_msg_t *
+call_flow_arrow_message(const  call_flow_arrow_t *arrow);
 
 /**
  * @brief Draw raw panel with message payload

@@ -189,6 +189,12 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg);
 sip_msg_t *
 call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg);
 
+rtp_stream_t *
+call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream);
+
+int
+timeval_is_older(struct timeval t1, struct timeval t2);
+
 /**
  * @brief Check if a message is older than other
  *
@@ -202,5 +208,8 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg);
  */
 int
 sip_msg_is_older(sip_msg_t *one, sip_msg_t *two);
+
+int
+rtp_stream_is_older(rtp_stream_t *one, rtp_stream_t *two);
 
 #endif /* __SNGREP_GROUP_H_ */
