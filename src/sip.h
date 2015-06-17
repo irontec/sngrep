@@ -108,6 +108,7 @@ struct sip_msg {
     int sdp;
     //! Message Cseq
     int cseq;
+
     //! PCAP Packet Header data
     struct pcap_pkthdr *pcap_header;
     //! PCAP Packet data
@@ -132,6 +133,8 @@ struct sip_call {
     char *attrs[SIP_ATTR_COUNT];
     //! Flag this call as filtered so won't be displayed
     int filtered;
+    //! For call dialogs, mark if call has not yet finished
+    int active;
     //! List of messages of this call
     sip_msg_t *msgs;
     //! Pointer to the last added message
@@ -429,6 +432,9 @@ call_get_next_filtered(sip_call_t *cur);
 sip_call_t *
 call_get_prev_filtered(sip_call_t *cur);
 
+sip_call_t *
+call_get_next_active(sip_call_t *cur);
+
 /**
  * @brief Update Call State attribute with its last parsed message
  *
@@ -446,6 +452,9 @@ call_update_state(sip_call_t *call, sip_msg_t *msg);
  */
 void
 call_add_media(sip_call_t *call, sdp_media_t *media);
+
+sdp_media_t *
+call_find_media(sip_call_t *call, const char *address, u_short port);
 
 /**
  * @brief Get message Request/Response code

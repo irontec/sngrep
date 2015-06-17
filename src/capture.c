@@ -182,6 +182,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int transport; /* 0 UDP, 1 TCP, 2 TLS */
     // Source and Destination Ports
     u_short sport, dport;
+    // Media structure for RTP packets
+    sdp_media_t *media;
 
     // Ignore packets while capture is paused
     if (capture_is_paused())
@@ -334,20 +336,14 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
-#ifdef ENABLED_MEDIA_TESTING
-//    } else {
-//        // Check if this is a RTP packet from active calls
-//        sip_call_t *call;
-//        for (call = call_get_next(NULL); call; call = call_get_next(call)) {
-//            sdp_media_t *media = media_find_pair(call->medias, ip_src, sport, ip_dst, dport);
-//            if (media) {
-//                if (!strcmp(media->addr1, ip_src) && media->port1 == sport)
-//                    media->txcnt++;
-//                else
-//                    media->rvcnt++;
-//            }
-//        }
-#endif
+    } else {
+        // Check if this is a RTP packet from active calls
+        sip_call_t *call;
+        for (call = call_get_next_active(NULL); call; call = call_get_next_active(call)) {
+            if ((media = call_find_media(call, ip_src, sport))) {
+                media_increase_pkt_count(media);
+            }
+        }
     }
 
     // Deallocate packet duplicated payload

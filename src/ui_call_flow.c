@@ -57,7 +57,7 @@
  * |     |      |      |      |   |                         |
  * |     |      |      |      |   |                         |
  * |     |      |      |      |   |                         |
- * | Usefull hotkeys                                        |
+ * | Useful hotkeys                                         |
  * +--------------------------------------------------------+
  *
  * Some values we have in mind, stored in the info structure of the panel:
@@ -398,10 +398,11 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
         for (media = msg->call->medias; media; media = media->next) {
             if (media->msg == msg) {
-                sprintf(mediastr, "%s %d (%s)",
+                sprintf(mediastr, "%s %d (%s) %d",
                           media_get_type(media),
                           media_get_port(media),
-                          media_get_format(media));
+                          media_get_format(media),
+                          media_get_pkt_count(media));
                 mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
             }
         }

@@ -529,6 +529,20 @@ call_get_prev_filtered(sip_call_t *cur)
     return prev;
 }
 
+sip_call_t *
+call_get_next_active(sip_call_t *cur)
+{
+    sip_call_t *next;
+
+    pthread_mutex_lock(&calls.lock);
+    for (next = call_get_next(cur); next; next = call_get_next(next))
+        if (next && next->active)
+            break;
+    pthread_mutex_unlock(&calls.lock);
+
+    return next;
+}
+
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
@@ -555,6 +569,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 // Alice and Bob are talking
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_INCALL);
                 // Store the timestap where call has started
+                call->active = 1;
                 call->cstart_msg = msg;
             } else if (reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
@@ -562,12 +577,14 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 // Store total call duration
                 call_set_attribute(call, SIP_ATTR_TOTALDUR,
                                    sip_calculate_duration(call->msgs, msg, dur));
+                call->active = 0;
             } else if (reqresp > 400) {
                 // Bob is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
                 // Store total call duration
                 call_set_attribute(call, SIP_ATTR_TOTALDUR,
                                    sip_calculate_duration(call->msgs, msg, dur));
+                call->active = 0;
             }
         } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
             if (reqresp == SIP_METHOD_BYE) {
@@ -576,10 +593,12 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 // Store Conversation duration
                 call_set_attribute(call, SIP_ATTR_CONVDUR,
                                    sip_calculate_duration(call->cstart_msg, msg, dur));
+                call->active = 0;
             }
         } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, SIP_CALLSTATE_INCALL)) {
             // Call is being setup (after proper authentication)
             call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
+            call->active = 1;
         } else {
             // Store total call duration
             call_set_attribute(call, SIP_ATTR_TOTALDUR,
@@ -587,30 +606,43 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
         }
     } else {
         // This is actually a call
-        if (reqresp == SIP_METHOD_INVITE)
+        if (reqresp == SIP_METHOD_INVITE) {
             call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
+            call->active = 1;
+        }
     }
+
 
 }
 
 void
 call_add_media(sip_call_t *call, sdp_media_t *media)
 {
-    sdp_media_t *tmp;
-
     //! Sanity check
     if (!call || !media)
         return;
 
-    //! Add the first media to the call
-    if (!call->medias) {
-        call->medias = media;
-    } else {
-        //! Look for the last media of the call
-        for (tmp = call->medias; tmp->next; tmp = tmp->next)
-            ;
-        tmp->next = media;
+    // Add media to the call
+    media->next = call->medias;
+    call->medias = media;
+}
+
+sdp_media_t *
+call_find_media(sip_call_t *call, const char *address, u_short port)
+{
+    sdp_media_t *media;
+
+    //! Sanity check
+    if (!call || !address)
+        return NULL;
+
+    for(media = call->medias; media; media = media->next) {
+        if (!strcmp(address, media_get_address(media)) && port == media_get_port(media)) {
+            return media;
+        }
     }
+
+    return media;
 }
 
 int
@@ -716,8 +748,8 @@ msg_parse_media(sip_msg_t *msg)
     char media_type[15] = { };
     char media_format[30] = { };
     int media_port;
-    char media_fmt_pref[5];
-    char media_fmt_code[5];
+    int media_fmt_pref;
+    int media_fmt_code;
     sdp_media_t *media = NULL;
     int port = 0;
     char *payload, *tofree, *line;
@@ -753,13 +785,13 @@ msg_parse_media(sip_msg_t *msg)
     while ((line = strsep(&payload, "\r\n")) != NULL) {
         // Check if we have a media string
         if (!strncmp(line, "m=", 2)) {
-            if (sscanf(line, "m=%s %d RTP/AVP %s", media_type, &media_port, media_fmt_pref) == 3) {
+            if (sscanf(line, "m=%s %d RTP/AVP %d", media_type, &media_port, &media_fmt_pref) == 3) {
                 // Create a new media structure for this message
                 if ((media = media_create(msg))) {
                     media_set_type(media, media_type);
                     media_set_port(media, media_port);
                     media_set_address(media, media_address);
-                    media_set_format(media, media_fmt_pref);
+                    media_set_format_code(media, media_fmt_pref);
                     call_add_media(msg->call, media);
                 }
             }
@@ -774,8 +806,8 @@ msg_parse_media(sip_msg_t *msg)
 
         // Check if we have attribute format string
         if (!strncmp(line, "a=rtpmap:", 9)) {
-            if (sscanf(line, "a=rtpmap:%s %[^ ]", media_fmt_code, media_format)) {
-                if (media && !strcmp(media_fmt_pref, media_fmt_code)) {
+            if (sscanf(line, "a=rtpmap:%d %[^ ]", &media_fmt_code, media_format)) {
+                if (media && media_fmt_pref == media_fmt_code) {
                     media_set_format(media, media_format);
                 }
             }

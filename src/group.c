@@ -244,18 +244,23 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
 }
 
 int
+timeval_is_older(struct timeval t1, struct timeval t2)
+{
+    long diff;
+    diff = t2.tv_sec  * 1000000 + t2.tv_usec;
+    diff -= t1.tv_sec * 1000000 + t2.tv_usec;
+    return (diff > 0);
+}
+
+int
 sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)
 {
     // Yes, you are older than nothing
     if (!two)
         return 1;
-    // Compare seconds
-    if (one->pcap_header->ts.tv_sec > two->pcap_header->ts.tv_sec)
-        return 1;
-    // Compare useconds if seconds are equal
-    if (one->pcap_header->ts.tv_sec == two->pcap_header->ts.tv_sec
-            && one->pcap_header->ts.tv_usec > two->pcap_header->ts.tv_usec)
-        return 1;
+
     // Otherwise
-    return 0;
+    return timeval_is_older(one->pcap_header->ts, two->pcap_header->ts);
 }
+
+

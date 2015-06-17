@@ -64,13 +64,14 @@ struct sdp_media
     u_short port;
     char type[15];
     char format[50];
+    int fmtcode;
 
     //! Remote address and port
     char remote_address[ADDRESSLEN];
     u_short remote_port;
-
-    //! Packets sent to sdp address/port
+    int stream_format;
     int pktcnt;
+
 
     //! Message with this SDP content
     struct sip_msg *msg;
@@ -94,6 +95,12 @@ media_set_address(sdp_media_t *media, const char *address);
 void
 media_set_format(sdp_media_t *media, const char *format);
 
+void
+media_set_format_code(sdp_media_t *media, int code);
+
+void
+media_increase_pkt_count(sdp_media_t *media);
+
 const char *
 media_get_address(sdp_media_t *media);
 
@@ -113,9 +120,12 @@ const char *
 media_get_format(sdp_media_t *media);
 
 int
+media_get_format_code(sdp_media_t *media);
+
+int
 media_get_pkt_count(sdp_media_t *media);
 
 const char *
-media_codec_from_encoding(const char *encoding);
+media_codec_from_encoding(int code, const char *format);
 
 #endif /* __SNGREP_MEDIA_H_ */

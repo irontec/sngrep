@@ -101,6 +101,18 @@ media_set_format(sdp_media_t *media, const char *format)
     strcpy(media->format, format);
 }
 
+void
+media_set_format_code(sdp_media_t *media, int code)
+{
+    media->fmtcode = code;
+}
+
+void
+media_increase_pkt_count(sdp_media_t *media)
+{
+    media->pktcnt++;
+}
+
 const char *
 media_get_address(sdp_media_t *media)
 {
@@ -134,7 +146,13 @@ media_get_type(sdp_media_t *media)
 const char *
 media_get_format(sdp_media_t *media)
 {
-    return media_codec_from_encoding(media->format);
+    return media_codec_from_encoding(media->fmtcode, media->format);
+}
+
+int
+media_get_format_code(sdp_media_t *media)
+{
+    return media->fmtcode;
 }
 
 int
@@ -144,26 +162,24 @@ media_get_pkt_count(sdp_media_t *media)
 }
 
 const char *
-media_codec_from_encoding(const char *encoding)
+media_codec_from_encoding(int code, const char *format)
 {
-    int id, i;
+    int i;
 
-    if (!encoding)
-        return NULL;
-
-    for (i = 0; encodings[i].id >= 0; i++) {
-        if (!strcmp(encodings[i].name, encoding))
-            return encodings[i].format;
+    if (format && strlen(format)) {
+        // Format from RTP codec name
+        for (i = 0; encodings[i].id >= 0; i++) {
+            if (!strcmp(encodings[i].name, format))
+                return encodings[i].format;
+        }
+    } else {
+        // Format from RTP codec id
+        for (i = 0; encodings[i].id >= 0; i++) {
+            if (encodings[i].id == code)
+                return encodings[i].format;
+        }
     }
 
-    // Get numeric encoding id
-    id = atoi(encoding);
-
-    for (i = 0; encodings[i].id >= 0; i++) {
-        if (encodings[i].id == id)
-            return encodings[i].format;
-    }
-
-    return encoding;
+    return format;
 }
 
