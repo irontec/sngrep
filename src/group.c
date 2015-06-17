@@ -211,33 +211,14 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
 sip_msg_t *
 call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
 {
+    sip_msg_t *next = NULL;
     sip_msg_t *prev = NULL;
-    sip_msg_t *cand;
-    int i;
 
-    // FIXME Performance hack for huge dialogs
-    if (group->callcnt == 1) {
-        cand = msg;
-        while ((cand = call_get_prev_msg(group->calls[0], cand))) {
-            if (group->sdp_only && !cand->sdp)
-                continue;
+    // FIXME Horrible performance for huge dialogs
+    while ((next = call_group_get_next_msg(group, next))) {
+        if (next == msg)
             break;
-        }
-        return cand;
-    }
-
-    for (i = 0; i < group->callcnt; i++) {
-        cand = group->calls[i]->last_msg;
-        while ((cand = call_get_prev_msg(group->calls[i], cand))) {
-            if (group->sdp_only && !cand->sdp)
-                continue;
-
-            // candidate must newer than current message and older than previous candidate
-            if (sip_msg_is_older(msg, cand) && (!prev || sip_msg_is_older(cand, prev))) {
-                prev = cand;
-                break;
-            }
-        }
+        prev = next;
     }
 
     return prev;
@@ -248,8 +229,8 @@ timeval_is_older(struct timeval t1, struct timeval t2)
 {
     long diff;
     diff = t2.tv_sec  * 1000000 + t2.tv_usec;
-    diff -= t1.tv_sec * 1000000 + t2.tv_usec;
-    return (diff > 0);
+    diff -= t1.tv_sec * 1000000 + t1.tv_usec;
+    return (diff < 0);
 }
 
 int

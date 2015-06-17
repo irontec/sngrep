@@ -398,11 +398,10 @@ call_flow_draw_message(PANEL *panel, sip_msg_t *msg, int cline)
     if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
         for (media = msg->call->medias; media; media = media->next) {
             if (media->msg == msg) {
-                sprintf(mediastr, "%s %d (%s) %d",
+                sprintf(mediastr, "%s %d (%s)",
                           media_get_type(media),
                           media_get_port(media),
-                          media_get_format(media),
-                          media_get_pkt_count(media));
+                          media_get_format(media));
                 mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
             }
         }
@@ -552,6 +551,11 @@ call_flow_handle_key(PANEL *panel, int key)
                     info->cur_line -= call_flow_message_height(panel, info->cur_msg);
                 }
                 info->cur_msg = next;
+                // Check the whole next message is displayed on panel
+                if (info->cur_line +  call_flow_message_height(panel, next) > height) {
+                    info->first_msg = call_group_get_next_msg(info->group, info->first_msg);
+                    info->cur_line -= call_flow_message_height(panel, next);
+                }
                 break;
             case ACTION_UP:
                 // Get previous message
