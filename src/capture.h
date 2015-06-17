@@ -39,14 +39,12 @@
 #include <stdlib.h>
 #include <time.h>
 
-#if defined(__linux__)
 #ifndef __FAVOR_BSD
 #define __FAVOR_BSD
 #endif
 
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE 1
-#endif
 #endif
 
 #if defined(BSD) || defined (__OpenBSD__) || defined(__FreeBSD__)
