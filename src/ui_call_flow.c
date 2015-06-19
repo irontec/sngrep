@@ -794,7 +794,6 @@ call_flow_handle_key(PANEL *panel, int key)
                     break;
                 info->cur_line += call_flow_arrow_height(panel, info->cur_arrow);
 
-                fprintf(stderr, "%d %d\n", info->cur_line, height);
                 // If we are out of the bottom of the displayed list
                 // refresh it starting in the next call
                 if (info->cur_line >= height) {
