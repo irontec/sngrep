@@ -538,11 +538,11 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (call_flow_column_get(panel, 0, stream->ip_src) == column1) {
         mvwprintw(win, cline, startpos - 1, "%d", stream->sport);
-        mvwaddch(win, cline, startpos + 5, '<');
+        mvwaddch(win, cline, endpos - 5, '>');
         mvwprintw(win, cline, endpos - 3, "%d", stream->dport);
     } else {
         mvwprintw(win, cline, endpos  - 3, "%d", stream->sport);
-        mvwaddch(win, cline, endpos - 5, '>');
+        mvwaddch(win, cline, startpos + 5, '<');
         mvwprintw(win, cline, startpos - 1, "%d", stream->dport);
     }
 
