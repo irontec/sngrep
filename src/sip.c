@@ -102,6 +102,8 @@ sip_msg_create(const char *payload)
     memset(msg, 0, sizeof(sip_msg_t));
     msg->payload = strdup(payload);
     msg->color = 0;
+    // Create a vector to store sdp
+    msg->medias = vector_create(0, 2);
     return msg;
 }
 
@@ -151,6 +153,8 @@ sip_call_create(char *callid)
 
     // Create a vector to store call messages
     call->msgs = vector_create(10, 5);
+    // Create a vector to store RTP streams
+    call->streams = vector_create(4, 2);
 
     // Initialize call filter status
     call->filtered = -1;
@@ -403,12 +407,7 @@ call_msg_count(sip_call_t *call)
 int
 msg_media_count(sip_msg_t *msg)
 {
-    sdp_media_t *media;
-    int count = 0;
-    for (media = msg->medias; media; media = media->next) {
-        count++;
-    }
-    return count;
+    return vector_count(msg->medias);
 }
 
 sip_call_t *
@@ -547,54 +546,21 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     }
 }
 
-void
-msg_add_media(sip_msg_t *msg, sdp_media_t *media)
-{
-    sdp_media_t *tmp;
-
-    //! Sanity check
-    if (!msg || !media)
-        return;
-
-    if (!msg->medias) {
-        // Add the first media of the call
-        msg->medias = media;
-    } else {
-        // Add media to the call
-        for (tmp = msg->medias; tmp->next; tmp = tmp->next);
-        tmp->next = media;
-    }
-}
-
-void
-call_add_stream(sip_call_t *call, rtp_stream_t *stream)
-{
-//    rtp_stream_t *tmp;
-    //! Sanity check
-    if (!call || !stream)
-        return;
-
-    //! Add stream to call stream list
-    stream->next = call->streams;
-    call->streams = stream;
-}
-
 rtp_stream_t *
 call_find_stream(sip_call_t *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport)
 {
-    rtp_stream_t *stream;
+    rtp_stream_t *stream, *ret = NULL;
+    vector_iter_t it;
 
-    //! Sanity check
-    if (!call || !call->streams || !ip_src || !ip_dst)
-        return NULL;
+    it = vector_iterator(call->streams);
 
-    for (stream = call->streams; stream; stream = stream->next) {
+    while ((stream = vector_iterator_next(&it))) {
         if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
             !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
-            return stream;
+            ret = stream;
         }
     }
-    return NULL;
+    return ret;
 }
 
 int
@@ -738,17 +704,19 @@ msg_parse_media(sip_msg_t *msg)
                     media_set_port(media, media_port);
                     media_set_address(media, media_address);
                     media_set_format_code(media, media_fmt_pref);
-                    msg_add_media(msg, media);
+                    vector_append(msg->medias, media);
 
                     if (!msg_is_retrans(msg)) {
                         // Create a new stream with this dest address:port
                         stream = stream_create(media);
                         strcpy(stream->ip_dst, media_address);
                         stream->dport = media_port;
-                        call_add_stream(msg->call, stream);
+                        vector_append(msg->call->streams, stream);
+
+                        vector_iter_t it = vector_iterator(msg->call->streams);
 
                         // If there is a pending stream to confirm
-                        for (active = msg->call->streams; active; active = active->next) {
+                        while ((active = vector_iterator_next(&it))) {
                             // Only consider confirmation of other stream with different message type
                             if (msg_is_request(active->media->msg) == msg_is_request(msg))
                                 continue;
@@ -776,8 +744,9 @@ msg_parse_media(sip_msg_t *msg)
 
                         // If no stream to complete has been found to complete
                         if (!active) {
+                            vector_iterator_reset(&it);
                             // Check if there was an active stream previously configured
-                            for (active = msg->call->streams; active; active = active->next) {
+                            while ((active = vector_iterator_next(&it))) {
                                 // We're looking for a confirmed stream
                                 if (!active->complete)
                                     continue;

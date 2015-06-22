@@ -110,8 +110,8 @@ struct sip_msg {
     int sdp;
     //! Message Cseq
     int cseq;
-    //! SDP payload information
-    sdp_media_t *medias;
+    //! SDP payload information (sdp_media_t *)
+    vector_t *medias;
 
     //! PCAP Packet Header data
     struct pcap_pkthdr *pcap_header;
@@ -139,8 +139,8 @@ struct sip_call {
     vector_t *msgs;
     //! Message when conversation started
     sip_msg_t *cstart_msg;
-    //! RTP streams for this call
-    rtp_stream_t *streams;
+    //! RTP streams for this call (rtp_stream_t *)
+    vector_t *streams;
 };
 
 /**
@@ -392,9 +392,6 @@ call_update_state(sip_call_t *call, sip_msg_t *msg);
  */
 void
 msg_add_media(sip_msg_t *msg, sdp_media_t *media);
-
-void
-call_add_stream(sip_call_t *call, rtp_stream_t *stream);
 
 rtp_stream_t *
 call_find_stream(sip_call_t *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport);

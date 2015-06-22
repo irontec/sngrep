@@ -67,7 +67,6 @@ rtp_stream_t *
 stream_create(sdp_media_t *media)
 {
     rtp_stream_t *stream;
-    ;
 
     // Allocate memory for this stream structure
     if (!(stream = malloc(sizeof(rtp_stream_t))))

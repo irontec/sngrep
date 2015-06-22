@@ -213,11 +213,13 @@ call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream)
     rtp_stream_t *next = NULL;
     rtp_stream_t *cand;
     sip_call_t *call;
+    vector_iter_t streams;
     int i;
 
     for (i = 0; i < vector_count(group->calls); i++) {
         call = vector_item(group->calls, i);
-        for (cand = call  ->streams; cand; cand = cand->next) {
+        streams = vector_iterator(call->streams);
+        while ( (cand = vector_iterator_next(&streams))) {
             if (!stream_get_count(cand))
                 continue;
 

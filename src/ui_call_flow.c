@@ -36,6 +36,7 @@
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_msg_diff.h"
+#include "vector.h"
 
 /***
  *
@@ -224,6 +225,7 @@ call_flow_draw_columns(PANEL *panel)
     rtp_stream_t *stream;
     WINDOW *win;
     sip_msg_t *msg;
+    vector_iter_t streams;
     int flow_height, flow_width;
     const char *coltext;
     char address[50], *end;
@@ -244,7 +246,8 @@ call_flow_draw_columns(PANEL *panel)
     // Add RTP columns FIXME Really
     if (setting_enabled(SETTING_CF_MEDIA)) {
         while ((call = call_group_get_next(info->group, call)) ) {
-            for (stream = call->streams; stream; stream = stream->next) {
+            streams = vector_iterator(call->streams);
+            while ((stream = vector_iterator_next(&streams))) {
                 if (stream_get_count(stream)) {
                     call_flow_column_add(panel, NULL, stream->ip_src);
                     call_flow_column_add(panel, NULL, stream->ip_dst);
@@ -290,6 +293,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     int height, width;
     char mediastr[40];
     sip_msg_t *msg = arrow->msg;
+    vector_iter_t medias;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -414,14 +418,13 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     cline ++;
     // Draw media information
     if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        for (media = msg->medias; media; media = media->next) {
-            if (media->msg == msg) {
-                sprintf(mediastr, "%s %d (%s)",
-                          media_get_type(media),
-                          media_get_port(media),
-                          media_get_format(media));
-                mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
-            }
+        medias = vector_iterator(msg->medias);
+        while ((media = vector_iterator_next(&medias))) {
+            sprintf(mediastr, "%s %d (%s)",
+                    media_get_type(media),
+                    media_get_port(media),
+                    media_get_format(media));
+            mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
         }
     }
 
