@@ -35,9 +35,9 @@
 
 static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 },
-    { SIP_ATTR_SIPFROM,     "sipfrom",     NULL,   "SIP From",      30 },
+    { SIP_ATTR_SIPFROM,     "sipfrom",     NULL,   "SIP From",      25 },
     { SIP_ATTR_SIPFROMUSER, "sipfromuser", NULL,   "SIP From User", 20 },
-    { SIP_ATTR_SIPTO,       "sipto",       NULL,   "SIP To",        30 },
+    { SIP_ATTR_SIPTO,       "sipto",       NULL,   "SIP To",        25 },
     { SIP_ATTR_SIPTOUSER,   "siptouser",   NULL,   "SIP To User",   20 },
     { SIP_ATTR_SRC,         "src",         NULL,   "Source",        22 },
     { SIP_ATTR_DST,         "dst",         NULL,   "Destination",   22 },

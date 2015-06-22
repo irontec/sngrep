@@ -55,13 +55,14 @@ init_options()
     setting_set_value(SETTING_FILTER_METHODS, "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE");
 
     // Add Call list column options
-    set_option_value("cl.column0", "sipfrom");
-    set_option_value("cl.column1", "sipto");
-    set_option_value("cl.column2", "msgcnt");
-    set_option_value("cl.column3", "src");
-    set_option_value("cl.column4", "dst");
-    set_option_value("cl.column5", "method");
-    set_option_value("cl.column6", "state");
+    set_option_value("cl.column0", "index");
+    set_option_value("cl.column1", "sipfrom");
+    set_option_value("cl.column2", "sipto");
+    set_option_value("cl.column3", "msgcnt");
+    set_option_value("cl.column4", "src");
+    set_option_value("cl.column5", "dst");
+    set_option_value("cl.column6", "method");
+    set_option_value("cl.column7", "state");
 
     // Initialize keybindings
     key_bindings_init();
