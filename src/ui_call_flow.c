@@ -28,6 +28,7 @@
  * @todo Code help screen. Please.
  *
  */
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include "capture.h"
@@ -60,9 +61,6 @@
  * | Useful hotkeys                                         |
  * +--------------------------------------------------------+
  *
- * Some values we have in mind, stored in the info structure of the panel:
- *
- *  - raw_width: this represents the raw message preview width if visible.
  */
 
 /**
@@ -376,10 +374,6 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         column2 = tmp;
     }
 
-    // Store columns in arrow
-    arrow->column1 = column1;
-    arrow->column2 = column2;
-
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
     int distance = abs(endpos - startpos) - 3;
@@ -506,13 +500,9 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         column2 = tmp;
     }
 
-    // Store columns in arrow
-    arrow->column1 = column1;
-    arrow->column2 = column2;
-
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
-    int distance = abs(endpos - startpos) - 10;
+    int distance = abs(endpos - startpos) - 9;
 
     // Highlight current message
     if (arrow == info->cur_arrow) {

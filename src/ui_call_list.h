@@ -32,9 +32,6 @@
 #ifndef __UI_CALL_LIST_H
 #define __UI_CALL_LIST_H
 
-#include "config.h"
-#include <form.h>
-#include "sip.h"
 #include "ui_manager.h"
 
 /**

@@ -215,19 +215,46 @@ settings_draw(PANEL *panel);
  * by ui manager. Otherwise the return will be considered
  * a key code.
  *
- * @param panel Filter panel pointer
+ * @param panel Settings panel pointer
  * @param key   key code
  * @return 0 if the key is handled, keycode otherwise
  */
 int
 settings_handle_key(PANEL *panel, int key);
 
+/**
+ * @brief Return entry information of the field
+ *
+ * If field is storing a setting value, return the entry
+ * structure associated to the setting
+ *
+ * @param field Ncurses field pointer of screen
+ * @return Setting information structure
+ */
 settings_entry_t *
 ui_settings_is_entry(FIELD *field);
 
+/**
+ * @brief Update settings with panel values
+ *
+ * Update all settings with the selected on screen.
+ * Note that some settings require application restart to
+ * take effect.
+ *
+ * @param panel Settings panel pointer
+ * @return 0 in all cases
+ */
 int
 ui_settings_update_settings(PANEL *panel);
 
+/**
+ * @brief Update user resource file with panel values
+ *
+ * Save all settings into user configuration file located
+ * in it's home directory.
+ *
+ * @param panel Settings panel pointer
+ */
 void
 ui_settings_save(PANEL *panel);
 
