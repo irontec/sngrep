@@ -217,7 +217,7 @@ call_list_draw_header(PANEL *panel)
     wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Get filter call counters
-    filter_stats(&info->callcnt, &info->dispcallcnt);
+    //filter_stats(&info->callcnt, &info->dispcallcnt);
 
     // Print calls count (also filtered)
     mvwprintw(win, 1, 35, "%*s", 35, "");

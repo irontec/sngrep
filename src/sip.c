@@ -48,7 +48,7 @@
  * All parsed calls will be added to this list, only accesible from
  * this awesome structure, so, keep it thread-safe.
  */
-static sip_call_list_t calls =
+sip_call_list_t calls =
     { 0 };
 
 void
@@ -60,6 +60,9 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.limit = limit;
     calls.only_calls = only_calls;
     calls.ignore_incomplete = no_incomplete;
+
+    // Create a vector to store calls
+    calls.list = vector_create(500, 50);
 
     // Create hash table for callid search
     hcreate(calls.limit);
@@ -144,18 +147,14 @@ sip_call_t *
 sip_call_create(char *callid)
 {
     ENTRY entry;
+    int index;
+
     // Initialize a new call structure
     sip_call_t *call = malloc(sizeof(sip_call_t));
     memset(call, 0, sizeof(sip_call_t));
 
-    if (!calls.count) {
-        calls.first = call;
-    } else {
-        call->prev = calls.last;
-        calls.last->next = call;
-    }
-    calls.last = call;
-    calls.count++;
+    // Add this call to the call list
+    index = vector_append(calls.list, call);
 
     // Store this call in hash table
     entry.key = strdup(callid);
@@ -166,7 +165,7 @@ sip_call_create(char *callid)
     call->filtered = -1;
 
     // Store current call Index
-    call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", calls.count);
+    call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", index);
 
     return call;
 }
@@ -178,22 +177,10 @@ sip_call_destroy(sip_call_t *call)
     if (!call)
         return;
 
-    // If removing the first call, update list head
-    if (call == calls.first)
-        calls.first = call->next;
-    // If removing the last call, update the list tail
-    if (call == calls.last)
-        calls.last = call->prev;
-    // Update previous call
-    if (call->prev)
-        call->prev->next = call->next;
-    // Update next call
-    if (call->next)
-        call->next->prev = call->prev;
-    // Update call counter
-    calls.count--;
+    // Remove call from calls list
+    vector_remove(calls.list, call);
 
-    // Remove all messages
+    // Remove all call messages
     while (call->msgs)
         sip_msg_destroy(call->msgs);
 
@@ -346,8 +333,15 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
 int
 sip_calls_count()
 {
-    return calls.count;
+    return vector_count(calls.list);
 }
+
+vector_iter_t
+sip_calls_iterator()
+{
+    return vector_iterator(calls.list);
+}
+
 
 void
 call_add_message(sip_call_t *call, sip_msg_t *msg)
@@ -388,14 +382,15 @@ sip_call_t *
 call_find_by_xcallid(const char *xcallid)
 {
     const char *cur_xcallid;
+    sip_call_t *cur;
+    int i;
 
-    sip_call_t *cur = calls.first;
-    while (cur) {
+    for (i=0; i < vector_count(calls.list); i++) {
+        cur = vector_item(calls.list, i);
         cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
         if (cur_xcallid && !strcmp(cur_xcallid, xcallid)) {
             return cur;
         }
-        cur = cur->next;
     }
     return NULL;
 }
@@ -477,11 +472,7 @@ call_get_next(sip_call_t *cur)
 
     sip_call_t * next;
     pthread_mutex_lock(&calls.lock);
-    if (!cur) {
-        next = calls.first;
-    } else {
-        next = cur->next;
-    }
+    next = vector_item(calls.list, vector_index(calls.list, cur) + 1);
     pthread_mutex_unlock(&calls.lock);
     return next;
 }
@@ -492,11 +483,7 @@ call_get_prev(sip_call_t *cur)
 
     sip_call_t *prev;
     pthread_mutex_lock(&calls.lock);
-    if (!cur) {
-        prev = calls.first;
-    } else {
-        prev = cur->prev;
-    }
+    prev = vector_item(calls.list, vector_index(calls.list, cur) - 1);
     pthread_mutex_unlock(&calls.lock);
     return prev;
 }
@@ -533,11 +520,9 @@ call_get_next_active(sip_call_t *cur)
 {
     sip_call_t *next;
 
-    pthread_mutex_lock(&calls.lock);
     for (next = call_get_next(cur); next; next = call_get_next(next))
         if (next && next->active)
             break;
-    pthread_mutex_unlock(&calls.lock);
 
     return next;
 }
@@ -985,11 +970,9 @@ msg_get_time_delta(sip_msg_t *one, sip_msg_t *two, char *out)
 void
 sip_calls_clear()
 {
-    // Remove first call until no first call exists
     pthread_mutex_lock(&calls.lock);
-    while (calls.first) {
-        sip_call_destroy(calls.first);
-    }
+    // Clear all elements in vector
+    vector_clear(calls.list);
     // Create again the callid hash table
     hdestroy();
     hcreate(calls.limit);

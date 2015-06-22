@@ -43,6 +43,7 @@
 #include <regex.h>
 #include "sip_attr.h"
 #include "media.h"
+#include "vector.h"
 
 //! SIP Methods
 enum sip_methods {
@@ -147,8 +148,6 @@ struct sip_call {
     sip_msg_t *cstart_msg;
     //! RTP streams for this call
     rtp_stream_t *streams;
-    //! Calls double linked list
-    sip_call_t *next, *prev;
 };
 
 /**
@@ -157,11 +156,9 @@ struct sip_call {
  * This structure acts as header of calls list
  */
 struct sip_call_list {
-    // First and Last calls of the list
-    sip_call_t *first;
-    sip_call_t *last;
-    // Call counter
-    int count;
+    //! List of all captured calls
+    vector_t *list;
+
     // Max call limit
     int limit;
     //! Only store dialogs starting with INVITE
@@ -290,6 +287,12 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
  */
 int
 sip_calls_count();
+
+/**
+ * @brief Return an iterator of call list
+ */
+vector_iter_t
+sip_calls_iterator();
 
 /**
  * @brief Append message to the call's message list

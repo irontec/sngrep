@@ -185,6 +185,8 @@ is_ignored_value(const char *field, const char *fvalue)
 {
     int i;
     for (i = 0; i < optscnt; i++) {
+        if (options[i].type != IGNORE)
+            continue;
         if (!strcasecmp(options[i].opt, field) && !strcasecmp(options[i].value, fvalue)) {
             return 1;
         }

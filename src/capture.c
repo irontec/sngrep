@@ -183,7 +183,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Source and Destination Ports
     u_short sport, dport;
     // Media structure for RTP packets
-    rtp_stream_t *stream;
+    //rtp_stream_t *stream;
 
     // Ignore packets while capture is paused
     if (capture_is_paused())
@@ -337,6 +337,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
     } else {
+#if 0
         // Check if this is a RTP packet from active calls
         sip_call_t *call;
         for (call = call_get_next_active(NULL); call; call = call_get_next_active(call)) {
@@ -349,6 +350,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                 break;
             }
         }
+#endif
     }
 
     // Deallocate packet duplicated payload

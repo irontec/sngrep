@@ -125,7 +125,7 @@ filter_stats(int *total, int *displayed);
  * @return 1 if call is filtered
  */
 int
-filter_check_call(sip_call_t *call);
+filter_check_call(void *item);
 
 /**
  * @brief Reset filtered flag in all calls

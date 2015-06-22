@@ -94,25 +94,33 @@ filter_get(int type)
 void
 filter_stats(int *total, int *displayed)
 {
-    sip_call_t *call = NULL;
+    // TODO
 
-    // Initialize stats
-    *total = 0;
-    *displayed = 0;
+//    sip_call_t *call = NULL;
+//
+//    // Initialize stats
+//    *total = 0;
+//    *displayed = 0;
+//
+//    while ((call = call_get_next(call))) {
+//        (*total)++;
+//        if (filter_check_call(call) == 0)
+//            (*displayed)++;
+//    }
 
-    while ((call = call_get_next(call))) {
-        (*total)++;
-        if (filter_check_call(call) == 0)
-            (*displayed)++;
-    }
+    vector_iter_t it = sip_calls_iterator();
+    *total = vector_iterator_count(&it);
+    vector_iterator_set_filter(&it, filter_check_call);
+    *displayed = vector_iterator_count(&it);
 }
 
 int
-filter_check_call(sip_call_t *call)
+filter_check_call(void *item)
 {
     int i;
     const char *data;
     char linetext[256];
+    sip_call_t *call = (sip_call_t*) item;
 
     // Filter for this call has already be processed
     if (call->filtered != -1)
