@@ -31,6 +31,8 @@
 
 #include "media.h"
 
+#define RTP_FORMAT_MASK     0x7F
+
 //! Shorter declaration of rtp_encoding structure
 typedef struct rtp_encoding rtp_encoding_t;
 //! Shorter declaration of rtp_stream structure
@@ -38,7 +40,7 @@ typedef struct rtp_stream rtp_stream_t;
 
 struct rtp_encoding
 {
-    int id;
+    u_char id;
     const char *name;
     const char *format;
 };
@@ -52,7 +54,7 @@ struct rtp_stream
     char ip_dst[ADDRESSLEN];
     u_short dport;
     //! Format of first received packet of stre
-    int format;
+    u_char format;
     //! Time of first received packet of stream
     struct timeval time;
     //! Packet count for this stream
@@ -70,7 +72,7 @@ stream_create(sdp_media_t *media);
 
 void
 stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const char *ip_dst,
-                  u_short dport, int format, struct timeval time);
+                  u_short dport, u_char format, struct timeval time);
 
 int
 stream_get_count(rtp_stream_t *stream);
