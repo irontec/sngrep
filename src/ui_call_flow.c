@@ -487,7 +487,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     mvwprintw(win, cline, 2, "%s", timeval_to_time(stream->time, time));
 
     // Get Message method (include extra info)
-    sprintf(codec, "RTP (%s) %d", media_codec_from_encoding(stream->format, NULL), stream_get_count(stream));
+    sprintf(codec, "RTP (%s) %d", rtp_get_codec(stream->format, NULL), stream_get_count(stream));
 
     // Get origin and destination column
     call_flow_column_t *column1 = call_flow_column_get(panel, 0, stream->ip_src);

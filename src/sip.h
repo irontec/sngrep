@@ -42,6 +42,7 @@
 #endif
 #include <regex.h>
 #include "sip_attr.h"
+#include "rtp.h"
 #include "media.h"
 #include "vector.h"
 

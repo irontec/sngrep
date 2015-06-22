@@ -182,6 +182,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     int transport; /* 0 UDP, 1 TCP, 2 TLS */
     // Source and Destination Ports
     u_short sport, dport;
+    // Media structure for RTP packets
+    rtp_stream_t *stream;
 
     // Ignore packets while capture is paused
     if (capture_is_paused())
@@ -335,22 +337,9 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
     } else {
-        // Check if this is a RTP packet from active calls
-        sip_call_t *call;
-        // Media structure for RTP packets
-        rtp_stream_t *stream;
-        vector_iter_t calls = sip_calls_iterator();
-        vector_iterator_set_filter(&calls, call_is_active);
-
-        while ((call = vector_iterator_next(&calls))) {
-            // Check if this call has an RTP stream for current packet data
-            if ((stream = call_find_stream(call, ip_src, sport, ip_dst, dport))) {
-                //! Add packet to found stream
-                stream_add_packet(stream, ip_src, sport, ip_dst, dport, 0, header->ts);
-                // Store this packets in output file
-                dump_packet(capinfo.pd, header, packet);
-                break;
-            }
+        if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, msg_payload))) {
+            // Store this packets in output file
+            dump_packet(capinfo.pd, header, packet);
         }
     }
 

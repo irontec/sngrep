@@ -36,18 +36,6 @@
 
 //! Shorter declaration of sdp_media structure
 typedef struct sdp_media sdp_media_t;
-//! Shorter declaration of rtp_encoding structure
-typedef struct rtp_encoding rtp_encoding_t;
-//! Shorter declaration of rtp_stream structure
-typedef struct rtp_stream rtp_stream_t;
-
-
-struct rtp_encoding
-{
-    int id;
-    const char *name;
-    const char *format;
-};
 
 struct sip_msg;
 struct sdp_media
@@ -64,33 +52,8 @@ struct sdp_media
     sdp_media_t *next;
 };
 
-struct rtp_stream
-{
-    //! Source address and port
-    char ip_src[ADDRESSLEN];
-    u_short sport;
-    //! Destination address and port
-    char ip_dst[ADDRESSLEN];
-    u_short dport;
-    //! Format of first received packet of stre
-    int format;
-    //! Time of first received packet of stream
-    struct timeval time;
-    //! Packet count for this stream
-    int pktcnt;
-    //!
-    int complete;
-    //! SDP media that setup this stream
-    sdp_media_t *media;
-    //! Next stream in the call
-    rtp_stream_t *next;
-};
-
 sdp_media_t *
 media_create(struct sip_msg *msg);
-
-rtp_stream_t *
-stream_create(sdp_media_t *media);
 
 void
 media_set_port(sdp_media_t *media, u_short port);
@@ -107,9 +70,6 @@ media_set_format(sdp_media_t *media, const char *format);
 void
 media_set_format_code(sdp_media_t *media, int code);
 
-void
-stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, int format, struct timeval time);
-
 const char *
 media_get_address(sdp_media_t *media);
 
@@ -124,11 +84,5 @@ media_get_format(sdp_media_t *media);
 
 int
 media_get_format_code(sdp_media_t *media);
-
-int
-stream_get_count(rtp_stream_t *stream);
-
-const char *
-media_codec_from_encoding(int code, const char *format);
 
 #endif /* __SNGREP_MEDIA_H_ */
