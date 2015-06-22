@@ -64,7 +64,7 @@ setting_t settings[SETTING_COUNT] =
   { SETTING_CF_SCROLLSTEP,      "cf.scrollstep",    SETTING_FMT_NUMBER,  "4",       NULL },
   { SETTING_CF_LOCALHIGHLIGHT,  "cf.localhighlight", SETTING_FMT_ENUM,   "on",      SETTING_ENUM_ONOFF },
   { SETTING_CF_SDP_INFO,        "cf.sdpinfo",       SETTING_FMT_ENUM,    "off",     SETTING_ENUM_SDP_INFO },
-  { SETTING_CF_MEDIA,           "cf.media",         SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
+  { SETTING_CF_MEDIA,           "cf.media",         SETTING_FMT_ENUM,    "on",     SETTING_ENUM_ONOFF },
   { SETTING_CF_DELTA,           "cf.deltatime",     SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },
   { SETTING_CR_SCROLLSTEP,      "cr.scrollstep",    SETTING_FMT_NUMBER,  "10",      NULL },
   { SETTING_FILTER_METHODS,     "filter.methods",   SETTING_FMT_STRING,  NULL,      NULL },

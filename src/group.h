@@ -50,9 +50,7 @@ typedef struct sip_call_group sip_call_group_t;
  */
 struct sip_call_group {
     //! Calls array in the group
-    sip_call_t *calls[1024];
-    //! Calls counter
-    int callcnt;
+    vector_t *calls;
     //! Color of the last printed call in mode Color-by-Call
     int color;
     //! Only consider SDP messages from Calls

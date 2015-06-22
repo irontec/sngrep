@@ -107,6 +107,12 @@ void *
 vector_item(vector_t *vector, int index);
 
 /**
+ * @brief Return first item of the vector
+ */
+void *
+vector_first(vector_t *vector);
+
+/**
  * @brief Get the index of an item
  *
  * Return the index of item in vector or -1 if
@@ -129,16 +135,28 @@ vector_iter_t
 vector_iterator(vector_t *vector);
 
 /**
+ * @brief Return the vector of this iterator
+ */
+vector_t *
+vector_iterator_vector(vector_iter_t *it);
+
+/**
  * @brief Return the number of items of iterator
  */
 int
 vector_iterator_count(vector_iter_t *it);
 
 /**
- * @brief Return next element of the iterator
+ * @brief Return next element of iterator
  */
 void *
 vector_iterator_next(vector_iter_t *it);
+
+/**
+ * @brief Return prev element of iterator
+ */
+void *
+vector_iterator_prev(vector_iter_t *it);
 
 /**
  * @brief Set iterator filter funcion
@@ -147,5 +165,23 @@ vector_iterator_next(vector_iter_t *it);
  */
 void
 vector_iterator_set_filter(vector_iter_t *it, int (*filter) (void *item));
+
+/**
+ * @brief Set current iterator position
+ */
+void
+vector_iterator_set_current(vector_iter_t *it, int current);
+
+/**
+ * @brief Return current iterator position
+ */
+int
+vector_iterator_current(vector_iter_t *it);
+
+/**
+ * @brief Reset iterator position to initial
+ */
+void
+vector_iterator_reset(vector_iter_t *it);
 
 #endif /* __SNGREP_VECTOR_H_ */

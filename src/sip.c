@@ -108,23 +108,9 @@ sip_msg_create(const char *payload)
 void
 sip_msg_destroy(sip_msg_t *msg)
 {
-    sip_msg_t *prev = NULL;
 
     if (!msg)
         return;
-
-    // If the message belongs to a call, remove it from
-    // its message list
-    if (msg->call) {
-        if ((prev = call_get_prev_msg(msg->call, msg))) {
-            prev->next = msg->next;
-        } else {
-            msg->call->msgs = msg->next;
-        }
-        if (msg->next) {
-            msg->next->prev = msg->prev;
-        }
-    }
 
     // Free message attribute list
     sip_attr_list_destroy(msg->attrs);
@@ -154,12 +140,17 @@ sip_call_create(char *callid)
     memset(call, 0, sizeof(sip_call_t));
 
     // Add this call to the call list
+    pthread_mutex_lock(&calls.lock);
     index = vector_append(calls.list, call);
+    pthread_mutex_unlock(&calls.lock);
 
     // Store this call in hash table
     entry.key = strdup(callid);
     entry.data = (void *) call;
     hsearch(entry, ENTER);
+
+    // Create a vector to store call messages
+    call->msgs = vector_create(10, 5);
 
     // Initialize call filter status
     call->filtered = -1;
@@ -173,6 +164,9 @@ sip_call_create(char *callid)
 void
 sip_call_destroy(sip_call_t *call)
 {
+    sip_msg_t *msg;
+    vector_iter_t msgs;
+
     // No call to destroy
     if (!call)
         return;
@@ -181,8 +175,12 @@ sip_call_destroy(sip_call_t *call)
     vector_remove(calls.list, call);
 
     // Remove all call messages
-    while (call->msgs)
-        sip_msg_destroy(call->msgs);
+    msgs = vector_iterator(call->msgs);
+    while ((msg = vector_iterator_next(&msgs))) {
+        sip_msg_destroy(msg);
+        vector_remove(call->msgs, msg);
+    }
+
 
     // Remove all call attributes
     sip_attr_list_destroy(call->attrs);
@@ -342,28 +340,29 @@ sip_calls_iterator()
     return vector_iterator(calls.list);
 }
 
+void
+sip_calls_stats(int *total, int *displayed)
+{
+    vector_iter_t it = vector_iterator(calls.list);
+
+    pthread_mutex_lock(&calls.lock);
+    // Total number of calls without filtering
+    *total = vector_iterator_count(&it);
+    // Total number of calls after filtering
+    vector_iterator_set_filter(&it, filter_check_call);
+    *displayed = vector_iterator_count(&it);
+    pthread_mutex_unlock(&calls.lock);
+}
 
 void
 call_add_message(sip_call_t *call, sip_msg_t *msg)
 {
     // Set the message owner
     msg->call = call;
-
     // Put this msg at the end of the msg list
-    if (!call->msgs) {
-        call->msgs = msg;
-        msg->prev = NULL;
-    } else {
-        call->last_msg->next = msg;
-        msg->prev = call->last_msg;
-    }
-    call->last_msg = msg;
-
-    // Increase message count
-    call->msgcnt++;
-
+    vector_append(call->msgs, msg);
     // Store message count
-    call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", call->msgcnt);
+    call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", vector_count(call->msgs));
 }
 
 sip_call_t *
@@ -398,7 +397,7 @@ call_find_by_xcallid(const char *xcallid)
 int
 call_msg_count(sip_call_t *call)
 {
-    return call->msgcnt;
+    return vector_count(call->msgs);
 }
 
 int
@@ -432,9 +431,9 @@ call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
     sip_msg_t *ret;
     pthread_mutex_lock(&calls.lock);
     if (msg == NULL) {
-        ret = call->msgs;
+        ret = vector_first(call->msgs);
     } else {
-        ret = msg->next;
+        ret = vector_item(call->msgs, vector_index(call->msgs, msg) + 1);
     }
 
     // Parse message if not parsed
@@ -450,13 +449,7 @@ call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
 {
     sip_msg_t *ret = NULL;
     pthread_mutex_lock(&calls.lock);
-    if (msg == NULL) {
-        // No message, no previous
-        ret = NULL;
-    } else {
-        // Get previous message
-        ret = msg->prev;
-    }
+    ret = vector_item(call->msgs, vector_index(call->msgs, msg) - 1);
 
     // Parse message if not parsed
     if (ret && !ret->parsed)
@@ -466,66 +459,22 @@ call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
     return ret;
 }
 
-sip_call_t *
-call_get_next(sip_call_t *cur)
+int
+call_is_active(void *item)
 {
-
-    sip_call_t * next;
-    pthread_mutex_lock(&calls.lock);
-    next = vector_item(calls.list, vector_index(calls.list, cur) + 1);
-    pthread_mutex_unlock(&calls.lock);
-    return next;
+    // TODO
+    sip_call_t *call = (sip_call_t *)item;
+    return call->active;
 }
 
-sip_call_t *
-call_get_prev(sip_call_t *cur)
+int
+msg_has_sdp(void *item)
 {
-
-    sip_call_t *prev;
-    pthread_mutex_lock(&calls.lock);
-    prev = vector_item(calls.list, vector_index(calls.list, cur) - 1);
-    pthread_mutex_unlock(&calls.lock);
-    return prev;
+    // TODO
+    sip_msg_t *msg = (sip_msg_t *)item;
+    return msg->sdp;
 }
 
-sip_call_t *
-call_get_next_filtered(sip_call_t *cur)
-{
-    sip_call_t *next = call_get_next(cur);
-
-    pthread_mutex_lock(&calls.lock);
-    // Return next not filtered call
-    if (next && filter_check_call(next))
-        next = call_get_next_filtered(next);
-    pthread_mutex_unlock(&calls.lock);
-
-    return next;
-}
-
-sip_call_t *
-call_get_prev_filtered(sip_call_t *cur)
-{
-    sip_call_t *prev = call_get_prev(cur);
-
-    pthread_mutex_lock(&calls.lock);
-    // Return previous call if this one is filtered
-    if (prev && filter_check_call(prev))
-        prev = call_get_prev_filtered(prev);
-    pthread_mutex_unlock(&calls.lock);
-    return prev;
-}
-
-sip_call_t *
-call_get_next_active(sip_call_t *cur)
-{
-    sip_call_t *next;
-
-    for (next = call_get_next(cur); next; next = call_get_next(next))
-        if (next && next->active)
-            break;
-
-    return next;
-}
 
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
@@ -533,13 +482,17 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     const char *callstate;
     char dur[20];
     int reqresp;
+    sip_msg_t *first;
 
     // Sanity check
     if (!call || !call->msgs || !msg)
         return;
 
+    // Get the first message in the call
+    first = vector_first(call->msgs);
+
     // Check First message of Call has INVITE method
-    if (call->msgs->reqresp != SIP_METHOD_INVITE) {
+    if (first->reqresp != SIP_METHOD_INVITE) {
         return;
     }
 
@@ -559,15 +512,13 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 // Alice is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CANCELLED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR,
-                                   sip_calculate_duration(call->msgs, msg, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(first, msg, dur));
                 call->active = 0;
             } else if (reqresp > 400) {
                 // Bob is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR,
-                                   sip_calculate_duration(call->msgs, msg, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(first, msg, dur));
                 call->active = 0;
             }
         } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
@@ -585,8 +536,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call->active = 1;
         } else {
             // Store total call duration
-            call_set_attribute(call, SIP_ATTR_TOTALDUR,
-                               sip_calculate_duration(call->msgs, msg, dur));
+            call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(first, msg, dur));
         }
     } else {
         // This is actually a call
@@ -595,8 +545,6 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call->active = 1;
         }
     }
-
-
 }
 
 void
@@ -869,64 +817,24 @@ int
 msg_is_retrans(sip_msg_t *msg)
 {
     sip_msg_t *prev = NULL;
+    vector_iter_t it;
 
     // Sanity check
     if (!msg || !msg->call || !msg->payload)
         return 0;
 
-    // Start on previous message
-    prev = msg;
+    // Get previous message in call
+    it = vector_iterator(msg->call->msgs);
+    vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
+    prev = vector_iterator_prev(&it);
 
-    // Check previous messages in same call
-    while ((prev = call_get_prev_msg(msg->call, prev))) {
-        // Check if the payload is exactly the same
-        if (!strcasecmp(msg->payload, prev->payload)) {
-            return 1;
-        }
-    }
-
-    return 0;
+    return (prev && !strcasecmp(msg->payload, prev->payload));
 }
 
 int
 msg_is_request(sip_msg_t *msg)
 {
     return msg->reqresp < SIP_METHOD_SENTINEL;
-}
-
-sip_msg_t *
-msg_get_request(sip_msg_t *msg)
-{
-    sip_msg_t *tmp = msg;
-
-    if (!msg)
-        return NULL;
-
-    if (!msg_is_request(msg))
-        return NULL;
-
-    for (tmp = call_get_prev_msg(msg->call, tmp); tmp; tmp = call_get_prev_msg(msg->call, tmp)) {
-        if (msg_is_request(tmp))
-            continue;
-
-        if (!strcmp(tmp->src, msg->dst) && tmp->sport == msg->dport)
-            return tmp;
-    }
-
-    return NULL;
-}
-
-sip_msg_t *
-msg_get_request_sdp(sip_msg_t *msg)
-{
-    sip_msg_t *tmp = msg;
-    while (tmp) {
-        if ((tmp = msg_get_request(tmp)) && tmp->sdp)
-            return tmp;
-    }
-
-    return NULL;
-
 }
 
 char *
@@ -1072,7 +980,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
         case SIP_ATTR_TOTALDUR:
             return sip_attr_get(call->attrs, id);
         default:
-            return msg_get_attribute(call_get_next_msg(call, NULL), id);
+            return msg_get_attribute(vector_first(call->msgs), id);
     }
 
     return NULL;

@@ -110,15 +110,6 @@ const char *
 filter_get(int type);
 
 /**
- * @brief Get Filtered calls
- *
- * @param total Total calls processed
- * @param displayed number of calls matching filters
- */
-void
-filter_stats(int *total, int *displayed);
-
-/**
  * @brief Check if a call if filtered
  *
  * @param call Call to be checked

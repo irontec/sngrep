@@ -90,11 +90,11 @@ struct sip_msg {
     //! Message attribute list
     char *attrs[SIP_ATTR_COUNT];
     //! Source address
-    char src[50];
+    char src[ADDRESSLEN];
     //! Source port
     u_short sport;
     //! Destination address
-    char dst[50];
+    char dst[ADDRESSLEN];
     //! Destination port
     u_short dport;
     //! Temporal payload data before being parsed
@@ -118,10 +118,6 @@ struct sip_msg {
     u_char *pcap_packet;
     //! Message owner
     sip_call_t *call;
-
-    //! Messages Double linked list
-    sip_msg_t *prev;
-    sip_msg_t *next;
 };
 
 /**
@@ -138,12 +134,8 @@ struct sip_call {
     int filtered;
     //! For call dialogs, mark if call has not yet finished
     int active;
-    //! List of messages of this call
-    sip_msg_t *msgs;
-    //! Pointer to the last added message
-    sip_msg_t *last_msg;
-    //! How many messages has this call
-    int msgcnt;
+    //! List of messages of this call (sip_msg_t*)
+    vector_t *msgs;
     //! Message when conversation started
     sip_msg_t *cstart_msg;
     //! RTP streams for this call
@@ -295,6 +287,15 @@ vector_iter_t
 sip_calls_iterator();
 
 /**
+ * @brief Return stats from call list
+ *
+ * @param total Total calls processed
+ * @param displayed number of calls matching filters
+ */
+void
+sip_calls_stats(int *total, int *displayed);
+
+/**
  * @brief Append message to the call's message list
  *
  * Creates a relation between this call and the message, appending it
@@ -366,79 +367,12 @@ msg_media_count(sip_msg_t *msg);
 sip_call_t *
 call_get_xcall(sip_call_t *call);
 
-/**
- * @brief Finds the next msg in a call.
- *
- * If the passed msg is NULL it returns the first message
- * in the call
- *
- * @param call SIP call structure
- * @param msg Actual SIP msg from the call (can be NULL)
- * @return Next chronological message in the call
- */
-sip_msg_t *
-call_get_next_msg(sip_call_t *call, sip_msg_t *msg);
 
-/**
- * @brief Finds the prev msg in a call.
- *
- * If the passed msg is the first message in the call
- * this function will return NULL
- *
- * @param call SIP call structure
- * @param msg Actual SIP msg from the call
- * @return Previous chronological message in the call
- */
-sip_msg_t *
-call_get_prev_msg(sip_call_t *call, sip_msg_t *msg);
+int
+call_is_active(void *item);
 
-/**
- * @brief Get next call
- *
- * General getter for call list. Never access calls list
- * directly, use this instead.
- *
- * @param cur Current call. Pass NULL to get the first call.
- * @return Next call in the list or NULL if there is no next call
- */
-sip_call_t *
-call_get_next(sip_call_t *cur);
-
-/**
- * @brief Get previous call
- *
- * General getter for call list. Never access calls list
- * directly, use this instead.
- *
- * @param cur Current call
- * @return Prev call in the list or NULL if there is no previous call
- */
-sip_call_t *
-call_get_prev(sip_call_t *cur);
-
-/**
- * @brief Get next call after applying filters and ignores
- *
- * @param cur Current call. Pass NULL to get the first call.
- * @return Next call in the list or NULL if there is no next call
- */
-sip_call_t *
-call_get_next_filtered(sip_call_t *cur);
-
-/**
- * @brief Get previous call applying filters and ignores
- *
- * General getter for call list. Never access calls list
- * directly, use this instead.
- *
- * @param cur Current call
- * @return Prev call in the list or NULL if there is no previous call
- */
-sip_call_t *
-call_get_prev_filtered(sip_call_t *cur);
-
-sip_call_t *
-call_get_next_active(sip_call_t *cur);
+int
+msg_has_sdp(void *item);
 
 /**
  * @brief Update Call State attribute with its last parsed message
@@ -519,13 +453,6 @@ msg_is_retrans(sip_msg_t *msg);
  */
 int
 msg_is_request(sip_msg_t *msg);
-
-
-sip_msg_t *
-msg_get_request(sip_msg_t *msg);
-
-sip_msg_t *
-msg_get_request_sdp(sip_msg_t *msg);
 
 /**
  * @brief Get summary of message header data
@@ -675,7 +602,6 @@ sip_method_from_str(const char *method);
  */
 const char *
 sip_address_format(const char *address);
-
 
 /**
  * @brief Return address:port formatted depending on active settings

@@ -91,29 +91,6 @@ filter_get(int type)
     return filters[type].expr;
 }
 
-void
-filter_stats(int *total, int *displayed)
-{
-    // TODO
-
-//    sip_call_t *call = NULL;
-//
-//    // Initialize stats
-//    *total = 0;
-//    *displayed = 0;
-//
-//    while ((call = call_get_next(call))) {
-//        (*total)++;
-//        if (filter_check_call(call) == 0)
-//            (*displayed)++;
-//    }
-
-    vector_iter_t it = sip_calls_iterator();
-    *total = vector_iterator_count(&it);
-    vector_iterator_set_filter(&it, filter_check_call);
-    *displayed = vector_iterator_count(&it);
-}
-
 int
 filter_check_call(void *item)
 {
@@ -124,7 +101,7 @@ filter_check_call(void *item)
 
     // Filter for this call has already be processed
     if (call->filtered != -1)
-        return call->filtered;
+        return (call->filtered == 0);
 
     // By default, call matches all filters
     call->filtered = 0;
@@ -179,15 +156,16 @@ filter_check_call(void *item)
     }
 
     // Return the final filter status
-    return call->filtered;
+    return (call->filtered == 0);
 }
 
 void
 filter_reset_calls()
 {
-    sip_call_t *call = NULL;
+    sip_call_t *call;
+    vector_iter_t calls = sip_calls_iterator();
 
     // Force filter evaluation
-    while ((call = call_get_next(call)))
+    while ((call = vector_iterator_next(&calls)))
         call->filtered = -1;
 }

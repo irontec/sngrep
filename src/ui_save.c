@@ -193,7 +193,7 @@ save_draw(PANEL *panel)
     WINDOW *win = panel_window(panel);
 
     // Get filter stats
-    filter_stats(&total, &displayed);
+    sip_calls_stats(&total, &displayed);
 
     mvwprintw(win, 7, 3, "( ) all dialogs ");
     mvwprintw(win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
@@ -359,6 +359,7 @@ save_to_file(PANEL *panel)
     pcap_dumper_t *pd = NULL;
     FILE *f = NULL;
     int i;
+    vector_iter_t calls, msgs;
 
     // Get panel information
     save_info_t *info = save_info(panel);
@@ -418,24 +419,38 @@ save_to_file(PANEL *panel)
         }
     }
 
+    // Get calls iterator
+    calls = sip_calls_iterator();
+
     switch(info->savemode) {
         case SAVE_ALL:
             // Save all packets to the file
-            while ((call = call_get_next(call)))
-                while ((msg = call_get_next_msg(call, msg)))
+            while ((call = vector_iterator_next(&calls))) {
+                msgs = vector_iterator(call->msgs);
+                while ((msg = vector_iterator_next(&msgs))) {
                     (info->saveformat == SAVE_PCAP) ? save_msg_pcap(pd, msg) : save_msg_txt(f, msg);
+                }
+            }
             break;
         case SAVE_SELECTED:
             // Save selected packets to file
-            while ((call = call_group_get_next(info->group, call)))
-                while ((msg = call_get_next_msg(call, msg)))
+            while ((call = call_group_get_next(info->group, call))) {
+                msgs = vector_iterator(call->msgs);
+                while ((msg = vector_iterator_next(&msgs))) {
                     (info->saveformat == SAVE_PCAP) ? save_msg_pcap(pd, msg) : save_msg_txt(f, msg);
+                }
+            }
             break;
         case SAVE_DISPLAYED:
+            // Set filtering for this iterator
+            vector_iterator_set_filter(&calls, filter_check_call);
             // Save selected packets to file
-            while ((call = call_get_next_filtered(call)))
-                while ((msg = call_get_next_msg(call, msg)))
+            while ((call = vector_iterator_next(&calls))) {
+                msgs = vector_iterator(call->msgs);
+                while ((msg = vector_iterator_next(&msgs))) {
                     (info->saveformat == SAVE_PCAP) ? save_msg_pcap(pd, msg) : save_msg_txt(f, msg);
+                }
+            }
             break;
     }
 

@@ -73,12 +73,14 @@ struct call_list_column {
  * panel pointer.
  */
 struct call_list_info {
+    //! Displayed calls iterator
+    vector_iter_t calls;
     //! First displayed call, for drawing faster
-    sip_call_t *first_call;
+    int first_call;
     //! First displayed call counter, for drawing scroll arrow faster
     int first_line;
     //! Selected call in the list
-    sip_call_t *cur_call;
+    int cur_call;
     //! Selected calls with space
     sip_call_group_t *group;
     //! Displayed column list, make it configurable in the future

@@ -145,11 +145,11 @@ call_flow_draw(PANEL *panel)
     werase(win);
 
     // Set title
-    if (info->group->callcnt == 1) {
+    if (call_group_count(info->group) == 1) {
         sprintf(title, "Call flow for %s",
-                call_get_attribute(*info->group->calls, SIP_ATTR_CALLID));
+                call_get_attribute(vector_first(info->group->calls), SIP_ATTR_CALLID));
     } else {
-        sprintf(title, "Call flow for %d dialogs", info->group->callcnt);
+        sprintf(title, "Call flow for %d dialogs", call_group_count(info->group));
     }
 
     // Print color mode in title
@@ -840,16 +840,12 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_SHOW_FLOW_EX:
                 werase(panel_window(panel));
                 // KEY_X , Display current call flow
-                if (info->group->callcnt == 1) {
-                    group = call_group_create();
-                    call_group_add(group, info->group->calls[0]);
-                    call_group_add(group, call_get_xcall(info->group->calls[0]));
-                    call_flow_set_group(group);
-                } else {
-                    group = call_group_create();
-                    call_group_add(group, info->group->calls[0]);
-                    call_flow_set_group(group);
+                group = call_group_create();
+                if (call_group_count(info->group) == 1) {
+                    call_group_add(group, call_get_xcall(vector_first(info->group->calls)));
                 }
+                call_group_add(group, vector_first(info->group->calls));
+                call_flow_set_group(group);
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode

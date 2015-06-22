@@ -29,6 +29,7 @@
 #include "vector.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 vector_t *
 vector_create(int limit, int step)
@@ -61,6 +62,10 @@ vector_clear(vector_t *vector)
 int
 vector_append(vector_t *vector, void *item)
 {
+    // Sanity check
+    if (!item)
+        return vector->count;
+
     // Check if we need to increase vector size
     if (vector->count == vector->limit) {
         // Increase vector size
@@ -76,15 +81,26 @@ vector_append(vector_t *vector, void *item)
 void
 vector_remove(vector_t *vector, void *item)
 {
-
+    // Get item position
+    int idx = vector_index(vector, item);
+    // Decrease item counter
+    vector->count--;
+    // Move the rest of the elements one position up
+    memcpy(vector->list + idx, vector->list + idx + 1, sizeof(void *) * (vector->count - idx));
 }
 
 void *
 vector_item(vector_t *vector, int index)
 {
-    if (vector->count <= index || index < 0)
+    if (index >= vector->count || index < 0)
         return NULL;
     return vector->list[index];
+}
+
+void *
+vector_first(vector_t *vector)
+{
+    return vector_item(vector, 0);
 }
 
 int
@@ -92,7 +108,7 @@ vector_index(vector_t *vector, void *item)
 {
     // FIXME Bad perfomance
     int i;
-    for (i=0; i < vector->count; i++) {
+    for (i = 0; i < vector->count; i++) {
         if (vector->list[i] == item)
             return i;
     }
@@ -115,16 +131,29 @@ vector_iterator(vector_t *vector)
     return it;
 }
 
+vector_t *
+vector_iterator_vector(vector_iter_t *it)
+{
+    return it->vector;
+}
+
 int
 vector_iterator_count(vector_iter_t *it)
 {
     int count = 0;
+    int pos = it->current;
 
-    if (!it->filter)
-        return vector_count(it->vector);
+    vector_iterator_reset(it);
 
-    while(vector_iterator_next(it))
-        count++;
+    if (!it->filter) {
+        count = vector_count(it->vector);
+    } else {
+        while (vector_iterator_next(it)) {
+            count++;
+        }
+    }
+
+    vector_iterator_set_current(it, pos);
 
     return count;
 }
@@ -132,13 +161,65 @@ vector_iterator_count(vector_iter_t *it)
 void *
 vector_iterator_next(vector_iter_t *it)
 {
-    // TODO Filter results
-    it->current++;
-    return vector_item(it->vector, it->current);
+    void *item;
+
+    if (it->current >= vector_count(it->vector))
+        return NULL;
+
+    while ((item = vector_item(it->vector, ++it->current))) {
+        if (it->filter) {
+            if (it->filter(item)) {
+                return item;
+            }
+        } else {
+            return item;
+        }
+    }
+    return NULL;
+}
+
+void *
+vector_iterator_prev(vector_iter_t *it)
+{
+    void *item;
+
+    if (it->current == -1)
+        return NULL;
+
+    while ((item = vector_item(it->vector, --it->current))) {
+        if (it->filter) {
+            if (it->filter(item)) {
+                return item;
+            }
+        } else {
+            return item;
+        }
+    }
+    return NULL;
 }
 
 void
-vector_iterator_set_filter(vector_iter_t *it, int (*filter) (void *item))
+vector_iterator_set_filter(vector_iter_t *it, int
+(*filter)(void *item))
 {
     it->filter = filter;
 }
+
+void
+vector_iterator_set_current(vector_iter_t *it, int current)
+{
+    it->current = current;
+}
+
+int
+vector_iterator_current(vector_iter_t *it)
+{
+    return it->current;
+}
+
+void
+vector_iterator_reset(vector_iter_t *it)
+{
+    vector_iterator_set_current(it, -1);
+}
+

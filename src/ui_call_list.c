@@ -40,6 +40,7 @@
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_save.h"
+#include "sip.h"
 
 /**
  * Ui Structure definition for Call List panel
@@ -110,6 +111,11 @@ call_list_create()
     // Calculate available printable area
     info->list_win = subwin(win, height - 5, width, 4, 0);
     info->group = call_group_create();
+
+    // Get current call list
+    info->calls = sip_calls_iterator();
+    vector_iterator_set_filter(&info->calls, filter_check_call);
+    info->cur_call = info->first_call = -1;
 
     // Set defualt filter text if configured
     if (setting_get_value(SETTING_CL_FILTER)) {
@@ -217,7 +223,7 @@ call_list_draw_header(PANEL *panel)
     wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Get filter call counters
-    //filter_stats(&info->callcnt, &info->dispcallcnt);
+    sip_calls_stats(&info->callcnt, &info->dispcallcnt);
 
     // Print calls count (also filtered)
     mvwprintw(win, 1, 35, "%*s", 35, "");
@@ -265,16 +271,21 @@ call_list_draw_list(PANEL *panel)
     getmaxyx(win, height, width);
 
     // If no active call, use the fist one (if exists)
-    if (!info->first_call && call_get_next_filtered(NULL)) {
-        info->cur_call = info->first_call = call_get_next_filtered(NULL);
+    if (info->first_call == -1 && vector_iterator_count(&info->calls)) {
+        vector_iterator_reset(&info->calls);
+        call = vector_iterator_next(&info->calls);
+        info->cur_call = info->first_call = vector_index(vector_iterator_vector(&info->calls), call);
         info->cur_line = info->first_line = 1;
     }
 
     // Clear call list before redrawing
     werase(win);
 
+    // Set the iterator position to the first call
+    vector_iterator_set_current(&info->calls, info->first_call - 1 );
+
     // Fill the call list
-    for (call = info->first_call; call; call = call_get_next_filtered(call)) {
+    while ((call = vector_iterator_next(&info->calls))) {
         // Stop if we have reached the bottom of the list
         if (cline == height)
             break;
@@ -288,7 +299,7 @@ call_list_draw_list(PANEL *panel)
             wattron(win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (call == info->cur_call) {
+        if (call == vector_item(vector_iterator_vector(&info->calls), info->cur_call)) {
             // Reverse colors on monochrome terminals
             if (!has_colors())
                 wattron(win, A_REVERSE);
@@ -417,6 +428,7 @@ call_list_handle_key(PANEL *panel, int key)
     ui_t *next_panel;
     sip_call_group_t *group;
     int action = -1;
+    sip_call_t *call;
 
     // Sanity check, this should not happen
     if (!(info  = call_list_info(panel)))
@@ -430,29 +442,34 @@ call_list_handle_key(PANEL *panel, int key)
     WINDOW *win = info->list_win;
     getmaxyx(win, height, width);
 
+    // Reset iterator position to current call
+    vector_iterator_set_current(&info->calls, info->cur_call);
+
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
                 // Check if there is a call below us
-                if (!info->cur_call || !call_get_next_filtered(info->cur_call))
+                if (!vector_iterator_next(&info->calls))
                     break;
-                info->cur_call = call_get_next_filtered(info->cur_call);
+                info->cur_call = vector_iterator_current(&info->calls);
                 info->cur_line++;
                 // If we are out of the bottom of the displayed list
                 // refresh it starting in the next call
                 if (info->cur_line > height) {
-                    info->first_call = call_get_next_filtered(info->first_call);
+                    vector_iterator_set_current(&info->calls, info->first_call);
+                    vector_iterator_next(&info->calls);
+                    info->first_call = vector_iterator_current(&info->calls);
                     info->first_line++;
                     info->cur_line = height;
                 }
                 break;
             case ACTION_UP:
                 // Check if there is a call above us
-                if (!info->cur_call || !call_get_prev_filtered(info->cur_call))
+                if (!vector_iterator_prev(&info->calls))
                     break;
-                info->cur_call = call_get_prev_filtered(info->cur_call);
+                info->cur_call = vector_iterator_current(&info->calls);
                 info->cur_line--;
                 // If we are out of the top of the displayed list
                 // refresh it starting in the previous (in fact current) call
@@ -484,48 +501,45 @@ call_list_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_SHOW_FLOW:
                 // Check we have calls in the list
-                if (!info->cur_call)
+                if (info->cur_call == -1)
                     break;
-                next_panel = ui_create_panel(PANEL_CALL_FLOW);
-                if (info->group->callcnt) {
+                ui_create_panel(PANEL_CALL_FLOW);
+                if (call_group_count(info->group)) {
                     group = info->group;
                 } else {
-                    if (!info->cur_call)
-                        break;
                     group = call_group_create();
-                    call_group_add(group, info->cur_call);
+                    call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
+                    call_group_add(group, call);
                 }
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_FLOW_EX:
                 // Check we have calls in the list
-                if (!info->cur_call)
+                if (info->cur_call == -1)
                     break;
                 // Display current call flow (extended)
                 ui_create_panel(PANEL_CALL_FLOW);
-                if (info->group->callcnt) {
+                if (call_group_count(info->group)) {
                     group = info->group;
                 } else {
-                    if (!info->cur_call)
-                        break;
                     group = call_group_create();
-                    call_group_add(group, info->cur_call);
-                    call_group_add(group, call_get_xcall(info->cur_call));
+                    call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
+                    call_group_add(group, call);
+                    call_group_add(group, call_get_xcall(call));
                 }
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_RAW:
                 // Check we have calls in the list
-                if (!info->cur_call)
+                if (info->cur_call == -1)
                     break;
                 ui_create_panel(PANEL_CALL_RAW);
-                if (info->group->callcnt) {
+                if (call_group_count(info->group)) {
                     group = info->group;
                 } else {
-                    if (!info->cur_call)
-                        break;
                     group = call_group_create();
-                    call_group_add(group, info->cur_call);
+                    call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
+                    call_group_add(group, call);
                 }
                 call_raw_set_group(group);
                 break;
@@ -556,12 +570,11 @@ call_list_handle_key(PANEL *panel, int key)
                 ui_create_panel(PANEL_SETTINGS);
                 break;
             case ACTION_SELECT:
-                if (!info->cur_call)
-                    break;
-                if (call_group_exists(info->group, info->cur_call)) {
-                    call_group_del(info->group, info->cur_call);
+                call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
+                if (call_group_exists(info->group, call)) {
+                    call_group_del(info->group, call);
                 } else {
-                    call_group_add(info->group, info->cur_call);
+                    call_group_add(info->group, call);
                 }
                 break;
             case ACTION_PREV_SCREEN:
@@ -825,9 +838,9 @@ call_list_clear(PANEL *panel)
         return;
 
     // Initialize structures
-    info->first_call = info->cur_call = NULL;
+    info->first_call = info->cur_call = -1;
     info->first_line = info->cur_line = 0;
-    info->group->callcnt = 0;
+    vector_clear(info->group->calls);
 
     // Clear Displayed lines
     werase(info->list_win);
