@@ -393,9 +393,6 @@ call_update_state(sip_call_t *call, sip_msg_t *msg);
 void
 msg_add_media(sip_msg_t *msg, sdp_media_t *media);
 
-rtp_stream_t *
-call_find_stream(sip_call_t *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
-
 /**
  * @brief Get message Request/Response code
  *
@@ -465,8 +462,14 @@ msg_is_request(sip_msg_t *msg);
 char *
 msg_get_header(sip_msg_t *msg, char *out);
 
-const char *
-msg_get_time_delta(sip_msg_t *one, sip_msg_t *two, char *out);
+/**
+ * @brief Get Time of message from packet header
+ *
+ * @param msg SIP message
+ * @return timeval structure with message first packet time
+ */
+struct timeval
+msg_get_time(sip_msg_t *msg);
 
 /**
  * @brief Remove al calls
@@ -476,16 +479,6 @@ msg_get_time_delta(sip_msg_t *one, sip_msg_t *two, char *out);
  */
 void
 sip_calls_clear();
-
-/**
- * @brief Calculate the time difference between two messages
- *
- * @param start First cronological message
- * @param start Second cronological message
- * @return Human readable time difference in MMM:SS format
- */
-const char *
-sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur);
 
 /**
  * @brief Set Capture Matching expression
@@ -614,9 +607,4 @@ const char *
 sip_address_port_format(const char *address);
 
 
-const char *
-timeval_to_date(struct timeval time, char *out);
-
-const char *
-timeval_to_time(struct timeval time, char *out);
 #endif

@@ -38,6 +38,7 @@
 typedef struct sdp_media sdp_media_t;
 
 struct sip_msg;
+struct sip_call;
 struct sdp_media
 {
     //! SDP Addresses information

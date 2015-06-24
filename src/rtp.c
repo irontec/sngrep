@@ -31,6 +31,7 @@
 
 #include "rtp.h"
 #include "sip.h"
+#include "vector.h"
 
 /**
  * @brief Known RTP encodings
@@ -64,7 +65,7 @@ rtp_encoding_t encodings[] =
   { -1, NULL } };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media)
+stream_create(sdp_media_t *media, const char *dst, u_short dport)
 {
     rtp_stream_t *stream;
 
@@ -75,6 +76,18 @@ stream_create(sdp_media_t *media)
     // Initialize all fields
     memset(stream, 0, sizeof(rtp_stream_t));
     stream->media = media;
+    strcpy(stream->ip_dst, dst);
+    stream->dport = dport;
+
+    return stream;
+}
+
+rtp_stream_t *
+stream_complete(rtp_stream_t *stream, const char *src, u_short sport)
+{
+    strcpy(stream->ip_src, src);
+    stream->sport = sport;
+    stream->complete = 1;
     return stream;
 }
 
@@ -82,13 +95,22 @@ void
 stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const char *ip_dst,
                   u_short dport, u_char format, struct timeval time)
 {
+    rtp_stream_t *reverse;
+
     if (stream->pktcnt) {
         stream->pktcnt++;
         return;
     }
+    stream_complete(stream, ip_src, sport);
     stream->format = format;
     stream->time = time;
     stream->pktcnt++;
+
+    if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport))) {
+        reverse = stream_create(stream->media, stream->ip_src, stream->sport);
+        stream_complete(reverse, stream->ip_dst, stream->dport);
+        vector_append(stream->media->msg->call->streams, reverse);
+    }
 }
 
 int
@@ -123,12 +145,8 @@ rtp_stream_t *
 rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst,
                  u_short dport, u_char *payload)
 {
-    // Check if this is a RTP packet from active calls
-    sip_call_t *call;
     // Media structure for RTP packets
     rtp_stream_t *stream;
-    // Iterator for active calls
-    vector_iter_t calls;
     // RTP payload data
     u_char format;
 
@@ -139,16 +157,65 @@ rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short spor
     // Get RTP payload type
     format = *(payload + 1) & RTP_FORMAT_MASK;
 
+    // Find the matching stream
+    stream = rtp_find_stream(src, sport, dst, dport);
+
+    // if a valid stream has been found
+    if (stream)  {
+        //! Add packet to found stream
+        stream_add_packet(stream, src, sport, dst, dport, format, header->ts);
+    }
+
+    return stream;
+}
+
+rtp_stream_t *
+rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport)
+{
+    // Structure for RTP packet streams
+    rtp_stream_t *stream;
+    // Check if this is a RTP packet from active calls
+    sip_call_t *call;
+    // Iterator for active calls
+    vector_iter_t calls;
+
     // Get active calls (during conversation)
     calls = sip_calls_iterator();
     vector_iterator_set_filter(&calls, call_is_active);
 
     while ((call = vector_iterator_next(&calls))) {
         // Check if this call has an RTP stream for current packet data
-        if ((stream = call_find_stream(call, src, sport, dst, dport))) {
-            //! Add packet to found stream
-            stream_add_packet(stream, src, sport, dst, dport, format, header->ts);
-            break;
+        if ((stream = rtp_find_call_stream(call, src, sport, dst, dport))) {
+            return stream;
         }
     }
+
+    return NULL;
+}
+
+rtp_stream_t *
+rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport)
+{
+    rtp_stream_t *stream, *ret = NULL;
+    vector_iter_t it;
+
+    it = vector_iterator(call->streams);
+
+    while ((stream = vector_iterator_next(&it))) {
+        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
+            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
+            ret = stream;
+        }
+    }
+
+    if (!ret) {
+        vector_iterator_reset(&it);
+        while ((stream = vector_iterator_next(&it))) {
+            if (!strcmp(ip_dst, stream->ip_dst) && dport == stream->dport && !stream->complete) {
+                ret = stream;
+            }
+        }
+    }
+
+    return ret;
 }

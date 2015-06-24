@@ -36,6 +36,7 @@
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_msg_diff.h"
+#include "util.h"
 #include "vector.h"
 
 /***
@@ -330,9 +331,9 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Print delta from selected message
     if (!info->selected) {
         if (setting_enabled(SETTING_CF_DELTA))
-            msg_get_time_delta(msg, call_group_get_next_msg(info->group, msg), delta);
+            timeval_to_delta(msg_get_time(msg), msg_get_time(call_group_get_next_msg(info->group, msg)), delta);
     } else if (info->cur_arrow == arrow) {
-        msg_get_time_delta(call_flow_arrow_message(info->selected), msg, delta);
+        timeval_to_delta(msg_get_time(call_flow_arrow_message(info->selected)), msg_get_time(msg), delta);
     }
 
     if (strlen(delta)) {
@@ -465,7 +466,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
-    char time[10];
+//    char time[20];
     char codec[50];
     int height, width;
     rtp_stream_t *stream = arrow->stream;
@@ -487,7 +488,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         return NULL;
 
     // Print timestamp
-    mvwprintw(win, cline, 2, "%s", timeval_to_time(stream->time, time));
+    //mvwprintw(win, cline, 2, "%s", timeval_to_time(stream->time, time));
 
     // Get Message method (include extra info)
     sprintf(codec, "RTP (%s) %d", rtp_get_codec(stream->format, NULL), stream_get_count(stream));
@@ -505,7 +506,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
-    int distance = abs(endpos - startpos) - 9;
+    int distance = abs(endpos - startpos) - 4;
 
     // Highlight current message
     if (arrow == info->cur_arrow) {
@@ -524,19 +525,25 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Clear the line
     mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
     // Draw method
-    mvwprintw(win, cline, startpos + (distance + 8) / 2 - strlen(codec) / 2 + 2, "%s", codec);
+    mvwprintw(win, cline, startpos + (distance) / 2 - strlen(codec) / 2 + 2, "%s", codec);
     cline ++;
     // Draw line between columns
-    mvwhline(win, cline, startpos + 5, ACS_HLINE, distance);
+    mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (call_flow_column_get(panel, 0, stream->ip_src) == column1) {
-        mvwprintw(win, cline, startpos - 1, "%d", stream->sport);
-        mvwaddch(win, cline, endpos - 5, '>');
-        mvwprintw(win, cline, endpos - 3, "%d", stream->dport);
+        mvwprintw(win, cline, startpos - 5, "%d", stream->sport);
+        mvwprintw(win, cline, endpos + 1, "%d", stream->dport);
+        if (distance > 0)
+            mvwaddch(win, cline, endpos - 2, '>');
+        else
+            mvwaddch(win, cline, endpos, '>');
     } else {
-        mvwprintw(win, cline, endpos  - 3, "%d", stream->sport);
-        mvwaddch(win, cline, startpos + 5, '<');
-        mvwprintw(win, cline, startpos - 1, "%d", stream->dport);
+        mvwprintw(win, cline, endpos  + 1, "%d", stream->sport);
+        mvwprintw(win, cline, startpos - 5, "%d", stream->dport);
+        if (distance > 0)
+            mvwaddch(win, cline, startpos + 2, '<');
+        else
+            mvwaddch(win, cline, startpos, '<');
     }
 
     wattroff(win, A_BOLD | A_REVERSE);

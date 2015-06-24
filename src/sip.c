@@ -41,6 +41,7 @@
 #include "setting.h"
 #include "capture.h"
 #include "filter.h"
+#include "util.h"
 
 /**
  * @brief Linked list of parsed calls
@@ -511,13 +512,13 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 // Alice is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CANCELLED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(first, msg, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(first->pcap_header->ts, msg->pcap_header->ts, dur));
                 call->active = 0;
             } else if (reqresp > 400) {
                 // Bob is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(first, msg, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(first->pcap_header->ts, msg->pcap_header->ts, dur));
                 call->active = 0;
             }
         } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
@@ -526,7 +527,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_COMPLETED);
                 // Store Conversation duration
                 call_set_attribute(call, SIP_ATTR_CONVDUR,
-                                   sip_calculate_duration(call->cstart_msg, msg, dur));
+                                   timeval_to_duration(call->cstart_msg->pcap_header->ts, msg->pcap_header->ts, dur));
                 call->active = 0;
             }
         } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, SIP_CALLSTATE_INCALL)) {
@@ -535,7 +536,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call->active = 1;
         } else {
             // Store total call duration
-            call_set_attribute(call, SIP_ATTR_TOTALDUR, sip_calculate_duration(first, msg, dur));
+            call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(first->pcap_header->ts, msg->pcap_header->ts, dur));
         }
     } else {
         // This is actually a call
@@ -544,23 +545,6 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call->active = 1;
         }
     }
-}
-
-rtp_stream_t *
-call_find_stream(sip_call_t *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport)
-{
-    rtp_stream_t *stream, *ret = NULL;
-    vector_iter_t it;
-
-    it = vector_iterator(call->streams);
-
-    while ((stream = vector_iterator_next(&it))) {
-        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
-            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
-            ret = stream;
-        }
-    }
-    return ret;
 }
 
 int
@@ -662,7 +646,6 @@ msg_parse_media(sip_msg_t *msg)
     int media_fmt_pref;
     int media_fmt_code;
     sdp_media_t *media = NULL;
-    rtp_stream_t *stream, *active;
     int port = 0;
     char *payload, *tofree, *line;
 
@@ -706,58 +689,14 @@ msg_parse_media(sip_msg_t *msg)
                     media_set_format_code(media, media_fmt_pref);
                     vector_append(msg->medias, media);
 
+                    /**
+                     * From SDP we can only guess destination address port. RTP Capture process
+                     * will determine when the stream has been completed, getting source address
+                     * and port of the stream.
+                     */
+                    // Create a new stream with this destination address:port
                     if (!msg_is_retrans(msg)) {
-                        // Create a new stream with this dest address:port
-                        stream = stream_create(media);
-                        strcpy(stream->ip_dst, media_address);
-                        stream->dport = media_port;
-                        vector_append(msg->call->streams, stream);
-
-                        vector_iter_t it = vector_iterator(msg->call->streams);
-
-                        // If there is a pending stream to confirm
-                        while ((active = vector_iterator_next(&it))) {
-                            // Only consider confirmation of other stream with different message type
-                            if (msg_is_request(active->media->msg) == msg_is_request(msg))
-                                continue;
-                            // Only consider confirmation of stream in same transaction
-                            if (active->media->msg->cseq != msg->cseq)
-                                continue;
-                            // Created from the other side of this dialog
-                            if (strcmp(msg->dst, active->media->msg->src))
-                                continue;
-                            // That is not still completed
-                            if (active->complete)
-                                continue;
-
-                            // Complete current stream
-                            strcpy(stream->ip_src, active->ip_dst);
-                            stream->sport = active->dport;
-                            stream->complete = 1;
-
-                            // Complete pending stream
-                            strcpy(active->ip_src, stream->ip_dst);
-                            active->sport = stream->dport;
-                            active->complete = 1;
-                            break;
-                        }
-
-                        // If no stream to complete has been found to complete
-                        if (!active) {
-                            vector_iterator_reset(&it);
-                            // Check if there was an active stream previously configured
-                            while ((active = vector_iterator_next(&it))) {
-                                // We're looking for a confirmed stream
-                                if (!active->complete)
-                                    continue;
-                                // That was confirmed from us
-                                if (strcmp(msg->dst, active->media->msg->dst))
-                                    continue;
-                                // Assume that source address, but not mark this as completed
-                                strcpy(stream->ip_src, active->ip_src);
-                                stream->sport = active->sport;
-                            }
-                        }
+                        vector_append(msg->call->streams, stream_create(media, media_address, media_port));
                     }
                 }
             }
@@ -822,26 +761,15 @@ msg_get_header(sip_msg_t *msg, char *out)
     return out;
 }
 
-const char *
-msg_get_time_delta(sip_msg_t *one, sip_msg_t *two, char *out)
+struct timeval
+msg_get_time(sip_msg_t *msg)
 {
-    long diff;
-    int nsec, nusec;
-    int sign;
-
-    if (!one || !two || !out)
-        return NULL;
-
-    diff = two->pcap_header->ts.tv_sec  * 1000000 + two->pcap_header->ts.tv_usec;
-    diff -= one->pcap_header->ts.tv_sec * 1000000 + one->pcap_header->ts.tv_usec;
-
-    nsec = diff / 1000000;
-    nusec = abs(diff - (nsec * 1000000));
-
-    sign = (diff >= 0) ? '+' : '-';
-
-    sprintf(out, "%c%d.%06d", sign, abs(nsec), nusec);
-    return out;
+    if (msg) {
+        return msg->pcap_header->ts;
+    } else {
+        struct timeval t = { };
+        return t;
+    }
 }
 
 void
@@ -855,19 +783,6 @@ sip_calls_clear()
     hcreate(calls.limit);
 
     pthread_mutex_unlock(&calls.lock);
-}
-
-const char *
-sip_calculate_duration(const sip_msg_t *start, const sip_msg_t *end, char *dur)
-{
-    int seconds;
-    char duration[20];
-    // Differnce in secons
-    seconds = end->pcap_header->ts.tv_sec - start->pcap_header->ts.tv_sec;
-    // Set Human readable format
-    sprintf(duration, "%d:%02d", seconds / 60, seconds % 60);
-    sprintf(dur, "%7s", duration);
-    return dur;
 }
 
 int
@@ -1071,22 +986,4 @@ sip_address_port_format(const char *addrport)
     return aport;
 }
 
-const char *
-timeval_to_date(struct timeval time, char *out)
-{
-    time_t t = (time_t) time.tv_sec;
-    struct tm *timestamp = localtime(&t);
-    strftime(out, 11, "%Y/%m/%d", timestamp);
-    return out;
-}
 
-
-const char *
-timeval_to_time(struct timeval time, char *out)
-{
-    time_t t = (time_t) time.tv_sec;
-    struct tm *timestamp = localtime(&t);
-    strftime(out, 11, "%H:%M:%S", timestamp);
-    sprintf(out + 8, ".%06d", (int) time.tv_usec);
-    return out;
-}

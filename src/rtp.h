@@ -59,7 +59,7 @@ struct rtp_stream
     struct timeval time;
     //! Packet count for this stream
     int pktcnt;
-    //!
+    //! Mark if address has been bound
     int complete;
     //! SDP media that setup this stream
     sdp_media_t *media;
@@ -68,7 +68,10 @@ struct rtp_stream
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media);
+stream_create(sdp_media_t *media, const char *dst, u_short dport);
+
+rtp_stream_t *
+stream_complete(rtp_stream_t *stream, const char *src, u_short sport);
 
 void
 stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const char *ip_dst,
@@ -82,5 +85,11 @@ rtp_get_codec(int code, const char *format);
 
 rtp_stream_t *
 rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload);
+
+rtp_stream_t *
+rtp_find_stream(const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
+
+rtp_stream_t *
+rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
 
 #endif /* __SNGREP_RTP_H */
