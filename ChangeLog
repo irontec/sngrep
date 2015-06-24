@@ -1,3 +1,19 @@
+2015-06-24 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.4.0 released
+
+	* Added Websocket (WS) transport support
+	* Added an option (alias) to replace addresses on screen
+	* Added a new screen to change/save settings
+	* Added support for multiple SDP medias in flow screen
+	* Added delta time between SIP messages in flow screen
+	* Added RTP stream arrows in flow screen
+	* RTP packets will be now saved with -O command line option
+	* Merged pcap and txt save screens
+	* Recoded screen update process
+	* Replace all internal linked list with vector structures
+	* Added index as first column in call list
+	* Fixed a bug with address resloution
+
 2015-05-17 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.3.2 released
 
