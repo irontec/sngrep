@@ -29,6 +29,9 @@
 #ifndef __SNGREP_UTIL_H
 #define __SNGREP_UTIL_H
 
+// Capture headers has some fixes for pcap timevals in BSD systems
+#include "capture.h"
+
 /**
  * @brief Convert timeval to yyyy/mm/dd format
  */

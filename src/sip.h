@@ -33,14 +33,11 @@
 #define __SNGREP_SIP_H
 
 #include "config.h"
-#include <pcap.h>
-#include <sys/time.h>
-#include <pthread.h>
-#include <arpa/inet.h>
+#include <regex.h>
 #ifdef WITH_PCRE
 #include <pcre.h>
 #endif
-#include <regex.h>
+#include "util.h"
 #include "sip_attr.h"
 #include "rtp.h"
 #include "media.h"

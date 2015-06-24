@@ -28,7 +28,6 @@
  * @todo Replace structures for their typedef shorter names
  */
 #include "config.h"
-#include <regex.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -39,9 +38,7 @@
 #include "sip.h"
 #include "option.h"
 #include "setting.h"
-#include "capture.h"
 #include "filter.h"
-#include "util.h"
 
 /**
  * @brief Linked list of parsed calls
