@@ -202,11 +202,11 @@ call_flow_draw_footer(PANEL *panel)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
-        key_action_key_str(ACTION_CONFIRM), "Raw Message",
+        key_action_key_str(ACTION_CONFIRM), "Raw",
         key_action_key_str(ACTION_SELECT), "Compare",
         key_action_key_str(ACTION_SHOW_HELP), "Help",
-        key_action_key_str(ACTION_SDP_INFO), "SDP mode",
-        key_action_key_str(ACTION_TOGGLE_RAW), "Toggle Raw",
+        key_action_key_str(ACTION_SDP_INFO), "SDP",
+        key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP",
         key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
         key_action_key_str(ACTION_COMPRESS), "Compressed",
         key_action_key_str(ACTION_SHOW_RAW), "Raw",

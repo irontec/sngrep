@@ -116,8 +116,8 @@ key_bindings_init()
     key_bind_action(ACTION_SAVE, 'S');
     key_bind_action(ACTION_SELECT, KEY_SPACE);
     key_bind_action(ACTION_CONFIRM, KEY_INTRO);
-    key_bind_action(ACTION_TOGGLE_RAW, KEY_F(3));
     key_bind_action(ACTION_TOGGLE_RAW, 't');
+    key_bind_action(ACTION_TOGGLE_MEDIA, KEY_F(3));
     key_bind_action(ACTION_TOGGLE_MEDIA, 'm');
     key_bind_action(ACTION_INCREASE_RAW, '9');
     key_bind_action(ACTION_DECREASE_RAW, '0');
