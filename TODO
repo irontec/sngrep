@@ -7,6 +7,12 @@ capture:
         so if a packet is marked as fragmented, part of its payload
         will not be displayed.
 
+	* Add command line option to capture rtp packets
+		All relevant captured packets are stored in memory, so this
+		option should not be enabled by default. Adding a --rtp argument
+		to make sngrep store this packets for saving them will be an
+		option.
+
 sip:
 	* Improve the way payload is stored
 		Payload is included two times. One in the msg->payload pointer
@@ -27,6 +33,14 @@ ui:
 		When the terminal size changes, the ui is not properly redraw.
 		It would be nice to handle KEY_RESIZE event and change all displayed
 		panels.
+
+	* Improve Save panel
+		Make save panel smarter. If you're displaying raw text, TEXT should
+		be automatically selected on the save dialog. If you have selected
+		multiple dialogs, 'save selected' should be the default option.
+		If you're filtering dialogs, 'save filtering' should be the default
+		option. If you're saving pcap and you enter .pcap in the filename,
+		we should avoid adding the file prefix.
 
     * Improve colors for white background terminals
         The best approach for colors should be use terminal defaults.
