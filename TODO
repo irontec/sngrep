@@ -34,14 +34,6 @@ ui:
 		It would be nice to handle KEY_RESIZE event and change all displayed
 		panels.
 
-	* Improve Save panel
-		Make save panel smarter. If you're displaying raw text, TEXT should
-		be automatically selected on the save dialog. If you have selected
-		multiple dialogs, 'save selected' should be the default option.
-		If you're filtering dialogs, 'save filtering' should be the default
-		option. If you're saving pcap and you enter .pcap in the filename,
-		we should avoid adding the file prefix.
-
     * Improve colors for white background terminals
         The best approach for colors should be use terminal defaults.
         Right now, white background terminals must set background dark option

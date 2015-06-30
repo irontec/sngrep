@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "util.h"
 
 
@@ -91,4 +92,17 @@ timeval_to_delta(struct timeval start, struct timeval end, char *out)
 
     sprintf(out, "%c%d.%06d", sign, abs(nsec), nusec);
     return out;
+}
+char *
+strtrim(char *str)
+{
+    int i;
+
+    if (!str || !strlen(str))
+        return str;
+
+    for (i = strlen(str) - 1; isspace(str[i]); i--)
+        str[i] = 0;
+
+    return str;
 }

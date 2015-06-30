@@ -174,7 +174,7 @@ void
 ui_destroy(ui_t *ui)
 {
     PANEL *panel;
-    // If thre is no ui panel, we're done
+    // If there is no ui panel, we're done
     if (!(panel = ui_get_panel(ui)))
         return;
 

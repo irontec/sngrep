@@ -57,4 +57,11 @@ timeval_to_duration(struct timeval start, struct timeval end, char *out);
  */
 const char *
 timeval_to_delta(struct timeval start, struct timeval end, char *out);
+
+/**
+ * @brief Return a given string without trailing spaces
+ */
+char *
+strtrim(char *str);
+
 #endif /* __SNGREP_UTIL_H */
