@@ -67,6 +67,16 @@ PANEL *
 call_raw_create();
 
 /**
+ * @brief Destroy panel
+ *
+ * This function will hide the panel and free all allocated memory.
+ *
+ * @param panel Ncurses panel pointer
+ */
+void
+call_raw_destroy(PANEL *panel);
+
+/**
  * @brief Get custom information of given panel
  *
  * Return ncurses users pointer of the given panel into panel's

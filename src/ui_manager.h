@@ -162,7 +162,7 @@ extern ui_t ui_settings;
  * @returns 0 on ncurses initialization success, 1 otherwise
  */
 int
-init_interface();
+ncurses_init();
 
 /**
  * @brief Stops ncurses mode
@@ -171,8 +171,8 @@ init_interface();
  *
  * @returns 0 on ncurses initialization success, 1 otherwise
  */
-int
-deinit_interface();
+void
+ncurses_deinit();
 
 /**
  * @brief Create a panel structure

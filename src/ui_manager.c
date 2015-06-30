@@ -64,7 +64,7 @@ static ui_t *panel_pool[] =
 };
 
 int
-init_interface()
+ncurses_init()
 {
     int bg, fg;
     const char *term;
@@ -139,13 +139,13 @@ init_interface()
     return 0;
 }
 
-int
-deinit_interface()
+void
+ncurses_deinit()
 {
     // Clear screen before leaving
     refresh();
     // End ncurses mode
-    return endwin();
+    endwin();
 }
 
 ui_t *
@@ -175,15 +175,16 @@ ui_destroy(ui_t *ui)
 {
     PANEL *panel;
     // If there is no ui panel, we're done
-    if (!(panel = ui_get_panel(ui)))
+    if (!ui || !ui->panel)
         return;
+
+    // Hide this panel before destroying
+    hide_panel(ui->panel);
 
     // If panel has a destructor function use it
     if (ui->destroy)
         ui->destroy(panel);
 
-    // Deallocate panel pointer
-    del_panel(ui->panel);
     // Initialize panel pointer
     ui->panel = NULL;
 }

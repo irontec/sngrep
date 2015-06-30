@@ -71,6 +71,12 @@ vector_t *
 vector_create(int limit, int step);
 
 /**
+ * @brief Free vector memory
+ */
+void
+vector_destroy(vector_t *vector);
+
+/**
  * @brief Remove all items of vector
  *
  */

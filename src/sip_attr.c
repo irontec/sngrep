@@ -128,6 +128,10 @@ sip_attr_list_destroy(char *attrs[])
 void
 sip_attr_set(char *attrs[], enum sip_attr_id id, const char *value)
 {
+    // Free previous value if exits
+    if (attrs[id])
+        free(attrs[id]);
+    // Assign the new value
     attrs[id] = strdup(value);
 }
 

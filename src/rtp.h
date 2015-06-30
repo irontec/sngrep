@@ -70,6 +70,9 @@ struct rtp_stream
 rtp_stream_t *
 stream_create(sdp_media_t *media, const char *dst, u_short dport);
 
+void
+stream_destroy(rtp_stream_t *stream);
+
 rtp_stream_t *
 stream_complete(rtp_stream_t *stream, const char *src, u_short sport);
 

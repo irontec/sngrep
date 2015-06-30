@@ -82,6 +82,12 @@ stream_create(sdp_media_t *media, const char *dst, u_short dport)
     return stream;
 }
 
+void
+stream_destroy(rtp_stream_t *stream)
+{
+    free(stream);
+}
+
 rtp_stream_t *
 stream_complete(rtp_stream_t *stream, const char *src, u_short sport)
 {

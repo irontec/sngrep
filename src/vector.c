@@ -40,17 +40,26 @@ vector_create(int limit, int step)
         return NULL;
 
     memset(v, 0, sizeof(vector_t));
-    v->limit = limit;
-    v->step = step;
 
     // Initial memory allocation
     if (!(v->list = malloc(sizeof(void *) * limit))) {
-        free(v);
+        vector_destroy(v);
         return NULL;
     }
 
+    v->limit = limit;
+    v->step = step;
+
     // Return vector pointer
     return v;
+}
+
+void
+vector_destroy(vector_t *vector)
+{
+    if (vector->list)
+        free(vector->list);
+    free(vector);
 }
 
 void

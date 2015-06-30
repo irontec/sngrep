@@ -273,14 +273,14 @@ main(int argc, char* argv[])
 
     // Start a capture thread
     if (capture_launch_thread() != 0) {
-        deinit_interface();
+        ncurses_deinit();
         fprintf(stderr, "Failed to launch capture thread.\n");
         return 1;
     }
 
     if (!no_interface) {
         // Initialize interface
-        init_interface();
+        ncurses_init();
         // This is a blocking call.
         // Create the first panel and wait for user input
         ui_create_panel(PANEL_CALL_LIST);
@@ -300,13 +300,13 @@ main(int argc, char* argv[])
     capture_close();
 
     // Deinitialize interface
-    deinit_interface();
+    ncurses_deinit();
 
     // Deinitialize configuration options
     deinit_options();
 
     // Deallocate sip stored messages
-    sip_calls_clear();
+    sip_deinit();
 
     // Leaving!
     return 0;

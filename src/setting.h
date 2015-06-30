@@ -109,7 +109,7 @@ struct setting_option {
     //! Setting format
     enum setting_fmt fmt;
     //! Value of the setting
-    char *value;
+    const char *value;
     //! Compa separated valid values
     const char **valuelist;
 };

@@ -128,6 +128,8 @@ struct sip_msg {
 struct sip_call {
     //! Call attribute list
     char *attrs[SIP_ATTR_COUNT];
+    //! Call Call-Id
+    char *callid;
     //! Flag this call as filtered so won't be displayed
     int filtered;
     //! For call dialogs, mark if call has not yet finished
@@ -193,6 +195,35 @@ struct sip_call_list {
 void
 sip_init(int limit, int only_calls, int no_incomplete);
 
+/**
+ * @brief Deallocate all memory used for SIP calls
+ */
+void
+sip_deinit();
+
+/**
+ * @brief Create a new call with the given callid (Minimum required data)
+ *
+ * Allocated required memory for a new SIP Call. The call acts as
+ * header structure to all the messages with the same callid.
+ *
+ * @param callid Call-ID Header value
+ * @return pointer to the sip_call created
+ */
+sip_call_t *
+sip_call_create(char *callid);
+
+/**
+ * @brief Free all related memory from a call and remove from call list
+ *
+ * Deallocate memory of an existing SIP Call.
+ * This will also remove all messages, calling sip_msg_destroy for each
+ * one.
+ *
+ * @param call Call to be destroyed
+ */
+void
+sip_call_destroy(sip_call_t *call);
 
 /**
  * @brief Create a new message from the readed header and payload
@@ -218,30 +249,6 @@ sip_msg_create(const char *payload);
  */
 void
 sip_msg_destroy(sip_msg_t *msg);
-
-/**
- * @brief Create a new call with the given callid (Minimum required data)
- *
- * Allocated required memory for a new SIP Call. The call acts as
- * header structure to all the messages with the same callid.
- *
- * @param callid Call-ID Header value
- * @return pointer to the sip_call created
- */
-sip_call_t *
-sip_call_create(char *callid);
-
-/**
- * @brief Free all related memory from a call and remove from call list
- *
- * Deallocate memory of an existing SIP Call.
- * This will also remove all messages, calling sip_msg_destroy for each
- * one.
- *
- * @param call Call to be destroyed
- */
-void
-sip_call_destroy(sip_call_t *call);
 
 /**
  * @brief Parses Call-ID header of a SIP message payload

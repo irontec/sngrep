@@ -43,6 +43,7 @@ ui_t ui_call_raw = {
     .type = PANEL_CALL_RAW,
     .panel = NULL,
     .create = call_raw_create,
+    .destroy = call_raw_destroy,
     .draw = call_raw_draw,
     .handle_key = call_raw_handle_key
 };
@@ -69,6 +70,23 @@ call_raw_create()
     info->scroll = 0;
 
     return panel;
+}
+
+void
+call_raw_destroy(PANEL *panel)
+{
+    call_raw_info_t *info;
+
+    if ((info = call_raw_info(panel))) {
+        // Delete panel call displayed group
+        if (info->group)
+            call_group_destroy(info->group);
+        // Delete panel windows
+        delwin(info->pad);
+        free(info);
+    }
+    // Delete panel window
+    free(panel_window(panel));
 }
 
 call_raw_info_t *

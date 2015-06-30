@@ -54,7 +54,6 @@ ui_t ui_call_list = {
     .handle_key = call_list_handle_key,
     .help = call_list_help,
     .destroy = call_list_destroy,
-
 };
 
 PANEL *
@@ -148,8 +147,16 @@ call_list_destroy(PANEL *panel)
         // Deallocate group data
         if (info->group)
             call_group_destroy(info->group);
+
+        // Deallocate panel windows
+        delwin(info->list_win);
         free(info);
     }
+
+    // Deallocate panel window
+    delwin(panel_window(panel));
+    // Deallocate panel pointer
+    del_panel(panel);
 }
 
 call_list_info_t *

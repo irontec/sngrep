@@ -72,6 +72,7 @@ ui_t ui_call_flow = {
     .type = PANEL_CALL_FLOW,
     .panel = NULL,
     .create = call_flow_create,
+    .destroy = call_flow_destroy,
     .draw = call_flow_draw,
     .handle_key = call_flow_handle_key,
     .help = call_flow_help
@@ -110,15 +111,37 @@ void
 call_flow_destroy(PANEL *panel)
 {
     call_flow_info_t *info;
-    // Hide the panel
-    hide_panel(panel);
+    call_flow_column_t *column;
+    call_flow_arrow_t *arrow;
+
     // Free the panel information
     if ((info = call_flow_info(panel))) {
-        // Deallocate group memory
+        // Delete panel call displayed group
+        if (info->group)
+            call_group_destroy(info->group);
+
+        // Delete panel columns;
+        while ((column = info->columns)) {
+            info->columns = column->next;
+            free(column);
+        }
+
+        // Delete panel arrows
+        while ((arrow = info->arrows)) {
+            info->arrows = arrow->next;
+            free(arrow);
+        }
+
+        // Delete panel windows
+        delwin(info->flow_win);
+        delwin(info->raw_win);
         free(info);
+
     }
     // Delete panel window
     delwin(panel_window(panel));
+    // Deallocate panel pointer
+    del_panel(panel);
 }
 
 call_flow_info_t *
@@ -839,12 +862,12 @@ call_flow_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_SHOW_FLOW_EX:
                 werase(panel_window(panel));
-                // KEY_X , Display current call flow
                 group = call_group_create();
                 if (call_group_count(info->group) == 1) {
                     call_group_add(group, call_get_xcall(vector_first(info->group->calls)));
                 }
                 call_group_add(group, vector_first(info->group->calls));
+                call_group_destroy(info->group);
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_RAW:

@@ -45,6 +45,7 @@ call_group_create()
 void
 call_group_destroy(sip_call_group_t *group)
 {
+    vector_destroy(group->calls);
     free(group);
 }
 

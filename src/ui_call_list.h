@@ -119,7 +119,6 @@ call_list_create();
  * This function will hide the panel and free all allocated memory.
  *
  * @param panel Ncurses panel pointer
- * @return panel Ncurses panel pointer
  */
 void
 call_list_destroy(PANEL *panel);

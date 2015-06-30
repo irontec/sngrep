@@ -90,43 +90,28 @@ sip_init(int limit, int only_calls, int no_incomplete)
 
 }
 
-sip_msg_t *
-sip_msg_create(const char *payload)
-{
-    sip_msg_t *msg;
-
-    if (!(msg = malloc(sizeof(sip_msg_t))))
-        return NULL;
-    memset(msg, 0, sizeof(sip_msg_t));
-    msg->payload = strdup(payload);
-    msg->color = 0;
-    // Create a vector to store sdp
-    msg->medias = vector_create(0, 2);
-    return msg;
-}
-
 void
-sip_msg_destroy(sip_msg_t *msg)
+sip_deinit()
 {
-
-    if (!msg)
-        return;
-
-    // Free message attribute list
-    sip_attr_list_destroy(msg->attrs);
-
-    // Free message payload pointer if not parsed
-    if (msg->payload)
-        free(msg->payload);
-
-    // Free packet data
-    if (msg->pcap_header)
-        free(msg->pcap_header);
-    if (msg->pcap_packet)
-        free(msg->pcap_packet);
-
-    // Free all memory
-    free(msg);
+    // Remove all calls
+    sip_calls_clear();
+    // Remove calls vector
+    vector_destroy(calls.list);
+    // Remove Call-id hash table
+    hdestroy();
+    // Deallocate regular expressions
+    regfree(&calls.reg_method);
+    regfree(&calls.reg_callid);
+    regfree(&calls.reg_xcallid);
+    regfree(&calls.reg_response);
+    regfree(&calls.reg_cseq);
+    regfree(&calls.reg_from);
+    regfree(&calls.reg_to);
+    regfree(&calls.reg_sdp);
+    regfree(&calls.reg_sdp_addr);
+    regfree(&calls.reg_sdp_port);
+    // Remove calls mutex
+    pthread_mutex_destroy(&calls.lock);
 }
 
 sip_call_t *
@@ -134,9 +119,11 @@ sip_call_create(char *callid)
 {
     ENTRY entry;
     int index;
+    sip_call_t *call;
 
     // Initialize a new call structure
-    sip_call_t *call = malloc(sizeof(sip_call_t));
+    if (!(call = malloc(sizeof(sip_call_t))))
+        return NULL;
     memset(call, 0, sizeof(sip_call_t));
 
     // Add this call to the call list
@@ -144,8 +131,11 @@ sip_call_create(char *callid)
     index = vector_append(calls.list, call);
     pthread_mutex_unlock(&calls.lock);
 
+    // Store Call-Id
+    call->callid = strdup(callid);
+
     // Store this call in hash table
-    entry.key = strdup(callid);
+    entry.key = call->callid;
     entry.data = (void *) call;
     hsearch(entry, ENTER);
 
@@ -167,28 +157,71 @@ void
 sip_call_destroy(sip_call_t *call)
 {
     sip_msg_t *msg;
-    vector_iter_t msgs;
-
-    // No call to destroy
-    if (!call)
-        return;
-
-    // Remove call from calls list
-    vector_remove(calls.list, call);
+    rtp_stream_t *stream;
+    vector_iter_t it;
 
     // Remove all call messages
-    msgs = vector_iterator(call->msgs);
-    while ((msg = vector_iterator_next(&msgs))) {
+    it = vector_iterator(call->msgs);
+    while ((msg = vector_iterator_next(&it)))
         sip_msg_destroy(msg);
-        vector_remove(call->msgs, msg);
-    }
+    vector_destroy(call->msgs);
 
+    // Remove all call streams
+    it = vector_iterator(call->streams);
+    while ((stream = vector_iterator_next(&it)))
+        stream_destroy(stream);
+    vector_destroy(call->streams);
 
     // Remove all call attributes
     sip_attr_list_destroy(call->attrs);
 
     // Free it!
+    free(call->callid);
     free(call);
+}
+
+sip_msg_t *
+sip_msg_create(const char *payload)
+{
+    sip_msg_t *msg;
+
+    if (!(msg = malloc(sizeof(sip_msg_t))))
+        return NULL;
+    memset(msg, 0, sizeof(sip_msg_t));
+    msg->payload = strdup(payload);
+    msg->color = 0;
+    // Create a vector to store sdp
+    msg->medias = vector_create(0, 2);
+    return msg;
+}
+
+void
+sip_msg_destroy(sip_msg_t *msg)
+{
+    sdp_media_t *media;
+    vector_iter_t it;
+
+    // Free message attribute list
+    sip_attr_list_destroy(msg->attrs);
+
+    // Free message payload pointer if not parsed
+    if (msg->payload)
+        free(msg->payload);
+
+    // Free packet data
+    if (msg->pcap_header)
+        free(msg->pcap_header);
+    if (msg->pcap_packet)
+        free(msg->pcap_packet);
+
+    // Free message SDP media
+    it = vector_iterator(msg->medias);
+    while ((media = vector_iterator_next(&it)))
+        media_destroy(media);
+    vector_destroy(msg->medias);
+
+    // Free all memory
+    free(msg);
 }
 
 char *
@@ -234,6 +267,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
     if (!msg_get_reqresp(msg)) {
         // Deallocate message memory
         sip_msg_destroy(msg);
+        free(callid);
         return NULL;
     }
 
@@ -267,6 +301,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
         if (!sip_check_match_expression((const char*) payload)) {
             // Deallocate message memory
             sip_msg_destroy(msg);
+            free(callid);
             pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
@@ -276,6 +311,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
             if (msg->reqresp != SIP_METHOD_INVITE) {
                 // Deallocate message memory
                 sip_msg_destroy(msg);
+                free(callid);
                 pthread_mutex_unlock(&calls.lock);
                 return NULL;
             }
@@ -287,6 +323,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
             if (msg->reqresp > SIP_METHOD_MESSAGE) {
                 // Deallocate message memory
                 sip_msg_destroy(msg);
+                free(callid);
                 pthread_mutex_unlock(&calls.lock);
                 return NULL;
             }
@@ -296,6 +333,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
         if (sip_check_msg_ignore(msg)) {
             // Deallocate message memory
             sip_msg_destroy(msg);
+            free(callid);
             pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
@@ -304,6 +342,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
         if (!(call = sip_call_create(callid))) {
             // Deallocate message memory
             sip_msg_destroy(msg);
+            free(callid);
             pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
@@ -772,7 +811,15 @@ msg_get_time(sip_msg_t *msg)
 void
 sip_calls_clear()
 {
+    vector_iter_t it;
+    sip_call_t *call;
+
     pthread_mutex_lock(&calls.lock);
+    // Remove all calls in vector
+    it = vector_iterator(calls.list);
+    while ((call = vector_iterator_next(&it)))
+        sip_call_destroy(call);
+
     // Clear all elements in vector
     vector_clear(calls.list);
     // Create again the callid hash table
@@ -982,5 +1029,3 @@ sip_address_port_format(const char *addrport)
 
     return aport;
 }
-
-
