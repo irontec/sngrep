@@ -184,6 +184,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     u_short sport, dport;
     // Media structure for RTP packets
     rtp_stream_t *stream;
+    // Current packet data
+    capture_packet_t *pkt;
 
     // Ignore packets while capture is paused
     if (capture_is_paused())
@@ -330,9 +332,16 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
         }
 
-        // Set message PCAP data
-        msg->pcap_packet = malloc(size_packet);
-        memcpy(msg->pcap_packet, packet, size_packet);
+        // Add this SIP packet to the message
+        pkt = malloc(sizeof(capture_packet_t));
+        pkt->type = CAPTURE_PACKET_SIP;
+        pkt->header = malloc(sizeof(struct pcap_pkthdr));
+        memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
+        pkt->data = malloc(size_packet);
+        memcpy(pkt->data, packet, size_packet);
+        pkt->payload_len = size_payload;
+        pkt->payload_start = size_packet - pkt->payload_len;
+        msg_add_packet(msg, pkt);
 
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);

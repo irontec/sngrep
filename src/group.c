@@ -251,7 +251,7 @@ sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)
         return 1;
 
     // Otherwise
-    return timeval_is_older(one->pcap_header->ts, two->pcap_header->ts);
+    return timeval_is_older(msg_get_time(one), msg_get_time(two));
 }
 
 int

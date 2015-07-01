@@ -109,11 +109,8 @@ struct sip_msg {
     int cseq;
     //! SDP payload information (sdp_media_t *)
     vector_t *medias;
-
-    //! PCAP Packet Header data
-    struct pcap_pkthdr *pcap_header;
-    //! PCAP Packet data
-    u_char *pcap_packet;
+    //! Captured packets for this message (capture_packet_t *)
+    vector_t *packets;
     //! Message owner
     sip_call_t *call;
 };
@@ -465,6 +462,18 @@ msg_is_retrans(sip_msg_t *msg);
  */
 int
 msg_is_request(sip_msg_t *msg);
+
+/**
+ * @brief Add a new packet for given message
+ *
+ * A SIP message can have multiple fragmented packets to
+ * store its payload;
+ *
+ * @param msg SIP message that will store this packet
+ * @param packet Captured packet information
+ */
+void
+msg_add_packet(sip_msg_t *msg, capture_packet_t *packet);
 
 /**
  * @brief Get summary of message header data

@@ -86,7 +86,7 @@ timeval_to_delta(struct timeval start, struct timeval end, char *out)
     diff -= start.tv_sec * 1000000 + start.tv_usec;
 
     nsec = diff / 1000000;
-    nusec = abs(diff - (nsec * 1000000));
+    nusec = labs(diff - (nsec * 1000000));
 
     sign = (diff >= 0) ? '+' : '-';
 

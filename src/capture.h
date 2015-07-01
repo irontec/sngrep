@@ -81,6 +81,15 @@ enum capture_status {
 typedef struct capture_info capture_info_t;
 //! Shorter declaration of dns_cache structure
 typedef struct dns_cache dns_cache_t;
+//! Shorter declaration of capture_packet structure
+typedef struct capture_packet capture_packet_t;
+
+//! Stored packet types
+enum capture_packet_type
+{
+    CAPTURE_PACKET_SIP = 0,
+    CAPTURE_PACKET_RTP,
+};
 
 /**
  * @brief Storage for DNS resolved ips
@@ -127,6 +136,19 @@ struct capture_info {
     pcap_if_t *devices;
     //! Capture thread for online capturing
     pthread_t capture_t;
+};
+
+struct capture_packet {
+    // Packet type as defined in capture_packet_type
+    int type;
+    //! PCAP Packet Header data
+    struct pcap_pkthdr *header;
+    //! PCAP Packet content
+    u_char *data;
+    //! Byte number where payload starts
+    int payload_start;
+    //! Payload length
+    int payload_len;
 };
 
 /**

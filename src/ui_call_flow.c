@@ -589,14 +589,14 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
     if (!cur) {
         memset(&cur_time, 0, sizeof(struct timeval));
     } else if (cur->type == CF_ARROW_SIP) {
-        cur_time = cur->msg->pcap_header->ts;
+        cur_time = msg_get_time(cur->msg);
     } else if (cur->type == CF_ARROW_RTP) {
         cur_time = cur->stream->time;
     }
 
     // Look for the next message
     while ((msg = call_group_get_next_msg(info->group, msg))) {
-        if (timeval_is_older(msg->pcap_header->ts, cur_time)) {
+        if (timeval_is_older(msg_get_time(msg), cur_time)) {
             break;
         }
     }
@@ -633,7 +633,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
         next->msg = msg;
     } else {
         /* Determine what goes next */
-        if (timeval_is_older(msg->pcap_header->ts, stream->time)) {
+        if (timeval_is_older(msg_get_time(msg), stream->time)) {
             if ((next = call_flow_arrow_find(panel, stream)))
                 return next;
             // Create a new arrow to store next info

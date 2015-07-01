@@ -190,6 +190,8 @@ sip_msg_create(const char *payload)
     // Create a vector to store sdp
     msg->medias = vector_create(0, 2);
     vector_set_destroyer(msg->medias, vector_generic_destroyer);
+    // Create a vector to store packets
+    msg->packets = vector_create(1, 1);
     return msg;
 }
 
@@ -203,14 +205,10 @@ sip_msg_destroy(sip_msg_t *msg)
     if (msg->payload)
         free(msg->payload);
 
-    // Free packet data
-    if (msg->pcap_header)
-        free(msg->pcap_header);
-    if (msg->pcap_packet)
-        free(msg->pcap_packet);
-
     // Free message SDP media
     vector_destroy(msg->medias);
+    // Free message packets
+    vector_destroy(msg->packets);
 
     // Free all memory
     free(msg);
@@ -286,10 +284,6 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
     // Fill message data
     msg->sport = sport;
     msg->dport = dport;
-
-    // Set message PCAP header
-    msg->pcap_header = malloc(sizeof(struct pcap_pkthdr));
-    memcpy(msg->pcap_header, header, sizeof(struct pcap_pkthdr));
 
     pthread_mutex_lock(&calls.lock);
     // Find the call for this msg
@@ -546,13 +540,13 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 // Alice is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CANCELLED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(first->pcap_header->ts, msg->pcap_header->ts, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
                 call->active = 0;
             } else if (reqresp > 400) {
                 // Bob is not in the mood
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
                 // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(first->pcap_header->ts, msg->pcap_header->ts, dur));
+                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
                 call->active = 0;
             }
         } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
@@ -561,7 +555,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
                 call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_COMPLETED);
                 // Store Conversation duration
                 call_set_attribute(call, SIP_ATTR_CONVDUR,
-                                   timeval_to_duration(call->cstart_msg->pcap_header->ts, msg->pcap_header->ts, dur));
+                                   timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(msg), dur));
                 call->active = 0;
             }
         } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, SIP_CALLSTATE_INCALL)) {
@@ -570,7 +564,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call->active = 1;
         } else {
             // Store total call duration
-            call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(first->pcap_header->ts, msg->pcap_header->ts, dur));
+            call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
         }
     } else {
         // This is actually a call
@@ -659,8 +653,8 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg->dst, msg->dport);
 
     // Set message Date and Time attribute
-    msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg->pcap_header->ts, date));
-    msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg->pcap_header->ts, time));
+    msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg_get_time(msg), date));
+    msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg_get_time(msg), time));
 
     // Message payload has been parsed
     msg->parsed = 1;
@@ -779,6 +773,12 @@ msg_is_request(sip_msg_t *msg)
     return msg->reqresp < SIP_METHOD_SENTINEL;
 }
 
+void
+msg_add_packet(sip_msg_t *msg, capture_packet_t *packet)
+{
+    vector_append(msg->packets, packet);
+}
+
 char *
 msg_get_header(sip_msg_t *msg, char *out)
 {
@@ -798,12 +798,12 @@ msg_get_header(sip_msg_t *msg, char *out)
 struct timeval
 msg_get_time(sip_msg_t *msg)
 {
-    if (msg) {
-        return msg->pcap_header->ts;
-    } else {
-        struct timeval t = { };
-        return t;
-    }
+    struct timeval t = { };
+    capture_packet_t *packet;
+
+    if (msg && (packet = vector_first(msg->packets)))
+        return packet->header->ts;
+    return t;
 }
 
 void

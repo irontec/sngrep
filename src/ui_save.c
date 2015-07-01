@@ -487,7 +487,12 @@ save_to_file(PANEL *panel)
 void
 save_msg_pcap(pcap_dumper_t *pd, sip_msg_t *msg)
 {
-    dump_packet(pd, msg->pcap_header, msg->pcap_packet);
+    capture_packet_t *packet;
+    vector_iter_t it = vector_iterator(msg->packets);
+
+    while ((packet = vector_iterator_next(&it))) {
+        dump_packet(pd, packet->header, packet->data);
+    }
 }
 
 void
