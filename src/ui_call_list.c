@@ -49,11 +49,11 @@ ui_t ui_call_list = {
     .type = PANEL_CALL_LIST,
     .panel = NULL,
     .create = call_list_create,
+    .destroy = call_list_destroy,
     .draw = call_list_draw,
     .resize = call_list_resize,
     .handle_key = call_list_handle_key,
     .help = call_list_help,
-    .destroy = call_list_destroy,
 };
 
 PANEL *
@@ -131,12 +131,8 @@ call_list_destroy(PANEL *panel)
 {
     call_list_info_t *info;
 
-    // Hide the panel
-    hide_panel(panel);
-
     // Free its status data
     if ((info = call_list_info(panel))) {
-
         // Deallocate forms data
         if (info->form) {
             unpost_form(info->form);

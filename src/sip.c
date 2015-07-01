@@ -60,7 +60,8 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.ignore_incomplete = no_incomplete;
 
     // Create a vector to store calls
-    calls.list = vector_create(500, 50);
+    calls.list = vector_create(200, 50);
+    vector_set_destroyer(calls.list, sip_call_destroyer);
 
     // Create hash table for callid search
     hcreate(calls.limit);
@@ -141,8 +142,11 @@ sip_call_create(char *callid)
 
     // Create a vector to store call messages
     call->msgs = vector_create(10, 5);
+    vector_set_destroyer(call->msgs, sip_msg_destroyer);
+
     // Create a vector to store RTP streams
     call->streams = vector_create(4, 2);
+    vector_set_destroyer(call->streams, vector_generic_destroyer);
 
     // Initialize call filter status
     call->filtered = -1;
@@ -156,28 +160,21 @@ sip_call_create(char *callid)
 void
 sip_call_destroy(sip_call_t *call)
 {
-    sip_msg_t *msg;
-    rtp_stream_t *stream;
-    vector_iter_t it;
-
     // Remove all call messages
-    it = vector_iterator(call->msgs);
-    while ((msg = vector_iterator_next(&it)))
-        sip_msg_destroy(msg);
     vector_destroy(call->msgs);
-
     // Remove all call streams
-    it = vector_iterator(call->streams);
-    while ((stream = vector_iterator_next(&it)))
-        stream_destroy(stream);
     vector_destroy(call->streams);
-
     // Remove all call attributes
     sip_attr_list_destroy(call->attrs);
-
     // Free it!
     free(call->callid);
     free(call);
+}
+
+void
+sip_call_destroyer(void *call)
+{
+    sip_call_destroy((sip_call_t*)call);
 }
 
 sip_msg_t *
@@ -192,15 +189,13 @@ sip_msg_create(const char *payload)
     msg->color = 0;
     // Create a vector to store sdp
     msg->medias = vector_create(0, 2);
+    vector_set_destroyer(msg->medias, vector_generic_destroyer);
     return msg;
 }
 
 void
 sip_msg_destroy(sip_msg_t *msg)
 {
-    sdp_media_t *media;
-    vector_iter_t it;
-
     // Free message attribute list
     sip_attr_list_destroy(msg->attrs);
 
@@ -215,13 +210,16 @@ sip_msg_destroy(sip_msg_t *msg)
         free(msg->pcap_packet);
 
     // Free message SDP media
-    it = vector_iterator(msg->medias);
-    while ((media = vector_iterator_next(&it)))
-        media_destroy(media);
     vector_destroy(msg->medias);
 
     // Free all memory
     free(msg);
+}
+
+void
+sip_msg_destroyer(void *msg)
+{
+    sip_msg_destroy((sip_msg_t *)msg);
 }
 
 char *
@@ -811,21 +809,12 @@ msg_get_time(sip_msg_t *msg)
 void
 sip_calls_clear()
 {
-    vector_iter_t it;
-    sip_call_t *call;
-
     pthread_mutex_lock(&calls.lock);
-    // Remove all calls in vector
-    it = vector_iterator(calls.list);
-    while ((call = vector_iterator_next(&it)))
-        sip_call_destroy(call);
-
-    // Clear all elements in vector
+    // Remove all items from vector
     vector_clear(calls.list);
     // Create again the callid hash table
     hdestroy();
     hcreate(calls.limit);
-
     pthread_mutex_unlock(&calls.lock);
 }
 

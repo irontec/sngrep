@@ -49,6 +49,8 @@ struct vector
     int step;
     //! Elements of the vector
     void **list;
+    //! Function to destroy one item
+    void (*destroyer) (void *item);
 };
 
 struct vector_iter
@@ -96,11 +98,28 @@ vector_append(vector_t *vector, void *item);
 
 /**
  * @brief Remove itemn from vector
- *
- * TODO Not yet implemented
  */
 void
 vector_remove(vector_t *vector, void *item);
+
+/**
+ * @brief Set the vector destroyer
+ *
+ * A destroyer is a function that will be invoked
+ * for each item when the vector is destroyed or an
+ * item is removed.
+ */
+void
+vector_set_destroyer(vector_t *vector, void (*destroyer) (void *item));
+
+/**
+ * @brief A generic item destroyer
+ *
+ * Generic memory deallocator for those items that only
+ * require a simple 'free'
+ */
+void
+vector_generic_destroyer(void *item);
 
 /**
  * @brief Get an item from vector
@@ -129,7 +148,6 @@ vector_index(vector_t *vector, void *item);
 
 /**
  * @brief Return the number of items of vector
- *
  */
 int
 vector_count(vector_t *vector);

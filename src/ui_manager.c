@@ -173,7 +173,6 @@ ui_create_panel(enum panel_types type)
 void
 ui_destroy(ui_t *ui)
 {
-    PANEL *panel;
     // If there is no ui panel, we're done
     if (!ui || !ui->panel)
         return;
@@ -183,7 +182,7 @@ ui_destroy(ui_t *ui)
 
     // If panel has a destructor function use it
     if (ui->destroy)
-        ui->destroy(panel);
+        ui->destroy(ui->panel);
 
     // Initialize panel pointer
     ui->panel = NULL;

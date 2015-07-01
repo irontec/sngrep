@@ -225,6 +225,13 @@ sip_call_create(char *callid);
 void
 sip_call_destroy(sip_call_t *call);
 
+
+/**
+ * @brief Wrapper around Message destroyer to clear call vectors
+ */
+void
+sip_call_destroyer(void *call);
+
 /**
  * @brief Create a new message from the readed header and payload
  *
@@ -245,10 +252,16 @@ sip_msg_create(const char *payload);
  * This function will remove the message from the call and the
  * passed pointer will be NULL.
  *
- * @param msg SIP message to be deleted
+ * @param nsg SIP message to be deleted
  */
 void
 sip_msg_destroy(sip_msg_t *msg);
+
+/**
+ * @brief Wrapper around Message destroyer to clear msg vectors
+ */
+void
+sip_msg_destroyer(void *msg);
 
 /**
  * @brief Parses Call-ID header of a SIP message payload

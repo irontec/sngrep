@@ -57,15 +57,21 @@ vector_create(int limit, int step)
 void
 vector_destroy(vector_t *vector)
 {
+    // Remove all items if a destroyer is set
+    vector_clear(vector);
+    // Deallocate vector list
     if (vector->list)
         free(vector->list);
+    // Deallocate vector itself
     free(vector);
 }
 
 void
 vector_clear(vector_t *vector)
 {
-    vector->count = 0;
+    // Remove all items in the vector
+    while (vector_first(vector))
+        vector_remove(vector, vector_first(vector));
 }
 
 int
@@ -95,7 +101,26 @@ vector_remove(vector_t *vector, void *item)
     // Decrease item counter
     vector->count--;
     // Move the rest of the elements one position up
-    memcpy(vector->list + idx, vector->list + idx + 1, sizeof(void *) * (vector->count - idx));
+    memmove(vector->list + idx, vector->list + idx + 1, sizeof(void *) * (vector->count - idx));
+    // Reset vector last position
+    vector->list[vector->count] = NULL;
+
+    // Destroy the item if vector has a destroyer
+    if (vector->destroyer) {
+        vector->destroyer(item);
+    }
+}
+
+void
+vector_set_destroyer(vector_t *vector, void (*destroyer) (void *item))
+{
+    vector->destroyer = destroyer;
+}
+
+void
+vector_generic_destroyer(void *item)
+{
+    free(item);
 }
 
 void *

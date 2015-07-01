@@ -57,9 +57,6 @@ sdp_media_t *
 media_create(struct sip_msg *msg);
 
 void
-media_destroy(sdp_media_t *media);
-
-void
 media_set_port(sdp_media_t *media, u_short port);
 
 void

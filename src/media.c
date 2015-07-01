@@ -48,12 +48,6 @@ media_create(struct sip_msg *msg)
 }
 
 void
-media_destroy(sdp_media_t *media)
-{
-    free(media);
-}
-
-void
 media_set_port(sdp_media_t *media, u_short port)
 {
     media->port = port;
