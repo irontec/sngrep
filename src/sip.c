@@ -110,15 +110,12 @@ sip_deinit()
 
 
 char *
-sip_get_callid(const char* payload)
+sip_get_callid(const char* payload, char *callid)
 {
-    char *callid = NULL;
     regmatch_t pmatch[3];
 
     // Try to get Call-ID from payload
     if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
-        // Call-ID is the firts regexp match
-        callid = malloc(pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         // Allocate memory for Call-Id (caller MUST free it)
         memset(callid, 0, pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         // Copy the matching part of payload
@@ -135,12 +132,12 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     sip_msg_t *msg;
     sip_call_t *call;
     int call_idx;
-    char *callid;
+    char callid[1024];
     char msg_src[ADDRESSLEN];
     char msg_dst[ADDRESSLEN];
 
     // Get the Call-ID of this message
-    if (!(callid = sip_get_callid((const char*) payload))) {
+    if (!sip_get_callid((const char*) payload, callid)) {
         return NULL;
     }
 
@@ -155,7 +152,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     if (!sip_get_msg_reqresp(msg, payload)) {
         // Deallocate message memory
         msg_destroy(msg);
-        free(callid);
         return NULL;
     }
 
@@ -186,54 +182,25 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     if (!(call = sip_find_by_callid(callid))) {
 
         // Check if payload matches expression
-        if (!sip_check_match_expression((const char*) payload)) {
-            // Deallocate message memory
-            msg_destroy(msg);
-            free(callid);
-            pthread_mutex_unlock(&calls.lock);
-            return NULL;
-        }
+        if (!sip_check_match_expression((const char*) payload))
+            goto skip_message;
 
         // User requested only INVITE starting dialogs
-        if (calls.only_calls) {
-            if (msg->reqresp != SIP_METHOD_INVITE) {
-                // Deallocate message memory
-                msg_destroy(msg);
-                free(callid);
-                pthread_mutex_unlock(&calls.lock);
-                return NULL;
-            }
-        }
+        if (calls.only_calls && msg->reqresp != SIP_METHOD_INVITE)
+            goto skip_message;
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (calls.ignore_incomplete) {
-            if (msg->reqresp > SIP_METHOD_MESSAGE) {
-                // Deallocate message memory
-                msg_destroy(msg);
-                free(callid);
-                pthread_mutex_unlock(&calls.lock);
-                return NULL;
-            }
-        }
+        if (calls.ignore_incomplete && msg->reqresp > SIP_METHOD_MESSAGE)
+            goto skip_message;
 
         // Check if this message is ignored by configuration directive
-        if (sip_check_msg_ignore(msg)) {
-            // Deallocate message memory
-            msg_destroy(msg);
-            free(callid);
-            pthread_mutex_unlock(&calls.lock);
-            return NULL;
-        }
+        if (sip_check_msg_ignore(msg))
+            goto skip_message;
 
         // Create the call if not found
-        if (!(call = call_create(callid))) {
-            // Deallocate message memory
-            msg_destroy(msg);
-            free(callid);
-            pthread_mutex_unlock(&calls.lock);
-            return NULL;
-        }
+        if (!(call = call_create(callid)))
+            goto skip_message;
 
         // Store this call in hash table
         entry.key = call->callid;
@@ -249,6 +216,7 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", call_idx);
     }
 
+
     // Set message callid
     msg_set_attribute(msg, SIP_ATTR_CALLID, callid);
     // Store Transport attribute
@@ -261,9 +229,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     } else if (packet->type == CAPTURE_PACKET_SIP_WS) {
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
     }
-
-    // Dellocate callid memory
-    free(callid);
 
     // Add this SIP packet to the message
     msg_add_packet(msg, packet);
@@ -279,6 +244,13 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
     // Return the loaded message
     return msg;
+
+skip_message:
+    // Deallocate message memory
+    msg_destroy(msg);
+    pthread_mutex_unlock(&calls.lock);
+    return NULL;
+
 }
 
 int

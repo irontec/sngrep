@@ -105,10 +105,11 @@ sip_deinit();
  * Mainly used to check if a payload contains a callid.
  *
  * @param payload SIP message payload
+ * @param callid Character array to store callid
  * @return callid parsed from Call-ID header
  */
 char *
-sip_get_callid(const char* payload);
+sip_get_callid(const char* payload, char *callid);
 
 /**
  * @brief Loads a new message from raw header/payload

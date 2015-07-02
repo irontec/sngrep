@@ -58,7 +58,6 @@ enum sip_methods {
     SIP_METHOD_SENTINEL,
 };
 
-
 /**
  * @brief Information of a single message withing a dialog.
  *
