@@ -152,18 +152,6 @@ void
 msg_add_media(sip_msg_t *msg, sdp_media_t *media);
 
 /**
- * @brief Check if a package is a retransmission
- *
- * This function will compare its payload with the previous message
- * in the dialog, to check if it has the same content.
- *
- * @param msg SIP message that will be checked
- * @return 1 if the previous message is equal to msg, 0 otherwise
- */
-int
-msg_is_retrans(sip_msg_t *msg);
-
-/**
  * @brief Check if a message is a Request or response
  *
  * @param msg SIP message that will be checked

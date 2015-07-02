@@ -151,6 +151,18 @@ int
 call_is_invite(sip_call_t *call);
 
 /**
+ * @brief Check if a message is a retransmission
+ *
+ * This function will compare its payload with the previous message
+ * in the dialog, to check if it has the same content.
+ *
+ * @param msg SIP message that will be checked
+ * @return 1 if the previous message is equal to msg, 0 otherwise
+ */
+int
+call_msg_is_retrans(sip_msg_t *msg);
+
+/**
  * @brief Update Call State attribute with its last parsed message
  *
  * @param call Call structure to be updated

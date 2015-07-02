@@ -461,13 +461,13 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (!strcasecmp(msg_src, column1->addr)) {
         mvwaddch(win, cline, endpos - 2, '>');
-        if (msg_is_retrans(msg)) {
+        if (call_msg_is_retrans(msg)) {
             mvwaddch(win, cline, endpos - 3, '>');
             mvwaddch(win, cline, endpos - 4, '>');
         }
     } else {
         mvwaddch(win, cline, startpos + 2, '<');
-        if (msg_is_retrans(msg)) {
+        if (call_msg_is_retrans(msg)) {
             mvwaddch(win, cline, startpos + 3, '<');
             mvwaddch(win, cline, startpos + 4, '<');
         }

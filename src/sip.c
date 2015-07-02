@@ -447,7 +447,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                      * and port of the stream.
                      */
                     // Create a new stream with this destination address:port
-                    if (!msg_is_retrans(msg)) {
+                    if (!call_msg_is_retrans(msg)) {
                         vector_append(msg->call->streams, stream_create(media, media_address, media_port));
                     }
                 }

@@ -117,6 +117,21 @@ call_is_invite(sip_call_t *call)
     return 0;
 }
 
+int
+call_msg_is_retrans(sip_msg_t *msg)
+{
+    sip_msg_t *prev = NULL;
+    vector_iter_t it;
+
+    // Get previous message in call
+    it = vector_iterator(msg->call->msgs);
+    vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
+    prev = vector_iterator_prev(&it);
+
+    return (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev)));
+}
+
+
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
