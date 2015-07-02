@@ -107,6 +107,16 @@ call_is_active(void *item)
     return call->active;
 }
 
+int
+call_is_invite(sip_call_t *call)
+{
+    sip_msg_t *first;
+    if ((first = vector_first(call->msgs)))
+        return (first->reqresp == SIP_METHOD_INVITE);
+
+    return 0;
+}
+
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
@@ -115,17 +125,11 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     int reqresp;
     sip_msg_t *first;
 
-    // Sanity check
-    if (!call || !call->msgs || !msg)
+    if (!call_is_invite(call))
         return;
 
     // Get the first message in the call
     first = vector_first(call->msgs);
-
-    // Check First message of Call has INVITE method
-    if (first->reqresp != SIP_METHOD_INVITE) {
-        return;
-    }
 
     // Get current message Method / Response Code
     reqresp = msg->reqresp;
@@ -199,6 +203,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
 
     switch (id) {
         case SIP_ATTR_CALLINDEX:
+        case SIP_ATTR_CALLID:
         case SIP_ATTR_MSGCNT:
         case SIP_ATTR_CALLSTATE:
         case SIP_ATTR_CONVDUR:

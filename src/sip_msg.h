@@ -119,6 +119,12 @@ void
 msg_destroyer(void *msg);
 
 /**
+ * @brief Return the call owner of this message
+ */
+struct sip_call *
+msg_get_call(const sip_msg_t *msg);
+
+/**
  * @brief Getter for media of given messages
  *
  * Return the number of media structures of given msg

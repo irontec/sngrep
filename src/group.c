@@ -162,17 +162,6 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
     sip_call_t *call;
     int i;
 
-
-    // FIXME Performance hack for huge dialogs
-    if (vector_count(group->calls) == 1) {
-        call = vector_first(group->calls);
-        msgs = vector_iterator(call->msgs);
-        vector_iterator_set_current(&msgs, vector_index(call->msgs, msg));
-        if (group->sdp_only)
-            vector_iterator_set_filter(&msgs, msg_has_sdp);
-        return vector_iterator_next(&msgs);
-    }
-
     for (i = 0; i < vector_count(group->calls); i++) {
 
         call = vector_item(group->calls, i);
@@ -189,7 +178,7 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
         }
     }
 
-    return next;
+    return sip_parse_msg(next);
 }
 
 sip_msg_t *

@@ -141,6 +141,14 @@ call_get_xcall(sip_call_t *call);
 int
 call_is_active(void *item);
 
+/**
+ * @brief Determine if this call starts with an Invite request
+ *
+ * @param call SIP call structure
+ * @return 1 if first call message has method INVITE, 0 otherwise
+ */
+int
+call_is_invite(sip_call_t *call);
 
 /**
  * @brief Update Call State attribute with its last parsed message

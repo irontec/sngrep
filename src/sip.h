@@ -203,6 +203,19 @@ int
 sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload);
 
 /**
+ * @brief Parse SIP Message payload if not parsed
+ *
+ * This function can be used for delayed parsing. This way
+ * the message will only use the minimun required memory
+ * to store basic information.
+ *
+ * @param msg SIP message structure
+ * @return parsed message
+ */
+sip_msg_t *
+sip_parse_msg(sip_msg_t *msg);
+
+/**
  * @brief Parse SIP Message payload for SDP media streams
  *
  * Parse the payload content to get SDP information

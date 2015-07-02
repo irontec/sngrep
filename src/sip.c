@@ -155,24 +155,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         return NULL;
     }
 
-    // Store sorce address. Prefix too long IPv6 addresses with two dots
-    if (strlen(src) > 15) {
-        sprintf(msg_src, "..%s", src + strlen(src) - 13);
-    } else {
-        strcpy(msg_src, src);
-    }
-
-    // Store destination address. Prefix too long IPv6 addresses with two dots
-    if (strlen(dst) > 15) {
-        sprintf(msg_dst, "..%s", dst + strlen(dst) - 13);
-    } else {
-        strcpy(msg_dst, dst);
-    }
-
-    // Set Source and Destination attributes
-    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg_src, sport);
-    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg_dst, dport);
-
     // If payload is encrypted, dup payload
     if (packet->type == CAPTURE_PACKET_SIP_TLS)
         msg->payload = (u_char *)strdup((const char *)payload);
@@ -214,11 +196,28 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
         // Store current call Index
         call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", call_idx);
+        // Set message callid
+        call_set_attribute(call, SIP_ATTR_CALLID, callid);
     }
 
+    // Store sorce address. Prefix too long IPv6 addresses with two dots
+    if (strlen(src) > 15) {
+        sprintf(msg_src, "..%s", src + strlen(src) - 13);
+    } else {
+        strcpy(msg_src, src);
+    }
 
-    // Set message callid
-    msg_set_attribute(msg, SIP_ATTR_CALLID, callid);
+    // Store destination address. Prefix too long IPv6 addresses with two dots
+    if (strlen(dst) > 15) {
+        sprintf(msg_dst, "..%s", dst + strlen(dst) - 13);
+    } else {
+        strcpy(msg_dst, dst);
+    }
+
+    // Set Source and Destination attributes
+    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg_src, sport);
+    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg_dst, dport);
+
     // Store Transport attribute
     if (packet->type == CAPTURE_PACKET_SIP_UDP) {
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
@@ -234,12 +233,17 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     msg_add_packet(msg, packet);
     // Add the message to the call
     call_add_message(call, msg);
-    // Parse SIP payload
-    sip_parse_msg_payload(msg, payload);
-    // Parse media data
-    sip_parse_msg_media(msg, payload);
-    // Update Call State
-    call_update_state(call, msg);
+
+    // Always parse first call message
+    if (call_msg_count(call) == 1 || call_is_invite(call)) {
+        // Parse SIP payload
+        sip_parse_msg_payload(msg, payload);
+        // Parse media data
+        sip_parse_msg_media(msg, payload);
+        // Update Call State
+        call_update_state(call, msg);
+    }
+
     pthread_mutex_unlock(&calls.lock);
 
     // Return the loaded message
@@ -394,6 +398,15 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg_get_time(msg), time));
 
     return 0;
+}
+
+sip_msg_t *
+sip_parse_msg(sip_msg_t *msg)
+{
+    if (msg && !msg->cseq) {
+        sip_parse_msg_payload(msg, (u_char*) msg_get_payload(msg));
+    }
+    return msg;
 }
 
 void

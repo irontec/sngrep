@@ -263,8 +263,8 @@ call_flow_draw_columns(PANEL *panel)
     // Load columns
     for (msg = call_group_get_next_msg(info->group, NULL); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
-        call_flow_column_add(panel, CALLID(msg), SRC(msg));
-        call_flow_column_add(panel, CALLID(msg), DST(msg));
+        call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), SRC(msg));
+        call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), DST(msg));
     }
 
     // Add RTP columns FIXME Really
@@ -337,7 +337,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Get message attributes
     msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
-    msg_callid = msg_get_attribute(msg, SIP_ATTR_CALLID);
+    msg_callid = call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID);
     msg_method = msg_get_attribute(msg, SIP_ATTR_METHOD);
     msg_src = msg_get_attribute(msg, SIP_ATTR_SRC);
     msg_dst = msg_get_attribute(msg, SIP_ATTR_DST);

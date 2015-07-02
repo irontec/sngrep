@@ -40,7 +40,7 @@ msg_create(const char *payload)
     memset(msg, 0, sizeof(sip_msg_t));
     msg->color = 0;
     // Create a vector to store attributes
-    msg->attrs = vector_create(4, 10);
+    msg->attrs = vector_create(0, 4);
     vector_set_destroyer(msg->attrs, sip_attr_destroyer);
     // Create a vector to store sdp
     msg->medias = vector_create(0, 2);
@@ -70,6 +70,11 @@ msg_destroyer(void *msg)
     msg_destroy((sip_msg_t *)msg);
 }
 
+struct sip_call *
+msg_get_call(const sip_msg_t *msg)
+{
+    return msg->call;
+}
 
 int
 msg_media_count(sip_msg_t *msg)
