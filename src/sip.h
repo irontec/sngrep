@@ -37,95 +37,11 @@
 #ifdef WITH_PCRE
 #include <pcre.h>
 #endif
-#include "util.h"
-#include "sip_attr.h"
-#include "rtp.h"
-#include "media.h"
+#include "sip_call.h"
 #include "vector.h"
 
-//! SIP Methods
-enum sip_methods {
-    SIP_METHOD_REGISTER = 1,
-    SIP_METHOD_INVITE,
-    SIP_METHOD_SUBSCRIBE,
-    SIP_METHOD_NOTIFY,
-    SIP_METHOD_OPTIONS,
-    SIP_METHOD_PUBLISH,
-    SIP_METHOD_MESSAGE,
-    SIP_METHOD_CANCEL,
-    SIP_METHOD_BYE,
-    SIP_METHOD_ACK,
-    SIP_METHOD_PRACK,
-    SIP_METHOD_INFO,
-    SIP_METHOD_REFER,
-    SIP_METHOD_UPDATE,
-    SIP_METHOD_SENTINEL,
-};
-
-//! SIP Call State
-#define SIP_CALLSTATE_CALLSETUP "CALL SETUP"
-#define SIP_CALLSTATE_INCALL    "IN CALL"
-#define SIP_CALLSTATE_CANCELLED "CANCELLED"
-#define SIP_CALLSTATE_REJECTED  "REJECTED"
-#define SIP_CALLSTATE_COMPLETED "COMPLETED"
-
-//! Shorter declaration of sip_call structure
-typedef struct sip_call sip_call_t;
-//! Shorter declaration of sip_msg structure
-typedef struct sip_msg sip_msg_t;
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
-
-/**
- * @brief Information of a single message withing a dialog.
- *
- * Most of the data is just stored to be displayed in the UI so
- * the formats may be no the best, but the simplest for this
- * purpose. It also works as a linked lists of messages in a
- * call.
- */
-struct sip_msg {
-    //! Temporal payload data before being parsed
-    u_char *payload;
-    //! Color for this message (in color.cseq mode)
-    int color;
-    //! Request Method or Response Code @see sip_methods
-    int reqresp;
-    //! Message Cseq
-    int cseq;
-    //! Message attribute list
-    vector_t *attrs;
-    //! SDP payload information (sdp_media_t *)
-    vector_t *medias;
-    //! Captured packets for this message (capture_packet_t *)
-    vector_t *packets;
-    //! Message owner
-    sip_call_t *call;
-};
-
-/**
- * @brief Contains all information of a call and its messages
- *
- * This structure acts as header of messages list of the same
- * callid (considered a dialog). It contains some replicated
- * data from its messages to speed up searches.
- */
-struct sip_call {
-    //! Call Call-Id
-    char *callid;
-    //! Flag this call as filtered so won't be displayed
-    int filtered;
-    //! For call dialogs, mark if call has not yet finished
-    int active;
-    //! List of messages of this call (sip_msg_t*)
-    vector_t *msgs;
-    //! Message when conversation started
-    sip_msg_t *cstart_msg;
-    //! Call attribute list
-    vector_t *attrs;
-    //! RTP streams for this call (rtp_stream_t *)
-    vector_t *streams;
-};
 
 /**
  * @brief call structures head list
@@ -184,68 +100,6 @@ void
 sip_deinit();
 
 /**
- * @brief Create a new call with the given callid (Minimum required data)
- *
- * Allocated required memory for a new SIP Call. The call acts as
- * header structure to all the messages with the same callid.
- *
- * @param callid Call-ID Header value
- * @return pointer to the sip_call created
- */
-sip_call_t *
-sip_call_create(char *callid);
-
-/**
- * @brief Free all related memory from a call and remove from call list
- *
- * Deallocate memory of an existing SIP Call.
- * This will also remove all messages, calling sip_msg_destroy for each
- * one.
- *
- * @param call Call to be destroyed
- */
-void
-sip_call_destroy(sip_call_t *call);
-
-
-/**
- * @brief Wrapper around Message destroyer to clear call vectors
- */
-void
-sip_call_destroyer(void *call);
-
-/**
- * @brief Create a new message from the readed header and payload
- *
- * Allocate required memory for a new SIP message. This function
- * will only store the given information, but wont parse it until
- * needed.
- *
- * @param payload Raw payload content
- * @return a new allocated message
- */
-sip_msg_t *
-sip_msg_create(const char *payload);
-
-/**
- * @brief Destroy a SIP message and free its memory
- *
- * Deallocate memory of an existing SIP Message.
- * This function will remove the message from the call and the
- * passed pointer will be NULL.
- *
- * @param nsg SIP message to be deleted
- */
-void
-sip_msg_destroy(sip_msg_t *msg);
-
-/**
- * @brief Wrapper around Message destroyer to clear msg vectors
- */
-void
-sip_msg_destroyer(void *msg);
-
-/**
  * @brief Parses Call-ID header of a SIP message payload
  *
  * Mainly used to check if a payload contains a callid.
@@ -295,27 +149,13 @@ void
 sip_calls_stats(int *total, int *displayed);
 
 /**
- * @brief Append message to the call's message list
- *
- * Creates a relation between this call and the message, appending it
- * to the end of the message list and setting the message owner.
- *
- * @param call pointer to the call owner of the message
- * @param msg SIP message structure
- */
-void
-call_add_message(sip_call_t *call, sip_msg_t *msg);
-
-/**
  * @brief Find a call structure in calls linked list given an callid
- *
- *
  *
  * @param callid Call-ID Header value
  * @return pointer to the sip_call structure found or NULL
  */
 sip_call_t *
-call_find_by_callid(const char *callid);
+sip_find_by_callid(const char *callid);
 
 /**
  * @brief Find a call structure in calls linked list given an xcallid
@@ -327,69 +167,16 @@ call_find_by_callid(const char *callid);
  * @return pointer to the sip_call structure found or NULL
  */
 sip_call_t *
-call_find_by_xcallid(const char *xcallid);
+sip_find_by_xcallid(const char *xcallid);
 
 /**
- * @brief Getter for call messages linked list size
+ * @brief Remove al calls
  *
- * Return the number of messages stored in this call. All messages
- * share the same Call-ID
- *
- * @param call SIP call structure
- * @return how many messages are in the call
- */
-int
-call_msg_count(sip_call_t *call);
-
-/**
- * @brief Getter for media of given messages
- *
- * Return the number of media structures of given msg
- * stored in this call.
- *
- * @param msg SIP message structure
- * @return how many media structures are in the msg
- */
-int
-msg_media_count(sip_msg_t *msg);
-
-/**
- * @brief Finds the other leg of this call.
- *
- * If this call has a X-CID or X-Call-ID header, that call will be
- * find and returned. Otherwise, a call with X-CID or X-Call-ID header
- * matching the given call's Call-ID will be find or returned.
- *
- * @param call SIP call structure
- * @return The other call structure or NULL if none found
- */
-sip_call_t *
-call_get_xcall(sip_call_t *call);
-
-
-int
-call_is_active(void *item);
-
-int
-msg_has_sdp(void *item);
-
-/**
- * @brief Update Call State attribute with its last parsed message
- *
- * @param call Call structure to be updated
- * @param msg Last received message of this call
+ * This funtion will clear the call list invoking the destroy
+ * function for each one.
  */
 void
-call_update_state(sip_call_t *call, sip_msg_t *msg);
-
-/**
- * @brief Add a media structure to a msg
- *
- * @param cmsg SIP Message to be updated
- * @param media Media structure to be added
- */
-void
-msg_add_media(sip_msg_t *msg, sdp_media_t *media);
+sip_calls_clear();
 
 /**
  * @brief Get message Request/Response code
@@ -400,7 +187,7 @@ msg_add_media(sip_msg_t *msg, sdp_media_t *media);
  * @return numeric representation of Request/ResponseCode
  */
 int
-msg_get_reqresp(sip_msg_t *msg, const u_char *payload);
+sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Parse SIP Message payload to fill sip_msg structe
@@ -412,7 +199,7 @@ msg_get_reqresp(sip_msg_t *msg, const u_char *payload);
  * @return 0 in all cases
  */
 int
-msg_parse_payload(sip_msg_t *msg, const u_char *payload);
+sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Parse SIP Message payload for SDP media streams
@@ -423,77 +210,7 @@ msg_parse_payload(sip_msg_t *msg, const u_char *payload);
  * @return 0 in all cases
  */
 void
-msg_parse_media(sip_msg_t *msg, const u_char *payload);
-
-/**
- * @brief Check if a package is a retransmission
- *
- * This function will compare its payload with the previous message
- * in the dialog, to check if it has the same content.
- *
- * @param msg SIP message that will be checked
- * @return 1 if the previous message is equal to msg, 0 otherwise
- */
-int
-msg_is_retrans(sip_msg_t *msg);
-
-/**
- * @brief Check if a message is a Request or response
- *
- * @param msg SIP message that will be checked
- * @return 1 if the message is a request, 0 if a response
- */
-int
-msg_is_request(sip_msg_t *msg);
-
-/**
- * @brief Add a new packet for given message
- *
- * A SIP message can have multiple fragmented packets to
- * store its payload;
- *
- * @param msg SIP message that will store this packet
- * @param packet Captured packet information
- */
-void
-msg_add_packet(sip_msg_t *msg, capture_packet_t *packet);
-
-/**
- * @brief Get SIP Message payload
- */
-const char *
-msg_get_payload(sip_msg_t *msg);
-
-/**
- * @brief Get summary of message header data
- *
- * For raw prints, it's handy to have the ngrep header style message
- * data.
- *
- * @param msg SIP message
- * @param out pointer to allocated memory to contain the header output
- * @returns pointer to out
- */
-char *
-msg_get_header(sip_msg_t *msg, char *out);
-
-/**
- * @brief Get Time of message from packet header
- *
- * @param msg SIP message
- * @return timeval structure with message first packet time
- */
-struct timeval
-msg_get_time(sip_msg_t *msg);
-
-/**
- * @brief Remove al calls
- *
- * This funtion will clear the call list invoking the destroy
- * function for each one.
- */
-void
-sip_calls_clear();
+sip_parse_msg_media(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Set Capture Matching expression
@@ -514,57 +231,6 @@ sip_set_match_expression(const char *expr, int insensitive, int invert);
  */
 int
 sip_check_match_expression(const char *payload);
-
-/**
- * @brief Sets the attribute value for a given call
- *
- * This function acts as wrapper of sip call attributes
- *
- * @param call SIP call structure
- * @param id Attribute id
- * @param value Attribute value
- */
-void
-call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *fmt, ...);
-
-/**
- * @brief Return a call attribute value
- *
- * This function will be used to avoid accessing call structure
- * fields directly.
- * @todo Code a proper way to store this information
- *
- * @param call SIP call structure
- * @param id Attribute id
- * @return Attribute value or NULL if not found
- */
-const char *
-call_get_attribute(struct sip_call *call, enum sip_attr_id id);
-
-/**
- * @brief Sets the attribute value for a given message
- *
- * This function acts as wrapper of sip message attributes
- *
- * @param msg SIP message structure
- * @param id Attribute id
- * @param value Attribute value
- */
-void
-msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *fmt, ...);
-
-/**
- * @brief Return a message attribute value
- *
- * This function will be used to avoid accessing call structure
- * fields directly.
- *
- * @param msg SIP message structure
- * @param id Attribute id
- * @return Attribute value or NULL if not found
- */
-const char *
-msg_get_attribute(struct sip_msg *msg, enum sip_attr_id id);
 
 /**
  * @brief Check if this msg is affected by filters
@@ -596,6 +262,19 @@ sip_method_str(enum sip_methods method);
  */
 int
 sip_method_from_str(const char *method);
+
+/**
+ * @brief Get summary of message header data
+ *
+ * For raw prints, it's handy to have the ngrep header style message
+ * data.
+ *
+ * @param msg SIP message
+ * @param out pointer to allocated memory to contain the header output
+ * @returns pointer to out
+ */
+char *
+sip_get_msg_header(sip_msg_t *msg, char *out);
 
 /**
  * @brief Return address formatted depending on active settings

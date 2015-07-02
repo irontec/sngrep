@@ -61,7 +61,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
 
     // Create a vector to store calls
     calls.list = vector_create(200, 50);
-    vector_set_destroyer(calls.list, sip_call_destroyer);
+    vector_set_destroyer(calls.list, call_destroyer);
 
     // Create hash table for callid search
     hcreate(calls.limit);
@@ -108,111 +108,6 @@ sip_deinit()
     pthread_mutex_destroy(&calls.lock);
 }
 
-sip_call_t *
-sip_call_create(char *callid)
-{
-    ENTRY entry;
-    int index;
-    sip_call_t *call;
-
-    // Initialize a new call structure
-    if (!(call = malloc(sizeof(sip_call_t))))
-        return NULL;
-    memset(call, 0, sizeof(sip_call_t));
-
-    // Add this call to the call list
-    pthread_mutex_lock(&calls.lock);
-    index = vector_append(calls.list, call);
-    pthread_mutex_unlock(&calls.lock);
-
-    // Store Call-Id
-    call->callid = strdup(callid);
-
-    // Store this call in hash table
-    entry.key = call->callid;
-    entry.data = (void *) call;
-    hsearch(entry, ENTER);
-
-    // Create a vector to store call messages
-    call->msgs = vector_create(10, 5);
-    vector_set_destroyer(call->msgs, sip_msg_destroyer);
-
-    // Create a vector to store call attributes
-    call->attrs = vector_create(1, 1);
-    vector_set_destroyer(call->attrs, sip_attr_destroyer);
-
-    // Create a vector to store RTP streams
-    call->streams = vector_create(0, 2);
-    vector_set_destroyer(call->streams, vector_generic_destroyer);
-
-    // Initialize call filter status
-    call->filtered = -1;
-
-    // Store current call Index
-    call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", index);
-
-    return call;
-}
-
-void
-sip_call_destroy(sip_call_t *call)
-{
-    // Remove all call messages
-    vector_destroy(call->msgs);
-    // Remove all call streams
-    vector_destroy(call->streams);
-    // Remove all call attributes
-    vector_destroy(call->attrs);
-    // Free it!
-    free(call->callid);
-    free(call);
-}
-
-void
-sip_call_destroyer(void *call)
-{
-    sip_call_destroy((sip_call_t*)call);
-}
-
-sip_msg_t *
-sip_msg_create(const char *payload)
-{
-    sip_msg_t *msg;
-
-    if (!(msg = malloc(sizeof(sip_msg_t))))
-        return NULL;
-    memset(msg, 0, sizeof(sip_msg_t));
-    msg->color = 0;
-    // Create a vector to store attributes
-    msg->attrs = vector_create(4, 10);
-    vector_set_destroyer(msg->attrs, sip_attr_destroyer);
-    // Create a vector to store sdp
-    msg->medias = vector_create(0, 2);
-    vector_set_destroyer(msg->medias, vector_generic_destroyer);
-    // Create a vector to store packets
-    msg->packets = vector_create(1, 1);
-    vector_set_destroyer(msg->packets, capture_packet_destroyer);
-    return msg;
-}
-
-void
-sip_msg_destroy(sip_msg_t *msg)
-{
-    // Free message attribute list
-    vector_destroy(msg->attrs);
-    // Free message SDP media
-    vector_destroy(msg->medias);
-    // Free message packets
-    vector_destroy(msg->packets);
-    // Free all memory
-    free(msg);
-}
-
-void
-sip_msg_destroyer(void *msg)
-{
-    sip_msg_destroy((sip_msg_t *)msg);
-}
 
 char *
 sip_get_callid(const char* payload)
@@ -236,8 +131,10 @@ sip_get_callid(const char* payload)
 sip_msg_t *
 sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload)
 {
+    ENTRY entry;
     sip_msg_t *msg;
     sip_call_t *call;
+    int call_idx;
     char *callid;
     char msg_src[ADDRESSLEN];
     char msg_dst[ADDRESSLEN];
@@ -248,16 +145,16 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     }
 
     // Create a new message from this data
-    if (!(msg = sip_msg_create((const char*) payload))) {
+    if (!(msg = msg_create((const char*) payload))) {
         return NULL;
     }
 
     // Get Method and request for the following checks
     // There is no need to parse all payload at this point
     // If no response or request code is found, this is not a SIP message
-    if (!msg_get_reqresp(msg, payload)) {
+    if (!sip_get_msg_reqresp(msg, payload)) {
         // Deallocate message memory
-        sip_msg_destroy(msg);
+        msg_destroy(msg);
         free(callid);
         return NULL;
     }
@@ -286,12 +183,12 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
     pthread_mutex_lock(&calls.lock);
     // Find the call for this msg
-    if (!(call = call_find_by_callid(callid))) {
+    if (!(call = sip_find_by_callid(callid))) {
 
         // Check if payload matches expression
         if (!sip_check_match_expression((const char*) payload)) {
             // Deallocate message memory
-            sip_msg_destroy(msg);
+            msg_destroy(msg);
             free(callid);
             pthread_mutex_unlock(&calls.lock);
             return NULL;
@@ -301,7 +198,7 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         if (calls.only_calls) {
             if (msg->reqresp != SIP_METHOD_INVITE) {
                 // Deallocate message memory
-                sip_msg_destroy(msg);
+                msg_destroy(msg);
                 free(callid);
                 pthread_mutex_unlock(&calls.lock);
                 return NULL;
@@ -313,7 +210,7 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         if (calls.ignore_incomplete) {
             if (msg->reqresp > SIP_METHOD_MESSAGE) {
                 // Deallocate message memory
-                sip_msg_destroy(msg);
+                msg_destroy(msg);
                 free(callid);
                 pthread_mutex_unlock(&calls.lock);
                 return NULL;
@@ -323,20 +220,33 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         // Check if this message is ignored by configuration directive
         if (sip_check_msg_ignore(msg)) {
             // Deallocate message memory
-            sip_msg_destroy(msg);
+            msg_destroy(msg);
             free(callid);
             pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
 
         // Create the call if not found
-        if (!(call = sip_call_create(callid))) {
+        if (!(call = call_create(callid))) {
             // Deallocate message memory
-            sip_msg_destroy(msg);
+            msg_destroy(msg);
             free(callid);
             pthread_mutex_unlock(&calls.lock);
             return NULL;
         }
+
+        // Store this call in hash table
+        entry.key = call->callid;
+        entry.data = (void *) call;
+        hsearch(entry, ENTER);
+
+        // Append this call to the call list
+        pthread_mutex_lock(&calls.lock);
+        call_idx = vector_append(calls.list, call);
+        pthread_mutex_unlock(&calls.lock);
+
+        // Store current call Index
+        call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", call_idx);
     }
 
     // Set message callid
@@ -360,9 +270,9 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     // Add the message to the call
     call_add_message(call, msg);
     // Parse SIP payload
-    msg_parse_payload(msg, payload);
+    sip_parse_msg_payload(msg, payload);
     // Parse media data
-    msg_parse_media(msg, payload);
+    sip_parse_msg_media(msg, payload);
     // Update Call State
     call_update_state(call, msg);
     pthread_mutex_unlock(&calls.lock);
@@ -397,19 +307,9 @@ sip_calls_stats(int *total, int *displayed)
     pthread_mutex_unlock(&calls.lock);
 }
 
-void
-call_add_message(sip_call_t *call, sip_msg_t *msg)
-{
-    // Set the message owner
-    msg->call = call;
-    // Put this msg at the end of the msg list
-    vector_append(call->msgs, msg);
-    // Store message count
-    call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", vector_count(call->msgs));
-}
 
 sip_call_t *
-call_find_by_callid(const char *callid)
+sip_find_by_callid(const char *callid)
 {
     ENTRY entry, *eptr;
 
@@ -421,7 +321,7 @@ call_find_by_callid(const char *callid)
 }
 
 sip_call_t *
-call_find_by_xcallid(const char *xcallid)
+sip_find_by_xcallid(const char *xcallid)
 {
     const char *cur_xcallid;
     sip_call_t *cur;
@@ -437,17 +337,6 @@ call_find_by_xcallid(const char *xcallid)
     return NULL;
 }
 
-int
-call_msg_count(sip_call_t *call)
-{
-    return vector_count(call->msgs);
-}
-
-int
-msg_media_count(sip_msg_t *msg)
-{
-    return vector_count(msg->medias);
-}
 
 sip_call_t *
 call_get_xcall(sip_call_t *call)
@@ -455,103 +344,16 @@ call_get_xcall(sip_call_t *call)
     sip_call_t *xcall;
     pthread_mutex_lock(&calls.lock);
     if (call_get_attribute(call, SIP_ATTR_XCALLID)) {
-        xcall = call_find_by_callid(call_get_attribute(call, SIP_ATTR_XCALLID));
+        xcall = sip_find_by_callid(call_get_attribute(call, SIP_ATTR_XCALLID));
     } else {
-        xcall = call_find_by_xcallid(call_get_attribute(call, SIP_ATTR_CALLID));
+        xcall = sip_find_by_xcallid(call_get_attribute(call, SIP_ATTR_CALLID));
     }
     pthread_mutex_unlock(&calls.lock);
     return xcall;
 }
 
 int
-call_is_active(void *item)
-{
-    // TODO
-    sip_call_t *call = (sip_call_t *)item;
-    return call->active;
-}
-
-int
-msg_has_sdp(void *item)
-{
-    // TODO
-    sip_msg_t *msg = (sip_msg_t *)item;
-    return vector_count(msg->medias) ? 1 : 0;
-}
-
-void
-call_update_state(sip_call_t *call, sip_msg_t *msg)
-{
-    const char *callstate;
-    char dur[20];
-    int reqresp;
-    sip_msg_t *first;
-
-    // Sanity check
-    if (!call || !call->msgs || !msg)
-        return;
-
-    // Get the first message in the call
-    first = vector_first(call->msgs);
-
-    // Check First message of Call has INVITE method
-    if (first->reqresp != SIP_METHOD_INVITE) {
-        return;
-    }
-
-    // Get current message Method / Response Code
-    reqresp = msg->reqresp;
-
-    // If this message is actually a call, get its current state
-    if ((callstate = call_get_attribute(call, SIP_ATTR_CALLSTATE))) {
-        if (!strcmp(callstate, SIP_CALLSTATE_CALLSETUP)) {
-            if (reqresp == 200) {
-                // Alice and Bob are talking
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_INCALL);
-                // Store the timestap where call has started
-                call->active = 1;
-                call->cstart_msg = msg;
-            } else if (reqresp == SIP_METHOD_CANCEL) {
-                // Alice is not in the mood
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CANCELLED);
-                // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
-                call->active = 0;
-            } else if (reqresp > 400) {
-                // Bob is not in the mood
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
-                // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
-                call->active = 0;
-            }
-        } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
-            if (reqresp == SIP_METHOD_BYE) {
-                // Thanks for all the fish!
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_COMPLETED);
-                // Store Conversation duration
-                call_set_attribute(call, SIP_ATTR_CONVDUR,
-                                   timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(msg), dur));
-                call->active = 0;
-            }
-        } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, SIP_CALLSTATE_INCALL)) {
-            // Call is being setup (after proper authentication)
-            call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
-            call->active = 1;
-        } else {
-            // Store total call duration
-            call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
-        }
-    } else {
-        // This is actually a call
-        if (reqresp == SIP_METHOD_INVITE) {
-            call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
-            call->active = 1;
-        }
-    }
-}
-
-int
-msg_get_reqresp(sip_msg_t *msg, const u_char *payload)
+sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[3];
     char reqresp[20];
@@ -582,7 +384,7 @@ msg_get_reqresp(sip_msg_t *msg, const u_char *payload)
 }
 
 int
-msg_parse_payload(sip_msg_t *msg, const u_char *payload)
+sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
     char date[12], time[20], cseq[11];
@@ -623,7 +425,7 @@ msg_parse_payload(sip_msg_t *msg, const u_char *payload)
 }
 
 void
-msg_parse_media(sip_msg_t *msg, const u_char *payload)
+sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
     char address[ADDRESSLEN];
@@ -693,73 +495,6 @@ msg_parse_media(sip_msg_t *msg, const u_char *payload)
 
 }
 
-int
-msg_is_retrans(sip_msg_t *msg)
-{
-    sip_msg_t *prev = NULL;
-    vector_iter_t it;
-
-    // Get previous message in call
-    it = vector_iterator(msg->call->msgs);
-    vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
-    prev = vector_iterator_prev(&it);
-
-    return (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev)));
-}
-
-int
-msg_is_request(sip_msg_t *msg)
-{
-    return msg->reqresp < SIP_METHOD_SENTINEL;
-}
-
-void
-msg_add_packet(sip_msg_t *msg, capture_packet_t *packet)
-{
-    vector_append(msg->packets, packet);
-}
-
-const char *
-msg_get_payload(sip_msg_t *msg)
-{
-    // Return Message payload pointer
-    if (msg->payload)
-        return (const char *)msg->payload;
-
-    // Calculate message payload pointer
-    // TODO Multi packet support
-    capture_packet_t *packet = vector_first(msg->packets);
-    packet->data[packet->size - 1] = '\0';
-    msg->payload = packet->data + packet->payload_start;
-    return (const char *) msg->payload;
-}
-
-char *
-msg_get_header(sip_msg_t *msg, char *out)
-{
-    // Source and Destination address
-    char from_addr[80], to_addr[80];
-
-    // We dont use Message attributes here because it contains truncated data
-    // This should not overload too much as all results should be already cached
-    sprintf(from_addr, "%s", sip_address_port_format(SRC(msg)));
-    sprintf(to_addr, "%s", sip_address_port_format(DST(msg)));
-
-    // Get msg header
-    sprintf(out, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
-    return out;
-}
-
-struct timeval
-msg_get_time(sip_msg_t *msg)
-{
-    struct timeval t = { };
-    capture_packet_t *packet;
-
-    if (msg && (packet = vector_first(msg->packets)))
-        return packet->header->ts;
-    return t;
-}
 
 void
 sip_calls_clear()
@@ -824,62 +559,6 @@ sip_check_match_expression(const char *payload)
 #endif
 }
 
-void
-call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *fmt, ...)
-{
-    char value[512];
-
-    // Get the actual value for the attribute
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf(value, fmt, ap);
-    va_end(ap);
-
-    sip_attr_set(call->attrs, id, value);
-}
-
-const char *
-call_get_attribute(sip_call_t *call, enum sip_attr_id id)
-{
-    if (!call)
-        return NULL;
-
-    switch (id) {
-        case SIP_ATTR_CALLINDEX:
-        case SIP_ATTR_MSGCNT:
-        case SIP_ATTR_CALLSTATE:
-        case SIP_ATTR_CONVDUR:
-        case SIP_ATTR_TOTALDUR:
-            return sip_attr_get_value(call->attrs, id);
-        default:
-            return msg_get_attribute(vector_first(call->msgs), id);
-    }
-
-    return NULL;
-}
-
-void
-msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *fmt, ...)
-{
-    char value[512];
-
-    // Get the actual value for the attribute
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf(value, fmt, ap);
-    va_end(ap);
-
-    sip_attr_set(msg->attrs, id, value);
-}
-
-const char *
-msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
-{
-    if (!msg)
-        return NULL;
-
-    return sip_attr_get_value(msg->attrs, id);
-}
 
 int
 sip_check_msg_ignore(sip_msg_t *msg)
@@ -943,6 +622,22 @@ sip_method_from_str(const char *method)
         if (!strcmp(method, sip_method_str(i)))
             return i;
     return atoi(method);
+}
+
+char *
+sip_get_msg_header(sip_msg_t *msg, char *out)
+{
+    // Source and Destination address
+    char from_addr[80], to_addr[80];
+
+    // We dont use Message attributes here because it contains truncated data
+    // This should not overload too much as all results should be already cached
+    sprintf(from_addr, "%s", sip_address_port_format(SRC(msg)));
+    sprintf(to_addr, "%s", sip_address_port_format(DST(msg)));
+
+    // Get msg header
+    sprintf(out, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
+    return out;
 }
 
 const char *

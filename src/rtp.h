@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file capture_rtp.h
+ * @file rtp.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage rtp captured packets
