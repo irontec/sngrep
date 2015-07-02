@@ -143,7 +143,7 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg)
     int number = 0;
     sip_msg_t *cur = NULL;
     while ((cur = call_group_get_next_msg(group, cur))) {
-        if (group->sdp_only && !msg->sdp)
+        if (group->sdp_only && !msg_has_sdp(msg))
             continue;
 
         if (cur == msg)

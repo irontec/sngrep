@@ -85,10 +85,6 @@ sip_init(int limit, int only_calls, int no_incomplete)
     regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]+) .+\r$", match_flags);
     regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
-    regcomp(&calls.reg_sdp, "^Content-Type:[ ]* application/sdp\r$", match_flags);
-    regcomp(&calls.reg_sdp_addr, "^c=[^ ]+ [^ ]+ (.+)\r$", match_flags);
-    regcomp(&calls.reg_sdp_port, "^m=[^ ]+ ([0-9]+)", match_flags);
-
 }
 
 void
@@ -108,9 +104,6 @@ sip_deinit()
     regfree(&calls.reg_cseq);
     regfree(&calls.reg_from);
     regfree(&calls.reg_to);
-    regfree(&calls.reg_sdp);
-    regfree(&calls.reg_sdp_addr);
-    regfree(&calls.reg_sdp_port);
     // Remove calls mutex
     pthread_mutex_destroy(&calls.lock);
 }
@@ -366,7 +359,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     msg_add_packet(msg, packet);
     // Add the message to the call
     call_add_message(call, msg);
-
     // Parse SIP payload
     msg_parse_payload(msg, payload);
     // Parse media data
@@ -484,7 +476,7 @@ msg_has_sdp(void *item)
 {
     // TODO
     sip_msg_t *msg = (sip_msg_t *)item;
-    return msg->sdp;
+    return vector_count(msg->medias) ? 1 : 0;
 }
 
 void
@@ -645,31 +637,8 @@ msg_parse_media(sip_msg_t *msg, const u_char *payload)
     int port = 0;
     char *payload2, *tofree, *line;
 
-    // Check if this message has sdp
-    if (regexec(&calls.reg_sdp, (char*)payload, 0, 0, 0) != 0)
-        return;
-
     // Initialize variables
     memset(address, 0, sizeof(address));
-
-    // SDP Address
-    if (regexec(&calls.reg_sdp_addr, (char*)payload, 2, pmatch, 0) == 0) {
-        sprintf(address, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
-        msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, address);
-    }
-
-    // SDP Port
-    if (regexec(&calls.reg_sdp_port, (char*)payload, 2, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_SDP_PORT, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so,
-                          payload + pmatch[1].rm_so);
-        port = atoi(msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
-    }
-
-    if (!strlen(address) || !port)
-        return;
-
-    // Message has SDP
-    msg->sdp = 1;
 
     // Parse each line of payload looking for sdp information
     tofree = payload2 = strdup((char*)payload);
@@ -715,6 +684,13 @@ msg_parse_media(sip_msg_t *msg, const u_char *payload)
         }
     }
     free(tofree);
+
+    // If message has media
+    if ((media = vector_first(msg->medias))) {
+        msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, media_get_address(media));
+        msg_set_attribute(msg, SIP_ATTR_SDP_PORT, "%d", media_get_port(media));
+    }
+
 }
 
 int

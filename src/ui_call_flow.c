@@ -369,18 +369,18 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     sprintf(method, "%s", msg_method);
 
     // If message has sdp information
-    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
+    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
         // Show sdp tag in tittle
         sprintf(method, "%s (SDP)", msg_method);
     }
 
-    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
+    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
         sprintf(method, "%.3s (%s:%s)",
                 msg_method,
                 msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS),
                 msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
     }
-    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
         sprintf(method, "%.3s (%s)",
                 msg_method,
                 msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS));
@@ -441,7 +441,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
     cline ++;
     // Draw media information
-    if (msg->sdp && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
         medias = vector_iterator(msg->medias);
         while ((media = vector_iterator_next(&medias))) {
             sprintf(mediastr, "%s %d (%s)",
@@ -679,7 +679,7 @@ int
 call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
-        if (!arrow->msg->sdp)
+        if (!msg_has_sdp(arrow->msg))
             return 2;
         if (setting_has_value(SETTING_CF_SDP_INFO, "off"))
             return 2;

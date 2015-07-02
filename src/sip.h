@@ -91,8 +91,6 @@ struct sip_msg {
     int color;
     //! Request Method or Response Code @see sip_methods
     int reqresp;
-    //! This message contains sdp data
-    int sdp;
     //! Message Cseq
     int cseq;
     //! Message attribute list
@@ -164,9 +162,6 @@ struct sip_call_list {
     regex_t reg_cseq;
     regex_t reg_from;
     regex_t reg_to;
-    regex_t reg_sdp;
-    regex_t reg_sdp_addr;
-    regex_t reg_sdp_port;
 
     // Warranty thread-safe access to the calls list
     pthread_mutex_t lock;
