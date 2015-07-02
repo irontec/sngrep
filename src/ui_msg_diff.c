@@ -169,11 +169,11 @@ msg_diff_draw(PANEL *panel)
 
     // Draw first message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_line_highlight(info->one->payload, info->two->payload, highlight);
+    msg_diff_line_highlight(msg_get_payload(info->one), msg_get_payload(info->two), highlight);
     msg_diff_draw_message(info->one_win, info->one, highlight);
     // Draw second message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_line_highlight(info->two->payload, info->one->payload, highlight);
+    msg_diff_line_highlight(msg_get_payload(info->two), msg_get_payload(info->one), highlight);
     msg_diff_draw_message(info->two_win, info->two, highlight);
 
     // Redraw footer
@@ -187,6 +187,7 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
 {
     int height, width, line, column, i;
     char header[256];
+    const char * payload = msg_get_payload(msg);
 
     // Clear the window
     werase(win);
@@ -201,11 +202,11 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
     // Print msg payload
     line = 2;
     column = 0;
-    for (i = 0; i < strlen(msg->payload); i++) {
-        if (msg->payload[i] == '\r')
+    for (i = 0; i < strlen(payload); i++) {
+        if (payload[i] == '\r')
             continue;
 
-        if (column == width || msg->payload[i] == '\n') {
+        if (column == width || payload[i] == '\n') {
             line++;
             column = 0;
             continue;
@@ -221,7 +222,7 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
         }
 
         // Put next character in position
-        mvwaddch(win, line, column++, msg->payload[i]);
+        mvwaddch(win, line, column++, payload[i]);
     }
 
     // Redraw raw win

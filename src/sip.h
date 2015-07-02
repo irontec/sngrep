@@ -96,9 +96,7 @@ struct sip_msg {
     //! Destination port
     u_short dport;
     //! Temporal payload data before being parsed
-    char *payload;
-    //! Flag to determine if message payload has been parsed
-    int parsed;
+    u_char *payload;
     //! Color for this message (in color.cseq mode)
     int color;
     //! Request Method or Response Code @see sip_methods
@@ -284,8 +282,7 @@ sip_get_callid(const char* payload);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short sport,
-                 const char *dst, u_short dport, u_char *payload);
+sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload);
 
 /**
  * @brief Getter for calls linked list size
@@ -416,7 +413,7 @@ msg_add_media(sip_msg_t *msg, sdp_media_t *media);
  * @return numeric representation of Request/ResponseCode
  */
 int
-msg_get_reqresp(sip_msg_t *msg);
+msg_get_reqresp(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Parse SIP Message payload to fill sip_msg structe
@@ -428,8 +425,7 @@ msg_get_reqresp(sip_msg_t *msg);
  * @return 0 in all cases
  */
 int
-msg_parse_payload(sip_msg_t *msg, const char *payload);
-
+msg_parse_payload(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Parse SIP Message payload for SDP media streams
@@ -440,7 +436,7 @@ msg_parse_payload(sip_msg_t *msg, const char *payload);
  * @return 0 in all cases
  */
 void
-msg_parse_media(sip_msg_t *msg);
+msg_parse_media(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Check if a package is a retransmission
@@ -474,6 +470,12 @@ msg_is_request(sip_msg_t *msg);
  */
 void
 msg_add_packet(sip_msg_t *msg, capture_packet_t *packet);
+
+/**
+ * @brief Get SIP Message payload
+ */
+const char *
+msg_get_payload(sip_msg_t *msg);
 
 /**
  * @brief Get summary of message header data

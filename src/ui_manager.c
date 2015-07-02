@@ -512,7 +512,7 @@ int
 draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
 {
     int height, width, line, column, i;
-    char *cur_line = msg->payload;
+    const char *cur_line, *payload;
     int syntax = setting_enabled(SETTING_SYNTAX);
 
     // Default text format
@@ -523,10 +523,13 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
     // Get window of main panel
     getmaxyx(win, height, width);
 
+    // Get packet payload
+    cur_line = payload = (const char *) msg_get_payload(msg);
+
     // Print msg payload
     line = starting;
     column = 0;
-    for (i = 0; i < strlen(msg->payload); i++) {
+    for (i = 0; i < strlen(payload); i++) {
         // If syntax highlighting is enabled
         if (syntax) {
             // First line highlight
@@ -540,13 +543,13 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
                     attrs = A_BOLD | COLOR_PAIR(CP_RED_ON_DEF);
 
                 // SIP URI syntax
-                if (!strncasecmp(msg->payload + i, "sip:", 4)) {
+                if (!strncasecmp(payload + i, "sip:", 4)) {
                     attrs = A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF);
                 }
             } else {
 
                 // Header syntax
-                if (strchr(cur_line, ':') && msg->payload + i < strchr(cur_line, ':'))
+                if (strchr(cur_line, ':') && payload + i < strchr(cur_line, ':'))
                     attrs = A_NORMAL | COLOR_PAIR(CP_GREEN_ON_DEF);
 
                 // Call-ID Header syntax
@@ -554,20 +557,20 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
                     attrs = A_BOLD | COLOR_PAIR(CP_MAGENTA_ON_DEF);
 
                 // CSeq Heaedr syntax
-                if (!strncasecmp(cur_line, "CSeq:", 5) && column > 5 && !isdigit(msg->payload[i]))
+                if (!strncasecmp(cur_line, "CSeq:", 5) && column > 5 && !isdigit(payload[i]))
                     attrs = A_NORMAL | COLOR_PAIR(CP_YELLOW_ON_DEF);
 
                 // tag and branch syntax
-                if (i > 0 && msg->payload[i - 1] == ';') {
+                if (i > 0 && payload[i - 1] == ';') {
                     // Highlight branch if requested
                     if (setting_enabled(SETTING_SYNTAX_BRANCH)) {
-                        if (!strncasecmp(msg->payload + i, "branch", 6)) {
+                        if (!strncasecmp(payload + i, "branch", 6)) {
                             attrs = A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF);
                         }
                     }
                     // Highlight tag if requested
                     if (setting_enabled(SETTING_SYNTAX_TAG)) {
-                        if (!strncasecmp(msg->payload + i, "tag", 3)) {
+                        if (!strncasecmp(payload + i, "tag", 3)) {
                             if (!strncasecmp(cur_line, "From:", 5)) {
                                 attrs = A_BOLD | COLOR_PAIR(CP_DEFAULT);
                             } else {
@@ -583,7 +586,7 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
             }
 
             // Remove previous syntax
-            if (strcspn(msg->payload + i, " \n;<>") == 0) {
+            if (strcspn(payload + i, " \n;<>") == 0) {
                 wattroff(win, attrs);
                 attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
             }
@@ -593,22 +596,22 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
         }
 
         // Dont print this characters
-        if (msg->payload[i] == '\r')
+        if (payload[i] == '\r')
             continue;
 
         // Store where the line begins
-        if (msg->payload[i] == '\n')
-            cur_line = msg->payload + i + 1;
+        if (payload[i] == '\n')
+            cur_line =payload + i + 1;
 
         // Move to the next line if line is filled or a we reach a line break
-        if (column > width || msg->payload[i] == '\n') {
+        if (column > width || payload[i] == '\n') {
             line++;
             column = 0;
             continue;
         }
 
         // Put next character in position
-        mvwaddch(win, line, column++, msg->payload[i]);
+        mvwaddch(win, line, column++, payload[i]);
 
         // Stop if we've reached the bottom of the window
         if (line == height)

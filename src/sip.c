@@ -145,7 +145,7 @@ sip_call_create(char *callid)
     vector_set_destroyer(call->msgs, sip_msg_destroyer);
 
     // Create a vector to store RTP streams
-    call->streams = vector_create(4, 2);
+    call->streams = vector_create(0, 2);
     vector_set_destroyer(call->streams, vector_generic_destroyer);
 
     // Initialize call filter status
@@ -185,13 +185,13 @@ sip_msg_create(const char *payload)
     if (!(msg = malloc(sizeof(sip_msg_t))))
         return NULL;
     memset(msg, 0, sizeof(sip_msg_t));
-    msg->payload = strdup(payload);
     msg->color = 0;
     // Create a vector to store sdp
     msg->medias = vector_create(0, 2);
     vector_set_destroyer(msg->medias, vector_generic_destroyer);
     // Create a vector to store packets
     msg->packets = vector_create(1, 1);
+    vector_set_destroyer(msg->packets, capture_packet_destroyer);
     return msg;
 }
 
@@ -200,10 +200,6 @@ sip_msg_destroy(sip_msg_t *msg)
 {
     // Free message attribute list
     sip_attr_list_destroy(msg->attrs);
-
-    // Free message payload pointer if not parsed
-    if (msg->payload)
-        free(msg->payload);
 
     // Free message SDP media
     vector_destroy(msg->medias);
@@ -240,8 +236,7 @@ sip_get_callid(const char* payload)
 }
 
 sip_msg_t *
-sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst,
-                 u_short dport, u_char *payload)
+sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload)
 {
     sip_msg_t *msg;
     sip_call_t *call;
@@ -260,7 +255,7 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
     // Get Method and request for the following checks
     // There is no need to parse all payload at this point
     // If no response or request code is found, this is not a SIP message
-    if (!msg_get_reqresp(msg)) {
+    if (!msg_get_reqresp(msg, payload)) {
         // Deallocate message memory
         sip_msg_destroy(msg);
         free(callid);
@@ -284,6 +279,10 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
     // Fill message data
     msg->sport = sport;
     msg->dport = dport;
+
+    // If payload is encrypted, dup payload
+    if (packet->type == CAPTURE_PACKET_SIP_TLS)
+        msg->payload = (u_char *)strdup((const char *)payload);
 
     pthread_mutex_lock(&calls.lock);
     // Find the call for this msg
@@ -342,19 +341,30 @@ sip_load_message(const struct pcap_pkthdr *header, const char *src, u_short spor
 
     // Set message callid
     msg_set_attribute(msg, SIP_ATTR_CALLID, callid);
+    // Store Transport attribute
+    if (packet->type == CAPTURE_PACKET_SIP_UDP) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
+    } else if (packet->type == CAPTURE_PACKET_SIP_TCP) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
+    } else if (packet->type == CAPTURE_PACKET_SIP_TLS) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
+    } else if (packet->type == CAPTURE_PACKET_SIP_WS) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
+    }
+
     // Dellocate callid memory
     free(callid);
 
+    // Add this SIP packet to the message
+    msg_add_packet(msg, packet);
     // Add the message to the found/created call
     call_add_message(call, msg);
-
-    msg_parse_payload(msg, msg->payload);
+    // Parse SIP payload
+    msg_parse_payload(msg, payload);
     // Parse media data
-    msg_parse_media(msg);
-
+    msg_parse_media(msg, payload);
     // Update Call State
     call_update_state(call, msg);
-
     pthread_mutex_unlock(&calls.lock);
 
     // Return the loaded message
@@ -453,40 +463,6 @@ call_get_xcall(sip_call_t *call)
     return xcall;
 }
 
-sip_msg_t *
-call_get_next_msg(sip_call_t *call, sip_msg_t *msg)
-{
-    sip_msg_t *ret;
-    pthread_mutex_lock(&calls.lock);
-    if (msg == NULL) {
-        ret = vector_first(call->msgs);
-    } else {
-        ret = vector_item(call->msgs, vector_index(call->msgs, msg) + 1);
-    }
-
-    // Parse message if not parsed
-    if (ret && !ret->parsed)
-        msg_parse_payload(ret, ret->payload);
-
-    pthread_mutex_unlock(&calls.lock);
-    return ret;
-}
-
-sip_msg_t *
-call_get_prev_msg(sip_call_t *call, sip_msg_t *msg)
-{
-    sip_msg_t *ret = NULL;
-    pthread_mutex_lock(&calls.lock);
-    ret = vector_item(call->msgs, vector_index(call->msgs, msg) - 1);
-
-    // Parse message if not parsed
-    if (ret && !ret->parsed)
-        msg_parse_payload(ret, ret->payload);
-
-    pthread_mutex_unlock(&calls.lock);
-    return ret;
-}
-
 int
 call_is_active(void *item)
 {
@@ -502,7 +478,6 @@ msg_has_sdp(void *item)
     sip_msg_t *msg = (sip_msg_t *)item;
     return msg->sdp;
 }
-
 
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
@@ -525,7 +500,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     }
 
     // Get current message Method / Response Code
-    reqresp = msg_get_reqresp(msg);
+    reqresp = msg->reqresp;
 
     // If this message is actually a call, get its current state
     if ((callstate = call_get_attribute(call, SIP_ATTR_CALLSTATE))) {
@@ -576,11 +551,10 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
 }
 
 int
-msg_get_reqresp(sip_msg_t *msg)
+msg_get_reqresp(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[3];
     char reqresp[20];
-    const char *payload = msg->payload;
 
     // If not already parsed
     if (!msg->reqresp) {
@@ -588,13 +562,13 @@ msg_get_reqresp(sip_msg_t *msg)
         memset(reqresp, 0, sizeof(reqresp));
 
         // Method & CSeq
-        if (regexec(&calls.reg_method, payload, 2, pmatch, 0) == 0) {
+        if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
             sprintf(reqresp, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
             msg_set_attribute(msg, SIP_ATTR_METHOD, reqresp);
         }
 
         // Response code
-        if (regexec(&calls.reg_response, payload, 3, pmatch, 0) == 0) {
+        if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
             msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so,
                               payload + pmatch[1].rm_so);
             sprintf(reqresp, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
@@ -608,32 +582,25 @@ msg_get_reqresp(sip_msg_t *msg)
 }
 
 int
-msg_parse_payload(sip_msg_t *msg, const char *payload)
+msg_parse_payload(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
     char date[12], time[20], cseq[11];
 
-    // If message has already been parsed, we've finished
-    if (msg->parsed)
-        return 0;
-
-    // Get Method and request for the following checks
-    msg_get_reqresp(msg);
-
     // CSeq
-    if (regexec(&calls.reg_cseq, payload, 2, pmatch, 0) == 0) {
+    if (regexec(&calls.reg_cseq, (char*)payload, 2, pmatch, 0) == 0) {
         sprintf(cseq, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
         msg->cseq = atoi(cseq);
     }
 
     // X-Call-Id
-    if (regexec(&calls.reg_xcallid, payload, 3, pmatch, 0) == 0) {
+    if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
         msg_set_attribute(msg, SIP_ATTR_XCALLID, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
                           payload + pmatch[2].rm_so);
     }
 
     // From
-    if (regexec(&calls.reg_from, payload, 4, pmatch, 0) == 0) {
+    if (regexec(&calls.reg_from, (const char *)payload, 4, pmatch, 0) == 0) {
         msg_set_attribute(msg, SIP_ATTR_SIPFROM, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
                           payload + pmatch[2].rm_so);
         msg_set_attribute(msg, SIP_ATTR_SIPFROMUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so,
@@ -641,7 +608,7 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     }
 
     // To
-    if (regexec(&calls.reg_to, payload, 4, pmatch, 0) == 0) {
+    if (regexec(&calls.reg_to, (const char *)payload, 4, pmatch, 0) == 0) {
         msg_set_attribute(msg, SIP_ATTR_SIPTO, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
                           payload + pmatch[2].rm_so);
         msg_set_attribute(msg, SIP_ATTR_SIPTOUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so,
@@ -656,14 +623,11 @@ msg_parse_payload(sip_msg_t *msg, const char *payload)
     msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg_get_time(msg), date));
     msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg_get_time(msg), time));
 
-    // Message payload has been parsed
-    msg->parsed = 1;
-
     return 0;
 }
 
 void
-msg_parse_media(sip_msg_t *msg)
+msg_parse_media(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
     char address[ADDRESSLEN];
@@ -675,25 +639,25 @@ msg_parse_media(sip_msg_t *msg)
     int media_fmt_code;
     sdp_media_t *media = NULL;
     int port = 0;
-    char *payload, *tofree, *line;
+    char *payload2, *tofree, *line;
 
     // Check if this message has sdp
-    if (regexec(&calls.reg_sdp, msg->payload, 0, 0, 0) != 0)
+    if (regexec(&calls.reg_sdp, (char*)payload, 0, 0, 0) != 0)
         return;
 
     // Initialize variables
     memset(address, 0, sizeof(address));
 
     // SDP Address
-    if (regexec(&calls.reg_sdp_addr, msg->payload, 2, pmatch, 0) == 0) {
-        sprintf(address, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, msg->payload + pmatch[1].rm_so);
+    if (regexec(&calls.reg_sdp_addr, (char*)payload, 2, pmatch, 0) == 0) {
+        sprintf(address, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
         msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, address);
     }
 
     // SDP Port
-    if (regexec(&calls.reg_sdp_port, msg->payload, 2, pmatch, 0) == 0) {
+    if (regexec(&calls.reg_sdp_port, (char*)payload, 2, pmatch, 0) == 0) {
         msg_set_attribute(msg, SIP_ATTR_SDP_PORT, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so,
-                          msg->payload + pmatch[1].rm_so);
+                          payload + pmatch[1].rm_so);
         port = atoi(msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
     }
 
@@ -704,8 +668,8 @@ msg_parse_media(sip_msg_t *msg)
     msg->sdp = 1;
 
     // Parse each line of payload looking for sdp information
-    tofree = payload = strdup(msg->payload);
-    while ((line = strsep(&payload, "\r\n")) != NULL) {
+    tofree = payload2 = strdup((char*)payload);
+    while ((line = strsep(&payload2, "\r\n")) != NULL) {
         // Check if we have a media string
         if (!strncmp(line, "m=", 2)) {
             if (sscanf(line, "m=%s %d RTP/AVP %d", media_type, &media_port, &media_fmt_pref) == 3) {
@@ -755,16 +719,12 @@ msg_is_retrans(sip_msg_t *msg)
     sip_msg_t *prev = NULL;
     vector_iter_t it;
 
-    // Sanity check
-    if (!msg || !msg->call || !msg->payload)
-        return 0;
-
     // Get previous message in call
     it = vector_iterator(msg->call->msgs);
     vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
     prev = vector_iterator_prev(&it);
 
-    return (prev && !strcasecmp(msg->payload, prev->payload));
+    return (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev)));
 }
 
 int
@@ -777,6 +737,21 @@ void
 msg_add_packet(sip_msg_t *msg, capture_packet_t *packet)
 {
     vector_append(msg->packets, packet);
+}
+
+const char *
+msg_get_payload(sip_msg_t *msg)
+{
+    // Return Message payload pointer
+    if (msg->payload)
+        return (const char *)msg->payload;
+
+    // Calculate message payload pointer
+    // TODO Multi packet support
+    capture_packet_t *packet = vector_first(msg->packets);
+    packet->data[packet->size - 1] = '\0';
+    msg->payload = packet->data + packet->payload_start;
+    return (const char *) msg->payload;
 }
 
 char *

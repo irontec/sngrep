@@ -87,7 +87,11 @@ typedef struct capture_packet capture_packet_t;
 //! Stored packet types
 enum capture_packet_type
 {
-    CAPTURE_PACKET_SIP = 0,
+    CAPTURE_PACKET_SIP_UDP = 0,
+    CAPTURE_PACKET_SIP_TCP,
+    CAPTURE_PACKET_SIP_TLS,
+    CAPTURE_PACKET_SIP_WS,
+    CAPTURE_PACKET_SIP_WSS,
     CAPTURE_PACKET_RTP,
 };
 
@@ -145,6 +149,8 @@ struct capture_packet {
     struct pcap_pkthdr *header;
     //! PCAP Packet content
     u_char *data;
+    //! PPCAP Packet content len
+    int size;
     //! Byte number where payload starts
     int payload_start;
     //! Payload length
@@ -288,6 +294,30 @@ capture_set_keyfile(const char *keyfile);
  */
 char *
 capture_last_error();
+
+/**
+ * @brief Allocate memory to store new packet data
+ */
+capture_packet_t *
+capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size, int payload_len);
+
+/**
+ * @brief Deallocate a packet structure memory
+ */
+void
+capture_packet_destroy(capture_packet_t *packet);
+
+/**
+ * @brief Destroyer function for packet vectors
+ */
+void
+capture_packet_destroyer(void *packet);
+
+/**
+ * @brief Set packet type
+ */
+void
+capture_packet_set_type(capture_packet_t *packet, int type);
 
 /**
  * @brief Close pcap handler

@@ -179,12 +179,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Total packet size
     uint32_t size_packet;
     // SIP message transport
-    int transport; /* 0 UDP, 1 TCP, 2 TLS */
+    int transport;
     // Source and Destination Ports
     u_short sport, dport;
     // Media structure for RTP packets
     rtp_stream_t *stream;
-    // Current packet data
+    // Captured packet info
     capture_packet_t *pkt;
 
     // Ignore packets while capture is paused
@@ -242,7 +242,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Only interested in UDP packets
     if (ip_proto == IPPROTO_UDP) {
         // Set transport UDP
-        transport = 0;
+        transport = CAPTURE_PACKET_SIP_UDP;
 
         // Get UDP header
         udp = (struct udphdr*) (packet + size_link + size_ip);
@@ -265,7 +265,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     } else if (ip_proto == IPPROTO_TCP) {
         // Set transport TCP
-        transport = 1;
+        transport = CAPTURE_PACKET_SIP_TCP;
 
         tcp = (struct tcphdr*) (packet + size_link + size_ip);
         tcp_size = (ip_frag_off) ? 0 : (tcp->th_off * 4);
@@ -302,13 +302,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                 }
 
                 // Set Transport TLS
-                transport = 2;
+                transport = CAPTURE_PACKET_SIP_TLS;
             }
         }
 #endif
         // Check if packet is Websocket
         if (msg_payload && capture_ws_check_packet(msg_payload, &size_payload)) {
-            transport = 3;
+            transport = CAPTURE_PACKET_SIP_WS;
         }
     } else {
         // Not handled protocol
@@ -319,41 +319,33 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     if ((int32_t) size_payload <= 0)
         return;
 
+    // Create a structure for this captured packet
+    pkt = capture_packet_create(header, packet, size_packet, size_payload);
+    capture_packet_set_type(pkt, transport);
+
     // Parse this header and payload
-    if ((msg = sip_load_message(header, ip_src, sport, ip_dst, dport, msg_payload))) {
-        // Store Transport attribute
-        if (transport == 0) {
-            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
-        } else if (transport == 1) {
-            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
-        } else if (transport == 2) {
-            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
-        } else if (transport == 3) {
-            msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
-        }
-
-        // Add this SIP packet to the message
-        pkt = malloc(sizeof(capture_packet_t));
-        pkt->type = CAPTURE_PACKET_SIP;
-        pkt->header = malloc(sizeof(struct pcap_pkthdr));
-        memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
-        pkt->data = malloc(size_packet);
-        memcpy(pkt->data, packet, size_packet);
-        pkt->payload_len = size_payload;
-        pkt->payload_start = size_packet - pkt->payload_len;
-        msg_add_packet(msg, pkt);
-
+    if ((msg = sip_load_message(pkt, ip_src, sport, ip_dst, dport, msg_payload))) {
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
-    } else {
-        if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, msg_payload))) {
-            // Store this packets in output file
-            dump_packet(capinfo.pd, header, packet);
-        }
+        // Deallocate packet duplicated payload
+        free(msg_payload);
+        return;
+    }
+
+    // Check if this packet belongs to a RTP stream
+    // TODO Store this packet in the stream
+    if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, msg_payload))) {
+        // We have an RTP packet!
+        capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
+        // Store this packets in output file
+        dump_packet(capinfo.pd, header, packet);
     }
 
     // Deallocate packet duplicated payload
     free(msg_payload);
+
+    // Not an interesting packet ...
+    capture_packet_destroy(pkt);
 }
 
 void
@@ -484,6 +476,43 @@ capture_last_error()
 {
     return pcap_geterr(capinfo.handle);
 }
+
+capture_packet_t *
+capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size, int payload_len)
+{
+    capture_packet_t *pkt;
+    pkt = malloc(sizeof(capture_packet_t));
+    pkt->size = size;
+    pkt->header = malloc(sizeof(struct pcap_pkthdr));
+    memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
+    pkt->data = malloc(size);
+    memcpy(pkt->data, packet, size);
+    pkt->payload_len = payload_len;
+    pkt->payload_start = size - pkt->payload_len;
+    return pkt;
+}
+
+void
+capture_packet_destroy(capture_packet_t *packet)
+{
+    free(packet->header);
+    free(packet->data);
+    free(packet);
+}
+
+
+void
+capture_packet_destroyer(void *packet)
+{
+    capture_packet_destroy((capture_packet_t*) packet);
+}
+
+void
+capture_packet_set_type(capture_packet_t *packet, int type)
+{
+    packet->type = type;
+}
+
 
 int
 datalink_size(int datalink)

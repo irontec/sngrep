@@ -86,7 +86,9 @@ call_raw_destroy(PANEL *panel)
         free(info);
     }
     // Delete panel window
-    free(panel_window(panel));
+    delwin(panel_window(panel));
+    // Delete panel
+    del_panel(panel);
 }
 
 call_raw_info_t *
@@ -126,6 +128,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     int payload_lines, i, column, height, width;
     // Message ngrep style Header
     char header[256];
+    char payload[2048];
 
     // Get panel information
     if (!(info = call_raw_info(panel)))
@@ -137,11 +140,14 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     // Get current pad dimensions
     getmaxyx(pad, height, width);
 
+    // Get message payload
+    strcpy(payload, msg_get_payload(msg));
+
     // Check how many lines we well need to draw this message
     payload_lines = 0;
     column = 0;
-    for (i = 0; i < strlen(msg->payload); i++) {
-        if (column == width || msg->payload[i] == '\n') {
+    for (i = 0; i < strlen(payload); i++) {
+        if (column == width || payload[i] == '\n') {
             payload_lines++;
             column = 0;
             continue;

@@ -500,5 +500,5 @@ save_msg_txt(FILE *f, sip_msg_t *msg)
 {
     fprintf(f, "%s %s %s -> %s\n%s\n\n", msg_get_attribute(msg, SIP_ATTR_DATE),
             msg_get_attribute(msg, SIP_ATTR_TIME), msg_get_attribute(msg, SIP_ATTR_SRC),
-            msg_get_attribute(msg, SIP_ATTR_DST), msg->payload);
+            msg_get_attribute(msg, SIP_ATTR_DST), msg_get_payload(msg));
 }

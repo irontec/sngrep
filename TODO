@@ -13,12 +13,6 @@ capture:
 		to make sngrep store this packets for saving them will be an
 		option.
 
-sip:
-	* Improve the way payload is stored
-		Payload is included two times. One in the msg->payload pointer
-		and also in msg->pcap_packet content. This doubles the required
-		memory.
-
 ui:
  	* Change panels initialization
 		Right now, all panels are initializated at the same, because
