@@ -85,16 +85,6 @@ typedef struct sip_call_list sip_call_list_t;
  * call.
  */
 struct sip_msg {
-    //! Message attribute list
-    char *attrs[SIP_ATTR_COUNT];
-    //! Source address
-    char src[ADDRESSLEN];
-    //! Source port
-    u_short sport;
-    //! Destination address
-    char dst[ADDRESSLEN];
-    //! Destination port
-    u_short dport;
     //! Temporal payload data before being parsed
     u_char *payload;
     //! Color for this message (in color.cseq mode)
@@ -105,6 +95,8 @@ struct sip_msg {
     int sdp;
     //! Message Cseq
     int cseq;
+    //! Message attribute list
+    vector_t *attrs;
     //! SDP payload information (sdp_media_t *)
     vector_t *medias;
     //! Captured packets for this message (capture_packet_t *)
@@ -121,8 +113,6 @@ struct sip_msg {
  * data from its messages to speed up searches.
  */
 struct sip_call {
-    //! Call attribute list
-    char *attrs[SIP_ATTR_COUNT];
     //! Call Call-Id
     char *callid;
     //! Flag this call as filtered so won't be displayed
@@ -133,6 +123,8 @@ struct sip_call {
     vector_t *msgs;
     //! Message when conversation started
     sip_msg_t *cstart_msg;
+    //! Call attribute list
+    vector_t *attrs;
     //! RTP streams for this call (rtp_stream_t *)
     vector_t *streams;
 };

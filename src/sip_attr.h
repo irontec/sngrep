@@ -30,6 +30,7 @@
 #define __SNGREP_SIP_ATTR_H
 
 #include "config.h"
+#include "vector.h"
 
 /* Some very used macros */
 #define CALLID(msg) msg_get_attribute(msg, SIP_ATTR_CALLID)
@@ -38,8 +39,10 @@
 #define TIME(msg) msg_get_attribute(msg, SIP_ATTR_TIME)
 #define DATE(msg) msg_get_attribute(msg, SIP_ATTR_DATE)
 
-//! Shorter declaration of sip_attr structure
+//! Shorter declaration of sip_attr_hdr structure
 typedef struct sip_attr_hdr sip_attr_hdr_t;
+//! Shorter declaration of sip_attr structure
+typedef struct sip_attr sip_attr_t;
 
 /**
  * @brief Available SIP Attributes
@@ -113,6 +116,17 @@ struct sip_attr_hdr {
 };
 
 /**
+ * @brief Attribute storage struct
+ */
+struct sip_attr
+{
+    //! Attribute id
+    enum sip_attr_id id;
+    //! Attribute value
+    char *value;
+};
+
+/**
  * @brief Get the header information of an Attribute
  *
  * Retrieve header data from attribute list
@@ -180,12 +194,22 @@ enum sip_attr_id
 sip_attr_from_name(const char *name);
 
 /**
- * @brief Deallocate all attributes of a list
- *
- * @param list Pointer to the attribute list
+ * @brief Allocate memory for an attribute structure
+ */
+sip_attr_t *
+sip_attr_create(enum sip_attr_id id, const char *value);
+
+/**
+ * @brief Free memory for an attribute structe
  */
 void
-sip_attr_list_destroy(char *attrs[]);
+sip_attr_destroy(sip_attr_t *attr);
+
+/**
+ * @brief Wrapper around sip_attr_destroy for attribute vectors
+ */
+void
+sip_attr_destroyer(void *attr);
 
 /**
  * @brief Sets the given attribute value to an attribute
@@ -198,7 +222,7 @@ sip_attr_list_destroy(char *attrs[]);
  * @param value Attribute value
  */
 void
-sip_attr_set(char *attrs[], enum sip_attr_id id, const char *value);
+sip_attr_set(vector_t *attrs, enum sip_attr_id id, const char *value);
 
 /**
  * @brief Gets the given attribute value to an attribute
@@ -207,7 +231,13 @@ sip_attr_set(char *attrs[], enum sip_attr_id id, const char *value);
  * This can be used for calls and message attributes.
  *
  */
+sip_attr_t *
+sip_attr_get(vector_t *attrs, enum sip_attr_id id);
+
+/**
+ * @brief Get attribute value
+ */
 const char *
-sip_attr_get(char *attrs[], enum sip_attr_id id);
+sip_attr_get_value(vector_t *attrs, enum sip_attr_id id);
 
 #endif /* __SNGREP_SIP_ATTR_H */

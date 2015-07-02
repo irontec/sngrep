@@ -144,6 +144,10 @@ sip_call_create(char *callid)
     call->msgs = vector_create(10, 5);
     vector_set_destroyer(call->msgs, sip_msg_destroyer);
 
+    // Create a vector to store call attributes
+    call->attrs = vector_create(1, 1);
+    vector_set_destroyer(call->attrs, sip_attr_destroyer);
+
     // Create a vector to store RTP streams
     call->streams = vector_create(0, 2);
     vector_set_destroyer(call->streams, vector_generic_destroyer);
@@ -165,7 +169,7 @@ sip_call_destroy(sip_call_t *call)
     // Remove all call streams
     vector_destroy(call->streams);
     // Remove all call attributes
-    sip_attr_list_destroy(call->attrs);
+    vector_destroy(call->attrs);
     // Free it!
     free(call->callid);
     free(call);
@@ -186,6 +190,9 @@ sip_msg_create(const char *payload)
         return NULL;
     memset(msg, 0, sizeof(sip_msg_t));
     msg->color = 0;
+    // Create a vector to store attributes
+    msg->attrs = vector_create(4, 10);
+    vector_set_destroyer(msg->attrs, sip_attr_destroyer);
     // Create a vector to store sdp
     msg->medias = vector_create(0, 2);
     vector_set_destroyer(msg->medias, vector_generic_destroyer);
@@ -199,13 +206,11 @@ void
 sip_msg_destroy(sip_msg_t *msg)
 {
     // Free message attribute list
-    sip_attr_list_destroy(msg->attrs);
-
+    vector_destroy(msg->attrs);
     // Free message SDP media
     vector_destroy(msg->medias);
     // Free message packets
     vector_destroy(msg->packets);
-
     // Free all memory
     free(msg);
 }
@@ -241,6 +246,8 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     sip_msg_t *msg;
     sip_call_t *call;
     char *callid;
+    char msg_src[ADDRESSLEN];
+    char msg_dst[ADDRESSLEN];
 
     // Get the Call-ID of this message
     if (!(callid = sip_get_callid((const char*) payload))) {
@@ -264,21 +271,21 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
     // Store sorce address. Prefix too long IPv6 addresses with two dots
     if (strlen(src) > 15) {
-        sprintf(msg->src, "..%s", src + strlen(src) - 13);
+        sprintf(msg_src, "..%s", src + strlen(src) - 13);
     } else {
-        strcpy(msg->src, src);
+        strcpy(msg_src, src);
     }
 
     // Store destination address. Prefix too long IPv6 addresses with two dots
     if (strlen(dst) > 15) {
-        sprintf(msg->dst, "..%s", dst + strlen(dst) - 13);
+        sprintf(msg_dst, "..%s", dst + strlen(dst) - 13);
     } else {
-        strcpy(msg->dst, dst);
+        strcpy(msg_dst, dst);
     }
 
-    // Fill message data
-    msg->sport = sport;
-    msg->dport = dport;
+    // Set Source and Destination attributes
+    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg_src, sport);
+    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg_dst, dport);
 
     // If payload is encrypted, dup payload
     if (packet->type == CAPTURE_PACKET_SIP_TLS)
@@ -357,8 +364,9 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
     // Add this SIP packet to the message
     msg_add_packet(msg, packet);
-    // Add the message to the found/created call
+    // Add the message to the call
     call_add_message(call, msg);
+
     // Parse SIP payload
     msg_parse_payload(msg, payload);
     // Parse media data
@@ -615,10 +623,6 @@ msg_parse_payload(sip_msg_t *msg, const u_char *payload)
                           payload + pmatch[3].rm_so);
     }
 
-    // Set Source and Destination attributes
-    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg->src, msg->sport);
-    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg->dst, msg->dport);
-
     // Set message Date and Time attribute
     msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg_get_time(msg), date));
     msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg_get_time(msg), time));
@@ -762,8 +766,8 @@ msg_get_header(sip_msg_t *msg, char *out)
 
     // We dont use Message attributes here because it contains truncated data
     // This should not overload too much as all results should be already cached
-    sprintf(from_addr, "%s:%u", sip_address_format(msg->src), msg->sport);
-    sprintf(to_addr, "%s:%u", sip_address_format(msg->dst), msg->dport);
+    sprintf(from_addr, "%s", sip_address_port_format(SRC(msg)));
+    sprintf(to_addr, "%s", sip_address_port_format(DST(msg)));
 
     // Get msg header
     sprintf(out, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
@@ -870,7 +874,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id)
         case SIP_ATTR_CALLSTATE:
         case SIP_ATTR_CONVDUR:
         case SIP_ATTR_TOTALDUR:
-            return sip_attr_get(call->attrs, id);
+            return sip_attr_get_value(call->attrs, id);
         default:
             return msg_get_attribute(vector_first(call->msgs), id);
     }
@@ -898,7 +902,7 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
     if (!msg)
         return NULL;
 
-    return sip_attr_get(msg->attrs, id);
+    return sip_attr_get_value(msg->attrs, id);
 }
 
 int
@@ -968,7 +972,6 @@ sip_method_from_str(const char *method)
 const char *
 sip_address_format(const char *address)
 {
-
     // Return address formatted depending on active settings
     if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
         return get_alias_value(address);
@@ -982,11 +985,11 @@ sip_address_format(const char *address)
 const char *
 sip_address_port_format(const char *addrport)
 {
-    static char aport[50];
-    char address[50];
+    static char aport[ADDRESSLEN + 6];
+    char address[ADDRESSLEN + 6];
     int port;
 
-    strncpy(aport, addrport, 50);
+    strncpy(aport, addrport, sizeof(aport));
     if (sscanf(aport, "%[^:]:%d", address, &port) == 2) {
         sprintf(aport, "%s:%d", sip_address_format(address), port);
     }

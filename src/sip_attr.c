@@ -115,30 +115,58 @@ sip_attr_from_name(const char *name) {
     return -1;
 }
 
-void
-sip_attr_list_destroy(char *attrs[])
+sip_attr_t *
+sip_attr_create(enum sip_attr_id id, const char *value)
 {
-    int i;
-    for (i = 0; i < SIP_ATTR_COUNT; i++) {
-        if (attrs[i])
-            free(attrs[i]);
-    }
+    sip_attr_t *attr;
+    // Create a new attribute struct and store it
+    if (!(attr = malloc(sizeof(sip_attr_t))))
+        return NULL;
+    attr->id = id;
+    attr->value = strdup(value);
+    return attr;
 }
 
 void
-sip_attr_set(char *attrs[], enum sip_attr_id id, const char *value)
+sip_attr_destroy(sip_attr_t *attr)
 {
-    // Free previous value if exits
-    if (attrs[id])
-        free(attrs[id]);
-    // Assign the new value
-    attrs[id] = strdup(value);
+    free(attr->value);
+    free(attr);
+}
+
+void
+sip_attr_destroyer(void *attr)
+{
+    sip_attr_destroy((sip_attr_t*) attr);
+}
+
+void
+sip_attr_set(vector_t *attrs, enum sip_attr_id id, const char *value)
+{
+    sip_attr_t *attr;
+    // Remove previous value if any
+    if ((attr = sip_attr_get(attrs, id)))
+        vector_remove(attrs, attr);
+    // Create a new attribute struct and store it
+    vector_append(attrs, sip_attr_create(id, value));
+}
+
+sip_attr_t *
+sip_attr_get(vector_t *attrs, enum sip_attr_id id)
+{
+    sip_attr_t *attr;
+    vector_iter_t it = vector_iterator(attrs);
+    while ((attr = vector_iterator_next(&it))) {
+        if (attr->id == id)
+            return attr;
+    }
+    return NULL;
 }
 
 const char *
-sip_attr_get(char *attrs[], enum sip_attr_id id)
+sip_attr_get_value(vector_t *attrs, enum sip_attr_id id)
 {
-    return attrs[id];
+    sip_attr_t *attr = sip_attr_get(attrs, id);
+    return (attr) ? attr->value : NULL;
 }
-
 
