@@ -30,6 +30,7 @@
 #define __SNGREP_SIP_CALL_H
 
 #include "config.h"
+#include <stdarg.h>
 #include "vector.h"
 #include "sip_msg.h"
 #include "sip_attr.h"

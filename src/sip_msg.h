@@ -30,6 +30,7 @@
 #define __SNGREP_SIP_MSG_H
 
 #include "config.h"
+#include <stdarg.h>
 #include "vector.h"
 #include "media.h"
 #include "rtp.h"
