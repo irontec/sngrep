@@ -42,23 +42,19 @@ call_create(char *callid)
         return NULL;
     memset(call, 0, sizeof(sip_call_t));
 
-    // Store Call-Id
-    call->callid = strdup(callid);
-
     // Create a vector to store call messages
-    call->msgs = vector_create(10, 5);
+    call->msgs = vector_create(2, 2);
     vector_set_destroyer(call->msgs, msg_destroyer);
 
     // Create a vector to store call attributes
     call->attrs = vector_create(1, 1);
     vector_set_destroyer(call->attrs, sip_attr_destroyer);
 
-    // Create a vector to store RTP streams
-    call->streams = vector_create(0, 2);
-    vector_set_destroyer(call->streams, vector_generic_destroyer);
-
     // Initialize call filter status
     call->filtered = -1;
+
+    // Set message callid
+    call_set_attribute(call, SIP_ATTR_CALLID, callid);
     return call;
 }
 
@@ -71,8 +67,6 @@ call_destroy(sip_call_t *call)
     vector_destroy(call->streams);
     // Remove all call attributes
     vector_destroy(call->attrs);
-    // Free it!
-    free(call->callid);
     free(call);
 }
 
@@ -91,6 +85,17 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     vector_append(call->msgs, msg);
     // Store message count
     call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", vector_count(call->msgs));
+}
+
+void
+call_add_stream(sip_call_t *call, rtp_stream_t *stream)
+{
+    if (!call->streams) {
+        // Create a vector to store RTP streams
+        call->streams = vector_create(2, 2);
+        vector_set_destroyer(call->streams, vector_generic_destroyer);
+    }
+    vector_append(call->streams, stream);
 }
 
 int
@@ -120,6 +125,7 @@ call_is_invite(sip_call_t *call)
 int
 call_msg_is_retrans(sip_msg_t *msg)
 {
+    return 0;
     sip_msg_t *prev = NULL;
     vector_iter_t it;
 

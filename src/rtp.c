@@ -109,7 +109,7 @@ stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const
     if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport))) {
         reverse = stream_create(stream->media, stream->ip_src, stream->sport);
         stream_complete(reverse, stream->ip_dst, stream->dport);
-        vector_append(stream->media->msg->call->streams, reverse);
+        call_add_stream(msg_get_call(stream->media->msg), reverse);
     }
 }
 

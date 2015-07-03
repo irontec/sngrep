@@ -185,7 +185,7 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
             goto skip_message;
 
         // Store this call in hash table
-        entry.key = call->callid;
+        entry.key = (char *) call_get_attribute(call, SIP_ATTR_CALLID);
         entry.data = (void *) call;
         hsearch(entry, ENTER);
 
@@ -196,8 +196,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
         // Store current call Index
         call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", call_idx);
-        // Set message callid
-        call_set_attribute(call, SIP_ATTR_CALLID, callid);
     }
 
     // Store sorce address. Prefix too long IPv6 addresses with two dots
@@ -218,17 +216,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg_src, sport);
     msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg_dst, dport);
 
-    // Store Transport attribute
-    if (packet->type == CAPTURE_PACKET_SIP_UDP) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
-    } else if (packet->type == CAPTURE_PACKET_SIP_TCP) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
-    } else if (packet->type == CAPTURE_PACKET_SIP_TLS) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
-    } else if (packet->type == CAPTURE_PACKET_SIP_WS) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
-    }
-
     // Add this SIP packet to the message
     msg_add_packet(msg, packet);
     // Add the message to the call
@@ -243,7 +230,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         // Update Call State
         call_update_state(call, msg);
     }
-
     pthread_mutex_unlock(&calls.lock);
 
     // Return the loaded message
@@ -359,6 +345,15 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
     return msg->reqresp;
 }
 
+sip_msg_t *
+sip_parse_msg(sip_msg_t *msg)
+{
+    if (msg && !msg->cseq) {
+        sip_parse_msg_payload(msg, (u_char*) msg_get_payload(msg));
+    }
+    return msg;
+}
+
 int
 sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 {
@@ -397,16 +392,19 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg_get_time(msg), date));
     msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg_get_time(msg), time));
 
-    return 0;
-}
-
-sip_msg_t *
-sip_parse_msg(sip_msg_t *msg)
-{
-    if (msg && !msg->cseq) {
-        sip_parse_msg_payload(msg, (u_char*) msg_get_payload(msg));
+    capture_packet_t *packet = vector_first(msg->packets);
+    // Store Transport attribute
+    if (packet->type == CAPTURE_PACKET_SIP_UDP) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
+    } else if (packet->type == CAPTURE_PACKET_SIP_TCP) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
+    } else if (packet->type == CAPTURE_PACKET_SIP_TLS) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
+    } else if (packet->type == CAPTURE_PACKET_SIP_WS) {
+        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
     }
-    return msg;
+
+    return 0;
 }
 
 void
@@ -439,7 +437,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                     media_set_port(media, media_port);
                     media_set_address(media, media_address);
                     media_set_format_code(media, media_fmt_pref);
-                    vector_append(msg->medias, media);
+                    msg_add_media(msg, media);
 
                     /**
                      * From SDP we can only guess destination address port. RTP Capture process
@@ -448,7 +446,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                      */
                     // Create a new stream with this destination address:port
                     if (!call_msg_is_retrans(msg)) {
-                        vector_append(msg->call->streams, stream_create(media, media_address, media_port));
+                        call_add_stream(msg_get_call(msg), stream_create(media, media_address, media_port));
                     }
                 }
             }

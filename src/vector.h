@@ -42,11 +42,11 @@ typedef struct vector_iter vector_iter_t;
 struct vector
 {
     //! Number of elements in list
-    int count;
+    short count;
     //! Total space in list (available + elements)
-    int limit;
+    short limit;
     //! Number of new spaces to be reallocated
-    int step;
+    short step;
     //! Elements of the vector
     void **list;
     //! Function to destroy one item

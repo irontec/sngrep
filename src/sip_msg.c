@@ -34,17 +34,13 @@ sip_msg_t *
 msg_create(const char *payload)
 {
     sip_msg_t *msg;
-
     if (!(msg = malloc(sizeof(sip_msg_t))))
         return NULL;
     memset(msg, 0, sizeof(sip_msg_t));
-    msg->color = 0;
+
     // Create a vector to store attributes
-    msg->attrs = vector_create(0, 4);
+    msg->attrs = vector_create(4, 4);
     vector_set_destroyer(msg->attrs, sip_attr_destroyer);
-    // Create a vector to store sdp
-    msg->medias = vector_create(0, 2);
-    vector_set_destroyer(msg->medias, vector_generic_destroyer);
     // Create a vector to store packets
     msg->packets = vector_create(1, 1);
     vector_set_destroyer(msg->packets, capture_packet_destroyer);
@@ -102,6 +98,17 @@ msg_add_packet(sip_msg_t *msg, capture_packet_t *packet)
     vector_append(msg->packets, packet);
 }
 
+void
+msg_add_media(sip_msg_t *msg, sdp_media_t *media)
+{
+    if (!msg->medias) {
+        // Create a vector to store sdp
+        msg->medias = vector_create(2, 2);
+        vector_set_destroyer(msg->medias, vector_generic_destroyer);
+    }
+    vector_append(msg->medias, media);
+}
+
 const char *
 msg_get_payload(sip_msg_t *msg)
 {
@@ -147,4 +154,3 @@ msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
 {
     return sip_attr_get_value(msg->attrs, id);
 }
-

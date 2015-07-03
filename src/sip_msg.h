@@ -70,12 +70,10 @@ struct sip_call;
 struct sip_msg {
     //! Temporal payload data before being parsed
     u_char *payload;
-    //! Color for this message (in color.cseq mode)
-    int color;
     //! Request Method or Response Code @see sip_methods
     int reqresp;
     //! Message Cseq
-    int cseq;
+    u_int cseq;
     //! Message attribute list
     vector_t *attrs;
     //! SDP payload information (sdp_media_t *)
@@ -171,6 +169,18 @@ msg_is_request(sip_msg_t *msg);
  */
 void
 msg_add_packet(sip_msg_t *msg, capture_packet_t *packet);
+
+/**
+ * @brief Add a new media for given message
+ *
+ * A SIP message can have multiple media description in
+ * the SIP payload content
+ *
+ * @param msg SIP message that will store this packet
+ * @param media parsed media structure from payload
+ */
+void
+msg_add_media(sip_msg_t *msg, sdp_media_t *media);
 
 /**
  * @brief Get SIP Message payload

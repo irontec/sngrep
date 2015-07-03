@@ -129,6 +129,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     // Message ngrep style Header
     char header[256];
     char payload[2048];
+    int color;
 
     // Get panel information
     if (!(info = call_raw_info(panel)))
@@ -170,20 +171,20 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     if (setting_has_value(SETTING_COLORMODE, "request")) {
         // Determine arrow color
         if (msg_is_request(msg)) {
-            msg->color = CP_RED_ON_DEF;
+            color = CP_RED_ON_DEF;
         } else {
-            msg->color = CP_GREEN_ON_DEF;
+            color = CP_GREEN_ON_DEF;
         }
     } else if (info->group && setting_has_value(SETTING_COLORMODE, "callid")) {
         // Color by call-id
-        msg->color = call_group_color(info->group, msg->call);
+        color = call_group_color(info->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        msg->color = msg->cseq % 7 + 1;
+        color = msg->cseq % 7 + 1;
     }
 
     // Turn on the message color
-    wattron(pad, COLOR_PAIR(msg->color));
+    wattron(pad, COLOR_PAIR(color));
 
     // Print msg header
     wattron(pad, A_BOLD);

@@ -191,18 +191,6 @@ int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload);
 
 /**
- * @brief Parse SIP Message payload to fill sip_msg structe
- *
- * Parse the payload content to set message attributes.
- *
- * @param msg SIP message structure
- * @param payload SIP message payload
- * @return 0 in all cases
- */
-int
-sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload);
-
-/**
  * @brief Parse SIP Message payload if not parsed
  *
  * This function can be used for delayed parsing. This way
@@ -214,6 +202,18 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload);
  */
 sip_msg_t *
 sip_parse_msg(sip_msg_t *msg);
+
+/**
+ * @brief Parse SIP Message payload to fill sip_msg structe
+ *
+ * Parse the payload content to set message attributes.
+ *
+ * @param msg SIP message structure
+ * @param payload SIP message payload
+ * @return 0 in all cases
+ */
+int
+sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Parse SIP Message payload for SDP media streams

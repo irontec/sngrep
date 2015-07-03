@@ -52,12 +52,10 @@ typedef struct sip_call sip_call_t;
  * data from its messages to speed up searches.
  */
 struct sip_call {
-    //! Call Call-Id
-    char *callid;
     //! Flag this call as filtered so won't be displayed
-    int filtered;
+    signed char filtered;
     //! For call dialogs, mark if call has not yet finished
-    int active;
+    u_char active;
     //! List of messages of this call (sip_msg_t*)
     vector_t *msgs;
     //! Message when conversation started
@@ -111,6 +109,16 @@ call_destroyer(void *call);
 void
 call_add_message(sip_call_t *call, sip_msg_t *msg);
 
+/**
+ * @brief Append a new RTP stream to the call
+ *
+ * Add a new stream to be monitored
+ *
+ * @param call pointer to the call owner of the stream
+ * @param stream RTP stream data
+ */
+void
+call_add_stream(sip_call_t *call, rtp_stream_t *stream);
 
 /**
  * @brief Getter for call messages linked list size

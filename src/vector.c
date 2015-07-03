@@ -38,25 +38,18 @@ vector_create(int limit, int step)
     // Allocate memory for this vector data
     if (!(v = malloc(sizeof(vector_t))))
         return NULL;
-
     memset(v, 0, sizeof(vector_t));
-
-    // Initial memory allocation
-    if (!(v->list = malloc(sizeof(void *) * limit))) {
-        vector_destroy(v);
-        return NULL;
-    }
-
     v->limit = limit;
     v->step = step;
-
-    // Return vector pointer
     return v;
 }
 
 void
 vector_destroy(vector_t *vector)
 {
+    // Nothing to free. Done.
+    if (!vector)
+        return;
     // Remove all items if a destroyer is set
     vector_clear(vector);
     // Deallocate vector list
@@ -77,9 +70,15 @@ vector_clear(vector_t *vector)
 int
 vector_append(vector_t *vector, void *item)
 {
+
     // Sanity check
     if (!item)
         return vector->count;
+
+    // Check if the vector has been initializated
+    if (!vector->list) {
+        vector->list = malloc(sizeof(void *) * vector->limit);
+    }
 
     // Check if we need to increase vector size
     if (vector->count == vector->limit) {
@@ -88,6 +87,7 @@ vector_append(vector_t *vector, void *item)
         // Add more memory to the list
         vector->list = realloc(vector->list, sizeof(void *) * vector->limit);
     }
+
     // Add item to the end of the list
     vector->list[vector->count++] = item;
     return vector->count;
@@ -126,7 +126,7 @@ vector_generic_destroyer(void *item)
 void *
 vector_item(vector_t *vector, int index)
 {
-    if (index >= vector->count || index < 0)
+    if (!vector || index >= vector->count || index < 0)
         return NULL;
     return vector->list[index];
 }
@@ -152,7 +152,7 @@ vector_index(vector_t *vector, void *item)
 int
 vector_count(vector_t *vector)
 {
-    return vector->count;
+    return (vector) ? vector->count : 0;
 }
 
 vector_iter_t
@@ -197,7 +197,7 @@ vector_iterator_next(vector_iter_t *it)
 {
     void *item;
 
-    if (it->current >= vector_count(it->vector))
+    if (!it || it->current >= vector_count(it->vector))
         return NULL;
 
     while ((item = vector_item(it->vector, ++it->current))) {

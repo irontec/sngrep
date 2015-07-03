@@ -318,6 +318,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     char mediastr[40];
     sip_msg_t *msg = arrow->msg;
     vector_iter_t medias;
+    int color;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -423,17 +424,17 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Color the message {
     if (setting_has_value(SETTING_COLORMODE, "request")) {
         // Color by request / response
-        msg->color = (msg_is_request(msg)) ? CP_RED_ON_DEF : CP_GREEN_ON_DEF;
+        color = (msg_is_request(msg)) ? CP_RED_ON_DEF : CP_GREEN_ON_DEF;
     } else if (setting_has_value(SETTING_COLORMODE, "callid")) {
         // Color by call-id
-        msg->color = call_group_color(info->group, msg->call);
+        color = call_group_color(info->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        msg->color = msg->cseq % 7 + 1;
+        color = msg->cseq % 7 + 1;
     }
 
     // Turn on the message color
-    wattron(win, COLOR_PAIR(msg->color));
+    wattron(win, COLOR_PAIR(color));
 
     // Clear the line
     mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
