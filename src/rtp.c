@@ -119,6 +119,14 @@ stream_get_count(rtp_stream_t *stream)
     return stream->pktcnt;
 }
 
+struct sip_call *
+stream_get_call(rtp_stream_t *stream)
+{
+    if (stream && stream->media && stream->media->msg)
+        return stream->media->msg->call;
+    return NULL;
+}
+
 const char *
 rtp_get_codec(int code, const char *format)
 {

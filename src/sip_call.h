@@ -64,6 +64,8 @@ struct sip_call {
     vector_t *attrs;
     //! RTP streams for this call (rtp_stream_t *)
     vector_t *streams;
+    //! RTP packets for this call (capture_packet_t *)
+    vector_t *rtp_packets;
 };
 
 /**
@@ -119,6 +121,15 @@ call_add_message(sip_call_t *call, sip_msg_t *msg);
  */
 void
 call_add_stream(sip_call_t *call, rtp_stream_t *stream);
+
+/**
+ * @brief Append a new RTP packet to the call
+ *
+ * @param call pointer to the call owner of the stream
+ * @param packet new RTP packet from call rtp streams
+ */
+void
+call_add_rtp_packet(sip_call_t *call, capture_packet_t *packet);
 
 /**
  * @brief Getter for call messages linked list size

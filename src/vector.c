@@ -90,6 +90,12 @@ vector_append(vector_t *vector, void *item)
 
     // Add item to the end of the list
     vector->list[vector->count++] = item;
+
+    // Check if vector has a sorter
+    if (vector->sorter) {
+        vector->sorter(vector, item);
+    }
+
     return vector->count;
 }
 
@@ -118,6 +124,12 @@ vector_set_destroyer(vector_t *vector, void (*destroyer) (void *item))
 }
 
 void
+vector_set_sorter(vector_t *vector, void (*sorter) (vector_t *vector, void *item))
+{
+    vector->sorter = sorter;
+}
+
+void
 vector_generic_destroyer(void *item)
 {
     free(item);
@@ -129,6 +141,14 @@ vector_item(vector_t *vector, int index)
     if (!vector || index >= vector->count || index < 0)
         return NULL;
     return vector->list[index];
+}
+
+void
+vector_set_item(vector_t *vector, int index, void *item)
+{
+    if (!vector || index >= vector->count || index < 0)
+        return;
+    vector->list[index] = item;
 }
 
 void *

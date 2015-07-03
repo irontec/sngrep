@@ -31,6 +31,9 @@
 #ifndef __SNGREP_VECTOR_H_
 #define __SNGREP_VECTOR_H_
 
+#include "config.h"
+#include <sys/types.h>
+
 //! Shorter declaration of vector structure
 typedef struct vector vector_t;
 //! Shorter declaration of iterator structure
@@ -42,15 +45,17 @@ typedef struct vector_iter vector_iter_t;
 struct vector
 {
     //! Number of elements in list
-    short count;
+    u_int count;
     //! Total space in list (available + elements)
-    short limit;
+    u_int limit;
     //! Number of new spaces to be reallocated
-    short step;
+    u_short step;
     //! Elements of the vector
     void **list;
     //! Function to destroy one item
     void (*destroyer) (void *item);
+    //! Function to sort each appended/inserted item
+    void (*sorter) (vector_t *vector, void *item);
 };
 
 struct vector_iter
@@ -113,6 +118,16 @@ void
 vector_set_destroyer(vector_t *vector, void (*destroyer) (void *item));
 
 /**
+ * @brief Set the vector sorter
+ *
+ * The sorter function will be invoked every time a new
+ * item is appended into the vector.
+ *
+ */
+void
+vector_set_sorter(vector_t *vector, void (*sorter) (vector_t *vector, void *item));
+
+/**
  * @brief A generic item destroyer
  *
  * Generic memory deallocator for those items that only
@@ -130,6 +145,19 @@ vector_generic_destroyer(void *item);
  */
 void *
 vector_item(vector_t *vector, int index);
+
+/**
+ * @brief Set an item in a given index
+ *
+ * This funtion will set an item in a given index.
+ * The index MUST be in the already allocated memory
+ * of the vector. This can be used to replace a vector
+ * item. If position is already in use, destroyer won't
+ * be call for existing item.
+ */
+void
+vector_set_item(vector_t *vector, int index, void *item);
+
 
 /**
  * @brief Return first item of the vector

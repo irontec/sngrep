@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include "vector.h"
 
 #ifndef __FAVOR_BSD
 #define __FAVOR_BSD
@@ -67,7 +68,6 @@
 #else
 #define ADDRESSLEN 47
 #endif
-
 
 //! Capture modes
 enum capture_status {
@@ -118,6 +118,8 @@ struct capture_info {
     int status;
     //! Calls capture limit. 0 for disabling
     int limit;
+    //! Also capture RTP packets
+    int rtp_capture;
     //! Input file in Offline capture
     const char *infile;
     //! Key file for TLS decrypt
@@ -228,13 +230,13 @@ int
 capture_set_bpf_filter(const char *filter);
 
 /**
- * @brief Limit the number of calls will be captured
+ * @brief Set capture options
  *
  * @param limit Numbers of calls >0
- * @return void
+ * @param rtp_catpure Enable rtp capture
  */
 void
-capture_set_limit(int limit);
+capture_set_opts(int limit, int rtp_capture);
 
 /**
  * @brief Pause/Resume capture
@@ -318,6 +320,12 @@ capture_packet_destroyer(void *packet);
  */
 void
 capture_packet_set_type(capture_packet_t *packet, int type);
+
+/**
+ * @brief Sorter by time for captured packets
+ */
+void
+capture_packet_time_sorter(vector_t *vector, void *item);
 
 /**
  * @brief Close pcap handler

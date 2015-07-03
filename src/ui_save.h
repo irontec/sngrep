@@ -50,6 +50,7 @@ enum save_field_list {
     FLD_SAVE_SELECTED,
     FLD_SAVE_DISPLAYED,
     FLD_SAVE_PCAP,
+    FLD_SAVE_PCAP_RTP,
     FLD_SAVE_TXT,
     FLD_SAVE_SAVE,
     FLD_SAVE_CANCEL,
@@ -70,6 +71,7 @@ enum save_mode {
  */
 enum save_format {
     SAVE_PCAP = 0,
+    SAVE_PCAP_RTP,
     SAVE_TXT
 };
 
@@ -189,13 +191,10 @@ int
 save_to_file(PANEL *panel);
 
 /**
- * @brief Save one SIP message into dump file
- *
- * @param pd Dump file opened with dump_open
- * @param msg a SIP Message
+ * @brief Save new packet into pcap
  */
 void
-save_msg_pcap(pcap_dumper_t *pd, sip_msg_t *msg);
+save_packet_pcap(pcap_dumper_t *pd, capture_packet_t *packet);
 
 /**
  * @brief Save one SIP message into open file

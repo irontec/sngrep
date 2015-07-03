@@ -49,6 +49,7 @@ setting_t settings[SETTING_COUNT] =
   { SETTING_CAPTURE_INFILE,     "capture.infile",   SETTING_FMT_STRING,  NULL,      NULL },
   { SETTING_CAPTURE_OUTFILE,    "capture.outfile",  SETTING_FMT_STRING,  NULL,      NULL },
   { SETTING_CAPTURE_KEYFILE,    "capture.keyfile",  SETTING_FMT_STRING,  NULL,      NULL },
+  { SETTING_CAPTURE_RTP,        "capture.rtp",      SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
   { SETTING_SIP_NOINCOMPLETE,   "sip.noincomplete", SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },
   { SETTING_SIP_CALLS,          "sip.calls",        SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
   { SETTING_SAVEPATH,           "savepath",         SETTING_FMT_STRING,  NULL,      NULL },

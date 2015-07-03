@@ -337,8 +337,14 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, msg_payload))) {
         // We have an RTP packet!
         capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
+        // Store this pacekt if capture rtp is enabled
+        if (capinfo.rtp_capture)
+            call_add_rtp_packet(stream_get_call(stream), pkt);
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
+        // Deallocate packet duplicated payload
+        free(msg_payload);
+        return;
     }
 
     // Deallocate packet duplicated payload
@@ -409,9 +415,10 @@ capture_set_bpf_filter(const char *filter)
 }
 
 void
-capture_set_limit(int limit)
+capture_set_opts(int limit, int rtp_capture)
 {
     capinfo.limit = limit;
+    capinfo.rtp_capture = rtp_capture;
 }
 
 void
@@ -511,6 +518,31 @@ void
 capture_packet_set_type(capture_packet_t *packet, int type)
 {
     packet->type = type;
+}
+
+void
+capture_packet_time_sorter(vector_t *vector, void *item)
+{
+    capture_packet_t *one, *two;
+    vector_iter_t iter = vector_iterator(vector);
+    int count = vector_count(vector);
+    int i, j;
+
+    // FIXME Bubble! oOoOO
+    for (i=0; i < count; i++) {
+        for (j=0; j < count - 1 ; j++)
+        {
+            // Compare this elements
+            one = vector_item(vector, j);
+            two = vector_item(vector, j + 1);
+
+            // Swap if older
+            if (timeval_is_older(one->header->ts, two->header->ts)) {
+                vector_set_item(vector, j, two);
+                vector_set_item(vector, j + 1, one);
+            }
+        }
+    }
 }
 
 

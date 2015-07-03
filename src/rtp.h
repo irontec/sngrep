@@ -80,6 +80,9 @@ stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const
 int
 stream_get_count(rtp_stream_t *stream);
 
+struct sip_call *
+stream_get_call(rtp_stream_t *stream);
+
 const char *
 rtp_get_codec(int code, const char *format);
 

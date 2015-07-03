@@ -58,6 +58,7 @@ usage()
            "    -I --input\t\t Read captured data from pcap file\n"
            "    -O --output\t\t Write captured data to pcap file\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
+           "    -r --rtp\t\t Capture full RTP packets\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
            "    -v --invert\t\t Invert <match expression>\n"
@@ -108,7 +109,7 @@ main(int argc, char* argv[])
     const char *keyfile;
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
-    int no_interface = 0, quiet = 0;
+    int no_interface = 0, quiet = 0, rtp_capture = 0;
 
     // Program otptions
     static struct option long_options[] = {
@@ -119,6 +120,7 @@ main(int argc, char* argv[])
         { "output", required_argument, 0, 'O' },
         { "keyfile", required_argument, 0, 'k' },
         { "calls", no_argument, 0, 'c' },
+        { "rtp", no_argument, 0, 'r' },
         { "limit", no_argument, 0, 'l' },
         { "icase", no_argument, 0, 'i' },
         { "invert", no_argument, 0, 'v' },
@@ -137,10 +139,11 @@ main(int argc, char* argv[])
     limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
     only_calls = setting_enabled(SETTING_SIP_CALLS);
     no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
+    rtp_capture = setting_enabled(SETTING_SIP_NOINCOMPLETE);
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:cl:ivNq";
+    char *options = "hVd:I:O:pqtW:k:crl:ivNq";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -169,6 +172,9 @@ main(int argc, char* argv[])
                 break;
             case 'c':
                 only_calls = 1;
+                break;
+            case 'r':
+                rtp_capture = 1;
                 break;
             case 'i':
                 match_insensitive++;
@@ -221,8 +227,8 @@ main(int argc, char* argv[])
     // Initialize SIP Messages Storage
     sip_init(limit, only_calls, no_incomplete);
 
-    // Set capture Calls limit
-    capture_set_limit(limit);
+    // Set capture options
+    capture_set_opts(limit, rtp_capture);
 
     // If we have an input file, load it
     if (infile) {

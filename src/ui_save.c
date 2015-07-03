@@ -87,7 +87,8 @@ save_create()
     info->fields[FLD_SAVE_SELECTED] = new_field(1, 1, 8, 4, 0, 0);
     info->fields[FLD_SAVE_DISPLAYED] = new_field(1, 1, 9, 4, 0, 0);
     info->fields[FLD_SAVE_PCAP] = new_field(1, 1, 7, 36, 0, 0);
-    info->fields[FLD_SAVE_TXT] = new_field(1, 1, 8, 36, 0, 0);
+    info->fields[FLD_SAVE_PCAP_RTP] = new_field(1, 1, 8, 36, 0, 0);
+    info->fields[FLD_SAVE_TXT] = new_field(1, 1, 9, 36, 0, 0);
     info->fields[FLD_SAVE_SAVE] = new_field(1, 10, height - 2, 20, 0, 0);
     info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, height - 2, 40, 0, 0);
     info->fields[FLD_SAVE_COUNT] = NULL;
@@ -167,7 +168,7 @@ save_create()
 
     // Set default save modes
     info->savemode = (displayed == total) ? SAVE_ALL : SAVE_DISPLAYED;
-    info->saveformat = SAVE_PCAP;
+    info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
 
     return panel;
 }
@@ -221,19 +222,20 @@ save_draw(PANEL *panel)
     mvwprintw(win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
     mvwprintw(win, 9, 3, "( ) filtered dialogs [%d]", displayed);
 
-    mvwprintw(win, 7, 35, "( ) .pcap");
-    mvwprintw(win, 8, 35, "( ) .txt");
+    mvwprintw(win, 7, 35, "( ) .pcap (SIP)");
+    mvwprintw(win, 8, 35, "( ) .pcap (SIP + RTP)");
+    mvwprintw(win, 9, 35, "( ) .txt");
 
     // Get filename field value.
     field_value = strtrim(field_buffer(info->fields[FLD_SAVE_FILE], 0));
 
     mvwprintw(win, 4, 60, "     ");
     if (strstr(field_value, ".pcap")) {
-        info->saveformat = SAVE_PCAP;
+        info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
     } else if (strstr(field_value, ".txt")) {
         info->saveformat = SAVE_TXT;
     } else {
-        if (info->saveformat == SAVE_PCAP)
+        if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP)
             mvwprintw(win, 4, 60, ".pcap");
         else
             mvwprintw(win, 4, 60, ".txt ");
@@ -245,6 +247,7 @@ save_draw(PANEL *panel)
     set_field_buffer(info->fields[FLD_SAVE_DISPLAYED], 0,
                      (info->savemode == SAVE_DISPLAYED) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_PCAP], 0, (info->saveformat == SAVE_PCAP) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, (info->saveformat == SAVE_PCAP_RTP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_TXT], 0, (info->saveformat == SAVE_TXT) ? "*" : " ");
 
     set_current_field(info->form, current_field(info->form));
@@ -318,6 +321,9 @@ save_handle_key(PANEL *panel, int key)
                     case FLD_SAVE_PCAP:
                         info->saveformat = SAVE_PCAP;
                         break;
+                    case FLD_SAVE_PCAP_RTP:
+                        info->saveformat = SAVE_PCAP_RTP;
+                        break;
                     case FLD_SAVE_TXT:
                         info->saveformat = SAVE_TXT;
                         break;
@@ -383,7 +389,9 @@ save_to_file(PANEL *panel)
     pcap_dumper_t *pd = NULL;
     FILE *f = NULL;
     int i;
-    vector_iter_t calls, msgs;
+    vector_iter_t calls, msgs, rtps, packets;
+    capture_packet_t *packet;
+    vector_t *sorted;
 
     // Get panel information
     save_info_t *info = save_info(panel);
@@ -409,7 +417,7 @@ save_to_file(PANEL *panel)
         return 1;
     }
 
-    if (info->saveformat == SAVE_PCAP) {
+    if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
         if (!strstr(savefile, ".pcap"))
             strcat(savefile, ".pcap");
     } else {
@@ -431,7 +439,7 @@ save_to_file(PANEL *panel)
         return 1;
     }
 
-    if (info->saveformat == SAVE_PCAP) {
+    if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
         // Open dump file
         pd = dump_open(fullfile);
         if (access(fullfile, W_OK) != 0) {
@@ -463,16 +471,48 @@ save_to_file(PANEL *panel)
             break;
     }
 
-    // Save selected packets to file
-    while ((call = vector_iterator_next(&calls))) {
-        msgs = vector_iterator(call->msgs);
-        while ((msg = vector_iterator_next(&msgs))) {
-            (info->saveformat == SAVE_PCAP) ? save_msg_pcap(pd, msg) : save_msg_txt(f, msg);
+    if (info->saveformat == SAVE_TXT) {
+        // Save selected packets to file
+        while ((call = vector_iterator_next(&calls))) {
+            msgs = vector_iterator(call->msgs);
+            // Save SIP message content
+            while ((msg = vector_iterator_next(&msgs))) {
+                save_msg_txt(f, msg);
+            }
+        }
+    } else {
+        // Store all messages in a time sorted vector
+        sorted = vector_create(10, 10);
+        // Save selected packets to file
+        while ((call = vector_iterator_next(&calls))) {
+            msgs = vector_iterator(call->msgs);
+            // Save SIP message content
+            while ((msg = vector_iterator_next(&msgs))) {
+                capture_packet_t *packet;
+                vector_iter_t it = vector_iterator(msg->packets);
+                while ((packet = vector_iterator_next(&it))) {
+                    vector_append(sorted, packet);
+                }
+            }
+            // Save RTP packets
+            if (info->saveformat == SAVE_PCAP_RTP) {
+                rtps = vector_iterator(call->rtp_packets);
+                while ((packet = vector_iterator_next(&rtps))) {
+                    vector_append(sorted, packet);
+                }
+            }
+        }
+
+        // Save sorted packets
+        capture_packet_time_sorter(sorted, NULL);
+        packets = vector_iterator(sorted);
+        while ((packet = vector_iterator_next(&packets))) {
+            save_packet_pcap(pd, packet);
         }
     }
 
     // Close saved file
-    if (info->saveformat == SAVE_PCAP) {
+    if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
         dump_close(pd);
     } else {
         fclose(f);
@@ -485,15 +525,11 @@ save_to_file(PANEL *panel)
 }
 
 void
-save_msg_pcap(pcap_dumper_t *pd, sip_msg_t *msg)
+save_packet_pcap(pcap_dumper_t *pd, capture_packet_t *packet)
 {
-    capture_packet_t *packet;
-    vector_iter_t it = vector_iterator(msg->packets);
-
-    while ((packet = vector_iterator_next(&it))) {
-        dump_packet(pd, packet->header, packet->data);
-    }
+    dump_packet(pd, packet->header, packet->data);
 }
+
 
 void
 save_msg_txt(FILE *f, sip_msg_t *msg)
