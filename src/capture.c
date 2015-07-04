@@ -524,7 +524,6 @@ void
 capture_packet_time_sorter(vector_t *vector, void *item)
 {
     capture_packet_t *one, *two;
-    vector_iter_t iter = vector_iterator(vector);
     int count = vector_count(vector);
     int i, j;
 

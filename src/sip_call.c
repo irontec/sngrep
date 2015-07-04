@@ -34,7 +34,6 @@
 sip_call_t *
 call_create(char *callid)
 {
-    int index;
     sip_call_t *call;
 
     // Initialize a new call structure

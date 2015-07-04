@@ -231,7 +231,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         call_update_state(call, msg);
     }
     pthread_mutex_unlock(&calls.lock);
-
     // Return the loaded message
     return msg;
 
@@ -410,7 +409,6 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 void
 sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 {
-    regmatch_t pmatch[4];
     char address[ADDRESSLEN];
     char media_address[ADDRESSLEN] = { };
     char media_type[15] = { };
@@ -419,7 +417,6 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     int media_fmt_pref;
     int media_fmt_code;
     sdp_media_t *media = NULL;
-    int port = 0;
     char *payload2, *tofree, *line;
 
     // Initialize variables
