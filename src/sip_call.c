@@ -135,7 +135,6 @@ call_is_invite(sip_call_t *call)
 int
 call_msg_is_retrans(sip_msg_t *msg)
 {
-    return 0;
     sip_msg_t *prev = NULL;
     vector_iter_t it;
 
