@@ -864,7 +864,6 @@ call_flow_handle_key(PANEL *panel, int key)
                     call_group_add(group, call_get_xcall(vector_first(info->group->calls)));
                 }
                 call_group_add(group, vector_first(info->group->calls));
-                call_group_destroy(info->group);
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_RAW:

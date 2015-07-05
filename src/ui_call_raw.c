@@ -78,9 +78,6 @@ call_raw_destroy(PANEL *panel)
     call_raw_info_t *info;
 
     if ((info = call_raw_info(panel))) {
-        // Delete panel call displayed group
-        if (info->group)
-            call_group_destroy(info->group);
         // Delete panel windows
         delwin(info->pad);
         free(info);
@@ -158,12 +155,13 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 
     // Check if we have enough space in our huge pad to store this message
     if (info->padline + payload_lines > height) {
-        // Delete previous pad
-        delwin(info->pad);
         // Create a new pad with more lines!
         pad = newpad(height + 500, COLS);
         // And copy all previous information
         overwrite(info->pad, pad);
+        // Delete previous pad
+        delwin(info->pad);
+        // And store the new pad
         info->pad = pad;
     }
 
