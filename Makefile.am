@@ -1,2 +1,2 @@
-SUBDIRS=src config doc
+SUBDIRS=src config doc tests
 EXTRA_DIST=bootstrap.sh

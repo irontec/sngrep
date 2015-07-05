@@ -4,8 +4,11 @@
 
 # Build files
 src/sngrep
-src/*.o
-src/.deps
+tests/test-*.log
+tests/test-*.trs
+tests/test-???
+*/*.o
+*/.deps
 src/config.h*
 src/stamp-h1
 
@@ -22,6 +25,7 @@ configure
 missing
 install-sh
 depcomp
+test-driver
 
 # Ignore Doxygen generated files
 doc/html
