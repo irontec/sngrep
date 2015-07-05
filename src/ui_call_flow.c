@@ -116,10 +116,6 @@ call_flow_destroy(PANEL *panel)
 
     // Free the panel information
     if ((info = call_flow_info(panel))) {
-        // Delete panel call displayed group
-        if (info->group)
-            call_group_destroy(info->group);
-
         // Delete panel columns;
         while ((column = info->columns)) {
             info->columns = column->next;
