@@ -295,17 +295,13 @@ wait_for_input()
     PANEL *panel;
 
     // While there are still panels
-    while (panel_below(NULL)) {
+    while ((panel = panel_below(NULL))) {
 
-        // Redraw all panels
-        panel = NULL;
-        while ((panel = panel_above(panel))) {
-            // Get panel interface structure
-            ui = ui_find_by_panel(panel);
-            // Redraw this panel
-            if (ui_draw_panel(ui) != 0)
-                return -1;
-        }
+        // Get panel interface structure
+        ui = ui_find_by_panel(panel);
+        // Redraw this panel
+        if (ui_draw_panel(ui) != 0)
+            return -1;
 
         // Update panel stack
         update_panels();
@@ -683,4 +679,77 @@ dialog_run(const char *fmt, ...)
     delwin(win);
     return 1;
 
+}
+
+WINDOW *
+dialog_progress_run(const char *fmt, ...)
+{
+    char textva[2048];
+    va_list ap;
+    int height, width;
+    WINDOW *win;
+    char *word;
+    int col = 2;
+    int line = 2;
+
+    // Get the message from the format string
+    va_start(ap, fmt);
+    vsprintf(textva, fmt, ap);
+    va_end(ap);
+
+    // Determine dialog dimensions
+    height = 6 + (strlen(textva) / 50);
+    width = strlen(textva);
+
+    // Check we don't have a too big or small window
+    if (width > DIALOG_MAX_WIDTH)
+        width = DIALOG_MAX_WIDTH;
+    if (width < DIALOG_MIN_WIDTH)
+        width = DIALOG_MIN_WIDTH;
+
+    // Create the window
+    win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
+    box(win, 0, 0);
+
+    // Write the message into the screen
+    for (word = strtok(textva, " "); word; word = strtok(NULL, " ")) {
+        if (col + strlen(word) > width - 2) {
+            line++;
+            col = 2;
+        }
+        mvwprintw(win, line, col, "%s", word);
+        col += strlen(word) + 1;
+    }
+
+    curs_set(0);
+    wrefresh(win);
+    // Disable input timeout
+    nocbreak();
+    cbreak();
+
+    return win;
+
+}
+
+void
+dialog_progress_set_value(WINDOW *win, int perc)
+{
+    int height, width;
+
+    getmaxyx(win, height, width);
+    mvwhline(win, 4, 4, '-', width - 10);
+    mvwaddch(win, 4, 3, '[');
+    mvwaddch(win, 4, width - 7, ']');
+    mvwprintw(win, 4, width - 5, "%d%%", perc);
+
+    if (perc > 0 && perc <= 100)
+        mvwhline(win, 4, 4, ACS_CKBOARD, (width - 10) * ((float)perc/100));
+
+    wrefresh(win);
+}
+
+void
+dialog_progress_destroy(WINDOW *win)
+{
+    delwin(win);
 }

@@ -425,10 +425,7 @@ void
 capture_set_paused(int pause)
 {
     if (capture_is_online()) {
-        if (pause)
-            capinfo.status = CAPTURE_ONLINE_PAUSED;
-        else
-            capinfo.status = CAPTURE_ONLINE;
+        capinfo.status = (pause) ? CAPTURE_ONLINE_PAUSED : CAPTURE_ONLINE;
     }
 }
 
@@ -523,25 +520,31 @@ capture_packet_set_type(capture_packet_t *packet, int type)
 void
 capture_packet_time_sorter(vector_t *vector, void *item)
 {
-    capture_packet_t *one, *two;
+    capture_packet_t *prev, *cur;
     int count = vector_count(vector);
-    int i, j;
+    int i;
 
-    // FIXME Bubble! oOoOO
-    for (i=0; i < count; i++) {
-        for (j=0; j < count - 1 ; j++)
-        {
-            // Compare this elements
-            one = vector_item(vector, j);
-            two = vector_item(vector, j + 1);
+    // Get current item
+    cur = (capture_packet_t *) item;
+    prev = vector_item(vector, count - 2);
 
-            // Swap if older
-            if (timeval_is_older(one->header->ts, two->header->ts)) {
-                vector_set_item(vector, j, two);
-                vector_set_item(vector, j + 1, one);
-            }
+    // Check if the item is already sorted
+    if (prev && timeval_is_older(cur->header->ts, prev->header->ts)) {
+        return;
+    }
+
+    for (i = count - 2 ; i >= 0; i--) {
+        // Get previous packet
+        prev = vector_item(vector, i);
+        // Check if the item is already in a sorted position
+        if (timeval_is_older(cur->header->ts, prev->header->ts)) {
+            vector_insert(vector, item, i + 1);
+            return;
         }
     }
+
+    // Put this item at the begining of the vector
+    vector_insert(vector, item, 0);
 }
 
 

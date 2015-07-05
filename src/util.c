@@ -101,7 +101,7 @@ strtrim(char *str)
     if (!str || !strlen(str))
         return str;
 
-    for (i = strlen(str) - 1; isspace(str[i]); i--)
+    for (i = strlen(str) - 1; i >= 0 && isspace(str[i]); i--)
         str[i] = 0;
 
     return str;

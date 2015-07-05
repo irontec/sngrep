@@ -399,4 +399,13 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting);
 int
 dialog_run(const char *fmt, ...);
 
+WINDOW *
+dialog_progress_run(const char *fmt, ...);
+
+void
+dialog_progress_set_value(WINDOW *win, int perc);
+
+void
+dialog_progress_destroy(WINDOW *win);
+
 #endif    // __SNGREP_UI_MANAGER_H

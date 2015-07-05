@@ -209,7 +209,7 @@ int
 save_draw(PANEL *panel)
 {
     int total, displayed;
-    const char *field_value;
+    char field_value[80];
 
     // Get panel information
     save_info_t *info = save_info(panel);
@@ -227,7 +227,9 @@ save_draw(PANEL *panel)
     mvwprintw(win, 9, 35, "( ) .txt");
 
     // Get filename field value.
-    field_value = strtrim(field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    memset(field_value, 0, sizeof(field_value));
+    strcpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    strtrim(field_value);
 
     mvwprintw(win, 4, 60, "     ");
     if (strstr(field_value, ".pcap")) {
@@ -388,7 +390,8 @@ save_to_file(PANEL *panel)
     sip_msg_t *msg = NULL;
     pcap_dumper_t *pd = NULL;
     FILE *f = NULL;
-    int i;
+    int cur = 0, total = 0;
+    WINDOW *progress;
     vector_iter_t calls, msgs, rtps, packets;
     capture_packet_t *packet;
     vector_t *sorted;
@@ -399,18 +402,14 @@ save_to_file(PANEL *panel)
     // Get current path field value.
     memset(savepath, 0, sizeof(savepath));
     strcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0));
-    // Trim trailing spaces
-    for (i = strlen(savepath) - 1; isspace(savepath[i]); i--)
-        savepath[i] = '\0';
+    strtrim(savepath);
     if (strlen(savepath))
         strcat(savepath, "/");
 
     // Get current file field value.
     memset(savefile, 0, sizeof(savefile));
     strcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0));
-    // Trim trailing spaces
-    for (i = strlen(savefile) - 1; isspace(savefile[i]); i--)
-        savefile[i] = '\0';
+    strtrim(savefile);
 
     if (!strlen(savefile)) {
         dialog_run("Please enter a valid filename");
@@ -482,7 +481,20 @@ save_to_file(PANEL *panel)
         }
     } else {
         // Store all messages in a time sorted vector
-        sorted = vector_create(10, 10);
+        sorted = vector_create(100, 50);
+        vector_set_sorter(sorted, capture_packet_time_sorter);
+
+        // Count packages for progress bar
+        while ((call = vector_iterator_next(&calls))) {
+            total += vector_count(call->msgs);
+            if (info->saveformat == SAVE_PCAP_RTP)
+                total += vector_count(call->rtp_packets);
+        }
+        vector_iterator_reset(&calls);
+
+        progress = dialog_progress_run("Saving packets...");
+        dialog_progress_set_value(progress, 0);
+
         // Save selected packets to file
         while ((call = vector_iterator_next(&calls))) {
             msgs = vector_iterator(call->msgs);
@@ -491,24 +503,30 @@ save_to_file(PANEL *panel)
                 capture_packet_t *packet;
                 vector_iter_t it = vector_iterator(msg->packets);
                 while ((packet = vector_iterator_next(&it))) {
+                    // Update progress bar dialog
+                    dialog_progress_set_value(progress, (++cur * 100) / total);
                     vector_append(sorted, packet);
                 }
             }
+
             // Save RTP packets
             if (info->saveformat == SAVE_PCAP_RTP) {
                 rtps = vector_iterator(call->rtp_packets);
                 while ((packet = vector_iterator_next(&rtps))) {
+                    // Update progress bar dialog
+                    dialog_progress_set_value(progress, (++cur * 100) / total);
                     vector_append(sorted, packet);
                 }
             }
         }
 
         // Save sorted packets
-        capture_packet_time_sorter(sorted, NULL);
         packets = vector_iterator(sorted);
         while ((packet = vector_iterator_next(&packets))) {
             save_packet_pcap(pd, packet);
         }
+
+        dialog_progress_destroy(progress);
     }
 
     // Close saved file

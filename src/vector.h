@@ -102,6 +102,14 @@ int
 vector_append(vector_t *vector, void *item);
 
 /**
+ * @brief Insert an item in a given vector position
+ *
+ * @return count of elements in vector
+ */
+int
+vector_insert(vector_t *vector, void *item, int pos);
+
+/**
  * @brief Remove itemn from vector
  */
 void

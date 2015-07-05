@@ -99,6 +99,26 @@ vector_append(vector_t *vector, void *item)
     return vector->count;
 }
 
+int
+vector_insert(vector_t *vector, void *item, int pos)
+{
+    if (!item)
+        return vector->count;
+
+    if (pos < 0 || pos > vector->count)
+        return vector->count;
+
+    // If possition is occupied, move the other position
+    if (vector->list[pos]) {
+        memmove(vector->list + pos + 1, vector->list + pos, sizeof(void *) * (vector->count - pos));
+    }
+
+    // Set the position
+    vector->list[pos] = item;
+    return vector->count;
+}
+
+
 void
 vector_remove(vector_t *vector, void *item)
 {
