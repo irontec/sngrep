@@ -377,7 +377,6 @@ capture_launch_thread()
     //! capture thread attributes
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     if (pthread_create(&capinfo.capture_t, &attr, (void *) capture_thread, NULL)) {
         return 1;
     }
