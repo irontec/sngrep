@@ -185,7 +185,7 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
             goto skip_message;
 
         // Store this call in hash table
-        entry.key = (char *) call_get_attribute(call, SIP_ATTR_CALLID);
+        entry.key = strdup(call_get_attribute(call, SIP_ATTR_CALLID));
         entry.data = (void *) call;
         hsearch(entry, ENTER);
 
