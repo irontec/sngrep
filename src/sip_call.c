@@ -66,6 +66,9 @@ call_destroy(sip_call_t *call)
     vector_destroy(call->streams);
     // Remove all call attributes
     vector_destroy(call->attrs);
+    // Remove all call rtp packets
+    vector_destroy(call->rtp_packets);
+    // Deallocate call memory
     free(call);
 }
 
