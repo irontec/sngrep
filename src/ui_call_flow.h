@@ -94,6 +94,10 @@ struct call_flow_arrow {
     sip_msg_t *msg;
     //! Stream information for RTP type arrows
     rtp_stream_t *stream;
+    //! Stream packet count for this arrow
+    int rtp_count;
+    //! Stream arrow position
+    int rtp_ind_pos;
     //! Number of screen lines this arrow uses
     int height;
     //! Line of flow window this line starts

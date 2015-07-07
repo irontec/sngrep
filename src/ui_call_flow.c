@@ -557,6 +557,11 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
             mvwaddch(win, cline, endpos - 2, '>');
         else
             mvwaddch(win, cline, endpos, '>');
+        if (arrow->rtp_count != stream_get_count(stream)) {
+            arrow->rtp_count = stream_get_count(stream);
+            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
+            mvwaddch(win, cline, startpos + arrow->rtp_ind_pos + 2, '>');
+        }
     } else {
         mvwprintw(win, cline, endpos  + 1, "%d", stream->sport);
         mvwprintw(win, cline, startpos - 5, "%d", stream->dport);
@@ -564,6 +569,11 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
             mvwaddch(win, cline, startpos + 2, '<');
         else
             mvwaddch(win, cline, startpos, '<');
+        if (arrow->rtp_count != stream_get_count(stream)) {
+            arrow->rtp_count = stream_get_count(stream);
+            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
+            mvwaddch(win, cline, endpos - arrow->rtp_ind_pos - 2, '<');
+        }
     }
 
     wattroff(win, A_BOLD | A_REVERSE);
