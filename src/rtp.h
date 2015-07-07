@@ -29,6 +29,8 @@
 #ifndef __SNGREP_RTP_H
 #define __SNGREP_RTP_H
 
+#include "config.h"
+#include "capture.h"
 #include "media.h"
 
 #define RTP_FORMAT_MASK     0x7F

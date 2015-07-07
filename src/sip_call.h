@@ -32,6 +32,7 @@
 #include "config.h"
 #include <stdarg.h>
 #include "vector.h"
+#include "rtp.h"
 #include "sip_msg.h"
 #include "sip_attr.h"
 

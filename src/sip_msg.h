@@ -33,7 +33,6 @@
 #include <stdarg.h>
 #include "vector.h"
 #include "media.h"
-#include "rtp.h"
 #include "sip_attr.h"
 #include "util.h"
 

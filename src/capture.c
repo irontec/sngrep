@@ -38,6 +38,7 @@
 #include "capture_tls.h"
 #endif
 #include "sip.h"
+#include "rtp.h"
 #include "setting.h"
 #include "ui_manager.h"
 #ifdef WITH_IPV6

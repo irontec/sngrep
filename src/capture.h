@@ -38,7 +38,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include "vector.h"
 
 #ifndef __FAVOR_BSD
 #define __FAVOR_BSD
@@ -48,13 +47,16 @@
 #define _BSD_SOURCE 1
 #endif
 
-#if defined(BSD) || defined (__OpenBSD__) || defined(__FreeBSD__)
+#if defined (__OpenBSD__)
 #define timeval bpf_timeval
+#endif
+
+#if defined(BSD) || defined (__OpenBSD__) || defined(__FreeBSD__)
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
-#include <net/if.h>
 #endif
 
 #include <arpa/inet.h>
@@ -62,6 +64,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include "vector.h"
 
 #ifdef INET6_ADDRSTRLEN
 #define ADDRESSLEN INET6_ADDRSTRLEN + 1
