@@ -64,6 +64,7 @@ settings_entry_t entries[] = {
  { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_EXITPROMPT,         SETTING_EXITPROMPT,         "Always prompt on quit ....................." },
  { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_DISPLAY_HOST,       SETTING_DISPLAY_HOST,       "Replace addresses with resolved hosts ....." },
  { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_DISPLAY_ALIAS,      SETTING_DISPLAY_ALIAS,      "Replace addresses with alias .............." },
+ { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_RTP,        SETTING_CAPTURE_RTP,        "Capture RTP packets * ....................." },
  { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_LIMIT,      SETTING_CAPTURE_LIMIT,      "Max dialogs * ............................." },
  { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_DEVICE,     SETTING_CAPTURE_DEVICE,     "Capture device * .........................." },
  { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_LOOKUP,     SETTING_CAPTURE_LOOKUP,     "Resolved IP Addresses * ..................." },
