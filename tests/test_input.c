@@ -51,7 +51,7 @@ int
 main()
 {
     int ppipe[2];
-    int unused, ret;
+    int unused, ret = 0;
     unused = pipe(ppipe);
 
     // Max test duration

@@ -314,7 +314,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     char mediastr[40];
     sip_msg_t *msg = arrow->msg;
     vector_iter_t medias;
-    int color;
+    int color = 0;
 
     // Get panel information
     info = call_flow_info(panel);
