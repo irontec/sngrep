@@ -140,7 +140,9 @@ setting_set_value(int id, const char *value)
 {
     setting_t *sett = setting_by_id(id);
     if (sett) {
+        if (sett->user) free(sett->value);
         sett->value = (value) ? strdup(value) : NULL;
+        sett->user = 1;
     }
 }
 

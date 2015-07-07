@@ -110,11 +110,12 @@ struct setting_option {
     //! Setting format
     enum setting_fmt fmt;
     //! Value of the setting
-    const char *value;
+    char *value;
     //! Compa separated valid values
     const char **valuelist;
+    //! Setting set by user config
+    int user;
 };
-
 
 setting_t *
 setting_by_id(int id);
