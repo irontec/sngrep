@@ -1,3 +1,16 @@
+2015-07-08 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.4.1 released
+
+	* Added an option to capture RTP packets
+	* Allow RTP packets to be saved with their calls
+	* Improved Save panel default options
+	* Added testing files
+	* Improved SIP message parsed process
+	* Improved SIP message payload memory usage
+	* Fixed a bug with timestamp diff overflows
+	* Fixed multiple memory leaks
+	* Fixed compatibility with BSD systems
+
 2015-06-24 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.4.0 released
 
