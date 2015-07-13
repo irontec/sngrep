@@ -42,7 +42,7 @@ typedef struct rtp_stream rtp_stream_t;
 
 struct rtp_encoding
 {
-    u_char id;
+    char id;
     const char *name;
     const char *format;
 };
