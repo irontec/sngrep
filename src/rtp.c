@@ -162,6 +162,10 @@ rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short spor
     if (!payload || !(payload + 1))
         return NULL;
 
+    // Check RTP version
+    if (RTP_VERSION(*payload) != RTP_VERSION_RFC1889)
+        return NULL;
+
     // Get RTP payload type
     format = *(payload + 1) & RTP_FORMAT_MASK;
 

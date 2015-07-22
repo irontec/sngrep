@@ -25,7 +25,9 @@
  *
  * @brief Functions to manage rtp captured packets
  *
+ * RTP_VERSION macro has been taken from wireshark source code: packet-rtp.c
  */
+
 #ifndef __SNGREP_RTP_H
 #define __SNGREP_RTP_H
 
@@ -33,6 +35,9 @@
 #include "capture.h"
 #include "media.h"
 
+// Version is the first 2 bits of the first octet
+#define RTP_VERSION(octet) ((octet) >> 6)
+#define RTP_VERSION_RFC1889 2
 #define RTP_FORMAT_MASK     0x7F
 
 //! Shorter declaration of rtp_encoding structure
