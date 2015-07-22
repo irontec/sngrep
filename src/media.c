@@ -44,7 +44,19 @@ media_create(struct sip_msg *msg)
     // Initialize all fields
     memset(media, 0, sizeof(sdp_media_t));
     media->msg = msg;
+    media->formats = vector_create(0, 1);
+    vector_set_destroyer(media->formats, vector_generic_destroyer);
     return media;
+}
+
+void
+media_destroyer(void *item)
+{
+    sdp_media_t *media = (sdp_media_t *) item;
+    if (!item)
+        return;
+    vector_destroy(media->formats);
+    free(media);
 }
 
 void
@@ -66,15 +78,22 @@ media_set_address(sdp_media_t *media, const char *address)
 }
 
 void
-media_set_format(sdp_media_t *media, const char *format)
+media_set_prefered_format(sdp_media_t *media, u_int code)
 {
-    strcpy(media->format, format);
+    media->fmtcode = code;
 }
 
 void
-media_set_format_code(sdp_media_t *media, int code)
+media_add_format(sdp_media_t *media, u_int code, const char *format)
 {
-    media->fmtcode = code;
+    sdp_media_fmt_t *fmt;
+
+    if (!(fmt = malloc(sizeof(sdp_media_fmt_t))))
+        return;
+
+    fmt->id = code;
+    strcpy(fmt->format, format);
+    vector_append(media->formats, fmt);
 }
 
 const char *
@@ -96,9 +115,30 @@ media_get_type(sdp_media_t *media)
 }
 
 const char *
-media_get_format(sdp_media_t *media)
+media_get_format(sdp_media_t *media, u_int code)
 {
-    return rtp_get_codec(media->fmtcode, media->format);
+    sdp_media_fmt_t *format;
+    vector_iter_t iter;
+    iter = vector_iterator(media->formats);
+    while ((format = vector_iterator_next(&iter))) {
+        if (format->id == code)
+            return format->format;
+    }
+
+    return "Unassigned";
+}
+
+const char *
+media_get_prefered_format(sdp_media_t *media)
+{
+    const char *format;
+
+    // Check if format is standard
+    if ((format = rtp_get_standard_format(media->fmtcode))) {
+        return format;
+    }
+    // Try to get format form SDP payload
+    return media_get_format(media, media->fmtcode);
 }
 
 int

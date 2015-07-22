@@ -444,7 +444,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
             sprintf(mediastr, "%s %d (%s)",
                     media_get_type(media),
                     media_get_port(media),
-                    media_get_format(media));
+                    media_get_prefered_format(media));
             mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
         }
     }
@@ -511,7 +511,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     //mvwprintw(win, cline, 2, "%s", timeval_to_time(stream->time, time));
 
     // Get Message method (include extra info)
-    sprintf(codec, "RTP (%s) %d", rtp_get_codec(stream->format, ""), stream_get_count(stream));
+    sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
 
     // Get origin and destination column
     call_flow_column_t *column1 = call_flow_column_get(panel, 0, stream->ip_src);

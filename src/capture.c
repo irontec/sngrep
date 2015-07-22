@@ -335,7 +335,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     // Check if this packet belongs to a RTP stream
     // TODO Store this packet in the stream
-    if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, msg_payload))) {
+    if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, msg_payload, size_payload))) {
         // We have an RTP packet!
         capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
         // Store this pacekt if capture rtp is enabled

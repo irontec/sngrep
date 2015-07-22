@@ -104,7 +104,7 @@ msg_add_media(sip_msg_t *msg, sdp_media_t *media)
     if (!msg->medias) {
         // Create a vector to store sdp
         msg->medias = vector_create(2, 2);
-        vector_set_destroyer(msg->medias, vector_generic_destroyer);
+        vector_set_destroyer(msg->medias, media_destroyer);
     }
     vector_append(msg->medias, media);
 }

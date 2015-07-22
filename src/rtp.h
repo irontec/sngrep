@@ -25,7 +25,8 @@
  *
  * @brief Functions to manage rtp captured packets
  *
- * RTP_VERSION macro has been taken from wireshark source code: packet-rtp.c
+ * @note RTP_VERSION and RTP_PAYLOAD_TYPE macros has been taken from wireshark
+ *       source code: packet-rtp.c
  */
 
 #ifndef __SNGREP_RTP_H
@@ -37,8 +38,11 @@
 
 // Version is the first 2 bits of the first octet
 #define RTP_VERSION(octet) ((octet) >> 6)
+// Payload type is the last 7 bits
+#define RTP_PAYLOAD_TYPE(octet) ((octet) & 0x7F)
+
+// Handled RTP versions
 #define RTP_VERSION_RFC1889 2
-#define RTP_FORMAT_MASK     0x7F
 
 //! Shorter declaration of rtp_encoding structure
 typedef struct rtp_encoding rtp_encoding_t;
@@ -47,7 +51,7 @@ typedef struct rtp_stream rtp_stream_t;
 
 struct rtp_encoding
 {
-    char id;
+    u_int id;
     const char *name;
     const char *format;
 };
@@ -61,28 +65,23 @@ struct rtp_stream
     char ip_dst[ADDRESSLEN];
     u_short dport;
     //! Format of first received packet of stre
-    u_char format;
+    u_int fmtcode;
     //! Time of first received packet of stream
     struct timeval time;
     //! Packet count for this stream
     int pktcnt;
-    //! Mark if address has been bound
-    int complete;
     //! SDP media that setup this stream
     sdp_media_t *media;
-    //! Next stream in the call
-    rtp_stream_t *next;
 };
 
 rtp_stream_t *
 stream_create(sdp_media_t *media, const char *dst, u_short dport);
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, const char *src, u_short sport);
+stream_complete(rtp_stream_t *stream, const char *src, u_short sport, u_int format);
 
 void
-stream_add_packet(rtp_stream_t *stream, const char *ip_src, u_short sport, const char *ip_dst,
-                  u_short dport, u_char format, struct timeval time);
+stream_add_packet(rtp_stream_t *stream, const struct pcap_pkthdr *header);
 
 int
 stream_get_count(rtp_stream_t *stream);
@@ -91,15 +90,18 @@ struct sip_call *
 stream_get_call(rtp_stream_t *stream);
 
 const char *
-rtp_get_codec(int code, const char *format);
+stream_get_format(rtp_stream_t *stream);
+
+const char *
+rtp_get_standard_format(u_int code);
 
 rtp_stream_t *
-rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload);
+rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload, uint32_t size);
 
 rtp_stream_t *
-rtp_find_stream(const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
+rtp_find_stream(const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format);
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
+rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format);
 
 #endif /* __SNGREP_RTP_H */

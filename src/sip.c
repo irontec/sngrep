@@ -414,8 +414,8 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     char media_type[15] = { };
     char media_format[30] = { };
     int media_port;
-    int media_fmt_pref;
-    int media_fmt_code;
+    u_int media_fmt_pref;
+    u_int media_fmt_code;
     sdp_media_t *media = NULL;
     char *payload2, *tofree, *line;
 
@@ -427,13 +427,13 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     while ((line = strsep(&payload2, "\r\n")) != NULL) {
         // Check if we have a media string
         if (!strncmp(line, "m=", 2)) {
-            if (sscanf(line, "m=%s %d RTP/AVP %d", media_type, &media_port, &media_fmt_pref) == 3) {
+            if (sscanf(line, "m=%s %d RTP/AVP %u", media_type, &media_port, &media_fmt_pref) == 3) {
                 // Create a new media structure for this message
                 if ((media = media_create(msg))) {
                     media_set_type(media, media_type);
                     media_set_port(media, media_port);
                     media_set_address(media, media_address);
-                    media_set_format_code(media, media_fmt_pref);
+                    media_set_prefered_format(media, media_fmt_pref);
                     msg_add_media(msg, media);
 
                     /**
@@ -458,12 +458,11 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
         // Check if we have attribute format string
         if (!strncmp(line, "a=rtpmap:", 9)) {
-            if (sscanf(line, "a=rtpmap:%d %[^ ]", &media_fmt_code, media_format)) {
-                if (media && media_fmt_pref == media_fmt_code) {
-                    media_set_format(media, media_format);
-                }
+            if (media && sscanf(line, "a=rtpmap:%u %[^ ]", &media_fmt_code, media_format)) {
+                media_add_format(media, media_fmt_code, media_format);
             }
         }
+
     }
     free(tofree);
 
