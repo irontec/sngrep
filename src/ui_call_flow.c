@@ -489,6 +489,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 //    char time[20];
     char codec[50];
     int height, width;
+    call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->stream;
 
     // Get panel information
@@ -513,9 +514,26 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Get Message method (include extra info)
     sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
 
-    // Get origin and destination column
-    call_flow_column_t *column1 = call_flow_column_get(panel, 0, stream->ip_src);
-    call_flow_column_t *column2 = call_flow_column_get(panel, 0, stream->ip_dst);
+
+    // Get origin column for this stream.
+    // If we share the same Address from its setup SIP packet, use that column instead.
+    if (!strncmp(stream->ip_src, SRC(stream->media->msg), strlen(stream->ip_src))) {
+        column1 = call_flow_column_get(panel, CALLID(stream->media->msg), SRC(stream->media->msg));
+    } else if (!strncmp(stream->ip_src, DST(stream->media->msg), strlen(stream->ip_src))) {
+        column1 = call_flow_column_get(panel, CALLID(stream->media->msg), DST(stream->media->msg));
+    } else {
+        column1 = call_flow_column_get(panel, 0, stream->ip_src);
+    }
+
+    // Get destination column for this stream.
+    // If we share the same Address from its setup SIP packet, use that column instead.
+    if (!strncmp(stream->ip_dst, DST(stream->media->msg), strlen(stream->ip_dst))) {
+        column2 = call_flow_column_get(panel, CALLID(stream->media->msg), DST(stream->media->msg));
+    } else if (!strncmp(stream->ip_dst, SRC(stream->media->msg), strlen(stream->ip_dst))) {
+        column2 = call_flow_column_get(panel, CALLID(stream->media->msg), SRC(stream->media->msg));
+    } else {
+        column2 = call_flow_column_get(panel, 0, stream->ip_dst);
+    }
 
     call_flow_column_t *tmp;
     if (column1->colpos > column2->colpos) {

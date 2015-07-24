@@ -33,7 +33,7 @@
 #include "vector.h"
 
 /* Some very used macros */
-#define CALLID(msg) msg_get_attribute(msg, SIP_ATTR_CALLID)
+#define CALLID(msg) call_get_attribute(msg->call, SIP_ATTR_CALLID)
 #define SRC(msg) msg_get_attribute(msg, SIP_ATTR_SRC)
 #define DST(msg) msg_get_attribute(msg, SIP_ATTR_DST)
 #define TIME(msg) msg_get_attribute(msg, SIP_ATTR_TIME)
