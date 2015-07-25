@@ -139,7 +139,7 @@ main(int argc, char* argv[])
     limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
     only_calls = setting_enabled(SETTING_SIP_CALLS);
     no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
-    rtp_capture = setting_enabled(SETTING_SIP_NOINCOMPLETE);
+    rtp_capture = setting_enabled(SETTING_CAPTURE_RTP);
 
     // Parse command line arguments
     opterr = 0;

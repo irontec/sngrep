@@ -339,8 +339,11 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // We have an RTP packet!
         capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
         // Store this pacekt if capture rtp is enabled
-        if (capinfo.rtp_capture)
+        if (capinfo.rtp_capture) {
             call_add_rtp_packet(stream_get_call(stream), pkt);
+        } else {
+            capture_packet_destroy(pkt);
+        }
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
         // Deallocate packet duplicated payload
