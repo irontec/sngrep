@@ -16,6 +16,16 @@ as PCAP viewer.
 #### CentOS / RedHat / Fedora
 [Install sngrep CentOS/RedHat/Fedora package](https://github.com/irontec/sngrep/wiki/Installing-Binaries#centos--fedora--rhel)
 
+#### Gentoo
+You can find unofficial ebuilds for sngrep at [Gentoo Bugtracker System](https://bugs.gentoo.org/show_bug.cgi?id=534780) (thanks to Space Dream)
+
+Feel free to vote if you would like to see sngrep be part of Gentoo portage tree.
+
+#### Arch
+You can find an unofficial PKGBUILD for Arch at [ArchLinux User Repositories](https://aur.archlinux.org/packages/sngrep/) (thanks to w1ngnutt)
+
+Feel free to vote if you would like to see sngrep at official Arch repositories.
+
 #### OSX
 OSX users can install sngrep using [homebrew](https://github.com/Homebrew/homebrew)
 
