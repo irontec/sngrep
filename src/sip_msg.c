@@ -122,9 +122,12 @@ msg_get_payload(sip_msg_t *msg)
     // Calculate message payload pointer
     // TODO Multi packet support
     capture_packet_t *packet = vector_first(msg->packets);
+
     // Get payload from packet data
     msg->payload = malloc(packet->payload_len + 1);
     memset(msg->payload, 0, packet->payload_len + 1);
+
+    // Get payload from packet
     if (packet->payload) {
         memcpy(msg->payload, packet->payload, packet->payload_len);
     } else {

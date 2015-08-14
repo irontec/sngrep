@@ -491,6 +491,7 @@ capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, in
 {
     capture_packet_t *pkt;
     pkt = malloc(sizeof(capture_packet_t));
+    memset(pkt, 0, sizeof(capture_packet_t));
     pkt->header = malloc(sizeof(struct pcap_pkthdr));
     pkt->data = malloc(size);
     memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
