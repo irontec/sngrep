@@ -95,6 +95,11 @@ capture_ws_check_packet(u_char *msg_payload, uint32_t *size_payload)
         offset += 4;
     }
 
+    // Not a Websocket packet
+    if (*size_payload < offset)
+        return 0;
+
+    // Skip Websocket headers
     *size_payload -= offset;
 
     if (*size_payload > 0) {
