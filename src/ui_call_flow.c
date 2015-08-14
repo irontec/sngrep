@@ -1051,6 +1051,7 @@ call_flow_set_group(sip_call_group_t *group)
     info->cur_line = 1;
     info->columns = NULL;
     info->selected = NULL;
+    info->last_msg = NULL;
 
     return 0;
 }
