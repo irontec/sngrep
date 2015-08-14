@@ -56,6 +56,9 @@ msg_destroy(sip_msg_t *msg)
     vector_destroy(msg->medias);
     // Free message packets
     vector_destroy(msg->packets);
+    // Free payload if parsed
+    if (msg->payload)
+        free(msg->payload);
     // Free all memory
     free(msg);
 }
@@ -119,8 +122,10 @@ msg_get_payload(sip_msg_t *msg)
     // Calculate message payload pointer
     // TODO Multi packet support
     capture_packet_t *packet = vector_first(msg->packets);
-    packet->data[packet->size - 1] = '\0';
-    msg->payload = packet->data + packet->payload_start;
+    // Get payload from packet data
+    msg->payload = malloc(packet->payload_len + 1);
+    memset(msg->payload, 0, packet->payload_len + 1);
+    memcpy(msg->payload, packet->data + (packet->size - packet->payload_len), packet->payload_len);
     return (const char *) msg->payload;
 }
 

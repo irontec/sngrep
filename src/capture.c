@@ -489,13 +489,12 @@ capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, in
 {
     capture_packet_t *pkt;
     pkt = malloc(sizeof(capture_packet_t));
-    pkt->size = size;
     pkt->header = malloc(sizeof(struct pcap_pkthdr));
-    memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
     pkt->data = malloc(size);
+    memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
     memcpy(pkt->data, packet, size);
+    pkt->size = size;
     pkt->payload_len = payload_len;
-    pkt->payload_start = size - pkt->payload_len;
     return pkt;
 }
 

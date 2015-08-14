@@ -156,8 +156,6 @@ struct capture_packet {
     u_char *data;
     //! PPCAP Packet content len
     int size;
-    //! Byte number where payload starts
-    int payload_start;
     //! Payload length
     int payload_len;
 };
