@@ -96,7 +96,7 @@ vector_append(vector_t *vector, void *item)
         vector->sorter(vector, item);
     }
 
-    return vector->count;
+    return vector->count - 1;
 }
 
 int

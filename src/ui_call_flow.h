@@ -91,6 +91,8 @@ struct call_flow_arrow {
     int height;
     //! Line of flow window this line starts
     int line;
+    //! Index in the arrow vector
+    int index;
 };
 
 

@@ -191,7 +191,8 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
         // Append this call to the call list
         pthread_mutex_lock(&calls.lock);
-        call_idx = vector_append(calls.list, call);
+        vector_append(calls.list, call);
+        call_idx = vector_count(calls.list);
         pthread_mutex_unlock(&calls.lock);
 
         // Store current call Index
