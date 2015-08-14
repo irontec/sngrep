@@ -125,12 +125,10 @@ call_flow_destroy(PANEL *panel)
         vector_destroy(info->columns);
         // Delete panel arrows
         vector_destroy(info->arrows);
-
         // Delete panel windows
         delwin(info->flow_win);
         delwin(info->raw_win);
         free(info);
-
     }
     // Delete panel window
     delwin(panel_window(panel));
@@ -247,7 +245,6 @@ call_flow_draw_columns(PANEL *panel)
     vector_iter_t columns;
     int flow_height, flow_width;
     const char *coltext;
-    char address[50], *end;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -285,10 +282,7 @@ call_flow_draw_columns(PANEL *panel)
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
 
         // Set bold to this address if it's local
-        strcpy(address, column->addr);
-        if ((end = strchr(address, ':')))
-            *end = '\0';
-        if (is_local_address_str(address) && setting_enabled(SETTING_CF_LOCALHIGHLIGHT))
+        if (is_local_address_str(column->addr) && setting_enabled(SETTING_CF_LOCALHIGHLIGHT))
             wattron(win, A_BOLD);
 
         coltext = sip_address_port_format(column->addr);

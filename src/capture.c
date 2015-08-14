@@ -674,7 +674,12 @@ lookup_hostname(const char *address)
 int
 is_local_address_str(const char *address)
 {
-    return is_local_address(inet_addr(address));
+    char straddress[ADDRESSLEN], *end;
+    strcpy(straddress, address);
+    // If address comes with port, remove it
+    if ((end = strchr(straddress, ':')))
+        *end = '\0';
+    return is_local_address(inet_addr(straddress));
 }
 
 int
