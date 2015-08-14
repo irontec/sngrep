@@ -103,6 +103,7 @@ call_flow_create()
     // Calculate available printable area for messages
     info->flow_win = subwin(win, height - 2 - 2 - 2, width - 2, 4, 0); // Header - Footer - Address
     info->raw_width = 0; // calculated with the available space after drawing columns
+    info->last_msg = NULL;
 
     return panel;
 }
@@ -257,10 +258,11 @@ call_flow_draw_columns(PANEL *panel)
     getmaxyx(info->flow_win, flow_height, flow_width);
 
     // Load columns
-    for (msg = call_group_get_next_msg(info->group, NULL); msg;
+    for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
         call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), SRC(msg));
         call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), DST(msg));
+        info->last_msg = msg;
     }
 
     // Add RTP columns FIXME Really

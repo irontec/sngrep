@@ -119,6 +119,8 @@ struct call_flow_info {
     WINDOW *flow_win;
     //! Group of calls displayed on the panel
     sip_call_group_t *group;
+    //! Last processed message
+    sip_msg_t *last_msg;
     //! List of arrows
     call_flow_arrow_t *arrows;
     //! First printed arrow of the panel
