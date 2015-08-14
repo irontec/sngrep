@@ -125,7 +125,11 @@ msg_get_payload(sip_msg_t *msg)
     // Get payload from packet data
     msg->payload = malloc(packet->payload_len + 1);
     memset(msg->payload, 0, packet->payload_len + 1);
-    memcpy(msg->payload, packet->data + (packet->size - packet->payload_len), packet->payload_len);
+    if (packet->payload) {
+        memcpy(msg->payload, packet->payload, packet->payload_len);
+    } else {
+        memcpy(msg->payload, packet->data + (packet->size - packet->payload_len), packet->payload_len);
+    }
     return (const char *) msg->payload;
 }
 

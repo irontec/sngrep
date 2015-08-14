@@ -154,6 +154,8 @@ struct capture_packet {
     struct pcap_pkthdr *header;
     //! PCAP Packet content
     u_char *data;
+    //! PCAP Packet payload when it can not be get from data
+    u_char *payload;
     //! PPCAP Packet content len
     int size;
     //! Payload length
@@ -321,6 +323,12 @@ capture_packet_destroyer(void *packet);
  */
 void
 capture_packet_set_type(capture_packet_t *packet, int type);
+
+/**
+ * @brief Set packet payload when it can not be get from packet
+ */
+void
+capture_packet_set_payload(capture_packet_t *packet, u_char *payload, int payload_len);
 
 /**
  * @brief Sorter by time for captured packets

@@ -323,6 +323,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Create a structure for this captured packet
     pkt = capture_packet_create(header, packet, size_packet, size_payload);
     capture_packet_set_type(pkt, transport);
+    if (transport == CAPTURE_PACKET_SIP_TLS || transport == CAPTURE_PACKET_SIP_WS)
+        capture_packet_set_payload(pkt, msg_payload, size_payload);
 
     // Parse this header and payload
     if ((msg = sip_load_message(pkt, ip_src, sport, ip_dst, dport, msg_payload))) {
@@ -503,6 +505,8 @@ capture_packet_destroy(capture_packet_t *packet)
 {
     free(packet->header);
     free(packet->data);
+    if (packet->payload)
+        free(packet->payload);
     free(packet);
 }
 
@@ -517,6 +521,14 @@ void
 capture_packet_set_type(capture_packet_t *packet, int type)
 {
     packet->type = type;
+}
+
+void
+capture_packet_set_payload(capture_packet_t *packet, u_char *payload, int payload_len)
+{
+    packet->payload = malloc(payload_len);
+    memset(packet->payload, 0, payload_len);
+    memcpy(packet->payload, payload, payload_len);
 }
 
 void
