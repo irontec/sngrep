@@ -84,7 +84,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     // Set the message owner
     msg->call = call;
     // Put this msg at the end of the msg list
-    vector_append(call->msgs, msg);
+    msg->index = vector_append(call->msgs, msg) - 1;
     // Store message count
     call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", vector_count(call->msgs));
 }

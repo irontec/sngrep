@@ -66,17 +66,6 @@ typedef struct call_flow_column call_flow_column_t;
 typedef struct call_flow_arrow call_flow_arrow_t;
 
 /**
- * @brief Structure to hold one column information
- */
-struct call_flow_column {
-    const char *addr;
-    const char *callid;
-    const char *callid2;
-    int colpos;
-    call_flow_column_t *next;
-};
-
-/**
  * @brief Call flow arrow types
  */
 enum call_flow_arrow_type {
@@ -102,8 +91,17 @@ struct call_flow_arrow {
     int height;
     //! Line of flow window this line starts
     int line;
-    //! Pointer to the next arrow
-    call_flow_arrow_t *next;
+};
+
+
+/**
+ * @brief Structure to hold one column information
+ */
+struct call_flow_column {
+    const char *addr;
+    const char *callid;
+    const char *callid2;
+    int colpos;
 };
 
 /**
@@ -121,8 +119,8 @@ struct call_flow_info {
     sip_call_group_t *group;
     //! Last processed message
     sip_msg_t *last_msg;
-    //! List of arrows
-    call_flow_arrow_t *arrows;
+    //! List of arrows (call_flow_arrow_t *)
+    vector_t *arrows;
     //! First printed arrow of the panel
     call_flow_arrow_t *first_arrow;
     //! Current arrow where the cursor is
@@ -134,7 +132,7 @@ struct call_flow_info {
     //! Current line for scrolling
     int cur_line;
     //! List of columns in the panel
-    call_flow_column_t *columns;
+    vector_t *columns;
 };
 
 /**

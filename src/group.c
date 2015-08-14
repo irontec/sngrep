@@ -167,20 +167,18 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
         call = vector_item(group->calls, i);
         msgs = vector_iterator(call->msgs);
 
+        if (msg && call == msg_get_call(msg))
+            vector_iterator_set_current(&msgs, msg->index);
+
         if (group->sdp_only)
             vector_iterator_set_filter(&msgs, msg_has_sdp);
-
-        // Optimization for groups with only one call
-        if (call_group_count(group) == 1) {
-            vector_iterator_set_current(&msgs, vector_index(call->msgs, msg));
-            return sip_parse_msg(vector_iterator_next(&msgs));
-        }
 
         cand = NULL;
         while ((cand = vector_iterator_next(&msgs))) {
             // candidate must be between msg and next
             if (sip_msg_is_older(cand, msg) && (!next || !sip_msg_is_older(cand, next))) {
                 next = cand;
+                break;
             }
         }
     }

@@ -105,6 +105,12 @@ call_flow_create()
     info->raw_width = 0; // calculated with the available space after drawing columns
     info->last_msg = NULL;
 
+    // Create vectors for columns and flow arrows
+    info->columns = vector_create(2, 1);
+    vector_set_destroyer(info->columns, vector_generic_destroyer);
+    info->arrows = vector_create(20, 5);
+    vector_set_destroyer(info->columns, vector_generic_destroyer);
+
     return panel;
 }
 
@@ -112,22 +118,13 @@ void
 call_flow_destroy(PANEL *panel)
 {
     call_flow_info_t *info;
-    call_flow_column_t *column;
-    call_flow_arrow_t *arrow;
 
     // Free the panel information
     if ((info = call_flow_info(panel))) {
-        // Delete panel columns;
-        while ((column = info->columns)) {
-            info->columns = column->next;
-            free(column);
-        }
-
+        // Delete panel columns
+        vector_destroy(info->columns);
         // Delete panel arrows
-        while ((arrow = info->arrows)) {
-            info->arrows = arrow->next;
-            free(arrow);
-        }
+        vector_destroy(info->arrows);
 
         // Delete panel windows
         delwin(info->flow_win);
@@ -247,12 +244,14 @@ call_flow_draw_columns(PANEL *panel)
     WINDOW *win;
     sip_msg_t *msg;
     vector_iter_t streams;
+    vector_iter_t columns;
     int flow_height, flow_width;
     const char *coltext;
     char address[50], *end;
 
     // Get panel information
     info = call_flow_info(panel);
+
     // Get window of main panel
     win = panel_window(panel);
     getmaxyx(info->flow_win, flow_height, flow_width);
@@ -279,7 +278,8 @@ call_flow_draw_columns(PANEL *panel)
     }
 
     // Draw vertical columns lines
-    for (column = info->columns; column; column = column->next) {
+    columns = vector_iterator(info->columns);
+    while ((column = vector_iterator_next(&columns))) {
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
         mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
@@ -608,7 +608,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
     rtp_stream_t *stream = NULL;
     struct timeval cur_time;
     call_flow_info_t *info;
-    call_flow_arrow_t *next, *tmp;
+    call_flow_arrow_t *next;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -680,12 +680,8 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
     }
 
     // Add this arrow to the list and return it
-    if (!info->arrows) {
-        info->arrows = next;
-    } else {
-        for (tmp = info->arrows; tmp->next; tmp = tmp->next);
-        tmp->next = next;
-    }
+    vector_append(info->arrows, next);
+
     return next;
 }
 
@@ -726,6 +722,7 @@ call_flow_arrow_find(PANEL *panel, const void *data)
 {
     call_flow_info_t *info;
     call_flow_arrow_t *arrow;
+    vector_iter_t arrows;
 
     if (!data)
         return NULL;
@@ -733,7 +730,8 @@ call_flow_arrow_find(PANEL *panel, const void *data)
     if (!(info = call_flow_info(panel)))
         return NULL;
 
-    for (arrow = info->arrows; arrow; arrow = arrow->next)
+    arrows = vector_iterator(info->arrows);
+    while ((arrow = vector_iterator_next(&arrows)))
         if (arrow->msg == data || arrow->stream == data)
             return arrow;
 
@@ -773,7 +771,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = width - (31 + 30 * info->columns->colpos) - 2;
+    raw_width = width - (30 * vector_count(info->columns)) - 2;
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
         raw_width = min_raw_width;
@@ -1049,7 +1047,8 @@ call_flow_set_group(sip_call_group_t *group)
     info->group = group;
     info->cur_arrow = info->first_arrow = call_flow_next_arrow(panel, NULL);
     info->cur_line = 1;
-    info->columns = NULL;
+    vector_clear(info->columns);
+    vector_clear(info->arrows);
     info->selected = NULL;
     info->last_msg = NULL;
 
@@ -1061,7 +1060,7 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
-    int colpos = 0;
+    vector_iter_t columns;
 
     if (!(info = call_flow_info(panel)))
         return;
@@ -1072,32 +1071,28 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
     if (call_flow_column_get(panel, callid, addr))
         return;
 
-    column = info->columns;
-    while (column) {
+    columns = vector_iterator(info->columns);
+    while ((column = vector_iterator_next(&columns))) {
         if (!strcasecmp(addr, column->addr) && column->colpos != 0 && !column->callid2) {
             column->callid2 = callid;
             return;
         }
-        column = column->next;
     }
-
-    if (info->columns)
-        colpos = info->columns->colpos + 1;
 
     column = malloc(sizeof(call_flow_column_t));
     memset(column, 0, sizeof(call_flow_column_t));
     column->callid = callid;
     column->addr = addr;
-    column->colpos = colpos;
-    column->next = info->columns;
-    info->columns = column;
+    column->colpos = vector_count(info->columns);
+    vector_append(info->columns, column);
 }
 
 call_flow_column_t *
 call_flow_column_get(PANEL *panel, const char *callid, const char *addr)
 {
     call_flow_info_t *info;
-    call_flow_column_t *columns;
+    call_flow_column_t *column;
+    vector_iter_t columns;
     int match_port;
     char coladdr[ADDRESSLEN + 6];
     char *dots;
@@ -1108,10 +1103,10 @@ call_flow_column_get(PANEL *panel, const char *callid, const char *addr)
     // Look for address or address:port ?
     match_port = (strchr(addr, ':') != NULL);
 
-    columns = info->columns;
-    while (columns) {
+    columns = vector_iterator(info->columns);
+    while ((column = vector_iterator_next(&columns))) {
         // Copy address:port column label
-        strcpy(coladdr, columns->addr);
+        strcpy(coladdr, column->addr);
 
         // Remove port if we want to match only address
         if (!match_port && (dots = strchr(coladdr, ':')))
@@ -1119,15 +1114,14 @@ call_flow_column_get(PANEL *panel, const char *callid, const char *addr)
 
         if (!strcasecmp(addr, coladdr)) {
             if (!match_port)
-                return columns;
+                return column;
             if (setting_enabled(SETTING_CF_SPLITCALLID))
-                return columns;
-            if (columns->callid && !strcasecmp(callid, columns->callid))
-                return columns;
-            if (columns->callid2 && !strcasecmp(callid, columns->callid2))
-                return columns;
+                return column;
+            if (column->callid && !strcasecmp(callid, column->callid))
+                return column;
+            if (column->callid2 && !strcasecmp(callid, column->callid2))
+                return column;
         }
-        columns = columns->next;
     }
     return NULL;
 }

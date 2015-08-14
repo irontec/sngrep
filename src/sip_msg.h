@@ -80,6 +80,8 @@ struct sip_msg {
     vector_t *medias;
     //! Captured packets for this message (capture_packet_t *)
     vector_t *packets;
+    //! Index of this message in call
+    int index;
     //! Message owner
     struct sip_call *call;
 };
