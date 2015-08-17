@@ -919,6 +919,8 @@ call_flow_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_TOGGLE_MEDIA:
                 setting_toggle(SETTING_CF_MEDIA);
+                // Force reload arrows
+                call_flow_set_group(info->group);
                 break;
             case ACTION_TOGGLE_RAW:
                 setting_toggle(SETTING_CF_FORCERAW);
@@ -1039,7 +1041,7 @@ call_flow_set_group(sip_call_group_t *group)
     vector_clear(info->arrows);
 
     info->group = group;
-    info->cur_arrow = info->first_arrow = call_flow_next_arrow(panel, NULL);
+    info->cur_arrow = info->first_arrow = info->selected = call_flow_next_arrow(panel, NULL);
     info->cur_line = 1;
     info->selected = NULL;
     info->last_msg = NULL;
