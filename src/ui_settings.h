@@ -121,16 +121,14 @@ enum settings_button_list {
 
 #define SETTINGS_ENTRY_COUNT (FLD_SETTINGS_COUNT - 3)
 
-struct settings_category
-{
+struct settings_category {
     // Category id
     enum settings_category_list cat_id;
     // Category label
     const char *title;
 };
 
-struct settings_entry
-{
+struct settings_entry {
     enum settings_category_list cat_id;
     //! Field id in settings_info array
     enum settings_field_list field_id;

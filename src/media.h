@@ -42,15 +42,13 @@ typedef struct sdp_media_fmt sdp_media_fmt_t;
 struct sip_msg;
 struct sip_call;
 
-struct sdp_media_fmt
-{
+struct sdp_media_fmt {
     u_int id;
     char format[50];
 };
 
 
-struct sdp_media
-{
+struct sdp_media {
     //! SDP Addresses information
     char address[ADDRESSLEN];
     u_short port;

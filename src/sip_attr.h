@@ -118,8 +118,7 @@ struct sip_attr_hdr {
 /**
  * @brief Attribute storage struct
  */
-struct sip_attr
-{
+struct sip_attr {
     //! Attribute id
     enum sip_attr_id id;
     //! Attribute value

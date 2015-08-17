@@ -49,15 +49,13 @@ typedef struct rtp_encoding rtp_encoding_t;
 //! Shorter declaration of rtp_stream structure
 typedef struct rtp_stream rtp_stream_t;
 
-struct rtp_encoding
-{
+struct rtp_encoding {
     u_int id;
     const char *name;
     const char *format;
 };
 
-struct rtp_stream
-{
+struct rtp_stream {
     //! Source address and port
     char ip_src[ADDRESSLEN];
     u_short sport;

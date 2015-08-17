@@ -402,7 +402,7 @@ column_select_save_columns(PANEL *panel)
     rename(userconf, tmpfile);
 
     // Create a new user conf file
-    if (!(fo = fopen(userconf, "w")))  {
+    if (!(fo = fopen(userconf, "w"))) {
         return;
     }
 

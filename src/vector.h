@@ -42,8 +42,7 @@ typedef struct vector_iter vector_iter_t;
 /**
  * @brief Structure to hold a list of pointers
  */
-struct vector
-{
+struct vector {
     //! Number of elements in list
     u_int count;
     //! Total space in list (available + elements)
@@ -58,8 +57,7 @@ struct vector
     void (*sorter) (vector_t *vector, void *item);
 };
 
-struct vector_iter
-{
+struct vector_iter {
     //! Last requested position
     int current;
     //! Vector that's being iterated

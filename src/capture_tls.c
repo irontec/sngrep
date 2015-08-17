@@ -115,8 +115,7 @@ PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, u
 }
 
 struct SSLConnection *
-tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport)
-{
+tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport) {
     struct SSLConnection *conn = NULL;
     conn = malloc(sizeof(struct SSLConnection));
     memset(conn, 0, sizeof(struct SSLConnection));
@@ -213,8 +212,7 @@ tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, u_short port
 }
 
 struct SSLConnection*
-tls_connection_find(struct in_addr addr, u_short port)
-{
+tls_connection_find(struct in_addr addr, u_short port) {
     struct SSLConnection *conn;
 
     for (conn = connections; conn; conn = conn->next) {

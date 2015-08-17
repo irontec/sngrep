@@ -53,8 +53,7 @@ typedef struct setting_option setting_t;
 #define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", NULL}
 
 //! Available setting Options
-enum setting_id
-{
+enum setting_id {
     SETTING_BACKGROUND = 0,
     SETTING_COLORMODE,
     SETTING_SYNTAX,
@@ -92,8 +91,7 @@ enum setting_id
 };
 
 //! Available setting formats
-enum setting_fmt
-{
+enum setting_fmt {
     SETTING_FMT_STRING = 0,
     SETTING_FMT_NUMBER,
     SETTING_FMT_ENUM,

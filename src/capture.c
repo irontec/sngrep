@@ -47,7 +47,7 @@
 
 // Capture information
 capture_info_t capinfo =
-    { 0 };
+{ 0 };
 
 int
 capture_online(const char *dev, const char *outfile)
@@ -691,7 +691,7 @@ is_local_address(in_addr_t address)
     for (device = capinfo.devices; device; device = device->next) {
         for (dev_addr = device->addresses; dev_addr; dev_addr = dev_addr->next)
             if (dev_addr->addr && dev_addr->addr->sa_family == AF_INET
-                    && ((struct sockaddr_in*) dev_addr->addr)->sin_addr.s_addr == address)
+                && ((struct sockaddr_in*) dev_addr->addr)->sin_addr.s_addr == address)
                 return 1;
     }
     return 0;

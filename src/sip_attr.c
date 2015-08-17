@@ -104,10 +104,10 @@ sip_attr_get_width(enum sip_attr_id id)
 }
 
 enum sip_attr_id
-sip_attr_from_name(const char *name) {
+sip_attr_from_name(const char *name)
+{
     int i;
-    for (i = 0; i < SIP_ATTR_COUNT; i++)
-    {
+    for (i = 0; i < SIP_ATTR_COUNT; i++) {
         if (!strcasecmp(name, attrs[i].name)) {
             return attrs[i].id;
         }

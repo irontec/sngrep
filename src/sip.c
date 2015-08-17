@@ -47,7 +47,7 @@
  * this awesome structure, so, keep it thread-safe.
  */
 sip_call_list_t calls =
-    { 0 };
+{ 0 };
 
 void
 sip_init(int limit, int only_calls, int no_incomplete)
@@ -453,7 +453,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
         // Check if we have a connection string
         if (!strncmp(line, "c=", 2)) {
             if (sscanf(line, "c=IN IP4 %s", media_address) && media) {
-                    media_set_address(media, media_address);
+                media_set_address(media, media_address);
             }
         }
 
@@ -512,7 +512,7 @@ sip_set_match_expression(const char *expr, int insensitive, int invert)
 
     // Case insensitive requested
     if (insensitive)
-    cflags |= REG_ICASE;
+        cflags |= REG_ICASE;
 
     // Check the expresion is a compilable regexp
     return regcomp(&calls.match_regex, expr, cflags) != 0;

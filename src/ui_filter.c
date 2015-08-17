@@ -207,9 +207,9 @@ filter_handle_key(PANEL *panel, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_PRINTABLE:
-                 // If this is a normal character on input field, print it
+                // If this is a normal character on input field, print it
                 if (field_idx == FLD_FILTER_SIPFROM || field_idx == FLD_FILTER_SIPTO
-                        || field_idx == FLD_FILTER_SRC || field_idx == FLD_FILTER_DST) {
+                    || field_idx == FLD_FILTER_SRC || field_idx == FLD_FILTER_DST) {
                     form_driver(info->form, key);
                     break;
                 }

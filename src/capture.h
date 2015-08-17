@@ -88,8 +88,7 @@ typedef struct dns_cache dns_cache_t;
 typedef struct capture_packet capture_packet_t;
 
 //! Stored packet types
-enum capture_packet_type
-{
+enum capture_packet_type {
     CAPTURE_PACKET_SIP_UDP = 0,
     CAPTURE_PACKET_SIP_TCP,
     CAPTURE_PACKET_SIP_TLS,

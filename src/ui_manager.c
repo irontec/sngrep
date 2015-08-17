@@ -51,8 +51,7 @@
  * and pointer to their main functions.
 
  */
-static ui_t *panel_pool[] =
-{
+static ui_t *panel_pool[] = {
     &ui_call_list,
     &ui_call_flow,
     &ui_call_raw,
@@ -97,7 +96,7 @@ ncurses_init()
     // Redefine some keys
     term = getenv("TERM");
     if (term
-            && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
+        && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
         define_key("\033[H", KEY_HOME);
         define_key("\033[F", KEY_END);
         define_key("\033OP", KEY_F(1));

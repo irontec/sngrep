@@ -80,7 +80,7 @@ capture_ws_check_packet(u_char *msg_payload, uint32_t *size_payload)
 
     // Skip Payload len
     switch (ws_len) {
-        // Extended
+            // Extended
         case 126:
             offset += 2;
             break;

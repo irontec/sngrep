@@ -55,8 +55,7 @@
 /**
  * @brief Available Key actions
  */
-enum key_actions
-{
+enum key_actions {
     ACTION_PRINTABLE = 0,
     ACTION_UP,
     ACTION_DOWN,
@@ -113,8 +112,7 @@ typedef struct key_binding key_binding_t;
 /**
  * @brief Struct to hold a keybinding data
  */
-struct key_binding
-{
+struct key_binding {
     //! keybindings for this action
     int keys[MAX_BINDINGS];
     //! How many keys are binded to this action

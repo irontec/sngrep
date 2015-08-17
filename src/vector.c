@@ -274,7 +274,7 @@ vector_iterator_prev(vector_iter_t *it)
 
 void
 vector_iterator_set_filter(vector_iter_t *it, int
-(*filter)(void *item))
+                           (*filter)(void *item))
 {
     it->filter = filter;
 }

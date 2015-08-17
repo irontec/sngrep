@@ -36,33 +36,33 @@
 /**
  * @brief Known RTP encodings
  */
-rtp_encoding_t encodings[] =
-{
-{ 0, "PCMU/8000", "g711u" },
-  { 3, "GSM/8000", "gsm" },
-  { 4, "G723/8000", "g723" },
-  { 5, "DVI4/8000", "dvi" },
-  { 6, "DVI4/16000", "dvi" },
-  { 7, "LPC/8000", "lpc" },
-  { 8, "PCMA/8000", "g711a" },
-  { 9, "G722/8000", "g722" },
-  { 10, "L16/44100", "l16" },
-  { 11, "L16/44100", "l16" },
-  { 12, "QCELP/8000", "qcelp" },
-  { 13, "CN/8000", "cn" },
-  { 14, "MPA/90000", "mpa" },
-  { 15, "G728/8000", "g728" },
-  { 16, "DVI4/11025", "dvi" },
-  { 17, "DVI4/22050", "dvi" },
-  { 18, "G729/8000", "g729" },
-  { 25, "CelB/90000", "celb" },
-  { 26, "JPEG/90000", "jpeg" },
-  { 28, "nv/90000", "nv" },
-  { 31, "H261/90000", "h261" },
-  { 32, "MPV/90000", "mpv" },
-  { 33, "MP2T/90000", "mp2t" },
-  { 34, "H263/90000", "h263" },
-  { 0, NULL, NULL } };
+rtp_encoding_t encodings[] = {
+    { 0, "PCMU/8000", "g711u" },
+    { 3, "GSM/8000", "gsm" },
+    { 4, "G723/8000", "g723" },
+    { 5, "DVI4/8000", "dvi" },
+    { 6, "DVI4/16000", "dvi" },
+    { 7, "LPC/8000", "lpc" },
+    { 8, "PCMA/8000", "g711a" },
+    { 9, "G722/8000", "g722" },
+    { 10, "L16/44100", "l16" },
+    { 11, "L16/44100", "l16" },
+    { 12, "QCELP/8000", "qcelp" },
+    { 13, "CN/8000", "cn" },
+    { 14, "MPA/90000", "mpa" },
+    { 15, "G728/8000", "g728" },
+    { 16, "DVI4/11025", "dvi" },
+    { 17, "DVI4/22050", "dvi" },
+    { 18, "G729/8000", "g729" },
+    { 25, "CelB/90000", "celb" },
+    { 26, "JPEG/90000", "jpeg" },
+    { 28, "nv/90000", "nv" },
+    { 31, "H261/90000", "h261" },
+    { 32, "MPV/90000", "mpv" },
+    { 33, "MP2T/90000", "mp2t" },
+    { 34, "H263/90000", "h263" },
+    { 0, NULL, NULL }
+};
 
 rtp_stream_t *
 stream_create(sdp_media_t *media, const char *dst, u_short dport)
@@ -107,8 +107,7 @@ stream_get_count(rtp_stream_t *stream)
 }
 
 struct sip_call *
-stream_get_call(rtp_stream_t *stream)
-{
+stream_get_call(rtp_stream_t *stream) {
     if (stream && stream->media && stream->media->msg)
         return stream->media->msg->call;
     return NULL;
@@ -175,7 +174,7 @@ rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short spor
     stream = rtp_find_stream(src, sport, dst, dport, format);
 
     // A valid stream has been found
-    if (stream)  {
+    if (stream) {
         // We have found a stream, but with different format
         if (stream->pktcnt && stream->fmtcode != format) {
             // Create a new stream for this new format

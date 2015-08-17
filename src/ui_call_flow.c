@@ -253,24 +253,22 @@ call_flow_draw_columns(PANEL *panel)
     win = panel_window(panel);
     getmaxyx(info->flow_win, flow_height, flow_width);
 
-    if (vector_count(info->columns) == 0) {
-        // Load columns
-        for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
-             msg = call_group_get_next_msg(info->group, msg)) {
-            call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), SRC(msg));
-            call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), DST(msg));
-            info->last_msg = msg;
-        }
+    // Load columns
+    for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
+         msg = call_group_get_next_msg(info->group, msg)) {
+        call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), SRC(msg));
+        call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), DST(msg));
+        info->last_msg = msg;
+    }
 
-        // Add RTP columns FIXME Really
-        if (setting_enabled(SETTING_CF_MEDIA)) {
-            while ((call = call_group_get_next(info->group, call)) ) {
-                streams = vector_iterator(call->streams);
-                while ((stream = vector_iterator_next(&streams))) {
-                    if (stream_get_count(stream)) {
-                        call_flow_column_add(panel, NULL, stream->ip_src);
-                        call_flow_column_add(panel, NULL, stream->ip_dst);
-                    }
+    // Add RTP columns FIXME Really
+    if (setting_enabled(SETTING_CF_MEDIA)) {
+        while ((call = call_group_get_next(info->group, call)) ) {
+            streams = vector_iterator(call->streams);
+            while ((stream = vector_iterator_next(&streams))) {
+                if (stream_get_count(stream)) {
+                    call_flow_column_add(panel, NULL, stream->ip_src);
+                    call_flow_column_add(panel, NULL, stream->ip_dst);
                 }
             }
         }
@@ -307,7 +305,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     const char *msg_src;
     const char *msg_dst;
     char method[80];
-    char delta[15] = {};
+    char delta[15] = { };
     int height, width;
     char mediastr[40];
     sip_msg_t *msg = arrow->msg;
@@ -753,7 +751,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 
     // Get panel information
     if (!(info = call_flow_info(panel)))
-            return 1;
+        return 1;
 
     // Get window of main panel
     win = panel_window(panel);

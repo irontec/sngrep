@@ -188,7 +188,7 @@ main(int argc, char* argv[])
             case 'q':
                 quiet = 1;
                 break;
-            // Dark options for dummy ones
+                // Dark options for dummy ones
             case 'p':
             case 't':
             case 'W':

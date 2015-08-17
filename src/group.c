@@ -104,7 +104,7 @@ call_group_get_next(sip_call_group_t *group, sip_call_t *call)
 
         // Is first message of this call older?
         if (sip_msg_is_older(first, vector_first(call->msgs))
-                && (!next || !sip_msg_is_older(first, next))) {
+            && (!next || !sip_msg_is_older(first, next))) {
             next = first;
             break;
         }

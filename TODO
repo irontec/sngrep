@@ -7,12 +7,6 @@ capture:
         so if a packet is marked as fragmented, part of its payload
         will not be displayed.
 
-	* Add command line option to capture rtp packets
-		All relevant captured packets are stored in memory, so this
-		option should not be enabled by default. Adding a --rtp argument
-		to make sngrep store this packets for saving them will be an
-		option.
-
 ui:
  	* Change panels initialization
 		Right now, all panels are initializated at the same, because

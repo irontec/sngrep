@@ -241,19 +241,32 @@ key_to_str(int key)
 {
     //! Check function keys and Special keys
     switch(key) {
-        case KEY_F(1): return "F1";
-        case KEY_F(2): return "F2";
-        case KEY_F(3): return "F3";
-        case KEY_F(4): return "F4";
-        case KEY_F(5): return "F5";
-        case KEY_F(6): return "F6";
-        case KEY_F(7): return "F7";
-        case KEY_F(8): return "F8";
-        case KEY_F(9): return "F9";
-        case KEY_F(10): return "F10";
-        case KEY_ESC: return "Esc";
-        case KEY_INTRO: return "Enter";
-        case ' ': return "Space";
+        case KEY_F(1):
+            return "F1";
+        case KEY_F(2):
+            return "F2";
+        case KEY_F(3):
+            return "F3";
+        case KEY_F(4):
+            return "F4";
+        case KEY_F(5):
+            return "F5";
+        case KEY_F(6):
+            return "F6";
+        case KEY_F(7):
+            return "F7";
+        case KEY_F(8):
+            return "F8";
+        case KEY_F(9):
+            return "F9";
+        case KEY_F(10):
+            return "F10";
+        case KEY_ESC:
+            return "Esc";
+        case KEY_INTRO:
+            return "Enter";
+        case ' ':
+            return "Space";
         default:
             if (key_is_printable(key))
                 return keyname(key);

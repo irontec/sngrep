@@ -70,8 +70,7 @@ msg_destroyer(void *msg)
 }
 
 struct sip_call *
-msg_get_call(const sip_msg_t *msg)
-{
+msg_get_call(const sip_msg_t *msg) {
     return msg->call;
 }
 
@@ -137,8 +136,7 @@ msg_get_payload(sip_msg_t *msg)
 }
 
 struct timeval
-msg_get_time(sip_msg_t *msg)
-{
+msg_get_time(sip_msg_t *msg) {
     struct timeval t = { };
     capture_packet_t *packet;
 
