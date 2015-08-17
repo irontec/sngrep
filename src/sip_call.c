@@ -141,10 +141,13 @@ call_msg_is_retrans(sip_msg_t *msg)
     sip_msg_t *prev = NULL;
     vector_iter_t it;
 
-    // Get previous message in call
+    // Get previous message in call with same origin and destination
     it = vector_iterator(msg->call->msgs);
     vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
-    prev = vector_iterator_prev(&it);
+    while ((prev = vector_iterator_prev(&it))) {
+        if (!strcmp(SRC(prev), SRC(msg)) && !strcmp(DST(prev), DST(msg)))
+            break;
+    }
 
     return (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev)));
 }
