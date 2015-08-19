@@ -254,7 +254,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         dport = htons(udp->uh_dport);
 
         size_payload = htons(udp->uh_ulen) - udp_size;
-        if (size_payload != 0) {
+        if ((int32_t)size_payload > 0) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
             memset(msg_payload, 0, size_payload + 1);
@@ -277,7 +277,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
         // We're only interested in packets with payload
         size_payload = ip_len - (size_ip + tcp_size);
-        if (size_payload != 0) {
+        if ((int32_t)size_payload > 0) {
             // Get packet payload
             msg_payload = malloc(size_payload + 1);
             memset(msg_payload, 0, size_payload + 1);
@@ -297,7 +297,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
                 tls_process_segment(ip4, &msg_payload, &size_payload);
 
                 // Check if we have decoded payload
-                if (size_payload == 0) {
+                if ((int32_t)size_payload > 0) {
                     free(msg_payload);
                     return;
                 }
@@ -317,7 +317,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     }
 
     // We're only interested in packets with payload
-    if (size_payload == 0)
+    if ((int32_t)size_payload <= 0)
         return;
 
     // Create a structure for this captured packet
