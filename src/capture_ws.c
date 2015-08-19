@@ -102,7 +102,7 @@ capture_ws_check_packet(u_char *msg_payload, uint32_t *size_payload)
     // Skip Websocket headers
     *size_payload -= offset;
 
-    if (*size_payload > 0) {
+    if ((int32_t)*size_payload > 0) {
         // Set the Websocket payload as new payload
         for (i = 0; i < *size_payload; i++)
             msg_payload[i] = msg_payload[i + offset];

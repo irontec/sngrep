@@ -85,7 +85,7 @@ capture_online(const char *dev, const char *outfile)
     capinfo.link = pcap_datalink(capinfo.handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if (datalink_size(capinfo.link) == -1) {
+    if ((capinfo.link_hl = datalink_size(capinfo.link)) == -1) {
         fprintf(stderr, "Unable to handle linktype %d\n", capinfo.link);
         return 3;
     }
@@ -126,7 +126,7 @@ capture_offline(const char *infile, const char *outfile)
     capinfo.link = pcap_datalink(capinfo.handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if (datalink_size(capinfo.link) == -1) {
+    if ((capinfo.link_hl = datalink_size(capinfo.link)) == -1) {
         fprintf(stderr, "Unable to handle linktype %d\n", capinfo.link);
         return 3;
     }
@@ -137,24 +137,20 @@ capture_offline(const char *infile, const char *outfile)
 void
 parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet)
 {
-    // Datalink Header size
-    int size_link;
-    // IP version
-    uint32_t ip_ver;
     // IP header data
     struct ip *ip4;
 #ifdef WITH_IPV6
     // IPv6 header data
     struct ip6_hdr *ip6;
 #endif
+    // IP version
+    uint32_t ip_ver;
     // IP protocol
     uint8_t ip_proto;
-    // IP segment length
-    uint32_t ip_len;
     // IP header size
-    uint32_t size_ip;
+    uint32_t ip_hl = 0;
     // Fragment offset
-    uint16_t ip_off = 0;
+    uint32_t ip_off = 0;
     // Fragmentation flag
     uint8_t ip_frag = 0;
     // Fragmentation offset
@@ -163,26 +159,22 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     char ip_src[ADDRESSLEN];
     //! Destination Address
     char ip_dst[ADDRESSLEN];
+    // Source and Destination Ports
+    u_short sport, dport;
     // UDP header data
     struct udphdr *udp;
     // UDP header size
-    uint16_t udp_size;
+    uint16_t udp_off;
     // TCP header data
     struct tcphdr *tcp;
     // TCP header size
-    uint16_t tcp_size;
+    uint16_t tcp_off;
     // Packet payload data
-    u_char *msg_payload = NULL;
+    u_char *payload = NULL;
     // Packet payload size
     uint32_t size_payload = header->caplen;
-    // Parsed message data
-    sip_msg_t *msg;
-    // Total packet size
-    uint32_t size_packet;
     // SIP message transport
     int transport;
-    // Source and Destination Ports
-    u_short sport, dport;
     // Media structure for RTP packets
     rtp_stream_t *stream;
     // Captured packet info
@@ -196,15 +188,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     if (capinfo.limit && sip_calls_count() >= capinfo.limit)
         return;
 
-    // Get link header size from datalink type
-    size_link = datalink_size(capinfo.link);
-
     // Get IP header
-    ip4 = (struct ip*) (packet + size_link);
+    ip4 = (struct ip *) (packet + capinfo.link_hl);
 
 #ifdef WITH_IPV6
     // Get IPv6 header
-    ip6 = (struct ip6_hdr*) (packet + size_link);
+    ip6 = (struct ip6_hdr *) (packet + capinfo.link_hl);
 #endif
 
     // Get IP version
@@ -212,28 +201,30 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     switch (ip_ver) {
         case 4:
-            size_ip = ip4->ip_hl * 4;
+            ip_hl = ip4->ip_hl * 4;
             ip_proto = ip4->ip_p;
-            ip_len = ntohs(ip4->ip_len);
-            inet_ntop(AF_INET, &ip4->ip_src, ip_src, sizeof(ip_src));
-            inet_ntop(AF_INET, &ip4->ip_dst, ip_dst, sizeof(ip_dst));
-
             ip_off = ntohs(ip4->ip_off);
+
             ip_frag = ip_off & (IP_MF | IP_OFFMASK);
             ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
+            // TODO Get fragment information
+
+            inet_ntop(AF_INET, &ip4->ip_src, ip_src, sizeof(ip_src));
+            inet_ntop(AF_INET, &ip4->ip_dst, ip_dst, sizeof(ip_dst));
             break;
 #ifdef WITH_IPV6
         case 6:
-            size_ip = sizeof(struct ip6_hdr);
+            ip_hl = sizeof(struct ip6_hdr);
             ip_proto = ip6->ip6_nxt;
-            ip_len = ntohs(ip6->ip6_plen);
-            inet_ntop(AF_INET6, &ip6->ip6_src, ip_src, INET6_ADDRSTRLEN);
-            inet_ntop(AF_INET6, &ip6->ip6_dst, ip_dst, INET6_ADDRSTRLEN);
 
             if (ip_proto == IPPROTO_FRAGMENT) {
-                struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_len);
+                struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_hl);
                 ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
+                // TODO Get fragment information
             }
+
+            inet_ntop(AF_INET6, &ip6->ip6_src, ip_src, sizeof(ip_src));
+            inet_ntop(AF_INET6, &ip6->ip6_dst, ip_dst, sizeof(ip_dst));
             break;
 #endif
         default:
@@ -242,60 +233,69 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
     // Only interested in UDP packets
     if (ip_proto == IPPROTO_UDP) {
-        // Set transport UDP
-        transport = CAPTURE_PACKET_SIP_UDP;
-
         // Get UDP header
-        udp = (struct udphdr*) (packet + size_link + size_ip);
-        udp_size = (ip_frag_off) ? 0 : sizeof(struct udphdr);
+        udp = (struct udphdr *)((u_char *)(ip4) + ip_hl);
+        udp_off = (ip_frag_off) ? 0 : sizeof(struct udphdr);
 
         // Set packet ports
         sport = htons(udp->uh_sport);
         dport = htons(udp->uh_dport);
 
-        size_payload = htons(udp->uh_ulen) - udp_size;
+        // Get actual payload size
+        size_payload -= capinfo.link_hl + ip_hl + udp_off;
+
+#ifdef WITH_IPV6
+        if (ip_ver == 6)
+            size_payload -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
+#endif
+
         if ((int32_t)size_payload > 0) {
             // Get packet payload
-            msg_payload = sng_malloc(size_payload + 1);
-            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + udp_size), size_payload);
+            payload = sng_malloc(size_payload + 1);
+            memcpy(payload, (u_char *) (udp) + udp_off, size_payload);
         }
 
-        // Total packet size
-        size_packet = size_link + size_ip + udp_size + size_payload;
+        // Set transport UDP
+        transport = CAPTURE_PACKET_SIP_UDP;
 
     } else if (ip_proto == IPPROTO_TCP) {
-        // Set transport TCP
-        transport = CAPTURE_PACKET_SIP_TCP;
-
-        tcp = (struct tcphdr*) (ip4 + size_ip);
-        tcp_size = (ip_frag_off) ? 0 : (tcp->th_off * 4);
+        // Get TCP header
+        tcp = (struct tcphdr *)((u_char *)(ip4 )+ ip_hl);
+        tcp_off = (ip_frag_off) ? 0 : (tcp->th_off * 4);
 
         // Set packet ports
         sport = htons(tcp->th_sport);
         dport = htons(tcp->th_dport);
 
-        // We're only interested in packets with payload
-        size_payload = ip_len - (size_ip + tcp_size);
+        // Get actual payload size
+        size_payload -= capinfo.link_hl + ip_hl + tcp_off;
+
+#ifdef WITH_IPV6
+        if (ip_ver == 6)
+            size_payload -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
+#endif
+
         if ((int32_t)size_payload > 0) {
             // Get packet payload
-            msg_payload = sng_malloc(size_payload + 1);
-            memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + tcp_size), size_payload);
+            payload = sng_malloc(size_payload + 1);
+            memcpy(payload, (u_char *)(tcp) + tcp_off, size_payload);
         }
 
-        // Total packet size
-        size_packet = size_link + size_ip + tcp_size + size_payload;
+        // Set transport TCP
+        transport = CAPTURE_PACKET_SIP_TCP;
+
 #ifdef WITH_OPENSSL
-        if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
+        if (!payload || !strstr((const char*) payload, "SIP/2.0")) {
             if (capture_get_keyfile()) {
                 // Allocate memory for the payload
-                msg_payload = sng_malloc(size_payload + 1);
+                payload = sng_malloc(size_payload + 1);
 
                 // Try to decrypt the packet
-                tls_process_segment(ip4, &msg_payload, &size_payload);
+                tls_process_segment(ip4, &payload, &size_payload);
 
                 // Check if we have decoded payload
-                if ((int32_t)size_payload > 0) {
-                    sng_free(msg_payload);
+                if ((int32_t)size_payload <= 0) {
+                    sng_free(payload);
                     return;
                 }
 
@@ -305,7 +305,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         }
 #endif
         // Check if packet is Websocket
-        if (msg_payload && capture_ws_check_packet(msg_payload, &size_payload)) {
+        if (payload && capture_ws_check_packet(payload, &size_payload)) {
             transport = CAPTURE_PACKET_SIP_WS;
         }
     } else {
@@ -318,23 +318,23 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Create a structure for this captured packet
-    pkt = capture_packet_create(header, packet, size_packet, size_payload);
+    pkt = capture_packet_create(header, packet, header->caplen, size_payload);
     capture_packet_set_type(pkt, transport);
     if (transport == CAPTURE_PACKET_SIP_TLS || transport == CAPTURE_PACKET_SIP_WS)
-        capture_packet_set_payload(pkt, msg_payload, size_payload);
+        capture_packet_set_payload(pkt, payload, size_payload);
 
     // Parse this header and payload
-    if ((msg = sip_load_message(pkt, ip_src, sport, ip_dst, dport, msg_payload))) {
+    if (sip_load_message(pkt, ip_src, sport, ip_dst, dport, payload)) {
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
         // Deallocate packet duplicated payload
-        sng_free(msg_payload);
+        sng_free(payload);
         return;
     }
 
     // Check if this packet belongs to a RTP stream
     // TODO Store this packet in the stream
-    if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, msg_payload, size_payload))) {
+    if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, payload, size_payload))) {
         // We have an RTP packet!
         capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
         // Store this pacekt if capture rtp is enabled
@@ -346,12 +346,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
         // Deallocate packet duplicated payload
-        sng_free(msg_payload);
+        sng_free(payload);
         return;
     }
 
     // Deallocate packet duplicated payload
-    sng_free(msg_payload);
+    sng_free(payload);
 
     // Not an interesting packet ...
     capture_packet_destroy(pkt);
@@ -558,7 +558,7 @@ capture_packet_time_sorter(vector_t *vector, void *item)
 }
 
 
-int
+uint8_t
 datalink_size(int datalink)
 {
     // Datalink header size
