@@ -32,6 +32,22 @@
 // Capture headers has some fixes for pcap timevals in BSD systems
 #include "capture.h"
 
+// Max Memmory allocation
+#define MALLOC_MAX_SIZE 102400
+
+
+/**
+ * @brief Wrapper for memory allocation
+ */
+void *
+sng_malloc(size_t size);
+
+/**
+ * @brief Wrapper for memmory deallocation
+ */
+void
+sng_free(void *ptr);
+
 /**
  * @brief Convert timeval to yyyy/mm/dd format
  */

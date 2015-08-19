@@ -5,6 +5,6 @@ test_003_SOURCES=test_003.c
 test_004_SOURCES=test_004.c
 test_005_SOURCES=test_005.c
 test_006_SOURCES=test_006.c
-test_007_SOURCES=test_007.c ../src/vector.c
+test_007_SOURCES=test_007.c ../src/vector.c ../src/util.c
 
 TESTS = $(check_PROGRAMS)

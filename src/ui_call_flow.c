@@ -90,8 +90,7 @@ call_flow_create()
     panel = new_panel(newwin(LINES, COLS, 0, 0));
 
     // Initialize Call List specific data
-    info = malloc(sizeof(call_flow_info_t));
-    memset(info, 0, sizeof(call_flow_info_t));
+    info = sng_malloc(sizeof(call_flow_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
@@ -128,7 +127,7 @@ call_flow_destroy(PANEL *panel)
         // Delete panel windows
         delwin(info->flow_win);
         delwin(info->raw_win);
-        free(info);
+        sng_free(info);
     }
     // Delete panel window
     delwin(panel_window(panel));
@@ -636,29 +635,25 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
     /* a rtp stream goes next */
     if (!msg) {
         // Create a new arrow to store next info
-        next = malloc(sizeof(call_flow_arrow_t));
-        memset(next, 0, sizeof(call_flow_arrow_t));
+        next = sng_malloc(sizeof(call_flow_arrow_t));
         next->type = CF_ARROW_RTP;
         next->stream = stream;
     } else if (!stream) {
         /* a sip message goes next */
         // Create a new arrow to store next info
-        next = malloc(sizeof(call_flow_arrow_t));
-        memset(next, 0, sizeof(call_flow_arrow_t));
+        next = sng_malloc(sizeof(call_flow_arrow_t));
         next->type = CF_ARROW_SIP;
         next->msg = msg;
     } else {
         /* Determine what goes next */
         if (timeval_is_older(msg_get_time(msg), stream->time)) {
             // Create a new arrow to store next info
-            next = malloc(sizeof(call_flow_arrow_t));
-            memset(next, 0, sizeof(call_flow_arrow_t));
+            next = sng_malloc(sizeof(call_flow_arrow_t));
             next->type = CF_ARROW_RTP;
             next->stream = stream;
         } else {
             // Create a new arrow to store next info
-            next = malloc(sizeof(call_flow_arrow_t));
-            memset(next, 0, sizeof(call_flow_arrow_t));
+            next = sng_malloc(sizeof(call_flow_arrow_t));
             next->type = CF_ARROW_SIP;
             next->msg = msg;
         }
@@ -1073,8 +1068,7 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
         }
     }
 
-    column = malloc(sizeof(call_flow_column_t));
-    memset(column, 0, sizeof(call_flow_column_t));
+    column = sng_malloc(sizeof(call_flow_column_t));
     column->callid = callid;
     column->addr = addr;
     column->colpos = vector_count(info->columns);

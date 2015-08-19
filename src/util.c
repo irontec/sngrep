@@ -35,6 +35,31 @@
 #include "util.h"
 
 
+void *
+sng_malloc(size_t size)
+{
+    void *data;
+
+    // Check memory allocation size
+    if (size <= 0 || size > MALLOC_MAX_SIZE)
+        return NULL;
+
+    // Allocate memory
+    if (!(data = malloc(size)))
+        return NULL;
+
+    // Initialize allocated memory
+    memset(data, 0, size);
+    return data;
+}
+
+void
+sng_free(void *ptr)
+{
+    if (ptr)
+        free(ptr);
+}
+
 const char *
 timeval_to_date(struct timeval time, char *out)
 {

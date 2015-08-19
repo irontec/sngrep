@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "vector.h"
+#include "util.h"
 
 int main ()
 {
@@ -41,7 +42,7 @@ int main ()
     assert(vector_count(vector) == 0);
     vector_append(vector, 0);
     assert(vector_count(vector) == 0);
-    vector_append(vector, malloc(1024));
+    vector_append(vector, sng_malloc(1024));
     assert(vector_count(vector) == 1);
     assert(vector_first(vector) == vector_item(vector, 0));
     vector_remove(vector, vector_first(vector));
@@ -49,23 +50,23 @@ int main ()
     assert(vector_first(vector) == vector_item(vector, 0));
 
     // Vector overflow test
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
     // Next append requires memory reallocation
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
-    vector_append(vector, malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
+    vector_append(vector, sng_malloc(32));
     // Expected vector size
     assert(vector_count(vector) == 16);
     // Expected empty position

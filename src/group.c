@@ -34,10 +34,9 @@ sip_call_group_t *
 call_group_create()
 {
     sip_call_group_t *group;
-    if (!(group = malloc(sizeof(sip_call_group_t)))) {
+    if (!(group = sng_malloc(sizeof(sip_call_group_t)))) {
         return NULL;
     }
-    memset(group, 0, sizeof(sip_call_group_t));
     group->calls = vector_create(5, 2);
     return group;
 }
@@ -46,7 +45,7 @@ void
 call_group_destroy(sip_call_group_t *group)
 {
     vector_destroy(group->calls);
-    free(group);
+    sng_free(group);
 }
 
 void

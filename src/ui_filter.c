@@ -66,8 +66,7 @@ filter_create()
     panel = new_panel(win);
 
     // Initialize Filter panel specific data
-    info = malloc(sizeof(filter_info_t));
-    memset(info, 0, sizeof(filter_info_t));
+    info = sng_malloc(sizeof(filter_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);

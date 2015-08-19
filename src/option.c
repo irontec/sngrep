@@ -33,6 +33,7 @@
 #include "keybinding.h"
 #include "option.h"
 #include "setting.h"
+#include "util.h"
 
 /**
  * @brief Configuration options array
@@ -85,8 +86,8 @@ deinit_options()
     int i;
     // Deallocate options memory
     for (i = 0; i < optscnt; i++) {
-        free(options[i].opt);
-        free(options[i].value);
+        sng_free(options[i].opt);
+        sng_free(options[i].value);
     }
 }
 
@@ -165,7 +166,7 @@ set_option_value(const char *opt, const char *value)
     } else {
         for (i = 0; i < optscnt; i++) {
             if (!strcasecmp(opt, options[i].opt)) {
-                free(options[i].value);
+                sng_free(options[i].value);
                 options[i].value = strdup(value);
             }
         }

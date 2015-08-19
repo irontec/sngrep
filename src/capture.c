@@ -174,7 +174,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Packet payload data
     u_char *msg_payload = NULL;
     // Packet payload size
-    uint32_t size_payload;
+    uint32_t size_payload = header->caplen;
     // Parsed message data
     sip_msg_t *msg;
     // Total packet size
@@ -256,8 +256,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         size_payload = htons(udp->uh_ulen) - udp_size;
         if ((int32_t)size_payload > 0) {
             // Get packet payload
-            msg_payload = malloc(size_payload + 1);
-            memset(msg_payload, 0, size_payload + 1);
+            msg_payload = sng_malloc(size_payload + 1);
             memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + udp_size), size_payload);
         }
 
@@ -268,7 +267,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Set transport TCP
         transport = CAPTURE_PACKET_SIP_TCP;
 
-        tcp = (struct tcphdr*) (packet + size_link + size_ip);
+        tcp = (struct tcphdr*) (ip4 + size_ip);
         tcp_size = (ip_frag_off) ? 0 : (tcp->th_off * 4);
 
         // Set packet ports
@@ -279,8 +278,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         size_payload = ip_len - (size_ip + tcp_size);
         if ((int32_t)size_payload > 0) {
             // Get packet payload
-            msg_payload = malloc(size_payload + 1);
-            memset(msg_payload, 0, size_payload + 1);
+            msg_payload = sng_malloc(size_payload + 1);
             memcpy(msg_payload, (u_char *) (packet + size_link + size_ip + tcp_size), size_payload);
         }
 
@@ -290,15 +288,14 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         if (!msg_payload || !strstr((const char*) msg_payload, "SIP/2.0")) {
             if (capture_get_keyfile()) {
                 // Allocate memory for the payload
-                msg_payload = malloc(size_payload + 1);
-                memset(msg_payload, 0, size_payload + 1);
+                msg_payload = sng_malloc(size_payload + 1);
 
                 // Try to decrypt the packet
                 tls_process_segment(ip4, &msg_payload, &size_payload);
 
                 // Check if we have decoded payload
                 if ((int32_t)size_payload > 0) {
-                    free(msg_payload);
+                    sng_free(msg_payload);
                     return;
                 }
 
@@ -331,7 +328,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
         // Deallocate packet duplicated payload
-        free(msg_payload);
+        sng_free(msg_payload);
         return;
     }
 
@@ -349,12 +346,12 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Store this packets in output file
         dump_packet(capinfo.pd, header, packet);
         // Deallocate packet duplicated payload
-        free(msg_payload);
+        sng_free(msg_payload);
         return;
     }
 
     // Deallocate packet duplicated payload
-    free(msg_payload);
+    sng_free(msg_payload);
 
     // Not an interesting packet ...
     capture_packet_destroy(pkt);
@@ -490,10 +487,9 @@ capture_packet_t *
 capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size, int payload_len)
 {
     capture_packet_t *pkt;
-    pkt = malloc(sizeof(capture_packet_t));
-    memset(pkt, 0, sizeof(capture_packet_t));
-    pkt->header = malloc(sizeof(struct pcap_pkthdr));
-    pkt->data = malloc(size);
+    pkt = sng_malloc(sizeof(capture_packet_t));
+    pkt->header = sng_malloc(sizeof(struct pcap_pkthdr));
+    pkt->data = sng_malloc(size);
     memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
     memcpy(pkt->data, packet, size);
     pkt->size = size;
@@ -504,11 +500,11 @@ capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, in
 void
 capture_packet_destroy(capture_packet_t *packet)
 {
-    free(packet->header);
-    free(packet->data);
+    sng_free(packet->header);
+    sng_free(packet->data);
     if (packet->payload)
-        free(packet->payload);
-    free(packet);
+        sng_free(packet->payload);
+    sng_free(packet);
 }
 
 
@@ -527,8 +523,7 @@ capture_packet_set_type(capture_packet_t *packet, int type)
 void
 capture_packet_set_payload(capture_packet_t *packet, u_char *payload, int payload_len)
 {
-    packet->payload = malloc(payload_len);
-    memset(packet->payload, 0, payload_len);
+    packet->payload = sng_malloc(payload_len);
     memcpy(packet->payload, payload, payload_len);
 }
 

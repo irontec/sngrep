@@ -34,6 +34,7 @@
 #include "capture.h"
 #include "capture_tls.h"
 #include "option.h"
+#include "util.h"
 
 struct SSLConnection *connections;
 
@@ -117,7 +118,7 @@ PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, u
 struct SSLConnection *
 tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport) {
     struct SSLConnection *conn = NULL;
-    conn = malloc(sizeof(struct SSLConnection));
+    conn = sng_malloc(sizeof(struct SSLConnection));
     memset(conn, 0, sizeof(struct SSLConnection));
 
     memcpy(&conn->client_addr, &caddr, sizeof(struct in_addr));
@@ -166,7 +167,7 @@ tls_connection_destroy(struct SSLConnection *conn)
     // Deallocate connection memory
     SSL_CTX_free(conn->ssl_ctx);
     SSL_free(conn->ssl);
-    free(conn);
+    sng_free(conn);
 }
 
 /**
@@ -393,7 +394,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                                     (unsigned char *) &conn->pre_master_secret,
                                     conn->server_private_key->pkey.rsa, RSA_PKCS1_PADDING);
 
-                unsigned char *seed = malloc(sizeof(struct Random) * 2);
+                unsigned char *seed = sng_malloc(sizeof(struct Random) * 2);
                 memcpy(seed, &conn->client_random, sizeof(struct Random));
                 memcpy(seed + sizeof(struct Random), &conn->server_random, sizeof(struct Random));
 
@@ -411,7 +412,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                     (unsigned char *) "key expansion", seed, sizeof(struct Random) * 2);
 
                 // Done with the seed
-                free(seed);
+                sng_free(seed);
 
                 // Create Client decoder
                 EVP_CIPHER_CTX_init(&conn->client_cipher_ctx);
@@ -430,10 +431,10 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
             default:
                 if (conn->encrypted) {
                     // Encrypted Hanshake Message
-                    unsigned char *decoded = malloc(48);
+                    unsigned char *decoded = sng_malloc(48);
                     uint32_t decodedlen;
                     tls_process_record_data(conn, fragment, 48, &decoded, &decodedlen);
-                    free(decoded);
+                    sng_free(decoded);
                 }
                 break;
         }
@@ -457,7 +458,7 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
         evp = &conn->server_cipher_ctx;
     }
 
-    decoded = malloc(len);
+    decoded = sng_malloc(len);
     EVP_Cipher(evp, decoded, (unsigned char *) fragment, len);
 
     // Get padding counter and remove from data
@@ -470,7 +471,7 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
     }
 
     // Clenaup decoded memory
-    free(decoded);
+    sng_free(decoded);
     return *outl;
 }
 

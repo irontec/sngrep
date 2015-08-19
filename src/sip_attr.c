@@ -32,6 +32,7 @@
 #include <stdarg.h>
 #include "option.h"
 #include "sip_attr.h"
+#include "util.h"
 
 static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 },
@@ -120,7 +121,7 @@ sip_attr_create(enum sip_attr_id id, const char *value)
 {
     sip_attr_t *attr;
     // Create a new attribute struct and store it
-    if (!(attr = malloc(sizeof(sip_attr_t))))
+    if (!(attr = sng_malloc(sizeof(sip_attr_t))))
         return NULL;
     attr->id = id;
     attr->value = strdup(value);
@@ -130,8 +131,8 @@ sip_attr_create(enum sip_attr_id id, const char *value)
 void
 sip_attr_destroy(sip_attr_t *attr)
 {
-    free(attr->value);
-    free(attr);
+    sng_free(attr->value);
+    sng_free(attr);
 }
 
 void

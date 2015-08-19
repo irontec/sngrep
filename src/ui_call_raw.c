@@ -58,8 +58,7 @@ call_raw_create()
     panel = new_panel(newwin(LINES, COLS, 0, 0));
 
     // Initialize Call List specific data
-    info = malloc(sizeof(call_raw_info_t));
-    memset(info, 0, sizeof(call_raw_info_t));
+    info = sng_malloc(sizeof(call_raw_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
@@ -80,7 +79,7 @@ call_raw_destroy(PANEL *panel)
     if ((info = call_raw_info(panel))) {
         // Delete panel windows
         delwin(info->pad);
-        free(info);
+        sng_free(info);
     }
     // Delete panel window
     delwin(panel_window(panel));

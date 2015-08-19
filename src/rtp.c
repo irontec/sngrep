@@ -70,11 +70,10 @@ stream_create(sdp_media_t *media, const char *dst, u_short dport)
     rtp_stream_t *stream;
 
     // Allocate memory for this stream structure
-    if (!(stream = malloc(sizeof(rtp_stream_t))))
+    if (!(stream = sng_malloc(sizeof(rtp_stream_t))))
         return NULL;
 
     // Initialize all fields
-    memset(stream, 0, sizeof(rtp_stream_t));
     stream->media = media;
     strcpy(stream->ip_dst, dst);
     stream->dport = dport;

@@ -69,8 +69,7 @@ call_list_create()
     // Create a new panel that fill all the screen
     panel = new_panel(newwin(LINES, COLS, 0, 0));
     // Initialize Call List specific data
-    info = malloc(sizeof(call_list_info_t));
-    memset(info, 0, sizeof(call_list_info_t));
+    info = sng_malloc(sizeof(call_list_info_t));
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
 
@@ -146,7 +145,7 @@ call_list_destroy(PANEL *panel)
 
         // Deallocate panel windows
         delwin(info->list_win);
-        free(info);
+        sng_free(info);
     }
 
     // Deallocate panel window

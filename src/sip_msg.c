@@ -34,9 +34,8 @@ sip_msg_t *
 msg_create(const char *payload)
 {
     sip_msg_t *msg;
-    if (!(msg = malloc(sizeof(sip_msg_t))))
+    if (!(msg = sng_malloc(sizeof(sip_msg_t))))
         return NULL;
-    memset(msg, 0, sizeof(sip_msg_t));
 
     // Create a vector to store attributes
     msg->attrs = vector_create(4, 4);
@@ -58,9 +57,9 @@ msg_destroy(sip_msg_t *msg)
     vector_destroy(msg->packets);
     // Free payload if parsed
     if (msg->payload)
-        free(msg->payload);
+        sng_free(msg->payload);
     // Free all memory
-    free(msg);
+    sng_free(msg);
 }
 
 void
@@ -123,8 +122,7 @@ msg_get_payload(sip_msg_t *msg)
     capture_packet_t *packet = vector_first(msg->packets);
 
     // Get payload from packet data
-    msg->payload = malloc(packet->payload_len + 1);
-    memset(msg->payload, 0, packet->payload_len + 1);
+    msg->payload = sng_malloc(packet->payload_len + 1);
 
     // Get payload from packet
     if (packet->payload) {

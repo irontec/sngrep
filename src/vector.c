@@ -30,15 +30,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "util.h"
 
 vector_t *
 vector_create(int limit, int step)
 {
     vector_t *v;
     // Allocate memory for this vector data
-    if (!(v = malloc(sizeof(vector_t))))
+    if (!(v = sng_malloc(sizeof(vector_t))))
         return NULL;
-    memset(v, 0, sizeof(vector_t));
     v->limit = limit;
     v->step = step;
     return v;
@@ -54,9 +54,9 @@ vector_destroy(vector_t *vector)
     vector_clear(vector);
     // Deallocate vector list
     if (vector->list)
-        free(vector->list);
+        sng_free(vector->list);
     // Deallocate vector itself
-    free(vector);
+    sng_free(vector);
 }
 
 void
@@ -77,7 +77,7 @@ vector_append(vector_t *vector, void *item)
 
     // Check if the vector has been initializated
     if (!vector->list) {
-        vector->list = malloc(sizeof(void *) * vector->limit);
+        vector->list = sng_malloc(sizeof(void *) * vector->limit);
     }
 
     // Check if we need to increase vector size
@@ -152,7 +152,7 @@ vector_set_sorter(vector_t *vector, void (*sorter) (vector_t *vector, void *item
 void
 vector_generic_destroyer(void *item)
 {
-    free(item);
+    sng_free(item);
 }
 
 void *

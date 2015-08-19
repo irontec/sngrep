@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include "media.h"
 #include "rtp.h"
+#include "util.h"
 
 sdp_media_t *
 media_create(struct sip_msg *msg)
@@ -38,11 +39,10 @@ media_create(struct sip_msg *msg)
     sdp_media_t *media;;
 
     // Allocate memory for this media structure
-    if (!(media = malloc(sizeof(sdp_media_t))))
+    if (!(media = sng_malloc(sizeof(sdp_media_t))))
         return NULL;
 
     // Initialize all fields
-    memset(media, 0, sizeof(sdp_media_t));
     media->msg = msg;
     media->formats = vector_create(0, 1);
     vector_set_destroyer(media->formats, vector_generic_destroyer);
@@ -56,7 +56,7 @@ media_destroyer(void *item)
     if (!item)
         return;
     vector_destroy(media->formats);
-    free(media);
+    sng_free(media);
 }
 
 void
@@ -88,7 +88,7 @@ media_add_format(sdp_media_t *media, u_int code, const char *format)
 {
     sdp_media_fmt_t *fmt;
 
-    if (!(fmt = malloc(sizeof(sdp_media_fmt_t))))
+    if (!(fmt = sng_malloc(sizeof(sdp_media_fmt_t))))
         return;
 
     fmt->id = code;

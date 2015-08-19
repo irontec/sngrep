@@ -37,9 +37,8 @@ call_create(char *callid)
     sip_call_t *call;
 
     // Initialize a new call structure
-    if (!(call = malloc(sizeof(sip_call_t))))
+    if (!(call = sng_malloc(sizeof(sip_call_t))))
         return NULL;
-    memset(call, 0, sizeof(sip_call_t));
 
     // Create a vector to store call messages
     call->msgs = vector_create(2, 2);
@@ -69,7 +68,7 @@ call_destroy(sip_call_t *call)
     // Remove all call rtp packets
     vector_destroy(call->rtp_packets);
     // Deallocate call memory
-    free(call);
+    sng_free(call);
 }
 
 void

@@ -77,8 +77,7 @@ msg_diff_create()
     panel = new_panel(newwin(LINES, COLS, 0, 0));
 
     // Initialize panel specific data
-    info = malloc(sizeof(msg_diff_info_t));
-    memset(info, 0, sizeof(msg_diff_info_t));
+    info = sng_malloc(sizeof(msg_diff_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(panel, (void*) info);
@@ -110,7 +109,7 @@ void
 msg_diff_destroy(PANEL *panel)
 {
     if (msg_diff_info(panel))
-        free(msg_diff_info(panel));
+        sng_free(msg_diff_info(panel));
 }
 
 msg_diff_info_t *

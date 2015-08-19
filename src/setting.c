@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "setting.h"
+#include "util.h"
 
 
 //! Available configurable settings
@@ -139,7 +140,7 @@ setting_set_value(int id, const char *value)
 {
     setting_t *sett = setting_by_id(id);
     if (sett) {
-        if (sett->user) free(sett->value);
+        if (sett->user) sng_free(sett->value);
         sett->value = (value) ? strdup(value) : NULL;
         sett->user = 1;
     }

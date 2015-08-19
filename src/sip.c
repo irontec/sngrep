@@ -465,7 +465,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
         }
 
     }
-    free(tofree);
+    sng_free(tofree);
 
     // If message has media
     if ((media = vector_first(msg->medias))) {
