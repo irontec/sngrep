@@ -149,14 +149,15 @@ rtp_get_standard_format(u_int code)
 }
 
 rtp_stream_t *
-rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst,
-                 u_short dport, u_char *payload, uint32_t size)
+rtp_check_stream(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport)
 {
     // Media structure for RTP packets
     rtp_stream_t *stream;
     rtp_stream_t *reverse;
     // RTP payload data
     u_int format;
+    u_char *payload = packet->payload;
+    uint32_t size = packet->payload_len;
 
     // Check if we have at least RTP type
     if (size < 2)
@@ -194,7 +195,7 @@ rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short spor
         }
 
         // Add packet to stream
-        stream_add_packet(stream, header);
+        stream_add_packet(stream, packet->header);
     }
 
     return stream;

@@ -35,6 +35,7 @@
 #include "capture_tls.h"
 #include "option.h"
 #include "util.h"
+#include "sip.h"
 
 struct SSLConnection *connections;
 
@@ -119,7 +120,6 @@ struct SSLConnection *
 tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport) {
     struct SSLConnection *conn = NULL;
     conn = sng_malloc(sizeof(struct SSLConnection));
-    memset(conn, 0, sizeof(struct SSLConnection));
 
     memcpy(&conn->client_addr, &caddr, sizeof(struct in_addr));
     memcpy(&conn->server_addr, &saddr, sizeof(struct in_addr));
@@ -225,7 +225,7 @@ tls_connection_find(struct in_addr addr, u_short port) {
 }
 
 int
-tls_process_segment(const struct ip *ip, uint8 **out, uint32_t *outl)
+tls_process_segment(const struct ip *ip, capture_packet_t *packet)
 {
     struct SSLConnection *conn;
     struct tcphdr *tcp;
@@ -235,6 +235,9 @@ tls_process_segment(const struct ip *ip, uint8 **out, uint32_t *outl)
     uint8_t ip_frag;
     uint16_t ip_frag_off;
     int len;
+    uint8 *out;
+    uint32_t outl = packet->payload_len;
+    out = sng_malloc(outl);
 
     // Process IP offset
     ip_off = ntohs(ip->ip_off);
@@ -267,8 +270,10 @@ tls_process_segment(const struct ip *ip, uint8 **out, uint32_t *outl)
                 // Process data segment!
                 payload = (uint8 *) tcp + tcp_size;
                 len = ntohs(ip->ip_len) - (ip->ip_hl * 4) - tcp_size;
-                if (tls_process_record(conn, payload, len, out, outl) != 0)
-                    return 1;
+                if (tls_process_record(conn, payload, len, &out, &outl) == 0) {
+                    capture_packet_set_payload(packet, out, outl);
+                    capture_packet_set_type(packet, CAPTURE_PACKET_SIP_TLS);
+                }
                 break;
             case TCP_STATE_FIN:
             case TCP_STATE_CLOSED:
@@ -283,6 +288,7 @@ tls_process_segment(const struct ip *ip, uint8 **out, uint32_t *outl)
         }
     }
 
+    sng_free(out);
     return 0;
 }
 
@@ -450,7 +456,7 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
     EVP_CIPHER_CTX *evp;
     unsigned char pad;
     unsigned char *decoded;
-    int dlen;
+    uint32_t dlen;
 
     if (conn->direction == 0) {
         evp = &conn->client_cipher_ctx;
@@ -465,7 +471,7 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
     pad = decoded[len - 1];
     dlen = (len - (pad + 1) - /* Trailing MAC */20);
 
-    if (dlen > 0) {
+    if ((int32_t)dlen > 0 && dlen <= *outl) {
         memcpy(*out, decoded, dlen);
         *outl = dlen;
     }

@@ -126,7 +126,7 @@ sip_get_callid(const char* payload, char *callid)
 }
 
 sip_msg_t *
-sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload)
+sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport)
 {
     ENTRY entry;
     sip_msg_t *msg;
@@ -135,16 +135,23 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     char callid[1024];
     char msg_src[ADDRESSLEN];
     char msg_dst[ADDRESSLEN];
+    u_char payload[MAX_SIP_PAYLOAD];
+
+    // Max SIP payload allowed
+    if (packet->payload_len > MAX_SIP_PAYLOAD)
+        return NULL;
+
+    // Get payload from packet(s)
+    memset(payload, 0, MAX_SIP_PAYLOAD);
+    memcpy(payload, packet->payload, packet->payload_len);
 
     // Get the Call-ID of this message
-    if (!sip_get_callid((const char*) payload, callid)) {
+    if (!sip_get_callid((const char*) payload, callid))
         return NULL;
-    }
 
     // Create a new message from this data
-    if (!(msg = msg_create((const char*) payload))) {
+    if (!(msg = msg_create((const char*) payload)))
         return NULL;
-    }
 
     // Get Method and request for the following checks
     // There is no need to parse all payload at this point
@@ -154,10 +161,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         msg_destroy(msg);
         return NULL;
     }
-
-    // If payload is encrypted, dup payload
-    if (packet->type == CAPTURE_PACKET_SIP_TLS)
-        msg->payload = (u_char *)strdup((const char *)payload);
 
     pthread_mutex_lock(&calls.lock);
     // Find the call for this msg

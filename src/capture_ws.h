@@ -47,6 +47,6 @@
  * @return 0 if packet is websocket, 1 otherwise
  */
 int
-capture_ws_check_packet(u_char *msg_payload, uint32_t *size_payload);
+capture_ws_check_packet(capture_packet_t *packet);
 
 #endif /* __SNGREP_CAPTURE_WS_H */

@@ -94,7 +94,7 @@ const char *
 rtp_get_standard_format(u_int code);
 
 rtp_stream_t *
-rtp_check_stream(const struct pcap_pkthdr *header, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload, uint32_t size);
+rtp_check_stream(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport);
 
 rtp_stream_t *
 rtp_find_stream(const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format);

@@ -40,6 +40,8 @@
 #include "sip_call.h"
 #include "vector.h"
 
+#define MAX_SIP_PAYLOAD 10240
+
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
 
@@ -124,7 +126,7 @@ sip_get_callid(const char* payload, char *callid);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport, u_char *payload);
+sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport);
 
 /**
  * @brief Getter for calls linked list size

@@ -56,8 +56,7 @@ msg_destroy(sip_msg_t *msg)
     // Free message packets
     vector_destroy(msg->packets);
     // Free payload if parsed
-    if (msg->payload)
-        sng_free(msg->payload);
+    sng_free(msg->payload);
     // Free all memory
     sng_free(msg);
 }
@@ -123,13 +122,7 @@ msg_get_payload(sip_msg_t *msg)
 
     // Get payload from packet data
     msg->payload = sng_malloc(packet->payload_len + 1);
-
-    // Get payload from packet
-    if (packet->payload) {
-        memcpy(msg->payload, packet->payload, packet->payload_len);
-    } else {
-        memcpy(msg->payload, packet->data + (packet->size - packet->payload_len), packet->payload_len);
-    }
+    memcpy(msg->payload, packet->payload, packet->payload_len);
     return (const char *) msg->payload;
 }
 

@@ -158,9 +158,9 @@ struct capture_packet {
     //! PCAP Packet payload when it can not be get from data
     u_char *payload;
     //! PPCAP Packet content len
-    int size;
+    uint32_t size;
     //! Payload length
-    int payload_len;
+    uint32_t payload_len;
 };
 
 /**
@@ -305,7 +305,7 @@ capture_last_error();
  * @brief Allocate memory to store new packet data
  */
 capture_packet_t *
-capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size, int payload_len);
+capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size);
 
 /**
  * @brief Deallocate a packet structure memory
@@ -329,7 +329,7 @@ capture_packet_set_type(capture_packet_t *packet, int type);
  * @brief Set packet payload when it can not be get from packet
  */
 void
-capture_packet_set_payload(capture_packet_t *packet, u_char *payload, int payload_len);
+capture_packet_set_payload(capture_packet_t *packet, u_char *payload, uint32_t payload_len);
 
 /**
  * @brief Sorter by time for captured packets

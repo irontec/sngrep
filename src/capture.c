@@ -248,12 +248,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         if (ip_ver == 6)
             size_payload -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
 #endif
-
-        if ((int32_t)size_payload > 0) {
-            // Get packet payload
-            payload = sng_malloc(size_payload + 1);
-            memcpy(payload, (u_char *) (udp) + udp_off, size_payload);
-        }
+        // Get payload start
+        payload = (u_char *) (udp) + udp_off;
 
         // Set transport UDP
         transport = CAPTURE_PACKET_SIP_UDP;
@@ -274,84 +270,59 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         if (ip_ver == 6)
             size_payload -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
 #endif
-
-        if ((int32_t)size_payload > 0) {
-            // Get packet payload
-            payload = sng_malloc(size_payload + 1);
-            memcpy(payload, (u_char *)(tcp) + tcp_off, size_payload);
-        }
+        // Get payload start
+        payload = (u_char *)(tcp) + tcp_off;
 
         // Set transport TCP
         transport = CAPTURE_PACKET_SIP_TCP;
-
-#ifdef WITH_OPENSSL
-        if (!payload || !strstr((const char*) payload, "SIP/2.0")) {
-            if (capture_get_keyfile()) {
-                // Allocate memory for the payload
-                payload = sng_malloc(size_payload + 1);
-
-                // Try to decrypt the packet
-                tls_process_segment(ip4, &payload, &size_payload);
-
-                // Check if we have decoded payload
-                if ((int32_t)size_payload <= 0) {
-                    sng_free(payload);
-                    return;
-                }
-
-                // Set Transport TLS
-                transport = CAPTURE_PACKET_SIP_TLS;
-            }
-        }
-#endif
-        // Check if packet is Websocket
-        if (payload && capture_ws_check_packet(payload, &size_payload)) {
-            transport = CAPTURE_PACKET_SIP_WS;
-        }
     } else {
         // Not handled protocol
         return;
     }
 
-    // We're only interested in packets with payload
-    if ((int32_t)size_payload <= 0)
-        return;
+    if ((int32_t)size_payload < 0)
+        size_payload = 0;
 
     // Create a structure for this captured packet
-    pkt = capture_packet_create(header, packet, header->caplen, size_payload);
+    pkt = capture_packet_create(header, packet, header->caplen);
     capture_packet_set_type(pkt, transport);
-    if (transport == CAPTURE_PACKET_SIP_TLS || transport == CAPTURE_PACKET_SIP_WS)
-        capture_packet_set_payload(pkt, payload, size_payload);
+    capture_packet_set_payload(pkt, payload, size_payload);
 
-    // Parse this header and payload
-    if (sip_load_message(pkt, ip_src, sport, ip_dst, dport, payload)) {
-        // Store this packets in output file
-        dump_packet(capinfo.pd, header, packet);
-        // Deallocate packet duplicated payload
-        sng_free(payload);
-        return;
-    }
+#ifdef WITH_OPENSSL
+    // Check if packet is TLS
+    if (capinfo.keyfile && transport == CAPTURE_PACKET_SIP_TCP)
+        tls_process_segment(ip4, pkt);
+#endif
 
-    // Check if this packet belongs to a RTP stream
-    // TODO Store this packet in the stream
-    if ((stream = rtp_check_stream(header, ip_src, sport, ip_dst, dport, payload, size_payload))) {
-        // We have an RTP packet!
-        capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
-        // Store this pacekt if capture rtp is enabled
-        if (capinfo.rtp_capture) {
-            call_add_rtp_packet(stream_get_call(stream), pkt);
-        } else {
-            capture_packet_destroy(pkt);
+    // Check if packet is WS or WSS
+    if (transport == CAPTURE_PACKET_SIP_TCP)
+        capture_ws_check_packet(pkt);
+
+    // We're only interested in packets with payload
+    if ((int32_t)pkt->payload_len > 0) {
+        // Parse this header and payload
+        if (sip_load_message(pkt, ip_src, sport, ip_dst, dport)) {
+            // Store this packets in output file
+            dump_packet(capinfo.pd, header, packet);
+            return;
         }
-        // Store this packets in output file
-        dump_packet(capinfo.pd, header, packet);
-        // Deallocate packet duplicated payload
-        sng_free(payload);
-        return;
-    }
 
-    // Deallocate packet duplicated payload
-    sng_free(payload);
+        // Check if this packet belongs to a RTP stream
+        // TODO Store this packet in the stream
+        if ((stream = rtp_check_stream(pkt, ip_src, sport, ip_dst, dport))) {
+            // We have an RTP packet!
+            capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
+            // Store this pacekt if capture rtp is enabled
+            if (capinfo.rtp_capture) {
+                call_add_rtp_packet(stream_get_call(stream), pkt);
+            } else {
+                capture_packet_destroy(pkt);
+            }
+            // Store this packets in output file
+            dump_packet(capinfo.pd, header, packet);
+            return;
+        }
+    }
 
     // Not an interesting packet ...
     capture_packet_destroy(pkt);
@@ -484,7 +455,7 @@ capture_last_error()
 }
 
 capture_packet_t *
-capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size, int payload_len)
+capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size)
 {
     capture_packet_t *pkt;
     pkt = sng_malloc(sizeof(capture_packet_t));
@@ -493,17 +464,22 @@ capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, in
     memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
     memcpy(pkt->data, packet, size);
     pkt->size = size;
-    pkt->payload_len = payload_len;
     return pkt;
 }
 
 void
 capture_packet_destroy(capture_packet_t *packet)
 {
+
+    switch(packet->type) {
+        case CAPTURE_PACKET_SIP_TLS:
+        case CAPTURE_PACKET_SIP_WS:
+        case CAPTURE_PACKET_SIP_WSS:
+            sng_free(packet->payload);
+    }
+
     sng_free(packet->header);
     sng_free(packet->data);
-    if (packet->payload)
-        sng_free(packet->payload);
     sng_free(packet);
 }
 
@@ -521,8 +497,9 @@ capture_packet_set_type(capture_packet_t *packet, int type)
 }
 
 void
-capture_packet_set_payload(capture_packet_t *packet, u_char *payload, int payload_len)
+capture_packet_set_payload(capture_packet_t *packet, u_char *payload, uint32_t payload_len)
 {
+    packet->payload_len = payload_len;
     packet->payload = sng_malloc(payload_len);
     memcpy(packet->payload, payload, payload_len);
 }

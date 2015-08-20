@@ -30,16 +30,19 @@
 #include "config.h"
 #include "capture.h"
 #include "capture_ws.h"
+#include "sip.h"
 
 int
-capture_ws_check_packet(u_char *msg_payload, uint32_t *size_payload)
+capture_ws_check_packet(capture_packet_t *packet)
 {
-    int offset = 0;
+    int ws_off = 0;
     u_char ws_fin;
     u_char ws_opcode;
     u_char ws_mask;
     uint8_t ws_len;
     u_char ws_mask_key[4];
+    u_char payload[MAX_SIP_PAYLOAD];
+    uint32_t size_payload;
     int i;
 
     /**
@@ -64,55 +67,72 @@ capture_ws_check_packet(u_char *msg_payload, uint32_t *size_payload)
      *    +---------------------------------------------------------------+
      */
 
+    // Max SIP payload allowed
+    if (packet->payload_len > MAX_SIP_PAYLOAD || packet->payload_len <= 0)
+        return 0;
+
+    // Get payload from packet(s)
+    size_payload = packet->payload_len;
+    memset(payload, 0, MAX_SIP_PAYLOAD);
+    memcpy(payload, packet->payload, packet->payload_len);
+
     // Flags && Opcode
-    ws_fin = (*msg_payload & WH_FIN) >> 4;
-    ws_opcode = *msg_payload & WH_OPCODE;
-    offset++;
+    ws_fin = (*payload & WH_FIN) >> 4;
+    ws_opcode = *payload & WH_OPCODE;
+    ws_off++;
 
     // Only interested in Ws text packets
     if (ws_opcode != WS_OPCODE_TEXT)
         return 0;
 
     // Masked flag && Payload len
-    ws_mask = (*(msg_payload + offset) & WH_MASK) >> 4;
-    ws_len = (*(msg_payload + offset) & WH_LEN);
-    offset++;
+    ws_mask = (*(payload + ws_off) & WH_MASK) >> 4;
+    ws_len = (*(payload + ws_off) & WH_LEN);
+    ws_off++;
 
     // Skip Payload len
     switch (ws_len) {
             // Extended
         case 126:
-            offset += 2;
+            ws_off += 2;
             break;
         case 127:
-            offset += 8;
+            ws_off += 8;
             break;
     }
 
     // Get Masking key if mask is enabled
     if (ws_mask) {
-        memcpy(ws_mask_key, (msg_payload + offset), 4);
-        offset += 4;
+        memcpy(ws_mask_key, (payload + ws_off), 4);
+        ws_off += 4;
     }
 
     // Not a Websocket packet
-    if (*size_payload < offset)
+    if (size_payload < ws_off)
         return 0;
 
     // Skip Websocket headers
-    *size_payload -= offset;
+    size_payload -= ws_off;
 
-    if ((int32_t)*size_payload > 0) {
-        // Set the Websocket payload as new payload
-        for (i = 0; i < *size_payload; i++)
-            msg_payload[i] = msg_payload[i + offset];
+    if ((int32_t) size_payload <= 0)
+        return 0;
 
-        // If mask is enabled, unmask the payload
-        if (ws_mask) {
-            for (i = 0; i < *size_payload; i++)
-                msg_payload[i] = msg_payload[i] ^ ws_mask_key[i % 4];
-        }
-        msg_payload[*size_payload - 1] = '\0';
+    // Skip Websocket headers
+    memset(payload, 0, MAX_SIP_PAYLOAD);
+    memcpy(payload, packet->payload + ws_off, packet->payload_len);
+
+    // If mask is enabled, unmask the payload
+    if (ws_mask) {
+        for (i = 0; i < size_payload; i++)
+            payload[i] = payload[i] ^ ws_mask_key[i % 4];
+    }
+
+    // Set new packet payload into the packet
+    capture_packet_set_payload(packet, payload, size_payload);
+    if (packet->type == CAPTURE_PACKET_SIP_TLS) {
+        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WSS);
+    } else {
+        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WSS);
     }
     return 1;
 }

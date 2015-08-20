@@ -108,8 +108,7 @@ msg_diff_create()
 void
 msg_diff_destroy(PANEL *panel)
 {
-    if (msg_diff_info(panel))
-        sng_free(msg_diff_info(panel));
+    sng_free(msg_diff_info(panel));
 }
 
 msg_diff_info_t *

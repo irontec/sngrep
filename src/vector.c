@@ -53,8 +53,7 @@ vector_destroy(vector_t *vector)
     // Remove all items if a destroyer is set
     vector_clear(vector);
     // Deallocate vector list
-    if (vector->list)
-        sng_free(vector->list);
+    sng_free(vector->list);
     // Deallocate vector itself
     sng_free(vector);
 }
