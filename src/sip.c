@@ -143,7 +143,7 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
 
     // Get payload from packet(s)
     memset(payload, 0, MAX_SIP_PAYLOAD);
-    memcpy(payload, packet->payload, packet->payload_len);
+    memcpy(payload, capture_packet_get_payload(packet), capture_packet_get_payload_len(packet));
 
     // Get the Call-ID of this message
     if (!sip_get_callid((const char*) payload, callid))

@@ -332,6 +332,18 @@ void
 capture_packet_set_payload(capture_packet_t *packet, u_char *payload, uint32_t payload_len);
 
 /**
+ * @brief Getter for capture payload size
+ */
+uint32_t
+capture_packet_get_payload_len(capture_packet_t *packet);
+
+/**
+ * @brief Getter for capture payload pointer
+ */
+u_char *
+capture_packet_get_payload(capture_packet_t *packet);
+
+/**
  * @brief Sorter by time for captured packets
  */
 void

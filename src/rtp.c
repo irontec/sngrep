@@ -156,8 +156,8 @@ rtp_check_stream(capture_packet_t *packet, const char *src, u_short sport, const
     rtp_stream_t *reverse;
     // RTP payload data
     u_int format;
-    u_char *payload = packet->payload;
-    uint32_t size = packet->payload_len;
+    u_char *payload = capture_packet_get_payload(packet);
+    uint32_t size = capture_packet_get_payload_len(packet);
 
     // Check if we have at least RTP type
     if (size < 2)

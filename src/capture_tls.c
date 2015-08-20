@@ -271,8 +271,11 @@ tls_process_segment(const struct ip *ip, capture_packet_t *packet)
                 payload = (uint8 *) tcp + tcp_size;
                 len = ntohs(ip->ip_len) - (ip->ip_hl * 4) - tcp_size;
                 if (tls_process_record(conn, payload, len, &out, &outl) == 0) {
-                    capture_packet_set_payload(packet, out, outl);
-                    capture_packet_set_type(packet, CAPTURE_PACKET_SIP_TLS);
+                    if ((int32_t) outl > 0) {
+                        capture_packet_set_payload(packet, out, outl);
+                        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_TLS);
+                        return 0;
+                    }
                 }
                 break;
             case TCP_STATE_FIN:

@@ -286,7 +286,8 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     // Create a structure for this captured packet
     pkt = capture_packet_create(header, packet, header->caplen);
     capture_packet_set_type(pkt, transport);
-    capture_packet_set_payload(pkt, payload, size_payload);
+    // For TCP and UDP, use payload directly from the packet
+    capture_packet_set_payload(pkt, NULL, size_payload);
 
 #ifdef WITH_OPENSSL
     // Check if packet is TLS
@@ -299,7 +300,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         capture_ws_check_packet(pkt);
 
     // We're only interested in packets with payload
-    if ((int32_t)pkt->payload_len > 0) {
+    if (capture_packet_get_payload_len(pkt)) {
         // Parse this header and payload
         if (sip_load_message(pkt, ip_src, sport, ip_dst, dport)) {
             // Store this packets in output file
@@ -470,14 +471,7 @@ capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, in
 void
 capture_packet_destroy(capture_packet_t *packet)
 {
-
-    switch(packet->type) {
-        case CAPTURE_PACKET_SIP_TLS:
-        case CAPTURE_PACKET_SIP_WS:
-        case CAPTURE_PACKET_SIP_WSS:
-            sng_free(packet->payload);
-    }
-
+    sng_free(packet->payload);
     sng_free(packet->header);
     sng_free(packet->data);
     sng_free(packet);
@@ -499,9 +493,24 @@ capture_packet_set_type(capture_packet_t *packet, int type)
 void
 capture_packet_set_payload(capture_packet_t *packet, u_char *payload, uint32_t payload_len)
 {
+    packet->payload = payload;
     packet->payload_len = payload_len;
-    packet->payload = sng_malloc(payload_len);
-    memcpy(packet->payload, payload, payload_len);
+}
+
+uint32_t
+capture_packet_get_payload_len(capture_packet_t *packet)
+{
+    return packet->payload_len;
+}
+
+u_char *
+capture_packet_get_payload(capture_packet_t *packet)
+{
+    if (packet->payload) {
+        return packet->payload;
+    } else {
+        return packet->data + (packet->size - packet->payload_len);
+    }
 }
 
 void

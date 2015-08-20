@@ -122,7 +122,7 @@ msg_get_payload(sip_msg_t *msg)
 
     // Get payload from packet data
     msg->payload = sng_malloc(packet->payload_len + 1);
-    memcpy(msg->payload, packet->payload, packet->payload_len);
+    memcpy(msg->payload, capture_packet_get_payload(packet), capture_packet_get_payload_len(packet));
     return (const char *) msg->payload;
 }
 

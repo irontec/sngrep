@@ -41,7 +41,7 @@ capture_ws_check_packet(capture_packet_t *packet)
     u_char ws_mask;
     uint8_t ws_len;
     u_char ws_mask_key[4];
-    u_char payload[MAX_SIP_PAYLOAD];
+    u_char *payload, *newpayload;
     uint32_t size_payload;
     int i;
 
@@ -67,14 +67,13 @@ capture_ws_check_packet(capture_packet_t *packet)
      *    +---------------------------------------------------------------+
      */
 
-    // Max SIP payload allowed
-    if (packet->payload_len > MAX_SIP_PAYLOAD || packet->payload_len <= 0)
-        return 0;
-
     // Get payload from packet(s)
-    size_payload = packet->payload_len;
-    memset(payload, 0, MAX_SIP_PAYLOAD);
-    memcpy(payload, packet->payload, packet->payload_len);
+    size_payload = capture_packet_get_payload_len(packet);
+    payload = capture_packet_get_payload(packet);
+
+    // Check we have payload
+    if (size_payload == 0)
+        return 0;
 
     // Flags && Opcode
     ws_fin = (*payload & WH_FIN) >> 4;
@@ -99,6 +98,8 @@ capture_ws_check_packet(capture_packet_t *packet)
         case 127:
             ws_off += 8;
             break;
+        default:
+            return 0;
     }
 
     // Get Masking key if mask is enabled
@@ -107,32 +108,25 @@ capture_ws_check_packet(capture_packet_t *packet)
         ws_off += 4;
     }
 
-    // Not a Websocket packet
-    if (size_payload < ws_off)
-        return 0;
-
     // Skip Websocket headers
     size_payload -= ws_off;
-
     if ((int32_t) size_payload <= 0)
         return 0;
 
-    // Skip Websocket headers
-    memset(payload, 0, MAX_SIP_PAYLOAD);
-    memcpy(payload, packet->payload + ws_off, packet->payload_len);
-
+    newpayload = sng_malloc(size_payload);
+    memcpy(newpayload, payload + ws_off, size_payload);
     // If mask is enabled, unmask the payload
     if (ws_mask) {
         for (i = 0; i < size_payload; i++)
-            payload[i] = payload[i] ^ ws_mask_key[i % 4];
+            newpayload[i] = newpayload[i] ^ ws_mask_key[i % 4];
     }
-
     // Set new packet payload into the packet
-    capture_packet_set_payload(packet, payload, size_payload);
+    capture_packet_set_payload(packet, newpayload, size_payload);
+
     if (packet->type == CAPTURE_PACKET_SIP_TLS) {
         capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WSS);
     } else {
-        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WSS);
+        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WS);
     }
     return 1;
 }
