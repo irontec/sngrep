@@ -9,6 +9,7 @@ tests/test-*.trs
 tests/test-???
 */*.o
 */.deps
+*gmon.out
 src/config.h*
 src/stamp-h1
 
