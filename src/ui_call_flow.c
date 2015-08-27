@@ -480,7 +480,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
-    char codec[50];
+    char codec[50], time[20];
     int height, width;
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->stream;
@@ -500,6 +500,10 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Check this media fits on the panel
     if (cline > height + arrow->height)
         return NULL;
+
+    // Print timestamp
+    timeval_to_time(stream->time, time);
+    mvwprintw(win, cline, 2, "%s", time);
 
     // Get Message method (include extra info)
     sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
