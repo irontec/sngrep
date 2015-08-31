@@ -544,7 +544,7 @@ capture_packet_time_sorter(vector_t *vector, void *item)
 }
 
 
-uint8_t
+int8_t
 datalink_size(int datalink)
 {
     // Datalink header size

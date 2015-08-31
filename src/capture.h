@@ -139,7 +139,7 @@ struct capture_info {
     //! libpcap link type
     int link;
     //! libpcap link header size
-    uint8_t link_hl;
+    int8_t link_hl;
     //! Cache for DNS lookups
     dns_cache_t dnscache;
     //! Local devices pointer
@@ -359,7 +359,7 @@ capture_close();
  * @brief Get datalink header size
  *
  */
-uint8_t
+int8_t
 datalink_size(int datalink);
 
 /**
