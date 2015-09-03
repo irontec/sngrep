@@ -19,7 +19,7 @@ case `uname -sr` in
                 ;;
         FreeBSD*)
                 AUTOCONF_VERSION=2.69
-                AUTOMAKE_VERSION=1.12
+                AUTOMAKE_VERSION=1.15
                 export AUTOCONF_VERSION
                 export AUTOMAKE_VERSION
                 ;;
