@@ -46,7 +46,6 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CAPTURE_LIMIT,      "capture.limit",    SETTING_FMT_NUMBER,  "20000",   NULL },
     { SETTING_CAPTURE_LOOKUP,     "capture.lookup",   SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
     { SETTING_CAPTURE_DEVICE,     "capture.device",   SETTING_FMT_STRING,  "any",     NULL },
-    { SETTING_CAPTURE_INFILE,     "capture.infile",   SETTING_FMT_STRING,  NULL,      NULL },
     { SETTING_CAPTURE_OUTFILE,    "capture.outfile",  SETTING_FMT_STRING,  NULL,      NULL },
     { SETTING_CAPTURE_KEYFILE,    "capture.keyfile",  SETTING_FMT_STRING,  NULL,      NULL },
     { SETTING_CAPTURE_RTP,        "capture.rtp",      SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },

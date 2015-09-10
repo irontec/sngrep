@@ -80,7 +80,9 @@ enum capture_status {
     CAPTURE_OFFLINE_LOADING,
 };
 
-//! Shorter declaration of capture_info structure
+//! Shorter declaration of capture_config structure
+typedef struct capture_config capture_config_t;
+//; Shorter declaration of capture_info structure
 typedef struct capture_info capture_info_t;
 //! Shorter declaration of dns_cache structure
 typedef struct dns_cache dns_cache_t;
@@ -110,44 +112,57 @@ struct dns_cache {
 };
 
 /**
- * @brief store all information related with packet capture
+ * @brief Capture common configuration
  *
- * All required information to capture and process packets
- * will be stored in this
+ * Store capture configuration and global data
  */
-struct capture_info {
+struct capture_config {
     //! Capture status
     int status;
     //! Calls capture limit. 0 for disabling
     int limit;
     //! Also capture RTP packets
     int rtp_capture;
-    //! Input file in Offline capture
-    const char *infile;
     //! Key file for TLS decrypt
     const char *keyfile;
     //! The compiled filter expression
     struct bpf_program fp;
-    //! Netmask of our sniffing device
-    bpf_u_int32 mask;
-    //! The IP of our sniffing device
-    bpf_u_int32 net;
-    //! libpcap capture handler
-    pcap_t *handle;
     //! libpcap dump file handler
     pcap_dumper_t *pd;
-    //! libpcap link type
-    int link;
-    //! libpcap link header size
-    int8_t link_hl;
     //! Cache for DNS lookups
     dns_cache_t dnscache;
     //! Local devices pointer
     pcap_if_t *devices;
+    //! Capture sources
+    vector_t *sources;
+};
+
+/**
+ * @brief store all information related with packet capture
+ *
+ * Store capture required data from one packet source
+ */
+struct capture_info
+{
+    //! libpcap link type
+    int link;
+    //! libpcap link header size
+    int8_t link_hl;
+    //! libpcap capture handler
+    pcap_t *handle;
+    //! Netmask of our sniffing device
+    bpf_u_int32 mask;
+    //! The IP of our sniffing device
+    bpf_u_int32 net;
+    //! Input file in Offline capture
+    const char *infile;
     //! Capture thread for online capturing
     pthread_t capture_t;
 };
 
+/**
+ * Single packet cpatured data
+ */
 struct capture_packet {
     // Packet type as defined in capture_packet_type
     int type;
@@ -162,6 +177,16 @@ struct capture_packet {
     //! Payload length
     uint32_t payload_len;
 };
+
+
+/**
+ * @brief Initialize capture data
+ *
+ * @param limit Numbers of calls >0
+ * @param rtp_catpure Enable rtp capture
+ */
+void
+capture_init(int limit, int rtp_capture);
 
 /**
  * @brief Online capture function
@@ -194,10 +219,9 @@ capture_offline(const char *infile, const char *outfile);
  * methods using pcap. This will get the payload from a package and
  * add it to the SIP storage layer.
  *
- * @param handle LIBPCAP capture handler
  */
 void
-parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet);
+parse_packet(u_char *capinfo, const struct pcap_pkthdr *header, const u_char *packet);
 
 /**
  * @brief Create a capture thread for online mode
@@ -232,15 +256,6 @@ capture_is_online();
  */
 int
 capture_set_bpf_filter(const char *filter);
-
-/**
- * @brief Set capture options
- *
- * @param limit Numbers of calls >0
- * @param rtp_catpure Enable rtp capture
- */
-void
-capture_set_opts(int limit, int rtp_capture);
 
 /**
  * @brief Pause/Resume capture

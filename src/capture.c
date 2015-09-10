@@ -46,52 +46,73 @@
 #endif
 
 // Capture information
-capture_info_t capinfo =
+capture_config_t capture_cfg =
 { 0 };
+
+
+void
+capture_init(int limit, int rtp_capture)
+{
+    capture_cfg.limit = limit;
+    capture_cfg.rtp_capture = rtp_capture;
+    capture_cfg.sources = vector_create(1, 1);
+}
 
 int
 capture_online(const char *dev, const char *outfile)
 {
+    capture_info_t *capinfo;
+
     //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Set capture mode
-    capinfo.status = CAPTURE_ONLINE;
+    capture_cfg.status = CAPTURE_ONLINE;
+
+    // Create a new structure to handle this capture source
+    if (!(capinfo = sng_malloc(sizeof(capture_info_t)))) {
+        fprintf(stderr, "Can't allocate memory for capture data!\n");
+        return 1;
+    }
 
     // Try to find capture device information
-    if (pcap_lookupnet(dev, &capinfo.net, &capinfo.mask, errbuf) == -1) {
+    if (pcap_lookupnet(dev, &capinfo->net, &capinfo->mask, errbuf) == -1) {
         fprintf(stderr, "Can't get netmask for device %s\n", dev);
-        capinfo.net = 0;
-        capinfo.mask = 0;
+        capinfo->net = 0;
+        capinfo->mask = 0;
+        return 2;
     }
 
     // Open capture device
-    capinfo.handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
-    if (capinfo.handle == NULL) {
+    capinfo->handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
+    if (capinfo->handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
     }
 
     // If requested store packets in a dump file
-    if (outfile) {
-        if ((capinfo.pd = dump_open(outfile)) == NULL) {
+    if (outfile && !capture_cfg.pd) {
+        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
             fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo.handle));
+                    pcap_geterr(capinfo->handle));
             return 2;
         }
     }
 
     // Get datalink to parse packets correctly
-    capinfo.link = pcap_datalink(capinfo.handle);
+    capinfo->link = pcap_datalink(capinfo->handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if ((capinfo.link_hl = datalink_size(capinfo.link)) == -1) {
-        fprintf(stderr, "Unable to handle linktype %d\n", capinfo.link);
+    if ((capinfo->link_hl = datalink_size(capinfo->link)) == -1) {
+        fprintf(stderr, "Unable to handle linktype %d\n", capinfo->link);
         return 3;
     }
 
     // Get Local devices addresses
-    pcap_findalldevs(&capinfo.devices, errbuf);
+    pcap_findalldevs(&capture_cfg.devices, errbuf);
+
+    // Add this capture information as packet source
+    vector_append(capture_cfg.sources, capinfo);
 
     return 0;
 }
@@ -99,43 +120,55 @@ capture_online(const char *dev, const char *outfile)
 int
 capture_offline(const char *infile, const char *outfile)
 {
+    capture_info_t *capinfo;
+
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Set capture mode
-    capinfo.status = CAPTURE_OFFLINE_LOADING;
+    capture_cfg.status = CAPTURE_OFFLINE_LOADING;
+
+    // Create a new structure to handle this capture source
+    if (!(capinfo = sng_malloc(sizeof(capture_info_t)))) {
+        fprintf(stderr, "Can't allocate memory for capture data!\n");
+        return 1;
+    }
+
     // Set capture input file
-    capinfo.infile = infile;
+    capinfo->infile = infile;
 
     // Open PCAP file
-    if ((capinfo.handle = pcap_open_offline(infile, errbuf)) == NULL) {
+    if ((capinfo->handle = pcap_open_offline(infile, errbuf)) == NULL) {
         fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
     }
 
     // If requested store packets in a dump file
-    if (outfile) {
-        if ((capinfo.pd = dump_open(outfile)) == NULL) {
+    if (outfile && !capture_cfg.pd) {
+        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
             fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo.handle));
+                    pcap_geterr(capinfo->handle));
             return 2;
         }
     }
 
     // Get datalink to parse packets correctly
-    capinfo.link = pcap_datalink(capinfo.handle);
+    capinfo->link = pcap_datalink(capinfo->handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if ((capinfo.link_hl = datalink_size(capinfo.link)) == -1) {
-        fprintf(stderr, "Unable to handle linktype %d\n", capinfo.link);
+    if ((capinfo->link_hl = datalink_size(capinfo->link)) == -1) {
+        fprintf(stderr, "Unable to handle linktype %d\n", capinfo->link);
         return 3;
     }
+
+    // Add this capture information as packet source
+    vector_append(capture_cfg.sources, capinfo);
 
     return 0;
 }
 
 void
-parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packet)
+parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packet)
 {
     // IP header data
     struct ip *ip4;
@@ -179,21 +212,23 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
     rtp_stream_t *stream;
     // Captured packet info
     capture_packet_t *pkt;
+    // Capture info
+    capture_info_t *capinfo = (capture_info_t *) info;
 
     // Ignore packets while capture is paused
     if (capture_is_paused())
         return;
 
     // Check if we have reached capture limit
-    if (capinfo.limit && sip_calls_count() >= capinfo.limit)
+    if (capture_cfg.limit && sip_calls_count() >= capture_cfg.limit)
         return;
 
     // Get IP header
-    ip4 = (struct ip *) (packet + capinfo.link_hl);
+    ip4 = (struct ip *) (packet + capinfo->link_hl);
 
 #ifdef WITH_IPV6
     // Get IPv6 header
-    ip6 = (struct ip6_hdr *) (packet + capinfo.link_hl);
+    ip6 = (struct ip6_hdr *) (packet + capinfo->link_hl);
 #endif
 
     // Get IP version
@@ -242,7 +277,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         dport = htons(udp->uh_dport);
 
         // Get actual payload size
-        size_payload -= capinfo.link_hl + ip_hl + udp_off;
+        size_payload -= capinfo->link_hl + ip_hl + udp_off;
 
 #ifdef WITH_IPV6
         if (ip_ver == 6)
@@ -264,7 +299,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         dport = htons(tcp->th_dport);
 
         // Get actual payload size
-        size_payload -= capinfo.link_hl + ip_hl + tcp_off;
+        size_payload -= capinfo->link_hl + ip_hl + tcp_off;
 
 #ifdef WITH_IPV6
         if (ip_ver == 6)
@@ -291,7 +326,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 
 #ifdef WITH_OPENSSL
     // Check if packet is TLS
-    if (capinfo.keyfile && transport == CAPTURE_PACKET_SIP_TCP)
+    if (capture_cfg.keyfile && transport == CAPTURE_PACKET_SIP_TCP)
         tls_process_segment(ip4, pkt);
 #endif
 
@@ -304,7 +339,7 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
         // Parse this header and payload
         if (sip_load_message(pkt, ip_src, sport, ip_dst, dport)) {
             // Store this packets in output file
-            dump_packet(capinfo.pd, header, packet);
+            dump_packet(capture_cfg.pd, header, packet);
             return;
         }
 
@@ -314,13 +349,13 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
             // We have an RTP packet!
             capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
             // Store this pacekt if capture rtp is enabled
-            if (capinfo.rtp_capture) {
+            if (capture_cfg.rtp_capture) {
                 call_add_rtp_packet(stream_get_call(stream), pkt);
             } else {
                 capture_packet_destroy(pkt);
             }
             // Store this packets in output file
-            dump_packet(capinfo.pd, header, packet);
+            dump_packet(capture_cfg.pd, header, packet);
             return;
         }
     }
@@ -332,93 +367,111 @@ parse_packet(u_char *mode, const struct pcap_pkthdr *header, const u_char *packe
 void
 capture_close()
 {
-    //Close PCAP file
-    if (capinfo.handle) {
-        pcap_breakloop(capinfo.handle);
-        pthread_join(capinfo.capture_t, NULL);
-        pcap_close(capinfo.handle);
+    capture_info_t *capinfo;
+
+    // Nothing to close
+    if (vector_count(capture_cfg.sources) == 0)
+        return;
+
+    // Stop all captures
+    vector_iter_t it = vector_iterator(capture_cfg.sources);
+    while ((capinfo = vector_iterator_next(&it))) {
+        //Close PCAP file
+        if (capinfo->handle) {
+            pcap_breakloop(capinfo->handle);
+            pthread_join(capinfo->capture_t, NULL);
+            pcap_close(capinfo->handle);
+        }
     }
 
     // Close dump file
-    if (capinfo.pd) {
-        dump_close(capinfo.pd);
+    if (capture_cfg.pd) {
+        dump_close(capture_cfg.pd);
     }
 }
 
 int
-capture_launch_thread()
+capture_launch_thread(capture_info_t *capinfo)
 {
     //! capture thread attributes
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    if (pthread_create(&capinfo.capture_t, &attr, (void *) capture_thread, NULL)) {
-        return 1;
+
+    // Start all captures threads
+    vector_iter_t it = vector_iterator(capture_cfg.sources);
+    while ((capinfo = vector_iterator_next(&it))) {
+        if (pthread_create(&capinfo->capture_t, &attr, (void *) capture_thread, capinfo)) {
+            return 1;
+        }
     }
+
     pthread_attr_destroy(&attr);
     return 0;
 }
 
 void
-capture_thread(void *none)
+capture_thread(void *info)
 {
+    capture_info_t *capinfo = (capture_info_t *) info;
+
     // Parse available packets
-    pcap_loop(capinfo.handle, -1, parse_packet, NULL);
-    // In offline mode, set capture to fully loaded
+    pcap_loop(capinfo->handle, -1, parse_packet, (u_char *) capinfo);
+
     if (!capture_is_online())
-        capinfo.status = CAPTURE_OFFLINE;
+        capture_cfg.status = CAPTURE_OFFLINE;
 }
 
 int
 capture_is_online()
 {
-    return (capinfo.status == CAPTURE_ONLINE || capinfo.status == CAPTURE_ONLINE_PAUSED);
+    return (capture_cfg.status == CAPTURE_ONLINE || capture_cfg.status == CAPTURE_ONLINE_PAUSED);
 }
 
 int
 capture_set_bpf_filter(const char *filter)
 {
-    //! Check if filter compiles
-    if (pcap_compile(capinfo.handle, &capinfo.fp, filter, 0, capinfo.mask) == -1)
-        return 1;
+    vector_iter_t it = vector_iterator(capture_cfg.sources);
+    capture_info_t *capinfo;
 
-    // Set capture filter
-    if (pcap_setfilter(capinfo.handle, &capinfo.fp) == -1)
-        return 1;
+    // Apply the given filter to all sources
+    while ((capinfo = vector_iterator_next(&it))) {
+        //! Check if filter compiles
+        if (pcap_compile(capinfo->handle, &capture_cfg.fp, filter, 0, capinfo->mask) == -1)
+            return 1;
+
+        // Set capture filter
+        if (pcap_setfilter(capinfo->handle, &capture_cfg.fp) == -1)
+            return 1;
+
+    }
 
     return 0;
-}
-
-void
-capture_set_opts(int limit, int rtp_capture)
-{
-    capinfo.limit = limit;
-    capinfo.rtp_capture = rtp_capture;
 }
 
 void
 capture_set_paused(int pause)
 {
     if (capture_is_online()) {
-        capinfo.status = (pause) ? CAPTURE_ONLINE_PAUSED : CAPTURE_ONLINE;
+        capture_cfg.status = (pause) ? CAPTURE_ONLINE_PAUSED : CAPTURE_ONLINE;
     }
 }
 
 int
 capture_is_paused()
 {
-    return capinfo.status == CAPTURE_ONLINE_PAUSED;
+    return capture_cfg.status == CAPTURE_ONLINE_PAUSED;
 }
 
 int
 capture_get_status()
 {
-    return capinfo.status;
+    return capture_cfg.status;
 }
 
 const char *
 capture_get_status_desc()
 {
-    switch (capinfo.status) {
+    switch (capture_cfg.status) {
         case CAPTURE_ONLINE:
             return "Online";
         case CAPTURE_ONLINE_PAUSED:
@@ -434,25 +487,39 @@ capture_get_status_desc()
 const char*
 capture_get_infile()
 {
-    return capinfo.infile;
+    capture_info_t *capinfo;
+
+    if (vector_count(capture_cfg.sources) == 1) {
+        capinfo = vector_first(capture_cfg.sources);
+        return capinfo->infile;
+    } else {
+        return "Multiple files";
+    }
+
 }
 
 const char*
 capture_get_keyfile()
 {
-    return capinfo.keyfile;
+    return capture_cfg.keyfile;
 }
 
 void
 capture_set_keyfile(const char *keyfile)
 {
-    capinfo.keyfile = keyfile;
+    capture_cfg.keyfile = keyfile;
 }
 
 char *
-capture_last_error()
+capture_last_error(cap)
 {
-    return pcap_geterr(capinfo.handle);
+    capture_info_t *capinfo;
+    if (vector_count(capture_cfg.sources) == 1) {
+        capinfo = vector_first(capture_cfg.sources);
+        return pcap_geterr(capinfo->handle);
+    }
+    return NULL;
+
 }
 
 capture_packet_t *
@@ -588,7 +655,13 @@ datalink_size(int datalink)
 pcap_dumper_t *
 dump_open(const char *dumpfile)
 {
-    return pcap_dump_open(capinfo.handle, dumpfile);
+    capture_info_t *capinfo;
+
+    if (vector_count(capture_cfg.sources) == 1) {
+        capinfo = vector_first(capture_cfg.sources);
+        return pcap_dump_open(capinfo->handle, dumpfile);
+    }
+    return NULL;
 }
 
 void
@@ -622,9 +695,9 @@ lookup_hostname(const char *address)
         return address;
 
     // Check if we have already tryied resolve this address
-    for (i = 0; i < capinfo.dnscache.count; i++) {
-        if (!strcmp(capinfo.dnscache.addr[i], address)) {
-            return capinfo.dnscache.hostname[i];
+    for (i = 0; i < capture_cfg.dnscache.count; i++) {
+        if (!strcmp(capture_cfg.dnscache.addr[i], address)) {
+            return capture_cfg.dnscache.hostname[i];
         }
     }
 
@@ -644,12 +717,12 @@ lookup_hostname(const char *address)
     hostlen = strlen(hostname);
 
     // Store this result in the dnscache
-    strcpy(capinfo.dnscache.addr[capinfo.dnscache.count], address);
-    strncpy(capinfo.dnscache.hostname[capinfo.dnscache.count], hostname, hostlen);
-    capinfo.dnscache.count++;
+    strcpy(capture_cfg.dnscache.addr[capture_cfg.dnscache.count], address);
+    strncpy(capture_cfg.dnscache.hostname[capture_cfg.dnscache.count], hostname, hostlen);
+    capture_cfg.dnscache.count++;
 
     // Return the stored value
-    return capinfo.dnscache.hostname[capinfo.dnscache.count - 1];
+    return capture_cfg.dnscache.hostname[capture_cfg.dnscache.count - 1];
 }
 
 int
@@ -669,7 +742,7 @@ is_local_address(in_addr_t address)
     pcap_if_t *device;
     pcap_addr_t *dev_addr;
 
-    for (device = capinfo.devices; device; device = device->next) {
+    for (device = capture_cfg.devices; device; device = device->next) {
         for (dev_addr = device->addresses; dev_addr; dev_addr = dev_addr->next)
             if (dev_addr->addr && dev_addr->addr->sa_family == AF_INET
                 && ((struct sockaddr_in*) dev_addr->addr)->sin_addr.s_addr == address)

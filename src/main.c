@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include "option.h"
+#include "vector.h"
 #include "ui_manager.h"
 #include "capture.h"
 #ifdef WITH_OPENSSL
@@ -104,12 +105,13 @@ int
 main(int argc, char* argv[])
 {
     int opt, idx, limit, only_calls, no_incomplete, i;
-    const char *device, *infile, *outfile;
+    const char *device, *outfile;
     char bpf[512];
     const char *keyfile;
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
     int no_interface = 0, quiet = 0, rtp_capture = 0;
+    vector_t *infiles = vector_create(1, 1);
 
     // Program otptions
     static struct option long_options[] = {
@@ -134,7 +136,6 @@ main(int argc, char* argv[])
 
     // Get initial values for configurable arguments
     device = setting_get_value(SETTING_CAPTURE_DEVICE);
-    infile = setting_get_value(SETTING_CAPTURE_INFILE);
     outfile = setting_get_value(SETTING_CAPTURE_OUTFILE);
     keyfile = setting_get_value(SETTING_CAPTURE_KEYFILE);
     limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
@@ -157,7 +158,7 @@ main(int argc, char* argv[])
                 device = optarg;
                 break;
             case 'I':
-                infile = optarg;
+                vector_append(infiles, optarg);
                 break;
             case 'O':
                 outfile = optarg;
@@ -232,18 +233,21 @@ main(int argc, char* argv[])
     sip_init(limit, only_calls, no_incomplete);
 
     // Set capture options
-    capture_set_opts(limit, rtp_capture);
+    capture_init(limit, rtp_capture);
 
     // If we have an input file, load it
-    if (infile) {
-        // Try to load file
-        if (capture_offline(infile, outfile) != 0)
-            return 1;
+    if (vector_count(infiles)) {
+        for (i = 0; i < vector_count(infiles); i++) {
+            // Try to load file
+            if (capture_offline(vector_item(infiles, i), outfile) != 0)
+                return 1;
+        }
     } else {
         // Check if all capture data is valid
         if (capture_online(device, outfile) != 0)
             return 1;
     }
+
 
     // More arguments pending!
     if (argv[optind]) {

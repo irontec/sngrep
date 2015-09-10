@@ -69,7 +69,6 @@ vector_clear(vector_t *vector)
 int
 vector_append(vector_t *vector, void *item)
 {
-
     // Sanity check
     if (!item)
         return vector->count;
