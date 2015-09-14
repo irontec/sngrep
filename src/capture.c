@@ -572,9 +572,6 @@ capture_packet_destroy(capture_packet_t *packet)
     // Sanity check
     if (!packet) return;
 
-    // Free packet payload
-    sng_free(packet->payload);
-
     // TODO frame destroyer?
     vector_iter_t it = vector_iterator(packet->frames);
     while ((frame = vector_iterator_next(&it))) {
@@ -582,6 +579,11 @@ capture_packet_destroy(capture_packet_t *packet)
         sng_free(frame->data);
         sng_free(frame);
     }
+
+    // Free remaining packet data
+    vector_destroy(packet->frames);
+    sng_free(packet->payload);
+    sng_free(packet);
 }
 
 
