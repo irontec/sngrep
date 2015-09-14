@@ -137,6 +137,8 @@ struct capture_config {
     pcap_if_t *devices;
     //! Capture sources
     vector_t *sources;
+    //! Packets pending reassembly
+    vector_t *tcp_reasm;
 };
 
 /**
@@ -174,6 +176,10 @@ struct capture_info
 struct capture_packet {
     // Packet type as defined in capture_packet_type
     int type;
+    // Packet source and destination address
+    char ip_src[ADDRESSLEN], ip_dst[ADDRESSLEN];
+    // Packet source and destination port
+    u_short sport, dport;
     //! PCAP Packet payload when it can not be get from data
     u_char *payload;
     //! Payload length
@@ -191,8 +197,6 @@ struct capture_frame {
     struct pcap_pkthdr *header;
     //! PCAP Frame content
     u_char *data;
-    //! PPCAP Frame content len
-    uint32_t size;
 };
 
 /**
@@ -203,6 +207,12 @@ struct capture_frame {
  */
 void
 capture_init(int limit, int rtp_capture);
+
+/**
+ * @brief Deinitialize capture data
+ */
+void
+capture_deinit();
 
 /**
  * @brief Online capture function
@@ -336,7 +346,13 @@ capture_last_error();
  * @brief Allocate memory to store new packet data
  */
 capture_packet_t *
-capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size);
+capture_packet_create(const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
+
+/**
+ * @brief Add a new frame to the given packet
+ */
+capture_frame_t *
+capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header, const u_char *packet);
 
 /**
  * @brief Deallocate a packet structure memory

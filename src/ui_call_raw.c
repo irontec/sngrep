@@ -124,7 +124,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     int payload_lines, i, column, height, width;
     // Message ngrep style Header
     char header[256];
-    char payload[2048];
+    char payload[MAX_SIP_PAYLOAD];
     int color = 0;
 
     // Get panel information

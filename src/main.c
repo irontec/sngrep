@@ -111,7 +111,7 @@ main(int argc, char* argv[])
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
     int no_interface = 0, quiet = 0, rtp_capture = 0;
-    vector_t *infiles = vector_create(1, 1);
+    vector_t *infiles = vector_create(0, 1);
 
     // Program otptions
     static struct option long_options[] = {
@@ -242,6 +242,7 @@ main(int argc, char* argv[])
             if (capture_offline(vector_item(infiles, i), outfile) != 0)
                 return 1;
         }
+        vector_destroy(infiles);
     } else {
         // Check if all capture data is valid
         if (capture_online(device, outfile) != 0)
@@ -312,6 +313,9 @@ main(int argc, char* argv[])
 
     // Close pcap handler
     capture_close();
+
+    // Capture deinit
+    capture_deinit();
 
     // Deinitialize interface
     ncurses_deinit();

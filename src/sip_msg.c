@@ -103,18 +103,7 @@ msg_add_media(sip_msg_t *msg, sdp_media_t *media)
 const char *
 msg_get_payload(sip_msg_t *msg)
 {
-    // Return Message payload pointer
-    if (msg->payload)
-        return (const char *)msg->payload;
-
-    // Calculate message payload pointer
-    // TODO Multi frame packet support
-    capture_packet_t *packet = msg->packet;
-
-    // Get payload from packet data
-    msg->payload = sng_malloc(packet->payload_len + 1);
-    memcpy(msg->payload, capture_packet_get_payload(packet), capture_packet_get_payload_len(packet));
-    return (const char *) msg->payload;
+    return (const char *) capture_packet_get_payload(msg->packet);
 }
 
 struct timeval

@@ -34,6 +34,7 @@
 #include <netdb.h>
 #include "capture.h"
 #include "capture_ws.h"
+#include "capture_reasm.h"
 #ifdef WITH_OPENSSL
 #include "capture_tls.h"
 #endif
@@ -56,6 +57,18 @@ capture_init(int limit, int rtp_capture)
     capture_cfg.limit = limit;
     capture_cfg.rtp_capture = rtp_capture;
     capture_cfg.sources = vector_create(1, 1);
+    vector_set_destroyer(capture_cfg.sources, vector_generic_destroyer);
+    capture_cfg.tcp_reasm = vector_create(0, 10);
+}
+
+void
+capture_deinit()
+{
+    vector_destroy(capture_cfg.sources);
+
+    // Clear pending packets
+    vector_set_destroyer(capture_cfg.tcp_reasm, capture_packet_destroyer);
+    vector_destroy(capture_cfg.tcp_reasm);
 }
 
 int
@@ -206,8 +219,6 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     u_char *payload = NULL;
     // Packet payload size
     uint32_t size_payload = header->caplen;
-    // SIP message transport
-    int transport;
     // Media structure for RTP packets
     rtp_stream_t *stream;
     // Captured packet info
@@ -279,6 +290,9 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         // Get actual payload size
         size_payload -= capinfo->link_hl + ip_hl + udp_off;
 
+        if ((int32_t)size_payload < 0)
+            size_payload = 0;
+
 #ifdef WITH_IPV6
         if (ip_ver == 6)
             size_payload -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
@@ -286,8 +300,11 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         // Get payload start
         payload = (u_char *) (udp) + udp_off;
 
-        // Set transport UDP
-        transport = CAPTURE_PACKET_SIP_UDP;
+        // Create a structure for this captured packet
+        pkt = capture_packet_create(ip_src, sport, ip_dst, dport);
+        capture_packet_set_type(pkt, CAPTURE_PACKET_SIP_UDP);
+        capture_packet_add_frame(pkt, header, packet);
+        capture_packet_set_payload(pkt, payload, size_payload);
 
     } else if (ip_proto == IPPROTO_TCP) {
         // Get TCP header
@@ -301,6 +318,9 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         // Get actual payload size
         size_payload -= capinfo->link_hl + ip_hl + tcp_off;
 
+        if ((int32_t)size_payload < 0)
+            size_payload = 0;
+
 #ifdef WITH_IPV6
         if (ip_ver == 6)
             size_payload -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
@@ -308,31 +328,22 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         // Get payload start
         payload = (u_char *)(tcp) + tcp_off;
 
-        // Set transport TCP
-        transport = CAPTURE_PACKET_SIP_TCP;
+        // Create a structure for this captured packet
+        if (!(pkt = capture_packet_reasm_tcp(header, packet, tcp, ip_src, sport, ip_dst, dport, payload, size_payload)))
+            return;
+
+#ifdef WITH_OPENSSL
+        // Check if packet is TLS
+        if (capture_cfg.keyfile)
+            tls_process_segment(ip4, pkt);
+#endif
+
+        // Check if packet is WS or WSS
+        capture_ws_check_packet(pkt);
     } else {
         // Not handled protocol
         return;
     }
-
-    if ((int32_t)size_payload < 0)
-        size_payload = 0;
-
-    // Create a structure for this captured packet
-    pkt = capture_packet_create(header, packet, header->caplen);
-    capture_packet_set_type(pkt, transport);
-    // For TCP and UDP, use payload directly from the packet
-    capture_packet_set_payload(pkt, NULL, size_payload);
-
-#ifdef WITH_OPENSSL
-    // Check if packet is TLS
-    if (capture_cfg.keyfile && transport == CAPTURE_PACKET_SIP_TCP)
-        tls_process_segment(ip4, pkt);
-#endif
-
-    // Check if packet is WS or WSS
-    if (transport == CAPTURE_PACKET_SIP_TCP)
-        capture_ws_check_packet(pkt);
 
     // We're only interested in packets with payload
     if (capture_packet_get_payload_len(pkt)) {
@@ -523,24 +534,34 @@ capture_last_error(cap)
 }
 
 capture_packet_t *
-capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size)
+capture_packet_create(const char *ip_src, u_short sport, const char *ip_dst, u_short dport)
 {
     capture_packet_t *pkt;
-    capture_frame_t *frame;
-    pkt = sng_malloc(sizeof(capture_packet_t));
-    pkt->frames = vector_create(1, 1);
 
-    // Add first frame to this packet
+    // Create a new packet
+    pkt = sng_malloc(sizeof(capture_packet_t));
+    memset(pkt, 0, sizeof(capture_packet_t));
+    pkt->frames = vector_create(1, 1);
+    memcpy(pkt->ip_src, ip_src, ADDRESSLEN);
+    memcpy(pkt->ip_dst, ip_dst, ADDRESSLEN);
+    pkt->sport = sport;
+    pkt->dport = dport;
+    return pkt;
+}
+
+capture_frame_t *
+capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header, const u_char *packet)
+{
+    capture_frame_t *frame;
+
+    // Add frame to this packet
     frame = sng_malloc(sizeof(capture_frame_t));
     frame->header = sng_malloc(sizeof(struct pcap_pkthdr));
-    frame->data = sng_malloc(size);
+    frame->data = sng_malloc(header->caplen);
     memcpy(frame->header, header, sizeof(struct pcap_pkthdr));
-    memcpy(frame->data, packet, size);
-    frame->size = size;
+    memcpy(frame->data, packet, header->caplen);
     vector_append(pkt->frames, frame);
-
-    // Return created packet
-    return pkt;
+    return frame;
 }
 
 void
@@ -549,8 +570,7 @@ capture_packet_destroy(capture_packet_t *packet)
     capture_frame_t *frame;
 
     // Sanity check
-    if (!packet)
-        return;
+    if (!packet) return;
 
     // Free packet payload
     sng_free(packet->payload);
@@ -580,8 +600,19 @@ capture_packet_set_type(capture_packet_t *packet, int type)
 void
 capture_packet_set_payload(capture_packet_t *packet, u_char *payload, uint32_t payload_len)
 {
-    packet->payload = payload;
-    packet->payload_len = payload_len;
+
+    // Free previous payload
+    sng_free(packet->payload);
+    packet->payload_len = 0;
+
+    // Set new payload
+    if (payload) {
+        packet->payload = sng_malloc(payload_len + 1);
+        memset(packet->payload, 0, payload_len + 1);
+        memcpy(packet->payload, payload, payload_len);
+        packet->payload_len = payload_len;
+    }
+
 }
 
 uint32_t
@@ -593,13 +624,7 @@ capture_packet_get_payload_len(capture_packet_t *packet)
 u_char *
 capture_packet_get_payload(capture_packet_t *packet)
 {
-    if (packet->payload) {
-        return packet->payload;
-    } else {
-        // TODO Implement multiframe packets
-        capture_frame_t *frame = vector_first(packet->frames);
-        return frame->data + (frame->size - packet->payload_len);
-    }
+    return packet->payload;
 }
 
 void
