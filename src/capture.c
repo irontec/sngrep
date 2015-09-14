@@ -629,27 +629,46 @@ capture_packet_get_payload(capture_packet_t *packet)
     return packet->payload;
 }
 
+struct timeval
+capture_packet_get_time(capture_packet_t *packet)
+{
+    capture_frame_t *first;
+    struct timeval ts = { 0 };
+
+    // Sanity check
+    if (!packet)
+        return ts;
+
+    // Return first frame timestamp
+    if ((first = vector_first(packet->frames)))
+        ts = first->header->ts;
+
+    // Return packe timestamp
+    return ts;
+}
+
+
 void
 capture_packet_time_sorter(vector_t *vector, void *item)
 {
-    capture_frame_t *prev, *cur;
+    struct timeval curts, prevts;
     int count = vector_count(vector);
     int i;
 
     // TODO Implement multiframe packets
-    cur = vector_first(((capture_packet_t *) item)->frames);
-    prev = vector_first(((capture_packet_t *) vector_item(vector, count - 2))->frames);
+    curts = capture_packet_get_time(item);
+    prevts = capture_packet_get_time(vector_last(vector));
 
     // Check if the item is already sorted
-    if (prev && timeval_is_older(cur->header->ts, prev->header->ts)) {
+    if (timeval_is_older(curts, prevts)) {
         return;
     }
 
     for (i = count - 2 ; i >= 0; i--) {
         // Get previous packet
-        prev = vector_item(vector, i);
+        prevts = capture_packet_get_time(vector_item(vector, i));
         // Check if the item is already in a sorted position
-        if (timeval_is_older(cur->header->ts, prev->header->ts)) {
+        if (timeval_is_older(curts, prevts)) {
             vector_insert(vector, item, i + 1);
             return;
         }

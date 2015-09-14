@@ -175,6 +175,12 @@ vector_first(vector_t *vector)
     return vector_item(vector, 0);
 }
 
+void *
+vector_last(vector_t *vector)
+{
+    return vector_item(vector, vector_count(vector) - 1);
+}
+
 int
 vector_index(vector_t *vector, void *item)
 {

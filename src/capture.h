@@ -391,6 +391,12 @@ u_char *
 capture_packet_get_payload(capture_packet_t *packet);
 
 /**
+ * @brief Get The timestamp for a packet.
+ */
+struct timeval
+capture_packet_get_time(capture_packet_t *packet);
+
+/**
  * @brief Sorter by time for captured packets
  */
 void

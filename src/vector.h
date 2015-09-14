@@ -172,6 +172,12 @@ void *
 vector_first(vector_t *vector);
 
 /**
+ * @brief Return last item of the vector
+ */
+void *
+vector_last(vector_t *vector);
+
+/**
  * @brief Get the index of an item
  *
  * Return the index of item in vector or -1 if
