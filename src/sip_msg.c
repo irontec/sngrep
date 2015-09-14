@@ -78,9 +78,7 @@ msg_media_count(sip_msg_t *msg)
 int
 msg_has_sdp(void *item)
 {
-    // TODO
-    sip_msg_t *msg = (sip_msg_t *)item;
-    return vector_count(msg->medias) ? 1 : 0;
+    return vector_count(((sip_msg_t *)item)->medias) ? 1 : 0;
 }
 
 int

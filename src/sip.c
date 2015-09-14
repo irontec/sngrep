@@ -431,7 +431,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     while ((line = strsep(&payload2, "\r\n")) != NULL) {
         // Check if we have a media string
         if (!strncmp(line, "m=", 2)) {
-            if (sscanf(line, "m=%s %d RTP/AVP %u", media_type, &media_port, &media_fmt_pref) == 3) {
+            if (sscanf(line, "m=%s %d RTP/%*s %u", media_type, &media_port, &media_fmt_pref) == 3) {
                 // Create a new media structure for this message
                 if ((media = media_create(msg))) {
                     media_set_type(media, media_type);
