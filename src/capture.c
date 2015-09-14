@@ -526,22 +526,42 @@ capture_packet_t *
 capture_packet_create(const struct pcap_pkthdr *header, const u_char *packet, int size)
 {
     capture_packet_t *pkt;
+    capture_frame_t *frame;
     pkt = sng_malloc(sizeof(capture_packet_t));
-    pkt->header = sng_malloc(sizeof(struct pcap_pkthdr));
-    pkt->data = sng_malloc(size);
-    memcpy(pkt->header, header, sizeof(struct pcap_pkthdr));
-    memcpy(pkt->data, packet, size);
-    pkt->size = size;
+    pkt->frames = vector_create(1, 1);
+
+    // Add first frame to this packet
+    frame = sng_malloc(sizeof(capture_frame_t));
+    frame->header = sng_malloc(sizeof(struct pcap_pkthdr));
+    frame->data = sng_malloc(size);
+    memcpy(frame->header, header, sizeof(struct pcap_pkthdr));
+    memcpy(frame->data, packet, size);
+    frame->size = size;
+    vector_append(pkt->frames, frame);
+
+    // Return created packet
     return pkt;
 }
 
 void
 capture_packet_destroy(capture_packet_t *packet)
 {
+    capture_frame_t *frame;
+
+    // Sanity check
+    if (!packet)
+        return;
+
+    // Free packet payload
     sng_free(packet->payload);
-    sng_free(packet->header);
-    sng_free(packet->data);
-    sng_free(packet);
+
+    // TODO frame destroyer?
+    vector_iter_t it = vector_iterator(packet->frames);
+    while ((frame = vector_iterator_next(&it))) {
+        sng_free(frame->header);
+        sng_free(frame->data);
+        sng_free(frame);
+    }
 }
 
 
@@ -576,20 +596,22 @@ capture_packet_get_payload(capture_packet_t *packet)
     if (packet->payload) {
         return packet->payload;
     } else {
-        return packet->data + (packet->size - packet->payload_len);
+        // TODO Implement multiframe packets
+        capture_frame_t *frame = vector_first(packet->frames);
+        return frame->data + (frame->size - packet->payload_len);
     }
 }
 
 void
 capture_packet_time_sorter(vector_t *vector, void *item)
 {
-    capture_packet_t *prev, *cur;
+    capture_frame_t *prev, *cur;
     int count = vector_count(vector);
     int i;
 
-    // Get current item
-    cur = (capture_packet_t *) item;
-    prev = vector_item(vector, count - 2);
+    // TODO Implement multiframe packets
+    cur = vector_first(((capture_packet_t *) item)->frames);
+    prev = vector_first(((capture_packet_t *) vector_item(vector, count - 2))->frames);
 
     // Check if the item is already sorted
     if (prev && timeval_is_older(cur->header->ts, prev->header->ts)) {

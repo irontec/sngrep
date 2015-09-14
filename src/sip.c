@@ -221,7 +221,8 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg_dst, dport);
 
     // Add this SIP packet to the message
-    msg_add_packet(msg, packet);
+    msg->packet = packet;
+
     // Add the message to the call
     call_add_message(call, msg);
 
@@ -395,15 +396,14 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg_get_time(msg), date));
     msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg_get_time(msg), time));
 
-    capture_packet_t *packet = vector_first(msg->packets);
     // Store Transport attribute
-    if (packet->type == CAPTURE_PACKET_SIP_UDP) {
+    if (msg->packet->type == CAPTURE_PACKET_SIP_UDP) {
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
-    } else if (packet->type == CAPTURE_PACKET_SIP_TCP) {
+    } else if (msg->packet->type == CAPTURE_PACKET_SIP_TCP) {
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
-    } else if (packet->type == CAPTURE_PACKET_SIP_TLS) {
+    } else if (msg->packet->type == CAPTURE_PACKET_SIP_TLS) {
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
-    } else if (packet->type == CAPTURE_PACKET_SIP_WS) {
+    } else if (msg->packet->type == CAPTURE_PACKET_SIP_WS) {
         msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
     }
 

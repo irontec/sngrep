@@ -79,7 +79,7 @@ struct sip_msg {
     //! SDP payload information (sdp_media_t *)
     vector_t *medias;
     //! Captured packets for this message (capture_packet_t *)
-    vector_t *packets;
+    capture_packet_t *packet;
     //! Index of this message in call
     int index;
     //! Message owner
@@ -159,18 +159,6 @@ msg_add_media(sip_msg_t *msg, sdp_media_t *media);
  */
 int
 msg_is_request(sip_msg_t *msg);
-
-/**
- * @brief Add a new packet for given message
- *
- * A SIP message can have multiple fragmented packets to
- * store its payload;
- *
- * @param msg SIP message that will store this packet
- * @param packet Captured packet information
- */
-void
-msg_add_packet(sip_msg_t *msg, capture_packet_t *packet);
 
 /**
  * @brief Add a new media for given message

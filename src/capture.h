@@ -88,6 +88,8 @@ typedef struct capture_info capture_info_t;
 typedef struct dns_cache dns_cache_t;
 //! Shorter declaration of capture_packet structure
 typedef struct capture_packet capture_packet_t;
+//! Shorter declaration of capture_frame structure
+typedef struct capture_frame capture_frame_t;
 
 //! Stored packet types
 enum capture_packet_type {
@@ -161,23 +163,37 @@ struct capture_info
 };
 
 /**
- * Single packet cpatured data
+ * Packet capture data.
+ *
+ * One packet can contain more than one frame after
+ * assembly. We assume than one SIP message has one packet
+ * (maybe in multiple frames) and that one packet can only contain
+ *  one SIP message.
+ *
  */
 struct capture_packet {
     // Packet type as defined in capture_packet_type
     int type;
-    //! PCAP Packet Header data
-    struct pcap_pkthdr *header;
-    //! PCAP Packet content
-    u_char *data;
     //! PCAP Packet payload when it can not be get from data
     u_char *payload;
-    //! PPCAP Packet content len
-    uint32_t size;
     //! Payload length
     uint32_t payload_len;
+    //! Packet frame list (capture_frame_t)
+    vector_t *frames;
 };
 
+/**
+ *  Capture frame.
+ *  One packet can contain multiple frames.
+ */
+struct capture_frame {
+    //! PCAP Frame Header data
+    struct pcap_pkthdr *header;
+    //! PCAP Frame content
+    u_char *data;
+    //! PPCAP Frame content len
+    uint32_t size;
+};
 
 /**
  * @brief Initialize capture data

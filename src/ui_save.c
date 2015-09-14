@@ -499,13 +499,9 @@ save_to_file(PANEL *panel)
             msgs = vector_iterator(call->msgs);
             // Save SIP message content
             while ((msg = vector_iterator_next(&msgs))) {
-                capture_packet_t *packet;
-                vector_iter_t it = vector_iterator(msg->packets);
-                while ((packet = vector_iterator_next(&it))) {
-                    // Update progress bar dialog
-                    dialog_progress_set_value(progress, (++cur * 100) / total);
-                    vector_append(sorted, packet);
-                }
+                // Update progress bar dialog
+                dialog_progress_set_value(progress, (++cur * 100) / total);
+                vector_append(sorted, msg->packet);
             }
 
             // Save RTP packets
@@ -544,7 +540,12 @@ save_to_file(PANEL *panel)
 void
 save_packet_pcap(pcap_dumper_t *pd, capture_packet_t *packet)
 {
-    dump_packet(pd, packet->header, packet->data);
+    vector_iter_t it = vector_iterator(packet->frames);
+    capture_frame_t *frame;
+
+    while ((frame = vector_iterator_next(&it))) {
+        dump_packet(pd, frame->header, frame->data);
+    }
 }
 
 

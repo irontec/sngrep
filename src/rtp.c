@@ -195,7 +195,8 @@ rtp_check_stream(capture_packet_t *packet, const char *src, u_short sport, const
         }
 
         // Add packet to stream
-        stream_add_packet(stream, packet->header);
+        // TODO Multiframe packet support
+        stream_add_packet(stream, ((capture_frame_t *)vector_first(packet->frames))->header);
     }
 
     return stream;

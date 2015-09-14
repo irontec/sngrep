@@ -40,9 +40,6 @@ msg_create(const char *payload)
     // Create a vector to store attributes
     msg->attrs = vector_create(4, 4);
     vector_set_destroyer(msg->attrs, sip_attr_destroyer);
-    // Create a vector to store packets
-    msg->packets = vector_create(1, 1);
-    vector_set_destroyer(msg->packets, capture_packet_destroyer);
     return msg;
 }
 
@@ -54,7 +51,7 @@ msg_destroy(sip_msg_t *msg)
     // Free message SDP media
     vector_destroy(msg->medias);
     // Free message packets
-    vector_destroy(msg->packets);
+    capture_packet_destroy(msg->packet);
     // Free payload if parsed
     sng_free(msg->payload);
     // Free all memory
@@ -93,12 +90,6 @@ msg_is_request(sip_msg_t *msg)
 }
 
 void
-msg_add_packet(sip_msg_t *msg, capture_packet_t *packet)
-{
-    vector_append(msg->packets, packet);
-}
-
-void
 msg_add_media(sip_msg_t *msg, sdp_media_t *media)
 {
     if (!msg->medias) {
@@ -117,8 +108,8 @@ msg_get_payload(sip_msg_t *msg)
         return (const char *)msg->payload;
 
     // Calculate message payload pointer
-    // TODO Multi packet support
-    capture_packet_t *packet = vector_first(msg->packets);
+    // TODO Multi frame packet support
+    capture_packet_t *packet = msg->packet;
 
     // Get payload from packet data
     msg->payload = sng_malloc(packet->payload_len + 1);
@@ -129,10 +120,10 @@ msg_get_payload(sip_msg_t *msg)
 struct timeval
 msg_get_time(sip_msg_t *msg) {
     struct timeval t = { };
-    capture_packet_t *packet;
+    capture_frame_t *frame;
 
-    if (msg && (packet = vector_first(msg->packets)))
-        return packet->header->ts;
+    if (msg && (frame = vector_first(msg->packet->frames)))
+        return frame->header->ts;
     return t;
 }
 
