@@ -43,13 +43,17 @@
  *
  */
 
-#ifndef __SNGREP_CAPTURE_TCPREASM_
-#define __SNGREP_CAPTURE_TCPREASM_
+#ifndef __SNGREP_CAPTURE_REASM_
+#define __SNGREP_CAPTURE_REASM_
 
 #include "capture.h"
+
 capture_packet_t *
-capture_packet_reasm_tcp(const struct pcap_pkthdr *header, const u_char *packet, struct tcphdr *tcp,
-                         const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_char *payload, int size_payload);
+capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char **packet, uint32_t *size, uint32_t *caplen);
+
+capture_packet_t *
+capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload);
 
 
-#endif /* __SNGREP_CAPTURE_TCPREASM_ */
+
+#endif /* __SNGREP_CAPTURE_REASM_ */

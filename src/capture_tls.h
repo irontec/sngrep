@@ -352,7 +352,7 @@ tls_connection_find(struct in_addr addr, u_short port);
  * @return 0 in all cases
  */
 int
-tls_process_segment(const struct ip *ip, capture_packet_t *packet);
+tls_process_segment(capture_packet_t *packet, const struct ip *ip);
 
 /**
  * @brief Process TLS record data
