@@ -225,33 +225,26 @@ tls_connection_find(struct in_addr addr, u_short port) {
 }
 
 int
-tls_process_segment(capture_packet_t *packet, const struct ip *ip)
+tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp)
 {
     struct SSLConnection *conn;
-    struct tcphdr *tcp;
-    uint16_t tcp_size;
-    const uint8 *payload;
-    uint16_t ip_off;
-    uint8_t ip_frag;
-    uint16_t ip_frag_off;
-    int len;
+    const u_char *payload = capture_packet_get_payload(packet);
+    uint32_t size_payload = capture_packet_get_payload_len(packet);
     uint8 *out;
     uint32_t outl = packet->payload_len;
     out = sng_malloc(outl);
+    struct in_addr ip_src, ip_dst;
+    u_short sport = packet->sport;
+    u_short dport = packet->dport;
 
-    // Process IP offset
-    ip_off = ntohs(ip->ip_off);
-    ip_frag = ip_off & (IP_MF | IP_OFFMASK);
-    ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
-
-    // Get TCP header
-    tcp = (struct tcphdr *) ((uint8 *) ip + (ip->ip_hl * 4));
-    tcp_size = (ip_frag_off) ? 0 : (tcp->th_off * 4);
+    // Convert addresses
+    inet_pton(AF_INET, packet->ip_src, &ip_src);
+    inet_pton(AF_INET, packet->ip_dst, &ip_dst);
 
     // Try to find a session for this ip
-    if ((conn = tls_connection_find(ip->ip_src, tcp->th_sport))) {
+    if ((conn = tls_connection_find(ip_src, sport))) {
         // Update last connection direction
-        conn->direction = tls_connection_dir(conn, ip->ip_src, tcp->th_sport);
+        conn->direction = tls_connection_dir(conn, ip_src, sport);
 
         // Check current connection state
         switch (conn->state) {
@@ -268,9 +261,7 @@ tls_process_segment(capture_packet_t *packet, const struct ip *ip)
             case TCP_STATE_ACK:
             case TCP_STATE_ESTABLISHED:
                 // Process data segment!
-                payload = (uint8 *) tcp + tcp_size;
-                len = ntohs(ip->ip_len) - (ip->ip_hl * 4) - tcp_size;
-                if (tls_process_record(conn, payload, len, &out, &outl) == 0) {
+                if (tls_process_record(conn, payload, size_payload, &out, &outl) == 0) {
                     if ((int32_t) outl > 0) {
                         capture_packet_set_payload(packet, out, outl);
                         capture_packet_set_type(packet, CAPTURE_PACKET_SIP_TLS);
@@ -287,7 +278,7 @@ tls_process_segment(capture_packet_t *packet, const struct ip *ip)
     } else {
         if (tcp->th_flags & TH_SYN & ~TH_ACK) {
             // New connection, store it status and leave
-            tls_connection_create(ip->ip_src, tcp->th_sport, ip->ip_dst, tcp->th_dport);
+            tls_connection_create(ip_src, sport, ip_dst, dport);
         }
     }
 

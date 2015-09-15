@@ -32,7 +32,11 @@
 
 #include "config.h"
 #include "util.h"
+#include "capture.h"
 #include "capture_reasm.h"
+#ifdef WITH_IPV6
+#include <netinet/ip6.h>
+#endif
 
 // Capture information
 extern capture_config_t capture_cfg;
@@ -106,7 +110,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             if (ip_proto == IPPROTO_FRAGMENT) {
                 struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_hl);
                 ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
-                ip_id = ntohl(ip6_fraghdr->ip6f_ident);
+                ip_id = ntohl(ip6f->ip6f_ident);
             }
 
             inet_ntop(AF_INET6, &ip6->ip6_src, ip_src, sizeof(ip_src));

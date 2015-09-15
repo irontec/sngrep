@@ -42,9 +42,6 @@
 #include "rtp.h"
 #include "setting.h"
 #include "ui_manager.h"
-#ifdef WITH_IPV6
-#include <netinet/ip6.h>
-#endif
 
 // Capture information
 capture_config_t capture_cfg =
@@ -203,7 +200,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     // Whole packet size
     uint32_t size_capture = header->caplen;
     // Packet payload size
-    uint32_t size_payload =  - capinfo->link_hl;
+    uint32_t size_payload =  size_capture - capinfo->link_hl;
     // Media structure for RTP packets
     rtp_stream_t *stream;
     // Captured packet info
@@ -259,10 +256,6 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         if ((int32_t)size_payload < 0)
             size_payload = 0;
 
-#ifdef WITH_IPV6
-        if (ip_ver == 6)
-            size_payload -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
-#endif
         // Get payload start
         payload = (u_char *)(tcp) + tcp_off;
 
@@ -277,7 +270,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
 #ifdef WITH_OPENSSL
         // Check if packet is TLS
         if (capture_cfg.keyfile)
-            tls_process_segment(ip4, pkt);
+            tls_process_segment(pkt, tcp);
 #endif
 
         // Check if packet is WS or WSS

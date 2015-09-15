@@ -346,13 +346,13 @@ tls_connection_find(struct in_addr addr, u_short port);
  * Check if a TCP segment contains TLS data. In case a TLS record is found
  * process it and return decrypted data if case of application_data record.
  *
- * @param ip Pointer to ip header of the packet
+ * @param tcp Pointer to tcp header of the packet
  * @param out Pointer to the output char array. Memory must be already allocated
  * @param out Number of bytes returned by this function
  * @return 0 in all cases
  */
 int
-tls_process_segment(capture_packet_t *packet, const struct ip *ip);
+tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp);
 
 /**
  * @brief Process TLS record data
