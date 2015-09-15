@@ -15,7 +15,7 @@ AC_ARG_ENABLE(debug,
     enable_debug=$enableval, enable_debug=no)
 
 if test "$enable_debug" = "yes" ; then
-    CFLAGS="$CFLAGS  -g -O0 -Wall -Werror -Wno-unused-but-set-variable -pg"
+    CFLAGS="$CFLAGS  -g -O0 -Wall -Werror -Wno-unused-but-set-variable"
     CXXFLAGS="$CXXFLAGS $CFLAGS"
 fi
 
