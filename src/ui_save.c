@@ -518,7 +518,7 @@ save_to_file(PANEL *panel)
         // Save sorted packets
         packets = vector_iterator(sorted);
         while ((packet = vector_iterator_next(&packets))) {
-            save_packet_pcap(pd, packet);
+            dump_packet(pd, packet);
         }
 
         dialog_progress_destroy(progress);
@@ -536,18 +536,6 @@ save_to_file(PANEL *panel)
 
     return 27;
 }
-
-void
-save_packet_pcap(pcap_dumper_t *pd, capture_packet_t *packet)
-{
-    vector_iter_t it = vector_iterator(packet->frames);
-    capture_frame_t *frame;
-
-    while ((frame = vector_iterator_next(&it))) {
-        dump_packet(pd, frame->header, frame->data);
-    }
-}
-
 
 void
 save_msg_txt(FILE *f, sip_msg_t *msg)

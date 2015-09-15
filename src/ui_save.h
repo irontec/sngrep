@@ -191,12 +191,6 @@ int
 save_to_file(PANEL *panel);
 
 /**
- * @brief Save new packet into pcap
- */
-void
-save_packet_pcap(pcap_dumper_t *pd, capture_packet_t *packet);
-
-/**
  * @brief Save one SIP message into open file
  *
  * @param f File opened with fopen

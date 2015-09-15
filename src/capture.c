@@ -286,7 +286,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         // Parse this header and payload
         if (sip_load_message(pkt, pkt->ip_src, pkt->sport, pkt->ip_dst, pkt->dport)) {
             // Store this packets in output file
-            dump_packet(capture_cfg.pd, header, data);
+            dump_packet(capture_cfg.pd, pkt);
             return;
         }
 
@@ -302,7 +302,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
                 capture_packet_destroy(pkt);
             }
             // Store this packets in output file
-            dump_packet(capture_cfg.pd, header, data);
+            dump_packet(capture_cfg.pd, pkt);
             return;
         }
     }
@@ -678,11 +678,16 @@ dump_open(const char *dumpfile)
 }
 
 void
-dump_packet(pcap_dumper_t *pd, const struct pcap_pkthdr *header, const u_char *packet)
+dump_packet(pcap_dumper_t *pd, const capture_packet_t *packet)
 {
-    if (!pd)
+    if (!pd || !packet)
         return;
-    pcap_dump((u_char*) pd, header, packet);
+
+    vector_iter_t it = vector_iterator(packet->frames);
+    capture_frame_t *frame;
+    while ((frame = vector_iterator_next(&it))) {
+        pcap_dump((u_char*) pd, frame->header, frame->data);
+    }
     pcap_dump_flush(pd);
 }
 

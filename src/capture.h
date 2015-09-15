@@ -438,7 +438,7 @@ dump_open(const char *dumpfile);
  * File must be previously opened with dump_open
  */
 void
-dump_packet(pcap_dumper_t *pd, const struct pcap_pkthdr *header, const u_char *packet);
+dump_packet(pcap_dumper_t *pd, const capture_packet_t *packet);
 
 /**
  * @brief Close a dump file
