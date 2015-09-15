@@ -197,8 +197,9 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
     capture_packet_t *pkt;
     u_char *new_payload;
 
+    //! Assembled
     if ((int32_t) size_payload <= 0)
-        return NULL;
+        return packet;
 
     while ((pkt = vector_iterator_next(&it))) {
         if (!strcmp(pkt->ip_src, packet->ip_src) && !strcmp(pkt->ip_dst, packet->ip_dst)
