@@ -48,6 +48,22 @@ call_group_destroy(sip_call_group_t *group)
     sng_free(group);
 }
 
+sip_call_group_t *
+call_group_clone(sip_call_group_t *original)
+{
+    sip_call_group_t *clone;
+
+    if (!original)
+        return NULL;
+
+    if (!(clone = sng_malloc(sizeof(sip_call_group_t)))) {
+        return NULL;
+    }
+
+    clone->calls = vector_clone(original->calls);
+    return clone;
+}
+
 void
 call_group_add(sip_call_group_t *group, sip_call_t *call)
 {

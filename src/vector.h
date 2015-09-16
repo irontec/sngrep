@@ -82,6 +82,19 @@ void
 vector_destroy(vector_t *vector);
 
 /**
+ * @brief Clone a vector container
+ *
+ * The cloned vector will have its own storage of pointers
+ * **but the items in its list will be shared with the
+ * original vector**
+ *
+ * Use with caution, specially with vector that have sorter
+ * or destroyer functions.
+ */
+vector_t *
+vector_clone(vector_t *original);
+
+/**
  * @brief Remove all items of vector
  *
  */

@@ -72,6 +72,9 @@
 #define ADDRESSLEN 47
 #endif
 
+//! Max allowed packet assembled size
+#define MAX_CAPTURE_LEN 20480
+
 //! Capture modes
 enum capture_status {
     CAPTURE_ONLINE = 0,

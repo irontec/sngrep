@@ -92,10 +92,10 @@ sip_deinit()
 {
     // Remove all calls
     sip_calls_clear();
-    // Remove calls vector
-    vector_destroy(calls.list);
     // Remove Call-id hash table
     hdestroy();
+    // Remove calls vector
+    vector_destroy(calls.list);
     // Deallocate regular expressions
     regfree(&calls.reg_method);
     regfree(&calls.reg_callid);
@@ -188,7 +188,7 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
             goto skip_message;
 
         // Store this call in hash table
-        entry.key = strdup(call_get_attribute(call, SIP_ATTR_CALLID));
+        entry.key = (char *) call_get_attribute(call, SIP_ATTR_CALLID);
         entry.data = (void *) call;
         hsearch(entry, ENTER);
 
@@ -273,6 +273,11 @@ sip_calls_stats(int *total, int *displayed)
     pthread_mutex_unlock(&calls.lock);
 }
 
+sip_call_t *
+sip_find_by_index(int index)
+{
+    return vector_item(calls.list, index);
+}
 
 sip_call_t *
 sip_find_by_callid(const char *callid)
@@ -483,11 +488,11 @@ void
 sip_calls_clear()
 {
     pthread_mutex_lock(&calls.lock);
-    // Remove all items from vector
-    vector_clear(calls.list);
     // Create again the callid hash table
     hdestroy();
     hcreate(calls.limit);
+    // Remove all items from vector
+    vector_clear(calls.list);
     pthread_mutex_unlock(&calls.lock);
 }
 

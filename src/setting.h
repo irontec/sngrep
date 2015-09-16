@@ -41,6 +41,9 @@
 #ifndef __SNGREP_SETTING_H
 #define __SNGREP_SETTING_H
 
+//! Max setting value
+#define MAX_SETTING_LEN   80
+
 //! Shorter declarartion of setting_option struct
 typedef struct setting_option setting_t;
 
@@ -86,7 +89,7 @@ enum setting_id {
     SETTING_CF_DELTA,
     SETTING_CR_SCROLLSTEP,
     SETTING_FILTER_METHODS,
-    SETTING_COUNT,
+    SETTING_COUNT
 };
 
 //! Available setting formats
@@ -107,11 +110,9 @@ struct setting_option {
     //! Setting format
     enum setting_fmt fmt;
     //! Value of the setting
-    char *value;
+    char value[MAX_SETTING_LEN];
     //! Compa separated valid values
     const char **valuelist;
-    //! Setting set by user config
-    int user;
 };
 
 setting_t *

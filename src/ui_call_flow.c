@@ -108,7 +108,7 @@ call_flow_create()
     info->columns = vector_create(2, 1);
     vector_set_destroyer(info->columns, vector_generic_destroyer);
     info->arrows = vector_create(20, 5);
-    vector_set_destroyer(info->columns, vector_generic_destroyer);
+    vector_set_destroyer(info->arrows, vector_generic_destroyer);
 
     return panel;
 }
@@ -127,6 +127,8 @@ call_flow_destroy(PANEL *panel)
         // Delete panel windows
         delwin(info->flow_win);
         delwin(info->raw_win);
+        // Delete displayed call group
+        call_group_destroy(info->group);
         sng_free(info);
     }
     // Delete panel window
@@ -812,7 +814,7 @@ call_flow_handle_key(PANEL *panel, int key)
     call_flow_info_t *info = call_flow_info(panel);
     call_flow_arrow_t *next, *prev;
     ui_t *next_panel;
-    sip_call_group_t *group;
+    sip_call_t *call;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
 
@@ -877,12 +879,14 @@ call_flow_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_SHOW_FLOW_EX:
                 werase(panel_window(panel));
-                group = call_group_create();
                 if (call_group_count(info->group) == 1) {
-                    call_group_add(group, call_get_xcall(vector_first(info->group->calls)));
+                    call_group_add(info->group, call_get_xcall(vector_first(info->group->calls)));
+                } else {
+                    call = vector_first(info->group->calls);
+                    vector_clear(info->group->calls);
+                    call_group_add(info->group, call);
                 }
-                call_group_add(group, vector_first(info->group->calls));
-                call_flow_set_group(group);
+                call_flow_set_group(info->group);
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode

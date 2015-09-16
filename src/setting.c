@@ -46,19 +46,19 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CAPTURE_LIMIT,      "capture.limit",    SETTING_FMT_NUMBER,  "20000",   NULL },
     { SETTING_CAPTURE_LOOKUP,     "capture.lookup",   SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
     { SETTING_CAPTURE_DEVICE,     "capture.device",   SETTING_FMT_STRING,  "any",     NULL },
-    { SETTING_CAPTURE_OUTFILE,    "capture.outfile",  SETTING_FMT_STRING,  NULL,      NULL },
-    { SETTING_CAPTURE_KEYFILE,    "capture.keyfile",  SETTING_FMT_STRING,  NULL,      NULL },
+    { SETTING_CAPTURE_OUTFILE,    "capture.outfile",  SETTING_FMT_STRING,  "",        NULL },
+    { SETTING_CAPTURE_KEYFILE,    "capture.keyfile",  SETTING_FMT_STRING,  "",        NULL },
     { SETTING_CAPTURE_RTP,        "capture.rtp",      SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },
     { SETTING_SIP_NOINCOMPLETE,   "sip.noincomplete", SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },
     { SETTING_SIP_CALLS,          "sip.calls",        SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
-    { SETTING_SAVEPATH,           "savepath",         SETTING_FMT_STRING,  NULL,      NULL },
+    { SETTING_SAVEPATH,           "savepath",         SETTING_FMT_STRING,  "",        NULL },
     { SETTING_DISPLAY_HOST,       "displayhost",      SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
     { SETTING_DISPLAY_ALIAS,      "displayalias",     SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
-    { SETTING_CL_FILTER,          "cl.filter",        SETTING_FMT_STRING,  NULL,      NULL },
+    { SETTING_CL_FILTER,          "cl.filter",        SETTING_FMT_STRING,  "",        NULL },
     { SETTING_CL_SCROLLSTEP,      "cl.scrollstep",    SETTING_FMT_NUMBER,  "4",       NULL },
     { SETTING_CF_FORCERAW,        "cf.forceraw",      SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },
     { SETTING_CF_RAWMINWIDTH,     "cf.rawminwidth",   SETTING_FMT_NUMBER,  "40",      NULL },
-    { SETTING_CF_RAWFIXEDWIDTH,   "cf.rawfixedwidth", SETTING_FMT_NUMBER,  NULL,      NULL },
+    { SETTING_CF_RAWFIXEDWIDTH,   "cf.rawfixedwidth", SETTING_FMT_NUMBER,  "",        NULL },
     { SETTING_CF_SPLITCALLID,     "cf.splitcallid",   SETTING_FMT_ENUM,    "off",     SETTING_ENUM_ONOFF },
     { SETTING_CF_HIGHTLIGHT,      "cf.highlight",     SETTING_FMT_ENUM,    "bold",    SETTING_ENUM_HIGHLIGHT },
     { SETTING_CF_SCROLLSTEP,      "cf.scrollstep",    SETTING_FMT_NUMBER,  "4",       NULL },
@@ -67,7 +67,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CF_MEDIA,           "cf.media",         SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },
     { SETTING_CF_DELTA,           "cf.deltatime",     SETTING_FMT_ENUM,    "on",      SETTING_ENUM_ONOFF },
     { SETTING_CR_SCROLLSTEP,      "cr.scrollstep",    SETTING_FMT_NUMBER,  "10",      NULL },
-    { SETTING_FILTER_METHODS,     "filter.methods",   SETTING_FMT_STRING,  NULL,      NULL },
+    { SETTING_FILTER_METHODS,     "filter.methods",   SETTING_FMT_STRING,  "",        NULL },
 };
 
 setting_t *
@@ -124,14 +124,14 @@ const char *
 setting_get_value(int id)
 {
     const setting_t *sett = setting_by_id(id);
-    return (sett) ? sett->value : NULL;
+    return (sett && strlen(sett->value)) ? sett->value : NULL;
 }
 
 int
 setting_get_intvalue(int id)
 {
     const setting_t *sett = setting_by_id(id);
-    return (sett && sett->value) ? atoi(sett->value) : -1;
+    return (sett && strlen(sett->value)) ? atoi(sett->value) : -1;
 }
 
 void
@@ -139,9 +139,15 @@ setting_set_value(int id, const char *value)
 {
     setting_t *sett = setting_by_id(id);
     if (sett) {
-        if (sett->user) sng_free(sett->value);
-        sett->value = (value) ? strdup(value) : NULL;
-        sett->user = 1;
+        memset(sett->value, 0, sizeof(sett->value));
+        if (value) {
+            if (strlen(value) < MAX_SETTING_LEN) {
+                strcpy(sett->value, value);
+            } else {
+                fprintf(stderr, "Setting value %s for %s is to long\n", sett->value, sett->name);
+                exit(1);
+            }
+        }
     }
 }
 
@@ -156,7 +162,6 @@ setting_set_intvalue(int id, int value)
 int
 setting_enabled(int id)
 {
-
     return setting_has_value(id, "on") ||
            setting_has_value(id, "yes");
 }

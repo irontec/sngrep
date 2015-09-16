@@ -140,8 +140,7 @@ call_list_destroy(PANEL *panel)
         }
 
         // Deallocate group data
-        if (info->group)
-            call_group_destroy(info->group);
+        call_group_destroy(info->group);
 
         // Deallocate panel windows
         delwin(info->list_win);
@@ -527,14 +526,14 @@ call_list_handle_key(PANEL *panel, int key)
                 // Check we have calls in the list
                 if (info->cur_call == -1)
                     break;
+                // Create a Call Flow panel
                 ui_create_panel(PANEL_CALL_FLOW);
-                if (call_group_count(info->group)) {
-                    group = info->group;
-                } else {
-                    group = call_group_create();
-                    call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
-                    call_group_add(group, call);
-                }
+                // Create a new group of calls
+                group = call_group_clone(info->group);
+                // If not selected call, show current call flow
+                if (call_group_count(info->group) == 0)
+                    call_group_add(group, sip_find_by_index(info->cur_call));
+                // Set flow call group
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_FLOW_EX:
@@ -543,14 +542,12 @@ call_list_handle_key(PANEL *panel, int key)
                     break;
                 // Display current call flow (extended)
                 ui_create_panel(PANEL_CALL_FLOW);
-                if (call_group_count(info->group)) {
-                    group = info->group;
-                } else {
-                    group = call_group_create();
-                    call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
-                    call_group_add(group, call);
-                    call_group_add(group, call_get_xcall(call));
-                }
+                // Create a new group of calls
+                group = call_group_clone(info->group);
+                // If not selected call, show current call flow
+                if (call_group_count(info->group) == 0)
+                    call_group_add(group, sip_find_by_index(info->cur_call));
+                // Set flow call group
                 call_flow_set_group(group);
                 break;
             case ACTION_SHOW_RAW:
@@ -558,13 +555,12 @@ call_list_handle_key(PANEL *panel, int key)
                 if (info->cur_call == -1)
                     break;
                 ui_create_panel(PANEL_CALL_RAW);
-                if (call_group_count(info->group)) {
-                    group = info->group;
-                } else {
-                    group = call_group_create();
-                    call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
-                    call_group_add(group, call);
-                }
+                // Create a new group of calls
+                group = call_group_clone(info->group);
+                // If not selected call, show current call flow
+                if (call_group_count(info->group) == 0)
+                    call_group_add(group, sip_find_by_index(info->cur_call));
+                // Set raw call group
                 call_raw_set_group(group);
                 break;
             case ACTION_SHOW_FILTERS:

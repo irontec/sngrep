@@ -242,13 +242,14 @@ main(int argc, char* argv[])
             if (capture_offline(vector_item(infiles, i), outfile) != 0)
                 return 1;
         }
-        vector_destroy(infiles);
     } else {
         // Check if all capture data is valid
         if (capture_online(device, outfile) != 0)
             return 1;
     }
 
+    // Remove Input files vector
+    vector_destroy(infiles);
 
     // More arguments pending!
     if (argv[optind]) {
@@ -310,9 +311,6 @@ main(int argc, char* argv[])
         if (!quiet)
             printf("\rDialog count: %d\n", sip_calls_count());
     }
-
-    // Close pcap handler
-    capture_close();
 
     // Capture deinit
     capture_deinit();

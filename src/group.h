@@ -76,6 +76,17 @@ void
 call_group_destroy(sip_call_group_t *group);
 
 /**
+ * @brief Clone an existing call group
+ *
+ * Create a new call group with the same calls of the
+ * original one. Beware: The call pointers are shared between
+ * original and clone groups.
+ *
+ */
+sip_call_group_t *
+call_group_clone(sip_call_group_t *original);
+
+/**
  * @brief Add a Call to the group
  *
  * @param group Pointer to an existing group

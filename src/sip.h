@@ -151,6 +151,16 @@ sip_calls_iterator();
 void
 sip_calls_stats(int *total, int *displayed);
 
+
+/**
+ * @brief Find a call structure in calls linked list given a call index
+ *
+ * @param index Position of the call in the calls vector
+ * @return pointer to the sip_call structure found or NULL
+ */
+sip_call_t *
+sip_find_by_index(int index);
+
 /**
  * @brief Find a call structure in calls linked list given an callid
  *

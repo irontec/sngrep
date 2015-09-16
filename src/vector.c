@@ -48,14 +48,39 @@ void
 vector_destroy(vector_t *vector)
 {
     // Nothing to free. Done.
-    if (!vector)
-        return;
+    if (!vector) return;
     // Remove all items if a destroyer is set
     vector_clear(vector);
     // Deallocate vector list
     sng_free(vector->list);
     // Deallocate vector itself
     sng_free(vector);
+}
+
+
+vector_t *
+vector_clone(vector_t *original)
+{
+    vector_t *clone;
+    vector_iter_t it;
+    void *item;
+
+    // Check we have a valid vector pointer
+    if (!original)
+        return NULL;
+
+    // Create a new vector structure
+    clone = vector_create(original->limit, original->step);
+    vector_set_destroyer(clone, original->destroyer);
+    vector_set_sorter(clone, original->sorter);
+
+    // Fill the clone vector with the same elements
+    it = vector_iterator(original);
+    while ((item = vector_iterator_next(&it)))
+        vector_append(clone, item);
+
+    // Return the cloned vector
+    return clone;
 }
 
 void

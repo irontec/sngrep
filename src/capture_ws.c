@@ -122,6 +122,8 @@ capture_ws_check_packet(capture_packet_t *packet)
     }
     // Set new packet payload into the packet
     capture_packet_set_payload(packet, newpayload, size_payload);
+    // Free the new payload
+    sng_free(newpayload);
 
     if (packet->type == CAPTURE_PACKET_SIP_TLS) {
         capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WSS);

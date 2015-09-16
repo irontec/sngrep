@@ -54,7 +54,6 @@ capture_init(int limit, int rtp_capture)
     capture_cfg.limit = limit;
     capture_cfg.rtp_capture = rtp_capture;
     capture_cfg.sources = vector_create(1, 1);
-    vector_set_destroyer(capture_cfg.sources, vector_generic_destroyer);
     capture_cfg.tcp_reasm = vector_create(0, 10);
     capture_cfg.ip_reasm = vector_create(0, 10);
 }
@@ -62,11 +61,16 @@ capture_init(int limit, int rtp_capture)
 void
 capture_deinit()
 {
-    vector_destroy(capture_cfg.sources);
+    // Close pcap handler
+    capture_close();
 
-    // Clear pending packets
+    // Deallocate vectors
+    vector_set_destroyer(capture_cfg.sources, vector_generic_destroyer);
+    vector_destroy(capture_cfg.sources);
     vector_set_destroyer(capture_cfg.tcp_reasm, capture_packet_destroyer);
     vector_destroy(capture_cfg.tcp_reasm);
+    vector_set_destroyer(capture_cfg.ip_reasm, capture_packet_destroyer);
+    vector_destroy(capture_cfg.ip_reasm);
 }
 
 int
@@ -194,7 +198,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     // TCP header size
     uint16_t tcp_off;
     // Packet data
-    u_char *data = (u_char *) packet;
+    u_char data[MAX_CAPTURE_LEN];
     // Packet payload data
     u_char *payload = NULL;
     // Whole packet size
@@ -214,8 +218,15 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     if (capture_cfg.limit && sip_calls_count() >= capture_cfg.limit)
         return;
 
+    // Check maximum capture length
+    if (header->caplen > MAX_CAPTURE_LEN)
+        return;
+
+    // Copy packet payload
+    memcpy(data, packet, header->caplen);
+
     // Check if we have a complete IP packet
-    if (!(pkt = capture_packet_reasm_ip(capinfo, header, &data, &size_payload, &size_capture)))
+    if (!(pkt = capture_packet_reasm_ip(capinfo, header, data, &size_payload, &size_capture)))
         return;
 
     // Only interested in UDP packets
@@ -295,15 +306,13 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         if ((stream = rtp_check_stream(pkt, pkt->ip_src, pkt->sport, pkt->ip_dst, pkt->dport))) {
             // We have an RTP packet!
             capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
+            // Store this packets in output file
+            dump_packet(capture_cfg.pd, pkt);
             // Store this pacekt if capture rtp is enabled
             if (capture_cfg.rtp_capture) {
                 call_add_rtp_packet(stream_get_call(stream), pkt);
-            } else {
-                capture_packet_destroy(pkt);
+                return;
             }
-            // Store this packets in output file
-            dump_packet(capture_cfg.pd, pkt);
-            return;
         }
     }
 
@@ -472,17 +481,43 @@ capture_last_error(cap)
 capture_packet_t *
 capture_packet_create(uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id)
 {
-    capture_packet_t *pkt;
-
     // Create a new packet
-    pkt = sng_malloc(sizeof(capture_packet_t));
-    memset(pkt, 0, sizeof(capture_packet_t));
-    pkt->proto = proto;
-    pkt->frames = vector_create(1, 1);
-    pkt->ip_id = id;
-    memcpy(pkt->ip_src, ip_src, ADDRESSLEN);
-    memcpy(pkt->ip_dst, ip_dst, ADDRESSLEN);
-    return pkt;
+    capture_packet_t *packet;
+    packet = sng_malloc(sizeof(capture_packet_t));
+    packet->proto = proto;
+    packet->frames = vector_create(1, 1);
+    packet->ip_id = id;
+    memcpy(packet->ip_src, ip_src, ADDRESSLEN);
+    memcpy(packet->ip_dst, ip_dst, ADDRESSLEN);
+    return packet;
+}
+
+void
+capture_packet_destroy(capture_packet_t *packet)
+{
+    capture_frame_t *frame;
+
+    // Check we have a valid packet pointer
+    if (!packet) return;
+
+    // TODO frame destroyer?
+    vector_iter_t it = vector_iterator(packet->frames);
+    while ((frame = vector_iterator_next(&it))) {
+        sng_free(frame->header);
+        sng_free(frame->data);
+    }
+
+    // Free remaining packet data
+    vector_set_destroyer(packet->frames, vector_generic_destroyer);
+    vector_destroy(packet->frames);
+    sng_free(packet->payload);
+    sng_free(packet);
+}
+
+void
+capture_packet_destroyer(void *packet)
+{
+    capture_packet_destroy((capture_packet_t*) packet);
 }
 
 capture_packet_t *
@@ -507,35 +542,6 @@ capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header
     memcpy(frame->data, packet, header->caplen);
     vector_append(pkt->frames, frame);
     return frame;
-}
-
-void
-capture_packet_destroy(capture_packet_t *packet)
-{
-    capture_frame_t *frame;
-
-    // Sanity check
-    if (!packet) return;
-
-    // TODO frame destroyer?
-    vector_iter_t it = vector_iterator(packet->frames);
-    while ((frame = vector_iterator_next(&it))) {
-        sng_free(frame->header);
-        sng_free(frame->data);
-        sng_free(frame);
-    }
-
-    // Free remaining packet data
-    vector_destroy(packet->frames);
-    sng_free(packet->payload);
-    sng_free(packet);
-}
-
-
-void
-capture_packet_destroyer(void *packet)
-{
-    capture_packet_destroy((capture_packet_t*) packet);
 }
 
 void

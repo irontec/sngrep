@@ -48,6 +48,14 @@ call_create(char *callid)
     call->attrs = vector_create(1, 1);
     vector_set_destroyer(call->attrs, sip_attr_destroyer);
 
+    // Create an empty vector to store rtp packets
+    call->rtp_packets = vector_create(0, 40);
+    vector_set_destroyer(call->rtp_packets, capture_packet_destroyer);
+
+    // Create an empty vector to strore stream data
+    call->streams = vector_create(0, 2);
+    vector_set_destroyer(call->streams, vector_generic_destroyer);
+
     // Initialize call filter status
     call->filtered = -1;
 
@@ -91,22 +99,12 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
 void
 call_add_stream(sip_call_t *call, rtp_stream_t *stream)
 {
-    if (!call->streams) {
-        // Create a vector to store RTP streams
-        call->streams = vector_create(2, 2);
-        vector_set_destroyer(call->streams, vector_generic_destroyer);
-    }
     vector_append(call->streams, stream);
 }
 
 void
 call_add_rtp_packet(sip_call_t *call, capture_packet_t *packet)
 {
-    if (!call->rtp_packets) {
-        // Create a vector to store RTP streams
-        call->rtp_packets = vector_create(20, 40);
-        vector_set_destroyer(call->rtp_packets, capture_packet_destroyer);
-    }
     vector_append(call->rtp_packets, packet);
 }
 

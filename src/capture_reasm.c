@@ -43,7 +43,7 @@ extern capture_config_t capture_cfg;
 
 
 capture_packet_t *
-capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char **packet, uint32_t *size, uint32_t *caplen)
+capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char *packet, uint32_t *size, uint32_t *caplen)
 {
     // IP header data
     struct ip *ip4;
@@ -69,17 +69,16 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     char ip_src[ADDRESSLEN];
     //! Destination Address
     char ip_dst[ADDRESSLEN];
-    //!
+    //! Common interator for vectors
     vector_iter_t it;
-    //!
+    //! Packet containers
     capture_packet_t *pkt;
-    //!
+    //! Storage for IP frame
     capture_frame_t *frame;
-    u_char *new_data;
     uint32_t len_data = 0;
 
     // Get IP header
-    ip4 = (struct ip *) (*packet + capinfo->link_hl);
+    ip4 = (struct ip *) (packet + capinfo->link_hl);
 
 #ifdef WITH_IPV6
     // Get IPv6 header
@@ -133,7 +132,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     if (ip_frag == 0) {
         // Just create a new packet with given network data
         pkt = capture_packet_create(ip_proto, ip_src, ip_dst, ip_id);
-        capture_packet_add_frame(pkt, header, *packet);
+        capture_packet_add_frame(pkt, header, packet);
         return pkt;
     }
 
@@ -146,11 +145,11 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 
     // If we already have this packet stored, append this frames to existing one
     if (pkt) {
-        capture_packet_add_frame(pkt, header, *packet);
+        capture_packet_add_frame(pkt, header, packet);
     } else {
         // Add To the possible reassembly list
         pkt = capture_packet_create(ip_proto, ip_src, ip_dst, ip_id);
-        capture_packet_add_frame(pkt, header, *packet);
+        capture_packet_add_frame(pkt, header, packet);
         vector_append(capture_cfg.ip_reasm, pkt);
         return NULL;
     }
@@ -165,25 +164,27 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             len_data += frame->header->caplen - capinfo->link_hl - frame_ip->ip_hl * 4;
         }
 
-        // Create memory for the assembly packet
-        new_data = sng_malloc(capinfo->link_hl + ip_hl + len_data);
-        memset(new_data, 0, capinfo->link_hl + ip_hl + len_data);
-        memcpy(new_data, *packet, capinfo->link_hl + ip_hl);
+        // Check packet content length
+        if (len_data > MAX_CAPTURE_LEN)
+            return NULL;
+
+        // Initialize memory for the assembly packet
+        memset(packet, 0, capinfo->link_hl + ip_hl + len_data);
 
         it = vector_iterator(pkt->frames);
         while ((frame = vector_iterator_next(&it))) {
             // Get IP header
             struct ip *frame_ip = (struct ip *) (frame->data + capinfo->link_hl);
-            memcpy(new_data + capinfo->link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
+            memcpy(packet + capinfo->link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
                    frame->data + capinfo->link_hl + frame_ip->ip_hl * 4,
                    frame->header->caplen - capinfo->link_hl - frame_ip->ip_hl * 4);
         }
 
         *caplen = capinfo->link_hl + ip_hl + len_data;
         *size = len_data;
-        *packet = new_data;
 
         // Return the assembled IP packet
+        vector_remove(capture_cfg.ip_reasm, pkt);
         return pkt;
     }
 
@@ -207,13 +208,15 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
             break;
     }
 
-    // If we already have this packet stored, append this frames to existing one
+    // If we already have this packet stored
     if (pkt) {
         capture_frame_t *frame;
+        // Append this frames to the original packet
         vector_iter_t frames = vector_iterator(packet->frames);
         while ((frame = vector_iterator_next(&frames)))
             capture_packet_add_frame(pkt, frame->header, frame->data);
-        // TODO We should destroy packet.
+        // Destroy current packet as its frames belong to the stored packet
+        capture_packet_destroy(packet);
     } else {
         // First time this packet has been seen
         pkt = packet;
