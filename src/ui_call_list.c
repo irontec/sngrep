@@ -497,6 +497,28 @@ call_list_handle_key(PANEL *panel, int key)
                 for (i = 0; i < rnpag_steps; i++)
                     call_list_handle_key(panel, KEY_UP);
                 break;
+            case ACTION_BEGIN:
+                // Initialize structures
+                info->first_call = info->cur_call = -1;
+                info->first_line = info->cur_line = 0;
+                break;
+            case ACTION_END:
+                // Check if there is a call below us
+                while (vector_iterator_next(&info->calls)) {
+                    info->cur_call = vector_iterator_current(&info->calls);
+                    info->cur_line++;
+                    // If we are out of the bottom of the displayed list
+                    // refresh it starting in the next call
+                    if (info->cur_line > height) {
+                        vector_iterator_set_current(&info->calls, info->first_call);
+                        vector_iterator_next(&info->calls);
+                        info->first_call = vector_iterator_current(&info->calls);
+                        info->first_line++;
+                        info->cur_line = height;
+                        vector_iterator_set_current(&info->calls, info->cur_call);
+                    }
+                }
+                break;
             case ACTION_DISP_FILTER:
                 // Activate Form
                 call_list_form_activate(panel, 1);
