@@ -131,6 +131,20 @@ key_bindings_init()
 }
 
 void
+key_bindings_dump()
+{
+    int i, j;
+    for (i = 1; i < ACTION_SENTINEL; i++) {
+
+        for (j = 0; j < bindings[i].bindcnt; j++) {
+            printf("ActionID: %d\t Key: %d \t%s\n", i,
+                   bindings[i].keys[j],
+                   key_to_str(bindings[i].keys[j]));
+        }
+    }
+}
+
+void
 key_bind_action(int action, int key)
 {
     if (action < 0)

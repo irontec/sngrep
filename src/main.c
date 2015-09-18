@@ -125,6 +125,7 @@ main(int argc, char* argv[])
         { "icase", no_argument, 0, 'i' },
         { "invert", no_argument, 0, 'v' },
         { "no-interface", no_argument, 0, 'N' },
+        { "dump-config", no_argument, 0, 'D' },
         { "quiet", no_argument, 0, 'q' },
     };
 
@@ -143,7 +144,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:crl:ivNq";
+    char *options = "hVd:I:O:pqtW:k:crl:ivNqD";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -188,6 +189,9 @@ main(int argc, char* argv[])
             case 'q':
                 quiet = 1;
                 break;
+            case 'D':
+                key_bindings_dump();
+                return 0;
                 // Dark options for dummy ones
             case 'p':
             case 't':

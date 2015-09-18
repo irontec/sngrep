@@ -126,6 +126,12 @@ void
 key_bindings_init();
 
 /**
+ * @brief Print configured keybindigs
+ */
+void
+key_bindings_dump();
+
+/**
  * @brief Bind a key to an action
  */
 void
