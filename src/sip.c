@@ -330,15 +330,15 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 
         // Method & CSeq
         if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
-            sprintf(reqresp, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+            sprintf(reqresp, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
             msg_set_attribute(msg, SIP_ATTR_METHOD, reqresp);
         }
 
         // Response code
         if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
-            msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so,
+            msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so),
                               payload + pmatch[1].rm_so);
-            sprintf(reqresp, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so, payload + pmatch[2].rm_so);
+            sprintf(reqresp, "%.*s", (int)(pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
         }
 
         // Get Request/Response Code
@@ -365,7 +365,7 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 
     // CSeq
     if (regexec(&calls.reg_cseq, (char*)payload, 2, pmatch, 0) == 0) {
-        sprintf(cseq, "%.*s", pmatch[1].rm_eo - pmatch[1].rm_so, payload + pmatch[1].rm_so);
+        sprintf(cseq, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
         msg->cseq = atoi(cseq);
     }
 
