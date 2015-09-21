@@ -229,6 +229,13 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
         // Set initial payload
         capture_packet_set_payload(pkt, payload, size_payload);
     } else {
+        // Check payload length. Dont handle too big payload packets
+        if (pkt->payload_len + size_payload > MAX_CAPTURE_LEN) {
+            capture_packet_destroy(pkt);
+            vector_remove(capture_cfg.tcp_reasm, pkt);
+            return NULL;
+        }
+
         // Append payload to the existing
         new_payload = sng_malloc(pkt->payload_len + size_payload);
         memcpy(new_payload, pkt->payload, pkt->payload_len);
