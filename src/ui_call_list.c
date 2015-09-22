@@ -525,45 +525,30 @@ call_list_handle_key(PANEL *panel, int key)
                 call_list_form_activate(panel, 1);
                 break;
             case ACTION_SHOW_FLOW:
-                // Check we have calls in the list
-                if (info->cur_call == -1)
-                    break;
-                // Create a Call Flow panel
-                ui_create_panel(PANEL_CALL_FLOW);
-                // Create a new group of calls
-                group = call_group_clone(info->group);
-                // If not selected call, show current call flow
-                if (call_group_count(info->group) == 0)
-                    call_group_add(group, sip_find_by_index(info->cur_call));
-                // Set flow call group
-                call_flow_set_group(group);
-                break;
             case ACTION_SHOW_FLOW_EX:
-                // Check we have calls in the list
-                if (info->cur_call == -1)
-                    break;
-                // Display current call flow (extended)
-                ui_create_panel(PANEL_CALL_FLOW);
-                // Create a new group of calls
-                group = call_group_clone(info->group);
-                // If not selected call, show current call flow
-                if (call_group_count(info->group) == 0)
-                    call_group_add(group, sip_find_by_index(info->cur_call));
-                // Set flow call group
-                call_flow_set_group(group);
-                break;
             case ACTION_SHOW_RAW:
                 // Check we have calls in the list
                 if (info->cur_call == -1)
                     break;
-                ui_create_panel(PANEL_CALL_RAW);
                 // Create a new group of calls
                 group = call_group_clone(info->group);
                 // If not selected call, show current call flow
                 if (call_group_count(info->group) == 0)
                     call_group_add(group, sip_find_by_index(info->cur_call));
-                // Set raw call group
-                call_raw_set_group(group);
+
+                // Add xcall to the group
+                if (action == ACTION_SHOW_FLOW_EX)
+                    call_group_add(group, call_get_xcall(sip_find_by_index(info->cur_call)));
+
+                if (action == ACTION_SHOW_RAW) {
+                    // Create a Call Flow panel
+                    ui_create_panel(PANEL_CALL_RAW);
+                    call_raw_set_group(group);
+                } else {
+                    // Display current call flow (normal or extended)
+                    ui_create_panel(PANEL_CALL_FLOW);
+                    call_flow_set_group(group);
+                }
                 break;
             case ACTION_SHOW_FILTERS:
                 ui_create_panel(PANEL_FILTER);
