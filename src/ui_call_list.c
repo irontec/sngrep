@@ -640,10 +640,6 @@ call_list_handle_form_key(PANEL *panel, int key)
             case ACTION_PRINTABLE:
                 // If this is a normal character on input field, print it
                 form_driver(info->form, key);
-                // Updated displayed results
-                call_list_clear(panel);
-                // Reset filters on each key stroke
-                filter_reset_calls();
                 break;
             case ACTION_PREV_SCREEN:
             case ACTION_NEXT_FIELD:
@@ -675,10 +671,6 @@ call_list_handle_form_key(PANEL *panel, int key)
                 break;
             case ACTION_BACKSPACE:
                 form_driver(info->form, REQ_DEL_PREV);
-                // Updated displayed results
-                call_list_clear(panel);
-                // Reset filters on each key stroke
-                filter_reset_calls();
                 break;
             default:
                 // Parse next action
@@ -689,13 +681,23 @@ call_list_handle_form_key(PANEL *panel, int key)
         break;
     }
 
+    // Filter has changed, re-apply filter to displayed calls
+    if (action == ACTION_PRINTABLE || action == ACTION_BACKSPACE ||
+            action == ACTION_DELETE || action == ACTION_CLEAR) {
+        // Updated displayed results
+         call_list_clear(panel);
+         // Reset filters on each key stroke
+         filter_reset_calls();
+    }
+
     // Validate all input data
     form_driver(info->form, REQ_VALIDATION);
 
     // Store dfilter input
     // We trim spaces with sscanf because and empty field is stored as space characters
     memset(dfilter, 0, sizeof(dfilter));
-    sscanf(field_buffer(info->fields[FLD_LIST_FILTER], 0), "%[^ ]", dfilter);
+    strcpy(dfilter, field_buffer(info->fields[FLD_LIST_FILTER], 0));
+    strtrim(dfilter);
 
     // Set display filter
     filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);
