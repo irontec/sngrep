@@ -103,6 +103,10 @@ save_create()
     set_field_back(info->fields[FLD_SAVE_PATH], A_UNDERLINE);
     set_field_back(info->fields[FLD_SAVE_FILE], A_UNDERLINE);
 
+    // Disable Save RTP if RTP packets are not being captured
+    if (!setting_enabled(SETTING_CAPTURE_RTP))
+        field_opts_off(info->fields[FLD_SAVE_PCAP_RTP], O_ACTIVE);
+
     // Create the form and post it
     info->form = new_form(info->fields);
     set_form_sub(info->form, win);
@@ -250,6 +254,10 @@ save_draw(PANEL *panel)
     set_field_buffer(info->fields[FLD_SAVE_PCAP], 0, (info->saveformat == SAVE_PCAP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, (info->saveformat == SAVE_PCAP_RTP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_TXT], 0, (info->saveformat == SAVE_TXT) ? "*" : " ");
+
+    // Show disabled options with makers
+    if (!setting_enabled(SETTING_CAPTURE_RTP))
+        set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, "-");
 
     set_current_field(info->form, current_field(info->form));
     form_driver(info->form, REQ_VALIDATION);
