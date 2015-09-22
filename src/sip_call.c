@@ -31,6 +31,7 @@
 
 #include "sip_call.h"
 #include "sip.h"
+#include "setting.h"
 
 sip_call_t *
 call_create(char *callid)
@@ -46,8 +47,10 @@ call_create(char *callid)
     vector_set_destroyer(call->msgs, msg_destroyer);
 
     // Create an empty vector to store rtp packets
-    call->rtp_packets = vector_create(0, 40);
-    vector_set_destroyer(call->rtp_packets, capture_packet_destroyer);
+    if (setting_enabled(SETTING_CAPTURE_RTP)) {
+        call->rtp_packets = vector_create(0, 40);
+        vector_set_destroyer(call->rtp_packets, capture_packet_destroyer);
+    }
 
     // Create an empty vector to strore stream data
     call->streams = vector_create(0, 2);
