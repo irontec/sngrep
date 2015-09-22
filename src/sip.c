@@ -49,6 +49,96 @@
 sip_call_list_t calls =
 { 0 };
 
+/* @brief list of methods and responses */
+sip_code_t sip_codes[] = {
+    { SIP_METHOD_REGISTER,  "REGISTER" },
+    { SIP_METHOD_INVITE,    "INVITE" },
+    { SIP_METHOD_SUBSCRIBE, "SUBSCRIBE" },
+    { SIP_METHOD_NOTIFY,    "NOTIFY" },
+    { SIP_METHOD_OPTIONS,   "OPTIONS" },
+    { SIP_METHOD_PUBLISH,   "PUBLISH" },
+    { SIP_METHOD_MESSAGE,   "MESSAGE" },
+    { SIP_METHOD_CANCEL,    "CANCEL" },
+    { SIP_METHOD_BYE,       "BYE" },
+    { SIP_METHOD_ACK,       "ACK" },
+    { SIP_METHOD_PRACK,     "PRACK" },
+    { SIP_METHOD_INFO,      "INFO" },
+    { SIP_METHOD_REFER,     "REFER" },
+    { SIP_METHOD_UPDATE,    "UPDATE" },
+    { 100, "100 Trying" },
+    { 180, "180 Ringing" },
+    { 181, "181 Call is Being Forwarded" },
+    { 182, "182 Queued" },
+    { 183, "183 Session Progress" },
+    { 199, "199 Early Dialog Terminated" },
+    { 200, "200 OK" },
+    { 202, "202 Accepted" },
+    { 204, "204 No Notification" },
+    { 300, "300 Multiple Choices" },
+    { 301, "301 Moved Permanently" },
+    { 302, "302 Moved Temporarily" },
+    { 305, "305 Use Proxy" },
+    { 380, "380 Alternative Service" },
+    { 400, "400 Bad Request" },
+    { 401, "401 Unauthorized" },
+    { 402, "402 Payment Required" },
+    { 403, "403 Forbidden" },
+    { 404, "404 Not Found" },
+    { 405, "405 Method Not Allowed" },
+    { 406, "406 Not Acceptable" },
+    { 407, "407 Proxy Authentication Required" },
+    { 408, "408 Request Timeout" },
+    { 409, "409 Conflict" },
+    { 410, "410 Gone" },
+    { 411, "411 Length Required" },
+    { 412, "412 Conditional Request Failed" },
+    { 413, "413 Request Entity Too Large" },
+    { 414, "414 Request-URI Too Long" },
+    { 415, "415 Unsupported Media Type" },
+    { 416, "416 Unsupported URI Scheme" },
+    { 417, "417 Unknown Resource-Priority" },
+    { 420, "420 Bad Extension" },
+    { 421, "421 Extension Required" },
+    { 422, "422 Session Interval Too Small" },
+    { 423, "423 Interval Too Brief" },
+    { 424, "424 Bad Location Information" },
+    { 428, "428 Use Identity Header" },
+    { 429, "429 Provide Referrer Identity" },
+    { 430, "430 Flow Failed" },
+    { 433, "433 Anonymity Disallowed" },
+    { 436, "436 Bad Identity-Info" },
+    { 437, "437 Unsupported Certificate" },
+    { 438, "438 Invalid Identity Header" },
+    { 439, "439 First Hop Lacks Outbound Support" },
+    { 470, "470 Consent Needed" },
+    { 480, "480 Temporarily Unavailable" },
+    { 481, "481 Call/Transaction Does Not Exist" },
+    { 482, "482 Loop Detected." },
+    { 483, "483 Too Many Hops" },
+    { 484, "484 Address Incomplete" },
+    { 485, "485 Ambiguous" },
+    { 486, "486 Busy Here" },
+    { 487, "487 Request Terminated" },
+    { 488, "488 Not Acceptable Here" },
+    { 489, "489 Bad Event" },
+    { 491, "491 Request Pending" },
+    { 493, "493 Undecipherable" },
+    { 494, "494 Security Agreement Required" },
+    { 500, "500 Server Internal Error" },
+    { 501, "501 Not Implemented" },
+    { 502, "502 Bad Gateway" },
+    { 503, "503 Service Unavailable" },
+    { 504, "504 Server Time-out" },
+    { 505, "505 Version Not Supported" },
+    { 513, "513 Message Too Large" },
+    { 580, "580 Precondition Failure" },
+    { 600, "600 Busy Everywhere" },
+    { 603, "603 Decline" },
+    { 604, "604 Does Not Exist Anywhere" },
+    { 606, "606 Not Acceptable" },
+    { -1 , NULL },
+};
+
 void
 sip_init(int limit, int only_calls, int no_incomplete)
 {
@@ -117,9 +207,9 @@ sip_get_callid(const char* payload, char *callid)
     // Try to get Call-ID from payload
     if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
         // Allocate memory for Call-Id (caller MUST free it)
-        memset(callid, 0, pmatch[2].rm_eo - pmatch[2].rm_so + 1);
+        memset(callid, 0, (int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         // Copy the matching part of payload
-        strncpy(callid, payload + pmatch[2].rm_so, pmatch[2].rm_eo - pmatch[2].rm_so);
+        strncpy(callid, payload + pmatch[2].rm_so, (int) pmatch[2].rm_eo - pmatch[2].rm_so);
     }
 
     return callid;
@@ -131,7 +221,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     ENTRY entry;
     sip_msg_t *msg;
     sip_call_t *call;
-    int call_idx;
     char callid[1024];
     char msg_src[ADDRESSLEN];
     char msg_dst[ADDRESSLEN];
@@ -188,18 +277,15 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
             goto skip_message;
 
         // Store this call in hash table
-        entry.key = (char *) call_get_attribute(call, SIP_ATTR_CALLID);
+        entry.key = (char *) call->callid;
         entry.data = (void *) call;
         hsearch(entry, ENTER);
 
         // Append this call to the call list
         pthread_mutex_lock(&calls.lock);
         vector_append(calls.list, call);
-        call_idx = vector_count(calls.list);
+        call->index = vector_count(calls.list);
         pthread_mutex_unlock(&calls.lock);
-
-        // Store current call Index
-        call_set_attribute(call, SIP_ATTR_CALLINDEX, "%d", call_idx);
     }
 
     // Store sorce address. Prefix too long IPv6 addresses with two dots
@@ -216,25 +302,25 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         strcpy(msg_dst, dst);
     }
 
-    // Set Source and Destination attributes
-    msg_set_attribute(msg, SIP_ATTR_SRC, "%s:%u", msg_src, sport);
-    msg_set_attribute(msg, SIP_ATTR_DST, "%s:%u", msg_dst, dport);
-
-    // Add this SIP packet to the message
+    // At this point we know we're handling an interesting SIP Packet
     msg->packet = packet;
 
     // Add the message to the call
     call_add_message(call, msg);
 
     // Always parse first call message
-    if (call_msg_count(call) == 1 || call_is_invite(call)) {
+    if (call_msg_count(call) == 1) {
         // Parse SIP payload
         sip_parse_msg_payload(msg, payload);
+    }
+
+    if (call_is_invite(call)) {
         // Parse media data
         sip_parse_msg_media(msg, payload);
         // Update Call State
         call_update_state(call, msg);
     }
+
     pthread_mutex_unlock(&calls.lock);
     // Return the loaded message
     return msg;
@@ -294,14 +380,13 @@ sip_find_by_callid(const char *callid)
 sip_call_t *
 sip_find_by_xcallid(const char *xcallid)
 {
-    const char *cur_xcallid;
     sip_call_t *cur;
     int i;
 
+    //FIXME Iterator pls?
     for (i=0; i < vector_count(calls.list); i++) {
         cur = vector_item(calls.list, i);
-        cur_xcallid = call_get_attribute(cur, SIP_ATTR_XCALLID);
-        if (cur_xcallid && !strcmp(cur_xcallid, xcallid)) {
+        if (cur->xcallid && !strcmp(cur->xcallid, xcallid)) {
             return cur;
         }
     }
@@ -314,10 +399,10 @@ call_get_xcall(sip_call_t *call)
 {
     sip_call_t *xcall;
     pthread_mutex_lock(&calls.lock);
-    if (call_get_attribute(call, SIP_ATTR_XCALLID)) {
-        xcall = sip_find_by_callid(call_get_attribute(call, SIP_ATTR_XCALLID));
+    if (call->xcallid) {
+        xcall = sip_find_by_callid(call->xcallid);
     } else {
-        xcall = sip_find_by_xcallid(call_get_attribute(call, SIP_ATTR_CALLID));
+        xcall = sip_find_by_xcallid(call->callid);
     }
     pthread_mutex_unlock(&calls.lock);
     return xcall;
@@ -337,13 +422,10 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
         // Method & CSeq
         if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
             sprintf(reqresp, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
-            msg_set_attribute(msg, SIP_ATTR_METHOD, reqresp);
         }
 
         // Response code
         if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
-            msg_set_attribute(msg, SIP_ATTR_METHOD, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so),
-                              payload + pmatch[1].rm_so);
             sprintf(reqresp, "%.*s", (int)(pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
         }
 
@@ -367,7 +449,7 @@ int
 sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
-    char date[12], time[20], cseq[11];
+    char cseq[11];
 
     // CSeq
     if (regexec(&calls.reg_cseq, (char*)payload, 2, pmatch, 0) == 0) {
@@ -375,41 +457,25 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
         msg->cseq = atoi(cseq);
     }
 
-    // X-Call-Id
-    if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_XCALLID, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
-                          payload + pmatch[2].rm_so);
+    // X-Call-Id.
+    // TODO Move this from msg parse
+    if (!msg->call->xcallid) {
+        if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
+            msg->call->xcallid = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
+            strncpy(msg->call->xcallid, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+        }
     }
 
     // From
     if (regexec(&calls.reg_from, (const char *)payload, 4, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_SIPFROM, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
-                          payload + pmatch[2].rm_so);
-        msg_set_attribute(msg, SIP_ATTR_SIPFROMUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so,
-                          payload + pmatch[3].rm_so);
+        msg->sip_from = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
+        strncpy(msg->sip_from, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
     }
 
     // To
     if (regexec(&calls.reg_to, (const char *)payload, 4, pmatch, 0) == 0) {
-        msg_set_attribute(msg, SIP_ATTR_SIPTO, "%.*s", pmatch[2].rm_eo - pmatch[2].rm_so,
-                          payload + pmatch[2].rm_so);
-        msg_set_attribute(msg, SIP_ATTR_SIPTOUSER, "%.*s", pmatch[3].rm_eo - pmatch[3].rm_so,
-                          payload + pmatch[3].rm_so);
-    }
-
-    // Set message Date and Time attribute
-    msg_set_attribute(msg, SIP_ATTR_DATE, timeval_to_date(msg_get_time(msg), date));
-    msg_set_attribute(msg, SIP_ATTR_TIME, timeval_to_time(msg_get_time(msg), time));
-
-    // Store Transport attribute
-    if (msg->packet->type == CAPTURE_PACKET_SIP_UDP) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "UDP");
-    } else if (msg->packet->type == CAPTURE_PACKET_SIP_TCP) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TCP");
-    } else if (msg->packet->type == CAPTURE_PACKET_SIP_TLS) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "TLS");
-    } else if (msg->packet->type == CAPTURE_PACKET_SIP_WS) {
-        msg_set_attribute(msg, SIP_ATTR_TRANSPORT, "WS");
+        msg->sip_to = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
+        strncpy(msg->sip_to, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
     }
 
     return 0;
@@ -474,13 +540,6 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
     }
     sng_free(tofree);
-
-    // If message has media
-    if ((media = vector_first(msg->medias))) {
-        msg_set_attribute(msg, SIP_ATTR_SDP_ADDRESS, media_get_address(media));
-        msg_set_attribute(msg, SIP_ATTR_SDP_PORT, "%d", media_get_port(media));
-    }
-
 }
 
 
@@ -553,11 +612,12 @@ sip_check_msg_ignore(sip_msg_t *msg)
 {
     int i;
     sip_attr_hdr_t *header;
+    char value[512];
 
     // Check if an ignore option exists
     for (i = 0; i < SIP_ATTR_COUNT; i++) {
         header = sip_attr_get_header(i);
-        if (is_ignored_value(header->name, msg_get_attribute(msg, header->id))) {
+        if (is_ignored_value(header->name, call_get_attribute(msg->call, header->id, value))) {
             return 1;
         }
     }
@@ -567,39 +627,31 @@ sip_check_msg_ignore(sip_msg_t *msg)
 const char *
 sip_method_str(enum sip_methods method)
 {
-    switch (method) {
-        case SIP_METHOD_REGISTER:
-            return "REGISTER";
-        case SIP_METHOD_INVITE:
-            return "INVITE";
-        case SIP_METHOD_SUBSCRIBE:
-            return "SUBSCRIBE";
-        case SIP_METHOD_NOTIFY:
-            return "NOTIFY";
-        case SIP_METHOD_OPTIONS:
-            return "OPTIONS";
-        case SIP_METHOD_PUBLISH:
-            return "PUBLISH";
-        case SIP_METHOD_MESSAGE:
-            return "MESSAGE";
-        case SIP_METHOD_CANCEL:
-            return "CANCEL";
-        case SIP_METHOD_BYE:
-            return "BYE";
-        case SIP_METHOD_ACK:
-            return "ACK";
-        case SIP_METHOD_PRACK:
-            return "PRACK";
-        case SIP_METHOD_INFO:
-            return "INFO";
-        case SIP_METHOD_REFER:
-            return "REFER";
-        case SIP_METHOD_UPDATE:
-            return "UPDATE";
-        case SIP_METHOD_SENTINEL:
-            return "";
+    int i;
+    for (i = 0; sip_codes[i].id > 0; i++) {
+        if (method == sip_codes[i].id)
+            return sip_codes[i].text;
     }
-    return NULL;
+    return "";
+}
+
+const char *
+sip_transport_str(int transport)
+{
+    switch(transport)
+    {
+        case CAPTURE_PACKET_SIP_UDP:
+            return "UDP";
+        case CAPTURE_PACKET_SIP_TCP:
+            return "TCP";
+        case CAPTURE_PACKET_SIP_TLS:
+            return "TLS";
+        case CAPTURE_PACKET_SIP_WS:
+            return "WS";
+        case CAPTURE_PACKET_SIP_WSS:
+            return "WSS";
+    }
+    return "";
 }
 
 int
@@ -615,16 +667,16 @@ sip_method_from_str(const char *method)
 char *
 sip_get_msg_header(sip_msg_t *msg, char *out)
 {
-    // Source and Destination address
-    char from_addr[80], to_addr[80];
+    char from_addr[80], to_addr[80], time[80], date[80];
 
-    // We dont use Message attributes here because it contains truncated data
-    // This should not overload too much as all results should be already cached
-    sprintf(from_addr, "%s", sip_address_port_format(SRC(msg)));
-    sprintf(to_addr, "%s", sip_address_port_format(DST(msg)));
+    // Source and Destination address
+    msg_get_attribute(msg, SIP_ATTR_DATE, date);
+    msg_get_attribute(msg, SIP_ATTR_TIME, time);
+    msg_get_attribute(msg, SIP_ATTR_SRC, from_addr);
+    msg_get_attribute(msg, SIP_ATTR_DST, to_addr);
 
     // Get msg header
-    sprintf(out, "%s %s %s -> %s", DATE(msg), TIME(msg), from_addr, to_addr);
+    sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
     return out;
 }
 

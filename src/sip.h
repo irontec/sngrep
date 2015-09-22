@@ -44,6 +44,37 @@
 
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
+//! Shorter declaration of sip codes structure
+typedef struct sip_code sip_code_t;
+
+//! SIP Methods
+enum sip_methods {
+    SIP_METHOD_REGISTER = 1,
+    SIP_METHOD_INVITE,
+    SIP_METHOD_SUBSCRIBE,
+    SIP_METHOD_NOTIFY,
+    SIP_METHOD_OPTIONS,
+    SIP_METHOD_PUBLISH,
+    SIP_METHOD_MESSAGE,
+    SIP_METHOD_CANCEL,
+    SIP_METHOD_BYE,
+    SIP_METHOD_ACK,
+    SIP_METHOD_PRACK,
+    SIP_METHOD_INFO,
+    SIP_METHOD_REFER,
+    SIP_METHOD_UPDATE,
+    SIP_METHOD_SENTINEL,
+};
+
+/**
+ * @brief Different Request/Response codes in SIP Protocol
+ */
+struct sip_code
+{
+    int id;
+    const char *text;
+};
+
 
 /**
  * @brief call structures head list
@@ -275,6 +306,12 @@ sip_check_msg_ignore(struct sip_msg *msg);
  */
 const char *
 sip_method_str(enum sip_methods method);
+
+/*
+ * @brief Get String value of Transport
+ */
+const char *
+sip_transport_str(int transport);
 
 /**
  * @brief Converts Request Name or Response code to number

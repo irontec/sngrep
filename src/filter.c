@@ -95,8 +95,7 @@ int
 filter_check_call(void *item)
 {
     int i;
-    const char *data;
-    char linetext[256];
+    char data[256];
     sip_call_t *call = (sip_call_t*) item;
 
     // Filter for this call has already be processed
@@ -112,27 +111,29 @@ filter_check_call(void *item)
         if (!filters[i].expr)
             continue;
 
+        // Initialize
+        memset(data, 0, sizeof(data));
+
         // Get filtered field
         switch(i) {
             case FILTER_SIPFROM:
-                data = call_get_attribute(call, SIP_ATTR_SIPFROM);
+                call_get_attribute(call, SIP_ATTR_SIPFROM, data);
                 break;
             case FILTER_SIPTO:
-                data = call_get_attribute(call, SIP_ATTR_SIPTO);
+                call_get_attribute(call, SIP_ATTR_SIPTO, data);
                 break;
             case FILTER_SOURCE:
-                data = call_get_attribute(call, SIP_ATTR_SRC);
+                call_get_attribute(call, SIP_ATTR_SRC, data);
                 break;
             case FILTER_DESTINATION:
-                data = call_get_attribute(call, SIP_ATTR_DST);
+                call_get_attribute(call, SIP_ATTR_DST, data);
                 break;
             case FILTER_METHOD:
-                data = call_get_attribute(call, SIP_ATTR_METHOD);
+                call_get_attribute(call, SIP_ATTR_METHOD, data);
                 break;
             case FILTER_CALL_LIST:
                 // FIXME Maybe call should know hot to calculate this line
-                memset(linetext, 0, sizeof(linetext));
-                data = call_list_line_text(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)), call, linetext);
+                call_list_line_text(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)), call, data);
                 break;
             default:
                 // Unknown filter id

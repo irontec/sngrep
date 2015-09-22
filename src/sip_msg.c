@@ -29,6 +29,8 @@
  *
  */
 #include "sip_msg.h"
+#include "media.h"
+#include "sip.h"
 
 sip_msg_t *
 msg_create(const char *payload)
@@ -36,25 +38,19 @@ msg_create(const char *payload)
     sip_msg_t *msg;
     if (!(msg = sng_malloc(sizeof(sip_msg_t))))
         return NULL;
-
-    // Create a vector to store attributes
-    msg->attrs = vector_create(4, 4);
-    vector_set_destroyer(msg->attrs, sip_attr_destroyer);
     return msg;
 }
 
 void
 msg_destroy(sip_msg_t *msg)
 {
-    // Free message attribute list
-    vector_destroy(msg->attrs);
     // Free message SDP media
     vector_destroy(msg->medias);
     // Free message packets
     capture_packet_destroy(msg->packet);
-    // Free payload if parsed
-    sng_free(msg->payload);
     // Free all memory
+    sng_free(msg->sip_from);
+    sng_free(msg->sip_to);
     sng_free(msg);
 }
 
@@ -114,22 +110,57 @@ msg_get_time(sip_msg_t *msg) {
     return t;
 }
 
-void
-msg_set_attribute(sip_msg_t *msg, enum sip_attr_id id, const char *fmt, ...)
-{
-    char value[512];
-
-    // Get the actual value for the attribute
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf(value, fmt, ap);
-    va_end(ap);
-
-    sip_attr_set(msg->attrs, id, value);
-}
-
 const char *
-msg_get_attribute(sip_msg_t *msg, enum sip_attr_id id)
+msg_get_attribute(sip_msg_t *msg, int id, char *value)
 {
-    return sip_attr_get_value(msg->attrs, id);
+    sdp_media_t *media;
+    char *ar;
+
+    switch (id) {
+        case SIP_ATTR_SRC:
+            sprintf(value, "%s:%u", msg->packet->ip_src, msg->packet->sport);
+            break;
+        case SIP_ATTR_DST:
+            sprintf(value, "%s:%u", msg->packet->ip_dst, msg->packet->dport);
+            break;
+        case SIP_ATTR_METHOD:
+            sprintf(value, "%s", sip_method_str(msg->reqresp));
+            break;
+        case SIP_ATTR_SIPFROM:
+            sprintf(value, "%s", msg->sip_from);
+            break;
+        case SIP_ATTR_SIPTO:
+            sprintf(value, "%s", msg->sip_to);
+            break;
+        case SIP_ATTR_SIPFROMUSER:
+            sprintf(value, "%s", msg->sip_from);
+            if ((ar = strchr(value, '@')))
+                *ar = '\0';
+            break;
+        case SIP_ATTR_SIPTOUSER:
+            sprintf(value, "%s", msg->sip_to);
+            if ((ar = strchr(value, '@')))
+                *ar = '\0';
+            break;
+        case SIP_ATTR_DATE:
+            timeval_to_date(msg_get_time(msg), value);
+            break;
+        case SIP_ATTR_TIME:
+            timeval_to_time(msg_get_time(msg), value);
+            break;
+        case SIP_ATTR_SDP_ADDRESS:
+            if ((media = vector_first(msg->medias)))
+                sprintf(value, "%s", media_get_address(media));
+            break;
+        case SIP_ATTR_SDP_PORT:
+            if ((media = vector_first(msg->medias)))
+                sprintf(value, "%d", media_get_port(media));
+            break;
+        default:
+            fprintf(stderr, "Unhandled attribute %s (%d)\n", sip_attr_get_name(id), id); abort();
+        break;
+    }
+
+    return strlen(value) ? value : NULL;
+
 }

@@ -540,7 +540,12 @@ save_to_file(PANEL *panel)
 void
 save_msg_txt(FILE *f, sip_msg_t *msg)
 {
-    fprintf(f, "%s %s %s -> %s\n%s\n\n", msg_get_attribute(msg, SIP_ATTR_DATE),
-            msg_get_attribute(msg, SIP_ATTR_TIME), msg_get_attribute(msg, SIP_ATTR_SRC),
-            msg_get_attribute(msg, SIP_ATTR_DST), msg_get_payload(msg));
+    char date[20], time[20], src[80], dst[80];
+
+    fprintf(f, "%s %s %s -> %s\n%s\n\n",
+            msg_get_attribute(msg, SIP_ATTR_DATE, date),
+            msg_get_attribute(msg, SIP_ATTR_TIME, time),
+            msg_get_attribute(msg, SIP_ATTR_SRC, src),
+            msg_get_attribute(msg, SIP_ATTR_DST, dst),
+            msg_get_payload(msg));
 }

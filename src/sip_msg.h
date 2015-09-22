@@ -39,25 +39,6 @@
 //! Shorter declaration of sip_msg structure
 typedef struct sip_msg sip_msg_t;
 
-//! SIP Methods
-enum sip_methods {
-    SIP_METHOD_REGISTER = 1,
-    SIP_METHOD_INVITE,
-    SIP_METHOD_SUBSCRIBE,
-    SIP_METHOD_NOTIFY,
-    SIP_METHOD_OPTIONS,
-    SIP_METHOD_PUBLISH,
-    SIP_METHOD_MESSAGE,
-    SIP_METHOD_CANCEL,
-    SIP_METHOD_BYE,
-    SIP_METHOD_ACK,
-    SIP_METHOD_PRACK,
-    SIP_METHOD_INFO,
-    SIP_METHOD_REFER,
-    SIP_METHOD_UPDATE,
-    SIP_METHOD_SENTINEL,
-};
-
 /**
  * @brief Information of a single message withing a dialog.
  *
@@ -68,14 +49,12 @@ enum sip_methods {
  */
 struct sip_call;
 struct sip_msg {
-    //! Temporal payload data before being parsed
-    u_char *payload;
     //! Request Method or Response Code @see sip_methods
     int reqresp;
     //! Message Cseq
     u_int cseq;
-    //! Message attribute list
-    vector_t *attrs;
+    //! SIP From and TO
+    char *sip_from, *sip_to;
     //! SDP payload information (sdp_media_t *)
     vector_t *medias;
     //! Captured packets for this message (capture_packet_t *)
@@ -188,18 +167,6 @@ struct timeval
 msg_get_time(sip_msg_t *msg);
 
 /**
- * @brief Sets the attribute value for a given message
- *
- * This function acts as wrapper of sip message attributes
- *
- * @param msg SIP message structure
- * @param id Attribute id
- * @param value Attribute value
- */
-void
-msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *fmt, ...);
-
-/**
  * @brief Return a message attribute value
  *
  * This function will be used to avoid accessing call structure
@@ -207,10 +174,11 @@ msg_set_attribute(struct sip_msg *msg, enum sip_attr_id id, const char *fmt, ...
  *
  * @param msg SIP message structure
  * @param id Attribute id
+ * @param out Buffer to store attribute value
  * @return Attribute value or NULL if not found
  */
 const char *
-msg_get_attribute(struct sip_msg *msg, enum sip_attr_id id);
+msg_get_attribute(struct sip_msg *msg, int id, char *value);
 
 
 #endif /* __SNGREP_SIP_MSG_H */

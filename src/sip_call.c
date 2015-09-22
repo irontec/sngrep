@@ -30,6 +30,7 @@
  */
 
 #include "sip_call.h"
+#include "sip.h"
 
 sip_call_t *
 call_create(char *callid)
@@ -44,10 +45,6 @@ call_create(char *callid)
     call->msgs = vector_create(2, 2);
     vector_set_destroyer(call->msgs, msg_destroyer);
 
-    // Create a vector to store call attributes
-    call->attrs = vector_create(1, 1);
-    vector_set_destroyer(call->attrs, sip_attr_destroyer);
-
     // Create an empty vector to store rtp packets
     call->rtp_packets = vector_create(0, 40);
     vector_set_destroyer(call->rtp_packets, capture_packet_destroyer);
@@ -60,7 +57,8 @@ call_create(char *callid)
     call->filtered = -1;
 
     // Set message callid
-    call_set_attribute(call, SIP_ATTR_CALLID, callid);
+    call->callid = strdup(callid);
+
     return call;
 }
 
@@ -71,11 +69,11 @@ call_destroy(sip_call_t *call)
     vector_destroy(call->msgs);
     // Remove all call streams
     vector_destroy(call->streams);
-    // Remove all call attributes
-    vector_destroy(call->attrs);
     // Remove all call rtp packets
     vector_destroy(call->rtp_packets);
     // Deallocate call memory
+    sng_free(call->callid);
+    sng_free(call->xcallid);
     sng_free(call);
 }
 
@@ -92,8 +90,6 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     msg->call = call;
     // Put this msg at the end of the msg list
     msg->index = vector_append(call->msgs, msg);
-    // Store message count
-    call_set_attribute(call, SIP_ATTR_MSGCNT, "%d", vector_count(call->msgs));
 }
 
 void
@@ -119,7 +115,7 @@ call_is_active(void *item)
 {
     // TODO
     sip_call_t *call = (sip_call_t *)item;
-    return call->active;
+    return (call->state == SIP_CALLSTATE_CALLSETUP || call->state == SIP_CALLSTATE_INCALL);
 }
 
 int
@@ -142,7 +138,8 @@ call_msg_is_retrans(sip_msg_t *msg)
     it = vector_iterator(msg->call->msgs);
     vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
     while ((prev = vector_iterator_prev(&it))) {
-        if (!strcmp(SRC(prev), SRC(msg)) && !strcmp(DST(prev), DST(msg)))
+        if (!strcmp(prev->packet->ip_src, msg->packet->ip_src) &&
+                !strcmp(prev->packet->ip_dst, msg->packet->ip_dst))
             break;
     }
 
@@ -153,8 +150,6 @@ call_msg_is_retrans(sip_msg_t *msg)
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
-    const char *callstate;
-    char dur[20];
     int reqresp;
     sip_msg_t *first;
 
@@ -168,84 +163,95 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     reqresp = msg->reqresp;
 
     // If this message is actually a call, get its current state
-    if ((callstate = call_get_attribute(call, SIP_ATTR_CALLSTATE))) {
-        if (!strcmp(callstate, SIP_CALLSTATE_CALLSETUP)) {
+    if (call->state) {
+        if (call->state == SIP_CALLSTATE_CALLSETUP) {
             if (reqresp == 200) {
                 // Alice and Bob are talking
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_INCALL);
-                // Store the timestap where call has started
-                call->active = 1;
+                call->state = SIP_CALLSTATE_INCALL;
                 call->cstart_msg = msg;
             } else if (reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CANCELLED);
-                // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
-                call->active = 0;
+                call->state = SIP_CALLSTATE_CANCELLED;
             } else if (reqresp > 400) {
                 // Bob is not in the mood
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_REJECTED);
-                // Store total call duration
-                call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
-                call->active = 0;
+                call->state = SIP_CALLSTATE_REJECTED;
             }
-        } else if (!strcmp(callstate, SIP_CALLSTATE_INCALL)) {
+        } else if (call->state == SIP_CALLSTATE_INCALL) {
             if (reqresp == SIP_METHOD_BYE) {
                 // Thanks for all the fish!
-                call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_COMPLETED);
-                // Store Conversation duration
-                call_set_attribute(call, SIP_ATTR_CONVDUR,
-                                   timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(msg), dur));
-                call->active = 0;
+                call->state = SIP_CALLSTATE_COMPLETED;
+                call->cend_msg = msg;
             }
-        } else if (reqresp == SIP_METHOD_INVITE && strcmp(callstate, SIP_CALLSTATE_INCALL)) {
+        } else if (reqresp == SIP_METHOD_INVITE && call->state !=  SIP_CALLSTATE_INCALL) {
             // Call is being setup (after proper authentication)
-            call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
-            call->active = 1;
-        } else {
-            // Store total call duration
-            call_set_attribute(call, SIP_ATTR_TOTALDUR, timeval_to_duration(msg_get_time(first), msg_get_time(msg), dur));
+            call->state = SIP_CALLSTATE_CALLSETUP;
         }
     } else {
         // This is actually a call
         if (reqresp == SIP_METHOD_INVITE) {
-            call_set_attribute(call, SIP_ATTR_CALLSTATE, SIP_CALLSTATE_CALLSETUP);
-            call->active = 1;
+            call->state = SIP_CALLSTATE_CALLSETUP;
         }
     }
 }
-void
-call_set_attribute(sip_call_t *call, enum sip_attr_id id, const char *fmt, ...)
-{
-    char value[512];
-
-    // Get the actual value for the attribute
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf(value, fmt, ap);
-    va_end(ap);
-
-    sip_attr_set(call->attrs, id, value);
-}
 
 const char *
-call_get_attribute(sip_call_t *call, enum sip_attr_id id)
+call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
 {
+    sip_msg_t *first, *last;
+
     if (!call)
         return NULL;
 
     switch (id) {
         case SIP_ATTR_CALLINDEX:
+            sprintf(value, "%d", call->index);
+            break;
         case SIP_ATTR_CALLID:
+            sprintf(value, "%s", call->callid);
+            break;
+        case SIP_ATTR_XCALLID:
+            sprintf(value, "%s", call->callid);
+            break;
         case SIP_ATTR_MSGCNT:
+            sprintf(value, "%d", vector_count(call->msgs));
+            break;
         case SIP_ATTR_CALLSTATE:
+            sprintf(value, "%s", call_state_to_str(call->state));
+            break;
+        case SIP_ATTR_TRANSPORT:
+            first = vector_first(call->msgs);
+            sprintf(value, "%s", sip_transport_str(first->packet->type));
+            break;
         case SIP_ATTR_CONVDUR:
+            timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(call->cend_msg), value);
+            break;
         case SIP_ATTR_TOTALDUR:
-            return sip_attr_get_value(call->attrs, id);
+            first = vector_first(call->msgs);
+            last = vector_last(call->msgs);
+            timeval_to_duration(msg_get_time(first), msg_get_time(last), value);
+            break;
         default:
-            return msg_get_attribute(vector_first(call->msgs), id);
+            return msg_get_attribute(vector_first(call->msgs), id, value);
+            break;
     }
 
-    return NULL;
+    return strlen(value) ? value : NULL;
 }
 
+const char *
+call_state_to_str(int state)
+{
+    switch (state) {
+        case SIP_CALLSTATE_CALLSETUP:
+            return "CALL SETUP";
+        case SIP_CALLSTATE_INCALL:
+            return "IN CALL";
+        case SIP_CALLSTATE_CANCELLED:
+            return "CANCELLED";
+        case SIP_CALLSTATE_REJECTED:
+            return "REJECTED";
+        case SIP_CALLSTATE_COMPLETED:
+            return "COMPLETED";
+    }
+    return "";
+}

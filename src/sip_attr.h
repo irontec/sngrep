@@ -32,13 +32,6 @@
 #include "config.h"
 #include "vector.h"
 
-/* Some very used macros */
-#define CALLID(msg) call_get_attribute(msg->call, SIP_ATTR_CALLID)
-#define SRC(msg) msg_get_attribute(msg, SIP_ATTR_SRC)
-#define DST(msg) msg_get_attribute(msg, SIP_ATTR_DST)
-#define TIME(msg) msg_get_attribute(msg, SIP_ATTR_TIME)
-#define DATE(msg) msg_get_attribute(msg, SIP_ATTR_DATE)
-
 //! Shorter declaration of sip_attr_hdr structure
 typedef struct sip_attr_hdr sip_attr_hdr_t;
 //! Shorter declaration of sip_attr structure
@@ -191,52 +184,5 @@ sip_attr_get_width(enum sip_attr_id id);
  */
 enum sip_attr_id
 sip_attr_from_name(const char *name);
-
-/**
- * @brief Allocate memory for an attribute structure
- */
-sip_attr_t *
-sip_attr_create(enum sip_attr_id id, const char *value);
-
-/**
- * @brief Free memory for an attribute structe
- */
-void
-sip_attr_destroy(sip_attr_t *attr);
-
-/**
- * @brief Wrapper around sip_attr_destroy for attribute vectors
- */
-void
-sip_attr_destroyer(void *attr);
-
-/**
- * @brief Sets the given attribute value to an attribute
- *
- * Primitive for setting an attribute value of a given attribute list.
- * This can be used for calls and message attributes.
- *
- * @param list Pointer to the attribute list
- * @param id Attribute id
- * @param value Attribute value
- */
-void
-sip_attr_set(vector_t *attrs, enum sip_attr_id id, const char *value);
-
-/**
- * @brief Gets the given attribute value to an attribute
- *
- * Primitive for getting an attribute value of a given attribute list.
- * This can be used for calls and message attributes.
- *
- */
-sip_attr_t *
-sip_attr_get(vector_t *attrs, enum sip_attr_id id);
-
-/**
- * @brief Get attribute value
- */
-const char *
-sip_attr_get_value(vector_t *attrs, enum sip_attr_id id);
 
 #endif /* __SNGREP_SIP_ATTR_H */

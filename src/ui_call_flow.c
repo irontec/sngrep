@@ -151,6 +151,7 @@ call_flow_draw(PANEL *panel)
     call_flow_arrow_t *arrow = NULL;
     int height, width, cline = 0;
     char title[256];
+    char callid[256];
 
     // Get panel information
     info = call_flow_info(panel);
@@ -163,7 +164,7 @@ call_flow_draw(PANEL *panel)
     // Set title
     if (call_group_count(info->group) == 1) {
         sprintf(title, "Call flow for %s",
-                call_get_attribute(vector_first(info->group->calls), SIP_ATTR_CALLID));
+                call_get_attribute(vector_first(info->group->calls), SIP_ATTR_CALLID, callid));
     } else {
         sprintf(title, "Call flow for %d dialogs", call_group_count(info->group));
     }
@@ -246,6 +247,7 @@ call_flow_draw_columns(PANEL *panel)
     vector_iter_t columns;
     int flow_height, flow_width;
     const char *coltext;
+    char ip_src[80], ip_dst[80];
 
     // Get panel information
     info = call_flow_info(panel);
@@ -257,8 +259,12 @@ call_flow_draw_columns(PANEL *panel)
     // Load columns
     for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
-        call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), SRC(msg));
-        call_flow_column_add(panel, call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID), DST(msg));
+        memset(ip_src, 0, sizeof(ip_src));
+        memset(ip_dst, 0, sizeof(ip_dst));
+        msg_get_attribute(msg, SIP_ATTR_SRC, ip_src);
+        msg_get_attribute(msg, SIP_ATTR_DST, ip_dst);
+        call_flow_column_add(panel, msg->call->callid, ip_src);
+        call_flow_column_add(panel, msg->call->callid, ip_dst);
         info->last_msg = msg;
     }
 
@@ -300,11 +306,13 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     call_flow_info_t *info;
     WINDOW *win;
     sdp_media_t *media;
-    const char *msg_time;
     const char *msg_callid;
     const char *msg_method;
-    const char *msg_src;
-    const char *msg_dst;
+    char msg_time[80];
+    char msg_src[80];
+    char msg_dst[80];
+    char sdp_address[80];
+    char sdp_port[80];
     char method[80];
     char delta[15] = { };
     int height, width;
@@ -331,15 +339,11 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         return NULL;
 
     // Get message attributes
-    msg_time = msg_get_attribute(msg, SIP_ATTR_TIME);
-    msg_callid = call_get_attribute(msg_get_call(msg), SIP_ATTR_CALLID);
-    msg_method = msg_get_attribute(msg, SIP_ATTR_METHOD);
-    msg_src = msg_get_attribute(msg, SIP_ATTR_SRC);
-    msg_dst = msg_get_attribute(msg, SIP_ATTR_DST);
-
-    // Check method has value. We prefer empty arrows rather than crashes
-    if (!msg_method)
-        msg_method = "";
+    msg_callid = msg->call->callid;
+    msg_method = sip_method_str(msg->reqresp);
+    msg_get_attribute(msg, SIP_ATTR_TIME, msg_time);
+    msg_get_attribute(msg, SIP_ATTR_SRC, msg_src);
+    msg_get_attribute(msg, SIP_ATTR_DST, msg_dst);
 
     // Print timestamp
     if (info->selected == arrow)
@@ -372,13 +376,13 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
         sprintf(method, "%.3s (%s:%s)",
                 msg_method,
-                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS),
-                msg_get_attribute(msg, SIP_ATTR_SDP_PORT));
+                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS, sdp_address),
+                msg_get_attribute(msg, SIP_ATTR_SDP_PORT, sdp_port));
     }
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
         sprintf(method, "%.3s (%s)",
                 msg_method,
-                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS));
+                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS, sdp_address));
     }
 
     // Draw message type or status and line
@@ -484,6 +488,8 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     WINDOW *win;
     char codec[50], time[20];
     int height, width;
+    const char *callid;
+    char msg_dst[80], msg_src[80];
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->stream;
 
@@ -510,22 +516,27 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Get Message method (include extra info)
     sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
 
+    // Get message data
+    msg_get_attribute(stream->media->msg, SIP_ATTR_SRC, msg_src);
+    msg_get_attribute(stream->media->msg, SIP_ATTR_DST, msg_dst);
+    callid = stream->media->msg->call->callid;
+
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strncmp(stream->ip_src, SRC(stream->media->msg), strlen(stream->ip_src))) {
-        column1 = call_flow_column_get(panel, CALLID(stream->media->msg), SRC(stream->media->msg));
-    } else if (!strncmp(stream->ip_src, DST(stream->media->msg), strlen(stream->ip_src))) {
-        column1 = call_flow_column_get(panel, CALLID(stream->media->msg), DST(stream->media->msg));
+    if (!strncmp(stream->ip_src, msg_src, strlen(stream->ip_src))) {
+        column1 = call_flow_column_get(panel, callid, msg_src);
+    } else if (!strncmp(stream->ip_src, msg_dst, strlen(stream->ip_src))) {
+        column1 = call_flow_column_get(panel, callid, msg_dst);
     } else {
         column1 = call_flow_column_get(panel, 0, stream->ip_src);
     }
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strncmp(stream->ip_dst, DST(stream->media->msg), strlen(stream->ip_dst))) {
-        column2 = call_flow_column_get(panel, CALLID(stream->media->msg), DST(stream->media->msg));
-    } else if (!strncmp(stream->ip_dst, SRC(stream->media->msg), strlen(stream->ip_dst))) {
-        column2 = call_flow_column_get(panel, CALLID(stream->media->msg), SRC(stream->media->msg));
+    if (!strncmp(stream->ip_dst, msg_dst, strlen(stream->ip_dst))) {
+        column2 = call_flow_column_get(panel, callid, msg_dst);
+    } else if (!strncmp(stream->ip_dst, msg_src, strlen(stream->ip_dst))) {
+        column2 = call_flow_column_get(panel, callid, msg_src);
     } else {
         column2 = call_flow_column_get(panel, 0, stream->ip_dst);
     }
@@ -1078,7 +1089,7 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
 
     column = sng_malloc(sizeof(call_flow_column_t));
     column->callid = callid;
-    column->addr = addr;
+    strcpy(column->addr, addr);
     column->colpos = vector_count(info->columns);
     vector_append(info->columns, column);
 }

@@ -36,15 +36,18 @@
 #include "sip_msg.h"
 #include "sip_attr.h"
 
-//! SIP Call State
-#define SIP_CALLSTATE_CALLSETUP "CALL SETUP"
-#define SIP_CALLSTATE_INCALL    "IN CALL"
-#define SIP_CALLSTATE_CANCELLED "CANCELLED"
-#define SIP_CALLSTATE_REJECTED  "REJECTED"
-#define SIP_CALLSTATE_COMPLETED "COMPLETED"
-
 //! Shorter declaration of sip_call structure
 typedef struct sip_call sip_call_t;
+
+//! SIP Call State
+enum call_state
+{
+    SIP_CALLSTATE_CALLSETUP = 1,
+    SIP_CALLSTATE_INCALL,
+    SIP_CALLSTATE_CANCELLED,
+    SIP_CALLSTATE_REJECTED,
+    SIP_CALLSTATE_COMPLETED
+};
 
 /**
  * @brief Contains all information of a call and its messages
@@ -54,16 +57,21 @@ typedef struct sip_call sip_call_t;
  * data from its messages to speed up searches.
  */
 struct sip_call {
+    // Call index in the call list
+    int index;
+    // Call identifier
+    char *callid;
+    //! Related Call identifier
+    char *xcallid;
     //! Flag this call as filtered so won't be displayed
     signed char filtered;
-    //! For call dialogs, mark if call has not yet finished
-    u_char active;
+    //! Call State. For dialogs starting with an INVITE method
+    int state;
+
     //! List of messages of this call (sip_msg_t*)
     vector_t *msgs;
-    //! Message when conversation started
-    sip_msg_t *cstart_msg;
-    //! Call attribute list
-    vector_t *attrs;
+    //! Message when conversation started and ended
+    sip_msg_t *cstart_msg, *cend_msg;
     //! RTP streams for this call (rtp_stream_t *)
     vector_t *streams;
     //! RTP packets for this call (capture_packet_t *)
@@ -193,18 +201,6 @@ void
 call_update_state(sip_call_t *call, sip_msg_t *msg);
 
 /**
- * @brief Sets the attribute value for a given call
- *
- * This function acts as wrapper of sip call attributes
- *
- * @param call SIP call structure
- * @param id Attribute id
- * @param value Attribute value
- */
-void
-call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *fmt, ...);
-
-/**
  * @brief Return a call attribute value
  *
  * This function will be used to avoid accessing call structure
@@ -216,6 +212,13 @@ call_set_attribute(struct sip_call *call, enum sip_attr_id id, const char *fmt, 
  * @return Attribute value or NULL if not found
  */
 const char *
-call_get_attribute(struct sip_call *call, enum sip_attr_id id);
+call_get_attribute(struct sip_call *call, enum sip_attr_id id, char *value);
+
+/**
+ * @brief Return the string represtation of a call state
+ *
+ */
+const char *
+call_state_to_str(int state);
 
 #endif /* __SNGREP_SIP_CALL_H */

@@ -378,7 +378,7 @@ const char *
 call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 {
     int i, collen;
-    const char *call_attr;
+    char call_attr[256];
     char coltext[256];
     int colid;
     int width;
@@ -410,8 +410,10 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text)
 
         // Initialize column text
         memset(coltext, 0, sizeof(coltext));
+        memset(call_attr, 0, sizeof(call_attr));
+
         // Get call attribute for current column
-        if ((call_attr = call_get_attribute(call, colid))) {
+        if (call_get_attribute(call, colid, call_attr)) {
             sprintf(coltext, "%.*s", collen, call_attr);
         }
         // Add the column text to the existing columns
