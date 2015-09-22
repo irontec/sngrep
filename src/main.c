@@ -174,9 +174,11 @@ main(int argc, char* argv[])
                 break;
             case 'c':
                 only_calls = 1;
+                setting_set_value(SETTING_SIP_CALLS, SETTING_ON);
                 break;
             case 'r':
                 rtp_capture = 1;
+                setting_set_value(SETTING_CAPTURE_RTP, SETTING_ON);
                 break;
             case 'i':
                 match_insensitive++;
