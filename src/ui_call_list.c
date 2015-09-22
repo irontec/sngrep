@@ -582,6 +582,10 @@ call_list_handle_key(PANEL *panel, int key)
                 call_list_clear(panel);
                 filter_reset_calls();
                 break;
+            case ACTION_CLEAR:
+                // Clear group calls
+                vector_clear(info->group->calls);
+                break;
             case ACTION_CLEAR_CALLS:
                 // Remove all stored calls
                 sip_calls_clear();
