@@ -436,6 +436,27 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
     return msg->reqresp;
 }
 
+const char *
+sip_get_response_str(sip_msg_t *msg, char *out)
+{
+    regmatch_t pmatch[3];
+    const char *payload;
+
+    // If not already parsed
+    if (msg_is_request(msg))
+        return NULL;
+
+    // Get message payload
+    payload = msg_get_payload(msg);
+
+    // Response code (full text)
+    if (regexec(&calls.reg_response, payload, 3, pmatch, 0) == 0) {
+        sprintf(out, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+    }
+
+    return out;
+}
+
 sip_msg_t *
 sip_parse_msg(sip_msg_t *msg)
 {
@@ -625,14 +646,29 @@ sip_check_msg_ignore(sip_msg_t *msg)
 }
 
 const char *
-sip_method_str(enum sip_methods method)
+sip_method_str(int method)
 {
     int i;
+
+    // Standard method
     for (i = 0; sip_codes[i].id > 0; i++) {
         if (method == sip_codes[i].id)
             return sip_codes[i].text;
     }
-    return "";
+    return NULL;
+}
+
+int
+sip_method_from_str(const char *method)
+{
+    int i;
+
+    // Standard method
+    for (i = 0; sip_codes[i].id > 0; i++) {
+        if (!strcmp(method, sip_codes[i].text))
+            return sip_codes[i].id;
+    }
+    return atoi(method);
 }
 
 const char *
@@ -652,16 +688,6 @@ sip_transport_str(int transport)
             return "WSS";
     }
     return "";
-}
-
-int
-sip_method_from_str(const char *method)
-{
-    int i;
-    for (i = 1; i < SIP_METHOD_SENTINEL; i++)
-        if (!strcmp(method, sip_method_str(i)))
-            return i;
-    return atoi(method);
 }
 
 char *

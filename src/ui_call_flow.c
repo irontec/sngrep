@@ -307,7 +307,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     WINDOW *win;
     sdp_media_t *media;
     const char *msg_callid;
-    const char *msg_method;
+    char msg_method[128];
     char msg_time[80];
     char msg_src[80];
     char msg_dst[80];
@@ -340,7 +340,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Get message attributes
     msg_callid = msg->call->callid;
-    msg_method = sip_method_str(msg->reqresp);
+    msg_get_attribute(msg, SIP_ATTR_METHOD, msg_method);
     msg_get_attribute(msg, SIP_ATTR_TIME, msg_time);
     msg_get_attribute(msg, SIP_ATTR_SRC, msg_src);
     msg_get_attribute(msg, SIP_ATTR_DST, msg_dst);

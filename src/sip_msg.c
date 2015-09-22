@@ -80,7 +80,7 @@ msg_has_sdp(void *item)
 int
 msg_is_request(sip_msg_t *msg)
 {
-    return msg->reqresp < SIP_METHOD_SENTINEL;
+    return msg->reqresp < 100;
 }
 
 void
@@ -124,7 +124,11 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             sprintf(value, "%s:%u", msg->packet->ip_dst, msg->packet->dport);
             break;
         case SIP_ATTR_METHOD:
-            sprintf(value, "%s", sip_method_str(msg->reqresp));
+            if (sip_method_str(msg->reqresp)) {
+                sprintf(value, "%s", sip_method_str(msg->reqresp));
+            } else {
+                sip_get_response_str(msg, value);
+            }
             break;
         case SIP_ATTR_SIPFROM:
             sprintf(value, "%s", msg->sip_from);

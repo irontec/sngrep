@@ -63,7 +63,6 @@ enum sip_methods {
     SIP_METHOD_INFO,
     SIP_METHOD_REFER,
     SIP_METHOD_UPDATE,
-    SIP_METHOD_SENTINEL,
 };
 
 /**
@@ -234,6 +233,14 @@ int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload);
 
 /**
+ * @brief Get full Response code (including text)
+ *
+ *
+ */
+const char *
+sip_get_response_str(sip_msg_t *msg, char *out);
+
+/**
  * @brief Parse SIP Message payload if not parsed
  *
  * This function can be used for delayed parsing. This way
@@ -301,11 +308,11 @@ sip_check_msg_ignore(struct sip_msg *msg);
 /**
  * @brief Get String value for a Method
  *
- * @param method One of the methods defined in @sip_methods
+ * @param method One of the methods defined in @sip_codes
  * @return a string representing the method text
  */
 const char *
-sip_method_str(enum sip_methods method);
+sip_method_str(int method);
 
 /*
  * @brief Get String value of Transport
