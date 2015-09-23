@@ -402,6 +402,14 @@ void
 capture_packet_destroyer(void *packet);
 
 /**
+ * @brief Free packet frames data.
+ *
+ * This can be used to avoid storing packet payload in memory or disk
+ */
+void
+capture_packet_free_frames(capture_packet_t *pkt);
+
+/**
  * @brief Set packet type
  */
 void

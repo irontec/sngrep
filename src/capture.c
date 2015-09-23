@@ -308,6 +308,11 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         capture_eep_send(pkt);
         // Store this packets in output file
         dump_packet(capture_cfg.pd, pkt);
+        // If storage is disabled, delete frames payload
+        if (capture_cfg.storage == 0) {
+            capture_packet_free_frames(pkt);
+        }
+
         return;
     }
 
@@ -545,6 +550,17 @@ capture_packet_destroyer(void *packet)
     capture_packet_destroy((capture_packet_t*) packet);
 }
 
+void
+capture_packet_free_frames(capture_packet_t *pkt)
+{
+    capture_frame_t *frame;
+    vector_iter_t it = vector_iterator(pkt->frames);
+
+    while ((frame = vector_iterator_next(&it))) {
+        sng_free(frame->data);
+    }
+}
+
 capture_packet_t *
 capture_packet_set_transport_data(capture_packet_t *pkt, u_short sport, u_short dport, int type)
 {
@@ -563,11 +579,8 @@ capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header
     frame = sng_malloc(sizeof(capture_frame_t));
     frame->header = sng_malloc(sizeof(struct pcap_pkthdr));
     memcpy(frame->header, header, sizeof(struct pcap_pkthdr));
-
-    if (capture_cfg.storage != 0) {
-        frame->data = sng_malloc(header->caplen);
-        memcpy(frame->data, packet, header->caplen);
-    }
+    frame->data = sng_malloc(header->caplen);
+    memcpy(frame->data, packet, header->caplen);
     vector_append(pkt->frames, frame);
     return frame;
 }
