@@ -83,6 +83,12 @@ enum capture_status {
     CAPTURE_OFFLINE_LOADING,
 };
 
+enum capture_storage {
+    CAPTURE_STORAGE_NONE = 0,
+    CAPTURE_STORAGE_MEMORY,
+    CAPTURE_STORAGE_DISK
+};
+
 //! Shorter declaration of capture_config structure
 typedef struct capture_config capture_config_t;
 //; Shorter declaration of capture_info structure
@@ -128,6 +134,8 @@ struct capture_config {
     int limit;
     //! Also capture RTP packets
     int rtp_capture;
+    //! Where should we store captured packets
+    int storage;
     //! Key file for TLS decrypt
     const char *keyfile;
     //! The compiled filter expression
@@ -180,6 +188,8 @@ struct capture_info
  */
 struct capture_packet {
     // IP protocol
+    uint8_t ip_version;
+    // Transport protocol
     uint8_t proto;
     // Packet type as defined in capture_packet_type
     int type;
@@ -257,6 +267,17 @@ capture_offline(const char *infile, const char *outfile);
  */
 void
 parse_packet(u_char *capinfo, const struct pcap_pkthdr *header, const u_char *packet);
+
+/**
+ * @brief Check if the given packet structure is SIP/RTP/..
+ *
+ * This function will call parse functions to determine if packet has relevant data
+ *
+ * @return 0 in case this packets has SIP/RTP data
+ * @return 1 otherwise
+ */
+int
+capture_packet_parse(capture_packet_t *pkt);
 
 /**
  * @brief Create a capture thread for online mode
@@ -355,7 +376,7 @@ capture_last_error();
  * @brief Allocate memory to store new packet data
  */
 capture_packet_t *
-capture_packet_create(uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id);
+capture_packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id);
 
 /**
  * @brief Set Transport layer information

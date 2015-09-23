@@ -131,7 +131,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // If no fragmentation
     if (ip_frag == 0) {
         // Just create a new packet with given network data
-        pkt = capture_packet_create(ip_proto, ip_src, ip_dst, ip_id);
+        pkt = capture_packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
         capture_packet_add_frame(pkt, header, packet);
         return pkt;
     }
@@ -148,7 +148,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         capture_packet_add_frame(pkt, header, packet);
     } else {
         // Add To the possible reassembly list
-        pkt = capture_packet_create(ip_proto, ip_src, ip_dst, ip_id);
+        pkt = capture_packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
         capture_packet_add_frame(pkt, header, packet);
         vector_append(capture_cfg.ip_reasm, pkt);
         return NULL;

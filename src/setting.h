@@ -54,6 +54,7 @@ typedef struct setting_option setting_t;
 #define SETTING_ENUM_COLORMODE   (const char *[]){ "request", "cseq", "callid", NULL }
 #define SETTING_ENUM_HIGHLIGHT   (const char *[]){ "bold", "reverse", "reversebold", NULL }
 #define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", NULL}
+#define SETTING_ENUM_STORAGE     (const char *[]){ "none", "memory", NULL }
 
 //! Other useful defines
 #define SETTING_ON  "on"
@@ -77,6 +78,7 @@ enum setting_id {
     SETTING_CAPTURE_OUTFILE,
     SETTING_CAPTURE_KEYFILE,
     SETTING_CAPTURE_RTP,
+    SETTING_CAPTURE_STORAGE,
     SETTING_SIP_NOINCOMPLETE,
     SETTING_SIP_CALLS,
     SETTING_SAVEPATH,
@@ -96,6 +98,14 @@ enum setting_id {
     SETTING_CF_DELTA,
     SETTING_CR_SCROLLSTEP,
     SETTING_FILTER_METHODS,
+    SETTING_EEP_SEND,
+    SETTING_EEP_SEND_ADDR,
+    SETTING_EEP_SEND_PORT,
+    SETTING_EEP_SEND_PASS,
+    SETTING_EEP_LISTEN,
+    SETTING_EEP_LISTEN_ADDR,
+    SETTING_EEP_LISTEN_PORT,
+    SETTING_EEP_LISTEN_PASS,
     SETTING_COUNT
 };
 

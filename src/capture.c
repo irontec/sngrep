@@ -35,6 +35,7 @@
 #include "capture.h"
 #include "capture_ws.h"
 #include "capture_reasm.h"
+#include "capture_eep.h"
 #ifdef WITH_OPENSSL
 #include "capture_tls.h"
 #endif
@@ -56,6 +57,17 @@ capture_init(int limit, int rtp_capture)
     capture_cfg.sources = vector_create(1, 1);
     capture_cfg.tcp_reasm = vector_create(0, 10);
     capture_cfg.ip_reasm = vector_create(0, 10);
+
+    // Fixme
+    if (setting_has_value(SETTING_CAPTURE_STORAGE, "none")) {
+        capture_cfg.storage = CAPTURE_STORAGE_NONE;
+    } else if (setting_has_value(SETTING_CAPTURE_STORAGE, "memory")) {
+        capture_cfg.storage = CAPTURE_STORAGE_MEMORY;
+    } else if (setting_has_value(SETTING_CAPTURE_STORAGE, "disk")) {
+        capture_cfg.storage = CAPTURE_STORAGE_DISK;
+    }
+
+
 }
 
 void
@@ -205,8 +217,6 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     uint32_t size_capture = header->caplen;
     // Packet payload size
     uint32_t size_payload =  size_capture - capinfo->link_hl;
-    // Media structure for RTP packets
-    rtp_stream_t *stream;
     // Captured packet info
     capture_packet_t *pkt;
 
@@ -292,13 +302,30 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         return;
     }
 
+    // Check if we can handle this packet
+    if (capture_packet_parse(pkt) == 0) {
+        // Send this packet through eep
+        capture_eep_send(pkt);
+        // Store this packets in output file
+        dump_packet(capture_cfg.pd, pkt);
+        return;
+    }
+
+    // Not an interesting packet ...
+    capture_packet_destroy(pkt);
+}
+
+int
+capture_packet_parse(capture_packet_t *pkt)
+{
+    // Media structure for RTP packets
+    rtp_stream_t *stream;
+
     // We're only interested in packets with payload
     if (capture_packet_get_payload_len(pkt)) {
         // Parse this header and payload
         if (sip_load_message(pkt, pkt->ip_src, pkt->sport, pkt->ip_dst, pkt->dport)) {
-            // Store this packets in output file
-            dump_packet(capture_cfg.pd, pkt);
-            return;
+            return 0;
         }
 
         // Check if this packet belongs to a RTP stream
@@ -306,18 +333,15 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         if ((stream = rtp_check_stream(pkt, pkt->ip_src, pkt->sport, pkt->ip_dst, pkt->dport))) {
             // We have an RTP packet!
             capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
-            // Store this packets in output file
-            dump_packet(capture_cfg.pd, pkt);
             // Store this pacekt if capture rtp is enabled
             if (capture_cfg.rtp_capture) {
                 call_add_rtp_packet(stream_get_call(stream), pkt);
-                return;
+                return 0;
             }
         }
     }
 
-    // Not an interesting packet ...
-    capture_packet_destroy(pkt);
+    return 1;
 }
 
 void
@@ -479,11 +503,12 @@ capture_last_error(cap)
 }
 
 capture_packet_t *
-capture_packet_create(uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id)
+capture_packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id)
 {
     // Create a new packet
     capture_packet_t *packet;
     packet = sng_malloc(sizeof(capture_packet_t));
+    packet->ip_version = ip_ver;
     packet->proto = proto;
     packet->frames = vector_create(1, 1);
     packet->ip_id = id;
@@ -537,9 +562,12 @@ capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header
     // Add frame to this packet
     frame = sng_malloc(sizeof(capture_frame_t));
     frame->header = sng_malloc(sizeof(struct pcap_pkthdr));
-    frame->data = sng_malloc(header->caplen);
     memcpy(frame->header, header, sizeof(struct pcap_pkthdr));
-    memcpy(frame->data, packet, header->caplen);
+
+    if (capture_cfg.storage != 0) {
+        frame->data = sng_malloc(header->caplen);
+        memcpy(frame->data, packet, header->caplen);
+    }
     vector_append(pkt->frames, frame);
     return frame;
 }

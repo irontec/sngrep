@@ -36,6 +36,7 @@
 #include "vector.h"
 #include "ui_manager.h"
 #include "capture.h"
+#include "capture_eep.h"
 #ifdef WITH_OPENSSL
 #include "capture_tls.h"
 #endif
@@ -64,6 +65,8 @@ usage()
            "    -i --icase\t\t Make <match expression> case insensitive\n"
            "    -v --invert\t\t Invert <match expression>\n"
            "    -N --no-interface\t Don't display sngrep interface, just capture\n"
+           "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
+           "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
 #ifdef WITH_OPENSSL
            "    -k --keyfile\t RSA private keyfile to decrypt captured packets\n"
@@ -128,6 +131,8 @@ main(int argc, char* argv[])
         { "invert", no_argument, 0, 'v' },
         { "no-interface", no_argument, 0, 'N' },
         { "dump-config", no_argument, 0, 'D' },
+        { "eep-listen", required_argument, 0, 'L' },
+        { "eep-send", required_argument, 0, 'H' },
         { "quiet", no_argument, 0, 'q' },
     };
 
@@ -145,7 +150,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:crl:ivNqD";
+    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -188,6 +193,7 @@ main(int argc, char* argv[])
                 break;
             case 'N':
                 no_interface = 1;
+                setting_set_value(SETTING_CAPTURE_STORAGE, "none");
                 break;
             case 'q':
                 quiet = 1;
@@ -199,6 +205,12 @@ main(int argc, char* argv[])
             case 'p':
             case 't':
             case 'W':
+                break;
+            case 'L':
+                capture_eep_set_server_url(optarg);
+                break;
+            case 'H':
+                capture_eep_set_client_url(optarg);
                 break;
             case '?':
                 if (strchr(options, optopt)) {
@@ -236,6 +248,9 @@ main(int argc, char* argv[])
 
     // Set capture options
     capture_init(limit, rtp_capture);
+
+    // Initialize EEP if enabled
+    capture_eep_init();
 
     // If we have an input file, load it
     if (vector_count(infiles)) {
