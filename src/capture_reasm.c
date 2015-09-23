@@ -34,7 +34,7 @@
 #include "util.h"
 #include "capture.h"
 #include "capture_reasm.h"
-#ifdef WITH_IPV6
+#ifdef USE_IPV6
 #include <netinet/ip6.h>
 #endif
 
@@ -47,7 +47,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 {
     // IP header data
     struct ip *ip4;
-#ifdef WITH_IPV6
+#ifdef USE_IPV6
     // IPv6 header data
     struct ip6_hdr *ip6;
 #endif
@@ -80,7 +80,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Get IP header
     ip4 = (struct ip *) (packet + capinfo->link_hl);
 
-#ifdef WITH_IPV6
+#ifdef USE_IPV6
     // Get IPv6 header
     ip6 = (struct ip6_hdr *) (packet + capinfo->link_hl);
 #endif
@@ -101,7 +101,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             inet_ntop(AF_INET, &ip4->ip_src, ip_src, sizeof(ip_src));
             inet_ntop(AF_INET, &ip4->ip_dst, ip_dst, sizeof(ip_dst));
             break;
-#ifdef WITH_IPV6
+#ifdef USE_IPV6
         case 6:
             ip_hl = sizeof(struct ip6_hdr);
             ip_proto = ip6->ip6_nxt;
@@ -123,7 +123,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Remove IP Header length from payload
     *size = *caplen - capinfo->link_hl - ip_hl;
 
-#ifdef WITH_IPV6
+#ifdef USE_IPV6
     if (ip_ver == 6)
         *size -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
 #endif
