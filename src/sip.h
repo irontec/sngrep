@@ -297,15 +297,6 @@ int
 sip_check_match_expression(const char *payload);
 
 /**
- * @brief Check if this msg is affected by filters
- *
- * @param call Message to check
- * @return 1 if msg is filtered, 0 otherwise
- */
-int
-sip_check_msg_ignore(struct sip_msg *msg);
-
-/**
  * @brief Get String value for a Method
  *
  * @param method One of the methods defined in @sip_codes

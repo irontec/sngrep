@@ -100,16 +100,3 @@
 ##-----------------------------------------------------------------------------
 ## Uncomment to display dialogs that does not start with a request method
 # set sip.ignoreincomplete off
-
-##-----------------------------------------------------------------------------
-## You can ignore some calls with any of the previous attributes with a given
-## value with ignore directive.
-##
-## ignore {field} {value}
-##
-## Examples:
-# ignore method OPTIONS
-# ignore method REGISTER
-# ignore method BYE
-# ignore srchost 192.168.1.1
-# ignore transport TCP

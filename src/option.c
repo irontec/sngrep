@@ -114,8 +114,6 @@ read_options(const char *fname)
                 } else {
                     set_option_value(option, value);
                 }
-            } else if (!strcasecmp(type, "ignore")) {
-                set_ignore_value(option, value);
             } else if (!strcasecmp(type, "alias")) {
                 set_alias_value(option, value);
             } else if (!strcasecmp(type, "bind")) {
@@ -171,29 +169,6 @@ set_option_value(const char *opt, const char *value)
             }
         }
     }
-}
-
-void
-set_ignore_value(const char *opt, const char *value)
-{
-    options[optscnt].type = IGNORE;
-    options[optscnt].opt = strdup(opt);
-    options[optscnt].value = strdup(value);
-    optscnt++;
-}
-
-int
-is_ignored_value(const char *field, const char *fvalue)
-{
-    int i;
-    for (i = 0; i < optscnt; i++) {
-        if (options[i].type != IGNORE)
-            continue;
-        if (!strcasecmp(options[i].opt, field) && !strcasecmp(options[i].value, fvalue)) {
-            return 1;
-        }
-    }
-    return 0;
 }
 
 void

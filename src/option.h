@@ -48,7 +48,6 @@ typedef struct config_option option_opt_t;
 //! Option types
 enum option_type {
     COLUMN = 0,
-    IGNORE,
     ALIAS
 };
 
@@ -137,30 +136,6 @@ get_option_int_value(const char *opt);
  */
 void
 set_option_value(const char *opt, const char *value);
-
-/**
- * @brief Sets a ignore option value
- *
- * Basic setter for 'ignore' directive attributes
- *
- * @param opt Name of configuration option
- * @param value Value of configuration option
- */
-void
-set_ignore_value(const char *opt, const char *value);
-
-/**
- * @brief Check if a exits an ignore directive for the given field and value
- *
- * Like is_option_enabled, this check if there is a match in configuration
- * options that match the given  field and value
- *
- * @param field Name of configuration option
- * @param fvalue Value to check if it has an ignore directive
- * @return 1 if value for field exists
- */
-int
-is_ignored_value(const char *field, const char *fvalue);
 
 /**
  * @brief Sets an alias for a given address

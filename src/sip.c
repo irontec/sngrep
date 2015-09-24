@@ -268,10 +268,6 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
         if (calls.ignore_incomplete && msg->reqresp > SIP_METHOD_MESSAGE)
             goto skip_message;
 
-        // Check if this message is ignored by configuration directive
-        if (sip_check_msg_ignore(msg))
-            goto skip_message;
-
         // Create the call if not found
         if (!(call = call_create(callid)))
             goto skip_message;
@@ -625,24 +621,6 @@ sip_check_match_expression(const char *payload)
     // Check if payload matches the given expresion
     return (regexec(&calls.match_regex, payload, 0, NULL, 0) == calls.match_invert);
 #endif
-}
-
-
-int
-sip_check_msg_ignore(sip_msg_t *msg)
-{
-    int i;
-    sip_attr_hdr_t *header;
-    char value[512];
-
-    // Check if an ignore option exists
-    for (i = 0; i < SIP_ATTR_COUNT; i++) {
-        header = sip_attr_get_header(i);
-        if (is_ignored_value(header->name, call_get_attribute(msg->call, header->id, value))) {
-            return 1;
-        }
-    }
-    return 0;
 }
 
 const char *
