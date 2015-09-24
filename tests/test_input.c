@@ -40,7 +40,7 @@
 #endif
 
 #ifndef TEST_KEY_DELAY
-#define TEST_KEY_DELAY 1000
+#define TEST_KEY_DELAY 2000
 #endif
 
 #ifndef TEST_PCAP_INPUT
