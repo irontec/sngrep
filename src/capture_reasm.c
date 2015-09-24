@@ -41,7 +41,6 @@
 // Capture information
 extern capture_config_t capture_cfg;
 
-
 capture_packet_t *
 capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char *packet, uint32_t *size, uint32_t *caplen)
 {

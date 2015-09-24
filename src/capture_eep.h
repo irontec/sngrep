@@ -39,38 +39,40 @@
  * sngrep packet structures has been made by Ivan Alonso (Kaian)
  *
  */
+#ifndef __SNGREP_CAPTURE_EEP_H
+#define __SNGREP_CAPTURE_EEP_H
 #include <pthread.h>
 #include "capture.h"
 
+//! Shorter declaration of capture_eep_config structure
 typedef struct capture_eep_config  capture_eep_config_t;
-typedef struct eep_info eep_info_t;
 
+/**
+ * @brief EEP  Client/Server configuration
+ */
 struct capture_eep_config
 {
+    //! Client socket for sending EEP data
     int client_sock;
+    //! Server socket for receiving EEP data
     int server_sock;
+    //! Capture agent id
     int capt_id;
+    //! IP address to sends EEP data
     const char *capt_host;
+    //! Port to send EEP data
     const char *capt_port;
+    //! Password for authenticate as client
     const char *capt_password;
+    //! IP address to received EEP data
     const char *capt_srv_host;
+    //! Local oort to receive EEP data
     const char *capt_srv_port;
+    //! Server password to authenticate incoming connections
     const char *capt_srv_password;
+    //! Server thread to parse incoming data
     pthread_t server_thread;
 };
-
-
-struct eep_info {
-    uint8_t     ip_family;  /* IP family IPv6 IPv4 */
-    uint8_t     ip_proto;   /* IP protocol ID : tcp/udp */
-    uint8_t     proto_type; /* SIP: 0x001, SDP: 0x03 */
-    const char  *ip_src;
-    const char  *ip_dst;
-    uint16_t    sport;
-    uint16_t    dport;
-    uint32_t    time_sec;
-    uint32_t    time_usec;
-} ;
 
 /* HEPv3 types */
 struct hep_chunk
@@ -146,8 +148,11 @@ struct hep_chunk_payload
 
 typedef struct hep_chunk_payload hep_chunk_payload_t;
 
-/* Structure of HEP */
-
+/**
+ * @brief Generic HEP header
+ *
+ * All EEP/HEP packets will contain at least this header.
+ */
 struct hep_generic
 {
     hep_ctrl_t header;
@@ -194,21 +199,82 @@ struct hep_ip6hdr
 };
 #endif
 
+/**
+ * @brief Initialize EEP proccess
+ *
+ * This funtion will setup all required sockets both for
+ * send and receiving information depending on sngrep configuration.
+ *
+ * It will also launch a thread to received EEP data if configured
+ * to do so.
+ *
+ * @return 1 on any error occurs, 0 otherwise
+ */
 int
 capture_eep_init();
 
+/**
+ * @brief Unitialize EEP process
+ *
+ * Close used sockets for receive and send data and stop server
+ * thread if server mode is enabled.
+ */
 void
 capture_eep_deinit();
 
+/**
+ * @brief Send a captured packet
+ *
+ * Send a packet encapsulated into EEP through the client socket.
+ * This function will only handle SIP packets if EEP client mode
+ * has been enabled.
+ *
+ * @param pkt Packet Structure data
+ * @return 1 on any error occurs, 0 otherwise
+ */
 int
 capture_eep_send(capture_packet_t *pkt);
 
+/**
+ * @brief Received a captured packet
+ *
+ * Wait for a packet to be received through the EEP server. This
+ * function will parse received EEP data and create a new packet
+ * structure.
+ *
+ * @return NULL on any error, packet structure otherwise
+ */
 capture_packet_t *
 capture_eep_receive();
 
+/**
+ * @brief Set EEP server url
+ *
+ * Set EEP servermode settings using a url in the format:
+ *  - proto:address:port
+ * For example:
+ *  - udp:10.10.0.100:9060
+ *  - udp:0.0.0.0:9960
+ *
+ * @param url URL to be parsed
+ * @return 0 if url has been parsed, 1 otherwise
+ */
 int
 capture_eep_set_server_url(const char *url);
 
+/**
+ * @brief Set EEP client url
+ *
+ * Set EEP clientmode settings using a url in the format:
+ *  - proto:address:port
+ * For example:
+ *  - udp:10.10.0.100:9060
+ *  - udp:0.0.0.0:9960
+ *
+ * @param url URL to be parsed
+ * @return 0 if url has been parsed, 1 otherwise
+ */
 int
 capture_eep_set_client_url(const char *url);
 
+#endif /* __SNGREP_CAPTURE_EEP_H */
