@@ -334,7 +334,6 @@ capture_packet_parse(capture_packet_t *pkt)
         }
 
         // Check if this packet belongs to a RTP stream
-        // TODO Store this packet in the stream
         if ((stream = rtp_check_stream(pkt, pkt->ip_src, pkt->sport, pkt->ip_dst, pkt->dport))) {
             // We have an RTP packet!
             capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
@@ -558,6 +557,7 @@ capture_packet_free_frames(capture_packet_t *pkt)
 
     while ((frame = vector_iterator_next(&it))) {
         sng_free(frame->data);
+        frame->data = NULL;
     }
 }
 

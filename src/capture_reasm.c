@@ -122,11 +122,6 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Remove IP Header length from payload
     *size = *caplen - capinfo->link_hl - ip_hl;
 
-#ifdef USE_IPV6
-    if (ip_ver == 6)
-        *size -= ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
-#endif
-
     // If no fragmentation
     if (ip_frag == 0) {
         // Just create a new packet with given network data
