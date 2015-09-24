@@ -55,7 +55,6 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_SAVEPATH,           "savepath",           SETTING_FMT_STRING,  "",          NULL },
     { SETTING_DISPLAY_HOST,       "displayhost",        SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_DISPLAY_ALIAS,      "displayalias",       SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
-    { SETTING_CL_FILTER,          "cl.filter",          SETTING_FMT_STRING,  "",          NULL },
     { SETTING_CL_SCROLLSTEP,      "cl.scrollstep",      SETTING_FMT_NUMBER,  "4",         NULL },
     { SETTING_CF_FORCERAW,        "cf.forceraw",        SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_CF_RAWMINWIDTH,     "cf.rawminwidth",     SETTING_FMT_NUMBER,  "40",        NULL },

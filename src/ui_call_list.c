@@ -115,12 +115,6 @@ call_list_create()
     vector_iterator_set_filter(&info->calls, filter_check_call);
     info->cur_call = info->first_call = -1;
 
-    // Set defualt filter text if configured
-    if (setting_get_value(SETTING_CL_FILTER)) {
-        set_field_buffer(info->fields[FLD_LIST_FILTER], 0, setting_get_value(SETTING_CL_FILTER));
-        call_list_form_activate(panel, 0);
-    }
-
     // Return the created panel
     return panel;
 }
