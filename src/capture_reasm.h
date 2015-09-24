@@ -36,24 +36,64 @@
  * @file capture_tcpreasm.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage reassembly TCP frames
+ * @brief Functions to manage reassembly IP/TCP packets
  *
  * This file contains the functions and structures to manage the reassembly of
- * captured tcp packets
- *
+ * captured packets.
  */
 
-#ifndef __SNGREP_CAPTURE_REASM_
-#define __SNGREP_CAPTURE_REASM_
+#ifndef __SNGREP_CAPTURE_REASM_H
+#define __SNGREP_CAPTURE_REASM_H
 
 #include "capture.h"
 
+/**
+ * @brief Reassembly capture IP fragments
+ *
+ * This function will try to assemble received PCAP data into a single IP packet.
+ * It will return a packet structure if no fragmentation is found or a full packet
+ * has been assembled.
+ *
+ * @note We assume packets higher than MAX_CAPTURE_LEN won't be SIP. This has been
+ * done to avoid reassembling too big packets, that aren't likely to be interesting
+ * for sngrep.
+ *
+ * TODO
+ * Assembly only works when all of the IP fragments are received in the good order.
+ * Properly check memory boundaries during packet reconstruction.
+ * Implement a way to timeout pending IP fragments after some time.
+ * TODO
+ *
+ * @param capinfo Packet capture session information
+ * @para header Header received from libpcap callback
+ * @para packet Packet contents received from libpcap callback
+ * @param size Packet size (not including Layer and Network headers)
+ * @param caplen Full packet size (current fragment -> whole assembled packet)
+ * @return a Packet structure when packet is not fragmented or fully reassembled
+ * @return NULL when packet has not been completely assembled
+ */
 capture_packet_t *
-capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char *packet, uint32_t *size, uint32_t *caplen);
+capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header,
+                        u_char *packet, uint32_t *size, uint32_t *caplen);
 
+/**
+ * @brief Reassembly capture TCP segments
+ *
+ * This function will try to assemble TCP segments of an existing packet.
+ *
+ * @note We assume packets higher than MAX_CAPTURE_LEN won't be SIP. This has been
+ * done to avoid reassembling too big packets, that aren't likely to be interesting
+ * for sngrep.
+ *
+ * @param packet Capture packet structure
+ * @param tcp TCP header extracted from capture packet data
+ * @param payload Assembled TCP packet payload content
+ * @param size_payload Payload length
+ * @return a Packet structure when packet is not segmented or fully reassembled
+ * @return NULL when packet has not been completely assembled
+ */
 capture_packet_t *
-capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload);
+capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp,
+                         u_char *payload, int size_payload);
 
-
-
-#endif /* __SNGREP_CAPTURE_REASM_ */
+#endif /* __SNGREP_CAPTURE_REASM_H */
