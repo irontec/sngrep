@@ -69,7 +69,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CR_SCROLLSTEP,      "cr.scrollstep",      SETTING_FMT_NUMBER,  "10",        NULL },
     { SETTING_FILTER_METHODS,     "filter.methods",     SETTING_FMT_STRING,  "",          NULL },
     { SETTING_EEP_SEND,           "eep.send",           SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
-    { SETTING_EEP_SEND_ADDR,      "eep.send.address",   SETTING_FMT_STRING,  "",          NULL },
+    { SETTING_EEP_SEND_ADDR,      "eep.send.address",   SETTING_FMT_STRING,  "10.1.1.1",  NULL },
     { SETTING_EEP_SEND_PORT,      "eep.send.port",      SETTING_FMT_NUMBER,  "9060",      NULL },
     { SETTING_EEP_SEND_PASS,      "eep.send.pass",      SETTING_FMT_STRING,  "myHep",     NULL },
     { SETTING_EEP_LISTEN,         "eep.listen",         SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },

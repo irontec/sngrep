@@ -48,8 +48,7 @@ settings_category_t categories[] = {
     { CAT_SETTINGS_INTERFACE,  "Interface" },
     { CAT_SETTINGS_CAPTURE,    "Capture" },
     { CAT_SETTINGS_CALL_FLOW,  "Call Flow" },
-    { CAT_SETTINGS_CALL_LIST,  "Call List" },
-    { CAT_SETTINGS_CALL_RAW,  "Call Raw" },
+    { CAT_SETTINGS_EEP_HOMER,  "EEP/HEP Homer" },
     { 0 , NULL },
 };
 
@@ -70,7 +69,6 @@ settings_entry_t entries[] = {
     { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_SIP_NOINCOMPLETE,   SETTING_SIP_NOINCOMPLETE,   "Capture full transactions ................." },
     { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_SIP_CALLS,          SETTING_SIP_CALLS,          "Only capture calls * ......................" },
     { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_SAVEPATH,           SETTING_SAVEPATH,           "Default Save path ........................." },
-    { CAT_SETTINGS_CALL_LIST,  FLD_SETTINGS_CL_SCROLLSTEP,      SETTING_CL_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_FORCERAW,        SETTING_CF_FORCERAW,        "Show message preview panel ................" },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_HIGHTLIGHT,      SETTING_CF_HIGHTLIGHT,      "Selected message hightlight ..............." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_LOCALHIGHLIGHT,  SETTING_CF_LOCALHIGHLIGHT,  "Highlight local addresses ................." },
@@ -79,7 +77,14 @@ settings_entry_t entries[] = {
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DELTA,           SETTING_CF_DELTA,           "Show delta time between messages .........." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_MEDIA,           SETTING_CF_MEDIA,           "Show RTP media streams ...................." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SCROLLSTEP,      SETTING_CF_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
-    { CAT_SETTINGS_CALL_RAW,   FLD_SETTINGS_CR_SCROLLSTEP,      SETTING_CR_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND,           SETTING_EEP_SEND,           "Send all captured SIP packets ............." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_ADDR,      SETTING_EEP_SEND_ADDR,      "Send EEP packet address ..................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_PORT,      SETTING_EEP_SEND_PORT,      "Send EEP packet port ......................" },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_PASS,      SETTING_EEP_SEND_PASS,      "EEP send password ........................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN,         SETTING_EEP_LISTEN,         "Listen for eep packets ...................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_ADDR,    SETTING_EEP_LISTEN_ADDR,    "Listen EEP packet address ................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PORT,    SETTING_EEP_LISTEN_PORT,    "Listen EEP packet port ...................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PASS,    SETTING_EEP_LISTEN_PASS,    "EEP server password ......................." },
     { 0 , 0, 0, NULL },
 };
 
