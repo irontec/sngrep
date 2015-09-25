@@ -256,21 +256,6 @@ int
 call_list_help(PANEL *panel);
 
 /**
- * @brief Request confirmation before exit
- *
- * This function will request the user to confirm exit from
- * the program. This message can be avoided using configuration
- * option cl.noexitprompt 0
- * The default button can be configured using option
- * cl.defexitbutton (default 1, that means yes)
- *
- * @param panel Call list panel pointer
- * @return 27 if user confirmed exit, 0 otherwise
- */
-int
-call_list_exit_confirm(PANEL *panel);
-
-/**
  * @brief Add a column the Call List
  *
  * This function will add a new column to the Call List panel

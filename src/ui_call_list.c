@@ -585,7 +585,11 @@ call_list_handle_key(PANEL *panel, int key)
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested
                 if (setting_enabled(SETTING_EXITPROMPT)) {
-                    return call_list_exit_confirm(panel);
+                    if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
+                        return KEY_ESC;
+                    } else {
+                        return 0;
+                    }
                 } else {
                     return KEY_ESC;
                 }
@@ -748,72 +752,6 @@ call_list_help(PANEL *panel)
     // Press any key to close
     wgetch(help_win);
     delwin(help_win);
-
-    return 0;
-}
-
-int
-call_list_exit_confirm(PANEL *panel)
-{
-    WINDOW *exit_win;
-    int c;
-
-    // Initial exit status
-    int exit = 1;
-
-    // Create a new panel and show centered
-    exit_win = newwin(8, 40, (LINES - 8) / 2, (COLS - 40) / 2);
-    keypad(exit_win, TRUE);
-
-    // Set the window title
-    mvwprintw(exit_win, 1, 13, "Confirm exit");
-
-    // Write border and boxes around the window
-    wattron(exit_win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    box(exit_win, 0, 0);
-    mvwhline(exit_win, 2, 1, ACS_HLINE, 40);
-    mvwhline(exit_win, 5, 1, ACS_HLINE, 40);
-    mvwaddch(exit_win, 2, 0, ACS_LTEE);
-    mvwaddch(exit_win, 5, 0, ACS_LTEE);
-    mvwaddch(exit_win, 2, 39, ACS_RTEE);
-    mvwaddch(exit_win, 5, 39, ACS_RTEE);
-
-    // Exit confirmation message message
-    wattron(exit_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(exit_win, 3, 2, "Are you sure you want to quit?");
-    wattroff(exit_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-
-    for (;;) {
-        // A list of available keys in this window
-        if (exit)
-            wattron(exit_win, A_REVERSE);
-        mvwprintw(exit_win, 6, 10, "[  Yes  ]");
-        wattroff(exit_win, A_REVERSE);
-        if (!exit)
-            wattron(exit_win, A_REVERSE);
-        mvwprintw(exit_win, 6, 20, "[  No   ]");
-        wattroff(exit_win, A_REVERSE);
-
-        c = wgetch(exit_win);
-        switch (c) {
-            case KEY_RIGHT:
-                exit = 0;
-                break;
-            case KEY_LEFT:
-                exit = 1;
-                break;
-            case KEY_TAB:
-                exit = (exit) ? 0 : 1;
-                break;
-            case KEY_SPACE:
-            case KEY_ENTER:
-            case KEY_INTRO:
-                delwin(exit_win);
-                // If we return ESC, we let ui_manager to handle this
-                // key and exit sngrep gracefully
-                return (exit) ? KEY_ESC : 0;
-        }
-    }
 
     return 0;
 }

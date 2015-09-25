@@ -435,8 +435,8 @@ save_to_file(PANEL *panel)
     sprintf(fullfile, "%s%s", savepath, savefile);
 
     if (access(fullfile, R_OK) == 0) {
-        dialog_run("Error: file %s already exists.", fullfile);
-        return 1;
+        if (dialog_confirm("Overwrite confirmation", "Selected file already exits.\n Do you want to overwrite it?", "Yes,No") != 0)
+            return 1;
     }
 
     // Don't allow to save no packets!

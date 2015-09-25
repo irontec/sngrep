@@ -53,7 +53,7 @@
 #define REFRESHTHSECS   2
 //! Default dialog dimensions
 #define DIALOG_MAX_WIDTH 100
-#define DIALOG_MIN_WIDTH 60
+#define DIALOG_MIN_WIDTH 40
 
 //! Shorter declaration of ui structure
 typedef struct ui ui_t;
@@ -407,5 +407,8 @@ dialog_progress_set_value(WINDOW *win, int perc);
 
 void
 dialog_progress_destroy(WINDOW *win);
+
+int
+dialog_confirm(const char *title, const char *text, const char *options);
 
 #endif    // __SNGREP_UI_MANAGER_H

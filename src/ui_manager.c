@@ -700,7 +700,7 @@ dialog_progress_run(const char *fmt, ...)
     height = 6 + (strlen(textva) / 50);
     width = strlen(textva);
 
-    // Check we don't have a too big or small window
+    // Check we don't want a too big or small window
     if (width > DIALOG_MAX_WIDTH)
         width = DIALOG_MAX_WIDTH;
     if (width < DIALOG_MIN_WIDTH)
@@ -751,4 +751,144 @@ void
 dialog_progress_destroy(WINDOW *win)
 {
     delwin(win);
+}
+
+int
+dialog_confirm(const char *title, const char *text, const char *options)
+{
+    WINDOW *dialog_win;
+    int c, i, curs, newl, height, width;
+    char *str, *tofree, *option, *word;
+    int selected = 0;
+    int optioncnt = 1;
+    int col = 2;
+    int line = 3;
+    char opts[4][10];
+
+    // Initialize
+    memset(opts, 0, 4 * 10);
+
+    // Check how many options exists
+    for (i=0; options[i]; i++) {
+        if (options[i] == ',')
+            optioncnt++;
+    }
+
+    // We only support 4 options
+    if (optioncnt > 4)
+        return -1;
+
+    // Calculate proper width taking into acount longest data
+    width = strlen(options) + 6 * optioncnt;
+    if (strlen(title) + 4 > width)
+        width = strlen(title) + 4;
+    if (strlen(text) > width && strlen(text) < 50)
+        width = strlen(text);
+
+    // Check we don't want a too big or small window
+    if (width > DIALOG_MAX_WIDTH)
+        width = DIALOG_MAX_WIDTH;
+    if (width < DIALOG_MIN_WIDTH)
+        width = DIALOG_MIN_WIDTH;
+
+    // Determine dialog dimensions
+    height = 7; // Minimum for header and button lines
+    height += (strlen(text) / width);   // Space for the text.
+    // Add one extra line for each newline in the text
+    for (i=0; text[i]; i++) {
+        if (text[i] == '\n')
+            height++;
+    }
+
+    // Parse each line of payload looking for sdp information
+    tofree = str = strdup((char*)options);
+    i = 0;
+    while ((option = strsep(&str, ",")) != NULL) {
+        strcpy(opts[i++], option);
+    }
+    sng_free(tofree);
+
+    // Create a new panel and show centered
+    dialog_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
+    keypad(dialog_win, TRUE);
+    curs = curs_set(0);
+
+    // Set the window title
+    mvwprintw(dialog_win, 1, (width - strlen(title)) / 2, title);
+
+    // Write border and boxes around the window
+    wattron(dialog_win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    box(dialog_win, 0, 0);
+
+    mvwhline(dialog_win, 2, 1, ACS_HLINE, width);
+    mvwaddch(dialog_win, 2, 0, ACS_LTEE);
+    mvwaddch(dialog_win, 2, width - 1, ACS_RTEE);
+
+    mvwhline(dialog_win, height - 3, 1, ACS_HLINE, width);
+    mvwaddch(dialog_win, height - 3, 0, ACS_LTEE);
+    mvwaddch(dialog_win, height - 3, width - 1, ACS_RTEE);
+
+    // Exit confirmation message message
+    wattron(dialog_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    // Write the message into the screen
+    tofree = str = strdup((char*)text);
+    newl = 0;
+    while ((word = strsep(&str, " ")) != NULL) {
+        if (word[strlen(word)-1] == '\n') {
+            word[strlen(word)-1] = '\0';
+            newl = 1;
+        }
+
+        if (col + strlen(word) > width - 2) {
+            line++;
+            col = 2;
+        }
+        mvwprintw(dialog_win, line, col, "%s", word);
+        col += strlen(word) + 1;
+        if (newl) {
+            line++;
+            col = 2;
+            newl = 0;
+        }
+    }
+    sng_free(tofree);
+    wattroff(dialog_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+
+    for (;;) {
+        // A list of available keys in this window
+        for (i = 0; i < optioncnt; i++ ) {
+            if (i == selected) wattron(dialog_win, A_REVERSE);
+            mvwprintw(dialog_win, height - 2, 10 + 10 * i, "[  %s  ]", opts[i]);
+            wattroff(dialog_win, A_REVERSE);
+        }
+
+        c = wgetch(dialog_win);
+        switch (c) {
+            case KEY_RIGHT:
+                selected++;
+                break;
+            case KEY_TAB:
+            case KEY_LEFT:
+                selected--;
+                break;
+            case KEY_SPACE:
+            case KEY_ENTER:
+            case KEY_INTRO:
+                goto done;
+            case KEY_ESC:
+                selected = -1;
+                goto done;
+        }
+
+        // Cycle through ooptions
+        if (selected > optioncnt - 1)
+            selected = 0;
+        if (selected < 0)
+            selected = optioncnt - 1;
+    }
+
+done:
+    delwin(dialog_win);
+    curs_set(curs);
+    return selected;
 }
