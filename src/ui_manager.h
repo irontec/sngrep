@@ -389,11 +389,6 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting);
  * @brief Draw a centered dialog with a message
  *
  * Create a centered dialog with a message.
- * TODO improvements
- *  - Icon
- *  - Buttons
- *  - Dimensions
- *
  * @param msg Message to be drawn
  */
 int

@@ -149,14 +149,11 @@ sip_get_callid(const char* payload, char *callid);
  * Use this function to convert raw data into call and message
  * structures. This is mainly used to load data from a file or
  *
- * @todo This functions should stop using ngrep header format
- *
- * @param header Raw ngrep header
- * @param payload Raw ngrep payload
+ * @param packet Packet structure pointer
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport);
+sip_check_packet(capture_packet_t *packet);
 
 /**
  * @brief Getter for calls linked list size

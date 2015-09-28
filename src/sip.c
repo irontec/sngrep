@@ -24,8 +24,6 @@
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in sip.h
- *
- * @todo Replace structures for their typedef shorter names
  */
 #include "config.h"
 #include <stdlib.h>
@@ -216,12 +214,14 @@ sip_get_callid(const char* payload, char *callid)
 }
 
 sip_msg_t *
-sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport)
+sip_check_packet(capture_packet_t *packet)
 {
     ENTRY entry;
     sip_msg_t *msg;
     sip_call_t *call;
     char callid[1024];
+    const char *src, *dst;
+    u_short sport, dport;
     char msg_src[ADDRESSLEN];
     char msg_dst[ADDRESSLEN];
     u_char payload[MAX_SIP_PAYLOAD];
@@ -229,6 +229,12 @@ sip_load_message(capture_packet_t *packet, const char *src, u_short sport, const
     // Max SIP payload allowed
     if (packet->payload_len > MAX_SIP_PAYLOAD)
         return NULL;
+
+    // Get Addresses from packet
+    src = packet->ip_src;
+    dst = packet->ip_dst;
+    sport = packet->sport;
+    dport = packet->dport;
 
     // Get payload from packet(s)
     memset(payload, 0, MAX_SIP_PAYLOAD);

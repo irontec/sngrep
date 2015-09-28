@@ -149,15 +149,25 @@ rtp_get_standard_format(u_int code)
 }
 
 rtp_stream_t *
-rtp_check_stream(capture_packet_t *packet, const char *src, u_short sport, const char* dst, u_short dport)
+rtp_check_packet(capture_packet_t *packet)
 {
-    // Media structure for RTP packets
+    const char *src, *dst;
+    u_short sport, dport;
     rtp_stream_t *stream;
     rtp_stream_t *reverse;
-    // RTP payload data
     u_int format;
-    u_char *payload = capture_packet_get_payload(packet);
-    uint32_t size = capture_packet_get_payload_len(packet);
+    u_char *payload;
+    uint32_t size;
+
+    // Get packet data
+    payload = capture_packet_get_payload(packet);
+    size = capture_packet_get_payload_len(packet);
+
+    // Get Addresses from packet
+    src = packet->ip_src;
+    dst = packet->ip_dst;
+    sport = packet->sport;
+    dport = packet->dport;
 
     // Check if we have at least RTP type
     if (size < 2)

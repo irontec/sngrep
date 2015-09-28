@@ -95,13 +95,6 @@ enum SSLConnectionState {
     TCP_STATE_CLOSED
 };
 
-/**
- * XXX We could remove this enum and HandshakeType because
- * they are not really used as enums.
- * Enumerated values are, in most cases, stored as 4 bytes integer
- * while the value it represents in SSL headers is only one byte,
- * so we may use SSL3_ defines instead.
- */
 //! ContentType values as defined in RFC5246
 enum ContentType {
     change_cipher_spec = SSL3_RT_CHANGE_CIPHER_SPEC,

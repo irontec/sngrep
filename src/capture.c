@@ -321,25 +321,25 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
 }
 
 int
-capture_packet_parse(capture_packet_t *pkt)
+capture_packet_parse(capture_packet_t *packet)
 {
     // Media structure for RTP packets
     rtp_stream_t *stream;
 
     // We're only interested in packets with payload
-    if (capture_packet_get_payload_len(pkt)) {
+    if (capture_packet_get_payload_len(packet)) {
         // Parse this header and payload
-        if (sip_load_message(pkt, pkt->ip_src, pkt->sport, pkt->ip_dst, pkt->dport)) {
+        if (sip_check_packet(packet)) {
             return 0;
         }
 
         // Check if this packet belongs to a RTP stream
-        if ((stream = rtp_check_stream(pkt, pkt->ip_src, pkt->sport, pkt->ip_dst, pkt->dport))) {
+        if ((stream = rtp_check_packet(packet))) {
             // We have an RTP packet!
-            capture_packet_set_type(pkt, CAPTURE_PACKET_RTP);
+            capture_packet_set_type(packet, CAPTURE_PACKET_RTP);
             // Store this pacekt if capture rtp is enabled
             if (capture_cfg.rtp_capture) {
-                call_add_rtp_packet(stream_get_call(stream), pkt);
+                call_add_rtp_packet(stream_get_call(stream), packet);
                 return 0;
             }
         }
