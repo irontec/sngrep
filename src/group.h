@@ -45,8 +45,6 @@ typedef struct sip_call_group sip_call_group_t;
  * This structure is used for displaying more than one dialog in the
  * same call flow. Instead of displaying a call flow, we will display
  * a calls group flow.
- *
- * @fixme Remove 1024 "limitation"
  */
 struct sip_call_group {
     //! Calls array in the group

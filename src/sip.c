@@ -383,15 +383,15 @@ sip_call_t *
 sip_find_by_xcallid(const char *xcallid)
 {
     sip_call_t *cur;
-    int i;
+    vector_iter_t it;
 
-    //FIXME Iterator pls?
-    for (i=0; i < vector_count(calls.list); i++) {
-        cur = vector_item(calls.list, i);
+    // Find the call with the given X-Call-Id
+    while ((cur = vector_iterator_next(&it))) {
         if (cur->xcallid && !strcmp(cur->xcallid, xcallid)) {
             return cur;
         }
     }
+    // None found
     return NULL;
 }
 
