@@ -118,8 +118,6 @@ enum sngrep_colors_pairs {
  * @brief Enum for available panel types
  *
  * Mostly used for managing keybindings and offloop ui refresh
- *
- * FIXME Replace this IDs for something more representative
  */
 enum panel_types {
     //! Call List ui screen
@@ -312,12 +310,10 @@ default_handle_key(ui_t *ui, int key);
  * Draw a box around passed windows  with two bars
  * (top and bottom) of one line each.
  *
- * FIXME The parameter should be a panel, or ui, but not a window..
- *
  * @param win Window to draw borders on
  */
 void
-title_foot_box(WINDOW *win);
+title_foot_box(PANEL *panel);
 
 /**
  * @brief Draw title at the top of the panel

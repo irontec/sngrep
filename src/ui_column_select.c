@@ -131,7 +131,7 @@ column_select_create()
     // Set the window title and boxes
     mvwprintw(win, 1, width / 2 - 14, "Call List columns selection");
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(panel_window(panel));
+    title_foot_box(panel);
     mvwhline(win, 6, 1, ACS_HLINE, width - 1);
     mvwaddch(win, 6, 0, ACS_LTEE);
     mvwaddch(win, 6, width - 1, ACS_RTEE);

@@ -386,9 +386,14 @@ default_handle_key(ui_t *ui, int key)
 }
 
 void
-title_foot_box(WINDOW *win)
+title_foot_box(PANEL *panel)
 {
     int height, width;
+    WINDOW *win = panel_window(panel);
+
+    // Sanity check
+    if (!win)
+        return;
 
     // Get window size
     getmaxyx(win, height, width);

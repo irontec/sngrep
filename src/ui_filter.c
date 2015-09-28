@@ -155,7 +155,7 @@ filter_create()
     // Set the window title and boxes
     mvwprintw(win, 1, 18, "Filter options");
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(panel_window(panel));
+    title_foot_box(panel);
     mvwhline(win, 7, 1, ACS_HLINE, 49);
     mvwaddch(win, 7, 0, ACS_LTEE);
     mvwaddch(win, 7, 49, ACS_RTEE);

@@ -123,7 +123,7 @@ save_create()
     // Set window boxes
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     // Window border
-    title_foot_box(panel_window(panel));
+    title_foot_box(panel);
 
     // Header and footer lines
     mvwhline(win, height - 3, 1, ACS_HLINE, width - 1);
