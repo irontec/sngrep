@@ -106,6 +106,8 @@ struct sip_attr_hdr {
     char *desc;
     //! Attribute default display width
     int dwidth;
+    //! This function determines the color of this attribute in CallList
+    int (*color)(const char *value);
 };
 
 /**
@@ -184,5 +186,32 @@ sip_attr_get_width(enum sip_attr_id id);
  */
 enum sip_attr_id
 sip_attr_from_name(const char *name);
+
+/**
+ * @brief Determine the color of the attribute in Call List
+ *
+ * Return the color pair to display an attribute in
+ * call list or -1 if default color must be used.
+ */
+int
+sip_attr_get_color(int id, const char *value);
+
+/**
+ * @brief Determine the color of the attribute in Call List
+ *
+ * This function can be used to show the Method attribute
+ * with different colours in Call List.
+ */
+int
+sip_attr_color_method(const char *value);
+
+/**
+ * @brief Determine the color of the attribute in Call List
+ *
+ * This function can be used to show the state attribute
+ * with different colours in Call List.
+ */
+int
+sip_attr_color_state(const char *value);
 
 #endif /* __SNGREP_SIP_ATTR_H */

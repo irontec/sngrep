@@ -205,7 +205,6 @@ call_update_state(sip_call_t *call, sip_msg_t *msg);
  *
  * This function will be used to avoid accessing call structure
  * fields directly.
- * @todo Code a proper way to store this information
  *
  * @param call SIP call structure
  * @param id Attribute id

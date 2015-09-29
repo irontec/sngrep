@@ -57,12 +57,12 @@ init_options()
 
     // Add Call list column options
     set_option_value("cl.column0", "index");
-    set_option_value("cl.column1", "sipfrom");
-    set_option_value("cl.column2", "sipto");
-    set_option_value("cl.column3", "msgcnt");
-    set_option_value("cl.column4", "src");
-    set_option_value("cl.column5", "dst");
-    set_option_value("cl.column6", "method");
+    set_option_value("cl.column1", "method");
+    set_option_value("cl.column2", "sipfrom");
+    set_option_value("cl.column3", "sipto");
+    set_option_value("cl.column4", "msgcnt");
+    set_option_value("cl.column5", "src");
+    set_option_value("cl.column6", "dst");
     set_option_value("cl.column7", "state");
 
     // Initialize keybindings

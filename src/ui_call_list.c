@@ -252,11 +252,14 @@ call_list_draw_footer(PANEL *panel)
 void
 call_list_draw_list(PANEL *panel)
 {
-
+    WINDOW *win;
     int height, width, cline = 0;
     struct sip_call *call;
-    char linetext[256];
-    WINDOW *win;
+    int i, collen;
+    char coltext[256];
+    int colid;
+    int colpos;
+    int color;
 
     // Get panel info
     call_list_info_t *info = call_list_info(panel);
@@ -289,26 +292,55 @@ call_list_draw_list(PANEL *panel)
         if (!call_msg_count(call))
             continue;
 
+        // Reverse colors on monochrome terminals
+        if (!has_colors())
+            wattron(win, A_REVERSE);
+
         // Show bold selected rows
         if (call_group_exists(info->group, call))
             wattron(win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (call == vector_item(vector_iterator_vector(&info->calls), info->cur_call)) {
-            // Reverse colors on monochrome terminals
-            if (!has_colors())
-                wattron(win, A_REVERSE);
+        if (call->index == info->cur_call + 1)
             wattron(win, COLOR_PAIR(CP_DEF_ON_BLUE));
-        }
-
         // Set current line background
         clear_line(win, cline);
         // Set current line selection box
         mvwprintw(win, cline, 2, call_group_exists(info->group, call) ? "[*]" : "[ ]");
 
-        // Print call line
-        memset(linetext, 0, sizeof(linetext));
-        mvwprintw(win, cline, 6, "%-*s", width - 6, call_list_line_text(panel, call, linetext));
+        // Print requested columns
+        colpos = 6;
+        for (i = 0; i < info->columncnt; i++) {
+            // Get current column id
+            colid = info->columns[i].id;
+            // Get current column width
+            collen = info->columns[i].width;
+            // Check if next column fits on window width
+            if (colpos + collen >= width)
+                break;
+
+            // Initialize column text
+            memset(coltext, 0, sizeof(coltext));
+
+            // Get call attribute for current column
+            if (!call_get_attribute(call, colid, coltext)) {
+                colpos += collen + 1;
+                continue;
+            }
+
+            // Enable attribute color (if not current one)
+            color = 0;
+            if (call->index != info->cur_call + 1 && (color = sip_attr_get_color(colid, coltext)) > 0)
+                wattron(win, color);
+
+            // Add the column text to the existing columns
+            mvwprintw(win, cline, colpos, "%.*s", collen, coltext);
+            colpos += collen + 1;
+
+            // Disable attribute color
+            if (color > 0)
+                wattroff(win, color);
+        }
         cline++;
 
         wattroff(win, COLOR_PAIR(CP_DEFAULT));

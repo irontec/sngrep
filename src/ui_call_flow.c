@@ -24,10 +24,8 @@
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in ui_call_flow.h
- *
- * @todo Code help screen. Please.
- *
  */
+
 #include "config.h"
 #include <stdlib.h>
 #include <string.h>

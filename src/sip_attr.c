@@ -33,6 +33,7 @@
 #include "option.h"
 #include "sip_attr.h"
 #include "util.h"
+#include "ui_manager.h"
 
 static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 },
@@ -46,12 +47,12 @@ static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_XCALLID,     "xcallid",     NULL,   "X-Call-ID",     50 },
     { SIP_ATTR_DATE,        "date",        NULL,   "Date",          10 },
     { SIP_ATTR_TIME,        "time",        NULL,   "Time",          8 },
-    { SIP_ATTR_METHOD,      "method",      NULL,   "Method",        15 },
+    { SIP_ATTR_METHOD,      "method",      NULL,   "Method",        10, sip_attr_color_method },
     { SIP_ATTR_SDP_ADDRESS, "sdpaddress",  NULL,   "SDP Address",   22 },
     { SIP_ATTR_SDP_PORT,    "sdpport",     NULL,   "SDP Port",      5 },
     { SIP_ATTR_TRANSPORT,   "transport",   "Trans", "Transport",    3 },
     { SIP_ATTR_MSGCNT,      "msgcnt",      "Msgs", "Message Count", 5 },
-    { SIP_ATTR_CALLSTATE,   "state",       NULL,   "Call State",    10 },
+    { SIP_ATTR_CALLSTATE,   "state",       NULL,   "Call State",    10, sip_attr_color_state },
     { SIP_ATTR_CONVDUR,     "convdur",     "ConvDur", "Conversation Duration", 7 },
     { SIP_ATTR_TOTALDUR,    "totaldur",    "TotalDur", "Total Duration", 8 }
 };
@@ -116,4 +117,49 @@ sip_attr_from_name(const char *name)
     return -1;
 }
 
+int
+sip_attr_get_color(int id, const char *value)
+{
+    sip_attr_hdr_t *header;
+    if ((header = sip_attr_get_header(id))) {
+        if (header->color) {
+            return header->color(value);
+        }
+    }
+    return 0;
+}
 
+int
+sip_attr_color_method(const char *value)
+{
+    switch (sip_method_from_str(value)) {
+        case SIP_METHOD_INVITE:
+            return COLOR_PAIR(CP_RED_ON_DEF) | A_BOLD;
+        case SIP_METHOD_NOTIFY:
+            return COLOR_PAIR(CP_YELLOW_ON_DEF);
+        case SIP_METHOD_OPTIONS:
+            return COLOR_PAIR(CP_YELLOW_ON_DEF);
+        case SIP_METHOD_REGISTER:
+            return COLOR_PAIR(CP_MAGENTA_ON_DEF);
+        case SIP_METHOD_SUBSCRIBE:
+            return COLOR_PAIR(CP_BLUE_ON_DEF);
+        default:
+            return 0;
+    }
+}
+
+int
+sip_attr_color_state(const char *value)
+{
+    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_CALLSETUP)))
+        return COLOR_PAIR(CP_YELLOW_ON_DEF);
+    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_INCALL)))
+        return COLOR_PAIR(CP_BLUE_ON_DEF);
+    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_COMPLETED)))
+        return COLOR_PAIR(CP_GREEN_ON_DEF);
+    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_CANCELLED)))
+        return COLOR_PAIR(CP_RED_ON_DEF);
+    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_REJECTED)))
+        return COLOR_PAIR(CP_RED_ON_DEF);
+    return 0;
+}
