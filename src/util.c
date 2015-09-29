@@ -60,6 +60,17 @@ sng_free(void *ptr)
         free(ptr);
 }
 
+int
+timeval_is_older(struct timeval t1, struct timeval t2)
+{
+    long long int t1sec, t2sec;
+    t1sec = t1.tv_sec;
+    t1sec = t1sec * 1000000;
+    t2sec = t2.tv_sec;
+    t2sec = t2sec * 1000000;
+    return ((t2sec + t2.tv_usec) - (t1sec + t1.tv_usec) < 0);
+}
+
 const char *
 timeval_to_date(struct timeval time, char *out)
 {

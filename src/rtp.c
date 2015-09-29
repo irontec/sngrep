@@ -275,3 +275,14 @@ rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, c
 
     return ret;
 }
+
+int
+stream_is_older(rtp_stream_t *one, rtp_stream_t *two)
+{
+    // Yes, you are older than nothing
+    if (!two)
+        return 1;
+
+    // Otherwise
+    return timeval_is_older(one->time, two->time);
+}

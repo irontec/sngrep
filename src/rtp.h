@@ -102,4 +102,15 @@ rtp_find_stream(const char *ip_src, u_short sport, const char *ip_dst, u_short d
 rtp_stream_t *
 rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format);
 
+/**
+ * @brief Check if a message is older than other
+ *
+ * @param one rtp stream pointer
+ * @param two rtp stream pointer
+ * @return 1 if one is older than two
+ * @return 0 if equal or two is older than one
+ */
+int
+stream_is_older(rtp_stream_t *one, rtp_stream_t *two);
+
 #endif /* __SNGREP_RTP_H */

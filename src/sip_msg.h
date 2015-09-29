@@ -180,5 +180,16 @@ msg_get_time(sip_msg_t *msg);
 const char *
 msg_get_attribute(struct sip_msg *msg, int id, char *value);
 
+/**
+ * @brief Check if a message is older than other
+ *
+ * @param one SIP message pointer
+ * @param two SIP message pointer
+ * @return 1 if one is older than two
+ * @return 0 if equal or two is older than one
+ */
+int
+msg_is_older(sip_msg_t *one, sip_msg_t *two);
+
 
 #endif /* __SNGREP_SIP_MSG_H */

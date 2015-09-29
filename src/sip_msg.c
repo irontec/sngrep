@@ -168,3 +168,14 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
     return strlen(value) ? value : NULL;
 
 }
+
+int
+msg_is_older(sip_msg_t *one, sip_msg_t *two)
+{
+    // Yes, you are older than nothing
+    if (!two)
+        return 1;
+
+    // Otherwise
+    return timeval_is_older(msg_get_time(one), msg_get_time(two));
+}

@@ -118,8 +118,8 @@ call_group_get_next(sip_call_group_t *group, sip_call_t *call)
         first = vector_first(c->msgs);
 
         // Is first message of this call older?
-        if (sip_msg_is_older(first, vector_first(call->msgs))
-            && (!next || !sip_msg_is_older(first, next))) {
+        if (msg_is_older(first, vector_first(call->msgs))
+            && (!next || !msg_is_older(first, next))) {
             next = first;
             break;
         }
@@ -191,7 +191,7 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
         cand = NULL;
         while ((cand = vector_iterator_next(&msgs))) {
             // candidate must be between msg and next
-            if (sip_msg_is_older(cand, msg) && (!next || !sip_msg_is_older(cand, next))) {
+            if (msg_is_older(cand, msg) && (!next || !msg_is_older(cand, next))) {
                 next = cand;
                 break;
             }
@@ -234,45 +234,12 @@ call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream)
                 continue;
 
             // candidate must be between msg and next
-            if (rtp_stream_is_older(cand, stream) && (!next || rtp_stream_is_older(next, cand))) {
+            if (stream_is_older(cand, stream) && (!next || stream_is_older(next, cand))) {
                 next = cand;
             }
         }
     }
 
     return next;
-}
-
-int
-timeval_is_older(struct timeval t1, struct timeval t2)
-{
-    long long int t1sec, t2sec;
-    t1sec = t1.tv_sec;
-    t1sec = t1sec * 1000000;
-    t2sec = t2.tv_sec;
-    t2sec = t2sec * 1000000;
-    return ((t2sec + t2.tv_usec) - (t1sec + t1.tv_usec) < 0);
-}
-
-int
-sip_msg_is_older(sip_msg_t *one, sip_msg_t *two)
-{
-    // Yes, you are older than nothing
-    if (!two)
-        return 1;
-
-    // Otherwise
-    return timeval_is_older(msg_get_time(one), msg_get_time(two));
-}
-
-int
-rtp_stream_is_older(rtp_stream_t *one, rtp_stream_t *two)
-{
-    // Yes, you are older than nothing
-    if (!two)
-        return 1;
-
-    // Otherwise
-    return timeval_is_older(one->time, two->time);
 }
 

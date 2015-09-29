@@ -49,6 +49,16 @@ void
 sng_free(void *ptr);
 
 /**
+ * @brief Compare two timeval structures
+ *
+ * @param t1 First timeval structure
+ * @param t2 Second timval structure
+ * @return 1 if t1 > t2, 0 if t1 <= t2
+ */
+int
+timeval_is_older(struct timeval t1, struct timeval t2);
+
+/**
  * @brief Convert timeval to yyyy/mm/dd format
  */
 const char *

@@ -196,7 +196,7 @@ column_select_toggle_item(PANEL *panel, ITEM *item);
 /**
  * @brief Update menu after a change
  *
- * After moving an item or updating its selection status
+ * After moving an item or updating its selectioactivn status
  * menu must be redrawn.
  *
  * @param panel Column selection panel pointer
