@@ -133,12 +133,18 @@ key_bindings_dump();
 
 /**
  * @brief Bind a key to an action
+ *
+ * @param action One action defined in @key_actions
+ * @param key Keycode returned by getch
  */
 void
 key_bind_action(int action, int key);
 
 /**
  * @brief Unbind a key to an action
+ *
+ * @param action One action defined in @key_actions
+ * @param key Keycode returned by getch
  */
 void
 key_unbind_action(int action, int key);
@@ -148,36 +154,62 @@ key_unbind_action(int action, int key);
  *
  * Set start parameter to -1 for start searching the
  * first action.
+ *
+ * @param action One action defined in @key_actions
+ * @param key Keycode returned by getch
  */
 int
 key_find_action(int key, int start);
 
 /**
  * @brief Return the action id associate to an action str
+ *
+ * This function is used to translate keybindings configuration
+ * found in sngreprc file to internal Action IDs
+ *
+ * @param action Configuration string for an action
+ * @return action id from @key_actions or -1 if none found
  */
 int
 key_action_id(const char *action);
 
 /**
  * @brief Check if key is a printable ascii character
+ *
+ * @return 1 if key is alphanumeric or space
  */
 int
 key_is_printable(int key);
 
 /**
  * @brief Return a Human readable representation of a key
+ *
+ * @return Character string representing the key
  */
 const char *
 key_to_str(int key);
 
 /**
  * @brief Parse Human key declaration to curses key
+ *
+ * This function is used to translate keybindings configuration
+ * keys found in sngreprc file into internal ncurses keycodes
+ *
+ * @return ncurses keycode for the given key string
  */
 int
 key_from_str(const char *key);
 
 /**
  * @brief Return Human readable key for an action
+ *
+ * This function is used to display keybindings in the bottom bar
+ * of panels. Depending on sngrep configuration it will display the
+ * first associated keybding with the action or the second one
+ * (aka alternative).
+ *
+ * @param action One action defined in @key_actions
+ * @return Main/Alt keybinding for the given action
  */
 const char *
 key_action_key_str(int action);

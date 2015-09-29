@@ -34,6 +34,7 @@
 #define __SNGREP_GROUP_H_
 
 #include "config.h"
+#include "vector.h"
 #include "sip.h"
 
 //! Shorter declaration of sip_call_group structure
@@ -196,26 +197,51 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg);
 sip_msg_t *
 call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg);
 
+/**
+ * @brief Find the next stream in a call group
+ *
+ * @param callgroup SIP call group structure
+ * @param msg Actual stream structure from any call of the group
+ * @return next chronological stream in the group or NULL
+ */
 rtp_stream_t *
 call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream);
 
+/**
+ * @brief Compare two timeval structures
+ *
+ * FIXME This should be in util.h
+ *
+ * @param t1 First timeval structure
+ * @param t2 Second timval structure
+ * @return 1 if t1 > t2, 0 if t1 <= t2
+ */
 int
 timeval_is_older(struct timeval t1, struct timeval t2);
 
 /**
  * @brief Check if a message is older than other
  *
- * @todo Move this to sip.h
+ * FIXME Move this to sip.h
  *
  * @param one SIP message pointer
  * @param two SIP message pointer
- * @return 0 if the messages has the same timestamp
  * @return 1 if one is older than two
- * @return 2 if two is older than one
+ * @return 0 if equal or two is older than one
  */
 int
 sip_msg_is_older(sip_msg_t *one, sip_msg_t *two);
 
+/**
+ * @brief Check if a message is older than other
+ *
+ * FIXME Move this to rtp.h
+ *
+ * @param one rtp stream pointer
+ * @param two rtp stream pointer
+ * @return 1 if one is older than two
+ * @return 0 if equal or two is older than one
+ */
 int
 rtp_stream_is_older(rtp_stream_t *one, rtp_stream_t *two);
 

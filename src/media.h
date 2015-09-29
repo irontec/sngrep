@@ -60,9 +60,20 @@ struct sdp_media {
     struct sip_msg *msg;
 };
 
+/**
+ * @brief Allocate memory for a new media structure
+ *
+ * Create a structure for a new message sdp connection data.
+ *
+ * @param msg SIP Message pointer owner of this media
+ * @return new allocated structure
+ */
 sdp_media_t *
 media_create(struct sip_msg *msg);
 
+/**
+ * @brief Vector destroyer for media items
+ */
 void
 media_destroyer(void *item);
 
