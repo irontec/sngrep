@@ -349,26 +349,38 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     mvwprintw(win, cline, 2, "%s", msg_time);
 
     // Print delta from selected message
-    if (!info->selected) {
-        if (setting_enabled(SETTING_CF_DELTA))
-            timeval_to_delta(msg_get_time(msg), msg_get_time(call_group_get_next_msg(info->group, msg)), delta);
-    } else if (info->cur_arrow == arrow) {
-        timeval_to_delta(msg_get_time(call_flow_arrow_message(info->selected)), msg_get_time(msg), delta);
-    }
+    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        if (!info->selected) {
+            if (setting_enabled(SETTING_CF_DELTA))
+                timeval_to_delta(msg_get_time(msg), msg_get_time(call_group_get_next_msg(info->group, msg)), delta);
+        } else if (info->cur_arrow == arrow) {
+            timeval_to_delta(msg_get_time(call_flow_arrow_message(info->selected)), msg_get_time(msg), delta);
+        }
 
-    if (strlen(delta)) {
-        wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-        mvwprintw(win, cline + 1 , 2, "%15s", delta);
+        if (strlen(delta)) {
+            wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+            mvwprintw(win, cline + 1 , 2, "%15s", delta);
+        }
+        wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     }
-    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     // Get Message method (include extra info)
     sprintf(method, "%s", msg_method);
 
     // If message has sdp information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
-        // Show sdp tag in tittle
+        // Show sdp tag in title
         sprintf(method, "%s (SDP)", msg_method);
+    }
+
+    // If message has sdp information
+    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        // Show sdp tag in title
+        if (msg_has_sdp(msg)) {
+            sprintf(method, "%.*s (SDP)", 12, msg_method);
+        } else {
+            sprintf(method, "%.*s", 17, msg_method);
+        }
     }
 
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
@@ -433,7 +445,10 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Clear the line
     mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
     // Draw method
-    mvwprintw(win, cline++, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
+    mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
+
+    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+        cline++;
 
     // Draw media information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
@@ -467,6 +482,9 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
             mvwaddch(win, cline, startpos + 4, '<');
         }
     }
+
+    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+        mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
 
     // Turn off colors
     wattroff(win, COLOR_PAIR(CP_RED_ON_DEF));
@@ -703,6 +721,8 @@ int
 call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
+        if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+            return 1;
         if (!msg_has_sdp(arrow->msg))
             return 2;
         if (setting_has_value(SETTING_CF_SDP_INFO, "off"))
