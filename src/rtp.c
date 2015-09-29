@@ -91,10 +91,10 @@ stream_complete(rtp_stream_t *stream, const char *src, u_short sport, u_int form
 }
 
 void
-stream_add_packet(rtp_stream_t *stream, const struct pcap_pkthdr *header)
+stream_add_packet(rtp_stream_t *stream, capture_packet_t *packet)
 {
     if (stream->pktcnt == 0)
-        stream->time = header->ts;
+        stream->time = capture_packet_get_time(packet);
 
     stream->pktcnt++;
 }
@@ -205,8 +205,7 @@ rtp_check_packet(capture_packet_t *packet)
         }
 
         // Add packet to stream
-        // TODO Multiframe packet support
-        stream_add_packet(stream, ((capture_frame_t *)vector_first(packet->frames))->header);
+        stream_add_packet(stream, packet);
     }
 
     return stream;

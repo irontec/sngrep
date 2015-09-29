@@ -79,7 +79,7 @@ rtp_stream_t *
 stream_complete(rtp_stream_t *stream, const char *src, u_short sport, u_int format);
 
 void
-stream_add_packet(rtp_stream_t *stream, const struct pcap_pkthdr *header);
+stream_add_packet(rtp_stream_t *stream, capture_packet_t *packet);
 
 int
 stream_get_count(rtp_stream_t *stream);
