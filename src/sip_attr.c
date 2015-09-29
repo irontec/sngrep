@@ -121,6 +121,10 @@ int
 sip_attr_get_color(int id, const char *value)
 {
     sip_attr_hdr_t *header;
+
+    if (!setting_enabled(SETTING_CL_COLORATTR))
+        return 0;
+
     if ((header = sip_attr_get_header(id))) {
         if (header->color) {
             return header->color(value);
