@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <regex.h>
 #include <unistd.h>
+#include <errno.h>
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_column_select.h"
@@ -56,7 +57,7 @@ column_select_create()
     column_select_info_t *info;
 
     // Calculate window dimensions
-    height = 22;
+    height = 20;
     width = 60;
 
     // Cerate a new indow for the panel and form
@@ -72,13 +73,14 @@ column_select_create()
     set_panel_userptr(panel, (void*) info);
 
     // Initialize the fields
-    info->fields[FLD_COLUMNS_SNGREPRC] = new_field(1, 1, height - 4, 3, 0, 0);
-    info->fields[FLD_COLUMNS_SAVE] = new_field(1, 10, height - 2, 15, 0, 0);
-    info->fields[FLD_COLUMNS_CANCEL] = new_field(1, 10, height - 2, 35, 0, 0);
+    info->fields[FLD_COLUMNS_ACCEPT] = new_field(1, 10, height - 2, 13, 0, 0);
+    info->fields[FLD_COLUMNS_SAVE]   = new_field(1, 10, height - 2, 25, 0, 0);
+    info->fields[FLD_COLUMNS_CANCEL] = new_field(1, 10, height - 2, 37, 0, 0);
     info->fields[FLD_COLUMNS_COUNT] = NULL;
 
     // Field Labels
-    set_field_buffer(info->fields[FLD_COLUMNS_SAVE], 0, "[ Accept ]");
+    set_field_buffer(info->fields[FLD_COLUMNS_ACCEPT], 0, "[ Accept ]");
+    set_field_buffer(info->fields[FLD_COLUMNS_SAVE],   0, "[  Save  ]");
     set_field_buffer(info->fields[FLD_COLUMNS_CANCEL], 0, "[ Cancel ]");
 
     // Create the form and post it
@@ -135,13 +137,7 @@ column_select_create()
     mvwhline(win, 6, 1, ACS_HLINE, width - 1);
     mvwaddch(win, 6, 0, ACS_LTEE);
     mvwaddch(win, 6, width - 1, ACS_RTEE);
-    mvwhline(win, height - 5, 1, ACS_HLINE, width - 1);
-    mvwaddch(win, height - 5, 0, ACS_LTEE);
-    mvwaddch(win, height - 5, width - 1, ACS_RTEE);
     wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-
-    // Set field labels
-    mvwprintw(win, 18, 2, "[ ] Remember columns state");
 
     // Some brief explanation abotu what window shows
     wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
@@ -158,19 +154,26 @@ column_select_create()
 void
 column_select_destroy(PANEL *panel)
 {
-    int i, itemcnt;
+    int i;
     column_select_info_t *info = column_select_info(panel);
 
-    // Get item count
-    itemcnt = item_count(info->menu);
-
-    // Unpost the menu
+    // Remove menu and items
     unpost_menu(info->menu);
-
-    // Free items
-    for (i = 0; i < itemcnt; i++) {
+    free_menu(info->menu);
+    for (i = 0; i < SIP_ATTR_COUNT; i++)
         free_item(info->items[i]);
-    }
+
+    // Remove form and fields
+    unpost_form(info->form);
+    free_form(info->form);
+    for (i = 0; i < FLD_COLUMNS_COUNT; i++)
+        free_field(info->fields[i]);
+
+    // Remove panel window and custom info
+    delwin(panel_window(panel));
+    del_panel(panel);
+    sng_free(info);
+
 }
 
 
@@ -240,8 +243,8 @@ column_select_handle_key_menu(PANEL *panel, int key)
             case ACTION_NEXT_FIELD:
                 info->form_active = 1;
                 set_menu_fore(menu, COLOR_PAIR(CP_DEFAULT));
+                set_field_back(info->fields[FLD_COLUMNS_ACCEPT], A_REVERSE);
                 form_driver(info->form, REQ_VALIDATION);
-                curs_set(1);
                 break;
             case ACTION_CONFIRM:
                 column_select_update_columns(panel);
@@ -276,32 +279,34 @@ column_select_handle_key_form(PANEL *panel, int key)
     field_idx = field_index(current_field(info->form));
 
     // Get current field value.
-    // We trim spaces with sscanf because and empty field is stored as
-    // space characters
     memset(field_value, 0, sizeof(field_value));
-    sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
+    strcpy(field_value, field_buffer(current_field(info->form), 0));
+    strtrim(field_value);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
+            case ACTION_RIGHT:
             case ACTION_NEXT_FIELD:
                 form_driver(info->form, REQ_NEXT_FIELD);
                 break;
+            case ACTION_LEFT:
             case ACTION_PREV_FIELD:
                 form_driver(info->form, REQ_PREV_FIELD);
                 break;
             case ACTION_SELECT:
             case ACTION_CONFIRM:
                 switch(field_idx) {
-                    case FLD_COLUMNS_SAVE:
+                    case FLD_COLUMNS_ACCEPT:
                         column_select_update_columns(panel);
                         return 27;
                     case FLD_COLUMNS_CANCEL:
                         return 27;
-                    case FLD_COLUMNS_SNGREPRC:
-                        info->remember = info->remember ? 0 : 1;
-                        break;
+                    case FLD_COLUMNS_SAVE:
+                        column_select_update_columns(panel);
+                        column_select_save_columns(panel);
+                        return 27;
                 }
                 break;
             default:
@@ -313,30 +318,24 @@ column_select_handle_key_form(PANEL *panel, int key)
         break;
     }
 
-    // Set field values
-    set_field_buffer(info->fields[FLD_COLUMNS_SNGREPRC], 0,
-                     (info->remember) ? "*" : "");
-
     // Validate all input data
     form_driver(info->form, REQ_VALIDATION);
 
     // Change background and cursor of "button fields"
-    set_field_back(info->fields[FLD_COLUMNS_SAVE], A_NORMAL);
+    set_field_back(info->fields[FLD_COLUMNS_ACCEPT], A_NORMAL);
+    set_field_back(info->fields[FLD_COLUMNS_SAVE],   A_NORMAL);
     set_field_back(info->fields[FLD_COLUMNS_CANCEL], A_NORMAL);
-    curs_set(1);
 
-    // Change current field background
+    // Get current selected field
     new_field_idx = field_index(current_field(info->form));
-    if (new_field_idx == FLD_COLUMNS_SAVE || new_field_idx == FLD_COLUMNS_CANCEL) {
-        set_field_back(info->fields[new_field_idx], A_REVERSE);
-        curs_set(0);
-    }
 
     // Swap between menu and form
-    if (field_idx == FLD_COLUMNS_CANCEL && new_field_idx == FLD_COLUMNS_SNGREPRC) {
+    if (field_idx == FLD_COLUMNS_CANCEL && new_field_idx == FLD_COLUMNS_ACCEPT) {
         set_menu_fore(info->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
-        curs_set(0);
         info->form_active = 0;
+    } else {
+        // Change current field background
+        set_field_back(info->fields[new_field_idx], A_REVERSE);
     }
 
     // Return if this panel has handled or not the key
@@ -370,10 +369,6 @@ column_select_update_columns(PANEL *panel)
         call_list_add_column(list_panel, attr_id, sip_attr_get_name(attr_id),
                              sip_attr_get_title(attr_id), sip_attr_get_width(attr_id));
     }
-
-    // Store columns in configuretion if requested
-    if (info->remember)
-        column_select_save_columns(panel);
 }
 
 void
@@ -402,6 +397,7 @@ column_select_save_columns(PANEL *panel)
 
     // Create a new user conf file
     if (!(fo = fopen(userconf, "w"))) {
+        dialog_run("Unable to open %s: %s", userconf, strerror(errno));
         return;
     }
 
@@ -433,6 +429,9 @@ column_select_save_columns(PANEL *panel)
         fputs(columnopt, fo);
     }
     fclose(fo);
+
+    // Show a information dialog
+    dialog_run("Column layout successfully saved to %s", userconf);
 }
 
 

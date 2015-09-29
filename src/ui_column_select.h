@@ -39,7 +39,7 @@
  * @brief Enum of available fields
  */
 enum column_select_field_list {
-    FLD_COLUMNS_SNGREPRC = 0,
+    FLD_COLUMNS_ACCEPT = 0,
     FLD_COLUMNS_SAVE,
     FLD_COLUMNS_CANCEL,
     //! Never remove this field id
@@ -68,8 +68,6 @@ struct column_select_info {
     FIELD *fields[FLD_COLUMNS_COUNT + 1];
     //! Flag to handle key inputs
     int form_active;
-    //! Flag to save column state to file
-    int remember;
 };
 
 /**
