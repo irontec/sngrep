@@ -2,10 +2,11 @@ ToDo List
 =========
 
 capture:
-    * Handle Packet fragmentation
-        Right now capture process only handle packets with SIP payload,
-        so if a packet is marked as fragmented, part of its payload
-        will not be displayed.
+    * Improve Packet fragmentation
+        Right now capture process only handle packet IP fragmentation and
+        TCP segmentation when all parts come ordered. Also, packets being
+        reassembled are stored in memory until fully assembled (which may
+        never occur).
 
 ui:
  	* Change panels initialization
