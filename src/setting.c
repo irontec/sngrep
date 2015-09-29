@@ -233,3 +233,14 @@ setting_enum_next(int id, const char *value)
 
     return NULL;
 }
+
+void
+settings_dump()
+{
+    int i;
+    for (i = 1; i < SETTING_COUNT; i++) {
+        printf("SettingId: %d\t SettingName: %-20s Value: %s\n", i,
+               setting_name(i),
+               setting_get_value(i));
+    }
+}

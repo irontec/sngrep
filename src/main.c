@@ -65,6 +65,7 @@ usage()
            "    -i --icase\t\t Make <match expression> case insensitive\n"
            "    -v --invert\t\t Invert <match expression>\n"
            "    -N --no-interface\t Don't display sngrep interface, just capture\n"
+           "    -D --dump-config\t Print active configuration settings and exit\n"
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
@@ -200,6 +201,7 @@ main(int argc, char* argv[])
                 break;
             case 'D':
                 key_bindings_dump();
+                settings_dump();
                 return 0;
                 // Dark options for dummy ones
             case 'p':

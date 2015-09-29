@@ -186,4 +186,14 @@ setting_toggle(int id);
 const char *
 setting_enum_next(int id, const char *value);
 
+/**
+ * @brief Dump configuration settings
+ *
+ * This function will print to stdout configuration settings
+ * after reading system/local/user resource files (in that order).
+ *
+ */
+void
+settings_dump();
+
 #endif /* __SNGREP_SETTING_H */
