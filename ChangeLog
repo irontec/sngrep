@@ -1,3 +1,14 @@
+2015-09-01 Ivan Alonso <kaian@irontec.com>
+	* sngrep 0.4.2 released
+
+	* Fixed a crash with RTP format detection
+	* Fixed capture.rtp setting
+	* Fixed a crash while parsing captured packets headers
+	* Fixed a crash while creating new columns in call flow window
+	* Restored TLS and WS transport payload display
+	* Added Timestamp to the first RTP packet displayed in call flow window
+	* Improved packet payload storage
+
 2015-07-08 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.4.1 released
 
