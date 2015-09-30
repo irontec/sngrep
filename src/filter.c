@@ -98,6 +98,10 @@ filter_check_call(void *item)
     char data[256];
     sip_call_t *call = (sip_call_t*) item;
 
+    // Dont filter calls without messages
+    if (call_msg_count(call) == 0)
+        return 0;
+
     // Filter for this call has already be processed
     if (call->filtered != -1)
         return (call->filtered == 0);
