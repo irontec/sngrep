@@ -222,8 +222,7 @@ rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport, 
     vector_iter_t calls;
 
     // Get active calls (during conversation)
-    calls = sip_calls_iterator();
-    vector_iterator_set_filter(&calls, call_is_active);
+    calls = sip_active_calls_iterator();
 
     while ((call = vector_iterator_next(&calls))) {
         // Check if this call has an RTP stream for current packet data

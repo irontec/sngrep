@@ -168,16 +168,13 @@ sip_call_t *
 call_get_xcall(sip_call_t *call);
 
 /**
- * @brief Vector Iterator filter for active calls
+ * @brief Determine if a dilog is a call in progress
  *
- * You can set function as filter for sip_call_t vectors. That way
- * iterator will only return calls whose state is not finished.
- *
- * @param  item generic pointer to sip_call_t structure
+ * @param call SIP call structure
  * @return 1 if the passed call state is active, 0 otherwise
  */
 int
-call_is_active(void *item);
+call_is_active(sip_call_t *call);
 
 /**
  * @brief Determine if this call starts with an Invite request

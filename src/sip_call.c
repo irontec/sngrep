@@ -115,10 +115,8 @@ call_msg_count(sip_call_t *call)
 }
 
 int
-call_is_active(void *item)
+call_is_active(sip_call_t *call)
 {
-    // TODO
-    sip_call_t *call = (sip_call_t *)item;
     return (call->state == SIP_CALLSTATE_CALLSETUP || call->state == SIP_CALLSTATE_INCALL);
 }
 

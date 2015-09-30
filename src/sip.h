@@ -83,6 +83,8 @@ struct sip_code
 struct sip_call_list {
     //! List of all captured calls
     vector_t *list;
+    //! List of active captured calls
+    vector_t *active;
 
     // Max call limit
     int limit;
@@ -180,6 +182,16 @@ sip_calls_count();
  */
 vector_iter_t
 sip_calls_iterator();
+
+/**
+ * @brief Return an iterator of call list
+ *
+ * We consider 'active' calls those that are willing to have
+ * an rtp stream that will receive new packets.
+ *
+ */
+vector_iter_t
+sip_active_calls_iterator();
 
 /**
  * @brief Return stats from call list

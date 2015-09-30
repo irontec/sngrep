@@ -150,6 +150,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     // Create a vector to store calls
     calls.list = vector_create(200, 50);
     vector_set_destroyer(calls.list, call_destroyer);
+    calls.active = vector_create(10, 10);
 
     // Create hash table for callid search
     hcreate(calls.limit);
@@ -184,6 +185,7 @@ sip_deinit()
     hdestroy();
     // Remove calls vector
     vector_destroy(calls.list);
+    vector_destroy(calls.active);
     // Deallocate regular expressions
     regfree(&calls.reg_method);
     regfree(&calls.reg_callid);
@@ -341,6 +343,16 @@ sip_check_packet(capture_packet_t *packet)
         sip_parse_msg_media(msg, payload);
         // Update Call State
         call_update_state(call, msg);
+        // Check if this call should be in active call list
+        if (call_is_active(call)) {
+            if (vector_index(calls.active, call) == -1) {
+                vector_append(calls.active, call);
+            }
+        } else {
+            if (vector_index(calls.active, call) != -1) {
+                vector_remove(calls.active, call);
+            }
+        }
     }
 
     pthread_mutex_unlock(&calls.lock);
@@ -365,6 +377,12 @@ vector_iter_t
 sip_calls_iterator()
 {
     return vector_iterator(calls.list);
+}
+
+vector_iter_t
+sip_active_calls_iterator()
+{
+    return vector_iterator(calls.active);
 }
 
 void
