@@ -152,6 +152,8 @@ struct capture_config {
     vector_t *ip_reasm;
     //! Packets pending TCP reassembly
     vector_t *tcp_reasm;
+    //! Capture Lock. Avoid parsing and handling data at the same time
+    pthread_mutex_t lock;
 };
 
 /**
@@ -371,6 +373,18 @@ capture_set_keyfile(const char *keyfile);
  */
 char *
 capture_last_error();
+
+/**
+ * @brief Avoid parsing more packets
+ */
+void
+capture_lock();
+
+/**
+ * @brief Allow parsing more packets
+ */
+void
+capture_unlock();
 
 /**
  * @brief Allocate memory to store new packet data

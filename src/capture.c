@@ -67,6 +67,15 @@ capture_init(int limit, int rtp_capture)
         capture_cfg.storage = CAPTURE_STORAGE_DISK;
     }
 
+    // Initialize calls lock
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__) || defined(BSD) || defined (__OpenBSD__)
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+#else
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+#endif
+    pthread_mutex_init(&capture_cfg.lock, &attr);
 
 }
 
@@ -83,6 +92,9 @@ capture_deinit()
     vector_destroy(capture_cfg.tcp_reasm);
     vector_set_destroyer(capture_cfg.ip_reasm, capture_packet_destroyer);
     vector_destroy(capture_cfg.ip_reasm);
+
+    // Remove capture mutex
+    pthread_mutex_destroy(&capture_cfg.lock);
 }
 
 int
@@ -326,10 +338,15 @@ capture_packet_parse(capture_packet_t *packet)
     // Media structure for RTP packets
     rtp_stream_t *stream;
 
+    // Avoid parsing from multiples sources.
+    // Avoid parsing while screen in being redrawn
+    capture_lock();
+
     // We're only interested in packets with payload
     if (capture_packet_get_payload_len(packet)) {
         // Parse this header and payload
         if (sip_check_packet(packet)) {
+            capture_unlock();
             return 0;
         }
 
@@ -340,11 +357,13 @@ capture_packet_parse(capture_packet_t *packet)
             // Store this pacekt if capture rtp is enabled
             if (capture_cfg.rtp_capture) {
                 call_add_rtp_packet(stream_get_call(stream), packet);
+                capture_unlock();
                 return 0;
             }
         }
     }
 
+    capture_unlock();
     return 1;
 }
 
@@ -504,6 +523,20 @@ capture_last_error(cap)
     }
     return NULL;
 
+}
+
+void
+capture_lock()
+{
+    // Avoid parsing more packet
+    pthread_mutex_lock(&capture_cfg.lock);
+}
+
+void
+capture_unlock()
+{
+    // Allow parsing more packets
+    pthread_mutex_unlock(&capture_cfg.lock);
 }
 
 capture_packet_t *

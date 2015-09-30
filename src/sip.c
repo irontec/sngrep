@@ -155,16 +155,6 @@ sip_init(int limit, int only_calls, int no_incomplete)
     // Create hash table for callid search
     hcreate(calls.limit);
 
-    // Initialize calls lock
-    pthread_mutexattr_t attr;
-    pthread_mutexattr_init(&attr);
-#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__) || defined(BSD) || defined (__OpenBSD__)
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-#else
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
-#endif
-    pthread_mutex_init(&calls.lock, &attr);
-
     // Initialize payload parsing regexp
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
     regcomp(&calls.reg_method, "^([a-zA-Z]+) sip:[^ ]+ SIP/2.0\r", match_flags & ~REG_NEWLINE);
@@ -194,8 +184,6 @@ sip_deinit()
     regfree(&calls.reg_cseq);
     regfree(&calls.reg_from);
     regfree(&calls.reg_to);
-    // Remove calls mutex
-    pthread_mutex_destroy(&calls.lock);
 }
 
 
@@ -276,7 +264,6 @@ sip_check_packet(capture_packet_t *packet)
         return NULL;
     }
 
-    pthread_mutex_lock(&calls.lock);
     // Find the call for this msg
     if (!(call = sip_find_by_callid(callid))) {
 
@@ -306,10 +293,8 @@ sip_check_packet(capture_packet_t *packet)
         hsearch(entry, ENTER);
 
         // Append this call to the call list
-        pthread_mutex_lock(&calls.lock);
         vector_append(calls.list, call);
         call->index = vector_count(calls.list);
-        pthread_mutex_unlock(&calls.lock);
     }
 
     // Store sorce address. Prefix too long IPv6 addresses with two dots
@@ -355,14 +340,12 @@ sip_check_packet(capture_packet_t *packet)
         }
     }
 
-    pthread_mutex_unlock(&calls.lock);
     // Return the loaded message
     return msg;
 
 skip_message:
     // Deallocate message memory
     msg_destroy(msg);
-    pthread_mutex_unlock(&calls.lock);
     return NULL;
 
 }
@@ -390,13 +373,11 @@ sip_calls_stats(int *total, int *displayed)
 {
     vector_iter_t it = vector_iterator(calls.list);
 
-    pthread_mutex_lock(&calls.lock);
     // Total number of calls without filtering
     *total = vector_iterator_count(&it);
     // Total number of calls after filtering
     vector_iterator_set_filter(&it, filter_check_call);
     *displayed = vector_iterator_count(&it);
-    pthread_mutex_unlock(&calls.lock);
 }
 
 sip_call_t *
@@ -438,13 +419,11 @@ sip_call_t *
 call_get_xcall(sip_call_t *call)
 {
     sip_call_t *xcall;
-    pthread_mutex_lock(&calls.lock);
     if (call->xcallid) {
         xcall = sip_find_by_callid(call->xcallid);
     } else {
         xcall = sip_find_by_xcallid(call->callid);
     }
-    pthread_mutex_unlock(&calls.lock);
     return xcall;
 }
 
@@ -598,13 +577,11 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 void
 sip_calls_clear()
 {
-    pthread_mutex_lock(&calls.lock);
     // Create again the callid hash table
     hdestroy();
     hcreate(calls.limit);
     // Remove all items from vector
     vector_clear(calls.list);
-    pthread_mutex_unlock(&calls.lock);
 }
 
 int

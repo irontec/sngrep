@@ -112,9 +112,6 @@ struct sip_call_list {
     regex_t reg_cseq;
     regex_t reg_from;
     regex_t reg_to;
-
-    // Warranty thread-safe access to the calls list
-    pthread_mutex_t lock;
 };
 
 /**

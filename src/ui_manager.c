@@ -211,13 +211,16 @@ ui_draw_panel(ui_t *ui)
     // Set character input timeout 200 ms
     halfdelay(REFRESHTHSECS);
 
+    // Avoid parsing any packet while UI is being drawn
+    capture_lock();
     // Request the panel to draw on the scren
     if (ui->draw) {
         ret = ui->draw(panel);
     } else {
         touchwin(panel_window(panel));
     }
-
+    // Continue parsing packets
+    capture_unlock();
     return ret;
 }
 
@@ -255,9 +258,12 @@ int
 ui_handle_key(ui_t *ui, int key)
 {
     int ret = 0;
-
+    // Avoid parsing any packet while key is being handled
+    capture_lock();
     if (ui->handle_key)
         ret = ui->handle_key(ui_get_panel(ui), key);
+    // Continue parsing packets
+    capture_unlock();
 
     return ret;
 }
