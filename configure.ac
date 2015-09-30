@@ -105,15 +105,6 @@ AC_ARG_WITH([openssl],
     [AC_SUBST(WITH_OPENSSL, no)]
 )
 
-# Check for SSL dependencies
-AS_IF([test "x$WITH_OPENSSL" == "xno"], [
-    AC_ARG_ENABLE([openssl],
-        AC_HELP_STRING([--enable-openssl], [Enable SSL Support (TLS SIP Transport)]),
-        [AC_SUBST(WITH_OPENSSL, $enableval)],
-        [AC_SUBST(WITH_OPENSSL, no)]
-    )
-], [])
-
 AS_IF([test "x$WITH_OPENSSL" == "xyes"], [
 	AC_CHECK_LIB([ssl], [SSL_new], [], [
 	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep])
