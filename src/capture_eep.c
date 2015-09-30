@@ -147,9 +147,13 @@ accept_eep_client(void *data)
     // Begin accepting connections
     while (eep_cfg.server_sock > 0) {
         if ((pkt = capture_eep_receive())) {
+            // Avoid parsing from multiples sources.
+            // Avoid parsing while screen in being redrawn
+            capture_lock();
             if (capture_packet_parse(pkt) != 0) {
                 capture_packet_destroy(pkt);
             }
+            capture_unlock();
         }
     }
 

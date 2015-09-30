@@ -314,6 +314,9 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         return;
     }
 
+    // Avoid parsing from multiples sources.
+    // Avoid parsing while screen in being redrawn
+    capture_lock();
     // Check if we can handle this packet
     if (capture_packet_parse(pkt) == 0) {
         // Send this packet through eep
@@ -324,12 +327,15 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         if (capture_cfg.storage == 0) {
             capture_packet_free_frames(pkt);
         }
-
+        // Allow Interface refresh and user input actions
+        capture_unlock();
         return;
     }
 
     // Not an interesting packet ...
     capture_packet_destroy(pkt);
+    // Allow Interface refresh and user input actions
+    capture_unlock();
 }
 
 int
@@ -338,15 +344,10 @@ capture_packet_parse(capture_packet_t *packet)
     // Media structure for RTP packets
     rtp_stream_t *stream;
 
-    // Avoid parsing from multiples sources.
-    // Avoid parsing while screen in being redrawn
-    capture_lock();
-
     // We're only interested in packets with payload
     if (capture_packet_get_payload_len(packet)) {
         // Parse this header and payload
         if (sip_check_packet(packet)) {
-            capture_unlock();
             return 0;
         }
 
@@ -357,13 +358,10 @@ capture_packet_parse(capture_packet_t *packet)
             // Store this pacekt if capture rtp is enabled
             if (capture_cfg.rtp_capture) {
                 call_add_rtp_packet(stream_get_call(stream), packet);
-                capture_unlock();
                 return 0;
             }
         }
     }
-
-    capture_unlock();
     return 1;
 }
 
