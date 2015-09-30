@@ -212,7 +212,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
             sprintf(value, "%s", call->callid);
             break;
         case SIP_ATTR_XCALLID:
-            sprintf(value, "%s", call->callid);
+            sprintf(value, "%s", call->xcallid);
             break;
         case SIP_ATTR_MSGCNT:
             sprintf(value, "%d", vector_count(call->msgs));

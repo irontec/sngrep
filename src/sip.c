@@ -239,7 +239,7 @@ sip_check_packet(capture_packet_t *packet)
 
     // Initialize local variables
     memset(callid, 0, sizeof(callid));
-    memset(callid, 0, sizeof(xcallid));
+    memset(xcallid, 0, sizeof(xcallid));
     memset(msg_src, 0, sizeof(msg_src));
     memset(msg_dst, 0, sizeof(msg_dst));
 
@@ -281,7 +281,7 @@ sip_check_packet(capture_packet_t *packet)
             goto skip_message;
 
         // Get the Call-ID of this message
-        sip_get_callid((const char*) payload, xcallid);
+        sip_get_xcallid((const char*) payload, xcallid);
 
         // Create the call if not found
         if (!(call = call_create(callid, xcallid)))
@@ -402,11 +402,11 @@ sip_call_t *
 sip_find_by_xcallid(const char *xcallid)
 {
     sip_call_t *cur;
-    vector_iter_t it;
+    vector_iter_t it = vector_iterator(calls.list);
 
     // Find the call with the given X-Call-Id
     while ((cur = vector_iterator_next(&it))) {
-        if (cur->xcallid && !strcmp(cur->xcallid, xcallid)) {
+        if (strlen(cur->xcallid) && !strcmp(cur->xcallid, xcallid)) {
             return cur;
         }
     }
@@ -419,7 +419,7 @@ sip_call_t *
 call_get_xcall(sip_call_t *call)
 {
     sip_call_t *xcall;
-    if (call->xcallid) {
+    if (strlen(call->xcallid)) {
         xcall = sip_find_by_callid(call->xcallid);
     } else {
         xcall = sip_find_by_xcallid(call->callid);
