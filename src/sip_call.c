@@ -34,7 +34,7 @@
 #include "setting.h"
 
 sip_call_t *
-call_create(char *callid)
+call_create(char *callid, char *xcallid)
 {
     sip_call_t *call;
 
@@ -61,6 +61,7 @@ call_create(char *callid)
 
     // Set message callid
     call->callid = strdup(callid);
+    call->xcallid = strdup(xcallid);
 
     return call;
 }

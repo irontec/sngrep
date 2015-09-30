@@ -204,13 +204,24 @@ sip_get_callid(const char* payload, char *callid)
 
     // Try to get Call-ID from payload
     if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
-        // Allocate memory for Call-Id (caller MUST free it)
-        memset(callid, 0, (int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         // Copy the matching part of payload
         strncpy(callid, payload + pmatch[2].rm_so, (int) pmatch[2].rm_eo - pmatch[2].rm_so);
     }
 
     return callid;
+}
+
+char *
+sip_get_xcallid(const char *payload, char *xcallid)
+{
+    regmatch_t pmatch[3];
+
+    // Try to get X-Call-ID from payload
+    if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
+        strncpy(xcallid, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    }
+
+    return xcallid;
 }
 
 sip_msg_t *
@@ -219,7 +230,7 @@ sip_check_packet(capture_packet_t *packet)
     ENTRY entry;
     sip_msg_t *msg;
     sip_call_t *call;
-    char callid[1024];
+    char callid[1024], xcallid[1024];
     const char *src, *dst;
     u_short sport, dport;
     char msg_src[ADDRESSLEN];
@@ -235,6 +246,12 @@ sip_check_packet(capture_packet_t *packet)
     dst = packet->ip_dst;
     sport = packet->sport;
     dport = packet->dport;
+
+    // Initialize local variables
+    memset(callid, 0, sizeof(callid));
+    memset(callid, 0, sizeof(xcallid));
+    memset(msg_src, 0, sizeof(msg_src));
+    memset(msg_dst, 0, sizeof(msg_dst));
 
     // Get payload from packet(s)
     memset(payload, 0, MAX_SIP_PAYLOAD);
@@ -274,8 +291,11 @@ sip_check_packet(capture_packet_t *packet)
         if (calls.ignore_incomplete && msg->reqresp > SIP_METHOD_MESSAGE)
             goto skip_message;
 
+        // Get the Call-ID of this message
+        sip_get_callid((const char*) payload, xcallid);
+
         // Create the call if not found
-        if (!(call = call_create(callid)))
+        if (!(call = call_create(callid, xcallid)))
             goto skip_message;
 
         // Store this call in hash table
@@ -307,14 +327,14 @@ sip_check_packet(capture_packet_t *packet)
     // At this point we know we're handling an interesting SIP Packet
     msg->packet = packet;
 
-    // Add the message to the call
-    call_add_message(call, msg);
-
     // Always parse first call message
-    if (call_msg_count(call) == 1) {
+    if (call_msg_count(call) == 0) {
         // Parse SIP payload
         sip_parse_msg_payload(msg, payload);
     }
+
+    // Add the message to the call
+    call_add_message(call, msg);
 
     if (call_is_invite(call)) {
         // Parse media data
@@ -478,15 +498,6 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     if (regexec(&calls.reg_cseq, (char*)payload, 2, pmatch, 0) == 0) {
         sprintf(cseq, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
         msg->cseq = atoi(cseq);
-    }
-
-    // X-Call-Id.
-    // TODO Move this from msg parse
-    if (!msg->call->xcallid) {
-        if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
-            msg->call->xcallid = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
-            strncpy(msg->call->xcallid, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
-        }
     }
 
     // From

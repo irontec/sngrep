@@ -144,6 +144,18 @@ char *
 sip_get_callid(const char* payload, char *callid);
 
 /**
+ * @brief Parses X-Call-ID header of a SIP message payload
+ *
+ * Mainly used to check if a payload contains a xcallid.
+ *
+ * @param payload SIP message payload
+ * @paramx callid Character array to store callid
+ * @return xcallid parsed from Call-ID header
+ */
+char *
+sip_get_xcallid(const char* payload, char *xcallid);
+
+/**
  * @brief Loads a new message from raw header/payload
  *
  * Use this function to convert raw data into call and message

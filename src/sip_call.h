@@ -85,10 +85,11 @@ struct sip_call {
  * header structure to all the messages with the same callid.
  *
  * @param callid Call-ID Header value
+ * @param xcallid X-Call-ID Header value
  * @return pointer to the sip_call created
  */
 sip_call_t *
-call_create(char *callid);
+call_create(char *callid, char *xcallid);
 
 /**
  * @brief Free all related memory from a call and remove from call list
