@@ -582,6 +582,7 @@ sip_calls_clear()
     hcreate(calls.limit);
     // Remove all items from vector
     vector_clear(calls.list);
+    vector_clear(calls.active);
 }
 
 int
