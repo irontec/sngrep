@@ -1,3 +1,24 @@
+2015-10-06 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.0.0 released
+
+	* Implemented basic TCP reassembly
+	* Implemented basic IP reassembly
+	* Implememted EEP/HEP client/server support
+	* Implemented command line option --dump-config
+	* Disabled RTP packet payload storage by default
+	* Removed --enable-openssl configure flag (use --with-openssl instead)
+	* Removed configurable ignore directives in rc file
+	* Removed configurable option cl.filter
+	* Improved payload memory storage
+	* Added a confirmation dialog to overwrite saved files
+	* Added save button to Columns select UI
+	* Added a keybinding to remove selected dialogs in Call List
+	* Added a keybinding to move to the first and last item in Call List
+	* Added attribute color support (can be disabled with cl.colorattr)
+	* Added a compressed view in Call Flow (one message per row)
+	* Fixed IPv6 support
+	* Fixed multiple memory leaks
+
 2015-09-01 Ivan Alonso <kaian@irontec.com>
 	* sngrep 0.4.2 released
 
