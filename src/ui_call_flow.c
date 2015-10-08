@@ -508,6 +508,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     char msg_dst[80], msg_src[80];
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->stream;
+    int arrow_dir = 0; /* 0: right, 1: left */
 
     // Get panel information
     info = call_flow_info(panel);
@@ -562,6 +563,7 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         tmp = column1;
         column1 = column2;
         column2 = tmp;
+        arrow_dir = 1; /* swap arrow direction */
     }
 
     int startpos = 20 + 30 * column1->colpos;
@@ -589,8 +591,8 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Draw line between columns
     mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
-    // Write the arrow at the end of the message (two arros if this is a retrans)
-    if (call_flow_column_get(panel, 0, stream->ip_src) == column1) {
+    // Write the arrow at the end of the message (two arrows if this is a retrans)
+    if (arrow_dir == 0 /* right */) {
         mvwprintw(win, cline, startpos - 5, "%d", stream->sport);
         mvwprintw(win, cline, endpos + 1, "%d", stream->dport);
         if (distance > 0)
