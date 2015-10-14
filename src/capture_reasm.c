@@ -58,6 +58,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     uint32_t ip_hl = 0;
     // Fragment offset
     uint16_t ip_off = 0;
+    // IP content len
+    uint16_t ip_len = 0;
     // Fragmentation flag
     uint16_t ip_frag = 0;
     // Fragmentation identifier
@@ -92,6 +94,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             ip_hl = ip4->ip_hl * 4;
             ip_proto = ip4->ip_p;
             ip_off = ntohs(ip4->ip_off);
+            ip_len = ntohs(ip4->ip_len);
 
             ip_frag = ip_off & (IP_MF | IP_OFFMASK);
             ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
@@ -104,6 +107,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         case 6:
             ip_hl = sizeof(struct ip6_hdr);
             ip_proto = ip6->ip6_nxt;
+            ip_len = ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen) + ip_hl;
 
             if (ip_proto == IPPROTO_FRAGMENT) {
                 struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_hl);
@@ -120,7 +124,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     }
 
     // Remove IP Header length from payload
-    *size = *caplen - capinfo->link_hl - ip_hl;
+    *size = ip_len - ip_hl;
 
     // If no fragmentation
     if (ip_frag == 0) {
