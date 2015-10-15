@@ -99,4 +99,4 @@
 
 ##-----------------------------------------------------------------------------
 ## Uncomment to display dialogs that does not start with a request method
-# set sip.ignoreincomplete off
+# set sip.noincomplete off
