@@ -124,7 +124,11 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     }
 
     // Remove IP Header length from payload
-    *size = ip_len - ip_hl;
+    if (*caplen > capinfo->link_hl + ip_len) {
+        *size = ip_len - ip_hl;
+    } else {
+        *size = *caplen - capinfo->link_hl - ip_hl;
+    }
 
     // If no fragmentation
     if (ip_frag == 0) {
