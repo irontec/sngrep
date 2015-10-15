@@ -45,7 +45,7 @@ filter_set(int type, const char *expr)
     if (expr) {
         const char *re_err = NULL;
         int32_t err_offset;
-        int32_t pcre_options = PCRE_UNGREEDY |  PCRE_CASELESS;
+        int32_t pcre_options = PCRE_UNGREEDY | PCRE_CASELESS;
 
         // Check if we have a valid expression
         if (!(regex = pcre_compile(expr, pcre_options, &re_err, &err_offset, 0)))
@@ -95,8 +95,10 @@ int
 filter_check_call(void *item)
 {
     int i;
-    char data[256];
+    char data[MAX_SIP_PAYLOAD];
     sip_call_t *call = (sip_call_t*) item;
+    sip_msg_t *msg;
+    vector_iter_t it;
 
     // Dont filter calls without messages
     if (call_msg_count(call) == 0)
@@ -135,6 +137,8 @@ filter_check_call(void *item)
             case FILTER_METHOD:
                 call_get_attribute(call, SIP_ATTR_METHOD, data);
                 break;
+            case FILTER_PAYLOAD:
+                break;
             case FILTER_CALL_LIST:
                 // FIXME Maybe call should know hot to calculate this line
                 call_list_line_text(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)), call, data);
@@ -144,24 +148,46 @@ filter_check_call(void *item)
                 return 0;
         }
 
-#ifdef WITH_PCRE
-        if (pcre_exec(filters[i].regex, 0, data, strlen(data), 0, 0, 0, 0)) {
-            // Mak as filtered
+        // For payload filtering, check all messages payload
+        if (i == FILTER_PAYLOAD) {
+            // Assume this call doesn't match the filter
             call->filtered = 1;
-            break;
+            // Create an iterator for the call messages
+            it = vector_iterator(call->msgs);
+            while ((msg = vector_iterator_next(&it))) {
+                // Copy message payload
+                strcpy(data, msg_get_payload(msg));
+                // Check if this payload matches the filter
+                if (filter_check_expr(filters[i], data) == 0) {
+                    call->filtered = 0;
+                    break;
+                }
+            }
+            if (call->filtered == 1)
+                break;
+        } else {
+            // Check the filter against given data
+            if (filter_check_expr(filters[i], data) != 0) {
+                // The data didn't matched the filter
+                call->filtered = 1;
+                break;
+            }
         }
-#else
-        // Call doesn't match this filter
-        if (regexec(&filters[i].regex, data, 0, NULL, 0)) {
-            // Mak as filtered
-            call->filtered = 1;
-            break;
-        }
-#endif
     }
 
     // Return the final filter status
     return (call->filtered == 0);
+}
+
+int
+filter_check_expr(filter_t filter, const char *data)
+{
+#ifdef WITH_PCRE
+        return pcre_exec(filter.regex, 0, data, strlen(data), 0, 0, 0, 0);
+#else
+        // Call doesn't match this filter
+        return regexec(&filter.regex, data, 0, NULL, 0);
+#endif
 }
 
 void

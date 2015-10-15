@@ -65,6 +65,8 @@ enum filter_type {
     FILTER_DESTINATION,
     //! SIP Method in packet payload
     FILTER_METHOD,
+    //! SIP Payload in any call packet
+    FILTER_PAYLOAD,
     //! Displayed line in call list
     FILTER_CALL_LIST,
     //! Number of available filter types
@@ -117,6 +119,14 @@ filter_get(int type);
  */
 int
 filter_check_call(void *item);
+
+/**
+ * @brief Check if data matches the filter regexp
+ *
+ * @return 0 if the given data matches the filter
+ */
+int
+filter_check_expr(filter_t filter, const char *data);
 
 /**
  * @brief Reset filtered flag in all calls
