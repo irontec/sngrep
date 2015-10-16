@@ -115,7 +115,7 @@ AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
 	])
 	
 	AC_CHECK_LIB([gcrypt], [gcry_md_map_name], [], [
-	    AC_MSG_ERROR([ You need to have libgcrypto installed to compile sngrep])
+	    AC_MSG_ERROR([ You need to have libgcrypt installed to compile sngrep])
 	])
 	AC_DEFINE([WITH_GNUTLS],[],[Compile With GnuTLS compatibility])
 ], [])
