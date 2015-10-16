@@ -48,14 +48,15 @@ int
 P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
        unsigned char *seed, int slen)
 {
-    unsigned char hmac[20];
+    unsigned char hmac[48];
     unsigned int hlen;
-    HMAC_CTX hm;
-    const EVP_MD *md = EVP_get_digestbyname(digest);
+    gcry_md_hd_t md;
     unsigned int tmpslen;
     unsigned char tmpseed[slen];
     unsigned char *out = dest;
     int pending = dlen;
+    int algo = gcry_md_map_name(digest);
+    int algolen = gcry_md_get_algo_dlen(algo);
 
     // Copy initial seed
     memcpy(tmpseed, seed, slen);
@@ -63,21 +64,25 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
 
     // Calculate enough data to fill destination
     while (pending > 0) {
-        HMAC_Init(&hm, secret, sslen, md);
-        HMAC_Update(&hm, tmpseed, tmpslen);
-        HMAC_Final(&hm, tmpseed, &tmpslen);
+        gcry_md_open(&md, algo, GCRY_MD_FLAG_HMAC);
+        gcry_md_setkey(md, secret, sslen);
+        gcry_md_write(md, tmpseed, tmpslen);
+        memcpy(tmpseed, gcry_md_read(md, algo), algolen);
+        tmpslen = algolen;
+        gcry_md_close(md);
 
-        HMAC_Init(&hm, secret, sslen, md);
-        HMAC_Update(&hm, tmpseed, tmpslen);
-        HMAC_Update(&hm, seed, slen);
-        HMAC_Final(&hm, hmac, &hlen);
+        gcry_md_open(&md, algo, GCRY_MD_FLAG_HMAC);
+        gcry_md_setkey(md, secret, sslen);
+        gcry_md_write(md, tmpseed, tmpslen);
+        gcry_md_write(md, seed, slen);
+        memcpy(hmac, gcry_md_read(md, algo), algolen);
+        hlen = algolen;
 
         hlen = (hlen > pending) ? pending : hlen;
         memcpy(out, hmac, hlen);
         out += hlen;
         pending -= hlen;
     }
-    HMAC_cleanup(&hm);
 
     return hlen;
 }
@@ -119,6 +124,12 @@ PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, u
 struct SSLConnection *
 tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport) {
     struct SSLConnection *conn = NULL;
+    gnutls_datum_t keycontent = { NULL, 0 };
+    FILE *keyfp;
+    gnutls_x509_privkey_t spkey;
+    size_t br;
+
+    // Allocate memory for this connection
     conn = sng_malloc(sizeof(struct SSLConnection));
 
     memcpy(&conn->client_addr, &caddr, sizeof(struct in_addr));
@@ -127,18 +138,28 @@ tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr,
     memcpy(&conn->server_port, &sport, sizeof(u_short));
 
     SSL_library_init();
-    ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
     if (!(conn->ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return NULL;
 
-    SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_get_keyfile(),
-                                SSL_FILETYPE_PEM);
     if (!(conn->ssl = SSL_new(conn->ssl_ctx)))
         return NULL;
 
-    conn->server_private_key = SSL_get_privatekey(conn->ssl);
+    if (!(keyfp = fopen(capture_get_keyfile(), "rb")))
+        return NULL;
+    fseek(keyfp, 0, SEEK_END);
+    keycontent.size = ftell(keyfp);
+    fseek(keyfp, 0, SEEK_SET);
+    keycontent.data = sng_malloc(keycontent.size);
+    br = fread(keycontent.data, 1, keycontent.size, keyfp);
+    fclose(keyfp);
+
+    gnutls_x509_privkey_init(&spkey);
+    gnutls_x509_privkey_import(spkey, &keycontent, GNUTLS_X509_FMT_PEM);
+    sng_free(keycontent.data);
+    gnutls_privkey_init(&conn->server_private_key);
+    gnutls_privkey_import_x509(conn->server_private_key, spkey, 0);
 
     // Add this connection to the list
     conn->next = connections;
@@ -179,25 +200,31 @@ tls_connection_destroy(struct SSLConnection *conn)
 int
 tls_check_keyfile(const char *keyfile)
 {
-    SSL *ssl;
-    SSL_CTX *ssl_ctx;
+    gnutls_x509_privkey_t key;
+    gnutls_datum_t keycontent = { NULL, 0 };
+    FILE *keyfp;
+    size_t br;
 
     SSL_library_init();
-    ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
     if (access(capture_get_keyfile(), R_OK) != 0)
         return 0;
 
-    if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
+    if (!(keyfp = fopen(capture_get_keyfile(), "rb")))
         return 0;
 
-    SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_get_keyfile(), SSL_FILETYPE_PEM);
-    if (!(ssl = SSL_new(ssl_ctx)))
-        return 0;
+    fseek(keyfp, 0, SEEK_END);
+    keycontent.size = ftell(keyfp);
+    fseek(keyfp, 0, SEEK_SET);
+    keycontent.data = sng_malloc(keycontent.size);
+    br = fread(keycontent.data, 1, keycontent.size, keyfp);
+    fclose(keyfp);
 
-    if (!SSL_get_privatekey(ssl))
+    gnutls_x509_privkey_init(&key);
+    if (gnutls_x509_privkey_import(key, &keycontent, GNUTLS_X509_FMT_PEM) < 0)
         return 0;
+    sng_free(keycontent.data);
 
     return 1;
 }
@@ -358,7 +385,6 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                 // Store client random
                 clienthello = (struct ClientHello *) body;
                 memcpy(&conn->client_random, &clienthello->random, sizeof(struct Random));
-
                 // Check we have a TLS handshake
                 if (!(clienthello->client_version.major == 0x03
                       && clienthello->client_version.minor == 0x01)) {
@@ -389,16 +415,16 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                 // Decrypt PreMasterKey
                 clientkeyex = (struct ClientKeyExchange *) body;
 
-                RSA_private_decrypt(UINT16_INT(clientkeyex->length),
-                                    (const unsigned char *) &clientkeyex->exchange_keys,
-                                    (unsigned char *) &conn->pre_master_secret,
-                                    conn->server_private_key->pkey.rsa, RSA_PKCS1_PADDING);
+                gnutls_datum_t exkeys, pms;
+                exkeys.size = UINT16_INT(clientkeyex->length);
+                exkeys.data = (unsigned char *)&clientkeyex->exchange_keys;
+                gnutls_privkey_decrypt_data(conn->server_private_key, 0, &exkeys, &pms);
+                memcpy(&conn->pre_master_secret, pms.data, pms.size);
 
+                // Get MasterSecret
                 unsigned char *seed = sng_malloc(sizeof(struct Random) * 2);
                 memcpy(seed, &conn->client_random, sizeof(struct Random));
                 memcpy(seed + sizeof(struct Random), &conn->server_random, sizeof(struct Random));
-
-                // Get MasterSecret
                 PRF((unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
                     (unsigned char *) &conn->pre_master_secret, sizeof(struct PreMasterSecret),
                     (unsigned char *) "master secret", seed, sizeof(struct Random) * 2);
@@ -415,15 +441,22 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                 sng_free(seed);
 
                 // Create Client decoder
-                EVP_CIPHER_CTX_init(&conn->client_cipher_ctx);
-                EVP_CipherInit(&conn->client_cipher_ctx, conn->ciph,
-                               conn->key_material.client_write_key, conn->key_material.client_write_IV,
-                               0);
+                gcry_cipher_open(&conn->client_cipher_ctx, conn->ciph, GCRY_CIPHER_MODE_CBC, 0);
+                gcry_cipher_setkey(conn->client_cipher_ctx,
+                                   conn->key_material.client_write_key,
+                                   gcry_cipher_get_algo_keylen(conn->ciph));
+                gcry_cipher_setiv(conn->client_cipher_ctx,
+                                  conn->key_material.client_write_IV,
+                                  gcry_cipher_get_algo_blklen(conn->ciph));
 
-                EVP_CIPHER_CTX_init(&conn->server_cipher_ctx);
-                EVP_CipherInit(&conn->server_cipher_ctx, conn->ciph,
-                               conn->key_material.server_write_key, conn->key_material.server_write_IV,
-                               0);
+                // Create Server decoder
+                gcry_cipher_open(&conn->server_cipher_ctx, conn->ciph, GCRY_CIPHER_MODE_CBC, 0);
+                gcry_cipher_setkey(conn->server_cipher_ctx,
+                                   conn->key_material.server_write_key,
+                                   gcry_cipher_get_algo_keylen(conn->ciph));
+                gcry_cipher_setiv(conn->server_cipher_ctx,
+                                  conn->key_material.server_write_IV,
+                                  gcry_cipher_get_algo_blklen(conn->ciph));
 
                 break;
             case finished:
@@ -447,10 +480,10 @@ int
 tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
                         uint8 **out, uint32_t *outl)
 {
-    EVP_CIPHER_CTX *evp;
+    gcry_cipher_hd_t *evp;
     unsigned char pad;
     unsigned char *decoded;
-    uint32_t dlen;
+    size_t dlen = len;
 
     if (conn->direction == 0) {
         evp = &conn->client_cipher_ctx;
@@ -459,7 +492,7 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
     }
 
     decoded = sng_malloc(len);
-    EVP_Cipher(evp, decoded, (unsigned char *) fragment, len);
+    gcry_cipher_decrypt(*evp, decoded, dlen, (unsigned char *) fragment, len);
 
     // Get padding counter and remove from data
     pad = decoded[len - 1];
@@ -482,9 +515,9 @@ tls_connection_load_cipher(struct SSLConnection *conn)
         return 1;
 
     if (conn->cipher_suite.cs2 == TLS_RSA_WITH_AES_256_CBC_SHA.cs2) {
-        conn->ciph = EVP_get_cipherbyname("AES256");
+        conn->ciph = gcry_cipher_map_name("AES256");
     } else if (conn->cipher_suite.cs2 == TLS_RSA_WITH_AES_128_CBC_SHA.cs2) {
-        conn->ciph = EVP_get_cipherbyname("AES128");
+        conn->ciph = gcry_cipher_map_name("AES");
     } else {
         return 1;
     }

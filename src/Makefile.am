@@ -1,6 +1,6 @@
 bin_PROGRAMS=sngrep
 sngrep_SOURCES=capture.c capture_eep.c capture_reasm.c capture_ws.c
-if WITH_OPENSSL
+if WITH_GNUTLS
 sngrep_SOURCES+=capture_tls.c
 endif
 sngrep_SOURCES+=sip.c sip_call.c sip_msg.c sip_attr.c main.c option.c

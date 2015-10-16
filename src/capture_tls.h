@@ -47,10 +47,11 @@
 #define __SNGREP_CAPTURE_TLS_
 
 #include "config.h"
-#include <openssl/ssl.h>
-#include <openssl/tls1.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
+#include <gnutls/openssl.h>
+#include <gnutls/crypto.h>
+#include <gnutls/abstract.h>
+#include <gnutls/x509.h>
+#include <gcrypt.h>
 #include "capture.h"
 
 //! Cast two bytes into decimal (Big Endian)
@@ -97,23 +98,23 @@ enum SSLConnectionState {
 
 //! ContentType values as defined in RFC5246
 enum ContentType {
-    change_cipher_spec = SSL3_RT_CHANGE_CIPHER_SPEC,
-    alert = SSL3_RT_ALERT,
-    handshake = SSL3_RT_HANDSHAKE,
-    application_data = SSL3_RT_APPLICATION_DATA
+    change_cipher_spec  = 20,
+    alert               = 21,
+    handshake           = 22,
+    application_data    = 23
 };
 
 //! HanshakeType values as defined in RFC5246
 enum HandshakeType {
-    hello_request = SSL3_MT_HELLO_REQUEST,
-    client_hello = SSL3_MT_CLIENT_HELLO,
-    server_hello = SSL3_MT_SERVER_HELLO,
-    certificate = SSL3_MT_CERTIFICATE,
-    certificate_request = SSL3_MT_CERTIFICATE_REQUEST,
-    server_hello_done = SSL3_MT_SERVER_DONE,
-    certificate_verify = SSL3_MT_CERTIFICATE_VERIFY,
-    client_key_exchange = SSL3_MT_CLIENT_KEY_EXCHANGE,
-    finished = SSL3_MT_FINISHED
+    hello_request       = GNUTLS_HANDSHAKE_HELLO_REQUEST,
+    client_hello        = GNUTLS_HANDSHAKE_CLIENT_HELLO,
+    server_hello        = GNUTLS_HANDSHAKE_SERVER_HELLO,
+    certificate         = GNUTLS_HANDSHAKE_CERTIFICATE_PKT,
+    certificate_request = GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST,
+    server_hello_done   = GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
+    certificate_verify  = GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
+    client_key_exchange = GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
+    finished            = GNUTLS_HANDSHAKE_FINISHED
 };
 
 //! ProtocolVersion header as defined in RFC5246
@@ -208,8 +209,8 @@ struct SSLConnection {
 
     SSL *ssl;
     SSL_CTX *ssl_ctx;
-    EVP_PKEY *server_private_key;
-    const EVP_CIPHER *ciph;
+    int ciph;
+    gnutls_privkey_t server_private_key;
     struct Random client_random;
     struct Random server_random;
     struct CipherSuite cipher_suite;
@@ -225,8 +226,8 @@ struct SSLConnection {
         uint8 server_write_IV[16];
     } key_material;
 
-    EVP_CIPHER_CTX client_cipher_ctx;
-    EVP_CIPHER_CTX server_cipher_ctx;
+    gcry_cipher_hd_t client_cipher_ctx;
+    gcry_cipher_hd_t server_cipher_ctx;
 
     struct SSLConnection *next;
 };

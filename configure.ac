@@ -97,23 +97,27 @@ AS_IF([test "x$enable_unicode" == "xyes"], [
 ])
 
 ####
-#### OpenSSL Support
+#### GnuTLS Support
 ####
-AC_ARG_WITH([openssl],
-    AS_HELP_STRING([--with-openssl], [Enable SSL Support (TLS SIP Transport)]),
-    [AC_SUBST(WITH_OPENSSL, $withval)],
-    [AC_SUBST(WITH_OPENSSL, no)]
+AC_ARG_WITH([gnutls],
+    AS_HELP_STRING([--with-gnutls], [Enable SSL Support (TLS SIP Transport)]),
+    [AC_SUBST(WITH_GNUTLS, $withval)],
+    [AC_SUBST(WITH_GNUTLS, no)]
 )
 
-AS_IF([test "x$WITH_OPENSSL" == "xyes"], [
-	AC_CHECK_LIB([ssl], [SSL_new], [], [
-	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep])
+AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
+	AC_CHECK_LIB([gnutls], [gnutls_init], [], [
+	    AC_MSG_ERROR([ You need to have gnutls installed to compile sngrep])
+	])
+
+	AC_CHECK_LIB([gnutls-openssl], [SSL_new], [], [
+	    AC_MSG_ERROR([ You need to have gnutls installed to compile sngrep])
 	])
 	
-	AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
-	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep])
+	AC_CHECK_LIB([gcrypt], [gcry_md_map_name], [], [
+	    AC_MSG_ERROR([ You need to have libgcrypto installed to compile sngrep])
 	])
-	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
+	AC_DEFINE([WITH_GNUTLS],[],[Compile With GnuTLS compatibility])
 ], [])
 
 ####
@@ -153,7 +157,7 @@ AS_IF([test "x$USE_IPV6" == "xyes"], [
 
 
 # Conditional Source inclusion 
-AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" == "xyes"])
+AM_CONDITIONAL([WITH_GNUTLS], [test "x$WITH_GNUTLS" == "xyes"])
 
 
 ######################################################################
@@ -177,8 +181,8 @@ AS_IF([test "x$enable_logo" == "xyes"], [
 AC_MSG_NOTICE
 AC_MSG_NOTICE(   sngrep configure finished                            	)
 AC_MSG_NOTICE( ====================================================== 	)
-AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
-AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  				)
+AC_MSG_NOTICE( GnuTLS Support               : ${WITH_GNUTLS}		)
+AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  		)
 AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
 AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )
 AC_MSG_NOTICE( ====================================================== 	)

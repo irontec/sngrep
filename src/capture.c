@@ -36,7 +36,7 @@
 #include "capture_ws.h"
 #include "capture_reasm.h"
 #include "capture_eep.h"
-#ifdef WITH_OPENSSL
+#ifdef WITH_GNUTLS
 #include "capture_tls.h"
 #endif
 #include "sip.h"
@@ -300,7 +300,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         if (!(pkt = capture_packet_reasm_tcp(pkt, tcp, payload, size_payload)))
             return;
 
-#ifdef WITH_OPENSSL
+#ifdef WITH_GNUTLS
         // Check if packet is TLS
         if (capture_cfg.keyfile)
             tls_process_segment(pkt, tcp);
