@@ -314,6 +314,12 @@ vector_iterator_set_current(vector_iter_t *it, int current)
     it->current = current;
 }
 
+void
+vector_iterator_set_last(vector_iter_t *it)
+{
+    it->current = vector_count(it->vector);
+}
+
 int
 vector_iterator_current(vector_iter_t *it)
 {

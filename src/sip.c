@@ -524,6 +524,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     u_int media_fmt_code;
     sdp_media_t *media = NULL;
     char *payload2, *tofree, *line;
+    sip_call_t *call = msg_get_call(msg);
 
     // Initialize variables
     memset(address, 0, sizeof(address));
@@ -543,13 +544,16 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                     msg_add_media(msg, media);
 
                     /**
-                     * From SDP we can only guess destination address port. RTP Capture process
+                     * From SDP we can only guess destination address port. RTP Capture proccess
                      * will determine when the stream has been completed, getting source address
                      * and port of the stream.
                      */
                     // Create a new stream with this destination address:port
                     if (!call_msg_is_retrans(msg)) {
-                        call_add_stream(msg_get_call(msg), stream_create(media, media_address, media_port));
+                        // Create RTP stream
+                        call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTP));
+                        // Create early RTCP stream
+                        call_add_stream(call, stream_create(media, media_address, media_port + 1, CAPTURE_PACKET_RTCP));
                     }
                 }
             }
@@ -568,6 +572,15 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                 media_add_format(media, media_fmt_code, media_format);
             }
         }
+
+        // Check if we have attribute format RTCP port
+        if (!strncmp(line, "a=rtcp:", 7)) {
+            if (media && sscanf(line, "a=rtcp:%u", &media_port)) {
+                // Create early RTCP stream
+                call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTCP));
+            }
+        }
+
 
     }
     sng_free(tofree);

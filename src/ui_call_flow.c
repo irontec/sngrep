@@ -189,7 +189,10 @@ call_flow_draw(PANEL *panel)
             if (!call_flow_draw_message(panel, arrow, cline))
                 break;
         } else if (arrow->type == CF_ARROW_RTP) {
-            if (!call_flow_draw_stream(panel, arrow, cline))
+            if (!call_flow_draw_rtp_stream(panel, arrow, cline))
+                break;
+        } else if (arrow->type == CF_ARROW_RTCP) {
+            if (!call_flow_draw_rtcp_stream(panel, arrow, cline))
                 break;
         }
         cline += arrow->height;
@@ -197,7 +200,18 @@ call_flow_draw(PANEL *panel)
 
     // If there are only three columns, then draw the raw message on this panel
     if (setting_enabled(SETTING_CF_FORCERAW)) {
-        call_flow_draw_raw(panel, call_flow_arrow_message(info->cur_arrow));
+        switch (info->cur_arrow->type) {
+            case CF_ARROW_RTP:
+                call_flow_draw_raw(panel, info->cur_arrow->stream->media->msg);
+                break;
+            case CF_ARROW_SIP:
+                call_flow_draw_raw(panel, info->cur_arrow->msg);
+                break;
+            case CF_ARROW_RTCP:
+                call_flow_draw_raw_rtcp(panel, info->cur_arrow->stream);
+                break;
+        }
+
     }
 
     // Draw the scrollbar
@@ -498,7 +512,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
 
 call_flow_arrow_t *
-call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
+call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
@@ -530,8 +544,12 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     timeval_to_time(stream->time, time);
     mvwprintw(win, cline, 2, "%s", time);
 
-    // Get Message method (include extra info)
-    sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
+    if (stream->type == CAPTURE_PACKET_RTP) {
+        // Get Message method (include extra info)
+        sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
+    } else {
+        sprintf(codec, "RTCP %d", stream_get_count(stream));
+    }
 
     // Get message data
     msg_get_attribute(stream->media->msg, SIP_ATTR_SRC, msg_src);
@@ -590,7 +608,137 @@ call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     mvwprintw(win, cline++, startpos + (distance) / 2 - strlen(codec) / 2 + 2, "%s", codec);
 
     // Draw line between columns
-    mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
+    mvwhline(win, cline, startpos + 2, '-', distance);
+    // Write the arrow at the end of the message (two arrows if this is a retrans)
+    if (arrow_dir == 0 /* right */) {
+        mvwprintw(win, cline, startpos - 5, "%d", stream->sport);
+        mvwprintw(win, cline, endpos + 1, "%d", stream->dport);
+        if (distance > 0)
+            mvwaddch(win, cline, endpos - 2, '>');
+        else
+            mvwaddch(win, cline, endpos, '>');
+        if (arrow->rtp_count != stream_get_count(stream)) {
+            arrow->rtp_count = stream_get_count(stream);
+            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
+            mvwaddch(win, cline, startpos + arrow->rtp_ind_pos + 2, '>');
+        }
+    } else {
+        mvwprintw(win, cline, endpos  + 1, "%d", stream->sport);
+        mvwprintw(win, cline, startpos - 5, "%d", stream->dport);
+        if (distance > 0)
+            mvwaddch(win, cline, startpos + 2, '<');
+        else
+            mvwaddch(win, cline, startpos, '<');
+        if (arrow->rtp_count != stream_get_count(stream)) {
+            arrow->rtp_count = stream_get_count(stream);
+            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
+            mvwaddch(win, cline, endpos - arrow->rtp_ind_pos - 2, '<');
+        }
+    }
+
+    wattroff(win, A_BOLD | A_REVERSE);
+
+    return arrow;
+}
+
+call_flow_arrow_t *
+call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
+{
+    call_flow_info_t *info;
+    WINDOW *win;
+    char codec[50], time[20];
+    int height, width;
+    const char *callid;
+    char msg_dst[80], msg_src[80];
+    call_flow_column_t *column1, *column2;
+    rtp_stream_t *stream = arrow->stream;
+    int arrow_dir = 0; /* 0: right, 1: left */
+
+    // Get panel information
+    info = call_flow_info(panel);
+    // Get the messages window
+    win = info->flow_win;
+    getmaxyx(win, height, width);
+
+    // Store arrow start line
+    arrow->line = cline;
+
+    // Calculate how many lines this message requires
+    arrow->height = call_flow_arrow_height(panel, arrow);
+
+    // Check this media fits on the panel
+    if (cline > height + arrow->height)
+        return NULL;
+
+    // Print timestamp
+    timeval_to_time(stream->time, time);
+    mvwprintw(win, cline, 2, "%s", time);
+
+    if (stream->type == CAPTURE_PACKET_RTP) {
+        // Get Message method (include extra info)
+        sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
+    } else {
+        sprintf(codec, "RTCP %d", stream_get_count(stream));
+    }
+
+    // Get message data
+    msg_get_attribute(stream->media->msg, SIP_ATTR_SRC, msg_src);
+    msg_get_attribute(stream->media->msg, SIP_ATTR_DST, msg_dst);
+    callid = stream->media->msg->call->callid;
+
+    // Get origin column for this stream.
+    // If we share the same Address from its setup SIP packet, use that column instead.
+    if (!strncmp(stream->ip_src, msg_src, strlen(stream->ip_src))) {
+        column1 = call_flow_column_get(panel, callid, msg_src);
+    } else if (!strncmp(stream->ip_src, msg_dst, strlen(stream->ip_src))) {
+        column1 = call_flow_column_get(panel, callid, msg_dst);
+    } else {
+        column1 = call_flow_column_get(panel, 0, stream->ip_src);
+    }
+
+    // Get destination column for this stream.
+    // If we share the same Address from its setup SIP packet, use that column instead.
+    if (!strncmp(stream->ip_dst, msg_dst, strlen(stream->ip_dst))) {
+        column2 = call_flow_column_get(panel, callid, msg_dst);
+    } else if (!strncmp(stream->ip_dst, msg_src, strlen(stream->ip_dst))) {
+        column2 = call_flow_column_get(panel, callid, msg_src);
+    } else {
+        column2 = call_flow_column_get(panel, 0, stream->ip_dst);
+    }
+
+    call_flow_column_t *tmp;
+    if (column1->colpos > column2->colpos) {
+        tmp = column1;
+        column1 = column2;
+        column2 = tmp;
+        arrow_dir = 1; /* swap arrow direction */
+    }
+
+    int startpos = 20 + 30 * column1->colpos;
+    int endpos = 20 + 30 * column2->colpos;
+    int distance = abs(endpos - startpos) - 4;
+
+    // Highlight current message
+    if (arrow == info->cur_arrow) {
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
+            wattron(win, A_REVERSE);
+        }
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
+            wattron(win, A_BOLD);
+        }
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
+            wattron(win, A_REVERSE);
+            wattron(win, A_BOLD);
+        }
+    }
+
+    // Clear the line
+    mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
+    // Draw method
+    mvwprintw(win, cline++, startpos + (distance) / 2 - strlen(codec) / 2 + 2, "%s", codec);
+
+    // Draw line between columns
+    mvwhline(win, cline, startpos + 2, '-', distance);
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == 0 /* right */) {
         mvwprintw(win, cline, startpos - 5, "%d", stream->sport);
@@ -644,7 +792,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
         memset(&cur_time, 0, sizeof(struct timeval));
     } else if (cur->type == CF_ARROW_SIP) {
         cur_time = msg_get_time(cur->msg);
-    } else if (cur->type == CF_ARROW_RTP) {
+    } else if (cur->type == CF_ARROW_RTP || cur->type == CF_ARROW_RTCP) {
         cur_time = cur->stream->time;
     }
 
@@ -671,7 +819,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
     if (!msg) {
         // Create a new arrow to store next info
         next = sng_malloc(sizeof(call_flow_arrow_t));
-        next->type = CF_ARROW_RTP;
+        next->type = (stream->type == CAPTURE_PACKET_RTP) ? CF_ARROW_RTP : CF_ARROW_RTCP;
         next->stream = stream;
     } else if (!stream) {
         /* a sip message goes next */
@@ -684,7 +832,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
         if (timeval_is_older(msg_get_time(msg), stream->time)) {
             // Create a new arrow to store next info
             next = sng_malloc(sizeof(call_flow_arrow_t));
-            next->type = CF_ARROW_RTP;
+            next->type = (stream->type == CAPTURE_PACKET_RTP) ? CF_ARROW_RTP : CF_ARROW_RTCP;
             next->stream = stream;
         } else {
             // Create a new arrow to store next info
@@ -733,7 +881,7 @@ call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow)
             return 2;
         if (setting_has_value(SETTING_CF_SDP_INFO, "full"))
             return msg_media_count(arrow->msg) + 2;
-    } else if (arrow->type == CF_ARROW_RTP) {
+    } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP) {
         return 2;
     }
 
@@ -768,7 +916,7 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow)
         return NULL;
     if (arrow->type == CF_ARROW_SIP)
         return arrow->msg;
-    if (arrow->type == CF_ARROW_RTP)
+    if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP)
         return arrow->stream->media->msg;
     return NULL;
 }
@@ -831,6 +979,78 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
 
     // Print msg payload
     draw_message(info->raw_win, msg);
+
+    // Copy the raw_win contents into the panel
+    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);
+
+    return 0;
+}
+
+
+int
+call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *stream)
+{
+    call_flow_info_t *info;
+    WINDOW *win, *raw_win;
+    int raw_width, raw_height, height, width;
+    int min_raw_width, fixed_raw_width;
+
+    // Get panel information
+    if (!(info = call_flow_info(panel)))
+        return 1;
+
+    // Get window of main panel
+    win = panel_window(panel);
+    getmaxyx(win, height, width);
+
+    // Get min raw width
+    min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
+    fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
+
+    // Calculate the raw data width (width - used columns for flow - vertical lines)
+    raw_width = width - (30 * vector_count(info->columns)) - 2;
+    // We can define a mininum size for rawminwidth
+    if (raw_width < min_raw_width) {
+        raw_width = min_raw_width;
+    }
+    // We can configure an exact raw size
+    if (fixed_raw_width > 0) {
+        raw_width = fixed_raw_width;
+    }
+
+    // Height of raw window is always available size minus 6 lines for header/footer
+    raw_height = height - 3;
+
+    // If we already have a raw window
+    raw_win = info->raw_win;
+    if (raw_win) {
+        // Check it has the correct size
+        if (getmaxx(raw_win) != raw_width) {
+            // We need a new raw window
+            delwin(raw_win);
+            info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
+        } else {
+            // We have a valid raw win, clear its content
+            werase(raw_win);
+        }
+    } else {
+        // Create the raw window of required size
+        info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
+    }
+
+    // Draw raw box lines
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwvline(win, 1, width - raw_width - 2, ACS_VLINE, height - 2);
+    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+
+    mvwprintw(raw_win, 0, 0, "============ RTCP Information ============");
+    mvwprintw(raw_win, 2, 0, "Sender's packet count: %d", stream->rtcpinfo.spc);
+    mvwprintw(raw_win, 3, 0, "Fraction Lost: %d / 256", stream->rtcpinfo.flost);
+    mvwprintw(raw_win, 4, 0, "Fraction discarded: %d / 256", stream->rtcpinfo.fdiscard);
+    mvwprintw(raw_win, 6, 0, "MOS - Listening Quality: %.1f", (float) stream->rtcpinfo.mosl / 10);
+    mvwprintw(raw_win, 7, 0, "MOS - Conversational Quality: %.1f", (float) stream->rtcpinfo.mosc / 10);
+
+
 
     // Copy the raw_win contents into the panel
     copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);

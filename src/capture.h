@@ -108,6 +108,7 @@ enum capture_packet_type {
     CAPTURE_PACKET_SIP_WS,
     CAPTURE_PACKET_SIP_WSS,
     CAPTURE_PACKET_RTP,
+    CAPTURE_PACKET_RTCP,
 };
 
 /**

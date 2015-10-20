@@ -250,6 +250,12 @@ void
 vector_iterator_set_current(vector_iter_t *it, int current);
 
 /**
+ * @brief Set iterator position to the last element
+ */
+void
+vector_iterator_set_last(vector_iter_t *it);
+
+/**
  * @brief Return current iterator position
  */
 int

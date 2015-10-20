@@ -71,6 +71,7 @@ typedef struct call_flow_arrow call_flow_arrow_t;
 enum call_flow_arrow_type {
     CF_ARROW_SIP,
     CF_ARROW_RTP,
+    CF_ARROW_RTCP,
 };
 
 /**
@@ -227,7 +228,20 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline);
  * @return the arrow passed as parameter
  */
 call_flow_arrow_t *
-call_flow_draw_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
+call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
+
+/**
+ * @brief Draw the RTCP stream data in the given line
+ *
+ * Draw the given arrow of type stream in the given line.
+ *
+ * @param panel Ncurses panel pointer
+ * @param arrow Call flow arrow to be drawn
+ * @param cline Window line to draw the message
+ * @return the arrow passed as parameter
+ */
+call_flow_arrow_t *
+call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
 
 /**
  * @brief Get the next chronological arrow
@@ -304,6 +318,18 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow);
  */
 int
 call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
+
+/**
+ * @brief Draw raw panel with RTCP data
+ *
+ * Draw the given stream data into the raw window.
+ *
+ * @param panel Ncurses panel pointer
+ * @param rtcp stream containing the RTCP conection data
+ * @return 0 in all cases
+ */
+int
+call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *rtcp);
 
 /**
  * @brief Handle Call flow extended key strokes

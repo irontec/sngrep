@@ -65,7 +65,7 @@ rtp_encoding_t encodings[] = {
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, const char *dst, u_short dport)
+stream_create(sdp_media_t *media, const char *dst, u_short dport, int type)
 {
     rtp_stream_t *stream;
 
@@ -74,6 +74,7 @@ stream_create(sdp_media_t *media, const char *dst, u_short dport)
         return NULL;
 
     // Initialize all fields
+    stream->type = type;
     stream->media = media;
     strcpy(stream->ip_dst, dst);
     stream->dport = dport;
@@ -82,12 +83,17 @@ stream_create(sdp_media_t *media, const char *dst, u_short dport)
 }
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, const char *src, u_short sport, u_int format)
+stream_complete(rtp_stream_t *stream, const char *src, u_short sport)
 {
     strcpy(stream->ip_src, src);
     stream->sport = sport;
-    stream->fmtcode = format;
     return stream;
+}
+
+void
+stream_set_format(rtp_stream_t *stream, uint32_t format)
+{
+    stream->rtpinfo.fmtcode = format;
 }
 
 void
@@ -99,7 +105,7 @@ stream_add_packet(rtp_stream_t *stream, capture_packet_t *packet)
     stream->pktcnt++;
 }
 
-int
+uint32_t
 stream_get_count(rtp_stream_t *stream)
 {
     return stream->pktcnt;
@@ -123,11 +129,11 @@ stream_get_format(rtp_stream_t *stream)
         return NULL;
 
     // Try to get standard format form code
-    if ((fmt = rtp_get_standard_format(stream->fmtcode)))
+    if ((fmt = rtp_get_standard_format(stream->rtpinfo.fmtcode)))
         return fmt;
 
     // Try to get format form SDP payload
-    if ((fmt = media_get_format(stream->media, stream->fmtcode)))
+    if ((fmt = media_get_format(stream->media, stream->rtpinfo.fmtcode)))
         return fmt;
 
     // Not found format for this code
@@ -155,9 +161,15 @@ rtp_check_packet(capture_packet_t *packet)
     u_short sport, dport;
     rtp_stream_t *stream;
     rtp_stream_t *reverse;
-    u_int format;
+    u_char format = 0;
     u_char *payload;
-    uint32_t size;
+    uint32_t size, bsize;
+    uint16_t len;
+    struct rtcp_hdr_generic hdr;
+    struct rtcp_hdr_sr hdr_sr;
+    struct rtcp_hdr_xr hdr_xr;
+    struct rtcp_blk_xr blk_xr;
+    struct rtcp_blk_xr_voip blk_xr_voip;
 
     // Get packet data
     payload = capture_packet_get_payload(packet);
@@ -177,35 +189,114 @@ rtp_check_packet(capture_packet_t *packet)
     if (RTP_VERSION(*payload) != RTP_VERSION_RFC1889)
         return NULL;
 
-    // Get RTP payload type
-    format = RTP_PAYLOAD_TYPE(*(++payload));
+    // RTP: even, RTCP: odd
+    if (((packet->dport % 2) == 0)) {
 
-    // Find the matching stream
-    stream = rtp_find_stream(src, sport, dst, dport, format);
+        // Get RTP payload type
+        format = RTP_PAYLOAD_TYPE(*(payload + 1));
 
-    // A valid stream has been found
-    if (stream) {
+        // Find the matching stream
+        stream = rtp_find_stream(src, sport, dst, dport, format);
+
+        // Check if a valid stream has been found
+        if (!stream)
+            return NULL;
+
         // We have found a stream, but with different format
-        if (stream->pktcnt && stream->fmtcode != format) {
+        if (stream->pktcnt && stream->rtpinfo.fmtcode != format) {
             // Create a new stream for this new format
-            stream = stream_create(stream->media, dst, dport);
-            stream_complete(stream, src, sport, format);
+            stream = stream_create(stream->media, dst, dport, CAPTURE_PACKET_RTP);
+            stream_complete(stream, src, sport);
+            stream_set_format(stream, format);
             call_add_stream(msg_get_call(stream->media->msg), stream);
         }
 
         // First packet for this stream, set source data
         if (stream->pktcnt == 0) {
-            stream_complete(stream, src, sport, format);
+            stream_complete(stream, src, sport);
+            stream_set_format(stream, format);
             // Check if an stream in the opposite direction exists
-            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport, stream->fmtcode))) {
-                reverse = stream_create(stream->media, stream->ip_src, stream->sport);
-                stream_complete(reverse, stream->ip_dst, stream->dport, format);
+            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport, stream->rtpinfo.fmtcode))) {
+                reverse = stream_create(stream->media, stream->ip_src, stream->sport, CAPTURE_PACKET_RTP);
+                stream_complete(reverse, stream->ip_dst, stream->dport);
+                stream_set_format(reverse, format);
                 call_add_stream(msg_get_call(stream->media->msg), reverse);
             }
         }
 
         // Add packet to stream
         stream_add_packet(stream, packet);
+    } else {
+        // Find the matching stream
+        if ((stream = rtp_find_stream(src, sport, dst, dport, format))) {
+
+            // Parse all packet payload headers
+            while (size > 0) {
+
+                // Check we have at least rtcp generic info
+                if (size < sizeof(struct rtcp_hdr_generic))
+                    break;
+
+                memcpy(&hdr, payload, sizeof(hdr));
+
+                // Check RTP version
+                if (RTP_VERSION(hdr.version) != RTP_VERSION_RFC1889)
+                    break;
+
+                // Header length
+                len = ntohs(hdr.len) * 4 + 4;
+
+                // Check RTCP packet header typ
+                switch (hdr.type) {
+                    case RTCP_HDR_SR:
+                        // Get Sender Report header
+                        memcpy(&hdr_sr, payload, sizeof(hdr_sr));
+                        stream->rtcpinfo.spc = ntohl(hdr_sr.spc);
+                        break;
+                    case RTCP_HDR_RR:
+                    case RTCP_HDR_SDES:
+                    case RTCP_HDR_BYE:
+                    case RTCP_HDR_APP:
+                    case RTCP_RTPFB:
+                    case RTCP_PSFB:
+                        break;
+                    case RTCP_XR:
+                        // Get Sender Report Extended header
+                        memcpy(&hdr_xr, payload, sizeof(hdr_xr));
+                        bsize = sizeof(hdr_xr);
+
+                        // Read all report blocks
+                        while (bsize < ntohs(hdr_xr.len) * 4 + 4) {
+                            // Read block header
+                            memcpy(&blk_xr, payload + bsize, sizeof(blk_xr));
+                            // Check block type
+                            switch (blk_xr.type) {
+                                case RTCP_XR_VOIP_METRCS:
+                                    memcpy(&blk_xr_voip, payload + sizeof(hdr_xr), sizeof(blk_xr_voip));
+                                    stream->rtcpinfo.fdiscard = blk_xr_voip.drate;
+                                    stream->rtcpinfo.flost = blk_xr_voip.lrate;
+                                    stream->rtcpinfo.mosl = blk_xr_voip.moslq;
+                                    stream->rtcpinfo.mosc = blk_xr_voip.moscq;
+                                    break;
+                                default: break;
+                            }
+                            bsize += ntohs(blk_xr.len) * 4;
+                        }
+                        break;
+                    case RTCP_AVB:
+                    case RTCP_RSI:
+                    case RTCP_TOKEN:
+                    default:
+                        break;
+                }
+                payload += len;
+                size -= len;
+            }
+
+            // Add packet to stream
+            stream_complete(stream, src, sport);
+            stream_add_packet(stream, packet);
+        }
     }
 
     return stream;
@@ -222,7 +313,8 @@ rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport, 
     vector_iter_t calls;
 
     // Get active calls (during conversation)
-    calls = sip_active_calls_iterator();
+    calls = sip_calls_iterator();
+    //vector_iterator_set_current(&calls, vector_iterator_count(&calls) - 1);
 
     while ((call = vector_iterator_next(&calls))) {
         // Check if this call has an RTP stream for current packet data
@@ -237,42 +329,41 @@ rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport, 
 rtp_stream_t *
 rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format)
 {
-    rtp_stream_t *stream, *ret = NULL;
+    rtp_stream_t *stream;
     vector_iter_t it;
 
+    // Create an iterator for call streams
     it = vector_iterator(call->streams);
 
-    // Try to look for a complete stream with this format
-    while ((stream = vector_iterator_next(&it))) {
-        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
-            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport &&
-            stream->fmtcode == format && stream->pktcnt) {
-            ret = stream;
+    // Look for an incomplete stream with this destination
+    vector_iterator_set_last(&it);
+    while ((stream = vector_iterator_prev(&it))) {
+        if (!strcmp(ip_dst, stream->ip_dst) && dport == stream->dport && !stream->pktcnt) {
+            return stream;
         }
     }
 
     // Try to look for a complete stream with any format
-    if (!ret) {
-        vector_iterator_reset(&it);
-        while ((stream = vector_iterator_next(&it))) {
-            if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
-                !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
-                ret = stream;
-            }
+    vector_iterator_set_last(&it);
+    while ((stream = vector_iterator_prev(&it))) {
+        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
+            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport &&
+            stream->rtpinfo.fmtcode == format && stream->pktcnt) {
+            return stream;
         }
     }
 
     // Try to look for an incomplete stream with this destination
-    if (!ret) {
-        vector_iterator_reset(&it);
-        while ((stream = vector_iterator_next(&it))) {
-            if (!strcmp(ip_dst, stream->ip_dst) && dport == stream->dport && !stream->pktcnt) {
-                ret = stream;
-            }
+    vector_iterator_set_last(&it);
+    while ((stream = vector_iterator_prev(&it))) {
+        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
+            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
+            return stream;
         }
     }
 
-    return ret;
+    // Nothing found
+    return NULL;
 }
 
 int

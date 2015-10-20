@@ -44,6 +44,40 @@
 // Handled RTP versions
 #define RTP_VERSION_RFC1889 2
 
+// RTCP header types
+//! http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml
+enum rtcp_header_types
+{
+    RTCP_HDR_SR = 200,
+    RTCP_HDR_RR,
+    RTCP_HDR_SDES,
+    RTCP_HDR_BYE,
+    RTCP_HDR_APP,
+    RTCP_RTPFB,
+    RTCP_PSFB,
+    RTCP_XR,
+    RTCP_AVB,
+    RTCP_RSI,
+    RTCP_TOKEN,
+};
+
+//! http://www.iana.org/assignments/rtcp-xr-block-types/rtcp-xr-block-types.xhtml
+enum rtcp_xr_block_types
+{
+    RTCP_XR_LOSS_RLE = 1,
+    RTCP_XR_DUP_RLE,
+    RTCP_XR_PKT_RXTIMES,
+    RTCP_XR_REF_TIME,
+    RTCP_XR_DLRR,
+    RTCP_XR_STATS_SUMRY,
+    RTCP_XR_VOIP_METRCS,
+    RTCP_XR_BT_XNQ,
+    RTCP_XR_TI_VOIP,
+    RTCP_XR_PR_LOSS_RLE,
+    RTCP_XR_MC_ACQ,
+    RTCP_XR_IDMS
+};
+
 //! Shorter declaration of rtp_encoding structure
 typedef struct rtp_encoding rtp_encoding_t;
 //! Shorter declaration of rtp_stream structure
@@ -56,32 +90,193 @@ struct rtp_encoding {
 };
 
 struct rtp_stream {
+    //! Determine stream type
+    uint32_t type;
     //! Source address and port
     char ip_src[ADDRESSLEN];
     u_short sport;
     //! Destination address and port
     char ip_dst[ADDRESSLEN];
     u_short dport;
-    //! Format of first received packet of stre
-    u_int fmtcode;
-    //! Time of first received packet of stream
-    struct timeval time;
-    //! Packet count for this stream
-    int pktcnt;
     //! SDP media that setup this stream
     sdp_media_t *media;
+    //! Packet count for this stream
+    uint32_t pktcnt;
+    //! Time of first received packet of stream
+    struct timeval time;
+
+    // Stream information (depending on type)
+    union {
+        struct {
+            //! Format of first received packet of stre
+            uint32_t fmtcode;
+        } rtpinfo;
+        struct {
+            //! Sender packet count
+            uint32_t spc;
+            //! Fraction lost x/256
+            uint8_t flost;
+            //! uint8_t discarded x/256
+            uint8_t fdiscard;
+            //! MOS - listening Quality
+            uint8_t mosl;
+            //! MOS - Conversational Quality
+            uint8_t mosc;
+        } rtcpinfo;
+    };
+};
+
+struct rtcp_hdr_generic
+{
+    //! version (V): 2 bits
+    uint8_t version;
+    //! packet type (PT): 8 bits
+    uint8_t type;
+    //! length: 16 bits
+    uint16_t len;
+};
+
+struct rtcp_hdr_sr
+{
+    //! version (V): 2 bits
+    uint8_t version:2;
+    //! padding (P): 1 bit
+    uint8_t padding:1;
+    //! reception report count (RC): 5 bits
+    uint8_t rcount:5;
+    //! packet type (PT): 8 bits
+    uint8_t type;
+    //! length: 16 bits
+    uint16_t len;
+    //! SSRC: 32 bits
+    uint32_t ssrc;
+    //! NTP timestamp: 64 bits
+    uint64_t ntpts;
+    //! RTP timestamp: 32 bits
+    uint32_t rtpts;
+    //! sender's packet count: 32 bits
+    uint32_t spc;
+    //! sender's octet count: 32 bits
+    uint32_t soc;
+};
+
+struct rtcp_blk_sr
+{
+    //! SSRC_n (source identifier): 32 bits
+    uint32_t ssrc;
+    //! fraction lost: 8 bits
+    uint8_t flost;
+    //! cumulative number of packets lost: 24 bits
+    struct {
+        uint8_t pl1;
+        uint8_t pl2;
+        uint8_t pl3;
+    } plost;
+    //! extended highest sequence number received: 32 bits
+    uint32_t hseq;
+    //! interarrival jitter: 32 bits
+    uint32_t ijitter;
+};
+
+struct rtcp_hdr_xr
+{
+    //! version (V): 2 bits
+    uint8_t version:2;
+    //! padding (P): 1 bit
+    uint8_t padding:1;
+    //! reserved: 5 bits
+    uint8_t reserved:5;
+    //! packet type (PT): 8 bits
+    uint8_t type;
+    //! length: 16 bits
+    uint16_t len;
+    //! SSRC: 32 bits
+    uint32_t ssrc;
+};
+
+struct rtcp_blk_xr
+{
+    //! block type (BT): 8 bits
+    uint8_t type;
+    //! type-specific: 8 bits
+    uint8_t specific;
+    //! length: 16 bits
+    uint16_t len;
+};
+
+struct rtcp_blk_xr_voip
+{
+    //! block type (BT): 8 bits
+    uint8_t type;
+    //! type-specific: 8 bits
+    uint8_t reserved;
+    //! length: 16 bits
+    uint16_t len;
+    //! SSRC: 32 bits
+    uint32_t ssrc;
+    //! loss rate: 8 bits
+    uint8_t lrate;
+    //! discard rate: 8 bits
+    uint8_t drate;
+    //! burst density: 8 bits
+    uint8_t bdens;
+    //! gap density: 8 bits
+    uint8_t gdens;
+    //! burst duration: 16 bits
+    uint16_t bdur;
+    //! gap duration: 16 bits
+    uint16_t gdur;
+    //! round trip delay: 16 bits
+    uint16_t rtd;
+    //! end system delay: 16 bits
+    uint16_t esd;
+    //! signal level: 8 bits
+    uint8_t slevel;
+    //! noise level: 8 bits
+    uint8_t nlevel;
+    //! residual echo return loss (RERL): 8 bits
+    uint8_t rerl;
+    //! Gmin: 8 bits
+    uint8_t gmin;
+    //! R factor: 8 bits
+    uint8_t rfactor;
+    //! ext. R factor: 8 bits
+    uint8_t xrfactor;
+    //! MOS-LQ: 8 bits
+    uint8_t moslq;
+    //! MOS-CQ: 8 bits
+    uint8_t moscq;
+    //! receiver configuration byte (RX config): 8 bits
+    uint8_t rxc;
+    //! packet loss concealment (PLC): 2 bits
+    uint8_t plc:2;
+    //! jitter buffer adaptive (JBA): 2 bits
+    uint8_t jba:2;
+    //! jitter buffer rate (JB rate): 4 bits
+    uint8_t jbrate:4;
+    //! reserved: 8 bits
+    uint8_t reserved2;
+    //! jitter buffer nominal delay (JB nominal): 16 bits
+    uint16_t jbndelay;
+    //! jitter buffer maximum delay (JB maximum): 16 bits
+    uint16_t jbmdelay;
+    //! jitter buffer absolute maximum delay (JB abs max): 16 bits
+    uint16_t jbadelay;
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, const char *dst, u_short dport);
+stream_create(sdp_media_t *media, const char *dst, u_short dport, int type);
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, const char *src, u_short sport, u_int format);
+stream_complete(rtp_stream_t *stream, const char *src, u_short sport);
+
+void
+stream_set_format(rtp_stream_t *stream, uint32_t format);
 
 void
 stream_add_packet(rtp_stream_t *stream, capture_packet_t *packet);
 
-int
+uint32_t
 stream_get_count(rtp_stream_t *stream);
 
 struct sip_call *
