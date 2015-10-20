@@ -703,7 +703,7 @@ sip_address_format(const char *address)
     // Return address formatted depending on active settings
     if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
         return get_alias_value(address);
-    } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
+    } else if (setting_enabled(SETTING_DISPLAY_HOST)) {
         return lookup_hostname(address);
     } else {
         return address;
