@@ -216,7 +216,7 @@ rtp_check_packet(capture_packet_t *packet)
             stream_complete(stream, src, sport);
             stream_set_format(stream, format);
             // Check if an stream in the opposite direction exists
-            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport, stream->rtpinfo.fmtcode))) {
+            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport))) {
                 reverse = stream_create(stream->media, stream->ip_src, stream->sport, CAPTURE_PACKET_RTP);
                 stream_complete(reverse, stream->ip_dst, stream->dport);
                 stream_set_format(reverse, format);
@@ -318,7 +318,7 @@ rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport, 
 
     while ((call = vector_iterator_next(&calls))) {
         // Check if this call has an RTP stream for current packet data
-        if ((stream = rtp_find_call_stream(call, src, sport, dst, dport, format))) {
+        if ((stream = rtp_find_call_stream(call, src, sport, dst, dport))) {
             return stream;
         }
     }
@@ -327,7 +327,7 @@ rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport, 
 }
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format)
+rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport)
 {
     rtp_stream_t *stream;
     vector_iter_t it;
@@ -339,16 +339,6 @@ rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, c
     vector_iterator_set_last(&it);
     while ((stream = vector_iterator_prev(&it))) {
         if (!strcmp(ip_dst, stream->ip_dst) && dport == stream->dport && !stream->pktcnt) {
-            return stream;
-        }
-    }
-
-    // Try to look for a complete stream with any format
-    vector_iterator_set_last(&it);
-    while ((stream = vector_iterator_prev(&it))) {
-        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
-            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport &&
-            stream->rtpinfo.fmtcode == format && stream->pktcnt) {
             return stream;
         }
     }

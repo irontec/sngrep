@@ -295,7 +295,7 @@ rtp_stream_t *
 rtp_find_stream(const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format);
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format);
+rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
 
 /**
  * @brief Check if a message is older than other
