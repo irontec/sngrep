@@ -308,4 +308,7 @@ rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, c
 int
 stream_is_older(rtp_stream_t *one, rtp_stream_t *two);
 
+int
+stream_is_complete(rtp_stream_t *stream);
+
 #endif /* __SNGREP_RTP_H */

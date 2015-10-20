@@ -550,10 +550,12 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                      */
                     // Create a new stream with this destination address:port
                     if (!call_msg_is_retrans(msg)) {
-                        // Create RTP stream
-                        call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTP));
-                        // Create early RTCP stream
-                        call_add_stream(call, stream_create(media, media_address, media_port + 1, CAPTURE_PACKET_RTCP));
+                        if (!rtp_find_call_stream(call, 0, 0, media_address, media_port)) {
+                            // Create RTP stream
+                            call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTP));
+                            // Create early RTCP stream
+                            call_add_stream(call, stream_create(media, media_address, media_port + 1, CAPTURE_PACKET_RTCP));
+                        }
                     }
                 }
             }
@@ -577,7 +579,9 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
         if (!strncmp(line, "a=rtcp:", 7)) {
             if (media && sscanf(line, "a=rtcp:%u", &media_port)) {
                 // Create early RTCP stream
-                call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTCP));
+                if (!rtp_find_call_stream(call, 0, 0, media_address, media_port)) {
+                    call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTCP));
+                }
             }
         }
 

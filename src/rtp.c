@@ -203,7 +203,7 @@ rtp_check_packet(capture_packet_t *packet)
             return NULL;
 
         // We have found a stream, but with different format
-        if (stream->pktcnt && stream->rtpinfo.fmtcode != format) {
+        if (stream_is_complete(stream) && stream->rtpinfo.fmtcode != format) {
             // Create a new stream for this new format
             stream = stream_create(stream->media, dst, dport, CAPTURE_PACKET_RTP);
             stream_complete(stream, src, sport);
@@ -212,7 +212,7 @@ rtp_check_packet(capture_packet_t *packet)
         }
 
         // First packet for this stream, set source data
-        if (stream->pktcnt == 0) {
+        if (!(stream_is_complete(stream))) {
             stream_complete(stream, src, sport);
             stream_set_format(stream, format);
             // Check if an stream in the opposite direction exists
@@ -344,11 +344,13 @@ rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, c
     }
 
     // Try to look for an incomplete stream with this destination
-    vector_iterator_set_last(&it);
-    while ((stream = vector_iterator_prev(&it))) {
-        if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
-            !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
-            return stream;
+    if (ip_src && sport) {
+        vector_iterator_set_last(&it);
+        while ((stream = vector_iterator_prev(&it))) {
+            if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
+                !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
+                return stream;
+            }
         }
     }
 
@@ -365,4 +367,10 @@ stream_is_older(rtp_stream_t *one, rtp_stream_t *two)
 
     // Otherwise
     return timeval_is_older(one->time, two->time);
+}
+
+int
+stream_is_complete(rtp_stream_t *stream)
+{
+    return (stream->pktcnt != 0);
 }
