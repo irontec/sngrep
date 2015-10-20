@@ -76,6 +76,8 @@ or live capturing, saving packets to a new file
 You can configure some options using [sngreprc] (https://github.com/irontec/sngrep/wiki/Configuration) file
 
 ## Frequent Asked Questions
+Any feedback, request or question are welcomed at [#sngrep](https://webchat.freenode.net/?channels=sngrep) channel at irc.freenode.net
+
 See FAQ on [Github Wiki](https://github.com/irontec/sngrep/wiki#frequent-asked-questions)
 
 ## License 
