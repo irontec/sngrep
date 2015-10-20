@@ -608,7 +608,7 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     mvwprintw(win, cline++, startpos + (distance) / 2 - strlen(codec) / 2 + 2, "%s", codec);
 
     // Draw line between columns
-    mvwhline(win, cline, startpos + 2, '-', distance);
+    mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == 0 /* right */) {
         mvwprintw(win, cline, startpos - 5, "%d", stream->sport);
@@ -678,7 +678,7 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         // Get Message method (include extra info)
         sprintf(codec, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
     } else {
-        sprintf(codec, "RTCP %d", stream_get_count(stream));
+        sprintf(codec, "RTCP (%.1f) %d", (float) stream->rtcpinfo.mosc / 10, stream_get_count(stream));
     }
 
     // Get message data
