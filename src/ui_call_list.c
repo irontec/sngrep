@@ -586,13 +586,6 @@ call_list_handle_key(PANEL *panel, int key)
                 next_panel = ui_create_panel(PANEL_SAVE);
                 save_set_group(ui_get_panel(next_panel), info->group);
                 break;
-            case ACTION_DISP_INVITE:
-                // Set Display filter text
-                set_field_buffer(info->fields[FLD_LIST_FILTER], 0, "invite");
-                filter_set(FILTER_CALL_LIST, "invite");
-                call_list_clear(panel);
-                filter_reset_calls();
-                break;
             case ACTION_CLEAR:
                 // Clear group calls
                 vector_clear(info->group->calls);

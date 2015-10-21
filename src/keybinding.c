@@ -109,8 +109,6 @@ key_bindings_init()
     key_bind_action(ACTION_DISP_FILTER, KEY_F(3));
     key_bind_action(ACTION_DISP_FILTER, '/');
     key_bind_action(ACTION_DISP_FILTER, KEY_TAB);
-    key_bind_action(ACTION_DISP_INVITE, 'i');
-    key_bind_action(ACTION_DISP_INVITE, 'I');
     key_bind_action(ACTION_SAVE, KEY_F(2));
     key_bind_action(ACTION_SAVE, 's');
     key_bind_action(ACTION_SAVE, 'S');
