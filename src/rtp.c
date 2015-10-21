@@ -280,7 +280,7 @@ rtp_check_packet(capture_packet_t *packet)
                                     break;
                                 default: break;
                             }
-                            bsize += ntohs(blk_xr.len) * 4;
+                            bsize += ntohs(blk_xr.len) * 4 + 4;
                         }
                         break;
                     case RTCP_AVB:
