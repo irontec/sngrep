@@ -182,7 +182,7 @@ rtp_check_packet(capture_packet_t *packet)
     dport = packet->dport;
 
     // Check if we have at least RTP type
-    if (size < 2)
+    if ((int32_t) size < 2)
         return NULL;
 
     // Check RTP version
@@ -231,7 +231,7 @@ rtp_check_packet(capture_packet_t *packet)
         if ((stream = rtp_find_stream(src, sport, dst, dport, format))) {
 
             // Parse all packet payload headers
-            while (size > 0) {
+            while ((int32_t) size > 0) {
 
                 // Check we have at least rtcp generic info
                 if (size < sizeof(struct rtcp_hdr_generic))
