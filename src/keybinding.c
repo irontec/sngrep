@@ -104,6 +104,7 @@ key_bindings_init()
     key_bind_action(ACTION_SHOW_SETTINGS, KEY_F(8));
     key_bind_action(ACTION_SHOW_SETTINGS, 'o');
     key_bind_action(ACTION_SHOW_SETTINGS, 'O');
+    key_bind_action(ACTION_SHOW_STATS, 'i');
     key_bind_action(ACTION_COLUMN_MOVE_UP, '-');
     key_bind_action(ACTION_COLUMN_MOVE_DOWN, '+');
     key_bind_action(ACTION_DISP_FILTER, KEY_F(3));

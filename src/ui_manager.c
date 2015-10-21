@@ -59,7 +59,8 @@ static ui_t *panel_pool[] = {
     &ui_save,
     &ui_msg_diff,
     &ui_column_select,
-    &ui_settings
+    &ui_settings,
+    &ui_stats
 };
 
 int

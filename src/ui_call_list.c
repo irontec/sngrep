@@ -582,6 +582,9 @@ call_list_handle_key(PANEL *panel, int key)
             case ACTION_SHOW_COLUMNS:
                 ui_create_panel(PANEL_COLUMN_SELECT);
                 break;
+            case ACTION_SHOW_STATS:
+                ui_create_panel(PANEL_STATS);
+                break;
             case ACTION_SAVE:
                 next_panel = ui_create_panel(PANEL_SAVE);
                 save_set_group(ui_get_panel(next_panel), info->group);

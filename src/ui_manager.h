@@ -136,6 +136,8 @@ enum panel_types {
     PANEL_COLUMN_SELECT,
     //! Settings panel
     PANEL_SETTINGS,
+    //! Stats panel
+    PANEL_STATS,
     //! Panel Counter
     PANEL_COUNT,
 };
@@ -151,6 +153,7 @@ extern ui_t ui_save;
 extern ui_t ui_msg_diff;
 extern ui_t ui_column_select;
 extern ui_t ui_settings;
+extern ui_t ui_stats;
 
 /**
  * @brief Initialize ncurses mode
