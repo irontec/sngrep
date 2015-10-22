@@ -36,7 +36,8 @@ Prerequisites
 
  - libncurse5 - for UI, windows, panels.
  - libpcap - for capturing packets.
- - libssl - (optional) for TLS transport decrypt
+ - libssl - (optional) for TLS transport decrypt using OpenSSL and libcrypt
+ - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
  - libncursesw5 - (optional) for UI, windows, panels (wide-character support)
  - libpcre - (optional) for Perl Compatible regular expressions
 
@@ -51,7 +52,8 @@ You can pass following flags to ./configure to enable some features
 
 | configure flag | Feature |
 | ------------- | ------------- |
-| `--with-gnutls` | Adds GnuTLS support to parse TLS captured messages (req. libssl)  |
+| `--with-openssl` | Adds OpenSSL support to parse TLS captured messages (req. libssl)  |
+| `--with-gnutls` | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
 | `--with-pcre`|  Adds Perl Compatible regular expressions support in regexp fields |
 | `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
 | `--enable-ipv6`   | Enables IPv6 packet capture support. |

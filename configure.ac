@@ -121,6 +121,31 @@ AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
 ], [])
 
 ####
+#### OpenSSL Support
+####
+AC_ARG_WITH([openssl],
+    AS_HELP_STRING([--with-openssl], [Enable SSL Support (TLS SIP Transport)]),
+    [AC_SUBST(WITH_OPENSSL, $withval)],
+    [AC_SUBST(WITH_OPENSSL, no)]
+)
+
+AS_IF([test "x$WITH_OPENSSL" == "xyes"], [
+	AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
+	    AC_MSG_ERROR([ GnuTLS and OpenSSL can not be enabled at the same time ])
+	], [])
+
+	AC_CHECK_LIB([ssl], [SSL_new], [], [
+	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep])
+	])
+
+	AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
+	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep])
+	])
+	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
+], [])
+
+
+####
 #### PCRE Support
 ####
 AC_ARG_WITH([pcre],
@@ -158,6 +183,7 @@ AS_IF([test "x$USE_IPV6" == "xyes"], [
 
 # Conditional Source inclusion 
 AM_CONDITIONAL([WITH_GNUTLS], [test "x$WITH_GNUTLS" == "xyes"])
+AM_CONDITIONAL([WITH_OPENSSL],[test "x$WITH_OPENSSL" == "xyes"])
 
 
 ######################################################################
@@ -182,6 +208,7 @@ AC_MSG_NOTICE
 AC_MSG_NOTICE(   sngrep configure finished                            	)
 AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE( GnuTLS Support               : ${WITH_GNUTLS}		)
+AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
 AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  		)
 AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
 AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )

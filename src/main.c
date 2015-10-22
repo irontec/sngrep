@@ -38,7 +38,10 @@
 #include "capture.h"
 #include "capture_eep.h"
 #ifdef WITH_GNUTLS
-#include "capture_tls.h"
+#include "capture_gnutls.h"
+#endif
+#ifdef WITH_OPENSSL
+#include "capture_openssl.h"
 #endif
 
 /**
@@ -50,7 +53,7 @@ void
 usage()
 {
     printf("Usage: %s [-hVcivNq] [-IO pcap_dump] [-d dev] [-l limit]"
-#ifdef WITH_GNUTLS
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            " [-k keyfile]"
 #endif
            " [<match expression>] [<bpf filter>]\n\n"
@@ -69,7 +72,7 @@ usage()
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
-#ifdef WITH_GNUTLS
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            "    -k --keyfile\t RSA private keyfile to decrypt captured packets\n"
 #endif
            "\n",PACKAGE);
@@ -86,6 +89,9 @@ version()
 
 #ifdef WITH_GNUTLS
            " * Compiled with GnuTLS support.\n"
+#endif
+#ifdef WITH_OPENSSL
+           " * Compiled with OpenSSL support.\n"
 #endif
 #ifdef WITH_UNICODE
            " * Compiled with Wide-character support.\n"
@@ -228,7 +234,7 @@ main(int argc, char* argv[])
         }
     }
 
-#ifdef WITH_GNUTLS
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     // Set capture decrypt key file
     capture_set_keyfile(keyfile);
     // Check if we have a keyfile and is valid
