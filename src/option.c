@@ -65,9 +65,6 @@ init_options()
     set_option_value("cl.column6", "dst");
     set_option_value("cl.column7", "state");
 
-    // Initialize keybindings
-    key_bindings_init();
-
     // Read options from configuration files
     read_options("/etc/sngreprc");
     read_options("/usr/local/etc/sngreprc");

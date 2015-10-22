@@ -36,144 +36,117 @@
 #include "keybinding.h"
 
 //! sngrep keybindings
-key_binding_t bindings[ACTION_SENTINEL];
-
-void
-key_bindings_init()
-{
-    // Initialize bindings structure
-    memset(bindings, 0, sizeof(key_binding_t) * ACTION_SENTINEL);
-
-    // Set default keybindings
-    key_bind_action(ACTION_UP, KEY_UP);
-    key_bind_action(ACTION_UP, 'j');
-    key_bind_action(ACTION_DOWN, KEY_DOWN);
-    key_bind_action(ACTION_DOWN, 'k');
-    key_bind_action(ACTION_LEFT, KEY_LEFT);
-    key_bind_action(ACTION_LEFT, 'h');
-    key_bind_action(ACTION_RIGHT, KEY_RIGHT);
-    key_bind_action(ACTION_RIGHT, 'l');
-    key_bind_action(ACTION_DELETE, KEY_DC);
-    key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE);
-    key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE2);
-    key_bind_action(ACTION_BACKSPACE, KEY_BACKSPACE3);
-    key_bind_action(ACTION_NPAGE, KEY_NPAGE);
-    key_bind_action(ACTION_NPAGE, KEY_CTRL('F'));
-    key_bind_action(ACTION_PPAGE, KEY_PPAGE);
-    key_bind_action(ACTION_PPAGE, KEY_CTRL('B'));
-    key_bind_action(ACTION_HNPAGE, KEY_CTRL('D'));
-    key_bind_action(ACTION_HPPAGE, KEY_CTRL('U'));
-    key_bind_action(ACTION_BEGIN, KEY_HOME);
-    key_bind_action(ACTION_BEGIN, KEY_CTRL('A'));
-    key_bind_action(ACTION_END, KEY_END);
-    key_bind_action(ACTION_END, KEY_CTRL('E'));
-    key_bind_action(ACTION_PREV_FIELD, KEY_UP);
-    key_bind_action(ACTION_NEXT_FIELD, KEY_TAB);
-    key_bind_action(ACTION_NEXT_FIELD, KEY_DOWN);
-    key_bind_action(ACTION_RESIZE_SCREEN, KEY_RESIZE);
-    key_bind_action(ACTION_CLEAR, KEY_CTRL('U'));
-    key_bind_action(ACTION_CLEAR, KEY_CTRL('W'));
-    key_bind_action(ACTION_CLEAR_CALLS, KEY_F(5));
-    key_bind_action(ACTION_TOGGLE_SYNTAX, KEY_F(8));
-    key_bind_action(ACTION_TOGGLE_SYNTAX, 'C');
-    key_bind_action(ACTION_CYCLE_COLOR, KEY_F(7));
-    key_bind_action(ACTION_CYCLE_COLOR, 'c');
-    key_bind_action(ACTION_SHOW_HOSTNAMES, KEY_F(9));
-    key_bind_action(ACTION_SHOW_ALIAS, 'a');
-    key_bind_action(ACTION_TOGGLE_PAUSE, 'p');
-    key_bind_action(ACTION_PREV_SCREEN, KEY_ESC);
-    key_bind_action(ACTION_PREV_SCREEN, 'q');
-    key_bind_action(ACTION_PREV_SCREEN, 'Q');
-    key_bind_action(ACTION_SHOW_HELP, KEY_F(1));
-    key_bind_action(ACTION_SHOW_HELP, 'h');
-    key_bind_action(ACTION_SHOW_HELP, 'H');
-    key_bind_action(ACTION_SHOW_HELP, '?');
-    key_bind_action(ACTION_SHOW_RAW, KEY_F(6));
-    key_bind_action(ACTION_SHOW_RAW, 'r');
-    key_bind_action(ACTION_SHOW_RAW, 'R');
-    key_bind_action(ACTION_SHOW_FLOW, KEY_INTRO);
-    key_bind_action(ACTION_SHOW_FLOW_EX, KEY_F(4));
-    key_bind_action(ACTION_SHOW_FLOW_EX, 'x');
-    key_bind_action(ACTION_SHOW_FLOW_EX, 'X');
-    key_bind_action(ACTION_SHOW_FILTERS, KEY_F(7));
-    key_bind_action(ACTION_SHOW_FILTERS, 'f');
-    key_bind_action(ACTION_SHOW_FILTERS, 'F');
-    key_bind_action(ACTION_SHOW_COLUMNS, KEY_F(10));
-    key_bind_action(ACTION_SHOW_COLUMNS, 't');
-    key_bind_action(ACTION_SHOW_COLUMNS, 'T');
-    key_bind_action(ACTION_SHOW_SETTINGS, KEY_F(8));
-    key_bind_action(ACTION_SHOW_SETTINGS, 'o');
-    key_bind_action(ACTION_SHOW_SETTINGS, 'O');
-    key_bind_action(ACTION_SHOW_STATS, 'i');
-    key_bind_action(ACTION_COLUMN_MOVE_UP, '-');
-    key_bind_action(ACTION_COLUMN_MOVE_DOWN, '+');
-    key_bind_action(ACTION_DISP_FILTER, KEY_F(3));
-    key_bind_action(ACTION_DISP_FILTER, '/');
-    key_bind_action(ACTION_DISP_FILTER, KEY_TAB);
-    key_bind_action(ACTION_SAVE, KEY_F(2));
-    key_bind_action(ACTION_SAVE, 's');
-    key_bind_action(ACTION_SAVE, 'S');
-    key_bind_action(ACTION_SELECT, KEY_SPACE);
-    key_bind_action(ACTION_CONFIRM, KEY_INTRO);
-    key_bind_action(ACTION_TOGGLE_RAW, 't');
-    key_bind_action(ACTION_TOGGLE_MEDIA, KEY_F(3));
-    key_bind_action(ACTION_TOGGLE_MEDIA, 'm');
-    key_bind_action(ACTION_INCREASE_RAW, '9');
-    key_bind_action(ACTION_DECREASE_RAW, '0');
-    key_bind_action(ACTION_RESET_RAW, 'T');
-    key_bind_action(ACTION_ONLY_SDP, 'D');
-    key_bind_action(ACTION_SDP_INFO, KEY_F(2));
-    key_bind_action(ACTION_SDP_INFO, 'd');
-    key_bind_action(ACTION_COMPRESS, KEY_F(5));
-    key_bind_action(ACTION_COMPRESS, 's');
-    key_bind_action(ACTION_TOGGLE_HINT, 'K');
-}
+key_binding_t bindings[ACTION_SENTINEL] = {
+   { ACTION_PRINTABLE,      "",             { }, 0 },
+   { ACTION_UP,             "up",           { KEY_UP, 'j' }, 2 },
+   { ACTION_DOWN,           "down",         { KEY_DOWN, 'k' }, 2 },
+   { ACTION_LEFT,           "left",         { KEY_LEFT, 'h' }, 2 },
+   { ACTION_RIGHT,          "right",        { KEY_RIGHT, 'l'}, 2 },
+   { ACTION_DELETE,         "delete",       { KEY_DC }, 1 },
+   { ACTION_BACKSPACE,      "backspace",    { KEY_BACKSPACE, KEY_BACKSPACE2, KEY_BACKSPACE3 }, 3 },
+   { ACTION_NPAGE,          "npage",        { KEY_NPAGE, KEY_CTRL('F') }, 2 },
+   { ACTION_PPAGE,          "ppage",        { KEY_PPAGE, KEY_CTRL('B') }, 2 },
+   { ACTION_HNPAGE,         "hnpage",       { KEY_CTRL('D') }, 1 },
+   { ACTION_HPPAGE,         "hppage",       { KEY_CTRL('U') }, 2 },
+   { ACTION_BEGIN,          "begin",        { KEY_HOME, KEY_CTRL('A') }, 2 },
+   { ACTION_END,            "end",          { KEY_END, KEY_CTRL('E') }, 2 },
+   { ACTION_PREV_FIELD,     "pfield",       { KEY_UP }, 1 },
+   { ACTION_NEXT_FIELD,     "nfield",       { KEY_DOWN, KEY_TAB }, 2 },
+   { ACTION_RESIZE_SCREEN,  "",             { KEY_RESIZE }, 1 },
+   { ACTION_CLEAR,          "clear",        { KEY_CTRL('U'), KEY_CTRL('W')}, 2 },
+   { ACTION_CLEAR_CALLS,    "clearcalls",   { KEY_F(5) }, 1 },
+   { ACTION_TOGGLE_SYNTAX,  "togglesyntax", { KEY_F(8), 'C' }, 2 },
+   { ACTION_CYCLE_COLOR,    "colormode",    { 'c' }, 1 },
+   { ACTION_SHOW_HOSTNAMES, "togglehostname", { KEY_F(9) }, 1 },
+   { ACTION_SHOW_ALIAS,     "togglealias",  { 'a' }, 1 },
+   { ACTION_TOGGLE_PAUSE,   "pause",        { 'p' }, 1 },
+   { ACTION_PREV_SCREEN,    "prevscreen",   { KEY_ESC, 'q', 'Q' }, 3 },
+   { ACTION_SHOW_HELP,      "help",         { KEY_F(1), 'h', 'H', '?' }, 4 },
+   { ACTION_SHOW_RAW,       "raw",          { KEY_F(6), 'R', 'r' }, 3 },
+   { ACTION_SHOW_FLOW,      "flow",         { KEY_INTRO }, 1 },
+   { ACTION_SHOW_FLOW_EX,   "flowex",       { KEY_F(4), 'x', 'X' }, 3 },
+   { ACTION_SHOW_FILTERS,   "filters",      { KEY_F(7), 'f', 'F' }, 3 },
+   { ACTION_SHOW_COLUMNS,   "columns",      { KEY_F(10), 't', 'T' }, 3 },
+   { ACTION_SHOW_SETTINGS,  "settings",     { KEY_F(8), 'o', 'O' }, 3 },
+   { ACTION_SHOW_STATS,     "stats",        { 'i' }, 1 },
+   { ACTION_COLUMN_MOVE_UP, "columnup",     { '-' }, 1 },
+   { ACTION_COLUMN_MOVE_DOWN, "columndown", { '+' }, 1 },
+   { ACTION_DISP_FILTER,    "search",       { KEY_F(3), '/', KEY_TAB }, 3 },
+   { ACTION_SAVE,           "save",         { KEY_F(2), 's', 'S'}, 3 },
+   { ACTION_SELECT,         "select",       { KEY_SPACE }, 1 },
+   { ACTION_CONFIRM,        "confirm",      { KEY_INTRO }, 1 },
+   { ACTION_TOGGLE_MEDIA,   "togglemedia",  { KEY_F(3), 'm' }, 2 },
+   { ACTION_TOGGLE_RAW,     "rawpreview",   { 't' }, 1 },
+   { ACTION_INCREASE_RAW,   "morerawpreview", { '9' }, 1 },
+   { ACTION_DECREASE_RAW,   "lessrawpreview", { '0' }, 1 },
+   { ACTION_RESET_RAW,      "resetrawpreview", { 'T' }, 1 },
+   { ACTION_ONLY_SDP,       "onlysdp",      { 'D' }, 1 },
+   { ACTION_SDP_INFO,       "sdpinfo",      { KEY_F(2), 'd' }, 2 },
+   { ACTION_COMPRESS,       "compress",     { 's' }, 1 },
+   { ACTION_TOGGLE_HINT,    "hintalt",      { 'K' }, 1 },
+};
 
 void
 key_bindings_dump()
 {
     int i, j;
     for (i = 1; i < ACTION_SENTINEL; i++) {
-
         for (j = 0; j < bindings[i].bindcnt; j++) {
-            printf("ActionID: %d\t Key: %d \t%s\n", i,
+            printf("ActionID: %d\t ActionName: %-21s Key: %d (%s)\n",
+                   bindings[i].id,
+                   bindings[i].name,
                    bindings[i].keys[j],
                    key_to_str(bindings[i].keys[j]));
         }
     }
 }
 
+key_binding_t *
+key_binding_data(int action)
+{
+    int i;
+    for (i = 1; i < ACTION_SENTINEL; i++) {
+        if (bindings[i].id == action)
+            return &bindings[i];
+    }
+
+    return NULL;
+}
+
 void
 key_bind_action(int action, int key)
 {
-    if (action < 0)
+    key_binding_t *bind;
+
+    if (!(bind = key_binding_data(action)))
         return;
 
-    if (bindings[action].bindcnt == MAX_BINDINGS)
+    if (bind->bindcnt == MAX_BINDINGS)
         return;
 
-    bindings[action].keys[bindings[action].bindcnt++] = key;
+    bind->keys[bind->bindcnt++] = key;
 }
 
 void
 key_unbind_action(int action, int key)
 {
-    key_binding_t bind;
+    key_binding_t tmp, *bind;
     int i;
 
     // Action is not valid
-    if (action < 0)
+    if (!(bind = key_binding_data(action)))
         return;
 
     // Copy binding to temporal struct
-    memcpy(&bind, &bindings[action], sizeof(key_binding_t));
+    memcpy(&tmp, bind, sizeof(key_binding_t));
+
     // Reset bindings for this action
-    memset(&bindings[action], 0, sizeof(key_binding_t));
+    memset(&bind->keys, 0, sizeof(int) * MAX_BINDINGS);
 
     // Add all bindings but the unbinded
-    for (i=0; i < bind.bindcnt; i++) {
-        if (bind.keys[i] != key) {
-            key_bind_action(action, bind.keys[i]);
+    for (i=0; i < tmp.bindcnt; i++) {
+        if (tmp.keys[i] != key) {
+            key_bind_action(action, tmp.keys[i]);
         }
     }
 }
@@ -189,7 +162,7 @@ key_find_action(int key, int start)
 
         for (j = 0; j < bindings[i].bindcnt; j++)
             if (bindings[i].keys[j] == key)
-                return i;
+                return bindings[i].id;
     }
     return -1;
 }
@@ -197,49 +170,12 @@ key_find_action(int key, int start)
 int
 key_action_id(const char *action)
 {
+    int i;
+    for (i = 1; i < ACTION_SENTINEL; i++) {
+        if (!strcasecmp(action, bindings[i].name))
+            return bindings[i].id;
 
-    if (!strcmp(action, "up")) return ACTION_UP;
-    if (!strcmp(action, "down")) return ACTION_DOWN;
-    if (!strcmp(action, "left")) return ACTION_LEFT;
-    if (!strcmp(action, "right")) return ACTION_RIGHT;
-    if (!strcmp(action, "delete")) return ACTION_DELETE;
-    if (!strcmp(action, "backspace")) return ACTION_BACKSPACE;
-    if (!strcmp(action, "npage")) return ACTION_NPAGE;
-    if (!strcmp(action, "ppage")) return ACTION_PPAGE;
-    if (!strcmp(action, "hnpage")) return ACTION_HNPAGE;
-    if (!strcmp(action, "hppage")) return ACTION_HPPAGE;
-    if (!strcmp(action, "begin")) return ACTION_BEGIN;
-    if (!strcmp(action, "end")) return ACTION_END;
-    if (!strcmp(action, "pfield")) return ACTION_PREV_FIELD;
-    if (!strcmp(action, "nfield")) return ACTION_NEXT_FIELD;
-    if (!strcmp(action, "clear")) return ACTION_CLEAR;
-    if (!strcmp(action, "clearcalls")) return ACTION_CLEAR_CALLS;
-    if (!strcmp(action, "togglesyntax")) return ACTION_TOGGLE_SYNTAX;
-    if (!strcmp(action, "colormode")) return ACTION_CYCLE_COLOR;
-    if (!strcmp(action, "togglehostname")) return ACTION_SHOW_HOSTNAMES;
-    if (!strcmp(action, "togglealias")) return ACTION_SHOW_ALIAS;
-    if (!strcmp(action, "pause")) return ACTION_TOGGLE_PAUSE;
-    if (!strcmp(action, "prevscreen")) return ACTION_PREV_SCREEN;
-    if (!strcmp(action, "help")) return ACTION_SHOW_HELP;
-    if (!strcmp(action, "raw")) return ACTION_SHOW_RAW;
-    if (!strcmp(action, "flow")) return ACTION_SHOW_FLOW;
-    if (!strcmp(action, "flowex")) return ACTION_SHOW_FLOW_EX;
-    if (!strcmp(action, "filters")) return ACTION_SHOW_FILTERS;
-    if (!strcmp(action, "columns")) return ACTION_SHOW_COLUMNS;
-    if (!strcmp(action, "columnup")) return ACTION_COLUMN_MOVE_UP;
-    if (!strcmp(action, "columndown")) return ACTION_COLUMN_MOVE_DOWN;
-    if (!strcmp(action, "search")) return ACTION_DISP_FILTER;
-    if (!strcmp(action, "save")) return ACTION_SAVE;
-    if (!strcmp(action, "select")) return ACTION_SELECT;
-    if (!strcmp(action, "confirm")) return ACTION_CONFIRM;
-    if (!strcmp(action, "rawpreview")) return ACTION_TOGGLE_RAW;
-    if (!strcmp(action, "morerawpreview")) return ACTION_INCREASE_RAW;
-    if (!strcmp(action, "lessrawpreview")) return ACTION_DECREASE_RAW;
-    if (!strcmp(action, "resetrawpreview")) return ACTION_RESET_RAW;
-    if (!strcmp(action, "onlysdp")) return ACTION_ONLY_SDP;
-    if (!strcmp(action, "sdpinfo")) return ACTION_SDP_INFO;
-    if (!strcmp(action, "compress")) return ACTION_COMPRESS;
-    if (!strcmp(action, "hintalt")) return ACTION_TOGGLE_HINT;
+    }
     return -1;
 }
 
@@ -322,11 +258,16 @@ key_from_str(const char *key)
 const char *
 key_action_key_str(int action)
 {
-    if (setting_enabled(SETTING_ALTKEY_HINT) && bindings[action].bindcnt > 1) {
+    key_binding_t *bind;
+
+    if (!(bind = key_binding_data(action)))
+        return NULL;
+
+    if (setting_enabled(SETTING_ALTKEY_HINT) && bind->bindcnt > 1) {
         // First alt keybinding
-        return key_to_str(bindings[action].keys[1]);
+        return key_to_str(bind->keys[1]);
     } else {
         // Default keybinding
-        return key_to_str(bindings[action].keys[0]);
+        return key_to_str(bind->keys[0]);
     }
 }

@@ -113,6 +113,10 @@ typedef struct key_binding key_binding_t;
  * @brief Struct to hold a keybinding data
  */
 struct key_binding {
+    //! Keybinding action id
+    int id;
+    //! Keybinding action name
+    const char *name;
     //! keybindings for this action
     int keys[MAX_BINDINGS];
     //! How many keys are binded to this action
@@ -120,16 +124,17 @@ struct key_binding {
 };
 
 /**
- * @brief Initialize default keybindings
- */
-void
-key_bindings_init();
-
-/**
  * @brief Print configured keybindigs
  */
 void
 key_bindings_dump();
+
+/**
+ * @brief Return Keybinding data for a given action
+ * @return key_binding_t structure pointer or NULL if not found
+ */
+key_binding_t *
+key_binding_data(int action);
 
 /**
  * @brief Bind a key to an action
