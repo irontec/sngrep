@@ -447,7 +447,8 @@ ui_settings_update_settings(PANEL *panel)
         if ((entry = ui_settings_is_entry(info->fields[i]))) {
             // Get field value.
             memset(field_value, 0, sizeof(field_value));
-            sscanf(field_buffer(info->fields[i], 0), "%[^ ]", field_value);
+            strcpy(field_value, field_buffer(info->fields[i], 0));
+            strtrim(field_value);
             // Change setting value
             setting_set_value(entry->setting_id, field_value);
         }
@@ -508,7 +509,8 @@ ui_settings_save(PANEL *panel)
         if ((entry = ui_settings_is_entry(info->fields[i]))) {
             // Get field value.
             memset(field_value, 0, sizeof(field_value));
-            sscanf(field_buffer(info->fields[i], 0), "%[^ ]", field_value);
+            strcpy(field_value, field_buffer(info->fields[i], 0));
+            strtrim(field_value);
 
             // Change setting value
             fprintf(fo, "set %s %s\n", setting_name(entry->setting_id), field_value);

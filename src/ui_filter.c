@@ -204,7 +204,8 @@ filter_handle_key(PANEL *panel, int key)
     // We trim spaces with sscanf because and empty field is stored as
     // space characters
     memset(field_value, 0, sizeof(field_value));
-    sscanf(field_buffer(current_field(info->form), 0), "%[^ ]", field_value);
+    strcpy(field_value, field_buffer(current_field(info->form), 0));
+    strtrim(field_value);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -325,7 +326,8 @@ filter_save_options(PANEL *panel)
         // We trim spaces with sscanf because and empty field is stored as
         // space characters
         memset(field_value, 0, sizeof(field_value));
-        sscanf(field_buffer(info->fields[field_id], 0), "%[^ ]", field_value);
+        strcpy(field_value, field_buffer(info->fields[field_id], 0));
+        strtrim(field_value);
 
         // Set filter expression
         expr = strlen(field_value) ? field_value : NULL;
