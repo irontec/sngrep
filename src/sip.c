@@ -741,3 +741,18 @@ sip_address_port_format(const char *addrport)
 
     return aport;
 }
+
+const char *
+sip_address_strip_port(char *addrport)
+{
+    char *colon;
+
+    if (!addrport)
+        return NULL;
+
+    // FIXME Make compatible with IPv6
+    if ((colon = strchr(addrport, ':')))
+        *colon = '\0';
+
+    return addrport;
+}

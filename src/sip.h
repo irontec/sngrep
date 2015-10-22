@@ -379,5 +379,11 @@ sip_address_format(const char *address);
 const char *
 sip_address_port_format(const char *address);
 
+/**
+ * @brief Remove port from an address
+ */
+const char *
+sip_address_strip_port(char *addrport);
+
 
 #endif

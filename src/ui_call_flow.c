@@ -36,6 +36,7 @@
 #include "ui_msg_diff.h"
 #include "util.h"
 #include "vector.h"
+#include "option.h"
 
 /***
  *
@@ -1319,17 +1320,29 @@ call_flow_set_group(sip_call_group_t *group)
 }
 
 void
-call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
+call_flow_column_add(PANEL *panel, const char *callid, const char *address)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
     vector_iter_t columns;
+    char addr[ADDRESSLEN + 6];
 
     if (!(info = call_flow_info(panel)))
         return;
 
-    if (!addr || !strlen(addr))
+    if (!address || !strlen(address))
         return;
+
+    // Coppy address to local var
+    strcpy(addr, address);
+
+    // when compressed view is enabled
+    if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+        // Remove the port from the address
+        sip_address_strip_port(addr);
+        // Display the alias value of the address
+        strcpy(addr, get_alias_value(addr));
+    }
 
     if (call_flow_column_get(panel, callid, addr))
         return;
@@ -1350,17 +1363,30 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr)
 }
 
 call_flow_column_t *
-call_flow_column_get(PANEL *panel, const char *callid, const char *addr)
+call_flow_column_get(PANEL *panel, const char *callid, const char *address)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
     vector_iter_t columns;
     int match_port;
     char coladdr[ADDRESSLEN + 6];
+    char addr[ADDRESSLEN + 6];
     char *dots;
 
     if (!(info = call_flow_info(panel)))
         return NULL;
+
+    // Coppy address to local var
+    strcpy(addr, address);
+
+    // when compressed view is enabled
+    if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+        // Remove the port from the address
+        sip_address_strip_port(addr);
+        // Display the alias value of the address
+        strcpy(addr, get_alias_value(addr));
+    }
+
 
     // Look for address or address:port ?
     match_port = (strchr(addr, ':') != NULL);
