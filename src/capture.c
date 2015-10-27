@@ -35,7 +35,9 @@
 #include "capture.h"
 #include "capture_ws.h"
 #include "capture_reasm.h"
+#ifdef USE_EEP
 #include "capture_eep.h"
+#endif
 #ifdef WITH_GNUTLS
 #include "capture_gnutls.h"
 #endif
@@ -322,8 +324,10 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     capture_lock();
     // Check if we can handle this packet
     if (capture_packet_parse(pkt) == 0) {
+#ifdef USE_EEP
         // Send this packet through eep
         capture_eep_send(pkt);
+#endif
         // Store this packets in output file
         dump_packet(capture_cfg.pd, pkt);
         // If storage is disabled, delete frames payload

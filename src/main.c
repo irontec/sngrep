@@ -52,9 +52,12 @@
 void
 usage()
 {
-    printf("Usage: %s [-hVcivNq] [-IO pcap_dump] [-d dev] [-l limit]"
+    printf("Usage: %s [-hVcivNqrD] [-IO pcap_dump] [-d dev] [-l limit]"
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            " [-k keyfile]"
+#endif
+#ifdef USE_EEP
+           " [-LH capture_url]"
 #endif
            " [<match expression>] [<bpf filter>]\n\n"
            "    -h --help\t\t This usage\n"
@@ -63,15 +66,17 @@ usage()
            "    -I --input\t\t Read captured data from pcap file\n"
            "    -O --output\t\t Write captured data to pcap file\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
-           "    -r --rtp\t\t Capture full RTP packets\n"
+           "    -r --rtp\t\t Capture RTP packets payload\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
            "    -v --invert\t\t Invert <match expression>\n"
            "    -N --no-interface\t Don't display sngrep interface, just capture\n"
+           "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
            "    -D --dump-config\t Print active configuration settings and exit\n"
+#ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
-           "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
+#endif
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            "    -k --keyfile\t RSA private keyfile to decrypt captured packets\n"
 #endif
@@ -130,7 +135,9 @@ main(int argc, char* argv[])
         { "device", required_argument, 0, 'd' },
         { "input", required_argument, 0, 'I' },
         { "output", required_argument, 0, 'O' },
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
         { "keyfile", required_argument, 0, 'k' },
+#endif
         { "calls", no_argument, 0, 'c' },
         { "rtp", no_argument, 0, 'r' },
         { "limit", no_argument, 0, 'l' },
@@ -138,8 +145,10 @@ main(int argc, char* argv[])
         { "invert", no_argument, 0, 'v' },
         { "no-interface", no_argument, 0, 'N' },
         { "dump-config", no_argument, 0, 'D' },
+#ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
+#endif
         { "quiet", no_argument, 0, 'q' },
     };
 
@@ -181,9 +190,11 @@ main(int argc, char* argv[])
                     return 0;
                 }
                 break;
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
             case 'k':
                 keyfile = optarg;
                 break;
+#endif
             case 'c':
                 only_calls = 1;
                 setting_set_value(SETTING_SIP_CALLS, SETTING_ON);
@@ -214,12 +225,14 @@ main(int argc, char* argv[])
             case 't':
             case 'W':
                 break;
+#ifdef USE_EEP
             case 'L':
                 capture_eep_set_server_url(optarg);
                 break;
             case 'H':
                 capture_eep_set_client_url(optarg);
                 break;
+#endif
             case '?':
                 if (strchr(options, optopt)) {
                     fprintf(stderr, "-%c option requires an argument.\n", optopt);
@@ -257,8 +270,10 @@ main(int argc, char* argv[])
     // Set capture options
     capture_init(limit, rtp_capture);
 
+#ifdef USE_EEP
     // Initialize EEP if enabled
     capture_eep_init();
+#endif
 
     // If we have an input file, load it
     if (vector_count(infiles)) {

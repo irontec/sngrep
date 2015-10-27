@@ -1,5 +1,8 @@
 bin_PROGRAMS=sngrep
-sngrep_SOURCES=capture.c capture_eep.c capture_reasm.c capture_ws.c
+sngrep_SOURCES=capture.c capture_reasm.c capture_ws.c
+if USE_EEP
+sngrep_SOURCES+=capture_eep.c
+endif
 if WITH_GNUTLS
 sngrep_SOURCES+=capture_gnutls.c
 endif
