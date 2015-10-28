@@ -334,6 +334,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     vector_iter_t medias;
     int color = 0;
     int msglen;
+    int arrow_dir = 0; /* 0: right, 1: left */
 
     // Get panel information
     info = call_flow_info(panel);
@@ -422,6 +423,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         tmp = column1;
         column1 = column2;
         column2 = tmp;
+        arrow_dir = 1; /* swap arrow direction */
     }
 
     int startpos = 20 + 30 * column1->colpos;
@@ -484,7 +486,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     }
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
-    if (!strcasecmp(msg_src, column1->addr)) {
+    if (arrow_dir == 0 /* right */) {
         mvwaddch(win, cline, endpos - 2, '>');
         if (call_msg_is_retrans(msg)) {
             mvwaddch(win, cline, endpos - 3, '>');
@@ -1386,7 +1388,6 @@ call_flow_column_get(PANEL *panel, const char *callid, const char *address)
         // Display the alias value of the address
         strcpy(addr, get_alias_value(addr));
     }
-
 
     // Look for address or address:port ?
     match_port = (strchr(addr, ':') != NULL);
