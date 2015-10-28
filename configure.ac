@@ -174,8 +174,16 @@ AC_ARG_ENABLE([ipv6],
 )
 
 AS_IF([test "x$USE_IPV6" == "xyes"], [
-	AC_CHECK_HEADER([netinet/ip6.h], [], [
+	AC_CHECK_HEADERS([netinet/in.h netinet/ip6.h], [], [
 	    AC_MSG_ERROR([ You dont seem to have ipv6 support (no ip6.h found).])
+	], [
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
 	])
 	AC_DEFINE([USE_IPV6],[],[Compile With IPv6 support])
 ], [])
