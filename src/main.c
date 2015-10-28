@@ -107,6 +107,9 @@ version()
 #ifdef USE_IPV6
            " * Compiled with IPv6 support.\n"
 #endif
+#ifdef USE_EEP
+            " * Compiled with EEP/HEP support.\n"
+#endif
            "\nWritten by Ivan Alonso [aka Kaian]\n",
            PACKAGE, VERSION);
 }
