@@ -36,11 +36,11 @@
 #endif
 
 #ifndef TEST_INITIAL_WAIT
-#define TEST_INITIAL_WAIT 1000 * 600
+#define TEST_INITIAL_WAIT 1000 * 1200
 #endif
 
 #ifndef TEST_KEY_DELAY
-#define TEST_KEY_DELAY 2000
+#define TEST_KEY_DELAY 3000
 #endif
 
 #ifndef TEST_PCAP_INPUT
