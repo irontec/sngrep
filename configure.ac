@@ -170,7 +170,7 @@ AS_IF([test "x$WITH_PCRE" == "xyes"], [
 AC_ARG_ENABLE([ipv6],
     AS_HELP_STRING([--enable-ipv6], [Enable IPv6 Support]),
     [AC_SUBST(USE_IPV6, $enableval)],
-    [AC_SUBST(USE_IPV6, yes)]
+    [AC_SUBST(USE_IPV6, no)]
 )
 
 AS_IF([test "x$USE_IPV6" == "xyes"], [
@@ -195,7 +195,7 @@ AS_IF([test "x$USE_IPV6" == "xyes"], [
 AC_ARG_ENABLE([eep],
     AS_HELP_STRING([--enable-eep], [Enable EEP/HEP Support]),
     [AC_SUBST(USE_EEP, $enableval)],
-    [AC_SUBST(USE_EEP, yes)]
+    [AC_SUBST(USE_EEP, no)]
 )
 
 AS_IF([test "x$USE_EEP" == "xyes"], [

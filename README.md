@@ -41,8 +41,8 @@ You can pass following flags to ./configure to enable some features
 | `--with-gnutls` | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
 | `--with-pcre`|  Adds Perl Compatible regular expressions support in regexp fields |
 | `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
-| `--disable-ipv6`   | Disable IPv6 packet capture support. (default: enabled) |
-| `--disable-eep`   | Disable EEP packet send/receive support. (default: enabled) |
+| `--enable-ipv6`   | Enable IPv6 packet capture support. |
+| `--enable-eep`   | Enable EEP packet send/receive support. |
 
 You can find [detailed instructions for some distributions] (https://github.com/irontec/sngrep/wiki/Building) on wiki.
 
