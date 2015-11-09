@@ -553,13 +553,17 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Get message data
     msg_get_attribute(stream->media->msg, SIP_ATTR_SRC, msg_src);
     msg_get_attribute(stream->media->msg, SIP_ATTR_DST, msg_dst);
+    // Remove port from address. We only look for columns no matter if it matches port or not
+    sip_address_strip_port(msg_src);
+    sip_address_strip_port(msg_dst);
+
     callid = stream->media->msg->call->callid;
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strncmp(stream->ip_src, msg_src, strlen(stream->ip_src))) {
+    if (!strcmp(stream->ip_src, msg_src)) {
         column1 = call_flow_column_get(panel, callid, msg_src);
-    } else if (!strncmp(stream->ip_src, msg_dst, strlen(stream->ip_src))) {
+    } else if (!strcmp(stream->ip_src, msg_dst)) {
         column1 = call_flow_column_get(panel, callid, msg_dst);
     } else {
         column1 = call_flow_column_get(panel, 0, stream->ip_src);
@@ -567,9 +571,9 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strncmp(stream->ip_dst, msg_dst, strlen(stream->ip_dst))) {
+    if (!strcmp(stream->ip_dst, msg_dst)) {
         column2 = call_flow_column_get(panel, callid, msg_dst);
-    } else if (!strncmp(stream->ip_dst, msg_src, strlen(stream->ip_dst))) {
+    } else if (!strcmp(stream->ip_dst, msg_src)) {
         column2 = call_flow_column_get(panel, callid, msg_src);
     } else {
         column2 = call_flow_column_get(panel, 0, stream->ip_dst);
@@ -689,13 +693,17 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Get message data
     msg_get_attribute(stream->media->msg, SIP_ATTR_SRC, msg_src);
     msg_get_attribute(stream->media->msg, SIP_ATTR_DST, msg_dst);
+    // Remove port from address. We only look for columns no matter if it matches port or not
+    sip_address_strip_port(msg_src);
+    sip_address_strip_port(msg_dst);
+
     callid = stream->media->msg->call->callid;
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strncmp(stream->ip_src, msg_src, strlen(stream->ip_src))) {
+    if (!strcmp(stream->ip_src, msg_src)) {
         column1 = call_flow_column_get(panel, callid, msg_src);
-    } else if (!strncmp(stream->ip_src, msg_dst, strlen(stream->ip_src))) {
+    } else if (!strcmp(stream->ip_src, msg_dst)) {
         column1 = call_flow_column_get(panel, callid, msg_dst);
     } else {
         column1 = call_flow_column_get(panel, 0, stream->ip_src);
@@ -703,9 +711,9 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strncmp(stream->ip_dst, msg_dst, strlen(stream->ip_dst))) {
+    if (!strcmp(stream->ip_dst, msg_dst)) {
         column2 = call_flow_column_get(panel, callid, msg_dst);
-    } else if (!strncmp(stream->ip_dst, msg_src, strlen(stream->ip_dst))) {
+    } else if (!strcmp(stream->ip_dst, msg_src)) {
         column2 = call_flow_column_get(panel, callid, msg_src);
     } else {
         column2 = call_flow_column_get(panel, 0, stream->ip_dst);
