@@ -287,6 +287,8 @@ rtp_check_packet(capture_packet_t *packet)
                     case RTCP_RSI:
                     case RTCP_TOKEN:
                     default:
+                        // Not handled headers. Skip the rest of this packet
+                        size = 0;
                         break;
                 }
                 payload += len;
