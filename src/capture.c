@@ -134,15 +134,6 @@ capture_online(const char *dev, const char *outfile)
         return 2;
     }
 
-    // If requested store packets in a dump file
-    if (outfile && !capture_cfg.pd) {
-        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
-            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo->handle));
-            return 2;
-        }
-    }
-
     // Get datalink to parse packets correctly
     capinfo->link = pcap_datalink(capinfo->handle);
 
@@ -157,6 +148,15 @@ capture_online(const char *dev, const char *outfile)
 
     // Add this capture information as packet source
     vector_append(capture_cfg.sources, capinfo);
+
+    // If requested store packets in a dump file
+    if (outfile && !capture_cfg.pd) {
+        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
+            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
+                    pcap_geterr(capinfo->handle));
+            return 2;
+        }
+    }
 
     return 0;
 }
@@ -187,15 +187,6 @@ capture_offline(const char *infile, const char *outfile)
         return 1;
     }
 
-    // If requested store packets in a dump file
-    if (outfile && !capture_cfg.pd) {
-        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
-            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo->handle));
-            return 2;
-        }
-    }
-
     // Get datalink to parse packets correctly
     capinfo->link = pcap_datalink(capinfo->handle);
 
@@ -207,6 +198,15 @@ capture_offline(const char *infile, const char *outfile)
 
     // Add this capture information as packet source
     vector_append(capture_cfg.sources, capinfo);
+
+    // If requested store packets in a dump file
+    if (outfile && !capture_cfg.pd) {
+        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
+            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
+                    pcap_geterr(capinfo->handle));
+            return 2;
+        }
+    }
 
     return 0;
 }
