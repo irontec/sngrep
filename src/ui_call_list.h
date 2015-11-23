@@ -98,6 +98,8 @@ struct call_list_info {
     int dispcallcnt;
     //! Total number of calls without filtering
     int callcnt;
+    //! Move to last list entry if autoscroll is enabled
+    int autoscroll;
 };
 
 /**

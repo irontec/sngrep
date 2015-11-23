@@ -57,6 +57,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_DISPLAY_ALIAS,      "displayalias",       SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_CL_SCROLLSTEP,      "cl.scrollstep",      SETTING_FMT_NUMBER,  "4",         NULL },
     { SETTING_CL_COLORATTR,       "cl.colorattr",       SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
+    { SETTING_CL_AUTOSCROLL,      "cl.autoscroll",      SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_CF_FORCERAW,        "cf.forceraw",        SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_CF_RAWMINWIDTH,     "cf.rawminwidth",     SETTING_FMT_NUMBER,  "40",        NULL },
     { SETTING_CF_RAWFIXEDWIDTH,   "cf.rawfixedwidth",   SETTING_FMT_NUMBER,  "",          NULL },

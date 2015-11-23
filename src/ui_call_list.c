@@ -115,6 +115,9 @@ call_list_create()
     vector_iterator_set_filter(&info->calls, filter_check_call);
     info->cur_call = info->first_call = -1;
 
+    // Set autoscroll default status
+    info->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
+
     // Return the created panel
     return panel;
 }
@@ -215,6 +218,9 @@ call_list_draw_header(PANEL *panel)
         mvwprintw(win, 3, colpos, "%.*s", collen, coldesc);
         colpos += collen + 1;
     }
+    // Print Autoscroll indicator
+    if (info->autoscroll)
+        mvwprintw(win, 3, 0, "A");
     wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Get filter call counters
@@ -227,6 +233,7 @@ call_list_draw_header(PANEL *panel)
     } else {
         mvwprintw(win, 1, 35, "Dialogs: %d", info->callcnt);
     }
+
 }
 
 void
@@ -267,6 +274,11 @@ call_list_draw_list(PANEL *panel)
     // Get window of call list panel
     win = info->list_win;
     getmaxyx(win, height, width);
+
+    // If autoscroll is enabled, select the last dialog
+    if (info->autoscroll) {
+        call_list_handle_key(panel, key_action_key(ACTION_END));
+    }
 
     // If no active call, use the fist one (if exists)
     if (info->first_call == -1 && vector_iterator_count(&info->calls)) {
@@ -493,6 +505,8 @@ call_list_handle_key(PANEL *panel, int key)
                     info->first_line++;
                     info->cur_line = height;
                 }
+                // Disable Autoscroll
+                info->autoscroll = 0;
                 break;
             case ACTION_UP:
                 // Check if there is a call above us
@@ -507,6 +521,8 @@ call_list_handle_key(PANEL *panel, int key)
                     info->first_line--;
                     info->cur_line = 1;
                 }
+                // Disable Autoscroll
+                info->autoscroll = 0;
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
@@ -515,6 +531,8 @@ call_list_handle_key(PANEL *panel, int key)
                 // Next page => N key down strokes
                 for (i = 0; i < rnpag_steps; i++)
                     call_list_handle_key(panel, KEY_DOWN);
+                // Disable Autoscroll
+                info->autoscroll = 0;
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
@@ -523,11 +541,15 @@ call_list_handle_key(PANEL *panel, int key)
                 // Prev page => N key up strokes
                 for (i = 0; i < rnpag_steps; i++)
                     call_list_handle_key(panel, KEY_UP);
+                // Disable Autoscroll
+                info->autoscroll = 0;
                 break;
             case ACTION_BEGIN:
                 // Initialize structures
                 info->first_call = info->cur_call = -1;
                 info->first_line = info->cur_line = 0;
+                // Disable Autoscroll
+                info->autoscroll = 0;
                 break;
             case ACTION_END:
                 // Check if there is a call below us
@@ -549,6 +571,8 @@ call_list_handle_key(PANEL *panel, int key)
             case ACTION_DISP_FILTER:
                 // Activate Form
                 call_list_form_activate(panel, 1);
+                // Disable Autoscroll
+                info->autoscroll = 0;
                 break;
             case ACTION_SHOW_FLOW:
             case ACTION_SHOW_FLOW_EX:
@@ -598,6 +622,9 @@ call_list_handle_key(PANEL *panel, int key)
                 sip_calls_clear();
                 // Clear List
                 call_list_clear(panel);
+                break;
+            case ACTION_AUTOSCROLL:
+                info->autoscroll = (info->autoscroll) ? 0 : 1;
                 break;
             case ACTION_SHOW_SETTINGS:
                 ui_create_panel(PANEL_SETTINGS);

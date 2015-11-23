@@ -103,6 +103,7 @@ enum key_actions {
     ACTION_SDP_INFO,
     ACTION_COMPRESS,
     ACTION_TOGGLE_HINT,
+    ACTION_AUTOSCROLL,
     ACTION_SENTINEL
 };
 
@@ -218,5 +219,14 @@ key_from_str(const char *key);
  */
 const char *
 key_action_key_str(int action);
+
+/**
+ * @brief Return key value for a given action
+ *
+ * @param action One action defined in @key_actions
+ * @return Main/Alt keybinding for the given action
+ */
+int
+key_action_key(int action);
 
 #endif /* __SNGREP_KEYBINDING_H_ */

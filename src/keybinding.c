@@ -83,6 +83,7 @@ key_binding_t bindings[ACTION_SENTINEL] = {
    { ACTION_ONLY_SDP,       "onlysdp",      { 'D' }, 1 },
    { ACTION_SDP_INFO,       "sdpinfo",      { KEY_F(2), 'd' }, 2 },
    { ACTION_COMPRESS,       "compress",     { 's' }, 1 },
+   { ACTION_AUTOSCROLL,     "autoscroll",   { 'A' }, 1 },
    { ACTION_TOGGLE_HINT,    "hintalt",      { 'K' }, 1 },
 };
 
@@ -270,4 +271,23 @@ key_action_key_str(int action)
         // Default keybinding
         return key_to_str(bind->keys[0]);
     }
+}
+
+int
+key_action_key(int action)
+{
+    key_binding_t *bind;
+
+    if (!(bind = key_binding_data(action)))
+        return -1;
+
+    if (setting_enabled(SETTING_ALTKEY_HINT) && bind->bindcnt > 1) {
+        // First alt keybinding
+        return bind->keys[1];
+    } else {
+        // Default keybinding
+        return bind->keys[0];
+    }
+
+    return -1;
 }
