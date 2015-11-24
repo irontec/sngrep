@@ -65,6 +65,7 @@ capture_eep_init()
     // Setting for EEP client
     if (setting_enabled(SETTING_EEP_SEND)) {
         // Fill configuration structure
+        eep_cfg.capt_version = setting_get_intvalue(SETTING_EEP_SEND_VER);
         eep_cfg.capt_host = setting_get_value(SETTING_EEP_SEND_ADDR);
         eep_cfg.capt_port = setting_get_value(SETTING_EEP_SEND_PORT);
         eep_cfg.capt_password = setting_get_value(SETTING_EEP_SEND_PASS);
@@ -94,6 +95,7 @@ capture_eep_init()
 
     if (setting_enabled(SETTING_EEP_LISTEN)) {
         // Fill configuration structure
+        eep_cfg.capt_srv_version = setting_get_intvalue(SETTING_EEP_LISTEN_VER);
         eep_cfg.capt_srv_host = setting_get_value(SETTING_EEP_LISTEN_ADDR);
         eep_cfg.capt_srv_port = setting_get_value(SETTING_EEP_LISTEN_PORT);
         eep_cfg.capt_srv_password = setting_get_value(SETTING_EEP_LISTEN_PASS);
@@ -178,7 +180,117 @@ capture_eep_deinit()
 int
 capture_eep_send(capture_packet_t *pkt)
 {
+    // Dont send RTP packets
+    if (pkt->type == CAPTURE_PACKET_RTP)
+        return 1;
 
+    // Check we have a connection established
+    if (!eep_cfg.client_sock)
+        return 1;
+
+    switch (eep_cfg.capt_version) {
+        case 2:
+            return capture_eep_send_v2(pkt);
+        case 3:
+            return capture_eep_send_v3(pkt);
+    }
+    return 1;
+}
+
+int
+capture_eep_send_v2(capture_packet_t *pkt)
+{
+    void* buffer;
+    unsigned int buflen = 0, iplen = 0, tlen = 0;
+    struct hep_hdr hdr;
+    struct hep_timehdr hep_time;
+    struct hep_iphdr hep_ipheader;
+#ifdef USE_IPV6
+    struct hep_ip6hdr hep_ip6header;
+#endif
+    unsigned char *data = capture_packet_get_payload(pkt);
+    unsigned int len = capture_packet_get_payload_len(pkt);
+    capture_frame_t *frame = vector_first(pkt->frames);
+
+    /* Version && proto */
+    hdr.hp_v = 2;
+    hdr.hp_f = pkt->ip_version == 4 ? AF_INET : AF_INET6;
+    hdr.hp_p = pkt->proto;
+    hdr.hp_sport = htons(pkt->sport);
+    hdr.hp_dport = htons(pkt->dport);
+
+    /* Timestamp */
+    hep_time.tv_sec = frame->header->ts.tv_sec;
+    hep_time.tv_usec = frame->header->ts.tv_usec;
+    hep_time.captid = eep_cfg.capt_id;
+
+    /* Calculate initial HEP packet size */
+    tlen = sizeof(struct hep_hdr) + sizeof(struct hep_timehdr);
+
+    /* IPv4 */
+    if (pkt->ip_version == 4) {
+        inet_pton(AF_INET, pkt->ip_src, &hep_ipheader.hp_src);
+        inet_pton(AF_INET, pkt->ip_dst, &hep_ipheader.hp_dst);
+        tlen += sizeof(struct hep_iphdr);
+        hdr.hp_l += sizeof(struct hep_iphdr);
+    }
+
+#ifdef USE_IPV6
+    /* IPv6 */
+    else if(pkt->ip_version == 6) {
+        inet_pton(AF_INET6, pkt->ip_src, &hep_ip6header.hp6_src);
+        inet_pton(AF_INET6, pkt->ip_dst, &hep_ip6header.hp6_dst);
+        tlen += sizeof(struct hep_ip6hdr);
+        hdr.hp_l += sizeof(struct hep_ip6hdr);
+    }
+#endif
+
+    // Add payload size to the final size of HEP packet
+    tlen += len;
+    hdr.hp_l = htons(tlen);
+
+    // Allocate memory for HEPv2 packet
+    if (!(buffer = sng_malloc(tlen)))
+        return 1;
+
+    // Copy basic headers
+    buflen = 0;
+    memcpy((void*) buffer + buflen, &hdr, sizeof(struct hep_hdr));
+    buflen += sizeof(struct hep_hdr);
+
+    // Copy IP header
+    if (pkt->ip_version == 4) {
+        memcpy((void*) buffer + buflen, &hep_ipheader, sizeof(struct hep_iphdr));
+        buflen += sizeof(struct hep_iphdr);
+    }
+#ifdef USE_IPV6
+    else if(pkt->ip_version == 6) {
+        memcpy((void*) buffer + buflen, &hep_ip6header, sizeof(struct hep_ip6hdr));
+        buflen += sizeof(struct hep_ip6hdr);
+    }
+#endif
+
+    // Copy TImestamp header
+    memcpy((void*) buffer + buflen, &hep_time, sizeof(struct hep_timehdr));
+    buflen += sizeof(struct hep_timehdr);
+
+    // Now copy payload itself
+    memcpy((void*) buffer + buflen, data, len);
+    buflen += len;
+
+    if (send(eep_cfg.client_sock, buffer, buflen, 0) == -1) {
+        return 1;
+    }
+
+    /* FREE */
+    sng_free(buffer);
+
+    return 1;
+}
+
+int
+capture_eep_send_v3(capture_packet_t *pkt)
+{
     struct hep_generic *hg = NULL;
     void* buffer;
     unsigned int buflen = 0, iplen = 0, tlen = 0;
@@ -192,17 +304,9 @@ capture_eep_send(capture_packet_t *pkt)
     unsigned char *data = capture_packet_get_payload(pkt);
     unsigned int len = capture_packet_get_payload_len(pkt);
 
-    // Check we have a connection established
-    if (!eep_cfg.client_sock)
-        return 1;
-
-    // Dont send RTP packets
-    if (pkt->type == CAPTURE_PACKET_RTP)
-        return 1;
-
     hg = sng_malloc(sizeof(struct hep_generic));
 
-    /* header set */
+    /* header set "HEP3" */
     memcpy(hg->header.id, "\x48\x45\x50\x33", 4);
 
     /* IP proto */
@@ -354,7 +458,7 @@ capture_eep_send(capture_packet_t *pkt)
     memcpy((void*) buffer + buflen, &payload_chunk, sizeof(struct hep_chunk));
     buflen += sizeof(struct hep_chunk);
 
-    /* Now copying payload self */
+    /* Now copying payload itself */
     memcpy((void*) buffer + buflen, data, len);
     buflen += len;
 
@@ -370,6 +474,113 @@ capture_eep_send(capture_packet_t *pkt)
 
 capture_packet_t *
 capture_eep_receive()
+{
+    switch (eep_cfg.capt_srv_version) {
+        case 2:
+            return capture_eep_receive_v2();
+        case 3:
+            return capture_eep_receive_v3();
+    }
+    return NULL;
+}
+
+capture_packet_t *
+capture_eep_receive_v2()
+{
+    uint8_t family, proto;
+    unsigned char *payload = 0;
+    unsigned int pos;
+    char buffer[MAX_CAPTURE_LEN] ;
+    //! Source and Destination Address
+    char ip_src[ADDRESSLEN], ip_dst[ADDRESSLEN];
+    //! Source and Destination Port
+    u_short sport, dport;
+    //! Packet header
+    struct pcap_pkthdr header;
+    //! New created packet pointer
+    capture_packet_t *pkt;
+    //! EEP client data
+    struct sockaddr eep_client;
+    socklen_t eep_client_len;
+    struct hep_hdr hdr;
+    struct hep_timehdr hep_time;
+    struct hep_iphdr hep_ipheader;
+#ifdef USE_IPV6
+    struct hep_ip6hdr hep_ip6header;
+#endif
+
+    // Initialize buffer
+    memset(buffer, 0, MAX_CAPTURE_LEN);
+
+    /* Receive EEP generic header */
+    if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, &eep_client, &eep_client_len) == -1)
+        return NULL;
+
+    /* Copy initial bytes to HEPv2 header */
+    memcpy(&hdr, buffer, sizeof(struct hep_hdr));
+
+    // Check HEP version
+    if (hdr.hp_v != 2)
+        return NULL;
+
+    /* IP proto */
+    family = hdr.hp_f;
+    /* Proto ID */
+    proto = hdr.hp_p;
+
+    pos = sizeof(struct hep_hdr);
+
+    /* IPv4 */
+    if (family == AF_INET) {
+        memcpy(&hep_ipheader, (void*) buffer + pos, sizeof(struct hep_iphdr));
+        inet_ntop(AF_INET, &hep_ipheader.hp_src, ip_src, sizeof(ip_src));
+        inet_ntop(AF_INET, &hep_ipheader.hp_dst, ip_dst, sizeof(ip_dst));
+        pos += sizeof(struct hep_iphdr);
+    }
+#ifdef USE_IPV6
+    /* IPv6 */
+    else if(family == AF_INET6) {
+        memcpy(&hep_ip6header, (void*) buffer + pos, sizeof(struct hep_ip6hdr));
+        inet_ntop(AF_INET6, &hep_ip6header.hp6_src, ip_src, sizeof(ip_src));
+        inet_ntop(AF_INET6, &hep_ip6header.hp6_dst, ip_dst, sizeof(ip_dst));
+        pos += sizeof(struct hep_ip6hdr);
+    }
+#endif
+
+    /* PORTS */
+    sport = ntohs(hdr.hp_sport);
+    dport = ntohs(hdr.hp_dport);
+
+    /* TIMESTAMP*/
+    memcpy(&hep_time, (void*) buffer + pos, sizeof(struct hep_timehdr));
+    pos += sizeof(struct hep_timehdr);
+    header.ts.tv_sec = hep_time.tv_sec;
+    header.ts.tv_usec = hep_time.tv_usec;
+
+    /* Protocol TYPE */
+    /* Capture ID */
+
+    // Calculate payload size (Total size - headers size)
+    header.caplen = header.len = ntohs(hdr.hp_l) - pos;
+
+    // Copy packet payload
+    payload = sng_malloc(header.caplen + 1);
+    memcpy(payload, (void*) buffer + pos, header.caplen);
+
+    // Create a new packet
+    pkt = capture_packet_create((family == AF_INET) ? 4 : 6, proto, ip_src, ip_dst, 0);
+    capture_packet_add_frame(pkt, &header, payload);
+    capture_packet_set_transport_data(pkt, sport, dport, CAPTURE_PACKET_SIP_UDP);
+    capture_packet_set_payload(pkt, payload, header.caplen);
+
+    /* FREE */
+    sng_free(payload);
+    return pkt;
+
+}
+
+capture_packet_t *
+capture_eep_receive_v3()
 {
 
     struct hep_generic hg;
@@ -405,8 +616,8 @@ capture_eep_receive()
     /* Copy initial bytes to EEP Generic header */
     memcpy(&hg, buffer, sizeof(struct hep_generic));
 
-    /* header set */
-    if (!memcpy(hg.header.id, "\x48\x45\x50\x33", 4))
+    /* header check */
+    if (memcmp(hg.header.id, "\x48\x45\x50\x33", 4) != 0)
         return NULL;
 
     /* IP proto */

@@ -58,12 +58,16 @@ struct capture_eep_config
     int server_sock;
     //! Capture agent id
     int capt_id;
+    //! Hep Version for sending data (2 or 3)
+    int capt_version;
     //! IP address to sends EEP data
     const char *capt_host;
     //! Port to send EEP data
     const char *capt_port;
     //! Password for authenticate as client
     const char *capt_password;
+    // HEp version for receiving data (2 or 3)
+    int capt_srv_version;
     //! IP address to received EEP data
     const char *capt_srv_host;
     //! Local oort to receive EEP data
@@ -223,7 +227,16 @@ void
 capture_eep_deinit();
 
 /**
- * @brief Send a captured packet
+ * @brief Wrapper for sending packet in configured EEP version
+ *
+ * @param pkt Packet Structure data
+ * @return 1 on any error occurs, 0 otherwise
+ */
+int
+capture_eep_send(capture_packet_t *pkt);
+
+/**
+ * @brief Send a captured packet (EEP version 2)
  *
  * Send a packet encapsulated into EEP through the client socket.
  * This function will only handle SIP packets if EEP client mode
@@ -233,10 +246,32 @@ capture_eep_deinit();
  * @return 1 on any error occurs, 0 otherwise
  */
 int
-capture_eep_send(capture_packet_t *pkt);
+capture_eep_send_v2(capture_packet_t *pkt);
 
 /**
- * @brief Received a captured packet
+ * @brief Send a captured packet (EEP version 3)
+ *
+ * Send a packet encapsulated into EEP through the client socket.
+ * This function will only handle SIP packets if EEP client mode
+ * has been enabled.
+ *
+ * @param pkt Packet Structure data
+ * @return 1 on any error occurs, 0 otherwise
+ */
+int
+capture_eep_send_v3(capture_packet_t *pkt);
+
+/**
+ * @brief Wrapper for receiving packet in configured EEP version
+ *
+ * @return NULL on any error, packet structure otherwise
+ */
+capture_packet_t *
+capture_eep_receive();
+
+
+/**
+ * @brief Received a captured packet (EEP version 2)
  *
  * Wait for a packet to be received through the EEP server. This
  * function will parse received EEP data and create a new packet
@@ -245,7 +280,19 @@ capture_eep_send(capture_packet_t *pkt);
  * @return NULL on any error, packet structure otherwise
  */
 capture_packet_t *
-capture_eep_receive();
+capture_eep_receive_v2();
+
+/**
+ * @brief Received a captured packet (EEP version 3)
+ *
+ * Wait for a packet to be received through the EEP server. This
+ * function will parse received EEP data and create a new packet
+ * structure.
+ *
+ * @return NULL on any error, packet structure otherwise
+ */
+capture_packet_t *
+capture_eep_receive_v3();
 
 /**
  * @brief Set EEP server url
