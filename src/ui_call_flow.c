@@ -359,27 +359,6 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     msg_get_attribute(msg, SIP_ATTR_SRC, msg_src);
     msg_get_attribute(msg, SIP_ATTR_DST, msg_dst);
 
-    // Print timestamp
-    if (info->selected == arrow)
-        wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(win, cline, 2, "%s", msg_time);
-
-    // Print delta from selected message
-    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-        if (!info->selected) {
-            if (setting_enabled(SETTING_CF_DELTA))
-                timeval_to_delta(msg_get_time(msg), msg_get_time(call_group_get_next_msg(info->group, msg)), delta);
-        } else if (info->cur_arrow == arrow) {
-            timeval_to_delta(msg_get_time(call_flow_arrow_message(info->selected)), msg_get_time(msg), delta);
-        }
-
-        if (strlen(delta)) {
-            wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-            mvwprintw(win, cline + 1 , 2, "%15s", delta);
-        }
-        wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    }
-
     // Get Message method (include extra info)
     sprintf(method, "%s", msg_method);
 
@@ -510,6 +489,29 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
     wattroff(win, A_BOLD | A_REVERSE);
 
+    // Print timestamp
+    if (info->selected == arrow)
+        wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(win, cline, 2, "%s", msg_time);
+
+    // Print delta from selected message
+    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        if (!info->selected) {
+            if (setting_enabled(SETTING_CF_DELTA))
+                timeval_to_delta(msg_get_time(call_group_get_prev_msg(info->group, msg)), msg_get_time(msg), delta);
+        } else if (info->cur_arrow == arrow) {
+            timeval_to_delta(msg_get_time(call_flow_arrow_message(info->selected)), msg_get_time(msg), delta);
+        }
+
+        if (strlen(delta)) {
+            wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+            mvwprintw(win, cline - 1 , 2, "%15s", delta);
+        }
+        wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    }
+
+    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+
     return arrow;
 }
 
@@ -542,10 +544,6 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Check this media fits on the panel
     if (cline > height + arrow->height)
         return NULL;
-
-    // Print timestamp
-    timeval_to_time(stream->time, time);
-    mvwprintw(win, cline, 2, "%s", time);
 
     // Get Message method (include extra info)
     sprintf(text, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
@@ -589,6 +587,14 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
+
+    // In compressed mode, we display the src and dst port inside the arrow
+    // so fixup the stard and end position
+    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        startpos += 5;
+        endpos -= 5;
+    }
+
     int distance = abs(endpos - startpos) - 4 + 1;
 
     // Highlight current message
@@ -618,13 +624,10 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == 0 /* right */) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, startpos - 5, "%d", stream->sport);
-            mvwprintw(win, cline, endpos + 1, "%d", stream->dport);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->sport);
+            mvwprintw(win, cline, endpos, "%d", stream->dport);
         }
-        if (distance > 0)
-            mvwaddch(win, cline, endpos - 2, '>');
-        else
-            mvwaddch(win, cline, endpos, '>');
+        mvwaddch(win, cline, endpos - 2, '>');
         if (arrow->rtp_count != stream_get_count(stream)) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
@@ -632,13 +635,10 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, endpos  + 1, "%d", stream->sport);
-            mvwprintw(win, cline, startpos - 5, "%d", stream->dport);
+            mvwprintw(win, cline, endpos, "%d", stream->sport);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->dport);
         }
-        if (distance > 0)
-            mvwaddch(win, cline, startpos + 2, '<');
-        else
-            mvwaddch(win, cline, startpos, '<');
+        mvwaddch(win, cline, startpos + 2, '<');
         if (arrow->rtp_count != stream_get_count(stream)) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
@@ -650,6 +650,11 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         mvwprintw(win, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
 
     wattroff(win, A_BOLD | A_REVERSE);
+
+    // Print timestamp
+    timeval_to_time(stream->time, time);
+    mvwprintw(win, cline, 2, "%s", time);
+
 
     return arrow;
 }
@@ -682,10 +687,6 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Check this media fits on the panel
     if (cline > height + arrow->height)
         return NULL;
-
-    // Print timestamp
-    timeval_to_time(stream->time, time);
-    mvwprintw(win, cline, 2, "%s", time);
 
     // Arrow text
     sprintf(text, "RTCP (%.1f) %d", (float) stream->rtcpinfo.mosc / 10, stream_get_count(stream));
@@ -729,6 +730,14 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
+
+    // In compressed mode, we display the src and dst port inside the arrow
+    // so fixup the stard and end position
+    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        startpos += 5;
+        endpos -= 5;
+    }
+
     int distance = abs(endpos - startpos) - 4 + 1;
 
     // Highlight current message
@@ -757,13 +766,10 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == 0 /* right */) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, startpos - 5, "%d", stream->sport);
-            mvwprintw(win, cline, endpos + 1, "%d", stream->dport);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->sport);
+            mvwprintw(win, cline, endpos, "%d", stream->dport);
         }
-        if (distance > 0)
-            mvwaddch(win, cline, endpos - 2, '>');
-        else
-            mvwaddch(win, cline, endpos, '>');
+        mvwaddch(win, cline, endpos - 2, '>');
         if (arrow->rtp_count != stream_get_count(stream)) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
@@ -771,13 +777,10 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, endpos  + 1, "%d", stream->sport);
-            mvwprintw(win, cline, startpos - 5, "%d", stream->dport);
+            mvwprintw(win, cline, endpos, "%d", stream->sport);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->dport);
         }
-        if (distance > 0)
-            mvwaddch(win, cline, startpos + 2, '<');
-        else
-            mvwaddch(win, cline, startpos, '<');
+        mvwaddch(win, cline, startpos + 2, '<');
         if (arrow->rtp_count != stream_get_count(stream)) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
@@ -789,6 +792,10 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         mvwprintw(win, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
 
     wattroff(win, A_BOLD | A_REVERSE);
+
+    // Print timestamp
+    timeval_to_time(stream->time, time);
+    mvwprintw(win, cline, 2, "%s", time);
 
     return arrow;
 }
