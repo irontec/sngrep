@@ -114,7 +114,7 @@ capture_eep_init()
 
         // Get network address
         if (inet_aton(eep_cfg.capt_srv_host, &addr) == 0) {
-            fprintf(stderr, "Error getting network address: %s\n", strerror(errno));
+            fprintf(stderr, "Error getting network address: Failed to parse address %s\n", eep_cfg.capt_srv_host);
             return 1;
         }
 
