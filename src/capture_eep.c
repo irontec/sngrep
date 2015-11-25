@@ -201,7 +201,7 @@ int
 capture_eep_send_v2(capture_packet_t *pkt)
 {
     void* buffer;
-    unsigned int buflen = 0, iplen = 0, tlen = 0;
+    unsigned int buflen = 0, tlen = 0;
     struct hep_hdr hdr;
     struct hep_timehdr hep_time;
     struct hep_iphdr hep_ipheader;
