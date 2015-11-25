@@ -59,8 +59,6 @@ int
 capture_eep_init()
 {
     struct addrinfo *ai, hints[1] = { { 0 } };
-    struct sockaddr_in srvaddr;
-    struct in_addr addr;
 
     // Setting for EEP client
     if (setting_enabled(SETTING_EEP_SEND)) {
@@ -80,11 +78,13 @@ capture_eep_init()
             fprintf(stderr, "capture: getaddrinfo() error\n");
             return 1;
         }
+
         eep_cfg.client_sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
         if (eep_cfg.client_sock < 0) {
             fprintf(stderr, "Sender socket creation failed: %s\n", strerror(errno));
             return 1;
         }
+
         if (connect(eep_cfg.client_sock, ai->ai_addr, (socklen_t) (ai->ai_addrlen)) == -1) {
             if (errno != EINPROGRESS) {
                 fprintf(stderr, "Sender socket creation failed: %s\n", strerror(errno));
@@ -105,6 +105,11 @@ capture_eep_init()
         hints->ai_socktype = SOCK_DGRAM;
         hints->ai_protocol = IPPROTO_UDP;
 
+        if (getaddrinfo(eep_cfg.capt_srv_host, eep_cfg.capt_srv_port, hints, &ai)) {
+            fprintf(stderr, "Error server network error: getaddrinfo() error\n");
+            return 1;
+        }
+
         // Create a socket for a new TCP IPv4 connection
         eep_cfg.server_sock = socket(AF_INET, SOCK_DGRAM, 0);
         if (eep_cfg.client_sock < 0) {
@@ -112,18 +117,8 @@ capture_eep_init()
             return 1;
         }
 
-        // Get network address
-        if (inet_aton(eep_cfg.capt_srv_host, &addr) == 0) {
-            fprintf(stderr, "Error getting network address: Failed to parse address %s\n", eep_cfg.capt_srv_host);
-            return 1;
-        }
-
         // Bind that socket to the requested address and port
-        memset(&srvaddr, 0, sizeof(srvaddr));
-        srvaddr.sin_family = AF_INET;
-        srvaddr.sin_addr = addr;
-        srvaddr.sin_port = htons(atoi(eep_cfg.capt_srv_port));
-        if (bind(eep_cfg.server_sock, (struct sockaddr *) &srvaddr, sizeof(srvaddr)) == -1) {
+        if (bind(eep_cfg.server_sock, ai->ai_addr, ai->ai_addrlen) == -1) {
             fprintf(stderr, "Error binding address: %s\n", strerror(errno));
             return 1;
         }
