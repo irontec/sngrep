@@ -75,7 +75,8 @@ capture_eep_init()
         hints->ai_protocol = IPPROTO_UDP;
 
         if (getaddrinfo(eep_cfg.capt_host, eep_cfg.capt_port, hints, &ai)) {
-            fprintf(stderr, "capture: getaddrinfo() error\n");
+            fprintf(stderr, "EEP client: failed getaddrinfo() for %s:%s\n",
+                    eep_cfg.capt_host, eep_cfg.capt_port);
             return 1;
         }
 
@@ -106,7 +107,8 @@ capture_eep_init()
         hints->ai_protocol = IPPROTO_UDP;
 
         if (getaddrinfo(eep_cfg.capt_srv_host, eep_cfg.capt_srv_port, hints, &ai)) {
-            fprintf(stderr, "Error server network error: getaddrinfo() error\n");
+            fprintf(stderr, "EEP server: failed getaddrinfo() for %s:%s\n",
+                    eep_cfg.capt_srv_host, eep_cfg.capt_srv_port);
             return 1;
         }
 
@@ -702,6 +704,10 @@ capture_eep_set_server_url(const char *url)
     char urlstr[256];
     char address[256], port[256];
 
+    memset(urlstr, 0, sizeof(urlstr));
+    memset(address, 0, sizeof(address));
+    memset(port, 0, sizeof(port));
+
     strncpy(urlstr, url, strlen(url));
     if (sscanf(urlstr, "%*[^:]:%[^:]:%s", address, port) == 2) {
         setting_set_value(SETTING_EEP_LISTEN, SETTING_ON);
@@ -717,6 +723,10 @@ capture_eep_set_client_url(const char *url)
 {
     char urlstr[256];
     char address[256], port[256];
+
+    memset(urlstr, 0, sizeof(urlstr));
+    memset(address, 0, sizeof(address));
+    memset(port, 0, sizeof(port));
 
     strncpy(urlstr, url, strlen(url));
     if (sscanf(urlstr, "%*[^:]:%[^:]:%s", address, port) == 2) {
