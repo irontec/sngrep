@@ -304,17 +304,17 @@ call_list_draw_list(PANEL *panel)
         if (!call_msg_count(call))
             continue;
 
-        // Reverse colors on monochrome terminals
-        if (!has_colors())
-            wattron(win, A_REVERSE);
-
         // Show bold selected rows
         if (call_group_exists(info->group, call))
             wattron(win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (call->index == info->cur_call + 1)
-            wattron(win, COLOR_PAIR(CP_DEF_ON_BLUE));
+        if (call->index == info->cur_call + 1) {
+            wattron(win, COLOR_PAIR(CP_WHITE_ON_BLUE));
+            // Reverse colors on monochrome terminals
+            if (!has_colors())
+                wattron(win, A_REVERSE);
+        }
         // Set current line background
         clear_line(win, cline);
         // Set current line selection box
