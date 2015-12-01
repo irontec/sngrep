@@ -308,7 +308,7 @@ call_flow_draw_columns(PANEL *panel)
     }
 
     // Add RTP columns FIXME Really
-    if (setting_enabled(SETTING_CF_MEDIA)) {
+    if (!setting_disabled(SETTING_CF_MEDIA)) {
         while ((call = call_group_get_next(info->group, call)) ) {
             streams = vector_iterator(call->streams);
             while ((stream = vector_iterator_next(&streams))) {
@@ -858,9 +858,13 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
         }
     }
 
-    if (setting_enabled(SETTING_CF_MEDIA)) {
+    if (!setting_disabled(SETTING_CF_MEDIA)) {
         // Look for the next stream
         while ((stream = call_group_get_next_stream(info->group, stream))) {
+            // Only handle RTCP when required
+            if (!setting_has_value(SETTING_CF_MEDIA, "rtcp") && stream->type == CAPTURE_PACKET_RTCP)
+                continue;
+
             if (timeval_is_older(stream->time, cur_time)) {
                 break;
             }

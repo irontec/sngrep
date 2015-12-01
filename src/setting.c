@@ -66,7 +66,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CF_SCROLLSTEP,      "cf.scrollstep",      SETTING_FMT_NUMBER,  "4",         NULL },
     { SETTING_CF_LOCALHIGHLIGHT,  "cf.localhighlight",  SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_CF_SDP_INFO,        "cf.sdpinfo",         SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_SDP_INFO },
-    { SETTING_CF_MEDIA,           "cf.media",           SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
+    { SETTING_CF_MEDIA,           "cf.media",           SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_MEDIA },
     { SETTING_CF_DELTA,           "cf.deltatime",       SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_CR_SCROLLSTEP,      "cr.scrollstep",      SETTING_FMT_NUMBER,  "10",        NULL },
     { SETTING_FILTER_METHODS,     "filter.methods",     SETTING_FMT_STRING,  "",          NULL },
@@ -176,6 +176,13 @@ setting_enabled(int id)
 {
     return setting_has_value(id, "on") ||
            setting_has_value(id, "yes");
+}
+
+int
+setting_disabled(int id)
+{
+    return setting_has_value(id, "off") ||
+           setting_has_value(id, "no");
 }
 
 int

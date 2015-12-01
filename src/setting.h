@@ -56,6 +56,7 @@ typedef struct setting_option setting_t;
 #define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", "compressed", NULL}
 #define SETTING_ENUM_STORAGE     (const char *[]){ "none", "memory", NULL }
 #define SETTING_ENUM_HEPVERSION  (const char *[]){ "2", "3", NULL }
+#define SETTING_ENUM_MEDIA       (const char *[]){ "on", "off", "rtcp", NULL }
 
 //! Other useful defines
 #define SETTING_ON  "on"
@@ -180,6 +181,9 @@ setting_set_intvalue(int id, int value);
 
 int
 setting_enabled(int id);
+
+int
+setting_disabled(int id);
 
 int
 setting_has_value(int id, const char *value);
