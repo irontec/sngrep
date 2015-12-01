@@ -230,6 +230,19 @@ call_flow_draw(PANEL *panel)
 void
 call_flow_draw_footer(PANEL *panel)
 {
+    call_flow_info_t *info;
+    sip_call_t *call = NULL;
+    WINDOW *win;
+    int streamcnt = 0;
+    int height, width;
+
+    // Get panel information
+    info = call_flow_info(panel);
+
+    // Get window of main panel
+    win = panel_window(panel);
+    getmaxyx(win, height, width);
+
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
         key_action_key_str(ACTION_CONFIRM), "Raw",
@@ -245,6 +258,19 @@ call_flow_draw_footer(PANEL *panel)
     };
 
     draw_keybindings(panel, keybindings, 22);
+
+    // If any dialog has RTP streams and they are not visible
+    if (!setting_enabled(SETTING_CF_MEDIA)) {
+        while ((call = call_group_get_next(info->group, call)) ) {
+            streamcnt += vector_count(call->streams);
+        }
+        // Highlight RTP keybinding
+        if (streamcnt) {
+            wattron(win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
+            mvwprintw(win, height - 1, 64, "%s %s", key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP");
+            wattroff(win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
+        }
+    }
 }
 
 int
