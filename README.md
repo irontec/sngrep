@@ -12,6 +12,7 @@ as PCAP viewer.
 ### Binaries
 * [Debian / Ubuntu] (https://github.com/irontec/sngrep/wiki/Installing-Binaries#debian--ubuntu)
 * [CentOS / RedHat / Fedora](https://github.com/irontec/sngrep/wiki/Installing-Binaries#centos--fedora--rhel)
+* [Alpine Linux](https://github.com/irontec/sngrep/wiki/Installing-Binaries#alpine-linux)
 * [Gentoo](https://github.com/irontec/sngrep/wiki/Installing-Binaries#gentoo)
 * [Arch](https://github.com/irontec/sngrep/wiki/Installing-Binaries#arch)
 * [OSX] (https://github.com/irontec/sngrep/wiki/Installing-Binaries#osx)
