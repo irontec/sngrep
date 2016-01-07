@@ -57,6 +57,7 @@ key_binding_t bindings[ACTION_SENTINEL] = {
    { ACTION_CLEAR_CALLS,    "clearcalls",   { KEY_F(5) }, 1 },
    { ACTION_TOGGLE_SYNTAX,  "togglesyntax", { KEY_F(8), 'C' }, 2 },
    { ACTION_CYCLE_COLOR,    "colormode",    { 'c' }, 1 },
+   { ACTION_COMPRESS,       "compress",     { 's' }, 1 },
    { ACTION_SHOW_HOSTNAMES, "togglehostname", { KEY_F(9) }, 1 },
    { ACTION_SHOW_ALIAS,     "togglealias",  { 'a' }, 1 },
    { ACTION_TOGGLE_PAUSE,   "pause",        { 'p' }, 1 },
@@ -83,7 +84,6 @@ key_binding_t bindings[ACTION_SENTINEL] = {
    { ACTION_RESET_RAW,      "resetrawpreview", { 'T' }, 1 },
    { ACTION_ONLY_SDP,       "onlysdp",      { 'D' }, 1 },
    { ACTION_SDP_INFO,       "sdpinfo",      { KEY_F(2), 'd' }, 2 },
-   { ACTION_COMPRESS,       "compress",     { 's' }, 1 },
    { ACTION_AUTOSCROLL,     "autoscroll",   { 'A' }, 1 },
    { ACTION_TOGGLE_HINT,    "hintalt",      { 'K' }, 1 },
 };
