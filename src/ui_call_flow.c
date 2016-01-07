@@ -34,6 +34,7 @@
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_msg_diff.h"
+#include "ui_save.h"
 #include "util.h"
 #include "vector.h"
 #include "option.h"
@@ -1208,6 +1209,10 @@ call_flow_handle_key(PANEL *panel, int key)
                     call_group_add(info->group, call);
                 }
                 call_flow_set_group(info->group);
+                break;
+            case ACTION_SAVE:
+                next_panel = ui_create_panel(PANEL_SAVE);
+                save_set_group(ui_get_panel(next_panel), info->group);
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode
