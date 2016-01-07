@@ -1210,10 +1210,6 @@ call_flow_handle_key(PANEL *panel, int key)
                 }
                 call_flow_set_group(info->group);
                 break;
-            case ACTION_SAVE:
-                next_panel = ui_create_panel(PANEL_SAVE);
-                save_set_group(ui_get_panel(next_panel), info->group);
-                break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode
                 ui_create_panel(PANEL_CALL_RAW);
@@ -1258,6 +1254,10 @@ call_flow_handle_key(PANEL *panel, int key)
                 setting_toggle(SETTING_CF_SPLITCALLID);
                 // Force columns reload
                 call_flow_set_group(info->group);
+                break;
+            case ACTION_SAVE:
+                next_panel = ui_create_panel(PANEL_SAVE);
+                save_set_group(ui_get_panel(next_panel), info->group);
                 break;
             case ACTION_SELECT:
                 if (!info->selected) {
