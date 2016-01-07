@@ -1126,7 +1126,7 @@ call_flow_handle_key(PANEL *panel, int key)
     call_flow_info_t *info = call_flow_info(panel);
     call_flow_arrow_t *next, *prev;
     ui_t *next_panel;
-    sip_call_t *call;
+    sip_call_t *call = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
 
@@ -1188,6 +1188,15 @@ call_flow_handle_key(PANEL *panel, int key)
                 call_flow_set_group(info->group);
                 for (i=0; i < call_group_msg_count(info->group); i++)
                     call_flow_handle_key(panel, KEY_DOWN);
+                break;
+            case ACTION_SHOW_FLOW_EX_FULL:
+                call = call_group_get_next(info->group, call);
+                for (; call; call = call_group_get_next(info->group, call)) {
+                    if (call->xcallid)
+                        call_group_add(info->group, sip_find_by_callid(call->xcallid));
+                    call_group_add(info->group, sip_find_by_xcallid(call->callid));
+                }
+                call_flow_set_group(info->group);
                 break;
             case ACTION_SHOW_FLOW_EX:
                 werase(panel_window(panel));

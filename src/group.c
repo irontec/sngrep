@@ -67,7 +67,9 @@ call_group_clone(sip_call_group_t *original)
 void
 call_group_add(sip_call_group_t *group, sip_call_t *call)
 {
-    vector_append(group->calls, call);
+    if (!call_group_exists(group, call)) {
+        vector_append(group->calls, call);
+    }
 }
 
 void
