@@ -5,10 +5,9 @@ compiler:
 notifications:
   recipients:
     - kaian@irontec.com
-before_script:
-    - sudo apt-get update
 install:
-    - sudo apt-get install -y libncurses5-dev libpcap0.8-dev libssl-dev
+    - sudo apt-get -qq update || true
+    - sudo apt-get install -y libncurses5-dev libpcap-dev libssl-dev
 script: 
     - ./bootstrap.sh
     - ./configure 
@@ -16,3 +15,4 @@ script:
 branches:
   only:
     - master
+    - travis
