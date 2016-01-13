@@ -20,7 +20,7 @@ as PCAP viewer.
 ### Building from sources
 Prerequisites
 
- - libncurse5 - for UI, windows, panels.
+ - libncurses5 - for UI, windows, panels.
  - libpcap - for capturing packets.
  - libssl - (optional) for TLS transport decrypt using OpenSSL and libcrypt
  - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
