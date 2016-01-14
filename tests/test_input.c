@@ -47,6 +47,9 @@
 #define TEST_PCAP_INPUT "aaa.pcap"
 #endif
 
+/* keys array needs to be of type "char" */
+const char keys[];
+
 int
 main()
 {

@@ -26,7 +26,7 @@
  * Basic Column selection testing
  */
 
-const int keys[] =
+const char keys[] =
         {
          /* Show Raw panel */
          't',
