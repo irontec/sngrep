@@ -25,7 +25,7 @@
  *
  * Basic Call Raw testing
  */
-const int keys[] =
+const char keys[] =
         {
          /* Select some dialogs */
          32, 107, 107, 107, 32, 107,

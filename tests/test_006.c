@@ -25,7 +25,7 @@
  *
  * Basic Message diff testing
  */
-const int keys[] =
+const char keys[] =
         {
          /* Select some dialog */
          107, 107, 107, 32, 10,
