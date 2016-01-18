@@ -146,4 +146,10 @@ filter_save_options(PANEL *panel);
 const char*
 filter_field_method(int field_id);
 
+/**
+ * @brief Set Method filtering from filter.methods setting format
+ */
+void
+filter_method_from_setting(const char *value);
+
 #endif

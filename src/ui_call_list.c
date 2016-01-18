@@ -118,6 +118,10 @@ call_list_create()
     // Set autoscroll default status
     info->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
 
+    // Apply initial configured method filters
+    filter_method_from_setting(setting_get_value(SETTING_FILTER_METHODS));
+
+
     // Return the created panel
     return panel;
 }

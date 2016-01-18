@@ -355,8 +355,13 @@ filter_save_options(PANEL *panel)
             case FLD_FILTER_OPTIONS:
             case FLD_FILTER_PUBLISH:
             case FLD_FILTER_MESSAGE:
-                if (!strcmp(field_value, "*"))
-                    sprintf(method_expr + strlen(method_expr), "|%s", filter_field_method(field_id));
+                if (!strcmp(field_value, "*")) {
+                    if (strlen(method_expr)) {
+                        sprintf(method_expr + strlen(method_expr), ",%s", filter_field_method(field_id));
+                    } else {
+                        strcpy(method_expr, filter_field_method(field_id));
+                    }
+                }
                 break;
             default:
                 break;
@@ -364,14 +369,7 @@ filter_save_options(PANEL *panel)
     }
 
     // Set Method filter
-    if (strlen(method_expr)) {
-        method_expr[0] = '(';
-        method_expr[strlen(method_expr)+1] = '\0';
-        method_expr[strlen(method_expr)] = ')';
-        filter_set(FILTER_METHOD, method_expr);
-    } else {
-        filter_set(FILTER_METHOD, NULL);
-    }
+    filter_method_from_setting(method_expr);
 
     // Force filter evaluation
     filter_reset_calls();
@@ -410,3 +408,31 @@ filter_field_method(int field_id)
 
     return sip_method_str(method);
 }
+
+void
+filter_method_from_setting(const char *value)
+{
+    int i;
+    char methods[256], method_expr[256];
+    int methods_len = strlen(value);
+    char *comma;
+
+    // If there's a method filter
+    if (methods_len) {
+        // Copy value into temporal array
+        memset(methods, 0, sizeof(methods));
+        strncpy(methods, value, methods_len);
+
+        // Replace all commas with pippes
+        while ((comma = strchr(methods, ',')))
+            *comma = '|';
+
+        // Create a regular expression
+        memset(method_expr, 0, sizeof(method_expr));
+        sprintf(method_expr, "(%s)", methods);
+        filter_set(FILTER_METHOD, method_expr);
+    } else {
+        filter_set(FILTER_METHOD, " ");
+    }
+}
+
