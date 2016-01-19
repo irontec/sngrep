@@ -141,19 +141,19 @@ filter_create()
     set_field_buffer(info->fields[FLD_FILTER_DST], 0, filter_get(FILTER_DESTINATION));
     set_field_buffer(info->fields[FLD_FILTER_PAYLOAD], 0, filter_get(FILTER_PAYLOAD));
     set_field_buffer(info->fields[FLD_FILTER_REGISTER], 0,
-                     strstr(method, sip_method_str(SIP_METHOD_REGISTER)) ? "*" : "");
+                     strcasestr(method, sip_method_str(SIP_METHOD_REGISTER)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_INVITE], 0,
-                     strstr(method, sip_method_str(SIP_METHOD_INVITE)) ? "*" : "");
+                     strcasestr(method, sip_method_str(SIP_METHOD_INVITE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_SUBSCRIBE], 0,
-                     strstr(method,sip_method_str(SIP_METHOD_SUBSCRIBE)) ? "*" : "");
+                     strcasestr(method,sip_method_str(SIP_METHOD_SUBSCRIBE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_NOTIFY], 0,
-                     strstr(method, sip_method_str(SIP_METHOD_NOTIFY)) ? "*" : "");
+                     strcasestr(method, sip_method_str(SIP_METHOD_NOTIFY)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_OPTIONS], 0,
-                     strstr(method, sip_method_str(SIP_METHOD_OPTIONS)) ? "*" : "");
+                     strcasestr(method, sip_method_str(SIP_METHOD_OPTIONS)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_PUBLISH], 0,
-                     strstr(method,  sip_method_str(SIP_METHOD_PUBLISH)) ? "*" : "");
+                     strcasestr(method,  sip_method_str(SIP_METHOD_PUBLISH)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_MESSAGE], 0,
-                     strstr(method,  sip_method_str(SIP_METHOD_MESSAGE)) ? "*" : "");
+                     strcasestr(method,  sip_method_str(SIP_METHOD_MESSAGE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_FILTER], 0, "[ Filter ]");
     set_field_buffer(info->fields[FLD_FILTER_CANCEL], 0, "[ Cancel ]");
 
