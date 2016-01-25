@@ -26,9 +26,11 @@
  * @brief Source of functions defined in ui_filter.h
  *
  */
+#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include <form.h>
+#include "ui_manager.h"
 #include "ui_filter.h"
 #include "ui_call_list.h"
 #include "sip.h"
@@ -412,7 +414,6 @@ filter_field_method(int field_id)
 void
 filter_method_from_setting(const char *value)
 {
-    int i;
     char methods[256], method_expr[256];
     int methods_len = strlen(value);
     char *comma;

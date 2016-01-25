@@ -39,6 +39,7 @@
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
+#include "ui_filter.h"
 #include "ui_save.h"
 #include "sip.h"
 
