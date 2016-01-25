@@ -1,4 +1,5 @@
 bin_PROGRAMS=sngrep
+VPATH=curses
 sngrep_SOURCES=capture.c
 if USE_EEP
 sngrep_SOURCES+=capture_eep.c

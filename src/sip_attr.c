@@ -33,7 +33,7 @@
 #include "option.h"
 #include "sip_attr.h"
 #include "util.h"
-#include "ui_manager.h"
+#include "curses/ui_manager.h"
 
 static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 },

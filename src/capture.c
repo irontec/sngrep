@@ -32,6 +32,7 @@
 
 #include "config.h"
 #include <netdb.h>
+#include <string.h>
 #include "capture.h"
 #ifdef USE_EEP
 #include "capture_eep.h"
@@ -45,12 +46,10 @@
 #include "sip.h"
 #include "rtp.h"
 #include "setting.h"
-#include "ui_manager.h"
 
 // Capture information
 capture_config_t capture_cfg =
 { 0 };
-
 
 void
 capture_init(int limit, int rtp_capture)
@@ -813,7 +812,7 @@ capture_get_infile()
 
     if (vector_count(capture_cfg.sources) == 1) {
         capinfo = vector_first(capture_cfg.sources);
-        return capinfo->infile;
+        return basename(capinfo->infile);
     } else {
         return "Multiple files";
     }

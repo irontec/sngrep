@@ -31,9 +31,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-#include "ui_manager.h"
 #include "setting.h"
 #include "keybinding.h"
+#include "curses/ui_manager.h"
 
 //! sngrep keybindings
 key_binding_t bindings[ACTION_SENTINEL] = {

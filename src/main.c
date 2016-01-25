@@ -34,7 +34,6 @@
 #include <getopt.h>
 #include "option.h"
 #include "vector.h"
-#include "ui_manager.h"
 #include "capture.h"
 #include "capture_eep.h"
 #ifdef WITH_GNUTLS
@@ -43,6 +42,7 @@
 #ifdef WITH_OPENSSL
 #include "capture_openssl.h"
 #endif
+#include "curses/ui_manager.h"
 
 /**
  * @brief Usage function
