@@ -70,11 +70,17 @@
 #include <netinet/udp.h>
 #include "vector.h"
 
+#ifdef USE_IPV6
 #ifdef INET6_ADDRSTRLEN
-#define ADDRESSLEN INET6_ADDRSTRLEN + 1
+#define ADDRESSLEN INET6_ADDRSTRLEN
 #else
-#define ADDRESSLEN 47
+#define ADDRESSLEN 46
 #endif
+#else
+#define ADDRESSLEN INET_ADDRSTRLEN
+#endif
+
+#define ADDRESSPORTLEN ADDRESSLEN + 6
 
 //! Max allowed packet assembled size
 #define MAX_CAPTURE_LEN 20480
@@ -208,10 +214,14 @@ struct capture_packet {
     uint8_t proto;
     // Packet type as defined in capture_packet_type
     int type;
-    // Packet source and destination address
-    char ip_src[ADDRESSLEN], ip_dst[ADDRESSLEN];
-    // Packet source and destination port
-    u_short sport, dport;
+    // Packet source IP address
+    char ip_src[ADDRESSLEN];
+    // Packet destination IP address
+    char ip_dst[ADDRESSLEN];
+    // Packet source port
+    uint16_t sport;
+    // Packet destination port
+    uint16_t dport;
     //! Packet IP id
     uint16_t ip_id;
     //! PCAP Packet payload when it can not be get from data
@@ -470,7 +480,7 @@ capture_packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const c
  * @brief Set Transport layer information
  */
 capture_packet_t *
-capture_packet_set_transport_data(capture_packet_t *pkt, u_short sport, u_short dport, int type);
+capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport, int type);
 /**
  * @brief Add a new frame to the given packet
  */

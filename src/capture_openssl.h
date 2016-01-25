@@ -58,10 +58,7 @@
 //! Cast three bytes into decimal (Big Endian)
 #define UINT24_INT(i) ((i.x[0] << 16) | (i.x[1] << 8) | i.x[2])
 
-//! One byte unsigned integer
-typedef unsigned char uint8;
-
-//! Two bytes unsigned integer
+//! Three bytes unsigned integer
 typedef struct uint16 {
     unsigned char x[2];
 } uint16;
@@ -70,11 +67,6 @@ typedef struct uint16 {
 typedef struct uint24 {
     unsigned char x[3];
 } uint24;
-
-//! Four bytes unsigned interger
-typedef struct uint32 {
-    unsigned char x[4];
-} uint32;
 
 //! One byte generic type
 typedef unsigned char opaque;
@@ -118,39 +110,39 @@ enum HandshakeType {
 
 //! ProtocolVersion header as defined in RFC5246
 struct ProtocolVersion {
-    uint8 major;
-    uint8 minor;
+    uint8_t major;
+    uint8_t minor;
 };
 
 //! TLSPlaintext record structure
 struct TLSPlaintext {
-    uint8 type;
+    uint8_t type;
     struct ProtocolVersion version;
     uint16 length;
 };
 
 //! Hanshake record structure
 struct Handshake {
-    uint8 type;
+    uint8_t type;
     uint24 length;
 };
 
 //! Handshake random structure
 struct Random {
-    uint32 gmt_unix_time;
+    uint32_t gmt_unix_time;
     opaque random_bytes[28];
 };
 
 struct CipherSuite {
-    uint8 cs1;
-    uint8 cs2;
+    uint8_t cs1;
+    uint8_t cs2;
 };
 
 //! ClientHello type in Handshake records
 struct ClientHello {
     struct ProtocolVersion client_version;
     struct Random random;
-//    uint8 session_id_length;
+//    uint8_t session_id_length;
 // CipherSuite cipher_suite;
 // Extension extensions;
 };
@@ -159,23 +151,23 @@ struct ClientHello {
 struct ServerHello {
     struct ProtocolVersion server_version;
     struct Random random;
-    uint8 session_id_length;
+    uint8_t session_id_length;
 // SessionID session_id;
 // CipherSuite cipher_suite;
 // CompressionMethod compression_method;
 };
 
 struct MasterSecret {
-    uint8 random[48];
+    uint8_t random[48];
 };
 
 struct PreMasterSecret {
     struct ProtocolVersion client_version;
-    uint8 random[46];
+    uint8_t random[46];
 };
 
 struct EncryptedPreMasterSecret {
-    uint8 pre_master_secret[128];
+    uint8_t pre_master_secret[128];
 };
 
 //! ClientKeyExchange type in Handshake records
@@ -202,9 +194,9 @@ struct SSLConnection {
     //! Server IP address
     struct in_addr server_addr;
     //! Client port
-    u_short client_port;
+    uint16_t client_port;
     //! Server port
-    u_short server_port;
+    uint16_t server_port;
 
     SSL *ssl;
     SSL_CTX *ssl_ctx;
@@ -217,12 +209,12 @@ struct SSLConnection {
     struct MasterSecret master_secret;
 
     struct tls_data {
-        uint8 client_write_MAC_key[20];
-        uint8 server_write_MAC_key[20];
-        uint8 client_write_key[32];
-        uint8 server_write_key[32];
-        uint8 client_write_IV[16];
-        uint8 server_write_IV[16];
+        uint8_t client_write_MAC_key[20];
+        uint8_t server_write_MAC_key[20];
+        uint8_t client_write_key[32];
+        uint8_t server_write_key[32];
+        uint8_t client_write_IV[16];
+        uint8_t server_write_IV[16];
     } key_material;
 
     EVP_CIPHER_CTX client_cipher_ctx;
@@ -283,7 +275,7 @@ PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, u
  * @return a pointer to a new allocated SSLConnection structure
  */
 struct SSLConnection *
-tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport);
+tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr, uint16_t sport);
 
 /**
  * @brief Destroys an existing SSLConnection
@@ -318,7 +310,7 @@ tls_check_keyfile(const char *keyfile);
  * @return 0 if address belongs to client, 1 to server or -1 otherwise
  */
 int
-tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, u_short port);
+tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, uint16_t port);
 
 /**
  * @brief Find a connection
@@ -331,7 +323,7 @@ tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, u_short port
  * @return an existing Connection pointer or NULL if not found
  */
 struct SSLConnection*
-tls_connection_find(struct in_addr addr, u_short port);
+tls_connection_find(struct in_addr addr, uint16_t port);
 
 /**
  * @brief Process a TCP segment to check TLS data
@@ -362,7 +354,7 @@ tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp);
  * @return Decrypted data length
  */
 int
-tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out,
+tls_process_record(struct SSLConnection *conn, const uint8_t *payload, const int len, uint8_t **out,
                    uint32_t *outl);
 
 /**
@@ -393,7 +385,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
  */
 int
 tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
-                        uint8 **out, uint32_t *outl);
+                        uint8_t **out, uint32_t *outl);
 
 
 /**

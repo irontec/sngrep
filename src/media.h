@@ -43,7 +43,7 @@ struct sip_msg;
 struct sip_call;
 
 struct sdp_media_fmt {
-    u_int id;
+    uint32_t id;
     char format[50];
 };
 
@@ -51,9 +51,9 @@ struct sdp_media_fmt {
 struct sdp_media {
     //! SDP Addresses information
     char address[ADDRESSLEN];
-    u_short port;
+    uint16_t port;
     char type[10];
-    u_int fmtcode;
+    uint32_t fmtcode;
     //! List of described formats in this media
     vector_t *formats;
     //! Message with this SDP content
@@ -78,7 +78,7 @@ void
 media_destroyer(void *item);
 
 void
-media_set_port(sdp_media_t *media, u_short port);
+media_set_port(sdp_media_t *media, uint16_t port);
 
 void
 media_set_type(sdp_media_t *media, const char *type);
@@ -87,22 +87,22 @@ void
 media_set_address(sdp_media_t *media, const char *address);
 
 void
-media_set_prefered_format(sdp_media_t *media, u_int code);
+media_set_prefered_format(sdp_media_t *media, uint32_t code);
 
 void
-media_add_format(sdp_media_t *media, u_int code, const char *format);
+media_add_format(sdp_media_t *media, uint32_t code, const char *format);
 
 const char *
 media_get_address(sdp_media_t *media);
 
-u_short
+uint16_t
 media_get_port(sdp_media_t *media);
 
 const char *
 media_get_type(sdp_media_t *media);
 
 const char *
-media_get_format(sdp_media_t *media, u_int code);
+media_get_format(sdp_media_t *media, uint32_t code);
 
 const char *
 media_get_prefered_format(sdp_media_t *media);

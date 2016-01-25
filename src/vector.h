@@ -32,7 +32,7 @@
 #define __SNGREP_VECTOR_H_
 
 #include "config.h"
-#include <sys/types.h>
+#include <stdint.h>
 
 //! Shorter declaration of vector structure
 typedef struct vector vector_t;
@@ -44,11 +44,11 @@ typedef struct vector_iter vector_iter_t;
  */
 struct vector {
     //! Number of elements in list
-    u_int count;
+    uint32_t count;
     //! Total space in list (available + elements)
-    u_int limit;
+    uint32_t limit;
     //! Number of new spaces to be reallocated
-    u_short step;
+    uint8_t step;
     //! Elements of the vector
     void **list;
     //! Function to destroy one item

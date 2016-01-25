@@ -49,9 +49,9 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
        unsigned char *seed, int slen)
 {
     unsigned char hmac[48];
-    unsigned int hlen;
+    uint32_t hlen;
     gcry_md_hd_t md;
-    unsigned int tmpslen;
+    uint32_t tmpslen;
     unsigned char tmpseed[slen];
     unsigned char *out = dest;
     int pending = dlen;
@@ -122,7 +122,7 @@ PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, u
 }
 
 struct SSLConnection *
-tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr, u_short sport) {
+tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr, uint16_t sport) {
     struct SSLConnection *conn = NULL;
     gnutls_datum_t keycontent = { NULL, 0 };
     FILE *keyfp;
@@ -134,8 +134,8 @@ tls_connection_create(struct in_addr caddr, u_short cport, struct in_addr saddr,
 
     memcpy(&conn->client_addr, &caddr, sizeof(struct in_addr));
     memcpy(&conn->server_addr, &saddr, sizeof(struct in_addr));
-    memcpy(&conn->client_port, &cport, sizeof(u_short));
-    memcpy(&conn->server_port, &sport, sizeof(u_short));
+    memcpy(&conn->client_port, &cport, sizeof(uint16_t));
+    memcpy(&conn->server_port, &sport, sizeof(uint16_t));
 
     SSL_library_init();
     OpenSSL_add_all_algorithms();
@@ -230,7 +230,7 @@ tls_check_keyfile(const char *keyfile)
 }
 
 int
-tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, u_short port)
+tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, uint16_t port)
 {
     if (conn->client_addr.s_addr == addr.s_addr && conn->client_port == port)
         return 0;
@@ -240,7 +240,7 @@ tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, u_short port
 }
 
 struct SSLConnection*
-tls_connection_find(struct in_addr addr, u_short port) {
+tls_connection_find(struct in_addr addr, uint16_t port) {
     struct SSLConnection *conn;
 
     for (conn = connections; conn; conn = conn->next) {
@@ -257,12 +257,12 @@ tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp)
     struct SSLConnection *conn;
     const u_char *payload = capture_packet_get_payload(packet);
     uint32_t size_payload = capture_packet_get_payload_len(packet);
-    uint8 *out;
+    uint8_t *out;
     uint32_t outl = packet->payload_len;
     out = sng_malloc(outl);
     struct in_addr ip_src, ip_dst;
-    u_short sport = packet->sport;
-    u_short dport = packet->dport;
+    uint16_t sport = packet->sport;
+    uint16_t dport = packet->dport;
 
     // Convert addresses
     inet_pton(AF_INET, packet->ip_src, &ip_src);
@@ -314,7 +314,7 @@ tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp)
 }
 
 int
-tls_process_record(struct SSLConnection *conn, const uint8 *payload, const int len, uint8 **out,
+tls_process_record(struct SSLConnection *conn, const uint8_t *payload, const int len, uint8_t **out,
                    uint32_t *outl)
 {
     struct TLSPlaintext *record;
@@ -399,7 +399,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
                 // Get the selected cipher
                 memcpy(&conn->cipher_suite,
                        body + sizeof(struct ServerHello) + serverhello->session_id_length,
-                       sizeof(uint16));
+                       sizeof(uint16_t));
                 // Check if we have a handled cipher
                 if (tls_connection_load_cipher(conn) != 0) {
                     tls_connection_destroy(conn);
@@ -478,7 +478,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment)
 
 int
 tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, const int len,
-                        uint8 **out, uint32_t *outl)
+                        uint8_t **out, uint32_t *outl)
 {
     gcry_cipher_hd_t *evp;
     unsigned char pad;

@@ -101,7 +101,7 @@ struct call_flow_arrow {
  * @brief Structure to hold one column information
  */
 struct call_flow_column {
-    char addr[ADDRESSLEN];
+    char addr[ADDRESSPORTLEN];
     const char *callid;
     const char *callid2;
     int colpos;

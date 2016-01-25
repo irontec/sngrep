@@ -60,7 +60,7 @@ media_destroyer(void *item)
 }
 
 void
-media_set_port(sdp_media_t *media, u_short port)
+media_set_port(sdp_media_t *media, uint16_t port)
 {
     media->port = port;
 }
@@ -78,13 +78,13 @@ media_set_address(sdp_media_t *media, const char *address)
 }
 
 void
-media_set_prefered_format(sdp_media_t *media, u_int code)
+media_set_prefered_format(sdp_media_t *media, uint32_t code)
 {
     media->fmtcode = code;
 }
 
 void
-media_add_format(sdp_media_t *media, u_int code, const char *format)
+media_add_format(sdp_media_t *media, uint32_t code, const char *format)
 {
     sdp_media_fmt_t *fmt;
 
@@ -102,7 +102,7 @@ media_get_address(sdp_media_t *media)
     return media->address;
 }
 
-u_short
+uint16_t
 media_get_port(sdp_media_t *media)
 {
     return media->port;
@@ -115,7 +115,7 @@ media_get_type(sdp_media_t *media)
 }
 
 const char *
-media_get_format(sdp_media_t *media, u_int code)
+media_get_format(sdp_media_t *media, uint32_t code)
 {
     sdp_media_fmt_t *format;
     vector_iter_t iter;

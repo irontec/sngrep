@@ -215,7 +215,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     // Capture info
     capture_info_t *capinfo = (capture_info_t *) info;
     // Source and Destination Ports
-    u_short sport, dport;
+    uint16_t sport, dport;
     // UDP header data
     struct udphdr *udp;
     // UDP header size
@@ -914,7 +914,7 @@ capture_packet_free_frames(capture_packet_t *pkt)
 }
 
 capture_packet_t *
-capture_packet_set_transport_data(capture_packet_t *pkt, u_short sport, u_short dport, int type)
+capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport, int type)
 {
     pkt->sport = sport;
     pkt->dport = dport;

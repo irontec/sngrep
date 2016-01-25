@@ -222,7 +222,7 @@ sip_check_packet(capture_packet_t *packet)
     sip_call_t *call;
     char callid[1024], xcallid[1024];
     const char *src, *dst;
-    u_short sport, dport;
+    uint16_t sport, dport;
     char msg_src[ADDRESSLEN];
     char msg_dst[ADDRESSLEN];
     u_char payload[MAX_SIP_PAYLOAD];
@@ -520,8 +520,8 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     char media_type[15] = { };
     char media_format[30] = { };
     int media_port;
-    u_int media_fmt_pref;
-    u_int media_fmt_code;
+    uint32_t media_fmt_pref;
+    uint32_t media_fmt_code;
     sdp_media_t *media = NULL;
     char *payload2, *tofree, *line;
     sip_call_t *call = msg_get_call(msg);

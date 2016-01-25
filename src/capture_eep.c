@@ -198,7 +198,7 @@ int
 capture_eep_send_v2(capture_packet_t *pkt)
 {
     void* buffer;
-    unsigned int buflen = 0, tlen = 0;
+    uint32_t buflen = 0, tlen = 0;
     struct hep_hdr hdr;
     struct hep_timehdr hep_time;
     struct hep_iphdr hep_ipheader;
@@ -206,7 +206,7 @@ capture_eep_send_v2(capture_packet_t *pkt)
     struct hep_ip6hdr hep_ip6header;
 #endif
     unsigned char *data = capture_packet_get_payload(pkt);
-    unsigned int len = capture_packet_get_payload_len(pkt);
+    uint32_t len = capture_packet_get_payload_len(pkt);
     capture_frame_t *frame = vector_first(pkt->frames);
 
     /* Version && proto */
@@ -290,7 +290,7 @@ capture_eep_send_v3(capture_packet_t *pkt)
 {
     struct hep_generic *hg = NULL;
     void* buffer;
-    unsigned int buflen = 0, iplen = 0, tlen = 0;
+    uint32_t buflen = 0, iplen = 0, tlen = 0;
     hep_chunk_ip4_t src_ip4, dst_ip4;
 #ifdef USE_IPV6
     hep_chunk_ip6_t src_ip6, dst_ip6;
@@ -299,7 +299,7 @@ capture_eep_send_v3(capture_packet_t *pkt)
     hep_chunk_t authkey_chunk;
     capture_frame_t *frame = vector_first(pkt->frames);
     unsigned char *data = capture_packet_get_payload(pkt);
-    unsigned int len = capture_packet_get_payload_len(pkt);
+    uint32_t len = capture_packet_get_payload_len(pkt);
 
     hg = sng_malloc(sizeof(struct hep_generic));
 
@@ -486,12 +486,12 @@ capture_eep_receive_v2()
 {
     uint8_t family, proto;
     unsigned char *payload = 0;
-    unsigned int pos;
+    uint32_t pos;
     char buffer[MAX_CAPTURE_LEN] ;
     //! Source and Destination Address
     char ip_src[ADDRESSLEN], ip_dst[ADDRESSLEN];
     //! Source and Destination Port
-    u_short sport, dport;
+    uint16_t sport, dport;
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
@@ -591,7 +591,7 @@ capture_eep_receive_v3()
     char password[100];
     int password_len;
     unsigned char *payload = 0;
-    unsigned int len, pos;
+    uint32_t len, pos;
     char buffer[MAX_CAPTURE_LEN] ;
     //! Source and Destination Address
     char ip_src[ADDRESSLEN], ip_dst[ADDRESSLEN];
@@ -600,7 +600,7 @@ capture_eep_receive_v3()
     socklen_t eep_client_len;
 
     //! Source and Destination Port
-    u_short sport, dport;
+    uint16_t sport, dport;
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer

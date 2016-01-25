@@ -84,7 +84,7 @@ typedef struct rtp_encoding rtp_encoding_t;
 typedef struct rtp_stream rtp_stream_t;
 
 struct rtp_encoding {
-    u_int id;
+    uint32_t id;
     const char *name;
     const char *format;
 };
@@ -94,10 +94,10 @@ struct rtp_stream {
     uint32_t type;
     //! Source address and port
     char ip_src[ADDRESSLEN];
-    u_short sport;
+    uint16_t sport;
     //! Destination address and port
     char ip_dst[ADDRESSLEN];
-    u_short dport;
+    uint16_t dport;
     //! SDP media that setup this stream
     sdp_media_t *media;
     //! Packet count for this stream
@@ -265,10 +265,10 @@ struct rtcp_blk_xr_voip
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, const char *dst, u_short dport, int type);
+stream_create(sdp_media_t *media, const char *dst, uint16_t dport, int type);
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, const char *src, u_short sport);
+stream_complete(rtp_stream_t *stream, const char *src, uint16_t sport);
 
 void
 stream_set_format(rtp_stream_t *stream, uint32_t format);
@@ -286,16 +286,16 @@ const char *
 stream_get_format(rtp_stream_t *stream);
 
 const char *
-rtp_get_standard_format(u_int code);
+rtp_get_standard_format(uint32_t code);
 
 rtp_stream_t *
 rtp_check_packet(capture_packet_t *packet);
 
 rtp_stream_t *
-rtp_find_stream(const char *ip_src, u_short sport, const char *ip_dst, u_short dport, u_int format);
+rtp_find_stream(const char *ip_src, uint16_t sport, const char *ip_dst, uint16_t dport, uint32_t format);
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport);
+rtp_find_call_stream(struct sip_call *call, const char *ip_src, uint16_t sport, const char *ip_dst, uint16_t dport);
 
 /**
  * @brief Check if a message is older than other

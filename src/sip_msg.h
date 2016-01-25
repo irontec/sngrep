@@ -52,7 +52,7 @@ struct sip_msg {
     //! Request Method or Response Code @see sip_methods
     int reqresp;
     //! Message Cseq
-    u_int cseq;
+    uint32_t cseq;
     //! SIP From and TO
     char *sip_from, *sip_to;
     //! SDP payload information (sdp_media_t *)

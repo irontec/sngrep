@@ -65,7 +65,7 @@ rtp_encoding_t encodings[] = {
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, const char *dst, u_short dport, int type)
+stream_create(sdp_media_t *media, const char *dst, uint16_t dport, int type)
 {
     rtp_stream_t *stream;
 
@@ -83,7 +83,7 @@ stream_create(sdp_media_t *media, const char *dst, u_short dport, int type)
 }
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, const char *src, u_short sport)
+stream_complete(rtp_stream_t *stream, const char *src, uint16_t sport)
 {
     strcpy(stream->ip_src, src);
     stream->sport = sport;
@@ -141,7 +141,7 @@ stream_get_format(rtp_stream_t *stream)
 }
 
 const char *
-rtp_get_standard_format(u_int code)
+rtp_get_standard_format(uint32_t code)
 {
     int i;
 
@@ -158,7 +158,7 @@ rtp_stream_t *
 rtp_check_packet(capture_packet_t *packet)
 {
     const char *src, *dst;
-    u_short sport, dport;
+    uint16_t sport, dport;
     rtp_stream_t *stream;
     rtp_stream_t *reverse;
     u_char format = 0;
@@ -305,7 +305,7 @@ rtp_check_packet(capture_packet_t *packet)
 }
 
 rtp_stream_t *
-rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport, u_int format)
+rtp_find_stream(const char *src, uint16_t sport, const char *dst, uint16_t dport, uint32_t format)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -329,7 +329,7 @@ rtp_find_stream(const char *src, u_short sport, const char *dst, u_short dport, 
 }
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, const char *ip_src, u_short sport, const char *ip_dst, u_short dport)
+rtp_find_call_stream(struct sip_call *call, const char *ip_src, uint16_t sport, const char *ip_dst, uint16_t dport)
 {
     rtp_stream_t *stream;
     vector_iter_t it;
