@@ -274,7 +274,8 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         payload = (u_char *) (udp) + udp_off;
 
         // Complete packet with Transport information
-        capture_packet_set_transport_data(pkt, sport, dport, CAPTURE_PACKET_SIP_UDP);
+        capture_packet_set_transport_data(pkt, sport, dport);
+        capture_packet_set_type(pkt, CAPTURE_PACKET_SIP_UDP);
         capture_packet_set_payload(pkt, payload, size_payload);
 
     } else if (pkt->proto == IPPROTO_TCP) {
@@ -296,7 +297,8 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         payload = (u_char *)(tcp) + tcp_off;
 
         // Complete packet with Transport information
-        capture_packet_set_transport_data(pkt, sport, dport, CAPTURE_PACKET_SIP_TCP);
+        capture_packet_set_transport_data(pkt, sport, dport);
+        capture_packet_set_type(pkt, CAPTURE_PACKET_SIP_TCP);
         capture_packet_set_payload(pkt, payload, size_payload);
 
         // Create a structure for this captured packet
@@ -918,11 +920,10 @@ capture_packet_free_frames(capture_packet_t *pkt)
 }
 
 capture_packet_t *
-capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport, int type)
+capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport)
 {
     pkt->sport = sport;
     pkt->dport = dport;
-    pkt->type = type;
     return pkt;
 }
 
@@ -942,7 +943,7 @@ capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header
 }
 
 void
-capture_packet_set_type(capture_packet_t *packet, int type)
+capture_packet_set_type(capture_packet_t *packet, enum capture_packet_type type)
 {
     packet->type = type;
 }

@@ -567,7 +567,8 @@ capture_eep_receive_v2()
     // Create a new packet
     pkt = capture_packet_create((family == AF_INET) ? 4 : 6, proto, ip_src, ip_dst, 0);
     capture_packet_add_frame(pkt, &header, payload);
-    capture_packet_set_transport_data(pkt, sport, dport, CAPTURE_PACKET_SIP_UDP);
+    capture_packet_set_transport_data(pkt, sport, dport);
+    capture_packet_set_type(pkt, CAPTURE_PACKET_SIP_UDP);
     capture_packet_set_payload(pkt, payload, header.caplen);
 
     /* FREE */
@@ -690,7 +691,8 @@ capture_eep_receive_v3()
     // Create a new packet
     pkt = capture_packet_create((family == AF_INET)?4:6, proto, ip_src, ip_dst, 0);
     capture_packet_add_frame(pkt, &header, payload);
-    capture_packet_set_transport_data(pkt, sport, dport, CAPTURE_PACKET_SIP_UDP);
+    capture_packet_set_transport_data(pkt, sport, dport);
+    capture_packeet_set_type(pkt, CAPTURE_PACKET_SIP_UDP);
     capture_packet_set_payload(pkt, payload, header.caplen);
 
     /* FREE */

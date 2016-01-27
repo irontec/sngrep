@@ -214,7 +214,7 @@ struct capture_packet {
     // Transport protocol
     uint8_t proto;
     // Packet type as defined in capture_packet_type
-    int type;
+    enum capture_packet_type type;
     // Packet source IP address
     char ip_src[ADDRESSLEN];
     // Packet destination IP address
@@ -481,7 +481,7 @@ capture_packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const c
  * @brief Set Transport layer information
  */
 capture_packet_t *
-capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport, int type);
+capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport);
 /**
  * @brief Add a new frame to the given packet
  */
@@ -512,7 +512,7 @@ capture_packet_free_frames(capture_packet_t *pkt);
  * @brief Set packet type
  */
 void
-capture_packet_set_type(capture_packet_t *packet, int type);
+capture_packet_set_type(capture_packet_t *packet, enum capture_packet_type type);
 
 /**
  * @brief Set packet payload when it can not be get from packet
