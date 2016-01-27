@@ -374,7 +374,7 @@ default_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
-                capture_set_paused(!capture_is_paused());
+                capture_set_paused(!capture_paused());
                 break;
             case ACTION_SHOW_HELP:
                 ui_help(ui);

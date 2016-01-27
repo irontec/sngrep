@@ -146,7 +146,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     if (!(conn->ssl = SSL_new(conn->ssl_ctx)))
         return NULL;
 
-    if (!(keyfp = fopen(capture_get_keyfile(), "rb")))
+    if (!(keyfp = fopen(capture_keyfile(), "rb")))
         return NULL;
     fseek(keyfp, 0, SEEK_END);
     keycontent.size = ftell(keyfp);
@@ -208,10 +208,10 @@ tls_check_keyfile(const char *keyfile)
     SSL_library_init();
     OpenSSL_add_all_algorithms();
 
-    if (access(capture_get_keyfile(), R_OK) != 0)
+    if (access(capture_keyfile(), R_OK) != 0)
         return 0;
 
-    if (!(keyfp = fopen(capture_get_keyfile(), "rb")))
+    if (!(keyfp = fopen(capture_keyfile(), "rb")))
         return 0;
 
     fseek(keyfp, 0, SEEK_END);

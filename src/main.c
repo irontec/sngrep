@@ -346,7 +346,7 @@ main(int argc, char* argv[])
         wait_for_input();
     } else {
         setbuf(stdout, NULL);
-        while(capture_get_status() != CAPTURE_OFFLINE) {
+        while(capture_status() != CAPTURE_OFFLINE) {
             if (!quiet)
                 printf("\rDialog count: %d", sip_calls_count());
             usleep(500 * 1000);

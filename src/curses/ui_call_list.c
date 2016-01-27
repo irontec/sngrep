@@ -199,10 +199,10 @@ call_list_draw_header(PANEL *panel)
 
     // Draw a Panel header lines
     clear_line(win, 1);
-    if ((infile = capture_get_infile()))
+    if ((infile = capture_input_file()))
         mvwprintw(win, 1, width - strlen(infile) - 11, "Filename: %s", infile);
     mvwprintw(win, 2, 2, "Display Filter: ");
-    mvwprintw(win, 1, 2, "Current Mode: %s", capture_get_status_desc());
+    mvwprintw(win, 1, 2, "Current Mode: %s", capture_status_desc());
 
     // Reverse colors on monochrome terminals
     if (!has_colors())

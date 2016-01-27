@@ -68,6 +68,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <stdbool.h>
 #include "vector.h"
 
 #ifdef USE_IPV6
@@ -107,17 +108,6 @@ enum capture_storage {
     CAPTURE_STORAGE_DISK
 };
 
-//! Shorter declaration of capture_config structure
-typedef struct capture_config capture_config_t;
-//; Shorter declaration of capture_info structure
-typedef struct capture_info capture_info_t;
-//! Shorter declaration of dns_cache structure
-typedef struct dns_cache dns_cache_t;
-//! Shorter declaration of capture_packet structure
-typedef struct capture_packet capture_packet_t;
-//! Shorter declaration of capture_frame structure
-typedef struct capture_frame capture_frame_t;
-
 //! Stored packet types
 enum capture_packet_type {
     CAPTURE_PACKET_SIP_UDP = 0,
@@ -128,6 +118,17 @@ enum capture_packet_type {
     CAPTURE_PACKET_RTP,
     CAPTURE_PACKET_RTCP,
 };
+
+//! Shorter declaration of capture_config structure
+typedef struct capture_config capture_config_t;
+//; Shorter declaration of capture_info structure
+typedef struct capture_info capture_info_t;
+//! Shorter declaration of dns_cache structure
+typedef struct dns_cache dns_cache_t;
+//! Shorter declaration of capture_packet structure
+typedef struct capture_packet capture_packet_t;
+//! Shorter declaration of capture_frame structure
+typedef struct capture_frame capture_frame_t;
 
 /**
  * @brief Storage for DNS resolved ips
@@ -148,13 +149,13 @@ struct dns_cache {
  */
 struct capture_config {
     //! Capture status
-    int status;
+    enum capture_status status;
     //! Calls capture limit. 0 for disabling
-    int limit;
+    size_t limit;
     //! Also capture RTP packets
-    int rtp_capture;
+    bool rtp_capture;
     //! Where should we store captured packets
-    int storage;
+    enum capture_storage storage;
     //! Key file for TLS decrypt
     const char *keyfile;
     //! The compiled filter expression
@@ -250,7 +251,7 @@ struct capture_frame {
  * @param rtp_catpure Enable rtp capture
  */
 void
-capture_init(int limit, int rtp_capture);
+capture_init(size_t limit, bool rtp_capture);
 
 /**
  * @brief Deinitialize capture data
@@ -412,20 +413,20 @@ capture_set_paused(int pause);
  *
  * @return 1 if capture is paused, 0 otherwise
  */
-int
-capture_is_paused();
+bool
+capture_paused();
 
 /**
  * @brief Get capture status value
  */
-int
-capture_get_status();
+enum capture_status
+capture_status();
 
 /**
  * @brief Return a string representing current capture status
  */
 const char *
-capture_get_status_desc();
+capture_status_desc();
 
 /**
  * @brief Get Input file from Offline mode
@@ -434,7 +435,7 @@ capture_get_status_desc();
  * @return NULL in Online mode
  */
 const char*
-capture_get_infile();
+capture_input_file();
 
 /**
  * @brief Get Key file from decrypting TLS packets
@@ -442,7 +443,7 @@ capture_get_infile();
  * @return given keyfile
  */
 const char*
-capture_get_keyfile();
+capture_keyfile();
 
 /**
  * @brief Set Keyfile to decrypt TLS packets

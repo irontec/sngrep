@@ -33,6 +33,7 @@
 #include "config.h"
 #include <netdb.h>
 #include <string.h>
+#include <stdbool.h>
 #include "capture.h"
 #ifdef USE_EEP
 #include "capture_eep.h"
@@ -52,7 +53,7 @@ capture_config_t capture_cfg =
 { 0 };
 
 void
-capture_init(int limit, int rtp_capture)
+capture_init(size_t limit, bool rtp_capture)
 {
     capture_cfg.limit = limit;
     capture_cfg.rtp_capture = rtp_capture;
@@ -235,7 +236,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     capture_packet_t *pkt;
 
     // Ignore packets while capture is paused
-    if (capture_is_paused())
+    if (capture_paused())
         return;
 
     // Check if we have reached capture limit
@@ -777,20 +778,20 @@ capture_set_paused(int pause)
     }
 }
 
-int
-capture_is_paused()
+bool
+capture_paused()
 {
     return capture_cfg.status == CAPTURE_ONLINE_PAUSED;
 }
 
-int
-capture_get_status()
+enum capture_status
+capture_status()
 {
     return capture_cfg.status;
 }
 
 const char *
-capture_get_status_desc()
+capture_status_desc()
 {
     switch (capture_cfg.status) {
         case CAPTURE_ONLINE:
@@ -806,7 +807,7 @@ capture_get_status_desc()
 }
 
 const char*
-capture_get_infile()
+capture_input_file()
 {
     capture_info_t *capinfo;
 
@@ -824,7 +825,7 @@ capture_get_infile()
 }
 
 const char*
-capture_get_keyfile()
+capture_keyfile()
 {
     return capture_cfg.keyfile;
 }

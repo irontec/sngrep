@@ -133,7 +133,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     if (!(conn->ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return NULL;
 
-    SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_get_keyfile(),
+    SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_keyfile(),
                                 SSL_FILETYPE_PEM);
     if (!(conn->ssl = SSL_new(conn->ssl_ctx)))
         return NULL;
@@ -186,13 +186,13 @@ tls_check_keyfile(const char *keyfile)
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
-    if (access(capture_get_keyfile(), R_OK) != 0)
+    if (access(capture_keyfile(), R_OK) != 0)
         return 0;
 
     if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return 0;
 
-    SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_get_keyfile(), SSL_FILETYPE_PEM);
+    SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_keyfile(), SSL_FILETYPE_PEM);
     if (!(ssl = SSL_new(ssl_ctx)))
         return 0;
 
