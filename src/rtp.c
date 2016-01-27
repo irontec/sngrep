@@ -65,9 +65,11 @@ rtp_encoding_t encodings[] = {
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, const char *dst, uint16_t dport, int type)
+stream_create(sdp_media_t *media, address_t dst, int type)
 {
     rtp_stream_t *stream;
+
+    fprintf(stderr, "Waiting for packets on %s:%u\n", dst.ip, dst.port);
 
     // Allocate memory for this stream structure
     if (!(stream = sng_malloc(sizeof(rtp_stream_t))))
@@ -76,17 +78,15 @@ stream_create(sdp_media_t *media, const char *dst, uint16_t dport, int type)
     // Initialize all fields
     stream->type = type;
     stream->media = media;
-    strcpy(stream->ip_dst, dst);
-    stream->dport = dport;
+    stream->dst = dst;
 
     return stream;
 }
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, const char *src, uint16_t sport)
+stream_complete(rtp_stream_t *stream, address_t src)
 {
-    strcpy(stream->ip_src, src);
-    stream->sport = sport;
+    stream->src = src;
     return stream;
 }
 
@@ -157,8 +157,7 @@ rtp_get_standard_format(uint32_t code)
 rtp_stream_t *
 rtp_check_packet(packet_t *packet)
 {
-    const char *src, *dst;
-    uint16_t sport, dport;
+    address_t src, dst;
     rtp_stream_t *stream;
     rtp_stream_t *reverse;
     u_char format = 0;
@@ -176,10 +175,8 @@ rtp_check_packet(packet_t *packet)
     size = packet_payloadlen(packet);
 
     // Get Addresses from packet
-    src = packet->src.ip;
-    dst = packet->dst.ip;
-    sport = packet->src.port;
-    dport = packet->dst.port;
+    src = packet->src;
+    dst = packet->dst;
 
     // Check if we have at least RTP type
     if ((int32_t) size < 2)
@@ -196,7 +193,7 @@ rtp_check_packet(packet_t *packet)
         format = RTP_PAYLOAD_TYPE(*(payload + 1));
 
         // Find the matching stream
-        stream = rtp_find_stream(src, sport, dst, dport, format);
+        stream = rtp_find_stream(src, dst, format);
 
         // Check if a valid stream has been found
         if (!stream)
@@ -205,20 +202,20 @@ rtp_check_packet(packet_t *packet)
         // We have found a stream, but with different format
         if (stream_is_complete(stream) && stream->rtpinfo.fmtcode != format) {
             // Create a new stream for this new format
-            stream = stream_create(stream->media, dst, dport, PACKET_RTP);
-            stream_complete(stream, src, sport);
+            stream = stream_create(stream->media, dst, PACKET_RTP);
+            stream_complete(stream, src);
             stream_set_format(stream, format);
             call_add_stream(msg_get_call(stream->media->msg), stream);
         }
 
         // First packet for this stream, set source data
         if (!(stream_is_complete(stream))) {
-            stream_complete(stream, src, sport);
+            stream_complete(stream, src);
             stream_set_format(stream, format);
             // Check if an stream in the opposite direction exists
-            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport))) {
-                reverse = stream_create(stream->media, stream->ip_src, stream->sport, PACKET_RTP);
-                stream_complete(reverse, stream->ip_dst, stream->dport);
+            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->dst, stream->src))) {
+                reverse = stream_create(stream->media, stream->src, PACKET_RTP);
+                stream_complete(reverse, stream->dst);
                 stream_set_format(reverse, format);
                 call_add_stream(msg_get_call(stream->media->msg), reverse);
             }
@@ -228,7 +225,7 @@ rtp_check_packet(packet_t *packet)
         stream_add_packet(stream, packet);
     } else {
         // Find the matching stream
-        if ((stream = rtp_find_stream(src, sport, dst, dport, format))) {
+        if ((stream = rtp_find_stream(src, dst, format))) {
 
             // Parse all packet payload headers
             while ((int32_t) size > 0) {
@@ -296,7 +293,7 @@ rtp_check_packet(packet_t *packet)
             }
 
             // Add packet to stream
-            stream_complete(stream, src, sport);
+            stream_complete(stream, src);
             stream_add_packet(stream, packet);
         }
     }
@@ -305,7 +302,7 @@ rtp_check_packet(packet_t *packet)
 }
 
 rtp_stream_t *
-rtp_find_stream(const char *src, uint16_t sport, const char *dst, uint16_t dport, uint32_t format)
+rtp_find_stream(address_t src, address_t dst, uint32_t format)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -320,7 +317,7 @@ rtp_find_stream(const char *src, uint16_t sport, const char *dst, uint16_t dport
 
     while ((call = vector_iterator_next(&calls))) {
         // Check if this call has an RTP stream for current packet data
-        if ((stream = rtp_find_call_stream(call, src, sport, dst, dport))) {
+        if ((stream = rtp_find_call_stream(call, src, dst))) {
             return stream;
         }
     }
@@ -329,7 +326,7 @@ rtp_find_stream(const char *src, uint16_t sport, const char *dst, uint16_t dport
 }
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, const char *ip_src, uint16_t sport, const char *ip_dst, uint16_t dport)
+rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
 {
     rtp_stream_t *stream;
     vector_iter_t it;
@@ -340,8 +337,8 @@ rtp_find_call_stream(struct sip_call *call, const char *ip_src, uint16_t sport, 
     // Look for an incomplete stream with this destination
     vector_iterator_set_last(&it);
     while ((stream = vector_iterator_prev(&it))) {
-        if (!strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
-            if (!ip_src && !sport) {
+        if (address_equals(dst, stream->dst)) {
+            if (!src.port) {
                 return stream;
             } else {
                 if (!stream->pktcnt) {
@@ -352,11 +349,11 @@ rtp_find_call_stream(struct sip_call *call, const char *ip_src, uint16_t sport, 
     }
 
     // Try to look for an incomplete stream with this destination
-    if (ip_src && sport) {
+    if (src.port) {
         vector_iterator_set_last(&it);
         while ((stream = vector_iterator_prev(&it))) {
-            if (!strcmp(ip_src, stream->ip_src) && sport == stream->sport &&
-                !strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
+            if (address_equals(src, stream->src) &&
+                address_equals(dst, stream->dst)) {
                 return stream;
             }
         }

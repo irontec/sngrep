@@ -214,8 +214,6 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
 {
     // Capture info
     capture_info_t *capinfo = (capture_info_t *) info;
-    // Source and Destination Ports
-    uint16_t sport, dport;
     // UDP header data
     struct udphdr *udp;
     // UDP header size
@@ -261,8 +259,8 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         udp_off = sizeof(struct udphdr);
 
         // Set packet ports
-        sport = htons(udp->uh_sport);
-        dport = htons(udp->uh_dport);
+        pkt->src.port = htons(udp->uh_sport);
+        pkt->dst.port = htons(udp->uh_dport);
 
         // Remove UDP Header from payload
         size_payload -= udp_off;
@@ -274,7 +272,6 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         payload = (u_char *) (udp) + udp_off;
 
         // Complete packet with Transport information
-        packet_set_transport_data(pkt, sport, dport);
         packet_set_type(pkt, PACKET_SIP_UDP);
         packet_set_payload(pkt, payload, size_payload);
 
@@ -284,8 +281,8 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         tcp_off = (tcp->th_off * 4);
 
         // Set packet ports
-        sport = htons(tcp->th_sport);
-        dport = htons(tcp->th_dport);
+        pkt->src.port = htons(tcp->th_sport);
+        pkt->dst.port = htons(tcp->th_dport);
 
         // Get actual payload size
         size_payload -= tcp_off;
@@ -297,7 +294,6 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         payload = (u_char *)(tcp) + tcp_off;
 
         // Complete packet with Transport information
-        packet_set_transport_data(pkt, sport, dport);
         packet_set_type(pkt, PACKET_SIP_TCP);
         packet_set_payload(pkt, payload, size_payload);
 

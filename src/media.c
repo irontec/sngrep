@@ -60,21 +60,15 @@ media_destroyer(void *item)
 }
 
 void
-media_set_port(sdp_media_t *media, uint16_t port)
-{
-    media->port = port;
-}
-
-void
 media_set_type(sdp_media_t *media, const char *type)
 {
     strcpy(media->type, type);
 }
 
 void
-media_set_address(sdp_media_t *media, const char *address)
+media_set_address(sdp_media_t *media, address_t addr)
 {
-    strcpy(media->address, address);
+    media->address = addr;
 }
 
 void
@@ -99,13 +93,13 @@ media_add_format(sdp_media_t *media, uint32_t code, const char *format)
 const char *
 media_get_address(sdp_media_t *media)
 {
-    return media->address;
+    return media->address.ip;
 }
 
 uint16_t
 media_get_port(sdp_media_t *media)
 {
-    return media->port;
+    return media->address.port;
 }
 
 const char *

@@ -222,8 +222,6 @@ sip_check_packet(packet_t *packet)
     sip_call_t *call;
     char callid[1024], xcallid[1024];
     address_t src, dst;
-    char msg_src[ADDRESSLEN];
-    char msg_dst[ADDRESSLEN];
     u_char payload[MAX_SIP_PAYLOAD];
 
     // Max SIP payload allowed
@@ -237,8 +235,6 @@ sip_check_packet(packet_t *packet)
     // Initialize local variables
     memset(callid, 0, sizeof(callid));
     memset(xcallid, 0, sizeof(xcallid));
-    memset(msg_src, 0, sizeof(msg_src));
-    memset(msg_dst, 0, sizeof(msg_dst));
 
     // Get payload from packet(s)
     memset(payload, 0, MAX_SIP_PAYLOAD);
@@ -292,20 +288,6 @@ sip_check_packet(packet_t *packet)
         // Append this call to the call list
         vector_append(calls.list, call);
         call->index = vector_count(calls.list);
-    }
-
-    // Store sorce address. Prefix too long IPv6 addresses with two dots
-    if (strlen(src.ip) > 15) {
-        sprintf(msg_src, "..%s", src.ip + strlen(src.ip) - 13);
-    } else {
-        strcpy(msg_src, src.ip);
-    }
-
-    // Store destination address. Prefix too long IPv6 addresses with two dots
-    if (strlen(dst.ip) > 15) {
-        sprintf(msg_dst, "..%s", dst.ip + strlen(dst.ip) - 13);
-    } else {
-        strcpy(msg_dst, dst.ip);
     }
 
     // At this point we know we're handling an interesting SIP Packet
@@ -512,31 +494,25 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 void
 sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 {
-    char address[ADDRESSLEN];
-    char media_address[ADDRESSLEN] = { };
+    address_t dst, src;
     char media_type[15] = { };
     char media_format[30] = { };
-    int media_port;
     uint32_t media_fmt_pref;
     uint32_t media_fmt_code;
     sdp_media_t *media = NULL;
     char *payload2, *tofree, *line;
     sip_call_t *call = msg_get_call(msg);
 
-    // Initialize variables
-    memset(address, 0, sizeof(address));
-
     // Parse each line of payload looking for sdp information
     tofree = payload2 = strdup((char*)payload);
     while ((line = strsep(&payload2, "\r\n")) != NULL) {
         // Check if we have a media string
         if (!strncmp(line, "m=", 2)) {
-            if (sscanf(line, "m=%s %d RTP/%*s %u", media_type, &media_port, &media_fmt_pref) == 3) {
+            if (sscanf(line, "m=%s %hu RTP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3) {
                 // Create a new media structure for this message
                 if ((media = media_create(msg))) {
                     media_set_type(media, media_type);
-                    media_set_port(media, media_port);
-                    media_set_address(media, media_address);
+                    media_set_address(media, dst);
                     media_set_prefered_format(media, media_fmt_pref);
                     msg_add_media(msg, media);
 
@@ -547,11 +523,12 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                      */
                     // Create a new stream with this destination address:port
                     if (!call_msg_is_retrans(msg)) {
-                        if (!rtp_find_call_stream(call, 0, 0, media_address, media_port)) {
+                        if (!rtp_find_call_stream(call, src, dst)) {
                             // Create RTP stream
-                            call_add_stream(call, stream_create(media, media_address, media_port, PACKET_RTP));
+                            call_add_stream(call, stream_create(media, dst, PACKET_RTP));
                             // Create early RTCP stream
-                            call_add_stream(call, stream_create(media, media_address, media_port + 1, PACKET_RTCP));
+                            dst.port++;
+                            call_add_stream(call, stream_create(media, dst, PACKET_RTCP));
                         }
                     }
                 }
@@ -560,8 +537,8 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
         // Check if we have a connection string
         if (!strncmp(line, "c=", 2)) {
-            if (sscanf(line, "c=IN IP4 %s", media_address) && media) {
-                media_set_address(media, media_address);
+            if (sscanf(line, "c=IN IP4 %s", dst.ip) && media) {
+                media_set_address(media, dst);
             }
         }
 
@@ -574,10 +551,10 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
         // Check if we have attribute format RTCP port
         if (!strncmp(line, "a=rtcp:", 7)) {
-            if (media && sscanf(line, "a=rtcp:%u", &media_port)) {
+            if (media && sscanf(line, "a=rtcp:%hu", &dst.port)) {
                 // Create early RTCP stream
-                if (!rtp_find_call_stream(call, 0, 0, media_address, media_port)) {
-                    call_add_stream(call, stream_create(media, media_address, media_port, PACKET_RTCP));
+                if (!rtp_find_call_stream(call, src, dst)) {
+                    call_add_stream(call, stream_create(media, dst, PACKET_RTCP));
                 }
             }
         }

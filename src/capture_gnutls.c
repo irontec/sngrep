@@ -261,8 +261,8 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
     uint32_t outl = packet->payload_len;
     out = sng_malloc(outl);
     struct in_addr ip_src, ip_dst;
-    uint16_t sport = packet->sport;
-    uint16_t dport = packet->dport;
+    uint16_t sport = packet->src.port;
+    uint16_t dport = packet->dst.port;
 
     // Convert addresses
     inet_pton(AF_INET, packet->src.ip, &ip_src);

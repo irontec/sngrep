@@ -92,12 +92,10 @@ struct rtp_encoding {
 struct rtp_stream {
     //! Determine stream type
     uint32_t type;
-    //! Source address and port
-    char ip_src[ADDRESSLEN];
-    uint16_t sport;
-    //! Destination address and port
-    char ip_dst[ADDRESSLEN];
-    uint16_t dport;
+    //! Source address
+    address_t src;
+    //! Destination address
+    address_t dst;
     //! SDP media that setup this stream
     sdp_media_t *media;
     //! Packet count for this stream
@@ -265,10 +263,10 @@ struct rtcp_blk_xr_voip
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, const char *dst, uint16_t dport, int type);
+stream_create(sdp_media_t *media, address_t dst, int type);
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, const char *src, uint16_t sport);
+stream_complete(rtp_stream_t *stream, address_t src);
 
 void
 stream_set_format(rtp_stream_t *stream, uint32_t format);
@@ -292,10 +290,10 @@ rtp_stream_t *
 rtp_check_packet(packet_t *packet);
 
 rtp_stream_t *
-rtp_find_stream(const char *ip_src, uint16_t sport, const char *ip_dst, uint16_t dport, uint32_t format);
+rtp_find_stream(address_t src, address_t dst, uint32_t format);
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, const char *ip_src, uint16_t sport, const char *ip_dst, uint16_t dport);
+rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst);
 
 /**
  * @brief Check if a message is older than other

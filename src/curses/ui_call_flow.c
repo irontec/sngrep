@@ -314,8 +314,8 @@ call_flow_draw_columns(PANEL *panel)
             streams = vector_iterator(call->streams);
             while ((stream = vector_iterator_next(&streams))) {
                 if (stream_get_count(stream)) {
-                    call_flow_column_add(panel, NULL, stream->ip_src);
-                    call_flow_column_add(panel, NULL, stream->ip_dst);
+                    call_flow_column_add(panel, NULL, stream->src.ip);
+                    call_flow_column_add(panel, NULL, stream->dst.ip);
                 }
             }
         }
@@ -586,22 +586,22 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->ip_src, msg_src)) {
+    if (!strcmp(stream->src.ip, msg_src)) {
         column1 = call_flow_column_get(panel, callid, msg_src);
-    } else if (!strcmp(stream->ip_src, msg_dst)) {
+    } else if (!strcmp(stream->src.ip, msg_dst)) {
         column1 = call_flow_column_get(panel, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(panel, 0, stream->ip_src);
+        column1 = call_flow_column_get(panel, 0, stream->src.ip);
     }
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->ip_dst, msg_dst)) {
+    if (!strcmp(stream->dst.ip, msg_dst)) {
         column2 = call_flow_column_get(panel, callid, msg_dst);
-    } else if (!strcmp(stream->ip_dst, msg_src)) {
+    } else if (!strcmp(stream->dst.ip, msg_src)) {
         column2 = call_flow_column_get(panel, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(panel, 0, stream->ip_dst);
+        column2 = call_flow_column_get(panel, 0, stream->dst.ip);
     }
 
     call_flow_column_t *tmp;
@@ -651,8 +651,8 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == 0 /* right */) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, startpos - 4, "%d", stream->sport);
-            mvwprintw(win, cline, endpos, "%d", stream->dport);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->src.port);
+            mvwprintw(win, cline, endpos, "%d", stream->dst.port);
         }
         mvwaddch(win, cline, endpos - 2, '>');
         if (arrow->rtp_count != stream_get_count(stream)) {
@@ -662,8 +662,8 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, endpos, "%d", stream->sport);
-            mvwprintw(win, cline, startpos - 4, "%d", stream->dport);
+            mvwprintw(win, cline, endpos, "%d", stream->src.port);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->dst.port);
         }
         mvwaddch(win, cline, startpos + 2, '<');
         if (arrow->rtp_count != stream_get_count(stream)) {
@@ -729,22 +729,22 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->ip_src, msg_src)) {
+    if (!strcmp(stream->src.ip, msg_src)) {
         column1 = call_flow_column_get(panel, callid, msg_src);
-    } else if (!strcmp(stream->ip_src, msg_dst)) {
+    } else if (!strcmp(stream->src.ip, msg_dst)) {
         column1 = call_flow_column_get(panel, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(panel, 0, stream->ip_src);
+        column1 = call_flow_column_get(panel, 0, stream->src.ip);
     }
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->ip_dst, msg_dst)) {
+    if (!strcmp(stream->dst.ip, msg_dst)) {
         column2 = call_flow_column_get(panel, callid, msg_dst);
-    } else if (!strcmp(stream->ip_dst, msg_src)) {
+    } else if (!strcmp(stream->dst.ip, msg_src)) {
         column2 = call_flow_column_get(panel, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(panel, 0, stream->ip_dst);
+        column2 = call_flow_column_get(panel, 0, stream->dst.ip);
     }
 
     call_flow_column_t *tmp;
@@ -793,8 +793,8 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == 0 /* right */) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, startpos - 4, "%d", stream->sport);
-            mvwprintw(win, cline, endpos, "%d", stream->dport);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->src.port);
+            mvwprintw(win, cline, endpos, "%d", stream->dst.port);
         }
         mvwaddch(win, cline, endpos - 2, '>');
         if (arrow->rtp_count != stream_get_count(stream)) {
@@ -804,8 +804,8 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, endpos, "%d", stream->sport);
-            mvwprintw(win, cline, startpos - 4, "%d", stream->dport);
+            mvwprintw(win, cline, endpos, "%d", stream->src.port);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->dst.port);
         }
         mvwaddch(win, cline, startpos + 2, '<');
         if (arrow->rtp_count != stream_get_count(stream)) {
