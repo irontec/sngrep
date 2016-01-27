@@ -43,18 +43,6 @@
 #include <pcap.h>
 #include "vector.h"
 
-#ifndef __FAVOR_BSD
-#define __FAVOR_BSD
-#endif
-
-#ifndef _BSD_SOURCE
-#define _BSD_SOURCE 1
-#endif
-
-#if defined (__OpenBSD__)
-#define timeval bpf_timeval
-#endif
-
 #ifdef USE_IPV6
 #ifdef INET6_ADDRSTRLEN
 #define ADDRESSLEN INET6_ADDRSTRLEN

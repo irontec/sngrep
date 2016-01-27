@@ -155,13 +155,11 @@ packet_time(packet_t *packet)
     frame_t *first;
     struct timeval ts = { 0 };
 
-    // Sanity check
-    if (!packet)
-        return ts;
-
     // Return first frame timestamp
-    if ((first = vector_first(packet->frames)))
-        ts = first->header->ts;
+    if (packet && (first = vector_first(packet->frames))) {
+        ts.tv_sec = first->header->ts.tv_sec;
+        ts.tv_usec = first->header->ts.tv_usec;
+    }
 
     // Return packe timestamp
     return ts;
