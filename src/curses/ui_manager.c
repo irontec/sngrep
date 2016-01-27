@@ -363,9 +363,6 @@ default_handle_key(ui_t *ui, int key)
             case ACTION_CYCLE_COLOR:
                 setting_toggle(SETTING_COLORMODE);
                 break;
-            case ACTION_SHOW_HOSTNAMES:
-                setting_toggle(SETTING_DISPLAY_HOST);
-                break;
             case ACTION_SHOW_ALIAS:
                 setting_toggle(SETTING_DISPLAY_ALIAS);
                 break;

@@ -58,7 +58,6 @@ key_binding_t bindings[ACTION_SENTINEL] = {
    { ACTION_TOGGLE_SYNTAX,  "togglesyntax", { KEY_F(8), 'C' }, 2 },
    { ACTION_CYCLE_COLOR,    "colormode",    { 'c' }, 1 },
    { ACTION_COMPRESS,       "compress",     { 's' }, 1 },
-   { ACTION_SHOW_HOSTNAMES, "togglehostname", { KEY_F(9) }, 1 },
    { ACTION_SHOW_ALIAS,     "togglealias",  { 'a' }, 1 },
    { ACTION_TOGGLE_PAUSE,   "pause",        { 'p' }, 1 },
    { ACTION_PREV_SCREEN,    "prevscreen",   { KEY_ESC, 'q', 'Q' }, 3 },

@@ -804,10 +804,9 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 18, 2, "F6/R        Show selected call messages in raw mode");
     mvwprintw(help_win, 19, 2, "F7/F        Show filter options");
     mvwprintw(help_win, 20, 2, "F8/c        Turn on/off window colours");
-    mvwprintw(help_win, 21, 2, "F9/l        Turn on/off resolved addresses");
-    mvwprintw(help_win, 22, 2, "F10/t       Select displayed columns");
-    mvwprintw(help_win, 23, 2, "i/I         Set display filter to invite");
-    mvwprintw(help_win, 24, 2, "p           Stop/Resume packet capture");
+    mvwprintw(help_win, 21, 2, "F10/t       Select displayed columns");
+    mvwprintw(help_win, 22, 2, "i/I         Set display filter to invite");
+    mvwprintw(help_win, 23, 2, "p           Stop/Resume packet capture");
 
     // Press any key to close
     wgetch(help_win);

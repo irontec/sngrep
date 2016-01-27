@@ -976,50 +976,6 @@ dump_close(pcap_dumper_t *pd)
     pcap_dump_close(pd);
 }
 
-const char *
-lookup_hostname(const char *address)
-{
-    int i;
-    int hostlen;
-    in_addr_t netaddress;
-    struct hostent *host;
-    const char *hostname;
-
-    // No lookup enabled, return address as is
-    if (!setting_enabled(SETTING_CAPTURE_LOOKUP))
-        return address;
-
-    // Check if we have already tryied resolve this address
-    for (i = 0; i < capture_cfg.dnscache.count; i++) {
-        if (!strcmp(capture_cfg.dnscache.addr[i], address)) {
-            return capture_cfg.dnscache.hostname[i];
-        }
-    }
-
-    // Convert the address to network byte order
-    if ((netaddress = inet_addr(address)) == -1)
-        return address;
-
-    // Lookup this addres
-    host = gethostbyaddr(&netaddress, sizeof(netaddress), AF_INET);
-    if (!host) {
-        hostname = address;
-    } else {
-        hostname = host->h_name;
-    }
-
-    // Max hostname length set to 16 chars
-    hostlen = strlen(hostname);
-
-    // Store this result in the dnscache
-    strcpy(capture_cfg.dnscache.addr[capture_cfg.dnscache.count], address);
-    strncpy(capture_cfg.dnscache.hostname[capture_cfg.dnscache.count], hostname, hostlen);
-    capture_cfg.dnscache.count++;
-
-    // Return the stored value
-    return capture_cfg.dnscache.hostname[capture_cfg.dnscache.count - 1];
-}
-
 int
 is_local_address_str(const char *address)
 {

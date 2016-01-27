@@ -235,16 +235,6 @@ call_raw_handle_key(PANEL *panel, int key)
                 // Prev page => N key up strokes
                 info->scroll -= rnpag_steps;
                 break;
-            case ACTION_SHOW_HOSTNAMES:
-                // Tooggle Host/Address display
-                setting_toggle(SETTING_DISPLAY_HOST);
-                // Force refresh panel
-                if (info->group) {
-                    call_raw_set_group(info->group);
-                } else {
-                    call_raw_set_msg(info->msg);
-                }
-                break;
             case ACTION_SAVE:
                 if (info->group) {
                     // KEY_S, Display save panel

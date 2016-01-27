@@ -101,21 +101,6 @@ enum capture_storage {
 typedef struct capture_config capture_config_t;
 //; Shorter declaration of capture_info structure
 typedef struct capture_info capture_info_t;
-//! Shorter declaration of dns_cache structure
-typedef struct dns_cache dns_cache_t;
-
-
-/**
- * @brief Storage for DNS resolved ips
- *
- * Structure to store resolved addresses when capture.lookup
- * configuration option is enabled.
- */
-struct dns_cache {
-    int count;
-    char addr[ADDRESSLEN][256];
-    char hostname[16][256];
-};
 
 /**
  * @brief Capture common configuration
@@ -137,8 +122,6 @@ struct capture_config {
     struct bpf_program fp;
     //! libpcap dump file handler
     pcap_dumper_t *pd;
-    //! Cache for DNS lookups
-    dns_cache_t dnscache;
     //! Local devices pointer
     pcap_if_t *devices;
     //! Capture sources
@@ -440,16 +423,6 @@ dump_packet(pcap_dumper_t *pd, const packet_t *packet);
  */
 void
 dump_close(pcap_dumper_t *pd);
-
-/**
- * @brief Try to get hostname from its address
- *
- * Try to get hostname from the given address, store it in
- * dnscache. If hostname can not be resolved, then store the
- * original address to avoid lookup again the same address.
- */
-const char *
-lookup_hostname(const char *address);
 
 /**
  * @brief Check if a given address belongs to a local device
