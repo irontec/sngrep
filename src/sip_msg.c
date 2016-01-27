@@ -33,7 +33,7 @@
 #include "sip.h"
 
 sip_msg_t *
-msg_create(const char *payload)
+msg_create()
 {
     sip_msg_t *msg;
     if (!(msg = sng_malloc(sizeof(sip_msg_t))))

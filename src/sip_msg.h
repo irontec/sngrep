@@ -48,19 +48,22 @@ typedef struct sip_msg sip_msg_t;
  * call.
  */
 struct sip_call;
+
 struct sip_msg {
     //! Request Method or Response Code @see sip_methods
     int reqresp;
     //! Message Cseq
     uint32_t cseq;
-    //! SIP From and TO
-    char *sip_from, *sip_to;
+    //! SIP From Header
+    char *sip_from;
+    //! SIP To Header
+    char *sip_to;
     //! SDP payload information (sdp_media_t *)
     vector_t *medias;
-    //! Captured packets for this message (capture_packet_t *)
+    //! Captured packet for this message
     capture_packet_t *packet;
     //! Index of this message in call
-    int index;
+    uint32_t index;
     //! Message owner
     struct sip_call *call;
 };
@@ -77,7 +80,7 @@ struct sip_msg {
  * @return a new allocated message
  */
 sip_msg_t *
-msg_create(const char *payload);
+msg_create();
 
 /**
  * @brief Destroy a SIP message and free its memory
