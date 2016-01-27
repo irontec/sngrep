@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file capture_packet.h
+ * @file packet.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage captured packet
@@ -37,22 +37,10 @@
 #define __SNGREP_CAPTURE_PACKET_H
 
 #include <time.h>
-#include <netinet/in.h>
-#include <stdint.h>
 #include <sys/types.h>
 #include <pcap.h>
+#include "address.h"
 #include "vector.h"
-
-#ifdef USE_IPV6
-#ifdef INET6_ADDRSTRLEN
-#define ADDRESSLEN INET6_ADDRSTRLEN
-#else
-#define ADDRESSLEN 46
-#endif
-#else
-#define ADDRESSLEN INET_ADDRSTRLEN
-#endif
-#define ADDRESSPORTLEN ADDRESSLEN + 6
 
 //! Stored packet types
 enum packet_type {
@@ -84,14 +72,10 @@ struct packet {
     uint8_t proto;
     //! Packet type as defined in capture_packet_type
     enum packet_type type;
-    //! Packet source IP address
-    char ip_src[ADDRESSLEN];
-    //! Packet destination IP address
-    char ip_dst[ADDRESSLEN];
-    //! Packet source port
-    uint16_t sport;
-    //! Packet destination port
-    uint16_t dport;
+    //! Source
+    address_t src;
+    //! Destination
+    address_t dst;
     //! Packet IP id
     uint16_t ip_id;
     //! PCAP Packet payload when it can not be get from data
@@ -119,7 +103,7 @@ struct frame {
  * @brief Allocate memory to store new packet data
  */
 packet_t *
-packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id);
+packet_create(uint8_t ip_ver, uint8_t proto, address_t src, address_t dst, uint32_t id);
 
 /**
  * @brief Set Transport layer information

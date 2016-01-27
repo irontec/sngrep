@@ -140,8 +140,8 @@ call_msg_is_retrans(sip_msg_t *msg)
     it = vector_iterator(msg->call->msgs);
     vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
     while ((prev = vector_iterator_prev(&it))) {
-        if (!strcmp(prev->packet->ip_src, msg->packet->ip_src) &&
-                !strcmp(prev->packet->ip_dst, msg->packet->ip_dst))
+        if (address_equals(prev->packet->src, msg->packet->src) &&
+                address_equals(prev->packet->dst, msg->packet->dst))
             break;
     }
 

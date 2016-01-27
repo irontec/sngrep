@@ -2,8 +2,8 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
- ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013-2016 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2016 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -20,13 +20,10 @@
  **
  ****************************************************************************/
 /**
- * @file capture.c
+ * @file packet.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in pcap.h
- *
- * sngrep can parse a pcap file to display call flows.
- * This file include the functions that uses libpcap to do so.
+ * @brief Source of functions defined in packet.h
  *
  */
 #include "config.h"
@@ -35,7 +32,7 @@
 #include "packet.h"
 
 packet_t *
-packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id)
+packet_create(uint8_t ip_ver, uint8_t proto, address_t src, address_t dst, uint32_t id)
 {
     // Create a new packet
     packet_t *packet;
@@ -45,8 +42,8 @@ packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const char *ip_
     packet->proto = proto;
     packet->frames = vector_create(1, 1);
     packet->ip_id = id;
-    memcpy(packet->ip_src, ip_src, ADDRESSLEN);
-    memcpy(packet->ip_dst, ip_dst, ADDRESSLEN);
+    packet->src = src;
+    packet->dst = dst;
     return packet;
 }
 
@@ -93,18 +90,15 @@ packet_free_frames(packet_t *pkt)
 packet_t *
 packet_set_transport_data(packet_t *pkt, uint16_t sport, uint16_t dport)
 {
-    pkt->sport = sport;
-    pkt->dport = dport;
+    pkt->src.port = sport;
+    pkt->dst.port = dport;
     return pkt;
 }
 
 frame_t *
 packet_add_frame(packet_t *pkt, const struct pcap_pkthdr *header, const u_char *packet)
 {
-    frame_t *frame;
-
-    // Add frame to this packet
-    frame = malloc(sizeof(frame_t));
+    frame_t *frame = malloc(sizeof(frame_t));
     frame->header = malloc(sizeof(struct pcap_pkthdr));
     memcpy(frame->header, header, sizeof(struct pcap_pkthdr));
     frame->data = malloc(header->caplen);
@@ -134,7 +128,6 @@ packet_set_payload(packet_t *packet, u_char *payload, uint32_t payload_len)
         memcpy(packet->payload, payload, payload_len);
         packet->payload_len = payload_len;
     }
-
 }
 
 uint32_t

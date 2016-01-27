@@ -221,8 +221,7 @@ sip_check_packet(packet_t *packet)
     sip_msg_t *msg;
     sip_call_t *call;
     char callid[1024], xcallid[1024];
-    const char *src, *dst;
-    uint16_t sport, dport;
+    address_t src, dst;
     char msg_src[ADDRESSLEN];
     char msg_dst[ADDRESSLEN];
     u_char payload[MAX_SIP_PAYLOAD];
@@ -232,10 +231,8 @@ sip_check_packet(packet_t *packet)
         return NULL;
 
     // Get Addresses from packet
-    src = packet->ip_src;
-    dst = packet->ip_dst;
-    sport = packet->sport;
-    dport = packet->dport;
+    src = packet->src;
+    dst = packet->dst;
 
     // Initialize local variables
     memset(callid, 0, sizeof(callid));
@@ -298,17 +295,17 @@ sip_check_packet(packet_t *packet)
     }
 
     // Store sorce address. Prefix too long IPv6 addresses with two dots
-    if (strlen(src) > 15) {
-        sprintf(msg_src, "..%s", src + strlen(src) - 13);
+    if (strlen(src.ip) > 15) {
+        sprintf(msg_src, "..%s", src.ip + strlen(src.ip) - 13);
     } else {
-        strcpy(msg_src, src);
+        strcpy(msg_src, src.ip);
     }
 
     // Store destination address. Prefix too long IPv6 addresses with two dots
-    if (strlen(dst) > 15) {
-        sprintf(msg_dst, "..%s", dst + strlen(dst) - 13);
+    if (strlen(dst.ip) > 15) {
+        sprintf(msg_dst, "..%s", dst.ip + strlen(dst.ip) - 13);
     } else {
-        strcpy(msg_dst, dst);
+        strcpy(msg_dst, dst.ip);
     }
 
     // At this point we know we're handling an interesting SIP Packet

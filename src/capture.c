@@ -371,9 +371,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Fragmentation offset
     uint16_t ip_frag_off = 0;
     //! Source Address
-    char ip_src[ADDRESSLEN];
+    address_t src;
     //! Destination Address
-    char ip_dst[ADDRESSLEN];
+    address_t dst;
     //! Common interator for vectors
     vector_iter_t it;
     //! Packet containers
@@ -404,8 +404,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
             ip_id = ntohs(ip4->ip_id);
 
-            inet_ntop(AF_INET, &ip4->ip_src, ip_src, sizeof(ip_src));
-            inet_ntop(AF_INET, &ip4->ip_dst, ip_dst, sizeof(ip_dst));
+            inet_ntop(AF_INET, &ip4->ip_src, src.ip, sizeof(src.ip));
+            inet_ntop(AF_INET, &ip4->ip_dst, dst.ip, sizeof(dst.ip));
             break;
 #ifdef USE_IPV6
         case 6:
@@ -419,8 +419,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
                 ip_id = ntohl(ip6f->ip6f_ident);
             }
 
-            inet_ntop(AF_INET6, &ip6->ip6_src, ip_src, sizeof(ip_src));
-            inet_ntop(AF_INET6, &ip6->ip6_dst, ip_dst, sizeof(ip_dst));
+            inet_ntop(AF_INET6, &ip6->ip6_src, src.ip, sizeof(src.ip));
+            inet_ntop(AF_INET6, &ip6->ip6_dst, dst.ip, sizeof(src.dst));
             break;
 #endif
         default:
@@ -437,7 +437,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // If no fragmentation
     if (ip_frag == 0) {
         // Just create a new packet with given network data
-        pkt = packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
+        pkt = packet_create(ip_ver, ip_proto, src, dst, ip_id);
         packet_add_frame(pkt, header, packet);
         return pkt;
     }
@@ -445,8 +445,11 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Look for another packet with same id in IP reassembly vector
     it = vector_iterator(capture_cfg.ip_reasm);
     while ((pkt = vector_iterator_next(&it))) {
-        if (!strcmp(pkt->ip_src, ip_src) && !strcmp(pkt->ip_dst, ip_dst) && pkt->ip_id == ip_id)
+        if (address_equals(pkt->src, src)
+                && address_equals(pkt->dst, dst)
+                && pkt->ip_id == ip_id) {
             break;
+        }
     }
 
     // If we already have this packet stored, append this frames to existing one
@@ -454,7 +457,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         packet_add_frame(pkt, header, packet);
     } else {
         // Add To the possible reassembly list
-        pkt = packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
+        pkt = packet_create(ip_ver, ip_proto, src, dst, ip_id);
         packet_add_frame(pkt, header, packet);
         vector_append(capture_cfg.ip_reasm, pkt);
         return NULL;
@@ -509,9 +512,10 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         return packet;
 
     while ((pkt = vector_iterator_next(&it))) {
-        if (!strcmp(pkt->ip_src, packet->ip_src) && !strcmp(pkt->ip_dst, packet->ip_dst)
-                && pkt->sport == packet->sport && pkt->dport == packet->dport)
+        if (address_equals(pkt->src, packet->src) &&
+                address_equals(pkt->dst, packet->dst)) {
             break;
+        }
     }
 
     // If we already have this packet stored

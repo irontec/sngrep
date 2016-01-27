@@ -176,10 +176,10 @@ rtp_check_packet(packet_t *packet)
     size = packet_payloadlen(packet);
 
     // Get Addresses from packet
-    src = packet->ip_src;
-    dst = packet->ip_dst;
-    sport = packet->sport;
-    dport = packet->dport;
+    src = packet->src.ip;
+    dst = packet->dst.ip;
+    sport = packet->src.port;
+    dport = packet->dst.port;
 
     // Check if we have at least RTP type
     if ((int32_t) size < 2)
@@ -190,7 +190,7 @@ rtp_check_packet(packet_t *packet)
         return NULL;
 
     // RTP: even, RTCP: odd
-    if (((packet->dport % 2) == 0)) {
+    if (((packet->dst.port % 2) == 0)) {
 
         // Get RTP payload type
         format = RTP_PAYLOAD_TYPE(*(payload + 1));

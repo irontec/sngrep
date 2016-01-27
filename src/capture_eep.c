@@ -226,8 +226,8 @@ capture_eep_send_v2(packet_t *pkt)
 
     /* IPv4 */
     if (pkt->ip_version == 4) {
-        inet_pton(AF_INET, pkt->ip_src, &hep_ipheader.hp_src);
-        inet_pton(AF_INET, pkt->ip_dst, &hep_ipheader.hp_dst);
+        inet_pton(AF_INET, pkt->src.ip, &hep_ipheader.hp_src);
+        inet_pton(AF_INET, pkt->dst.ip, &hep_ipheader.hp_dst);
         tlen += sizeof(struct hep_iphdr);
         hdr.hp_l += sizeof(struct hep_iphdr);
     }
@@ -323,13 +323,13 @@ capture_eep_send_v3(packet_t *pkt)
         /* SRC IP */
         src_ip4.chunk.vendor_id = htons(0x0000);
         src_ip4.chunk.type_id = htons(0x0003);
-        inet_pton(AF_INET, pkt->ip_src, &src_ip4.data);
+        inet_pton(AF_INET, pkt->src.ip, &src_ip4.data);
         src_ip4.chunk.length = htons(sizeof(src_ip4));
 
         /* DST IP */
         dst_ip4.chunk.vendor_id = htons(0x0000);
         dst_ip4.chunk.type_id = htons(0x0004);
-        inet_pton(AF_INET, pkt->ip_dst, &dst_ip4.data);
+        inet_pton(AF_INET, pkt->dst.ip, &dst_ip4.data);
         dst_ip4.chunk.length = htons(sizeof(dst_ip4));
 
         iplen = sizeof(dst_ip4) + sizeof(src_ip4);
@@ -488,10 +488,10 @@ capture_eep_receive_v2()
     unsigned char *payload = 0;
     uint32_t pos;
     char buffer[MAX_CAPTURE_LEN] ;
-    //! Source and Destination Address
-    char ip_src[ADDRESSLEN], ip_dst[ADDRESSLEN];
-    //! Source and Destination Port
-    uint16_t sport, dport;
+    //! Source Address
+    address_t src;
+    //! Destination address
+    address_t dst;
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
@@ -530,23 +530,23 @@ capture_eep_receive_v2()
     /* IPv4 */
     if (family == AF_INET) {
         memcpy(&hep_ipheader, (void*) buffer + pos, sizeof(struct hep_iphdr));
-        inet_ntop(AF_INET, &hep_ipheader.hp_src, ip_src, sizeof(ip_src));
-        inet_ntop(AF_INET, &hep_ipheader.hp_dst, ip_dst, sizeof(ip_dst));
+        inet_ntop(AF_INET, &hep_ipheader.hp_src, src.ip, sizeof(src.ip));
+        inet_ntop(AF_INET, &hep_ipheader.hp_dst, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct hep_iphdr);
     }
 #ifdef USE_IPV6
     /* IPv6 */
     else if(family == AF_INET6) {
         memcpy(&hep_ip6header, (void*) buffer + pos, sizeof(struct hep_ip6hdr));
-        inet_ntop(AF_INET6, &hep_ip6header.hp6_src, ip_src, sizeof(ip_src));
-        inet_ntop(AF_INET6, &hep_ip6header.hp6_dst, ip_dst, sizeof(ip_dst));
+        inet_ntop(AF_INET6, &hep_ip6header.hp6_src, src.ip, sizeof(src.ip));
+        inet_ntop(AF_INET6, &hep_ip6header.hp6_dst, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct hep_ip6hdr);
     }
 #endif
 
     /* PORTS */
-    sport = ntohs(hdr.hp_sport);
-    dport = ntohs(hdr.hp_dport);
+    src.port = ntohs(hdr.hp_sport);
+    dst.port = ntohs(hdr.hp_dport);
 
     /* TIMESTAMP*/
     memcpy(&hep_time, (void*) buffer + pos, sizeof(struct hep_timehdr));
@@ -565,7 +565,7 @@ capture_eep_receive_v2()
     memcpy(payload, (void*) buffer + pos, header.caplen);
 
     // Create a new packet
-    pkt = packet_create((family == AF_INET) ? 4 : 6, proto, ip_src, ip_dst, 0);
+    pkt = packet_create((family == AF_INET) ? 4 : 6, proto, src, dst, 0);
     packet_add_frame(pkt, &header, payload);
     packet_set_transport_data(pkt, sport, dport);
     packet_set_type(pkt, PACKET_SIP_UDP);

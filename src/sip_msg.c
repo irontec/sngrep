@@ -118,10 +118,10 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
 
     switch (id) {
         case SIP_ATTR_SRC:
-            sprintf(value, "%s:%u", msg->packet->ip_src, msg->packet->sport);
+            sprintf(value, "%s:%u", msg->packet->src.ip, msg->packet->src.port);
             break;
         case SIP_ATTR_DST:
-            sprintf(value, "%s:%u", msg->packet->ip_dst, msg->packet->dport);
+            sprintf(value, "%s:%u", msg->packet->dst.ip, msg->packet->dst.port);
             break;
         case SIP_ATTR_METHOD:
             if (sip_method_str(msg->reqresp)) {

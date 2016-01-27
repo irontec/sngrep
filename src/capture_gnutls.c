@@ -265,8 +265,8 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
     uint16_t dport = packet->dport;
 
     // Convert addresses
-    inet_pton(AF_INET, packet->ip_src, &ip_src);
-    inet_pton(AF_INET, packet->ip_dst, &ip_dst);
+    inet_pton(AF_INET, packet->src.ip, &ip_src);
+    inet_pton(AF_INET, packet->dst.ip, &ip_dst);
 
     // Try to find a session for this ip
     if ((conn = tls_connection_find(ip_src, sport))) {
