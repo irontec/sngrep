@@ -812,7 +812,11 @@ capture_get_infile()
 
     if (vector_count(capture_cfg.sources) == 1) {
         capinfo = vector_first(capture_cfg.sources);
-        return basename(capinfo->infile);
+        if (capinfo->infile) {
+            return basename(capinfo->infile);
+        } else {
+            return NULL;
+        }
     } else {
         return "Multiple files";
     }
