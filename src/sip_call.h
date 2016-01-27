@@ -140,7 +140,7 @@ call_add_stream(sip_call_t *call, rtp_stream_t *stream);
  * @param packet new RTP packet from call rtp streams
  */
 void
-call_add_rtp_packet(sip_call_t *call, capture_packet_t *packet);
+call_add_rtp_packet(sip_call_t *call, packet_t *packet);
 
 /**
  * @brief Getter for call messages linked list size

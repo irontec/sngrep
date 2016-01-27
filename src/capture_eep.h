@@ -233,7 +233,7 @@ capture_eep_deinit();
  * @return 1 on any error occurs, 0 otherwise
  */
 int
-capture_eep_send(capture_packet_t *pkt);
+capture_eep_send(packet_t *pkt);
 
 /**
  * @brief Send a captured packet (EEP version 2)
@@ -246,7 +246,7 @@ capture_eep_send(capture_packet_t *pkt);
  * @return 1 on any error occurs, 0 otherwise
  */
 int
-capture_eep_send_v2(capture_packet_t *pkt);
+capture_eep_send_v2(packet_t *pkt);
 
 /**
  * @brief Send a captured packet (EEP version 3)
@@ -259,14 +259,14 @@ capture_eep_send_v2(capture_packet_t *pkt);
  * @return 1 on any error occurs, 0 otherwise
  */
 int
-capture_eep_send_v3(capture_packet_t *pkt);
+capture_eep_send_v3(packet_t *pkt);
 
 /**
  * @brief Wrapper for receiving packet in configured EEP version
  *
  * @return NULL on any error, packet structure otherwise
  */
-capture_packet_t *
+packet_t *
 capture_eep_receive();
 
 
@@ -279,7 +279,7 @@ capture_eep_receive();
  *
  * @return NULL on any error, packet structure otherwise
  */
-capture_packet_t *
+packet_t *
 capture_eep_receive_v2();
 
 /**
@@ -291,7 +291,7 @@ capture_eep_receive_v2();
  *
  * @return NULL on any error, packet structure otherwise
  */
-capture_packet_t *
+packet_t *
 capture_eep_receive_v3();
 
 /**

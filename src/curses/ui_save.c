@@ -400,7 +400,7 @@ save_to_file(PANEL *panel)
     int cur = 0, total = 0;
     WINDOW *progress;
     vector_iter_t calls, msgs, rtps, packets;
-    capture_packet_t *packet;
+    packet_t *packet;
     vector_t *sorted;
 
     // Get panel information

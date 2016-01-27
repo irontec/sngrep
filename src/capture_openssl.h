@@ -337,7 +337,7 @@ tls_connection_find(struct in_addr addr, uint16_t port);
  * @return 0 in all cases
  */
 int
-tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp);
+tls_process_segment(packet_t *packet, struct tcphdr *tcp);
 
 /**
  * @brief Process TLS record data

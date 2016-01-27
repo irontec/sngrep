@@ -215,7 +215,7 @@ sip_get_xcallid(const char *payload, char *xcallid)
 }
 
 sip_msg_t *
-sip_check_packet(capture_packet_t *packet)
+sip_check_packet(packet_t *packet)
 {
     ENTRY entry;
     sip_msg_t *msg;
@@ -245,7 +245,7 @@ sip_check_packet(capture_packet_t *packet)
 
     // Get payload from packet(s)
     memset(payload, 0, MAX_SIP_PAYLOAD);
-    memcpy(payload, capture_packet_get_payload(packet), capture_packet_get_payload_len(packet));
+    memcpy(payload, packet_payload(packet), packet_payloadlen(packet));
 
     // Get the Call-ID of this message
     if (!sip_get_callid((const char*) payload, callid))
@@ -552,9 +552,9 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                     if (!call_msg_is_retrans(msg)) {
                         if (!rtp_find_call_stream(call, 0, 0, media_address, media_port)) {
                             // Create RTP stream
-                            call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTP));
+                            call_add_stream(call, stream_create(media, media_address, media_port, PACKET_RTP));
                             // Create early RTCP stream
-                            call_add_stream(call, stream_create(media, media_address, media_port + 1, CAPTURE_PACKET_RTCP));
+                            call_add_stream(call, stream_create(media, media_address, media_port + 1, PACKET_RTCP));
                         }
                     }
                 }
@@ -580,7 +580,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
             if (media && sscanf(line, "a=rtcp:%u", &media_port)) {
                 // Create early RTCP stream
                 if (!rtp_find_call_stream(call, 0, 0, media_address, media_port)) {
-                    call_add_stream(call, stream_create(media, media_address, media_port, CAPTURE_PACKET_RTCP));
+                    call_add_stream(call, stream_create(media, media_address, media_port, PACKET_RTCP));
                 }
             }
         }
@@ -684,15 +684,15 @@ sip_transport_str(int transport)
 {
     switch(transport)
     {
-        case CAPTURE_PACKET_SIP_UDP:
+        case PACKET_SIP_UDP:
             return "UDP";
-        case CAPTURE_PACKET_SIP_TCP:
+        case PACKET_SIP_TCP:
             return "TCP";
-        case CAPTURE_PACKET_SIP_TLS:
+        case PACKET_SIP_TLS:
             return "TLS";
-        case CAPTURE_PACKET_SIP_WS:
+        case PACKET_SIP_WS:
             return "WS";
-        case CAPTURE_PACKET_SIP_WSS:
+        case PACKET_SIP_WSS:
             return "WSS";
     }
     return "";

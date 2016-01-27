@@ -274,7 +274,7 @@ void
 stream_set_format(rtp_stream_t *stream, uint32_t format);
 
 void
-stream_add_packet(rtp_stream_t *stream, capture_packet_t *packet);
+stream_add_packet(rtp_stream_t *stream, packet_t *packet);
 
 uint32_t
 stream_get_count(rtp_stream_t *stream);
@@ -289,7 +289,7 @@ const char *
 rtp_get_standard_format(uint32_t code);
 
 rtp_stream_t *
-rtp_check_packet(capture_packet_t *packet);
+rtp_check_packet(packet_t *packet);
 
 rtp_stream_t *
 rtp_find_stream(const char *ip_src, uint16_t sport, const char *ip_dst, uint16_t dport, uint32_t format);

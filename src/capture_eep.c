@@ -141,7 +141,7 @@ capture_eep_init()
 void *
 accept_eep_client(void *data)
 {
-    capture_packet_t *pkt;
+    packet_t *pkt;
 
     // Begin accepting connections
     while (eep_cfg.server_sock > 0) {
@@ -150,7 +150,7 @@ accept_eep_client(void *data)
             // Avoid parsing while screen in being redrawn
             capture_lock();
             if (capture_packet_parse(pkt) != 0) {
-                capture_packet_destroy(pkt);
+                packet_destroy(pkt);
             }
             capture_unlock();
         }
@@ -175,10 +175,10 @@ capture_eep_deinit()
 }
 
 int
-capture_eep_send(capture_packet_t *pkt)
+capture_eep_send(packet_t *pkt)
 {
     // Dont send RTP packets
-    if (pkt->type == CAPTURE_PACKET_RTP)
+    if (pkt->type == PACKET_RTP)
         return 1;
 
     // Check we have a connection established
@@ -195,7 +195,7 @@ capture_eep_send(capture_packet_t *pkt)
 }
 
 int
-capture_eep_send_v2(capture_packet_t *pkt)
+capture_eep_send_v2(packet_t *pkt)
 {
     void* buffer;
     uint32_t buflen = 0, tlen = 0;
@@ -205,9 +205,9 @@ capture_eep_send_v2(capture_packet_t *pkt)
 #ifdef USE_IPV6
     struct hep_ip6hdr hep_ip6header;
 #endif
-    unsigned char *data = capture_packet_get_payload(pkt);
-    uint32_t len = capture_packet_get_payload_len(pkt);
-    capture_frame_t *frame = vector_first(pkt->frames);
+    unsigned char *data = packet_payload(pkt);
+    uint32_t len = packet_payloadlen(pkt);
+    frame_t *frame = vector_first(pkt->frames);
 
     /* Version && proto */
     hdr.hp_v = 2;
@@ -286,7 +286,7 @@ capture_eep_send_v2(capture_packet_t *pkt)
 }
 
 int
-capture_eep_send_v3(capture_packet_t *pkt)
+capture_eep_send_v3(packet_t *pkt)
 {
     struct hep_generic *hg = NULL;
     void* buffer;
@@ -297,9 +297,9 @@ capture_eep_send_v3(capture_packet_t *pkt)
 #endif
     hep_chunk_t payload_chunk;
     hep_chunk_t authkey_chunk;
-    capture_frame_t *frame = vector_first(pkt->frames);
-    unsigned char *data = capture_packet_get_payload(pkt);
-    uint32_t len = capture_packet_get_payload_len(pkt);
+    frame_t *frame = vector_first(pkt->frames);
+    unsigned char *data = packet_payload(pkt);
+    uint32_t len = packet_payloadlen(pkt);
 
     hg = sng_malloc(sizeof(struct hep_generic));
 
@@ -469,7 +469,7 @@ capture_eep_send_v3(capture_packet_t *pkt)
     return 0;
 }
 
-capture_packet_t *
+packet_t *
 capture_eep_receive()
 {
     switch (eep_cfg.capt_srv_version) {
@@ -481,7 +481,7 @@ capture_eep_receive()
     return NULL;
 }
 
-capture_packet_t *
+packet_t *
 capture_eep_receive_v2()
 {
     uint8_t family, proto;
@@ -495,7 +495,7 @@ capture_eep_receive_v2()
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
-    capture_packet_t *pkt;
+    packet_t *pkt;
     //! EEP client data
     struct sockaddr eep_client;
     socklen_t eep_client_len;
@@ -565,11 +565,11 @@ capture_eep_receive_v2()
     memcpy(payload, (void*) buffer + pos, header.caplen);
 
     // Create a new packet
-    pkt = capture_packet_create((family == AF_INET) ? 4 : 6, proto, ip_src, ip_dst, 0);
-    capture_packet_add_frame(pkt, &header, payload);
-    capture_packet_set_transport_data(pkt, sport, dport);
-    capture_packet_set_type(pkt, CAPTURE_PACKET_SIP_UDP);
-    capture_packet_set_payload(pkt, payload, header.caplen);
+    pkt = packet_create((family == AF_INET) ? 4 : 6, proto, ip_src, ip_dst, 0);
+    packet_add_frame(pkt, &header, payload);
+    packet_set_transport_data(pkt, sport, dport);
+    packet_set_type(pkt, PACKET_SIP_UDP);
+    packet_set_payload(pkt, payload, header.caplen);
 
     /* FREE */
     sng_free(payload);
@@ -577,7 +577,7 @@ capture_eep_receive_v2()
 
 }
 
-capture_packet_t *
+packet_t *
 capture_eep_receive_v3()
 {
 
@@ -605,7 +605,7 @@ capture_eep_receive_v3()
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
-    capture_packet_t *pkt;
+    packet_t *pkt;
 
     /* Receive EEP generic header */
     if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, &eep_client, &eep_client_len) == -1)
@@ -689,11 +689,11 @@ capture_eep_receive_v3()
     memcpy(payload, (void*) buffer + pos, header.caplen);
 
     // Create a new packet
-    pkt = capture_packet_create((family == AF_INET)?4:6, proto, ip_src, ip_dst, 0);
-    capture_packet_add_frame(pkt, &header, payload);
-    capture_packet_set_transport_data(pkt, sport, dport);
-    capture_packeet_set_type(pkt, CAPTURE_PACKET_SIP_UDP);
-    capture_packet_set_payload(pkt, payload, header.caplen);
+    pkt = packet_create((family == AF_INET)?4:6, proto, ip_src, ip_dst, 0);
+    packet_add_frame(pkt, &header, payload);
+    packet_set_transport_data(pkt, sport, dport);
+    capture_packeet_set_type(pkt, PACKET_SIP_UDP);
+    packet_set_payload(pkt, payload, header.caplen);
 
     /* FREE */
     sng_free(payload);

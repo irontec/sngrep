@@ -49,7 +49,7 @@ call_create(char *callid, char *xcallid)
     // Create an empty vector to store rtp packets
     if (setting_enabled(SETTING_CAPTURE_RTP)) {
         call->rtp_packets = vector_create(0, 40);
-        vector_set_destroyer(call->rtp_packets, capture_packet_destroyer);
+        vector_set_destroyer(call->rtp_packets, packet_destroyer);
     }
 
     // Create an empty vector to strore stream data
@@ -103,7 +103,7 @@ call_add_stream(sip_call_t *call, rtp_stream_t *stream)
 }
 
 void
-call_add_rtp_packet(sip_call_t *call, capture_packet_t *packet)
+call_add_rtp_packet(sip_call_t *call, packet_t *packet)
 {
     vector_append(call->rtp_packets, packet);
 }

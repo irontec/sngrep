@@ -47,7 +47,7 @@ msg_destroy(sip_msg_t *msg)
     // Free message SDP media
     vector_destroy(msg->medias);
     // Free message packets
-    capture_packet_destroy(msg->packet);
+    packet_destroy(msg->packet);
     // Free all memory
     sng_free(msg->sip_from);
     sng_free(msg->sip_to);
@@ -97,13 +97,13 @@ msg_add_media(sip_msg_t *msg, sdp_media_t *media)
 const char *
 msg_get_payload(sip_msg_t *msg)
 {
-    return (const char *) capture_packet_get_payload(msg->packet);
+    return (const char *) packet_payload(msg->packet);
 }
 
 struct timeval
 msg_get_time(sip_msg_t *msg) {
     struct timeval t = { };
-    capture_frame_t *frame;
+    frame_t *frame;
 
     if (msg && (frame = vector_first(msg->packet->frames)))
         return frame->header->ts;

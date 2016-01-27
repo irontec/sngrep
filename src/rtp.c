@@ -97,10 +97,10 @@ stream_set_format(rtp_stream_t *stream, uint32_t format)
 }
 
 void
-stream_add_packet(rtp_stream_t *stream, capture_packet_t *packet)
+stream_add_packet(rtp_stream_t *stream, packet_t *packet)
 {
     if (stream->pktcnt == 0)
-        stream->time = capture_packet_get_time(packet);
+        stream->time = packet_time(packet);
 
     stream->pktcnt++;
 }
@@ -155,7 +155,7 @@ rtp_get_standard_format(uint32_t code)
 }
 
 rtp_stream_t *
-rtp_check_packet(capture_packet_t *packet)
+rtp_check_packet(packet_t *packet)
 {
     const char *src, *dst;
     uint16_t sport, dport;
@@ -172,8 +172,8 @@ rtp_check_packet(capture_packet_t *packet)
     struct rtcp_blk_xr_voip blk_xr_voip;
 
     // Get packet data
-    payload = capture_packet_get_payload(packet);
-    size = capture_packet_get_payload_len(packet);
+    payload = packet_payload(packet);
+    size = packet_payloadlen(packet);
 
     // Get Addresses from packet
     src = packet->ip_src;
@@ -205,7 +205,7 @@ rtp_check_packet(capture_packet_t *packet)
         // We have found a stream, but with different format
         if (stream_is_complete(stream) && stream->rtpinfo.fmtcode != format) {
             // Create a new stream for this new format
-            stream = stream_create(stream->media, dst, dport, CAPTURE_PACKET_RTP);
+            stream = stream_create(stream->media, dst, dport, PACKET_RTP);
             stream_complete(stream, src, sport);
             stream_set_format(stream, format);
             call_add_stream(msg_get_call(stream->media->msg), stream);
@@ -217,7 +217,7 @@ rtp_check_packet(capture_packet_t *packet)
             stream_set_format(stream, format);
             // Check if an stream in the opposite direction exists
             if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->ip_dst, stream->dport,  stream->ip_src,  stream->sport))) {
-                reverse = stream_create(stream->media, stream->ip_src, stream->sport, CAPTURE_PACKET_RTP);
+                reverse = stream_create(stream->media, stream->ip_src, stream->sport, PACKET_RTP);
                 stream_complete(reverse, stream->ip_dst, stream->dport);
                 stream_set_format(reverse, format);
                 call_add_stream(msg_get_call(stream->media->msg), reverse);

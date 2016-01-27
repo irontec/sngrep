@@ -61,7 +61,7 @@ struct sip_msg {
     //! SDP payload information (sdp_media_t *)
     vector_t *medias;
     //! Captured packet for this message
-    capture_packet_t *packet;
+    packet_t *packet;
     //! Index of this message in call
     uint32_t index;
     //! Message owner

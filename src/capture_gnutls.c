@@ -252,11 +252,11 @@ tls_connection_find(struct in_addr addr, uint16_t port) {
 }
 
 int
-tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp)
+tls_process_segment(packet_t *packet, struct tcphdr *tcp)
 {
     struct SSLConnection *conn;
-    const u_char *payload = capture_packet_get_payload(packet);
-    uint32_t size_payload = capture_packet_get_payload_len(packet);
+    const u_char *payload = packet_payload(packet);
+    uint32_t size_payload = packet_payloadlen(packet);
     uint8_t *out;
     uint32_t outl = packet->payload_len;
     out = sng_malloc(outl);
@@ -290,8 +290,8 @@ tls_process_segment(capture_packet_t *packet, struct tcphdr *tcp)
                 // Process data segment!
                 if (tls_process_record(conn, payload, size_payload, &out, &outl) == 0) {
                     if ((int32_t) outl > 0) {
-                        capture_packet_set_payload(packet, out, outl);
-                        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_TLS);
+                        packet_set_payload(packet, out, outl);
+                        packet_set_type(packet, PACKET_SIP_TLS);
                         return 0;
                     }
                 }

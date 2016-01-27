@@ -863,7 +863,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
         // Look for the next stream
         while ((stream = call_group_get_next_stream(info->group, stream))) {
             // Only handle RTCP when required
-            if (!setting_has_value(SETTING_CF_MEDIA, "rtcp") && stream->type == CAPTURE_PACKET_RTCP)
+            if (!setting_has_value(SETTING_CF_MEDIA, "rtcp") && stream->type == PACKET_RTCP)
                 continue;
 
             if (timeval_is_older(stream->time, cur_time)) {
@@ -879,7 +879,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
     if (!msg) {
         // Create a new arrow to store next info
         next = sng_malloc(sizeof(call_flow_arrow_t));
-        next->type = (stream->type == CAPTURE_PACKET_RTP) ? CF_ARROW_RTP : CF_ARROW_RTCP;
+        next->type = (stream->type == PACKET_RTP) ? CF_ARROW_RTP : CF_ARROW_RTCP;
         next->stream = stream;
     } else if (!stream) {
         /* a sip message goes next */
@@ -892,7 +892,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
         if (timeval_is_older(msg_get_time(msg), stream->time)) {
             // Create a new arrow to store next info
             next = sng_malloc(sizeof(call_flow_arrow_t));
-            next->type = (stream->type == CAPTURE_PACKET_RTP) ? CF_ARROW_RTP : CF_ARROW_RTCP;
+            next->type = (stream->type == PACKET_RTP) ? CF_ARROW_RTP : CF_ARROW_RTCP;
             next->stream = stream;
         } else {
             // Create a new arrow to store next info

@@ -164,7 +164,7 @@ sip_get_xcallid(const char* payload, char *xcallid);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_check_packet(capture_packet_t *packet);
+sip_check_packet(packet_t *packet);
 
 /**
  * @brief Getter for calls linked list size

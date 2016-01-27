@@ -91,9 +91,9 @@ capture_deinit()
     // Deallocate vectors
     vector_set_destroyer(capture_cfg.sources, vector_generic_destroyer);
     vector_destroy(capture_cfg.sources);
-    vector_set_destroyer(capture_cfg.tcp_reasm, capture_packet_destroyer);
+    vector_set_destroyer(capture_cfg.tcp_reasm, packet_destroyer);
     vector_destroy(capture_cfg.tcp_reasm);
-    vector_set_destroyer(capture_cfg.ip_reasm, capture_packet_destroyer);
+    vector_set_destroyer(capture_cfg.ip_reasm, packet_destroyer);
     vector_destroy(capture_cfg.ip_reasm);
 
     // Remove capture mutex
@@ -233,7 +233,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     // Packet payload size
     uint32_t size_payload =  size_capture - capinfo->link_hl;
     // Captured packet info
-    capture_packet_t *pkt;
+    packet_t *pkt;
 
     // Ignore packets while capture is paused
     if (capture_paused())
@@ -274,9 +274,9 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         payload = (u_char *) (udp) + udp_off;
 
         // Complete packet with Transport information
-        capture_packet_set_transport_data(pkt, sport, dport);
-        capture_packet_set_type(pkt, CAPTURE_PACKET_SIP_UDP);
-        capture_packet_set_payload(pkt, payload, size_payload);
+        packet_set_transport_data(pkt, sport, dport);
+        packet_set_type(pkt, PACKET_SIP_UDP);
+        packet_set_payload(pkt, payload, size_payload);
 
     } else if (pkt->proto == IPPROTO_TCP) {
         // Get TCP header
@@ -297,9 +297,9 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         payload = (u_char *)(tcp) + tcp_off;
 
         // Complete packet with Transport information
-        capture_packet_set_transport_data(pkt, sport, dport);
-        capture_packet_set_type(pkt, CAPTURE_PACKET_SIP_TCP);
-        capture_packet_set_payload(pkt, payload, size_payload);
+        packet_set_transport_data(pkt, sport, dport);
+        packet_set_type(pkt, PACKET_SIP_TCP);
+        packet_set_payload(pkt, payload, size_payload);
 
         // Create a structure for this captured packet
         if (!(pkt = capture_packet_reasm_tcp(pkt, tcp, payload, size_payload)))
@@ -315,7 +315,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         capture_ws_check_packet(pkt);
     } else {
         // Not handled protocol
-        capture_packet_destroy(pkt);
+        packet_destroy(pkt);
         return;
     }
 
@@ -332,7 +332,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         dump_packet(capture_cfg.pd, pkt);
         // If storage is disabled, delete frames payload
         if (capture_cfg.storage == 0) {
-            capture_packet_free_frames(pkt);
+            packet_free_frames(pkt);
         }
         // Allow Interface refresh and user input actions
         capture_unlock();
@@ -340,12 +340,12 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     }
 
     // Not an interesting packet ...
-    capture_packet_destroy(pkt);
+    packet_destroy(pkt);
     // Allow Interface refresh and user input actions
     capture_unlock();
 }
 
-capture_packet_t *
+packet_t *
 capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char *packet, uint32_t *size, uint32_t *caplen)
 {
     // IP header data
@@ -377,9 +377,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     //! Common interator for vectors
     vector_iter_t it;
     //! Packet containers
-    capture_packet_t *pkt;
+    packet_t *pkt;
     //! Storage for IP frame
-    capture_frame_t *frame;
+    frame_t *frame;
     uint32_t len_data = 0;
 
     // Get IP header
@@ -437,8 +437,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // If no fragmentation
     if (ip_frag == 0) {
         // Just create a new packet with given network data
-        pkt = capture_packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
-        capture_packet_add_frame(pkt, header, packet);
+        pkt = packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
+        packet_add_frame(pkt, header, packet);
         return pkt;
     }
 
@@ -451,11 +451,11 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 
     // If we already have this packet stored, append this frames to existing one
     if (pkt) {
-        capture_packet_add_frame(pkt, header, packet);
+        packet_add_frame(pkt, header, packet);
     } else {
         // Add To the possible reassembly list
-        pkt = capture_packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
-        capture_packet_add_frame(pkt, header, packet);
+        pkt = packet_create(ip_ver, ip_proto, ip_src, ip_dst, ip_id);
+        packet_add_frame(pkt, header, packet);
         vector_append(capture_cfg.ip_reasm, pkt);
         return NULL;
     }
@@ -497,11 +497,11 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     return NULL;
 }
 
-capture_packet_t *
-capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload) {
+packet_t *
+capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload) {
 
     vector_iter_t it = vector_iterator(capture_cfg.tcp_reasm);
-    capture_packet_t *pkt;
+    packet_t *pkt;
     u_char *new_payload;
 
     //! Assembled
@@ -516,13 +516,13 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
 
     // If we already have this packet stored
     if (pkt) {
-        capture_frame_t *frame;
+        frame_t *frame;
         // Append this frames to the original packet
         vector_iter_t frames = vector_iterator(packet->frames);
         while ((frame = vector_iterator_next(&frames)))
-            capture_packet_add_frame(pkt, frame->header, frame->data);
+            packet_add_frame(pkt, frame->header, frame->data);
         // Destroy current packet as its frames belong to the stored packet
-        capture_packet_destroy(packet);
+        packet_destroy(packet);
     } else {
         // First time this packet has been seen
         pkt = packet;
@@ -533,11 +533,11 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
     // If the first frame of this packet
     if (vector_count(pkt->frames) == 1) {
         // Set initial payload
-        capture_packet_set_payload(pkt, payload, size_payload);
+        packet_set_payload(pkt, payload, size_payload);
     } else {
         // Check payload length. Dont handle too big payload packets
         if (pkt->payload_len + size_payload > MAX_CAPTURE_LEN) {
-            capture_packet_destroy(pkt);
+            packet_destroy(pkt);
             vector_remove(capture_cfg.tcp_reasm, pkt);
             return NULL;
         }
@@ -546,7 +546,7 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
         new_payload = sng_malloc(pkt->payload_len + size_payload);
         memcpy(new_payload, pkt->payload, pkt->payload_len);
         memcpy(new_payload + pkt->payload_len, payload, size_payload);
-        capture_packet_set_payload(pkt, new_payload, pkt->payload_len + size_payload);
+        packet_set_payload(pkt, new_payload, pkt->payload_len + size_payload);
         sng_free(new_payload);
     }
 
@@ -560,7 +560,7 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
 }
 
 int
-capture_ws_check_packet(capture_packet_t *packet)
+capture_ws_check_packet(packet_t *packet)
 {
     int ws_off = 0;
     u_char ws_fin;
@@ -595,8 +595,8 @@ capture_ws_check_packet(capture_packet_t *packet)
      */
 
     // Get payload from packet(s)
-    size_payload = capture_packet_get_payload_len(packet);
-    payload = capture_packet_get_payload(packet);
+    size_payload = packet_payloadlen(packet);
+    payload = packet_payload(packet);
 
     // Check we have payload
     if (size_payload == 0)
@@ -648,27 +648,27 @@ capture_ws_check_packet(capture_packet_t *packet)
             newpayload[i] = newpayload[i] ^ ws_mask_key[i % 4];
     }
     // Set new packet payload into the packet
-    capture_packet_set_payload(packet, newpayload, size_payload);
+    packet_set_payload(packet, newpayload, size_payload);
     // Free the new payload
     sng_free(newpayload);
 
-    if (packet->type == CAPTURE_PACKET_SIP_TLS) {
-        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WSS);
+    if (packet->type == PACKET_SIP_TLS) {
+        packet_set_type(packet, PACKET_SIP_WSS);
     } else {
-        capture_packet_set_type(packet, CAPTURE_PACKET_SIP_WS);
+        packet_set_type(packet, PACKET_SIP_WS);
     }
     return 1;
 }
 
 
 int
-capture_packet_parse(capture_packet_t *packet)
+capture_packet_parse(packet_t *packet)
 {
     // Media structure for RTP packets
     rtp_stream_t *stream;
 
     // We're only interested in packets with payload
-    if (capture_packet_get_payload_len(packet)) {
+    if (packet_payloadlen(packet)) {
         // Parse this header and payload
         if (sip_check_packet(packet)) {
             return 0;
@@ -677,7 +677,7 @@ capture_packet_parse(capture_packet_t *packet)
         // Check if this packet belongs to a RTP stream
         if ((stream = rtp_check_packet(packet))) {
             // We have an RTP packet!
-            capture_packet_set_type(packet, CAPTURE_PACKET_RTP);
+            packet_set_type(packet, PACKET_RTP);
             // Store this pacekt if capture rtp is enabled
             if (capture_cfg.rtp_capture) {
                 call_add_rtp_packet(stream_get_call(stream), packet);
@@ -864,137 +864,6 @@ capture_unlock()
     pthread_mutex_unlock(&capture_cfg.lock);
 }
 
-capture_packet_t *
-capture_packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id)
-{
-    // Create a new packet
-    capture_packet_t *packet;
-    packet = sng_malloc(sizeof(capture_packet_t));
-    packet->ip_version = ip_ver;
-    packet->proto = proto;
-    packet->frames = vector_create(1, 1);
-    packet->ip_id = id;
-    memcpy(packet->ip_src, ip_src, ADDRESSLEN);
-    memcpy(packet->ip_dst, ip_dst, ADDRESSLEN);
-    return packet;
-}
-
-void
-capture_packet_destroy(capture_packet_t *packet)
-{
-    capture_frame_t *frame;
-
-    // Check we have a valid packet pointer
-    if (!packet) return;
-
-    // TODO frame destroyer?
-    vector_iter_t it = vector_iterator(packet->frames);
-    while ((frame = vector_iterator_next(&it))) {
-        sng_free(frame->header);
-        sng_free(frame->data);
-    }
-
-    // Free remaining packet data
-    vector_set_destroyer(packet->frames, vector_generic_destroyer);
-    vector_destroy(packet->frames);
-    sng_free(packet->payload);
-    sng_free(packet);
-}
-
-void
-capture_packet_destroyer(void *packet)
-{
-    capture_packet_destroy((capture_packet_t*) packet);
-}
-
-void
-capture_packet_free_frames(capture_packet_t *pkt)
-{
-    capture_frame_t *frame;
-    vector_iter_t it = vector_iterator(pkt->frames);
-
-    while ((frame = vector_iterator_next(&it))) {
-        sng_free(frame->data);
-        frame->data = NULL;
-    }
-}
-
-capture_packet_t *
-capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport)
-{
-    pkt->sport = sport;
-    pkt->dport = dport;
-    return pkt;
-}
-
-capture_frame_t *
-capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header, const u_char *packet)
-{
-    capture_frame_t *frame;
-
-    // Add frame to this packet
-    frame = sng_malloc(sizeof(capture_frame_t));
-    frame->header = sng_malloc(sizeof(struct pcap_pkthdr));
-    memcpy(frame->header, header, sizeof(struct pcap_pkthdr));
-    frame->data = sng_malloc(header->caplen);
-    memcpy(frame->data, packet, header->caplen);
-    vector_append(pkt->frames, frame);
-    return frame;
-}
-
-void
-capture_packet_set_type(capture_packet_t *packet, enum capture_packet_type type)
-{
-    packet->type = type;
-}
-
-void
-capture_packet_set_payload(capture_packet_t *packet, u_char *payload, uint32_t payload_len)
-{
-
-    // Free previous payload
-    sng_free(packet->payload);
-    packet->payload_len = 0;
-
-    // Set new payload
-    if (payload) {
-        packet->payload = sng_malloc(payload_len + 1);
-        memset(packet->payload, 0, payload_len + 1);
-        memcpy(packet->payload, payload, payload_len);
-        packet->payload_len = payload_len;
-    }
-
-}
-
-uint32_t
-capture_packet_get_payload_len(capture_packet_t *packet)
-{
-    return packet->payload_len;
-}
-
-u_char *
-capture_packet_get_payload(capture_packet_t *packet)
-{
-    return packet->payload;
-}
-
-struct timeval
-capture_packet_get_time(capture_packet_t *packet)
-{
-    capture_frame_t *first;
-    struct timeval ts = { 0 };
-
-    // Sanity check
-    if (!packet)
-        return ts;
-
-    // Return first frame timestamp
-    if ((first = vector_first(packet->frames)))
-        ts = first->header->ts;
-
-    // Return packe timestamp
-    return ts;
-}
 
 
 void
@@ -1005,8 +874,8 @@ capture_packet_time_sorter(vector_t *vector, void *item)
     int i;
 
     // TODO Implement multiframe packets
-    curts = capture_packet_get_time(item);
-    prevts = capture_packet_get_time(vector_last(vector));
+    curts = packet_time(item);
+    prevts = packet_time(vector_last(vector));
 
     // Check if the item is already sorted
     if (timeval_is_older(curts, prevts)) {
@@ -1015,7 +884,7 @@ capture_packet_time_sorter(vector_t *vector, void *item)
 
     for (i = count - 2 ; i >= 0; i--) {
         // Get previous packet
-        prevts = capture_packet_get_time(vector_item(vector, i));
+        prevts = packet_time(vector_item(vector, i));
         // Check if the item is already in a sorted position
         if (timeval_is_older(curts, prevts)) {
             vector_insert(vector, item, i + 1);
@@ -1082,13 +951,13 @@ dump_open(const char *dumpfile)
 }
 
 void
-dump_packet(pcap_dumper_t *pd, const capture_packet_t *packet)
+dump_packet(pcap_dumper_t *pd, const packet_t *packet)
 {
     if (!pd || !packet)
         return;
 
     vector_iter_t it = vector_iterator(packet->frames);
-    capture_frame_t *frame;
+    frame_t *frame;
     while ((frame = vector_iterator_next(&it))) {
         pcap_dump((u_char*) pd, frame->header, frame->data);
     }

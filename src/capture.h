@@ -69,19 +69,8 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <stdbool.h>
+#include "packet.h"
 #include "vector.h"
-
-#ifdef USE_IPV6
-#ifdef INET6_ADDRSTRLEN
-#define ADDRESSLEN INET6_ADDRSTRLEN
-#else
-#define ADDRESSLEN 46
-#endif
-#else
-#define ADDRESSLEN INET_ADDRSTRLEN
-#endif
-
-#define ADDRESSPORTLEN ADDRESSLEN + 6
 
 //! Max allowed packet assembled size
 #define MAX_CAPTURE_LEN 20480
@@ -108,27 +97,13 @@ enum capture_storage {
     CAPTURE_STORAGE_DISK
 };
 
-//! Stored packet types
-enum capture_packet_type {
-    CAPTURE_PACKET_SIP_UDP = 0,
-    CAPTURE_PACKET_SIP_TCP,
-    CAPTURE_PACKET_SIP_TLS,
-    CAPTURE_PACKET_SIP_WS,
-    CAPTURE_PACKET_SIP_WSS,
-    CAPTURE_PACKET_RTP,
-    CAPTURE_PACKET_RTCP,
-};
-
 //! Shorter declaration of capture_config structure
 typedef struct capture_config capture_config_t;
 //; Shorter declaration of capture_info structure
 typedef struct capture_info capture_info_t;
 //! Shorter declaration of dns_cache structure
 typedef struct dns_cache dns_cache_t;
-//! Shorter declaration of capture_packet structure
-typedef struct capture_packet capture_packet_t;
-//! Shorter declaration of capture_frame structure
-typedef struct capture_frame capture_frame_t;
+
 
 /**
  * @brief Storage for DNS resolved ips
@@ -199,50 +174,6 @@ struct capture_info
     pthread_t capture_t;
 };
 
-/**
- * Packet capture data.
- *
- * One packet can contain more than one frame after
- * assembly. We assume than one SIP message has one packet
- * (maybe in multiple frames) and that one packet can only contain
- *  one SIP message.
- *
- */
-struct capture_packet {
-    // IP protocol
-    uint8_t ip_version;
-    // Transport protocol
-    uint8_t proto;
-    // Packet type as defined in capture_packet_type
-    enum capture_packet_type type;
-    // Packet source IP address
-    char ip_src[ADDRESSLEN];
-    // Packet destination IP address
-    char ip_dst[ADDRESSLEN];
-    // Packet source port
-    uint16_t sport;
-    // Packet destination port
-    uint16_t dport;
-    //! Packet IP id
-    uint16_t ip_id;
-    //! PCAP Packet payload when it can not be get from data
-    u_char *payload;
-    //! Payload length
-    uint32_t payload_len;
-    //! Packet frame list (capture_frame_t)
-    vector_t *frames;
-};
-
-/**
- *  Capture frame.
- *  One packet can contain multiple frames.
- */
-struct capture_frame {
-    //! PCAP Frame Header data
-    struct pcap_pkthdr *header;
-    //! PCAP Frame content
-    u_char *data;
-};
 
 /**
  * @brief Initialize capture data
@@ -319,7 +250,7 @@ parse_packet(u_char *capinfo, const struct pcap_pkthdr *header, const u_char *pa
  * @return a Packet structure when packet is not fragmented or fully reassembled
  * @return NULL when packet has not been completely assembled
  */
-capture_packet_t *
+packet_t *
 capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header,
                         u_char *packet, uint32_t *size, uint32_t *caplen);
 
@@ -339,8 +270,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
  * @return a Packet structure when packet is not segmented or fully reassembled
  * @return NULL when packet has not been completely assembled
  */
-capture_packet_t *
-capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp,
+packet_t *
+capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp,
                          u_char *payload, int size_payload);
 
 /**
@@ -353,7 +284,7 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp,
  * @return 0 if packet is websocket, 1 otherwise
  */
 int
-capture_ws_check_packet(capture_packet_t *packet);
+capture_ws_check_packet(packet_t *packet);
 
 /**
  * @brief Check if the given packet structure is SIP/RTP/..
@@ -364,7 +295,7 @@ capture_ws_check_packet(capture_packet_t *packet);
  * @return 1 otherwise
  */
 int
-capture_packet_parse(capture_packet_t *pkt);
+capture_packet_parse(packet_t *pkt);
 
 /**
  * @brief Create a capture thread for online mode
@@ -472,73 +403,6 @@ void
 capture_unlock();
 
 /**
- * @brief Allocate memory to store new packet data
- */
-capture_packet_t *
-capture_packet_create(uint8_t ip_ver, uint8_t proto, const char *ip_src, const char *ip_dst, uint32_t id);
-
-/**
- * @brief Set Transport layer information
- */
-capture_packet_t *
-capture_packet_set_transport_data(capture_packet_t *pkt, uint16_t sport, uint16_t dport);
-/**
- * @brief Add a new frame to the given packet
- */
-capture_frame_t *
-capture_packet_add_frame(capture_packet_t *pkt, const struct pcap_pkthdr *header, const u_char *packet);
-
-/**
- * @brief Deallocate a packet structure memory
- */
-void
-capture_packet_destroy(capture_packet_t *packet);
-
-/**
- * @brief Destroyer function for packet vectors
- */
-void
-capture_packet_destroyer(void *packet);
-
-/**
- * @brief Free packet frames data.
- *
- * This can be used to avoid storing packet payload in memory or disk
- */
-void
-capture_packet_free_frames(capture_packet_t *pkt);
-
-/**
- * @brief Set packet type
- */
-void
-capture_packet_set_type(capture_packet_t *packet, enum capture_packet_type type);
-
-/**
- * @brief Set packet payload when it can not be get from packet
- */
-void
-capture_packet_set_payload(capture_packet_t *packet, u_char *payload, uint32_t payload_len);
-
-/**
- * @brief Getter for capture payload size
- */
-uint32_t
-capture_packet_get_payload_len(capture_packet_t *packet);
-
-/**
- * @brief Getter for capture payload pointer
- */
-u_char *
-capture_packet_get_payload(capture_packet_t *packet);
-
-/**
- * @brief Get The timestamp for a packet.
- */
-struct timeval
-capture_packet_get_time(capture_packet_t *packet);
-
-/**
  * @brief Sorter by time for captured packets
  */
 void
@@ -569,7 +433,7 @@ dump_open(const char *dumpfile);
  * File must be previously opened with dump_open
  */
 void
-dump_packet(pcap_dumper_t *pd, const capture_packet_t *packet);
+dump_packet(pcap_dumper_t *pd, const packet_t *packet);
 
 /**
  * @brief Close a dump file
