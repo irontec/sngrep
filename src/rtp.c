@@ -340,8 +340,14 @@ rtp_find_call_stream(struct sip_call *call, const char *ip_src, uint16_t sport, 
     // Look for an incomplete stream with this destination
     vector_iterator_set_last(&it);
     while ((stream = vector_iterator_prev(&it))) {
-        if (!strcmp(ip_dst, stream->ip_dst) && dport == stream->dport && !stream->pktcnt) {
-            return stream;
+        if (!strcmp(ip_dst, stream->ip_dst) && dport == stream->dport) {
+            if (!ip_src && !sport) {
+                return stream;
+            } else {
+                if (!stream->pktcnt) {
+                    return stream;
+                }
+            }
         }
     }
 
