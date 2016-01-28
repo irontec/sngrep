@@ -48,6 +48,12 @@ sng_malloc(size_t size);
 void
 sng_free(void *ptr);
 
+/*
+ * @brief Generic implementation of basename
+ */
+char *
+sng_basename(const char *name);
+
 /**
  * @brief Compare two timeval structures
  *

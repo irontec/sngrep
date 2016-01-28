@@ -60,6 +60,20 @@ sng_free(void *ptr)
         free(ptr);
 }
 
+char *
+sng_basename(const char *name)
+{
+    const char *base = name;
+
+    while (*name)
+    {
+        if (*name++ == '/') {
+            base = name;
+        }
+    }
+    return (char *) base;
+}
+
 int
 timeval_is_older(struct timeval t1, struct timeval t2)
 {
