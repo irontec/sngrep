@@ -46,6 +46,7 @@
 #include "sip.h"
 #include "rtp.h"
 #include "setting.h"
+#include "util.h"
 
 // Capture information
 capture_config_t capture_cfg =
@@ -813,7 +814,7 @@ capture_get_infile()
     if (vector_count(capture_cfg.sources) == 1) {
         capinfo = vector_first(capture_cfg.sources);
         if (capinfo->infile) {
-            return basename(capinfo->infile);
+            return sng_basename(capinfo->infile);
         } else {
             return NULL;
         }
