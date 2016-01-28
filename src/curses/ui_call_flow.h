@@ -110,7 +110,7 @@ struct call_flow_column {
     //! Address header for this column
     address_t addr;
     //! Alias for the given address
-    char alias[ADDRESSPORTLEN];
+    char alias[MAX_SETTING_LEN];
     //! Call Ids
     const char *callid;
     const char *callid2;

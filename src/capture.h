@@ -122,8 +122,6 @@ struct capture_config {
     struct bpf_program fp;
     //! libpcap dump file handler
     pcap_dumper_t *pd;
-    //! Local devices pointer
-    pcap_if_t *devices;
     //! Capture sources
     vector_t *sources;
     //! Packets pending IP reassembly
@@ -423,15 +421,6 @@ dump_packet(pcap_dumper_t *pd, const packet_t *packet);
  */
 void
 dump_close(pcap_dumper_t *pd);
-
-/**
- * @brief Check if a given address belongs to a local device
- *
- * @param address IPv4 string format for address
- * @return 1 if address is local, 0 otherwise
- */
-int
-is_local_address_str(address_t addr);
 
 /**
  * @brief Check if a given address belongs to a local device

@@ -142,9 +142,6 @@ capture_online(const char *dev, const char *outfile)
         return 3;
     }
 
-    // Get Local devices addresses
-    pcap_findalldevs(&capture_cfg.devices, errbuf);
-
     // Add this capture information as packet source
     vector_append(capture_cfg.sources, capinfo);
 
@@ -971,30 +968,4 @@ dump_close(pcap_dumper_t *pd)
     if (!pd)
         return;
     pcap_dump_close(pd);
-}
-
-int
-is_local_address_str(address_t addr)
-{
-    char straddress[ADDRESSLEN], *end;
-    strcpy(straddress, addr.ip);
-    // If address comes with port, remove it
-    if ((end = strchr(straddress, ':')))
-        *end = '\0';
-    return is_local_address(inet_addr(straddress));
-}
-
-int
-is_local_address(in_addr_t address)
-{
-    pcap_if_t *device;
-    pcap_addr_t *dev_addr;
-
-    for (device = capture_cfg.devices; device; device = device->next) {
-        for (dev_addr = device->addresses; dev_addr; dev_addr = dev_addr->next)
-            if (dev_addr->addr && dev_addr->addr->sa_family == AF_INET
-                && ((struct sockaddr_in*) dev_addr->addr)->sin_addr.s_addr == address)
-                return 1;
-    }
-    return 0;
 }

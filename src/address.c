@@ -30,6 +30,10 @@
 #include "config.h"
 #include "address.h"
 #include <string.h>
+#include <pcap.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 bool
 addressport_equals(address_t addr1, address_t addr2)
@@ -41,4 +45,54 @@ bool
 address_equals(address_t addr1, address_t addr2)
 {
     return !strcmp(addr1.ip, addr2.ip);
+}
+
+bool
+address_is_local(address_t addr)
+{
+    //! Local devices pointer
+    static pcap_if_t *devices = 0;
+    pcap_if_t *dev;
+    pcap_addr_t *da;
+    char errbuf[PCAP_ERRBUF_SIZE];
+    struct sockaddr_in *ipaddr;
+#ifdef USE_IPV6
+    struct sockaddr_in6 *ip6addr;
+#endif
+    char ip[ADDRESSLEN];
+
+    // Get all network devices
+    if (!devices) {
+        // Get Local devices addresses
+        pcap_findalldevs(&devices, errbuf);
+    }
+
+    for (dev = devices; dev; dev = dev->next) {
+        for (da = dev->addresses; da ; da = da->next) {
+            // Ingore empty addresses
+            if (!da->addr)
+                continue;
+
+            // Get address representation
+            switch (da->addr->sa_family) {
+            case AF_INET:
+                ipaddr = (struct sockaddr_in *) da->addr;
+                inet_ntop(AF_INET, &ipaddr->sin_addr, ip, sizeof(ip));
+                break;
+#ifdef USE_IPV6
+            case AF_INET6:
+                ip6addr = (struct sockaddr_in6 *) da->addr;
+                inet_ntop(AF_INET, &ip6addr->sin6_addr, ip, sizeof(ip));
+                break;
+#endif
+            }
+
+            // Check if this address matches
+            if (!strcmp(addr.ip, ip)) {
+                return true;
+            }
+
+        }
+    }
+    return false;
 }

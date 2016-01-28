@@ -48,9 +48,6 @@
 #define ADDRESSLEN INET_ADDRSTRLEN
 #endif
 
-//! Address string Length (including colons and port)
-#define ADDRESSPORTLEN ADDRESSLEN + 6
-
 //! Shorter declaration of address structure
 typedef struct address address_t;
 
@@ -83,5 +80,14 @@ addressport_equals(address_t addr1, address_t addr2);
  */
 bool
 address_equals(address_t addr1, address_t addr2);
+
+/**
+ * @brief Check if a given IP address belongs to a local device
+ *
+ * @param address Address structure
+ * @return true if address is local, false otherwise
+ */
+bool
+address_is_local(address_t addr);
 
 #endif /* __SNGREP_ADDRESS_H */

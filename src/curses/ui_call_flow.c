@@ -286,7 +286,7 @@ call_flow_draw_columns(PANEL *panel)
     vector_iter_t streams;
     vector_iter_t columns;
     int flow_height, flow_width;
-    char coltext[ADDRESSPORTLEN];
+    char coltext[MAX_SETTING_LEN];
     address_t addr;
 
     // Get panel information
@@ -329,8 +329,10 @@ call_flow_draw_columns(PANEL *panel)
         mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
 
         // Set bold to this address if it's local
-        if (is_local_address_str(column->addr) && setting_enabled(SETTING_CF_LOCALHIGHLIGHT))
-            wattron(win, A_BOLD);
+        if (setting_enabled(SETTING_CF_LOCALHIGHLIGHT)) {
+            if (address_is_local(column->addr))
+                wattron(win, A_BOLD);
+        }
 
         if (setting_enabled(SETTING_CF_SPLITCALLID)) {
             sprintf(coltext, "%s", column->alias);
