@@ -48,8 +48,6 @@ static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_DATE,        "date",        NULL,   "Date",          10 },
     { SIP_ATTR_TIME,        "time",        NULL,   "Time",          8 },
     { SIP_ATTR_METHOD,      "method",      NULL,   "Method",        10, sip_attr_color_method },
-    { SIP_ATTR_SDP_ADDRESS, "sdpaddress",  NULL,   "SDP Address",   22 },
-    { SIP_ATTR_SDP_PORT,    "sdpport",     NULL,   "SDP Port",      5 },
     { SIP_ATTR_TRANSPORT,   "transport",   "Trans", "Transport",    3 },
     { SIP_ATTR_MSGCNT,      "msgcnt",      "Msgs", "Message Count", 5 },
     { SIP_ATTR_CALLSTATE,   "state",       NULL,   "Call State",    10, sip_attr_color_state },

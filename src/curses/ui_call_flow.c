@@ -355,17 +355,16 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     call_flow_info_t *info;
     WINDOW *win;
     sdp_media_t *media;
-    const char *msg_callid;
+    const char *callid;
     char msg_method[128];
     char msg_time[80];
-    address_t msg_src;
-    address_t msg_dst;
-    char sdp_address[80];
-    char sdp_port[80];
+    address_t src;
+    address_t dst;
     char method[80];
     char delta[15] = { };
     int height, width;
     char mediastr[40];
+    call_flow_column_t *column1, *column2;
     sip_msg_t *msg = arrow->msg;
     vector_iter_t medias;
     int color = 0;
@@ -373,7 +372,9 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     int arrow_dir = 0; /* 0: right, 1: left */
 
     // Get panel information
-    info = call_flow_info(panel);
+    if (!(info = call_flow_info(panel)))
+        return NULL;
+
     // Get the messages window
     win = info->flow_win;
     getmaxyx(win, height, width);
@@ -389,11 +390,12 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         return NULL;
 
     // Get message attributes
-    msg_callid = msg->call->callid;
-    msg_src = msg->packet->src;
-    msg_dst = msg->packet->dst;
+    callid = msg->call->callid;
+    src = msg->packet->src;
+    dst = msg->packet->dst;
+    media = vector_first(msg->medias);
     msg_get_attribute(msg, SIP_ATTR_METHOD, msg_method);
-    msg_get_attribute(msg, SIP_ATTR_TIME, msg_time);
+    timeval_to_time(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
     sprintf(method, "%s", msg_method);
@@ -415,23 +417,22 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     }
 
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
-        sprintf(method, "%.3s (%s:%s)",
+        sprintf(method, "%.3s (%s:%u)",
                 msg_method,
-                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS, sdp_address),
-                msg_get_attribute(msg, SIP_ATTR_SDP_PORT, sdp_port));
+                media->address.ip,
+                media->address.port);
     }
+
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        sprintf(method, "%.3s (%s)",
-                msg_method,
-                msg_get_attribute(msg, SIP_ATTR_SDP_ADDRESS, sdp_address));
+        sprintf(method, "%.3s (%s)", msg_method, media->address.ip);
     }
 
     // Draw message type or status and line
     msglen = (strlen(method) > 24) ? 24 : strlen(method);
 
     // Get origin and destination column
-    call_flow_column_t *column1 = call_flow_column_get(panel, msg_callid, msg_src);
-    call_flow_column_t *column2 = call_flow_column_get(panel, msg_callid, msg_dst);
+    column1 = call_flow_column_get(panel, callid, src);
+    column2 = call_flow_column_get(panel, callid, dst);
 
     call_flow_column_t *tmp;
     if (column1->colpos > column2->colpos) {
@@ -487,8 +488,8 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         medias = vector_iterator(msg->medias);
         while ((media = vector_iterator_next(&medias))) {
             sprintf(mediastr, "%s %d (%s)",
-                    media_get_type(media),
-                    media_get_port(media),
+                    media->type,
+                    media->address.port,
                     media_get_prefered_format(media));
             mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
         }

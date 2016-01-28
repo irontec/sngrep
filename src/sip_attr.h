@@ -68,10 +68,6 @@ enum sip_attr_id {
     SIP_ATTR_TIME,
     //! SIP Message Method or Response code
     SIP_ATTR_METHOD,
-    //! SDP Address
-    SIP_ATTR_SDP_ADDRESS,
-    //! SDP Port
-    SIP_ATTR_SDP_PORT,
     //! SIP Message transport
     SIP_ATTR_TRANSPORT,
     //! SIP Call message counter

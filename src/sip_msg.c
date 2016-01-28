@@ -113,7 +113,6 @@ msg_get_time(sip_msg_t *msg) {
 const char *
 msg_get_attribute(sip_msg_t *msg, int id, char *value)
 {
-    sdp_media_t *media;
     char *ar;
 
     switch (id) {
@@ -151,14 +150,6 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             break;
         case SIP_ATTR_TIME:
             timeval_to_time(msg_get_time(msg), value);
-            break;
-        case SIP_ATTR_SDP_ADDRESS:
-            if ((media = vector_first(msg->medias)))
-                sprintf(value, "%s", media_get_address(media));
-            break;
-        case SIP_ATTR_SDP_PORT:
-            if ((media = vector_first(msg->medias)))
-                sprintf(value, "%d", media_get_port(media));
             break;
         default:
             fprintf(stderr, "Unhandled attribute %s (%d)\n", sip_attr_get_name(id), id); abort();

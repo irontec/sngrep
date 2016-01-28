@@ -91,24 +91,6 @@ media_add_format(sdp_media_t *media, uint32_t code, const char *format)
 }
 
 const char *
-media_get_address(sdp_media_t *media)
-{
-    return media->address.ip;
-}
-
-uint16_t
-media_get_port(sdp_media_t *media)
-{
-    return media->address.port;
-}
-
-const char *
-media_get_type(sdp_media_t *media)
-{
-    return media->type;
-}
-
-const char *
 media_get_format(sdp_media_t *media, uint32_t code)
 {
     sdp_media_fmt_t *format;
