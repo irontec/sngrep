@@ -355,23 +355,5 @@ sip_method_from_str(const char *method);
 char *
 sip_get_msg_header(sip_msg_t *msg, char *out);
 
-/**
- * @brief Return address formatted depending on active settings
- *
- * Addresses can be printed in many formats depending on active settings.
- * Alias, resolving or just printing address as is will be
- *
- * @param address Address in string format
- * @return address formatted
- */
-const char *
-sip_address_format(const char *address);
-
-/**
- * @brief Remove port from an address
- */
-const char *
-sip_address_strip_port(char *addrport);
-
 
 #endif

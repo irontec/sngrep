@@ -687,29 +687,3 @@ sip_get_msg_header(sip_msg_t *msg, char *out)
     sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
     return out;
 }
-
-const char *
-sip_address_format(const char *address)
-{
-    // Return address formatted depending on active settings
-    if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-        return get_alias_value(address);
-    } else {
-        return address;
-    }
-}
-
-const char *
-sip_address_strip_port(char *addrport)
-{
-    char *colon;
-
-    if (!addrport)
-        return NULL;
-
-    // FIXME Make compatible with IPv6
-    if ((colon = strchr(addrport, ':')))
-        *colon = '\0';
-
-    return addrport;
-}
