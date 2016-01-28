@@ -425,12 +425,11 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             return NULL;
     }
 
+    // Fixup VSS trailer in ethernet packets
+    *caplen = capinfo->link_hl + ip_len;
+
     // Remove IP Header length from payload
-    if (*caplen > capinfo->link_hl + ip_len) {
-        *size = ip_len - ip_hl;
-    } else {
-        *size = *caplen - capinfo->link_hl - ip_hl;
-    }
+    *size = *caplen - capinfo->link_hl - ip_hl;
 
     // If no fragmentation
     if (ip_frag == 0) {
