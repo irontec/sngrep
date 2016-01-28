@@ -368,18 +368,6 @@ const char *
 sip_address_format(const char *address);
 
 /**
- * @brief Return address:port formatted depending on active settings
- *
- * Addresses can be printed in many formats depending on active settings.
- * Alias, resolving or just printing address as is will be
- *
- * @param addrport Address:Port in string format
- * @return address:port formatted
- */
-const char *
-sip_address_port_format(const char *address);
-
-/**
  * @brief Remove port from an address
  */
 const char *

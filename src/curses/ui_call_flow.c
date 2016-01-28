@@ -286,8 +286,8 @@ call_flow_draw_columns(PANEL *panel)
     vector_iter_t streams;
     vector_iter_t columns;
     int flow_height, flow_width;
-    const char *coltext;
-    char ip_src[80], ip_dst[80];
+    char coltext[ADDRESSPORTLEN];
+    address_t addr;
 
     // Get panel information
     info = call_flow_info(panel);
@@ -299,12 +299,8 @@ call_flow_draw_columns(PANEL *panel)
     // Load columns
     for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
-        memset(ip_src, 0, sizeof(ip_src));
-        memset(ip_dst, 0, sizeof(ip_dst));
-        msg_get_attribute(msg, SIP_ATTR_SRC, ip_src);
-        msg_get_attribute(msg, SIP_ATTR_DST, ip_dst);
-        call_flow_column_add(panel, msg->call->callid, ip_src);
-        call_flow_column_add(panel, msg->call->callid, ip_dst);
+        call_flow_column_add(panel, msg->call->callid, msg->packet->src);
+        call_flow_column_add(panel, msg->call->callid, msg->packet->dst);
         info->last_msg = msg;
     }
 
@@ -314,14 +310,18 @@ call_flow_draw_columns(PANEL *panel)
             streams = vector_iterator(call->streams);
             while ((stream = vector_iterator_next(&streams))) {
                 if (stream_get_count(stream)) {
-                    call_flow_column_add(panel, NULL, stream->src.ip);
-                    call_flow_column_add(panel, NULL, stream->dst.ip);
+                    addr = stream->src;
+                    addr.port = 0;
+                    call_flow_column_add(panel, NULL, addr);
+                    addr = stream->dst;
+                    addr.port = 0;
+                    call_flow_column_add(panel, NULL, addr);
                 }
             }
         }
     }
 
-    // Draw vertical columns lines
+    // Draw columns
     columns = vector_iterator(info->columns);
     while ((column = vector_iterator_next(&columns))) {
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
@@ -332,7 +332,14 @@ call_flow_draw_columns(PANEL *panel)
         if (is_local_address_str(column->addr) && setting_enabled(SETTING_CF_LOCALHIGHLIGHT))
             wattron(win, A_BOLD);
 
-        coltext = sip_address_port_format(column->addr);
+        if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+            sprintf(coltext, "%s", column->alias);
+        } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
+            sprintf(coltext, "%s:%u", column->alias, column->addr.port);
+        } else {
+            sprintf(coltext, "%s:%u", column->addr.ip, column->addr.port);
+        }
+
         mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s", coltext);
         wattroff(win, A_BOLD);
     }
@@ -349,8 +356,8 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     const char *msg_callid;
     char msg_method[128];
     char msg_time[80];
-    char msg_src[80];
-    char msg_dst[80];
+    address_t msg_src;
+    address_t msg_dst;
     char sdp_address[80];
     char sdp_port[80];
     char method[80];
@@ -381,10 +388,10 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 
     // Get message attributes
     msg_callid = msg->call->callid;
+    msg_src = msg->packet->src;
+    msg_dst = msg->packet->dst;
     msg_get_attribute(msg, SIP_ATTR_METHOD, msg_method);
     msg_get_attribute(msg, SIP_ATTR_TIME, msg_time);
-    msg_get_attribute(msg, SIP_ATTR_SRC, msg_src);
-    msg_get_attribute(msg, SIP_ATTR_DST, msg_dst);
 
     // Get Message method (include extra info)
     sprintf(method, "%s", msg_method);
@@ -551,7 +558,7 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     char text[50], time[20];
     int height, width;
     const char *callid;
-    char msg_dst[80], msg_src[80];
+    address_t msg_src, msg_dst;
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->stream;
     int arrow_dir = 0; /* 0: right, 1: left */
@@ -576,32 +583,28 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     sprintf(text, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
 
     // Get message data
-    msg_get_attribute(stream->media->msg, SIP_ATTR_SRC, msg_src);
-    msg_get_attribute(stream->media->msg, SIP_ATTR_DST, msg_dst);
-    // Remove port from address. We only look for columns no matter if it matches port or not
-    sip_address_strip_port(msg_src);
-    sip_address_strip_port(msg_dst);
-
     callid = stream->media->msg->call->callid;
+    msg_src = stream->media->msg->packet->src;
+    msg_dst = stream->media->msg->packet->dst;
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->src.ip, msg_src)) {
+    if (!strcmp(stream->src.ip, msg_src.ip)) {
         column1 = call_flow_column_get(panel, callid, msg_src);
-    } else if (!strcmp(stream->src.ip, msg_dst)) {
+    } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
         column1 = call_flow_column_get(panel, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(panel, 0, stream->src.ip);
+        column1 = call_flow_column_get(panel, 0, stream->src);
     }
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->dst.ip, msg_dst)) {
+    if (!strcmp(stream->dst.ip, msg_dst.ip)) {
         column2 = call_flow_column_get(panel, callid, msg_dst);
-    } else if (!strcmp(stream->dst.ip, msg_src)) {
+    } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
         column2 = call_flow_column_get(panel, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(panel, 0, stream->dst.ip);
+        column2 = call_flow_column_get(panel, 0, stream->dst);
     }
 
     call_flow_column_t *tmp;
@@ -694,7 +697,7 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     char text[50], time[20];
     int height, width;
     const char *callid;
-    char msg_dst[80], msg_src[80];
+    address_t msg_src, msg_dst;
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->stream;
     int arrow_dir = 0; /* 0: right, 1: left */
@@ -719,32 +722,28 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     sprintf(text, "RTCP (%.1f) %d", (float) stream->rtcpinfo.mosc / 10, stream_get_count(stream));
 
     // Get message data
-    msg_get_attribute(stream->media->msg, SIP_ATTR_SRC, msg_src);
-    msg_get_attribute(stream->media->msg, SIP_ATTR_DST, msg_dst);
-    // Remove port from address. We only look for columns no matter if it matches port or not
-    sip_address_strip_port(msg_src);
-    sip_address_strip_port(msg_dst);
-
     callid = stream->media->msg->call->callid;
+    msg_src = stream->media->msg->packet->src;
+    msg_dst = stream->media->msg->packet->dst;
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->src.ip, msg_src)) {
+    if (!strcmp(stream->src.ip, msg_src.ip)) {
         column1 = call_flow_column_get(panel, callid, msg_src);
-    } else if (!strcmp(stream->src.ip, msg_dst)) {
+    } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
         column1 = call_flow_column_get(panel, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(panel, 0, stream->src.ip);
+        column1 = call_flow_column_get(panel, 0, stream->src);
     }
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->dst.ip, msg_dst)) {
+    if (!strcmp(stream->dst.ip, msg_dst.ip)) {
         column2 = call_flow_column_get(panel, callid, msg_dst);
-    } else if (!strcmp(stream->dst.ip, msg_src)) {
+    } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
         column2 = call_flow_column_get(panel, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(panel, 0, stream->dst.ip);
+        column2 = call_flow_column_get(panel, 0, stream->dst);
     }
 
     call_flow_column_t *tmp;
@@ -1380,94 +1379,80 @@ call_flow_set_group(sip_call_group_t *group)
 }
 
 void
-call_flow_column_add(PANEL *panel, const char *callid, const char *address)
+call_flow_column_add(PANEL *panel, const char *callid, address_t addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
     vector_iter_t columns;
-    char addr[ADDRESSLEN + 6];
 
     if (!(info = call_flow_info(panel)))
         return;
 
-    if (!address || !strlen(address))
-        return;
-
-    // Coppy address to local var
-    strcpy(addr, address);
-
-    // when compressed view is enabled
-    if (setting_enabled(SETTING_CF_SPLITCALLID)) {
-        // Remove the port from the address
-        sip_address_strip_port(addr);
-        // Display the alias value of the address
-        strcpy(addr, get_alias_value(addr));
-    }
-
     if (call_flow_column_get(panel, callid, addr))
         return;
 
+    // Try to fill the second Call-Id of the column
     columns = vector_iterator(info->columns);
     while ((column = vector_iterator_next(&columns))) {
-        if (!strcasecmp(addr, column->addr) && column->colpos != 0 && !column->callid2) {
-            column->callid2 = callid;
-            return;
+        if (addressport_equals(column->addr, addr)) {
+            if (column->colpos != 0  && !column->callid2) {
+                column->callid2 = callid;
+                return;
+            }
         }
     }
 
+    // Create a new column
     column = sng_malloc(sizeof(call_flow_column_t));
     column->callid = callid;
-    strcpy(column->addr, addr);
+    column->addr = addr;
+    strcpy(column->alias, get_alias_value(addr.ip));
     column->colpos = vector_count(info->columns);
     vector_append(info->columns, column);
 }
 
 call_flow_column_t *
-call_flow_column_get(PANEL *panel, const char *callid, const char *address)
+call_flow_column_get(PANEL *panel, const char *callid, address_t addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
     vector_iter_t columns;
     int match_port;
-    char coladdr[ADDRESSLEN + 6];
-    char addr[ADDRESSLEN + 6];
-    char *dots;
+    const char *alias;
 
     if (!(info = call_flow_info(panel)))
         return NULL;
 
-    // Coppy address to local var
-    strcpy(addr, address);
-
-    // when compressed view is enabled
-    if (setting_enabled(SETTING_CF_SPLITCALLID)) {
-        // Remove the port from the address
-        sip_address_strip_port(addr);
-        // Display the alias value of the address
-        strcpy(addr, get_alias_value(addr));
-    }
-
     // Look for address or address:port ?
-    match_port = (strchr(addr, ':') != NULL);
+    match_port = addr.port != 0;
+
+    // Get alias value for given address
+    alias = get_alias_value(addr.ip);
 
     columns = vector_iterator(info->columns);
     while ((column = vector_iterator_next(&columns))) {
-        // Copy address:port column label
-        strcpy(coladdr, column->addr);
-
-        // Remove port if we want to match only address
-        if (!match_port && (dots = strchr(coladdr, ':')))
-            *dots = '\0';
-
-        if (!strcasecmp(addr, coladdr)) {
-            if (!match_port)
+        // In compressed mode, we search using alias instead of address
+        if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+            if (!strcmp(column->alias, alias)) {
                 return column;
-            if (setting_enabled(SETTING_CF_SPLITCALLID))
-                return column;
-            if (column->callid && !strcasecmp(callid, column->callid))
-                return column;
-            if (column->callid2 && !strcasecmp(callid, column->callid2))
-                return column;
+            }
+        } else {
+            // Check if this column matches requested address
+            if (match_port) {
+                if (addressport_equals(column->addr, addr)) {
+                    if (column->callid && !strcmp(callid, column->callid)) {
+                        return column;
+                    }
+                    if (column->callid2 && !strcmp(callid, column->callid2)) {
+                        return column;
+                    }
+                }
+            } else {
+                // Dont check port
+                if (address_equals(column->addr, addr)) {
+                    return column;
+                }
+            }
         }
     }
     return NULL;

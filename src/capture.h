@@ -431,7 +431,7 @@ dump_close(pcap_dumper_t *pd);
  * @return 1 if address is local, 0 otherwise
  */
 int
-is_local_address_str(const char *address);
+is_local_address_str(address_t addr);
 
 /**
  * @brief Check if a given address belongs to a local device

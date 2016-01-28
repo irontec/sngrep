@@ -700,21 +700,6 @@ sip_address_format(const char *address)
 }
 
 const char *
-sip_address_port_format(const char *addrport)
-{
-    static char aport[ADDRESSLEN + 6];
-    char address[ADDRESSLEN + 6];
-    int port;
-
-    strncpy(aport, addrport, sizeof(aport));
-    if (sscanf(aport, "%[^:]:%d", address, &port) == 2) {
-        sprintf(aport, "%s:%d", sip_address_format(address), port);
-    }
-
-    return aport;
-}
-
-const char *
 sip_address_strip_port(char *addrport)
 {
     char *colon;

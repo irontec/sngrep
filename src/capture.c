@@ -442,8 +442,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Look for another packet with same id in IP reassembly vector
     it = vector_iterator(capture_cfg.ip_reasm);
     while ((pkt = vector_iterator_next(&it))) {
-        if (address_equals(pkt->src, src)
-                && address_equals(pkt->dst, dst)
+        if (addressport_equals(pkt->src, src)
+                && addressport_equals(pkt->dst, dst)
                 && pkt->ip_id == ip_id) {
             break;
         }
@@ -509,8 +509,8 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         return packet;
 
     while ((pkt = vector_iterator_next(&it))) {
-        if (address_equals(pkt->src, packet->src) &&
-                address_equals(pkt->dst, packet->dst)) {
+        if (addressport_equals(pkt->src, packet->src) &&
+                addressport_equals(pkt->dst, packet->dst)) {
             break;
         }
     }
@@ -974,10 +974,10 @@ dump_close(pcap_dumper_t *pd)
 }
 
 int
-is_local_address_str(const char *address)
+is_local_address_str(address_t addr)
 {
     char straddress[ADDRESSLEN], *end;
-    strcpy(straddress, address);
+    strcpy(straddress, addr.ip);
     // If address comes with port, remove it
     if ((end = strchr(straddress, ':')))
         *end = '\0';

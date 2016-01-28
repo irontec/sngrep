@@ -65,7 +65,17 @@ struct address {
 };
 
 /**
- * @brief Check if two address are equal
+ * @brief Check if two address are equal (including port)
+ *
+ * @param addr1 Address structure
+ * @param addr2 Address structure
+ * @return true if addresses contain the IP address, false otherwise
+ */
+bool
+addressport_equals(address_t addr1, address_t addr2);
+
+/**
+ * @brief Check if two address are equal (ignoring port)
  *
  * @param addr1 Address structure
  * @param addr2 Address structure

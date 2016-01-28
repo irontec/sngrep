@@ -69,8 +69,6 @@ stream_create(sdp_media_t *media, address_t dst, int type)
 {
     rtp_stream_t *stream;
 
-    fprintf(stderr, "Waiting for packets on %s:%u\n", dst.ip, dst.port);
-
     // Allocate memory for this stream structure
     if (!(stream = sng_malloc(sizeof(rtp_stream_t))))
         return NULL;
@@ -337,7 +335,7 @@ rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
     // Look for an incomplete stream with this destination
     vector_iterator_set_last(&it);
     while ((stream = vector_iterator_prev(&it))) {
-        if (address_equals(dst, stream->dst)) {
+        if (addressport_equals(dst, stream->dst)) {
             if (!src.port) {
                 return stream;
             } else {
@@ -352,8 +350,8 @@ rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
     if (src.port) {
         vector_iterator_set_last(&it);
         while ((stream = vector_iterator_prev(&it))) {
-            if (address_equals(src, stream->src) &&
-                address_equals(dst, stream->dst)) {
+            if (addressport_equals(src, stream->src) &&
+                addressport_equals(dst, stream->dst)) {
                 return stream;
             }
         }

@@ -99,11 +99,22 @@ struct call_flow_arrow {
 
 /**
  * @brief Structure to hold one column information
+ *
+ * One column has one address:port for packets source or destination matching
+ * and a couple of Call-Ids. Limiting the number of Call-Ids each column have
+ * we avoid having one column with lots of begining or ending arrows of
+ * different dialogs.
+ *
  */
 struct call_flow_column {
-    char addr[ADDRESSPORTLEN];
+    //! Address header for this column
+    address_t addr;
+    //! Alias for the given address
+    char alias[ADDRESSPORTLEN];
+    //! Call Ids
     const char *callid;
     const char *callid2;
+    //! Column position (starting with zero) // FIXME array position?
     int colpos;
 };
 
@@ -381,7 +392,7 @@ call_flow_set_group(sip_call_group_t *group);
  * @param addr Address:port string
  */
 void
-call_flow_column_add(PANEL *panel, const char *callid, const char *addr);
+call_flow_column_add(PANEL *panel, const char *callid, address_t addr);
 
 /**
  * @brief Get a flow column data
@@ -392,6 +403,7 @@ call_flow_column_add(PANEL *panel, const char *callid, const char *addr);
  * @return column structure pointer or NULL if not found
  */
 call_flow_column_t *
-call_flow_column_get(PANEL *panel, const char *callid, const char *addr);
+call_flow_column_get(PANEL *panel, const char *callid, address_t address);
+
 
 #endif /* __SNGREP_UI_CALL_FLOW_H */
