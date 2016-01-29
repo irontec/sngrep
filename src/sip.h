@@ -33,6 +33,7 @@
 #define __SNGREP_SIP_H
 
 #include "config.h"
+#include <stdbool.h>
 #include <regex.h>
 #ifdef WITH_PCRE
 #include <pcre.h>
@@ -112,6 +113,9 @@ struct sip_call_list {
     regex_t reg_cseq;
     regex_t reg_from;
     regex_t reg_to;
+    regex_t reg_valid;
+    regex_t reg_cl;
+    regex_t reg_body;
 };
 
 /**
@@ -153,6 +157,24 @@ sip_get_callid(const char* payload, char *callid);
  */
 char *
 sip_get_xcallid(const char* payload, char *xcallid);
+
+/**
+ * @brief Validate the packet payload is a SIP message
+ *
+ * This function will validate the payload of a packet to determine if it
+ * contains a full SIP packet. In order to be valid, the SIP packet must
+ * have a initial line with Request or Respones, a Content-Length header
+ * field and a body matching the length of that header.
+ *
+ * This function will only be used for TCP captured packets, when the
+ * Content-Length header field is a MUST.
+ *
+ * @param packet TCP assembled packet structure
+ * @return true if packet is a complete SIP message, false otherwise
+ *
+ */
+bool
+sip_validate_packet(capture_packet_t *packet);
 
 /**
  * @brief Loads a new message from raw header/payload

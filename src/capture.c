@@ -528,6 +528,11 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
         vector_append(capture_cfg.tcp_reasm, packet);
     }
 
+    // Store firt tcp sequence
+    if (pkt->tcp_seq == 0) {
+        pkt->tcp_seq = ntohl(tcp->th_seq);
+    }
+
     // If the first frame of this packet
     if (vector_count(pkt->frames) == 1) {
         // Set initial payload
@@ -539,17 +544,24 @@ capture_packet_reasm_tcp(capture_packet_t *packet, struct tcphdr *tcp, u_char *p
             vector_remove(capture_cfg.tcp_reasm, pkt);
             return NULL;
         }
-
-        // Append payload to the existing
         new_payload = sng_malloc(pkt->payload_len + size_payload);
-        memcpy(new_payload, pkt->payload, pkt->payload_len);
-        memcpy(new_payload + pkt->payload_len, payload, size_payload);
+        if (pkt->tcp_seq < ntohl(tcp->th_seq)) {
+            // Append payload to the existing
+            pkt->tcp_seq =  ntohl(tcp->th_seq);
+            memcpy(new_payload, pkt->payload, pkt->payload_len);
+            memcpy(new_payload + pkt->payload_len, payload, size_payload);
+        } else {
+            // Prepend payload to the existing
+            memcpy(new_payload, payload, size_payload);
+            memcpy(new_payload + size_payload, pkt->payload, pkt->payload_len);
+        }
         capture_packet_set_payload(pkt, new_payload, pkt->payload_len + size_payload);
         sng_free(new_payload);
+
     }
 
     // This packet is ready to be parsed
-    if (tcp->th_flags & TH_PUSH) {
+    if ((tcp->th_flags & TH_PUSH) || sip_validate_packet(pkt)) {
         vector_remove(capture_cfg.tcp_reasm, pkt);
         return pkt;
     }
