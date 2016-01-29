@@ -410,12 +410,17 @@ int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[3];
-    char reqresp[20];
+    char resp_str[40];
+    char reqresp[40];
+    const char *resp_def;
+
+    // Initialize variables
+    memset(pmatch, 0, sizeof(pmatch));
+    memset(resp_str, 0, sizeof(resp_str));
+    memset(reqresp, 0, sizeof(reqresp));
 
     // If not already parsed
     if (!msg->reqresp) {
-        // Initialize variables
-        memset(reqresp, 0, sizeof(reqresp));
 
         // Method & CSeq
         if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
@@ -424,35 +429,34 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 
         // Response code
         if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
+            sprintf(resp_str, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
             sprintf(reqresp, "%.*s", (int)(pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
         }
 
         // Get Request/Response Code
         msg->reqresp = sip_method_from_str(reqresp);
+
+        // For response codes, check if the text matches the default
+        if (!msg_is_request(msg)) {
+            resp_def = sip_method_str(msg->reqresp);
+            if (!resp_def || strcmp(resp_def, resp_str)) {
+                msg->resp_str = strdup(resp_str);
+            }
+        }
     }
 
     return msg->reqresp;
 }
 
 const char *
-sip_get_response_str(sip_msg_t *msg, char *out)
+sip_get_msg_reqresp_str(sip_msg_t *msg)
 {
-    regmatch_t pmatch[3];
-    const char *payload;
-
-    // If not already parsed
-    if (msg_is_request(msg))
-        return NULL;
-
-    // Get message payload
-    payload = msg_get_payload(msg);
-
-    // Response code (full text)
-    if (regexec(&calls.reg_response, payload, 3, pmatch, 0) == 0) {
-        sprintf(out, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+    // Check if code has non-standard text
+    if (msg->resp_str) {
+        return msg->resp_str;
+    } else {
+        return sip_method_str(msg->reqresp);
     }
-
-    return out;
 }
 
 sip_msg_t *

@@ -52,6 +52,8 @@ struct sip_call;
 struct sip_msg {
     //! Request Method or Response Code @see sip_methods
     int reqresp;
+    //!  Response text if it doesn't matches an standard
+    char *resp_str;
     //! Message Cseq
     uint32_t cseq;
     //! SIP From Header

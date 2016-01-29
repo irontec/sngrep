@@ -123,11 +123,7 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             sprintf(value, "%s:%u", msg->packet->dst.ip, msg->packet->dst.port);
             break;
         case SIP_ATTR_METHOD:
-            if (sip_method_str(msg->reqresp)) {
-                sprintf(value, "%s", sip_method_str(msg->reqresp));
-            } else {
-                sip_get_response_str(msg, value);
-            }
+            sprintf(value, "%s", sip_get_msg_reqresp_str(msg));
             break;
         case SIP_ATTR_SIPFROM:
             sprintf(value, "%s", msg->sip_from);

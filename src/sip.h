@@ -256,7 +256,7 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload);
  *
  */
 const char *
-sip_get_response_str(sip_msg_t *msg, char *out);
+sip_get_msg_reqresp_str(sip_msg_t *msg);
 
 /**
  * @brief Parse SIP Message payload if not parsed
