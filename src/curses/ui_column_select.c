@@ -38,7 +38,7 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_t ui_column_select = {
+ui_panel_t ui_column_select = {
     .type = PANEL_COLUMN_SELECT,
     .panel = NULL,
     .create = column_select_create,

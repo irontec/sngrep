@@ -41,7 +41,7 @@
 /**
  * Ui Structure definition for Save panel
  */
-ui_t ui_save = {
+ui_panel_t ui_save = {
     .type = PANEL_SAVE,
     .panel = NULL,
     .create = save_create,

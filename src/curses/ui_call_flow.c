@@ -68,7 +68,7 @@
 /**
  * Ui Structure definition for Call Flow panel
  */
-ui_t ui_call_flow = {
+ui_panel_t ui_call_flow = {
     .type = PANEL_CALL_FLOW,
     .panel = NULL,
     .create = call_flow_create,
@@ -81,34 +81,25 @@ ui_t ui_call_flow = {
 PANEL *
 call_flow_create()
 {
-    PANEL *panel;
-    WINDOW *win;
-    int height, width;
-    call_flow_info_t *info;
-
     // Create a new panel to fill all the screen
-    panel = new_panel(newwin(LINES, COLS, 0, 0));
+    PANEL *panel = new_panel(newwin(LINES, COLS, 0, 0));
 
     // Initialize Call List specific data
-    info = sng_malloc(sizeof(call_flow_info_t));
-
-    // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
+    call_flow_info_t *info = malloc(sizeof(call_flow_info_t));
+    memset(info, 0, sizeof(call_flow_info_t));
 
     // Let's draw the fixed elements of the screen
-    win = panel_window(panel);
-    getmaxyx(win, height, width);
+    WINDOW *win = panel_window(panel);
 
     // Calculate available printable area for messages
-    info->flow_win = subwin(win, height - 2 - 2 - 2, width - 2, 4, 0); // Header - Footer - Address
-    info->raw_width = 0; // calculated with the available space after drawing columns
-    info->last_msg = NULL;
+    info->flow_win = subwin(win, getmaxy(win) - 6, getmaxx(win) - 2, 4, 0);
 
     // Create vectors for columns and flow arrows
     info->columns = vector_create(2, 1);
-    vector_set_destroyer(info->columns, vector_generic_destroyer);
     info->arrows = vector_create(20, 5);
-    vector_set_destroyer(info->arrows, vector_generic_destroyer);
+
+    // Store it into panel userptr
+    set_panel_userptr(panel, (void*) info);
 
     return panel;
 }
@@ -121,15 +112,16 @@ call_flow_destroy(PANEL *panel)
     // Free the panel information
     if ((info = call_flow_info(panel))) {
         // Delete panel columns
-        vector_destroy(info->columns);
+        vector_destroy_items(info->columns);
         // Delete panel arrows
-        vector_destroy(info->arrows);
+        vector_destroy_items(info->arrows);
         // Delete panel windows
         delwin(info->flow_win);
         delwin(info->raw_win);
         // Delete displayed call group
         call_group_destroy(info->group);
-        sng_free(info);
+        // Free panel info
+        free(info);
     }
     // Delete panel window
     delwin(panel_window(panel));
@@ -146,18 +138,16 @@ call_flow_info(PANEL *panel)
 int
 call_flow_draw(PANEL *panel)
 {
-    call_flow_info_t *info;
-    WINDOW *win;
     call_flow_arrow_t *arrow = NULL;
     int height, width, cline = 0;
     char title[256];
     char callid[256];
 
     // Get panel information
-    info = call_flow_info(panel);
+    call_flow_info_t *info = call_flow_info(panel);
 
     // Get window of main panel
-    win = panel_window(panel);
+    WINDOW *win = panel_window(panel);
     getmaxyx(win, height, width);
     werase(win);
 
@@ -1128,7 +1118,7 @@ call_flow_handle_key(PANEL *panel, int key)
     int i, raw_width, height, width;
     call_flow_info_t *info = call_flow_info(panel);
     call_flow_arrow_t *next, *prev;
-    ui_t *next_panel;
+    ui_panel_t *next_panel;
     sip_call_t *call = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;

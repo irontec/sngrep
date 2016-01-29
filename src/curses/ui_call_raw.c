@@ -39,7 +39,7 @@
 /**
  * Ui Structure definition for Call Raw panel
  */
-ui_t ui_call_raw = {
+ui_panel_t ui_call_raw = {
     .type = PANEL_CALL_RAW,
     .panel = NULL,
     .create = call_raw_create,
@@ -203,7 +203,7 @@ int
 call_raw_handle_key(PANEL *panel, int key)
 {
     call_raw_info_t *info;
-    ui_t *next_panel;
+    ui_panel_t *next_panel;
     int rnpag_steps = setting_get_intvalue(SETTING_CR_SCROLLSTEP);
     int action = -1;
 
@@ -280,7 +280,7 @@ call_raw_handle_key(PANEL *panel, int key)
 int
 call_raw_set_group(sip_call_group_t *group)
 {
-    ui_t *raw_panel;
+    ui_panel_t *raw_panel;
     PANEL *panel;
     call_raw_info_t *info;
 
@@ -310,7 +310,7 @@ call_raw_set_group(sip_call_group_t *group)
 int
 call_raw_set_msg(sip_msg_t *msg)
 {
-    ui_t *raw_panel;
+    ui_panel_t *raw_panel;
     PANEL *panel;
     call_raw_info_t *info;
 

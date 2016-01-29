@@ -51,7 +51,7 @@
  * and pointer to their main functions.
 
  */
-static ui_t *panel_pool[] = {
+static ui_panel_t *panel_pool[] = {
     &ui_call_list,
     &ui_call_flow,
     &ui_call_raw,
@@ -150,128 +150,17 @@ ncurses_deinit()
     endwin();
 }
 
-ui_t *
-ui_create(ui_t *ui)
-{
-    // If ui has no panel
-    if (!ui_get_panel(ui)) {
-        // Create the new panel for this ui
-        if (ui->create) {
-            ui->panel = ui->create();
-        }
-    }
 
-    // And return it
-    return ui;
-}
 
-ui_t *
+
+ui_panel_t *
 ui_create_panel(enum panel_types type)
 {
     // Find the panel of given type and create it
     return ui_create(ui_find_by_type(type));
 }
 
-void
-ui_destroy(ui_t *ui)
-{
-    // If there is no ui panel, we're done
-    if (!ui || !ui->panel)
-        return;
-
-    // Hide this panel before destroying
-    hide_panel(ui->panel);
-
-    // If panel has a destructor function use it
-    if (ui->destroy)
-        ui->destroy(ui->panel);
-
-    // Initialize panel pointer
-    ui->panel = NULL;
-}
-
-PANEL *
-ui_get_panel(ui_t *ui)
-{
-    // Return panel pointer of ui struct
-    return (ui) ? ui->panel : NULL;
-}
-
-int
-ui_draw_panel(ui_t *ui)
-{
-    PANEL *panel = NULL;
-    int ret = 0;
-
-    //! Sanity check, this should not happen
-    if (!ui)
-        return -1;
-
-    // Get ui panel pointer
-    if (!(panel = ui_get_panel(ui)))
-        return -1;
-
-    // Set character input timeout 200 ms
-    halfdelay(REFRESHTHSECS);
-
-    // Avoid parsing any packet while UI is being drawn
-    capture_lock();
-    // Request the panel to draw on the scren
-    if (ui->draw) {
-        ret = ui->draw(panel);
-    } else {
-        touchwin(panel_window(panel));
-    }
-    // Continue parsing packets
-    capture_unlock();
-    return ret;
-}
-
-int
-ui_resize_panel(ui_t *ui)
-{
-    int ret = 0;
-
-    //! Sanity check, this should not happen
-    if (!ui)
-        return -1;
-
-    // Notify the panel screen size has changed
-    if (ui->resize) {
-        ret = ui->resize(ui_get_panel(ui));
-    }
-
-    return ret;
-}
-
-void
-ui_help(ui_t *ui)
-{
-    // Disable input timeout
-    nocbreak();
-    cbreak();
-
-    // If current ui has help function
-    if (ui->help) {
-        ui->help(ui_get_panel(ui));
-    }
-}
-
-int
-ui_handle_key(ui_t *ui, int key)
-{
-    int ret = 0;
-    // Avoid parsing any packet while key is being handled
-    capture_lock();
-    if (ui->handle_key)
-        ret = ui->handle_key(ui_get_panel(ui), key);
-    // Continue parsing packets
-    capture_unlock();
-
-    return ret;
-}
-
-ui_t *
+ui_panel_t *
 ui_find_by_panel(PANEL *panel)
 {
     int i;
@@ -283,7 +172,7 @@ ui_find_by_panel(PANEL *panel)
     return NULL;
 }
 
-ui_t *
+ui_panel_t *
 ui_find_by_type(enum panel_types type)
 {
     int i;
@@ -298,7 +187,7 @@ ui_find_by_type(enum panel_types type)
 int
 wait_for_input()
 {
-    ui_t *ui;
+    ui_panel_t *ui;
     WINDOW *win;
     PANEL *panel;
 
@@ -307,9 +196,18 @@ wait_for_input()
 
         // Get panel interface structure
         ui = ui_find_by_panel(panel);
+
+        // Set character input timeout 200 ms
+        halfdelay(REFRESHTHSECS);
+
+        // Avoid parsing any packet while UI is being drawn
+        capture_lock();
         // Redraw this panel
-        if (ui_draw_panel(ui) != 0)
+        if (ui_draw_panel(ui) != 0) {
+            capture_unlock();
             return -1;
+        }
+        capture_unlock();
 
         // Update panel stack
         update_panels();
@@ -330,10 +228,13 @@ wait_for_input()
             continue;
 
         // Check if current panel has custom bindings for that key
+        capture_lock();
         if ((c = ui_handle_key(ui, c)) == 0) {
+            capture_unlock();
             // Key has been handled by panel
             continue;
         }
+        capture_unlock();
 
         // Key not handled by UI, try default handler
         default_handle_key(ui, c);
@@ -343,7 +244,7 @@ wait_for_input()
 }
 
 int
-default_handle_key(ui_t *ui, int key)
+default_handle_key(ui_panel_t *ui, int key)
 {
     int action = -1;
 

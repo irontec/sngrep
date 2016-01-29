@@ -46,7 +46,7 @@
 /**
  * Ui Structure definition for Call List panel
  */
-ui_t ui_call_list = {
+ui_panel_t ui_call_list = {
     .type = PANEL_CALL_LIST,
     .panel = NULL,
     .create = call_list_create,
@@ -471,7 +471,7 @@ call_list_handle_key(PANEL *panel, int key)
 {
     int i, height, width, rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     call_list_info_t *info;
-    ui_t *next_panel;
+    ui_panel_t *next_panel;
     sip_call_group_t *group;
     int action = -1;
     sip_call_t *call;

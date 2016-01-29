@@ -61,7 +61,7 @@
 /**
  * Ui Structure definition for Stats panel
  */
-ui_t ui_stats = {
+ui_panel_t ui_stats = {
     .type = PANEL_STATS,
     .panel = NULL,
     .create = stats_create,

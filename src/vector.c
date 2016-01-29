@@ -57,6 +57,23 @@ vector_destroy(vector_t *vector)
     sng_free(vector);
 }
 
+void
+vector_destroy_items(vector_t *vector)
+{
+    int i;
+
+    // Nothing to free. Done
+    if (!vector) return;
+
+    // If vector contains items
+    if (vector->count) {
+        for (i = 0; i < vector->count; i++) {
+            free(vector->list[i]);
+        }
+        free(vector->list);
+    }
+    free(vector);
+}
 
 vector_t *
 vector_clone(vector_t *original)

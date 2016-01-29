@@ -82,6 +82,12 @@ void
 vector_destroy(vector_t *vector);
 
 /**
+ * @brief Free all vector items and memory
+ */
+void
+vector_destroy_items(vector_t *vector);
+
+/**
  * @brief Clone a vector container
  *
  * The cloned vector will have its own storage of pointers

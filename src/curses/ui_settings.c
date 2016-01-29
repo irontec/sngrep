@@ -35,7 +35,7 @@
 /**
  * Ui Structure definition for Settings panel
  */
-ui_t ui_settings = {
+ui_panel_t ui_settings = {
     .type = PANEL_SETTINGS,
     .panel = NULL,
     .create = settings_create,

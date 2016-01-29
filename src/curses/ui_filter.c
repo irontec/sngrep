@@ -40,7 +40,7 @@
 /**
  * Ui Structure definition for Filter panel
  */
-ui_t ui_filter = {
+ui_panel_t ui_filter = {
     .type = PANEL_FILTER,
     .panel = NULL,
     .create = filter_create,

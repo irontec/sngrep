@@ -55,7 +55,7 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_t ui_msg_diff = {
+ui_panel_t ui_msg_diff = {
     .type = PANEL_MSG_DIFF,
     .panel = NULL,
     .create = msg_diff_create,
