@@ -517,7 +517,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 {
     char address[ADDRESSLEN];
     char media_address[ADDRESSLEN] = { };
-    char media_type[15] = { };
+    char media_type[MEDIATYPELEN] = { };
     char media_format[30] = { };
     int media_port;
     uint32_t media_fmt_pref;

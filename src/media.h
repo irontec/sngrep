@@ -34,6 +34,8 @@
 #include <sys/types.h>
 #include "capture.h"
 
+#define MEDIATYPELEN 15
+
 //! Shorter declaration of sdp_media structure
 typedef struct sdp_media sdp_media_t;
 //! Shorter declaration of sdp_media_fmt structure
@@ -52,7 +54,7 @@ struct sdp_media {
     //! SDP Addresses information
     char address[ADDRESSLEN];
     uint16_t port;
-    char type[10];
+    char type[MEDIATYPELEN];
     uint32_t fmtcode;
     //! List of described formats in this media
     vector_t *formats;
