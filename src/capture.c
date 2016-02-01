@@ -1149,7 +1149,7 @@ lookup_hostname(const char *address)
 int
 is_local_address_str(const char *address)
 {
-    char straddress[ADDRESSLEN], *end;
+    char straddress[ADDRESSPORTLEN], *end;
     strcpy(straddress, address);
     // If address comes with port, remove it
     if ((end = strchr(straddress, ':')))
