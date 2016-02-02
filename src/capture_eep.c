@@ -235,8 +235,8 @@ capture_eep_send_v2(packet_t *pkt)
 #ifdef USE_IPV6
     /* IPv6 */
     else if(pkt->ip_version == 6) {
-        inet_pton(AF_INET6, pkt->ip_src, &hep_ip6header.hp6_src);
-        inet_pton(AF_INET6, pkt->ip_dst, &hep_ip6header.hp6_dst);
+        inet_pton(AF_INET6, pkt->src.ip, &hep_ip6header.hp6_src);
+        inet_pton(AF_INET6, pkt->dst.ip, &hep_ip6header.hp6_dst);
         tlen += sizeof(struct hep_ip6hdr);
         hdr.hp_l += sizeof(struct hep_ip6hdr);
     }
@@ -341,13 +341,13 @@ capture_eep_send_v3(packet_t *pkt)
         /* SRC IPv6 */
         src_ip6.chunk.vendor_id = htons(0x0000);
         src_ip6.chunk.type_id = htons(0x0005);
-        inet_pton(AF_INET6, pkt->ip_src, &src_ip6.data);
+        inet_pton(AF_INET6, pkt->src.ip, &src_ip6.data);
         src_ip6.chunk.length = htonl(sizeof(src_ip6));
 
         /* DST IPv6 */
         dst_ip6.chunk.vendor_id = htons(0x0000);
         dst_ip6.chunk.type_id = htons(0x0006);
-        inet_pton(AF_INET6, pkt->ip_dst, &dst_ip6.data);
+        inet_pton(AF_INET6, pkt->dst.ip, &dst_ip6.data);
         dst_ip6.chunk.length = htonl(sizeof(dst_ip6));
 
         iplen = sizeof(dst_ip6) + sizeof(src_ip6);
@@ -640,12 +640,12 @@ capture_eep_receive_v3()
     else if(family == AF_INET6) {
         /* SRC IPv6 */
         memcpy(&src_ip6, (void*) buffer + pos, sizeof(struct hep_chunk_ip6));
-        inet_ntop(AF_INET6, &src_ip6.data, ip_src, sizeof(ip_src));
+        inet_ntop(AF_INET6, &src_ip6.data, src.ip, sizeof(src.ip));
         pos += sizeof(struct hep_chunk_ip6);
 
         /* DST IP */
         memcpy(&src_ip6, (void*) buffer + pos, sizeof(struct hep_chunk_ip6));
-        inet_ntop(AF_INET6, &dst_ip6.data, ip_dst, sizeof(ip_dst));
+        inet_ntop(AF_INET6, &dst_ip6.data, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct hep_chunk_ip6);
     }
 #endif

@@ -414,7 +414,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             }
 
             inet_ntop(AF_INET6, &ip6->ip6_src, src.ip, sizeof(src.ip));
-            inet_ntop(AF_INET6, &ip6->ip6_dst, dst.ip, sizeof(src.dst));
+            inet_ntop(AF_INET6, &ip6->ip6_dst, dst.ip, sizeof(dst.ip));
             break;
 #endif
         default:
