@@ -2,8 +2,8 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
- ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013-2016 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2016 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -421,12 +421,11 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             return NULL;
     }
 
+    // Fixup VSS trailer in ethernet packets
+    *caplen = capinfo->link_hl + ip_len;
+
     // Remove IP Header length from payload
-    if (*caplen > capinfo->link_hl + ip_len) {
-        *size = ip_len - ip_hl;
-    } else {
-        *size = *caplen - capinfo->link_hl - ip_hl;
-    }
+    *size = *caplen - capinfo->link_hl - ip_hl;
 
     // If no fragmentation
     if (ip_frag == 0) {
@@ -528,6 +527,11 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         vector_append(capture_cfg.tcp_reasm, packet);
     }
 
+    // Store firt tcp sequence
+    if (pkt->tcp_seq == 0) {
+        pkt->tcp_seq = ntohl(tcp->th_seq);
+    }
+
     // If the first frame of this packet
     if (vector_count(pkt->frames) == 1) {
         // Set initial payload
@@ -539,17 +543,24 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
             vector_remove(capture_cfg.tcp_reasm, pkt);
             return NULL;
         }
-
-        // Append payload to the existing
         new_payload = sng_malloc(pkt->payload_len + size_payload);
-        memcpy(new_payload, pkt->payload, pkt->payload_len);
-        memcpy(new_payload + pkt->payload_len, payload, size_payload);
+        if (pkt->tcp_seq < ntohl(tcp->th_seq)) {
+            // Append payload to the existing
+            pkt->tcp_seq =  ntohl(tcp->th_seq);
+            memcpy(new_payload, pkt->payload, pkt->payload_len);
+            memcpy(new_payload + pkt->payload_len, payload, size_payload);
+        } else {
+            // Prepend payload to the existing
+            memcpy(new_payload, payload, size_payload);
+            memcpy(new_payload + size_payload, pkt->payload, pkt->payload_len);
+        }
         packet_set_payload(pkt, new_payload, pkt->payload_len + size_payload);
         sng_free(new_payload);
+
     }
 
     // This packet is ready to be parsed
-    if (tcp->th_flags & TH_PUSH) {
+    if ((tcp->th_flags & TH_PUSH) || sip_validate_packet(pkt)) {
         vector_remove(capture_cfg.tcp_reasm, pkt);
         return pkt;
     }

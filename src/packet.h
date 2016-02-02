@@ -78,6 +78,8 @@ struct packet {
     address_t dst;
     //! Packet IP id
     uint16_t ip_id;
+    //! Last TCP sequence frame
+    uint32_t tcp_seq;
     //! PCAP Packet payload when it can not be get from data
     u_char *payload;
     //! Payload length

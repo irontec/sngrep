@@ -2,8 +2,8 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
- ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013-2016 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2016 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -164,6 +164,10 @@ sip_init(int limit, int only_calls, int no_incomplete)
     regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]+) .+\r$", match_flags);
     regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
+    regcomp(&calls.reg_valid, "^([A-Z]+ sip:|SIP/2.0 [0-9]{3})", match_flags & ~REG_NEWLINE);
+    regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)\r$", match_flags);
+    regcomp(&calls.reg_body, "\r\n\r\n(.*)", match_flags & ~REG_NEWLINE);
+
 }
 
 void
@@ -184,6 +188,9 @@ sip_deinit()
     regfree(&calls.reg_cseq);
     regfree(&calls.reg_from);
     regfree(&calls.reg_to);
+    regfree(&calls.reg_valid);
+    regfree(&calls.reg_cl);
+    regfree(&calls.reg_body);
 }
 
 
@@ -212,6 +219,55 @@ sip_get_xcallid(const char *payload, char *xcallid)
     }
 
     return xcallid;
+}
+
+bool
+sip_validate_packet(packet_t *packet)
+{
+    uint32_t plen = packet_payloadlen(packet);
+    u_char payload[MAX_SIP_PAYLOAD];
+    regmatch_t pmatch[3];
+    char cl_header[10];
+    int content_len;
+    int bodylen;
+
+        // Max SIP payload allowed
+    if (plen == 0 || plen > MAX_SIP_PAYLOAD)
+        return false;
+
+    // Get payload from packet(s)
+    memset(payload, 0, MAX_SIP_PAYLOAD);
+    memcpy(payload, packet_payload(packet), plen);
+
+    // Initialize variables
+    memset(cl_header, 0, sizeof(cl_header));
+
+    // Check if the first line follows SIP request or response format
+    if (regexec(&calls.reg_valid, (const char *) payload, 2, pmatch, 0) != 0) {
+        // Not a SIP message
+        return false;
+    }
+
+    // Check if we have Content Length header
+    if (regexec(&calls.reg_cl, (const char *) payload, 4, pmatch, 0) != 0) {
+        // Not a SIP message or not complete
+        return false;
+    }
+
+
+    strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    content_len = atoi(cl_header);
+
+    // Check if we have Body separator field
+    if (regexec(&calls.reg_body, (const char *) payload, 2, pmatch, 0) != 0) {
+        // Not a SIP message or not complete
+        return false;
+    }
+
+    // Get the SIP message body length
+    bodylen = (int) pmatch[1].rm_eo - pmatch[1].rm_so;
+
+    return content_len == bodylen;
 }
 
 sip_msg_t *
@@ -499,7 +555,7 @@ void
 sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 {
     address_t dst, src;
-    char media_type[15] = { };
+    char media_type[MEDIATYPELEN] = { };
     char media_format[30] = { };
     uint32_t media_fmt_pref;
     uint32_t media_fmt_code;

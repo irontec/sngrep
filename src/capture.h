@@ -2,8 +2,8 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013,2014 Ivan Alonso (Kaian)
- ** Copyright (C) 2013,2014 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013-2016 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2016 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -154,7 +154,6 @@ struct capture_info
     //! Capture thread for online capturing
     pthread_t capture_t;
 };
-
 
 /**
  * @brief Initialize capture data
