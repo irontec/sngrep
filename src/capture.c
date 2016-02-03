@@ -73,7 +73,7 @@ capture_init(int limit, int rtp_capture)
     // Initialize calls lock
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
-#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__) || defined(BSD) || defined (__OpenBSD__)
+#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__) || defined(BSD) || defined (__OpenBSD__) || defined(__DragonFly__)
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 #else
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
@@ -848,7 +848,7 @@ capture_set_keyfile(const char *keyfile)
 }
 
 char *
-capture_last_error(cap)
+capture_last_error()
 {
     capture_info_t *capinfo;
     if (vector_count(capture_cfg.sources) == 1) {
