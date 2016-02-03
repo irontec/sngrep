@@ -342,13 +342,13 @@ capture_eep_send_v3(capture_packet_t *pkt)
         src_ip6.chunk.vendor_id = htons(0x0000);
         src_ip6.chunk.type_id = htons(0x0005);
         inet_pton(AF_INET6, pkt->ip_src, &src_ip6.data);
-        src_ip6.chunk.length = htonl(sizeof(src_ip6));
+        src_ip6.chunk.length = htons(sizeof(src_ip6));
 
         /* DST IPv6 */
         dst_ip6.chunk.vendor_id = htons(0x0000);
         dst_ip6.chunk.type_id = htons(0x0006);
         inet_pton(AF_INET6, pkt->ip_dst, &dst_ip6.data);
-        dst_ip6.chunk.length = htonl(sizeof(dst_ip6));
+        dst_ip6.chunk.length = htons(sizeof(dst_ip6));
 
         iplen = sizeof(dst_ip6) + sizeof(src_ip6);
     }
