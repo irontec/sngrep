@@ -94,10 +94,6 @@ struct call_list_info {
     FIELD *fields[FLD_LIST_COUNT + 1];
     //! We're entering keys on form
     int form_active;
-    //! Number of calls displayed in the list
-    int dispcallcnt;
-    //! Total number of calls without filtering
-    int callcnt;
     //! Move to last list entry if autoscroll is enabled
     int autoscroll;
 };

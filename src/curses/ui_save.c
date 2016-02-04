@@ -55,7 +55,6 @@ save_create(ui_t *ui)
 {
     save_info_t *info;
     char savepath[128];
-    int total, displayed;
 
     // Pause the capture while saving
     capture_set_paused(1);
@@ -69,7 +68,8 @@ save_create(ui_t *ui)
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);
 
-    // Initialize the fields
+    // Initialize the fields    int total, displayed;
+
     info->fields[FLD_SAVE_PATH] = new_field(1, 52, 3, 13, 0, 0);
     info->fields[FLD_SAVE_FILE] = new_field(1, 47, 4, 13, 0, 0);
     info->fields[FLD_SAVE_ALL] = new_field(1, 1, 7, 4, 0, 0);
@@ -157,10 +157,10 @@ save_create(ui_t *ui)
     curs_set(1);
 
     // Get filter stats
-    sip_calls_stats(&total, &displayed);
+    sip_stats_t stats = sip_calls_stats();
 
     // Set default save modes
-    info->savemode = (displayed == total) ? SAVE_ALL : SAVE_DISPLAYED;
+    info->savemode = (stats.displayed == stats.total) ? SAVE_ALL : SAVE_DISPLAYED;
     info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
 
 }
@@ -202,18 +202,17 @@ save_info(ui_t *ui)
 int
 save_draw(ui_t *ui)
 {
-    int total, displayed;
     char field_value[80];
 
     // Get panel information
     save_info_t *info = save_info(ui);
 
     // Get filter stats
-    sip_calls_stats(&total, &displayed);
+    sip_stats_t stats = sip_calls_stats();
 
     mvwprintw(ui->win, 7, 3, "( ) all dialogs ");
     mvwprintw(ui->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
-    mvwprintw(ui->win, 9, 3, "( ) filtered dialogs [%d]", displayed);
+    mvwprintw(ui->win, 9, 3, "( ) filtered dialogs [%d]", stats.displayed);
 
     mvwprintw(ui->win, 7, 35, "( ) .pcap (SIP)");
     mvwprintw(ui->win, 8, 35, "( ) .pcap (SIP + RTP)");

@@ -47,6 +47,8 @@
 typedef struct sip_call_list sip_call_list_t;
 //! Shorter declaration of sip codes structure
 typedef struct sip_code sip_code_t;
+//! Shorter declaration of sip stats
+typedef struct sip_stats sip_stats_t;
 
 //! SIP Methods
 enum sip_methods {
@@ -75,6 +77,16 @@ struct sip_code
     const char *text;
 };
 
+/**
+ * @brief Structure to store dialog stats
+ */
+struct sip_stats
+{
+    //! Total number of captured dialogs
+    int total;
+    //! Total number of displayed dialogs after filtering
+    int displayed;
+};
 
 /**
  * @brief call structures head list
@@ -218,8 +230,8 @@ sip_active_calls_iterator();
  * @param total Total calls processed
  * @param displayed number of calls matching filters
  */
-void
-sip_calls_stats(int *total, int *displayed);
+sip_stats_t
+sip_calls_stats();
 
 
 /**

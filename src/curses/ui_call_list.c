@@ -68,8 +68,8 @@ call_list_create(ui_t *ui)
     ui_panel_create(ui, LINES, COLS);
 
     // Initialize Call List specific data
-    info = sng_malloc(sizeof(call_list_info_t));
-    // Store it into panel userptr
+    info = malloc(sizeof(call_list_info_t));
+    memset(info, 0, sizeof(call_list_info_t));
     set_panel_userptr(ui->panel, (void*) info);
 
     // Add configured columns
@@ -182,6 +182,8 @@ call_list_draw_header(ui_t *ui)
 
     // Draw a Panel header lines
     ui_clear_line(ui, 1);
+
+    // Print Open filename in Offline mode
     if ((infile = capture_input_file()))
         mvwprintw(ui->win, 1, ui->width - strlen(infile) - 11, "Filename: %s", infile);
     mvwprintw(ui->win, 2, 2, "Display Filter: ");
@@ -212,14 +214,14 @@ call_list_draw_header(ui_t *ui)
     wattroff(ui->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Get filter call counters
-    sip_calls_stats(&info->callcnt, &info->dispcallcnt);
+    sip_stats_t stats = sip_calls_stats();
 
     // Print calls count (also filtered)
     mvwprintw(ui->win, 1, 35, "%*s", 35, "");
-    if (info->callcnt != info->dispcallcnt) {
-        mvwprintw(ui->win, 1, 35, "Dialogs: %d (%d displayed)", info->callcnt, info->dispcallcnt);
+    if (stats.total != stats.displayed) {
+        mvwprintw(ui->win, 1, 35, "Dialogs: %d (%d displayed)", stats.total, stats.displayed);
     } else {
-        mvwprintw(ui->win, 1, 35, "Dialogs: %d", info->callcnt);
+        mvwprintw(ui->win, 1, 35, "Dialogs: %d", stats.total);
     }
 
 }
@@ -349,7 +351,8 @@ call_list_draw_list(ui_t *ui)
     }
 
     // Draw scrollbar to the right
-    draw_vscrollbar(list_win, info->first_line, info->dispcallcnt, 1);
+    sip_stats_t stats = sip_calls_stats();
+    draw_vscrollbar(list_win, info->first_line, stats.displayed, 1);
     wnoutrefresh(info->list_win);
 }
 

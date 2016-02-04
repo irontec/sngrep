@@ -403,16 +403,18 @@ sip_active_calls_iterator()
     return vector_iterator(calls.active);
 }
 
-void
-sip_calls_stats(int *total, int *displayed)
+sip_stats_t
+sip_calls_stats()
 {
+    sip_stats_t stats;
     vector_iter_t it = vector_iterator(calls.list);
 
     // Total number of calls without filtering
-    *total = vector_iterator_count(&it);
+    stats.total = vector_iterator_count(&it);
     // Total number of calls after filtering
     vector_iterator_set_filter(&it, filter_check_call);
-    *displayed = vector_iterator_count(&it);
+    stats.displayed = vector_iterator_count(&it);
+    return stats;
 }
 
 sip_call_t *
