@@ -36,6 +36,7 @@
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
 #include "config.h"
+#include "theme.h"
 #include "ui_panel.h"
 #include "sip.h"
 #include "group.h"
@@ -48,32 +49,6 @@
 #define DIALOG_MAX_WIDTH 100
 #define DIALOG_MIN_WIDTH 40
 
-/**
- * @brief Enum for available color pairs
- */
-enum sngrep_colors_pairs {
-    CP_DEFAULT = 0,
-    CP_CYAN_ON_DEF,
-    CP_YELLOW_ON_DEF,
-    CP_MAGENTA_ON_DEF,
-    CP_GREEN_ON_DEF,
-    CP_RED_ON_DEF,
-    CP_BLUE_ON_DEF,
-    CP_WHITE_ON_DEF,
-    CP_DEF_ON_CYAN,
-    CP_DEF_ON_BLUE,
-    CP_WHITE_ON_BLUE,
-    CP_BLACK_ON_CYAN,
-    CP_WHITE_ON_CYAN,
-    CP_YELLOW_ON_CYAN,
-    CP_BLUE_ON_CYAN,
-    CP_BLUE_ON_WHITE,
-    CP_CYAN_ON_BLACK,
-    CP_CYAN_ON_WHITE,
-};
-
-// Used to configure color pairs only with fg color
-#define COLOR_DEFAULT -1
 
 /**
  * Define existing panels
@@ -167,28 +142,6 @@ void
 title_foot_box(PANEL *panel);
 
 /**
- * @brief Draw title at the top of the panel
- *
- * This function will draw a line with the title on the first
- * row of the panel's window
- *
- * @param panel PANEL pointer to draw title on
- * @param title String containing the title
- */
-void
-draw_title(PANEL *panel, const char *title);
-
-/**
- * @brief Draw keybinding info at the bottom of the panel
- *
- * This function will draw a line with the available keybindings
- * in the last line of the given panel
- *
- */
-void
-draw_keybindings(PANEL *panel, const char *keybindings[], int count);
-
-/**
  * @brief Draw a vertical scroll
  *
  * This function will draw a vertical scroll in the
@@ -196,15 +149,6 @@ draw_keybindings(PANEL *panel, const char *keybindings[], int count);
  */
 void
 draw_vscrollbar(WINDOW *win, int value, int max, int left);
-
-/**
- * @brief Clear a given window line
- *
- * This function can be used to clear a given line on the
- * screen.
- */
-void
-clear_line(WINDOW *win, int line);
 
 /**
  * @brief Draw a message payload in a window

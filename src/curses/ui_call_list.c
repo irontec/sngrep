@@ -178,10 +178,10 @@ call_list_draw_header(ui_t *ui)
     call_list_info_t *info = call_list_info(ui);
 
     // Draw panel title
-    draw_title(ui->panel, "sngrep - SIP messages flow viewer");
+    ui_set_title(ui, "sngrep - SIP messages flow viewer");
 
     // Draw a Panel header lines
-    clear_line(ui->win, 1);
+    ui_clear_line(ui, 1);
     if ((infile = capture_input_file()))
         mvwprintw(ui->win, 1, ui->width - strlen(infile) - 11, "Filename: %s", infile);
     mvwprintw(ui->win, 2, 2, "Display Filter: ");
@@ -241,7 +241,7 @@ call_list_draw_footer(ui_t *ui)
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    draw_keybindings(ui->panel, keybindings, 22);
+    ui_draw_bindings(ui, keybindings, 22);
 }
 
 void
@@ -304,7 +304,7 @@ call_list_draw_list(ui_t *ui)
                 wattron(list_win, A_REVERSE);
         }
         // Set current line background
-        clear_line(list_win, cline);
+        mvwprintw(list_win, cline, 0, "%*s", listw, "");
         // Set current line selection box
         mvwprintw(list_win, cline, 2, call_group_exists(info->group, call) ? "[*]" : "[ ]");
 
@@ -351,7 +351,6 @@ call_list_draw_list(ui_t *ui)
     // Draw scrollbar to the right
     draw_vscrollbar(list_win, info->first_line, info->dispcallcnt, 1);
     wnoutrefresh(info->list_win);
-
 }
 
 int

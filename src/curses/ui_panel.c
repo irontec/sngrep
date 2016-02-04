@@ -28,6 +28,8 @@
 
 #include "config.h"
 #include "ui_panel.h"
+#include <string.h>
+#include "theme.h"
 
 ui_t *
 ui_create(ui_t *ui)
@@ -148,4 +150,60 @@ ui_panel_destroy(ui_t *ui)
     delwin(ui->win);
     // Deallocate panel pointer
     del_panel(ui->panel);
+}
+
+void
+ui_set_title(ui_t *ui, const char *title)
+{
+    // FIXME Reverse colors on monochrome terminals
+    if (!has_colors()) {
+        wattron(ui->win, A_REVERSE);
+    }
+
+    // Center the title on the window
+    wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    ui_clear_line(ui, 0);
+    mvwprintw(ui->win, 0, (ui->width - strlen(title)) / 2, "%s", title);
+    wattroff(ui->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
+}
+
+void
+ui_clear_line(ui_t *ui, int line)
+{
+    // We could do this with wcleartoel but we want to
+    // preserve previous window attributes. That way we
+    // can set the background of the line.
+    mvwprintw(ui->win, line, 0, "%*s", ui->width, "");
+}
+
+void
+ui_draw_bindings(ui_t *ui, const char *keybindings[], int count)
+{
+    int key, xpos = 0;
+
+    // Reverse colors on monochrome terminals
+    if (!has_colors()) {
+        wattron(ui->win, A_REVERSE);
+    }
+
+    // Write a line all the footer width
+    wattron(ui->win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    ui_clear_line(ui, ui->height - 1);
+
+    // Draw keys and their actions
+    for (key = 0; key < count; key += 2) {
+        wattron(ui->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        mvwprintw(ui->win, ui->height - 1, xpos, "%-*s",
+                  strlen(keybindings[key]) + 1, keybindings[key]);
+        xpos += strlen(keybindings[key]) + 1;
+        wattroff(ui->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        wattron(ui->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
+        mvwprintw(ui->win, ui->height - 1, xpos, "%-*s",
+                  strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);
+        wattroff(ui->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
+        xpos += strlen(keybindings[key + 1]) + 3;
+    }
+
+    // Disable reverse mode in all cases
+    wattroff(ui->win, A_REVERSE | A_BOLD);
 }

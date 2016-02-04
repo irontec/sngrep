@@ -199,5 +199,38 @@ ui_panel_create(ui_t *ui, int height, int width);
 void
 ui_panel_destroy(ui_t *ui);
 
+/**
+ * @brief Draw title at the top of the panel UI
+ *
+ * This function will draw a line with the title on the first
+ * row of the UI panel's window
+ *
+ * @param ui UI structure
+ * @param title String containing the title
+ */
+void
+ui_set_title(ui_t *ui, const char *title);
+
+/**
+ * @brief Clear a given window line
+ *
+ * This function can be used to clear a given line on the
+ * screen.
+ *
+ * @param ui UI structure
+ * @param line Number of line to be cleared
+ */
+void
+ui_clear_line(ui_t *ui, int line);
+
+/**
+ * @brief Draw keybinding info at the bottom of the panel
+ *
+ * This function will draw a line with the available keybindings
+ * in the last line of the given panel
+ *
+ */
+void
+ui_draw_bindings(ui_t *ui, const char *keybindings[], int count);
 
 #endif /* __SNGREP_UI_PANEL_H */

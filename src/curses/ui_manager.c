@@ -315,61 +315,6 @@ title_foot_box(PANEL *panel)
 }
 
 void
-draw_keybindings(PANEL *panel, const char *keybindings[], int count)
-{
-    int height, width, key, xpos = 0;
-
-    // Get window available space
-    WINDOW *win = panel_window(panel);
-    getmaxyx(win, height, width);
-
-    // Reverse colors on monochrome terminals
-    if (!has_colors())
-        wattron(win, A_REVERSE);
-
-    // Write a line all the footer width
-    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    clear_line(win, height - 1);
-
-    // Draw keys and their actions
-    for (key = 0; key < count; key += 2) {
-        wattron(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key]) + 1, keybindings[key]);
-        xpos += strlen(keybindings[key]) + 1;
-        wattroff(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        mvwprintw(win, height - 1, xpos, "%-*s", strlen(keybindings[key + 1]) + 1,
-                  keybindings[key + 1]);
-        wattroff(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        xpos += strlen(keybindings[key + 1]) + 3;
-    }
-
-    // Disable reverse mode in all cases
-    wattroff(win, A_REVERSE);
-}
-
-void
-draw_title(PANEL *panel, const char *title)
-{
-    int height, width;
-
-    // Get window available space
-    WINDOW *win = panel_window(panel);
-    getmaxyx(win, height, width);
-
-    // Reverse colors on monochrome terminals
-    if (!has_colors())
-        wattron(win, A_REVERSE);
-
-    // Center the title on the window
-    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    clear_line(win, 0);
-    mvwprintw(win, 0, (width - strlen(title)) / 2, "%s", title);
-    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
-
-}
-
-void
 draw_vscrollbar(WINDOW *win, int value, int max, int left)
 {
     int height, width, cline, scrollen, scrollypos, scrollxpos;
@@ -398,15 +343,6 @@ draw_vscrollbar(WINDOW *win, int value, int max, int left)
     for (cline = 0; cline < scrollen; cline++)
         mvwaddch(win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
 
-}
-
-void
-clear_line(WINDOW *win, int line)
-{
-    // We could do this with wcleartoel but we want to
-    // preserve previous window attributes. That way we
-    // can set the background of the line.
-    mvwprintw(win, line, 0, "%*s", getmaxx(win), "");
 }
 
 int

@@ -158,7 +158,7 @@ call_flow_draw(ui_t *ui)
         strcat(title, " (Color by CSeq)");
 
     // Draw panel title
-    draw_title(ui->panel, title);
+    ui_set_title(ui, title);
 
     // Show some keybinding
     call_flow_draw_footer(ui);
@@ -232,7 +232,7 @@ call_flow_draw_footer(ui_t *ui)
         key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
     };
 
-    draw_keybindings(ui->panel, keybindings, 22);
+    ui_draw_bindings(ui, keybindings, 22);
 
     // If any dialog has RTP streams and they are not visible
     if (!setting_enabled(SETTING_CF_MEDIA)) {

@@ -91,7 +91,7 @@ msg_diff_create(ui_t *ui)
     mvwvline(ui->win, 0, hwidth, ACS_VLINE, ui->height);
 
     // Draw title
-    draw_title(ui->panel, "sngrep - SIP messages flow viewer");
+    ui_set_title(ui, "sngrep - SIP messages flow viewer");
 
     // Draw keybindings
     msg_diff_draw_footer(ui);
@@ -148,7 +148,7 @@ msg_diff_draw_footer(ui_t *ui)
         key_action_key_str(ACTION_SHOW_HELP), "Help"
     };
 
-    draw_keybindings(ui->panel, keybindings, 4);
+    ui_draw_bindings(ui, keybindings, 4);
 }
 
 int
