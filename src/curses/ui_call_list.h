@@ -112,8 +112,8 @@ struct call_list_info {
  *
  * @return the allocated ncurses panel
  */
-PANEL *
-call_list_create();
+void
+call_list_create(ui_t *ui);
 
 /**
  * @brief Destroy panel
@@ -123,7 +123,7 @@ call_list_create();
  * @param panel Ncurses panel pointer
  */
 void
-call_list_destroy(PANEL *panel);
+call_list_destroy(ui_t *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -135,7 +135,7 @@ call_list_destroy(PANEL *panel);
  * @return a pointer to info structure of given panel
  */
 call_list_info_t *
-call_list_info(PANEL *panel);
+call_list_info(ui_t *ui);
 
 /**
  * @brief Resize the windows of Call List
@@ -146,7 +146,7 @@ call_list_info(PANEL *panel);
  * @return 0 if the panel has been resized, -1 otherwise
  */
 int
-call_list_resize(PANEL *panel);
+call_list_resize(ui_t *ui);
 
 /**
  * @brief Draw panel header
@@ -156,7 +156,7 @@ call_list_resize(PANEL *panel);
  * @param panel Ncurses panel pointer
  */
 void
-call_list_draw_header(PANEL *panel);
+call_list_draw_header(ui_t *ui);
 
 /**
  * @brief Draw panel footer
@@ -167,7 +167,7 @@ call_list_draw_header(PANEL *panel);
  * @param panel Ncurses panel pointer
  */
 void
-call_list_draw_footer(PANEL *panel);
+call_list_draw_footer(ui_t *ui);
 
 /**
  * @brief Draw panel list contents
@@ -177,7 +177,7 @@ call_list_draw_footer(PANEL *panel);
  * @param panel Ncurses panel pointer
  */
 void
-call_list_draw_list(PANEL *panel);
+call_list_draw_list(ui_t *ui);
 
 /**
  * @brief Draw the Call list panel
@@ -189,7 +189,7 @@ call_list_draw_list(PANEL *panel);
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
-call_list_draw(PANEL *panel);
+call_list_draw(ui_t *ui);
 
 /**
  * @brief Enable/Disable Panel form focus
@@ -203,7 +203,7 @@ call_list_draw(PANEL *panel);
  * @param active Enable/Disable flag
  */
 void
-call_list_form_activate(PANEL *panel, int active);
+call_list_form_activate(ui_t *ui, int active);
 
 /**
  * @brief Get List line from the given call
@@ -217,7 +217,7 @@ call_list_form_activate(PANEL *panel, int active);
  * @return A pointer to text
  */
 const char*
-call_list_line_text(PANEL *panel, sip_call_t *call, char *text);
+call_list_line_text(ui_t *ui, sip_call_t *call, char *text);
 
 /**
  * @brief Handle Call list key strokes
@@ -231,7 +231,7 @@ call_list_line_text(PANEL *panel, sip_call_t *call, char *text);
  * @return 0 if the function can handle the key, key otherwise
  */
 int
-call_list_handle_key(PANEL *panel, int key);
+call_list_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Handle Forms entries key strokes
@@ -243,7 +243,7 @@ call_list_handle_key(PANEL *panel, int key);
  * @return 0 if the function can handle the key, key otherwise
  */
 int
-call_list_handle_form_key(PANEL *panel, int key);
+call_list_handle_form_key(ui_t *ui, int key);
 
 /**
  * @brief Request the panel to show its help
@@ -255,7 +255,7 @@ call_list_handle_form_key(PANEL *panel, int key);
  * @return 0 if the screen has help, -1 otherwise
  */
 int
-call_list_help(PANEL *panel);
+call_list_help(ui_t *ui);
 
 /**
  * @brief Add a column the Call List
@@ -271,7 +271,7 @@ call_list_help(PANEL *panel);
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
 int
-call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const char *title,
+call_list_add_column(ui_t *ui, enum sip_attr_id id, const char* attr, const char *title,
                      int width);
 
 /**
@@ -281,7 +281,7 @@ call_list_add_column(PANEL *panel, enum sip_attr_id id, const char* attr, const 
  * @param panel Call list panel pointer
  */
 void
-call_list_clear(PANEL *panel);
+call_list_clear(ui_t *ui);
 
 
 #endif

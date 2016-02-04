@@ -87,8 +87,8 @@ struct filter_info {
  *
  * @return a panel pointer
  */
-PANEL *
-filter_create();
+void
+filter_create(ui_t *ui);
 
 /**
  * @brief Destroy filter panel
@@ -96,7 +96,7 @@ filter_create();
  * This function do the final cleanups for this panel
  */
 void
-filter_destroy();
+filter_destroy(ui_t *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -108,7 +108,7 @@ filter_destroy();
  * @return a pointer to info structure of given panel
  */
 filter_info_t *
-filter_info(PANEL *panel);
+filter_info(ui_t *ui);
 
 /**
  * @brief Manage pressed keys for filter panel
@@ -125,7 +125,7 @@ filter_info(PANEL *panel);
  * @return 0 if the key is handled, keycode otherwise
  */
 int
-filter_handle_key(PANEL *panel, int key);
+filter_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Save form data to options
@@ -136,7 +136,7 @@ filter_handle_key(PANEL *panel, int key);
  * @param panel Filter panel pointer
  */
 void
-filter_save_options(PANEL *panel);
+filter_save_options(ui_t *ui);
 
 /**
  * @brief Return String value for a filter field

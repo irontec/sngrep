@@ -38,16 +38,9 @@
  *
  * @return a panel pointer
  */
-PANEL *
-stats_create();
-
-/**
- * @brief Destroy stats  panel
- *
- * This function do the final cleanups for this panel
- */
 void
-stats_destroy();
+stats_create(ui_t *ui);
+
 
 /**
  * @brief Manage pressed keys for stats panel
@@ -64,7 +57,7 @@ stats_destroy();
  * @return 0 if the key is handled, keycode otherwise
  */
 int
-stats_handle_key(PANEL *panel, int key);
+stats_handle_key(ui_t *ui, int key);
 
 
 

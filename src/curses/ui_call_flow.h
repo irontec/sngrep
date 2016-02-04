@@ -156,11 +156,9 @@ struct call_flow_info {
  * stuff of the screen (which usually won't be redrawn)
  * It will also create an information structure of the panel status and
  * store it in the panel's userpointer
- *
- * @return the allocated ncurses panel
  */
-PANEL *
-call_flow_create();
+void
+call_flow_create(ui_t *ui);
 
 /**
  * @brief Destroy panel
@@ -170,7 +168,7 @@ call_flow_create();
  * @return panel Ncurses panel pointer
  */
 void
-call_flow_destroy(PANEL *panel);
+call_flow_destroy(ui_t *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -182,7 +180,7 @@ call_flow_destroy(PANEL *panel);
  * @return a pointer to info structure of given panel
  */
 call_flow_info_t *
-call_flow_info(PANEL *panel);
+call_flow_info(ui_t *ui);
 
 /**
  * @brief Draw the Call flow extended panel
@@ -194,7 +192,7 @@ call_flow_info(PANEL *panel);
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
-call_flow_draw(PANEL *panel);
+call_flow_draw(ui_t *ui);
 
 /**
  * @brief Draw the footer of the panel with keybindings info
@@ -202,7 +200,7 @@ call_flow_draw(PANEL *panel);
  * @param panel Ncurses panel pointer
  */
 void
-call_flow_draw_footer(PANEL *panel);
+call_flow_draw_footer(ui_t *ui);
 
 /**
  * @brief Draw the visible columns in panel window
@@ -210,7 +208,7 @@ call_flow_draw_footer(PANEL *panel);
  * @param panel Ncurses panel pointer
  */
 int
-call_flow_draw_columns(PANEL *panel);
+call_flow_draw_columns(ui_t *ui);
 
 /**
  * @brief Draw the message arrow in the given line
@@ -226,7 +224,7 @@ call_flow_draw_columns(PANEL *panel);
  * @return the arrow passed as parameter
  */
 call_flow_arrow_t *
-call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline);
+call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline);
 
 /**
  * @brief Draw the stream data in the given line
@@ -239,7 +237,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline);
  * @return the arrow passed as parameter
  */
 call_flow_arrow_t *
-call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
+call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline);
 
 /**
  * @brief Draw the RTCP stream data in the given line
@@ -252,7 +250,7 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
  * @return the arrow passed as parameter
  */
 call_flow_arrow_t *
-call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
+call_flow_draw_rtcp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline);
 
 /**
  * @brief Get the next chronological arrow
@@ -264,7 +262,7 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline);
  * @return next chronological arrow
  */
 call_flow_arrow_t *
-call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur);
+call_flow_next_arrow(ui_t *ui, const call_flow_arrow_t *cur);
 
 /**
  * @brief Get the previous chronological arrow
@@ -276,7 +274,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur);
  * @return previous chronological arrow
  */
 call_flow_arrow_t *
-call_flow_prev_arrow(PANEL *panel, const call_flow_arrow_t *cur);
+call_flow_prev_arrow(ui_t *ui, const call_flow_arrow_t *cur);
 
 /**
  * @brief Get how many lines of screen an arrow will use
@@ -290,7 +288,7 @@ call_flow_prev_arrow(PANEL *panel, const call_flow_arrow_t *cur);
  * @return height the arrow will have
  */
 int
-call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow);
+call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow);
 
 /**
  * @brief Return the arrow of a SIP msg or RTP stream
@@ -303,7 +301,7 @@ call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow);
  * @return a pointer to the found arrow or NULL
  */
 call_flow_arrow_t *
-call_flow_arrow_find(PANEL *panel, const void *data);
+call_flow_arrow_find(ui_t *ui, const void *data);
 
 /**
  * @brief Return the SIP message associated with the arrow
@@ -328,7 +326,7 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow);
  * @return 0 in all cases
  */
 int
-call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
+call_flow_draw_raw(ui_t *ui, sip_msg_t *msg);
 
 /**
  * @brief Draw raw panel with RTCP data
@@ -340,7 +338,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg);
  * @return 0 in all cases
  */
 int
-call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *rtcp);
+call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *rtcp);
 
 /**
  * @brief Handle Call flow extended key strokes
@@ -354,7 +352,7 @@ call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *rtcp);
  * @return 0 if the function can handle the key, key otherwise
  */
 int
-call_flow_handle_key(PANEL *panel, int key);
+call_flow_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Request the panel to show its help
@@ -366,7 +364,7 @@ call_flow_handle_key(PANEL *panel, int key);
  * @return 0 if the screen has help, -1 otherwise
  */
 int
-call_flow_help(PANEL *panel);
+call_flow_help(ui_t *ui);
 
 /**
  * @brief Set the group call of the panel
@@ -392,7 +390,7 @@ call_flow_set_group(sip_call_group_t *group);
  * @param addr Address:port string
  */
 void
-call_flow_column_add(PANEL *panel, const char *callid, address_t addr);
+call_flow_column_add(ui_t *ui, const char *callid, address_t addr);
 
 /**
  * @brief Get a flow column data
@@ -403,7 +401,7 @@ call_flow_column_add(PANEL *panel, const char *callid, address_t addr);
  * @return column structure pointer or NULL if not found
  */
 call_flow_column_t *
-call_flow_column_get(PANEL *panel, const char *callid, address_t address);
+call_flow_column_get(ui_t *ui, const char *callid, address_t address);
 
 
 #endif /* __SNGREP_UI_CALL_FLOW_H */

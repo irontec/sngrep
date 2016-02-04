@@ -39,7 +39,7 @@
 /**
  * Ui Structure definition for Call Raw panel
  */
-ui_panel_t ui_call_raw = {
+ui_t ui_call_raw = {
     .type = PANEL_CALL_RAW,
     .panel = NULL,
     .create = call_raw_create,
@@ -48,77 +48,69 @@ ui_panel_t ui_call_raw = {
     .handle_key = call_raw_handle_key
 };
 
-PANEL *
-call_raw_create()
+void
+call_raw_create(ui_t *ui)
 {
-    PANEL *panel;
-    call_raw_info_t *info;
-
     // Create a new panel to fill all the screen
-    panel = new_panel(newwin(LINES, COLS, 0, 0));
+    ui_panel_create(ui, LINES, COLS);
 
     // Initialize Call List specific data
-    info = sng_malloc(sizeof(call_raw_info_t));
+    call_raw_info_t *info = sng_malloc(sizeof(call_raw_info_t));
 
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
+    set_panel_userptr(ui->panel, (void*) info);
 
     // Create a initial pad of 1000 lines
     info->pad = newpad(500, COLS);
     info->padline = 0;
     info->scroll = 0;
-
-    return panel;
 }
 
 void
-call_raw_destroy(PANEL *panel)
+call_raw_destroy(ui_t *ui)
 {
     call_raw_info_t *info;
 
-    if ((info = call_raw_info(panel))) {
+    if ((info = call_raw_info(ui))) {
         // Delete panel windows
         delwin(info->pad);
         sng_free(info);
     }
-    // Delete panel window
-    delwin(panel_window(panel));
-    // Delete panel
-    del_panel(panel);
+    ui_panel_destroy(ui);
 }
 
 call_raw_info_t *
-call_raw_info(PANEL *panel)
+call_raw_info(ui_t *ui)
 {
-    return (call_raw_info_t*) panel_userptr(panel);
+    return (call_raw_info_t*) panel_userptr(ui->panel);
 }
 
 int
-call_raw_draw(PANEL *panel)
+call_raw_draw(ui_t *ui)
 {
     call_raw_info_t *info;
     sip_msg_t *msg = NULL;
 
     // Get panel information
-    if(!(info = call_raw_info(panel)))
+    if(!(info = call_raw_info(ui)))
         return -1;
 
     if (info->group) {
         // Print the call group messages into the pad
         while ((msg = call_group_get_next_msg(info->group, info->last)))
-            call_raw_print_msg(panel, msg);
+            call_raw_print_msg(ui, msg);
     } else {
         call_raw_set_msg(info->msg);
     }
 
     // Copy the visible part of the pad into the panel window
-    copywin(info->pad, panel_window(panel), info->scroll, 0, 0, 0, LINES - 1, COLS - 1, 0);
-    touchwin(panel_window(panel));
+    copywin(info->pad, ui->win, info->scroll, 0, 0, 0, ui->height - 1, ui->width - 1, 0);
+    touchwin(ui->win);
     return 0;
 }
 
 int
-call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
+call_raw_print_msg(ui_t *ui, sip_msg_t *msg)
 {
     call_raw_info_t *info;
     int payload_lines, i, column, height, width;
@@ -128,7 +120,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
     int color = 0;
 
     // Get panel information
-    if (!(info = call_raw_info(panel)))
+    if (!(info = call_raw_info(ui)))
         return -1;
 
     // Get the pad window
@@ -200,15 +192,15 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg)
 }
 
 int
-call_raw_handle_key(PANEL *panel, int key)
+call_raw_handle_key(ui_t *ui, int key)
 {
     call_raw_info_t *info;
-    ui_panel_t *next_panel;
+    ui_t *next_ui;
     int rnpag_steps = setting_get_intvalue(SETTING_CR_SCROLLSTEP);
     int action = -1;
 
     // Sanity check, this should not happen
-    if (!(info  = call_raw_info(panel)))
+    if (!(info  = call_raw_info(ui)))
         return -1;
 
     // Check actions for this key
@@ -238,14 +230,14 @@ call_raw_handle_key(PANEL *panel, int key)
             case ACTION_SAVE:
                 if (info->group) {
                     // KEY_S, Display save panel
-                    next_panel = ui_create_panel(PANEL_SAVE);
-                    save_set_group(ui_get_panel(next_panel), info->group);
+                    next_ui = ui_create_panel(PANEL_SAVE);
+                    save_set_group(next_ui, info->group);
                 }
                 break;
             case ACTION_TOGGLE_SYNTAX:
             case ACTION_CYCLE_COLOR:
                 // Handle colors using default handler
-                default_handle_key(ui_find_by_panel(panel), key);
+                default_handle_key(ui, key);
                 // Create a new pad (forces messages draw)
                 delwin(info->pad);
                 info->pad = newpad(500, COLS);
@@ -280,20 +272,16 @@ call_raw_handle_key(PANEL *panel, int key)
 int
 call_raw_set_group(sip_call_group_t *group)
 {
-    ui_panel_t *raw_panel;
-    PANEL *panel;
+    ui_t *ui;
     call_raw_info_t *info;
 
     if (!group)
         return -1;
 
-    if (!(raw_panel = ui_find_by_type(PANEL_CALL_RAW)))
+    if (!(ui = ui_find_by_type(PANEL_CALL_RAW)))
         return -1;
 
-    if (!(panel = raw_panel->panel))
-        return -1;
-
-    if (!(info = call_raw_info(panel)))
+    if (!(info = call_raw_info(ui)))
         return -1;
 
     // Set call raw call group
@@ -310,20 +298,16 @@ call_raw_set_group(sip_call_group_t *group)
 int
 call_raw_set_msg(sip_msg_t *msg)
 {
-    ui_panel_t *raw_panel;
-    PANEL *panel;
+    ui_t *ui;
     call_raw_info_t *info;
 
     if (!msg)
         return -1;
 
-    if (!(raw_panel = ui_find_by_type(PANEL_CALL_RAW)))
+    if (!(ui = ui_find_by_type(PANEL_CALL_RAW)))
         return -1;
 
-    if (!(panel = raw_panel->panel))
-        return -1;
-
-    if (!(info = call_raw_info(panel)))
+    if (!(info = call_raw_info(ui)))
         return -1;
 
     // Set call raw message
@@ -335,7 +319,7 @@ call_raw_set_msg(sip_msg_t *msg)
     wclear(info->pad);
 
     // Print the message in the pad
-    call_raw_print_msg(panel, msg);
+    call_raw_print_msg(ui, msg);
 
     return 0;
 

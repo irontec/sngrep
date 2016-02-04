@@ -29,15 +29,14 @@
 #include "config.h"
 #include "ui_panel.h"
 
-
-ui_panel_t *
-ui_create(ui_panel_t *ui)
+ui_t *
+ui_create(ui_t *ui)
 {
     // If ui has no panel
     if (!ui->panel) {
         // Create the new panel for this ui
         if (ui->create) {
-            ui->panel = ui->create();
+            ui->create(ui);
         }
     }
 
@@ -46,7 +45,7 @@ ui_create(ui_panel_t *ui)
 }
 
 void
-ui_destroy(ui_panel_t *ui)
+ui_destroy(ui_t *ui)
 {
     // If there is no ui panel, we're done
     if (!ui || !ui->panel)
@@ -57,7 +56,7 @@ ui_destroy(ui_panel_t *ui)
 
     // If panel has a destructor function use it
     if (ui->destroy) {
-        ui->destroy(ui->panel);
+        ui->destroy(ui);
     }
 
     // Initialize panel pointer
@@ -65,14 +64,14 @@ ui_destroy(ui_panel_t *ui)
 }
 
 PANEL *
-ui_get_panel(ui_panel_t *ui)
+ui_get_panel(ui_t *ui)
 {
     // Return panel pointer of ui struct
     return (ui) ? ui->panel : NULL;
 }
 
 int
-ui_draw_panel(ui_panel_t *ui)
+ui_draw_panel(ui_t *ui)
 {
     //! Sanity check, this should not happen
     if (!ui || !ui->panel)
@@ -80,7 +79,7 @@ ui_draw_panel(ui_panel_t *ui)
 
     // Request the panel to draw on the scren
     if (ui->draw) {
-        return ui->draw(ui->panel);
+        return ui->draw(ui);
     } else {
         touchwin(ui->win);
     }
@@ -89,7 +88,7 @@ ui_draw_panel(ui_panel_t *ui)
 }
 
 int
-ui_resize_panel(ui_panel_t *ui)
+ui_resize_panel(ui_t *ui)
 {
     //! Sanity check, this should not happen
     if (!ui)
@@ -97,14 +96,14 @@ ui_resize_panel(ui_panel_t *ui)
 
     // Notify the panel screen size has changed
     if (ui->resize) {
-        return ui->resize(ui->panel);
+        return ui->resize(ui);
     }
 
     return 0;
 }
 
 void
-ui_help(ui_panel_t *ui)
+ui_help(ui_t *ui)
 {
     // Disable input timeout
     nocbreak();
@@ -112,16 +111,41 @@ ui_help(ui_panel_t *ui)
 
     // If current ui has help function
     if (ui->help) {
-        ui->help(ui->panel);
+        ui->help(ui);
     }
 }
 
 int
-ui_handle_key(ui_panel_t *ui, int key)
+ui_handle_key(ui_t *ui, int key)
 {
     if (ui->handle_key) {
-        return ui->handle_key(ui->panel, key);
+        return ui->handle_key(ui, key);
     }
 
     return 0;
+}
+
+
+void
+ui_panel_create(ui_t *ui, int height, int width)
+{
+    ui->width = width;
+    ui->height = height;
+    ui->x = ui->y = 0;
+
+    // If panel doesn't fill the screen center it
+    if (ui->height != LINES) ui->x = (LINES - height) / 2;
+    if (ui->width != COLS) ui->y = (COLS - width) / 2;
+
+    ui->win = newwin(height, width, ui->x, ui->y);
+    ui->panel = new_panel(ui->win);
+}
+
+void
+ui_panel_destroy(ui_t *ui)
+{
+    // Deallocate panel window
+    delwin(ui->win);
+    // Deallocate panel pointer
+    del_panel(ui->panel);
 }

@@ -57,8 +57,8 @@ struct msg_diff_info {
  *
  * @return the allocated ncurses panel
  */
-PANEL *
-msg_diff_create();
+void
+msg_diff_create(ui_t *ui);
 
 /**
  * @brief Deallocate panel memory
@@ -69,7 +69,7 @@ msg_diff_create();
  * @param panel Ncurses panel pointer
  */
 void
-msg_diff_destroy(PANEL *panel);
+msg_diff_destroy(ui_t *ui);
 
 /**
  * @brief Get panel information structure
@@ -82,7 +82,7 @@ msg_diff_destroy(PANEL *panel);
  * @return a pointer to the info structure or NULL if no structure exists
  */
 msg_diff_info_t *
-msg_diff_info(PANEL *panel);
+msg_diff_info(ui_t *ui);
 
 /**
  * @brief Redraw panel data
@@ -94,7 +94,7 @@ msg_diff_info(PANEL *panel);
  * @return 0 in all cases
  */
 int
-msg_diff_draw(PANEL *panel);
+msg_diff_draw(ui_t *ui);
 
 /**
  * @brief Draw panel footer
@@ -105,7 +105,7 @@ msg_diff_draw(PANEL *panel);
  * @param panel Ncurses panel pointer
  */
 void
-msg_diff_draw_footer(PANEL *panel);
+msg_diff_draw_footer(ui_t *ui);
 
 /**
  * @brief Draw a message into a raw subwindow
@@ -129,7 +129,7 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight);
  * @return 0 if the function can handle the key, key otherwise
  */
 int
-msg_diff_handle_key(PANEL *panel, int key);
+msg_diff_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Request the panel to show its help
@@ -141,7 +141,7 @@ msg_diff_handle_key(PANEL *panel, int key);
  * @return 0 if the screen has help
  */
 int
-msg_diff_help(PANEL *panel);
+msg_diff_help(ui_t *ui);
 
 /**
  * @brief Set the panel working messages
@@ -155,6 +155,6 @@ msg_diff_help(PANEL *panel);
  * @return 0 in all cases
  */
 int
-msg_diff_set_msgs(PANEL *panel, sip_msg_t *one, sip_msg_t *two);
+msg_diff_set_msgs(ui_t *ui, sip_msg_t *one, sip_msg_t *two);
 
 #endif

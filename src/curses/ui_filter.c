@@ -40,7 +40,7 @@
 /**
  * Ui Structure definition for Filter panel
  */
-ui_panel_t ui_filter = {
+ui_t ui_filter = {
     .type = PANEL_FILTER,
     .panel = NULL,
     .create = filter_create,
@@ -48,30 +48,20 @@ ui_panel_t ui_filter = {
     .destroy = filter_destroy
 };
 
-PANEL *
-filter_create()
+void
+filter_create(ui_t *ui)
 {
-    PANEL *panel;
-    WINDOW *win;
-    int height, width;
     filter_info_t *info;
     const char *method;
 
-    // Calculate window dimensions
-    height = 16;
-    width = 50;
-
     // Cerate a new indow for the panel and form
-    win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
-
-    // Create a new panel
-    panel = new_panel(win);
+    ui_panel_create(ui, 16, 50);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(filter_info_t));
 
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
+    set_panel_userptr(ui->panel, (void*) info);
 
     // Initialize the fields
     info->fields[FLD_FILTER_SIPFROM] = new_field(1, 28, 3, 18, 0, 0);
@@ -86,8 +76,8 @@ filter_create()
     info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 9, 37, 0, 0);
     info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 10, 37, 0, 0);
     info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 11, 37, 0, 0);
-    info->fields[FLD_FILTER_FILTER] = new_field(1, 10, height - 2, 11, 0, 0);
-    info->fields[FLD_FILTER_CANCEL] = new_field(1, 10, height - 2, 30, 0, 0);
+    info->fields[FLD_FILTER_FILTER] = new_field(1, 10, ui->height - 2, 11, 0, 0);
+    info->fields[FLD_FILTER_CANCEL] = new_field(1, 10, ui->height - 2, 30, 0, 0);
     info->fields[FLD_FILTER_COUNT] = NULL;
 
     // Set fields options
@@ -115,22 +105,22 @@ filter_create()
 
     // Create the form and post it
     info->form = new_form(info->fields);
-    set_form_sub(info->form, win);
+    set_form_sub(info->form, ui->win);
     post_form(info->form);
 
     // Fields labels
-    mvwprintw(win, 3, 3, "SIP From:");
-    mvwprintw(win, 4, 3, "SIP To:");
-    mvwprintw(win, 5, 3, "Source:");
-    mvwprintw(win, 6, 3, "Destination:");
-    mvwprintw(win, 7, 3, "Payload:");
-    mvwprintw(win, 9, 3, "REGISTER   [ ]");
-    mvwprintw(win, 10, 3, "INVITE     [ ]");
-    mvwprintw(win, 11, 3, "SUBSCRIBE  [ ]");
-    mvwprintw(win, 12, 3, "NOTIFY     [ ]");
-    mvwprintw(win, 9, 25, "OPTIONS    [ ]");
-    mvwprintw(win, 10, 25, "PUBLISH    [ ]");
-    mvwprintw(win, 11, 25, "MESSAGE    [ ]");
+    mvwprintw(ui->win, 3, 3, "SIP From:");
+    mvwprintw(ui->win, 4, 3, "SIP To:");
+    mvwprintw(ui->win, 5, 3, "Source:");
+    mvwprintw(ui->win, 6, 3, "Destination:");
+    mvwprintw(ui->win, 7, 3, "Payload:");
+    mvwprintw(ui->win, 9, 3, "REGISTER   [ ]");
+    mvwprintw(ui->win, 10, 3, "INVITE     [ ]");
+    mvwprintw(ui->win, 11, 3, "SUBSCRIBE  [ ]");
+    mvwprintw(ui->win, 12, 3, "NOTIFY     [ ]");
+    mvwprintw(ui->win, 9, 25, "OPTIONS    [ ]");
+    mvwprintw(ui->win, 10, 25, "PUBLISH    [ ]");
+    mvwprintw(ui->win, 11, 25, "MESSAGE    [ ]");
 
     // Get Method filter
     if (!(method = filter_get(FILTER_METHOD)))
@@ -160,44 +150,43 @@ filter_create()
     set_field_buffer(info->fields[FLD_FILTER_CANCEL], 0, "[ Cancel ]");
 
     // Set the window title and boxes
-    mvwprintw(win, 1, 18, "Filter options");
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(panel);
-    mvwhline(win, 8, 1, ACS_HLINE, 49);
-    mvwaddch(win, 8, 0, ACS_LTEE);
-    mvwaddch(win, 8, 49, ACS_RTEE);
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwprintw(ui->win, 1, 18, "Filter options");
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    title_foot_box(ui->panel);
+    mvwhline(ui->win, 8, 1, ACS_HLINE, 49);
+    mvwaddch(ui->win, 8, 0, ACS_LTEE);
+    mvwaddch(ui->win, 8, 49, ACS_RTEE);
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);
-    wmove(win, 3, 18);
+    wmove(ui->win, 3, 18);
     curs_set(1);
-
-    return panel;
-}
-
-filter_info_t *
-filter_info(PANEL *panel)
-{
-    return (filter_info_t*) panel_userptr(panel);
 }
 
 void
-filter_destroy(PANEL *panel)
+filter_destroy(ui_t *ui)
 {
-    // Disable cursor position
     curs_set(0);
+    ui_panel_destroy(ui);
+}
+
+
+filter_info_t *
+filter_info(ui_t *ui)
+{
+    return (filter_info_t*) panel_userptr(ui->panel);
 }
 
 int
-filter_handle_key(PANEL *panel, int key)
+filter_handle_key(ui_t *ui, int key)
 {
     int field_idx;
     char field_value[30];
     int action = -1;
 
     // Get panel information
-    filter_info_t *info = filter_info(panel);
+    filter_info_t *info = filter_info(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -273,13 +262,13 @@ filter_handle_key(PANEL *panel, int key)
                     case FLD_FILTER_CANCEL:
                         return KEY_ESC;
                     case FLD_FILTER_FILTER:
-                        filter_save_options(panel);
+                        filter_save_options(ui);
                         return KEY_ESC;
                 }
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_FILTER_CANCEL)
-                    filter_save_options(panel);
+                    filter_save_options(ui);
                 return KEY_ESC;
             default:
                 // Parse next action
@@ -310,7 +299,7 @@ filter_handle_key(PANEL *panel, int key)
 }
 
 void
-filter_save_options(PANEL *panel)
+filter_save_options(ui_t *ui)
 {
     char field_value[30];
     char *expr;
@@ -321,7 +310,7 @@ filter_save_options(PANEL *panel)
     memset(method_expr, 0, sizeof(method_expr));
 
     // Get panel information
-    filter_info_t *info = filter_info(panel);
+    filter_info_t *info = filter_info(ui);
 
     for (field_id = 0; field_id < FLD_FILTER_COUNT; field_id++) {
         // Get current field value.
@@ -376,7 +365,7 @@ filter_save_options(PANEL *panel)
     // Force filter evaluation
     filter_reset_calls();
     // TODO FIXME Refresh call list FIXME
-    call_list_clear(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
+    call_list_clear(ui_find_by_type(PANEL_CALL_LIST));
 
 }
 

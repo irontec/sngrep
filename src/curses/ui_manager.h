@@ -78,15 +78,15 @@ enum sngrep_colors_pairs {
 /**
  * Define existing panels
  */
-extern ui_panel_t ui_call_list;
-extern ui_panel_t ui_call_flow;
-extern ui_panel_t ui_call_raw;
-extern ui_panel_t ui_filter;
-extern ui_panel_t ui_save;
-extern ui_panel_t ui_msg_diff;
-extern ui_panel_t ui_column_select;
-extern ui_panel_t ui_settings;
-extern ui_panel_t ui_stats;
+extern ui_t ui_call_list;
+extern ui_t ui_call_flow;
+extern ui_t ui_call_raw;
+extern ui_t ui_filter;
+extern ui_t ui_save;
+extern ui_t ui_msg_diff;
+extern ui_t ui_column_select;
+extern ui_t ui_settings;
+extern ui_t ui_stats;
 
 /**
  * @brief Initialize ncurses mode
@@ -118,19 +118,19 @@ ncurses_deinit();
  * @param type Panel Type
  * @return the ui structure with the panel pointer created*
  */
-ui_panel_t *
+ui_t *
 ui_create_panel(enum panel_types type);
 
 /**
  * @brief Find a ui from its pannel pointer
  */
-ui_panel_t *
+ui_t *
 ui_find_by_panel(PANEL *panel);
 
 /**
  * @brief Find a ui form its panel id
  */
-ui_panel_t *
+ui_t *
 ui_find_by_type(enum panel_types type);
 
 /**
@@ -153,7 +153,7 @@ wait_for_input();
  * @param key key pressed by user
  */
 int
-default_handle_key(ui_panel_t *ui, int key);
+default_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Draw a box around passed windows

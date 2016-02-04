@@ -77,11 +77,9 @@ struct column_select_info {
  * displaying the column selection panel. It also draws all the
  * static information of the panel that will never be
  * redrawn.
- *
- * @return a panel pointer
  */
-PANEL *
-column_select_create();
+void
+column_select_create(ui_t *ui);
 
 /**
  * @brief Destroy column selection panel
@@ -89,7 +87,7 @@ column_select_create();
  * This function do the final cleanups for this panel
  */
 void
-column_select_destroy();
+column_select_destroy(ui_t *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -101,7 +99,7 @@ column_select_destroy();
  * @return a pointer to info structure of given panel
  */
 column_select_info_t *
-column_select_info(PANEL *panel);
+column_select_info(ui_t *ui);
 
 /**
  * @brief Manage pressed keys for column selection panel
@@ -118,7 +116,7 @@ column_select_info(PANEL *panel);
  * @return 0 if the key is handled, keycode otherwise
  */
 int
-column_select_handle_key(PANEL *panel, int key);
+column_select_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Manage pressed keys for column selection panel
@@ -132,7 +130,7 @@ column_select_handle_key(PANEL *panel, int key);
  * @return 0 if the key is handled, keycode otherwise
  */
 int
-column_select_handle_key_menu(PANEL *panel, int key);
+column_select_handle_key_menu(ui_t *ui, int key);
 
 /**
  * @brief Manage pressed keys for column selection panel
@@ -146,7 +144,7 @@ column_select_handle_key_menu(PANEL *panel, int key);
  * @return 0 if the key is handled, keycode otherwise
  */
 int
-column_select_handle_key_form(PANEL *panel, int key);
+column_select_handle_key_form(ui_t *ui, int key);
 
 /**
  * @brief Update Call List columns
@@ -156,7 +154,7 @@ column_select_handle_key_form(PANEL *panel, int key);
  * @param panel Column selection panel pointer
  */
 void
-column_select_update_columns(PANEL *panel);
+column_select_update_columns(ui_t *ui);
 
 /**
  * @brief Save selected columns to user config file
@@ -167,7 +165,7 @@ column_select_update_columns(PANEL *panel);
  * @param panel Column selection panel pointer
  */
 void
-column_select_save_columns(PANEL *panel);
+column_select_save_columns(ui_t *ui);
 
 /**
  * @brief Move a item to a new position
@@ -179,7 +177,7 @@ column_select_save_columns(PANEL *panel);
  * @param post New position in the menu
  */
 void
-column_select_move_item(PANEL *panel, ITEM *item, int pos);
+column_select_move_item(ui_t *ui, ITEM *item, int pos);
 
 /**
  * @brief Select/Deselect a menu item
@@ -191,7 +189,7 @@ column_select_move_item(PANEL *panel, ITEM *item, int pos);
  * @param item Menu item to be (de)selected
  */
 void
-column_select_toggle_item(PANEL *panel, ITEM *item);
+column_select_toggle_item(ui_t *ui, ITEM *item);
 
 /**
  * @brief Update menu after a change
@@ -202,6 +200,6 @@ column_select_toggle_item(PANEL *panel, ITEM *item);
  * @param panel Column selection panel pointer
  */
 void
-column_select_update_menu(PANEL *panel);
+column_select_update_menu(ui_t *ui);
 
 #endif /* __UI_COLUMN_SELECT_H */

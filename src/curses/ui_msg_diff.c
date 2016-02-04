@@ -55,7 +55,7 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_panel_t ui_msg_diff = {
+ui_t ui_msg_diff = {
     .type = PANEL_MSG_DIFF,
     .panel = NULL,
     .create = msg_diff_create,
@@ -65,56 +65,49 @@ ui_panel_t ui_msg_diff = {
     .help = msg_diff_help
 };
 
-PANEL *
-msg_diff_create()
+void
+msg_diff_create(ui_t *ui)
 {
-    PANEL *panel;
-    WINDOW *win;
-    int height, width, hwidth;
+    int hwidth;
     msg_diff_info_t *info;
 
     // Create a new panel to fill all the screen
-    panel = new_panel(newwin(LINES, COLS, 0, 0));
+    ui_panel_create(ui, LINES, COLS);
 
     // Initialize panel specific data
     info = sng_malloc(sizeof(msg_diff_info_t));
 
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
-
-    // Let's draw the fixed elements of the screen
-    win = panel_window(panel);
-    getmaxyx(win, height, width);
+    set_panel_userptr(ui->panel, (void*) info);
 
     // Calculate subwindows width
-    hwidth = width / 2 - 1;
+    hwidth = ui->width / 2 - 1;
 
     // Create 2 subwindows, one for each message
-    info->one_win = subwin(win, height - 2, hwidth, 1, 0);
-    info->two_win = subwin(win, height - 2, hwidth, 1, hwidth + 1); // Header - Footer - Address
+    info->one_win = subwin(ui->win, ui->height - 2, hwidth, 1, 0);
+    info->two_win = subwin(ui->win, ui->height - 2, hwidth, 1, hwidth + 1); // Header - Footer - Address
 
     // Draw a vertical line to separe both subwindows
-    mvwvline(win, 0, hwidth, ACS_VLINE, height);
+    mvwvline(ui->win, 0, hwidth, ACS_VLINE, ui->height);
 
     // Draw title
-    draw_title(panel, "sngrep - SIP messages flow viewer");
+    draw_title(ui->panel, "sngrep - SIP messages flow viewer");
 
     // Draw keybindings
-    msg_diff_draw_footer(panel);
-
-    return panel;
+    msg_diff_draw_footer(ui);
 }
 
 void
-msg_diff_destroy(PANEL *panel)
+msg_diff_destroy(ui_t *ui)
 {
-    sng_free(msg_diff_info(panel));
+    sng_free(msg_diff_info(ui));
+    ui_panel_destroy(ui);
 }
 
 msg_diff_info_t *
-msg_diff_info(PANEL *panel)
+msg_diff_info(ui_t *ui)
 {
-    return (msg_diff_info_t*) panel_userptr(panel);
+    return (msg_diff_info_t*) panel_userptr(ui->panel);
 }
 
 int
@@ -148,21 +141,21 @@ msg_diff_line_highlight(const char* payload1, const char* payload2, char *highli
 }
 
 void
-msg_diff_draw_footer(PANEL *panel)
+msg_diff_draw_footer(ui_t *ui)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls Flow",
         key_action_key_str(ACTION_SHOW_HELP), "Help"
     };
 
-    draw_keybindings(panel, keybindings, 4);
+    draw_keybindings(ui->panel, keybindings, 4);
 }
 
 int
-msg_diff_draw(PANEL *panel)
+msg_diff_draw(ui_t *ui)
 {
     // Get panel information
-    msg_diff_info_t *info = msg_diff_info(panel);
+    msg_diff_info_t *info = msg_diff_info(ui);
     char highlight[4086];
 
     // Draw first message
@@ -175,7 +168,7 @@ msg_diff_draw(PANEL *panel)
     msg_diff_draw_message(info->two_win, info->two, highlight);
 
     // Redraw footer
-    msg_diff_draw_footer(panel);
+    msg_diff_draw_footer(ui);
 
     return 0;
 }
@@ -230,24 +223,24 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
 }
 
 int
-msg_diff_handle_key(PANEL *panel, int key)
+msg_diff_handle_key(ui_t *ui, int key)
 {
     return key;
 }
 
 int
-msg_diff_help(PANEL *panel)
+msg_diff_help(ui_t *ui)
 {
     return 0;
 }
 
 int
-msg_diff_set_msgs(PANEL *panel, sip_msg_t *one, sip_msg_t *two)
+msg_diff_set_msgs(ui_t *ui, sip_msg_t *one, sip_msg_t *two)
 {
     msg_diff_info_t *info;
 
     // Get panel information
-    info = msg_diff_info(panel);
+    info = msg_diff_info(ui);
     info->one = one;
     info->two = two;
 

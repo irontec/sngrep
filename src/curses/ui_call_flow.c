@@ -68,7 +68,7 @@
 /**
  * Ui Structure definition for Call Flow panel
  */
-ui_panel_t ui_call_flow = {
+ui_t ui_call_flow = {
     .type = PANEL_CALL_FLOW,
     .panel = NULL,
     .create = call_flow_create,
@@ -78,39 +78,34 @@ ui_panel_t ui_call_flow = {
     .help = call_flow_help
 };
 
-PANEL *
-call_flow_create()
+void
+call_flow_create(ui_t *ui)
 {
     // Create a new panel to fill all the screen
-    PANEL *panel = new_panel(newwin(LINES, COLS, 0, 0));
+    ui_panel_create(ui, LINES, COLS);
 
     // Initialize Call List specific data
     call_flow_info_t *info = malloc(sizeof(call_flow_info_t));
     memset(info, 0, sizeof(call_flow_info_t));
 
-    // Let's draw the fixed elements of the screen
-    WINDOW *win = panel_window(panel);
-
     // Calculate available printable area for messages
-    info->flow_win = subwin(win, getmaxy(win) - 6, getmaxx(win) - 2, 4, 0);
+    info->flow_win = subwin(ui->win, ui->height - 6, ui->width - 2, 4, 0);
 
     // Create vectors for columns and flow arrows
     info->columns = vector_create(2, 1);
     info->arrows = vector_create(20, 5);
 
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
-
-    return panel;
+    set_panel_userptr(ui->panel, (void*) info);
 }
 
 void
-call_flow_destroy(PANEL *panel)
+call_flow_destroy(ui_t *ui)
 {
     call_flow_info_t *info;
 
     // Free the panel information
-    if ((info = call_flow_info(panel))) {
+    if ((info = call_flow_info(ui))) {
         // Delete panel columns
         vector_destroy_items(info->columns);
         // Delete panel arrows
@@ -123,33 +118,28 @@ call_flow_destroy(PANEL *panel)
         // Free panel info
         free(info);
     }
-    // Delete panel window
-    delwin(panel_window(panel));
-    // Deallocate panel pointer
-    del_panel(panel);
+    ui_panel_destroy(ui);
 }
 
 call_flow_info_t *
-call_flow_info(PANEL *panel)
+call_flow_info(ui_t *ui)
 {
-    return (call_flow_info_t*) panel_userptr(panel);
+    return (call_flow_info_t*) panel_userptr(ui->panel);
 }
 
 int
-call_flow_draw(PANEL *panel)
+call_flow_draw(ui_t *ui)
 {
     call_flow_arrow_t *arrow = NULL;
-    int height, width, cline = 0;
+    int cline = 0;
     char title[256];
     char callid[256];
 
     // Get panel information
-    call_flow_info_t *info = call_flow_info(panel);
+    call_flow_info_t *info = call_flow_info(ui);
 
     // Get window of main panel
-    WINDOW *win = panel_window(panel);
-    getmaxyx(win, height, width);
-    werase(win);
+    werase(ui->win);
 
     // Set title
     if (call_group_count(info->group) == 1) {
@@ -168,23 +158,23 @@ call_flow_draw(PANEL *panel)
         strcat(title, " (Color by CSeq)");
 
     // Draw panel title
-    draw_title(panel, title);
+    draw_title(ui->panel, title);
 
     // Show some keybinding
-    call_flow_draw_footer(panel);
+    call_flow_draw_footer(ui);
 
     // Redraw columns
-    call_flow_draw_columns(panel);
+    call_flow_draw_columns(ui);
 
-    for (arrow = info->first_arrow; arrow; arrow = call_flow_next_arrow(panel, arrow)) {
+    for (arrow = info->first_arrow; arrow; arrow = call_flow_next_arrow(ui, arrow)) {
         if (arrow->type == CF_ARROW_SIP) {
-            if (!call_flow_draw_message(panel, arrow, cline))
+            if (!call_flow_draw_message(ui, arrow, cline))
                 break;
         } else if (arrow->type == CF_ARROW_RTP) {
-            if (!call_flow_draw_rtp_stream(panel, arrow, cline))
+            if (!call_flow_draw_rtp_stream(ui, arrow, cline))
                 break;
         } else if (arrow->type == CF_ARROW_RTCP) {
-            if (!call_flow_draw_rtcp_stream(panel, arrow, cline))
+            if (!call_flow_draw_rtcp_stream(ui, arrow, cline))
                 break;
         }
         cline += arrow->height;
@@ -194,13 +184,13 @@ call_flow_draw(PANEL *panel)
     if (setting_enabled(SETTING_CF_FORCERAW)) {
         switch (info->cur_arrow->type) {
             case CF_ARROW_RTP:
-                call_flow_draw_raw(panel, info->cur_arrow->stream->media->msg);
+                call_flow_draw_raw(ui, info->cur_arrow->stream->media->msg);
                 break;
             case CF_ARROW_SIP:
-                call_flow_draw_raw(panel, info->cur_arrow->msg);
+                call_flow_draw_raw(ui, info->cur_arrow->msg);
                 break;
             case CF_ARROW_RTCP:
-                call_flow_draw_raw_rtcp(panel, info->cur_arrow->stream);
+                call_flow_draw_raw_rtcp(ui, info->cur_arrow->stream);
                 break;
         }
 
@@ -219,20 +209,14 @@ call_flow_draw(PANEL *panel)
 }
 
 void
-call_flow_draw_footer(PANEL *panel)
+call_flow_draw_footer(ui_t *ui)
 {
     call_flow_info_t *info;
     sip_call_t *call = NULL;
-    WINDOW *win;
     int streamcnt = 0;
-    int height, width;
 
     // Get panel information
-    info = call_flow_info(panel);
-
-    // Get window of main panel
-    win = panel_window(panel);
-    getmaxyx(win, height, width);
+    info = call_flow_info(ui);
 
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
@@ -248,7 +232,7 @@ call_flow_draw_footer(PANEL *panel)
         key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
     };
 
-    draw_keybindings(panel, keybindings, 22);
+    draw_keybindings(ui->panel, keybindings, 22);
 
     // If any dialog has RTP streams and they are not visible
     if (!setting_enabled(SETTING_CF_MEDIA)) {
@@ -257,40 +241,34 @@ call_flow_draw_footer(PANEL *panel)
         }
         // Highlight RTP keybinding
         if (streamcnt) {
-            wattron(win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-            mvwprintw(win, height - 1, 64, "%s %s", key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP");
-            wattroff(win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
+            wattron(ui->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
+            mvwprintw(ui->win, ui->height - 1, 64, "%s %s", key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP");
+            wattroff(ui->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
         }
     }
 }
 
 int
-call_flow_draw_columns(PANEL *panel)
+call_flow_draw_columns(ui_t *ui)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
     sip_call_t *call = NULL;
     rtp_stream_t *stream;
-    WINDOW *win;
     sip_msg_t *msg;
     vector_iter_t streams;
     vector_iter_t columns;
-    int flow_height, flow_width;
     char coltext[MAX_SETTING_LEN];
     address_t addr;
 
     // Get panel information
-    info = call_flow_info(panel);
-
-    // Get window of main panel
-    win = panel_window(panel);
-    getmaxyx(info->flow_win, flow_height, flow_width);
+    info = call_flow_info(ui);
 
     // Load columns
     for (msg = call_group_get_next_msg(info->group, info->last_msg); msg;
          msg = call_group_get_next_msg(info->group, msg)) {
-        call_flow_column_add(panel, msg->call->callid, msg->packet->src);
-        call_flow_column_add(panel, msg->call->callid, msg->packet->dst);
+        call_flow_column_add(ui, msg->call->callid, msg->packet->src);
+        call_flow_column_add(ui, msg->call->callid, msg->packet->dst);
         info->last_msg = msg;
     }
 
@@ -302,10 +280,10 @@ call_flow_draw_columns(PANEL *panel)
                 if (stream_get_count(stream)) {
                     addr = stream->src;
                     addr.port = 0;
-                    call_flow_column_add(panel, NULL, addr);
+                    call_flow_column_add(ui, NULL, addr);
                     addr = stream->dst;
                     addr.port = 0;
-                    call_flow_column_add(panel, NULL, addr);
+                    call_flow_column_add(ui, NULL, addr);
                 }
             }
         }
@@ -314,14 +292,14 @@ call_flow_draw_columns(PANEL *panel)
     // Draw columns
     columns = vector_iterator(info->columns);
     while ((column = vector_iterator_next(&columns))) {
-        mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, flow_height);
-        mvwhline(win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
-        mvwaddch(win, 3, 20 + 30 * column->colpos, ACS_TTEE);
+        mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, ui->height - 6);
+        mvwhline(ui->win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
+        mvwaddch(ui->win, 3, 20 + 30 * column->colpos, ACS_TTEE);
 
         // Set bold to this address if it's local
         if (setting_enabled(SETTING_CF_LOCALHIGHLIGHT)) {
             if (address_is_local(column->addr))
-                wattron(win, A_BOLD);
+                wattron(ui->win, A_BOLD);
         }
 
         if (setting_enabled(SETTING_CF_SPLITCALLID)) {
@@ -332,18 +310,18 @@ call_flow_draw_columns(PANEL *panel)
             sprintf(coltext, "%s:%u", column->addr.ip, column->addr.port);
         }
 
-        mvwprintw(win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s", coltext);
-        wattroff(win, A_BOLD);
+        mvwprintw(ui->win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s", coltext);
+        wattroff(ui->win, A_BOLD);
     }
 
     return 0;
 }
 
 call_flow_arrow_t *
-call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
+call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
-    WINDOW *win;
+    WINDOW *flow_win;
     sdp_media_t *media;
     const char *callid;
     char msg_method[128];
@@ -352,7 +330,7 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     address_t dst;
     char method[80];
     char delta[15] = { };
-    int height, width;
+    int flowh, floww;
     char mediastr[40];
     call_flow_column_t *column1, *column2;
     sip_msg_t *msg = arrow->msg;
@@ -362,21 +340,21 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     int arrow_dir = 0; /* 0: right, 1: left */
 
     // Get panel information
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return NULL;
 
     // Get the messages window
-    win = info->flow_win;
-    getmaxyx(win, height, width);
+    flow_win = info->flow_win;
+    getmaxyx(flow_win, flowh, floww);
 
     // Store arrow start line
     arrow->line = cline;
 
     // Calculate how many lines this message requires
-    arrow->height = call_flow_arrow_height(panel, arrow);
+    arrow->height = call_flow_arrow_height(ui, arrow);
 
     // Check this message fits on the panel
-    if (cline > height + arrow->height)
+    if (cline > flowh + arrow->height)
         return NULL;
 
     // Get message attributes
@@ -421,8 +399,8 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     msglen = (strlen(method) > 24) ? 24 : strlen(method);
 
     // Get origin and destination column
-    column1 = call_flow_column_get(panel, callid, src);
-    column2 = call_flow_column_get(panel, callid, dst);
+    column1 = call_flow_column_get(ui, callid, src);
+    column2 = call_flow_column_get(ui, callid, dst);
 
     call_flow_column_t *tmp;
     if (column1->colpos > column2->colpos) {
@@ -439,14 +417,14 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Highlight current message
     if (arrow == info->cur_arrow) {
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
-            wattron(win, A_REVERSE);
+            wattron(flow_win, A_REVERSE);
         }
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
-            wattron(win, A_BOLD);
+            wattron(flow_win, A_BOLD);
         }
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
-            wattron(win, A_REVERSE);
-            wattron(win, A_BOLD);
+            wattron(flow_win, A_REVERSE);
+            wattron(flow_win, A_BOLD);
         }
     }
 
@@ -463,12 +441,12 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     }
 
     // Turn on the message color
-    wattron(win, COLOR_PAIR(color));
+    wattron(flow_win, COLOR_PAIR(color));
 
     // Clear the line
-    mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
+    mvwprintw(flow_win, cline, startpos + 2, "%*s", distance, "");
     // Draw method
-    mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
+    mvwprintw(flow_win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
 
     if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
         cline++;
@@ -481,45 +459,45 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
                     media->type,
                     media->address.port,
                     media_get_prefered_format(media));
-            mvwprintw(win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
+            mvwprintw(flow_win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
         }
     }
 
     if (arrow == info->selected) {
-        mvwhline(win, cline, startpos + 2, '=', distance);
+        mvwhline(flow_win, cline, startpos + 2, '=', distance);
     } else {
-        mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
+        mvwhline(flow_win, cline, startpos + 2, ACS_HLINE, distance);
     }
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (arrow_dir == 0 /* right */) {
-        mvwaddch(win, cline, endpos - 2, '>');
+        mvwaddch(flow_win, cline, endpos - 2, '>');
         if (call_msg_is_retrans(msg)) {
-            mvwaddch(win, cline, endpos - 3, '>');
-            mvwaddch(win, cline, endpos - 4, '>');
+            mvwaddch(flow_win, cline, endpos - 3, '>');
+            mvwaddch(flow_win, cline, endpos - 4, '>');
         }
     } else {
-        mvwaddch(win, cline, startpos + 2, '<');
+        mvwaddch(flow_win, cline, startpos + 2, '<');
         if (call_msg_is_retrans(msg)) {
-            mvwaddch(win, cline, startpos + 3, '<');
-            mvwaddch(win, cline, startpos + 4, '<');
+            mvwaddch(flow_win, cline, startpos + 3, '<');
+            mvwaddch(flow_win, cline, startpos + 4, '<');
         }
     }
 
     if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
-        mvwprintw(win, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
+        mvwprintw(flow_win, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
 
     // Turn off colors
-    wattroff(win, COLOR_PAIR(CP_RED_ON_DEF));
-    wattroff(win, COLOR_PAIR(CP_GREEN_ON_DEF));
-    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    wattroff(win, A_BOLD | A_REVERSE);
+    wattroff(flow_win, COLOR_PAIR(CP_RED_ON_DEF));
+    wattroff(flow_win, COLOR_PAIR(CP_GREEN_ON_DEF));
+    wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    wattroff(flow_win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+    wattroff(flow_win, A_BOLD | A_REVERSE);
 
     // Print timestamp
     if (info->selected == arrow)
-        wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(win, cline, 2, "%s", msg_time);
+        wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(flow_win, cline, 2, "%s", msg_time);
 
     // Print delta from selected message
     if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
@@ -531,20 +509,20 @@ call_flow_draw_message(PANEL *panel, call_flow_arrow_t *arrow, int cline)
         }
 
         if (strlen(delta)) {
-            wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-            mvwprintw(win, cline - 1 , 2, "%15s", delta);
+            wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+            mvwprintw(flow_win, cline - 1 , 2, "%15s", delta);
         }
-        wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+        wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
     }
 
-    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     return arrow;
 }
 
 
 call_flow_arrow_t *
-call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
+call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
@@ -557,7 +535,7 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     int arrow_dir = 0; /* 0: right, 1: left */
 
     // Get panel information
-    info = call_flow_info(panel);
+    info = call_flow_info(ui);
     // Get the messages window
     win = info->flow_win;
     getmaxyx(win, height, width);
@@ -566,7 +544,7 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     arrow->line = cline;
 
     // Calculate how many lines this message requires
-    arrow->height = call_flow_arrow_height(panel, arrow);
+    arrow->height = call_flow_arrow_height(ui, arrow);
 
     // Check this media fits on the panel
     if (cline > height + arrow->height)
@@ -583,21 +561,21 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
     if (!strcmp(stream->src.ip, msg_src.ip)) {
-        column1 = call_flow_column_get(panel, callid, msg_src);
+        column1 = call_flow_column_get(ui, callid, msg_src);
     } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
-        column1 = call_flow_column_get(panel, callid, msg_dst);
+        column1 = call_flow_column_get(ui, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(panel, 0, stream->src);
+        column1 = call_flow_column_get(ui, 0, stream->src);
     }
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
     if (!strcmp(stream->dst.ip, msg_dst.ip)) {
-        column2 = call_flow_column_get(panel, callid, msg_dst);
+        column2 = call_flow_column_get(ui, callid, msg_dst);
     } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
-        column2 = call_flow_column_get(panel, callid, msg_src);
+        column2 = call_flow_column_get(ui, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(panel, 0, stream->dst);
+        column2 = call_flow_column_get(ui, 0, stream->dst);
     }
 
     call_flow_column_t *tmp;
@@ -683,7 +661,7 @@ call_flow_draw_rtp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 }
 
 call_flow_arrow_t *
-call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
+call_flow_draw_rtcp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
@@ -696,7 +674,7 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     int arrow_dir = 0; /* 0: right, 1: left */
 
     // Get panel information
-    info = call_flow_info(panel);
+    info = call_flow_info(ui);
     // Get the messages window
     win = info->flow_win;
     getmaxyx(win, height, width);
@@ -705,7 +683,7 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     arrow->line = cline;
 
     // Calculate how many lines this message requires
-    arrow->height = call_flow_arrow_height(panel, arrow);
+    arrow->height = call_flow_arrow_height(ui, arrow);
 
     // Check this media fits on the panel
     if (cline > height + arrow->height)
@@ -722,21 +700,21 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
     if (!strcmp(stream->src.ip, msg_src.ip)) {
-        column1 = call_flow_column_get(panel, callid, msg_src);
+        column1 = call_flow_column_get(ui, callid, msg_src);
     } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
-        column1 = call_flow_column_get(panel, callid, msg_dst);
+        column1 = call_flow_column_get(ui, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(panel, 0, stream->src);
+        column1 = call_flow_column_get(ui, 0, stream->src);
     }
 
     // Get destination column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
     if (!strcmp(stream->dst.ip, msg_dst.ip)) {
-        column2 = call_flow_column_get(panel, callid, msg_dst);
+        column2 = call_flow_column_get(ui, callid, msg_dst);
     } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
-        column2 = call_flow_column_get(panel, callid, msg_src);
+        column2 = call_flow_column_get(ui, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(panel, 0, stream->dst);
+        column2 = call_flow_column_get(ui, 0, stream->dst);
     }
 
     call_flow_column_t *tmp;
@@ -820,7 +798,7 @@ call_flow_draw_rtcp_stream(PANEL *panel, call_flow_arrow_t *arrow, int cline)
 }
 
 call_flow_arrow_t *
-call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
+call_flow_next_arrow(ui_t *ui, const call_flow_arrow_t *cur)
 {
     sip_msg_t *msg = NULL;
     rtp_stream_t *stream = NULL;
@@ -829,7 +807,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
     call_flow_arrow_t *next;
 
     // Get panel information
-    info = call_flow_info(panel);
+    info = call_flow_info(ui);
 
     // Return next arrow if already parsed
     if (cur && (next = vector_item(info->arrows, cur->index + 1)))
@@ -901,7 +879,7 @@ call_flow_next_arrow(PANEL *panel, const call_flow_arrow_t *cur)
 }
 
 call_flow_arrow_t *
-call_flow_prev_arrow(PANEL *panel, const call_flow_arrow_t *cur)
+call_flow_prev_arrow(ui_t *ui, const call_flow_arrow_t *cur)
 {
     call_flow_arrow_t *prev;
     call_flow_info_t *info;
@@ -910,7 +888,7 @@ call_flow_prev_arrow(PANEL *panel, const call_flow_arrow_t *cur)
         return NULL;
 
     // Get panel information
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return NULL;
 
     if ((prev = vector_item(info->arrows, cur->index - 1)))
@@ -920,7 +898,7 @@ call_flow_prev_arrow(PANEL *panel, const call_flow_arrow_t *cur)
 }
 
 int
-call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow)
+call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
         if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
@@ -943,7 +921,7 @@ call_flow_arrow_height(PANEL *panel, const call_flow_arrow_t *arrow)
 }
 
 call_flow_arrow_t *
-call_flow_arrow_find(PANEL *panel, const void *data)
+call_flow_arrow_find(ui_t *ui, const void *data)
 {
     call_flow_info_t *info;
     call_flow_arrow_t *arrow;
@@ -952,7 +930,7 @@ call_flow_arrow_find(PANEL *panel, const void *data)
     if (!data)
         return NULL;
 
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return NULL;
 
     arrows = vector_iterator(info->arrows);
@@ -976,27 +954,23 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow)
 }
 
 int
-call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
+call_flow_draw_raw(ui_t *ui, sip_msg_t *msg)
 {
     call_flow_info_t *info;
-    WINDOW *win, *raw_win;
-    int raw_width, raw_height, height, width;
+    WINDOW *raw_win;
+    int raw_width, raw_height;
     int min_raw_width, fixed_raw_width;
 
     // Get panel information
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return 1;
-
-    // Get window of main panel
-    win = panel_window(panel);
-    getmaxyx(win, height, width);
 
     // Get min raw width
     min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = width - (30 * vector_count(info->columns)) - 2;
+    raw_width = ui->width - (30 * vector_count(info->columns)) - 2;
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
         raw_width = min_raw_width;
@@ -1007,7 +981,7 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     }
 
     // Height of raw window is always available size minus 6 lines for header/footer
-    raw_height = height - 3;
+    raw_height = ui->height - 3;
 
     // If we already have a raw window
     raw_win = info->raw_win;
@@ -1027,42 +1001,38 @@ call_flow_draw_raw(PANEL *panel, sip_msg_t *msg)
     }
 
     // Draw raw box lines
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    mvwvline(win, 1, width - raw_width - 2, ACS_VLINE, height - 2);
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwvline(ui->win, 1, ui->width - raw_width - 2, ACS_VLINE, ui->height - 2);
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Print msg payload
     draw_message(info->raw_win, msg);
 
     // Copy the raw_win contents into the panel
-    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);
+    copywin(raw_win, ui->win, 0, 0, 1, ui->width - raw_width - 1, raw_height, ui->width - 2, 0);
 
     return 0;
 }
 
 
 int
-call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *stream)
+call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
 {
     call_flow_info_t *info;
-    WINDOW *win, *raw_win;
-    int raw_width, raw_height, height, width;
+    WINDOW *raw_win;
+    int raw_width, raw_height;
     int min_raw_width, fixed_raw_width;
 
     // Get panel information
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return 1;
-
-    // Get window of main panel
-    win = panel_window(panel);
-    getmaxyx(win, height, width);
 
     // Get min raw width
     min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = width - (30 * vector_count(info->columns)) - 2;
+    raw_width = ui->width - (30 * vector_count(info->columns)) - 2;
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
         raw_width = min_raw_width;
@@ -1073,7 +1043,7 @@ call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *stream)
     }
 
     // Height of raw window is always available size minus 6 lines for header/footer
-    raw_height = height - 3;
+    raw_height = ui->height - 3;
 
     // If we already have a raw window
     raw_win = info->raw_win;
@@ -1093,9 +1063,9 @@ call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *stream)
     }
 
     // Draw raw box lines
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    mvwvline(win, 1, width - raw_width - 2, ACS_VLINE, height - 2);
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwvline(ui->win, 1, ui->width - raw_width - 2, ACS_VLINE, ui->height - 2);
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     mvwprintw(raw_win, 0, 0, "============ RTCP Information ============");
     mvwprintw(raw_win, 2, 0, "Sender's packet count: %d", stream->rtcpinfo.spc);
@@ -1107,18 +1077,18 @@ call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *stream)
 
 
     // Copy the raw_win contents into the panel
-    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);
+    copywin(raw_win, ui->win, 0, 0, 1, ui->width - raw_width - 1, raw_height, ui->width - 2, 0);
 
     return 0;
 }
 
 int
-call_flow_handle_key(PANEL *panel, int key)
+call_flow_handle_key(ui_t *ui, int key)
 {
     int i, raw_width, height, width;
-    call_flow_info_t *info = call_flow_info(panel);
+    call_flow_info_t *info = call_flow_info(ui);
     call_flow_arrow_t *next, *prev;
-    ui_panel_t *next_panel;
+    ui_t *next_ui;
     sip_call_t *call = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
@@ -1135,26 +1105,26 @@ call_flow_handle_key(PANEL *panel, int key)
         switch(action) {
             case ACTION_DOWN:
                 // Check if there is a call below us
-                if (!(next = call_flow_next_arrow(panel, info->cur_arrow)))
+                if (!(next = call_flow_next_arrow(ui, info->cur_arrow)))
                     break;
-                info->cur_line += call_flow_arrow_height(panel, info->cur_arrow);
+                info->cur_line += call_flow_arrow_height(ui, info->cur_arrow);
 
                 // If we are out of the bottom of the displayed list
                 // refresh it starting in the next call
                 if (info->cur_line >= height) {
-                    info->cur_line -= call_flow_arrow_height(panel, info->first_arrow);
-                    info->first_arrow = call_flow_next_arrow(panel, info->first_arrow);
+                    info->cur_line -= call_flow_arrow_height(ui, info->first_arrow);
+                    info->first_arrow = call_flow_next_arrow(ui, info->first_arrow);
                 }
                 info->cur_arrow = next;
                 break;
             case ACTION_UP:
                 // Get previous message
-                if (!(prev = call_flow_prev_arrow(panel, info->cur_arrow)))
+                if (!(prev = call_flow_prev_arrow(ui, info->cur_arrow)))
                     break;
-                info->cur_line -= call_flow_arrow_height(panel, info->cur_arrow);
+                info->cur_line -= call_flow_arrow_height(ui, info->cur_arrow);
                 info->cur_arrow = prev;
                 if (info->cur_line <= 0) {
-                    info->cur_line += call_flow_arrow_height(panel, prev);
+                    info->cur_line += call_flow_arrow_height(ui, prev);
                     info->first_arrow = prev;
                 }
                 break;
@@ -1164,7 +1134,7 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_NPAGE:
                 // Next page => N key down strokes
                 for (i = 0; i < rnpag_steps; i++)
-                    call_flow_handle_key(panel, KEY_DOWN);
+                    call_flow_handle_key(ui, KEY_DOWN);
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
@@ -1172,7 +1142,7 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
                 for (i = 0; i < rnpag_steps; i++)
-                    call_flow_handle_key(panel, KEY_UP);
+                    call_flow_handle_key(ui, KEY_UP);
                 break;
             case ACTION_BEGIN:
                 call_flow_set_group(info->group);
@@ -1180,7 +1150,7 @@ call_flow_handle_key(PANEL *panel, int key)
             case ACTION_END:
                 call_flow_set_group(info->group);
                 for (i=0; i < call_group_msg_count(info->group); i++)
-                    call_flow_handle_key(panel, KEY_DOWN);
+                    call_flow_handle_key(ui, KEY_DOWN);
                 break;
             case ACTION_SHOW_FLOW_EX_FULL:
                 call = call_group_get_next(info->group, call);
@@ -1192,7 +1162,7 @@ call_flow_handle_key(PANEL *panel, int key)
                 call_flow_set_group(info->group);
                 break;
             case ACTION_SHOW_FLOW_EX:
-                werase(panel_window(panel));
+                werase(ui->win);
                 if (call_group_count(info->group) == 1) {
                     call_group_add(info->group, call_get_xcall(vector_first(info->group->calls)));
                 } else {
@@ -1248,8 +1218,8 @@ call_flow_handle_key(PANEL *panel, int key)
                 call_flow_set_group(info->group);
                 break;
             case ACTION_SAVE:
-                next_panel = ui_create_panel(PANEL_SAVE);
-                save_set_group(ui_get_panel(next_panel), info->group);
+                next_ui = ui_create_panel(PANEL_SAVE);
+                save_set_group(next_ui, info->group);
                 break;
             case ACTION_SELECT:
                 if (!info->selected) {
@@ -1259,8 +1229,8 @@ call_flow_handle_key(PANEL *panel, int key)
                         info->selected = NULL;
                     } else {
                         // Show diff panel
-                        next_panel = ui_create_panel(PANEL_MSG_DIFF);
-                        msg_diff_set_msgs(ui_get_panel(next_panel),
+                        next_ui = ui_create_panel(PANEL_MSG_DIFF);
+                        msg_diff_set_msgs(next_ui,
                                           call_flow_arrow_message(info->selected),
                                           call_flow_arrow_message(info->cur_arrow));
                     }
@@ -1286,7 +1256,7 @@ call_flow_handle_key(PANEL *panel, int key)
 }
 
 int
-call_flow_help(PANEL *panel)
+call_flow_help(ui_t *ui)
 {
     WINDOW *help_win;
     int height, width;
@@ -1350,20 +1320,20 @@ call_flow_help(PANEL *panel)
 int
 call_flow_set_group(sip_call_group_t *group)
 {
-    PANEL *panel;
+    ui_t *ui;
     call_flow_info_t *info;
 
-    if (!(panel = ui_get_panel(ui_find_by_type(PANEL_CALL_FLOW))))
+    if (!(ui = ui_find_by_type(PANEL_CALL_FLOW)))
         return -1;
 
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return -1;
 
     vector_clear(info->columns);
     vector_clear(info->arrows);
 
     info->group = group;
-    info->cur_arrow = info->first_arrow = info->selected = call_flow_next_arrow(panel, NULL);
+    info->cur_arrow = info->first_arrow = info->selected = call_flow_next_arrow(ui, NULL);
     info->cur_line = 1;
     info->selected = NULL;
     info->last_msg = NULL;
@@ -1372,16 +1342,16 @@ call_flow_set_group(sip_call_group_t *group)
 }
 
 void
-call_flow_column_add(PANEL *panel, const char *callid, address_t addr)
+call_flow_column_add(ui_t *ui, const char *callid, address_t addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
     vector_iter_t columns;
 
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return;
 
-    if (call_flow_column_get(panel, callid, addr))
+    if (call_flow_column_get(ui, callid, addr))
         return;
 
     // Try to fill the second Call-Id of the column
@@ -1405,7 +1375,7 @@ call_flow_column_add(PANEL *panel, const char *callid, address_t addr)
 }
 
 call_flow_column_t *
-call_flow_column_get(PANEL *panel, const char *callid, address_t addr)
+call_flow_column_get(ui_t *ui, const char *callid, address_t addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
@@ -1413,7 +1383,7 @@ call_flow_column_get(PANEL *panel, const char *callid, address_t addr)
     int match_port;
     const char *alias;
 
-    if (!(info = call_flow_info(panel)))
+    if (!(info = call_flow_info(ui)))
         return NULL;
 
     // Look for address or address:port ?

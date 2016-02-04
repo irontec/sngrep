@@ -106,8 +106,8 @@ struct save_info {
  *
  * @return a panel pointer
  */
-PANEL *
-save_create();
+void
+save_create(ui_t *ui);
 
 /**
  * @brief Destroy save panel
@@ -115,7 +115,7 @@ save_create();
  * This function do the final cleanups for this panel
  */
 void
-save_destroy();
+save_destroy(ui_t *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -127,7 +127,7 @@ save_destroy();
  * @return a pointer to info structure of given panel
  */
 save_info_t *
-save_info(PANEL *panel);
+save_info(ui_t *ui);
 
 /**
  * @brief Draw the Save panel
@@ -139,7 +139,7 @@ save_info(PANEL *panel);
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
-save_draw(PANEL *panel);
+save_draw(ui_t *ui);
 
 /**
  * @brief Manage pressed keys for save panel
@@ -156,7 +156,7 @@ save_draw(PANEL *panel);
  * @return 0 if the key is handled, keycode otherwise
  */
 int
-save_handle_key(PANEL *panel, int key);
+save_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Set the group call of the panel
@@ -167,7 +167,7 @@ save_handle_key(PANEL *panel, int key);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-save_set_group(PANEL *panel, sip_call_group_t *group);
+save_set_group(ui_t *ui, sip_call_group_t *group);
 
 /**
  * @brief Print an error message in Save panel
@@ -177,7 +177,7 @@ save_set_group(PANEL *panel, sip_call_group_t *group);
  * @param message Message to be printed in the panel
  */
 void
-save_error_message(PANEL *panel, const char *message);
+save_error_message(ui_t *ui, const char *message);
 
 /**
  * @brief Save form data to options
@@ -188,7 +188,7 @@ save_error_message(PANEL *panel, const char *message);
  * @param panel Save panel pointer
  */
 int
-save_to_file(PANEL *panel);
+save_to_file(ui_t *ui);
 
 /**
  * @brief Save one SIP message into open file

@@ -60,11 +60,9 @@ struct call_raw_info {
  * stuff of the screen (which usually won't be redrawn)
  * It will also create an information structure of the panel status and
  * store it in the panel's userpointer
- *
- * @return the allocated ncurses panel
  */
-PANEL *
-call_raw_create();
+void
+call_raw_create(ui_t *ui);
 
 /**
  * @brief Destroy panel
@@ -74,7 +72,7 @@ call_raw_create();
  * @param panel Ncurses panel pointer
  */
 void
-call_raw_destroy(PANEL *panel);
+call_raw_destroy(ui_t *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -86,7 +84,7 @@ call_raw_destroy(PANEL *panel);
  * @return a pointer to info structure of given panel
  */
 call_raw_info_t *
-call_raw_info(PANEL *panel);
+call_raw_info(ui_t *ui);
 
 /**
  * @brief Draw the Call Raw panel
@@ -98,7 +96,7 @@ call_raw_info(PANEL *panel);
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
-call_raw_draw(PANEL *panel);
+call_raw_draw(ui_t *ui);
 
 /**
  * @brief Draw a message in call Raw
@@ -110,7 +108,7 @@ call_raw_draw(PANEL *panel);
  * @return 0 in call cases
  */
 int
-call_raw_print_msg(PANEL *panel, sip_msg_t *msg);
+call_raw_print_msg(ui_t *ui, sip_msg_t *msg);
 
 /**
  * @brief Handle Call Raw key strokes
@@ -124,7 +122,7 @@ call_raw_print_msg(PANEL *panel, sip_msg_t *msg);
  * @return 0 if the function can handle the key, key otherwise
  */
 int
-call_raw_handle_key(PANEL *panel, int key);
+call_raw_handle_key(ui_t *ui, int key);
 
 /**
  * @brief Set the active call group of the panel

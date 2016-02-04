@@ -38,7 +38,7 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_panel_t ui_column_select = {
+ui_t ui_column_select = {
     .type = PANEL_COLUMN_SELECT,
     .panel = NULL,
     .create = column_select_create,
@@ -46,36 +46,26 @@ ui_panel_t ui_column_select = {
     .destroy = column_select_destroy
 };
 
-PANEL *
-column_select_create()
+void
+column_select_create(ui_t *ui)
 {
     int attr_id, column;
-    PANEL *panel;
-    WINDOW *win;
     MENU *menu;
-    int height, width;
     column_select_info_t *info;
 
-    // Calculate window dimensions
-    height = 20;
-    width = 60;
-
     // Cerate a new indow for the panel and form
-    win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
-
-    // Create a new panel
-    panel = new_panel(win);
+    ui_panel_create(ui, 20, 60);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(column_select_info_t));
 
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
+    set_panel_userptr(ui->panel, (void*) info);
 
     // Initialize the fields
-    info->fields[FLD_COLUMNS_ACCEPT] = new_field(1, 10, height - 2, 13, 0, 0);
-    info->fields[FLD_COLUMNS_SAVE]   = new_field(1, 10, height - 2, 25, 0, 0);
-    info->fields[FLD_COLUMNS_CANCEL] = new_field(1, 10, height - 2, 37, 0, 0);
+    info->fields[FLD_COLUMNS_ACCEPT] = new_field(1, 10, ui->height - 2, 13, 0, 0);
+    info->fields[FLD_COLUMNS_SAVE]   = new_field(1, 10, ui->height - 2, 25, 0, 0);
+    info->fields[FLD_COLUMNS_CANCEL] = new_field(1, 10, ui->height - 2, 37, 0, 0);
     info->fields[FLD_COLUMNS_COUNT] = NULL;
 
     // Field Labels
@@ -85,11 +75,11 @@ column_select_create()
 
     // Create the form and post it
     info->form = new_form(info->fields);
-    set_form_sub(info->form, win);
+    set_form_sub(info->form, ui->win);
     post_form(info->form);
 
     // Create a subwin for the menu area
-    info->menu_win = derwin(win, 10, width - 2, 7, 0);
+    info->menu_win = derwin(ui->win, 10, ui->width - 2, 7, 0);
 
     // Initialize one field for each attribute
     for (attr_id = 0; attr_id < SIP_ATTR_COUNT; attr_id++) {
@@ -104,23 +94,23 @@ column_select_create()
 
     // Set current enabled fields
     // FIXME Stealing Call list columns :/
-    call_list_info_t *list_info = call_list_info(ui_get_panel(ui_find_by_type(PANEL_CALL_LIST)));
+    call_list_info_t *list_info = call_list_info(ui_find_by_type(PANEL_CALL_LIST));
 
     // Enable current enabled fields and move them to the top
     for (column = 0; column < list_info->columncnt; column++) {
         const char *attr = list_info->columns[column].attr;
         for (attr_id = 0; attr_id < item_count(menu); attr_id++) {
             if (!strcmp(item_userptr(info->items[attr_id]), attr)) {
-                column_select_toggle_item(panel, info->items[attr_id]);
-                column_select_move_item(panel, info->items[attr_id], column);
+                column_select_toggle_item(ui, info->items[attr_id]);
+                column_select_move_item(ui, info->items[attr_id], column);
                 break;
             }
         }
     }
 
     // Set main window and sub window
-    set_menu_win(menu, win);
-    set_menu_sub(menu, derwin(win, 10, width - 5, 7, 2));
+    set_menu_win(menu, ui->win);
+    set_menu_sub(menu, derwin(ui->win, 10, ui->width - 5, 7, 2));
     set_menu_format(menu, 10, 1);
     set_menu_mark(menu, "");
     set_menu_fore(menu, COLOR_PAIR(CP_DEF_ON_BLUE));
@@ -131,31 +121,29 @@ column_select_create()
     draw_vscrollbar(info->menu_win, top_row(menu), item_count(menu) - 1, 0);
 
     // Set the window title and boxes
-    mvwprintw(win, 1, width / 2 - 14, "Call List columns selection");
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(panel);
-    mvwhline(win, 6, 1, ACS_HLINE, width - 1);
-    mvwaddch(win, 6, 0, ACS_LTEE);
-    mvwaddch(win, 6, width - 1, ACS_RTEE);
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwprintw(ui->win, 1, ui->width / 2 - 14, "Call List columns selection");
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    title_foot_box(ui->panel);
+    mvwhline(ui->win, 6, 1, ACS_HLINE, ui->width - 1);
+    mvwaddch(ui->win, 6, 0, ACS_LTEE);
+    mvwaddch(ui->win, 6, ui->width - 1, ACS_RTEE);
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Some brief explanation abotu what window shows
-    wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(win, 3, 2, "This windows show the list of columns displayed on Call");
-    mvwprintw(win, 4, 2, "List. You can enable/disable using Space Bar and reorder");
-    mvwprintw(win, 5, 2, "them using + and - keys.");
-    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    wattron(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(ui->win, 3, 2, "This windows show the list of columns displayed on Call");
+    mvwprintw(ui->win, 4, 2, "List. You can enable/disable using Space Bar and reorder");
+    mvwprintw(ui->win, 5, 2, "them using + and - keys.");
+    wattroff(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     info->form_active = 0;
-
-    return panel;
 }
 
 void
-column_select_destroy(PANEL *panel)
+column_select_destroy(ui_t *ui)
 {
     int i;
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
 
     // Remove menu and items
     unpost_menu(info->menu);
@@ -169,36 +157,35 @@ column_select_destroy(PANEL *panel)
     for (i = 0; i < FLD_COLUMNS_COUNT; i++)
         free_field(info->fields[i]);
 
-    // Remove panel window and custom info
-    delwin(panel_window(panel));
-    del_panel(panel);
     sng_free(info);
 
+    // Remove panel window and custom info
+    ui_panel_destroy(ui);
 }
 
 
 column_select_info_t *
-column_select_info(PANEL *panel)
+column_select_info(ui_t *ui)
 {
-    return (column_select_info_t*) panel_userptr(panel);
+    return (column_select_info_t*) panel_userptr(ui->panel);
 }
 
 int
-column_select_handle_key(PANEL *panel, int key)
+column_select_handle_key(ui_t *ui, int key)
 {
     // Get panel information
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
 
     if (info->form_active) {
-        return column_select_handle_key_form(panel, key);
+        return column_select_handle_key_form(ui, key);
     } else {
-        return column_select_handle_key_menu(panel, key);
+        return column_select_handle_key_menu(ui, key);
     }
     return 0;
 }
 
 int
-column_select_handle_key_menu(PANEL *panel, int key)
+column_select_handle_key_menu(ui_t *ui, int key)
 {
     MENU *menu;
     ITEM *current;
@@ -206,7 +193,7 @@ column_select_handle_key_menu(PANEL *panel, int key)
     int action = -1;
 
     // Get panel information
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
 
     menu = info->menu;
     current = current_item(menu);
@@ -229,16 +216,16 @@ column_select_handle_key_menu(PANEL *panel, int key)
                 menu_driver(menu, REQ_SCR_UPAGE);
                 break;
             case ACTION_SELECT:
-                column_select_toggle_item(panel, current);
-                column_select_update_menu(panel);
+                column_select_toggle_item(ui, current);
+                column_select_update_menu(ui);
                 break;
             case ACTION_COLUMN_MOVE_DOWN:
-                column_select_move_item(panel, current, current_idx + 1);
-                column_select_update_menu(panel);
+                column_select_move_item(ui, current, current_idx + 1);
+                column_select_update_menu(ui);
                 break;
             case ACTION_COLUMN_MOVE_UP:
-                column_select_move_item(panel, current, current_idx - 1);
-                column_select_update_menu(panel);
+                column_select_move_item(ui, current, current_idx - 1);
+                column_select_update_menu(ui);
                 break;
             case ACTION_NEXT_FIELD:
                 info->form_active = 1;
@@ -247,7 +234,7 @@ column_select_handle_key_menu(PANEL *panel, int key)
                 form_driver(info->form, REQ_VALIDATION);
                 break;
             case ACTION_CONFIRM:
-                column_select_update_columns(panel);
+                column_select_update_columns(ui);
                 return 27;
             default:
                 // Parse next action
@@ -266,14 +253,14 @@ column_select_handle_key_menu(PANEL *panel, int key)
 }
 
 int
-column_select_handle_key_form(PANEL *panel, int key)
+column_select_handle_key_form(ui_t *ui, int key)
 {
     int field_idx, new_field_idx;
     char field_value[48];
     int action = -1;
 
     // Get panel information
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -299,13 +286,13 @@ column_select_handle_key_form(PANEL *panel, int key)
             case ACTION_CONFIRM:
                 switch(field_idx) {
                     case FLD_COLUMNS_ACCEPT:
-                        column_select_update_columns(panel);
+                        column_select_update_columns(ui);
                         return 27;
                     case FLD_COLUMNS_CANCEL:
                         return 27;
                     case FLD_COLUMNS_SAVE:
-                        column_select_update_columns(panel);
-                        column_select_save_columns(panel);
+                        column_select_update_columns(ui);
+                        column_select_save_columns(ui);
                         return 27;
                 }
                 break;
@@ -343,16 +330,16 @@ column_select_handle_key_form(PANEL *panel, int key)
 }
 
 void
-column_select_update_columns(PANEL *panel)
+column_select_update_columns(ui_t *ui)
 {
     int column, attr_id;
 
     // Get panel information
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
 
     // Set enabled fields
-    PANEL *list_panel = ui_get_panel(ui_find_by_type(PANEL_CALL_LIST));
-    call_list_info_t *list_info = call_list_info(list_panel);
+    ui_t *ui_list = ui_find_by_type(PANEL_CALL_LIST);
+    call_list_info_t *list_info = call_list_info(ui_list);
 
     // Reset column count
     list_info->columncnt = 0;
@@ -366,13 +353,13 @@ column_select_update_columns(PANEL *panel)
         // Get column attribute
         attr_id = sip_attr_from_name(item_userptr(info->items[column]));
         // Add a new column to the list
-        call_list_add_column(list_panel, attr_id, sip_attr_get_name(attr_id),
+        call_list_add_column(ui_list, attr_id, sip_attr_get_name(attr_id),
                              sip_attr_get_title(attr_id), sip_attr_get_width(attr_id));
     }
 }
 
 void
-column_select_save_columns(PANEL *panel)
+column_select_save_columns(ui_t *ui)
 {
     int column;
     FILE *fi, *fo;
@@ -416,7 +403,7 @@ column_select_save_columns(PANEL *panel)
     }
 
     // Get panel information
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
 
     // Add all selected columns
     for (column = 0; column < item_count(info->menu); column++) {
@@ -436,10 +423,10 @@ column_select_save_columns(PANEL *panel)
 
 
 void
-column_select_move_item(PANEL *panel, ITEM *item, int pos)
+column_select_move_item(ui_t *ui, ITEM *item, int pos)
 {
     // Get panel information
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
 
     // Check we have a valid position
     if (pos == item_count(info->menu) || pos < 0)
@@ -454,7 +441,7 @@ column_select_move_item(PANEL *panel, ITEM *item, int pos)
 }
 
 void
-column_select_toggle_item(PANEL *panel, ITEM *item)
+column_select_toggle_item(ui_t *ui, ITEM *item)
 {
     // Change item name
     if (!strncmp(item_name(item), "[ ]", 3)) {
@@ -465,10 +452,10 @@ column_select_toggle_item(PANEL *panel, ITEM *item)
 }
 
 void
-column_select_update_menu(PANEL *panel)
+column_select_update_menu(ui_t *ui)
 {
     // Get panel information
-    column_select_info_t *info = column_select_info(panel);
+    column_select_info_t *info = column_select_info(ui);
     ITEM *current = current_item(info->menu);
     int top_idx = top_row(info->menu);
 

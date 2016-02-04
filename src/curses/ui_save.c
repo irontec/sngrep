@@ -41,7 +41,7 @@
 /**
  * Ui Structure definition for Save panel
  */
-ui_panel_t ui_save = {
+ui_t ui_save = {
     .type = PANEL_SAVE,
     .panel = NULL,
     .create = save_create,
@@ -50,12 +50,9 @@ ui_panel_t ui_save = {
     .destroy = save_destroy
 };
 
-PANEL *
-save_create()
+void
+save_create(ui_t *ui)
 {
-    PANEL *panel;
-    WINDOW *win;
-    int height, width;
     save_info_t *info;
     char savepath[128];
     int total, displayed;
@@ -63,21 +60,14 @@ save_create()
     // Pause the capture while saving
     capture_set_paused(1);
 
-    // Calculate window dimensions
-    height = 14;
-    width = 68;
-
     // Cerate a new indow for the panel and form
-    win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
-
-    // Create a new panel
-    panel = new_panel(win);
+    ui_panel_create(ui, 14, 68);
 
     // Initialize save panel specific data
     info = sng_malloc(sizeof(save_info_t));
 
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
+    set_panel_userptr(ui->panel, (void*) info);
 
     // Initialize the fields
     info->fields[FLD_SAVE_PATH] = new_field(1, 52, 3, 13, 0, 0);
@@ -88,8 +78,8 @@ save_create()
     info->fields[FLD_SAVE_PCAP] = new_field(1, 1, 7, 36, 0, 0);
     info->fields[FLD_SAVE_PCAP_RTP] = new_field(1, 1, 8, 36, 0, 0);
     info->fields[FLD_SAVE_TXT] = new_field(1, 1, 9, 36, 0, 0);
-    info->fields[FLD_SAVE_SAVE] = new_field(1, 10, height - 2, 20, 0, 0);
-    info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, height - 2, 40, 0, 0);
+    info->fields[FLD_SAVE_SAVE] = new_field(1, 10, ui->height - 2, 20, 0, 0);
+    info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, ui->height - 2, 40, 0, 0);
     info->fields[FLD_SAVE_COUNT] = NULL;
 
     // Set fields options
@@ -109,7 +99,7 @@ save_create()
 
     // Create the form and post it
     info->form = new_form(info->fields);
-    set_form_sub(info->form, win);
+    set_form_sub(info->form, ui->win);
     post_form(info->form);
     form_opts_off(info->form, O_BS_OVERLOAD);
 
@@ -121,45 +111,45 @@ save_create()
     set_field_buffer(info->fields[FLD_SAVE_CANCEL], 0, "[ Cancel ]");
 
     // Set window boxes
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
     // Window border
-    title_foot_box(panel);
+    title_foot_box(ui->panel);
 
     // Header and footer lines
-    mvwhline(win, height - 3, 1, ACS_HLINE, width - 1);
-    mvwaddch(win, height - 3, 0, ACS_LTEE);
-    mvwaddch(win, height - 3, width - 1, ACS_RTEE);
+    mvwhline(ui->win, ui->height - 3, 1, ACS_HLINE, ui->width - 1);
+    mvwaddch(ui->win, ui->height - 3, 0, ACS_LTEE);
+    mvwaddch(ui->win, ui->height - 3, ui->width - 1, ACS_RTEE);
 
     // Save mode box
-    mvwaddch(win, 6, 2, ACS_ULCORNER);
-    mvwhline(win, 6, 3, ACS_HLINE, 30);
-    mvwaddch(win, 6, 32, ACS_URCORNER);
-    mvwvline(win, 7, 2, ACS_VLINE, 3);
-    mvwvline(win, 7, 32, ACS_VLINE, 3);
-    mvwaddch(win, 10, 2, ACS_LLCORNER);
-    mvwhline(win, 10, 3, ACS_HLINE, 30);
-    mvwaddch(win, 10, 32, ACS_LRCORNER);
+    mvwaddch(ui->win, 6, 2, ACS_ULCORNER);
+    mvwhline(ui->win, 6, 3, ACS_HLINE, 30);
+    mvwaddch(ui->win, 6, 32, ACS_URCORNER);
+    mvwvline(ui->win, 7, 2, ACS_VLINE, 3);
+    mvwvline(ui->win, 7, 32, ACS_VLINE, 3);
+    mvwaddch(ui->win, 10, 2, ACS_LLCORNER);
+    mvwhline(ui->win, 10, 3, ACS_HLINE, 30);
+    mvwaddch(ui->win, 10, 32, ACS_LRCORNER);
 
     // Save mode box
-    mvwaddch(win, 6, 34, ACS_ULCORNER);
-    mvwhline(win, 6, 35, ACS_HLINE, 30);
-    mvwaddch(win, 6, 64, ACS_URCORNER);
-    mvwvline(win, 7, 34, ACS_VLINE, 3);
-    mvwvline(win, 7, 64, ACS_VLINE, 3);
-    mvwaddch(win, 10, 34, ACS_LLCORNER);
-    mvwhline(win, 10, 35, ACS_HLINE, 30);
-    mvwaddch(win, 10, 64, ACS_LRCORNER);
+    mvwaddch(ui->win, 6, 34, ACS_ULCORNER);
+    mvwhline(ui->win, 6, 35, ACS_HLINE, 30);
+    mvwaddch(ui->win, 6, 64, ACS_URCORNER);
+    mvwvline(ui->win, 7, 34, ACS_VLINE, 3);
+    mvwvline(ui->win, 7, 64, ACS_VLINE, 3);
+    mvwaddch(ui->win, 10, 34, ACS_LLCORNER);
+    mvwhline(ui->win, 10, 35, ACS_HLINE, 30);
+    mvwaddch(ui->win, 10, 64, ACS_LRCORNER);
 
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Set screen labels
-    mvwprintw(win, 1, 27, "Save capture");
-    mvwprintw(win, 3, 3, "Path:");
-    mvwprintw(win, 4, 3, "Filename:");
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    mvwprintw(win, 6, 4, " Dialogs ");
-    mvwprintw(win, 6, 36, " Format ");
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwprintw(ui->win, 1, 27, "Save capture");
+    mvwprintw(ui->win, 3, 3, "Path:");
+    mvwprintw(ui->win, 4, 3, "Filename:");
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwprintw(ui->win, 6, 4, " Dialogs ");
+    mvwprintw(ui->win, 6, 36, " Format ");
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_SAVE_FILE]);
@@ -173,17 +163,16 @@ save_create()
     info->savemode = (displayed == total) ? SAVE_ALL : SAVE_DISPLAYED;
     info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
 
-    return panel;
 }
 
 void
-save_destroy(PANEL *panel)
+save_destroy(ui_t *ui)
 {
     save_info_t *info;
     int i;
 
     // Get panel information
-    if ((info = save_info(panel))) {
+    if ((info = save_info(ui))) {
         // Remove panel form and fields
         unpost_form(info->form);
         free_form(info->form);
@@ -191,9 +180,11 @@ save_destroy(PANEL *panel)
             free_field(info->fields[i]);
 
         // Remove panel window and custom info
-        delwin(panel_window(panel));
         sng_free(info);
     }
+
+    // Delete panel
+    ui_panel_destroy(ui);
 
     // Resume capture
     capture_set_paused(0);
@@ -203,47 +194,46 @@ save_destroy(PANEL *panel)
 }
 
 save_info_t *
-save_info(PANEL *panel)
+save_info(ui_t *ui)
 {
-    return (save_info_t*) panel_userptr(panel);
+    return (save_info_t*) panel_userptr(ui->panel);
 }
 
 int
-save_draw(PANEL *panel)
+save_draw(ui_t *ui)
 {
     int total, displayed;
     char field_value[80];
 
     // Get panel information
-    save_info_t *info = save_info(panel);
-    WINDOW *win = panel_window(panel);
+    save_info_t *info = save_info(ui);
 
     // Get filter stats
     sip_calls_stats(&total, &displayed);
 
-    mvwprintw(win, 7, 3, "( ) all dialogs ");
-    mvwprintw(win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
-    mvwprintw(win, 9, 3, "( ) filtered dialogs [%d]", displayed);
+    mvwprintw(ui->win, 7, 3, "( ) all dialogs ");
+    mvwprintw(ui->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
+    mvwprintw(ui->win, 9, 3, "( ) filtered dialogs [%d]", displayed);
 
-    mvwprintw(win, 7, 35, "( ) .pcap (SIP)");
-    mvwprintw(win, 8, 35, "( ) .pcap (SIP + RTP)");
-    mvwprintw(win, 9, 35, "( ) .txt");
+    mvwprintw(ui->win, 7, 35, "( ) .pcap (SIP)");
+    mvwprintw(ui->win, 8, 35, "( ) .pcap (SIP + RTP)");
+    mvwprintw(ui->win, 9, 35, "( ) .txt");
 
     // Get filename field value.
     memset(field_value, 0, sizeof(field_value));
     strcpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0));
     strtrim(field_value);
 
-    mvwprintw(win, 4, 60, "     ");
+    mvwprintw(ui->win, 4, 60, "     ");
     if (strstr(field_value, ".pcap")) {
         info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
     } else if (strstr(field_value, ".txt")) {
         info->saveformat = SAVE_TXT;
     } else {
         if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP)
-            mvwprintw(win, 4, 60, ".pcap");
+            mvwprintw(ui->win, 4, 60, ".pcap");
         else
-            mvwprintw(win, 4, 60, ".txt ");
+            mvwprintw(ui->win, 4, 60, ".txt ");
     }
 
     set_field_buffer(info->fields[FLD_SAVE_ALL], 0, (info->savemode == SAVE_ALL) ? "*" : " ");
@@ -266,13 +256,13 @@ save_draw(PANEL *panel)
 }
 
 int
-save_handle_key(PANEL *panel, int key)
+save_handle_key(ui_t *ui, int key)
 {
     int field_idx;
     int action = -1;
 
     // Get panel information
-    save_info_t *info = save_info(panel);
+    save_info_t *info = save_info(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -345,7 +335,7 @@ save_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_SAVE_CANCEL) {
-                    return save_to_file(panel);
+                    return save_to_file(ui);
                 }
                 return KEY_ESC;
             default:
@@ -377,10 +367,10 @@ save_handle_key(PANEL *panel, int key)
 }
 
 void
-save_set_group(PANEL *panel, sip_call_group_t *group)
+save_set_group(ui_t *ui, sip_call_group_t *group)
 {
     // Get panel information
-    save_info_t *info = save_info(panel);
+    save_info_t *info = save_info(ui);
     info->group = group;
     if (call_group_count(group)) {
         info->savemode = SAVE_SELECTED;
@@ -388,7 +378,7 @@ save_set_group(PANEL *panel, sip_call_group_t *group)
 }
 
 int
-save_to_file(PANEL *panel)
+save_to_file(ui_t *ui)
 {
     char savepath[256];
     char savefile[256];
@@ -404,7 +394,7 @@ save_to_file(PANEL *panel)
     vector_t *sorted;
 
     // Get panel information
-    save_info_t *info = save_info(panel);
+    save_info_t *info = save_info(ui);
 
     // Get current path field value.
     memset(savepath, 0, sizeof(savepath));

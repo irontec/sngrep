@@ -51,7 +51,7 @@
  * and pointer to their main functions.
 
  */
-static ui_panel_t *panel_pool[] = {
+static ui_t *panel_pool[] = {
     &ui_call_list,
     &ui_call_flow,
     &ui_call_raw,
@@ -153,14 +153,14 @@ ncurses_deinit()
 
 
 
-ui_panel_t *
+ui_t *
 ui_create_panel(enum panel_types type)
 {
     // Find the panel of given type and create it
     return ui_create(ui_find_by_type(type));
 }
 
-ui_panel_t *
+ui_t *
 ui_find_by_panel(PANEL *panel)
 {
     int i;
@@ -172,7 +172,7 @@ ui_find_by_panel(PANEL *panel)
     return NULL;
 }
 
-ui_panel_t *
+ui_t *
 ui_find_by_type(enum panel_types type)
 {
     int i;
@@ -187,7 +187,7 @@ ui_find_by_type(enum panel_types type)
 int
 wait_for_input()
 {
-    ui_panel_t *ui;
+    ui_t *ui;
     WINDOW *win;
     PANEL *panel;
 
@@ -244,7 +244,7 @@ wait_for_input()
 }
 
 int
-default_handle_key(ui_panel_t *ui, int key)
+default_handle_key(ui_t *ui, int key)
 {
     int action = -1;
 

@@ -35,7 +35,7 @@
 /**
  * Ui Structure definition for Settings panel
  */
-ui_panel_t ui_settings = {
+ui_t ui_settings = {
     .type = PANEL_SETTINGS,
     .panel = NULL,
     .create = settings_create,
@@ -88,39 +88,30 @@ settings_entry_t entries[] = {
     { 0 , 0, 0, NULL },
 };
 
-PANEL *
-settings_create()
+void
+settings_create(ui_t *ui)
 {
-    PANEL *panel;
-    WINDOW *win;
-    int height, width, i, j, line;
+    int i, j, line;
     settings_info_t *info;
     FIELD *entry, *label;
     int field = 0;
 
-    // Calculate window dimensions
-    height = 21;
-    width = 70;
-
     // Cerate a new window for the panel and form
-    win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
-
-    // Create a new panel
-    panel = new_panel(win);
+    ui_panel_create(ui, 21, 70);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(settings_info_t));
 
     // Store it into panel userptr
-    set_panel_userptr(panel, (void*) info);
+    set_panel_userptr(ui->panel, (void*) info);
 
     // Create a scrollable subwindow for settings
-    info->form_win = derwin(win, height - 11, width - 2, 8, 1);
+    info->form_win = derwin(ui->win, ui->height - 11, ui->width - 2, 8, 1);
 
     // Configure panel buttons
-    info->buttons[BTN_SETTINGS_ACCEPT] = new_field(1, 10, height - 2, 12, 0, 0);
-    info->buttons[BTN_SETTINGS_SAVE]   = new_field(1, 10, height - 2, 29, 0, 0);
-    info->buttons[BTN_SETTINGS_CANCEL] = new_field(1, 10, height - 2, 46, 0, 0);
+    info->buttons[BTN_SETTINGS_ACCEPT] = new_field(1, 10, ui->height - 2, 12, 0, 0);
+    info->buttons[BTN_SETTINGS_SAVE]   = new_field(1, 10, ui->height - 2, 29, 0, 0);
+    info->buttons[BTN_SETTINGS_CANCEL] = new_field(1, 10, ui->height - 2, 46, 0, 0);
     info->buttons[BTN_SETTINGS_COUNT]  = NULL;
     field_opts_off(info->buttons[BTN_SETTINGS_ACCEPT], O_EDIT);
     field_opts_off(info->buttons[BTN_SETTINGS_SAVE], O_EDIT);
@@ -129,7 +120,7 @@ settings_create()
     set_field_buffer(info->buttons[BTN_SETTINGS_SAVE],   0, "[  Save  ]");
     set_field_buffer(info->buttons[BTN_SETTINGS_CANCEL], 0, "[ Cancel ]");
     info->buttons_form = new_form(info->buttons);
-    set_form_sub(info->buttons_form, win);
+    set_form_sub(info->buttons_form, ui->win);
     post_form(info->buttons_form);
 
     // Initialize rest of settings fields
@@ -189,55 +180,50 @@ settings_create()
     post_form(info->form);
 
     // Set the window title and boxes
-    mvwprintw(win, 1, width / 2 - 5, "Settings");
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(panel);
-    mvwhline(win, 6, 1, ACS_HLINE, width - 1);
-    mvwaddch(win, 6, 0, ACS_LTEE);
-    mvwaddch(win, 6, width - 1, ACS_RTEE);
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move arround settings.");
-    mvwprintw(win, 4, 1, " Settings with (*) requires restart.");
-    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(ui->win, 1, ui->width / 2 - 5, "Settings");
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    title_foot_box(ui->panel);
+    mvwhline(ui->win, 6, 1, ACS_HLINE, ui->width - 1);
+    mvwaddch(ui->win, 6, 0, ACS_LTEE);
+    mvwaddch(ui->win, 6, ui->width - 1, ACS_RTEE);
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattron(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(ui->win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move arround settings.");
+    mvwprintw(ui->win, 4, 1, " Settings with (*) requires restart.");
+    wattroff(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     // Set default field
     info->active_form = info->form;
     set_current_field(info->form, *info->fields);
     info->active_category = form_page(info->form) + 1;
-
-    return panel;
 }
 
 void
-settings_destroy()
+settings_destroy(ui_t *ui)
 {
     curs_set(0);
+    ui_panel_destroy(ui);
 }
 
 settings_info_t *
-settings_info(PANEL *panel)
+settings_info(ui_t *ui)
 {
-    return (settings_info_t*) panel_userptr(panel);
+    return (settings_info_t*) panel_userptr(ui->panel);
 }
 
 int
-settings_draw(PANEL *panel)
+settings_draw(ui_t *ui)
 {
-    WINDOW *win;
     int field_idx;
     int i;
     int cury, curx;
 
 
     // Get panel information
-    settings_info_t *info = settings_info(panel);
-
-    win = panel_window(panel);
+    settings_info_t *info = settings_info(ui);
 
     // Store cursor position
-    getyx(win, cury, curx);
-
+    getyx(ui->win, cury, curx);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
@@ -246,11 +232,11 @@ settings_draw(PANEL *panel)
     int colpos = 2;
     for (i = 0; categories[i].cat_id; i++) {
         if (categories[i].cat_id == info->active_category) {
-            mvwprintw(win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
+            mvwprintw(ui->win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
         } else {
-            wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-            mvwprintw(win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
-            wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+            wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+            mvwprintw(ui->win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
+            wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
         }
         colpos += strlen(categories[i].title) + 5;
     }
@@ -274,16 +260,16 @@ settings_draw(PANEL *panel)
         set_field_fore(info->fields[field_index(current_field(info->form)) + 1], A_BOLD);
     }
 
-    touchwin(win);
+    touchwin(ui->win);
 
     // Restore cursor position
-    wmove(win, cury, curx);
+    wmove(ui->win, cury, curx);
 
     return 0;
 }
 
 int
-settings_handle_key(PANEL *panel, int key)
+settings_handle_key(ui_t *ui, int key)
 {
     int action = -1;
     int field_idx;
@@ -291,7 +277,7 @@ settings_handle_key(PANEL *panel, int key)
     enum setting_fmt sett_fmt = -1;
 
     // Get panel information
-    settings_info_t *info = settings_info(panel);
+    settings_info_t *info = settings_info(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->active_form));
@@ -368,7 +354,7 @@ settings_handle_key(PANEL *panel, int key)
                     }
                     break;
                 case ACTION_CONFIRM:
-                    ui_settings_update_settings(panel);
+                    ui_settings_update_settings(ui);
                     return KEY_ESC;
                 default:
                     // Parse next action
@@ -400,8 +386,8 @@ settings_handle_key(PANEL *panel, int key)
                     if (field_idx == BTN_SETTINGS_CANCEL)
                         return KEY_ESC;
                     if (field_idx == BTN_SETTINGS_SAVE)
-                        ui_settings_save(panel);
-                    ui_settings_update_settings(panel);
+                        ui_settings_save(ui);
+                    ui_settings_update_settings(ui);
                     return KEY_ESC;
                 default:
                     continue;
@@ -434,14 +420,14 @@ ui_settings_is_entry(FIELD *field)
 }
 
 int
-ui_settings_update_settings(PANEL *panel)
+ui_settings_update_settings(ui_t *ui)
 {
     int i;
     char field_value[180];
     settings_entry_t *entry;
 
     // Get panel information
-    settings_info_t *info = settings_info(panel);
+    settings_info_t *info = settings_info(ui);
 
     for (i=0; i < FLD_SETTINGS_COUNT; i++) {
         if ((entry = ui_settings_is_entry(info->fields[i]))) {
@@ -458,7 +444,7 @@ ui_settings_update_settings(PANEL *panel)
 }
 
 void
-ui_settings_save(PANEL *panel)
+ui_settings_save(ui_t *ui)
 {
     int i;
     FILE *fi, *fo;
@@ -469,7 +455,7 @@ ui_settings_save(PANEL *panel)
     settings_entry_t *entry;
 
     // Get panel information
-    settings_info_t *info = settings_info(panel);
+    settings_info_t *info = settings_info(ui);
 
     // No home dir...
     if (!home) {

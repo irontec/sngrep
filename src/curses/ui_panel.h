@@ -69,7 +69,7 @@ enum panel_types {
 };
 
 //! Shorter declaration of ui structure
-typedef struct ui_panel ui_panel_t;
+typedef struct ui ui_t;
 
 /**
  * @brief Panel information structure
@@ -77,7 +77,7 @@ typedef struct ui_panel ui_panel_t;
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct ui_panel {
+struct ui {
     //! Curses panel pointer
     PANEL *panel;
     //! Window for the curses panel
@@ -86,21 +86,25 @@ struct ui_panel {
     int height;
     //! Width of the curses window
     int width;
+    //! Vertical starting position of the window
+    int x;
+    //! Horizontal starting position of the window
+    int y;
     //! Panel Type @see panel_types enum
     enum panel_types type;
 
     //! Constructor for this panel
-    PANEL* (*create)();
+    void (*create)(ui_t *);
     //! Destroy current panel
-    void (*destroy)(PANEL *);
+    void (*destroy)(ui_t *);
     //! Request the panel to redraw its data
-    int (*draw)(PANEL*);
+    int (*draw)(ui_t *);
     //! Notifies the panel the screen has changed
-    int (*resize)(PANEL*);
+    int (*resize)(ui_t *);
     //! Handle a custom keybind on this panel
-    int (*handle_key)(PANEL*, int key);
+    int (*handle_key)(ui_t *, int key);
     //! Show help window for this panel (if any)
-    int (*help)(PANEL *);
+    int (*help)(ui_t *);
 };
 
 /**
@@ -112,8 +116,8 @@ struct ui_panel {
  * @param ui UI structure
  * @return the ui structure with the panel pointer created
  */
-ui_panel_t *
-ui_create(ui_panel_t *ui);
+ui_t *
+ui_create(ui_t *ui);
 
 /**
  * @brief Destroy a panel structure
@@ -125,7 +129,7 @@ ui_create(ui_panel_t *ui);
  * @param ui UI structure
  */
 void
-ui_destroy(ui_panel_t *ui);
+ui_destroy(ui_t *ui);
 
 /**
  * @brief Get panel pointer from an ui element
@@ -138,7 +142,7 @@ ui_destroy(ui_panel_t *ui);
  * @return ncurses panel pointer of given UI
  */
 PANEL *
-ui_get_panel(ui_panel_t *ui);
+ui_get_panel(ui_t *ui);
 
 /**
  * @brief Redrawn current ui
@@ -150,7 +154,7 @@ ui_get_panel(ui_panel_t *ui);
  * @return 0 if ui has been drawn, -1 otherwise
  */
 int
-ui_resize_panel(ui_panel_t *ui);
+ui_resize_panel(ui_t *ui);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -162,7 +166,7 @@ ui_resize_panel(ui_panel_t *ui);
  * @return 0 if ui has been resize, -1 otherwise
  */
 int
-ui_draw_panel(ui_panel_t *ui);
+ui_draw_panel(ui_t *ui);
 
 /**
  * @brief Show help screen from current UI (if any)
@@ -174,7 +178,7 @@ ui_draw_panel(ui_panel_t *ui);
  * @param ui UI structure
  */
 void
-ui_help(ui_panel_t *ui);
+ui_help(ui_t *ui);
 
 /**
  * @brief Handle key inputs on given UI
@@ -187,6 +191,13 @@ ui_help(ui_panel_t *ui);
  * @param key keycode sequence of the pressed keys and mods
  */
 int
-ui_handle_key(ui_panel_t *ui, int key);
+ui_handle_key(ui_t *ui, int key);
+
+void
+ui_panel_create(ui_t *ui, int height, int width);
+
+void
+ui_panel_destroy(ui_t *ui);
+
 
 #endif /* __SNGREP_UI_PANEL_H */
