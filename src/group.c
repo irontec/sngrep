@@ -234,6 +234,8 @@ call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream)
         while ( (cand = vector_iterator_next(&streams))) {
             if (!stream_get_count(cand))
                 continue;
+            if (cand->type != PACKET_RTP)
+                continue;
 
             // candidate must be between msg and next
             if (stream_is_older(cand, stream) && (!next || stream_is_older(next, cand))) {

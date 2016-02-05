@@ -365,9 +365,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Fragmentation offset
     uint16_t ip_frag_off = 0;
     //! Source Address
-    address_t src;
+    address_t src = { };
     //! Destination Address
-    address_t dst;
+    address_t dst = { };
     //! Common interator for vectors
     vector_iter_t it;
     //! Packet containers

@@ -57,6 +57,7 @@
 
 #include "ui_manager.h"
 #include "group.h"
+#include "scrollbar.h"
 
 //! Sorter declaration of struct call_flow_info
 typedef struct call_flow_info call_flow_info_t;
@@ -80,10 +81,8 @@ enum call_flow_arrow_type {
 struct call_flow_arrow {
     //! Type of arrow @see call_flow_arrow_type
     int type;
-    //! Msg pointer for SIP type arrows
-    sip_msg_t *msg;
-    //! Stream information for RTP type arrows
-    rtp_stream_t *stream;
+    //! Item owner of this arrow
+    void *item;
     //! Stream packet count for this arrow
     int rtp_count;
     //! Stream arrow position
@@ -92,8 +91,6 @@ struct call_flow_arrow {
     int height;
     //! Line of flow window this line starts
     int line;
-    //! Index in the arrow vector
-    int index;
 };
 
 
@@ -131,20 +128,16 @@ struct call_flow_info {
     WINDOW *flow_win;
     //! Group of calls displayed on the panel
     sip_call_group_t *group;
-    //! Last processed message
-    sip_msg_t *last_msg;
     //! List of arrows (call_flow_arrow_t *)
     vector_t *arrows;
-    //! First printed arrow of the panel
-    call_flow_arrow_t *first_arrow;
-    //! Current arrow where the cursor is
-    call_flow_arrow_t *cur_arrow;
+    //! List of displayed arrows
+    vector_t *darrows;
+    //! Current arrow index where the cursor is
+    int cur_arrow;
     //! Selected arrow to compare
-    call_flow_arrow_t *selected;
-    //! Width of raw_win
-    int raw_width;
+    int selected;
     //! Current line for scrolling
-    int cur_line;
+    scrollbar_t scroll;
     //! List of columns in the panel
     vector_t *columns;
 };
@@ -210,6 +203,15 @@ call_flow_draw_footer(ui_t *ui);
 int
 call_flow_draw_columns(ui_t *ui);
 
+void
+call_flow_draw_arrows(ui_t *ui);
+
+void
+call_flow_draw_preview(ui_t *ui);
+
+int
+call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line);
+
 /**
  * @brief Draw the message arrow in the given line
  *
@@ -223,7 +225,7 @@ call_flow_draw_columns(ui_t *ui);
  * @param cline Window line to draw the message
  * @return the arrow passed as parameter
  */
-call_flow_arrow_t *
+int
 call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline);
 
 /**
@@ -236,45 +238,11 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline);
  * @param cline Window line to draw the message
  * @return the arrow passed as parameter
  */
-call_flow_arrow_t *
+int
 call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline);
 
-/**
- * @brief Draw the RTCP stream data in the given line
- *
- * Draw the given arrow of type stream in the given line.
- *
- * @param panel Ncurses panel pointer
- * @param arrow Call flow arrow to be drawn
- * @param cline Window line to draw the message
- * @return the arrow passed as parameter
- */
 call_flow_arrow_t *
-call_flow_draw_rtcp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline);
-
-/**
- * @brief Get the next chronological arrow
- *
- * Give the next arrow taking into account Call list display mode.
- *
- * @param panel Ncurses panel pointer
- * @param cur Current arrow to use as reference
- * @return next chronological arrow
- */
-call_flow_arrow_t *
-call_flow_next_arrow(ui_t *ui, const call_flow_arrow_t *cur);
-
-/**
- * @brief Get the previous chronological arrow
- *
- * Give the previous arrow taking into account Call list display mode.
- *
- * @param panel Ncurses panel pointer
- * @param cur Current arrow to use as reference
- * @return previous chronological arrow
- */
-call_flow_arrow_t *
-call_flow_prev_arrow(ui_t *ui, const call_flow_arrow_t *cur);
+call_flow_arrow_create(ui_t *ui, void *item, int type);
 
 /**
  * @brief Get how many lines of screen an arrow will use
@@ -403,5 +371,23 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr);
 call_flow_column_t *
 call_flow_column_get(ui_t *ui, const char *callid, address_t address);
 
+/**
+ * @brief Move selected cursor to given arrow
+ *
+ * This function will move the cursor to given arrow, taking into account
+ * selected line and scrolling position.
+ *
+ */
+void
+call_flow_move(ui_t *ui, int arrowindex);
+
+call_flow_arrow_t *
+call_flow_arrow_selected(ui_t *ui);
+
+struct timeval
+call_flow_arrow_time(call_flow_arrow_t *arrow);
+
+void
+call_flow_arrow_sorter(vector_t *vector, void *item);
 
 #endif /* __SNGREP_UI_CALL_FLOW_H */

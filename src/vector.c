@@ -149,6 +149,8 @@ vector_append(vector_t *vector, void *item)
         vector->limit += vector->step;
         // Add more memory to the list
         vector->list = realloc(vector->list, sizeof(void *) * vector->limit);
+        // Initialize new allocated memory
+        memset(vector->list + vector->limit - vector->step, 0, vector->step);
     }
 
     // Add item to the end of the list
@@ -171,9 +173,14 @@ vector_insert(vector_t *vector, void *item, int pos)
     if (pos < 0 || pos > vector->count)
         return vector->count;
 
+    // If position is already filled with that item, we're done
+    if (vector->list[pos] == item)
+        return vector->count;
+
     // If possition is occupied, move the other position
     if (vector->list[pos]) {
-        memmove(vector->list + pos + 1, vector->list + pos, sizeof(void *) * (vector->count - pos));
+        memmove(vector->list + pos + 1, vector->list + pos,
+                sizeof(void *) * (vector->count - pos - 1));
     }
 
     // Set the position

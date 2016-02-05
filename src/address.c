@@ -73,6 +73,9 @@ address_is_local(address_t addr)
             if (!da->addr)
                 continue;
 
+            // Initialize variables
+            memset(ip, 0, sizeof(ip));
+
             // Get address representation
             switch (da->addr->sa_family) {
             case AF_INET:
