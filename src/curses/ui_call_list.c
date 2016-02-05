@@ -560,6 +560,13 @@ call_list_handle_key(ui_t *ui, int key)
                 // Clear List
                 call_list_clear(ui);
                 break;
+            case ACTION_SEARCH_XCALL:
+                // Find current call xcall
+                call = call_get_xcall(vector_item(info->dcalls, info->cur_call));
+                if (call && vector_index(info->dcalls, call) != -1) {
+                    call_list_move(ui, vector_index(info->dcalls, call));
+                }
+                break;
             case ACTION_AUTOSCROLL:
                 info->autoscroll = (info->autoscroll) ? 0 : 1;
                 break;
@@ -595,8 +602,6 @@ call_list_handle_key(ui_t *ui, int key)
         break;
     }
 
-    fprintf(stderr, "%d\n", action);
-
     // Disable autoscroll on some key pressed
     switch(action) {
         case ACTION_DOWN:
@@ -608,6 +613,7 @@ call_list_handle_key(ui_t *ui, int key)
         case ACTION_BEGIN:
         case ACTION_END:
         case ACTION_DISP_FILTER:
+        case ACTION_SEARCH_XCALL:
             info->autoscroll = 0;
             break;
     }
