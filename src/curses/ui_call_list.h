@@ -33,6 +33,7 @@
 #define __UI_CALL_LIST_H
 
 #include "ui_manager.h"
+#include "scrollbar.h"
 
 /**
  * @brief Enum of available fields
@@ -70,12 +71,8 @@ struct call_list_column {
  * panel pointer.
  */
 struct call_list_info {
-    //! Displayed calls iterator
-    vector_iter_t calls;
-    //! First displayed call, for drawing faster
-    int first_call;
-    //! First displayed call counter, for drawing scroll arrow faster
-    int first_line;
+    //! Displayed calls vector
+    vector_t *dcalls;
     //! Selected call in the list
     int cur_call;
     //! Selected calls with space
@@ -84,8 +81,6 @@ struct call_list_info {
     call_list_column_t columns[SIP_ATTR_COUNT];
     //! Displayed column count.
     int columncnt;
-    //! Stores the current selected line
-    int cur_line;
     //! List subwindow
     WINDOW *list_win;
     //! Form that contains the display filter
@@ -96,6 +91,8 @@ struct call_list_info {
     int form_active;
     //! Move to last list entry if autoscroll is enabled
     int autoscroll;
+    //! List scrollbar
+    scrollbar_t scroll;
 };
 
 /**
@@ -279,5 +276,14 @@ call_list_add_column(ui_t *ui, enum sip_attr_id id, const char* attr, const char
 void
 call_list_clear(ui_t *ui);
 
+/**
+ * @brief Move selected cursor to given line
+ *
+ * This function will move the cursor to given line, taking into account
+ * selected line and scrolling position.
+ *
+ */
+void
+call_list_move(ui_t *ui, int line);
 
 #endif

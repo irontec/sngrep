@@ -60,6 +60,8 @@ struct vector {
 struct vector_iter {
     //! Last requested position
     int current;
+    //! Last vector position
+    int current_vector;
     //! Vector that's being iterated
     vector_t *vector;
     //! Filter iterator results using this func
@@ -99,6 +101,13 @@ vector_destroy_items(vector_t *vector);
  */
 vector_t *
 vector_clone(vector_t *original);
+
+/**
+ * @brief Copy filtered elements to a new vector
+ *
+ */
+vector_t *
+vector_copy_if(vector_t *original, int (*filter)(void *item));
 
 /**
  * @brief Remove all items of vector

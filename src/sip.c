@@ -403,6 +403,12 @@ sip_active_calls_iterator()
     return vector_iterator(calls.active);
 }
 
+vector_t *
+sip_calls_vector()
+{
+    return calls.list;
+}
+
 sip_stats_t
 sip_calls_stats()
 {

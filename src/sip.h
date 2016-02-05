@@ -225,6 +225,12 @@ vector_iter_t
 sip_active_calls_iterator();
 
 /**
+ * @brief Return the call list
+ */
+vector_t *
+sip_calls_vector();
+
+/**
  * @brief Return stats from call list
  *
  * @param total Total calls processed

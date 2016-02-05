@@ -103,12 +103,15 @@ call_list_create(ui_t *ui)
 
     // Calculate available printable area
     info->list_win = subwin(ui->win, ui->height - 5, ui->width, 4, 0);
+    info->scroll = ui_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
+
+    // Group of selected calls
     info->group = call_group_create();
 
     // Get current call list
-    info->calls = sip_calls_iterator();
-    vector_iterator_set_filter(&info->calls, filter_check_call);
-    info->cur_call = info->first_call = -1;
+    //info->calls = sip_calls_iterator();
+    //vector_iterator_set_filter(&info->calls, filter_check_call);
+    info->cur_call = -1;
 
     // Set autoscroll default status
     info->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
@@ -133,6 +136,7 @@ call_list_destroy(ui_t *ui)
 
         // Deallocate group data
         call_group_destroy(info->group);
+        vector_destroy(info->dcalls);
 
         // Deallocate panel windows
         delwin(info->list_win);
@@ -213,10 +217,8 @@ call_list_draw_header(ui_t *ui)
         mvwprintw(ui->win, 3, 0, "A");
     wattroff(ui->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
-    // Get filter call counters
-    sip_stats_t stats = sip_calls_stats();
-
     // Print calls count (also filtered)
+    sip_stats_t stats = sip_calls_stats();
     mvwprintw(ui->win, 1, 35, "%*s", 35, "");
     if (stats.total != stats.displayed) {
         mvwprintw(ui->win, 1, 35, "Dialogs: %d (%d displayed)", stats.total, stats.displayed);
@@ -261,6 +263,10 @@ call_list_draw_list(ui_t *ui)
     // Get panel info
     call_list_info_t *info = call_list_info(ui);
 
+    // Get the list of calls that are goint to be displayed
+    vector_destroy(info->dcalls);
+    info->dcalls = vector_copy_if(sip_calls_vector(), filter_check_call);
+
     // Get window of call list panel
     list_win = info->list_win;
     getmaxyx(list_win, listh, listw);
@@ -271,21 +277,19 @@ call_list_draw_list(ui_t *ui)
     }
 
     // If no active call, use the fist one (if exists)
-    if (info->first_call == -1 && vector_iterator_count(&info->calls)) {
-        vector_iterator_reset(&info->calls);
-        call = vector_iterator_next(&info->calls);
-        info->cur_call = info->first_call = vector_index(vector_iterator_vector(&info->calls), call);
-        info->cur_line = info->first_line = 1;
+    if (info->cur_call == -1 && vector_count(info->dcalls)) {
+        info->cur_call = info->scroll.pos = 0;
     }
 
     // Clear call list before redrawing
     werase(list_win);
 
     // Set the iterator position to the first call
-    vector_iterator_set_current(&info->calls, info->first_call - 1 );
+    vector_iter_t it = vector_iterator(info->dcalls);
+    vector_iterator_set_current(&it, info->scroll.pos - 1);
 
     // Fill the call list
-    while ((call = vector_iterator_next(&info->calls))) {
+    while ((call = vector_iterator_next(&it))) {
         // Stop if we have reached the bottom of the list
         if (cline == listh)
             break;
@@ -299,7 +303,7 @@ call_list_draw_list(ui_t *ui)
             wattron(list_win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (call->index == info->cur_call + 1) {
+        if (info->cur_call == vector_iterator_current(&it)) {
             wattron(list_win, COLOR_PAIR(CP_WHITE_ON_BLUE));
             // Reverse colors on monochrome terminals
             if (!has_colors())
@@ -332,8 +336,11 @@ call_list_draw_list(ui_t *ui)
 
             // Enable attribute color (if not current one)
             color = 0;
-            if (call->index != info->cur_call + 1 && (color = sip_attr_get_color(colid, coltext)) > 0)
-                wattron(list_win, color);
+            if (info->cur_call != vector_iterator_current(&it)) {
+                if ((color = sip_attr_get_color(colid, coltext)) > 0) {
+                    wattron(list_win, color);
+                }
+            }
 
             // Add the column text to the existing columns
             mvwprintw(list_win, cline, colpos, "%.*s", collen, coltext);
@@ -351,8 +358,10 @@ call_list_draw_list(ui_t *ui)
     }
 
     // Draw scrollbar to the right
-    sip_stats_t stats = sip_calls_stats();
-    draw_vscrollbar(list_win, info->first_line, stats.displayed, 1);
+    info->scroll.max = vector_count(info->dcalls);
+    ui_scrollbar_draw(info->scroll);
+
+    // Refresh the list
     wnoutrefresh(info->list_win);
 }
 
@@ -448,7 +457,7 @@ call_list_line_text(ui_t *ui, sip_call_t *call, char *text)
 int
 call_list_handle_key(ui_t *ui, int key)
 {
-    int listh, listw, i, rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
+    int listh, listw,rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     call_list_info_t *info;
     ui_t *next_ui;
     sip_call_group_t *group;
@@ -467,96 +476,40 @@ call_list_handle_key(ui_t *ui, int key)
     WINDOW *list_win = info->list_win;
     getmaxyx(list_win, listh, listw);
 
-    // Reset iterator position to current call
-    vector_iterator_set_current(&info->calls, info->cur_call);
-
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
-                // Check if there is a call below us
-                if (!vector_iterator_next(&info->calls))
-                    break;
-                info->cur_call = vector_iterator_current(&info->calls);
-                info->cur_line++;
-                // If we are out of the bottom of the displayed list
-                // refresh it starting in the next call
-                if (info->cur_line > listh) {
-                    vector_iterator_set_current(&info->calls, info->first_call);
-                    vector_iterator_next(&info->calls);
-                    info->first_call = vector_iterator_current(&info->calls);
-                    info->first_line++;
-                    info->cur_line = listh;
-                }
-                // Disable Autoscroll
-                info->autoscroll = 0;
+                call_list_move(ui, info->cur_call + 1);
                 break;
             case ACTION_UP:
-                // Check if there is a call above us
-                if (!vector_iterator_prev(&info->calls))
-                    break;
-                info->cur_call = vector_iterator_current(&info->calls);
-                info->cur_line--;
-                // If we are out of the top of the displayed list
-                // refresh it starting in the previous (in fact current) call
-                if (info->cur_line <= 0) {
-                    info->first_call = info->cur_call;
-                    info->first_line--;
-                    info->cur_line = 1;
-                }
-                // Disable Autoscroll
-                info->autoscroll = 0;
+                call_list_move(ui, info->cur_call - 1);
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
                 /* no break */
             case ACTION_NPAGE:
                 // Next page => N key down strokes
-                for (i = 0; i < rnpag_steps; i++)
-                    call_list_handle_key(ui, KEY_DOWN);
-                // Disable Autoscroll
-                info->autoscroll = 0;
+                call_list_move(ui, info->cur_call + rnpag_steps);
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
                 /* no break */
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
-                for (i = 0; i < rnpag_steps; i++)
-                    call_list_handle_key(ui, KEY_UP);
-                // Disable Autoscroll
-                info->autoscroll = 0;
+                call_list_move(ui, info->cur_call - rnpag_steps);
                 break;
             case ACTION_BEGIN:
-                // Initialize structures
-                info->first_call = info->cur_call = -1;
-                info->first_line = info->cur_line = 0;
-                // Disable Autoscroll
-                info->autoscroll = 0;
+                // Move to first list entry
+                call_list_move(ui, 0);
                 break;
             case ACTION_END:
-                // Check if there is a call below us
-                while (vector_iterator_next(&info->calls)) {
-                    info->cur_call = vector_iterator_current(&info->calls);
-                    info->cur_line++;
-                    // If we are out of the bottom of the displayed list
-                    // refresh it starting in the next call
-                    if (info->cur_line > listh) {
-                        vector_iterator_set_current(&info->calls, info->first_call);
-                        vector_iterator_next(&info->calls);
-                        info->first_call = vector_iterator_current(&info->calls);
-                        info->first_line++;
-                        info->cur_line = listh;
-                        vector_iterator_set_current(&info->calls, info->cur_call);
-                    }
-                }
+                call_list_move(ui, vector_count(info->dcalls));
                 break;
             case ACTION_DISP_FILTER:
                 // Activate Form
                 call_list_form_activate(ui, 1);
-                // Disable Autoscroll
-                info->autoscroll = 0;
                 break;
             case ACTION_SHOW_FLOW:
             case ACTION_SHOW_FLOW_EX:
@@ -568,11 +521,11 @@ call_list_handle_key(ui_t *ui, int key)
                 group = call_group_clone(info->group);
                 // If not selected call, show current call flow
                 if (call_group_count(info->group) == 0)
-                    call_group_add(group, sip_find_by_index(info->cur_call));
+                    call_group_add(group, vector_item(info->dcalls, info->cur_call));
 
                 // Add xcall to the group
                 if (action == ACTION_SHOW_FLOW_EX)
-                    call_group_add(group, call_get_xcall(sip_find_by_index(info->cur_call)));
+                    call_group_add(group, call_get_xcall(vector_item(info->dcalls, info->cur_call)));
 
                 if (action == ACTION_SHOW_RAW) {
                     // Create a Call Flow panel
@@ -614,7 +567,7 @@ call_list_handle_key(ui_t *ui, int key)
                 ui_create_panel(PANEL_SETTINGS);
                 break;
             case ACTION_SELECT:
-                call = vector_item(vector_iterator_vector(&info->calls), info->cur_call);
+                call = vector_item(info->dcalls, info->cur_call);
                 if (call_group_exists(info->group, call)) {
                     call_group_del(info->group, call);
                 } else {
@@ -641,6 +594,24 @@ call_list_handle_key(ui_t *ui, int key)
         // This panel has handled the key successfully
         break;
     }
+
+    fprintf(stderr, "%d\n", action);
+
+    // Disable autoscroll on some key pressed
+    switch(action) {
+        case ACTION_DOWN:
+        case ACTION_UP:
+        case ACTION_HNPAGE:
+        case ACTION_HPPAGE:
+        case ACTION_NPAGE:
+        case ACTION_PPAGE:
+        case ACTION_BEGIN:
+        case ACTION_END:
+        case ACTION_DISP_FILTER:
+            info->autoscroll = 0;
+            break;
+    }
+
 
     // Return if this panel has handled or not the key
     return (action == ERR) ? key : 0;
@@ -821,10 +792,59 @@ call_list_clear(ui_t *ui)
         return;
 
     // Initialize structures
-    info->first_call = info->cur_call = -1;
-    info->first_line = info->cur_line = 0;
+    info->scroll.pos = info->cur_call = -1;
     vector_clear(info->group->calls);
 
     // Clear Displayed lines
     werase(info->list_win);
+}
+
+void
+call_list_move(ui_t *ui, int line)
+{
+    call_list_info_t *info;
+
+    // Get panel info
+    if (!(info = call_list_info(ui)))
+        return;
+
+    // Already in this position?
+    if (info->cur_call == line)
+        return;
+
+    // Moving down or up?
+    bool move_down = (info->cur_call < line);
+
+    vector_iter_t it = vector_iterator(info->dcalls);
+    vector_iterator_set_current(&it, info->cur_call);
+
+    if (move_down) {
+        while (info->cur_call < line) {
+            // Check if there is a call below us
+            if (!vector_iterator_next(&it))
+               break;
+
+            // Increase current call position
+            info->cur_call++;
+
+            // If we are out of the bottom of the displayed list
+            // refresh it starting in the next call
+            if (info->cur_call - info->scroll.pos == getmaxy(info->list_win)) {
+               info->scroll.pos++;
+            }
+        }
+    } else {
+        while (info->cur_call > line) {
+            // Check if there is a call above us
+            if (!vector_iterator_prev(&it))
+              break;
+            // If we are out of the top of the displayed list
+            // refresh it starting in the previous (in fact current) call
+            if (info->cur_call ==  info->scroll.pos) {
+              info->scroll.pos--;
+            }
+            // Move current call position
+            info->cur_call--;
+        }
+    }
 }

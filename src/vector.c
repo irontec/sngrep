@@ -100,6 +100,29 @@ vector_clone(vector_t *original)
     return clone;
 }
 
+vector_t *
+vector_copy_if(vector_t *original, int (*filter)(void *item))
+{
+    vector_t *clone;
+    vector_iter_t it;
+    void *item;
+
+    // Check we have a valid vector pointer
+    if (!original)
+        return NULL;
+
+    // Create a new vector structure
+    clone = vector_create(0, 1);
+    // Fill the clone vector with the same elements applying filter
+    it = vector_iterator(original);
+    vector_iterator_set_filter(&it, filter);
+    while ((item = vector_iterator_next(&it))) {
+        vector_append(clone, item);
+    }
+    // Return the cloned vector
+    return clone;
+}
+
 void
 vector_clear(vector_t *vector)
 {
