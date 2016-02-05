@@ -273,7 +273,7 @@ call_list_draw_list(ui_t *ui)
 
     // If autoscroll is enabled, select the last dialog
     if (info->autoscroll) {
-        call_list_handle_key(ui, key_action_key(ACTION_END));
+        call_list_move(ui, vector_count(info->dcalls));
     }
 
     // If no active call, use the fist one (if exists)
