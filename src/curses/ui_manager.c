@@ -879,10 +879,12 @@ dialog_confirm(const char *title, const char *text, const char *options)
         c = wgetch(dialog_win);
         switch (c) {
             case KEY_RIGHT:
+            case 'l':
                 selected++;
                 break;
             case KEY_TAB:
             case KEY_LEFT:
+            case 'h':
                 selected--;
                 break;
             case KEY_SPACE:
