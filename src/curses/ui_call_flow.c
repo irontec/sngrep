@@ -342,7 +342,11 @@ call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line)
     if (arrow->type == CF_ARROW_SIP) {
         return call_flow_draw_message(ui, arrow, line);
     } else {
-        return call_flow_draw_rtp_stream(ui, arrow, line);
+        if (setting_enabled(SETTING_CF_MEDIA)) {
+            return call_flow_draw_rtp_stream(ui, arrow, line);
+        } else {
+            return 0;
+        }
     }
 }
 
