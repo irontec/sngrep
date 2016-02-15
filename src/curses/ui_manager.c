@@ -605,7 +605,7 @@ int
 dialog_confirm(const char *title, const char *text, const char *options)
 {
     WINDOW *dialog_win;
-    int c, i, curs, newl, height, width;
+    int key, action, i, curs, newl, height, width;
     char *str, *tofree, *option, *word;
     int selected = 0;
     int optioncnt = 1;
@@ -710,22 +710,32 @@ dialog_confirm(const char *title, const char *text, const char *options)
             wattroff(dialog_win, A_REVERSE);
         }
 
-        c = wgetch(dialog_win);
-        switch (c) {
-            case KEY_RIGHT:
-                selected++;
-                break;
-            case KEY_TAB:
-            case KEY_LEFT:
-                selected--;
-                break;
-            case KEY_SPACE:
-            case KEY_ENTER:
-            case KEY_INTRO:
-                goto done;
-            case KEY_ESC:
-                selected = -1;
-                goto done;
+        // Get pressed key
+        key = wgetch(dialog_win);
+
+        // Check actions for this key
+        while ((action = key_find_action(key, action)) != ERR) {
+            // Check if we handle this action
+            switch (action) {
+                case ACTION_RIGHT:
+                    selected++;
+                    break;
+                case ACTION_LEFT:
+                case ACTION_NEXT_FIELD:
+                    selected--;
+                    break;
+                case ACTION_SELECT:
+                case ACTION_CONFIRM:
+                    goto done;
+                case ACTION_PREV_SCREEN:
+                    selected = -1;
+                    goto done;
+                default:
+                    // Parse next action
+                    continue;
+            }
+            // key handled successfully
+            break;
         }
 
         // Cycle through ooptions

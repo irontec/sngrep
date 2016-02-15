@@ -38,8 +38,8 @@
 //! sngrep keybindings
 key_binding_t bindings[ACTION_SENTINEL] = {
    { ACTION_PRINTABLE,      "",             { }, 0 },
-   { ACTION_UP,             "up",           { KEY_UP, 'j' }, 2 },
-   { ACTION_DOWN,           "down",         { KEY_DOWN, 'k' }, 2 },
+   { ACTION_UP,             "up",           { KEY_UP, 'k' }, 2 },
+   { ACTION_DOWN,           "down",         { KEY_DOWN, 'j' }, 2 },
    { ACTION_LEFT,           "left",         { KEY_LEFT, 'h' }, 2 },
    { ACTION_RIGHT,          "right",        { KEY_RIGHT, 'l'}, 2 },
    { ACTION_DELETE,         "delete",       { KEY_DC }, 1 },
