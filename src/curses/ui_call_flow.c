@@ -1280,6 +1280,10 @@ call_flow_handle_key(PANEL *panel, int key)
                 call_raw_set_group(info->group);
                 call_raw_set_msg(call_flow_arrow_message(info->cur_arrow));
                 break;
+            case ACTION_CLEAR_CALLS:
+                // Propagate the key to the previous panel
+                return -2;
+
             default:
                 // Parse next action
                 continue;

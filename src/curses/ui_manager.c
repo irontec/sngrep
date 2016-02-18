@@ -302,6 +302,9 @@ wait_for_input()
     WINDOW *win;
     PANEL *panel;
 
+    int c = ERR;
+    int rekey = 0;
+
     // While there are still panels
     while ((panel = panel_below(NULL))) {
 
@@ -322,16 +325,26 @@ wait_for_input()
         win = panel_window(panel);
         keypad(win, TRUE);
 
-        // Get pressed key
-        int c = wgetch(win);
+        if (rekey == 0) {
+          // Get pressed key
+          c = wgetch(win);
 
-        // Timeout, no key pressed
-        if (c == ERR)
-            continue;
+          // Timeout, no key pressed
+          if (c == ERR)
+              continue;
+        } else {
+          rekey = 0;
+        }
 
         // Check if current panel has custom bindings for that key
-        if ((c = ui_handle_key(ui, c)) == 0) {
+        int ret = ui_handle_key(ui, c);
+        if (ret == 0) {
             // Key has been handled by panel
+            continue;
+        } else if (ret == -2) {
+            // Propagate the key to the previous panel
+            ui_destroy(ui);
+            rekey = 1;
             continue;
         }
 

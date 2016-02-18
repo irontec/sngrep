@@ -336,7 +336,9 @@ call_flow_draw_raw_rtcp(PANEL *panel, rtp_stream_t *rtcp);
  *
  * This function will manage the custom keybindings of the panel. If this
  * function returns -1, the ui manager will check if the pressed key
- * is one of the common ones (like toggle colors and so).
+ * is one of the common ones (like toggle colors and so). If this function
+ * returns -2, the ui manager will destroy the current panel and pass the key
+ * to the previous panel.
  *
  * @param panel Ncurses panel pointer
  * @param key Pressed keycode
