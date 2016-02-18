@@ -800,7 +800,7 @@ call_list_help(PANEL *panel)
     mvwprintw(help_win, 14, 2, "F2/S        Save captured packages to a file");
     mvwprintw(help_win, 15, 2, "F3//        Display filtering (match string case insensitive)");
     mvwprintw(help_win, 16, 2, "F4/X        Show selected call-flow (Extended) if available");
-    mvwprintw(help_win, 17, 2, "F5          Clear call list (can not be undone!)");
+    mvwprintw(help_win, 17, 2, "F5/Ctrl-L   Clear call list (can not be undone!)");
     mvwprintw(help_win, 18, 2, "F6/R        Show selected call messages in raw mode");
     mvwprintw(help_win, 19, 2, "F7/F        Show filter options");
     mvwprintw(help_win, 20, 2, "F8/c        Turn on/off window colours");
