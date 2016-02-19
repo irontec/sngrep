@@ -1282,7 +1282,7 @@ call_flow_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_CLEAR_CALLS:
                 // Propagate the key to the previous panel
-                return -1;
+                return KEY_PROPAGATED;
 
             default:
                 // Parse next action

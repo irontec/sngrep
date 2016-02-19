@@ -304,7 +304,7 @@ wait_for_input();
 /**
  * @brief Default handler for keys
  *
- * If ui doesn't handle the given key (ui_handle_key returns -1)
+ * If ui doesn't handle the given key (ui_handle_key returns the key value)
  * then the default handler will be invoked
  *
  * @param ui Current displayed UI structure
