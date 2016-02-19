@@ -1282,7 +1282,7 @@ call_flow_handle_key(PANEL *panel, int key)
                 break;
             case ACTION_CLEAR_CALLS:
                 // Propagate the key to the previous panel
-                return -2;
+                return -1;
 
             default:
                 // Parse next action
@@ -1338,20 +1338,21 @@ call_flow_help(PANEL *panel)
     // A list of available keys in this window
     mvwprintw(help_win, 8, 2, "Available keys:");
     mvwprintw(help_win, 9, 2, "Esc/Q       Go back to Call list window");
-    mvwprintw(help_win, 10, 2, "Enter       Show current message Raw");
-    mvwprintw(help_win, 11, 2, "F1/h        Show this screen");
-    mvwprintw(help_win, 12, 2, "F2/d        Toggle SDP Address:Port info");
-    mvwprintw(help_win, 13, 2, "F3/m        Toggle RTP arrows display");
-    mvwprintw(help_win, 14, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
-    mvwprintw(help_win, 15, 2, "F5/s        Toggle compressed view (One address <=> one column");
-    mvwprintw(help_win, 16, 2, "F6/R        Show original call messages in raw mode");
-    mvwprintw(help_win, 17, 2, "F7/c        Cycle between available color modes");
-    mvwprintw(help_win, 18, 2, "F8/C        Turn on/off message syntax highlighting");
-    mvwprintw(help_win, 19, 2, "F9/l        Turn on/off resolved addresses");
-    mvwprintw(help_win, 20, 2, "9/0         Increase/Decrease raw preview size");
-    mvwprintw(help_win, 21, 2, "t           Toggle raw preview display");
-    mvwprintw(help_win, 22, 2, "T           Restore raw preview size");
-    mvwprintw(help_win, 23, 2, "D           Only show SDP messages");
+    mvwprintw(help_win, 10, 2, "F5/Ctrl-L   Leave screen and clear call list");
+    mvwprintw(help_win, 11, 2, "Enter       Show current message Raw");
+    mvwprintw(help_win, 12, 2, "F1/h        Show this screen");
+    mvwprintw(help_win, 13, 2, "F2/d        Toggle SDP Address:Port info");
+    mvwprintw(help_win, 14, 2, "F3/m        Toggle RTP arrows display");
+    mvwprintw(help_win, 15, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
+    mvwprintw(help_win, 16, 2, "F5/s        Toggle compressed view (One address <=> one column");
+    mvwprintw(help_win, 17, 2, "F6/R        Show original call messages in raw mode");
+    mvwprintw(help_win, 18, 2, "F7/c        Cycle between available color modes");
+    mvwprintw(help_win, 19, 2, "F8/C        Turn on/off message syntax highlighting");
+    mvwprintw(help_win, 20, 2, "F9/l        Turn on/off resolved addresses");
+    mvwprintw(help_win, 21, 2, "9/0         Increase/Decrease raw preview size");
+    mvwprintw(help_win, 22, 2, "t           Toggle raw preview display");
+    mvwprintw(help_win, 23, 2, "T           Restore raw preview size");
+    mvwprintw(help_win, 24, 2, "D           Only show SDP messages");
 
 
     // Press any key to close

@@ -302,9 +302,6 @@ wait_for_input()
     WINDOW *win;
     PANEL *panel;
 
-    int c = ERR;
-    int rekey = 0;
-
     // While there are still panels
     while ((panel = panel_below(NULL))) {
 
@@ -325,31 +322,33 @@ wait_for_input()
         win = panel_window(panel);
         keypad(win, TRUE);
 
-        if (rekey == 0) {
-          // Get pressed key
-          c = wgetch(win);
+        // Get pressed key
+        int c = wgetch(win);
 
-          // Timeout, no key pressed
-          if (c == ERR)
-              continue;
-        } else {
-          rekey = 0;
-        }
-
-        // Check if current panel has custom bindings for that key
-        int ret = ui_handle_key(ui, c);
-        if (ret == 0) {
-            // Key has been handled by panel
+        // Timeout, no key pressed
+        if (c == ERR)
             continue;
-        } else if (ret == -2) {
-            // Propagate the key to the previous panel
-            ui_destroy(ui);
-            rekey = 1;
-            continue;
-        }
 
-        // Key not handled by UI, try default handler
-        default_handle_key(ui, c);
+        // Handle received key
+        int hdl = -1;
+        while (hdl != KEY_HANDLED) {
+            // Check if current panel has custom bindings for that key
+            hdl = ui_handle_key(ui, c);
+
+            if (hdl == KEY_HANDLED) {
+                // Panel handled this key
+                continue;
+            } else if (hdl == KEY_PROPAGATED) {
+                // Destroy current panel
+                ui_destroy(ui);
+                // Try to handle this key with the previus panel
+                ui = ui_find_by_panel(panel_below(NULL));
+            } else {
+                // Key not handled by UI nor propagated. Use default handler
+                default_handle_key(ui, c);
+                break;
+            }
+        }
     }
 
     return -1;
