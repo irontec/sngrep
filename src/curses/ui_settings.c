@@ -355,7 +355,8 @@ settings_handle_key(ui_t *ui, int key)
                     break;
                 case ACTION_CONFIRM:
                     ui_settings_update_settings(ui);
-                    return KEY_ESC;
+                    ui_destroy(ui);
+                    return KEY_HANDLED;
                 default:
                     // Parse next action
                     continue;
@@ -383,12 +384,11 @@ settings_handle_key(ui_t *ui, int key)
                     break;
                 case ACTION_SELECT:
                 case ACTION_CONFIRM:
-                    if (field_idx == BTN_SETTINGS_CANCEL)
-                        return KEY_ESC;
                     if (field_idx == BTN_SETTINGS_SAVE)
                         ui_settings_save(ui);
                     ui_settings_update_settings(ui);
-                    return KEY_ESC;
+                    ui_destroy(ui);
+                    return KEY_HANDLED;
                 default:
                     continue;
             }
@@ -410,7 +410,7 @@ settings_handle_key(ui_t *ui, int key)
     }
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 settings_entry_t *

@@ -235,7 +235,8 @@ column_select_handle_key_menu(ui_t *ui, int key)
                 break;
             case ACTION_CONFIRM:
                 column_select_update_columns(ui);
-                return 27;
+                ui_destroy(ui);
+                return KEY_HANDLED;
             default:
                 // Parse next action
                 continue;
@@ -249,7 +250,7 @@ column_select_handle_key_menu(ui_t *ui, int key)
     draw_vscrollbar(info->menu_win, top_row(menu), item_count(menu) - 1, 0);
     wnoutrefresh(info->menu_win);
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 int
@@ -287,13 +288,16 @@ column_select_handle_key_form(ui_t *ui, int key)
                 switch(field_idx) {
                     case FLD_COLUMNS_ACCEPT:
                         column_select_update_columns(ui);
-                        return 27;
+                        ui_destroy(ui);
+                        return KEY_HANDLED;
                     case FLD_COLUMNS_CANCEL:
-                        return 27;
+                        ui_destroy(ui);
+                        return KEY_HANDLED;
                     case FLD_COLUMNS_SAVE:
                         column_select_update_columns(ui);
                         column_select_save_columns(ui);
-                        return 27;
+                        ui_destroy(ui);
+                        return KEY_HANDLED;
                 }
                 break;
             default:
@@ -326,7 +330,7 @@ column_select_handle_key_form(ui_t *ui, int key)
     }
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 void

@@ -937,7 +937,7 @@ call_flow_handle_key(ui_t *ui, int key)
 
     // Sanity check, this should not happen
     if (!info)
-        return -1;
+        return KEY_NOT_HANDLED;
 
     getmaxyx(info->flow_win, height, width);
 
@@ -1074,7 +1074,7 @@ call_flow_handle_key(ui_t *ui, int key)
     }
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 int
@@ -1084,7 +1084,7 @@ call_flow_help(ui_t *ui)
     int height, width;
 
     // Create a new panel and show centered
-    height = 27;
+    height = 28;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
 

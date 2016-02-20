@@ -336,7 +336,8 @@ save_handle_key(ui_t *ui, int key)
                 if (field_idx != FLD_SAVE_CANCEL) {
                     return save_to_file(ui);
                 }
-                return KEY_ESC;
+                ui_destroy(ui);
+                return KEY_HANDLED;
             default:
                 // Parse next action
                 continue;
@@ -362,7 +363,7 @@ save_handle_key(ui_t *ui, int key)
     }
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 void

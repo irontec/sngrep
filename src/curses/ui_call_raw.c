@@ -269,7 +269,7 @@ call_raw_handle_key(ui_t *ui, int key)
     }
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 int

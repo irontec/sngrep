@@ -225,7 +225,7 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
 int
 msg_diff_handle_key(ui_t *ui, int key)
 {
-    return key;
+    return KEY_NOT_HANDLED;
 }
 
 int

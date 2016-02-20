@@ -260,16 +260,19 @@ filter_handle_key(ui_t *ui, int key)
                         }
                         break;
                     case FLD_FILTER_CANCEL:
-                        return KEY_ESC;
+                        ui_destroy(ui);
+                        return KEY_HANDLED;
                     case FLD_FILTER_FILTER:
                         filter_save_options(ui);
-                        return KEY_ESC;
+                        ui_destroy(ui);
+                        return KEY_HANDLED;
                 }
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_FILTER_CANCEL)
                     filter_save_options(ui);
-                return KEY_ESC;
+                ui_destroy(ui);
+                return KEY_HANDLED;
             default:
                 // Parse next action
                 continue;
@@ -295,7 +298,7 @@ filter_handle_key(ui_t *ui, int key)
     }
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 void

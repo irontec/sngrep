@@ -197,5 +197,6 @@ stats_create(ui_t *ui)
 int
 stats_handle_key(ui_t *ui, int key)
 {
-    return KEY_ESC;
+    ui_destroy(ui);
+    return KEY_HANDLED;
 }

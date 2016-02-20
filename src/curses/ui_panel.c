@@ -124,7 +124,7 @@ ui_handle_key(ui_t *ui, int key)
         return ui->handle_key(ui, key);
     }
 
-    return 0;
+    return KEY_NOT_HANDLED;
 }
 
 

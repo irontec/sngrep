@@ -585,13 +585,12 @@ call_list_handle_key(ui_t *ui, int key)
                 // Handle quit from this screen unless requested
                 if (setting_enabled(SETTING_EXITPROMPT)) {
                     if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
-                        return KEY_ESC;
-                    } else {
-                        return 0;
+                        ui_destroy(ui);
                     }
                 } else {
-                    return KEY_ESC;
+                    ui_destroy(ui);
                 }
+                return KEY_HANDLED;
                 break;
             default:
                 // Parse next action
@@ -620,7 +619,7 @@ call_list_handle_key(ui_t *ui, int key)
 
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 int
@@ -706,7 +705,7 @@ call_list_handle_form_key(ui_t *ui, int key)
     filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? key : 0;
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 int

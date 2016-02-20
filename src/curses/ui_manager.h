@@ -49,10 +49,6 @@
 #define DIALOG_MAX_WIDTH 100
 #define DIALOG_MIN_WIDTH 40
 
-//! Possible key handler results
-#define KEY_HANDLED      0
-#define KEY_PROPAGATED  -1
-
 /**
  * Define existing panels
  */

@@ -40,6 +40,13 @@
 #include <panel.h>
 #include <form.h>
 
+//! Possible key handler results
+enum key_handler_ret {
+    KEY_HANDLED         = 0,
+    KEY_NOT_HANDLED     = -1,
+    KEY_PROPAGATED      = -2
+};
+
 /**
  * @brief Enum for available panel types
  *
