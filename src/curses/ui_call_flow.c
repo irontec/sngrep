@@ -172,7 +172,14 @@ call_flow_draw(ui_t *ui)
     call_flow_draw_preview(ui);
 
     // Draw the scrollbar
-    info->scroll.max = vector_count(info->darrows);
+    vector_iter_t it = vector_iterator(info->darrows);
+    call_flow_arrow_t *arrow = NULL;
+    info->scroll.max = info->scroll.pos = 0;
+    while ((arrow = vector_iterator_next(&it))) {
+        if (vector_iterator_current(&it) == info->first_arrow)
+            info->scroll.pos = info->scroll.max;
+        info->scroll.max += call_flow_arrow_height(ui, arrow);
+    }
     ui_scrollbar_draw(info->scroll);
 
     // Redraw flow win
@@ -321,12 +328,12 @@ call_flow_draw_arrows(ui_t *ui)
 
     // If no active call, use the fist one (if exists)
     if (info->cur_arrow == -1 && vector_count(info->darrows)) {
-        info->cur_arrow = info->scroll.pos = 0;
+        info->cur_arrow = info->first_arrow = 0;
     }
 
     // Draw arrows
     vector_iter_t it = vector_iterator(info->darrows);
-    vector_iterator_set_current(&it, info->scroll.pos - 1);
+    vector_iterator_set_current(&it, info->first_arrow - 1);
     while ((arrow = vector_iterator_next(&it))) {
         // Stop if we have reached the bottom of the screen
         if (cline >= getmaxy(info->flow_win))
@@ -1272,8 +1279,8 @@ call_flow_move(ui_t *ui, int arrowindex)
 
             // If we are out of the bottom of the displayed list
             // refresh it starting in the next call
-            if (info->cur_arrow - info->scroll.pos == getmaxy(info->flow_win)/2) {
-               info->scroll.pos++;
+            if (info->cur_arrow - info->first_arrow == getmaxy(info->flow_win)/2) {
+                info->first_arrow++;
             }
         }
     } else {
@@ -1283,8 +1290,8 @@ call_flow_move(ui_t *ui, int arrowindex)
               break;
             // If we are out of the top of the displayed list
             // refresh it starting in the previous (in fact current) call
-            if (info->cur_arrow ==  info->scroll.pos) {
-              info->scroll.pos--;
+            if (info->cur_arrow ==  info->first_arrow) {
+                info->first_arrow--;
             }
             // Move current call position
             info->cur_arrow--;

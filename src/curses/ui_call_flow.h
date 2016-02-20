@@ -132,6 +132,8 @@ struct call_flow_info {
     vector_t *arrows;
     //! List of displayed arrows
     vector_t *darrows;
+    //! First displayed arrow in the list
+    int first_arrow;
     //! Current arrow index where the cursor is
     int cur_arrow;
     //! Selected arrow to compare
