@@ -363,6 +363,10 @@ call_flow_draw_preview(ui_t *ui)
     call_flow_arrow_t *arrow = NULL;
     call_flow_info_t *info;
 
+    // Check if not displaying raw has been requested
+    if (setting_disabled(SETTING_CF_FORCERAW))
+        return;
+
     // Get panel information
     info = call_flow_info(ui);
 
