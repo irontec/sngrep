@@ -267,6 +267,9 @@ call_raw_handle_key(PANEL *panel, int key)
                     call_raw_set_msg(info->msg);
                 }
                 break;
+            case ACTION_CLEAR_CALLS:
+                // Propagate the key to the previous panel
+                return KEY_PROPAGATED;
             default:
                 // Parse next action
                 continue;
