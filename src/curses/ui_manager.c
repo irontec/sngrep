@@ -615,13 +615,14 @@ int
 dialog_confirm(const char *title, const char *text, const char *options)
 {
     WINDOW *dialog_win;
-    int key, action, i, curs, newl, height, width;
+    int key, i, curs, newl, height, width;
     char *str, *tofree, *option, *word;
     int selected = 0;
     int optioncnt = 1;
     int col = 2;
     int line = 3;
     char opts[4][10];
+    int action = -1;
 
     // Initialize
     memset(opts, 0, 4 * 10);
