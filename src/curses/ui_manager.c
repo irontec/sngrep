@@ -227,17 +227,29 @@ wait_for_input()
         if (c == ERR)
             continue;
 
-        // Check if current panel has custom bindings for that key
         capture_lock();
-        if ((c = ui_handle_key(ui, c)) == 0) {
-            capture_unlock();
-            // Key has been handled by panel
-            continue;
+        // Handle received key
+        int key = c;
+        while (c != KEY_HANDLED) {
+            // Check if current panel has custom bindings for that key
+            c = ui_handle_key(ui, c);
+
+            if (c == KEY_HANDLED) {
+                // Panel handled this key
+                continue;
+            } else if (c == KEY_PROPAGATED) {
+                // restore the key value
+                c = key;
+                // Destroy current panel
+                ui_destroy(ui);
+                // Try to handle this key with the previus panel
+                ui = ui_find_by_panel(panel_below(NULL));
+            } else {
+                // Key not handled by UI nor propagated. Use default handler
+                c = default_handle_key(ui, c);
+            }
         }
         capture_unlock();
-
-        // Key not handled by UI, try default handler
-        default_handle_key(ui, c);
     }
 
     return -1;
@@ -288,8 +300,8 @@ default_handle_key(ui_t *ui, int key)
         break;
     }
 
-    // Return this is a valid handled key
-    return (action == ERR) ? key : 0;
+    // Consider the key handled at this point
+    return KEY_HANDLED;
 }
 
 void

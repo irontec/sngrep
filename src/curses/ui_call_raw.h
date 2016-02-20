@@ -114,8 +114,9 @@ call_raw_print_msg(ui_t *ui, sip_msg_t *msg);
  * @brief Handle Call Raw key strokes
  *
  * This function will manage the custom keybindings of the panel. If this
- * function returns -1, the ui manager will check if the pressed key
- * is one of the common ones (like toggle colors and so).
+ * function returns -1, the ui manager will destroy the current panel and
+ * pass the key to the previous panel.
+
  *
  * @param panel Ncurses panel pointer
  * @param key Pressed keycode
