@@ -93,6 +93,17 @@ call_raw_info_t *
 call_raw_info(ui_t *ui);
 
 /**
+ * @brief Determine if the screen requires redrawn
+ *
+ * This will query the interface if it requires to be redraw again.
+ *
+ * @param ui UI structure pointer
+ * @return true if the panel requires redraw, false otherwise
+ */
+bool
+call_raw_redraw(ui_t *ui);
+
+/**
  * @brief Draw the Call Raw panel
  *
  * This function will drawn the panel into the screen based on its stored

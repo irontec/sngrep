@@ -44,6 +44,7 @@ ui_t ui_call_raw = {
     .panel = NULL,
     .create = call_raw_create,
     .destroy = call_raw_destroy,
+    .redraw = call_raw_redraw,
     .draw = call_raw_draw,
     .handle_key = call_raw_handle_key
 };
@@ -83,6 +84,17 @@ call_raw_info_t *
 call_raw_info(ui_t *ui)
 {
     return (call_raw_info_t*) panel_userptr(ui->panel);
+}
+
+bool
+call_raw_redraw(ui_t *ui)
+{
+    // Get panel information
+    call_raw_info_t *info = call_raw_info(ui);
+
+    // Check if any of the group has changed
+    return call_group_has_changed(info->group);
+
 }
 
 int
