@@ -86,6 +86,9 @@ key_binding_t bindings[ACTION_SENTINEL] = {
    { ACTION_SDP_INFO,       "sdpinfo",      { KEY_F(2), 'd' }, 2 },
    { ACTION_AUTOSCROLL,     "autoscroll",   { 'A' }, 1 },
    { ACTION_TOGGLE_HINT,    "hintalt",      { 'K' }, 1 },
+   { ACTION_SORT_PREV,      "sortprev",     { '<' }, 1 },
+   { ACTION_SORT_NEXT,      "sortnext",     { '>' }, 1 },
+   { ACTION_SORT_SWAP,      "sortswap",     { 'z' }, 1 },
 };
 
 void

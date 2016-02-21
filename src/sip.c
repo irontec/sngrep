@@ -150,10 +150,15 @@ sip_init(int limit, int only_calls, int no_incomplete)
     // Create a vector to store calls
     calls.list = vector_create(200, 50);
     vector_set_destroyer(calls.list, call_destroyer);
+    vector_set_sorter(calls.list, sip_list_sorter);
     calls.active = vector_create(10, 10);
 
     // Create hash table for callid search
     hcreate(calls.limit);
+
+    // By default sort by call index ascending
+    calls.sort.by = SIP_ATTR_CALLINDEX;
+    calls.sort.asc = true;
 
     // Initialize payload parsing regexp
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
@@ -765,4 +770,66 @@ sip_get_msg_header(sip_msg_t *msg, char *out)
     // Get msg header
     sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
     return out;
+}
+
+void
+sip_set_sort_options(sip_sort_t sort)
+{
+    calls.sort = sort;
+    sip_sort_list();
+}
+
+sip_sort_t
+sip_sort_options()
+{
+    return calls.sort;
+}
+
+void
+sip_sort_list()
+{
+    // Cloning the vector automatically sorts it
+    vector_t *clone = vector_clone(calls.list);
+
+    // FIXME FIXME FIXME
+    // There should be a way to destroy the vector without calling the
+    // vector destroyer for each item...
+    vector_set_destroyer(calls.list, NULL);
+    vector_destroy(calls.list);
+
+    // The new sorted list
+    calls.list = clone;
+}
+
+void
+sip_list_sorter(vector_t *vector, void *item)
+{
+    sip_call_t *prev, *cur = (sip_call_t *)item;
+    int count = vector_count(vector);
+    int i;
+
+    // First item is alway sorted
+    if (vector_count(vector) == 1)
+        return;
+
+    prev = vector_item(vector, vector_count(vector) - 2);
+
+    // Check if the item is already sorted
+    if (call_attr_compare(cur, prev, calls.sort.by) == 0) {
+        return;
+    }
+
+    for (i = count - 2 ; i >= 0; i--) {
+        // Get previous item
+        prev = vector_item(vector, i);
+        // Check if the item is already in a sorted position
+        int cmp = call_attr_compare(cur, prev, calls.sort.by);
+        if ((calls.sort.asc && cmp > 0) || (!calls.sort.asc && cmp < 0)) {
+            vector_insert(vector, item, i + 1);
+            return;
+        }
+    }
+
+    // Put this item at the begining of the vector
+    vector_insert(vector, item, 0);
 }

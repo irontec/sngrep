@@ -241,4 +241,15 @@ call_get_attribute(struct sip_call *call, enum sip_attr_id id, char *value);
 const char *
 call_state_to_str(int state);
 
+/**
+ * @brief Compare two calls based on a given attribute
+ *
+ * @return 0 if call attributes are equal
+ * @return 1 if first call is greater
+ * @return -1 if first call is lesser
+ */
+int
+call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id);
+
+
 #endif /* __SNGREP_SIP_CALL_H */

@@ -37,10 +37,16 @@ vector_create(int limit, int step)
 {
     vector_t *v;
     // Allocate memory for this vector data
-    if (!(v = sng_malloc(sizeof(vector_t))))
+    if (!(v = malloc(sizeof(vector_t))))
         return NULL;
+
+    v->count = 0;
     v->limit = limit;
     v->step = step;
+    v->list = NULL;
+    v->sorter = NULL;
+    v->destroyer = NULL;
+
     return v;
 }
 
@@ -140,7 +146,8 @@ vector_append(vector_t *vector, void *item)
 
     // Check if the vector has been initializated
     if (!vector->list) {
-        vector->list = sng_malloc(sizeof(void *) * vector->limit);
+        vector->list = malloc(sizeof(void *) * vector->limit);
+        memset(vector->list, 0, sizeof(void *) * vector->limit);
     }
 
     // Check if we need to increase vector size

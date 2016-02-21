@@ -110,8 +110,6 @@ call_list_create(ui_t *ui)
     info->group = call_group_create();
 
     // Get current call list
-    //info->calls = sip_calls_iterator();
-    //vector_iterator_set_filter(&info->calls, filter_check_call);
     info->cur_call = -1;
 
     // Set autoscroll default status
@@ -184,6 +182,7 @@ call_list_draw_header(ui_t *ui)
 {
     const char *infile, *coldesc;
     int colpos, collen, i;
+    char sortind;
     const char *countlb;
 
     // Get panel info
@@ -205,6 +204,9 @@ call_list_draw_header(ui_t *ui)
     if (!has_colors())
         wattron(ui->win, A_REVERSE);
 
+    // Get configured sorting options
+    sip_sort_t sort = sip_sort_options();
+
     // Draw columns titles
     wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(ui->win, 3, 0, "%*s", ui->width, "");
@@ -217,7 +219,16 @@ call_list_draw_header(ui_t *ui)
         // Check if the column will fit in the remaining space of the screen
         if (colpos + strlen(coldesc) >= ui->width)
             break;
-        mvwprintw(ui->win, 3, colpos, "%.*s", collen, coldesc);
+
+        // Print sort column indicator
+        if (info->columns[i].id == sort.by) {
+            wattron(ui->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
+            sortind = (sort.asc) ? 'v' : '^';
+            mvwprintw(ui->win, 3, colpos, "%c%.*s", sortind, collen, coldesc);
+            wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        } else {
+            mvwprintw(ui->win, 3, colpos, "%.*s", collen, coldesc);
+        }
         colpos += collen + 1;
     }
     // Print Autoscroll indicator
@@ -478,6 +489,8 @@ call_list_handle_key(ui_t *ui, int key)
     sip_call_group_t *group;
     int action = -1;
     sip_call_t *call;
+    sip_sort_t sort;
+    int i;
 
     // Sanity check, this should not happen
     if (!(info  = call_list_info(ui)))
@@ -595,6 +608,36 @@ call_list_handle_key(ui_t *ui, int key)
                 } else {
                     call_group_add(info->group, call);
                 }
+                break;
+            case ACTION_SORT_SWAP:
+                // Change sort order
+                sort = sip_sort_options();
+                sort.asc = (sort.asc) ? false : true;
+                sip_set_sort_options(sort);
+                break;
+            case ACTION_SORT_PREV:
+                // Change sort attribute
+                sort = sip_sort_options();
+                for (i = 0; i < info->columncnt; i++) {
+                    if (info->columns[i].id == sort.by &&  i != 0) {
+                        sort.by = info->columns[i-1].id;
+                        break;
+                    }
+                }
+                sip_set_sort_options(sort);
+                break;
+            case ACTION_SORT_NEXT:
+                // Change sort attribute
+                sort = sip_sort_options();
+                for (i = 0; i < info->columncnt; i++) {
+                    if (info->columns[i].id == sort.by) {
+                        if (i + 1 != info->columncnt) {
+                            sort.by = info->columns[i+1].id;
+                            break;
+                        }
+                    }
+                }
+                sip_set_sort_options(sort);
                 break;
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested

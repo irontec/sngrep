@@ -1356,8 +1356,12 @@ call_flow_arrow_sorter(vector_t *vector, void *item)
     int count = vector_count(vector);
     int i;
 
+    // First item is alway sorted
+    if (vector_count(vector) == 1)
+        return;
+
     curts = call_flow_arrow_time(item);
-    prevts = call_flow_arrow_time(vector_last(vector));
+    prevts = call_flow_arrow_time(vector_item(vector, vector_count(vector) - 2));
 
     // Check if the item is already sorted
     if (timeval_is_older(curts, prevts)) {

@@ -49,6 +49,8 @@ typedef struct sip_call_list sip_call_list_t;
 typedef struct sip_code sip_code_t;
 //! Shorter declaration of sip stats
 typedef struct sip_stats sip_stats_t;
+//! Shorter declaration of sip sort
+typedef struct sip_sort sip_sort_t;
 
 //! SIP Methods
 enum sip_methods {
@@ -89,6 +91,17 @@ struct sip_stats
 };
 
 /**
+ * @brief Sorting information for the sip list
+ */
+struct sip_sort
+{
+    //! Sort call list by this attribute
+    enum sip_attr_id by;
+    //! Sory by attribute ascending
+    bool asc;
+};
+
+/**
  * @brief call structures head list
  *
  * This structure acts as header of calls list
@@ -100,6 +113,8 @@ struct sip_call_list {
     vector_t *active;
     //! Changed flag. For interface optimal updates
     bool changed;
+    //! Sort call list following this options
+    sip_sort_t sort;
 
     // Max call limit
     int limit;
@@ -409,5 +424,16 @@ sip_method_from_str(const char *method);
 char *
 sip_get_msg_header(sip_msg_t *msg, char *out);
 
+void
+sip_set_sort_options(sip_sort_t sort);
+
+sip_sort_t
+sip_sort_options();
+
+void
+sip_sort_list();
+
+void
+sip_list_sorter(vector_t *vector, void *item);
 
 #endif

@@ -271,3 +271,41 @@ call_state_to_str(int state)
     }
     return "";
 }
+
+int
+call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id)
+{
+    char onevalue[256], twovalue[256];
+    int oneintvalue, twointvalue;
+    int comparetype; /* TODO 0 = string compare, 1 = int comprare */
+
+    switch (id) {
+        case SIP_ATTR_CALLINDEX:
+            oneintvalue = one->index;
+            twointvalue = two->index;
+            comparetype = 1;
+            break;
+        case SIP_ATTR_MSGCNT:
+            oneintvalue = call_msg_count(one);
+            twointvalue = call_msg_count(two);
+            comparetype = 1;
+            break;
+        default:
+            // Get attribute values
+            call_get_attribute(one, id, onevalue);
+            call_get_attribute(two, id, twovalue);
+            comparetype = 0;
+    }
+
+    switch (comparetype) {
+        case 0:
+            return strcmp(onevalue, twovalue);
+        case 1:
+            if (oneintvalue == twointvalue) return 0;
+            if (oneintvalue > twointvalue) return 1;
+            if (oneintvalue < twointvalue) return -1;
+            /* no break */
+        default:
+            return 0;
+    }
+}
