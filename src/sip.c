@@ -284,6 +284,7 @@ sip_check_packet(packet_t *packet)
     char callid[1024], xcallid[1024];
     address_t src, dst;
     u_char payload[MAX_SIP_PAYLOAD];
+    bool newcall = false;
 
     // Max SIP payload allowed
     if (packet->payload_len > MAX_SIP_PAYLOAD)
@@ -346,9 +347,8 @@ sip_check_packet(packet_t *packet)
         entry.data = (void *) call;
         hsearch(entry, ENTER);
 
-        // Append this call to the call list
-        vector_append(calls.list, call);
-        call->index = vector_count(calls.list);
+        // Mark this as a new call
+        newcall = true;
     }
 
     // At this point we know we're handling an interesting SIP Packet
@@ -378,6 +378,12 @@ sip_check_packet(packet_t *packet)
                 vector_remove(calls.active, call);
             }
         }
+    }
+
+    if (newcall) {
+        // Append this call to the call list
+        vector_append(calls.list, call);
+        call->index = vector_count(calls.list);
     }
 
     // Mark the list as changed
