@@ -184,6 +184,7 @@ call_list_draw_header(ui_t *ui)
 {
     const char *infile, *coldesc;
     int colpos, collen, i;
+    const char *countlb;
 
     // Get panel info
     call_list_info_t *info = call_list_info(ui);
@@ -224,13 +225,20 @@ call_list_draw_header(ui_t *ui)
         mvwprintw(ui->win, 3, 0, "A");
     wattroff(ui->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
+    // Print Dialogs or Calls in label depending on calls filter
+    if (setting_enabled(SETTING_SIP_CALLS)) {
+        countlb = "Calls";
+    } else {
+        countlb = "Dialogs";
+    }
+
     // Print calls count (also filtered)
     sip_stats_t stats = sip_calls_stats();
     mvwprintw(ui->win, 1, 35, "%*s", 35, "");
     if (stats.total != stats.displayed) {
-        mvwprintw(ui->win, 1, 35, "Dialogs: %d (%d displayed)", stats.total, stats.displayed);
+        mvwprintw(ui->win, 1, 35, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
     } else {
-        mvwprintw(ui->win, 1, 35, "Dialogs: %d", stats.total);
+        mvwprintw(ui->win, 1, 35, "%s: %d", countlb, stats.total);
     }
 
 }
