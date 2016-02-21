@@ -223,7 +223,7 @@ call_list_draw_header(ui_t *ui)
         // Print sort column indicator
         if (info->columns[i].id == sort.by) {
             wattron(ui->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-            sortind = (sort.asc) ? 'v' : '^';
+            sortind = (sort.asc) ? '^' : 'v';
             mvwprintw(ui->win, 3, colpos, "%c%.*s", sortind, collen, coldesc);
             wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
         } else {

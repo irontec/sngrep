@@ -347,6 +347,9 @@ sip_check_packet(packet_t *packet)
         entry.data = (void *) call;
         hsearch(entry, ENTER);
 
+        // Set call index
+        call->index = vector_count(calls.list) + 1;
+
         // Mark this as a new call
         newcall = true;
     }
@@ -383,7 +386,6 @@ sip_check_packet(packet_t *packet)
     if (newcall) {
         // Append this call to the call list
         vector_append(calls.list, call);
-        call->index = vector_count(calls.list);
     }
 
     // Mark the list as changed
