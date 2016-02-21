@@ -87,6 +87,12 @@ call_destroyer(void *call)
     call_destroy((sip_call_t*)call);
 }
 
+bool
+call_has_changed(sip_call_t *call)
+{
+    return call->changed;
+}
+
 void
 call_add_message(sip_call_t *call, sip_msg_t *msg)
 {

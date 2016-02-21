@@ -653,8 +653,6 @@ sip_calls_clear()
     // Remove all items from vector
     vector_clear(calls.list);
     vector_clear(calls.active);
-    // Flag the list as changed
-    calls.changed = true;
 }
 
 int

@@ -132,7 +132,7 @@ call_list_info_t *
 call_list_info(ui_t *ui);
 
 /**
- * @brief Determine if the screen requires redrwa
+ * @brief Determine if the screen requires redrawn
  *
  * This will query the interface if it requires to be redraw again.
  *

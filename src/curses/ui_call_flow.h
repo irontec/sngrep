@@ -188,6 +188,17 @@ call_flow_info_t *
 call_flow_info(ui_t *ui);
 
 /**
+ * @brief Determine if the screen requires redrawn
+ *
+ * This will query the interface if it requires to be redraw again.
+ *
+ * @param ui UI structure pointer
+ * @return true if the panel requires redraw, false otherwise
+ */
+bool
+call_flow_redraw(ui_t *ui);
+
+/**
  * @brief Draw the Call flow extended panel
  *
  * This function will drawn the panel into the screen based on its stored

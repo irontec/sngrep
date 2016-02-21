@@ -73,6 +73,7 @@ ui_t ui_call_flow = {
     .panel = NULL,
     .create = call_flow_create,
     .destroy = call_flow_destroy,
+    .redraw = call_flow_redraw,
     .draw = call_flow_draw,
     .handle_key = call_flow_handle_key,
     .help = call_flow_help
@@ -127,6 +128,24 @@ call_flow_info_t *
 call_flow_info(ui_t *ui)
 {
     return (call_flow_info_t*) panel_userptr(ui->panel);
+}
+
+bool
+call_flow_redraw(ui_t *ui)
+{
+    // Get panel information
+    call_flow_info_t *info = call_flow_info(ui);
+
+    // Check if any of the group has changed
+    sip_call_t *call = NULL;
+    while ((call = call_group_get_next(info->group, call))) {
+        if (call_has_changed(call)) {
+            return true;
+        }
+    }
+
+    // None of the calls have changed, we don't require redraw
+    return false;
 }
 
 int
