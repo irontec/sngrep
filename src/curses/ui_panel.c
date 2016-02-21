@@ -42,6 +42,9 @@ ui_create(ui_t *ui)
         }
     }
 
+    // Force screen draw for the first time
+    ui->changed = true;
+
     // And return it
     return ui;
 }
@@ -70,6 +73,26 @@ ui_get_panel(ui_t *ui)
 {
     // Return panel pointer of ui struct
     return (ui) ? ui->panel : NULL;
+}
+
+bool
+ui_draw_redraw(ui_t *ui)
+{
+    // Sanity check, this should not happen
+    if (!ui || !ui->panel)
+        return false;
+
+    // If ui has changed, force redraw. Don't even ask.
+    if (ui->changed) {
+        ui->changed = false;
+        return true;
+    }
+
+    // Query the panel if its needs to be redrawn
+    if (ui->redraw) {
+        return ui->redraw(ui);
+    }
+    return true;
 }
 
 int
@@ -120,10 +143,14 @@ ui_help(ui_t *ui)
 int
 ui_handle_key(ui_t *ui, int key)
 {
+    int hld = KEY_NOT_HANDLED;
+    // Request the panel to handle the key
     if (ui->handle_key) {
-        return ui->handle_key(ui, key);
+        hld = ui->handle_key(ui, key);
     }
-    return KEY_NOT_HANDLED;
+    // Force redraw when the user presses keys
+    ui->changed = true;
+    return hld;
 }
 
 

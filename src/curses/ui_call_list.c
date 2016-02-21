@@ -50,6 +50,7 @@ ui_t ui_call_list = {
     .type = PANEL_CALL_LIST,
     .create = call_list_create,
     .destroy = call_list_destroy,
+    .redraw = call_list_redraw,
     .draw = call_list_draw,
     .resize = call_list_resize,
     .handle_key = call_list_handle_key,
@@ -150,6 +151,12 @@ call_list_info_t *
 call_list_info(ui_t *ui)
 {
     return (call_list_info_t*) panel_userptr(ui->panel);
+}
+
+bool
+call_list_redraw(ui_t *ui)
+{
+    return sip_calls_has_changed();
 }
 
 int

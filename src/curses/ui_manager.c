@@ -150,9 +150,6 @@ ncurses_deinit()
     endwin();
 }
 
-
-
-
 ui_t *
 ui_create_panel(enum panel_types type)
 {
@@ -202,10 +199,13 @@ wait_for_input()
 
         // Avoid parsing any packet while UI is being drawn
         capture_lock();
-        // Redraw this panel
-        if (ui_draw_panel(ui) != 0) {
-            capture_unlock();
-            return -1;
+        // Query the interface if it needs to be redrawn
+        if (ui_draw_redraw(ui)) {
+            // Redraw this panel
+            if (ui_draw_panel(ui) != 0) {
+                capture_unlock();
+                return -1;
+            }
         }
         capture_unlock();
 

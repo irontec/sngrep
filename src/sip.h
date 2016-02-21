@@ -98,6 +98,8 @@ struct sip_call_list {
     vector_t *list;
     //! List of active captured calls
     vector_t *active;
+    //! Changed flag. For interface optimal updates
+    bool changed;
 
     // Max call limit
     int limit;
@@ -199,6 +201,18 @@ sip_validate_packet(packet_t *packet);
  */
 sip_msg_t *
 sip_check_packet(packet_t *packet);
+
+/**
+ * @brief Return if the call list has changed
+ *
+ * Check if the call list has changed since the last time
+ * this function was invoked. We consider list has changed when a new
+ * call has been added or removed.
+ *
+ * @return true if list has changed, false otherwise
+ */
+bool
+sip_calls_has_changed();
 
 /**
  * @brief Getter for calls linked list size

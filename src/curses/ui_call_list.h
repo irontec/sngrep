@@ -132,6 +132,17 @@ call_list_info_t *
 call_list_info(ui_t *ui);
 
 /**
+ * @brief Determine if the screen requires redrwa
+ *
+ * This will query the interface if it requires to be redraw again.
+ *
+ * @param ui UI structure pointer
+ * @return true if the panel requires redraw, false otherwise
+ */
+bool
+call_list_redraw(ui_t *ui);
+
+/**
  * @brief Resize the windows of Call List
  *
  * This function will be invoked when the ui size has changed

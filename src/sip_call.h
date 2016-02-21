@@ -31,6 +31,7 @@
 
 #include "config.h"
 #include <stdarg.h>
+#include <stdbool.h>
 #include "vector.h"
 #include "rtp.h"
 #include "sip_msg.h"
@@ -67,6 +68,8 @@ struct sip_call {
     signed char filtered;
     //! Call State. For dialogs starting with an INVITE method
     int state;
+    //! Changed flag. For interface optimal updates
+    bool changed;
 
     //! List of messages of this call (sip_msg_t*)
     vector_t *msgs;
@@ -109,6 +112,18 @@ call_destroy(sip_call_t *call);
  */
 void
 call_destroyer(void *call);
+
+/**
+ * @brief Return if the call has changed
+ *
+ * Check if the call has changed since the last time * this function was
+ * invoked. We consider list has changed when a new message or stream
+ * has been added to the call.
+ *
+ * @return true if call has changed, false otherwise
+ */
+bool
+call_has_changed(sip_call_t *call);
 
 /**
  * @brief Append message to the call's message list

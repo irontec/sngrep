@@ -94,18 +94,26 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     msg->call = call;
     // Put this msg at the end of the msg list
     msg->index = vector_append(call->msgs, msg);
+    // Flag this call as changed
+    call->changed = true;
 }
 
 void
 call_add_stream(sip_call_t *call, rtp_stream_t *stream)
 {
+    // Store stream
     vector_append(call->streams, stream);
+    // Flag this call as changed
+    call->changed = true;
 }
 
 void
 call_add_rtp_packet(sip_call_t *call, packet_t *packet)
 {
+    // Store packet
     vector_append(call->rtp_packets, packet);
+    // Flag this call as changed
+    call->changed = true;
 }
 
 int

@@ -375,6 +375,9 @@ sip_check_packet(packet_t *packet)
         }
     }
 
+    // Mark the list as changed
+    calls.changed = true;
+
     // Return the loaded message
     return msg;
 
@@ -383,6 +386,14 @@ skip_message:
     msg_destroy(msg);
     return NULL;
 
+}
+
+bool
+sip_calls_has_changed()
+{
+    bool changed = calls.changed;
+    calls.changed = false;
+    return changed;
 }
 
 int
@@ -642,6 +653,8 @@ sip_calls_clear()
     // Remove all items from vector
     vector_clear(calls.list);
     vector_clear(calls.active);
+    // Flag the list as changed
+    calls.changed = true;
 }
 
 int

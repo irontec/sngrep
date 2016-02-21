@@ -39,6 +39,7 @@
 #endif
 #include <panel.h>
 #include <form.h>
+#include <stdbool.h>
 
 //! Possible key handler results
 enum key_handler_ret {
@@ -102,11 +103,15 @@ struct ui {
     int y;
     //! Panel Type @see panel_types enum
     enum panel_types type;
+    //! Flag this panel as redraw required
+    bool changed;
 
     //! Constructor for this panel
     void (*create)(ui_t *);
     //! Destroy current panel
     void (*destroy)(ui_t *);
+    //! Query the panel if redraw is required
+    bool (*redraw)(ui_t *);
     //! Request the panel to redraw its data
     int (*draw)(ui_t *);
     //! Notifies the panel the screen has changed
@@ -165,6 +170,18 @@ ui_get_panel(ui_t *ui);
  */
 int
 ui_resize_panel(ui_t *ui);
+
+/**
+ * @brief Check if the panel requires redraw
+ *
+ * This function acts as wrapper to custom ui redraw function
+ * with some checks
+ *
+ * @param ui UI structure
+ * @return true if the panel must be drawn, false otherwise
+ */
+bool
+ui_draw_redraw(ui_t *ui);
 
 /**
  * @brief Notifies current ui the screen size has changed
