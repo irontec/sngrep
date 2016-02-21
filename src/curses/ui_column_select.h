@@ -77,6 +77,8 @@ struct column_select_info {
  * displaying the column selection panel. It also draws all the
  * static information of the panel that will never be
  * redrawn.
+ *
+ * @param ui UI structure pointer
  */
 void
 column_select_create(ui_t *ui);
@@ -85,6 +87,8 @@ column_select_create(ui_t *ui);
  * @brief Destroy column selection panel
  *
  * This function do the final cleanups for this panel
+ *
+ * @param ui UI structure pointer
  */
 void
 column_select_destroy(ui_t *ui);
@@ -95,7 +99,7 @@ column_select_destroy(ui_t *ui);
  * Return ncurses users pointer of the given panel into panel's
  * information structure pointer.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return a pointer to info structure of given panel
  */
 column_select_info_t *
@@ -107,13 +111,10 @@ column_select_info(ui_t *ui);
  * This function is called by UI manager every time a
  * key is pressed. This allow the filter panel to manage
  * its own keys.
- * If this function return 0, the key will not be handled
- * by ui manager. Otherwise the return will be considered
- * a key code.
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  * @param key   key code
- * @return 0 if the key is handled, keycode otherwise
+ * @return enum @key_handler_ret
  */
 int
 column_select_handle_key(ui_t *ui, int key);
@@ -125,9 +126,9 @@ column_select_handle_key(ui_t *ui, int key);
  * You can switch between menu and rest of the components
  * using TAB
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  * @param key   key code
- * @return 0 if the key is handled, keycode otherwise
+ * @return enum @key_handler_ret
  */
 int
 column_select_handle_key_menu(ui_t *ui, int key);
@@ -139,9 +140,9 @@ column_select_handle_key_menu(ui_t *ui, int key);
  * You can switch between menu and rest of the components
  * using TAB
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  * @param key   key code
- * @return 0 if the key is handled, keycode otherwise
+ * @return enum @key_handler_ret
  */
 int
 column_select_handle_key_form(ui_t *ui, int key);
@@ -151,7 +152,7 @@ column_select_handle_key_form(ui_t *ui, int key);
  *
  * This function will update the columns of Call List
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  */
 void
 column_select_update_columns(ui_t *ui);
@@ -162,7 +163,7 @@ column_select_update_columns(ui_t *ui);
  * Remove previously configurated columns from user's
  * $HOME/.sngreprc and add new ones
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  */
 void
 column_select_save_columns(ui_t *ui);
@@ -172,7 +173,7 @@ column_select_save_columns(ui_t *ui);
  *
  * This function can be used to reorder the column list
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  * @param item Menu item to be moved
  * @param post New position in the menu
  */
@@ -185,7 +186,7 @@ column_select_move_item(ui_t *ui, ITEM *item, int pos);
  * This function can be used to toggle selection status of
  * the menu item
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  * @param item Menu item to be (de)selected
  */
 void
@@ -197,7 +198,7 @@ column_select_toggle_item(ui_t *ui, ITEM *item);
  * After moving an item or updating its selectioactivn status
  * menu must be redrawn.
  *
- * @param panel Column selection panel pointer
+ * @param ui UI structure pointer
  */
 void
 column_select_update_menu(ui_t *ui);

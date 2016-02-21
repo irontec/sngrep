@@ -59,10 +59,10 @@ ui_t ui_msg_diff = {
     .type = PANEL_MSG_DIFF,
     .panel = NULL,
     .create = msg_diff_create,
-    .handle_key = msg_diff_handle_key,
+    .handle_key = NULL,
     .destroy = msg_diff_destroy,
     .draw = msg_diff_draw,
-    .help = msg_diff_help
+    .help = NULL
 };
 
 void
@@ -219,18 +219,6 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
     // Redraw raw win
     wnoutrefresh(win);
 
-    return 0;
-}
-
-int
-msg_diff_handle_key(ui_t *ui, int key)
-{
-    return KEY_NOT_HANDLED;
-}
-
-int
-msg_diff_help(ui_t *ui)
-{
     return 0;
 }
 

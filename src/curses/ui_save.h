@@ -104,7 +104,7 @@ struct save_info {
  * static information of the panel that will never be
  * redrawn.
  *
- * @return a panel pointer
+ * @param ui UI structure pointer
  */
 void
 save_create(ui_t *ui);
@@ -113,6 +113,8 @@ save_create(ui_t *ui);
  * @brief Destroy save panel
  *
  * This function do the final cleanups for this panel
+ *
+ * @param ui UI structure pointer
  */
 void
 save_destroy(ui_t *ui);
@@ -123,7 +125,7 @@ save_destroy(ui_t *ui);
  * Return ncurses users pointer of the given panel into panel's
  * information structure pointer.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return a pointer to info structure of given panel
  */
 save_info_t *
@@ -135,7 +137,7 @@ save_info(ui_t *ui);
  * This function will drawn the panel into the screen based on its stored
  * status
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
@@ -147,13 +149,10 @@ save_draw(ui_t *ui);
  * This function is called by UI manager every time a
  * key is pressed. This allow the save panel to manage
  * its own keys.
- * If this function return 0, the key will not be handled
- * by ui manager. Otherwise the return will be considered
- * a key code.
  *
- * @param panel Save panel pointer
+ * @param ui UI structure pointer
  * @param key   key code
- * @return 0 if the key is handled, keycode otherwise
+ * @return enum @key_handler_ret
  */
 int
 save_handle_key(ui_t *ui, int key);
@@ -164,6 +163,7 @@ save_handle_key(ui_t *ui, int key);
  * This function will access the panel information and will set the
  * group call pointer to the selected calls
  *
+ * @param ui UI structure pointer
  * @param group Call group pointer to be set in the internal info struct
  */
 void
@@ -173,7 +173,8 @@ save_set_group(ui_t *ui, sip_call_group_t *group);
  * @brief Print an error message in Save panel
  *
  * General function to print any save error message
- * @param panel Save panel pointer
+ *
+ * @param ui UI structure pointer
  * @param message Message to be printed in the panel
  */
 void
@@ -185,7 +186,7 @@ save_error_message(ui_t *ui, const char *message);
  * This function will try to copy the temporal file to
  * another location user entered
  *
- * @param panel Save panel pointer
+ * @param ui UI structure pointer
  */
 int
 save_to_file(ui_t *ui);

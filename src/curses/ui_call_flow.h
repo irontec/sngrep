@@ -159,6 +159,8 @@ struct call_flow_info {
  * stuff of the screen (which usually won't be redrawn)
  * It will also create an information structure of the panel status and
  * store it in the panel's userpointer
+ *
+ * @param ui UI structure pointer
  */
 void
 call_flow_create(ui_t *ui);
@@ -168,7 +170,7 @@ call_flow_create(ui_t *ui);
  *
  * This function will hide the panel and free all allocated memory.
  *
- * @return panel Ncurses panel pointer
+ * @param ui UI structure pointer
  */
 void
 call_flow_destroy(ui_t *ui);
@@ -179,7 +181,7 @@ call_flow_destroy(ui_t *ui);
  * Return ncurses users pointer of the given panel into panel's
  * information structure pointer.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return a pointer to info structure of given panel
  */
 call_flow_info_t *
@@ -191,7 +193,7 @@ call_flow_info(ui_t *ui);
  * This function will drawn the panel into the screen based on its stored
  * status
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
@@ -200,7 +202,7 @@ call_flow_draw(ui_t *ui);
 /**
  * @brief Draw the footer of the panel with keybindings info
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  */
 void
 call_flow_draw_footer(ui_t *ui);
@@ -208,17 +210,39 @@ call_flow_draw_footer(ui_t *ui);
 /**
  * @brief Draw the visible columns in panel window
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  */
 int
 call_flow_draw_columns(ui_t *ui);
 
+/**
+ * @brief Draw arrows in the visible part of the panel
+ *
+ * @param ui UI structure pointer
+ */
 void
 call_flow_draw_arrows(ui_t *ui);
 
+/**
+ * @brief Draw panel preview of current arrow
+ *
+ * If user request to not draw preview panel, this function does nothing.
+ *
+ * @param ui UI structure pointer
+ */
 void
 call_flow_draw_preview(ui_t *ui);
 
+/**
+ * @brief Draw a single arrow in arrow flow
+ *
+ * This function draws an arrow of any type in the given line of the flow.
+ *
+ * @param ui UI Structure pointer
+ * @param arrow Arrow structure pointer of any type
+ * @param line Line of the flow window to draw this arrow
+ * @return the number of screen lines this arrow uses on screen
+ */
 int
 call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line);
 
@@ -230,10 +254,10 @@ call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line);
  * base on message information. Each message use multiple lines
  * depending on the display mode of call flow
  *
- * @param panel Ncurses panel pointer
- * @param arrow Call flow arrow to be drawn
+ * @param ui UI structure pointer
+ * @param arrow Call flow arrow with message to be drawn
  * @param cline Window line to draw the message
- * @return the arrow passed as parameter
+ * @return the number of screen lines this arrow uses on screen
  */
 int
 call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline);
@@ -243,14 +267,28 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline);
  *
  * Draw the given arrow of type stream in the given line.
  *
- * @param panel Ncurses panel pointer
- * @param arrow Call flow arrow to be drawn
+ * @param ui UI structure pointer
+ * @param arrow Call flow arrow of stream to be drawn
  * @param cline Window line to draw the message
- * @return the arrow passed as parameter
+ * @return the number of screen lines this arrow uses on screen
  */
 int
 call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline);
 
+/**
+ * @brief Create a new arrow of given type
+ *
+ * Allocate memory for a new arrow of the given type and associate the
+ * item pointer. If the arrow already exists in the ui arrows vector
+ * this function will return that arrow instead of creating a new one.
+ *
+ * This function WON'T add the arrow to any ui vector.
+ *
+ * @param ui UI structure pointer
+ * @param item Item pointer to associate to the arrow
+ * @param type Type of arrow as defined in enum @call_flow_arrow_type
+ * @return an arrow pointer or NULL in case of error
+ */
 call_flow_arrow_t *
 call_flow_arrow_create(ui_t *ui, void *item, int type);
 
@@ -261,7 +299,7 @@ call_flow_arrow_create(ui_t *ui, void *item, int type);
  * take more than two lines. This function will calculate how many
  * lines the arrow will use.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param arrow Arrow structure to calculate height
  * @return height the arrow will have
  */
@@ -274,7 +312,7 @@ call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow);
  * This function will try to find an existing arrow with a
  * message or stream equals to the giving pointer.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param data Data to search in the arrow structure
  * @return a pointer to the found arrow or NULL
  */
@@ -292,14 +330,14 @@ call_flow_arrow_find(ui_t *ui, const void *data);
  * @return associated SIP message with the arrow
  */
 sip_msg_t *
-call_flow_arrow_message(const  call_flow_arrow_t *arrow);
+call_flow_arrow_message(const call_flow_arrow_t *arrow);
 
 /**
  * @brief Draw raw panel with message payload
  *
  * Draw the given message payload into the raw window.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param msg Message data to draw
  * @return 0 in all cases
  */
@@ -311,7 +349,7 @@ call_flow_draw_raw(ui_t *ui, sip_msg_t *msg);
  *
  * Draw the given stream data into the raw window.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param rtcp stream containing the RTCP conection data
  * @return 0 in all cases
  */
@@ -321,13 +359,12 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *rtcp);
 /**
  * @brief Handle Call flow extended key strokes
  *
- * This function will manage the custom keybindings of the panel. If this
- * function returns -1, the ui manager will destroy the current panel and
- * pass the key to the previous panel.
+ * This function will manage the custom keybindings of the panel.
+ * This function return one of the values defined in @key_handler_ret
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param key Pressed keycode
- * @return 0 if the function can handle the key, key otherwise
+ * @return enum @key_handler_ret
  */
 int
 call_flow_handle_key(ui_t *ui, int key);
@@ -338,7 +375,7 @@ call_flow_handle_key(ui_t *ui, int key);
  * This function will request to panel to show its help (if any) by
  * invoking its help function.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return 0 if the screen has help, -1 otherwise
  */
 int
@@ -363,7 +400,7 @@ call_flow_set_group(sip_call_group_t *group);
  * Each column has one address and two callids (unless split mode
  * is disabled)
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param callid Call-Id header of SIP payload
  * @param addr Address:port string
  */
@@ -373,7 +410,7 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr);
 /**
  * @brief Get a flow column data
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param callid Call-Id header of SIP payload
  * @param addr Address:port string
  * @return column structure pointer or NULL if not found
@@ -387,16 +424,49 @@ call_flow_column_get(ui_t *ui, const char *callid, address_t address);
  * This function will move the cursor to given arrow, taking into account
  * selected line and scrolling position.
  *
+ * @param ui UI structure pointer
+ * @param arrowindex Position to move the cursor
  */
 void
 call_flow_move(ui_t *ui, int arrowindex);
 
+/*
+ * @brief Return selected flow arrow
+ *
+ * User can select an arrow to compare times or payload with another
+ * arrow. Don't confuse this with the current arrow (where the cursor is)
+ *
+ * @param ui UI Structure pointer
+ * @return user selected arrow
+ */
 call_flow_arrow_t *
 call_flow_arrow_selected(ui_t *ui);
 
+/**
+ * @brief Return timestamp for given arrow
+ *
+ * This function is a wrapper to return arrow timestamp no matter what
+ * type of arrow is passed. Arrows of different types store their times
+ * in different locations.
+ *
+ * If pointer is invalid of arrow type doesn't match anything known, the
+ * timestamp returned structure will be zero'd
+ *
+ * @param arrow Arrow structure pointer
+ * @return timestamp for given arrow
+ */
 struct timeval
 call_flow_arrow_time(call_flow_arrow_t *arrow);
 
+/**
+ * @brief Sort arrows by timestamp
+ *
+ * This function acts as sorter for arrows vector. Each time a new arrow
+ * is appended, it's sorted based on its timestamp.
+ *
+ * @param vector Arrows vector pointer
+ * @param item Call Flow arrow structure pointer
+ */
 void
 call_flow_arrow_sorter(vector_t *vector, void *item);
 

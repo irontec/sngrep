@@ -42,8 +42,11 @@
 
 //! Possible key handler results
 enum key_handler_ret {
+    //! Panel has handled the key, dont'use default key handler
     KEY_HANDLED         = 0,
+    //! Panel has not handled the key, try defualt key handler
     KEY_NOT_HANDLED     = -1,
+    //! Panel destroys and requests previous panel to handle key
     KEY_PROPAGATED      = -2
 };
 
@@ -191,18 +194,35 @@ ui_help(ui_t *ui);
  * @brief Handle key inputs on given UI
  *
  * This function will pass the input key sequence
- * to the given UI. This will only happen if the key
- * sequence don't match any of the general keybindings
+ * to the given UI.
  *
  * @param ui UI structure
  * @param key keycode sequence of the pressed keys and mods
+ * @return enum @key_handler_ret*
  */
 int
 ui_handle_key(ui_t *ui, int key);
 
+/**
+ * @brief Create a ncurses panel for the given ui
+ *
+ * Create a panel and associated window and store their
+ * porinters in ui structure.
+ * If height and widht doesn't match the screen dimensions
+ * the panel will be centered on the screen.
+ *
+ * @param ui UI structure
+ * @param height panel window height
+ * @param width panel windo width
+ */
 void
 ui_panel_create(ui_t *ui, int height, int width);
 
+/**
+ * @brief Deallocate ncurses panel and window
+ *
+ * @param ui UI structure
+ */
 void
 ui_panel_destroy(ui_t *ui);
 

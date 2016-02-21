@@ -179,7 +179,7 @@ struct settings_info {
  * static information of the panel that will never be
  * redrawn.
  *
- * @return a panel pointer
+ * @param ui UI structure pointer
  */
 void
 settings_create(ui_t *ui);
@@ -188,6 +188,8 @@ settings_create(ui_t *ui);
  * @brief Destroy settings panel
  *
  * This function do the final cleanups for this panel
+ *
+ * @param ui UI structure pointer
  */
 void
 settings_destroy(ui_t *ui);
@@ -198,7 +200,7 @@ settings_destroy(ui_t *ui);
  * Return ncurses users pointer of the given panel into panel's
  * information structure pointer.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return a pointer to info structure of given panel
  */
 settings_info_t *
@@ -210,7 +212,7 @@ settings_info(ui_t *ui);
  * This function will drawn the panel into the screen with
  * current status settings
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
@@ -222,13 +224,10 @@ settings_draw(ui_t *ui);
  * This function is called by UI manager every time a
  * key is pressed. This allow the filter panel to manage
  * its own keys.
- * If this function return 0, the key will not be handled
- * by ui manager. Otherwise the return will be considered
- * a key code.
  *
- * @param panel Settings panel pointer
+ * @param ui UI structure pointer
  * @param key   key code
- * @return 0 if the key is handled, keycode otherwise
+ * @return enum @key_handler_ret
  */
 int
 settings_handle_key(ui_t *ui, int key);
@@ -252,7 +251,7 @@ ui_settings_is_entry(FIELD *field);
  * Note that some settings require application restart to
  * take effect.
  *
- * @param panel Settings panel pointer
+ * @param ui UI structure pointer
  * @return 0 in all cases
  */
 int
@@ -264,7 +263,7 @@ ui_settings_update_settings(ui_t *ui);
  * Save all settings into user configuration file located
  * in it's home directory.
  *
- * @param panel Settings panel pointer
+ * @param ui UI structure pointer
  */
 void
 ui_settings_save(ui_t *ui);

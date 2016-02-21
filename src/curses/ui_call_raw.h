@@ -45,11 +45,17 @@ typedef struct call_raw_info call_raw_info_t;
  * PANEL user pointer.
  */
 struct call_raw_info {
+    //! Group of calls displayed on the panel (Call raw display)
     sip_call_group_t *group;
+    //! Message to display on the panel (Single message raw display)
     sip_msg_t *msg;
+    //! Last printed message on panel (Call raw display)
     sip_msg_t *last;
+    //! Window pad to copy on displayed screen
     WINDOW *pad;
+    //! Already used lines of the window pad
     int padline;
+    //! Scroll position of the window pad
     int scroll;
 };
 
@@ -113,14 +119,12 @@ call_raw_print_msg(ui_t *ui, sip_msg_t *msg);
 /**
  * @brief Handle Call Raw key strokes
  *
- * This function will manage the custom keybindings of the panel. If this
- * function returns -1, the ui manager will destroy the current panel and
- * pass the key to the previous panel.
-
+ * This function will manage the custom keybindings of the panel.
+ * This function return one of the values defined in @key_handler_ret
  *
  * @param panel Ncurses panel pointer
  * @param key Pressed keycode
- * @return 0 if the function can handle the key, key otherwise
+ * @return enum @key_handler_ret
  */
 int
 call_raw_handle_key(ui_t *ui, int key);

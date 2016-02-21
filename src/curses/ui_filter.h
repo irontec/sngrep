@@ -85,7 +85,7 @@ struct filter_info {
  * static information of the panel that will never be
  * redrawn.
  *
- * @return a panel pointer
+ * @param ui UI structure pointer
  */
 void
 filter_create(ui_t *ui);
@@ -94,6 +94,7 @@ filter_create(ui_t *ui);
  * @brief Destroy filter panel
  *
  * This function do the final cleanups for this panel
+ * @param ui UI structure pointer
  */
 void
 filter_destroy(ui_t *ui);
@@ -104,7 +105,7 @@ filter_destroy(ui_t *ui);
  * Return ncurses users pointer of the given panel into panel's
  * information structure pointer.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return a pointer to info structure of given panel
  */
 filter_info_t *
@@ -116,13 +117,10 @@ filter_info(ui_t *ui);
  * This function is called by UI manager every time a
  * key is pressed. This allow the filter panel to manage
  * its own keys.
- * If this function return 0, the key will not be handled
- * by ui manager. Otherwise the return will be considered
- * a key code.
  *
- * @param panel Filter panel pointer
+ * @param ui UI structure pointer
  * @param key   key code
- * @return 0 if the key is handled, keycode otherwise
+ * @return enum @key_handler_ret
  */
 int
 filter_handle_key(ui_t *ui, int key);
@@ -133,7 +131,7 @@ filter_handle_key(ui_t *ui, int key);
  * This function will update the options values
  * of filter fields with its new value.
  *
- * @param panel Filter panel pointer
+ * @param ui UI structure pointer
  */
 void
 filter_save_options(ui_t *ui);

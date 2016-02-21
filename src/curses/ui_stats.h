@@ -25,8 +25,8 @@
  *
  * @brief Functions to manage ui window for capture stats display
  */
-#ifndef __UI_STATS_H
-#define __UI_STATS_H
+#ifndef __SNGREP_UI_STATS_H
+#define __SNGREP_UI_STATS_H
 
 /**
  * @brief Creates a new stats panel
@@ -36,29 +36,9 @@
  * static information of the panel that will never be
  * redrawn.
  *
- * @return a panel pointer
+ * @param ui UI structure pointer
  */
 void
 stats_create(ui_t *ui);
 
-
-/**
- * @brief Manage pressed keys for stats panel
- *
- * This function is called by UI manager every time a
- * key is pressed. This allow the filter panel to manage
- * its own keys.
- * If this function return 0, the key will not be handled
- * by ui manager. Otherwise the return will be considered
- * a key code.
- *
- * @param panel Filter panel pointer
- * @param key   key code
- * @return 0 if the key is handled, keycode otherwise
- */
-int
-stats_handle_key(ui_t *ui, int key);
-
-
-
-#endif /* __UI_STATS_H */
+#endif /* __SNGREP_UI_STATS_H */

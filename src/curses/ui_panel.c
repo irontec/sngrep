@@ -123,7 +123,6 @@ ui_handle_key(ui_t *ui, int key)
     if (ui->handle_key) {
         return ui->handle_key(ui, key);
     }
-
     return KEY_NOT_HANDLED;
 }
 

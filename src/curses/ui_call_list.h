@@ -103,6 +103,7 @@ struct call_list_info {
  * It will also create an information structure of the panel status and
  * store it in the panel's userpointer
  *
+ * @param ui UI structure pointer
  * @return the allocated ncurses panel
  */
 void
@@ -113,7 +114,7 @@ call_list_create(ui_t *ui);
  *
  * This function will hide the panel and free all allocated memory.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  */
 void
 call_list_destroy(ui_t *ui);
@@ -124,7 +125,7 @@ call_list_destroy(ui_t *ui);
  * Return ncurses users pointer of the given panel into panel's
  * information structure pointer.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return a pointer to info structure of given panel
  */
 call_list_info_t *
@@ -135,7 +136,7 @@ call_list_info(ui_t *ui);
  *
  * This function will be invoked when the ui size has changed
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return 0 if the panel has been resized, -1 otherwise
  */
 int
@@ -146,7 +147,7 @@ call_list_resize(ui_t *ui);
  *
  * This funtion will draw Call list header
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  */
 void
 call_list_draw_header(ui_t *ui);
@@ -157,7 +158,7 @@ call_list_draw_header(ui_t *ui);
  * This funtion will draw Call list footer that contains
  * keybinginds
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  */
 void
 call_list_draw_footer(ui_t *ui);
@@ -167,7 +168,7 @@ call_list_draw_footer(ui_t *ui);
  *
  * This funtion will draw Call list dialogs list
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  */
 void
 call_list_draw_list(ui_t *ui);
@@ -178,7 +179,7 @@ call_list_draw_list(ui_t *ui);
  * This function will drawn the panel into the screen based on its stored
  * status
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
@@ -192,7 +193,7 @@ call_list_draw(ui_t *ui);
  * This will also set properties in fields to show them as focused
  * and show/hide the cursor
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param active Enable/Disable flag
  */
 void
@@ -204,7 +205,7 @@ call_list_form_activate(ui_t *ui, int active);
  * Get the list line of the given call to display in the list
  * This line is built using the configured columns and sizes
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param call Call to get data from
  * @param text Text pointer to store the generated line
  * @return A pointer to text
@@ -215,13 +216,12 @@ call_list_line_text(ui_t *ui, sip_call_t *call, char *text);
 /**
  * @brief Handle Call list key strokes
  *
- * This function will manage the custom keybindings of the panel. If this
- * function returns -1, the ui manager will check if the pressed key
- * is one of the common ones (like toggle colors and so).
+ * This function will manage the custom keybindings of the panel.
+ * This function return one of the values defined in @key_handler_ret
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param key Pressed keycode
- * @return 0 if the function can handle the key, key otherwise
+ * @return enum @key_handler_ret
  */
 int
 call_list_handle_key(ui_t *ui, int key);
@@ -231,9 +231,9 @@ call_list_handle_key(ui_t *ui, int key);
  *
  * This function will manage the custom keybindings of the panel form.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param key Pressed keycode
- * @return 0 if the function can handle the key, key otherwise
+* @return enum @key_handler_ret
  */
 int
 call_list_handle_form_key(ui_t *ui, int key);
@@ -244,7 +244,7 @@ call_list_handle_form_key(ui_t *ui, int key);
  * This function will request to panel to show its help (if any) by
  * invoking its help function.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @return 0 if the screen has help, -1 otherwise
  */
 int
@@ -256,7 +256,7 @@ call_list_help(ui_t *ui);
  * This function will add a new column to the Call List panel
  * @todo Columns are not configurable yet.
  *
- * @param panel Ncurses panel pointer
+ * @param ui UI structure pointer
  * @param id SIP call attribute id
  * @param attr SIP call attribute name
  * @param title SIP call attribute description
@@ -271,7 +271,7 @@ call_list_add_column(ui_t *ui, enum sip_attr_id id, const char* attr, const char
  * @brief Remove all calls from the list and calls storage
  *
  * This funtion will clear all call lines in the list
- * @param panel Call list panel pointer
+ * @param ui UI structure pointer
  */
 void
 call_list_clear(ui_t *ui);
@@ -282,6 +282,8 @@ call_list_clear(ui_t *ui);
  * This function will move the cursor to given line, taking into account
  * selected line and scrolling position.
  *
+ * @param ui UI structure pointer
+ * @param line Position to move the cursor
  */
 void
 call_list_move(ui_t *ui, int line);

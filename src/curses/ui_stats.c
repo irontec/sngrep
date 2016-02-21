@@ -66,7 +66,7 @@ ui_t ui_stats = {
     .panel = NULL,
     .create = stats_create,
     .destroy = ui_panel_destroy,
-    .handle_key = stats_handle_key
+    .handle_key = NULL
 };
 
 void
@@ -96,7 +96,7 @@ stats_create(ui_t *ui)
     mvwhline(ui->win, 8, 1, ACS_HLINE, ui->width - 1);
     mvwaddch(ui->win, 8, 0, ACS_LTEE);
     mvwaddch(ui->win, 8, ui->width - 1, ACS_RTEE);
-    mvwprintw(ui->win, ui->height - 2, ui->width / 2 - 12, "Press any key to continue");
+    mvwprintw(ui->win, ui->height - 2, ui->width / 2 - 9, "Press ESC to leave");
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Parse the data
@@ -192,11 +192,4 @@ stats_create(ui_t *ui)
     mvwprintw(ui->win, 14, 33, "6XX: %d (%.1f\%)", stats.r600, (float) stats.r600 * 100 / stats.mtotal);
     mvwprintw(ui->win, 15, 33, "7XX: %d (%.1f\%)", stats.r700, (float) stats.r700 * 100 / stats.mtotal);
     mvwprintw(ui->win, 16, 33, "8XX: %d (%.1f\%)", stats.r800, (float) stats.r800 * 100 / stats.mtotal);
-}
-
-int
-stats_handle_key(ui_t *ui, int key)
-{
-    ui_destroy(ui);
-    return KEY_HANDLED;
 }
