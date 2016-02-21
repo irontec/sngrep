@@ -289,13 +289,17 @@ call_list_draw_list(ui_t *ui)
     // Get panel info
     call_list_info_t *info = call_list_info(ui);
 
-    // Get the list of calls that are goint to be displayed
-    vector_destroy(info->dcalls);
-    info->dcalls = vector_copy_if(sip_calls_vector(), filter_check_call);
-
     // Get window of call list panel
     list_win = info->list_win;
     getmaxyx(list_win, listh, listw);
+
+    // Store selected call
+    if (info->cur_call >= 0)
+        call = vector_item(info->dcalls, info->cur_call);
+
+    // Get the list of calls that are goint to be displayed
+    vector_destroy(info->dcalls);
+    info->dcalls = vector_copy_if(sip_calls_vector(), filter_check_call);
 
     // If no active call, use the fist one (if exists)
     if (info->cur_call == -1 && vector_count(info->dcalls)) {
@@ -305,6 +309,8 @@ call_list_draw_list(ui_t *ui)
     // If autoscroll is enabled, select the last dialog
     if (info->autoscroll)  {
         call_list_move(ui, vector_count(info->dcalls) - 1);
+    } else if (call) {
+        call_list_move(ui, vector_index(info->dcalls, call));
     }
 
     // Clear call list before redrawing
