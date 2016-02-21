@@ -33,6 +33,7 @@
 #include <menu.h>
 #include <form.h>
 #include "ui_manager.h"
+#include "scrollbar.h"
 #include "sip_attr.h"
 
 /**
@@ -68,6 +69,8 @@ struct column_select_info {
     FIELD *fields[FLD_COLUMNS_COUNT + 1];
     //! Flag to handle key inputs
     int form_active;
+    //! Scrollbar for the menu window
+    scrollbar_t scroll;
 };
 
 /**

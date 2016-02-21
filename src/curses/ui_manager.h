@@ -141,15 +141,6 @@ void
 title_foot_box(PANEL *panel);
 
 /**
- * @brief Draw a vertical scroll
- *
- * This function will draw a vertical scroll in the
- * right or left side of the given window
- */
-void
-draw_vscrollbar(WINDOW *win, int value, int max, int left);
-
-/**
  * @brief Draw a message payload in a window
  *
  * Generic drawing function for payload. This function will start

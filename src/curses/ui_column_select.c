@@ -118,7 +118,9 @@ column_select_create(ui_t *ui)
     post_menu(menu);
 
     // Draw a scrollbar to the right
-    draw_vscrollbar(info->menu_win, top_row(menu), item_count(menu) - 1, 0);
+    info->scroll = ui_set_scrollbar(info->menu_win, SB_VERTICAL, SB_RIGHT);
+    info->scroll.max = item_count(menu) - 1;
+    ui_scrollbar_draw(info->scroll);
 
     // Set the window title and boxes
     mvwprintw(ui->win, 1, ui->width / 2 - 14, "Call List columns selection");
@@ -247,8 +249,10 @@ column_select_handle_key_menu(ui_t *ui, int key)
     }
 
     // Draw a scrollbar to the right
-    draw_vscrollbar(info->menu_win, top_row(menu), item_count(menu) - 1, 0);
+    info->scroll.pos = top_row(menu);
+    ui_scrollbar_draw(info->scroll);
     wnoutrefresh(info->menu_win);
+
     // Return if this panel has handled or not the key
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
