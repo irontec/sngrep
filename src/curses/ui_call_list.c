@@ -279,14 +279,14 @@ call_list_draw_list(ui_t *ui)
     list_win = info->list_win;
     getmaxyx(list_win, listh, listw);
 
-    // If autoscroll is enabled, select the last dialog
-    if (info->autoscroll) {
-        call_list_move(ui, vector_count(info->dcalls));
-    }
-
     // If no active call, use the fist one (if exists)
     if (info->cur_call == -1 && vector_count(info->dcalls)) {
         info->cur_call = info->scroll.pos = 0;
+    }
+
+    // If autoscroll is enabled, select the last dialog
+    if (info->autoscroll)  {
+        call_list_move(ui, vector_count(info->dcalls) - 1);
     }
 
     // Clear call list before redrawing
