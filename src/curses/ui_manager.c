@@ -324,37 +324,6 @@ title_foot_box(PANEL *panel)
 
 }
 
-void
-draw_vscrollbar(WINDOW *win, int value, int max, int left)
-{
-    int height, width, cline, scrollen, scrollypos, scrollxpos;
-
-    // Get window available space
-    getmaxyx(win, height, width);
-
-    // If no even a screen has been filled, don't draw it
-    if (max < height)
-        return;
-
-    // Display the scrollbar left or right
-    scrollxpos = (left) ? 0 : width - 1;
-
-    // Initialize scrollbar line
-    mvwvline(win, 0, scrollxpos, ACS_VLINE, height);
-
-    // How long the scroll will be
-    if (!(scrollen = (height * 1.0f / max * height) + 0.5))
-        scrollen = 1;
-
-    // Where will the scroll start
-    scrollypos = height * (value * 1.0f / max);
-
-    // Draw the N blocks of the scrollbar
-    for (cline = 0; cline < scrollen; cline++)
-        mvwaddch(win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
-
-}
-
 int
 draw_message(WINDOW *win, sip_msg_t *msg)
 {
