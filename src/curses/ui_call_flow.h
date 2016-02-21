@@ -76,6 +76,14 @@ enum call_flow_arrow_type {
 };
 
 /**
+ * @brief Call flow arrow directions
+ */
+enum call_flow_arrow_dir {
+    CF_ARROW_RIGHT = 0,
+    CF_ARROW_LEFT,
+};
+
+/**
  * @brief Call Flow arrow information
  */
 struct call_flow_arrow {

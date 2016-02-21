@@ -400,7 +400,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     vector_iter_t medias;
     int color = 0;
     int msglen;
-    int arrow_dir = 0; /* 0: right, 1: left */
+    int arrow_dir = CF_ARROW_RIGHT;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -469,7 +469,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         tmp = column1;
         column1 = column2;
         column2 = tmp;
-        arrow_dir = 1; /* swap arrow direction */
+        arrow_dir = CF_ARROW_LEFT;
     }
 
     int startpos = 20 + 30 * column1->colpos;
@@ -532,7 +532,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     }
 
     // Write the arrow at the end of the message (two arros if this is a retrans)
-    if (arrow_dir == 0 /* right */) {
+    if (arrow_dir == CF_ARROW_RIGHT) {
         mvwaddch(flow_win, cline, endpos - 2, '>');
         if (call_msg_is_retrans(msg)) {
             mvwaddch(flow_win, cline, endpos - 3, '>');
@@ -597,7 +597,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     address_t msg_src, msg_dst;
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->item;
-    int arrow_dir = 0; /* 0: right, 1: left */
+    int arrow_dir = CF_ARROW_RIGHT;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -648,7 +648,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         tmp = column1;
         column1 = column2;
         column2 = tmp;
-        arrow_dir = 1; /* swap arrow direction */
+        arrow_dir = CF_ARROW_LEFT;
     }
 
     int startpos = 20 + 30 * column1->colpos;
@@ -686,9 +686,9 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         cline++;
 
     // Draw line between columns
-    mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
+    mvwhline(win, cline, startpos + 2, '-', distance);
     // Write the arrow at the end of the message (two arrows if this is a retrans)
-    if (arrow_dir == 0 /* right */) {
+    if (arrow_dir == CF_ARROW_RIGHT) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
             mvwprintw(win, cline, startpos - 4, "%d", stream->src.port);
             mvwprintw(win, cline, endpos, "%d", stream->dst.port);
