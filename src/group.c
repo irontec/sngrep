@@ -48,6 +48,24 @@ call_group_destroy(sip_call_group_t *group)
     sng_free(group);
 }
 
+bool
+call_group_has_changed(sip_call_group_t *group)
+{
+    bool changed = false;
+
+    // Check if any of the group has changed
+    // We check all the calls even after we found a changed one to reset all
+    // the changed pointers
+    sip_call_t *call = NULL;
+    while ((call = call_group_get_next(group, call))) {
+        if (call_has_changed(call)) {
+            changed = true;
+        }
+    }
+    // Return if any of the calls have changed
+    return changed;
+}
+
 sip_call_group_t *
 call_group_clone(sip_call_group_t *original)
 {

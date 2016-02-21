@@ -75,6 +75,18 @@ void
 call_group_destroy(sip_call_group_t *group);
 
 /**
+ * @brief Check if any of the calls of the group has changed
+ *
+ * This checks all the group flags to check if any of the call has
+ * changed.
+ *
+ * @param ggroup Call group structure pointer
+ * @return true if any of the calls of the group has changed, false otherwise
+ */
+bool
+call_group_has_changed(sip_call_group_t *group);
+
+/**
  * @brief Clone an existing call group
  *
  * Create a new call group with the same calls of the

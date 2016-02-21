@@ -137,15 +137,7 @@ call_flow_redraw(ui_t *ui)
     call_flow_info_t *info = call_flow_info(ui);
 
     // Check if any of the group has changed
-    sip_call_t *call = NULL;
-    while ((call = call_group_get_next(info->group, call))) {
-        if (call_has_changed(call)) {
-            return true;
-        }
-    }
-
-    // None of the calls have changed, we don't require redraw
-    return false;
+    return call_group_has_changed(info->group);
 }
 
 int
