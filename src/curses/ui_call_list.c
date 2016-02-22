@@ -308,7 +308,12 @@ call_list_draw_list(ui_t *ui)
 
     // If autoscroll is enabled, select the last dialog
     if (info->autoscroll)  {
-        call_list_move(ui, vector_count(info->dcalls) - 1);
+        sip_sort_t sort = sip_sort_options();
+        if (sort.asc) {
+            call_list_move(ui, vector_count(info->dcalls) - 1);
+        } else {
+            call_list_move(ui, 0);
+        }
     } else if (call) {
         call_list_move(ui, vector_index(info->dcalls, call));
     }
