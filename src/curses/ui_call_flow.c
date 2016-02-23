@@ -1257,6 +1257,7 @@ void
 call_flow_move(ui_t *ui, int arrowindex)
 {
     call_flow_info_t *info;
+    call_flow_arrow_t *arrow;
 
     // Get panel info
     if (!(info = call_flow_info(ui)))
@@ -1275,8 +1276,13 @@ call_flow_move(ui_t *ui, int arrowindex)
     if (move_down) {
         while (info->cur_arrow < arrowindex) {
             // Check if there is a call below us
-            if (!vector_iterator_next(&it))
+            if (!(arrow = vector_iterator_next(&it)))
                break;
+
+            // If selected arrow is RTP and RTP is not being displayed keep searching
+            if (arrow->type == CF_ARROW_RTP && setting_disabled(SETTING_CF_MEDIA)) {
+                arrowindex++;
+            }
 
             // Increase current call position
             info->cur_arrow++;
@@ -1290,8 +1296,14 @@ call_flow_move(ui_t *ui, int arrowindex)
     } else {
         while (info->cur_arrow > arrowindex) {
             // Check if there is a call above us
-            if (!vector_iterator_prev(&it))
+            if (!(arrow = vector_iterator_prev(&it)))
               break;
+
+            // If selected arrow is RTP and RTP is not being displayed keep searching
+            if (arrow->type == CF_ARROW_RTP && setting_disabled(SETTING_CF_MEDIA)) {
+                arrowindex--;
+            }
+
             // If we are out of the top of the displayed list
             // refresh it starting in the previous (in fact current) call
             if (info->cur_arrow ==  info->first_arrow) {
