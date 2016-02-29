@@ -33,6 +33,7 @@
 #define __UI_CALL_LIST_H
 
 #include "ui_manager.h"
+#include <menu.h>
 #include "scrollbar.h"
 
 /**
@@ -89,6 +90,10 @@ struct call_list_info {
     FIELD *fields[FLD_LIST_COUNT + 1];
     //! We're entering keys on form
     int form_active;
+    // Columns menu
+    MENU *menu;
+    //! We're selecting sorting field
+    int menu_active;
     //! Move to last list entry if autoscroll is enabled
     int autoscroll;
     //! List scrollbar
@@ -244,10 +249,22 @@ call_list_handle_key(ui_t *ui, int key);
  *
  * @param ui UI structure pointer
  * @param key Pressed keycode
-* @return enum @key_handler_ret
+ * @return enum @key_handler_ret
  */
 int
 call_list_handle_form_key(ui_t *ui, int key);
+
+/**
+ * @brief Handle Sort menu key strokes
+ *
+ * This function will manage the custom keybidnings for sort menu
+ *
+ * @param ui UI structure pointer
+ * @param key Pressed keycode
+ * @return enum @key_handler_ret
+ */
+int
+call_list_handle_menu_key(ui_t *ui, int key);
 
 /**
  * @brief Request the panel to show its help
@@ -298,5 +315,16 @@ call_list_clear(ui_t *ui);
  */
 void
 call_list_move(ui_t *ui, int line);
+
+/**
+ * @brief Select column to sort by
+ *
+ * This function will display a lateral menu to select the column to sort
+ * the list for. The menu will be filled with current displayed columns.
+ *
+ * @param ui UI structure pointer
+ */
+void
+call_list_select_sort_attribute(ui_t *ui);
 
 #endif

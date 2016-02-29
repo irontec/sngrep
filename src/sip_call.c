@@ -292,13 +292,22 @@ call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id)
             break;
         default:
             // Get attribute values
+            memset(onevalue, 0, sizeof(onevalue));
+            memset(twovalue, 0, sizeof(twovalue));
             call_get_attribute(one, id, onevalue);
             call_get_attribute(two, id, twovalue);
             comparetype = 0;
+            break;
     }
 
     switch (comparetype) {
         case 0:
+            if (strlen(twovalue) == 0 && strlen(onevalue) == 0)
+                return 0;
+            if (strlen(twovalue) == 0)
+                return 1;
+            if (strlen(onevalue) == 0)
+                return -1;
             return strcmp(onevalue, twovalue);
         case 1:
             if (oneintvalue == twointvalue) return 0;

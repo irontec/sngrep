@@ -101,6 +101,7 @@ call_list_create(ui_t *ui)
 
     // Form starts inactive
     call_list_form_activate(ui, 0);
+    info->menu_active = 0;
 
     // Calculate available printable area
     info->list_win = subwin(ui->win, ui->height - 5, ui->width, 4, 0);
@@ -210,7 +211,19 @@ call_list_draw_header(ui_t *ui)
     // Draw columns titles
     wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     mvwprintw(ui->win, 3, 0, "%*s", ui->width, "");
-    for (colpos = 6, i = 0; i < info->columncnt; i++) {
+
+    // Draw separator line
+    if (info->menu_active) {
+        colpos = 18;
+        mvwprintw(ui->win, 3, 0, "Sort by");
+        wattron(ui->win, A_BOLD | COLOR_PAIR(CP_CYAN_ON_BLACK));
+        mvwprintw(ui->win, 3, 11, "%*s", 1, "");
+        wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    } else {
+        colpos = 6;
+    }
+
+    for (i = 0; i < info->columncnt; i++) {
         // Get current column width
         collen = info->columns[i].width;
         // Get current column title
@@ -399,7 +412,8 @@ call_list_draw_list(ui_t *ui)
     ui_scrollbar_draw(info->scroll);
 
     // Refresh the list
-    wnoutrefresh(info->list_win);
+    if (!info->menu_active)
+        wnoutrefresh(info->list_win);
 }
 
 int
@@ -501,7 +515,6 @@ call_list_handle_key(ui_t *ui, int key)
     int action = -1;
     sip_call_t *call;
     sip_sort_t sort;
-    int i;
 
     // Sanity check, this should not happen
     if (!(info  = call_list_info(ui)))
@@ -510,6 +523,9 @@ call_list_handle_key(ui_t *ui, int key)
     // Handle form key
     if (info->form_active)
         return call_list_handle_form_key(ui, key);
+
+    if (info->menu_active)
+        return call_list_handle_menu_key(ui, key);
 
     // Get window of call list panel
     WINDOW *list_win = info->list_win;
@@ -626,29 +642,9 @@ call_list_handle_key(ui_t *ui, int key)
                 sort.asc = (sort.asc) ? false : true;
                 sip_set_sort_options(sort);
                 break;
-            case ACTION_SORT_PREV:
-                // Change sort attribute
-                sort = sip_sort_options();
-                for (i = 0; i < info->columncnt; i++) {
-                    if (info->columns[i].id == sort.by &&  i != 0) {
-                        sort.by = info->columns[i-1].id;
-                        break;
-                    }
-                }
-                sip_set_sort_options(sort);
-                break;
             case ACTION_SORT_NEXT:
-                // Change sort attribute
-                sort = sip_sort_options();
-                for (i = 0; i < info->columncnt; i++) {
-                    if (info->columns[i].id == sort.by) {
-                        if (i + 1 != info->columncnt) {
-                            sort.by = info->columns[i+1].id;
-                            break;
-                        }
-                    }
-                }
-                sip_set_sort_options(sort);
+            case ACTION_SORT_PREV:
+                call_list_select_sort_attribute(ui);
                 break;
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested
@@ -775,6 +771,77 @@ call_list_handle_form_key(ui_t *ui, int key)
 
     // Return if this panel has handled or not the key
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
+}
+
+int
+call_list_handle_menu_key(ui_t *ui, int key)
+{
+    MENU *menu;
+    ITEM *current;
+    int current_idx;
+    int action = -1;
+    sip_sort_t sort;
+    enum sip_attr_id id;
+
+    // Get panel information
+    call_list_info_t *info = call_list_info(ui);
+
+    menu = info->menu;
+    current = current_item(menu);
+    current_idx = item_index(current);
+
+      // Check actions for this key
+      while ((action = key_find_action(key, action)) != ERR) {
+          // Check if we handle this action
+          switch (action) {
+              case ACTION_DOWN:
+                  menu_driver(menu, REQ_DOWN_ITEM);
+                  break;
+              case ACTION_UP:
+                  menu_driver(menu, REQ_UP_ITEM);
+                  break;
+              case ACTION_NPAGE:
+                  menu_driver(menu, REQ_SCR_DPAGE);
+                  break;
+              case ACTION_PPAGE:
+                  menu_driver(menu, REQ_SCR_UPAGE);
+                  break;
+              case ACTION_CONFIRM:
+              case ACTION_SELECT:
+                  // Change sort attribute
+                  sort = sip_sort_options();
+                  id = sip_attr_from_name(item_name(current_item(info->menu)));
+                  if (sort.by == id) {
+                      sort.asc = (sort.asc) ? false : true;
+                  } else {
+                      sort.by = id;
+                  }
+                  sip_set_sort_options(sort);
+                  /* no break */
+              case ACTION_PREV_SCREEN:
+                  // Desactive sorting menu
+                  info->menu_active = 0;
+
+                  // Restore list position
+                  mvderwin(info->list_win, 4, 0);
+                  // Restore list window size
+                  wresize(info->list_win, ui->height - 5, ui->width);
+
+                  // Remove menu and items
+                  unpost_menu(info->menu);
+                  free_menu(info->menu);
+                  break;
+              default:
+                  // Parse next action
+                  continue;
+          }
+
+          // We've handled this key, stop checking actions
+          break;
+      }
+
+      // Return if this panel has handled or not the key
+      return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 int
@@ -921,4 +988,40 @@ call_list_move(ui_t *ui, int line)
             info->cur_call--;
         }
     }
+}
+
+void
+call_list_select_sort_attribute(ui_t *ui)
+{
+    call_list_info_t *info;
+    ITEM *items[SIP_ATTR_COUNT + 1];
+    int i;
+
+    // Get panel info
+    if (!(info = call_list_info(ui)))
+        return;
+
+    // Activete sorting menu
+    info->menu_active = 1;
+
+    wresize(info->list_win, ui->height - 5, ui->width - 12);
+    mvderwin(info->list_win, 4, 12);
+
+    // Create menu entries
+    for (i = 0; i < info->columncnt; i++) {
+        items[i] = new_item(sip_attr_get_name(info->columns[i].id), 0);
+    }
+    items[info->columncnt] = NULL;
+    // Create the columns menu and post it
+    info->menu = new_menu(items);
+
+    // Set main window and sub window
+    set_menu_win(info->menu, ui->win);
+    set_menu_sub(info->menu, derwin(ui->win, 20, 15, 4, 0));
+    werase(menu_win(info->menu));
+    set_menu_format(info->menu, ui->height, 1);
+    set_menu_mark(info->menu, "");
+    set_menu_fore(info->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
+    menu_opts_off(info->menu, O_ONEVALUE);
+    post_menu(info->menu);
 }
