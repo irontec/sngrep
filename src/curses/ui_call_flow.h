@@ -470,4 +470,10 @@ call_flow_arrow_time(call_flow_arrow_t *arrow);
 void
 call_flow_arrow_sorter(vector_t *vector, void *item);
 
+/**
+ * @brief Filter displayed arrows based on configuration
+ */
+int
+call_flow_arrow_filter(void *item);
+
 #endif /* __SNGREP_UI_CALL_FLOW_H */
