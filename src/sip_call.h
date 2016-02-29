@@ -71,6 +71,9 @@ struct sip_call {
     //! Changed flag. For interface optimal updates
     bool changed;
 
+    //! List of calls with with this call as X-Call-Id
+    vector_t *xcalls;
+
     //! List of messages of this call (sip_msg_t*)
     vector_t *msgs;
     //! Message when conversation started and ended
@@ -170,19 +173,6 @@ int
 call_msg_count(sip_call_t *call);
 
 /**
- * @brief Finds the other leg of this call.
- *
- * If this call has a X-CID or X-Call-ID header, that call will be
- * find and returned. Otherwise, a call with X-CID or X-Call-ID header
- * matching the given call's Call-ID will be find or returned.
- *
- * @param call SIP call structure
- * @return The other call structure or NULL if none found
- */
-sip_call_t *
-call_get_xcall(sip_call_t *call);
-
-/**
  * @brief Determine if a dilog is a call in progress
  *
  * @param call SIP call structure
@@ -251,5 +241,16 @@ call_state_to_str(int state);
 int
 call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id);
 
+/**
+ * @brief Relate this two calls
+ *
+ * Add a call to the internal xcalls vector of another call.
+ * This calls are related by the SIP header X-Call-Id or X-CID
+ *
+ * @param call SIP call structure
+ * @param xcall SIP call structure
+ */
+void
+call_add_xcall(sip_call_t *call, sip_call_t *xcall);
 
 #endif /* __SNGREP_SIP_CALL_H */

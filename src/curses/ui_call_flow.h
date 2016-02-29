@@ -117,8 +117,7 @@ struct call_flow_column {
     //! Alias for the given address
     char alias[MAX_SETTING_LEN];
     //! Call Ids
-    const char *callid;
-    const char *callid2;
+    vector_t *callids;
     //! Column position (starting with zero) // FIXME array position?
     int colpos;
 };
@@ -150,6 +149,8 @@ struct call_flow_info {
     scrollbar_t scroll;
     //! List of columns in the panel
     vector_t *columns;
+    //! Max callids per column
+    int maxcallids;
 };
 
 /**

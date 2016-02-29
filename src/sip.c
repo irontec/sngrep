@@ -361,6 +361,10 @@ sip_check_packet(packet_t *packet)
     if (call_msg_count(call) == 0) {
         // Parse SIP payload
         sip_parse_msg_payload(msg, payload);
+        // If this call has X-Call-Id, append it to the parent call
+        if (strlen(call->xcallid)) {
+            call_add_xcall(sip_find_by_callid(call->xcallid), call);
+        }
     }
 
     // Add the message to the call
@@ -463,35 +467,6 @@ sip_find_by_callid(const char *callid)
         return eptr->data;
 
     return NULL;
-}
-
-sip_call_t *
-sip_find_by_xcallid(const char *xcallid)
-{
-    sip_call_t *cur;
-    vector_iter_t it = vector_iterator(calls.list);
-
-    // Find the call with the given X-Call-Id
-    while ((cur = vector_iterator_next(&it))) {
-        if (strlen(cur->xcallid) && !strcmp(cur->xcallid, xcallid)) {
-            return cur;
-        }
-    }
-    // None found
-    return NULL;
-}
-
-
-sip_call_t *
-call_get_xcall(sip_call_t *call)
-{
-    sip_call_t *xcall;
-    if (strlen(call->xcallid)) {
-        xcall = sip_find_by_callid(call->xcallid);
-    } else {
-        xcall = sip_find_by_xcallid(call->callid);
-    }
-    return xcall;
 }
 
 int

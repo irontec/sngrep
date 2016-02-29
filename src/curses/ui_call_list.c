@@ -574,13 +574,17 @@ call_list_handle_key(ui_t *ui, int key)
                     break;
                 // Create a new group of calls
                 group = call_group_clone(info->group);
+
                 // If not selected call, show current call flow
                 if (call_group_count(info->group) == 0)
                     call_group_add(group, vector_item(info->dcalls, info->cur_call));
 
                 // Add xcall to the group
-                if (action == ACTION_SHOW_FLOW_EX)
-                    call_group_add(group, call_get_xcall(vector_item(info->dcalls, info->cur_call)));
+                if (action == ACTION_SHOW_FLOW_EX) {
+                    call = vector_item(info->dcalls, info->cur_call);
+                    call_group_add_calls(group, call->xcalls);
+                    group->callid = call->callid;
+                }
 
                 if (action == ACTION_SHOW_RAW) {
                     // Create a Call Flow panel
@@ -614,13 +618,6 @@ call_list_handle_key(ui_t *ui, int key)
                 sip_calls_clear();
                 // Clear List
                 call_list_clear(ui);
-                break;
-            case ACTION_SEARCH_XCALL:
-                // Find current call xcall
-                call = call_get_xcall(vector_item(info->dcalls, info->cur_call));
-                if (call && vector_index(info->dcalls, call) != -1) {
-                    call_list_move(ui, vector_index(info->dcalls, call));
-                }
                 break;
             case ACTION_AUTOSCROLL:
                 info->autoscroll = (info->autoscroll) ? 0 : 1;
@@ -677,7 +674,6 @@ call_list_handle_key(ui_t *ui, int key)
         case ACTION_BEGIN:
         case ACTION_END:
         case ACTION_DISP_FILTER:
-        case ACTION_SEARCH_XCALL:
             info->autoscroll = 0;
             break;
     }

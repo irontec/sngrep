@@ -48,6 +48,8 @@ typedef struct sip_call_group sip_call_group_t;
  * a calls group flow.
  */
 struct sip_call_group {
+    //! For extended display, main call-id
+    char *callid;
     //! Calls array in the group
     vector_t *calls;
     //! Color of the last printed call in mode Color-by-Call
@@ -105,6 +107,15 @@ call_group_clone(sip_call_group_t *original);
  */
 void
 call_group_add(sip_call_group_t *group, sip_call_t *call);
+
+/**
+ * @brief Add several Calls to the group
+ *
+ * @param group Pointer to an existing group
+ * @param calls Pointer to a vector with calls
+ */
+void
+call_group_add_calls(sip_call_group_t *group, vector_t *calls);
 
 /**
  * @brief Remove a call from the group

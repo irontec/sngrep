@@ -288,18 +288,6 @@ sip_call_t *
 sip_find_by_callid(const char *callid);
 
 /**
- * @brief Find a call structure in calls linked list given an xcallid
- *
- * Find the call that have the xcallid attribute equal tot he given
- * value.
- *
- * @param xcallid X-Call-ID or X-CID Header value
- * @return pointer to the sip_call structure found or NULL
- */
-sip_call_t *
-sip_find_by_xcallid(const char *xcallid);
-
-/**
  * @brief Remove al calls
  *
  * This funtion will clear the call list invoking the destroy

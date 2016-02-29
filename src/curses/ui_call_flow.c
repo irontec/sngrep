@@ -152,7 +152,9 @@ call_flow_draw(ui_t *ui)
     werase(ui->win);
 
     // Set title
-    if (call_group_count(info->group) == 1) {
+    if (info->group->callid) {
+        sprintf(title, "Extended Call flow for %s", info->group->callid);
+    } else if (call_group_count(info->group) == 1) {
         sip_call_t *call = call_group_get_next(info->group, NULL);
         sprintf(title, "Call flow for %s", call->callid);
     } else {
@@ -427,7 +429,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     if (cline > flowh + arrow->height)
         return 0;
 
-    // Get message attributes
+    // For extended, use xcallid nstead
     callid = msg->call->callid;
     src = msg->packet->src;
     dst = msg->packet->dst;
@@ -993,23 +995,17 @@ call_flow_handle_key(ui_t *ui, int key)
             case ACTION_END:
                 call_flow_move(ui, vector_count(info->darrows));
                 break;
-            case ACTION_SHOW_FLOW_EX_FULL:
-                call = call_group_get_next(info->group, call);
-                for (; call; call = call_group_get_next(info->group, call)) {
-                    if (call->xcallid)
-                        call_group_add(info->group, sip_find_by_callid(call->xcallid));
-                    call_group_add(info->group, sip_find_by_xcallid(call->callid));
-                }
-                call_flow_set_group(info->group);
-                break;
             case ACTION_SHOW_FLOW_EX:
                 werase(ui->win);
                 if (call_group_count(info->group) == 1) {
-                    call_group_add(info->group, call_get_xcall(vector_first(info->group->calls)));
+                    call = vector_first(info->group->calls);
+                    call_group_add_calls(info->group, call->xcalls);
+                    info->group->callid = call->callid;
                 } else {
                     call = vector_first(info->group->calls);
                     vector_clear(info->group->calls);
                     call_group_add(info->group, call);
+                    info->group->callid = 0;
                 }
                 call_flow_set_group(info->group);
                 break;
@@ -1181,6 +1177,12 @@ call_flow_set_group(sip_call_group_t *group)
     info->group = group;
     info->cur_arrow = info->selected = -1;
 
+    if (info->group->callid) {
+        info->maxcallids = call_group_count(group);
+    } else {
+        info->maxcallids = 2;
+    }
+
     return 0;
 }
 
@@ -1201,8 +1203,8 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr)
     columns = vector_iterator(info->columns);
     while ((column = vector_iterator_next(&columns))) {
         if (addressport_equals(column->addr, addr)) {
-            if (column->colpos != 0  && !column->callid2) {
-                column->callid2 = callid;
+            if (column->colpos != 0 && vector_count(column->callids) < info->maxcallids) {
+                vector_append(column->callids, (void*)callid);
                 return;
             }
         }
@@ -1211,7 +1213,8 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr)
     // Create a new column
     column = malloc(sizeof(call_flow_column_t));
     memset(column, 0, sizeof(call_flow_column_t));
-    column->callid = callid;
+    column->callids = vector_create(1, 1);
+    vector_append(column->callids, (void*)callid);
     column->addr = addr;
     strcpy(column->alias, get_alias_value(addr.ip));
     column->colpos = vector_count(info->columns);
@@ -1247,10 +1250,7 @@ call_flow_column_get(ui_t *ui, const char *callid, address_t addr)
             // Check if this column matches requested address
             if (match_port) {
                 if (addressport_equals(column->addr, addr)) {
-                    if (column->callid && !strcmp(callid, column->callid)) {
-                        return column;
-                    }
-                    if (column->callid2 && !strcmp(callid, column->callid2)) {
+                    if (vector_index(column->callids, (void*)callid) >= 0) {
                         return column;
                     }
                 }

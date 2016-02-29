@@ -60,8 +60,14 @@ call_group_has_changed(sip_call_group_t *group)
     while ((call = call_group_get_next(group, call))) {
         if (call_has_changed(call)) {
             changed = true;
+
+            // If this group is based on a Call-Id, check there are no new call related
+            if (group->callid && !strcmp(group->callid, call->callid)) {
+                call_group_add_calls(group, call->xcalls);
+            }
         }
     }
+
     // Return if any of the calls have changed
     return changed;
 }
@@ -87,6 +93,20 @@ call_group_add(sip_call_group_t *group, sip_call_t *call)
 {
     if (!call_group_exists(group, call)) {
         vector_append(group->calls, call);
+    }
+}
+
+void
+call_group_add_calls(sip_call_group_t *group, vector_t *calls)
+{
+    sip_call_t *call;
+    vector_iter_t it = vector_iterator(calls);
+
+    // Get the call with the next chronological message
+    while ((call = vector_iterator_next(&it))) {
+        if (!call_group_exists(group, call)) {
+            vector_append(group->calls, call);
+        }
     }
 }
 

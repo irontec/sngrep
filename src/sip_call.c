@@ -56,6 +56,9 @@ call_create(char *callid, char *xcallid)
     call->streams = vector_create(0, 2);
     vector_set_destroyer(call->streams, vector_generic_destroyer);
 
+    // Create an empty vector to store x-calls
+    call->xcalls = vector_create(0, 1);
+
     // Initialize call filter status
     call->filtered = -1;
 
@@ -75,6 +78,8 @@ call_destroy(sip_call_t *call)
     vector_destroy(call->streams);
     // Remove all call rtp packets
     vector_destroy(call->rtp_packets);
+    // Remove all xcalls
+    vector_destroy(call->xcalls);
     // Deallocate call memory
     sng_free(call->callid);
     sng_free(call->xcallid);
@@ -317,4 +322,16 @@ call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id)
         default:
             return 0;
     }
+}
+
+void
+call_add_xcall(sip_call_t *call, sip_call_t *xcall)
+{
+    if (!call || !xcall)
+        return;
+
+    // Mark this call as changed
+    call->changed = true;
+    // Add the xcall to the list
+    vector_append(call->xcalls, xcall);
 }
