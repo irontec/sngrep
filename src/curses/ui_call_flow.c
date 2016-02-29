@@ -256,6 +256,13 @@ call_flow_draw_columns(ui_t *ui)
     // Get panel information
     info = call_flow_info(ui);
 
+    // In extended call flow, columns can have multiple call-ids
+    if (info->group->callid) {
+        info->maxcallids = call_group_count(info->group);
+    } else {
+        info->maxcallids = 2;
+    }
+
     // Load columns
     while((msg = call_group_get_next_msg(info->group, msg))) {
         call_flow_column_add(ui, msg->call->callid, msg->packet->src);
@@ -1176,12 +1183,6 @@ call_flow_set_group(sip_call_group_t *group)
 
     info->group = group;
     info->cur_arrow = info->selected = -1;
-
-    if (info->group->callid) {
-        info->maxcallids = call_group_count(group);
-    } else {
-        info->maxcallids = 2;
-    }
 
     return 0;
 }
