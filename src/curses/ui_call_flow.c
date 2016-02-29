@@ -279,7 +279,7 @@ call_flow_draw_columns(ui_t *ui)
                 wattron(ui->win, A_BOLD);
         }
 
-        if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+        if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr.port) {
             sprintf(coltext, "%s", column->alias);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
             sprintf(coltext, "%s:%u", column->alias, column->addr.port);
@@ -594,7 +594,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     char text[50], time[20];
     int height, width;
     const char *callid;
-    address_t msg_src, msg_dst;
+    address_t msg_src, msg_dst, stream_src, stream_dst;
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->item;
     int arrow_dir = CF_ARROW_RIGHT;
@@ -622,6 +622,10 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     callid = stream->media->msg->call->callid;
     msg_src = stream->media->msg->packet->src;
     msg_dst = stream->media->msg->packet->dst;
+    stream_src = stream->src;
+    stream_src.port = 0;
+    stream_dst = stream->dst;
+    stream_dst.port = 0;
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
@@ -630,7 +634,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
         column1 = call_flow_column_get(ui, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(ui, 0, stream->src);
+        column1 = call_flow_column_get(ui, 0, stream_src);
     }
 
     // Get destination column for this stream.
@@ -640,7 +644,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
         column2 = call_flow_column_get(ui, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(ui, 0, stream->dst);
+        column2 = call_flow_column_get(ui, 0, stream_dst);
     }
 
     call_flow_column_t *tmp;
