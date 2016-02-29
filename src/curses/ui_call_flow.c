@@ -290,7 +290,7 @@ call_flow_draw_columns(ui_t *ui)
                 wattron(ui->win, A_BOLD);
         }
 
-        if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+        if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr.port) {
             sprintf(coltext, "%s", column->alias);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
             sprintf(coltext, "%s:%u", column->alias, column->addr.port);
@@ -345,6 +345,7 @@ call_flow_draw_arrows(ui_t *ui)
     // Draw arrows
     vector_iter_t it = vector_iterator(info->darrows);
     vector_iterator_set_current(&it, info->first_arrow - 1);
+    vector_iterator_set_filter(&it, call_flow_arrow_filter);
     while ((arrow = vector_iterator_next(&it))) {
         // Stop if we have reached the bottom of the screen
         if (cline >= getmaxy(info->flow_win))
@@ -360,11 +361,7 @@ call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line)
     if (arrow->type == CF_ARROW_SIP) {
         return call_flow_draw_message(ui, arrow, line);
     } else {
-        if (setting_enabled(SETTING_CF_MEDIA)) {
-            return call_flow_draw_rtp_stream(ui, arrow, line);
-        } else {
-            return 0;
-        }
+        return call_flow_draw_rtp_stream(ui, arrow, line);
     }
 }
 
@@ -605,7 +602,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     char text[50], time[20];
     int height, width;
     const char *callid;
-    address_t msg_src, msg_dst;
+    address_t msg_src, msg_dst, stream_src, stream_dst;
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->item;
     int arrow_dir = CF_ARROW_RIGHT;
@@ -633,6 +630,10 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     callid = stream->media->msg->call->callid;
     msg_src = stream->media->msg->packet->src;
     msg_dst = stream->media->msg->packet->dst;
+    stream_src = stream->src;
+    stream_src.port = 0;
+    stream_dst = stream->dst;
+    stream_dst.port = 0;
 
     // Get origin column for this stream.
     // If we share the same Address from its setup SIP packet, use that column instead.
@@ -641,7 +642,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
         column1 = call_flow_column_get(ui, callid, msg_dst);
     } else {
-        column1 = call_flow_column_get(ui, 0, stream->src);
+        column1 = call_flow_column_get(ui, 0, stream_src);
     }
 
     // Get destination column for this stream.
@@ -651,7 +652,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
         column2 = call_flow_column_get(ui, callid, msg_src);
     } else {
-        column2 = call_flow_column_get(ui, 0, stream->dst);
+        column2 = call_flow_column_get(ui, 0, stream_dst);
     }
 
     call_flow_column_t *tmp;
@@ -1269,6 +1270,7 @@ call_flow_move(ui_t *ui, int arrowindex)
 {
     call_flow_info_t *info;
     call_flow_arrow_t *arrow;
+    int flowh;
 
     // Get panel info
     if (!(info = call_flow_info(ui)))
@@ -1278,52 +1280,47 @@ call_flow_move(ui_t *ui, int arrowindex)
     if (info->cur_arrow == arrowindex)
         return;
 
+    // Get flow subwindow height (for scrolling)
+    flowh  = getmaxy(info->flow_win);
+
     // Moving down or up?
     bool move_down = (info->cur_arrow < arrowindex);
 
     vector_iter_t it = vector_iterator(info->darrows);
     vector_iterator_set_current(&it, info->cur_arrow);
+    vector_iterator_set_filter(&it, call_flow_arrow_filter);
 
     if (move_down) {
-        while (info->cur_arrow < arrowindex) {
-            // Check if there is a call below us
-            if (!(arrow = vector_iterator_next(&it)))
-               break;
+        while ((arrow = vector_iterator_next(&it))) {
+            // Get next selected arrow
+            info->cur_arrow = vector_iterator_current(&it);
 
-            // If selected arrow is RTP and RTP is not being displayed keep searching
-            if (arrow->type == CF_ARROW_RTP && setting_disabled(SETTING_CF_MEDIA)) {
-                arrowindex++;
-            }
-
-            // Increase current call position
-            info->cur_arrow++;
-
-            // If we are out of the bottom of the displayed list
-            // refresh it starting in the next call
-            if (info->cur_arrow - info->first_arrow == getmaxy(info->flow_win)/2) {
-                info->first_arrow++;
+            // We have reached our destination
+            if (info->cur_arrow >= arrowindex) {
+                break;
             }
         }
     } else {
-        while (info->cur_arrow > arrowindex) {
-            // Check if there is a call above us
-            if (!(arrow = vector_iterator_prev(&it)))
-              break;
+        while ((arrow = vector_iterator_prev(&it))) {
+            // Get previous selected arrow
+            info->cur_arrow = vector_iterator_current(&it);
 
-            // If selected arrow is RTP and RTP is not being displayed keep searching
-            if (arrow->type == CF_ARROW_RTP && setting_disabled(SETTING_CF_MEDIA)) {
-                arrowindex--;
+            // We have reached our destination
+            if (info->cur_arrow <= arrowindex) {
+                break;
             }
-
-            // If we are out of the top of the displayed list
-            // refresh it starting in the previous (in fact current) call
-            if (info->cur_arrow ==  info->first_arrow) {
-                info->first_arrow--;
-            }
-            // Move current call position
-            info->cur_arrow--;
         }
     }
+
+    // Update the first displayed arrow
+    if (info->cur_arrow < info->first_arrow) {
+        info->first_arrow = info->cur_arrow;
+    } else if (info->cur_arrow - info->first_arrow >= flowh/2) {
+        // If we are out of the bottom of the displayed list
+        // refresh it starting in the next call
+        info->first_arrow = info->cur_arrow - flowh/2;
+    }
+
 
 }
 
@@ -1392,4 +1389,21 @@ call_flow_arrow_sorter(vector_t *vector, void *item)
 
     // Put this item at the begining of the vector
     vector_insert(vector, item, 0);
+}
+
+int
+call_flow_arrow_filter(void *item)
+{
+    call_flow_arrow_t *arrow = (call_flow_arrow_t *) item;
+
+    // SIP arrows are never filtered
+    if (arrow->type == CF_ARROW_SIP)
+        return 1;
+
+    // RTP arrows are only displayed when requested
+    if (arrow->type == CF_ARROW_RTP && setting_enabled(SETTING_CF_MEDIA))
+        return 1;
+
+    // Rest of the arrows are never displayed
+    return 0;
 }
