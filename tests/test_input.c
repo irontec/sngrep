@@ -55,21 +55,22 @@ main()
 {
     int ppipe[2];
     int unused, ret = 0;
+    int child;
     unused = pipe(ppipe);
 
     // Max test duration
     alarm(TEST_MAX_DURATION);
 
-    if (!fork()) {
-        char *argv[] =
-                {
-                  "../src/sngrep",
-                  "-I",
-                  TEST_PCAP_INPUT,
-                  0 };
+    if ((child = fork()) < 0) {
+        fprintf(stderr, "Fatal: unable to fork test.\n");
+        return 127;
+    } else if (child == 0) {
+        // Child process, run sngrep with test pcap
         dup2(ppipe[0], STDIN_FILENO);
+        char *argv[] = { "../src/sngrep", "-I", TEST_PCAP_INPUT, 0 };
         execv(argv[0], argv);
     } else {
+        // Parent process, send keys to child stdin
         usleep(TEST_INITIAL_WAIT);
         int i;
         for (i = 0; keys[i]; i++) {
