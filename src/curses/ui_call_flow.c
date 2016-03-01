@@ -204,8 +204,6 @@ void
 call_flow_draw_footer(ui_t *ui)
 {
     call_flow_info_t *info;
-    sip_call_t *call = NULL;
-    int streamcnt = 0;
 
     // Get panel information
     info = call_flow_info(ui);
