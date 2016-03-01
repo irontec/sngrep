@@ -817,15 +817,13 @@ call_list_handle_menu_key(ui_t *ui, int key)
               case ACTION_PREV_SCREEN:
                   // Desactive sorting menu
                   info->menu_active = 0;
-
+                  // Remove menu and items
+                  unpost_menu(info->menu);
+                  free_menu(info->menu);
                   // Restore list position
                   mvderwin(info->list_win, 4, 0);
                   // Restore list window size
                   wresize(info->list_win, ui->height - 5, ui->width);
-
-                  // Remove menu and items
-                  unpost_menu(info->menu);
-                  free_menu(info->menu);
                   break;
               default:
                   // Parse next action
