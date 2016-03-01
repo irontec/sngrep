@@ -225,19 +225,6 @@ call_flow_draw_footer(ui_t *ui)
     };
 
     ui_draw_bindings(ui, keybindings, 22);
-
-    // If any dialog has RTP streams and they are not visible
-    if (!setting_enabled(SETTING_CF_MEDIA)) {
-        while ((call = call_group_get_next(info->group, call)) ) {
-            streamcnt += vector_count(call->streams);
-        }
-        // Highlight RTP keybinding
-        if (streamcnt) {
-            wattron(ui->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-            mvwprintw(ui->win, ui->height - 1, 64, "%s %s", key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP");
-            wattroff(ui->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-        }
-    }
 }
 
 int
