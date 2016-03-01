@@ -774,7 +774,7 @@ call_list_handle_menu_key(ui_t *ui, int key)
 {
     MENU *menu;
     ITEM *current;
-    int current_idx;
+    int current_idx, i;
     int action = -1;
     sip_sort_t sort;
     enum sip_attr_id id;
@@ -817,9 +817,18 @@ call_list_handle_menu_key(ui_t *ui, int key)
               case ACTION_PREV_SCREEN:
                   // Desactive sorting menu
                   info->menu_active = 0;
-                  // Remove menu and items
+
+                  // Remove menu
                   unpost_menu(info->menu);
                   free_menu(info->menu);
+
+                  // Remove items
+                  for (i = 0; i < SIP_ATTR_COUNT; i++) {
+                      if (!info->items[i])
+                          break;
+                      free_item(info->items[i]);
+                  }
+
                   // Restore list position
                   mvderwin(info->list_win, 4, 0);
                   // Restore list window size
@@ -988,7 +997,6 @@ void
 call_list_select_sort_attribute(ui_t *ui)
 {
     call_list_info_t *info;
-    ITEM *items[SIP_ATTR_COUNT + 1];
     int i;
 
     // Get panel info
@@ -1003,11 +1011,11 @@ call_list_select_sort_attribute(ui_t *ui)
 
     // Create menu entries
     for (i = 0; i < info->columncnt; i++) {
-        items[i] = new_item(sip_attr_get_name(info->columns[i].id), 0);
+        info->items[i] = new_item(sip_attr_get_name(info->columns[i].id), 0);
     }
-    items[info->columncnt] = NULL;
+    info->items[info->columncnt] = NULL;
     // Create the columns menu and post it
-    info->menu = new_menu(items);
+    info->menu = new_menu(info->items);
 
     // Set main window and sub window
     set_menu_win(info->menu, ui->win);

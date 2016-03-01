@@ -90,8 +90,10 @@ struct call_list_info {
     FIELD *fields[FLD_LIST_COUNT + 1];
     //! We're entering keys on form
     int form_active;
-    // Columns menu
+    // Columns sort menu
     MENU *menu;
+    // Columns sort menu items
+    ITEM *items[SIP_ATTR_COUNT + 1];
     //! We're selecting sorting field
     int menu_active;
     //! Move to last list entry if autoscroll is enabled
