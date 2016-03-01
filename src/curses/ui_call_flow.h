@@ -55,6 +55,7 @@
 #ifndef __SNGREP_UI_CALL_FLOW_H
 #define __SNGREP_UI_CALL_FLOW_H
 
+#include <stdbool.h>
 #include "ui_manager.h"
 #include "group.h"
 #include "scrollbar.h"
@@ -100,7 +101,6 @@ struct call_flow_arrow {
     //! Line of flow window this line starts
     int line;
 };
-
 
 /**
  * @brief Structure to hold one column information
@@ -151,6 +151,8 @@ struct call_flow_info {
     vector_t *columns;
     //! Max callids per column
     int maxcallids;
+    //! Print timestamp next to the arrow
+    bool arrowtime;
 };
 
 /**

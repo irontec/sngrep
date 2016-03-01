@@ -89,6 +89,9 @@ call_flow_create(ui_t *ui)
     call_flow_info_t *info = malloc(sizeof(call_flow_info_t));
     memset(info, 0, sizeof(call_flow_info_t));
 
+    // Display timestamp next to each arrow
+    info->arrowtime = true;
+
     // Calculate available printable area for messages
     info->flow_win = subwin(ui->win, ui->height - 6, ui->width - 2, 4, 0);
     info->scroll = ui_set_scrollbar(info->flow_win, SB_VERTICAL, SB_LEFT);
@@ -565,29 +568,30 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     wattroff(flow_win, A_BOLD | A_REVERSE);
 
     // Print timestamp
-    if (arrow == call_flow_arrow_selected(ui))
-        wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(flow_win, cline, 2, "%s", msg_time);
-
-    // Print delta from selected message
-    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-        if (info->selected == -1) {
-            if (setting_enabled(SETTING_CF_DELTA))
-                timeval_to_delta(msg_get_time(call_group_get_prev_msg(info->group, msg)), msg_get_time(msg), delta);
-        } else if (arrow == vector_item(info->darrows, info->cur_arrow)) {
-            struct timeval selts, curts;
-            selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(ui)));
-            curts = msg_get_time(msg);
-            timeval_to_delta(selts, curts, delta);
-        }
-
-        if (strlen(delta)) {
+    if (info->arrowtime) {
+        if (arrow == call_flow_arrow_selected(ui))
             wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-            mvwprintw(flow_win, cline - 1 , 2, "%15s", delta);
-        }
-        wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    }
+        mvwprintw(flow_win, cline, 2, "%s", msg_time);
 
+        // Print delta from selected message
+        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+            if (info->selected == -1) {
+                if (setting_enabled(SETTING_CF_DELTA))
+                    timeval_to_delta(msg_get_time(call_group_get_prev_msg(info->group, msg)), msg_get_time(msg), delta);
+            } else if (arrow == vector_item(info->darrows, info->cur_arrow)) {
+                struct timeval selts, curts;
+                selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(ui)));
+                curts = msg_get_time(msg);
+                timeval_to_delta(selts, curts, delta);
+            }
+
+            if (strlen(delta)) {
+                wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+                mvwprintw(flow_win, cline - 1 , 2, "%15s", delta);
+            }
+            wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+        }
+    }
     wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     return arrow->height;
@@ -665,15 +669,29 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     int startpos = 20 + 30 * column1->colpos;
     int endpos = 20 + 30 * column2->colpos;
+    int distance = 0;
 
-    // In compressed mode, we display the src and dst port inside the arrow
-    // so fixup the stard and end position
-    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-        startpos += 5;
-        endpos -= 5;
+    if (startpos != endpos) {
+        // In compressed mode, we display the src and dst port inside the arrow
+        // so fixup the stard and end position
+        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+            startpos += 5;
+            endpos -= 5;
+        }
+        distance = abs(endpos - startpos) - 4 + 1;
+    } else {
+        // Fix port positions
+        startpos -= 2;
+        endpos += 2;
+        distance = 1;
+
+        // Fix arrow direction based on ports
+        if (stream->src.port < stream->dst.port) {
+            arrow_dir = CF_ARROW_RIGHT;
+        } else {
+            arrow_dir = CF_ARROW_LEFT;
+        }
     }
-
-    int distance = abs(endpos - startpos) - 4 + 1;
 
     // Highlight current message
     if (arrow == vector_item(info->darrows, info->cur_arrow)) {
@@ -698,7 +716,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         cline++;
 
     // Draw line between columns
-    mvwhline(win, cline, startpos + 2, '-', distance);
+    mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == CF_ARROW_RIGHT) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
@@ -730,9 +748,10 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     wattroff(win, A_BOLD | A_REVERSE);
 
     // Print timestamp
-    timeval_to_time(stream->time, time);
-    mvwprintw(win, cline, 2, "%s", time);
-
+    if (info->arrowtime) {
+        timeval_to_time(stream->time, time);
+        mvwprintw(win, cline, 2, "%s", time);
+    }
 
     return arrow->height;
 }
@@ -1056,6 +1075,9 @@ call_flow_handle_key(ui_t *ui, int key)
                 next_ui = ui_create_panel(PANEL_SAVE);
                 save_set_group(next_ui, info->group);
                 break;
+            case ACTION_TOGGLE_TIME:
+                info->arrowtime = (info->arrowtime) ? false : true;
+                break;
             case ACTION_SELECT:
                 if (info->selected == -1) {
                     info->selected = info->cur_arrow;
@@ -1310,7 +1332,7 @@ call_flow_move(ui_t *ui, int arrowindex)
     } else if (info->cur_arrow - info->first_arrow >= flowh/2) {
         // If we are out of the bottom of the displayed list
         // refresh it starting in the next call
-        info->first_arrow = info->cur_arrow - flowh/2;
+        info->first_arrow = info->cur_arrow - flowh/2 + 1;
     }
 
 

@@ -290,7 +290,10 @@ rtp_stream_t *
 rtp_check_packet(packet_t *packet);
 
 rtp_stream_t *
-rtp_find_stream(address_t src, address_t dst, uint32_t format);
+rtp_find_stream_format(address_t src, address_t dst, uint32_t format);
+
+rtp_stream_t *
+rtp_find_stream(address_t src, address_t dst);
 
 rtp_stream_t *
 rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst);

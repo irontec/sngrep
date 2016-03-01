@@ -191,7 +191,11 @@ rtp_check_packet(packet_t *packet)
         format = RTP_PAYLOAD_TYPE(*(payload + 1));
 
         // Find the matching stream
-        stream = rtp_find_stream(src, dst, format);
+        stream = rtp_find_stream_format(src, dst, format);
+
+        // Or a not completed stream
+        if (!stream)
+            stream = rtp_find_stream(src, dst);
 
         // Check if a valid stream has been found
         if (!stream)
@@ -223,7 +227,7 @@ rtp_check_packet(packet_t *packet)
         stream_add_packet(stream, packet);
     } else {
         // Find the matching stream
-        if ((stream = rtp_find_stream(src, dst, format))) {
+        if ((stream = rtp_find_stream(src, dst))) {
 
             // Parse all packet payload headers
             while ((int32_t) size > 0) {
@@ -300,7 +304,49 @@ rtp_check_packet(packet_t *packet)
 }
 
 rtp_stream_t *
-rtp_find_stream(address_t src, address_t dst, uint32_t format)
+rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
+{
+    // Structure for RTP packet streams
+    rtp_stream_t *stream;
+    // Check if this is a RTP packet from active calls
+    sip_call_t *call;
+    // Iterator for active calls
+    vector_iter_t calls;
+    // Iterator for call streams
+    vector_iter_t streams;
+
+    // Get active calls (during conversation)
+    calls = sip_calls_iterator();
+    //vector_iterator_set_current(&calls, vector_iterator_count(&calls) - 1);
+
+    while ((call = vector_iterator_next(&calls))) {
+        streams = vector_iterator(call->streams);
+        while ((stream = vector_iterator_next(&streams))) {
+            // Only look RTP packets
+            if (stream->type != PACKET_RTP)
+                continue;
+
+            // Stream complete, check source, dst and format
+            if (stream_is_complete(stream)) {
+                if (addressport_equals(stream->src, src) &&
+                    addressport_equals(stream->dst, dst) &&
+                    stream->rtpinfo.fmtcode == format) {
+                    return stream;
+                }
+            } else {
+                // Incomplete stream, if dst match is enough
+                if (addressport_equals(stream->dst, dst)) {
+                       return stream;
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
+rtp_stream_t *
+rtp_find_stream(address_t src, address_t dst)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -322,6 +368,7 @@ rtp_find_stream(address_t src, address_t dst, uint32_t format)
 
     return NULL;
 }
+
 
 rtp_stream_t *
 rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
