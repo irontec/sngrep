@@ -292,7 +292,7 @@ call_list_draw_list(ui_t *ui)
 {
     WINDOW *list_win;
     int listh, listw, cline = 0;
-    struct sip_call *call;
+    struct sip_call *call = NULL;
     int i, collen;
     char coltext[256];
     int colid;
