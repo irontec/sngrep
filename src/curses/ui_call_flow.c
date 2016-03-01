@@ -189,8 +189,14 @@ call_flow_draw(ui_t *ui)
     call_flow_arrow_t *arrow = NULL;
     info->scroll.max = info->scroll.pos = 0;
     while ((arrow = vector_iterator_next(&it))) {
-        if (vector_iterator_current(&it) == info->first_arrow)
+        // Store current position arrow
+        if (vector_iterator_current(&it) == info->first_arrow) {
             info->scroll.pos = info->scroll.max;
+        }
+        // Skip RTP arrows if not displayed
+        if (arrow->type == CF_ARROW_RTP && setting_disabled(SETTING_CF_MEDIA)) {
+            continue;
+        }
         info->scroll.max += call_flow_arrow_height(ui, arrow);
     }
     ui_scrollbar_draw(info->scroll);
