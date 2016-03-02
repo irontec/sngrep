@@ -38,7 +38,7 @@
 bool
 addressport_equals(address_t addr1, address_t addr2)
 {
-    return !strcmp(addr1.ip, addr2.ip) && addr1.port == addr2.port;
+    return addr1.port == addr2.port && !strcmp(addr1.ip, addr2.ip);
 }
 
 bool

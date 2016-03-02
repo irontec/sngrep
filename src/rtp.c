@@ -193,10 +193,6 @@ rtp_check_packet(packet_t *packet)
         // Find the matching stream
         stream = rtp_find_stream_format(src, dst, format);
 
-        // Or a not completed stream
-        if (!stream)
-            stream = rtp_find_stream(src, dst);
-
         // Check if a valid stream has been found
         if (!stream)
             return NULL;
@@ -314,6 +310,8 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
     vector_iter_t calls;
     // Iterator for call streams
     vector_iter_t streams;
+    // Candiate stream
+    rtp_stream_t *candidate = NULL;
 
     // Get active calls (during conversation)
     calls = sip_calls_iterator();
@@ -321,17 +319,23 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
 
     while ((call = vector_iterator_next(&calls))) {
         streams = vector_iterator(call->streams);
-        while ((stream = vector_iterator_next(&streams))) {
+        vector_iterator_set_last(&streams);
+        while ((stream = vector_iterator_prev(&streams))) {
             // Only look RTP packets
             if (stream->type != PACKET_RTP)
                 continue;
 
-            // Stream complete, check source, dst and format
+            // Stream complete, check source, dst
             if (stream_is_complete(stream)) {
                 if (addressport_equals(stream->src, src) &&
-                    addressport_equals(stream->dst, dst) &&
-                    stream->rtpinfo.fmtcode == format) {
-                    return stream;
+                    addressport_equals(stream->dst, dst)) {
+                    // Exact searched stream format
+                    if (stream->rtpinfo.fmtcode == format) {
+                        return stream;
+                    } else {
+                        // Matching addresses but different format
+                        candidate = stream;
+                    }
                 }
             } else {
                 // Incomplete stream, if dst match is enough
@@ -342,7 +346,7 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
         }
     }
 
-    return NULL;
+    return candidate;
 }
 
 rtp_stream_t *
