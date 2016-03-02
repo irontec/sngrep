@@ -1074,6 +1074,8 @@ call_flow_handle_key(ui_t *ui, int key)
             case ACTION_SAVE:
                 next_ui = ui_create_panel(PANEL_SAVE);
                 save_set_group(next_ui, info->group);
+                save_set_msg(next_ui,
+                    call_flow_arrow_message(vector_item(info->darrows, info->cur_arrow)));
                 break;
             case ACTION_TOGGLE_TIME:
                 info->arrowtime = (info->arrowtime) ? false : true;
