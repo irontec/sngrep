@@ -473,8 +473,9 @@ int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[3];
-    char resp_str[40];
+    char resp_str[256];
     char reqresp[40];
+    char cseq[11];
     const char *resp_def;
 
     // Initialize variables
@@ -489,6 +490,13 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
         if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
             sprintf(reqresp, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
         }
+
+        // CSeq
+        if (regexec(&calls.reg_cseq, (char*)payload, 2, pmatch, 0) == 0) {
+            sprintf(cseq, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+            msg->cseq = atoi(cseq);
+        }
+
 
         // Response code
         if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
@@ -535,13 +543,6 @@ int
 sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
-    char cseq[11];
-
-    // CSeq
-    if (regexec(&calls.reg_cseq, (char*)payload, 2, pmatch, 0) == 0) {
-        sprintf(cseq, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
-        msg->cseq = atoi(cseq);
-    }
 
     // From
     if (regexec(&calls.reg_from, (const char *)payload, 4, pmatch, 0) == 0) {

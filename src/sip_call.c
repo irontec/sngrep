@@ -186,7 +186,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     // If this message is actually a call, get its current state
     if (call->state) {
         if (call->state == SIP_CALLSTATE_CALLSETUP) {
-            if (reqresp == 200) {
+            if (reqresp == SIP_METHOD_ACK && call->invitecseq == msg->cseq) {
                 // Alice and Bob are talking
                 call->state = SIP_CALLSTATE_INCALL;
                 call->cstart_msg = msg;
@@ -210,6 +210,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
     } else {
         // This is actually a call
         if (reqresp == SIP_METHOD_INVITE) {
+            call->invitecseq = msg->cseq;
             call->state = SIP_CALLSTATE_CALLSETUP;
         }
     }

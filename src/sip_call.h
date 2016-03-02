@@ -70,10 +70,10 @@ struct sip_call {
     int state;
     //! Changed flag. For interface optimal updates
     bool changed;
-
     //! List of calls with with this call as X-Call-Id
     vector_t *xcalls;
-
+    //! Cseq from invite startint the call
+    uint32_t invitecseq;
     //! List of messages of this call (sip_msg_t*)
     vector_t *msgs;
     //! Message when conversation started and ended
