@@ -1,166 +1,222 @@
-2015-10-06 Ivan Alonso <kaian@irontec.com>
-	* sngrep 1.0.0 released
+2016-03-02 Ivan Alonso <kaina@irontec.com>
+    * sngrep 1.3.0 released
 
-	* Implemented basic TCP reassembly
-	* Implemented basic IP reassembly
-	* Implememted EEP/HEP client/server support
-	* Implemented command line option --dump-config
-	* Disabled RTP packet payload storage by default
-	* Removed --enable-openssl configure flag (use --with-openssl instead)
-	* Removed configurable ignore directives in rc file
-	* Removed configurable option cl.filter
-	* Improved payload memory storage
-	* Added a confirmation dialog to overwrite saved files
-	* Added save button to Columns select UI
-	* Added a keybinding to remove selected dialogs in Call List
-	* Added a keybinding to move to the first and last item in Call List
-	* Added attribute color support (can be disabled with cl.colorattr)
-	* Added a compressed view in Call Flow (one message per row)
-	* Fixed IPv6 support
-	* Fixed multiple memory leaks
+    * Interface
+        * Recoded panel updates to only refresh when something changes
+        * Allow saving displayed dialogs from Call Flow (default key 'S')
+        * Allow clearing Call List from Flow or Raw (default keys Ctrl-L or F5)
+    * Call List
+        * Call List can now be sorted by displayed columns (default keys '<' and 'z')
+        * Fixed a bug to handle filter.method setting on startup
+        * Display Calls: instead of Dialogs: in header when only print calls is enabled
+    * Call Flow
+        * Improved Extended flow arrow display for dialogs with the same X-Call-Id
+        * Merge RTP arrows that have the same port/address
+        * Improved RTP arrow displayed in only one column
+        * Display RTCP information in RTP arrows (still requires lots of work)
+        * Arrow times can now be toggled (default key 'w')
+        * Remove RTCP arrows from Call Flow
+    * SIP
+        * Stored Response texts when not matching their response code default text
+        * Fixed a crash when parsing application type SDP
+    * Capture
+        * Improved TCP SIP detection and parsing
+        * Refactored packet and configuration structures
+        * Removed IP address lookup feature
+    * Other
+        * Adding new tests for Call List sorting
+        * Keybinding fixes and user input improvements
+        * Address/Port code refactoring
+
+2015-12-10 Ivan Alonso <kaian@irontec.com>
+    * sngrep 1.2.0 released
+
+    * Add support for EEP/HEP version 2
+    * Call List: autoscroll (default keybinding A)
+    * Call List: Align SIP arrows timestamp
+    * Call Flow: Disable RTP/RTCP arrows by default (m to display or set cf.media yes in sngreprc)
+    * Resolved addresses from eep address settings
+    * Fixed dump pcap while using -O option
+    * Fixed a bug while parsing RTCP packet payload
+    * Improved color sheme for b/w terminals
+
+2015-10-28 Ivan Alonso <kaian@irontec.com>
+    * sngrep 1.1.0 released
+
+    * Added GnuTLS support
+    * Added initial RTCP support
+    * Added a simple message statistics screen ('i' keybinding)
+    * Added payload filtering in filter screen
+    * Added alias directive to label addresses
+    * Call Flow: Compressed view now uses alias to merge columns
+    * Refactored Keybinding initializations
+    * Improved keybinding dump information when using --dump-config
+    * Make EEP support a configurable option
+    * Make EEP and IPv6 configurable options enabled by default
+
+2015-10-06 Ivan Alonso <kaian@irontec.com>
+    * sngrep 1.0.0 released
+
+    * Implemented basic TCP reassembly
+    * Implemented basic IP reassembly
+    * Implememted EEP/HEP client/server support
+    * Implemented command line option --dump-config
+    * Disabled RTP packet payload storage by default
+    * Removed --enable-openssl configure flag (use --with-openssl instead)
+    * Removed configurable ignore directives in rc file
+    * Removed configurable option cl.filter
+    * Improved payload memory storage
+    * Added a confirmation dialog to overwrite saved files
+    * Added save button to Columns select UI
+    * Added a keybinding to remove selected dialogs in Call List
+    * Added a keybinding to move to the first and last item in Call List
+    * Added attribute color support (can be disabled with cl.colorattr)
+    * Added a compressed view in Call Flow (one message per row)
+    * Fixed IPv6 support
+    * Fixed multiple memory leaks
 
 2015-09-01 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.4.2 released
+    * sngrep 0.4.2 released
 
-	* Fixed a crash with RTP format detection
-	* Fixed capture.rtp setting
-	* Fixed a crash while parsing captured packets headers
-	* Fixed a crash while creating new columns in call flow window
-	* Restored TLS and WS transport payload display
-	* Added Timestamp to the first RTP packet displayed in call flow window
-	* Improved packet payload storage
+    * Fixed a crash with RTP format detection
+    * Fixed capture.rtp setting
+    * Fixed a crash while parsing captured packets headers
+    * Fixed a crash while creating new columns in call flow window
+    * Restored TLS and WS transport payload display
+    * Added Timestamp to the first RTP packet displayed in call flow window
+    * Improved packet payload storage
 
 2015-07-08 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.4.1 released
+    * sngrep 0.4.1 released
 
-	* Added an option to capture RTP packets
-	* Allow RTP packets to be saved with their calls
-	* Improved Save panel default options
-	* Added testing files
-	* Improved SIP message parsed process
-	* Improved SIP message payload memory usage
-	* Fixed a bug with timestamp diff overflows
-	* Fixed multiple memory leaks
-	* Fixed compatibility with BSD systems
+    * Added an option to capture RTP packets
+    * Allow RTP packets to be saved with their calls
+    * Improved Save panel default options
+    * Added testing files
+    * Improved SIP message parsed process
+    * Improved SIP message payload memory usage
+    * Fixed a bug with timestamp diff overflows
+    * Fixed multiple memory leaks
+    * Fixed compatibility with BSD systems
 
 2015-06-24 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.4.0 released
+    * sngrep 0.4.0 released
 
-	* Added Websocket (WS) transport support
-	* Added an option (alias) to replace addresses on screen
-	* Added a new screen to change/save settings
-	* Added support for multiple SDP medias in flow screen
-	* Added delta time between SIP messages in flow screen
-	* Added RTP stream arrows in flow screen
-	* RTP packets will be now saved with -O command line option
-	* Merged pcap and txt save screens
-	* Recoded screen update process
-	* Replace all internal linked list with vector structures
-	* Added index as first column in call list
-	* Fixed a bug with address resloution
+    * Added Websocket (WS) transport support
+    * Added an option (alias) to replace addresses on screen
+    * Added a new screen to change/save settings
+    * Added support for multiple SDP medias in flow screen
+    * Added delta time between SIP messages in flow screen
+    * Added RTP stream arrows in flow screen
+    * RTP packets will be now saved with -O command line option
+    * Merged pcap and txt save screens
+    * Recoded screen update process
+    * Replace all internal linked list with vector structures
+    * Added index as first column in call list
+    * Fixed a bug with address resloution
 
 2015-05-17 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.3.2 released
+    * sngrep 0.3.2 released
 
-	* Fixed sources compilation for BSD systems
-	* Fixed a bug where Contact header was displayed in SIP From column
-	* Fixed some keybindings in filter and save panels
-	* Improved SIP packet detection from payload
-	* Highlight local address columns in Call Flow
+    * Fixed sources compilation for BSD systems
+    * Fixed a bug where Contact header was displayed in SIP From column
+    * Fixed some keybindings in filter and save panels
+    * Improved SIP packet detection from payload
+    * Highlight local address columns in Call Flow
 
 2015-04-14 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.3.1 released
+    * sngrep 0.3.1 released
 
-	* Added command line option -N to not display ncurses interface
-	* Added command line option -q to dont print any stdout output
-	* Added optional IPv6 support
-	* Added SIP compact headers support
-	* Fixed autotools templates for OpenBSD 5
-	* Set dark background by default
-	* Repladed SIP payload function with regexp
-	* Implemented configurable keybindings via sngreprc
-	* Added more default keybindings
-	* Implement basic RTP detection
-	* Improved parsing payload performance
+    * Added command line option -N to not display ncurses interface
+    * Added command line option -q to dont print any stdout output
+    * Added optional IPv6 support
+    * Added SIP compact headers support
+    * Fixed autotools templates for OpenBSD 5
+    * Set dark background by default
+    * Repladed SIP payload function with regexp
+    * Implemented configurable keybindings via sngreprc
+    * Added more default keybindings
+    * Implement basic RTP detection
+    * Improved parsing payload performance
 
 2015-03-02 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.3.0 released
+    * sngrep 0.3.0 released
 
-	* Added command line option -c to only display calls
-	* Added command line option -l to change capture limit
-	* Added command line match expression for packet payload
-	* Converted all filters to regular expressions (POSIX or PCRE)
-	* Added optional PCRE support (Perl Compatible Regular Expressions)
-	* Added optional UTF-8 / Unicode compatible terminals support
-	* Added current displayed and total dialogs counters in Call list
-	* Added an option to save displayed dialogs (after filtering)
-	* Added an option to save current columns layout
-	* Added new attributes:
-		- sipfromuser: User in From: Header
-		- siptouser: User in To: header
-		- convdur: Total conversation duration (from 200 to BYE)
-		- totaldur: Total call duration (from first to last message)
-	* Interface will now be displayed while pcaps are loading
-	* Reworked Interface refresh process
-	* Reworked Filtering process
-	* Fixed general performance issues
-	* Disable OpenSSL support by default
-	* Removed command line option to read pcap without flags
-	* Added long versions of command line flags
+    * Added command line option -c to only display calls
+    * Added command line option -l to change capture limit
+    * Added command line match expression for packet payload
+    * Converted all filters to regular expressions (POSIX or PCRE)
+    * Added optional PCRE support (Perl Compatible Regular Expressions)
+    * Added optional UTF-8 / Unicode compatible terminals support
+    * Added current displayed and total dialogs counters in Call list
+    * Added an option to save displayed dialogs (after filtering)
+    * Added an option to save current columns layout
+    * Added new attributes:
+        - sipfromuser: User in From: Header
+        - siptouser: User in To: header
+        - convdur: Total conversation duration (from 200 to BYE)
+        - totaldur: Total call duration (from first to last message)
+    * Interface will now be displayed while pcaps are loading
+    * Reworked Interface refresh process
+    * Reworked Filtering process
+    * Fixed general performance issues
+    * Disable OpenSSL support by default
+    * Removed command line option to read pcap without flags
+    * Added long versions of command line flags
 
 2015-02-09 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.2.2 released
+    * sngrep 0.2.2 released
 
-	* Added a new panel to configure Call List columns during runtime
-	  (static configuration can still be done using sngreprc file)
-	* Added a configuration option to change selected message
-	  highlight in Call Flow (bold is not properly displayed in some terminals)
-	* Fixed message retransmission detection (-->>>)
-	* Fixed some drawing issues on small screens
-	* Fixed a crash when capturing while saving pcap dialog was being displayed
-	* Fixed a bug that considered ACK as a response instead of a request
-	* Fixed Call state for REJECTED calls
-	* Fixed Colors for monochrome terminals
-	* Changed default column width for SIP To/From to 30 characters
-	* Other minor fixes
+    * Added a new panel to configure Call List columns during runtime
+      (static configuration can still be done using sngreprc file)
+    * Added a configuration option to change selected message
+      highlight in Call Flow (bold is not properly displayed in some terminals)
+    * Fixed message retransmission detection (-->>>)
+    * Fixed some drawing issues on small screens
+    * Fixed a crash when capturing while saving pcap dialog was being displayed
+    * Fixed a bug that considered ACK as a response instead of a request
+    * Fixed Call state for REJECTED calls
+    * Fixed Colors for monochrome terminals
+    * Changed default column width for SIP To/From to 30 characters
+    * Other minor fixes
 
 2015-01-22 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.2.1 released
+    * sngrep 0.2.1 released
 
-	* Added SIP message color syntax options
-	* Improved Call Flow refreshing logic
-	* Fixed multiple locking problems with UI
-	* Respect terminals colors (can be overridden with background dark option)
-	* Improve offline pcap file reading to respect capture limit option
-	* Swapped some keybindings
-	* Multiple minor fixes and code refactoring
+    * Added SIP message color syntax options
+    * Improved Call Flow refreshing logic
+    * Fixed multiple locking problems with UI
+    * Respect terminals colors (can be overridden with background dark option)
+    * Improve offline pcap file reading to respect capture limit option
+    * Swapped some keybindings
+    * Multiple minor fixes and code refactoring
 
 2014-12-04 Ivan Alonso <kaian@irontec.com>
-	* sngrep 0.2.0 released
+    * sngrep 0.2.0 released
 
-	* Added Initial TLS Support (No compression, AES)
-	* Added an option to resolve IP addresses
-	* Added a new panel to compare two SIP messages
-	* Fixed multiples memory leaks
+    * Added Initial TLS Support (No compression, AES)
+    * Added an option to resolve IP addresses
+    * Added a new panel to compare two SIP messages
+    * Fixed multiples memory leaks
 
 2014-10-21 Ivan Alonso <kaian@irontec.com>
 
-	* sngrep 0.1.0 released
+    * sngrep 0.1.0 released
 
-	* Remove ngrep compatibility. Force libpcap during compilation
-	* Added TCP support
-	* Allow saving selected dialogs into pcap
-	* New UI design to maximize screen usage
-	* Added a serach box in Call List window
-	* Added Funtion Keys keybindings
-	* Added command line arguments
-	* Fixed some memory bugs
+    * Remove ngrep compatibility. Force libpcap during compilation
+    * Added TCP support
+    * Allow saving selected dialogs into pcap
+    * New UI design to maximize screen usage
+    * Added a serach box in Call List window
+    * Added Funtion Keys keybindings
+    * Added command line arguments
+    * Fixed some memory bugs
 
 
 2013-04-22 Ivan Alonso <kaian@irontec.com>
 
-	* sngrep 0.0-alpha released.
+    * sngrep 0.0-alpha released.
 
-	* Initial version, code is just a mere stub with global variables, without
-	  sanity checks... expect the worst.
+    * Initial version, code is just a mere stub with global variables, without
+      sanity checks... expect the worst.
 
