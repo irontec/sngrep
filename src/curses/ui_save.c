@@ -89,7 +89,7 @@ save_create(ui_t *ui)
     field_opts_off(info->fields[FLD_SAVE_ALL], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_SELECTED], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_AUTOSKIP);
-    field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
 
     // Change background of input fields
     set_field_back(info->fields[FLD_SAVE_PATH], A_UNDERLINE);
@@ -215,7 +215,10 @@ save_draw(ui_t *ui)
     mvwprintw(ui->win, 7, 3, "( ) all dialogs ");
     mvwprintw(ui->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
     mvwprintw(ui->win, 9, 3, "( ) filtered dialogs [%d]", stats.displayed);
-    mvwprintw(ui->win, 10, 3, "( ) current SIP message");
+
+    // Print 'current SIP message' field label if required
+    if (info->msg != NULL)
+        mvwprintw(ui->win, 10, 3, "( ) current SIP message");
 
     mvwprintw(ui->win, 7, 35, "( ) .pcap (SIP)");
     mvwprintw(ui->win, 8, 35, "( ) .pcap (SIP + RTP)");
@@ -253,9 +256,6 @@ save_draw(ui_t *ui)
     if (!setting_enabled(SETTING_CAPTURE_RTP))
         set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, "-");
 
-    if (info->msg == NULL)
-        set_field_buffer(info->fields[FLD_SAVE_MESSAGE], 0, "-");
-
     set_current_field(info->form, current_field(info->form));
     form_driver(info->form, REQ_VALIDATION);
 
@@ -285,18 +285,10 @@ save_handle_key(ui_t *ui, int key)
                 }
                 continue;
             case ACTION_NEXT_FIELD:
-                // Skip 'Current SIP message' field if no message was selected
-                if (field_idx == FLD_SAVE_MESSAGE-1 && info->msg == NULL)
-                  form_driver(info->form, REQ_NEXT_FIELD);
-
                 form_driver(info->form, REQ_NEXT_FIELD);
                 form_driver(info->form, REQ_END_LINE);
                 break;
             case ACTION_PREV_FIELD:
-                // Skip 'Current SIP message' field if no message was selected
-                if (field_idx == FLD_SAVE_MESSAGE+1 && info->msg == NULL)
-                  form_driver(info->form, REQ_PREV_FIELD);
-
                 form_driver(info->form, REQ_PREV_FIELD);
                 form_driver(info->form, REQ_END_LINE);
                 break;
@@ -402,6 +394,9 @@ save_set_msg(ui_t *ui, sip_msg_t *msg)
     // Get panel information
     save_info_t *info = save_info(ui);
     info->msg = msg;
+
+    // make 'current SIP message' field visible
+    field_opts_on(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
 }
 
 int
