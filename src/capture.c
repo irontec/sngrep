@@ -560,7 +560,7 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
     }
 
     // This packet is ready to be parsed
-    if ((tcp->th_flags & TH_PUSH) || sip_validate_packet(pkt)) {
+    if (sip_validate_packet(pkt)) {
         vector_remove(capture_cfg.tcp_reasm, pkt);
         return pkt;
     }
