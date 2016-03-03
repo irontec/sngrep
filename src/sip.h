@@ -70,6 +70,13 @@ enum sip_methods {
     SIP_METHOD_UPDATE,
 };
 
+//! Return values for sip_validate_packet
+enum validate_result {
+    VALIDATE_NOT_SIP        = -1,
+    VALIDATE_PARTIAL_SIP    = 0,
+    VALIDATE_COMPLETE_SIP   = 1,
+};
+
 /**
  * @brief Different Request/Response codes in SIP Protocol
  */
@@ -199,10 +206,11 @@ sip_get_xcallid(const char* payload, char *xcallid);
  * Content-Length header field is a MUST.
  *
  * @param packet TCP assembled packet structure
- * @return true if packet is a complete SIP message, false otherwise
- *
+ * @return -1 if the packet first line doesn't match a SIP message
+ * @return 0 if the packet contains SIP but is not yet complete
+ * @return 1 if the packet is a complete SIP message
  */
-bool
+int
 sip_validate_packet(packet_t *packet);
 
 /**

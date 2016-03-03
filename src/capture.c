@@ -560,11 +560,17 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
     }
 
     // This packet is ready to be parsed
-    if (sip_validate_packet(pkt)) {
+    int valid = sip_validate_packet(pkt);
+    if (valid == VALIDATE_COMPLETE_SIP) {
+        // Full SIP packet!
         vector_remove(capture_cfg.tcp_reasm, pkt);
         return pkt;
+    } else if (valid == VALIDATE_NOT_SIP) {
+        vector_remove(capture_cfg.tcp_reasm, pkt);
+        packet_destroy(pkt);
     }
 
+    // An incomplete SIP Packet
     return NULL;
 }
 

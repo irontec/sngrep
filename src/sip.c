@@ -226,7 +226,7 @@ sip_get_xcallid(const char *payload, char *xcallid)
     return xcallid;
 }
 
-bool
+int
 sip_validate_packet(packet_t *packet)
 {
     uint32_t plen = packet_payloadlen(packet);
@@ -238,7 +238,7 @@ sip_validate_packet(packet_t *packet)
 
         // Max SIP payload allowed
     if (plen == 0 || plen > MAX_SIP_PAYLOAD)
-        return false;
+        return VALIDATE_NOT_SIP;
 
     // Get payload from packet(s)
     memset(payload, 0, MAX_SIP_PAYLOAD);
@@ -249,16 +249,15 @@ sip_validate_packet(packet_t *packet)
 
     // Check if the first line follows SIP request or response format
     if (regexec(&calls.reg_valid, (const char *) payload, 2, pmatch, 0) != 0) {
-        // Not a SIP message
-        return false;
+        // Not a SIP message AT ALL
+        return VALIDATE_NOT_SIP;
     }
 
     // Check if we have Content Length header
     if (regexec(&calls.reg_cl, (const char *) payload, 4, pmatch, 0) != 0) {
         // Not a SIP message or not complete
-        return false;
+        return VALIDATE_PARTIAL_SIP;
     }
-
 
     strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
     content_len = atoi(cl_header);
@@ -266,13 +265,13 @@ sip_validate_packet(packet_t *packet)
     // Check if we have Body separator field
     if (regexec(&calls.reg_body, (const char *) payload, 2, pmatch, 0) != 0) {
         // Not a SIP message or not complete
-        return false;
+        return VALIDATE_PARTIAL_SIP;
     }
 
     // Get the SIP message body length
     bodylen = (int) pmatch[1].rm_eo - pmatch[1].rm_so;
 
-    return content_len == bodylen;
+    return (content_len == bodylen) ? VALIDATE_COMPLETE_SIP : VALIDATE_PARTIAL_SIP;
 }
 
 sip_msg_t *
