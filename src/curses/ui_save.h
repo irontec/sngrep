@@ -49,6 +49,7 @@ enum save_field_list {
     FLD_SAVE_ALL,
     FLD_SAVE_SELECTED,
     FLD_SAVE_DISPLAYED,
+    FLD_SAVE_MESSAGE,
     FLD_SAVE_PCAP,
     FLD_SAVE_PCAP_RTP,
     FLD_SAVE_TXT,
@@ -63,7 +64,8 @@ enum save_field_list {
 enum save_mode {
     SAVE_ALL = 0,
     SAVE_SELECTED,
-    SAVE_DISPLAYED
+    SAVE_DISPLAYED,
+    SAVE_MESSAGE
 };
 
 /**
@@ -94,6 +96,8 @@ struct save_info {
     enum save_format saveformat;
     //! Call group to be saved
     sip_call_group_t *group;
+    //! Message to be saved
+    sip_msg_t *msg;
 };
 
 /**
@@ -168,6 +172,18 @@ save_handle_key(ui_t *ui, int key);
  */
 void
 save_set_group(ui_t *ui, sip_call_group_t *group);
+
+/**
+ * @brief Set the SIP message to be saved
+ *
+ * This function will access the panel information and will set the
+ * pointer to the selected SIP message
+ *
+ * @param ui UI structure pointer
+ * @param msg SIP message pointer to be set in the internal info struct
+ */
+void
+save_set_msg(ui_t *ui, sip_msg_t *msg);
 
 /**
  * @brief Print an error message in Save panel

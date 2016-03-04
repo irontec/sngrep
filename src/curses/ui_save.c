@@ -60,7 +60,7 @@ save_create(ui_t *ui)
     capture_set_paused(1);
 
     // Cerate a new indow for the panel and form
-    ui_panel_create(ui, 14, 68);
+    ui_panel_create(ui, 15, 68);
 
     // Initialize save panel specific data
     info = sng_malloc(sizeof(save_info_t));
@@ -75,6 +75,7 @@ save_create(ui_t *ui)
     info->fields[FLD_SAVE_ALL] = new_field(1, 1, 7, 4, 0, 0);
     info->fields[FLD_SAVE_SELECTED] = new_field(1, 1, 8, 4, 0, 0);
     info->fields[FLD_SAVE_DISPLAYED] = new_field(1, 1, 9, 4, 0, 0);
+    info->fields[FLD_SAVE_MESSAGE] = new_field(1, 1, 10, 4, 0, 0);
     info->fields[FLD_SAVE_PCAP] = new_field(1, 1, 7, 36, 0, 0);
     info->fields[FLD_SAVE_PCAP_RTP] = new_field(1, 1, 8, 36, 0, 0);
     info->fields[FLD_SAVE_TXT] = new_field(1, 1, 9, 36, 0, 0);
@@ -88,6 +89,7 @@ save_create(ui_t *ui)
     field_opts_off(info->fields[FLD_SAVE_ALL], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_SELECTED], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
 
     // Change background of input fields
     set_field_back(info->fields[FLD_SAVE_PATH], A_UNDERLINE);
@@ -124,11 +126,11 @@ save_create(ui_t *ui)
     mvwaddch(ui->win, 6, 2, ACS_ULCORNER);
     mvwhline(ui->win, 6, 3, ACS_HLINE, 30);
     mvwaddch(ui->win, 6, 32, ACS_URCORNER);
-    mvwvline(ui->win, 7, 2, ACS_VLINE, 3);
-    mvwvline(ui->win, 7, 32, ACS_VLINE, 3);
-    mvwaddch(ui->win, 10, 2, ACS_LLCORNER);
-    mvwhline(ui->win, 10, 3, ACS_HLINE, 30);
-    mvwaddch(ui->win, 10, 32, ACS_LRCORNER);
+    mvwvline(ui->win, 7, 2, ACS_VLINE, 4);
+    mvwvline(ui->win, 7, 32, ACS_VLINE, 4);
+    mvwaddch(ui->win, 11, 2, ACS_LLCORNER);
+    mvwhline(ui->win, 11, 3, ACS_HLINE, 30);
+    mvwaddch(ui->win, 11, 32, ACS_LRCORNER);
 
     // Save mode box
     mvwaddch(ui->win, 6, 34, ACS_ULCORNER);
@@ -214,6 +216,10 @@ save_draw(ui_t *ui)
     mvwprintw(ui->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
     mvwprintw(ui->win, 9, 3, "( ) filtered dialogs [%d]", stats.displayed);
 
+    // Print 'current SIP message' field label if required
+    if (info->msg != NULL)
+        mvwprintw(ui->win, 10, 3, "( ) current SIP message");
+
     mvwprintw(ui->win, 7, 35, "( ) .pcap (SIP)");
     mvwprintw(ui->win, 8, 35, "( ) .pcap (SIP + RTP)");
     mvwprintw(ui->win, 9, 35, "( ) .txt");
@@ -240,6 +246,8 @@ save_draw(ui_t *ui)
                      (info->savemode == SAVE_SELECTED) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_DISPLAYED], 0,
                      (info->savemode == SAVE_DISPLAYED) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_MESSAGE], 0,
+                     (info->savemode == SAVE_MESSAGE) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_PCAP], 0, (info->saveformat == SAVE_PCAP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, (info->saveformat == SAVE_PCAP_RTP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_TXT], 0, (info->saveformat == SAVE_TXT) ? "*" : " ");
@@ -316,6 +324,9 @@ save_handle_key(ui_t *ui, int key)
                     case FLD_SAVE_DISPLAYED:
                         info->savemode = SAVE_DISPLAYED;
                         break;
+                    case FLD_SAVE_MESSAGE:
+                        info->savemode = SAVE_MESSAGE;
+                        break;
                     case FLD_SAVE_PCAP:
                         info->saveformat = SAVE_PCAP;
                         break;
@@ -375,6 +386,17 @@ save_set_group(ui_t *ui, sip_call_group_t *group)
     if (call_group_count(group)) {
         info->savemode = SAVE_SELECTED;
     }
+}
+
+void
+save_set_msg(ui_t *ui, sip_msg_t *msg)
+{
+    // Get panel information
+    save_info_t *info = save_info(ui);
+    info->msg = msg;
+
+    // make 'current SIP message' field visible
+    field_opts_on(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
 }
 
 int
@@ -467,7 +489,15 @@ save_to_file(ui_t *ui)
             break;
     }
 
-    if (info->saveformat == SAVE_TXT) {
+    if (info->savemode == SAVE_MESSAGE) {
+        if (info->saveformat == SAVE_TXT) {
+            // Save selected message to file
+            save_msg_txt(f, info->msg);
+        } else {
+            // Save selected message packet to pcap
+            dump_packet(pd, info->msg->packet);
+        }
+    } else if (info->saveformat == SAVE_TXT) {
         // Save selected packets to file
         while ((call = vector_iterator_next(&calls))) {
             msgs = vector_iterator(call->msgs);
@@ -530,7 +560,11 @@ save_to_file(ui_t *ui)
     }
 
     // Show success popup
-    dialog_run("Successfully saved %d dialogs to %s", vector_iterator_count(&calls), savefile);
+    if (info->savemode == SAVE_MESSAGE) {
+      dialog_run("Successfully saved selected SIP message to %s", savefile);
+    } else {
+      dialog_run("Successfully saved %d dialogs to %s", vector_iterator_count(&calls), savefile);
+    }
 
     return 27;
 }
