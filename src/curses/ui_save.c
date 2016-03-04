@@ -345,7 +345,7 @@ save_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_SAVE_CANCEL) {
-                    return save_to_file(ui);
+                    save_to_file(ui);
                 }
                 ui_destroy(ui);
                 return KEY_HANDLED;
@@ -487,6 +487,8 @@ save_to_file(ui_t *ui)
             calls = sip_calls_iterator();
             vector_iterator_set_filter(&calls, filter_check_call);
             break;
+        default:
+            break;
     }
 
     if (info->savemode == SAVE_MESSAGE) {
@@ -566,7 +568,7 @@ save_to_file(ui_t *ui)
       dialog_run("Successfully saved %d dialogs to %s", vector_iterator_count(&calls), savefile);
     }
 
-    return 27;
+    return 0;
 }
 
 void

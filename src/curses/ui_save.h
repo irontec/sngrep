@@ -199,10 +199,11 @@ save_error_message(ui_t *ui, const char *message);
 /**
  * @brief Save form data to options
  *
- * This function will try to copy the temporal file to
- * another location user entered
+ * Save capture packets to a file based on selected modes on screen
+ * It will display an error or success dialog before exit
  *
  * @param ui UI structure pointer
+ * @returns 1 in case of error, 0 otherwise.
  */
 int
 save_to_file(ui_t *ui);
