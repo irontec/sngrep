@@ -301,8 +301,9 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
 
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
         // Check if packet is TLS
-        if (capture_cfg.keyfile)
+        if (capture_cfg.keyfile) {
             tls_process_segment(pkt, tcp);
+        }
 #endif
 
         // Check if packet is WS or WSS
@@ -567,7 +568,7 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         return pkt;
     } else if (valid == VALIDATE_NOT_SIP) {
         vector_remove(capture_cfg.tcp_reasm, pkt);
-        packet_destroy(pkt);
+        return pkt;
     }
 
     // An incomplete SIP Packet

@@ -106,6 +106,7 @@ enum HandshakeType {
     server_hello_done   = GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
     certificate_verify  = GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
     client_key_exchange = GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
+    new_session_ticket  = GNUTLS_HANDSHAKE_NEW_SESSION_TICKET,
     finished            = GNUTLS_HANDSHAKE_FINISHED
 };
 
@@ -130,8 +131,8 @@ struct Handshake {
 
 //! Handshake random structure
 struct Random {
-    uint32_t gmt_unix_time;
-    opaque random_bytes[28];
+    uint8_t gmt_unix_time[4];
+    uint8_t random_bytes[28];
 };
 
 struct CipherSuite {
@@ -189,6 +190,8 @@ struct SSLConnection {
     int direction;
     //! Data is encrypted flag
     int encrypted;
+    //! TLS version
+    int version;
 
     //! Client IP address
     struct in_addr client_addr;
@@ -244,6 +247,7 @@ int
 P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
        unsigned char *seed, int slen);
 
+
 /**
  * @brief Pseudorandom Function as defined in RFC5246
  *
@@ -259,8 +263,26 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
  * @return destination length in bytes
  */
 int
-PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label,
-    unsigned char *seed, int slen);
+PRF12(unsigned char *dest, int dlen, unsigned char *pre_master_secret,
+        int plen, unsigned char *label, unsigned char *seed, int slen);
+
+/**
+ * @brief Pseudorandom Function as defined in RFC2246
+ *
+ * This function will generate MasterSecret and KeyMaterial data from PreMasterSecret and Seed
+ *
+ * @param dest Destination of PRF function result. Memory must be already allocated
+ * @param dlen Destination length in bytes
+ * @param pre_master_secret PreMasterSecret decrypted from ClientKeyExchange Handhsake record
+ * @param pslen PreMasterSecret length in bytes
+ * @param label Fixed ASCII string
+ * @param seed Concatenation of Random data from Hello Handshake records
+ * @param slen Seed length in bytes
+ * @return destination length in bytes
+ */
+int
+PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret,
+        int plen, unsigned char *label, unsigned char *seed, int slen);
 
 /**
  * @brief Create a new SSLConnection
@@ -366,10 +388,11 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload, const int
  *
  * @param conn Existing connection pointer
  * @param fragment Handshake record data
+ * @param len Decimal length of the fragment
  * @return 0 on valid record processed, 1 otherwise
  */
 int
-tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment);
+tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment, const int len);
 
 /**
  * @brief Process TLS ApplicationData record types
