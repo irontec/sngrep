@@ -205,6 +205,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             }
         } else if (reqresp == SIP_METHOD_INVITE && call->state !=  SIP_CALLSTATE_INCALL) {
             // Call is being setup (after proper authentication)
+            call->invitecseq = msg->cseq;
             call->state = SIP_CALLSTATE_CALLSETUP;
         }
     } else {
