@@ -376,13 +376,23 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     //! Storage for IP frame
     frame_t *frame;
     uint32_t len_data = 0;
+    //! Link + Extra header size
+    int8_t link_hl = capinfo->link_hl;
+
+    // Skip VLAN header if present
+    if (capinfo->link == DLT_EN10MB) {
+        struct ether_header *eth = (struct ether_header *) packet;
+        if (ntohs(eth->ether_type) == ETHERTYPE_8021Q) {
+            link_hl += 4;
+        }
+    }
 
     // Get IP header
-    ip4 = (struct ip *) (packet + capinfo->link_hl);
+    ip4 = (struct ip *) (packet + link_hl);
 
 #ifdef USE_IPV6
     // Get IPv6 header
-    ip6 = (struct ip6_hdr *) (packet + capinfo->link_hl);
+    ip6 = (struct ip6_hdr *) (packet + link_hl);
 #endif
 
     // Get IP version
@@ -423,10 +433,10 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     }
 
     // Fixup VSS trailer in ethernet packets
-    *caplen = capinfo->link_hl + ip_len;
+    *caplen = link_hl + ip_len;
 
     // Remove IP Header length from payload
-    *size = *caplen - capinfo->link_hl - ip_hl;
+    *size = *caplen - link_hl - ip_hl;
 
     // If no fragmentation
     if (ip_frag == 0) {
@@ -463,8 +473,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         // Calculate assembled IP payload data
         it = vector_iterator(pkt->frames);
         while ((frame = vector_iterator_next(&it))) {
-            struct ip *frame_ip = (struct ip *) (frame->data + capinfo->link_hl);
-            len_data += frame->header->caplen - capinfo->link_hl - frame_ip->ip_hl * 4;
+            struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
+            len_data += frame->header->caplen - link_hl - frame_ip->ip_hl * 4;
         }
 
         // Check packet content length
@@ -472,18 +482,18 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             return NULL;
 
         // Initialize memory for the assembly packet
-        memset(packet, 0, capinfo->link_hl + ip_hl + len_data);
+        memset(packet, 0, link_hl + ip_hl + len_data);
 
         it = vector_iterator(pkt->frames);
         while ((frame = vector_iterator_next(&it))) {
             // Get IP header
-            struct ip *frame_ip = (struct ip *) (frame->data + capinfo->link_hl);
-            memcpy(packet + capinfo->link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
-                   frame->data + capinfo->link_hl + frame_ip->ip_hl * 4,
-                   frame->header->caplen - capinfo->link_hl - frame_ip->ip_hl * 4);
+            struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
+            memcpy(packet + link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
+                   frame->data + link_hl + frame_ip->ip_hl * 4,
+                   frame->header->caplen - link_hl - frame_ip->ip_hl * 4);
         }
 
-        *caplen = capinfo->link_hl + ip_hl + len_data;
+        *caplen = link_hl + ip_hl + len_data;
         *size = len_data;
 
         // Return the assembled IP packet
@@ -567,8 +577,11 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         vector_remove(capture_cfg.tcp_reasm, pkt);
         return pkt;
     } else if (valid == VALIDATE_NOT_SIP) {
-        vector_remove(capture_cfg.tcp_reasm, pkt);
-        return pkt;
+        // Not a SIP packet, store until PSH flag
+        if (tcp->th_flags & TH_PUSH) {
+            vector_remove(capture_cfg.tcp_reasm, pkt);
+            return pkt;
+        }
     }
 
     // An incomplete SIP Packet

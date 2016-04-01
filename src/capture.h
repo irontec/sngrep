@@ -75,6 +75,11 @@
 //! Max allowed packet assembled size
 #define MAX_CAPTURE_LEN 20480
 
+//! Define VLAN 802.1Q Ethernet type
+#ifndef ETHERTYPE_8021Q
+#define ETHERTYPE_8021Q 0x8100
+#endif
+
 //! Define Websocket Transport codes
 #define WH_FIN      0x80
 #define WH_RSV      0x70
