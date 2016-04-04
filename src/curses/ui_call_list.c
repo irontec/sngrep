@@ -170,6 +170,11 @@ call_list_resize(ui_t *ui)
 
     // Change the main window size
     wresize(ui->win, maxy, maxx);
+
+    // Store new size
+    ui->width = maxx;
+    ui->height = maxy;
+
     // Calculate available printable area
     wresize(info->list_win, maxy - 5, maxx - 4);
     // Force list redraw
