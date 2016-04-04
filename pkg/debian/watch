@@ -1,0 +1,3 @@
+version=3
+opts="filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/sngrep_$1\.tar\.gz/,pgpsigurlmangle=s/archive\/v(\d\S*)\.tar\.gz/releases\/download\/v$1\/v$1.tar.gz.asc/,uversionmangle=s/\-rc([\d]+)//" \
+  https://github.com/irontec/sngrep/tags .*/v?(\d\S*)\.tar\.gz
