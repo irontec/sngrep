@@ -315,9 +315,9 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
 
     // Get active calls (during conversation)
     calls = sip_calls_iterator();
-    //vector_iterator_set_current(&calls, vector_iterator_count(&calls) - 1);
+    vector_iterator_set_current(&calls, vector_iterator_count(&calls));
 
-    while ((call = vector_iterator_next(&calls))) {
+    while ((call = vector_iterator_prev(&calls))) {
         streams = vector_iterator(call->streams);
         vector_iterator_set_last(&streams);
         while ((stream = vector_iterator_prev(&streams))) {
@@ -361,9 +361,9 @@ rtp_find_stream(address_t src, address_t dst)
 
     // Get active calls (during conversation)
     calls = sip_calls_iterator();
-    //vector_iterator_set_current(&calls, vector_iterator_count(&calls) - 1);
+    vector_iterator_set_current(&calls, vector_iterator_count(&calls));
 
-    while ((call = vector_iterator_next(&calls))) {
+    while ((call = vector_iterator_prev(&calls))) {
         // Check if this call has an RTP stream for current packet data
         if ((stream = rtp_find_call_stream(call, src, dst))) {
             return stream;
