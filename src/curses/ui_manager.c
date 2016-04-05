@@ -182,7 +182,7 @@ ui_find_by_type(enum panel_types type)
 }
 
 int
-wait_for_input()
+ui_wait_for_input()
 {
     ui_t *ui;
     WINDOW *win;
@@ -244,7 +244,7 @@ wait_for_input()
                 ui = ui_find_by_panel(panel_below(NULL));
             } else {
                 // Key not handled by UI nor propagated. Use default handler
-                hld = default_handle_key(ui, c);
+                hld = ui_default_handle_key(ui, c);
             }
         }
         capture_unlock();
@@ -254,7 +254,7 @@ wait_for_input()
 }
 
 int
-default_handle_key(ui_t *ui, int key)
+ui_default_handle_key(ui_t *ui, int key)
 {
     int action = -1;
 
@@ -263,7 +263,7 @@ default_handle_key(ui_t *ui, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_RESIZE_SCREEN:
-                ui_resize_panel(ui);
+                ui_resize_panels();
                 break;
             case ACTION_TOGGLE_SYNTAX:
                 setting_toggle(SETTING_SYNTAX);
@@ -300,6 +300,18 @@ default_handle_key(ui_t *ui, int key)
 
     // Consider the key handled at this point
     return KEY_HANDLED;
+}
+
+void
+ui_resize_panels()
+{
+    PANEL *panel = NULL;
+
+    // While there are still panels
+    while ((panel = panel_below(panel))) {
+        // Invoke resize for this panel
+        ui_resize_panel(ui_find_by_panel(panel));
+    }
 }
 
 void

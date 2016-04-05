@@ -115,7 +115,7 @@ ui_find_by_type(enum panel_types type);
  *
  */
 int
-wait_for_input();
+ui_wait_for_input();
 
 /**
  * @brief Default handler for keys
@@ -127,7 +127,16 @@ wait_for_input();
  * @param key key pressed by user
  */
 int
-default_handle_key(ui_t *ui, int key);
+ui_default_handle_key(ui_t *ui, int key);
+
+/**
+ * @brief Call Resize function in all panels in the stack
+ *
+ * This function acts as handler of screen resize function invoking all
+ * resize functions of panels that implement it.
+ */
+void
+ui_resize_panels();
 
 /**
  * @brief Draw a box around passed windows

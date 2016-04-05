@@ -249,7 +249,7 @@ call_raw_handle_key(ui_t *ui, int key)
             case ACTION_TOGGLE_SYNTAX:
             case ACTION_CYCLE_COLOR:
                 // Handle colors using default handler
-                default_handle_key(ui, key);
+                ui_default_handle_key(ui, key);
                 // Create a new pad (forces messages draw)
                 delwin(info->pad);
                 info->pad = newpad(500, COLS);
