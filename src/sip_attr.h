@@ -32,6 +32,9 @@
 #include "config.h"
 #include "vector.h"
 
+//! Max attribute length
+#define SIP_ATTR_MAXLEN 255
+
 //! Shorter declaration of sip_attr_hdr structure
 typedef struct sip_attr_hdr sip_attr_hdr_t;
 //! Shorter declaration of sip_attr structure

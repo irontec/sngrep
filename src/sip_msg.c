@@ -124,21 +124,21 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             sprintf(value, "%s:%u", msg->packet->dst.ip, msg->packet->dst.port);
             break;
         case SIP_ATTR_METHOD:
-            sprintf(value, "%s", sip_get_msg_reqresp_str(msg));
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, sip_get_msg_reqresp_str(msg));
             break;
         case SIP_ATTR_SIPFROM:
-            sprintf(value, "%s", msg->sip_from);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_from);
             break;
         case SIP_ATTR_SIPTO:
-            sprintf(value, "%s", msg->sip_to);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_to);
             break;
         case SIP_ATTR_SIPFROMUSER:
-            sprintf(value, "%s", msg->sip_from);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_from);
             if ((ar = strchr(value, '@')))
                 *ar = '\0';
             break;
         case SIP_ATTR_SIPTOUSER:
-            sprintf(value, "%s", msg->sip_to);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_to);
             if ((ar = strchr(value, '@')))
                 *ar = '\0';
             break;

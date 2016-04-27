@@ -299,7 +299,7 @@ call_list_draw_list(ui_t *ui)
     int listh, listw, cline = 0;
     struct sip_call *call = NULL;
     int i, collen;
-    char coltext[256];
+    char coltext[SIP_ATTR_MAXLEN];
     int colid;
     int colpos;
     int color;
@@ -471,8 +471,8 @@ const char *
 call_list_line_text(ui_t *ui, sip_call_t *call, char *text)
 {
     int i, collen;
-    char call_attr[256];
-    char coltext[256];
+    char call_attr[SIP_ATTR_MAXLEN];
+    char coltext[SIP_ATTR_MAXLEN];
     int colid;
 
     // Get panel info
