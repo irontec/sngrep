@@ -1,4 +1,13 @@
-2016-03-02 Ivan Alonso <kaina@irontec.com>
+2016-04-28 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.3.1 released
+
+	* Fixed a crash where From or To headers where too long
+	* Improved call list screen resize 
+	* Add support for IEEE 802.1Q Ethernet VLAN headers
+	* Fixed a bug in displayed callstate after failed authentication
+	* Associate RTP stream with the most recent dialog that uses stream rtp ports
+
+2016-03-02 Ivan Alonso <kaian@irontec.com>
     * sngrep 1.3.0 released
 
     * Interface
