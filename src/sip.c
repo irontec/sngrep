@@ -547,12 +547,20 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     if (regexec(&calls.reg_from, (const char *)payload, 4, pmatch, 0) == 0) {
         msg->sip_from = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         strncpy(msg->sip_from, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    } else {
+        // Malformed From Header
+        msg->sip_from = sng_malloc(12);
+        strncpy(msg->sip_from, "<malformed>", 11);
     }
 
     // To
     if (regexec(&calls.reg_to, (const char *)payload, 4, pmatch, 0) == 0) {
         msg->sip_to = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         strncpy(msg->sip_to, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    } else {
+        // Malformed To Header
+        msg->sip_to = sng_malloc(12);
+        strncpy(msg->sip_to, "<malformed>", 11);
     }
 
     return 0;
