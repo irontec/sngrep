@@ -366,7 +366,8 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 break;
             case change_cipher_spec:
                 // From now on, this connection will be encrypted using MasterSecret
-                conn->encrypted = 1;
+                if (conn->client_cipher_ctx.cipher && conn->server_cipher_ctx.cipher)
+                    conn->encrypted = 1;
                 break;
             case application_data:
                 if (conn->encrypted) {
