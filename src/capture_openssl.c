@@ -232,8 +232,10 @@ tls_check_keyfile(const char *keyfile)
 {
     SSL *ssl;
     SSL_CTX *ssl_ctx;
+    char errbuf[1024];
 
     SSL_library_init();
+    SSL_load_error_strings();
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
@@ -243,7 +245,12 @@ tls_check_keyfile(const char *keyfile)
     if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return 0;
 
-    SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_keyfile(), SSL_FILETYPE_PEM);
+    if (!(SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_keyfile(), SSL_FILETYPE_PEM))) {
+        unsigned long n = ERR_get_error();
+        fprintf(stderr, "%s\n", ERR_error_string(n, errbuf));
+        return 0;
+    }
+
     if (!(ssl = SSL_new(ssl_ctx)))
         return 0;
 
