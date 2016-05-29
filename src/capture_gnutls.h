@@ -47,7 +47,7 @@
 #define __SNGREP_CAPTURE_TLS_
 
 #include "config.h"
-#include <gnutls/openssl.h>
+#include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 #include <gnutls/abstract.h>
 #include <gnutls/x509.h>
@@ -202,8 +202,7 @@ struct SSLConnection {
     //! Server port
     uint16_t server_port;
 
-    SSL *ssl;
-    SSL_CTX *ssl_ctx;
+    gnutls_session_t ssl;
     int ciph;
     gnutls_privkey_t server_private_key;
     struct Random client_random;

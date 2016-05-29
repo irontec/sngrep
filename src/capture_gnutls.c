@@ -187,13 +187,9 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     memcpy(&conn->client_port, &cport, sizeof(uint16_t));
     memcpy(&conn->server_port, &sport, sizeof(uint16_t));
 
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
+    gnutls_global_init();
 
-    if (!(conn->ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
-        return NULL;
-
-    if (!(conn->ssl = SSL_new(conn->ssl_ctx)))
+    if (gnutls_init(&conn->ssl, GNUTLS_SERVER) < GNUTLS_E_SUCCESS)
         return NULL;
 
     if (!(keyfp = fopen(capture_keyfile(), "rb")))
@@ -237,8 +233,7 @@ tls_connection_destroy(struct SSLConnection *conn)
     }
 
     // Deallocate connection memory
-    SSL_CTX_free(conn->ssl_ctx);
-    SSL_free(conn->ssl);
+    gnutls_deinit(conn->ssl);
     sng_free(conn);
 }
 
@@ -252,12 +247,13 @@ int
 tls_check_keyfile(const char *keyfile)
 {
     gnutls_x509_privkey_t key;
+    gnutls_privkey_t privkey;
     gnutls_datum_t keycontent = { NULL, 0 };
     FILE *keyfp;
     size_t br;
+    int ret;
 
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
+    gnutls_global_init();
 
     if (access(capture_keyfile(), R_OK) != 0)
         return 0;
@@ -272,10 +268,36 @@ tls_check_keyfile(const char *keyfile)
     br = fread(keycontent.data, 1, keycontent.size, keyfp);
     fclose(keyfp);
 
-    gnutls_x509_privkey_init(&key);
-    if (gnutls_x509_privkey_import(key, &keycontent, GNUTLS_X509_FMT_PEM) < 0)
+    // Check we have read something from keyfile
+    if (!keycontent.data)
         return 0;
+
+    // Initialize keyfile structure
+    ret = gnutls_x509_privkey_init(&key);
+    if (ret < GNUTLS_E_SUCCESS) {
+        fprintf (stderr, "Error initializing keyfile: %s\n", gnutls_strerror(ret));
+        return 0;
+    }
+
+    ret = gnutls_privkey_init(&privkey);
+    if (ret < GNUTLS_E_SUCCESS) {
+        fprintf (stderr, "Error initializing keyfile: %s\n", gnutls_strerror(ret));
+        return 0;
+    }
+
+    // Import RSA keyfile
+    ret = gnutls_x509_privkey_import(key, &keycontent, GNUTLS_X509_FMT_PEM);
+    if (ret < GNUTLS_E_SUCCESS) {
+        fprintf (stderr, "Error loading keyfile: %s\n", gnutls_strerror(ret));
+        return 0;
+    }
     sng_free(keycontent.data);
+
+    ret = gnutls_privkey_import_x509(privkey, key, 0);
+    if (ret < GNUTLS_E_SUCCESS) {
+        fprintf (stderr, "Error loading keyfile: %s\n", gnutls_strerror(ret));
+        return 0;
+    }
 
     return 1;
 }
@@ -393,7 +415,7 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 break;
             case change_cipher_spec:
                 // From now on, this connection will be encrypted using MasterSecret
-                if (conn->client_cipher_ctx.cipher && conn->server_cipher_ctx.cipher)
+                if (conn->client_cipher_ctx && conn->server_cipher_ctx)
                     conn->encrypted = 1;
                 break;
             case application_data:
@@ -488,6 +510,9 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 tls_debug_print_hex("exchange keys",exkeys.data, exkeys.size);
 
                 gnutls_privkey_decrypt_data(conn->server_private_key, 0, &exkeys, &pms);
+                if (!pms.data) break;
+
+
                 memcpy(&conn->pre_master_secret, pms.data, pms.size);
                 tls_debug_print_hex("pre_master_secret", pms.data, pms.size);
                 tls_debug_print_hex("client_random", &conn->client_random, 32);
