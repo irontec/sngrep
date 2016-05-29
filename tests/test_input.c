@@ -32,7 +32,7 @@
 #include <sys/wait.h>
 
 #ifndef TEST_MAX_DURATION
-#define TEST_MAX_DURATION 5
+#define TEST_MAX_DURATION 60
 #endif
 
 #ifndef TEST_INITIAL_WAIT
