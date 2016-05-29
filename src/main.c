@@ -73,6 +73,7 @@ usage()
            "    -N --no-interface\t Don't display sngrep interface, just capture\n"
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
            "    -D --dump-config\t Print active configuration settings and exit\n"
+           "    -R --rotate\t Rotate calls when capture limit have been reached.\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
@@ -128,7 +129,7 @@ main(int argc, char* argv[])
     const char *keyfile;
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
-    int no_interface = 0, quiet = 0, rtp_capture = 0;
+    int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0;
     vector_t *infiles = vector_create(0, 1);
 
     // Program otptions
@@ -148,6 +149,7 @@ main(int argc, char* argv[])
         { "invert", no_argument, 0, 'v' },
         { "no-interface", no_argument, 0, 'N' },
         { "dump-config", no_argument, 0, 'D' },
+        { "rotate", no_argument, 0, 'R' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -166,10 +168,11 @@ main(int argc, char* argv[])
     only_calls = setting_enabled(SETTING_SIP_CALLS);
     no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
     rtp_capture = setting_enabled(SETTING_CAPTURE_RTP);
+    rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:";
+    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:R";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -226,6 +229,10 @@ main(int argc, char* argv[])
                 key_bindings_dump();
                 settings_dump();
                 return 0;
+            case 'R':
+                rotate = 1;
+                setting_set_value(SETTING_CAPTURE_ROTATE, SETTING_ON);
+                break;
                 // Dark options for dummy ones
             case 'p':
             case 't':
@@ -282,7 +289,7 @@ main(int argc, char* argv[])
     sip_init(limit, only_calls, no_incomplete);
 
     // Set capture options
-    capture_init(limit, rtp_capture);
+    capture_init(limit, rtp_capture, rotate);
 
 #ifdef USE_EEP
     // Initialize EEP if enabled

@@ -54,10 +54,11 @@ capture_config_t capture_cfg =
 { 0 };
 
 void
-capture_init(size_t limit, bool rtp_capture)
+capture_init(size_t limit, bool rtp_capture, bool rotate)
 {
     capture_cfg.limit = limit;
     capture_cfg.rtp_capture = rtp_capture;
+    capture_cfg.rotate = rotate;
     capture_cfg.sources = vector_create(1, 1);
     capture_cfg.tcp_reasm = vector_create(0, 10);
     capture_cfg.ip_reasm = vector_create(0, 10);
@@ -236,8 +237,12 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Check if we have reached capture limit
-    if (capture_cfg.limit && sip_calls_count() >= capture_cfg.limit)
-        return;
+    if (capture_cfg.limit && sip_calls_count() >= capture_cfg.limit) {
+        // If capture rotation is disabled, just skip this packet
+        if (!capture_cfg.rotate) {
+            return;
+        }
+    }
 
     // Check maximum capture length
     if (header->caplen > MAX_CAPTURE_LEN)

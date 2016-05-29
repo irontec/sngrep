@@ -146,6 +146,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.limit = limit;
     calls.only_calls = only_calls;
     calls.ignore_incomplete = no_incomplete;
+    calls.last_index = 0;
 
     // Create a vector to store calls
     calls.list = vector_create(200, 50);
@@ -337,6 +338,10 @@ sip_check_packet(packet_t *packet)
         // Get the Call-ID of this message
         sip_get_xcallid((const char*) payload, xcallid);
 
+        // Rotate call list if limit has been reached
+        if (calls.limit == sip_calls_count())
+            sip_calls_rotate();
+
         // Create the call if not found
         if (!(call = call_create(callid, xcallid)))
             goto skip_message;
@@ -347,7 +352,7 @@ sip_check_packet(packet_t *packet)
         hsearch(entry, ENTER);
 
         // Set call index
-        call->index = vector_count(calls.list) + 1;
+        call->index = ++calls.last_index;
 
         // Mark this as a new call
         newcall = true;
@@ -376,11 +381,11 @@ sip_check_packet(packet_t *packet)
         call_update_state(call, msg);
         // Check if this call should be in active call list
         if (call_is_active(call)) {
-            if (vector_index(calls.active, call) == -1) {
+            if (sip_call_is_active(call)) {
                 vector_append(calls.active, call);
             }
         } else {
-            if (vector_index(calls.active, call) != -1) {
+            if (sip_call_is_active(call)) {
                 vector_remove(calls.active, call);
             }
         }
@@ -428,6 +433,12 @@ vector_iter_t
 sip_active_calls_iterator()
 {
     return vector_iterator(calls.active);
+}
+
+bool
+sip_call_is_active(sip_call_t *call)
+{
+    return vector_index(calls.active, call) != -1;
 }
 
 vector_t *
@@ -649,6 +660,16 @@ sip_calls_clear()
     // Remove all items from vector
     vector_clear(calls.list);
     vector_clear(calls.active);
+}
+
+void
+sip_calls_rotate()
+{
+    // Remove first call from active and call lists
+    sip_call_t *call = vector_first(calls.list);
+    if (sip_call_is_active(call))
+        vector_remove(calls.active, call);
+    vector_remove(calls.list, call);
 }
 
 int

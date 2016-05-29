@@ -122,6 +122,8 @@ struct sip_call_list {
     bool changed;
     //! Sort call list following this options
     sip_sort_t sort;
+    //! Last created id
+    int last_index;
 
     // Max call limit
     int limit;
@@ -262,6 +264,15 @@ vector_iter_t
 sip_active_calls_iterator();
 
 /**
+ * @brief Return if a call is in active's call vector
+ *
+ * @param call Call to be searched
+ * @return TRUE if call is active, FALSE otherwise
+ */
+bool
+sip_call_is_active(sip_call_t *call);
+
+/**
  * @brief Return the call list
  */
 vector_t *
@@ -303,6 +314,15 @@ sip_find_by_callid(const char *callid);
  */
 void
 sip_calls_clear();
+
+/**
+ * @brief Remove first call in the call list
+ *
+ * This function removes the first call in the calls vector avoiding
+ * reaching the capture limit.
+ */
+void
+sip_calls_rotate();
 
 /**
  * @brief Get message Request/Response code

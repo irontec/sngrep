@@ -119,6 +119,8 @@ struct capture_config {
     size_t limit;
     //! Also capture RTP packets
     bool rtp_capture;
+    //! Rotate capturad dialogs when limit have reached
+    bool rotate;
     //! Where should we store captured packets
     enum capture_storage storage;
     //! Key file for TLS decrypt
@@ -165,9 +167,10 @@ struct capture_info
  *
  * @param limit Numbers of calls >0
  * @param rtp_catpure Enable rtp capture
+ * @param rotate Enable capture rotation
  */
 void
-capture_init(size_t limit, bool rtp_capture);
+capture_init(size_t limit, bool rtp_capture, bool rotate);
 
 /**
  * @brief Deinitialize capture data
