@@ -193,10 +193,13 @@ main(int argc, char* argv[])
                     return 0;
                 }
                 break;
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
             case 'k':
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
                 keyfile = optarg;
                 break;
+#else
+                fprintf(stderr, "sngrep is not compiled with SSL support.");
+                exit(1);
 #endif
             case 'c':
                 only_calls = 1;
@@ -228,13 +231,21 @@ main(int argc, char* argv[])
             case 't':
             case 'W':
                 break;
-#ifdef USE_EEP
             case 'L':
+#ifdef USE_EEP
                 capture_eep_set_server_url(optarg);
                 break;
+#else
+                fprintf(stderr, "sngrep is not compiled with HEP/EEP support.");
+                exit(1);
+#endif
             case 'H':
+#ifdef USE_EEP
                 capture_eep_set_client_url(optarg);
                 break;
+#else
+                fprintf(stderr, "sngrep is not compiled with HEP/EEP support.");
+                exit(1);
 #endif
             case '?':
                 if (strchr(options, optopt)) {
