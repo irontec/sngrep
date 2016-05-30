@@ -73,7 +73,7 @@ usage()
            "    -N --no-interface\t Don't display sngrep interface, just capture\n"
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
            "    -D --dump-config\t Print active configuration settings and exit\n"
-           "    -R --rotate\t Rotate calls when capture limit have been reached.\n"
+           "    -R --rotate\t\t Rotate calls when capture limit have been reached.\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
