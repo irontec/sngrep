@@ -201,6 +201,10 @@ vector_remove(vector_t *vector, void *item)
 {
     // Get item position
     int idx = vector_index(vector, item);
+    // Not found in the vector
+    if (idx == -1)
+        return;
+
     // Decrease item counter
     vector->count--;
     // Move the rest of the elements one position up

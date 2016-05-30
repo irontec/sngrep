@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#include <search.h>
 #include <stdarg.h>
 #include "sip.h"
 #include "option.h"
@@ -155,7 +154,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.active = vector_create(10, 10);
 
     // Create hash table for callid search
-    hcreate(calls.limit);
+    calls.callids = htable_create(calls.limit);
 
     // By default sort by call index ascending
     calls.sort.by = SIP_ATTR_CALLINDEX;
@@ -182,7 +181,7 @@ sip_deinit()
     // Remove all calls
     sip_calls_clear();
     // Remove Call-id hash table
-    hdestroy();
+    htable_destroy(calls.callids);
     // Remove calls vector
     vector_destroy(calls.list);
     vector_destroy(calls.active);
@@ -278,7 +277,6 @@ sip_validate_packet(packet_t *packet)
 sip_msg_t *
 sip_check_packet(packet_t *packet)
 {
-    ENTRY entry;
     sip_msg_t *msg;
     sip_call_t *call;
     char callid[1024], xcallid[1024];
@@ -346,10 +344,8 @@ sip_check_packet(packet_t *packet)
         if (!(call = call_create(callid, xcallid)))
             goto skip_message;
 
-        // Store this call in hash table
-        entry.key = (char *) call->callid;
-        entry.data = (void *) call;
-        hsearch(entry, ENTER);
+        // Add this Call-Id to hash table
+        htable_insert(calls.callids, call->callid, call);
 
         // Set call index
         call->index = ++calls.last_index;
@@ -470,13 +466,7 @@ sip_find_by_index(int index)
 sip_call_t *
 sip_find_by_callid(const char *callid)
 {
-    ENTRY entry, *eptr;
-
-    entry.key = (char *) callid;
-    if ((eptr = hsearch(entry, FIND)))
-        return eptr->data;
-
-    return NULL;
+    return htable_find(calls.callids, callid);
 }
 
 int
@@ -655,8 +645,8 @@ void
 sip_calls_clear()
 {
     // Create again the callid hash table
-    hdestroy();
-    hcreate(calls.limit);
+    htable_destroy(calls.callids);
+    calls.callids = htable_create(calls.limit);
     // Remove all items from vector
     vector_clear(calls.list);
     vector_clear(calls.active);
@@ -665,11 +655,14 @@ sip_calls_clear()
 void
 sip_calls_rotate()
 {
-    // Remove first call from active and call lists
     sip_call_t *call = vector_first(calls.list);
-    if (sip_call_is_active(call))
-        vector_remove(calls.active, call);
+
+    // Remove from callids hash
+    htable_remove(calls.callids, call->callid);
+    // Remove first call from active and call lists
+    vector_remove(calls.active, call);
     vector_remove(calls.list, call);
+
 }
 
 int
