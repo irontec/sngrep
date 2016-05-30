@@ -67,7 +67,7 @@ capture_eep_init()
         eep_cfg.capt_host = setting_get_value(SETTING_EEP_SEND_ADDR);
         eep_cfg.capt_port = setting_get_value(SETTING_EEP_SEND_PORT);
         eep_cfg.capt_password = setting_get_value(SETTING_EEP_SEND_PASS);
-        eep_cfg.capt_id = 2002;
+        eep_cfg.capt_id = setting_get_intvalue(SETTING_EEP_SEND_ID);;
 
         hints->ai_flags = AI_NUMERICSERV;
         hints->ai_family = AF_UNSPEC;
