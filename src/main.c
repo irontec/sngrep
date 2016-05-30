@@ -73,6 +73,7 @@ usage()
            "    -N --no-interface\t Don't display sngrep interface, just capture\n"
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
            "    -D --dump-config\t Print active configuration settings and exit\n"
+           "    -f --config\t\t Read configuration from file\n"
            "    -R --rotate\t\t Rotate calls when capture limit have been reached.\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
@@ -150,6 +151,7 @@ main(int argc, char* argv[])
         { "no-interface", no_argument, 0, 'N' },
         { "dump-config", no_argument, 0, 'D' },
         { "rotate", no_argument, 0, 'R' },
+        { "config", required_argument, 0, 'f' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -172,7 +174,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:R";
+    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:Rf:";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -229,6 +231,9 @@ main(int argc, char* argv[])
                 key_bindings_dump();
                 settings_dump();
                 return 0;
+            case 'f':
+                read_options(optarg);
+                break;
             case 'R':
                 rotate = 1;
                 setting_set_value(SETTING_CAPTURE_ROTATE, SETTING_ON);
