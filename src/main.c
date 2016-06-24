@@ -133,7 +133,7 @@ main(int argc, char* argv[])
     int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0;
     vector_t *infiles = vector_create(0, 1);
 
-    // Program otptions
+    // Program options
     static struct option long_options[] = {
         { "help", no_argument, 0, 'h' },
         { "version", no_argument, 0, 'V' },
