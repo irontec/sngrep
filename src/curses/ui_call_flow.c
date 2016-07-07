@@ -571,7 +571,14 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     if (info->arrowtime) {
         if (arrow == call_flow_arrow_selected(ui))
             wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-        mvwprintw(flow_win, cline, 2, "%s", msg_time);
+
+        if (arrow == vector_item(info->darrows, info->cur_arrow)) {
+            wattron(flow_win, A_BOLD);
+            mvwprintw(flow_win, cline, 2, "%s", msg_time);
+            wattroff(flow_win, A_BOLD);
+        } else {
+            mvwprintw(flow_win, cline, 2, "%s", msg_time);
+        }
 
         // Print delta from selected message
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
@@ -750,7 +757,14 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     // Print timestamp
     if (info->arrowtime) {
         timeval_to_time(stream->time, time);
-        mvwprintw(win, cline, 2, "%s", time);
+        if (arrow == vector_item(info->darrows, info->cur_arrow)) {
+            wattron(win, A_BOLD);
+            mvwprintw(win, cline, 2, "%s", time);
+            wattroff(win, A_BOLD);
+        } else {
+            mvwprintw(win, cline, 2, "%s", time);
+        }
+
     }
 
     return arrow->height;
