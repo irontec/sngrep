@@ -191,7 +191,7 @@ int
 setting_has_value(int id, const char *value)
 {
     setting_t *sett = setting_by_id(id);
-    if (sett && sett->value) {
+    if (sett) {
         return !strcmp(sett->value, value);
     }
 
