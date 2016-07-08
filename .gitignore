@@ -30,3 +30,7 @@ test-driver
 
 # Ignore Doxygen generated files
 doc/html
+
+# Tags file
+tags
+TAGS
