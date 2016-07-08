@@ -30,3 +30,11 @@ test-driver
 
 # Ignore Doxygen generated files
 doc/html
+
+# Tags file
+tags
+TAGS
+
+# Vim swap files
+.*.swp
+.*.swo
