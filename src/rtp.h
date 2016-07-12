@@ -44,6 +44,12 @@
 // Handled RTP versions
 #define RTP_VERSION_RFC1889 2
 
+// RTP header length
+#define RTP_HDR_LENGTH 12
+
+// RTCP common header length
+#define RTCP_HDR_LENGTH 4
+
 // RTCP header types
 //! http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml
 enum rtcp_header_types
@@ -311,5 +317,21 @@ stream_is_older(rtp_stream_t *one, rtp_stream_t *two);
 
 int
 stream_is_complete(rtp_stream_t *stream);
+
+/**
+ * @brief Check if the data is a RTP packet
+ * RFC 5761 Section 4.  Distinguishable RTP and RTCP Packets
+ * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
+ */
+int
+data_is_rtp(u_char *data, uint32_t len);
+
+/**
+ * @brief Check if the data is a RTCP packet
+ * RFC 5761 Section 4.  Distinguishable RTP and RTCP Packets
+ * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
+ */
+int
+data_is_rtcp(u_char *data, uint32_t len);
 
 #endif /* __SNGREP_RTP_H */
