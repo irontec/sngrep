@@ -613,7 +613,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     char text[50], time[20];
     int height, width;
     const char *callid;
-    address_t msg_src, msg_dst, stream_src, stream_dst;
+    address_t msg_src, msg_dst, src, dst;
     call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->item;
     int arrow_dir = CF_ARROW_RIGHT;
@@ -641,37 +641,19 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     callid = stream->media->msg->call->callid;
     msg_src = stream->media->msg->packet->src;
     msg_dst = stream->media->msg->packet->dst;
-    stream_src = stream->src;
-    stream_src.port = 0;
-    stream_dst = stream->dst;
-    stream_dst.port = 0;
 
-    // Get origin column for this stream.
-    // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->src.ip, msg_src.ip)) {
-        column1 = call_flow_column_get(ui, callid, msg_src);
-    } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
-        column1 = call_flow_column_get(ui, callid, msg_dst);
-    } else {
-        column1 = call_flow_column_get(ui, 0, stream_src);
-    }
+    // Get call inititator source and destination address
+    src = stream->media->msg->call->cstart_msg->packet->src;
+    dst = stream->media->msg->call->cstart_msg->packet->dst;
 
-    // Get destination column for this stream.
-    // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->dst.ip, msg_dst.ip)) {
-        column2 = call_flow_column_get(ui, callid, msg_dst);
-    } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
-        column2 = call_flow_column_get(ui, callid, msg_src);
-    } else {
-        column2 = call_flow_column_get(ui, 0, stream_dst);
-    }
+    column1 = call_flow_column_get(ui, callid, src);
+    column2 = call_flow_column_get(ui, callid, dst);
 
-    call_flow_column_t *tmp;
-    if (column1->colpos > column2->colpos) {
-        tmp = column1;
-        column1 = column2;
-        column2 = tmp;
+    // Check if media description for this stream came from call inititator
+    if (!strcmp(msg_src.ip, src.ip) && msg_src.port == src.port) {
         arrow_dir = CF_ARROW_LEFT;
+    } else {
+        arrow_dir = CF_ARROW_RIGHT;
     }
 
     int startpos = 20 + 30 * column1->colpos;
@@ -691,13 +673,6 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         startpos -= 2;
         endpos += 2;
         distance = 1;
-
-        // Fix arrow direction based on ports
-        if (stream->src.port < stream->dst.port) {
-            arrow_dir = CF_ARROW_RIGHT;
-        } else {
-            arrow_dir = CF_ARROW_LEFT;
-        }
     }
 
     // Highlight current message
