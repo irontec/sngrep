@@ -176,16 +176,7 @@ rtp_check_packet(packet_t *packet)
     src = packet->src;
     dst = packet->dst;
 
-    // Check if we have at least RTP type
-    if ((int32_t) size < 2)
-        return NULL;
-
-    // Check RTP version
-    if (RTP_VERSION(*payload) != RTP_VERSION_RFC1889)
-        return NULL;
-
-    // RTP: even, RTCP: odd
-    if (((packet->dst.port % 2) == 0)) {
+    if (data_is_rtp(payload, size) == 0) {
 
         // Get RTP payload type
         format = RTP_PAYLOAD_TYPE(*(payload + 1));
@@ -221,7 +212,7 @@ rtp_check_packet(packet_t *packet)
 
         // Add packet to stream
         stream_add_packet(stream, packet);
-    } else {
+    } else if (data_is_rtcp(payload, size) == 0) {
         // Find the matching stream
         if ((stream = rtp_find_stream(src, dst))) {
 
@@ -294,6 +285,8 @@ rtp_check_packet(packet_t *packet)
             stream_complete(stream, src);
             stream_add_packet(stream, packet);
         }
+    } else {
+      return NULL;
     }
 
     return stream;
@@ -427,4 +420,36 @@ int
 stream_is_complete(rtp_stream_t *stream)
 {
     return (stream->pktcnt != 0);
+}
+
+int
+data_is_rtp(u_char *data, uint32_t len)
+{
+    u_char pt = RTP_PAYLOAD_TYPE(*(data + 1));
+
+    if ((len >= RTP_HDR_LENGTH) &&
+        (RTP_VERSION(*data) == RTP_VERSION_RFC1889) &&
+        (data[0] > 127 && data[0] < 192) &&
+        (pt <= 64 || pt >= 96)) {
+        return 0;
+    }
+
+    // Not a RTP packet
+    return 1;
+}
+
+int
+data_is_rtcp(u_char *data, uint32_t len)
+{
+    struct rtcp_hdr_generic *hdr = (struct rtcp_hdr_generic*) data;
+
+    if ((len >= RTCP_HDR_LENGTH) &&
+        (RTP_VERSION(*data) == RTP_VERSION_RFC1889) &&
+        (data[0] > 127 && data[0] < 192) &&
+        (hdr->type >= 192 && hdr->type <= 223)) {
+        return 0;
+    }
+
+    // Not a RTCP packet
+    return 1;
 }
