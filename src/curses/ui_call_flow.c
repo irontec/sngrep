@@ -406,12 +406,10 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     char delta[15] = { };
     int flowh, floww;
     char mediastr[40];
-    call_flow_column_t *column1, *column2;
     sip_msg_t *msg = arrow->item;
     vector_iter_t medias;
     int color = 0;
     int msglen;
-    int arrow_dir = CF_ARROW_RIGHT;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -472,19 +470,20 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     msglen = (strlen(method) > 24) ? 24 : strlen(method);
 
     // Get origin and destination column
-    column1 = call_flow_column_get(ui, callid, src);
-    column2 = call_flow_column_get(ui, callid, dst);
+    arrow->scolumn = call_flow_column_get(ui, callid, src);
+    arrow->dcolumn = call_flow_column_get(ui, callid, dst);
 
-    call_flow_column_t *tmp;
-    if (column1->colpos > column2->colpos) {
-        tmp = column1;
-        column1 = column2;
-        column2 = tmp;
+    // Determine start and end position of the arrow line
+    int arrow_dir, startpos, endpos;
+    if (arrow->scolumn->colpos < arrow->dcolumn->colpos) {
+        arrow_dir = CF_ARROW_RIGHT;
+        startpos = 20 + 30 * arrow->scolumn->colpos;
+        endpos = 20 + 30 * arrow->dcolumn->colpos;
+    } else {
         arrow_dir = CF_ARROW_LEFT;
+        startpos = 20 + 30 * arrow->dcolumn->colpos;
+        endpos = 20 + 30 * arrow->scolumn->colpos;
     }
-
-    int startpos = 20 + 30 * column1->colpos;
-    int endpos = 20 + 30 * column2->colpos;
     int distance = abs(endpos - startpos) - 3;
 
     // Highlight current message
@@ -613,10 +612,11 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     char text[50], time[20];
     int height, width;
     const char *callid;
-    address_t msg_src, msg_dst, stream_src, stream_dst;
-    call_flow_column_t *column1, *column2;
     rtp_stream_t *stream = arrow->item;
-    int arrow_dir = CF_ARROW_RIGHT;
+    sip_msg_t *msg;
+    sip_call_t *call;
+    call_flow_arrow_t *msgarrow;
+    address_t addr;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -634,48 +634,71 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     if (cline > height + arrow->height)
         return 0;
 
-    // Get Message method (include extra info)
+    // Get arrow text
     sprintf(text, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
 
     // Get message data
-    callid = stream->media->msg->call->callid;
-    msg_src = stream->media->msg->packet->src;
-    msg_dst = stream->media->msg->packet->dst;
-    stream_src = stream->src;
-    stream_src.port = 0;
-    stream_dst = stream->dst;
-    stream_dst.port = 0;
+    call = stream->media->msg->call;
+    callid = call->callid;
 
-    // Get origin column for this stream.
-    // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->src.ip, msg_src.ip)) {
-        column1 = call_flow_column_get(ui, callid, msg_src);
-    } else if (!strcmp(stream->src.ip, msg_dst.ip)) {
-        column1 = call_flow_column_get(ui, callid, msg_dst);
-    } else {
-        column1 = call_flow_column_get(ui, 0, stream_src);
+    /**
+     * This logic will try to use the same columns for the stream representation
+     * that are used in the SIP messages that configured the streams in their SDP
+     * if they share the same IP addresses.
+     */
+    // Message with Stream destination configured in SDP content
+    msg = stream->media->msg;
+
+    // If message and stream share the same IP address
+    if (address_equals(msg->packet->src, stream->dst)) {
+        // Reuse the msg arrow columns as destination column
+        if ((msgarrow = call_flow_arrow_find(ui, msg))) {
+            arrow->dcolumn = msgarrow->scolumn;
+        }
     }
 
-    // Get destination column for this stream.
-    // If we share the same Address from its setup SIP packet, use that column instead.
-    if (!strcmp(stream->dst.ip, msg_dst.ip)) {
-        column2 = call_flow_column_get(ui, callid, msg_dst);
-    } else if (!strcmp(stream->dst.ip, msg_src.ip)) {
-        column2 = call_flow_column_get(ui, callid, msg_src);
-    } else {
-        column2 = call_flow_column_get(ui, 0, stream_dst);
+    // fallback: Just use any column that have the destination IP printed
+    if (!arrow->dcolumn) {
+        // FIXME figure a better way to find ignoring port :(
+        addr = stream->dst; addr.port = 0;
+        arrow->dcolumn = call_flow_column_get(ui, 0, addr);
     }
 
-    call_flow_column_t *tmp;
-    if (column1->colpos > column2->colpos) {
-        tmp = column1;
-        column1 = column2;
-        column2 = tmp;
+    /**
+     * For source address of the stream, first try to find a message that have
+     * the stream source configured in their SDP as destination and then apply
+     * the same previous logic address: if IP address matches, reuse message
+     * column, othwerise any column with the source IP will be used.
+     */
+    // Message with Stream source configured in SDP content
+    msg = call_msg_with_media(call, stream->src);
+
+    // Try to find a message with configured SDP matching the source of this stream
+    if (msg && address_equals(msg->packet->src, stream->src)) {
+        // Reuse the msg arrow columns as destination column
+        if ((msgarrow = call_flow_arrow_find(ui, msg))) {
+            arrow->scolumn = msgarrow->scolumn;
+        }
+    }
+
+    // fallback: Just use any column that have the soruce IP printed
+    if (!arrow->scolumn) {
+        // FIXME figure a better way to find ignoring port :(
+        addr = stream->src; addr.port = 0;
+        arrow->scolumn = call_flow_column_get(ui, 0, addr);
+    }
+
+    // Determine start and end position of the arrow line
+    int arrow_dir, startpos, endpos;
+    if (arrow->scolumn->colpos < arrow->dcolumn->colpos) {
+        arrow_dir = CF_ARROW_RIGHT;
+        startpos = 20 + 30 * arrow->scolumn->colpos;
+        endpos = 20 + 30 * arrow->dcolumn->colpos;
+    } else {
         arrow_dir = CF_ARROW_LEFT;
+        startpos = 20 + 30 * arrow->dcolumn->colpos;
+        endpos = 20 + 30 * arrow->scolumn->colpos;
     }
-
-    int startpos = 20 + 30 * column1->colpos;
-    int endpos = 20 + 30 * column2->colpos;
     int distance = 0;
 
     if (startpos != endpos) {

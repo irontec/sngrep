@@ -203,6 +203,16 @@ int
 call_msg_is_retrans(sip_msg_t *msg);
 
 /**
+ * @brief Find a message in the call with SDP with the given address
+ *
+ * @param call SIP call structure
+ * @param dst address:port structure to be searched
+ * @return the message found or NULL
+ */
+sip_msg_t *
+call_msg_with_media(sip_call_t *call, address_t dst);
+
+/**
  * @brief Update Call State attribute with its last parsed message
  *
  * @param call Call structure to be updated

@@ -100,6 +100,10 @@ struct call_flow_arrow {
     int height;
     //! Line of flow window this line starts
     int line;
+    //! Source column for this arrow
+    call_flow_column_t *scolumn;
+    //! Destination column for this arrow
+    call_flow_column_t *dcolumn;
 };
 
 /**

@@ -167,6 +167,28 @@ call_msg_is_retrans(sip_msg_t *msg)
     return (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev)));
 }
 
+sip_msg_t *
+call_msg_with_media(sip_call_t *call, address_t dst)
+{
+    sip_msg_t *msg;
+    sdp_media_t *media;
+    vector_iter_t itmsg;
+    vector_iter_t itmedia;
+
+
+    // Get message with media address configured in given dst
+    itmsg = vector_iterator(call->msgs);
+    while ((msg = vector_iterator_next(&itmsg))) {
+        itmedia = vector_iterator(msg->medias);
+        while ((media = vector_iterator_next(&itmedia))) {
+            if (addressport_equals(dst, media->address)) {
+                return msg;
+            }
+        }
+    }
+
+    return NULL;
+}
 
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
