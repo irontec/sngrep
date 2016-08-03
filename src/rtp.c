@@ -201,6 +201,13 @@ rtp_check_packet(packet_t *packet)
         if (!(stream_is_complete(stream))) {
             stream_complete(stream, src);
             stream_set_format(stream, format);
+            // Check if an stream in the opposite direction exists
+            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->dst, stream->src))) {
+                reverse = stream_create(stream->media, stream->src, PACKET_RTP);
+                stream_complete(reverse, stream->dst);
+                stream_set_format(reverse, format);
+                call_add_stream(msg_get_call(stream->media->msg), reverse);
+            }
         }
 
         // Add packet to stream
