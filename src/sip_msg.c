@@ -45,7 +45,9 @@ void
 msg_destroy(sip_msg_t *msg)
 {
     // Free message SDP media
-    vector_destroy(msg->medias);
+    if (!msg->retrans)
+        vector_destroy(msg->medias);
+
     // Free message packets
     packet_destroy(msg->packet);
     // Free all memory

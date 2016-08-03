@@ -68,6 +68,8 @@ struct sip_msg {
     uint32_t index;
     //! Message owner
     struct sip_call *call;
+    //! Message is a retransmission from other message
+    sip_msg_t *retrans;
 };
 
 

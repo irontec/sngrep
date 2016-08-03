@@ -544,13 +544,13 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     // Write the arrow at the end of the message (two arros if this is a retrans)
     if (arrow_dir == CF_ARROW_RIGHT) {
         mvwaddch(flow_win, cline, endpos - 2, '>');
-        if (call_msg_is_retrans(msg)) {
+        if (msg->retrans) {
             mvwaddch(flow_win, cline, endpos - 3, '>');
             mvwaddch(flow_win, cline, endpos - 4, '>');
         }
     } else {
         mvwaddch(flow_win, cline, startpos + 2, '<');
-        if (call_msg_is_retrans(msg)) {
+        if (msg->retrans) {
             mvwaddch(flow_win, cline, startpos + 3, '<');
             mvwaddch(flow_win, cline, startpos + 4, '<');
         }

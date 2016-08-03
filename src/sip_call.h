@@ -197,10 +197,9 @@ call_is_invite(sip_call_t *call);
  * in the dialog, to check if it has the same content.
  *
  * @param msg SIP message that will be checked
- * @return 1 if the previous message is equal to msg, 0 otherwise
  */
-int
-call_msg_is_retrans(sip_msg_t *msg);
+void
+call_msg_retrans_check(sip_msg_t *msg);
 
 /**
  * @brief Find a message in the call with SDP with the given address

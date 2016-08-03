@@ -149,8 +149,8 @@ call_is_invite(sip_call_t *call)
     return 0;
 }
 
-int
-call_msg_is_retrans(sip_msg_t *msg)
+void
+call_msg_retrans_check(sip_msg_t *msg)
 {
     sip_msg_t *prev = NULL;
     vector_iter_t it;
@@ -164,7 +164,10 @@ call_msg_is_retrans(sip_msg_t *msg)
             break;
     }
 
-    return (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev)));
+    // Store the flag that determines if message is retrans
+    if (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
+        msg->retrans = prev;
+    }
 }
 
 sip_msg_t *
@@ -174,7 +177,6 @@ call_msg_with_media(sip_call_t *call, address_t dst)
     sdp_media_t *media;
     vector_iter_t itmsg;
     vector_iter_t itmedia;
-
 
     // Get message with media address configured in given dst
     itmsg = vector_iterator(call->msgs);

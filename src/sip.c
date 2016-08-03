@@ -370,6 +370,9 @@ sip_check_packet(packet_t *packet)
     // Add the message to the call
     call_add_message(call, msg);
 
+    // check if message is a retransmission
+    call_msg_retrans_check(msg);
+
     if (call_is_invite(call)) {
         // Parse media data
         sip_parse_msg_media(msg, payload);
@@ -591,8 +594,11 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     char *payload2, *tofree, *line;
     sip_call_t *call = msg_get_call(msg);
 
-    if (call_msg_is_retrans(msg)) {
-      return;
+    // If message is retrans, there's no need to parse the payload again
+    if (msg->retrans) {
+        // Use the media vector from the original message
+        msg->medias = msg->retrans->medias;
+        return;
     }
 
     // Parse each line of payload looking for sdp information
