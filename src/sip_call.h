@@ -70,6 +70,8 @@ struct sip_call {
     int state;
     //! Changed flag. For interface optimal updates
     bool changed;
+    //! Locked flag. Calls locked are never deleted
+    bool locked;
     //! List of calls with with this call as X-Call-Id
     vector_t *xcalls;
     //! Cseq from invite startint the call

@@ -684,14 +684,18 @@ sip_calls_clear()
 void
 sip_calls_rotate()
 {
-    sip_call_t *call = vector_first(calls.list);
-
-    // Remove from callids hash
-    htable_remove(calls.callids, call->callid);
-    // Remove first call from active and call lists
-    vector_remove(calls.active, call);
-    vector_remove(calls.list, call);
-
+    sip_call_t *call;
+    vector_iter_t it = vector_iterator(calls.list);
+    while ((call = vector_iterator_next(&it))) {
+        if (!call->locked) {
+            // Remove from callids hash
+            htable_remove(calls.callids, call->callid);
+            // Remove first call from active and call lists
+            vector_remove(calls.active, call);
+            vector_remove(calls.list, call);
+            return;
+        }
+    }
 }
 
 int

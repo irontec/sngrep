@@ -44,6 +44,11 @@ call_group_create()
 void
 call_group_destroy(sip_call_group_t *group)
 {
+    // Remove all calls of the group
+    sip_call_t *call;
+    while ((call = vector_first(group->calls))) {
+        call_group_del(group, call);
+    }
     vector_destroy(group->calls);
     sng_free(group);
 }
@@ -92,6 +97,7 @@ void
 call_group_add(sip_call_group_t *group, sip_call_t *call)
 {
     if (!call_group_exists(group, call)) {
+        call->locked = true;
         vector_append(group->calls, call);
     }
 }
@@ -104,6 +110,7 @@ call_group_add_calls(sip_call_group_t *group, vector_t *calls)
 
     // Get the call with the next chronological message
     while ((call = vector_iterator_next(&it))) {
+        call->locked = true;
         if (!call_group_exists(group, call)) {
             vector_append(group->calls, call);
         }
@@ -113,6 +120,7 @@ call_group_add_calls(sip_call_group_t *group, vector_t *calls)
 void
 call_group_del(sip_call_group_t *group, sip_call_t *call)
 {
+    call->locked = false;
     vector_remove(group->calls, call);
 }
 
