@@ -113,7 +113,7 @@ msg_diff_info(ui_t *ui)
 int
 msg_diff_line_highlight(const char* payload1, const char* payload2, char *highlight)
 {
-    char search[512];
+    char search[MAX_SIP_PAYLOAD];
     int len, i;
 
     // Initialize search terms
@@ -156,7 +156,7 @@ msg_diff_draw(ui_t *ui)
 {
     // Get panel information
     msg_diff_info_t *info = msg_diff_info(ui);
-    char highlight[4086];
+    char highlight[MAX_SIP_PAYLOAD];
 
     // Draw first message
     memset(highlight, 0, sizeof(highlight));
@@ -177,7 +177,7 @@ int
 msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
 {
     int height, width, line, column, i;
-    char header[256];
+    char header[MAX_SIP_PAYLOAD];
     const char * payload = msg_get_payload(msg);
 
     // Clear the window
