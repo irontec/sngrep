@@ -54,7 +54,7 @@ void
 save_create(ui_t *ui)
 {
     save_info_t *info;
-    char savepath[128];
+    char savepath[MAX_SETTING_LEN];
 
     // Pause the capture while saving
     capture_set_paused(1);
@@ -84,12 +84,18 @@ save_create(ui_t *ui)
     info->fields[FLD_SAVE_COUNT] = NULL;
 
     // Set fields options
+    field_opts_off(info->fields[FLD_SAVE_PATH], O_STATIC);
     field_opts_off(info->fields[FLD_SAVE_PATH], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_SAVE_FILE], O_STATIC);
     field_opts_off(info->fields[FLD_SAVE_FILE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_ALL], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_SELECTED], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
+
+    // Limit max save path and file length
+    set_max_field(info->fields[FLD_SAVE_PATH], MAX_SETTING_LEN);
+    set_max_field(info->fields[FLD_SAVE_FILE], MAX_SETTING_LEN);
 
     // Change background of input fields
     set_field_back(info->fields[FLD_SAVE_PATH], A_UNDERLINE);
@@ -204,7 +210,7 @@ save_info(ui_t *ui)
 int
 save_draw(ui_t *ui)
 {
-    char field_value[80];
+    char field_value[MAX_SETTING_LEN];
 
     // Get panel information
     save_info_t *info = save_info(ui);
@@ -402,9 +408,9 @@ save_set_msg(ui_t *ui, sip_msg_t *msg)
 int
 save_to_file(ui_t *ui)
 {
-    char savepath[256];
-    char savefile[256];
-    char fullfile[512];
+    char savepath[MAX_SETTING_LEN];
+    char savefile[MAX_SETTING_LEN];
+    char fullfile[MAX_SETTING_LEN*2];
     sip_call_t *call = NULL;
     sip_msg_t *msg = NULL;
     pcap_dumper_t *pd = NULL;

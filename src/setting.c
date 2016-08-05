@@ -158,7 +158,7 @@ setting_set_value(int id, const char *value)
             if (strlen(value) < MAX_SETTING_LEN) {
                 strcpy(sett->value, value);
             } else {
-                fprintf(stderr, "Setting value %s for %s is to long\n", sett->value, sett->name);
+                fprintf(stderr, "Setting value %s for %s is too long\n", sett->value, sett->name);
                 exit(1);
             }
         }

@@ -26,9 +26,11 @@
  * @brief Source code of functions defined in option.h
  *
  */
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
 #include "keybinding.h"
 #include "option.h"
@@ -50,9 +52,15 @@ init_options()
     // Custom user conf file
     char userconf[128];
     char *home = getenv("HOME");
+    char *pwd = get_current_dir_name();
+
+    // Defualt savepath is current directory
+    if (pwd) {
+        setting_set_value(SETTING_SAVEPATH, pwd);
+        free(pwd);
+    }
 
     // Initialize settings
-    setting_set_value(SETTING_SAVEPATH, home);
     setting_set_value(SETTING_FILTER_METHODS, "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE");
 
     // Add Call list column options

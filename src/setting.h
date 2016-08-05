@@ -42,7 +42,7 @@
 #define __SNGREP_SETTING_H
 
 //! Max setting value
-#define MAX_SETTING_LEN   80
+#define MAX_SETTING_LEN   1024
 
 //! Shorter declarartion of setting_option struct
 typedef struct setting_option setting_t;
