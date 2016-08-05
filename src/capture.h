@@ -125,6 +125,8 @@ struct capture_config {
     enum capture_storage storage;
     //! Key file for TLS decrypt
     const char *keyfile;
+    //! capture filter expression text
+    const char *filter;
     //! The compiled filter expression
     struct bpf_program fp;
     //! libpcap dump file handler
@@ -158,6 +160,8 @@ struct capture_info
     bpf_u_int32 net;
     //! Input file in Offline capture
     const char *infile;
+    //! Capture device in Online mode
+    const char *device;
     //! Capture thread for online capturing
     pthread_t capture_t;
 };
@@ -320,6 +324,14 @@ int
 capture_set_bpf_filter(const char *filter);
 
 /**
+ * @brief Get the configured BPF filter
+ *
+ * @return String containing the BPF filter text or NULL
+ */
+const char *
+capture_get_bpf_filter();
+
+/**
  * @brief Pause/Resume capture
  *
  * @param pause 1 to pause capture, 0 to resume
@@ -355,6 +367,15 @@ capture_status_desc();
  */
 const char*
 capture_input_file();
+
+/**
+ * @brief Get Device interface from Online mode
+ *
+ * @return Device name used to capture packets
+ * @return NULL in Offline or Mixed mode
+ */
+const char *
+capture_device();
 
 /**
  * @brief Get Key file from decrypting TLS packets

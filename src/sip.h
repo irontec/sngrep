@@ -385,13 +385,21 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload);
 /**
  * @brief Set Capture Matching expression
  *
- * @param expr String containing matching expreson
+ * @param expr String containing matching expression
  * @param insensitive 1 for case insensitive matching
  * @param invert 1 for reverse matching
  * @return 0 if expresion is valid, 1 otherwise
  */
 int
 sip_set_match_expression(const char *expr, int insensitive, int invert);
+
+/**
+ * @brief Get Capture Matching expression
+ *
+ * @return String containing matching expression
+ */
+const char *
+sip_get_match_expression();
 
 /**
  * @brief Checks if a given payload matches expression

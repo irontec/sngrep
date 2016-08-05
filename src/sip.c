@@ -729,6 +729,12 @@ sip_set_match_expression(const char *expr, int insensitive, int invert)
 #endif
 }
 
+const char *
+sip_get_match_expression()
+{
+    return calls.match_expr;
+}
+
 int
 sip_check_match_expression(const char *payload)
 {

@@ -134,6 +134,9 @@ capture_online(const char *dev, const char *outfile)
         return 2;
     }
 
+    // Store capture device
+    capinfo->device = dev;
+
     // Get datalink to parse packets correctly
     capinfo->link = pcap_datalink(capinfo->handle);
 
@@ -803,8 +806,18 @@ capture_set_bpf_filter(const char *filter)
 
     }
 
+    // Store valid capture filter
+    capture_cfg.filter = filter;
+
     return 0;
 }
+
+const char *
+capture_get_bpf_filter()
+{
+    return capture_cfg.filter;
+}
+
 
 void
 capture_set_paused(int pause)
@@ -857,7 +870,18 @@ capture_input_file()
     } else {
         return "Multiple files";
     }
+}
 
+const char *
+capture_device()
+{
+    capture_info_t *capinfo;
+
+    if (vector_count(capture_cfg.sources) == 1) {
+        capinfo = vector_first(capture_cfg.sources);
+        return capinfo->device;
+    }
+    return NULL;
 }
 
 const char*

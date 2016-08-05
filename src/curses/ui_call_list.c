@@ -92,7 +92,7 @@ call_list_create(ui_t *ui)
     }
 
     // Initialize the fields
-    info->fields[FLD_LIST_FILTER] = new_field(1, ui->width - 19, 2, 18, 0, 0);
+    info->fields[FLD_LIST_FILTER] = new_field(1, ui->width - 19, 3, 18, 0, 0);
     info->fields[FLD_LIST_COUNT] = NULL;
 
     // Create the form and post it
@@ -104,7 +104,7 @@ call_list_create(ui_t *ui)
     info->menu_active = 0;
 
     // Calculate available printable area
-    info->list_win = subwin(ui->win, ui->height - 5, ui->width, 4, 0);
+    info->list_win = subwin(ui->win, ui->height - 6, ui->width, 5, 0);
     info->scroll = ui_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
 
     // Group of selected calls
@@ -190,6 +190,7 @@ call_list_draw_header(ui_t *ui)
     int colpos, collen, i;
     char sortind;
     const char *countlb;
+    const char *device, *filterexpr, *filterbpf;
 
     // Get panel info
     call_list_info_t *info = call_list_info(ui);
@@ -202,9 +203,38 @@ call_list_draw_header(ui_t *ui)
 
     // Print Open filename in Offline mode
     if ((infile = capture_input_file()))
-        mvwprintw(ui->win, 1, ui->width - strlen(infile) - 11, "Filename: %s", infile);
-    mvwprintw(ui->win, 2, 2, "Display Filter: ");
-    mvwprintw(ui->win, 1, 2, "Current Mode: %s", capture_status_desc());
+        mvwprintw(ui->win, 1, 77, "Filename: %s", infile);
+
+    mvwprintw(ui->win, 1, 2, "Current Mode: ");
+    if (capture_is_online()) {
+        wattron(ui->win, COLOR_PAIR(CP_GREEN_ON_DEF));
+    } else {
+        wattron(ui->win, COLOR_PAIR(CP_RED_ON_DEF));
+    }
+    wprintw(ui->win, "%s ", capture_status_desc());
+
+    // Get online mode capture device
+    if ((device = capture_device()))
+        wprintw(ui->win, "[%s]", device);
+
+    wattroff(ui->win, COLOR_PAIR(CP_GREEN_ON_DEF));
+    wattroff(ui->win, COLOR_PAIR(CP_RED_ON_DEF));
+
+    // Label for Display filter
+    mvwprintw(ui->win, 3, 2, "Display Filter: ");
+
+    mvwprintw(ui->win, 2, 2, "Match Expression: ");
+
+    wattron(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+    if ((filterexpr = sip_get_match_expression()))
+        wprintw(ui->win, "%s", filterexpr);
+    wattroff(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+
+    mvwprintw(ui->win, 2, 45, "BPF Filter: ");
+    wattron(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+    if ((filterbpf = capture_get_bpf_filter()))
+        wprintw(ui->win, "%s", filterbpf);
+    wattroff(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
 
     // Reverse colors on monochrome terminals
     if (!has_colors())
@@ -215,14 +245,14 @@ call_list_draw_header(ui_t *ui)
 
     // Draw columns titles
     wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    mvwprintw(ui->win, 3, 0, "%*s", ui->width, "");
+    ui_clear_line(ui, 4);
 
     // Draw separator line
     if (info->menu_active) {
         colpos = 18;
-        mvwprintw(ui->win, 3, 0, "Sort by");
+        mvwprintw(ui->win, 4, 0, "Sort by");
         wattron(ui->win, A_BOLD | COLOR_PAIR(CP_CYAN_ON_BLACK));
-        mvwprintw(ui->win, 3, 11, "%*s", 1, "");
+        mvwprintw(ui->win, 4, 11, "%*s", 1, "");
         wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     } else {
         colpos = 6;
@@ -242,16 +272,16 @@ call_list_draw_header(ui_t *ui)
         if (info->columns[i].id == sort.by) {
             wattron(ui->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
             sortind = (sort.asc) ? '^' : 'v';
-            mvwprintw(ui->win, 3, colpos, "%c%.*s", sortind, collen, coldesc);
+            mvwprintw(ui->win, 4, colpos, "%c%.*s", sortind, collen, coldesc);
             wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
         } else {
-            mvwprintw(ui->win, 3, colpos, "%.*s", collen, coldesc);
+            mvwprintw(ui->win, 4, colpos, "%.*s", collen, coldesc);
         }
         colpos += collen + 1;
     }
     // Print Autoscroll indicator
     if (info->autoscroll)
-        mvwprintw(ui->win, 3, 0, "A");
+        mvwprintw(ui->win, 4, 0, "A");
     wattroff(ui->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Print Dialogs or Calls in label depending on calls filter
@@ -265,9 +295,9 @@ call_list_draw_header(ui_t *ui)
     sip_stats_t stats = sip_calls_stats();
     mvwprintw(ui->win, 1, 35, "%*s", 35, "");
     if (stats.total != stats.displayed) {
-        mvwprintw(ui->win, 1, 35, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
+        mvwprintw(ui->win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
     } else {
-        mvwprintw(ui->win, 1, 35, "%s: %d", countlb, stats.total);
+        mvwprintw(ui->win, 1, 45, "%s: %d", countlb, stats.total);
     }
 
 }
