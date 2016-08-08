@@ -1,33 +1,32 @@
 2016-08-08 Ivan Alonso <kaian@irontec.com>
-	* sngrep 1.4.0 released
+    * sngrep 1.4.0 released
 
-	* Capture
-		* Added a setting and command line option ('-R') to rotate captured dialogs
-		* Improved RTP stream detection
-	* Call List
-		* Added capture match and bpf filters labels
-		* Added capture device label for online captures
-	* Call Flow
-		* Rework how RTP streams arrows select their source and destination columns
-	* Settings
-		* Added a setting to configure EEP/HEP capture id
-		* Changed default savepath to current directory
-	* Other
-		* Fixed a crash with malformed From and To headers
-		* Fixed a crash while comparing two big SIP messages
-		* Fixed a crash while trying to decode TLS packets too early
-		* Fixed incorrect state detection of Call status column
-		* Increased the timeout to consider a test unsuccessful
-
+    * Capture
+        * Added a setting and command line option ('-R') to rotate captured dialogs
+        * Improved RTP stream detection
+    * Call List
+        * Added capture match and bpf filters labels
+        * Added capture device label for online captures
+    * Call Flow
+        * Rework how RTP streams arrows select their source and destination columns
+    * Settings
+        * Added a setting to configure EEP/HEP capture id
+        * Changed default savepath to current directory
+    * Other
+        * Fixed a crash with malformed From and To headers
+        * Fixed a crash while comparing two big SIP messages
+        * Fixed a crash while trying to decode TLS packets too early
+        * Fixed incorrect state detection of Call status column
+        * Increased the timeout to consider a test unsuccessful
 
 2016-04-28 Ivan Alonso <kaian@irontec.com>
-	* sngrep 1.3.1 released
+    * sngrep 1.3.1 released
 
-	* Fixed a crash where From or To headers where too long
-	* Improved call list screen resize 
-	* Add support for IEEE 802.1Q Ethernet VLAN headers
-	* Fixed a bug in displayed callstate after failed authentication
-	* Associate RTP stream with the most recent dialog that uses stream rtp ports
+    * Fixed a crash where From or To headers where too long
+    * Improved call list screen resize
+    * Add support for IEEE 802.1Q Ethernet VLAN headers
+    * Fixed a bug in displayed callstate after failed authentication
+    * Associate RTP stream with the most recent dialog that uses stream rtp ports
 
 2016-03-02 Ivan Alonso <kaian@irontec.com>
     * sngrep 1.3.0 released
