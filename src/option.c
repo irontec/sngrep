@@ -52,10 +52,10 @@ init_options()
     // Custom user conf file
     char userconf[128];
     char *home = getenv("HOME");
-    char *pwd = get_current_dir_name();
+    char *pwd;
 
     // Defualt savepath is current directory
-    if (pwd) {
+    if ((pwd = getcwd(pwd, MAX_SETTING_LEN))) {
         setting_set_value(SETTING_SAVEPATH, pwd);
         free(pwd);
     }
