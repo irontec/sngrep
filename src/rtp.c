@@ -201,12 +201,43 @@ rtp_check_packet(packet_t *packet)
         if (!(stream_is_complete(stream))) {
             stream_complete(stream, src);
             stream_set_format(stream, format);
+
+            /**
+             * TODO This is a mess. Rework required
+             *
+             * This logic tries to handle a common problem when SDP address and RTP address
+             * doesn't match. In some cases one endpoint waits until RTP data is sent to its
+             * configured port in SDP and replies its RTP to the source ignoring what the other
+             * endpoint has configured in its SDP.
+             *
+             * For such cases, we create streams 'on the fly', when a stream is completed (the
+             * first time its source address is filled), a new stream is created with the
+             * opposite src and dst.
+             *
+             * BUT, there are some cases when this 'reverse' stream should not be created:
+             *  - When there already exists a stream with that setup
+             *  - When there exists an incomplete stream with that destination (and still no source)
+             *  - ...
+             *
+             */
+
             // Check if an stream in the opposite direction exists
             if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->dst, stream->src))) {
                 reverse = stream_create(stream->media, stream->src, PACKET_RTP);
                 stream_complete(reverse, stream->dst);
                 stream_set_format(reverse, format);
                 call_add_stream(msg_get_call(stream->media->msg), reverse);
+            } else {
+                // If the reverse stream has other source configured
+                if (reverse->src.port && !addressport_equals(stream->src, reverse->src)) {
+                    if (!(reverse = rtp_find_call_exact_stream(stream->media->msg->call, stream->dst, stream->src))) {
+                        // Create a new reverse stream
+                        reverse = stream_create(stream->media, stream->src, PACKET_RTP);
+                        stream_complete(reverse, stream->dst);
+                        stream_set_format(reverse, format);
+                        call_add_stream(msg_get_call(stream->media->msg), reverse);
+                    }
+                }
             }
         }
 
@@ -390,14 +421,29 @@ rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
         }
     }
 
-    // Try to look for an incomplete stream with this destination
+    // Try to look for a complete stream with this destination
     if (src.port) {
-        vector_iterator_set_last(&it);
-        while ((stream = vector_iterator_prev(&it))) {
-            if (addressport_equals(src, stream->src) &&
-                addressport_equals(dst, stream->dst)) {
-                return stream;
-            }
+        return rtp_find_call_exact_stream(call, src, dst);
+    }
+
+    // Nothing found
+    return NULL;
+}
+
+rtp_stream_t *
+rtp_find_call_exact_stream(struct sip_call *call, address_t src, address_t dst)
+{
+    rtp_stream_t *stream;
+    vector_iter_t it;
+
+    // Create an iterator for call streams
+    it = vector_iterator(call->streams);
+
+    vector_iterator_set_last(&it);
+    while ((stream = vector_iterator_prev(&it))) {
+        if (addressport_equals(src, stream->src) &&
+            addressport_equals(dst, stream->dst)) {
+            return stream;
         }
     }
 

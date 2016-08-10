@@ -267,8 +267,9 @@ call_flow_draw_columns(ui_t *ui)
     if (!setting_disabled(SETTING_CF_MEDIA)) {
         while ((call = call_group_get_next(info->group, call)) ) {
             streams = vector_iterator(call->streams);
+
             while ((stream = vector_iterator_next(&streams))) {
-                if (stream_get_count(stream)) {
+                if (stream->type == PACKET_RTP && stream_get_count(stream)) {
                     addr = stream->src;
                     addr.port = 0;
                     call_flow_column_add(ui, NULL, addr);

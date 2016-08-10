@@ -304,6 +304,9 @@ rtp_find_stream(address_t src, address_t dst);
 rtp_stream_t *
 rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst);
 
+rtp_stream_t *
+rtp_find_call_exact_stream(struct sip_call *call, address_t src, address_t dst);
+
 /**
  * @brief Check if a message is older than other
  *

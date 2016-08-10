@@ -585,7 +585,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     }
 
     address_t dst, src = { };
-    rtp_stream_t *rtp_stream = NULL, *rtcp_stream = NULL;
+    rtp_stream_t *rtp_stream = NULL, *rtcp_stream = NULL, *msg_rtp_stream = NULL;
     char media_type[MEDIATYPELEN] = { };
     char media_format[30] = { };
     uint32_t media_fmt_pref;
@@ -609,6 +609,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
             if (sscanf(line, "m=%s %hu RTP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3) {
 
                 // Add streams from previous 'm=' line to the call
+                ADD_STREAM(msg_rtp_stream);
                 ADD_STREAM(rtp_stream);
                 ADD_STREAM(rtcp_stream);
 
@@ -625,6 +626,11 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                      * and port of the stream.
                      */
                     // Create a new stream with this destination address:port
+
+                    // Create RTP stream with source of message as destination address
+                    msg_rtp_stream = stream_create(media, dst, PACKET_RTP);
+                    msg_rtp_stream->dst = msg->packet->src;
+                    msg_rtp_stream->dst.port = dst.port;
 
                     // Create RTP stream
                     rtp_stream = stream_create(media, dst, PACKET_RTP);
@@ -661,6 +667,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     }
 
     // Add streams from last 'm=' line to the call
+    ADD_STREAM(msg_rtp_stream);
     ADD_STREAM(rtp_stream);
     ADD_STREAM(rtcp_stream);
 
