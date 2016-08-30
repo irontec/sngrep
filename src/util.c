@@ -82,7 +82,7 @@ timeval_is_older(struct timeval t1, struct timeval t2)
     t1sec = t1sec * 1000000;
     t2sec = t2.tv_sec;
     t2sec = t2sec * 1000000;
-    return ((t2sec + t2.tv_usec) - (t1sec + t1.tv_usec) < 0);
+    return ((t2sec + t2.tv_usec) - (t1sec + t1.tv_usec) <= 0);
 }
 
 const char *
