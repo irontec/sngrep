@@ -166,6 +166,10 @@ msg_is_older(sip_msg_t *one, sip_msg_t *two)
     if (!two)
         return 1;
 
+    // No, you are not older than yourself
+    if (one == two)
+        return 0;
+
     // Otherwise
     return timeval_is_older(msg_get_time(one), msg_get_time(two));
 }

@@ -458,6 +458,10 @@ stream_is_older(rtp_stream_t *one, rtp_stream_t *two)
     if (!two)
         return 1;
 
+    // No, you are not older than yourself
+    if (one == two)
+        return 0;
+
     // Otherwise
     return timeval_is_older(one->time, two->time);
 }
