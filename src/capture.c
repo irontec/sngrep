@@ -482,7 +482,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         it = vector_iterator(pkt->frames);
         while ((frame = vector_iterator_next(&it))) {
             struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
-            len_data += frame->header->caplen - link_hl - frame_ip->ip_hl * 4;
+            len_data += ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4;
         }
 
         // Check packet content length
@@ -498,7 +498,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
             memcpy(packet + link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
                    frame->data + link_hl + frame_ip->ip_hl * 4,
-                   frame->header->caplen - link_hl - frame_ip->ip_hl * 4);
+                   ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4);
         }
 
         *caplen = link_hl + ip_hl + len_data;
