@@ -346,7 +346,7 @@ int
 draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
 {
     int height, width, line, column, i;
-    const char *cur_line, *payload;
+    const char *cur_line, *payload, *method = NULL;
     int syntax = setting_enabled(SETTING_SYNTAX);
 
     // Default text format
@@ -356,6 +356,11 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
 
     // Get window of main panel
     getmaxyx(win, height, width);
+
+    // Get message method (if request)
+    if (msg_is_request(msg)) {
+        method = sip_method_str(msg->reqresp);
+    }
 
     // Get packet payload
     cur_line = payload = (const char *) msg_get_payload(msg);
@@ -377,7 +382,7 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
                     attrs = A_BOLD | COLOR_PAIR(CP_RED_ON_DEF);
 
                 // SIP URI syntax
-                if (!strncasecmp(payload + i, "sip:", 4)) {
+                if (method && i == strlen(method) + 1) {
                     attrs = A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF);
                 }
             } else {
