@@ -68,7 +68,7 @@ settings_entry_t entries[] = {
     { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_SIP_NOINCOMPLETE,   SETTING_SIP_NOINCOMPLETE,   "Capture full transactions ................." },
     { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_SAVEPATH,           SETTING_SAVEPATH,           "Default Save path ........................." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_FORCERAW,        SETTING_CF_FORCERAW,        "Show message preview panel ................" },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_HIGHTLIGHT,      SETTING_CF_HIGHTLIGHT,      "Selected message hightlight ..............." },
+    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_HIGHTLIGHT,      SETTING_CF_HIGHTLIGHT,      "Selected message highlight ................" },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_LOCALHIGHLIGHT,  SETTING_CF_LOCALHIGHLIGHT,  "Highlight local addresses ................." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SPLITCACALLID,   SETTING_CF_SPLITCALLID,     "Merge columns with same address ..........." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SDPONLY,         SETTING_CF_SDP_INFO,        "Show SDP information in messages .........." },
@@ -191,7 +191,7 @@ settings_create(ui_t *ui)
     mvwaddch(ui->win, 6, ui->width - 1, ACS_RTEE);
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
     wattron(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(ui->win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move arround settings.");
+    mvwprintw(ui->win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move around settings.");
     mvwprintw(ui->win, 4, 1, " Settings with (*) requires restart.");
     wattroff(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
