@@ -52,7 +52,7 @@ void
 filter_create(ui_t *ui)
 {
     filter_info_t *info;
-    const char *method;
+    const char *method, *payload;
 
     // Cerate a new indow for the panel and form
     ui_panel_create(ui, 16, 50);
@@ -85,7 +85,7 @@ filter_create(ui_t *ui)
     field_opts_off(info->fields[FLD_FILTER_SIPTO], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SRC], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_DST], O_AUTOSKIP);
-    field_opts_off(info->fields[FLD_FILTER_PAYLOAD], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_PAYLOAD], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_REGISTER], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_INVITE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SUBSCRIBE], O_AUTOSKIP);
@@ -125,6 +125,10 @@ filter_create(ui_t *ui)
     // Get Method filter
     if (!(method = filter_get(FILTER_METHOD)))
         method = setting_get_value(SETTING_FILTER_METHODS);
+
+    // Get Payload filter
+    if (!(payload = filter_get(FILTER_PAYLOAD)))
+        payload = setting_get_value(SETTING_FILTER_PAYLOAD);
 
     // Set Default field values
     set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));
@@ -182,7 +186,7 @@ int
 filter_handle_key(ui_t *ui, int key)
 {
     int field_idx;
-    char field_value[30];
+    char field_value[MAX_SETTING_LEN];
     int action = -1;
 
     // Get panel information
@@ -304,7 +308,7 @@ filter_handle_key(ui_t *ui, int key)
 void
 filter_save_options(ui_t *ui)
 {
-    char field_value[30];
+    char field_value[MAX_SETTING_LEN];
     char *expr;
     int field_id;
     char method_expr[256];
@@ -427,5 +431,11 @@ filter_method_from_setting(const char *value)
     } else {
         filter_set(FILTER_METHOD, " ");
     }
+}
+
+void
+filter_payload_from_setting(const char *value)
+{
+    if (value) filter_set(FILTER_PAYLOAD, value);
 }
 

@@ -116,8 +116,9 @@ call_list_create(ui_t *ui)
     // Set autoscroll default status
     info->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
 
-    // Apply initial configured method filters
+    // Apply initial configured filters
     filter_method_from_setting(setting_get_value(SETTING_FILTER_METHODS));
+    filter_payload_from_setting(setting_get_value(SETTING_FILTER_PAYLOAD));
 }
 
 void

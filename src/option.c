@@ -111,7 +111,7 @@ read_options(const char *fname)
             continue;
 
         // Get configuration option from setting line
-        if (sscanf(line, "%s %s %s", type, option, value) == 3) {
+        if (sscanf(line, "%s %s %[^\t\n]", type, option, value) == 3) {
             if (!strcasecmp(type, "set")) {
                 if ((id = setting_id(option)) >= 0) {
                     setting_set_value(id, value);

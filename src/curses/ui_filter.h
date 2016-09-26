@@ -150,4 +150,10 @@ filter_field_method(int field_id);
 void
 filter_method_from_setting(const char *value);
 
+/**
+ * @brief Set Payload filter from filter.payload setting
+ */
+void
+filter_payload_from_setting(const char *value);
+
 #endif
