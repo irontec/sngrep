@@ -54,6 +54,7 @@ static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_CONVDUR,     "convdur",     "ConvDur", "Conversation Duration", 7 },
     { SIP_ATTR_TOTALDUR,    "totaldur",    "TotalDur", "Total Duration", 8 },
     { SIP_ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text", 25 },
+    { SIP_ATTR_WARNING,     "warning",     "Warning", "Warning code", 4 }
 };
 
 sip_attr_hdr_t *

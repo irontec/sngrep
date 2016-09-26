@@ -83,6 +83,8 @@ enum sip_attr_id {
     SIP_ATTR_TOTALDUR,
     //! Text from SIP Reason header
     SIP_ATTR_REASON_TXT,
+    //! Warning Header
+    SIP_ATTR_WARNING,
     //! SIP Attribute count
     SIP_ATTR_COUNT
 };

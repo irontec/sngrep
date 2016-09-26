@@ -72,8 +72,10 @@ struct sip_call {
     bool changed;
     //! Locked flag. Calls locked are never deleted
     bool locked;
-    //! Las reason text value for this call
+    //! Last reason text value for this call
     char *reasontxt;
+    //! Last warning text value for this call
+    int warning;
     //! List of calls with with this call as X-Call-Id
     vector_t *xcalls;
     //! Cseq from invite startint the call

@@ -158,6 +158,7 @@ struct sip_call_list {
     regex_t reg_cl;
     regex_t reg_body;
     regex_t reg_reason;
+    regex_t reg_warning;
 };
 
 /**

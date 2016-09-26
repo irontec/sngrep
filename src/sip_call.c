@@ -282,6 +282,10 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
             if (call->reasontxt)
                 sprintf(value, "%s", call->reasontxt);
             break;
+        case SIP_ATTR_WARNING:
+            if (call->warning)
+                sprintf(value, "%d", call->warning);
+            break;
         default:
             return msg_get_attribute(vector_first(call->msgs), id, value);
             break;

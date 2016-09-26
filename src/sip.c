@@ -173,6 +173,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)\r$", match_flags);
     regcomp(&calls.reg_body, "\r\n\r\n(.*)", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_reason, "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"", match_flags);
+    regcomp(&calls.reg_warning, "Warning:[ ]*([0-9]*)", match_flags);
 
 }
 
@@ -198,6 +199,7 @@ sip_deinit()
     regfree(&calls.reg_cl);
     regfree(&calls.reg_body);
     regfree(&calls.reg_reason);
+    regfree(&calls.reg_warning);
 }
 
 
@@ -684,11 +686,18 @@ void
 sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
+    char warning[10];
 
-     // Reason
+     // Reason text
      if (regexec(&calls.reg_reason, (const char *)payload, 2, pmatch, 0) == 0) {
          msg->call->reasontxt = sng_malloc((int)pmatch[1].rm_eo - pmatch[1].rm_so + 1);
          strncpy(msg->call->reasontxt, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
+     }
+
+     // Warning code
+     if (regexec(&calls.reg_warning, (const char *)payload, 2, pmatch, 0) == 0) {
+         strncpy(warning, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
+         msg->call->warning = atoi(warning);
      }
 }
 
