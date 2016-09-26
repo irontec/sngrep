@@ -865,9 +865,9 @@ call_list_handle_menu_key(ui_t *ui, int key)
                   }
 
                   // Restore list position
-                  mvderwin(info->list_win, 4, 0);
+                  mvderwin(info->list_win, 5, 0);
                   // Restore list window size
-                  wresize(info->list_win, ui->height - 5, ui->width);
+                  wresize(info->list_win, ui->height - 6, ui->width);
                   break;
               default:
                   // Parse next action
@@ -1041,8 +1041,8 @@ call_list_select_sort_attribute(ui_t *ui)
     // Activete sorting menu
     info->menu_active = 1;
 
-    wresize(info->list_win, ui->height - 5, ui->width - 12);
-    mvderwin(info->list_win, 4, 12);
+    wresize(info->list_win, ui->height - 6, ui->width - 12);
+    mvderwin(info->list_win, 5, 12);
 
     // Create menu entries
     for (i = 0; i < info->columncnt; i++) {
@@ -1054,7 +1054,7 @@ call_list_select_sort_attribute(ui_t *ui)
 
     // Set main window and sub window
     set_menu_win(info->menu, ui->win);
-    set_menu_sub(info->menu, derwin(ui->win, 20, 15, 4, 0));
+    set_menu_sub(info->menu, derwin(ui->win, 20, 15, 5, 0));
     werase(menu_win(info->menu));
     set_menu_format(info->menu, ui->height, 1);
     set_menu_mark(info->menu, "");
