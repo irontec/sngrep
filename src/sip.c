@@ -172,6 +172,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     regcomp(&calls.reg_valid, "^([A-Z]+ [a-zA-Z]+:|SIP/2.0 [0-9]{3})", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)\r$", match_flags);
     regcomp(&calls.reg_body, "\r\n\r\n(.*)", match_flags & ~REG_NEWLINE);
+    regcomp(&calls.reg_reason, "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"", match_flags);
 
 }
 
@@ -196,6 +197,7 @@ sip_deinit()
     regfree(&calls.reg_valid);
     regfree(&calls.reg_cl);
     regfree(&calls.reg_body);
+    regfree(&calls.reg_reason);
 }
 
 
@@ -378,6 +380,8 @@ sip_check_packet(packet_t *packet)
         sip_parse_msg_media(msg, payload);
         // Update Call State
         call_update_state(call, msg);
+        // Parse extra fields
+        sip_parse_extra_headers(msg, payload);
         // Check if this call should be in active call list
         if (call_is_active(call)) {
             if (sip_call_is_active(call)) {
@@ -676,6 +680,17 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 #undef ADD_STREAM
 }
 
+void
+sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
+{
+    regmatch_t pmatch[4];
+
+     // Reason
+     if (regexec(&calls.reg_reason, (const char *)payload, 2, pmatch, 0) == 0) {
+         msg->call->reasontxt = sng_malloc((int)pmatch[1].rm_eo - pmatch[1].rm_so + 1);
+         strncpy(msg->call->reasontxt, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
+     }
+}
 
 void
 sip_calls_clear()

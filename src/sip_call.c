@@ -83,6 +83,7 @@ call_destroy(sip_call_t *call)
     // Deallocate call memory
     sng_free(call->callid);
     sng_free(call->xcallid);
+    sng_free(call->reasontxt);
     sng_free(call);
 }
 
@@ -276,6 +277,10 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
             first = vector_first(call->msgs);
             last = vector_last(call->msgs);
             timeval_to_duration(msg_get_time(first), msg_get_time(last), value);
+            break;
+        case SIP_ATTR_REASON_TXT:
+            if (call->reasontxt)
+                sprintf(value, "%s", call->reasontxt);
             break;
         default:
             return msg_get_attribute(vector_first(call->msgs), id, value);

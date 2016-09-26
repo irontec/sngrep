@@ -81,6 +81,8 @@ enum sip_attr_id {
     SIP_ATTR_CONVDUR,
     //! Total call duration
     SIP_ATTR_TOTALDUR,
+    //! Text from SIP Reason header
+    SIP_ATTR_REASON_TXT,
     //! SIP Attribute count
     SIP_ATTR_COUNT
 };

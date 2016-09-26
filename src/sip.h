@@ -157,6 +157,7 @@ struct sip_call_list {
     regex_t reg_valid;
     regex_t reg_cl;
     regex_t reg_body;
+    regex_t reg_reason;
 };
 
 /**
@@ -308,6 +309,18 @@ sip_find_by_index(int index);
  */
 sip_call_t *
 sip_find_by_callid(const char *callid);
+
+
+/**
+ * @brief Parse extra fields only for dialogs strarting with invite
+ *
+ * @note This function assumes the msg is already part of a call
+ *
+ * @param msg SIP message structure
+ * @param payload SIP message payload
+ */
+void
+sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Remove al calls
