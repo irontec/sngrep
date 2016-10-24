@@ -128,7 +128,7 @@ capture_online(const char *dev, const char *outfile)
     }
 
     // Open capture device
-    capinfo->handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
+    capinfo->handle = pcap_open_live(dev, MAXIMUM_SNAPLEN, 1, 1000, errbuf);
     if (capinfo->handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
