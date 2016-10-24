@@ -472,11 +472,21 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         pkt = packet_create(ip_ver, ip_proto, src, dst, ip_id);
         packet_add_frame(pkt, header, packet);
         vector_append(capture_cfg.ip_reasm, pkt);
-        return NULL;
     }
 
-    // If no more fragments
+    // Add this IP content length to the total captured of the packet
+    pkt->ip_cap_len += ip_len;
+
+    // Calculate how much data we need to complete this packet
+    // The total packet size can only be known using the last fragment of the packet
+    // where 'No more fragments is enabled' and it's calculated based on the
+    // last fragment offset
     if ((ip_off & IP_MF) == 0) {
+        pkt->ip_exp_len = ip_frag_off + ip_len + ip_hl;
+    }
+
+    // If we have the whole packet (captured length is expected length)
+    if (pkt->ip_cap_len == pkt->ip_exp_len) {
         // TODO Dont check the flag, check the holes
         // Calculate assembled IP payload data
         it = vector_iterator(pkt->frames);
