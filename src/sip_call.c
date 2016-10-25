@@ -218,9 +218,15 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             } else if (reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
                 call->state = SIP_CALLSTATE_CANCELLED;
+            } else if ((reqresp == 480) || (reqresp == 486)) {
+                // Bob is busy
+                call->state = SIP_CALLSTATE_BUSY;
             } else if (reqresp > 400 && call->invitecseq == msg->cseq) {
                 // Bob is not in the mood
                 call->state = SIP_CALLSTATE_REJECTED;
+            } else if (reqresp > 300) {
+                // Bob has diversion
+                call->state = SIP_CALLSTATE_DIVERTED;
             }
         } else if (call->state == SIP_CALLSTATE_INCALL) {
             if (reqresp == SIP_METHOD_BYE) {
@@ -306,6 +312,10 @@ call_state_to_str(int state)
             return "CANCELLED";
         case SIP_CALLSTATE_REJECTED:
             return "REJECTED";
+        case SIP_CALLSTATE_BUSY:
+            return "BUSY";
+        case SIP_CALLSTATE_DIVERTED:
+            return "DIVERTED";
         case SIP_CALLSTATE_COMPLETED:
             return "COMPLETED";
     }
