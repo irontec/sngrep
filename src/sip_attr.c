@@ -165,5 +165,9 @@ sip_attr_color_state(const char *value)
         return COLOR_PAIR(CP_RED_ON_DEF);
     if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_REJECTED)))
         return COLOR_PAIR(CP_RED_ON_DEF);
+    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_BUSY)))
+        return COLOR_PAIR(CP_MAGENTA_ON_DEF);
+    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_DIVERTED)))
+        return COLOR_PAIR(CP_CYAN_ON_DEF);
     return 0;
 }
