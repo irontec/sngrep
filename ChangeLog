@@ -1,3 +1,23 @@
+2016-10-28 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.1 released
+
+	* Capture
+		* Reworked how IP fragments are assembled
+		* Increased default capture snapshot length
+	* SIP
+		* Added support for any kind of uri schemes
+		* Added support for Warning header code
+		* Added support for Reason header text
+		* Added callstates BUSY and DIVERTED
+	* Call List
+		* Fixed a bug displaying sort by column ('<','>' keybinding)
+	* Call Flow
+		* Fixed a bug where arrows with same timestamp were not displayed
+	* Settings
+		* Added a setting for filter.payload
+	* Other
+		* Fixed text typos
+
 2016-08-08 Ivan Alonso <kaian@irontec.com>
     * sngrep 1.4.0 released
 
