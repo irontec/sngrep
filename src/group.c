@@ -96,6 +96,8 @@ call_group_clone(sip_call_group_t *original)
 void
 call_group_add(sip_call_group_t *group, sip_call_t *call)
 {
+    if (!call) return;
+
     if (!call_group_exists(group, call)) {
         call->locked = true;
         vector_append(group->calls, call);
@@ -120,6 +122,7 @@ call_group_add_calls(sip_call_group_t *group, vector_t *calls)
 void
 call_group_del(sip_call_group_t *group, sip_call_t *call)
 {
+    if (!call) return;
     call->locked = false;
     vector_remove(group->calls, call);
 }
