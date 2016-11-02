@@ -140,6 +140,15 @@ struct CipherSuite {
     uint8_t cs2;
 };
 
+struct ClientHelloSSLv2 {
+    struct ProtocolVersion client_version;
+    uint16 cipherlist_len;
+    uint16 sessionid_len;
+    uint16 random_len;
+    // CipherSuite cipher_suite;
+    // struct Random random;
+};
+
 //! ClientHello type in Handshake records
 struct ClientHello {
     struct ProtocolVersion client_version;
@@ -378,6 +387,37 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp);
 int
 tls_process_record(struct SSLConnection *conn, const uint8_t *payload, const int len, uint8_t **out,
                    uint32_t *outl);
+
+/**
+ * @brief Check if this Record looks like SSLv2
+ *
+ * Some devices send the initial ClientHello in a SSLv2 record for compatibility
+ * with only SSLv2 protocol.
+ *
+ * We will only parse SSLv2 Client hello fragments that have TLSv1/SSLv3 content
+ * so this does not make us SSLv2 compatible ;-p
+ * @param conn Existing connection pointer
+ * @param payload Packet peyload
+ * @param len Payload length
+ * @return 1 if payload seems a SSLv2 record, 0 otherwise
+ */
+int
+tls_record_handshake_is_ssl2(struct SSLConnection *conn, const uint8_t *payload,
+                   const int len);
+/**
+ * @brief Process TLS Handshake SSLv2 record types
+ *
+ * Process all types of Handshake records to store and compute all required
+ * data to decrypt application data packets
+ *
+ * @param conn Existing connection pointer
+ * @param fragment Handshake record data
+ * @param len Decimal length of the fragment
+ * @return 0 on valid record processed, 1 otherwise
+ */
+int
+tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
+                   const int len, uint8_t **out, uint32_t *outl);
 
 /**
  * @brief Process TLS Handshake record types

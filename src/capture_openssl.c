@@ -318,13 +318,22 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
                 break;
             case TCP_STATE_ACK:
             case TCP_STATE_ESTABLISHED:
-                // Process data segment!
-                if (tls_process_record(conn, payload, size_payload, &out, &outl) == 0) {
-                    if ((int32_t) outl > 0) {
-                        packet_set_payload(packet, out, outl);
-                        packet_set_type(packet, PACKET_SIP_TLS);
-                        return 0;
-                    }
+                // Check if we have a SSLv2 Handshake
+                if(tls_record_handshake_is_ssl2(conn, payload, size_payload)) {
+                    if (tls_process_record_ssl2(conn, payload, size_payload, &out, &outl) != 0)
+                        outl = 0;
+
+                } else {
+                    // Process data segment!
+                    if (tls_process_record(conn, payload, size_payload, &out, &outl) != 0)
+                        outl = 0;
+                }
+
+                // This seems a SIP TLS packet ;-)
+                if ((int32_t) outl > 0) {
+                    packet_set_payload(packet, out, outl);
+                    packet_set_type(packet, PACKET_SIP_TLS);
+                    return 0;
                 }
                 break;
             case TCP_STATE_FIN:
@@ -341,6 +350,88 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
     }
 
     sng_free(out);
+    return 0;
+}
+
+int
+tls_record_handshake_is_ssl2(struct SSLConnection *conn, const uint8_t *payload,
+                   const int len)
+{
+    // This magic belongs to wireshark people <3
+    if (len < 3) return 0;
+    // v2 client hello should start this way
+    if (payload[0] != 0x80) return 0;
+    // v2 client hello msg type
+    if (payload[2] != 0x01) return 0;
+    // Seems SSLv2
+    return 1;
+}
+
+int
+tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
+                   const int len, uint8_t **out, uint32_t *outl)
+{
+    int record_len_len;
+    uint16 record_len16;
+    uint24 record_len24;
+    uint8_t record_type;
+    const opaque *fragment;
+    int flen;
+
+    // No record data here!
+    if (len == 0)
+        return 0;
+
+    // Record header length
+    record_len_len = (payload[0] & 0x80) ? 2 : 3;
+
+    // Two bytes SSLv2 record length field
+    if (record_len_len == 2) {
+        record_len16.x[0] = (payload[0] & 0x7f) << 8;
+        record_len16.x[1] = (payload[1]);
+        record_type = payload[2];
+        fragment = payload + 3;
+        flen = UINT16_INT(record_len16) - 1 /* record type */;
+    } else {
+        record_len24.x[0] = (payload[0] & 0x3f) << 8;
+        record_len24.x[1] = payload[1];
+        record_len24.x[2] = payload[2];
+        record_type = payload[3];
+        fragment = payload + 4;
+        flen = UINT24_INT(record_len24) - 1 /* record type */;
+    }
+
+    // We only handle Client Hello handshake SSLv2 records
+    if (record_type == 0x01 && flen > sizeof(struct ClientHelloSSLv2)) {
+        // Client Hello SSLv2
+        struct ClientHelloSSLv2 *clienthello = (struct ClientHelloSSLv2 *) fragment;
+
+        // Check we have a TLS handshake
+        if (clienthello->client_version.major != 0x03) {
+            tls_connection_destroy(conn);
+            return 1;
+        }
+
+        // Only TLS 1.0, 1.1 or 1.2 connections
+        if (clienthello->client_version.minor != 0x01
+                && clienthello->client_version.minor != 0x02
+                && clienthello->client_version.minor != 0x03) {
+            tls_connection_destroy(conn);
+            return 1;
+        }
+
+        // Store TLS version
+        conn->version = clienthello->client_version.minor;
+
+        // Calculate where client random starts
+        const opaque *random = fragment + sizeof(struct ClientHelloSSLv2)
+                            + UINT16_INT(clienthello->cipherlist_len)
+                            + UINT16_INT(clienthello->sessionid_len);
+
+        // Get Client random
+        memcpy(&conn->client_random, random, sizeof(struct Random));
+    }
+
     return 0;
 }
 
