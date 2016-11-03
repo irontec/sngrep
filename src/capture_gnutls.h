@@ -88,6 +88,25 @@ enum SSLConnectionState {
     TCP_STATE_CLOSED
 };
 
+//! SSL Encoders algo
+enum SSLCipherEncoders {
+    ENC_AES         = 1,
+    ENC_AES256      = 2
+};
+
+//! SSL Digests algo
+enum SSLCIpherDigest {
+    DIG_SHA1        = 1,
+    DIG_SHA256      = 2,
+    DIG_SHA384      = 3
+};
+
+//! SSL Decode mode
+enum SSLCipherMode {
+    MODE_CBC        = GCRY_CIPHER_MODE_CBC,
+    MODE_GCM        = GCRY_CIPHER_MODE_GCM
+};
+
 //! ContentType values as defined in RFC5246
 enum ContentType {
     change_cipher_spec  = 20,
@@ -138,6 +157,16 @@ struct Random {
 struct CipherSuite {
     uint8_t cs1;
     uint8_t cs2;
+};
+
+struct CipherData {
+    int num;
+    int enc;
+    int ivblock;
+    int bits;
+    int digest;
+    int diglen;
+    int mode;
 };
 
 struct ClientHelloSSLv2 {
@@ -217,16 +246,17 @@ struct SSLConnection {
     struct Random client_random;
     struct Random server_random;
     struct CipherSuite cipher_suite;
+    struct CipherData cipher_data;
     struct PreMasterSecret pre_master_secret;
     struct MasterSecret master_secret;
 
     struct tls_data {
-        uint8_t client_write_MAC_key[20];
-        uint8_t server_write_MAC_key[20];
-        uint8_t client_write_key[32];
-        uint8_t server_write_key[32];
-        uint8_t client_write_IV[16];
-        uint8_t server_write_IV[16];
+        uint8_t *client_write_MAC_key;
+        uint8_t *server_write_MAC_key;
+        uint8_t *client_write_key;
+        uint8_t *server_write_key;
+        uint8_t *client_write_IV;
+        uint8_t *server_write_IV;
     } key_material;
 
     gcry_cipher_hd_t client_cipher_ctx;
@@ -255,25 +285,6 @@ int
 P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
        unsigned char *seed, int slen);
 
-
-/**
- * @brief Pseudorandom Function as defined in RFC5246
- *
- * This function will generate MasterSecret and KeyMaterial data from PreMasterSecret and Seed
- *
- * @param dest Destination of PRF function result. Memory must be already allocated
- * @param dlen Destination length in bytes
- * @param pre_master_secret PreMasterSecret decrypted from ClientKeyExchange Handhsake record
- * @param pslen PreMasterSecret length in bytes
- * @param label Fixed ASCII string
- * @param seed Concatenation of Random data from Hello Handshake records
- * @param slen Seed length in bytes
- * @return destination length in bytes
- */
-int
-PRF12(unsigned char *dest, int dlen, unsigned char *pre_master_secret,
-        int plen, unsigned char *label, unsigned char *seed, int slen);
-
 /**
  * @brief Pseudorandom Function as defined in RFC2246
  *
@@ -289,7 +300,7 @@ PRF12(unsigned char *dest, int dlen, unsigned char *pre_master_secret,
  * @return destination length in bytes
  */
 int
-PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret,
+PRF(struct SSLConnection *conn, unsigned char *dest, int dlen, unsigned char *pre_master_secret,
         int plen, unsigned char *label, unsigned char *seed, int slen);
 
 /**
@@ -463,5 +474,16 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
  */
 int
 tls_connection_load_cipher(struct SSLConnection *conn);
+
+/**
+ * @brief Determine if the given version is valid for us
+ *
+ * We only handle some SSL/TLS versions. This function will filter out
+ * records from unsupported versions.
+ *
+ * @return 0 if the version is supported, 1 otherwise
+ */
+int
+tls_valid_version(struct ProtocolVersion version);
 
 #endif
