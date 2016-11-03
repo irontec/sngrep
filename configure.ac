@@ -110,10 +110,6 @@ AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
 	    AC_MSG_ERROR([ You need to have gnutls installed to compile sngrep])
 	])
 
-	AC_CHECK_LIB([gnutls-openssl], [SSL_new], [], [
-	    AC_MSG_ERROR([ You need to have gnutls installed to compile sngrep])
-	])
-	
 	AC_CHECK_LIB([gcrypt], [gcry_md_map_name], [], [
 	    AC_MSG_ERROR([ You need to have libgcrypt installed to compile sngrep])
 	])

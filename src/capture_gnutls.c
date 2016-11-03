@@ -185,12 +185,14 @@ PRF(struct SSLConnection *conn,
 }
 
 struct SSLConnection *
-tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr, uint16_t sport) {
+tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr, uint16_t sport)
+{
     struct SSLConnection *conn = NULL;
     gnutls_datum_t keycontent = { NULL, 0 };
     FILE *keyfp;
     gnutls_x509_privkey_t spkey;
     size_t br;
+    int ret;
 
     // Allocate memory for this connection
     conn = sng_malloc(sizeof(struct SSLConnection));
@@ -216,10 +218,20 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     fclose(keyfp);
 
     gnutls_x509_privkey_init(&spkey);
-    gnutls_x509_privkey_import(spkey, &keycontent, GNUTLS_X509_FMT_PEM);
+
+    // Import PEM key data
+    ret = gnutls_x509_privkey_import(spkey, &keycontent, GNUTLS_X509_FMT_PEM);
+    if (ret != GNUTLS_E_SUCCESS)
+        return NULL;
+
     sng_free(keycontent.data);
-    gnutls_privkey_init(&conn->server_private_key);
-    gnutls_privkey_import_x509(conn->server_private_key, spkey, 0);
+
+    // Check this is a valid RSA key
+    if (gnutls_x509_privkey_get_pk_algorithm(spkey) != GNUTLS_PK_RSA)
+        return NULL;
+
+    // Store this key into the connection
+    conn->server_private_key = spkey;
 
     // Add this connection to the list
     conn->next = connections;
@@ -266,7 +278,6 @@ int
 tls_check_keyfile(const char *keyfile)
 {
     gnutls_x509_privkey_t key;
-    gnutls_privkey_t privkey;
     gnutls_datum_t keycontent = { NULL, 0 };
     FILE *keyfp;
     size_t br;
@@ -298,21 +309,9 @@ tls_check_keyfile(const char *keyfile)
         return 0;
     }
 
-    ret = gnutls_privkey_init(&privkey);
-    if (ret < GNUTLS_E_SUCCESS) {
-        fprintf (stderr, "Error initializing keyfile: %s\n", gnutls_strerror(ret));
-        return 0;
-    }
-
     // Import RSA keyfile
     ret = gnutls_x509_privkey_import(key, &keycontent, GNUTLS_X509_FMT_PEM);
-    if (ret < GNUTLS_E_SUCCESS) {
-        fprintf (stderr, "Error loading keyfile: %s\n", gnutls_strerror(ret));
-        return 0;
-    }
     sng_free(keycontent.data);
-
-    ret = gnutls_privkey_import_x509(privkey, key, 0);
     if (ret < GNUTLS_E_SUCCESS) {
         fprintf (stderr, "Error loading keyfile: %s\n", gnutls_strerror(ret));
         return 0;
@@ -602,9 +601,8 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 exkeys.data = (unsigned char *)&clientkeyex->exchange_keys;
                 tls_debug_print_hex("exchange keys",exkeys.data, exkeys.size);
 
-                gnutls_privkey_decrypt_data(conn->server_private_key, 0, &exkeys, &pms);
+                tls_privkey_decrypt_data(conn->server_private_key, 0, &exkeys, &pms);
                 if (!pms.data) break;
-
 
                 memcpy(&conn->pre_master_secret, pms.data, pms.size);
                 tls_debug_print_hex("pre_master_secret", pms.data, pms.size);
@@ -698,7 +696,6 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                                   gcry_cipher_get_algo_blklen(conn->ciph));
 
                 break;
-            case new_session_ticket:
             case finished:
                 break;
             default:
@@ -832,4 +829,67 @@ tls_valid_version(struct ProtocolVersion version)
             }
     }
     return 1;
+}
+
+int
+tls_privkey_decrypt_data(gnutls_x509_privkey_t key, unsigned int flags,
+                const gnutls_datum_t * ciphertext, gnutls_datum_t * plaintext)
+{
+    size_t decr_len = 0, i = 0;
+    gcry_sexp_t s_data = NULL, s_plain = NULL;
+    gcry_mpi_t  encr_mpi = NULL, text = NULL;
+    size_t tmp_size;
+    gnutls_datum_t rsa_datum[6];
+    gcry_mpi_t rsa_params[6];
+    gcry_sexp_t rsa_priv_key = NULL;
+
+    // Extract data from RSA key
+    gnutls_x509_privkey_export_rsa_raw(key,
+             &rsa_datum[0], &rsa_datum[1], &rsa_datum[2],
+             &rsa_datum[3], &rsa_datum[4], &rsa_datum[5]);
+
+    // Convert to RSA params
+    for(i=0; i<6; i++) {
+        gcry_mpi_scan(&rsa_params[i], GCRYMPI_FMT_USG, rsa_datum[i].data, rsa_datum[i].size, &tmp_size);
+    }
+
+    if (gcry_mpi_cmp(rsa_params[3], rsa_params[4]) > 0)
+        gcry_mpi_swap(rsa_params[3], rsa_params[4]);
+
+    // Convert to sexp
+    gcry_mpi_invm(rsa_params[5], rsa_params[3], rsa_params[4]);
+    gcry_sexp_build(&rsa_priv_key, NULL,
+        "(private-key(rsa((n%m)(e%m)(d%m)(p%m)(q%m)(u%m))))",
+        rsa_params[0], rsa_params[1], rsa_params[2],
+        rsa_params[3], rsa_params[4], rsa_params[5]);
+
+    // Free not longer required data
+    for (i=0; i< 6; i++) {
+        gcry_mpi_release(rsa_params[i]);
+        gnutls_free(rsa_datum[i].data);
+    }
+
+    gcry_mpi_scan(&encr_mpi, GCRYMPI_FMT_USG, ciphertext->data, ciphertext->size, NULL);
+    gcry_sexp_build(&s_data, NULL, "(enc-val(rsa(a%m)))", encr_mpi);
+    gcry_pk_decrypt(&s_plain, s_data, rsa_priv_key);
+    text = gcry_sexp_nth_mpi(s_plain, 0, 0);
+    gcry_mpi_print(GCRYMPI_FMT_USG, NULL, 0, &decr_len, text);
+    gcry_mpi_print(GCRYMPI_FMT_USG, ciphertext->data, ciphertext->size, &decr_len, text);
+
+    int pad = 0;
+    for (i = 1; i < decr_len; i++) {
+        if (ciphertext->data[i] == 0) {
+            pad = i+1;
+            break;
+        }
+    }
+
+    plaintext->size = decr_len - pad;
+    plaintext->data = gnutls_malloc(plaintext->size);
+    memmove(plaintext->data, ciphertext->data + pad, plaintext->size);
+    gcry_sexp_release(s_data);
+    gcry_sexp_release(s_plain);
+    gcry_mpi_release(encr_mpi);
+    gcry_mpi_release(text);
+    return (int) decr_len;
 }

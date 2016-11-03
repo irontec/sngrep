@@ -49,7 +49,6 @@
 #include "config.h"
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
-#include <gnutls/abstract.h>
 #include <gnutls/x509.h>
 #include <gcrypt.h>
 #include "capture.h"
@@ -125,7 +124,6 @@ enum HandshakeType {
     server_hello_done   = GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
     certificate_verify  = GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
     client_key_exchange = GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
-    new_session_ticket  = GNUTLS_HANDSHAKE_NEW_SESSION_TICKET,
     finished            = GNUTLS_HANDSHAKE_FINISHED
 };
 
@@ -242,7 +240,7 @@ struct SSLConnection {
 
     gnutls_session_t ssl;
     int ciph;
-    gnutls_privkey_t server_private_key;
+    gnutls_x509_privkey_t server_private_key;
     struct Random client_random;
     struct Random server_random;
     struct CipherSuite cipher_suite;
@@ -485,5 +483,21 @@ tls_connection_load_cipher(struct SSLConnection *conn);
  */
 int
 tls_valid_version(struct ProtocolVersion version);
+
+/**
+ * @brief Decrypt data using private RSA key
+ *
+ * This function code has been taken from wireshark.
+ * Because wireshark simply rocks.
+ *
+ * @param key Imported RSA key data
+ * @param flags decrpyt flag (no used)
+ * @param ciphertext Encrypted data
+ * @param plaintext Decrypted data
+ * @return number of bytes of decrypted data
+ */
+int
+tls_privkey_decrypt_data(gnutls_x509_privkey_t key, unsigned int flags,
+                const gnutls_datum_t * ciphertext, gnutls_datum_t * plaintext);
 
 #endif
