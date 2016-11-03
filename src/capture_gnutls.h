@@ -365,7 +365,7 @@ tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, uint16_t por
  * @return an existing Connection pointer or NULL if not found
  */
 struct SSLConnection*
-tls_connection_find(struct in_addr addr, uint16_t port);
+tls_connection_find(struct in_addr src, uint16_t sport, struct in_addr dst, uint16_t dport);
 
 /**
  * @brief Process a TCP segment to check TLS data

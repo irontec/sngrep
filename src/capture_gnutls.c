@@ -332,11 +332,16 @@ tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, uint16_t por
 }
 
 struct SSLConnection*
-tls_connection_find(struct in_addr addr, uint16_t port) {
+tls_connection_find(struct in_addr src, uint16_t sport, struct in_addr dst, uint16_t dport) {
     struct SSLConnection *conn;
 
     for (conn = connections; conn; conn = conn->next) {
-        if (tls_connection_dir(conn, addr, port) != -1) {
+        if (tls_connection_dir(conn, src, sport) == 0 &&
+                tls_connection_dir(conn, dst, dport) == 1) {
+            return conn;
+        }
+        if (tls_connection_dir(conn, src, sport) == 1 &&
+                tls_connection_dir(conn, dst, dport) == 0) {
             return conn;
         }
     }
@@ -361,7 +366,7 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
     inet_pton(AF_INET, packet->dst.ip, &ip_dst);
 
     // Try to find a session for this ip
-    if ((conn = tls_connection_find(ip_src, sport))) {
+    if ((conn = tls_connection_find(ip_src, sport, ip_dst, dport))) {
         // Update last connection direction
         conn->direction = tls_connection_dir(conn, ip_src, sport);
 
