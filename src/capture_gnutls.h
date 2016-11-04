@@ -48,7 +48,6 @@
 
 #include "config.h"
 #include <gnutls/gnutls.h>
-#include <gnutls/crypto.h>
 #include <gnutls/x509.h>
 #include <gcrypt.h>
 #include "capture.h"
