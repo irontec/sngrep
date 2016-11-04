@@ -102,8 +102,8 @@ enum SSLCIpherDigest {
 
 //! SSL Decode mode
 enum SSLCipherMode {
-    MODE_CBC        = GCRY_CIPHER_MODE_CBC,
-    MODE_GCM        = GCRY_CIPHER_MODE_GCM
+    MODE_CBC,
+    MODE_GCM
 };
 
 //! ContentType values as defined in RFC5246

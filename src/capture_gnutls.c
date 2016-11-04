@@ -677,8 +677,18 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 sng_free(seed);
                 //sng_free(key_material);
 
+                int mode = 0;
+                if (conn->cipher_data.mode == MODE_CBC) {
+                    mode = GCRY_CIPHER_MODE_CBC;
+                } else if (conn->cipher_data.mode == MODE_GCM) {
+                    mode = GCRY_CIPHER_MODE_CTR;
+                } else {
+                    tls_connection_destroy(conn);
+                    return 1;
+                }
+
                 // Create Client decoder
-                gcry_cipher_open(&conn->client_cipher_ctx, conn->ciph, conn->cipher_data.mode, 0);
+                gcry_cipher_open(&conn->client_cipher_ctx, conn->ciph, mode, 0);
                 gcry_cipher_setkey(conn->client_cipher_ctx,
                                    conn->key_material.client_write_key,
                                    gcry_cipher_get_algo_keylen(conn->ciph));
@@ -687,7 +697,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                                   gcry_cipher_get_algo_blklen(conn->ciph));
 
                 // Create Server decoder
-                gcry_cipher_open(&conn->server_cipher_ctx, conn->ciph, conn->cipher_data.mode, 0);
+                gcry_cipher_open(&conn->server_cipher_ctx, conn->ciph, mode, 0);
                 gcry_cipher_setkey(conn->server_cipher_ctx,
                                    conn->key_material.server_write_key,
                                    gcry_cipher_get_algo_keylen(conn->ciph));
