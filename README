@@ -16,6 +16,7 @@ as PCAP viewer.
 * [Gentoo](https://github.com/irontec/sngrep/wiki/Installing-Binaries#gentoo)
 * [Arch](https://github.com/irontec/sngrep/wiki/Installing-Binaries#arch)
 * [OSX] (https://github.com/irontec/sngrep/wiki/Installing-Binaries#osx)
+* [OpenWRT/LEDE] (https://github.com/irontec/sngrep/wiki/Installing-Binaries#openwrtlede)
 
 ### Building from sources
 Prerequisites
