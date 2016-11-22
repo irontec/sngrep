@@ -51,6 +51,7 @@
 #include <openssl/tls1.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include "capture.h"
 
 //! Cast two bytes into decimal (Big Endian)
