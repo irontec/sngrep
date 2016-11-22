@@ -616,7 +616,9 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                                0);
 
                 break;
+#ifndef OLD_OPENSSL_VERSION
             case new_session_ticket:
+#endif
             case finished:
                 break;
             default:
