@@ -51,12 +51,19 @@
 #include <openssl/tls1.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include "capture.h"
 
 //! Cast two bytes into decimal (Big Endian)
 #define UINT16_INT(i) ((i.x[0] << 8) | i.x[1])
 //! Cast three bytes into decimal (Big Endian)
 #define UINT24_INT(i) ((i.x[0] << 16) | (i.x[1] << 8) | i.x[2])
+
+//The symbol SSL3_MT_NEWSESSION_TICKET appears to have been introduced at around
+//openssl 0.9.8f, and the use of if breaks builds with older openssls
+#if OPENSSL_VERSION_NUMBER < 0x00908070L
+#define OLD_OPENSSL_VERSION 1
+#endif
 
 //! Three bytes unsigned integer
 typedef struct uint16 {
@@ -105,7 +112,9 @@ enum HandshakeType {
     server_hello_done = SSL3_MT_SERVER_DONE,
     certificate_verify = SSL3_MT_CERTIFICATE_VERIFY,
     client_key_exchange = SSL3_MT_CLIENT_KEY_EXCHANGE,
+#ifndef OLD_OPENSSL_VERSION
     new_session_ticket = SSL3_MT_NEWSESSION_TICKET,
+#endif
     finished = SSL3_MT_FINISHED
 };
 
