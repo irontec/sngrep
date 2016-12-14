@@ -187,7 +187,7 @@ sip_attr_get_width(enum sip_attr_id id);
  * @param name Attribut name
  * @return Attribute id or -1 if not found
  */
-enum sip_attr_id
+int
 sip_attr_from_name(const char *name);
 
 /**

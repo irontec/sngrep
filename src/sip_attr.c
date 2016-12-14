@@ -105,7 +105,7 @@ sip_attr_get_width(enum sip_attr_id id)
     return 0;
 }
 
-enum sip_attr_id
+int
 sip_attr_from_name(const char *name)
 {
     int i;

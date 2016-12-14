@@ -156,9 +156,15 @@ sip_init(int limit, int only_calls, int no_incomplete)
     // Create hash table for callid search
     calls.callids = htable_create(calls.limit);
 
-    // By default sort by call index ascending
-    calls.sort.by = SIP_ATTR_CALLINDEX;
-    calls.sort.asc = true;
+    // Set default sorting field
+    if (sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
+        calls.sort.by = sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD));
+        calls.sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
+    } else {
+        // Fallback to default sorting field
+        calls.sort.by = SIP_ATTR_CALLINDEX;
+        calls.sort.asc = true;
+    }
 
     // Initialize payload parsing regexp
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
