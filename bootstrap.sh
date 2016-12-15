@@ -14,8 +14,8 @@ check_for_app() {
 
 case `uname -sr` in
         OpenBSD*)
-                export AUTOCONF_VERSION=2.63
-                export AUTOMAKE_VERSION=1.9
+                export AUTOCONF_VERSION=2.69
+                export AUTOMAKE_VERSION=1.15
                 ;;
         FreeBSD*)
                 AUTOCONF_VERSION=2.69
