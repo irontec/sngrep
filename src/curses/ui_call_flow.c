@@ -196,10 +196,6 @@ call_flow_draw(ui_t *ui)
         if (vector_iterator_current(&it) == info->first_arrow) {
             info->scroll.pos = info->scroll.max;
         }
-        // Skip RTP arrows if not displayed
-        if (arrow->type == CF_ARROW_RTP && setting_disabled(SETTING_CF_MEDIA)) {
-            continue;
-        }
         info->scroll.max += call_flow_arrow_height(ui, arrow);
     }
     ui_scrollbar_draw(info->scroll);
@@ -831,6 +827,8 @@ call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow)
     } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP) {
         if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
             return 1;
+        if (setting_disabled(SETTING_CF_MEDIA))
+            return 0;
         return 2;
     }
 
@@ -1325,6 +1323,7 @@ call_flow_move(ui_t *ui, int arrowindex)
     call_flow_info_t *info;
     call_flow_arrow_t *arrow;
     int flowh;
+    int curh = 0;
 
     // Get panel info
     if (!(info = call_flow_info(ui)))
@@ -1367,15 +1366,28 @@ call_flow_move(ui_t *ui, int arrowindex)
     }
 
     // Update the first displayed arrow
-    if (info->cur_arrow < info->first_arrow) {
+    if (info->cur_arrow <= info->first_arrow) {
         info->first_arrow = info->cur_arrow;
-    } else if (info->cur_arrow - info->first_arrow >= flowh/2) {
-        // If we are out of the bottom of the displayed list
-        // refresh it starting in the next call
-        info->first_arrow = info->cur_arrow - flowh/2 + 1;
+    } else {
+        // Draw the scrollbar
+        vector_iterator_set_current(&it, info->first_arrow - 1);
+        while ((arrow = vector_iterator_next(&it))) {
+            // Increase current arrow height position
+            curh += call_flow_arrow_height(ui, arrow);
+            // If we have reached current arrow
+            if (vector_iterator_current(&it) == info->cur_arrow) {
+                if (curh > flowh) {
+                    // Go to the next first arrow and check if current arrow
+                    // is still out of bottom bounds
+                    info->first_arrow++;
+                    vector_iterator_set_current(&it, info->first_arrow - 1);
+                    curh = 0;
+                } else {
+                    break;
+                }
+            }
+        }
     }
-
-
 }
 
 call_flow_arrow_t *
