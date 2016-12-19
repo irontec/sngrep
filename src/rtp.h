@@ -50,6 +50,9 @@
 // RTCP common header length
 #define RTCP_HDR_LENGTH 4
 
+// If stream does not receive a packet in this seconds, we consider it inactive
+#define STREAM_INACTIVE_SECS 3
+
 // RTCP header types
 //! http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml
 enum rtcp_header_types
@@ -108,6 +111,8 @@ struct rtp_stream {
     uint32_t pktcnt;
     //! Time of first received packet of stream
     struct timeval time;
+    //! Unix timestamp of last received packet
+    int lasttm;
 
     // Stream information (depending on type)
     union {
@@ -320,6 +325,18 @@ stream_is_older(rtp_stream_t *one, rtp_stream_t *two);
 
 int
 stream_is_complete(rtp_stream_t *stream);
+
+/**
+ * @brief Determine if a stream is still active
+ *
+ * This simply checks the timestamp of the last received packet of the stream
+ * marking as inactive if it was before STREAM_INACTIVE_SECS ago
+ *
+ * @return 1 if stream is active
+ * @return 0 if stream is inactive
+ */
+int
+stream_is_active(rtp_stream_t *stream);
 
 /**
  * @brief Check if the data is a RTP packet

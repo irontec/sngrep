@@ -650,7 +650,8 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     if (address_equals(msg->packet->src, stream->dst)) {
         // Reuse the msg arrow columns as destination column
         if ((msgarrow = call_flow_arrow_find(ui, msg))) {
-            arrow->dcolumn = msgarrow->scolumn;
+            // Get origin and destination column
+            arrow->dcolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->src);
         }
     }
 
@@ -674,7 +675,20 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     if (msg && address_equals(msg->packet->src, stream->src)) {
         // Reuse the msg arrow columns as destination column
         if ((msgarrow = call_flow_arrow_find(ui, msg))) {
-            arrow->scolumn = msgarrow->scolumn;
+            // Get origin and destination column
+            arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->src);
+        }
+    }
+
+    // Prefer message that configured this stream rather than any column
+    if (!arrow->scolumn) {
+        msg = stream->media->msg;
+        // If message and stream share the same IP address
+        if (address_equals(msg->packet->dst, stream->src)) {
+            // Reuse the msg arrow columns as destination column
+            if ((msgarrow = call_flow_arrow_find(ui, msg))) {
+                arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->dst);
+            }
         }
     }
 
@@ -734,16 +748,23 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         }
     }
 
+    // Check if displayed stream is active
+    int active = stream_is_active(stream);
+
     // Clear the line
     mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
-    // Draw method
+    // Draw RTP arrow text
     mvwprintw(win, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
 
     if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
         cline++;
 
     // Draw line between columns
-    mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
+    if (active)
+        mvwhline(win, cline, startpos + 2, '-', distance);
+    else
+        mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
+
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow_dir == CF_ARROW_RIGHT) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
@@ -751,7 +772,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
             mvwprintw(win, cline, endpos, "%d", stream->dst.port);
         }
         mvwaddch(win, cline, endpos - 2, '>');
-        if (arrow->rtp_count != stream_get_count(stream)) {
+        if (active) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
             mvwaddch(win, cline, startpos + arrow->rtp_ind_pos + 2, '>');
@@ -762,7 +783,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
             mvwprintw(win, cline, startpos - 4, "%d", stream->dst.port);
         }
         mvwaddch(win, cline, startpos + 2, '<');
-        if (arrow->rtp_count != stream_get_count(stream)) {
+        if (active) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
             mvwaddch(win, cline, endpos - arrow->rtp_ind_pos - 2, '<');
@@ -814,6 +835,8 @@ int
 call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
+        if (setting_enabled(SETTING_CF_ONLYMEDIA))
+            return 0;
         if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
             return 1;
         if (!msg_has_sdp(arrow->item))
@@ -921,7 +944,7 @@ call_flow_draw_raw(ui_t *ui, sip_msg_t *msg)
         info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
     }
 
-    // Draw raw box lines
+    // Draw raw box li
     wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
     mvwvline(ui->win, 1, ui->width - raw_width - 2, ACS_VLINE, ui->height - 2);
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
@@ -939,6 +962,11 @@ call_flow_draw_raw(ui_t *ui, sip_msg_t *msg)
 int
 call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
 {
+    /**
+     * TODO This is too experimental to even display it
+     */
+    return 0;
+
     call_flow_info_t *info;
     WINDOW *raw_win;
     int raw_width, raw_height;
@@ -1093,6 +1121,10 @@ call_flow_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_SDP_INFO:
                 setting_toggle(SETTING_CF_SDP_INFO);
+                break;
+            case ACTION_ONLY_MEDIA:
+                setting_toggle(SETTING_CF_ONLYMEDIA);
+                call_flow_set_group(info->group);
                 break;
             case ACTION_TOGGLE_MEDIA:
                 setting_toggle(SETTING_CF_MEDIA);
@@ -1463,12 +1495,18 @@ call_flow_arrow_filter(void *item)
     call_flow_arrow_t *arrow = (call_flow_arrow_t *) item;
 
     // SIP arrows are never filtered
-    if (arrow->type == CF_ARROW_SIP)
+    if (arrow->type == CF_ARROW_SIP && setting_disabled(SETTING_CF_ONLYMEDIA))
         return 1;
 
     // RTP arrows are only displayed when requested
-    if (arrow->type == CF_ARROW_RTP && setting_enabled(SETTING_CF_MEDIA))
-        return 1;
+    if (arrow->type == CF_ARROW_RTP) {
+        // Display all streams
+        if (setting_enabled(SETTING_CF_MEDIA))
+            return 1;
+        // Otherwise only show active streams
+        if (setting_has_value(SETTING_CF_MEDIA, SETTING_ACTIVE))
+            return stream_is_active(arrow->item);
+    }
 
     // Rest of the arrows are never displayed
     return 0;

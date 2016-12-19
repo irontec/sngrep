@@ -29,6 +29,9 @@
  *
  */
 
+#include "config.h"
+#include <stddef.h>
+#include <time.h>
 #include "rtp.h"
 #include "sip.h"
 #include "vector.h"
@@ -100,6 +103,7 @@ stream_add_packet(rtp_stream_t *stream, packet_t *packet)
     if (stream->pktcnt == 0)
         stream->time = packet_time(packet);
 
+    stream->lasttm = (int) time(NULL);
     stream->pktcnt++;
 }
 
@@ -470,6 +474,12 @@ int
 stream_is_complete(rtp_stream_t *stream)
 {
     return (stream->pktcnt != 0);
+}
+
+int
+stream_is_active(rtp_stream_t *stream)
+{
+    return ((int) time(NULL) - stream->lasttm <= STREAM_INACTIVE_SECS);
 }
 
 int

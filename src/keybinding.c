@@ -77,6 +77,7 @@ key_binding_t bindings[ACTION_SENTINEL] = {
    { ACTION_SELECT,         "select",       { KEY_SPACE }, 1 },
    { ACTION_CONFIRM,        "confirm",      { KEY_INTRO }, 1 },
    { ACTION_TOGGLE_MEDIA,   "togglemedia",  { KEY_F(3), 'm' }, 2 },
+   { ACTION_ONLY_MEDIA,     "onlymedia",    { 'M' }, 1 },
    { ACTION_TOGGLE_RAW,     "rawpreview",   { 't' }, 1 },
    { ACTION_INCREASE_RAW,   "morerawpreview", { '9' }, 1 },
    { ACTION_DECREASE_RAW,   "lessrawpreview", { '0' }, 1 },
