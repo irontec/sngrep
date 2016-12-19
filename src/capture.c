@@ -121,10 +121,8 @@ capture_online(const char *dev, const char *outfile)
 
     // Try to find capture device information
     if (pcap_lookupnet(dev, &capinfo->net, &capinfo->mask, errbuf) == -1) {
-        fprintf(stderr, "Can't get netmask for device %s\n", dev);
         capinfo->net = 0;
         capinfo->mask = 0;
-        return 2;
     }
 
     // Open capture device
