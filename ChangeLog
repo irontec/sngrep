@@ -1,3 +1,21 @@
+2016-12-19 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.2 released
+
+	* Capture
+		* Interface network mask and IP address are no longer a must to capture
+	* TLS
+		* gnutls: Add support for initial ClientHello in SSLv2
+		* gnutls: Initial support for GCM cipher modes
+		* gnutls: Improve compatibility with old libgcrypt versions
+	* Call List
+		* Add setting for default sorting field and order
+	* Call Flow
+		* Added a keybinding to only display RTP streams
+		* Added a new mode to only display _active_ RTP streams
+	* Packages
+		* Irontec Debian packages now compile using gnutls
+		* Updated spec file for RPM packages
+
 2016-10-28 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.1 released
 
