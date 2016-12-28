@@ -2,7 +2,7 @@
 
 Summary:            SIP Messages flow viewer
 Name:               sngrep
-Version:            1.4.1
+Version:            1.4.2
 Release:            0%{?dist}
 License:            GPLv3
 Group:              Applications/Engineering
