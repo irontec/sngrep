@@ -473,14 +473,14 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     }
 
     // Add this IP content length to the total captured of the packet
-    pkt->ip_cap_len += ip_len;
+    pkt->ip_cap_len += ip_len - ip_hl;
 
     // Calculate how much data we need to complete this packet
     // The total packet size can only be known using the last fragment of the packet
     // where 'No more fragments is enabled' and it's calculated based on the
     // last fragment offset
     if ((ip_off & IP_MF) == 0) {
-        pkt->ip_exp_len = ip_frag_off + ip_len + ip_hl;
+        pkt->ip_exp_len = ip_frag_off + ip_len - ip_hl;
     }
 
     // If we have the whole packet (captured length is expected length)
