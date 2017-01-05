@@ -218,7 +218,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             } else if (reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
                 call->state = SIP_CALLSTATE_CANCELLED;
-            } else if ((reqresp == 480) || (reqresp == 486)) {
+            } else if ((reqresp == 480) || (reqresp == 486) || (reqresp == 600 )) {
                 // Bob is busy
                 call->state = SIP_CALLSTATE_BUSY;
             } else if (reqresp > 400 && call->invitecseq == msg->cseq) {
