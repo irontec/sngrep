@@ -1163,6 +1163,9 @@ call_flow_handle_key(ui_t *ui, int key)
                     }
                 }
                 break;
+            case ACTION_CLEAR:
+                info->selected = -1;
+                break;
             case ACTION_CONFIRM:
                 // KEY_ENTER, display current message in raw mode
                 ui_create_panel(PANEL_CALL_RAW);
