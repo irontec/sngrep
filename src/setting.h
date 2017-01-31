@@ -32,6 +32,7 @@
  *  - Initialization
  *  - \@sysdir\@/sngreprc
  *  - $HOME/.sngreprc
+ *  - $SNGREPRC
  *
  * This is a basic approach to configuration, but at least a minimun is required
  * for those who can not see all the list columns or want to disable colours in

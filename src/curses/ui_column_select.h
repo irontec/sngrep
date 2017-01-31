@@ -164,7 +164,7 @@ column_select_update_columns(ui_t *ui);
  * @brief Save selected columns to user config file
  *
  * Remove previously configurated columns from user's
- * $HOME/.sngreprc and add new ones
+ * $SNGREPRC or $HOME/.sngreprc and add new ones
  *
  * @param ui UI structure pointer
  */
