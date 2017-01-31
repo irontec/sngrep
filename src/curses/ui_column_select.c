@@ -373,21 +373,24 @@ column_select_save_columns(ui_t *ui)
     FILE *fi, *fo;
     char columnopt[128];
     char line[1024];
-    char *home = getenv("HOME");
+    char *rcfile;
     char userconf[128], tmpfile[128];
 
-    // No home dir...
-    if (!home)
+    // Use current $SNGREPRC or $HOME/.sngreprc file
+    if (rcfile = getenv("SNGREPRC")) {
+        sprintf(userconf, "%s", rcfile);
+        sprintf(tmpfile, "%s.old", rcfile);
+    } else if (rcfile = getenv("HOME")) {
+        sprintf(userconf, "%s/.sngreprc", rcfile);
+        sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
+    } else {
         return;
-
-    // Read current $HOME/.sngreprc file
-    sprintf(userconf, "%s/.sngreprc", home);
-    sprintf(tmpfile, "%s/.sngreprc.old", home);
+    }
 
     // Remove old config file
     unlink(tmpfile);
 
-    // Move home file to temporal dir
+    // Move user conf file to temporal file
     rename(userconf, tmpfile);
 
     // Create a new user conf file
@@ -403,7 +406,7 @@ column_select_save_columns(ui_t *ui)
         while (fgets(line, 1024, fi) != NULL) {
             // Ignore lines starting with set (but keep settings)
             if (strncmp(line, "set ", 4) || strncmp(line, "set cl.column", 13)) {
-                // Put everyting in new .sngreprc file
+                // Put everyting in new user conf file
                 fputs(line, fo);
             }
         }

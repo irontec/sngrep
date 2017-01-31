@@ -51,7 +51,7 @@ init_options()
 {
     // Custom user conf file
     char userconf[128];
-    char *home = getenv("HOME");
+    char *rcfile;
     char pwd[MAX_SETTING_LEN];
 
     // Defualt savepath is current directory
@@ -75,9 +75,11 @@ init_options()
     // Read options from configuration files
     read_options("/etc/sngreprc");
     read_options("/usr/local/etc/sngreprc");
-    // Get user homedir configuration
-    if (home) {
-        sprintf(userconf, "%s/.sngreprc", home);
+    // Get user configuration
+    if (rcfile = getenv("SNGREPRC")) {
+        read_options(rcfile);
+    } else if (rcfile = getenv("HOME")) {
+        sprintf(userconf, "%s/.sngreprc", rcfile);
         read_options(userconf);
     }
 
