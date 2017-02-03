@@ -76,10 +76,10 @@ init_options()
     read_options("/etc/sngreprc");
     read_options("/usr/local/etc/sngreprc");
     // Get user configuration
-    if (rcfile = getenv("SNGREPRC")) {
+    if ((rcfile = getenv("SNGREPRC"))) {
         read_options(rcfile);
-    } else if (rcfile = getenv("HOME")) {
-        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+    } else if ((rcfile = getenv("HOME"))) {
+        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
             sprintf(userconf, "%s/.sngreprc", rcfile);
             read_options(userconf);
             sng_free(userconf);

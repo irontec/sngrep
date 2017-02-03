@@ -462,9 +462,9 @@ ui_settings_save(ui_t *ui)
     settings_info_t *info = settings_info(ui);
 
     // Use current $SNGREPRC or $HOME/.sngreprc file
-    if (rcfile = getenv("SNGREPRC")) {
-        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
-            if (tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+    if ((rcfile = getenv("SNGREPRC"))) {
+        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
+            if ((tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
                 sprintf(userconf, "%s", rcfile);
                 sprintf(tmpfile, "%s.old", rcfile);
             } else {
@@ -474,9 +474,9 @@ ui_settings_save(ui_t *ui)
         } else {
             return;
         }
-    } else if (rcfile = getenv("HOME")) {
-        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
-            if (tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+    } else if ((rcfile = getenv("HOME"))) {
+        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
+            if ((tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
                 sprintf(userconf, "%s/.sngreprc", rcfile);
                 sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
             } else {
