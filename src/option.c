@@ -50,7 +50,7 @@ int
 init_options()
 {
     // Custom user conf file
-    char userconf[128];
+    char *userconf = NULL;
     char *rcfile;
     char pwd[MAX_SETTING_LEN];
 
@@ -79,8 +79,11 @@ init_options()
     if (rcfile = getenv("SNGREPRC")) {
         read_options(rcfile);
     } else if (rcfile = getenv("HOME")) {
-        sprintf(userconf, "%s/.sngreprc", rcfile);
-        read_options(userconf);
+        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+            sprintf(userconf, "%s/.sngreprc", rcfile);
+            read_options(userconf);
+            sng_free(userconf);
+        }
     }
 
     return 0;

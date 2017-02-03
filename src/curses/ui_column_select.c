@@ -374,15 +374,34 @@ column_select_save_columns(ui_t *ui)
     char columnopt[128];
     char line[1024];
     char *rcfile;
-    char userconf[128], tmpfile[128];
+    char *userconf = NULL;
+    char *tmpfile  = NULL;
 
     // Use current $SNGREPRC or $HOME/.sngreprc file
     if (rcfile = getenv("SNGREPRC")) {
-        sprintf(userconf, "%s", rcfile);
-        sprintf(tmpfile, "%s.old", rcfile);
+        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+            if (tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+                sprintf(userconf, "%s", rcfile);
+                sprintf(tmpfile, "%s.old", rcfile);
+            } else {
+                sng_free(userconf);
+                return;
+            }
+        } else {
+            return;
+        }
     } else if (rcfile = getenv("HOME")) {
-        sprintf(userconf, "%s/.sngreprc", rcfile);
-        sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
+        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+            if (tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+                sprintf(userconf, "%s/.sngreprc", rcfile);
+                sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
+            } else {
+                sng_free(userconf);
+                return;
+            }
+        } else {
+            return;
+        }
     } else {
         return;
     }
@@ -396,6 +415,8 @@ column_select_save_columns(ui_t *ui)
     // Create a new user conf file
     if (!(fo = fopen(userconf, "w"))) {
         dialog_run("Unable to open %s: %s", userconf, strerror(errno));
+        sng_free(userconf);
+        sng_free(tmpfile);
         return;
     }
 
@@ -430,6 +451,9 @@ column_select_save_columns(ui_t *ui)
 
     // Show a information dialog
     dialog_run("Column layout successfully saved to %s", userconf);
+
+    sng_free(userconf);
+    sng_free(tmpfile);
 }
 
 

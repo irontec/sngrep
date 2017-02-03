@@ -45,6 +45,9 @@
 //! Max setting value
 #define MAX_SETTING_LEN   1024
 
+//! Max extra length needed for "/.sngreprc.old"
+#define RCFILE_EXTRA_LEN   16
+
 //! Shorter declarartion of setting_option struct
 typedef struct setting_option setting_t;
 
