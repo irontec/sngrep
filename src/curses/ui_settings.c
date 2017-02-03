@@ -453,7 +453,8 @@ ui_settings_save(ui_t *ui)
     FILE *fi, *fo;
     char line[1024];
     char *rcfile;
-    char userconf[128], tmpfile[128];
+    char *userconf = NULL;
+    char *tmpfile  = NULL;
     char field_value[180];
     settings_entry_t *entry;
 
@@ -462,11 +463,29 @@ ui_settings_save(ui_t *ui)
 
     // Use current $SNGREPRC or $HOME/.sngreprc file
     if (rcfile = getenv("SNGREPRC")) {
-        sprintf(userconf, "%s", rcfile);
-        sprintf(tmpfile, "%s.old", rcfile);
+        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+            if (tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+                sprintf(userconf, "%s", rcfile);
+                sprintf(tmpfile, "%s.old", rcfile);
+            } else {
+                sng_free(userconf);
+                return;
+            }
+        } else {
+            return;
+        }
     } else if (rcfile = getenv("HOME")) {
-        sprintf(userconf, "%s/.sngreprc", rcfile);
-        sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
+        if (userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+            if (tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN)) {
+                sprintf(userconf, "%s/.sngreprc", rcfile);
+                sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
+            } else {
+                sng_free(userconf);
+                return;
+            }
+        } else {
+            return;
+        }
     } else {
         dialog_run("Unable to save configuration. User has no $SNGREPRC or $HOME dir.");
         return;
@@ -480,6 +499,8 @@ ui_settings_save(ui_t *ui)
 
     // Create a new user conf file
     if (!(fo = fopen(userconf, "w"))) {
+        sng_free(userconf);
+        sng_free(tmpfile);
         return;
     }
 
@@ -510,4 +531,7 @@ ui_settings_save(ui_t *ui)
     fclose(fo);
 
     dialog_run("Settings successfully saved to %s", userconf);
+
+    sng_free(userconf);
+    sng_free(tmpfile);
 }
