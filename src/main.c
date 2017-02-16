@@ -74,7 +74,8 @@ usage()
            "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
            "    -D --dump-config\t Print active configuration settings and exit\n"
            "    -f --config\t\t Read configuration from file\n"
-           "    -R --rotate\t\t Rotate calls when capture limit have been reached.\n"
+           "    -F --no-config\t Do not read configuration from default config file\n"
+           "    -R --rotate\t\t Rotate calls when capture limit have been reached\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
@@ -130,7 +131,7 @@ main(int argc, char* argv[])
     const char *keyfile;
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
-    int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0;
+    int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0, no_config = 0;
     vector_t *infiles = vector_create(0, 1);
 
     // Program options
@@ -152,6 +153,7 @@ main(int argc, char* argv[])
         { "dump-config", no_argument, 0, 'D' },
         { "rotate", no_argument, 0, 'R' },
         { "config", required_argument, 0, 'f' },
+        { "no-config", required_argument, 0, 'F' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -159,8 +161,27 @@ main(int argc, char* argv[])
         { "quiet", no_argument, 0, 'q' },
     };
 
+    // Parse command line arguments that have high priority
+    opterr = 0;
+    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:Rf:F";
+    while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
+        switch (opt) {
+            case 'h':
+                usage();
+                return 0;
+            case 'V':
+                version();
+                return 0;
+            case 'F':
+                no_config = 1;
+                break;
+            default:
+                break;
+        }
+	}
+
     // Initialize configuration options
-    init_options();
+    init_options(no_config);
 
     // Get initial values for configurable arguments
     device = setting_get_value(SETTING_CAPTURE_DEVICE);
@@ -172,17 +193,15 @@ main(int argc, char* argv[])
     rtp_capture = setting_enabled(SETTING_CAPTURE_RTP);
     rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
 
-    // Parse command line arguments
+    // Parse the rest of command line arguments
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:Rf:";
+    optind = 1;  /* reset getopt index */
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
-            case 'h':
-                usage();
-                return 0;
-            case 'V':
-                version();
-                return 0;
+            case 'h': /* handled before with higher priority options */
+                break;
+            case 'V': /* handled before with higher priority options */
+                break;
             case 'd':
                 device = optarg;
                 break;
@@ -233,6 +252,8 @@ main(int argc, char* argv[])
                 return 0;
             case 'f':
                 read_options(optarg);
+                break;
+            case 'F':  /* handled before with higher priority options */
                 break;
             case 'R':
                 rotate = 1;

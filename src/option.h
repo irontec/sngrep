@@ -74,10 +74,11 @@ struct config_option {
  * This values can be overriden using resources files, either from system dir
  * or user home dir.
  *
+ * @param no_config Do not load config file if set to 1
  * @return 0 in all cases
  */
 int
-init_options();
+init_options(int no_config);
 
 /**
  * @brief Deallocate options memory
