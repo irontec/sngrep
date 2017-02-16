@@ -47,7 +47,7 @@ option_opt_t options[1024];
 int optscnt = 0;
 
 int
-init_options()
+init_options(int no_config)
 {
     // Custom user conf file
     char *userconf = NULL;
@@ -71,6 +71,11 @@ init_options()
     set_option_value("cl.column5", "src");
     set_option_value("cl.column6", "dst");
     set_option_value("cl.column7", "state");
+
+	// Done if config file should not be read
+	if(no_config) {
+		return 0;
+	}
 
     // Read options from configuration files
     read_options("/etc/sngreprc");
