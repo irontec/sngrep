@@ -153,7 +153,7 @@ main(int argc, char* argv[])
         { "dump-config", no_argument, 0, 'D' },
         { "rotate", no_argument, 0, 'R' },
         { "config", required_argument, 0, 'f' },
-        { "no-config", required_argument, 0, 'F' },
+        { "no-config", no_argument, 0, 'F' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
