@@ -47,6 +47,24 @@ packet_create(uint8_t ip_ver, uint8_t proto, address_t src, address_t dst, uint3
     return packet;
 }
 
+packet_t*
+packet_clone(packet_t *packet)
+{
+    packet_t *clone;
+    frame_t *frame;
+
+    // Create a new packet with the original information
+    clone =    packet_create(packet->ip_version, packet->proto, packet->src, packet->dst, packet->ip_id);
+    clone->tcp_seq = packet->tcp_seq;
+
+    // Append this frames to the original packet
+    vector_iter_t frames = vector_iterator(packet->frames);
+    while ((frame = vector_iterator_next(&frames)))
+        packet_add_frame(clone, frame->header, frame->data);
+
+    return clone;
+}
+
 void
 packet_destroy(packet_t *packet)
 {

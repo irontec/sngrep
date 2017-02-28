@@ -526,6 +526,7 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
     vector_iter_t it = vector_iterator(capture_cfg.tcp_reasm);
     packet_t *pkt;
     u_char *new_payload;
+    u_char full_payload[MAX_CAPTURE_LEN + 1];
 
     //! Assembled
     if ((int32_t) size_payload <= 0)
@@ -583,14 +584,28 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         }
         packet_set_payload(pkt, new_payload, pkt->payload_len + size_payload);
         sng_free(new_payload);
-
     }
+
+    // Store full payload content
+    memset(full_payload, 0, MAX_CAPTURE_LEN);
+    memcpy(full_payload, pkt->payload, pkt->payload_len);
 
     // This packet is ready to be parsed
     int valid = sip_validate_packet(pkt);
     if (valid == VALIDATE_COMPLETE_SIP) {
         // Full SIP packet!
         vector_remove(capture_cfg.tcp_reasm, pkt);
+        return pkt;
+    } else if (valid == VALIDATE_MULTIPLE_SIP) {
+        vector_remove(capture_cfg.tcp_reasm, pkt);
+
+        // We have a full SIP Packet, but do not remove everything from the reasm queue
+        packet_t *cont = packet_clone(pkt);
+        int pldiff = size_payload - pkt->payload_len;
+        packet_set_payload(cont, full_payload + pkt->payload_len, pldiff);
+        vector_append(capture_cfg.tcp_reasm, cont);
+
+        // Return the full initial packet
         return pkt;
     } else if (valid == VALIDATE_NOT_SIP) {
         // Not a SIP packet, store until PSH flag

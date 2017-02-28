@@ -112,6 +112,12 @@ packet_t *
 packet_create(uint8_t ip_ver, uint8_t proto, address_t src, address_t dst, uint32_t id);
 
 /**
+ * @brief Deep clone one packet
+ */
+packet_t*
+packet_clone(packet_t *packet);
+
+/**
  * @brief Set Transport layer information
  */
 packet_t *

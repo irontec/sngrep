@@ -76,6 +76,7 @@ enum validate_result {
     VALIDATE_NOT_SIP        = -1,
     VALIDATE_PARTIAL_SIP    = 0,
     VALIDATE_COMPLETE_SIP   = 1,
+    VALIDATE_MULTIPLE_SIP   = 2
 };
 
 /**

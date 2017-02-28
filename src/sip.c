@@ -246,7 +246,7 @@ sip_validate_packet(packet_t *packet)
     int content_len;
     int bodylen;
 
-        // Max SIP payload allowed
+    // Max SIP payload allowed
     if (plen == 0 || plen > MAX_SIP_PAYLOAD)
         return VALIDATE_NOT_SIP;
 
@@ -281,7 +281,19 @@ sip_validate_packet(packet_t *packet)
     // Get the SIP message body length
     bodylen = (int) pmatch[1].rm_eo - pmatch[1].rm_so;
 
-    return (content_len == bodylen) ? VALIDATE_COMPLETE_SIP : VALIDATE_PARTIAL_SIP;
+    // The SDP body of the SIP message ends in another packet
+    if (content_len > bodylen) {
+        return VALIDATE_PARTIAL_SIP;
+    }
+
+    if (content_len < bodylen) {
+        // We got more than one SIP message in the same packet
+        packet_set_payload(packet, payload, pmatch[1].rm_so + content_len);
+        return VALIDATE_MULTIPLE_SIP;
+    }
+
+    // We got all the SDP body of the SIP message
+    return VALIDATE_COMPLETE_SIP;
 }
 
 sip_msg_t *
