@@ -129,14 +129,7 @@ AS_IF([test "x$WITH_OPENSSL" == "xyes"], [
 	AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
 	    AC_MSG_ERROR([ GnuTLS and OpenSSL can not be enabled at the same time ])
 	], [])
-
-	AC_CHECK_LIB([ssl], [SSL_new], [], [
-	    AC_MSG_ERROR([ You need to have libssl installed to compile sngrep])
-	])
-
-	AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
-	    AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep])
-	])
+	PKG_CHECK_MODULES([SSL], [libssl libcrypto])
 	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
 ], [])
 

@@ -1,6 +1,8 @@
 AUTOMAKE_OPTIONS=subdir-objects
 bin_PROGRAMS=sngrep
 sngrep_SOURCES=capture.c
+sngrep_CFLAGS=
+sngrep_LDADD=
 if USE_EEP
 sngrep_SOURCES+=capture_eep.c
 endif
@@ -9,6 +11,8 @@ sngrep_SOURCES+=capture_gnutls.c
 endif
 if WITH_OPENSSL
 sngrep_SOURCES+=capture_openssl.c
+sngrep_CFLAGS+=$(SSL_CFLAGS)
+sngrep_LDADD+=$(SSL_LIBS)
 endif
 sngrep_SOURCES+=address.c packet.c sip.c sip_call.c sip_msg.c sip_attr.c main.c
 sngrep_SOURCES+=option.c group.c filter.c keybinding.c media.c setting.c rtp.c
