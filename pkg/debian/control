@@ -1,6 +1,6 @@
 Source: sngrep
 Section: comm
-Build-Depends: dh-autoreconf, debhelper, libpcap-dev, libncursesw5-dev, gnutls-dev, libgcrypt-dev, libpcre3-dev, libncurses5-dev
+Build-Depends: dh-autoreconf, debhelper, libpcap-dev, libncursesw5-dev, gnutls-dev, libgcrypt-dev, libpcre3-dev, libncurses5-dev, pkg-config
 Priority: optional
 Standards-Version: 3.9.6
 Homepage: https://github.com/irontec/sngrep
