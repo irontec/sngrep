@@ -128,6 +128,15 @@ int
 vector_append(vector_t *vector, void *item);
 
 /**
+ * @brief Append a vector to another vector
+ * @param dst Vector that will append the new items
+ * @param src Vector that contain the items to append
+ * @return 0 in case of success, 1 otherwise
+ */
+int
+vector_append_vector(vector_t *dst, vector_t *src);
+
+/**
  * @brief Insert an item in a given vector position
  *
  * @return count of elements in vector

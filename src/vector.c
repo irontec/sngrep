@@ -172,6 +172,21 @@ vector_append(vector_t *vector, void *item)
 }
 
 int
+vector_append_vector(vector_t *dst, vector_t *src)
+{
+    if (!dst || !src)
+        return 1;
+
+    vector_iter_t it = vector_iterator(src);
+
+    void *item;
+    while ((item = vector_iterator_next(&it)))
+        vector_append(dst, item);
+
+    return 0;
+}
+
+int
 vector_insert(vector_t *vector, void *item, int pos)
 {
     if (!item)

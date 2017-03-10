@@ -230,4 +230,12 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg);
 rtp_stream_t *
 call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream);
 
+/**
+ * @brief Sort messages in a group by message time
+ * @param vector sorted vector
+ * @param item item to add to the vector
+ */
+void
+call_group_msg_sorter(vector_t *vector, void *item);
+
 #endif /* __SNGREP_GROUP_H_ */
