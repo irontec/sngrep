@@ -95,14 +95,6 @@
 #define WH_LEN      0x7F
 #define WS_OPCODE_TEXT 0x1
 
-//! Capture modes
-enum capture_status {
-    CAPTURE_ONLINE = 0,
-    CAPTURE_ONLINE_PAUSED,
-    CAPTURE_OFFLINE,
-    CAPTURE_OFFLINE_LOADING,
-};
-
 enum capture_storage {
     CAPTURE_STORAGE_NONE = 0,
     CAPTURE_STORAGE_MEMORY,
@@ -120,14 +112,14 @@ typedef struct capture_info capture_info_t;
  * Store capture configuration and global data
  */
 struct capture_config {
-    //! Capture status
-    enum capture_status status;
     //! Calls capture limit. 0 for disabling
     size_t limit;
     //! Also capture RTP packets
     bool rtp_capture;
     //! Rotate capturad dialogs when limit have reached
     bool rotate;
+    //! Capture sources are paused (all packets are skipped)
+    int paused;
     //! Where should we store captured packets
     enum capture_storage storage;
     //! Key file for TLS decrypt
@@ -140,10 +132,6 @@ struct capture_config {
     pcap_dumper_t *pd;
     //! Capture sources
     vector_t *sources;
-    //! Packets pending IP reassembly
-    vector_t *ip_reasm;
-    //! Packets pending TCP reassembly
-    vector_t *tcp_reasm;
     //! Capture Lock. Avoid parsing and handling data at the same time
     pthread_mutex_t lock;
 };
@@ -169,6 +157,10 @@ struct capture_info
     const char *infile;
     //! Capture device in Online mode
     const char *device;
+    //! Packets pending IP reassembly
+    vector_t *ip_reasm;
+    //! Packets pending TCP reassembly
+    vector_t *tcp_reasm;
     //! Capture thread for online capturing
     pthread_t capture_t;
 };
@@ -270,7 +262,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
  * @return NULL when packet has not been completely assembled
  */
 packet_t *
-capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp,
+capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphdr *tcp,
                          u_char *payload, int size_payload);
 
 /**
@@ -357,7 +349,7 @@ capture_paused();
 /**
  * @brief Get capture status value
  */
-enum capture_status
+int
 capture_status();
 
 /**

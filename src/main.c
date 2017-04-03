@@ -133,6 +133,7 @@ main(int argc, char* argv[])
     int match_insensitive = 0, match_invert = 0;
     int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0, no_config = 0;
     vector_t *infiles = vector_create(0, 1);
+    vector_t *indevices = vector_create(0, 1);
 
     // Program options
     static struct option long_options[] = {
@@ -203,7 +204,7 @@ main(int argc, char* argv[])
             case 'V': /* handled before with higher priority options */
                 break;
             case 'd':
-                device = optarg;
+                vector_append(indevices, optarg);
                 break;
             case 'I':
                 vector_append(infiles, optarg);
@@ -323,17 +324,24 @@ main(int argc, char* argv[])
 #endif
 
     // If we have an input file, load it
-    if (vector_count(infiles)) {
-        for (i = 0; i < vector_count(infiles); i++) {
-            // Try to load file
-            if (capture_offline(vector_item(infiles, i), outfile) != 0)
-                return 1;
-        }
-    } else {
-        // Check if all capture data is valid
-        if (capture_online(device, outfile) != 0)
+    for (i = 0; i < vector_count(infiles); i++) {
+        // Try to load file
+        if (capture_offline(vector_item(infiles, i), outfile) != 0)
             return 1;
     }
+
+    // If we have an input device, load it
+    for (i = 0; i < vector_count(indevices); i++) {
+        // Check if all capture data is valid
+        if (capture_online(vector_item(indevices, i), outfile) != 0)
+            return 1;
+    }
+
+    // If no device or files has been specified in command line, use default
+    if (vector_count(indevices) == 0 && vector_count(infiles) == 0) {
+        vector_append(indevices, (char *) device);
+    }
+
 
     // Remove Input files vector
     vector_destroy(infiles);
@@ -390,7 +398,7 @@ main(int argc, char* argv[])
         ui_wait_for_input();
     } else {
         setbuf(stdout, NULL);
-        while(capture_status() != CAPTURE_OFFLINE) {
+        while(capture_is_online()) {
             if (!quiet)
                 printf("\rDialog count: %d", sip_calls_count());
             usleep(500 * 1000);

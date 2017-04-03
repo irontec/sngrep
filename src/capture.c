@@ -59,9 +59,8 @@ capture_init(size_t limit, bool rtp_capture, bool rotate)
     capture_cfg.limit = limit;
     capture_cfg.rtp_capture = rtp_capture;
     capture_cfg.rotate = rotate;
+    capture_cfg.paused = 0;
     capture_cfg.sources = vector_create(1, 1);
-    capture_cfg.tcp_reasm = vector_create(0, 10);
-    capture_cfg.ip_reasm = vector_create(0, 10);
 
     // Fixme
     if (setting_has_value(SETTING_CAPTURE_STORAGE, "none")) {
@@ -93,10 +92,6 @@ capture_deinit()
     // Deallocate vectors
     vector_set_destroyer(capture_cfg.sources, vector_generic_destroyer);
     vector_destroy(capture_cfg.sources);
-    vector_set_destroyer(capture_cfg.tcp_reasm, packet_destroyer);
-    vector_destroy(capture_cfg.tcp_reasm);
-    vector_set_destroyer(capture_cfg.ip_reasm, packet_destroyer);
-    vector_destroy(capture_cfg.ip_reasm);
 
     // Remove capture mutex
     pthread_mutex_destroy(&capture_cfg.lock);
@@ -109,9 +104,6 @@ capture_online(const char *dev, const char *outfile)
 
     //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
-
-    // Set capture mode
-    capture_cfg.status = CAPTURE_ONLINE;
 
     // Create a new structure to handle this capture source
     if (!(capinfo = sng_malloc(sizeof(capture_info_t)))) {
@@ -144,6 +136,10 @@ capture_online(const char *dev, const char *outfile)
         return 3;
     }
 
+    // Create Vectors for IP and TCP reassembly
+    capinfo->tcp_reasm = vector_create(0, 10);
+    capinfo->ip_reasm = vector_create(0, 10);
+
     // Add this capture information as packet source
     vector_append(capture_cfg.sources, capinfo);
 
@@ -166,9 +162,6 @@ capture_offline(const char *infile, const char *outfile)
 
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
-
-    // Set capture mode
-    capture_cfg.status = CAPTURE_OFFLINE_LOADING;
 
     // Create a new structure to handle this capture source
     if (!(capinfo = sng_malloc(sizeof(capture_info_t)))) {
@@ -193,6 +186,10 @@ capture_offline(const char *infile, const char *outfile)
         fprintf(stderr, "Unable to handle linktype %d\n", capinfo->link);
         return 3;
     }
+
+    // Create Vectors for IP and TCP reassembly
+    capinfo->tcp_reasm = vector_create(0, 10);
+    capinfo->ip_reasm = vector_create(0, 10);
 
     // Add this capture information as packet source
     vector_append(capture_cfg.sources, capinfo);
@@ -302,7 +299,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         packet_set_payload(pkt, payload, size_payload);
 
         // Create a structure for this captured packet
-        if (!(pkt = capture_packet_reasm_tcp(pkt, tcp, payload, size_payload)))
+        if (!(pkt = capture_packet_reasm_tcp(capinfo, pkt, tcp, payload, size_payload)))
             return;
 
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
@@ -453,7 +450,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     }
 
     // Look for another packet with same id in IP reassembly vector
-    it = vector_iterator(capture_cfg.ip_reasm);
+    it = vector_iterator(capinfo->ip_reasm);
     while ((pkt = vector_iterator_next(&it))) {
         if (addressport_equals(pkt->src, src)
                 && addressport_equals(pkt->dst, dst)
@@ -469,7 +466,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         // Add To the possible reassembly list
         pkt = packet_create(ip_ver, ip_proto, src, dst, ip_id);
         packet_add_frame(pkt, header, packet);
-        vector_append(capture_cfg.ip_reasm, pkt);
+        vector_append(capinfo->ip_reasm, pkt);
     }
 
     // Add this IP content length to the total captured of the packet
@@ -513,7 +510,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         *size = len_data;
 
         // Return the assembled IP packet
-        vector_remove(capture_cfg.ip_reasm, pkt);
+        vector_remove(capinfo->ip_reasm, pkt);
         return pkt;
     }
 
@@ -521,9 +518,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 }
 
 packet_t *
-capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload) {
+capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload) {
 
-    vector_iter_t it = vector_iterator(capture_cfg.tcp_reasm);
+    vector_iter_t it = vector_iterator(capinfo->tcp_reasm);
     packet_t *pkt;
     u_char *new_payload;
     u_char full_payload[MAX_CAPTURE_LEN + 1];
@@ -552,7 +549,7 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         // First time this packet has been seen
         pkt = packet;
         // Add To the possible reassembly list
-        vector_append(capture_cfg.tcp_reasm, packet);
+        vector_append(capinfo->tcp_reasm, packet);
     }
 
     // Store firt tcp sequence
@@ -568,7 +565,7 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
         // Check payload length. Dont handle too big payload packets
         if (pkt->payload_len + size_payload > MAX_CAPTURE_LEN) {
             packet_destroy(pkt);
-            vector_remove(capture_cfg.tcp_reasm, pkt);
+            vector_remove(capinfo->tcp_reasm, pkt);
             return NULL;
         }
         new_payload = sng_malloc(pkt->payload_len + size_payload);
@@ -594,23 +591,23 @@ capture_packet_reasm_tcp(packet_t *packet, struct tcphdr *tcp, u_char *payload, 
     int valid = sip_validate_packet(pkt);
     if (valid == VALIDATE_COMPLETE_SIP) {
         // Full SIP packet!
-        vector_remove(capture_cfg.tcp_reasm, pkt);
+        vector_remove(capinfo->tcp_reasm, pkt);
         return pkt;
     } else if (valid == VALIDATE_MULTIPLE_SIP) {
-        vector_remove(capture_cfg.tcp_reasm, pkt);
+        vector_remove(capinfo->tcp_reasm, pkt);
 
         // We have a full SIP Packet, but do not remove everything from the reasm queue
         packet_t *cont = packet_clone(pkt);
         int pldiff = size_payload - pkt->payload_len;
         packet_set_payload(cont, full_payload + pkt->payload_len, pldiff);
-        vector_append(capture_cfg.tcp_reasm, cont);
+        vector_append(capinfo->tcp_reasm, cont);
 
         // Return the full initial packet
         return pkt;
     } else if (valid == VALIDATE_NOT_SIP) {
         // Not a SIP packet, store until PSH flag
         if (tcp->th_flags & TH_PUSH) {
-            vector_remove(capture_cfg.tcp_reasm, pkt);
+            vector_remove(capinfo->tcp_reasm, pkt);
             return pkt;
         }
     }
@@ -801,14 +798,18 @@ capture_thread(void *info)
     // Parse available packets
     pcap_loop(capinfo->handle, -1, parse_packet, (u_char *) capinfo);
 
-    if (!capture_is_online())
-        capture_cfg.status = CAPTURE_OFFLINE;
 }
 
 int
 capture_is_online()
 {
-    return (capture_cfg.status == CAPTURE_ONLINE || capture_cfg.status == CAPTURE_ONLINE_PAUSED);
+    capture_info_t *capinfo;
+    vector_iter_t it = vector_iterator(capture_cfg.sources);
+    while ((capinfo = vector_iterator_next(&it))) {
+        if (capinfo->infile)
+            return 0;
+    }
+    return 1;
 }
 
 int
@@ -845,37 +846,48 @@ capture_get_bpf_filter()
 void
 capture_set_paused(int pause)
 {
-    if (capture_is_online()) {
-        capture_cfg.status = (pause) ? CAPTURE_ONLINE_PAUSED : CAPTURE_ONLINE;
-    }
+    capture_cfg.paused = pause;
 }
 
 bool
 capture_paused()
 {
-    return capture_cfg.status == CAPTURE_ONLINE_PAUSED;
-}
-
-enum capture_status
-capture_status()
-{
-    return capture_cfg.status;
+    return capture_cfg.paused;
 }
 
 const char *
 capture_status_desc()
 {
-    switch (capture_cfg.status) {
-        case CAPTURE_ONLINE:
-            return "Online";
-        case CAPTURE_ONLINE_PAUSED:
-            return "Online (Paused)";
-        case CAPTURE_OFFLINE:
-            return "Offline";
-        case CAPTURE_OFFLINE_LOADING:
-            return "Offline (Loading)";
+    int online = 0, offline = 0;
+
+
+    capture_info_t *capinfo;
+    vector_iter_t it = vector_iterator(capture_cfg.sources);
+    while ((capinfo = vector_iterator_next(&it))) {
+        if (capinfo->infile) {
+            offline++;
+        } else {
+            online++;
+        }
     }
-    return "";
+
+    if (capture_paused()) {
+        if (online > 0 && offline == 0) {
+            return "Online (Paused)";
+        } else if (online == 0 && offline > 0) {
+            return "Offline (Paused)";
+        } else {
+            return "Mixed (Paused)";
+        }
+    } else {
+        if (online > 0 && offline == 0) {
+            return "Online";
+        } else if (online == 0 && offline > 0) {
+            return "Offline";
+        } else {
+            return "Mixed";
+        }
+    }
 }
 
 const char*
@@ -903,6 +915,8 @@ capture_device()
     if (vector_count(capture_cfg.sources) == 1) {
         capinfo = vector_first(capture_cfg.sources);
         return capinfo->device;
+    } else {
+        return "multi";
     }
     return NULL;
 }
