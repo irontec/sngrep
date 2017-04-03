@@ -168,15 +168,15 @@ sip_init(int limit, int only_calls, int no_incomplete)
 
     // Initialize payload parsing regexp
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
-    regcomp(&calls.reg_method, "^([a-zA-Z]+) [a-zA-Z]+:[^ ]+ SIP/2.0\r", match_flags & ~REG_NEWLINE);
-    regcomp(&calls.reg_callid, "^(Call-ID|i):[ ]*([^ ]+)\r$", match_flags);
-    regcomp(&calls.reg_xcallid, "^(X-Call-ID|X-CID):[ ]*([^ ]+)\r$", match_flags);
-    regcomp(&calls.reg_response, "^SIP/2.0[ ]*(([0-9]{3}) [^\r]*)\r", match_flags & ~REG_NEWLINE);
+    regcomp(&calls.reg_method, "^([a-zA-Z]+) [a-zA-Z]+:[^ ]+ SIP/2.0[ ]*\r", match_flags & ~REG_NEWLINE);
+    regcomp(&calls.reg_callid, "^(Call-ID|i):[ ]*([^ ]+)[ ]*\r$", match_flags);
+    regcomp(&calls.reg_xcallid, "^(X-Call-ID|X-CID):[ ]*([^ ]+)[ ]*\r$", match_flags);
+    regcomp(&calls.reg_response, "^SIP/2.0[ ]*(([0-9]{3}) [^\r]*)[ ]*\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]+) .+\r$", match_flags);
     regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_valid, "^([A-Z]+ [a-zA-Z]+:|SIP/2.0 [0-9]{3})", match_flags & ~REG_NEWLINE);
-    regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)\r$", match_flags);
+    regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)[ ]*\r$", match_flags);
     regcomp(&calls.reg_body, "\r\n\r\n(.*)", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_reason, "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"", match_flags);
     regcomp(&calls.reg_warning, "Warning:[ ]*([0-9]*)", match_flags);

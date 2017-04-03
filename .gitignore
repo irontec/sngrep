@@ -7,8 +7,9 @@ src/sngrep
 tests/test-*.log
 tests/test-*.trs
 tests/test-???
-*/*.o
-*/.deps
+*.o
+.deps
+.dirstamp
 *gmon.out
 src/config.h*
 src/stamp-h1
