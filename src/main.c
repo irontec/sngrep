@@ -146,7 +146,7 @@ main(int argc, char* argv[])
 #endif
         { "calls", no_argument, 0, 'c' },
         { "rtp", no_argument, 0, 'r' },
-        { "limit", no_argument, 0, 'l' },
+        { "limit", required_argument, 0, 'l' },
         { "icase", no_argument, 0, 'i' },
         { "invert", no_argument, 0, 'v' },
         { "no-interface", no_argument, 0, 'N' },
