@@ -13,12 +13,14 @@ sngrep \- SIP Messages flow viewer
 
 .B sngrep [-hVcivlkNq] [ -IO
 .I pcap_dump
-.B ] [ -d 
+.B ] [ -d
 .I dev
 .B ] [ -l
 .I limit
 .B ] [ -k
 .I keyfile
+.B ] [-LH
+.I capture_url
 .B ] [
 .I <match expression>
 .B ] [
@@ -30,7 +32,7 @@ sngrep is a terminal tool that groups SIP (Session Initiation Protocol)
 Messages by Call-Id, and displays them in arrow flows similar to the used in
 SIP RFCs. The aim of this tool is to make easier the process of learnig or
 debugging SIP. It recognizes UDP, TCP and partially TLS SIP packets and
-understands bpf filter logic in the same way 
+understands bpf filter logic in the same way
 .B ngrep (8)
 and
 .B tcpdump (1)
@@ -62,12 +64,12 @@ Invert match expression.
 Read packets from pcap file instead of network devices. This option can be used
 with bpf filters.
 
-.TP 
+.TP
 .I \-O pcap_dump
-Save all captured packets to a pcap file. This option can be used 
+Save all captured packets to a pcap file. This option can be used
 with bpf filters.
 
-.TP 
+.TP
 .I \-d dev
 Use this capture device instead of default (\fIany\fP).
 
@@ -77,7 +79,16 @@ Use private keyfile to decrypt TLS packets.
 
 .TP
 .I -l limit
-Change default capture limit (10000 dialogs)
+Change default capture limit (20000 dialogs)
+Limit must be a numeric value above 1 and can not be disabled. This is both
+security measure to avoid unlimited memory usage and also used internally
+in sngrep to manage hash table sizes.
+
+.TP
+.I -R
+Remove oldest dialog when the capture limit has reached
+Altough not recommended, this can be used to keep sngrep running during long
+times with some control over consumed memory.
 
 .TP
 .I -N
@@ -86,6 +97,16 @@ Don't display sngrep interface, just capture
 .TP
 .I -q
 Don't print captured dialogs in no interface mode
+
+.TP
+.I -H
+Send captured packets to a HEP server (like Homer or another sngrep)
+Argument must be an IP address and port in the format: udp:A.B.C.D:PORT
+
+.TP
+.I -L
+Start a HEP server listening for packets
+Argument must be an IP address and port in the format: udp:A.B.C.D:PORT
 
 .TP
 .I match expression
