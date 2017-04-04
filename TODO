@@ -14,6 +14,14 @@ capture:
         consider an assembled packet. It's require to evaluate if a packet
         contains a SIP message every time we assemble a new segment.
 
+    * Improve long run performance
+        Right now, sngrep stores a lot of information in memory making it quite
+        dangerous in long runs. We implemented a dialog limit to avoid being
+        afraid of leaving an unattended sngrep, but it ended being also used
+        by internal structures as a max size reference. While the limit is still
+        a good idea, it will be nice to decouple it from the internals, allowing
+        even unlimited captures if specified by the user at own risk.
+
 rtp:
     * Improve RTP stream creation
         We create new streams from SDP information every time we parse a
