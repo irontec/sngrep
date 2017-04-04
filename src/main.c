@@ -323,6 +323,11 @@ main(int argc, char* argv[])
     capture_eep_init();
 #endif
 
+    // If no device or files has been specified in command line, use default
+    if (vector_count(indevices) == 0 && vector_count(infiles) == 0) {
+        vector_append(indevices, (char *) device);
+    }
+
     // If we have an input file, load it
     for (i = 0; i < vector_count(infiles); i++) {
         // Try to load file
@@ -336,12 +341,6 @@ main(int argc, char* argv[])
         if (capture_online(vector_item(indevices, i), outfile) != 0)
             return 1;
     }
-
-    // If no device or files has been specified in command line, use default
-    if (vector_count(indevices) == 0 && vector_count(infiles) == 0) {
-        vector_append(indevices, (char *) device);
-    }
-
 
     // Remove Input files vector
     vector_destroy(infiles);
