@@ -203,7 +203,7 @@ call_list_draw_header(ui_t *ui)
     ui_clear_line(ui, 1);
 
     // Print Open filename in Offline mode
-    if ((infile = capture_input_file()))
+    if (!capture_is_online() && (infile = capture_input_file()))
         mvwprintw(ui->win, 1, 77, "Filename: %s", infile);
 
     mvwprintw(ui->win, 1, 2, "Current Mode: ");
