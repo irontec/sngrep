@@ -173,8 +173,8 @@ sip_init(int limit, int only_calls, int no_incomplete)
     regcomp(&calls.reg_xcallid, "^(X-Call-ID|X-CID):[ ]*([^ ]+)[ ]*\r$", match_flags);
     regcomp(&calls.reg_response, "^SIP/2.0[ ]*(([0-9]{3}) [^\r]*)[ ]*\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]+) .+\r$", match_flags);
-    regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
-    regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@]+)@?[^\r>;]+)", match_flags);
+    regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);
+    regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_valid, "^([A-Z]+ [a-zA-Z]+:|SIP/2.0 [0-9]{3})", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)[ ]*\r$", match_flags);
     regcomp(&calls.reg_body, "\r\n\r\n(.*)", match_flags & ~REG_NEWLINE);
