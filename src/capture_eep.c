@@ -588,9 +588,10 @@ capture_eep_receive_v3()
 #endif
     hep_chunk_t payload_chunk;
     hep_chunk_t authkey_chunk;
+    hep_chunk_t uuid_chunk;
     uint8_t family, proto;
     char password[100];
-    int password_len;
+    int password_len, uuid_len;
     unsigned char *payload = 0;
     uint32_t len, pos;
     char buffer[MAX_CAPTURE_LEN] ;
@@ -672,6 +673,14 @@ capture_eep_receive_v3()
         // Validate the password
         if (strncmp(password, eep_cfg.capt_srv_password, password_len) != 0)
             return NULL;
+    }
+
+    if (setting_enabled(SETTING_EEP_LISTEN_UUID)) {
+        memcpy(&uuid_chunk, (void*) buffer + pos, sizeof(uuid_chunk));
+        pos += sizeof(uuid_chunk);
+
+        uuid_len = ntohs(uuid_chunk.length) - sizeof(uuid_chunk);
+        pos += uuid_len;
     }
 
     /* Payload */
