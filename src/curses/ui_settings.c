@@ -87,6 +87,7 @@ settings_entry_t entries[] = {
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_ADDR,    SETTING_EEP_LISTEN_ADDR,    "Listen EEP packet address ................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PORT,    SETTING_EEP_LISTEN_PORT,    "Listen EEP packet port ...................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PASS,    SETTING_EEP_LISTEN_PASS,    "EEP server password ......................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_UUID,    SETTING_EEP_LISTEN_UUID,    "EEP server expects UUID (Asterisk) ........" },
 #endif
     { 0 , 0, 0, NULL },
 };
@@ -100,7 +101,7 @@ settings_create(ui_t *ui)
     int field = 0;
 
     // Cerate a new window for the panel and form
-    ui_panel_create(ui, 22, 70);
+    ui_panel_create(ui, 24, 70);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(settings_info_t));
