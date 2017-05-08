@@ -239,8 +239,13 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
         next = vector_item(messages, vector_index(messages, msg) + 1);
     }
     vector_destroy(messages);
+    next = sip_parse_msg(next);
 
-    return sip_parse_msg(next);
+    if (next && group->sdp_only && !msg_has_sdp(next)) {
+        return call_group_get_next_msg(group, next);
+    }
+
+    return next;
 }
 
 sip_msg_t *
@@ -262,7 +267,13 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
         prev = vector_item(messages, vector_index(messages, msg) - 1);
     }
     vector_destroy(messages);
-    return sip_parse_msg(prev);
+    prev = sip_parse_msg(prev);
+
+    if (prev && group->sdp_only && !msg_has_sdp(prev)) {
+        return call_group_get_prev_msg(group, prev);
+    }
+
+    return prev;
 }
 
 rtp_stream_t *
