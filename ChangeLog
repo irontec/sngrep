@@ -1,3 +1,29 @@
+2016-05-10 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.3 released
+
+	* Capture
+	  * Added support for capturing from multiples interfaces from command line
+	  * Fixed a bug where IP reassembly was only working whe packet only had two fragments
+	  * Fixed a bug where TCP packets where not assembled in the correct order
+
+	* HEP/EEP
+	  * Added support for UUID chunks sent by asterisk HEP PJSIP module
+
+	* SIP
+	  * Improved From/To header regexp to parse URIs without user part
+	  * SIP responses codes 600 will now set callstate to BUSY
+
+	* Call Flow
+	  * Added keybinding to deselect previously selected arrow (defaults to Ctrl+W)
+	  * Fixed a bug while displaying arrows order of a dialog from multiple input files
+
+	* Configuration
+	  * Configuration file can no be specified using environment variable SNGREPRC
+	  * Added `-F` command line option to start sngrep without reading any configuration file
+
+	* Packages/Build
+	  * OpenSSL depedencies are now being searching using pkg-config if available
+
 2016-12-19 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.2 released
 
