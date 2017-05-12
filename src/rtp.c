@@ -265,7 +265,8 @@ rtp_check_packet(packet_t *packet)
                     break;
 
                 // Header length
-                len = ntohs(hdr.len) * 4 + 4;
+                if ((len = ntohs(hdr.len) * 4 + 4) > size)
+                    break;
 
                 // Check RTCP packet header typ
                 switch (hdr.type) {
