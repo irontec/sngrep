@@ -588,6 +588,7 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
     memcpy(full_payload, pkt->payload, pkt->payload_len);
 
     // This packet is ready to be parsed
+    int original_size = pkt->payload_len;
     int valid = sip_validate_packet(pkt);
     if (valid == VALIDATE_COMPLETE_SIP) {
         // Full SIP packet!
@@ -598,9 +599,11 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
 
         // We have a full SIP Packet, but do not remove everything from the reasm queue
         packet_t *cont = packet_clone(pkt);
-        int pldiff = size_payload - pkt->payload_len;
-        packet_set_payload(cont, full_payload + pkt->payload_len, pldiff);
-        vector_append(capinfo->tcp_reasm, cont);
+        int pldiff = original_size - pkt->payload_len;
+        if (pldiff < MAX_CAPTURE_LEN) {
+            packet_set_payload(cont, full_payload + pkt->payload_len, pldiff);
+            vector_append(capinfo->tcp_reasm, cont);
+        }
 
         // Return the full initial packet
         return pkt;
