@@ -106,9 +106,14 @@ AC_ARG_WITH([gnutls],
 )
 
 AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
+
+    m4_ifdef([PKG_CHECK_MODULES], [
+        PKG_CHECK_MODULES([LIBGNUTLS], [gnutls])
+    ], [
 	AC_CHECK_LIB([gnutls], [gnutls_init], [], [
 	    AC_MSG_ERROR([ You need to have gnutls installed to compile sngrep])
 	])
+    ])
 
 	AC_CHECK_LIB([gcrypt], [gcry_md_map_name], [], [
 	    AC_MSG_ERROR([ You need to have libgcrypt installed to compile sngrep])
