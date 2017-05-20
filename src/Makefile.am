@@ -8,8 +8,8 @@ sngrep_SOURCES+=capture_eep.c
 endif
 if WITH_GNUTLS
 sngrep_SOURCES+=capture_gnutls.c
-sngrep_CFLAGS+=$(LIBGNUTLS_CFLAGS)
-sngrep_LDADD+=$(LIBGNUTLS_LIBS)
+sngrep_CFLAGS+=$(LIBGNUTLS_CFLAGS) $(LIBGCRYPT_CFLAGS)
+sngrep_LDADD+=$(LIBGNUTLS_LIBS) $(LIBGCRYPT_LIBS)
 endif
 if WITH_OPENSSL
 sngrep_SOURCES+=capture_openssl.c

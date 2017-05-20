@@ -115,10 +115,22 @@ AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
 	])
     ])
 
-	AC_CHECK_LIB([gcrypt], [gcry_md_map_name], [], [
-	    AC_MSG_ERROR([ You need to have libgcrypt installed to compile sngrep])
-	])
+	AC_PATH_PROG([LIBGCRYPT_CONFIG],[libgcrypt-config],[no])
+	if test "x${LIBGCRYPT_CONFIG}" = "xno"; then
+	    AC_MSG_FAILURE([libgcrypt-config not found in PATH])
+	fi
+	AC_CHECK_LIB(
+		[gcrypt],
+		[gcry_md_map_name],
+		[LIBGCRYPT_CFLAGS="`${LIBGCRYPT_CONFIG} --cflags`"
+		LIBGCRYPT_LIBS="`${LIBGCRYPT_CONFIG} --libs`"
+		],
+		[AC_MSG_ERROR([ You need to have libgcrypt installed to compile sngrep])],
+		[`${LIBGCRYPT_CONFIG} --libs --cflags`]
+		)
 	AC_DEFINE([WITH_GNUTLS],[],[Compile With GnuTLS compatibility])
+	AC_SUBST(LIBGCRYPT_CFLAGS)
+	AC_SUBST(LIBGCRYPT_LIBS)
 ], [])
 
 ####
