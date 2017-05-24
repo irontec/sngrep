@@ -390,6 +390,17 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         }
     }
 
+#ifdef DLT_LINUX_SLL
+    if (capinfo->link == DLT_LINUX_SLL) {
+        struct sll_header *sll = (struct sll_header *) packet;
+        if (ntohs(sll->sll_protocol) == ETHERTYPE_8021Q) {
+            link_hl += 4;
+        }
+    }
+#endif
+
+
+
     // Get IP header
     ip4 = (struct ip *) (packet + link_hl);
 

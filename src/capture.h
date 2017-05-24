@@ -68,6 +68,10 @@
 #include <netinet/ip6.h>
 #endif
 
+#ifdef DLT_LINUX_SLL
+#include <pcap/sll.h>
+#endif
+
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
