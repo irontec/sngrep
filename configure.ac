@@ -1,9 +1,9 @@
 AC_PREREQ([2.59])
 AC_INIT([sngrep], [1.4.3], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
 AM_INIT_AUTOMAKE([1.9])
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_MACRO_DIRS([m4])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+m4_ifdef([AC_CONFIG_MACRO_DIRS], AC_CONFIG_MACRO_DIRS([m4]), m4_include([m4/sngrep.m4]))
 
 AC_COPYRIGHT("Irontec S.L.")
 
