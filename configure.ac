@@ -3,6 +3,7 @@ AC_INIT([sngrep], [1.4.3], [kaian@irontec.com], [sngrep], [http://www.irontec.co
 AM_INIT_AUTOMAKE([1.9])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_MACRO_DIRS([m4])
 
 AC_COPYRIGHT("Irontec S.L.")
 
@@ -53,13 +54,13 @@ AS_IF([test "x$enable_unicode" == "xyes"], [
 	# Ncurses with wide-character support
 	AC_DEFINE([WITH_UNICODE], [], [Compile With Unicode compatibility])
 
-	AC_CHECK_HEADER([ncursesw/ncurses.h], [], [
-	    AC_MSG_ERROR([ You need to have ncurses development files installed to compile sngrep.])
-	])
-
-	AC_CHECK_LIB([ncursesw], [initscr], [], [
-	    AC_MSG_ERROR([ You need to have libncursesw installed to compile sngrep.])
-	])
+   SNGREP_CHECK_SCRIPT([ncursesw6], [addnwstr], [WITH_UNICODE], "ncursesw6-config",
+    SNGREP_CHECK_SCRIPT([ncursesw], [addnwstr], [WITH_UNICODE], "ncursesw5-config",
+     SNGREP_CHECK_SCRIPT([ncurses], [addnwstr], [WITH_UNICODE], "ncurses5-config",
+      SNGREP_CHECK_LIB([ncursesw6], [addnwstr], [WITH_UNICODE],
+       SNGREP_CHECK_LIB([ncursesw], [addnwstr], [WITH_UNICODE],
+        SNGREP_CHECK_LIB([ncurses], [addnwstr], [WITH_UNICODE],
+	))))))
 
 	AC_CHECK_LIB([panelw], [new_panel], [], [
 	    AC_MSG_ERROR([ You need to have ncurses panelw library installed to compile sngrep.])

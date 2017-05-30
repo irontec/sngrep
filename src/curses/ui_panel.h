@@ -33,10 +33,9 @@
 
 #ifdef WITH_UNICODE
 #define _X_OPEN_SOURCE_EXTENDED
-#include <ncursesw/ncurses.h>
-#else
-#include <ncurses.h>
+#include <wctype.h>
 #endif
+#include <ncurses.h>
 #include <panel.h>
 #include <form.h>
 #include <stdbool.h>
