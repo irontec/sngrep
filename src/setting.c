@@ -78,13 +78,13 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_EEP_SEND_VER,       "eep.send.version",   SETTING_FMT_ENUM,    "3",         SETTING_ENUM_HEPVERSION },
     { SETTING_EEP_SEND_ADDR,      "eep.send.address",   SETTING_FMT_STRING,  "10.1.1.1",  NULL },
     { SETTING_EEP_SEND_PORT,      "eep.send.port",      SETTING_FMT_NUMBER,  "9060",      NULL },
-    { SETTING_EEP_SEND_PASS,      "eep.send.pass",      SETTING_FMT_STRING,  "myHep",     NULL },
+    { SETTING_EEP_SEND_PASS,      "eep.send.pass",      SETTING_FMT_STRING,  "",          NULL },
     { SETTING_EEP_SEND_ID,        "eep.send.id",        SETTING_FMT_NUMBER,  "2002",      NULL },
     { SETTING_EEP_LISTEN,         "eep.listen",         SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_EEP_LISTEN_VER,     "eep.listen.version", SETTING_FMT_ENUM,    "3",         SETTING_ENUM_HEPVERSION },
     { SETTING_EEP_LISTEN_ADDR,    "eep.listen.address", SETTING_FMT_STRING,  "0.0.0.0",   NULL },
     { SETTING_EEP_LISTEN_PORT,    "eep.listen.port",    SETTING_FMT_NUMBER,  "9060",      NULL },
-    { SETTING_EEP_LISTEN_PASS,    "eep.listen.pass",    SETTING_FMT_STRING,  "myHep",     NULL },
+    { SETTING_EEP_LISTEN_PASS,    "eep.listen.pass",    SETTING_FMT_STRING,  "",          NULL },
     { SETTING_EEP_LISTEN_UUID,    "eep.listen.uuid",    SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
 #endif
 };
