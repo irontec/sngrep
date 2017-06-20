@@ -174,6 +174,18 @@ capture_eep_deinit()
     }
 }
 
+const char *
+capture_eep_send_port()
+{
+    return eep_cfg.capt_port;
+}
+
+const char *
+capture_eep_listen_port()
+{
+    return eep_cfg.capt_srv_port;
+}
+
 int
 capture_eep_send(packet_t *pkt)
 {

@@ -885,6 +885,13 @@ capture_status_desc()
         }
     }
 
+#ifdef USE_EEP
+    // EEP Listen mode is always considered online
+    if (capture_eep_listen_port()) {
+        online++;
+    }
+#endif
+
     if (capture_paused()) {
         if (online > 0 && offline == 0) {
             return "Online (Paused)";

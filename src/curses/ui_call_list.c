@@ -35,6 +35,9 @@
 #include "option.h"
 #include "filter.h"
 #include "capture.h"
+#ifdef USE_EEP
+#include "capture_eep.h"
+#endif
 #include "ui_manager.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
@@ -218,6 +221,16 @@ call_list_draw_header(ui_t *ui)
     if ((device = capture_device()))
         wprintw(ui->win, "[%s]", device);
 
+#ifdef USE_EEP
+    const char *eep_port;
+    if ((eep_port = capture_eep_send_port())) {
+        wprintw(ui->win, "[H:%s]", eep_port);
+    }
+    if ((eep_port = capture_eep_listen_port())) {
+        wprintw(ui->win, "[L:%s]", eep_port);
+    }
+#endif
+
     wattroff(ui->win, COLOR_PAIR(CP_GREEN_ON_DEF));
     wattroff(ui->win, COLOR_PAIR(CP_RED_ON_DEF));
 
@@ -294,7 +307,7 @@ call_list_draw_header(ui_t *ui)
 
     // Print calls count (also filtered)
     sip_stats_t stats = sip_calls_stats();
-    mvwprintw(ui->win, 1, 35, "%*s", 35, "");
+    mvwprintw(ui->win, 1, 45, "%*s", 30, "");
     if (stats.total != stats.displayed) {
         mvwprintw(ui->win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
     } else {

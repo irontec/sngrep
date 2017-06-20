@@ -227,6 +227,22 @@ void
 capture_eep_deinit();
 
 /**
+ * @brief Return the remote port where HEP packets are sent
+ *
+ * @return Remote port or NULL if HEP send mode is not running
+ */
+const char *
+capture_eep_send_port();
+
+/**
+ * @brief Return the local port where HEP packets are received
+ *
+ * @return Local listen port or NULL if HEP listen mode is not running
+ */
+const char *
+capture_eep_listen_port();
+
+/**
  * @brief Wrapper for sending packet in configured EEP version
  *
  * @param pkt Packet Structure data
