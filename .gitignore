@@ -1,6 +1,7 @@
 # Ignore eclipse files
 .*project
 .settings
+.vscode
 
 # Build files
 src/sngrep
