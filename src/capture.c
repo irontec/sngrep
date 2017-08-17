@@ -768,6 +768,11 @@ capture_close()
     if (vector_count(capture_cfg.sources) == 0)
         return;
 
+    // Close dump file
+    if (capture_cfg.pd) {
+        dump_close(capture_cfg.pd);
+    }
+
     // Stop all captures
     vector_iter_t it = vector_iterator(capture_cfg.sources);
     while ((capinfo = vector_iterator_next(&it))) {
@@ -775,14 +780,9 @@ capture_close()
         if (capinfo->handle) {
             pcap_breakloop(capinfo->handle);
             pthread_join(capinfo->capture_t, NULL);
-            pcap_close(capinfo->handle);
         }
     }
 
-    // Close dump file
-    if (capture_cfg.pd) {
-        dump_close(capture_cfg.pd);
-    }
 }
 
 int
@@ -811,7 +811,8 @@ capture_thread(void *info)
 
     // Parse available packets
     pcap_loop(capinfo->handle, -1, parse_packet, (u_char *) capinfo);
-
+    pcap_close(capinfo->handle);
+    capinfo->handle = NULL;
 }
 
 int
@@ -824,6 +825,18 @@ capture_is_online()
             return 0;
     }
     return 1;
+}
+
+int
+capture_is_running()
+{
+    capture_info_t *capinfo;
+    vector_iter_t it = vector_iterator(capture_cfg.sources);
+    while ((capinfo = vector_iterator_next(&it))) {
+        if (capinfo->handle)
+            return 1;
+    }
+    return 0;
 }
 
 int

@@ -318,6 +318,14 @@ int
 capture_is_online();
 
 /**
+ * @brief Check if at least one capture handle is opened
+ *
+ * @return 1 if any capture source is running, 0 if all ended
+ */
+int
+capture_is_running();
+
+/**
  * @brief Set a bpf filter in open capture
  *
  * @param filter String containing the BPF filter text
