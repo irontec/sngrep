@@ -169,6 +169,11 @@ capture_offline(const char *infile, const char *outfile)
         return 1;
     }
 
+    // Check if file is standard input
+    if (strlen(infile) == 1 && *infile == '-') {
+        infile = "/dev/stdin";
+    }
+
     // Set capture input file
     capinfo->infile = infile;
 
