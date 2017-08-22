@@ -136,11 +136,29 @@ call_flow_info(ui_t *ui)
 bool
 call_flow_redraw(ui_t *ui)
 {
+    int maxx, maxy;
+
     // Get panel information
     call_flow_info_t *info = call_flow_info(ui);
+    // Get current screen dimensions
+    getmaxyx(stdscr, maxy, maxx);
+
+    // Change the main window size
+    wresize(ui->win, maxy, maxx);
+
+    // Store new size
+    ui->width = maxx;
+    ui->height = maxy;
+
+    // Calculate available printable area
+    wresize(info->flow_win, maxy - 6, maxx);
+
+    // Force flow redraw
+    call_flow_draw(ui);
 
     // Check if any of the group has changed
-    return call_group_has_changed(info->group);
+    // return call_group_has_changed(info->group);
+    return 0;
 }
 
 int

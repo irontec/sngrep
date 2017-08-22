@@ -180,7 +180,7 @@ call_list_resize(ui_t *ui)
     ui->height = maxy;
 
     // Calculate available printable area
-    wresize(info->list_win, maxy - 5, maxx - 4);
+    wresize(info->list_win, maxy - 6, maxx); //-4
     // Force list redraw
     call_list_clear(ui);
 
