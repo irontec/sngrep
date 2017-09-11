@@ -27,6 +27,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_EGREP
 AC_LANG(C)
+AM_PROG_CC_C_O
 
 #######################################################################
 # Check for other REQUIRED libraries

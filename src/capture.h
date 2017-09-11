@@ -68,7 +68,7 @@
 #include <netinet/ip6.h>
 #endif
 
-#ifdef DLT_LINUX_SLL
+#ifdef SLL_HDR_LEN
 #include <pcap/sll.h>
 #endif
 

@@ -395,7 +395,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         }
     }
 
-#ifdef DLT_LINUX_SLL
+#ifdef SLL_HDR_LEN
     if (capinfo->link == DLT_LINUX_SLL) {
         struct sll_header *sll = (struct sll_header *) packet;
         if (ntohs(sll->sll_protocol) == ETHERTYPE_8021Q) {
