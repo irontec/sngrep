@@ -1,4 +1,15 @@
-2016-05-10 Ivan Alonso <kaian@irontec.com>
+2017-09-17 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.4 released
+
+	* Fixed multiples crashes with SIP TCP payloads
+	* Improve configure detection for gnutls and ncurses
+	* HEP/EEP: removed default password
+	* HEP/EEP: hep capture mode is now displayed in call list window
+	* -I flag now supports reading from standard input
+	* Call List and Call Flow windows now resize properly
+
+
+2017-05-10 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.3 released
 
 	* Capture

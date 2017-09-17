@@ -2,7 +2,7 @@
 
 Summary:            SIP Messages flow viewer
 Name:               sngrep
-Version:            1.4.3
+Version:            1.4.4
 Release:            0%{?dist}
 License:            GPLv3
 Group:              Applications/Engineering
@@ -59,6 +59,8 @@ make %{?_smp_mflags}
 %{__rm} -rf %{buildroot}
 
 %changelog
+* Sun Sep 17 2017 Ivan Alonso <kaian@irontec.com> - 1.4.4
+ - Version 1.4.4
 * Wed May 10 2017 Ivan Alonso <kaian@irontec.com> - 1.4.3
  - Version 1.4.3
 * Fri Dec 19 2016 Ivan Alonso <kaian@irontec.com> - 1.4.2
