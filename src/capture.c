@@ -800,6 +800,8 @@ capture_launch_thread(capture_info_t *capinfo)
     // Start all captures threads
     vector_iter_t it = vector_iterator(capture_cfg.sources);
     while ((capinfo = vector_iterator_next(&it))) {
+        // Mark capture as running
+        capinfo->running = true;
         if (pthread_create(&capinfo->capture_t, &attr, (void *) capture_thread, capinfo)) {
             return 1;
         }
@@ -817,7 +819,7 @@ capture_thread(void *info)
     // Parse available packets
     pcap_loop(capinfo->handle, -1, parse_packet, (u_char *) capinfo);
     pcap_close(capinfo->handle);
-    capinfo->handle = NULL;
+    capinfo->running = false;
 }
 
 int
@@ -838,7 +840,7 @@ capture_is_running()
     capture_info_t *capinfo;
     vector_iter_t it = vector_iterator(capture_cfg.sources);
     while ((capinfo = vector_iterator_next(&it))) {
-        if (capinfo->handle)
+        if (capinfo->running)
             return 1;
     }
     return 0;

@@ -147,6 +147,8 @@ struct capture_config {
  */
 struct capture_info
 {
+    //! Flag to determine if capture is running
+    bool running;
     //! libpcap link type
     int link;
     //! libpcap link header size
