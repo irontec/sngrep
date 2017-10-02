@@ -68,13 +68,9 @@ ncurses_init()
 {
     int bg, fg;
     const char *term;
-    FILE *fstdin;
 
     // Set Locale
     setlocale(LC_CTYPE, "");
-
-    // Allow reading from stdin
-    fstdin = freopen("/dev/tty", "r", stdin);
 
     // Initialize curses
     if (!initscr()) {

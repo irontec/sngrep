@@ -159,6 +159,7 @@ int
 capture_offline(const char *infile, const char *outfile)
 {
     capture_info_t *capinfo;
+    FILE *fstdin;
 
     // Error text (in case of file open error)
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -172,6 +173,7 @@ capture_offline(const char *infile, const char *outfile)
     // Check if file is standard input
     if (strlen(infile) == 1 && *infile == '-') {
         infile = "/dev/stdin";
+        fstdin = freopen("/dev/tty", "r", stdin);
     }
 
     // Set capture input file
