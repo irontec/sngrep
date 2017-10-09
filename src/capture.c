@@ -785,8 +785,10 @@ capture_close()
     while ((capinfo = vector_iterator_next(&it))) {
         //Close PCAP file
         if (capinfo->handle) {
-            pcap_breakloop(capinfo->handle);
-            pthread_join(capinfo->capture_t, NULL);
+            if (capinfo->running) {
+                pcap_breakloop(capinfo->handle);
+                pthread_join(capinfo->capture_t, NULL);
+            }
         }
     }
 
@@ -820,7 +822,6 @@ capture_thread(void *info)
 
     // Parse available packets
     pcap_loop(capinfo->handle, -1, parse_packet, (u_char *) capinfo);
-    pcap_close(capinfo->handle);
     capinfo->running = false;
 }
 
