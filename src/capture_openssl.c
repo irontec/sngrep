@@ -190,6 +190,8 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
         return NULL;
 
     conn->server_private_key = SSL_get_privatekey(conn->ssl);
+    conn->client_cipher_ctx = EVP_CIPHER_CTX_new();
+    conn->server_cipher_ctx = EVP_CIPHER_CTX_new();
 
     // Add this connection to the list
     conn->next = connections;
@@ -216,6 +218,8 @@ tls_connection_destroy(struct SSLConnection *conn)
     }
 
     // Deallocate connection memory
+    EVP_CIPHER_CTX_free(conn->client_cipher_ctx);
+    EVP_CIPHER_CTX_free(conn->server_cipher_ctx);
     SSL_CTX_free(conn->ssl_ctx);
     SSL_free(conn->ssl);
     sng_free(conn);
@@ -469,7 +473,7 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 break;
             case change_cipher_spec:
                 // From now on, this connection will be encrypted using MasterSecret
-                if (conn->client_cipher_ctx.cipher && conn->server_cipher_ctx.cipher)
+                if (conn->client_cipher_ctx->cipher && conn->server_cipher_ctx->cipher)
                     conn->encrypted = 1;
                 break;
             case application_data:
@@ -605,13 +609,13 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 sng_free(seed);
 
                 // Create Client decoder
-                EVP_CIPHER_CTX_init(&conn->client_cipher_ctx);
-                EVP_CipherInit(&conn->client_cipher_ctx, conn->ciph,
+                EVP_CIPHER_CTX_init(conn->client_cipher_ctx);
+                EVP_CipherInit(conn->client_cipher_ctx, conn->ciph,
                                conn->key_material.client_write_key, conn->key_material.client_write_IV,
                                0);
 
-                EVP_CIPHER_CTX_init(&conn->server_cipher_ctx);
-                EVP_CipherInit(&conn->server_cipher_ctx, conn->ciph,
+                EVP_CIPHER_CTX_init(conn->server_cipher_ctx);
+                EVP_CipherInit(conn->server_cipher_ctx, conn->ciph,
                                conn->key_material.server_write_key, conn->key_material.server_write_IV,
                                0);
 
@@ -647,9 +651,9 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment,
     tls_debug_print_hex("Ciphertext", fragment, len);
 
     if (conn->direction == 0) {
-        evp = &conn->client_cipher_ctx;
+        evp = conn->client_cipher_ctx;
     } else {
-        evp = &conn->server_cipher_ctx;
+        evp = conn->server_cipher_ctx;
     }
 
     // TLS 1.1 and later extract explicit IV

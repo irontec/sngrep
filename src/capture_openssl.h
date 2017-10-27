@@ -238,8 +238,8 @@ struct SSLConnection {
         uint8_t server_write_IV[16];
     } key_material;
 
-    EVP_CIPHER_CTX client_cipher_ctx;
-    EVP_CIPHER_CTX server_cipher_ctx;
+    EVP_CIPHER_CTX *client_cipher_ctx;
+    EVP_CIPHER_CTX *server_cipher_ctx;
 
     struct SSLConnection *next;
 };
