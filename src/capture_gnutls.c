@@ -437,8 +437,7 @@ tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
                    const int len, uint8_t **out, uint32_t *outl)
 {
     int record_len_len;
-    uint16 record_len16;
-    uint24 record_len24;
+    uint32_t record_len;
     uint8_t record_type;
     const opaque *fragment;
     int flen;
@@ -452,18 +451,18 @@ tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
 
     // Two bytes SSLv2 record length field
     if (record_len_len == 2) {
-        record_len16.x[0] = (payload[0] & 0x7f) << 8;
-        record_len16.x[1] = (payload[1]);
+        record_len = (payload[0] & 0x7f) << 8;
+        record_len += (payload[1]);
         record_type = payload[2];
         fragment = payload + 3;
-        flen = UINT16_INT(record_len16) - 1 /* record type */;
+        flen = record_len - 1 /* record type */;
     } else {
-        record_len24.x[0] = (payload[0] & 0x3f) << 8;
-        record_len24.x[1] = payload[1];
-        record_len24.x[2] = payload[2];
+        record_len = (payload[0] & 0x3f) << 8;
+        record_len += payload[1];
+        record_len += payload[2];
         record_type = payload[3];
         fragment = payload + 4;
-        flen = UINT24_INT(record_len24) - 1 /* record type */;
+        flen = record_len - 1 /* record type */;
     }
 
     // We only handle Client Hello handshake SSLv2 records
