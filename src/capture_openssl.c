@@ -402,7 +402,7 @@ tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
 
     // No record data here!
     if (len == 0)
-        return 0;
+        return 1;
 
     // Record header length
     record_len_len = (payload[0] & 0x80) ? 2 : 3;
@@ -467,7 +467,7 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
 
     // No record data here!
     if (len == 0)
-        return 0;
+        return 1;
 
     // Get Record data
     record = (struct TLSPlaintext *) payload;
@@ -502,7 +502,7 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 }
                 break;
             default:
-                break;
+                return 1;
         }
     }
 

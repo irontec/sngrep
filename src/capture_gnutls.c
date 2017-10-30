@@ -495,7 +495,7 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
 
     // No record data here!
     if (len == 0)
-        return 0;
+        return 1;
 
     // Get Record data
     record = (struct TLSPlaintext *) payload;
@@ -524,7 +524,7 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 }
                 break;
             default:
-                break;
+                return 1;
         }
     }
 
