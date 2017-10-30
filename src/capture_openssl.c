@@ -82,7 +82,6 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
 {
     unsigned char hmac[48];
     uint32_t hlen;
-    HMAC_CTX hm;
     const EVP_MD *md = EVP_get_digestbyname(digest);
     uint32_t tmpslen;
     unsigned char tmpseed[slen];
@@ -95,6 +94,8 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
 
     // Calculate enough data to fill destination
     while (pending > 0) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+        HMAC_CTX hm;
         HMAC_Init(&hm, secret, sslen, md);
         HMAC_Update(&hm, tmpseed, tmpslen);
         HMAC_Final(&hm, tmpseed, &tmpslen);
@@ -104,12 +105,25 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
         HMAC_Update(&hm, seed, slen);
         HMAC_Final(&hm, hmac, &hlen);
 
+        HMAC_cleanup(&hm);
+#else
+        HMAC_CTX *hm = HMAC_CTX_new();
+        HMAC_Init_ex(hm, secret, sslen, md, NULL);
+        HMAC_Update(hm, tmpseed, tmpslen);
+        HMAC_Final(hm, tmpseed, &tmpslen);
+
+        HMAC_Init_ex(hm, secret, sslen, md, NULL);
+        HMAC_Update(hm, tmpseed, tmpslen);
+        HMAC_Update(hm, seed, slen);
+        HMAC_Final(hm, hmac, &hlen);
+
+        HMAC_CTX_free(hm);
+#endif
         hlen = (hlen > pending) ? pending : hlen;
         memcpy(out, hmac, hlen);
         out += hlen;
         pending -= hlen;
     }
-    HMAC_cleanup(&hm);
 
     return hlen;
 }
@@ -472,8 +486,14 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 break;
             case change_cipher_spec:
                 // From now on, this connection will be encrypted using MasterSecret
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
                 if (conn->client_cipher_ctx->cipher && conn->server_cipher_ctx->cipher)
                     conn->encrypted = 1;
+#else
+                if (EVP_CIPHER_CTX_get_cipher_data(conn->client_cipher_ctx) &&
+                    EVP_CIPHER_CTX_get_cipher_data(conn->server_cipher_ctx))
+                    conn->encrypted = 1;
+#endif
                 break;
             case application_data:
                 if (conn->encrypted) {
@@ -559,10 +579,17 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 // Decrypt PreMasterKey
                 clientkeyex = (struct ClientKeyExchange *) body;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
                 RSA_private_decrypt(UINT16_INT(clientkeyex->length),
                                     (const unsigned char *) &clientkeyex->exchange_keys,
                                     (unsigned char *) &conn->pre_master_secret,
                                     conn->server_private_key->pkey.rsa, RSA_PKCS1_PADDING);
+#else
+                RSA_private_decrypt(UINT16_INT(clientkeyex->length),
+                                    (const unsigned char *) &clientkeyex->exchange_keys,
+                                    (unsigned char *) &conn->pre_master_secret,
+                                    EVP_PKEY_get0_RSA(conn->server_private_key), RSA_PKCS1_PADDING);
+#endif
 
                 tls_debug_print_hex("client_random", &conn->client_random, 32);
                 tls_debug_print_hex("server_random", &conn->server_random, 32);
