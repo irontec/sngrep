@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include "address.h"
 
 #ifndef __FAVOR_BSD
 #define __FAVOR_BSD
@@ -128,6 +129,8 @@ struct capture_config {
     enum capture_storage storage;
     //! Key file for TLS decrypt
     const char *keyfile;
+    //! TLS Server address
+    address_t tlsserver;
     //! capture filter expression text
     const char *filter;
     //! The compiled filter expression
@@ -405,6 +408,13 @@ capture_keyfile();
  */
 void
 capture_set_keyfile(const char *keyfile);
+
+/**
+ * @brief Get TLS Server address if configured
+ * @return address scructure
+ */
+address_t
+capture_tls_server();
 
 /**
  * @brief Return the last capture error

@@ -90,4 +90,14 @@ address_equals(address_t addr1, address_t addr2);
 bool
 address_is_local(address_t addr);
 
+/**
+ * @brief Convert string IP:PORT to address structure
+ *
+ * @param string in format IP:PORT
+ * @return address structure
+ */
+address_t
+address_from_str(const char *ipport);
+
+
 #endif /* __SNGREP_ADDRESS_H */

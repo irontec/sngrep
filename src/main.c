@@ -128,7 +128,9 @@ main(int argc, char* argv[])
     int opt, idx, limit, only_calls, no_incomplete, i;
     const char *device, *outfile;
     char bpf[512];
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     const char *keyfile;
+#endif
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
     int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0, no_config = 0;
@@ -187,7 +189,9 @@ main(int argc, char* argv[])
     // Get initial values for configurable arguments
     device = setting_get_value(SETTING_CAPTURE_DEVICE);
     outfile = setting_get_value(SETTING_CAPTURE_OUTFILE);
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     keyfile = setting_get_value(SETTING_CAPTURE_KEYFILE);
+#endif
     limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
     only_calls = setting_enabled(SETTING_SIP_CALLS);
     no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);

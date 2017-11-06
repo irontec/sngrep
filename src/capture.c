@@ -71,6 +71,11 @@ capture_init(size_t limit, bool rtp_capture, bool rotate)
         capture_cfg.storage = CAPTURE_STORAGE_DISK;
     }
 
+#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
+    // Parse TLS Server setting
+    capture_cfg.tlsserver = address_from_str(setting_get_value(SETTING_CAPTURE_TLSSERVER));
+#endif
+
     // Initialize calls lock
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
@@ -975,6 +980,12 @@ void
 capture_set_keyfile(const char *keyfile)
 {
     capture_cfg.keyfile = keyfile;
+}
+
+address_t
+capture_tls_server()
+{
+    return capture_cfg.tlsserver;
 }
 
 char *

@@ -99,3 +99,24 @@ address_is_local(address_t addr)
     }
     return false;
 }
+
+address_t
+address_from_str(const char *ipport)
+{
+    address_t ret = {};
+    char scanipport[256];
+    char address[256];
+    int port;
+
+    if (!ipport || strlen(ipport) > ADDRESSLEN + 6)
+        return ret;
+
+    strncpy(scanipport, ipport, strlen(ipport));
+
+    if (sscanf(scanipport, "%[^:]:%d", address, &port) == 2) {
+        strncpy(ret.ip, address, strlen(address));
+        ret.port = port;
+    }
+
+    return ret;
+}

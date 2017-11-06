@@ -359,6 +359,7 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
     struct in_addr ip_src, ip_dst;
     uint16_t sport = packet->src.port;
     uint16_t dport = packet->dst.port;
+    address_t tlsserver = capture_tls_server();
 
     // Convert addresses
     inet_pton(AF_INET, packet->src.ip, &ip_src);
@@ -408,7 +409,13 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
                 break;
         }
     } else {
-        if (tcp->th_flags & TH_SYN & ~TH_ACK) {
+        // Only create new connections whose destination is tlsserver
+        if (tlsserver.port) {
+            if (addressport_equals(tlsserver, packet->dst)) {
+                // New connection, store it status and leave
+                tls_connection_create(ip_src, sport, ip_dst, dport);
+            }
+        } else {
             // New connection, store it status and leave
             tls_connection_create(ip_src, sport, ip_dst, dport);
         }
