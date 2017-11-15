@@ -392,7 +392,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     frame_t *frame;
     uint32_t len_data = 0;
     //! Link + Extra header size
-    int8_t link_hl = capinfo->link_hl;
+    uint16_t link_hl = capinfo->link_hl;
 
     // Skip VLAN header if present
     if (capinfo->link == DLT_EN10MB) {
@@ -411,7 +411,24 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     }
 #endif
 
+    // Skip NFLOG header if present
+    if (capinfo->link == DLT_NFLOG) {
+        // Parse NFLOG TLV headers
+        while (link_hl + 8 <= *caplen) {
+            nflog_tlv_t *tlv = (nflog_tlv_t *) (packet + link_hl);
 
+            if (!tlv) break;
+
+            if (tlv->tlv_type == NFULA_PAYLOAD) {
+                link_hl += 4;
+                break;
+            }
+
+            if (tlv->tlv_length >= 4) {
+                link_hl += ((tlv->tlv_length + 3) & ~3); /* next TLV aligned to 4B */
+            }
+        }
+    }
 
     // Get IP header
     ip4 = (struct ip *) (packet + link_hl);
@@ -1073,6 +1090,8 @@ datalink_size(int datalink)
             return 21;
         case DLT_ENC:
             return 12;
+        case DLT_NFLOG:
+            return 4;
 #ifdef DLT_LINUX_SLL
         case DLT_LINUX_SLL:
             return 16;

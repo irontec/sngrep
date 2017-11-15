@@ -92,6 +92,15 @@
 #define ETHERTYPE_8021Q 0x8100
 #endif
 
+//! NFLOG Support (for libpcap <1.6.0)
+#define DLT_NFLOG       239
+#define NFULA_PAYLOAD   9
+
+typedef struct nflog_tlv {
+    u_int16_t   tlv_length;
+    u_int16_t   tlv_type;
+} nflog_tlv_t;
+
 //! Define Websocket Transport codes
 #define WH_FIN      0x80
 #define WH_RSV      0x70
