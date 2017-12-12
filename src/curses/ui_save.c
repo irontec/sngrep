@@ -467,7 +467,7 @@ save_to_file(ui_t *ui)
         // Open dump file
         pd = dump_open(fullfile);
         if (access(fullfile, W_OK) != 0) {
-            dialog_run(capture_last_error());
+            dialog_run("%s", capture_last_error());
             return 1;
         }
     } else {
