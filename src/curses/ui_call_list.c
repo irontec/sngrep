@@ -736,7 +736,7 @@ int
 call_list_handle_form_key(ui_t *ui, int key)
 {
     int field_idx;
-    char dfilter[256];
+    char dfilter[COLS];
     int action = -1;
 
     // Get panel information
