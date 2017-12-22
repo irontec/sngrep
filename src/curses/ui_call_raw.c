@@ -240,6 +240,10 @@ call_raw_handle_key(ui_t *ui, int key)
                 info->scroll -= rnpag_steps;
                 break;
             case ACTION_SAVE:
+                if (capture_sources_count() > 1) {
+                    dialog_run("Saving is not possible when multiple input sources are specified.");
+                    break;
+                }
                 if (info->group) {
                     // KEY_S, Display save panel
                     next_ui = ui_create_panel(PANEL_SAVE);

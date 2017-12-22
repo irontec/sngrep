@@ -426,6 +426,13 @@ address_t
 capture_tls_server();
 
 /**
+ * @brief Return packet catprue sources count
+ * @return capture sources count
+ */
+int
+capture_sources_count();
+
+/**
  * @brief Return the last capture error
  */
 char *

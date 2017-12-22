@@ -1005,6 +1005,12 @@ capture_tls_server()
     return capture_cfg.tlsserver;
 }
 
+int
+capture_sources_count()
+{
+    return vector_count(capture_cfg.sources);
+}
+
 char *
 capture_last_error()
 {

@@ -1164,6 +1164,10 @@ call_flow_handle_key(ui_t *ui, int key)
                 call_flow_set_group(info->group);
                 break;
             case ACTION_SAVE:
+                if (capture_sources_count() > 1) {
+                    dialog_run("Saving is not possible when multiple input sources are specified.");
+                    break;
+                }
                 next_ui = ui_create_panel(PANEL_SAVE);
                 save_set_group(next_ui, info->group);
                 save_set_msg(next_ui,
