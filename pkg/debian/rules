@@ -1,5 +1,16 @@
 #!/usr/bin/make -f
+
 override_dh_auto_configure:
 	dh_auto_configure -- --with-gnutls --with-pcre --enable-unicode --enable-ipv6 --enable-eep
+
+override_dh_strip:
+	dh_strip --dbg-package=sngrep-dbg
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/sngrep
+
+override_dh_installdocs:
+	dh_installdocs --link-doc=sngrep
+
 %:
 	dh $@ --with autoreconf

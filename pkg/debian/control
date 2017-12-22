@@ -21,3 +21,15 @@ Description: Ncurses SIP Messages flow viewer
  You can also create new PCAP files from captures or displayed dialogs.
  .
 
+Package: sngrep-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends: sngrep (= ${binary:Version}), ${misc:Depends}
+Description: Debugging symbols for sngrep SIP Messages flow viewer
+ sngrep displays SIP Messages grouped by Call-Id into flow
+ diagrams. It can be used as an offline PCAP viewer or online
+ capture using libpcap functions.
+ .
+ This package contains the debugging sysmbols.
+ .
