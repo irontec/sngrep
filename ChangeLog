@@ -1,3 +1,12 @@
+2018-01-19 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.5 released
+
+	* save: avoid crashing when multiple source inputs are used
+	* call list: fix buffer overflow in display filter with wide terminals
+	* capture: added new setting capture.tlsserver to only process TLS packets to tha address
+	* capture: fixed compatibility with OpenSSL >= 1.1.0
+	* capture: only read stdin when input file is '-'
+
 2017-09-17 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.4 released
 
