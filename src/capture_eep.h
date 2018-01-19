@@ -2,8 +2,8 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013-2017 Ivan Alonso (Kaian)
- ** Copyright (C) 2013-2017 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013-2018 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2018 Irontec SL. All rights reserved.
  ** Copyright (C) 2012 Homer Project (http://www.sipcapture.org)
  **
  ** This program is free software: you can redistribute it and/or modify
