@@ -65,6 +65,15 @@
 #define OLD_OPENSSL_VERSION 1
 #endif
 
+/* LibreSSL declares OPENSSL_VERSION_NUMBER == 2.0 but does not include most
+ * changes from OpenSSL >= 1.1 (new functions, macros, deprecations, ...)
+ */
+#if defined(LIBRESSL_VERSION_NUMBER)
+#define MODSSL_USE_OPENSSL_PRE_1_1_API (1)
+#else
+#define MODSSL_USE_OPENSSL_PRE_1_1_API (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#endif
+
 //! Three bytes unsigned integer
 typedef struct uint16 {
     unsigned char x[2];

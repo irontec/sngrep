@@ -94,7 +94,7 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
 
     // Calculate enough data to fill destination
     while (pending > 0) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
         HMAC_CTX hm;
         HMAC_Init(&hm, secret, sslen, md);
         HMAC_Update(&hm, tmpseed, tmpslen);
@@ -495,7 +495,7 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 break;
             case change_cipher_spec:
                 // From now on, this connection will be encrypted using MasterSecret
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
                 if (conn->client_cipher_ctx->cipher && conn->server_cipher_ctx->cipher)
                     conn->encrypted = 1;
 #else
@@ -588,7 +588,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 // Decrypt PreMasterKey
                 clientkeyex = (struct ClientKeyExchange *) body;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
                 RSA_private_decrypt(UINT16_INT(clientkeyex->length),
                                     (const unsigned char *) &clientkeyex->exchange_keys,
                                     (unsigned char *) &conn->pre_master_secret,
