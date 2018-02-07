@@ -470,6 +470,12 @@ sip_calls_vector()
     return calls.list;
 }
 
+vector_t *
+sip_active_calls_vector()
+{
+    return calls.active;
+}
+
 sip_stats_t
 sip_calls_stats()
 {
@@ -725,9 +731,31 @@ sip_calls_clear()
     // Create again the callid hash table
     htable_destroy(calls.callids);
     calls.callids = htable_create(calls.limit);
+
     // Remove all items from vector
     vector_clear(calls.list);
     vector_clear(calls.active);
+}
+
+void
+sip_calls_clear_soft()
+{
+        // Create again the callid hash table
+        htable_destroy(calls.callids);
+        calls.callids = htable_create(calls.limit);
+
+        // Repopulate list applying current filter
+        calls.list = vector_copy_if(sip_calls_vector(), filter_check_call);
+        calls.active = vector_copy_if(sip_active_calls_vector(), filter_check_call);
+
+        // Repopulate callids based on filtered list
+        sip_call_t *call;
+        vector_iter_t it = vector_iterator(calls.list);
+
+        while ((call = vector_iterator_next(&it)))
+        {
+                htable_insert(calls.callids, call->callid, call);
+        }
 }
 
 void

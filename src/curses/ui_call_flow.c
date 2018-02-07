@@ -1201,6 +1201,7 @@ call_flow_handle_key(ui_t *ui, int key)
                 call_raw_set_msg(call_flow_arrow_message(vector_item(info->darrows, info->cur_arrow)));
                 break;
             case ACTION_CLEAR_CALLS:
+            case ACTION_CLEAR_CALLS_SOFT:
                 // Propagate the key to the previous panel
                 return KEY_PROPAGATED;
 
