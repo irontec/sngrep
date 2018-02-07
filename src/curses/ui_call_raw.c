@@ -266,6 +266,7 @@ call_raw_handle_key(ui_t *ui, int key)
                 }
                 break;
             case ACTION_CLEAR_CALLS:
+            case ACTION_CLEAR_CALLS_SOFT:
                 // Propagate the key to the previous panel
                 return KEY_PROPAGATED;
             default:

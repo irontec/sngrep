@@ -285,6 +285,12 @@ vector_t *
 sip_calls_vector();
 
 /**
+ * @brief Return the active call list
+ */
+vector_t *
+sip_active_calls_vector();
+
+/**
  * @brief Return stats from call list
  *
  * @param total Total calls processed
@@ -332,6 +338,15 @@ sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload);
  */
 void
 sip_calls_clear();
+
+/**
+ * @brief Remove al calls
+ *
+ * This funtion will clear the call list of calls other than ones
+ * fitting the current filter
+ */
+void
+sip_calls_clear_soft();
 
 /**
  * @brief Remove first call in the call list

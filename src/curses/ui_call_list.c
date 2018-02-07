@@ -330,10 +330,11 @@ call_list_draw_footer(ui_t *ui)
         key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
         key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
         key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
+        key_action_key_str(ACTION_CLEAR_CALLS_SOFT), "Clear with Filter",
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    ui_draw_bindings(ui, keybindings, 22);
+    ui_draw_bindings(ui, keybindings, 23);
 }
 
 void
@@ -669,6 +670,12 @@ call_list_handle_key(ui_t *ui, int key)
             case ACTION_CLEAR_CALLS:
                 // Remove all stored calls
                 sip_calls_clear();
+                // Clear List
+                call_list_clear(ui);
+                break;
+            case ACTION_CLEAR_CALLS_SOFT:
+                // Remove stored calls, keeping the currently displayed calls
+                sip_calls_clear_soft();
                 // Clear List
                 call_list_clear(ui);
                 break;
