@@ -917,7 +917,7 @@ capture_paused()
 const char *
 capture_status_desc()
 {
-    int online = 0, offline = 0;
+    int online = 0, offline = 0, loading = 0;
 
 
     capture_info_t *capinfo;
@@ -925,6 +925,9 @@ capture_status_desc()
     while ((capinfo = vector_iterator_next(&it))) {
         if (capinfo->infile) {
             offline++;
+            if (capinfo->running) {
+                loading++;
+            }
         } else {
             online++;
         }
@@ -944,6 +947,14 @@ capture_status_desc()
             return "Offline (Paused)";
         } else {
             return "Mixed (Paused)";
+        }
+    } else if (loading > 0) {
+        if (online > 0 && offline == 0) {
+            return "Online (Loading)";
+        } else if (online == 0 && offline > 0) {
+            return "Offline (Loading)";
+        } else {
+            return "Mixed (Loading)";
         }
     } else {
         if (online > 0 && offline == 0) {
