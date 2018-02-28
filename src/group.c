@@ -313,7 +313,6 @@ call_group_msg_sorter(vector_t *vector, void *item)
 
     // Current and last packet times
     curts = msg_get_time(item);
-    prevts = msg_get_time(vector_last(vector));
 
     for (i = count - 2 ; i >= 0; i--) {
         // Get previous packet
@@ -324,4 +323,7 @@ call_group_msg_sorter(vector_t *vector, void *item)
             return;
         }
     }
+
+    // Put this item at the begining of the vector
+    vector_insert(vector, item, 0);
 }

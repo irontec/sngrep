@@ -933,13 +933,6 @@ sip_list_sorter(vector_t *vector, void *item)
     if (vector_count(vector) == 1)
         return;
 
-    prev = vector_item(vector, vector_count(vector) - 2);
-
-    // Check if the item is already sorted
-    if (call_attr_compare(cur, prev, calls.sort.by) == 0) {
-        return;
-    }
-
     for (i = count - 2 ; i >= 0; i--) {
         // Get previous item
         prev = vector_item(vector, i);

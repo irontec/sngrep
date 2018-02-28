@@ -1059,12 +1059,6 @@ capture_packet_time_sorter(vector_t *vector, void *item)
 
     // TODO Implement multiframe packets
     curts = packet_time(item);
-    prevts = packet_time(vector_last(vector));
-
-    // Check if the item is already sorted
-    if (timeval_is_older(curts, prevts)) {
-        return;
-    }
 
     for (i = count - 2 ; i >= 0; i--) {
         // Get previous packet

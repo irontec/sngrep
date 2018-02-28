@@ -1500,12 +1500,6 @@ call_flow_arrow_sorter(vector_t *vector, void *item)
         return;
 
     curts = call_flow_arrow_time(item);
-    prevts = call_flow_arrow_time(vector_item(vector, vector_count(vector) - 2));
-
-    // Check if the item is already sorted
-    if (timeval_is_older(curts, prevts)) {
-        return;
-    }
 
     for (i = count - 2 ; i >= 0; i--) {
         // Get previous arrow

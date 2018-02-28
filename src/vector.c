@@ -192,7 +192,7 @@ vector_insert(vector_t *vector, void *item, int pos)
     if (!item)
         return vector->count;
 
-    if (pos < 0 || pos > vector->count)
+    if (pos < 0 || pos > vector->count - 2)
         return vector->count;
 
     // If position is already filled with that item, we're done
