@@ -19,6 +19,7 @@
  ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
+
 /**
  * @file ui_column_select.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
@@ -470,20 +471,31 @@ column_select_move_item(ui_t *ui, ITEM *item, int pos)
     // Swap position with destination
     int item_pos = item_index(item);
     info->items[item_pos] = info->items[pos];
-    info->items[item_pos]->index = item_pos;
     info->items[pos] = item;
-    info->items[pos]->index = pos;
+    set_menu_items(info->menu, info->items);
 }
 
 void
 column_select_toggle_item(ui_t *ui, ITEM *item)
 {
+    // Get panel information
+    column_select_info_t *info = column_select_info(ui);
+
+    int pos = item_index(item);
+
     // Change item name
     if (!strncmp(item_name(item), "[ ]", 3)) {
-        item->name.str = "[*]";
+        info->items[pos] = new_item("[*]", item_description(item));
     } else {
-        item->name.str = "[ ]";
+        info->items[pos] = new_item("[ ]", item_description(item));
     }
+
+    // Restore menu item
+    set_item_userptr(info->items[pos], item_userptr(item));
+    set_menu_items(info->menu, info->items);
+
+    // Destroy old item
+    free_item(item);
 }
 
 void
@@ -504,4 +516,8 @@ column_select_update_menu(ui_t *ui)
     // Move until the current position is set
     set_top_row(info->menu, top_idx);
     set_current_item(info->menu, current);
+
+    // Force menu redraw
+    menu_driver(info->menu, REQ_UP_ITEM);
+    menu_driver(info->menu, REQ_DOWN_ITEM);
 }
