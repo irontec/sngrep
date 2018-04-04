@@ -747,7 +747,7 @@ int
 call_list_handle_form_key(ui_t *ui, int key)
 {
     int field_idx;
-    char dfilter[COLS];
+    char *dfilter;
     int action = -1;
 
     // Get panel information
@@ -817,13 +817,16 @@ call_list_handle_form_key(ui_t *ui, int key)
     form_driver(info->form, REQ_VALIDATION);
 
     // Store dfilter input
-    // We trim spaces with sscanf because and empty field is stored as space characters
-    memset(dfilter, 0, sizeof(dfilter));
-    strcpy(dfilter, field_buffer(info->fields[FLD_LIST_FILTER], 0));
+    int field_len = strlen(field_buffer(info->fields[FLD_LIST_FILTER], 0));
+    dfilter = malloc(field_len + 1);
+    memset(dfilter, 0, field_len + 1);
+    strncpy(dfilter, field_buffer(info->fields[FLD_LIST_FILTER], 0), field_len);
+    // Trim any trailing spaces
     strtrim(dfilter);
 
     // Set display filter
     filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);
+    free(dfilter);
 
     // Return if this panel has handled or not the key
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
