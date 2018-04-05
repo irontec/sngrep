@@ -349,6 +349,7 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
     int height, width, line, column, i;
     const char *cur_line, *payload, *method = NULL;
     int syntax = setting_enabled(SETTING_SYNTAX);
+    const char *nonascii = setting_get_value(SETTING_CR_NON_ASCII);
 
     // Default text format
     int attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
@@ -451,7 +452,11 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
         }
 
         // Put next character in position
-        mvwaddch(win, line, column++, payload[i]);
+        if (isascii(payload[i])) {
+            mvwaddch(win, line, column++, payload[i]);
+        } else {
+            mvwaddch(win, line, column++, *nonascii);
+        }
 
         // Stop if we've reached the bottom of the window
         if (line == height)

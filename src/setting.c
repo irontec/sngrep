@@ -74,6 +74,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CF_ONLYMEDIA,       "cf.onlymedia",       SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_CF_DELTA,           "cf.deltatime",       SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_CR_SCROLLSTEP,      "cr.scrollstep",      SETTING_FMT_NUMBER,  "10",        NULL },
+    { SETTING_CR_NON_ASCII,       "cr.nonascii",        SETTING_FMT_STRING,  ".",        NULL },
     { SETTING_FILTER_PAYLOAD,     "filter.payload",     SETTING_FMT_STRING,  "",          NULL },
     { SETTING_FILTER_METHODS,     "filter.methods",     SETTING_FMT_STRING,  "",          NULL },
 #ifdef USE_EEP
