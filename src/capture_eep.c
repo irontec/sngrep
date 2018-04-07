@@ -126,11 +126,7 @@ capture_eep_init()
         }
 
         // Create a new thread for accepting client connections
-        if (pthread_create(&eep_cfg.server_thread, NULL, accept_eep_client, NULL) != 0) {
-            fprintf(stderr, "Error creating accept thread: %s\n", strerror(errno));
-            return 1;
-        }
-
+        eep_cfg.server_thread = g_thread_new("eep-server-thread", accept_eep_client, NULL);
     }
 
     // Settings for EEP server
@@ -157,7 +153,7 @@ accept_eep_client(void *data)
     }
 
     // Leave the thread gracefully
-    pthread_exit(NULL);
+    g_thread_exit(NULL);
     return 0;
 }
 
@@ -170,7 +166,6 @@ capture_eep_deinit()
     if (eep_cfg.server_sock) {
         close(eep_cfg.server_sock);
         eep_cfg.server_sock = -1;
-        //pthread_join(&eep_cfg.server_thread, &ret);
     }
 }
 

@@ -41,7 +41,8 @@
  */
 #ifndef __SNGREP_CAPTURE_EEP_H
 #define __SNGREP_CAPTURE_EEP_H
-#include <pthread.h>
+#include "config.h"
+#include <glib.h>
 #include "capture.h"
 
 //! Shorter declaration of capture_eep_config structure
@@ -75,7 +76,7 @@ struct capture_eep_config
     //! Server password to authenticate incoming connections
     const char *capt_srv_password;
     //! Server thread to parse incoming data
-    pthread_t server_thread;
+    GThread *server_thread;
 };
 
 /* HEPv3 types */

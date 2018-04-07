@@ -31,10 +31,6 @@ AM_PROG_CC_C_O
 
 #######################################################################
 # Check for other REQUIRED libraries
-AC_CHECK_LIB([pthread], [pthread_create], [], [
-    AC_MSG_ERROR([ You need to have libpthread installed to compile sngrep.])
-])
-
 AC_CHECK_LIB([pcap], [pcap_open_offline], [], [
     AC_MSG_ERROR([ You need to have libpcap installed to compile sngrep.])
 ])

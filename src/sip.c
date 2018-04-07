@@ -30,7 +30,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include <pthread.h>
 #include <stdarg.h>
 #include "sip.h"
 #include "option.h"

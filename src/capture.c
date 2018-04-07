@@ -77,15 +77,7 @@ capture_init(size_t limit, bool rtp_capture, bool rotate)
 #endif
 
     // Initialize calls lock
-    pthread_mutexattr_t attr;
-    pthread_mutexattr_init(&attr);
-#if defined(PTHREAD_MUTEX_RECURSIVE) || defined(__FreeBSD__) || defined(BSD) || defined (__OpenBSD__) || defined(__DragonFly__)
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-#else
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
-#endif
-    pthread_mutex_init(&capture_cfg.lock, &attr);
-
+    g_rec_mutex_init(&capture_cfg.lock);
 }
 
 void
@@ -97,9 +89,6 @@ capture_deinit()
     // Deallocate vectors
     vector_set_destroyer(capture_cfg.sources, vector_generic_destroyer);
     vector_destroy(capture_cfg.sources);
-
-    // Remove capture mutex
-    pthread_mutex_destroy(&capture_cfg.lock);
 }
 
 int
@@ -813,8 +802,8 @@ capture_close()
                  * @see: https://www.tcpdump.org/manpages/pcap_breakloop.3pcap.html
                  */
                 pcap_breakloop(capinfo->handle);
-                pthread_cancel(capinfo->capture_t);
-                pthread_join(capinfo->capture_t, NULL);
+                //FIXME pthread_cancel(capinfo->capture_t);
+                g_thread_join(capinfo->capture_t);
             }
         }
     }
@@ -822,23 +811,17 @@ capture_close()
 }
 
 int
-capture_launch_thread(capture_info_t *capinfo)
+capture_launch_thread()
 {
-    //! capture thread attributes
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
+    capture_info_t *capinfo;
 
     // Start all captures threads
     vector_iter_t it = vector_iterator(capture_cfg.sources);
     while ((capinfo = vector_iterator_next(&it))) {
         // Mark capture as running
         capinfo->running = true;
-        if (pthread_create(&capinfo->capture_t, &attr, (void *) capture_thread, capinfo)) {
-            return 1;
-        }
+        capinfo->capture_t = g_thread_new(NULL, (void *) capture_thread, capinfo);
     }
-
-    pthread_attr_destroy(&attr);
     return 0;
 }
 
@@ -1043,14 +1026,14 @@ void
 capture_lock()
 {
     // Avoid parsing more packet
-    pthread_mutex_lock(&capture_cfg.lock);
+    g_rec_mutex_lock(&capture_cfg.lock);
 }
 
 void
 capture_unlock()
 {
     // Allow parsing more packets
-    pthread_mutex_unlock(&capture_cfg.lock);
+    g_rec_mutex_unlock(&capture_cfg.lock);
 }
 
 

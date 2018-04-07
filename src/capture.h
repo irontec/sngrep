@@ -33,7 +33,7 @@
 #define __SNGREP_CAPTURE_H
 
 #include "config.h"
-#include <pthread.h>
+#include <glib.h>
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>
@@ -149,7 +149,7 @@ struct capture_config {
     //! Capture sources
     vector_t *sources;
     //! Capture Lock. Avoid parsing and handling data at the same time
-    pthread_mutex_t lock;
+    GRecMutex lock;
 };
 
 /**
@@ -180,7 +180,7 @@ struct capture_info
     //! Packets pending TCP reassembly
     vector_t *tcp_reasm;
     //! Capture thread for online capturing
-    pthread_t capture_t;
+    GThread *capture_t;
 };
 
 /**
