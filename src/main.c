@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <getopt.h>
+#include <glib.h>
 #include "option.h"
 #include "vector.h"
 #include "capture.h"
@@ -44,50 +44,8 @@
 #endif
 #include "curses/ui_manager.h"
 
-/**
- * @brief Usage function
- *
- * Print all available options (which are none actually)
- */
 void
-usage()
-{
-    printf("Usage: %s [-hVcivNqrD] [-IO pcap_dump] [-d dev] [-l limit]"
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-           " [-k keyfile]"
-#endif
-#ifdef USE_EEP
-           " [-LH capture_url]"
-#endif
-           " [<match expression>] [<bpf filter>]\n\n"
-           "    -h --help\t\t This usage\n"
-           "    -V --version\t Version information\n"
-           "    -d --device\t\t Use this capture device instead of default\n"
-           "    -I --input\t\t Read captured data from pcap file\n"
-           "    -O --output\t\t Write captured data to pcap file\n"
-           "    -c --calls\t\t Only display dialogs starting with INVITE\n"
-           "    -r --rtp\t\t Capture RTP packets payload\n"
-           "    -l --limit\t\t Set capture limit to N dialogs\n"
-           "    -i --icase\t\t Make <match expression> case insensitive\n"
-           "    -v --invert\t\t Invert <match expression>\n"
-           "    -N --no-interface\t Don't display sngrep interface, just capture\n"
-           "    -q --quiet\t\t Don't print captured dialogs in no interface mode\n"
-           "    -D --dump-config\t Print active configuration settings and exit\n"
-           "    -f --config\t\t Read configuration from file\n"
-           "    -F --no-config\t Do not read configuration from default config file\n"
-           "    -R --rotate\t\t Rotate calls when capture limit have been reached\n"
-#ifdef USE_EEP
-           "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
-           "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
-#endif
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-           "    -k --keyfile\t RSA private keyfile to decrypt captured packets\n"
-#endif
-           "\n",PACKAGE);
-}
-
-void
-version()
+print_version_info()
 {
     printf("%s - %s\n"
            "Copyright (C) 2013-2018 Irontec S.L.\n"
@@ -125,179 +83,145 @@ version()
 int
 main(int argc, char* argv[])
 {
-    int opt, idx, limit, only_calls, no_incomplete, i;
-    const char *device, *outfile;
+    const char *device;
     char bpf[512];
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-    const char *keyfile;
-#endif
     const char *match_expr;
-    int match_insensitive = 0, match_invert = 0;
-    int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0, no_config = 0;
+
+    GError *error = NULL;
+    GOptionContext *context;
+    gchar **file_inputs = NULL;
+    gchar **devices = NULL;
+    gchar *outfile = NULL;
+    gchar *hep_listen = NULL;
+    gchar *hep_send = NULL;
+    gboolean no_interface = FALSE;
+    gboolean quiet = FALSE;
+    gboolean version = FALSE;
+    gboolean config_dump = FALSE;
+    gboolean no_config = FALSE;
+    gboolean rtp_capture = FALSE;
+    gboolean rotate = FALSE;
+    gboolean match_insensitive = FALSE;
+    gboolean match_invert = FALSE;
+    gboolean only_calls = FALSE;
+    gboolean no_incomplete;
+    gint limit = 0;
+    gchar *config_file = NULL;
+    gchar *keyfile = NULL;
+
     vector_t *infiles = vector_create(0, 1);
     vector_t *indevices = vector_create(0, 1);
 
-    // Program options
-    static struct option long_options[] = {
-        { "help", no_argument, 0, 'h' },
-        { "version", no_argument, 0, 'V' },
-        { "device", required_argument, 0, 'd' },
-        { "input", required_argument, 0, 'I' },
-        { "output", required_argument, 0, 'O' },
+    GOptionEntry main_entries[] = {
+        { "version",'V', 0, G_OPTION_ARG_NONE, &version,
+          "Version information", NULL },
+        { "device", 'd', 0, G_OPTION_ARG_STRING_ARRAY,  &devices,
+          "Use this capture device instead of default", "DEVICE" },
+        { "input",  'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &file_inputs,
+          "Read captured data from pcap file", "FILE" },
+        { "output", 'O', 0, G_OPTION_ARG_FILENAME, &outfile,
+          "Write captured data to pcap file", "FILE" },
+        { "calls",  'c', 0, G_OPTION_ARG_NONE, &only_calls,
+          "Only display dialogs starting with INVITE", NULL },
+        { "rtp",    'r', 0, G_OPTION_ARG_NONE, &rtp_capture,
+          "Store captured RTP packets (enables saving RTP)", NULL },
+        { "limit",  'l', 0, G_OPTION_ARG_INT, &limit,
+          "Set capture limit to N dialogs", "N" },
+        { "rotate", 'R', 0, G_OPTION_ARG_NONE, &rotate,
+          "Rotate calls when capture limit have been reached", NULL },
+        { "no-interface", 'N', 0, G_OPTION_ARG_NONE, &no_interface,
+          "Don't display sngrep interface, just capture", NULL },
+        { "quiet",  'q', 0, G_OPTION_ARG_NONE, &quiet,
+          "Don't print captured dialogs in no interface mode", NULL },
+        { "icase",  'i', 0, G_OPTION_ARG_NONE, &match_insensitive,
+          "Make <match expression> case insensitive", NULL },
+        { "invert", 'v', 0, G_OPTION_ARG_NONE, &match_invert,
+          "Invert <match expression>", NULL },
+        { "dump-config", 'D', 0, G_OPTION_ARG_NONE, &config_dump,
+          "Print active configuration settings and exit", NULL },
+        { "config", 'f', 0, G_OPTION_ARG_FILENAME, &config_file,
+          "Read configuration from FILE", "FILE" },
+        { "no-config", 'F', 0, G_OPTION_ARG_NONE, &no_config,
+          "Do not read configuration from default config file", NULL },
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-        { "keyfile", required_argument, 0, 'k' },
+        { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
+            "RSA private keyfile to decrypt captured packets", "KEYFILE" },
 #endif
-        { "calls", no_argument, 0, 'c' },
-        { "rtp", no_argument, 0, 'r' },
-        { "limit", required_argument, 0, 'l' },
-        { "icase", no_argument, 0, 'i' },
-        { "invert", no_argument, 0, 'v' },
-        { "no-interface", no_argument, 0, 'N' },
-        { "dump-config", no_argument, 0, 'D' },
-        { "rotate", no_argument, 0, 'R' },
-        { "config", required_argument, 0, 'f' },
-        { "no-config", no_argument, 0, 'F' },
 #ifdef USE_EEP
-        { "eep-listen", required_argument, 0, 'L' },
-        { "eep-send", required_argument, 0, 'H' },
+        { "hep-listen", 'L', 0, G_OPTION_ARG_STRING, &hep_listen,
+            "Listen for encapsulated HEP packets", "udp:X.X.X.X:XXXX" },
+        { "hep-send", 'H', 0, G_OPTION_ARG_STRING, &hep_send,
+            "Homer sipcapture URL", "udp:X.X.X.X:XXXX" },
 #endif
-        { "quiet", no_argument, 0, 'q' },
+        { NULL }
     };
 
-    // Parse command line arguments that have high priority
-    opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:Rf:F";
-    while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
-        switch (opt) {
-            case 'h':
-                usage();
-                return 0;
-            case 'V':
-                version();
-                return 0;
-            case 'F':
-                no_config = 1;
-                break;
-            default:
-                break;
-        }
-	}
+    /************************** Command Line Parsing **************************/
+    context = g_option_context_new("[<match expression>] [<bpf filter>]");
+    g_option_context_add_main_entries (context, main_entries, NULL);
+    gboolean parsed = g_option_context_parse (context, &argc, &argv, &error);
+    g_option_context_free (context);
 
+    if (!parsed) {
+        g_printerr("option parsing failed: %s\n", error->message);
+        return 1;
+    }
+
+    // Parse command line arguments that have high priority
+    if (version) {
+        print_version_info();
+        return 0;
+    } else if (config_dump) {
+        key_bindings_dump();
+        settings_dump();
+        return 0;
+    }
+
+    /***************************** Configuration *****************************/
     // Initialize configuration options
     init_options(no_config);
 
-    // Get initial values for configurable arguments
-    device = setting_get_value(SETTING_CAPTURE_DEVICE);
-    outfile = setting_get_value(SETTING_CAPTURE_OUTFILE);
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-    keyfile = setting_get_value(SETTING_CAPTURE_KEYFILE);
-#endif
-    limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
-    only_calls = setting_enabled(SETTING_SIP_CALLS);
-    no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
-    rtp_capture = setting_enabled(SETTING_CAPTURE_RTP);
-    rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
+    // Override default configuration options if requested
+    if (config_file)
+        read_options(config_file);
 
-    // Parse the rest of command line arguments
-    opterr = 0;
-    optind = 1;  /* reset getopt index */
-    while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
-        switch (opt) {
-            case 'h': /* handled before with higher priority options */
-                break;
-            case 'V': /* handled before with higher priority options */
-                break;
-            case 'd':
-                vector_append(indevices, optarg);
-                break;
-            case 'I':
-                vector_append(infiles, optarg);
-                break;
-            case 'O':
-                outfile = optarg;
-                break;
-            case 'l':
-                if(!(limit = atoi(optarg))) {
-                    fprintf(stderr, "Invalid limit value.\n");
-                    return 0;
-                }
-                break;
-            case 'k':
+    // Get initial values for configurable arguments
+    if (!limit) limit  = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
+    if (!only_calls) only_calls = setting_enabled(SETTING_SIP_CALLS);
+    if (!rtp_capture) rtp_capture = setting_enabled(SETTING_CAPTURE_RTP);
+    if (!rotate) rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
+    if (!outfile) outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
+    no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
+    device = setting_get_value(SETTING_CAPTURE_DEVICE);
+
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-                keyfile = optarg;
-                break;
-#else
-                fprintf(stderr, "sngrep is not compiled with SSL support.");
-                exit(1);
+    if (!keyfile) keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
 #endif
-            case 'c':
-                only_calls = 1;
-                setting_set_value(SETTING_SIP_CALLS, SETTING_ON);
-                break;
-            case 'r':
-                rtp_capture = 1;
-                setting_set_value(SETTING_CAPTURE_RTP, SETTING_ON);
-                break;
-            case 'i':
-                match_insensitive++;
-                break;
-            case 'v':
-                match_invert++;
-                break;
-            case 'N':
-                no_interface = 1;
-                setting_set_value(SETTING_CAPTURE_STORAGE, "none");
-                break;
-            case 'q':
-                quiet = 1;
-                break;
-            case 'D':
-                key_bindings_dump();
-                settings_dump();
-                return 0;
-            case 'f':
-                read_options(optarg);
-                break;
-            case 'F':  /* handled before with higher priority options */
-                break;
-            case 'R':
-                rotate = 1;
-                setting_set_value(SETTING_CAPTURE_ROTATE, SETTING_ON);
-                break;
-                // Dark options for dummy ones
-            case 'p':
-            case 't':
-            case 'W':
-                break;
-            case 'L':
-#ifdef USE_EEP
-                capture_eep_set_server_url(optarg);
-                break;
-#else
-                fprintf(stderr, "sngrep is not compiled with HEP/EEP support.");
-                exit(1);
-#endif
-            case 'H':
-#ifdef USE_EEP
-                capture_eep_set_client_url(optarg);
-                break;
-#else
-                fprintf(stderr, "sngrep is not compiled with HEP/EEP support.");
-                exit(1);
-#endif
-            case '?':
-                if (strchr(options, optopt)) {
-                    fprintf(stderr, "-%c option requires an argument.\n", optopt);
-                } else if (isprint(optopt)) {
-                    fprintf(stderr, "Unknown option -%c.\n", optopt);
-                } else {
-                    fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
-                }
-                return 1;
-            default:
-                break;
+
+    // Handle capture inputs
+    if (devices) {
+        for (int i = 0; devices[i]; i++) {
+            vector_append(indevices, devices[i]);
         }
     }
+
+    if (file_inputs) {
+        for (int i = 0; file_inputs[i]; i++) {
+            vector_append(infiles, file_inputs[i]);
+        }
+    }
+
+    // Legacy settings set
+    if (only_calls) setting_set_value(SETTING_SIP_CALLS, SETTING_ON);
+    if (rtp_capture) setting_set_value(SETTING_CAPTURE_RTP, SETTING_ON);
+    if (rotate) setting_set_value(SETTING_CAPTURE_ROTATE, SETTING_ON);
+    if (no_interface) setting_set_value(SETTING_CAPTURE_STORAGE, "none");
+
+#ifdef USE_EEP
+    // Hep settings
+    if (hep_listen) capture_eep_set_server_url(hep_listen);
+    if (hep_send)  capture_eep_set_client_url(hep_send);
+#endif
 
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     // Set capture decrypt key file
@@ -333,14 +257,14 @@ main(int argc, char* argv[])
     }
 
     // If we have an input file, load it
-    for (i = 0; i < vector_count(infiles); i++) {
+    for (int i = 0; i < vector_count(infiles); i++) {
         // Try to load file
         if (capture_offline(vector_item(infiles, i), outfile) != 0)
             return 1;
     }
 
     // If we have an input device, load it
-    for (i = 0; i < vector_count(indevices); i++) {
+    for (int i = 0; i < vector_count(indevices); i++) {
         // Check if all capture data is valid
         if (capture_online(vector_item(indevices, i), outfile) != 0)
             return 1;
@@ -350,13 +274,15 @@ main(int argc, char* argv[])
     vector_destroy(infiles);
 
     // More arguments pending!
-    if (argv[optind]) {
+    if (argc > 1) {
+        guint argi = 1;
+
         // Assume first pending argument is  match expression
-        match_expr = argv[optind++];
+        match_expr = argv[argi++];
 
         // Try to build the bpf filter string with the rest
         memset(bpf, 0, sizeof(bpf));
-        for (i = optind; i < argc; i++)
+        for (int i = argi; i < argc; i++)
             sprintf(bpf + strlen(bpf), "%s ", argv[i]);
 
         // Check if this BPF filter is valid
@@ -367,7 +293,7 @@ main(int argc, char* argv[])
 
             // Build the bpf filter string
             memset(bpf, 0, sizeof(bpf));
-            for (i = optind - 1; i < argc; i++)
+            for (int i = argi - 1; i < argc; i++)
                 sprintf(bpf + strlen(bpf), "%s ", argv[i]);
 
             // Check bpf filter is valid again
