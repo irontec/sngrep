@@ -30,7 +30,6 @@ set(SOURCES
     src/curses/ui_stats.c
     src/filter.c
     src/group.c
-    src/hash.c
     src/keybinding.c
     src/main.c
     src/media.c

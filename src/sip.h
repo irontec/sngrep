@@ -40,7 +40,6 @@
 #endif
 #include "sip_call.h"
 #include "vector.h"
-#include "hash.h"
 
 #define MAX_SIP_PAYLOAD 10240
 
@@ -127,7 +126,7 @@ struct sip_call_list {
     //! Last created id
     int last_index;
     //! Call-Ids hash table
-    htable_t *callids;
+    GHashTable *callids;
 
     // Max call limit
     int limit;

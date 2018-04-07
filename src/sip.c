@@ -26,6 +26,7 @@
  * @brief Source of functions defined in sip.h
  */
 #include "config.h"
+#include <glib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -155,7 +156,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.active = vector_create(10, 10);
 
     // Create hash table for callid search
-    calls.callids = htable_create(calls.limit);
+    calls.callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     // Set default sorting field
     if (sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
@@ -208,7 +209,7 @@ sip_deinit()
     // Remove all calls
     sip_calls_clear();
     // Remove Call-id hash table
-    htable_destroy(calls.callids);
+    g_hash_table_destroy(calls.callids);
     // Remove calls vector
     vector_destroy(calls.list);
     vector_destroy(calls.active);
@@ -386,7 +387,7 @@ sip_check_packet(packet_t *packet)
             goto skip_message;
 
         // Add this Call-Id to hash table
-        htable_insert(calls.callids, call->callid, call);
+        g_hash_table_insert(calls.callids, call->callid, call);
 
         // Set call index
         call->index = ++calls.last_index;
@@ -518,7 +519,7 @@ sip_find_by_index(int index)
 sip_call_t *
 sip_find_by_callid(const char *callid)
 {
-    return htable_find(calls.callids, callid);
+    return g_hash_table_lookup(calls.callids, callid);
 }
 
 int
@@ -760,8 +761,7 @@ void
 sip_calls_clear()
 {
     // Create again the callid hash table
-    htable_destroy(calls.callids);
-    calls.callids = htable_create(calls.limit);
+    g_hash_table_remove_all(calls.callids);
 
     // Remove all items from vector
     vector_clear(calls.list);
@@ -772,8 +772,7 @@ void
 sip_calls_clear_soft()
 {
         // Create again the callid hash table
-        htable_destroy(calls.callids);
-        calls.callids = htable_create(calls.limit);
+        g_hash_table_remove_all(calls.callids);
 
         // Repopulate list applying current filter
         calls.list = vector_copy_if(sip_calls_vector(), filter_check_call);
@@ -785,7 +784,7 @@ sip_calls_clear_soft()
 
         while ((call = vector_iterator_next(&it)))
         {
-                htable_insert(calls.callids, call->callid, call);
+            g_hash_table_insert(calls.callids, call->callid, call);
         }
 }
 
@@ -797,7 +796,7 @@ sip_calls_rotate()
     while ((call = vector_iterator_next(&it))) {
         if (!call->locked) {
             // Remove from callids hash
-            htable_remove(calls.callids, call->callid);
+            g_hash_table_remove(calls.callids, call->callid);
             // Remove first call from active and call lists
             vector_remove(calls.active, call);
             vector_remove(calls.list, call);
