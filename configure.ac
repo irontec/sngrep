@@ -42,6 +42,8 @@ AC_CHECK_HEADER([pcap.h], [], [
     AC_MSG_ERROR([ You need to have libpcap development files installed to compile sngrep.])
 ])
 
+PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.16])
+
 ####
 #### Ncurses Wide character support
 ####

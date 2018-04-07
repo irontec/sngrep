@@ -6,11 +6,13 @@
 
 # Build files
 src/sngrep
+sngrep
+sngrep.cbp
 tests/test-*.log
 tests/test-*.trs
 tests/test-???
 *.o
-.deps
+**.deps
 .dirstamp
 *gmon.out
 src/config.h*
@@ -30,6 +32,10 @@ missing
 install-sh
 depcomp
 test-driver
+cmake-build-*
+CMakeCache.txt
+CMakeFiles
+cmake*
 
 # Ignore Doxygen generated files
 doc/html

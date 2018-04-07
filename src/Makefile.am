@@ -1,8 +1,8 @@
 AUTOMAKE_OPTIONS=subdir-objects
 bin_PROGRAMS=sngrep
 sngrep_SOURCES=capture.c
-sngrep_CFLAGS=
-sngrep_LDADD=
+sngrep_CFLAGS=$(GLIB_CFLAGS)
+sngrep_LDADD=$(GLIB_LIBS)
 if USE_EEP
 sngrep_SOURCES+=capture_eep.c
 endif
