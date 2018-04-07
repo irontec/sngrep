@@ -62,9 +62,6 @@ print_version_info()
 #ifdef WITH_UNICODE
            " * Compiled with Wide-character support.\n"
 #endif
-#ifdef WITH_PCRE
-           " * Compiled with Perl Compatible regular expressions support.\n"
-#endif
 #ifdef USE_IPV6
            " * Compiled with IPv6 support.\n"
 #endif

@@ -30,7 +30,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
-#include <regex.h>
 #include <ctype.h>
 #include "option.h"
 #include "filter.h"

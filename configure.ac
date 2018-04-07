@@ -170,13 +170,7 @@ AC_ARG_WITH([pcre],
 )
 
 AS_IF([test "x$WITH_PCRE" == "xyes"], [
-	AC_CHECK_HEADER([pcre.h], [], [
-	    AC_MSG_ERROR([ You need libpcre development files installed to compile with pcre support.])
-	])
-	AC_CHECK_LIB([pcre], [pcre_exec], [], [
-	    AC_MSG_ERROR([ You need libpcre library installed to compile with pcre support.])
-	])
-	AC_DEFINE([WITH_PCRE],[],[Compile With Perl Compatible regular expressions support])
+    AC_MSG_WARN("PCRE Support is deprecated. This option will be removed soon.")
 ], [])
 
 ####
@@ -248,7 +242,6 @@ AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE( GnuTLS Support               : ${WITH_GNUTLS}		)
 AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
 AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  		)
-AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
 AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )
 AC_MSG_NOTICE( EEP Support                  : ${USE_EEP}               )
 AC_MSG_NOTICE( ====================================================== 	)

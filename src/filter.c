@@ -26,6 +26,7 @@
  * @brief Source code of functions defined in filter.h
  *
  */
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include "sip.h"
@@ -38,49 +39,26 @@ filter_t filters[FILTER_COUNT] = { };
 int
 filter_set(int type, const char *expr)
 {
-#ifdef WITH_PCRE
-    pcre *regex = NULL;
+    GRegex *regex;
 
     // If we have an expression, check if compiles before changing the filter
     if (expr) {
-        const char *re_err = NULL;
-        int32_t err_offset;
-        int32_t pcre_options = PCRE_UNGREEDY | PCRE_CASELESS;
-
         // Check if we have a valid expression
-        if (!(regex = pcre_compile(expr, pcre_options, &re_err, &err_offset, 0)))
+        regex = g_regex_new(expr, G_REGEX_CASELESS, 0, NULL);
+        if (regex == NULL) {
             return 1;
+        }
     }
 
     // Remove previous value
     if (filters[type].expr) {
         sng_free(filters[type].expr);
-        pcre_free(filters[type].regex);
+        g_regex_unref(filters[type].regex);
     }
 
     // Set new expresion values
     filters[type].expr = (expr) ? strdup(expr) : NULL;
     filters[type].regex = regex;
-
-#else
-    regex_t regex;
-    // If we have an expression, check if compiles before changing the filter
-    if (expr) {
-        // Check if we have a valid expression
-        if (regcomp(&regex, expr, REG_EXTENDED | REG_ICASE) != 0)
-            return 1;
-    }
-
-    // Remove previous value
-    if (filters[type].expr) {
-        sng_free(filters[type].expr);
-        regfree(&filters[type].regex);
-    }
-
-    // Set new expresion values
-    filters[type].expr = (expr) ? strdup(expr) : NULL;
-    memcpy(&filters[type].regex, &regex, sizeof(regex));
-#endif
 
     return 0;
 }
@@ -182,12 +160,7 @@ filter_check_call(void *item)
 int
 filter_check_expr(filter_t filter, const char *data)
 {
-#ifdef WITH_PCRE
-        return pcre_exec(filter.regex, 0, data, strlen(data), 0, 0, 0, 0);
-#else
-        // Call doesn't match this filter
-        return regexec(&filter.regex, data, 0, NULL, 0);
-#endif
+    return (g_regex_match(filter.regex, data, 0, NULL)) ? 0 : 1;
 }
 
 void

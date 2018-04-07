@@ -139,10 +139,6 @@ sip_code_t sip_codes[] = {
 void
 sip_init(int limit, int only_calls, int no_incomplete)
 {
-    int match_flags, reg_rule_len, reg_rule_err;
-    char reg_rule[SIP_ATTR_MAXLEN];
-    const char *setting = NULL;
-
     // Store capture limit
     calls.limit = limit;
     calls.only_calls = only_calls;
@@ -169,38 +165,21 @@ sip_init(int limit, int only_calls, int no_incomplete)
     }
 
     // Initialize payload parsing regexp
-    match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
-    regcomp(&calls.reg_method, "^([a-zA-Z]+) [a-zA-Z]+:[^ ]+ SIP/2.0[ ]*\r", match_flags & ~REG_NEWLINE);
-    regcomp(&calls.reg_callid, "^(Call-ID|i):[ ]*([^ ]+)[ ]*\r$", match_flags);
-    setting = setting_get_value(SETTING_SIP_HEADER_X_CID);
-    reg_rule_len = strlen(setting) + 22;
-    if (reg_rule_len >= SIP_ATTR_MAXLEN) {
-        setting = "X-Call-ID|X-CID";
-        reg_rule_len = strlen(setting) + 22;
-        fprintf(stderr, "%s setting too long, using default.\n",
-            setting_name(SETTING_SIP_HEADER_X_CID));
-    }
-    snprintf(reg_rule, reg_rule_len, "^(%s):[ ]*([^ ]+)[ ]*\r$", setting);
-    reg_rule_err = regcomp(&calls.reg_xcallid, reg_rule, match_flags);
-    if(reg_rule_err != 0) {
-        regerror(reg_rule_err, &calls.reg_xcallid, reg_rule, SIP_ATTR_MAXLEN);
-        regfree(&calls.reg_xcallid);
-        fprintf(stderr, "%s setting produces regex compilation error: %s"
-            "using default value instead\n",
-            setting_name(SETTING_SIP_HEADER_X_CID), reg_rule);
-        regcomp(&calls.reg_xcallid,
-            "^(X-Call-ID|X-CID):[ ]*([^ ]+)[ ]*\r$", match_flags);
-    }
-    regcomp(&calls.reg_response, "^SIP/2.0[ ]*(([0-9]{3}) [^\r]*)[ ]*\r", match_flags & ~REG_NEWLINE);
-    regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]+) .+\r$", match_flags);
-    regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);
-    regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);
-    regcomp(&calls.reg_valid, "^([A-Z]+ [a-zA-Z]+:|SIP/2.0 [0-9]{3})", match_flags & ~REG_NEWLINE);
-    regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)[ ]*\r$", match_flags);
-    regcomp(&calls.reg_body, "\r\n\r\n(.*)", match_flags & ~REG_NEWLINE);
-    regcomp(&calls.reg_reason, "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"", match_flags);
-    regcomp(&calls.reg_warning, "Warning:[ ]*([0-9]*)", match_flags);
+    GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
+    GRegexCompileFlags cflags = G_REGEX_OPTIMIZE | G_REGEX_CASELESS | G_REGEX_NEWLINE_CRLF | G_REGEX_MULTILINE;
 
+    calls.reg_method = g_regex_new("(?P<method>\\w+) [^:]+:\\S* SIP/2.0", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+    calls.reg_callid = g_regex_new("^(Call-ID|i):\\s*(?P<callid>.+)$", cflags, mflags, NULL);
+    calls.reg_xcallid = g_regex_new("^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$", cflags, mflags, NULL);
+    calls.reg_response = g_regex_new("SIP/2.0 (?P<text>(?P<code>\\d{3}) .*)", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+    calls.reg_cseq = g_regex_new("^CSeq:\\s*(?P<cseq>\\d+)\\s+\\w+$", cflags, mflags, NULL);
+    calls.reg_from = g_regex_new("^(From|f):[^:]+:(?P<from>((?P<fromuser>[^@;>\r]+)@)?[^;>\r]+)", cflags, mflags, NULL);
+    calls.reg_to = g_regex_new("^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r]+)@)?[^;>\r]+)", cflags, mflags, NULL);
+    calls.reg_valid = g_regex_new("^(\\w+ \\w+:|SIP/2.0 \\d{3})", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+    calls.reg_cl = g_regex_new( "^(Content-Length|l):\\s*(?P<clen>\\d+)$", cflags, mflags, NULL);
+    calls.reg_body = g_regex_new("\r\n\r\n(.*)", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+    calls.reg_reason = g_regex_new("Reason:[ ]*[^\r]*;text=\"([^\r]+)\"", cflags, mflags, NULL);
+    calls.reg_warning = g_regex_new("^Warning:\\s*(?P<warning>\\d+)", cflags, mflags, NULL);
 }
 
 void
@@ -214,31 +193,33 @@ sip_deinit()
     vector_destroy(calls.list);
     vector_destroy(calls.active);
     // Deallocate regular expressions
-    regfree(&calls.reg_method);
-    regfree(&calls.reg_callid);
-    regfree(&calls.reg_xcallid);
-    regfree(&calls.reg_response);
-    regfree(&calls.reg_cseq);
-    regfree(&calls.reg_from);
-    regfree(&calls.reg_to);
-    regfree(&calls.reg_valid);
-    regfree(&calls.reg_cl);
-    regfree(&calls.reg_body);
-    regfree(&calls.reg_reason);
-    regfree(&calls.reg_warning);
+    g_regex_unref(calls.reg_method);
+    g_regex_unref(calls.reg_callid);
+    g_regex_unref(calls.reg_xcallid);
+    g_regex_unref(calls.reg_response);
+    g_regex_unref(calls.reg_cseq);
+    g_regex_unref(calls.reg_from);
+    g_regex_unref(calls.reg_to);
+    g_regex_unref(calls.reg_valid);
+    g_regex_unref(calls.reg_cl);
+    g_regex_unref(calls.reg_body);
+    g_regex_unref(calls.reg_reason);
+    g_regex_unref(calls.reg_warning);
 }
 
 
 char *
 sip_get_callid(const char* payload, char *callid)
 {
-    regmatch_t pmatch[3];
+    GMatchInfo *pmatch;
 
     // Try to get Call-ID from payload
-    if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
+    g_regex_match(calls.reg_callid, payload, 0, &pmatch);
+    if (g_match_info_matches(pmatch)) {
         // Copy the matching part of payload
-        strncpy(callid, payload + pmatch[2].rm_so, (int) pmatch[2].rm_eo - pmatch[2].rm_so);
+        strcpy(callid, g_match_info_fetch_named(pmatch, "callid"));
     }
+    g_match_info_free(pmatch);
 
     return callid;
 }
@@ -246,12 +227,13 @@ sip_get_callid(const char* payload, char *callid)
 char *
 sip_get_xcallid(const char *payload, char *xcallid)
 {
-    regmatch_t pmatch[3];
+    GMatchInfo *pmatch;
 
-    // Try to get X-Call-ID from payload
-    if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
-        strncpy(xcallid, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    g_regex_match(calls.reg_xcallid, payload, 0, &pmatch);
+    if (g_match_info_matches(pmatch)) {
+        strcpy(xcallid, g_match_info_fetch_named(pmatch, "xcallid"));
     }
+    g_match_info_free(pmatch);
 
     return xcallid;
 }
@@ -261,7 +243,7 @@ sip_validate_packet(packet_t *packet)
 {
     uint32_t plen = packet_payloadlen(packet);
     u_char payload[MAX_SIP_PAYLOAD];
-    regmatch_t pmatch[3];
+    GMatchInfo *pmatch;
     char cl_header[10];
     int content_len;
     int bodylen;
@@ -277,40 +259,57 @@ sip_validate_packet(packet_t *packet)
     // Initialize variables
     memset(cl_header, 0, sizeof(cl_header));
 
+    // Check if payload is UTF8
+    // @TODO what about binary content-body
+    if (!g_utf8_validate((const char *) payload, plen, NULL)) {
+        return VALIDATE_NOT_SIP;
+    }
+
     // Check if the first line follows SIP request or response format
-    if (regexec(&calls.reg_valid, (const char *) payload, 2, pmatch, 0) != 0) {
+    if (g_regex_match(calls.reg_valid, (const char *) payload, 0, NULL)) {
         // Not a SIP message AT ALL
         return VALIDATE_NOT_SIP;
     }
 
     // Check if we have Content Length header
-    if (regexec(&calls.reg_cl, (const char *) payload, 4, pmatch, 0) != 0) {
+    g_regex_match(calls.reg_cl, (const char *) payload, 0, &pmatch);
+    if (!g_match_info_matches(pmatch)) {
+        g_match_info_free(pmatch);
         // Not a SIP message or not complete
         return VALIDATE_PARTIAL_SIP;
     }
 
-    strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    strncpy(cl_header, g_match_info_fetch_named(pmatch, "clen"), sizeof(cl_header));
     content_len = atoi(cl_header);
+    g_match_info_free(pmatch);
 
     // Check if we have Body separator field
-    if (regexec(&calls.reg_body, (const char *) payload, 2, pmatch, 0) != 0) {
+    g_regex_match(calls.reg_body, (const char *) payload, 0, &pmatch);
+    if (!g_match_info_matches(pmatch)) {
+        g_match_info_free(pmatch);
         // Not a SIP message or not complete
         return VALIDATE_PARTIAL_SIP;
     }
 
     // Get the SIP message body length
-    bodylen = (int) pmatch[1].rm_eo - pmatch[1].rm_so;
+    bodylen = strlen(g_match_info_fetch(pmatch, 1));
 
     // The SDP body of the SIP message ends in another packet
     if (content_len > bodylen) {
+        g_match_info_free(pmatch);
         return VALIDATE_PARTIAL_SIP;
     }
 
     if (content_len < bodylen) {
         // We got more than one SIP message in the same packet
-        packet_set_payload(packet, payload, pmatch[1].rm_so + content_len);
+        gint start, end;
+        g_match_info_fetch_pos(pmatch, 1, &start, &end);
+        packet_set_payload(packet, payload, start + content_len);
+        g_match_info_free(pmatch);
         return VALIDATE_MULTIPLE_SIP;
     }
+
+    g_match_info_free(pmatch);
 
     // We got all the SDP body of the SIP message
     return VALIDATE_COMPLETE_SIP;
@@ -341,6 +340,11 @@ sip_check_packet(packet_t *packet)
     // Get payload from packet(s)
     memset(payload, 0, MAX_SIP_PAYLOAD);
     memcpy(payload, packet_payload(packet), packet_payloadlen(packet));
+
+    // Check if payload is UTF8
+    // @TODO what about binary content-body
+    if (!g_utf8_validate((const char *)payload, -1, NULL))
+        return NULL;
 
     // Get the Call-ID of this message
     if (!sip_get_callid((const char*) payload, callid))
@@ -525,49 +529,37 @@ sip_find_by_callid(const char *callid)
 int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 {
-    regmatch_t pmatch[3];
+    GMatchInfo *pmatch;
     char resp_str[SIP_ATTR_MAXLEN];
     char reqresp[SIP_ATTR_MAXLEN];
     char cseq[11];
     const char *resp_def;
 
     // Initialize variables
-    memset(pmatch, 0, sizeof(pmatch));
     memset(resp_str, 0, sizeof(resp_str));
     memset(reqresp, 0, sizeof(reqresp));
 
     // If not already parsed
     if (!msg->reqresp) {
-
         // Method & CSeq
-        if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
-            if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(reqresp, "<malformed>", 11);
-            } else {
-                sprintf(reqresp, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
-            }
+        if (g_regex_match(calls.reg_method, (const char *) payload, 0, &pmatch)) {
+            strncpy(reqresp, g_match_info_fetch_named(pmatch, "method"), sizeof(reqresp));
         }
+        g_match_info_free(pmatch);
 
         // CSeq
-        if (regexec(&calls.reg_cseq, (char*)payload, 2, pmatch, 0) == 0) {
-            sprintf(cseq, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+        if (g_regex_match(calls.reg_cseq, (const char *) payload, 0, &pmatch)) {
+            strncpy(cseq, g_match_info_fetch_named(pmatch, "cseq"), sizeof(cseq));
             msg->cseq = atoi(cseq);
         }
-
+        g_match_info_free(pmatch);
 
         // Response code
-        if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
-            if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(resp_str, "<malformed>", 11);
-            } else {
-                sprintf(resp_str, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
-            }
-            if ((int)(pmatch[2].rm_eo - pmatch[2].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(resp_str, "<malformed>", 11);
-            } else {
-                sprintf(reqresp, "%.*s", (int) (pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
-            }
+        if (g_regex_match(calls.reg_response, (const char *) payload, 0, &pmatch)) {
+            strncpy(resp_str, g_match_info_fetch_named(pmatch, "text"), sizeof(resp_str));
+            strncpy(reqresp, g_match_info_fetch_named(pmatch, "code"), sizeof(reqresp));
         }
+        g_match_info_free(pmatch);
 
         // Get Request/Response Code
         msg->reqresp = sip_method_from_str(reqresp);
@@ -607,27 +599,24 @@ sip_parse_msg(sip_msg_t *msg)
 int
 sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 {
-    regmatch_t pmatch[4];
+    GMatchInfo *pmatch;
 
     // From
-    if (regexec(&calls.reg_from, (const char *)payload, 4, pmatch, 0) == 0) {
-        msg->sip_from = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
-        strncpy(msg->sip_from, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    if (g_regex_match(calls.reg_from, (const char *) payload, 0, &pmatch)) {
+        msg->sip_from = g_match_info_fetch_named(pmatch, "from");
     } else {
-        // Malformed From Header
-        msg->sip_from = sng_malloc(12);
-        strncpy(msg->sip_from, "<malformed>", 11);
+        msg->sip_from = strdup("<malformed>");
     }
+    g_match_info_free(pmatch);
+
 
     // To
-    if (regexec(&calls.reg_to, (const char *)payload, 4, pmatch, 0) == 0) {
-        msg->sip_to = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
-        strncpy(msg->sip_to, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    if (g_regex_match(calls.reg_to, (const char *) payload, 0, &pmatch)) {
+        msg->sip_to = g_match_info_fetch_named(pmatch, "to");
     } else {
-        // Malformed To Header
-        msg->sip_to = sng_malloc(12);
-        strncpy(msg->sip_to, "<malformed>", 11);
+        msg->sip_to = strdup("<malformed>");
     }
+    g_match_info_free(pmatch);
 
     return 0;
 }
@@ -741,20 +730,20 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 void
 sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
 {
-    regmatch_t pmatch[4];
-    char warning[10];
+    GMatchInfo *pmatch;
 
-     // Reason text
-     if (regexec(&calls.reg_reason, (const char *)payload, 2, pmatch, 0) == 0) {
-         msg->call->reasontxt = sng_malloc((int)pmatch[1].rm_eo - pmatch[1].rm_so + 1);
-         strncpy(msg->call->reasontxt, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
-     }
+    // Reason text
+    if (g_regex_match(calls.reg_reason, (const char *) payload, 0, &pmatch)) {
+        msg->call->reasontxt = strdup(g_match_info_fetch(pmatch, 1));
+    }
+    g_match_info_free(pmatch);
 
-     // Warning code
-     if (regexec(&calls.reg_warning, (const char *)payload, 2, pmatch, 0) == 0) {
-         strncpy(warning, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
-         msg->call->warning = atoi(warning);
-     }
+    // Warning code
+    if (g_regex_match(calls.reg_warning, (const char *) payload, 0, &pmatch)) {
+        msg->call->warning = atoi(g_match_info_fetch_named(pmatch, "warning"));
+    }
+    g_match_info_free(pmatch);
+
 }
 
 void
@@ -813,27 +802,15 @@ sip_set_match_expression(const char *expr, int insensitive, int invert)
     // Set invert flag
     calls.match_invert = invert;
 
-#ifdef WITH_PCRE
-    const char *re_err = NULL;
-    int32_t err_offset;
-    int32_t pflags = PCRE_UNGREEDY;
-
-    if (insensitive)
-        pflags |= PCRE_CASELESS;
-
-    // Check if we have a valid expression
-    calls.match_regex = pcre_compile(expr, pflags, &re_err, &err_offset, 0);
-    return calls.match_regex == NULL;
-#else
-    int cflags = REG_EXTENDED;
+    GRegexCompileFlags cflags = 0;
 
     // Case insensitive requested
     if (insensitive)
-        cflags |= REG_ICASE;
+        cflags |= G_REGEX_CASELESS;
 
     // Check the expresion is a compilable regexp
-    return regcomp(&calls.match_regex, expr, cflags) != 0;
-#endif
+    calls.match_regex = g_regex_new(expr, cflags, 0, NULL);
+    return (calls.match_regex != NULL) ? 0 : 1;
 }
 
 const char *
@@ -849,17 +826,13 @@ sip_check_match_expression(const char *payload)
     if (!calls.match_expr)
         return 1;
 
-#ifdef WITH_PCRE
-    switch (pcre_exec(calls.match_regex, 0, payload, strlen(payload), 0, 0, 0, 0)) {
-        case PCRE_ERROR_NOMATCH:
-            return 1 == calls.match_invert;
+    // Check if payload matches the given expresion
+    if (g_regex_match(calls.match_regex, payload, 0, NULL)) {
+        return 0 == calls.match_invert;
+    } else {
+        return 1 == calls.match_invert;
     }
 
-    return 0 == calls.match_invert;
-#else
-    // Check if payload matches the given expresion
-    return (regexec(&calls.match_regex, payload, 0, NULL, 0) == calls.match_invert);
-#endif
 }
 
 const char *

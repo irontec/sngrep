@@ -29,7 +29,6 @@
  */
 #include <string.h>
 #include <stdlib.h>
-#include <regex.h>
 #include <unistd.h>
 #include <errno.h>
 #include "ui_manager.h"

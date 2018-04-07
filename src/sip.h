@@ -34,10 +34,6 @@
 
 #include "config.h"
 #include <stdbool.h>
-#include <regex.h>
-#ifdef WITH_PCRE
-#include <pcre.h>
-#endif
 #include "sip_call.h"
 #include "vector.h"
 
@@ -136,29 +132,25 @@ struct sip_call_list {
     int ignore_incomplete;
     //! match expression text
     const char *match_expr;
-#ifdef WITH_PCRE
     //! Compiled match expression
-    pcre *match_regex;
-#else
-    //! Compiled match expression
-    regex_t match_regex;
-#endif
+    GRegex *match_regex;
+
     //! Invert match expression result
     int match_invert;
 
     //! Regexp for payload matching
-    regex_t reg_method;
-    regex_t reg_callid;
-    regex_t reg_xcallid;
-    regex_t reg_response;
-    regex_t reg_cseq;
-    regex_t reg_from;
-    regex_t reg_to;
-    regex_t reg_valid;
-    regex_t reg_cl;
-    regex_t reg_body;
-    regex_t reg_reason;
-    regex_t reg_warning;
+    GRegex *reg_method;
+    GRegex *reg_callid;
+    GRegex *reg_xcallid;
+    GRegex *reg_response;
+    GRegex *reg_cseq;
+    GRegex *reg_from;
+    GRegex *reg_to;
+    GRegex *reg_valid;
+    GRegex *reg_cl;
+    GRegex *reg_body;
+    GRegex *reg_reason;
+    GRegex *reg_warning;
 };
 
 /**
