@@ -5,6 +5,7 @@ project(sngrep
 
 set(PROJECT_NAME sngrep)
 set(CMAKE_C_STANDARD 99)
+add_compile_options(-Werror)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/src/config.h.cmake
@@ -42,7 +43,7 @@ set(SOURCES
     src/sip_call.c
     src/sip_msg.c
     src/util.c
-    src/vector.c
+    src/glib-utils.c
 )
 
 ######################################################################

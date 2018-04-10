@@ -32,6 +32,7 @@
 
 #include "config.h"
 #include <sys/types.h>
+#include <glib.h>
 #include "capture.h"
 
 #define MEDIATYPELEN 15
@@ -56,7 +57,7 @@ struct sdp_media {
     char type[MEDIATYPELEN];
     uint32_t fmtcode;
     //! List of described formats in this media
-    vector_t *formats;
+    GSequence *formats;
     //! Message with this SDP content
     struct sip_msg *msg;
 };
@@ -72,11 +73,8 @@ struct sdp_media {
 sdp_media_t *
 media_create(struct sip_msg *msg);
 
-/**
- * @brief Vector destroyer for media items
- */
 void
-media_destroyer(void *item);
+media_destroy(void *item);
 
 void
 media_set_type(sdp_media_t *media, const char *type);

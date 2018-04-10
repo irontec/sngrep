@@ -39,8 +39,8 @@
 #include <time.h>
 #include <sys/types.h>
 #include <pcap.h>
+#include <glib.h>
 #include "address.h"
-#include "vector.h"
 
 //! Stored packet types
 enum packet_type {
@@ -89,7 +89,7 @@ struct packet {
     //! Payload length
     uint32_t payload_len;
     //! Packet frame list (frame_t)
-    vector_t *frames;
+    GSequence *frames;
 };
 
 /**
@@ -133,13 +133,7 @@ packet_add_frame(packet_t *pkt, const struct pcap_pkthdr *header, const u_char *
  * @brief Deallocate a packet structure memory
  */
 void
-packet_destroy(packet_t *packet);
-
-/**
- * @brief Destroyer function for packet vectors
- */
-void
-packet_destroyer(void *packet);
+packet_destroy(gpointer item);
 
 /**
  * @brief Free packet frames data.
@@ -177,6 +171,6 @@ packet_payload(packet_t *packet);
  * @brief Get The timestamp for a packet.
  */
 struct timeval
-packet_time(packet_t *packet);
+packet_time(const packet_t *packet);
 
 #endif /* __SNGREP_CAPTURE_PACKET_H */

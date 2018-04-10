@@ -31,9 +31,11 @@
  */
 
 #include "config.h"
+#include <glib.h>
 #include <netdb.h>
 #include <string.h>
 #include <stdbool.h>
+#include "glib-utils.h"
 #include "capture.h"
 #ifdef USE_EEP
 #include "capture_eep.h"
@@ -60,7 +62,7 @@ capture_init(size_t limit, bool rtp_capture, bool rotate)
     capture_cfg.rtp_capture = rtp_capture;
     capture_cfg.rotate = rotate;
     capture_cfg.paused = 0;
-    capture_cfg.sources = vector_create(1, 1);
+    capture_cfg.sources = g_sequence_new(g_free);
 
     // Fixme
     if (setting_has_value(SETTING_CAPTURE_STORAGE, "none")) {
@@ -87,8 +89,7 @@ capture_deinit()
     capture_close();
 
     // Deallocate vectors
-    vector_set_destroyer(capture_cfg.sources, vector_generic_destroyer);
-    vector_destroy(capture_cfg.sources);
+    g_sequence_free(capture_cfg.sources);
 }
 
 int
@@ -100,7 +101,7 @@ capture_online(const char *dev, const char *outfile)
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Create a new structure to handle this capture source
-    if (!(capinfo = sng_malloc(sizeof(capture_info_t)))) {
+    if (!(capinfo = g_malloc0(sizeof(capture_info_t)))) {
         fprintf(stderr, "Can't allocate memory for capture data!\n");
         return 1;
     }
@@ -131,11 +132,11 @@ capture_online(const char *dev, const char *outfile)
     }
 
     // Create Vectors for IP and TCP reassembly
-    capinfo->tcp_reasm = vector_create(0, 10);
-    capinfo->ip_reasm = vector_create(0, 10);
+    capinfo->tcp_reasm = g_sequence_new(NULL);
+    capinfo->ip_reasm = g_sequence_new(NULL);
 
     // Add this capture information as packet source
-    vector_append(capture_cfg.sources, capinfo);
+    g_sequence_append(capture_cfg.sources, capinfo);
 
     // If requested store packets in a dump file
     if (outfile && !capture_cfg.pd) {
@@ -159,7 +160,7 @@ capture_offline(const char *infile, const char *outfile)
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Create a new structure to handle this capture source
-    if (!(capinfo = sng_malloc(sizeof(capture_info_t)))) {
+    if (!(capinfo = g_malloc0(sizeof(capture_info_t)))) {
         fprintf(stderr, "Can't allocate memory for capture data!\n");
         return 1;
     }
@@ -189,11 +190,11 @@ capture_offline(const char *infile, const char *outfile)
     }
 
     // Create Vectors for IP and TCP reassembly
-    capinfo->tcp_reasm = vector_create(0, 10);
-    capinfo->ip_reasm = vector_create(0, 10);
+    capinfo->tcp_reasm = g_sequence_new(NULL);
+    capinfo->ip_reasm = g_sequence_new(NULL);
 
     // Add this capture information as packet source
-    vector_append(capture_cfg.sources, capinfo);
+    g_sequence_append(capture_cfg.sources, capinfo);
 
     // If requested store packets in a dump file
     if (outfile && !capture_cfg.pd) {
@@ -374,7 +375,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     //! Destination Address
     address_t dst = { };
     //! Common interator for vectors
-    vector_iter_t it;
+    GSequenceIter *it;
     //! Packet containers
     packet_t *pkt;
     //! Storage for IP frame
@@ -479,8 +480,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     }
 
     // Look for another packet with same id in IP reassembly vector
-    it = vector_iterator(capinfo->ip_reasm);
-    while ((pkt = vector_iterator_next(&it))) {
+    it = g_sequence_get_begin_iter(capinfo->ip_reasm);
+    for (pkt = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        pkt = g_sequence_get(it);
         if (addressport_equals(pkt->src, src)
                 && addressport_equals(pkt->dst, dst)
                 && pkt->ip_id == ip_id) {
@@ -495,7 +497,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         // Add To the possible reassembly list
         pkt = packet_create(ip_ver, ip_proto, src, dst, ip_id);
         packet_add_frame(pkt, header, packet);
-        vector_append(capinfo->ip_reasm, pkt);
+        g_sequence_append(capinfo->ip_reasm, pkt);
     }
 
     // Add this IP content length to the total captured of the packet
@@ -513,8 +515,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     if (pkt->ip_cap_len == pkt->ip_exp_len) {
         // TODO Dont check the flag, check the holes
         // Calculate assembled IP payload data
-        it = vector_iterator(pkt->frames);
-        while ((frame = vector_iterator_next(&it))) {
+        it = g_sequence_get_begin_iter(pkt->frames);
+        for (frame = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+            frame = g_sequence_get(it);
             struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
             len_data += ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4;
         }
@@ -526,8 +529,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         // Initialize memory for the assembly packet
         memset(packet, 0, link_hl + ip_hl + len_data);
 
-        it = vector_iterator(pkt->frames);
-        while ((frame = vector_iterator_next(&it))) {
+        it = g_sequence_get_begin_iter(pkt->frames);
+        for (frame = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+            frame = g_sequence_get(it);
             // Get IP header
             struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
             memcpy(packet + link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
@@ -539,7 +543,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         *size = len_data;
 
         // Return the assembled IP packet
-        vector_remove(capinfo->ip_reasm, pkt);
+        g_sequence_remove_data(capinfo->ip_reasm, pkt);
         return pkt;
     }
 
@@ -549,7 +553,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 packet_t *
 capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload) {
 
-    vector_iter_t it = vector_iterator(capinfo->tcp_reasm);
+    GSequenceIter *it = g_sequence_get_begin_iter(capinfo->tcp_reasm);
     packet_t *pkt;
     u_char *new_payload;
     u_char full_payload[MAX_CAPTURE_LEN + 1];
@@ -558,7 +562,8 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
     if ((int32_t) size_payload <= 0)
         return packet;
 
-    while ((pkt = vector_iterator_next(&it))) {
+    for (pkt = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        pkt = g_sequence_get(it);
         if (addressport_equals(pkt->src, packet->src) &&
                 addressport_equals(pkt->dst, packet->dst)) {
             break;
@@ -569,16 +574,18 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
     if (pkt) {
         frame_t *frame;
         // Append this frames to the original packet
-        vector_iter_t frames = vector_iterator(packet->frames);
-        while ((frame = vector_iterator_next(&frames)))
+        GSequenceIter *it = g_sequence_get_begin_iter(packet->frames);
+        for (frame = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+            frame = g_sequence_get(it);
             packet_add_frame(pkt, frame->header, frame->data);
+        }
         // Destroy current packet as its frames belong to the stored packet
         packet_destroy(packet);
     } else {
         // First time this packet has been seen
         pkt = packet;
         // Add To the possible reassembly list
-        vector_append(capinfo->tcp_reasm, packet);
+        g_sequence_append(capinfo->tcp_reasm, packet);
     }
 
     // Store firt tcp sequence
@@ -587,14 +594,14 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
     }
 
     // If the first frame of this packet
-    if (vector_count(pkt->frames) == 1) {
+    if (g_sequence_get_length(pkt->frames) == 1) {
         // Set initial payload
         packet_set_payload(pkt, payload, size_payload);
     } else {
         // Check payload length. Dont handle too big payload packets
         if (pkt->payload_len + size_payload > MAX_CAPTURE_LEN) {
             packet_destroy(pkt);
-            vector_remove(capinfo->tcp_reasm, pkt);
+            g_sequence_remove_data(capinfo->tcp_reasm, pkt);
             return NULL;
         }
         new_payload = sng_malloc(pkt->payload_len + size_payload);
@@ -621,17 +628,17 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
     int valid = sip_validate_packet(pkt);
     if (valid == VALIDATE_COMPLETE_SIP) {
         // Full SIP packet!
-        vector_remove(capinfo->tcp_reasm, pkt);
+        g_sequence_remove_data(capinfo->tcp_reasm, pkt);
         return pkt;
     } else if (valid == VALIDATE_MULTIPLE_SIP) {
-        vector_remove(capinfo->tcp_reasm, pkt);
+        g_sequence_remove_data(capinfo->tcp_reasm, pkt);
 
         // We have a full SIP Packet, but do not remove everything from the reasm queue
         packet_t *cont = packet_clone(pkt);
         int pldiff = original_size - pkt->payload_len;
         if (pldiff > 0 && pldiff < MAX_CAPTURE_LEN) {
             packet_set_payload(cont, full_payload + pkt->payload_len, pldiff);
-            vector_append(capinfo->tcp_reasm, cont);
+            g_sequence_append(capinfo->tcp_reasm, cont);
         }
 
         // Return the full initial packet
@@ -639,7 +646,7 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
     } else if (valid == VALIDATE_NOT_SIP) {
         // Not a SIP packet, store until PSH flag
         if (tcp->th_flags & TH_PUSH) {
-            vector_remove(capinfo->tcp_reasm, pkt);
+            g_sequence_remove_data(capinfo->tcp_reasm, pkt);
             return pkt;
         }
     }
@@ -783,7 +790,7 @@ capture_close()
     capture_info_t *capinfo;
 
     // Nothing to close
-    if (vector_count(capture_cfg.sources) == 0)
+    if (g_sequence_is_empty(capture_cfg.sources))
         return;
 
     // Close dump file
@@ -792,8 +799,9 @@ capture_close()
     }
 
     // Stop all captures
-    vector_iter_t it = vector_iterator(capture_cfg.sources);
-    while ((capinfo = vector_iterator_next(&it))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        capinfo = g_sequence_get(it);
         //Close PCAP file
         if (capinfo->handle) {
             if (capinfo->running) {
@@ -816,8 +824,9 @@ capture_launch_thread()
     capture_info_t *capinfo;
 
     // Start all captures threads
-    vector_iter_t it = vector_iterator(capture_cfg.sources);
-    while ((capinfo = vector_iterator_next(&it))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        capinfo = g_sequence_get(it);
         // Mark capture as running
         capinfo->running = true;
         capinfo->capture_t = g_thread_new(NULL, (void *) capture_thread, capinfo);
@@ -839,8 +848,9 @@ int
 capture_is_online()
 {
     capture_info_t *capinfo;
-    vector_iter_t it = vector_iterator(capture_cfg.sources);
-    while ((capinfo = vector_iterator_next(&it))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        capinfo = g_sequence_get(it);
         if (capinfo->infile)
             return 0;
     }
@@ -851,8 +861,9 @@ int
 capture_is_running()
 {
     capture_info_t *capinfo;
-    vector_iter_t it = vector_iterator(capture_cfg.sources);
-    while ((capinfo = vector_iterator_next(&it))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        capinfo = g_sequence_get(it);
         if (capinfo->running)
             return 1;
     }
@@ -862,11 +873,12 @@ capture_is_running()
 int
 capture_set_bpf_filter(const char *filter)
 {
-    vector_iter_t it = vector_iterator(capture_cfg.sources);
+    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
     capture_info_t *capinfo;
 
     // Apply the given filter to all sources
-    while ((capinfo = vector_iterator_next(&it))) {
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        capinfo = g_sequence_get(it);
         //! Check if filter compiles
         if (pcap_compile(capinfo->handle, &capture_cfg.fp, filter, 0, capinfo->mask) == -1)
             return 1;
@@ -909,8 +921,9 @@ capture_status_desc()
 
 
     capture_info_t *capinfo;
-    vector_iter_t it = vector_iterator(capture_cfg.sources);
-    while ((capinfo = vector_iterator_next(&it))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        capinfo = g_sequence_get(it);
         if (capinfo->infile) {
             offline++;
             if (capinfo->running) {
@@ -960,8 +973,8 @@ capture_input_file()
 {
     capture_info_t *capinfo;
 
-    if (vector_count(capture_cfg.sources) == 1) {
-        capinfo = vector_first(capture_cfg.sources);
+    if (g_sequence_get_length(capture_cfg.sources) == 1) {
+        capinfo = g_sequence_first(capture_cfg.sources);
         if (capinfo->infile) {
             return sng_basename(capinfo->infile);
         } else {
@@ -977,8 +990,8 @@ capture_device()
 {
     capture_info_t *capinfo;
 
-    if (vector_count(capture_cfg.sources) == 1) {
-        capinfo = vector_first(capture_cfg.sources);
+    if (g_sequence_get_length(capture_cfg.sources) == 1) {
+        capinfo = g_sequence_first(capture_cfg.sources);
         return capinfo->device;
     } else {
         return "multi";
@@ -1007,15 +1020,15 @@ capture_tls_server()
 int
 capture_sources_count()
 {
-    return vector_count(capture_cfg.sources);
+    return g_sequence_get_length(capture_cfg.sources);
 }
 
 char *
 capture_last_error()
 {
     capture_info_t *capinfo;
-    if (vector_count(capture_cfg.sources) == 1) {
-        capinfo = vector_first(capture_cfg.sources);
+    if (g_sequence_get_length(capture_cfg.sources) == 1) {
+        capinfo = g_sequence_first(capture_cfg.sources);
         return pcap_geterr(capinfo->handle);
     }
     return NULL;
@@ -1038,28 +1051,13 @@ capture_unlock()
 
 
 
-void
-capture_packet_time_sorter(vector_t *vector, void *item)
+gint
+capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
 {
-    struct timeval curts, prevts;
-    int count = vector_count(vector);
-    int i;
-
-    // TODO Implement multiframe packets
-    curts = packet_time(item);
-
-    for (i = count - 2 ; i >= 0; i--) {
-        // Get previous packet
-        prevts = packet_time(vector_item(vector, i));
-        // Check if the item is already in a sorted position
-        if (timeval_is_older(curts, prevts)) {
-            vector_insert(vector, item, i + 1);
-            return;
-        }
-    }
-
-    // Put this item at the begining of the vector
-    vector_insert(vector, item, 0);
+    return timeval_is_older(
+            packet_time(a),
+            packet_time(b)
+    );
 }
 
 
@@ -1111,8 +1109,8 @@ dump_open(const char *dumpfile)
 {
     capture_info_t *capinfo;
 
-    if (vector_count(capture_cfg.sources) == 1) {
-        capinfo = vector_first(capture_cfg.sources);
+    if (g_sequence_get_length(capture_cfg.sources) == 1) {
+        capinfo = g_sequence_first(capture_cfg.sources);
         return pcap_dump_open(capinfo->handle, dumpfile);
     }
     return NULL;
@@ -1124,9 +1122,10 @@ dump_packet(pcap_dumper_t *pd, const packet_t *packet)
     if (!pd || !packet)
         return;
 
-    vector_iter_t it = vector_iterator(packet->frames);
+    GSequenceIter *it = g_sequence_get_begin_iter(packet->frames);
     frame_t *frame;
-    while ((frame = vector_iterator_next(&it))) {
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        frame = g_sequence_get(it);
         pcap_dump((u_char*) pd, frame->header, frame->data);
     }
     pcap_dump_flush(pd);

@@ -54,7 +54,8 @@
  *
  */
 #include "config.h"
-#include "vector.h"
+#include <glib.h>
+#include "glib-utils.h"
 #include "sip.h"
 #include "ui_manager.h"
 #include "ui_stats.h"
@@ -73,8 +74,8 @@ ui_t ui_stats = {
 void
 stats_create(ui_t *ui)
 {
-    vector_iter_t calls;
-    vector_iter_t msgs;
+    GSequenceIter *calls;
+    GSequenceIter *msgs;
     sip_call_t *call;
     sip_msg_t *msg;
 
@@ -102,7 +103,7 @@ stats_create(ui_t *ui)
 
     // Parse the data
     calls = sip_calls_iterator();
-    stats.dtotal = vector_iterator_count(&calls);
+    stats.dtotal = g_sequence_iter_length(calls);
 
     // Ignore this screen when no dialog exists
     if (!stats.dtotal) {
@@ -110,7 +111,8 @@ stats_create(ui_t *ui)
         return;
     }
 
-    while ((call = vector_iterator_next(&calls))) {
+    for (call = NULL; !g_sequence_iter_is_end(calls); calls = g_sequence_iter_next(calls)) {
+        call = g_sequence_get(calls);
         // If this dialog is a call
         if (call->state) {
             // Increase call counter
@@ -127,8 +129,9 @@ stats_create(ui_t *ui)
             }
         }
         // For each message in call
-        msgs = vector_iterator(call->msgs);
-        while ((msg = vector_iterator_next(&msgs))) {
+        msgs = g_sequence_get_begin_iter(call->msgs);
+        for (msg = NULL; !g_sequence_iter_is_end(msgs); msgs = g_sequence_iter_next(msgs)) {
+            msg = g_sequence_get(msgs);
             // Increase message counter
             stats.mtotal++;
             // Check message type

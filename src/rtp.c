@@ -30,11 +30,12 @@
  */
 
 #include "config.h"
+#include <glib.h>
 #include <stddef.h>
 #include <time.h>
+#include "glib-utils.h"
 #include "rtp.h"
 #include "sip.h"
-#include "vector.h"
 
 /**
  * @brief Known RTP encodings
@@ -336,20 +337,22 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
     // Check if this is a RTP packet from active calls
     sip_call_t *call;
     // Iterator for active calls
-    vector_iter_t calls;
+    GSequenceIter *calls;
     // Iterator for call streams
-    vector_iter_t streams;
+    GSequenceIter *streams;
     // Candiate stream
     rtp_stream_t *candidate = NULL;
 
     // Get active calls (during conversation)
-    calls = sip_calls_iterator();
-    vector_iterator_set_current(&calls, vector_iterator_count(&calls));
+    calls = g_sequence_get_end_iter(sip_calls_vector());
 
-    while ((call = vector_iterator_prev(&calls))) {
-        streams = vector_iterator(call->streams);
-        vector_iterator_set_last(&streams);
-        while ((stream = vector_iterator_prev(&streams))) {
+    while(!g_sequence_iter_is_begin(calls)) {
+        calls = g_sequence_iter_prev(calls);
+        call = g_sequence_get(calls);
+        streams = g_sequence_get_end_iter(call->streams);
+        while(!g_sequence_iter_is_begin(streams)) {
+            streams = g_sequence_iter_prev(streams);
+            stream = g_sequence_get(streams);
             // Only look RTP packets
             if (stream->type != PACKET_RTP)
                 continue;
@@ -386,13 +389,14 @@ rtp_find_stream(address_t src, address_t dst)
     // Check if this is a RTP packet from active calls
     sip_call_t *call;
     // Iterator for active calls
-    vector_iter_t calls;
+    GSequenceIter *calls;
 
     // Get active calls (during conversation)
-    calls = sip_calls_iterator();
-    vector_iterator_set_current(&calls, vector_iterator_count(&calls));
+    calls = g_sequence_get_end_iter(sip_calls_vector());
 
-    while ((call = vector_iterator_prev(&calls))) {
+    while(!g_sequence_iter_is_begin(calls)) {
+        calls = g_sequence_iter_prev(calls);
+        call = g_sequence_get(calls);
         // Check if this call has an RTP stream for current packet data
         if ((stream = rtp_find_call_stream(call, src, dst))) {
             return stream;
@@ -407,14 +411,15 @@ rtp_stream_t *
 rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
 {
     rtp_stream_t *stream;
-    vector_iter_t it;
+    GSequenceIter *it;
 
     // Create an iterator for call streams
-    it = vector_iterator(call->streams);
+    it = g_sequence_get_end_iter(call->streams);
 
     // Look for an incomplete stream with this destination
-    vector_iterator_set_last(&it);
-    while ((stream = vector_iterator_prev(&it))) {
+    while(!g_sequence_iter_is_begin(it)) {
+        it = g_sequence_iter_prev(it);
+        stream = g_sequence_get(it);
         if (addressport_equals(dst, stream->dst)) {
             if (!src.port) {
                 return stream;
@@ -439,13 +444,14 @@ rtp_stream_t *
 rtp_find_call_exact_stream(struct sip_call *call, address_t src, address_t dst)
 {
     rtp_stream_t *stream;
-    vector_iter_t it;
+    GSequenceIter *it;
 
     // Create an iterator for call streams
-    it = vector_iterator(call->streams);
+    it = g_sequence_get_end_iter(call->streams);
 
-    vector_iterator_set_last(&it);
-    while ((stream = vector_iterator_prev(&it))) {
+    while(!g_sequence_iter_is_begin(it)) {
+        it = g_sequence_iter_prev(it);
+        stream = g_sequence_get(it);
         if (addressport_equals(src, stream->src) &&
             addressport_equals(dst, stream->dst)) {
             return stream;

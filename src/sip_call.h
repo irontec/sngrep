@@ -29,10 +29,9 @@
 #ifndef __SNGREP_SIP_CALL_H
 #define __SNGREP_SIP_CALL_H
 
-#include "config.h"
 #include <stdarg.h>
 #include <stdbool.h>
-#include "vector.h"
+#include <glib.h>
 #include "rtp.h"
 #include "sip_msg.h"
 #include "sip_attr.h"
@@ -79,17 +78,17 @@ struct sip_call {
     //! Last warning text value for this call
     int warning;
     //! List of calls with with this call as X-Call-Id
-    vector_t *xcalls;
+    GSequence *xcalls;
     //! Cseq from invite startint the call
     uint32_t invitecseq;
     //! List of messages of this call (sip_msg_t*)
-    vector_t *msgs;
+    GSequence *msgs;
     //! Message when conversation started and ended
     sip_msg_t *cstart_msg, *cend_msg;
     //! RTP streams for this call (rtp_stream_t *)
-    vector_t *streams;
+    GSequence *streams;
     //! RTP packets for this call (capture_packet_t *)
-    vector_t *rtp_packets;
+    GSequence *rtp_packets;
 };
 
 /**
@@ -115,14 +114,7 @@ call_create(char *callid, char *xcallid);
  * @param call Call to be destroyed
  */
 void
-call_destroy(sip_call_t *call);
-
-
-/**
- * @brief Wrapper around Message destroyer to clear call vectors
- */
-void
-call_destroyer(void *call);
+call_destroy(gpointer item);
 
 /**
  * @brief Return if the call has changed
@@ -178,7 +170,7 @@ call_add_rtp_packet(sip_call_t *call, packet_t *packet);
  * @return how many messages are in the call
  */
 int
-call_msg_count(sip_call_t *call);
+call_msg_count(const sip_call_t *call);
 
 /**
  * @brief Determine if a dilog is a call in progress
@@ -239,7 +231,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg);
  * @return Attribute value or NULL if not found
  */
 const char *
-call_get_attribute(struct sip_call *call, enum sip_attr_id id, char *value);
+call_get_attribute(const struct sip_call *call, enum sip_attr_id id, char *value);
 
 /**
  * @brief Return the string represtation of a call state
@@ -256,7 +248,7 @@ call_state_to_str(int state);
  * @return -1 if first call is lesser
  */
 int
-call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id);
+call_attr_compare(const sip_call_t *one, const sip_call_t *two, enum sip_attr_id id);
 
 /**
  * @brief Relate this two calls

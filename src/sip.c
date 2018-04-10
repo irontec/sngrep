@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
+#include "glib-utils.h"
 #include "sip.h"
 #include "option.h"
 #include "setting.h"
@@ -146,10 +147,8 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.last_index = 0;
 
     // Create a vector to store calls
-    calls.list = vector_create(200, 50);
-    vector_set_destroyer(calls.list, call_destroyer);
-    vector_set_sorter(calls.list, sip_list_sorter);
-    calls.active = vector_create(10, 10);
+    calls.list = g_sequence_new(call_destroy);
+    calls.active = g_sequence_new(NULL);
 
     // Create hash table for callid search
     calls.callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -190,8 +189,8 @@ sip_deinit()
     // Remove Call-id hash table
     g_hash_table_destroy(calls.callids);
     // Remove calls vector
-    vector_destroy(calls.list);
-    vector_destroy(calls.active);
+    g_sequence_free(calls.list);
+    g_sequence_free(calls.active);
     // Deallocate regular expressions
     g_regex_unref(calls.reg_method);
     g_regex_unref(calls.reg_callid);
@@ -429,18 +428,18 @@ sip_check_packet(packet_t *packet)
         // Check if this call should be in active call list
         if (call_is_active(call)) {
             if (sip_call_is_active(call)) {
-                vector_append(calls.active, call);
+                g_sequence_append(calls.active, call);
             }
         } else {
             if (sip_call_is_active(call)) {
-                vector_remove(calls.active, call);
+                g_sequence_remove_data(calls.active, call);
             }
         }
     }
 
     if (newcall) {
         // Append this call to the call list
-        vector_append(calls.list, call);
+        g_sequence_insert_sorted(calls.list, call, sip_list_sorter, NULL);
     }
 
     // Mark the list as changed
@@ -467,34 +466,34 @@ sip_calls_has_changed()
 int
 sip_calls_count()
 {
-    return vector_count(calls.list);
+    return g_sequence_get_length(calls.list);
 }
 
-vector_iter_t
+GSequenceIter *
 sip_calls_iterator()
 {
-    return vector_iterator(calls.list);
+    return g_sequence_get_begin_iter(calls.list);
 }
 
-vector_iter_t
+GSequenceIter *
 sip_active_calls_iterator()
 {
-    return vector_iterator(calls.active);
+    return g_sequence_get_begin_iter(calls.active);
 }
 
 bool
 sip_call_is_active(sip_call_t *call)
 {
-    return vector_index(calls.active, call) != -1;
+    return g_sequence_index(calls.active, call) != -1;
 }
 
-vector_t *
+GSequence *
 sip_calls_vector()
 {
     return calls.list;
 }
 
-vector_t *
+GSequence *
 sip_active_calls_vector()
 {
     return calls.active;
@@ -503,21 +502,24 @@ sip_active_calls_vector()
 sip_stats_t
 sip_calls_stats()
 {
-    sip_stats_t stats;
-    vector_iter_t it = vector_iterator(calls.list);
+    sip_stats_t stats = {};
+    sip_call_t *call;
+    GSequenceIter *it = g_sequence_get_begin_iter(calls.list);
 
     // Total number of calls without filtering
-    stats.total = vector_iterator_count(&it);
+    stats.total = g_sequence_iter_length(it);
     // Total number of calls after filtering
-    vector_iterator_set_filter(&it, filter_check_call);
-    stats.displayed = vector_iterator_count(&it);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        if (filter_check_call(g_sequence_get(it), NULL))
+            stats.displayed++;
+    }
     return stats;
 }
 
 sip_call_t *
 sip_find_by_index(int index)
 {
-    return vector_item(calls.list, index);
+    return g_sequence_nth(calls.list, index);
 }
 
 sip_call_t *
@@ -645,13 +647,6 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     char *payload2, *tofree, *line;
     sip_call_t *call = msg_get_call(msg);
 
-    // If message is retrans, there's no need to parse the payload again
-    if (msg->retrans) {
-        // Use the media vector from the original message
-        msg->medias = msg->retrans->medias;
-        return;
-    }
-
     // Parse each line of payload looking for sdp information
     tofree = payload2 = strdup((char*)payload);
     while ((line = strsep(&payload2, "\r\n")) != NULL) {
@@ -753,42 +748,43 @@ sip_calls_clear()
     g_hash_table_remove_all(calls.callids);
 
     // Remove all items from vector
-    vector_clear(calls.list);
-    vector_clear(calls.active);
+    g_sequence_remove_all(calls.list);
+    g_sequence_remove_all(calls.active);
 }
 
 void
 sip_calls_clear_soft()
 {
-        // Create again the callid hash table
-        g_hash_table_remove_all(calls.callids);
+    // Create again the callid hash table
+    g_hash_table_remove_all(calls.callids);
 
-        // Repopulate list applying current filter
-        calls.list = vector_copy_if(sip_calls_vector(), filter_check_call);
-        calls.active = vector_copy_if(sip_active_calls_vector(), filter_check_call);
+    // Repopulate list applying current filter
+    calls.list = g_sequence_copy(sip_calls_vector(), filter_check_call, NULL);
+    calls.active = g_sequence_copy(sip_active_calls_vector(), filter_check_call, NULL);
 
-        // Repopulate callids based on filtered list
-        sip_call_t *call;
-        vector_iter_t it = vector_iterator(calls.list);
+    // Repopulate callids based on filtered list
+    sip_call_t *call;
+    GSequenceIter *it = g_sequence_get_begin_iter(calls.list);
 
-        while ((call = vector_iterator_next(&it)))
-        {
-            g_hash_table_insert(calls.callids, call->callid, call);
-        }
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        call = g_sequence_get(it);
+        g_hash_table_insert(calls.callids, call->callid, call);
+    }
 }
 
 void
 sip_calls_rotate()
 {
     sip_call_t *call;
-    vector_iter_t it = vector_iterator(calls.list);
-    while ((call = vector_iterator_next(&it))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(calls.list);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        call = g_sequence_get(it);
         if (!call->locked) {
             // Remove from callids hash
             g_hash_table_remove(calls.callids, call->callid);
             // Remove first call from active and call lists
-            vector_remove(calls.active, call);
-            vector_remove(calls.list, call);
+            g_sequence_remove_data(calls.active, call);
+            g_sequence_remove_data(calls.list, call);
             return;
         }
     }
@@ -912,41 +908,13 @@ sip_sort_options()
 void
 sip_sort_list()
 {
-    // Cloning the vector automatically sorts it
-    vector_t *clone = vector_clone(calls.list);
-
-    // FIXME FIXME FIXME
-    // There should be a way to destroy the vector without calling the
-    // vector destroyer for each item...
-    vector_set_destroyer(calls.list, NULL);
-    vector_destroy(calls.list);
-
-    // The new sorted list
-    calls.list = clone;
+    g_sequence_sort(calls.list, sip_list_sorter, NULL);
 }
 
-void
-sip_list_sorter(vector_t *vector, void *item)
+gint
+sip_list_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
 {
-    sip_call_t *prev, *cur = (sip_call_t *)item;
-    int count = vector_count(vector);
-    int i;
-
-    // First item is alway sorted
-    if (vector_count(vector) == 1)
-        return;
-
-    for (i = count - 2 ; i >= 0; i--) {
-        // Get previous item
-        prev = vector_item(vector, i);
-        // Check if the item is already in a sorted position
-        int cmp = call_attr_compare(cur, prev, calls.sort.by);
-        if ((calls.sort.asc && cmp > 0) || (!calls.sort.asc && cmp < 0)) {
-            vector_insert(vector, item, i + 1);
-            return;
-        }
-    }
-
-    // Put this item at the begining of the vector
-    vector_insert(vector, item, 0);
+    const sip_call_t *calla = a, *callb = b;
+    int cmp = call_attr_compare(calla, callb, calls.sort.by);
+    return (calls.sort.asc) ? cmp : cmp * -1;
 }

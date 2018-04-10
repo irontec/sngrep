@@ -32,10 +32,9 @@
 #ifndef __SNGREP_SIP_H
 #define __SNGREP_SIP_H
 
-#include "config.h"
 #include <stdbool.h>
+#include <glib.h>
 #include "sip_call.h"
-#include "vector.h"
 
 #define MAX_SIP_PAYLOAD 10240
 
@@ -112,9 +111,9 @@ struct sip_sort
  */
 struct sip_call_list {
     //! List of all captured calls
-    vector_t *list;
+    GSequence *list;
     //! List of active captured calls
-    vector_t *active;
+    GSequence *active;
     //! Changed flag. For interface optimal updates
     bool changed;
     //! Sort call list following this options
@@ -247,7 +246,7 @@ sip_calls_count();
 /**
  * @brief Return an iterator of call list
  */
-vector_iter_t
+GSequenceIter *
 sip_calls_iterator();
 
 /**
@@ -257,7 +256,7 @@ sip_calls_iterator();
  * an rtp stream that will receive new packets.
  *
  */
-vector_iter_t
+GSequenceIter *
 sip_active_calls_iterator();
 
 /**
@@ -272,13 +271,13 @@ sip_call_is_active(sip_call_t *call);
 /**
  * @brief Return the call list
  */
-vector_t *
+GSequence *
 sip_calls_vector();
 
 /**
  * @brief Return the active call list
  */
-vector_t *
+GSequence *
 sip_active_calls_vector();
 
 /**
@@ -481,7 +480,7 @@ sip_sort_options();
 void
 sip_sort_list();
 
-void
-sip_list_sorter(vector_t *vector, void *item);
+gint
+sip_list_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
 
 #endif

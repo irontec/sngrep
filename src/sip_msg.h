@@ -29,9 +29,8 @@
 #ifndef __SNGREP_SIP_MSG_H
 #define __SNGREP_SIP_MSG_H
 
-#include "config.h"
 #include <stdarg.h>
-#include "vector.h"
+#include <glib.h>
 #include "media.h"
 #include "sip_attr.h"
 #include "util.h"
@@ -61,7 +60,7 @@ struct sip_msg {
     //! SIP To Header
     char *sip_to;
     //! SDP payload information (sdp_media_t *)
-    vector_t *medias;
+    GSequence *medias;
     //! Captured packet for this message
     packet_t *packet;
     //! Index of this message in call
@@ -96,13 +95,7 @@ msg_create();
  * @param nsg SIP message to be deleted
  */
 void
-msg_destroy(sip_msg_t *msg);
-
-/**
- * @brief Wrapper around Message destroyer to clear msg vectors
- */
-void
-msg_destroyer(void *msg);
+msg_destroy(gpointer item);
 
 /**
  * @brief Return the call owner of this message
@@ -171,7 +164,7 @@ msg_get_payload(sip_msg_t *msg);
  * @return timeval structure with message first packet time
  */
 struct timeval
-msg_get_time(sip_msg_t *msg);
+msg_get_time(const sip_msg_t *msg);
 
 /**
  * @brief Return a message attribute value

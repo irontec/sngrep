@@ -40,12 +40,14 @@
  *
  */
 #include "config.h"
+#include <glib.h>
 #include <sys/socket.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <pcap.h>
+#include "glib-utils.h"
 #include "capture_eep.h"
 #include "util.h"
 #include "setting.h"
@@ -214,7 +216,7 @@ capture_eep_send_v2(packet_t *pkt)
 #endif
     unsigned char *data = packet_payload(pkt);
     uint32_t len = packet_payloadlen(pkt);
-    frame_t *frame = vector_first(pkt->frames);
+    frame_t *frame = g_sequence_first(pkt->frames);
 
     /* Version && proto */
     hdr.hp_v = 2;
@@ -304,7 +306,7 @@ capture_eep_send_v3(packet_t *pkt)
 #endif
     hep_chunk_t payload_chunk;
     hep_chunk_t authkey_chunk;
-    frame_t *frame = vector_first(pkt->frames);
+    frame_t *frame = g_sequence_first(pkt->frames);
     unsigned char *data = packet_payload(pkt);
     uint32_t len = packet_payloadlen(pkt);
 

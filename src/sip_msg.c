@@ -28,6 +28,9 @@
  * This file contains the functions and structure to manage SIP message data
  *
  */
+#include "config.h"
+#include <glib.h>
+#include "glib-utils.h"
 #include "sip_msg.h"
 #include "media.h"
 #include "sip.h"
@@ -38,15 +41,18 @@ msg_create()
     sip_msg_t *msg;
     if (!(msg = sng_malloc(sizeof(sip_msg_t))))
         return NULL;
+    msg->medias = g_sequence_new(media_destroy);
     return msg;
 }
 
 void
-msg_destroy(sip_msg_t *msg)
+msg_destroy(gpointer item)
 {
+    sip_msg_t *msg = item;
+
     // Free message SDP media
     if (!msg->retrans)
-        vector_destroy(msg->medias);
+        g_sequence_free(msg->medias);
 
     // Free message packets
     packet_destroy(msg->packet);
@@ -57,12 +63,6 @@ msg_destroy(sip_msg_t *msg)
     sng_free(msg);
 }
 
-void
-msg_destroyer(void *msg)
-{
-    msg_destroy((sip_msg_t *)msg);
-}
-
 struct sip_call *
 msg_get_call(const sip_msg_t *msg) {
     return msg->call;
@@ -71,13 +71,13 @@ msg_get_call(const sip_msg_t *msg) {
 int
 msg_media_count(sip_msg_t *msg)
 {
-    return vector_count(msg->medias);
+    return g_sequence_get_length(msg->medias);
 }
 
 int
 msg_has_sdp(void *item)
 {
-    return vector_count(((sip_msg_t *)item)->medias) ? 1 : 0;
+    return msg_media_count(item);
 }
 
 int
@@ -89,12 +89,7 @@ msg_is_request(sip_msg_t *msg)
 void
 msg_add_media(sip_msg_t *msg, sdp_media_t *media)
 {
-    if (!msg->medias) {
-        // Create a vector to store sdp
-        msg->medias = vector_create(2, 2);
-        vector_set_destroyer(msg->medias, media_destroyer);
-    }
-    vector_append(msg->medias, media);
+    g_sequence_append(msg->medias, media);
 }
 
 const char *
@@ -104,11 +99,11 @@ msg_get_payload(sip_msg_t *msg)
 }
 
 struct timeval
-msg_get_time(sip_msg_t *msg) {
+msg_get_time(const sip_msg_t *msg) {
     struct timeval t = { };
     frame_t *frame;
 
-    if (msg && (frame = vector_first(msg->packet->frames)))
+    if (msg && (frame = g_sequence_first(msg->packet->frames)))
         return frame->header->ts;
     return t;
 }

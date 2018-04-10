@@ -105,10 +105,10 @@ filter_get(int type);
  * @brief Check if a call if filtered
  *
  * @param call Call to be checked
- * @return 1 if call is filtered
+ * @return TRUE if call is filtered
  */
-int
-filter_check_call(void *item);
+gboolean
+filter_check_call(gconstpointer item, gconstpointer user_data);
 
 /**
  * @brief Check if data matches the filter regexp

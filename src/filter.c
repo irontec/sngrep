@@ -27,8 +27,10 @@
  *
  */
 #include "config.h"
+#include <glib.h>
 #include <stdlib.h>
 #include <string.h>
+#include "glib-utils.h"
 #include "sip.h"
 #include "curses/ui_call_list.h"
 #include "filter.h"
@@ -69,18 +71,18 @@ filter_get(int type)
     return filters[type].expr;
 }
 
-int
-filter_check_call(void *item)
+gboolean
+filter_check_call(gconstpointer item, gconstpointer user_data)
 {
     int i;
     char data[MAX_SIP_PAYLOAD];
     sip_call_t *call = (sip_call_t*) item;
     sip_msg_t *msg;
-    vector_iter_t it;
+    GSequenceIter *it;
 
     // Dont filter calls without messages
     if (call_msg_count(call) == 0)
-        return 0;
+        return FALSE;
 
     // Filter for this call has already be processed
     if (call->filtered != -1)
@@ -123,7 +125,7 @@ filter_check_call(void *item)
                 break;
             default:
                 // Unknown filter id
-                return 0;
+                return FALSE;
         }
 
         // For payload filtering, check all messages payload
@@ -131,8 +133,9 @@ filter_check_call(void *item)
             // Assume this call doesn't match the filter
             call->filtered = 1;
             // Create an iterator for the call messages
-            it = vector_iterator(call->msgs);
-            while ((msg = vector_iterator_next(&it))) {
+            it = g_sequence_get_begin_iter(call->msgs);
+            for (msg = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+                msg = g_sequence_get(it);
                 // Copy message payload
                 strcpy(data, msg_get_payload(msg));
                 // Check if this payload matches the filter
@@ -166,10 +169,11 @@ filter_check_expr(filter_t filter, const char *data)
 void
 filter_reset_calls()
 {
-    sip_call_t *call;
-    vector_iter_t calls = sip_calls_iterator();
+    GSequenceIter *it = sip_calls_iterator();
 
     // Force filter evaluation
-    while ((call = vector_iterator_next(&calls)))
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        sip_call_t *call = g_sequence_get(it);
         call->filtered = -1;
+    }
 }

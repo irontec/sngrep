@@ -33,8 +33,7 @@
 #ifndef __SNGREP_GROUP_H_
 #define __SNGREP_GROUP_H_
 
-#include "config.h"
-#include "vector.h"
+#include <glib.h>
 #include "sip.h"
 
 //! Shorter declaration of sip_call_group structure
@@ -51,7 +50,7 @@ struct sip_call_group {
     //! For extended display, main call-id
     char *callid;
     //! Calls array in the group
-    vector_t *calls;
+    GSequence *calls;
     //! Color of the last printed call in mode Color-by-Call
     int color;
     //! Only consider SDP messages from Calls
@@ -115,7 +114,7 @@ call_group_add(sip_call_group_t *group, sip_call_t *call);
  * @param calls Pointer to a vector with calls
  */
 void
-call_group_add_calls(sip_call_group_t *group, vector_t *calls);
+call_group_add_calls(sip_call_group_t *group, GSequence *calls);
 
 /**
  * @brief Remove a call from the group
@@ -235,7 +234,7 @@ call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream);
  * @param vector sorted vector
  * @param item item to add to the vector
  */
-void
-call_group_msg_sorter(vector_t *vector, void *item);
+gint
+call_group_msg_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
 
 #endif /* __SNGREP_GROUP_H_ */

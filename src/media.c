@@ -27,8 +27,10 @@
  */
 
 #include "config.h"
+#include <glib.h>
 #include <string.h>
 #include <stdlib.h>
+#include "glib-utils.h"
 #include "media.h"
 #include "rtp.h"
 #include "util.h"
@@ -44,18 +46,17 @@ media_create(struct sip_msg *msg)
 
     // Initialize all fields
     media->msg = msg;
-    media->formats = vector_create(0, 1);
-    vector_set_destroyer(media->formats, vector_generic_destroyer);
+    media->formats = g_sequence_new(sng_free);
     return media;
 }
 
 void
-media_destroyer(void *item)
+media_destroy(void *item)
 {
     sdp_media_t *media = (sdp_media_t *) item;
     if (!item)
         return;
-    vector_destroy(media->formats);
+    g_sequence_free(media->formats);
     sng_free(media);
 }
 
@@ -87,16 +88,16 @@ media_add_format(sdp_media_t *media, uint32_t code, const char *format)
 
     fmt->id = code;
     strcpy(fmt->format, format);
-    vector_append(media->formats, fmt);
+    g_sequence_append(media->formats, fmt);
 }
 
 const char *
 media_get_format(sdp_media_t *media, uint32_t code)
 {
     sdp_media_fmt_t *format;
-    vector_iter_t iter;
-    iter = vector_iterator(media->formats);
-    while ((format = vector_iterator_next(&iter))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(media->formats);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        format = g_sequence_get(it);
         if (format->id == code)
             return format->format;
     }

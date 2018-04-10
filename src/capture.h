@@ -32,7 +32,6 @@
 #ifndef __SNGREP_CAPTURE_H
 #define __SNGREP_CAPTURE_H
 
-#include "config.h"
 #include <glib.h>
 #include <pcap.h>
 #include <string.h>
@@ -80,7 +79,6 @@
 #include <netinet/udp.h>
 #include <stdbool.h>
 #include "packet.h"
-#include "vector.h"
 
 //! Max allowed packet assembled size
 #define MAX_CAPTURE_LEN 20480
@@ -147,7 +145,7 @@ struct capture_config {
     //! libpcap dump file handler
     pcap_dumper_t *pd;
     //! Capture sources
-    vector_t *sources;
+    GSequence *sources;
     //! Capture Lock. Avoid parsing and handling data at the same time
     GRecMutex lock;
 };
@@ -176,9 +174,9 @@ struct capture_info
     //! Capture device in Online mode
     const char *device;
     //! Packets pending IP reassembly
-    vector_t *ip_reasm;
+    GSequence *ip_reasm;
     //! Packets pending TCP reassembly
-    vector_t *tcp_reasm;
+    GSequence *tcp_reasm;
     //! Capture thread for online capturing
     GThread *capture_t;
 };
@@ -453,8 +451,8 @@ capture_unlock();
 /**
  * @brief Sorter by time for captured packets
  */
-void
-capture_packet_time_sorter(vector_t *vector, void *item);
+gint
+capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
 
 /**
  * @brief Close pcap handler

@@ -26,11 +26,14 @@
  * @brief Source of functions defined in ui_call_list.h
  *
  */
+#include "config.h"
+#include <glib.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "glib-utils.h"
 #include "option.h"
 #include "filter.h"
 #include "capture.h"
@@ -114,6 +117,7 @@ call_list_create(ui_t *ui)
 
     // Get current call list
     info->cur_call = -1;
+    info->dcalls = g_sequence_new(NULL);
 
     // Set autoscroll default status
     info->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
@@ -139,7 +143,7 @@ call_list_destroy(ui_t *ui)
 
         // Deallocate group data
         call_group_destroy(info->group);
-        vector_destroy(info->dcalls);
+        g_sequence_free(info->dcalls);
 
         // Deallocate panel windows
         delwin(info->list_win);
@@ -357,14 +361,14 @@ call_list_draw_list(ui_t *ui)
 
     // Store selected call
     if (info->cur_call >= 0)
-        call = vector_item(info->dcalls, info->cur_call);
+        call = g_sequence_nth(info->dcalls, info->cur_call);
 
     // Get the list of calls that are goint to be displayed
-    vector_destroy(info->dcalls);
-    info->dcalls = vector_copy_if(sip_calls_vector(), filter_check_call);
+    g_sequence_free(info->dcalls);
+    info->dcalls = g_sequence_copy(sip_calls_vector(), filter_check_call, NULL);
 
     // If no active call, use the fist one (if exists)
-    if (info->cur_call == -1 && vector_count(info->dcalls)) {
+    if (info->cur_call == -1 && g_sequence_get_length(info->dcalls)) {
         info->cur_call = info->scroll.pos = 0;
     }
 
@@ -372,23 +376,24 @@ call_list_draw_list(ui_t *ui)
     if (info->autoscroll)  {
         sip_sort_t sort = sip_sort_options();
         if (sort.asc) {
-            call_list_move(ui, vector_count(info->dcalls) - 1);
+            call_list_move(ui, g_sequence_get_length(info->dcalls) - 1);
         } else {
             call_list_move(ui, 0);
         }
     } else if (call) {
-        call_list_move(ui, vector_index(info->dcalls, call));
+        call_list_move(ui, g_sequence_index(info->dcalls, call));
     }
 
     // Clear call list before redrawing
     werase(list_win);
 
     // Set the iterator position to the first call
-    vector_iter_t it = vector_iterator(info->dcalls);
-    vector_iterator_set_current(&it, info->scroll.pos - 1);
+    GSequenceIter *it = g_sequence_get_iter_at_pos(info->dcalls, info->scroll.pos);
 
     // Fill the call list
-    while ((call = vector_iterator_next(&it))) {
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        call = g_sequence_get(it);
+
         // Stop if we have reached the bottom of the list
         if (cline == listh)
             break;
@@ -402,7 +407,7 @@ call_list_draw_list(ui_t *ui)
             wattron(list_win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (info->cur_call == vector_iterator_current(&it)) {
+        if (info->cur_call == g_sequence_iter_get_position(it)) {
             wattron(list_win, COLOR_PAIR(CP_WHITE_ON_BLUE));
             // Reverse colors on monochrome terminals
             if (!has_colors())
@@ -435,7 +440,7 @@ call_list_draw_list(ui_t *ui)
 
             // Enable attribute color (if not current one)
             color = 0;
-            if (info->cur_call != vector_iterator_current(&it)) {
+            if (info->cur_call != g_sequence_iter_get_position(it)) {
                 if ((color = sip_attr_get_color(colid, coltext)) > 0) {
                     wattron(list_win, color);
                 }
@@ -457,7 +462,7 @@ call_list_draw_list(ui_t *ui)
     }
 
     // Draw scrollbar to the right
-    info->scroll.max = vector_count(info->dcalls);
+    info->scroll.max = g_sequence_get_length(info->dcalls) - 1;
     ui_scrollbar_draw(info->scroll);
 
     // Refresh the list
@@ -609,7 +614,7 @@ call_list_handle_key(ui_t *ui, int key)
                 call_list_move(ui, 0);
                 break;
             case ACTION_END:
-                call_list_move(ui, vector_count(info->dcalls));
+                call_list_move(ui, g_sequence_get_length(info->dcalls));
                 break;
             case ACTION_DISP_FILTER:
                 // Activate Form
@@ -626,11 +631,11 @@ call_list_handle_key(ui_t *ui, int key)
 
                 // If not selected call, show current call flow
                 if (call_group_count(info->group) == 0)
-                    call_group_add(group, vector_item(info->dcalls, info->cur_call));
+                    call_group_add(group, g_sequence_nth(info->dcalls, info->cur_call));
 
                 // Add xcall to the group
                 if (action == ACTION_SHOW_FLOW_EX) {
-                    call = vector_item(info->dcalls, info->cur_call);
+                    call = g_sequence_nth(info->dcalls, info->cur_call);
                     call_group_add_calls(group, call->xcalls);
                     group->callid = call->callid;
                 }
@@ -664,7 +669,7 @@ call_list_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_CLEAR:
                 // Clear group calls
-                vector_clear(info->group->calls);
+                g_sequence_remove_all(info->group->calls);
                 break;
             case ACTION_CLEAR_CALLS:
                 // Remove all stored calls
@@ -685,7 +690,7 @@ call_list_handle_key(ui_t *ui, int key)
                 ui_create_panel(PANEL_SETTINGS);
                 break;
             case ACTION_SELECT:
-                call = vector_item(info->dcalls, info->cur_call);
+                call = g_sequence_nth(info->dcalls, info->cur_call);
                 if (call_group_exists(info->group, call)) {
                     call_group_del(info->group, call);
                 } else {
@@ -999,7 +1004,7 @@ call_list_clear(ui_t *ui)
 
     // Initialize structures
     info->scroll.pos = info->cur_call = -1;
-    vector_clear(info->group->calls);
+    g_sequence_remove_all(info->group->calls);
 
     // Clear Displayed lines
     werase(info->list_win);
@@ -1021,13 +1026,13 @@ call_list_move(ui_t *ui, int line)
     // Moving down or up?
     bool move_down = (info->cur_call < line);
 
-    vector_iter_t it = vector_iterator(info->dcalls);
-    vector_iterator_set_current(&it, info->cur_call);
+    GSequenceIter *it = g_sequence_get_begin_iter(info->dcalls);
+    g_sequence_iter_set_pos(&it, info->cur_call);
 
     if (move_down) {
         while (info->cur_call < line) {
             // Check if there is a call below us
-            if (!vector_iterator_next(&it))
+            if (g_sequence_iter_is_end(g_sequence_iter_next(it)))
                break;
 
             // Increase current call position
@@ -1042,8 +1047,9 @@ call_list_move(ui_t *ui, int line)
     } else {
         while (info->cur_call > line) {
             // Check if there is a call above us
-            if (!vector_iterator_prev(&it))
+            if (g_sequence_iter_is_begin(it))
               break;
+
             // If we are out of the top of the displayed list
             // refresh it starting in the previous (in fact current) call
             if (info->cur_call ==  info->scroll.pos) {

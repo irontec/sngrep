@@ -28,7 +28,9 @@
  * This file contains the functions and structure to manage SIP call data
  *
  */
-
+#include "config.h"
+#include <glib.h>
+#include "glib-utils.h"
 #include "sip_call.h"
 #include "sip.h"
 #include "setting.h"
@@ -43,21 +45,16 @@ call_create(char *callid, char *xcallid)
         return NULL;
 
     // Create a vector to store call messages
-    call->msgs = vector_create(2, 2);
-    vector_set_destroyer(call->msgs, msg_destroyer);
+    call->msgs = g_sequence_new(msg_destroy);
 
     // Create an empty vector to store rtp packets
-    if (setting_enabled(SETTING_CAPTURE_RTP)) {
-        call->rtp_packets = vector_create(0, 40);
-        vector_set_destroyer(call->rtp_packets, packet_destroyer);
-    }
+    call->rtp_packets = g_sequence_new(packet_destroy);
 
     // Create an empty vector to strore stream data
-    call->streams = vector_create(0, 2);
-    vector_set_destroyer(call->streams, vector_generic_destroyer);
+    call->streams = g_sequence_new(sng_free);
 
     // Create an empty vector to store x-calls
-    call->xcalls = vector_create(0, 1);
+    call->xcalls = g_sequence_new(NULL);
 
     // Initialize call filter status
     call->filtered = -1;
@@ -70,27 +67,22 @@ call_create(char *callid, char *xcallid)
 }
 
 void
-call_destroy(sip_call_t *call)
+call_destroy(gpointer item)
 {
+    sip_call_t *call = item;
     // Remove all call messages
-    vector_destroy(call->msgs);
+    g_sequence_free(call->msgs);
     // Remove all call streams
-    vector_destroy(call->streams);
+    g_sequence_free(call->streams);
     // Remove all call rtp packets
-    vector_destroy(call->rtp_packets);
+    g_sequence_free(call->rtp_packets);
     // Remove all xcalls
-    vector_destroy(call->xcalls);
+    g_sequence_free(call->xcalls);
     // Deallocate call memory
     sng_free(call->callid);
     sng_free(call->xcallid);
     sng_free(call->reasontxt);
     sng_free(call);
-}
-
-void
-call_destroyer(void *call)
-{
-    call_destroy((sip_call_t*)call);
 }
 
 bool
@@ -105,7 +97,8 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     // Set the message owner
     msg->call = call;
     // Put this msg at the end of the msg list
-    msg->index = vector_append(call->msgs, msg);
+    g_sequence_append(call->msgs, msg);
+    msg->index = g_sequence_get_length(call->msgs);
     // Flag this call as changed
     call->changed = true;
 }
@@ -114,7 +107,7 @@ void
 call_add_stream(sip_call_t *call, rtp_stream_t *stream)
 {
     // Store stream
-    vector_append(call->streams, stream);
+    g_sequence_append(call->streams, stream);
     // Flag this call as changed
     call->changed = true;
 }
@@ -123,15 +116,15 @@ void
 call_add_rtp_packet(sip_call_t *call, packet_t *packet)
 {
     // Store packet
-    vector_append(call->rtp_packets, packet);
+    g_sequence_append(call->rtp_packets, packet);
     // Flag this call as changed
     call->changed = true;
 }
 
 int
-call_msg_count(sip_call_t *call)
+call_msg_count(const sip_call_t *call)
 {
-    return vector_count(call->msgs);
+    return g_sequence_get_length(call->msgs);
 }
 
 int
@@ -144,7 +137,7 @@ int
 call_is_invite(sip_call_t *call)
 {
     sip_msg_t *first;
-    if ((first = vector_first(call->msgs)))
+    if ((first = g_sequence_first(call->msgs)))
         return (first->reqresp == SIP_METHOD_INVITE);
 
     return 0;
@@ -154,21 +147,29 @@ void
 call_msg_retrans_check(sip_msg_t *msg)
 {
     sip_msg_t *prev = NULL;
-    vector_iter_t it;
+    GSequenceIter *it;
 
     // Get previous message in call with same origin and destination
-    it = vector_iterator(msg->call->msgs);
-    vector_iterator_set_current(&it, vector_index(msg->call->msgs, msg));
-    while ((prev = vector_iterator_prev(&it))) {
+    it = g_sequence_get_end_iter(msg->call->msgs);
+
+    // Skip already added message
+    it = g_sequence_iter_prev(it);
+
+    while(!g_sequence_iter_is_begin(it)) {
+        it = g_sequence_iter_prev(it);
+        prev = g_sequence_get(it);
+        // Same addresses
         if (addressport_equals(prev->packet->src, msg->packet->src) &&
-                addressport_equals(prev->packet->dst, msg->packet->dst))
-            break;
+            addressport_equals(prev->packet->dst, msg->packet->dst)) {
+            // Same payload
+            if (!strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
+                // Store the flag that determines if message is retrans
+                msg->retrans = prev;
+                break;
+            }
+        }
     }
 
-    // Store the flag that determines if message is retrans
-    if (prev && !strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
-        msg->retrans = prev;
-    }
 }
 
 sip_msg_t *
@@ -176,14 +177,16 @@ call_msg_with_media(sip_call_t *call, address_t dst)
 {
     sip_msg_t *msg;
     sdp_media_t *media;
-    vector_iter_t itmsg;
-    vector_iter_t itmedia;
+    GSequenceIter *itmsg;
+    GSequenceIter *itmedia;
 
     // Get message with media address configured in given dst
-    itmsg = vector_iterator(call->msgs);
-    while ((msg = vector_iterator_next(&itmsg))) {
-        itmedia = vector_iterator(msg->medias);
-        while ((media = vector_iterator_next(&itmedia))) {
+    itmsg = g_sequence_get_begin_iter(call->msgs);
+    for (;!g_sequence_iter_is_end(itmsg); itmsg = g_sequence_iter_next(itmsg)) {
+        msg = g_sequence_get(itmsg);
+        itmedia = g_sequence_get_begin_iter(msg->medias);
+        for (;!g_sequence_iter_is_end(itmedia); itmedia = g_sequence_iter_next(itmedia)) {
+            media = g_sequence_get(itmedia);
             if (addressport_equals(dst, media->address)) {
                 return msg;
             }
@@ -203,7 +206,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
         return;
 
     // Get the first message in the call
-    first = vector_first(call->msgs);
+    first = g_sequence_first(call->msgs);
 
     // Get current message Method / Response Code
     reqresp = msg->reqresp;
@@ -249,7 +252,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
 }
 
 const char *
-call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
+call_get_attribute(const sip_call_t *call, enum sip_attr_id id, char *value)
 {
     sip_msg_t *first, *last;
 
@@ -267,21 +270,21 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
             sprintf(value, "%s", call->xcallid);
             break;
         case SIP_ATTR_MSGCNT:
-            sprintf(value, "%d", vector_count(call->msgs));
+            sprintf(value, "%d", g_sequence_get_length(call->msgs));
             break;
         case SIP_ATTR_CALLSTATE:
             sprintf(value, "%s", call_state_to_str(call->state));
             break;
         case SIP_ATTR_TRANSPORT:
-            first = vector_first(call->msgs);
+            first = g_sequence_first(call->msgs);
             sprintf(value, "%s", sip_transport_str(first->packet->type));
             break;
         case SIP_ATTR_CONVDUR:
             timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(call->cend_msg), value);
             break;
         case SIP_ATTR_TOTALDUR:
-            first = vector_first(call->msgs);
-            last = vector_last(call->msgs);
+            first = g_sequence_first(call->msgs);
+            last = g_sequence_last(call->msgs);
             timeval_to_duration(msg_get_time(first), msg_get_time(last), value);
             break;
         case SIP_ATTR_REASON_TXT:
@@ -293,7 +296,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
                 sprintf(value, "%d", call->warning);
             break;
         default:
-            return msg_get_attribute(vector_first(call->msgs), id, value);
+            return msg_get_attribute(g_sequence_first(call->msgs), id, value);
             break;
     }
 
@@ -323,7 +326,7 @@ call_state_to_str(int state)
 }
 
 int
-call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id)
+call_attr_compare(const sip_call_t *one, const sip_call_t *two, enum sip_attr_id id)
 {
     char onevalue[256], twovalue[256];
     int oneintvalue, twointvalue;
@@ -378,5 +381,5 @@ call_add_xcall(sip_call_t *call, sip_call_t *xcall)
     // Mark this call as changed
     call->changed = true;
     // Add the xcall to the list
-    vector_append(call->xcalls, xcall);
+    g_sequence_append(call->xcalls, xcall);
 }

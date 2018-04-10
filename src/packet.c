@@ -27,8 +27,10 @@
  *
  */
 #include "config.h"
+#include <glib.h>
 #include <stdlib.h>
 #include <string.h>
+#include "glib-utils.h"
 #include "packet.h"
 
 packet_t *
@@ -40,7 +42,7 @@ packet_create(uint8_t ip_ver, uint8_t proto, address_t src, address_t dst, uint3
     memset(packet, 0, sizeof(packet_t));
     packet->ip_version = ip_ver;
     packet->proto = proto;
-    packet->frames = vector_create(1, 1);
+    packet->frames = g_sequence_new(free);
     packet->ip_id = id;
     packet->src = src;
     packet->dst = dst;
@@ -58,48 +60,46 @@ packet_clone(packet_t *packet)
     clone->tcp_seq = packet->tcp_seq;
 
     // Append this frames to the original packet
-    vector_iter_t frames = vector_iterator(packet->frames);
-    while ((frame = vector_iterator_next(&frames)))
+    GSequenceIter *it = g_sequence_get_begin_iter(packet->frames);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        frame = g_sequence_get(it);
         packet_add_frame(clone, frame->header, frame->data);
+    }
 
     return clone;
 }
 
 void
-packet_destroy(packet_t *packet)
+packet_destroy(gpointer item)
 {
+    packet_t *packet = item;
     frame_t *frame;
 
     // Check we have a valid packet pointer
     if (!packet) return;
 
     // Destroy frames
-    vector_iter_t it = vector_iterator(packet->frames);
-    while ((frame = vector_iterator_next(&it))) {
+    GSequenceIter *it = g_sequence_get_begin_iter(packet->frames);
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        frame = g_sequence_get(it);
         free(frame->header);
         free(frame->data);
     }
 
     // TODO Free remaining packet data
-    vector_set_destroyer(packet->frames, vector_generic_destroyer);
-    vector_destroy(packet->frames);
+    g_sequence_free(packet->frames);
     free(packet->payload);
     free(packet);
-}
-
-void
-packet_destroyer(void *packet)
-{
-    packet_destroy((packet_t*) packet);
 }
 
 void
 packet_free_frames(packet_t *pkt)
 {
     frame_t *frame;
-    vector_iter_t it = vector_iterator(pkt->frames);
+    GSequenceIter *it = g_sequence_get_begin_iter(pkt->frames);
 
-    while ((frame = vector_iterator_next(&it))) {
+    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        frame = g_sequence_get(it);
         free(frame->data);
         frame->data = NULL;
     }
@@ -121,7 +121,7 @@ packet_add_frame(packet_t *pkt, const struct pcap_pkthdr *header, const u_char *
     memcpy(frame->header, header, sizeof(struct pcap_pkthdr));
     frame->data = malloc(header->caplen);
     memcpy(frame->data, packet, header->caplen);
-    vector_append(pkt->frames, frame);
+    g_sequence_append(pkt->frames, frame);
     return frame;
 }
 
@@ -161,13 +161,13 @@ packet_payload(packet_t *packet)
 }
 
 struct timeval
-packet_time(packet_t *packet)
+packet_time(const packet_t *packet)
 {
     frame_t *first;
     struct timeval ts = { 0 };
 
     // Return first frame timestamp
-    if (packet && (first = vector_first(packet->frames))) {
+    if (packet && (first = g_sequence_first(packet->frames))) {
         ts.tv_sec = first->header->ts.tv_sec;
         ts.tv_usec = first->header->ts.tv_usec;
     }

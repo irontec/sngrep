@@ -27,13 +27,13 @@
  */
 
 #include "config.h"
+#include <glib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <glib.h>
 #include "option.h"
-#include "vector.h"
+#include "glib-utils.h"
 #include "capture.h"
 #include "capture_eep.h"
 #ifdef WITH_GNUTLS
@@ -106,8 +106,8 @@ main(int argc, char* argv[])
     gchar *config_file = NULL;
     gchar *keyfile = NULL;
 
-    vector_t *infiles = vector_create(0, 1);
-    vector_t *indevices = vector_create(0, 1);
+    GSequence *infiles = g_sequence_new(NULL);
+    GSequence*indevices = g_sequence_new(NULL);
 
     GOptionEntry main_entries[] = {
         { "version",'V', 0, G_OPTION_ARG_NONE, &version,
@@ -198,13 +198,13 @@ main(int argc, char* argv[])
     // Handle capture inputs
     if (devices) {
         for (int i = 0; devices[i]; i++) {
-            vector_append(indevices, devices[i]);
+            g_sequence_append(indevices, devices[i]);
         }
     }
 
     if (file_inputs) {
         for (int i = 0; file_inputs[i]; i++) {
-            vector_append(infiles, file_inputs[i]);
+            g_sequence_append(infiles, file_inputs[i]);
         }
     }
 
@@ -249,26 +249,27 @@ main(int argc, char* argv[])
 #endif
 
     // If no device or files has been specified in command line, use default
-    if (vector_count(indevices) == 0 && vector_count(infiles) == 0) {
-        vector_append(indevices, (char *) device);
+    if (g_sequence_get_length(indevices) == 0 && g_sequence_get_length(infiles) == 0) {
+        g_sequence_append(indevices, (char *) device);
     }
 
     // If we have an input file, load it
-    for (int i = 0; i < vector_count(infiles); i++) {
+    for (int i = 0; i < g_sequence_get_length(infiles); i++) {
         // Try to load file
-        if (capture_offline(vector_item(infiles, i), outfile) != 0)
+        if (capture_offline(g_sequence_nth(infiles, i), outfile) != 0)
             return 1;
     }
 
     // If we have an input device, load it
-    for (int i = 0; i < vector_count(indevices); i++) {
+    for (int i = 0; i < g_sequence_get_length(indevices); i++) {
         // Check if all capture data is valid
-        if (capture_online(vector_item(indevices, i), outfile) != 0)
+        if (capture_online(g_sequence_nth(indevices, i), outfile) != 0)
             return 1;
     }
 
     // Remove Input files vector
-    vector_destroy(infiles);
+    g_sequence_free(infiles);
+    g_sequence_free(indevices);
 
     // More arguments pending!
     if (argc > 1) {

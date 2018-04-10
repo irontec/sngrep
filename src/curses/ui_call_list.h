@@ -32,8 +32,9 @@
 #ifndef __UI_CALL_LIST_H
 #define __UI_CALL_LIST_H
 
-#include "ui_manager.h"
 #include <menu.h>
+#include <glib.h>
+#include "ui_manager.h"
 #include "scrollbar.h"
 
 /**
@@ -73,7 +74,7 @@ struct call_list_column {
  */
 struct call_list_info {
     //! Displayed calls vector
-    vector_t *dcalls;
+    GSequence *dcalls;
     //! Selected call in the list
     int cur_call;
     //! Selected calls with space

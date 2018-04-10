@@ -124,7 +124,7 @@ struct call_flow_column {
     //! Alias for the given address
     char alias[MAX_SETTING_LEN];
     //! Call Ids
-    vector_t *callids;
+    GSequence *callids;
     //! Column position (starting with zero) // FIXME array position?
     int colpos;
 };
@@ -143,9 +143,9 @@ struct call_flow_info {
     //! Group of calls displayed on the panel
     sip_call_group_t *group;
     //! List of arrows (call_flow_arrow_t *)
-    vector_t *arrows;
+    GSequence *arrows;
     //! List of displayed arrows
-    vector_t *darrows;
+    GSequence *darrows;
     //! First displayed arrow in the list
     int first_arrow;
     //! Current arrow index where the cursor is
@@ -155,7 +155,7 @@ struct call_flow_info {
     //! Current line for scrolling
     scrollbar_t scroll;
     //! List of columns in the panel
-    vector_t *columns;
+    GSequence *columns;
     //! Max callids per column
     int maxcallids;
     //! Print timestamp next to the arrow
@@ -477,7 +477,7 @@ call_flow_arrow_selected(ui_t *ui);
  * @return timestamp for given arrow
  */
 struct timeval
-call_flow_arrow_time(call_flow_arrow_t *arrow);
+call_flow_arrow_time(const call_flow_arrow_t *arrow);
 
 /**
  * @brief Sort arrows by timestamp
@@ -488,8 +488,8 @@ call_flow_arrow_time(call_flow_arrow_t *arrow);
  * @param vector Arrows vector pointer
  * @param item Call Flow arrow structure pointer
  */
-void
-call_flow_arrow_sorter(vector_t *vector, void *item);
+gint
+call_flow_arrow_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
 
 /**
  * @brief Filter displayed arrows based on configuration
