@@ -191,7 +191,6 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     gnutls_datum_t keycontent = { NULL, 0 };
     FILE *keyfp;
     gnutls_x509_privkey_t spkey;
-    size_t br;
     int ret;
 
     // Allocate memory for this connection
@@ -214,7 +213,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     keycontent.size = ftell(keyfp);
     fseek(keyfp, 0, SEEK_SET);
     keycontent.data = sng_malloc(keycontent.size);
-    br = fread(keycontent.data, 1, keycontent.size, keyfp);
+    fread(keycontent.data, 1, keycontent.size, keyfp);
     fclose(keyfp);
 
     gnutls_x509_privkey_init(&spkey);
@@ -280,7 +279,6 @@ tls_check_keyfile(const char *keyfile)
     gnutls_x509_privkey_t key;
     gnutls_datum_t keycontent = { NULL, 0 };
     FILE *keyfp;
-    size_t br;
     int ret;
 
     gnutls_global_init();
@@ -295,7 +293,7 @@ tls_check_keyfile(const char *keyfile)
     keycontent.size = ftell(keyfp);
     fseek(keyfp, 0, SEEK_SET);
     keycontent.data = sng_malloc(keycontent.size);
-    br = fread(keycontent.data, 1, keycontent.size, keyfp);
+    fread(keycontent.data, 1, keycontent.size, keyfp);
     fclose(keyfp);
 
     // Check we have read something from keyfile

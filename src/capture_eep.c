@@ -602,7 +602,7 @@ capture_eep_receive_v3()
     char password[100];
     int password_len, uuid_len;
     unsigned char *payload = 0;
-    uint32_t len, pos;
+    uint32_t pos;
     char buffer[MAX_CAPTURE_LEN] ;
     //! Source and Destination Address
     address_t src, dst;
@@ -630,7 +630,6 @@ capture_eep_receive_v3()
     /* Proto ID */
     proto = hg.ip_proto.data;
 
-    len = ntohs(hg.header.length) - sizeof(struct hep_generic);
     pos = sizeof(struct hep_generic);
 
     /* IPv4 */

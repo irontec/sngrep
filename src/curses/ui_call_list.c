@@ -562,7 +562,7 @@ call_list_line_text(ui_t *ui, sip_call_t *call, char *text)
 int
 call_list_handle_key(ui_t *ui, int key)
 {
-    int listh, listw,rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
+    int rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     call_list_info_t *info;
     ui_t *next_ui;
     sip_call_group_t *group;
@@ -580,10 +580,6 @@ call_list_handle_key(ui_t *ui, int key)
 
     if (info->menu_active)
         return call_list_handle_menu_key(ui, key);
-
-    // Get window of call list panel
-    WINDOW *list_win = info->list_win;
-    getmaxyx(list_win, listh, listw);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -750,15 +746,11 @@ call_list_handle_key(ui_t *ui, int key)
 int
 call_list_handle_form_key(ui_t *ui, int key)
 {
-    int field_idx;
     char *dfilter;
     int action = -1;
 
     // Get panel information
     call_list_info_t *info = call_list_info(ui);
-
-    // Get current field id
-    field_idx = field_index(current_field(info->form));
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -840,8 +832,7 @@ int
 call_list_handle_menu_key(ui_t *ui, int key)
 {
     MENU *menu;
-    ITEM *current;
-    int current_idx, i;
+    int i;
     int action = -1;
     sip_sort_t sort;
     enum sip_attr_id id;
@@ -850,8 +841,6 @@ call_list_handle_menu_key(ui_t *ui, int key)
     call_list_info_t *info = call_list_info(ui);
 
     menu = info->menu;
-    current = current_item(menu);
-    current_idx = item_index(current);
 
       // Check actions for this key
       while ((action = key_find_action(key, action)) != ERR) {

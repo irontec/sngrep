@@ -227,11 +227,6 @@ call_flow_draw(ui_t *ui)
 void
 call_flow_draw_footer(ui_t *ui)
 {
-    call_flow_info_t *info;
-
-    // Get panel information
-    info = call_flow_info(ui);
-
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
         key_action_key_str(ACTION_CONFIRM), "Raw",
@@ -435,8 +430,8 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     address_t src;
     address_t dst;
     char method[80];
-    char delta[15] = {};
-    int flowh, floww;
+    char delta[15] = { };
+    int flowh;
     char mediastr[40];
     sip_msg_t *msg = arrow->item;
     GSequenceIter *it;
@@ -449,7 +444,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Get the messages window
     flow_win = info->flow_win;
-    getmaxyx(flow_win, flowh, floww);
+    flowh = getmaxy(flow_win);
 
     // Store arrow start line
     arrow->line = cline;
@@ -679,8 +674,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     call_flow_info_t *info;
     WINDOW *win;
     char text[50], time[20];
-    int height, width;
-    const char *callid;
+    int height;
     rtp_stream_t *stream = arrow->item;
     sip_msg_t *msg;
     sip_call_t *call;
@@ -691,7 +685,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     info = call_flow_info(ui);
     // Get the messages window
     win = info->flow_win;
-    getmaxyx(win, height, width);
+    height = getmaxy(win);
 
     // Store arrow start line
     arrow->line = cline;
@@ -708,7 +702,6 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Get message data
     call = stream->media->msg->call;
-    callid = call->callid;
 
     /**
      * This logic will try to use the same columns for the stream representation
@@ -887,13 +880,9 @@ call_flow_arrow_t *
 call_flow_arrow_create(ui_t *ui, void *item, int type)
 {
     call_flow_arrow_t *arrow;
-    call_flow_info_t *info;
 
     if ((arrow = call_flow_arrow_find(ui, item)))
         return arrow;
-
-    // Get panel information
-    info = call_flow_info(ui);
 
     // Create a new arrow of the given type
     arrow = malloc(sizeof(call_flow_arrow_t));
@@ -1111,7 +1100,7 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
 int
 call_flow_handle_key(ui_t *ui, int key)
 {
-    int raw_width, height, width;
+    int raw_width;
     call_flow_info_t *info = call_flow_info(ui);
     ui_t *next_ui;
     sip_call_t *call = NULL;
@@ -1121,8 +1110,6 @@ call_flow_handle_key(ui_t *ui, int key)
     // Sanity check, this should not happen
     if (!info)
         return KEY_NOT_HANDLED;
-
-    getmaxyx(info->flow_win, height, width);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
