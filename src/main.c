@@ -212,8 +212,8 @@ main(int argc, char* argv[])
     // Set capture decrypt key file
     capture_set_keyfile(keyfile);
     // Check if we have a keyfile and is valid
-    if (keyfile && !tls_check_keyfile(keyfile)) {
-        fprintf(stderr, "%s does not contain a valid RSA private key.\n", keyfile);
+    if (keyfile && !tls_check_keyfile(keyfile, &error)) {
+        g_printerr("Error: %s\n", error->message);
         return 1;
     }
 #endif

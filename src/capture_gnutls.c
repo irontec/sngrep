@@ -29,8 +29,11 @@
  * that use TLS as transport.
  *
  */
-
+#include "config.h"
+#include <glib.h>
 #include <unistd.h>
+#include <errno.h>
+#include <gnutls/gnutls.h>
 #include "capture.h"
 #include "capture_gnutls.h"
 #include "option.h"
@@ -48,7 +51,11 @@ struct CipherData ciphers[] = {
 };
 
 
-
+GQuark
+s_gnutls_error_quark()
+{
+    return  g_quark_from_static_string("sngrep-gnutls");
+}
 
 #define TLS_DEBUG 0
 
@@ -273,49 +280,51 @@ tls_connection_destroy(struct SSLConnection *conn)
  *
  * Most probably we only need one context and key for all connections
  */
-int
-tls_check_keyfile(const char *keyfile)
+gboolean
+tls_check_keyfile(const gchar *keyfile, GError **error)
 {
     gnutls_x509_privkey_t key;
     gnutls_datum_t keycontent = { NULL, 0 };
-    FILE *keyfp;
     int ret;
 
     gnutls_global_init();
 
-    if (access(capture_keyfile(), R_OK) != 0)
-        return 0;
-
-    if (!(keyfp = fopen(capture_keyfile(), "rb")))
-        return 0;
-
-    fseek(keyfp, 0, SEEK_END);
-    keycontent.size = ftell(keyfp);
-    fseek(keyfp, 0, SEEK_SET);
-    keycontent.data = sng_malloc(keycontent.size);
-    fread(keycontent.data, 1, keycontent.size, keyfp);
-    fclose(keyfp);
+    if (!g_file_get_contents(keyfile, (gchar **) &keycontent.data, (gsize *)&keycontent.size, error)) {
+        return FALSE;
+    }
 
     // Check we have read something from keyfile
-    if (!keycontent.data)
-        return 0;
+    if (keycontent.size == 0) {
+        g_set_error (error,
+                     S_GNUTLS_ERROR,
+                     S_GNUTLS_ERROR_KEYFILE_EMTPY,
+                     "Unable to read keyfile contents");
+        return FALSE;
+    }
 
     // Initialize keyfile structure
     ret = gnutls_x509_privkey_init(&key);
     if (ret < GNUTLS_E_SUCCESS) {
-        fprintf (stderr, "Error initializing keyfile: %s\n", gnutls_strerror(ret));
-        return 0;
+        g_set_error (error,
+                     S_GNUTLS_ERROR,
+                     S_GNUTLS_ERROR_PRIVATE_INIT,
+                     "Unable to initializing keyfile: %s",
+                     gnutls_strerror(ret));
+        return FALSE;
     }
 
     // Import RSA keyfile
     ret = gnutls_x509_privkey_import(key, &keycontent, GNUTLS_X509_FMT_PEM);
-    sng_free(keycontent.data);
     if (ret < GNUTLS_E_SUCCESS) {
-        fprintf (stderr, "Error loading keyfile: %s\n", gnutls_strerror(ret));
-        return 0;
+        g_set_error (error,
+                     S_GNUTLS_ERROR,
+                     S_GNUTLS_ERROR_PRIVATE_LOAD,
+                     "Unable to loading keyfile: %s",
+                     gnutls_strerror(ret));
+        return FALSE;
     }
 
-    return 1;
+    return TRUE;
 }
 
 int

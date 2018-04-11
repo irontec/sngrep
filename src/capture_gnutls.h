@@ -47,10 +47,27 @@
 #define __SNGREP_CAPTURE_TLS_
 
 #include "config.h"
+#include <glib.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gcrypt.h>
 #include "capture.h"
+
+//! Error reporting domain
+#define S_GNUTLS_ERROR s_gnutls_error_quark()
+
+/**
+ * @brief Get Capture domain struct for GError
+ */
+GQuark
+s_gnutls_error_quark(void);
+
+enum {
+    S_GNUTLS_ERROR_KEYFILE_EMTPY,
+    S_GNUTLS_ERROR_PRIVATE_INIT,
+    S_GNUTLS_ERROR_PRIVATE_LOAD
+};
+
 
 //! Cast two bytes into decimal (Big Endian)
 #define UINT16_INT(i) ((i.x[0] << 8) | i.x[1])
@@ -335,8 +352,8 @@ tls_connection_destroy(struct SSLConnection *conn);
  * @param keyfile Absolute path the keyfile
  * @return 1 if file contains RSA private info, 0 otherwise
  */
-int
-tls_check_keyfile(const char *keyfile);
+gboolean
+tls_check_keyfile(const gchar *keyfile, GError **error);
 
 /**
  * @brief Determines packet direction
