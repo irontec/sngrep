@@ -46,6 +46,10 @@ typedef struct sip_code sip_code_t;
 typedef struct sip_stats sip_stats_t;
 //! Shorter declaration of sip sort
 typedef struct sip_sort sip_sort_t;
+//! Shorter declaration of structs
+typedef struct _SStorageSortOpts    SStorageSortOpts;
+typedef struct _SStorageMatchOpts   SStorageMatchOpts;
+typedef struct _SStorageCaptureOpts SStorageCaptureOpts;
 
 //! SIP Methods
 enum sip_methods {
@@ -71,6 +75,39 @@ enum validate_result {
     VALIDATE_PARTIAL_SIP    = 0,
     VALIDATE_COMPLETE_SIP   = 1,
     VALIDATE_MULTIPLE_SIP   = 2
+};
+
+struct _SStorageSortOpts {
+    //! Sort call list by this attribute
+    enum sip_attr_id by;
+    //! Sory by attribute ascending
+    gboolean asc;
+};
+
+struct _SStorageMatchOpts {
+    //! Only store dialogs starting with INVITE
+    gboolean invite;
+    //! Only store dialogs starting with a Method without to-tag
+    gboolean complete;
+    //! Match expression text
+    gchar *mexpr;
+    //! Invert match expression result
+    gboolean minvert;
+    //! Ignore case while matching
+    gboolean micase;
+    //! Compiled match expression
+    GRegex *mregex;
+};
+
+struct _SStorageCaptureOpts {
+    //! Max number of calls in the list
+    guint limit;
+    //! Rotate first call when the limit is reached
+    gboolean rotate;
+    //! Keep captured RTP packets
+    gboolean rtp;
+    //! Save all stored packets in file
+    gchar *outfile;
 };
 
 /**
@@ -110,32 +147,22 @@ struct sip_sort
  * This structure acts as header of calls list
  */
 struct sip_call_list {
+    // Matching options
+    struct _SStorageMatchOpts match;
+    // Capture options
+    struct _SStorageCaptureOpts capture;
+    //! Sort call list following this options
+    struct _SStorageSortOpts sort;
     //! List of all captured calls
     GSequence *list;
     //! List of active captured calls
     GSequence *active;
     //! Changed flag. For interface optimal updates
     bool changed;
-    //! Sort call list following this options
-    sip_sort_t sort;
     //! Last created id
     int last_index;
     //! Call-Ids hash table
     GHashTable *callids;
-
-    // Max call limit
-    int limit;
-    //! Only store dialogs starting with INVITE
-    int only_calls;
-    //! Only store dialogs starting with some Methods
-    int ignore_incomplete;
-    //! match expression text
-    const char *match_expr;
-    //! Compiled match expression
-    GRegex *match_regex;
-
-    //! Invert match expression result
-    int match_invert;
 
     //! Regexp for payload matching
     GRegex *reg_method;
@@ -153,14 +180,23 @@ struct sip_call_list {
 };
 
 /**
+ * @brief Get Capture domain struct for GError
+ */
+GQuark
+capture_pcap_error_quark();
+
+/**
  * @brief Initialize SIP Storage structures
  *
  * @param limit Max number of Stored calls
  * @param only_calls only parse dialogs starting with INVITE
  * @param no_incomplete only parse dialog starting with some methods
  */
-void
-sip_init(int limit, int only_calls, int no_incomplete);
+gboolean
+sip_init(SStorageCaptureOpts capture_options,
+         SStorageMatchOpts match_options,
+         SStorageSortOpts sort_options,
+         GError **error);
 
 /**
  * @brief Deallocate all memory used for SIP calls
@@ -403,17 +439,6 @@ void
 sip_parse_msg_media(sip_msg_t *msg, const u_char *payload);
 
 /**
- * @brief Set Capture Matching expression
- *
- * @param expr String containing matching expression
- * @param insensitive 1 for case insensitive matching
- * @param invert 1 for reverse matching
- * @return 0 if expresion is valid, 1 otherwise
- */
-int
-sip_set_match_expression(const char *expr, int insensitive, int invert);
-
-/**
  * @brief Get Capture Matching expression
  *
  * @return String containing matching expression
@@ -472,9 +497,9 @@ char *
 sip_get_msg_header(sip_msg_t *msg, char *out);
 
 void
-sip_set_sort_options(sip_sort_t sort);
+sip_set_sort_options(SStorageSortOpts sort);
 
-sip_sort_t
+SStorageSortOpts
 sip_sort_options();
 
 void

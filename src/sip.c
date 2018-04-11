@@ -137,14 +137,35 @@ sip_code_t sip_codes[] = {
     { -1 , NULL },
 };
 
-void
-sip_init(int limit, int only_calls, int no_incomplete)
+gboolean
+sip_init(SStorageCaptureOpts capture_options,
+         SStorageMatchOpts match_options,
+         SStorageSortOpts sort_options,
+         GError **error)
 {
+    GRegexCompileFlags cflags = G_REGEX_EXTENDED;
+    GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
+
+    calls.capture = capture_options;
+    calls.match = match_options;
+    calls.sort = sort_options;
+
     // Store capture limit
-    calls.limit = limit;
-    calls.only_calls = only_calls;
-    calls.ignore_incomplete = no_incomplete;
     calls.last_index = 0;
+
+    // Validate match expression
+    if (calls.match.mexpr) {
+        // Case insensitive requested
+        if (calls.match.micase) {
+            cflags |= G_REGEX_CASELESS;
+        }
+
+        // Check the expresion is a compilable regexp
+        calls.match.mregex = g_regex_new(calls.match.mexpr, cflags, 0, error);
+        if (calls.match.mregex == NULL) {
+            return FALSE;
+        }
+    }
 
     // Create a vector to store calls
     calls.list = g_sequence_new(call_destroy);
@@ -164,8 +185,8 @@ sip_init(int limit, int only_calls, int no_incomplete)
     }
 
     // Initialize payload parsing regexp
-    GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
-    GRegexCompileFlags cflags = G_REGEX_OPTIMIZE | G_REGEX_CASELESS | G_REGEX_NEWLINE_CRLF | G_REGEX_MULTILINE;
+    mflags = G_REGEX_MATCH_NEWLINE_CRLF;
+    cflags = G_REGEX_OPTIMIZE | G_REGEX_CASELESS | G_REGEX_NEWLINE_CRLF | G_REGEX_MULTILINE;
 
     calls.reg_method = g_regex_new("(?P<method>\\w+) [^:]+:\\S* SIP/2.0", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
     calls.reg_callid = g_regex_new("^(Call-ID|i):\\s*(?P<callid>.+)$", cflags, mflags, NULL);
@@ -179,6 +200,8 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.reg_body = g_regex_new("\r\n\r\n(.*)", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
     calls.reg_reason = g_regex_new("Reason:[ ]*[^\r]*;text=\"([^\r]+)\"", cflags, mflags, NULL);
     calls.reg_warning = g_regex_new("^Warning:\\s*(?P<warning>\\d+)", cflags, mflags, NULL);
+
+    return TRUE;
 }
 
 void
@@ -365,19 +388,19 @@ sip_check_packet(packet_t *packet)
             goto skip_message;
 
         // User requested only INVITE starting dialogs
-        if (calls.only_calls && msg->reqresp != SIP_METHOD_INVITE)
+        if (calls.match.invite && msg->reqresp != SIP_METHOD_INVITE)
             goto skip_message;
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (calls.ignore_incomplete && msg->reqresp > SIP_METHOD_MESSAGE)
+        if (calls.match.complete && msg->reqresp > SIP_METHOD_MESSAGE)
             goto skip_message;
 
         // Get the Call-ID of this message
         sip_get_xcallid((const char*) payload, xcallid);
 
         // Rotate call list if limit has been reached
-        if (calls.limit == sip_calls_count())
+        if (calls.capture.limit == sip_calls_count())
             sip_calls_rotate();
 
         // Create the call if not found
@@ -784,43 +807,24 @@ sip_calls_rotate()
     }
 }
 
-int
-sip_set_match_expression(const char *expr, int insensitive, int invert)
-{
-    // Store expression text
-    calls.match_expr = expr;
-    // Set invert flag
-    calls.match_invert = invert;
-
-    GRegexCompileFlags cflags = 0;
-
-    // Case insensitive requested
-    if (insensitive)
-        cflags |= G_REGEX_CASELESS;
-
-    // Check the expresion is a compilable regexp
-    calls.match_regex = g_regex_new(expr, cflags, 0, NULL);
-    return (calls.match_regex != NULL) ? 0 : 1;
-}
-
 const char *
 sip_get_match_expression()
 {
-    return calls.match_expr;
+    return calls.match.mexpr;
 }
 
 int
 sip_check_match_expression(const char *payload)
 {
     // Everything matches when there is no match
-    if (!calls.match_expr)
+    if (calls.match.mexpr == NULL)
         return 1;
 
     // Check if payload matches the given expresion
-    if (g_regex_match(calls.match_regex, payload, 0, NULL)) {
-        return 0 == calls.match_invert;
+    if (g_regex_match(calls.match.mregex, payload, 0, NULL)) {
+        return 0 == calls.match.minvert;
     } else {
-        return 1 == calls.match_invert;
+        return 1 == calls.match.minvert;
     }
 
 }
@@ -887,13 +891,13 @@ sip_get_msg_header(sip_msg_t *msg, char *out)
 }
 
 void
-sip_set_sort_options(sip_sort_t sort)
+sip_set_sort_options(SStorageSortOpts sort)
 {
     calls.sort = sort;
     sip_sort_list();
 }
 
-sip_sort_t
+SStorageSortOpts
 sip_sort_options()
 {
     return calls.sort;

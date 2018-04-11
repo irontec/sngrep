@@ -258,7 +258,7 @@ call_list_draw_header(ui_t *ui)
         wattron(ui->win, A_REVERSE);
 
     // Get configured sorting options
-    sip_sort_t sort = sip_sort_options();
+    SStorageSortOpts sort = sip_sort_options();
 
     // Draw columns titles
     wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
@@ -374,7 +374,7 @@ call_list_draw_list(ui_t *ui)
 
     // If autoscroll is enabled, select the last dialog
     if (info->autoscroll)  {
-        sip_sort_t sort = sip_sort_options();
+        SStorageSortOpts sort = sip_sort_options();
         if (sort.asc) {
             call_list_move(ui, g_sequence_get_length(info->dcalls) - 1);
         } else {
@@ -568,7 +568,7 @@ call_list_handle_key(ui_t *ui, int key)
     sip_call_group_t *group;
     int action = -1;
     sip_call_t *call;
-    sip_sort_t sort;
+    SStorageSortOpts sort;
 
     // Sanity check, this should not happen
     if (!(info  = call_list_info(ui)))
@@ -834,7 +834,7 @@ call_list_handle_menu_key(ui_t *ui, int key)
     MENU *menu;
     int i;
     int action = -1;
-    sip_sort_t sort;
+    SStorageSortOpts sort;
     enum sip_attr_id id;
 
     // Get panel information

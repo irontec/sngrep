@@ -80,15 +80,9 @@ print_version_info()
 int
 main(int argc, char* argv[])
 {
-    const char *device;
-    char bpf[512];
-    const char *match_expr;
-
     GError *error = NULL;
-    GOptionContext *context;
     gchar **file_inputs = NULL;
     gchar **devices = NULL;
-    gchar *outfile = NULL;
     gchar *hep_listen = NULL;
     gchar *hep_send = NULL;
     gboolean no_interface = FALSE;
@@ -96,16 +90,11 @@ main(int argc, char* argv[])
     gboolean version = FALSE;
     gboolean config_dump = FALSE;
     gboolean no_config = FALSE;
-    gboolean rtp_capture = FALSE;
-    gboolean rotate = FALSE;
-    gboolean match_insensitive = FALSE;
-    gboolean match_invert = FALSE;
-    gboolean only_calls = FALSE;
-    gboolean no_incomplete;
-    gint limit = 0;
     gchar *config_file = NULL;
     gchar *keyfile = NULL;
-
+    SStorageSortOpts storage_sopts = {};
+    SStorageMatchOpts storage_mopts = {};
+    SStorageCaptureOpts storage_copts = {};
     GSequence *infiles = g_sequence_new(NULL);
     GSequence*indevices = g_sequence_new(NULL);
 
@@ -116,23 +105,23 @@ main(int argc, char* argv[])
           "Use this capture device instead of default", "DEVICE" },
         { "input",  'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &file_inputs,
           "Read captured data from pcap file", "FILE" },
-        { "output", 'O', 0, G_OPTION_ARG_FILENAME, &outfile,
+        { "output", 'O', 0, G_OPTION_ARG_FILENAME, storage_copts.outfile,
           "Write captured data to pcap file", "FILE" },
-        { "calls",  'c', 0, G_OPTION_ARG_NONE, &only_calls,
+        { "calls",  'c', 0, G_OPTION_ARG_NONE, &storage_mopts.invite,
           "Only display dialogs starting with INVITE", NULL },
-        { "rtp",    'r', 0, G_OPTION_ARG_NONE, &rtp_capture,
+        { "rtp",    'r', 0, G_OPTION_ARG_NONE, &storage_copts.rtp,
           "Store captured RTP packets (enables saving RTP)", NULL },
-        { "limit",  'l', 0, G_OPTION_ARG_INT, &limit,
+        { "limit",  'l', 0, G_OPTION_ARG_INT, &storage_copts.limit,
           "Set capture limit to N dialogs", "N" },
-        { "rotate", 'R', 0, G_OPTION_ARG_NONE, &rotate,
+        { "rotate", 'R', 0, G_OPTION_ARG_NONE, &storage_copts.rotate,
           "Rotate calls when capture limit have been reached", NULL },
         { "no-interface", 'N', 0, G_OPTION_ARG_NONE, &no_interface,
           "Don't display sngrep interface, just capture", NULL },
         { "quiet",  'q', 0, G_OPTION_ARG_NONE, &quiet,
           "Don't print captured dialogs in no interface mode", NULL },
-        { "icase",  'i', 0, G_OPTION_ARG_NONE, &match_insensitive,
+        { "icase",  'i', 0, G_OPTION_ARG_NONE, &storage_mopts.micase,
           "Make <match expression> case insensitive", NULL },
-        { "invert", 'v', 0, G_OPTION_ARG_NONE, &match_invert,
+        { "invert", 'v', 0, G_OPTION_ARG_NONE, &storage_mopts.minvert,
           "Invert <match expression>", NULL },
         { "dump-config", 'D', 0, G_OPTION_ARG_NONE, &config_dump,
           "Print active configuration settings and exit", NULL },
@@ -154,13 +143,13 @@ main(int argc, char* argv[])
     };
 
     /************************** Command Line Parsing **************************/
-    context = g_option_context_new("[<match expression>] [<bpf filter>]");
+    GOptionContext *context = g_option_context_new("[<match expression>] [<bpf filter>]");
     g_option_context_add_main_entries (context, main_entries, NULL);
-    gboolean parsed = g_option_context_parse (context, &argc, &argv, &error);
+    g_option_context_parse (context, &argc, &argv, &error);
     g_option_context_free (context);
 
-    if (!parsed) {
-        g_printerr("option parsing failed: %s\n", error->message);
+    if (error != NULL) {
+        g_printerr("Options parsing failed: %s\n", error->message);
         return 1;
     }
 
@@ -183,13 +172,18 @@ main(int argc, char* argv[])
         read_options(config_file);
 
     // Get initial values for configurable arguments
-    if (!limit) limit  = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
-    if (!only_calls) only_calls = setting_enabled(SETTING_SIP_CALLS);
-    if (!rtp_capture) rtp_capture = setting_enabled(SETTING_CAPTURE_RTP);
-    if (!rotate) rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
-    if (!outfile) outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
-    no_incomplete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
-    device = setting_get_value(SETTING_CAPTURE_DEVICE);
+    if (!storage_mopts.invite)
+        storage_mopts.invite = setting_enabled(SETTING_SIP_CALLS);
+    if (!storage_mopts.complete)
+        storage_mopts.complete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
+    if (!storage_copts.limit)
+        storage_copts.limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
+    if (!storage_copts.rtp)
+        storage_copts.rtp = setting_enabled(SETTING_CAPTURE_RTP);
+    if (!storage_copts.rotate)
+        storage_copts.rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
+    if (!storage_copts.outfile)
+        storage_copts.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
 
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     if (!keyfile) keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
@@ -207,12 +201,6 @@ main(int argc, char* argv[])
             g_sequence_append(infiles, file_inputs[i]);
         }
     }
-
-    // Legacy settings set
-    if (only_calls) setting_set_value(SETTING_SIP_CALLS, SETTING_ON);
-    if (rtp_capture) setting_set_value(SETTING_CAPTURE_RTP, SETTING_ON);
-    if (rotate) setting_set_value(SETTING_CAPTURE_ROTATE, SETTING_ON);
-    if (no_interface) setting_set_value(SETTING_CAPTURE_STORAGE, "none");
 
 #ifdef USE_EEP
     // Hep settings
@@ -237,33 +225,30 @@ main(int argc, char* argv[])
         return 0;
     }
 
-    // Initialize SIP Messages Storage
-    sip_init(limit, only_calls, no_incomplete);
+    // If no device or files has been specified in command line, use default
+    if (g_sequence_get_length(indevices) == 0 && g_sequence_get_length(infiles) == 0) {
+        g_sequence_append(indevices, (gpointer) setting_get_value(SETTING_CAPTURE_DEVICE));
+    }
 
     // Set capture options
-    capture_init(limit, rtp_capture, rotate);
+    capture_init(storage_copts.limit, storage_copts.rtp, storage_copts.rotate);
 
 #ifdef USE_EEP
     // Initialize EEP if enabled
     capture_eep_init();
 #endif
 
-    // If no device or files has been specified in command line, use default
-    if (g_sequence_get_length(indevices) == 0 && g_sequence_get_length(infiles) == 0) {
-        g_sequence_append(indevices, (char *) device);
-    }
-
     // If we have an input file, load it
     for (int i = 0; i < g_sequence_get_length(infiles); i++) {
         // Try to load file
-        if (capture_offline(g_sequence_nth(infiles, i), outfile) != 0)
+        if (capture_offline(g_sequence_nth(infiles, i), storage_copts.outfile) != 0)
             return 1;
     }
 
     // If we have an input device, load it
     for (int i = 0; i < g_sequence_get_length(indevices); i++) {
         // Check if all capture data is valid
-        if (capture_online(g_sequence_nth(indevices, i), outfile) != 0)
+        if (capture_online(g_sequence_nth(indevices, i), storage_copts.outfile) != 0)
             return 1;
     }
 
@@ -273,41 +258,39 @@ main(int argc, char* argv[])
 
     // More arguments pending!
     if (argc > 1) {
+        // Assume first pending argument is match expression
         guint argi = 1;
-
-        // Assume first pending argument is  match expression
-        match_expr = argv[argi++];
+        gchar *match_expr = argv[argi++];
 
         // Try to build the bpf filter string with the rest
-        memset(bpf, 0, sizeof(bpf));
-        for (int i = argi; i < argc; i++)
-            sprintf(bpf + strlen(bpf), "%s ", argv[i]);
+        GString *bpf_filter = g_string_new(NULL);
+        while (argv[argi]) {
+            g_string_append_printf(bpf_filter, " %s", argv[argi]);
+            argi++;
+        }
 
         // Check if this BPF filter is valid
-        if (capture_set_bpf_filter(bpf) != 0) {
+        if (capture_set_bpf_filter(bpf_filter->str) != 0) {
             // BPF Filter invalid, check incluiding match_expr
-            match_expr = 0;    // There is no need to parse all payload at this point
-
-
-            // Build the bpf filter string
-            memset(bpf, 0, sizeof(bpf));
-            for (int i = argi - 1; i < argc; i++)
-                sprintf(bpf + strlen(bpf), "%s ", argv[i]);
+            g_string_prepend(bpf_filter, match_expr);
+            match_expr = NULL;
 
             // Check bpf filter is valid again
-            if (capture_set_bpf_filter(bpf) != 0) {
-                fprintf(stderr, "Couldn't install filter %s: %s\n", bpf, capture_last_error());
+            if (capture_set_bpf_filter(bpf_filter->str) != 0) {
+                fprintf(stderr, "Couldn't install filter %s: %s\n", bpf_filter->str, capture_last_error());
                 return 1;
             }
         }
 
-        // Set the capture filter
-        if (match_expr)
-            if (sip_set_match_expression(match_expr, match_insensitive, match_invert)) {
-                fprintf(stderr, "Unable to parse expression %s\n", match_expr);
-                return 1;
-            }
+        // Set the payload match expression
+        storage_mopts.mexpr = match_expr;
     }
+
+    // Initialize SIP Messages Storage
+    if (!sip_init(storage_copts, storage_mopts, storage_sopts, &error)) {
+        g_printerr("Failed to initialize storage: %s\n", error->message);
+        return 1;
+    };
 
     // Start a capture thread
     if (capture_launch_thread() != 0) {
