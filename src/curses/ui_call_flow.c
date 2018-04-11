@@ -415,7 +415,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     WINDOW *flow_win;
     sdp_media_t *media;
     const char *callid;
-    char msg_method[128];
+    char msg_method[SIP_ATTR_MAXLEN];
     char msg_time[80];
     address_t src;
     address_t dst;
