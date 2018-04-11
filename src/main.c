@@ -81,8 +81,8 @@ int
 main(int argc, char* argv[])
 {
     GError *error = NULL;
-    gchar **file_inputs = NULL;
-    gchar **devices = NULL;
+    gchar **input_files = NULL;
+    gchar **input_devices = NULL;
     gchar *hep_listen = NULL;
     gchar *hep_send = NULL;
     gboolean no_interface = FALSE;
@@ -95,15 +95,15 @@ main(int argc, char* argv[])
     SStorageSortOpts storage_sopts = {};
     SStorageMatchOpts storage_mopts = {};
     SStorageCaptureOpts storage_copts = {};
-    GSequence *infiles = g_sequence_new(NULL);
-    GSequence*indevices = g_sequence_new(NULL);
+    GPtrArray *infiles = g_ptr_array_new();
+    GPtrArray *indevices = g_ptr_array_new();
 
     GOptionEntry main_entries[] = {
-        { "version",'V', 0, G_OPTION_ARG_NONE, &version,
+        { "version",'V', 0, G_OPTION_ARG_CALLBACK, &version,
           "Version information", NULL },
-        { "device", 'd', 0, G_OPTION_ARG_STRING_ARRAY,  &devices,
+        { "device", 'd', 0, G_OPTION_ARG_STRING_ARRAY,  &input_devices,
           "Use this capture device instead of default", "DEVICE" },
-        { "input",  'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &file_inputs,
+        { "input",  'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &input_files,
           "Read captured data from pcap file", "FILE" },
         { "output", 'O', 0, G_OPTION_ARG_FILENAME, storage_copts.outfile,
           "Write captured data to pcap file", "FILE" },
@@ -190,15 +190,15 @@ main(int argc, char* argv[])
 #endif
 
     // Handle capture inputs
-    if (devices) {
-        for (int i = 0; devices[i]; i++) {
-            g_sequence_append(indevices, devices[i]);
+    if (input_devices) {
+        for (int i = 0; input_devices[i]; i++) {
+            g_ptr_array_add(indevices, input_devices[i]);
         }
     }
 
-    if (file_inputs) {
-        for (int i = 0; file_inputs[i]; i++) {
-            g_sequence_append(infiles, file_inputs[i]);
+    if (input_files) {
+        for (int i = 0; input_files[i]; i++) {
+            g_ptr_array_add(infiles, input_files[i]);
         }
     }
 
@@ -226,8 +226,8 @@ main(int argc, char* argv[])
     }
 
     // If no device or files has been specified in command line, use default
-    if (g_sequence_get_length(indevices) == 0 && g_sequence_get_length(infiles) == 0) {
-        g_sequence_append(indevices, (gpointer) setting_get_value(SETTING_CAPTURE_DEVICE));
+    if (input_devices == NULL && input_files == NULL) {
+        g_ptr_array_add(indevices, (gpointer) setting_get_value(SETTING_CAPTURE_DEVICE));
     }
 
     // Set capture options
@@ -239,22 +239,22 @@ main(int argc, char* argv[])
 #endif
 
     // If we have an input file, load it
-    for (int i = 0; i < g_sequence_get_length(infiles); i++) {
+    for (int i = 0; i < infiles->len; i++) {
         // Try to load file
-        if (capture_offline(g_sequence_nth(infiles, i), storage_copts.outfile) != 0)
+        if (capture_offline(g_ptr_array_index(infiles, i), storage_copts.outfile) != 0)
             return 1;
     }
 
     // If we have an input device, load it
-    for (int i = 0; i < g_sequence_get_length(indevices); i++) {
+    for (int i = 0; i < infiles->len; i++) {
         // Check if all capture data is valid
-        if (capture_online(g_sequence_nth(indevices, i), storage_copts.outfile) != 0)
+        if (capture_online(g_ptr_array_index(indevices, i), storage_copts.outfile) != 0)
             return 1;
     }
 
     // Remove Input files vector
-    g_sequence_free(infiles);
-    g_sequence_free(indevices);
+    g_ptr_array_free(infiles, FALSE);
+    g_ptr_array_free(indevices, FALSE);
 
     // More arguments pending!
     if (argc > 1) {
@@ -271,7 +271,7 @@ main(int argc, char* argv[])
 
         // Check if this BPF filter is valid
         if (capture_set_bpf_filter(bpf_filter->str) != 0) {
-            // BPF Filter invalid, check incluiding match_expr
+            // BPF Filter invalid, check including match_expr
             g_string_prepend(bpf_filter, match_expr);
             match_expr = NULL;
 
