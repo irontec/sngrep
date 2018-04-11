@@ -28,12 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <ctype.h>
 #include "option.h"
-#include "glib-utils.h"
 #include "capture.h"
 #include "capture_eep.h"
 #ifdef WITH_GNUTLS
@@ -47,7 +42,7 @@
 void
 print_version_info()
 {
-    printf("%s - %s\n"
+    g_print("%s - %s\n"
            "Copyright (C) 2013-2018 Irontec S.L.\n"
            "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
            "This is free software: you are free to change and redistribute it.\n"
@@ -219,9 +214,9 @@ main(int argc, char* argv[])
 #endif
 
     // Check if given argument is a file
-    if (argc == 2 && (access(argv[1], F_OK) == 0)) {
+    if (argc == 2 && g_file_test(argv[1], G_FILE_TEST_IS_REGULAR)) {
         // Old legacy option to open pcaps without other arguments
-        printf("%s seems to be a file: You forgot -I flag?\n", argv[1]);
+        g_print("%s seems to be a file: You forgot -I flag?\n", argv[1]);
         return 0;
     }
 
@@ -246,7 +241,7 @@ main(int argc, char* argv[])
     }
 
     // If we have an input device, load it
-    for (int i = 0; i < infiles->len; i++) {
+    for (int i = 0; i < indevices->len; i++) {
         // Check if all capture data is valid
         if (capture_online(g_ptr_array_index(indevices, i), storage_copts.outfile) != 0)
             return 1;
@@ -277,7 +272,9 @@ main(int argc, char* argv[])
 
             // Check bpf filter is valid again
             if (capture_set_bpf_filter(bpf_filter->str) != 0) {
-                fprintf(stderr, "Couldn't install filter %s: %s\n", bpf_filter->str, capture_last_error());
+                g_printerr( "Couldn't install filter %s: %s\n",
+                            bpf_filter->str,
+                            capture_last_error());
                 return 1;
             }
         }
@@ -295,7 +292,7 @@ main(int argc, char* argv[])
     // Start a capture thread
     if (capture_launch_thread() != 0) {
         ncurses_deinit();
-        fprintf(stderr, "Failed to launch capture thread.\n");
+        g_printerr("Failed to launch capture thread.\n");
         return 1;
     }
 
@@ -310,11 +307,11 @@ main(int argc, char* argv[])
         setbuf(stdout, NULL);
         while(capture_is_running()) {
             if (!quiet)
-                printf("\rDialog count: %d", sip_calls_count());
-            usleep(500 * 1000);
+                g_print("\rDialog count: %d", sip_calls_count());
+            g_usleep(500 * 1000);
         }
         if (!quiet)
-            printf("\rDialog count: %d\n", sip_calls_count());
+            g_print("\rDialog count: %d\n", sip_calls_count());
     }
 
     // Capture deinit
