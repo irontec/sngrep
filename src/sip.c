@@ -139,7 +139,9 @@ sip_code_t sip_codes[] = {
 void
 sip_init(int limit, int only_calls, int no_incomplete)
 {
-    int match_flags;
+    int match_flags, reg_rule_len, reg_rule_err;
+    char reg_rule[SIP_ATTR_MAXLEN];
+    const char *setting = NULL;
 
     // Store capture limit
     calls.limit = limit;
@@ -170,7 +172,25 @@ sip_init(int limit, int only_calls, int no_incomplete)
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
     regcomp(&calls.reg_method, "^([a-zA-Z]+) [a-zA-Z]+:[^ ]+ SIP/2.0[ ]*\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_callid, "^(Call-ID|i):[ ]*([^ ]+)[ ]*\r$", match_flags);
-    regcomp(&calls.reg_xcallid, "^(X-Call-ID|X-CID):[ ]*([^ ]+)[ ]*\r$", match_flags);
+    setting = setting_get_value(SETTING_SIP_HEADER_X_CID);
+    reg_rule_len = strlen(setting) + 22;
+    if (reg_rule_len >= SIP_ATTR_MAXLEN) {
+        setting = "X-Call-ID|X-CID";
+        reg_rule_len = strlen(setting) + 22;
+        fprintf(stderr, "%s setting too long, using default.\n",
+            setting_name(SETTING_SIP_HEADER_X_CID));
+    }
+    snprintf(reg_rule, reg_rule_len, "^(%s):[ ]*([^ ]+)[ ]*\r$", setting);
+    reg_rule_err = regcomp(&calls.reg_xcallid, reg_rule, match_flags);
+    if(reg_rule_err != 0) {
+        regerror(reg_rule_err, &calls.reg_xcallid, reg_rule, SIP_ATTR_MAXLEN);
+        regfree(&calls.reg_xcallid);
+        fprintf(stderr, "%s setting produces regex compilation error: %s"
+            "using default value instead\n",
+            setting_name(SETTING_SIP_HEADER_X_CID), reg_rule);
+        regcomp(&calls.reg_xcallid,
+            "^(X-Call-ID|X-CID):[ ]*([^ ]+)[ ]*\r$", match_flags);
+    }
     regcomp(&calls.reg_response, "^SIP/2.0[ ]*(([0-9]{3}) [^\r]*)[ ]*\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]+) .+\r$", match_flags);
     regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);

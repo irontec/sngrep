@@ -100,3 +100,7 @@
 ##-----------------------------------------------------------------------------
 ## Uncomment to display dialogs that does not start with a request method
 # set sip.noincomplete off
+
+##-----------------------------------------------------------------------------
+## Uncomment to define custom b_leg correlation header
+# set sip.xcid X-Call-ID|X-CID
