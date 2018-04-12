@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD 99)
 add_compile_options(-Werror)
 
 configure_file(
-    ${PROJECT_SOURCE_DIR}/src/config.h.cmake
+    ${PROJECT_SOURCE_DIR}/src/config.h.cmake.in
     ${PROJECT_SOURCE_DIR}/src/config.h
 )
 

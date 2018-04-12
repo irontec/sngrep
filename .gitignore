@@ -15,7 +15,8 @@ tests/test-???
 **.deps
 .dirstamp
 *gmon.out
-src/config.h*
+src/config.h
+src/config.h.in*
 src/stamp-h1
 
 .autotools
