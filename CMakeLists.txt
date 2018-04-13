@@ -16,7 +16,8 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 
 set(SOURCES
     src/address.c
-    src/capture.c
+    src/capture/capture.c
+    src/capture/capture_pcap.c
     src/curses/scrollbar.c
     src/curses/ui_call_flow.c
     src/curses/ui_call_list.c
@@ -48,10 +49,10 @@ set(SOURCES
 
 ######################################################################
 # HEP  Support
-option (USE_EEP "Enable EEP/HEP Support" ON)
-if (USE_EEP)
-    set(SOURCES ${SOURCES} src/capture_eep.c)
-endif (USE_EEP)
+option (USE_HEP "Enable EEP/HEP Support" ON)
+if (USE_HEP)
+    set(SOURCES ${SOURCES} src/capture/capture_hep.c)
+endif (USE_HEP)
 
 # IPv6 Support
 option (USE_IPV6 "Enable IPv6 Support" ON)
@@ -59,7 +60,7 @@ option (USE_IPV6 "Enable IPv6 Support" ON)
 # GnuTLS Support
 option (WITH_GNUTLS "Enable SSL Support (TLS SIP Transport)" ON)
 if (WITH_GNUTLS)
-    set(SOURCES ${SOURCES} src/capture_gnutls.c)
+    set(SOURCES ${SOURCES} src/capture/capture_gnutls.c)
 endif(WITH_GNUTLS)
 
 ######################################################################

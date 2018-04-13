@@ -37,7 +37,7 @@
 #include "glib-utils.h"
 #include "ui_save.h"
 #include "setting.h"
-#include "capture.h"
+#include "capture/capture.h"
 #include "filter.h"
 
 /**
@@ -59,7 +59,7 @@ save_create(ui_t *ui)
     char savepath[MAX_SETTING_LEN];
 
     // Pause the capture while saving
-    capture_set_paused(1);
+    capture_manager()->paused = TRUE;
 
     // Cerate a new indow for the panel and form
     ui_panel_create(ui, 15, 68);
@@ -197,7 +197,7 @@ save_destroy(ui_t *ui)
     ui_panel_destroy(ui);
 
     // Resume capture
-    capture_set_paused(0);
+    capture_manager()->paused = FALSE;
 
     // Disable cursor position
     curs_set(0);
@@ -469,7 +469,7 @@ save_to_file(ui_t *ui)
         // Open dump file
         pd = dump_open(fullfile);
         if (access(fullfile, W_OK) != 0) {
-            dialog_run("%s", capture_last_error());
+            dialog_run("%s", capture_pcap_error(NULL));
             return 1;
         }
     } else {

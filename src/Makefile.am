@@ -1,18 +1,18 @@
 AUTOMAKE_OPTIONS=subdir-objects
 bin_PROGRAMS=sngrep
-sngrep_SOURCES=capture.c
+sngrep_SOURCES=capture/capture.c capture/capture_pcap.c
 sngrep_CFLAGS=$(GLIB_CFLAGS)
 sngrep_LDADD=$(GLIB_LIBS)
-if USE_EEP
-sngrep_SOURCES+=capture_eep.c
+if USE_HEP
+sngrep_SOURCES+=capture/capture_hep.c
 endif
 if WITH_GNUTLS
-sngrep_SOURCES+=capture_gnutls.c
+sngrep_SOURCES+=capture/capture_gnutls.c
 sngrep_CFLAGS+=$(LIBGNUTLS_CFLAGS) $(LIBGCRYPT_CFLAGS)
 sngrep_LDADD+=$(LIBGNUTLS_LIBS) $(LIBGCRYPT_LIBS)
 endif
 if WITH_OPENSSL
-sngrep_SOURCES+=capture_openssl.c
+sngrep_SOURCES+=capture/capture_openssl.c
 sngrep_CFLAGS+=$(SSL_CFLAGS)
 sngrep_LDADD+=$(SSL_LIBS)
 endif

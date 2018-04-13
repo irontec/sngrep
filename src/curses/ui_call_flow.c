@@ -30,7 +30,7 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
-#include "capture.h"
+#include "capture/capture_pcap.h"
 #include "ui_manager.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
@@ -1204,7 +1204,7 @@ call_flow_handle_key(ui_t *ui, int key)
                 call_flow_set_group(info->group);
                 break;
             case ACTION_SAVE:
-                if (capture_sources_count() > 1) {
+                if (capture_sources_count(capture_manager()) > 1) {
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }

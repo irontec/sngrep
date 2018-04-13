@@ -36,9 +36,9 @@
 #include "glib-utils.h"
 #include "option.h"
 #include "filter.h"
-#include "capture.h"
-#ifdef USE_EEP
-#include "capture_eep.h"
+#include "capture/capture_pcap.h"
+#ifdef USE_HEP
+#include "capture/capture_hep.h"
 #endif
 #include "ui_manager.h"
 #include "ui_call_list.h"
@@ -209,27 +209,27 @@ call_list_draw_header(ui_t *ui)
     ui_clear_line(ui, 1);
 
     // Print Open filename in Offline mode
-    if (!capture_is_online() && (infile = capture_input_file()))
+    if (!capture_is_online(capture_manager()) && (infile = capture_input_pcap_file(capture_manager())))
         mvwprintw(ui->win, 1, 77, "Filename: %s", infile);
 
     mvwprintw(ui->win, 1, 2, "Current Mode: ");
-    if (capture_is_online()) {
+    if (capture_is_online(capture_manager())) {
         wattron(ui->win, COLOR_PAIR(CP_GREEN_ON_DEF));
     } else {
         wattron(ui->win, COLOR_PAIR(CP_RED_ON_DEF));
     }
-    wprintw(ui->win, "%s ", capture_status_desc());
+    wprintw(ui->win, "%s ", capture_status_desc(capture_manager()));
 
     // Get online mode capture device
-    if ((device = capture_device()))
+    if ((device = capture_input_pcap_device(capture_manager())))
         wprintw(ui->win, "[%s]", device);
 
-#ifdef USE_EEP
+#ifdef USE_HEP
     const char *eep_port;
-    if ((eep_port = capture_eep_send_port())) {
+    if ((eep_port = capture_output_hep_port(capture_manager()))) {
         wprintw(ui->win, "[H:%s]", eep_port);
     }
-    if ((eep_port = capture_eep_listen_port())) {
+    if ((eep_port = capture_input_hep_port(capture_manager()))) {
         wprintw(ui->win, "[L:%s]", eep_port);
     }
 #endif
@@ -249,7 +249,7 @@ call_list_draw_header(ui_t *ui)
 
     mvwprintw(ui->win, 2, 45, "BPF Filter: ");
     wattron(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    if ((filterbpf = capture_get_bpf_filter()))
+    if ((filterbpf = capture_manager_filter(capture_manager())))
         wprintw(ui->win, "%s", filterbpf);
     wattroff(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
 
@@ -656,7 +656,7 @@ call_list_handle_key(ui_t *ui, int key)
                 ui_create_panel(PANEL_STATS);
                 break;
             case ACTION_SAVE:
-                if (capture_sources_count() > 1) {
+                if (capture_sources_count(capture_manager()) > 1) {
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }

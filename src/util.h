@@ -30,7 +30,7 @@
 #define __SNGREP_UTIL_H
 
 // Capture headers has some fixes for pcap timevals in BSD systems
-#include "capture.h"
+#include "capture/capture_pcap.h"
 
 // Max Memmory allocation
 #define MALLOC_MAX_SIZE 102400

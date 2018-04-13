@@ -29,8 +29,8 @@
  * This file include the functions that uses libpcap to do so.
  *
  */
-#ifndef __SNGREP_CAPTURE_H
-#define __SNGREP_CAPTURE_H
+#ifndef __SNGREP_CAPTURE_PCAP_H
+#define __SNGREP_CAPTURE_PCAP_H
 
 #include <glib.h>
 #include <pcap.h>
@@ -79,6 +79,7 @@
 #include <netinet/udp.h>
 #include <stdbool.h>
 #include "packet.h"
+#include "capture.h"
 
 //! Max allowed packet assembled size
 #define MAX_CAPTURE_LEN 20480
@@ -107,130 +108,150 @@ typedef struct nflog_tlv {
 #define WH_LEN      0x7F
 #define WS_OPCODE_TEXT 0x1
 
-enum capture_storage {
-    CAPTURE_STORAGE_NONE = 0,
-    CAPTURE_STORAGE_MEMORY,
-    CAPTURE_STORAGE_DISK
+//! Max allowed packet length (for libpcap)
+#define MAXIMUM_SNAPLEN 262144
+//! Error reporting
+#define CAPTURE_PCAP_ERROR (capture_pcap_error_quark())
+
+//! Error codes
+enum capture_pcap_errors
+{
+    CAPTURE_PCAP_ERROR_DEVICE_LOOKUP = 0,
+    CAPTURE_PCAP_ERROR_DEVICE_OPEN,
+    CAPTURE_PCAP_ERROR_FILE_OPEN,
+    CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
+    CAPTURE_PCAP_ERROR_FILTER_COMPILE,
+    CAPTURE_PCAP_ERROR_FILTER_APPLY,
 };
 
-//! Shorter declaration of capture_config structure
-typedef struct capture_config capture_config_t;
-//; Shorter declaration of capture_info structure
-typedef struct capture_info capture_info_t;
-
-/**
- * @brief Capture common configuration
- *
- * Store capture configuration and global data
- */
-struct capture_config {
-    //! Calls capture limit. 0 for disabling
-    size_t limit;
-    //! Also capture RTP packets
-    bool rtp_capture;
-    //! Rotate capturad dialogs when limit have reached
-    bool rotate;
-    //! Capture sources are paused (all packets are skipped)
-    int paused;
-    //! Where should we store captured packets
-    enum capture_storage storage;
-    //! Key file for TLS decrypt
-    const char *keyfile;
-    //! TLS Server address
-    address_t tlsserver;
-    //! capture filter expression text
-    const char *filter;
-    //! The compiled filter expression
-    struct bpf_program fp;
-    //! libpcap dump file handler
-    pcap_dumper_t *pd;
-    //! Capture sources
-    GSequence *sources;
-    //! Capture Lock. Avoid parsing and handling data at the same time
-    GRecMutex lock;
-};
+//! Shorter declaration of capture_info structure
+typedef struct _CapturePcap CapturePcap;
 
 /**
  * @brief store all information related with packet capture
  *
  * Store capture required data from one packet source
  */
-struct capture_info
+struct _CapturePcap
 {
-    //! Flag to determine if capture is running
-    bool running;
-    //! libpcap link type
-    int link;
-    //! libpcap link header size
-    int8_t link_hl;
     //! libpcap capture handler
     pcap_t *handle;
     //! Netmask of our sniffing device
     bpf_u_int32 mask;
     //! The IP of our sniffing device
     bpf_u_int32 net;
-    //! Input file in Offline capture
-    const char *infile;
-    //! Capture device in Online mode
-    const char *device;
+    //! libpcap link type
+    gint link;
+    //! libpcap link header size
+    int8_t link_hl;
     //! Packets pending IP reassembly
     GSequence *ip_reasm;
     //! Packets pending TCP reassembly
     GSequence *tcp_reasm;
-    //! Capture thread for online capturing
-    GThread *capture_t;
 };
 
-/**
- * @brief Initialize capture data
- *
- * @param limit Numbers of calls >0
- * @param rtp_catpure Enable rtp capture
- * @param rotate Enable capture rotation
- */
-void
-capture_init(size_t limit, bool rtp_capture, bool rotate);
 
 /**
- * @brief Deinitialize capture data
+ * @brief Get Capture domain struct for GError
  */
-void
-capture_deinit();
+GQuark
+capture_pcap_error_quark();
 
 /**
  * @brief Online capture function
  *
  * @param device Device to start capture from
- * @param outfile Dumpfile for captured packets
+ * @param error GError with failure description (optional)
  *
- * @return 0 on spawn success, 1 otherwise
+ * @return capture input struct pointer or NULL on failure
  */
-int
-capture_online(const char *dev, const char *outfile);
+CaptureInput *
+capture_input_pcap_online(const gchar *dev, GError **error);
 
 /**
  * @brief Read from pcap file and fill sngrep sctuctures
  *
- * This function will use libpcap files and previous structures to
- * parse the pcap file.
- *
  * @param infile File to read packets from
+ * @param error GError with failure description (optional)
  *
- * @return 0 if load has been successfull, 1 otherwise
+ * @return input struct pointer or NULL on failure
  */
-int
-capture_offline(const char *infile, const char *outfile);
+CaptureInput *
+capture_input_pcap_offline(const gchar *infile, GError **error);
 
 /**
- * @brief Read the next package and parse SIP messages
+ * @brief PCAP Capture Thread
  *
- * This function is shared between online and offline capture
- * methods using pcap. This will get the payload from a package and
- * add it to the SIP storage layer.
+ * This function is used as worker thread for capturing filtered packets and
+ * pass them to the UI layer.
+ */
+void
+capture_input_pcap_start(CaptureInput *input);
+
+/**
+ * @brief Close pcap handler
+ */
+void
+capture_input_pcap_stop(CaptureInput *input);
+
+/**
+ * @brief Set a bpf filter in open capture
+ *
+ * @param filter String containing the BPF filter text
+ * @return TRUE if valid, FALSE otherwise
+ */
+gboolean
+capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **error);
+
+/**
  *
  */
 void
-parse_packet(u_char *capinfo, const struct pcap_pkthdr *header, const u_char *packet);
+capture_input_pcap_set_keyfile(CaptureInput *input, const gchar *keyfile);
+
+/**
+ * @brief Open a new dumper file for capture handler
+ */
+CaptureOutput *
+capture_output_pcap(const char *dumpfile, GError **error);
+
+/**
+ * @brief Store a packet in dump file
+ *
+ * File must be previously opened with dump_open
+ */
+void
+capture_output_pcap_dump(CaptureOutput *output, packet_t *packet);
+
+/**
+ * @brief Close a dump file
+ */
+void
+capture_output_pcap_close(CaptureOutput *output);
+
+/**
+ * @brief Read the next package
+ *
+ * This function is shared between online and offline capture
+ * methods using pcap. This will get the payload from a package and
+ * add it to the packet manager.
+ */
+void
+capture_pcap_parse_packet(u_char *input, const struct pcap_pkthdr *header, const guchar *content);
+
+/**
+ * @brief Return the last error in the pcap handler
+ * @param pcap handler
+ * @return a string representing the last error
+ */
+char *
+capture_pcap_error(pcap_t *handle);
+
+/**
+ * @brief Sorter by time for captured packets
+ */
+gint
+capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
 
 /**
  * @brief Reassembly capture IP fragments
@@ -258,7 +279,7 @@ parse_packet(u_char *capinfo, const struct pcap_pkthdr *header, const u_char *pa
  * @return NULL when packet has not been completely assembled
  */
 packet_t *
-capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header,
+capture_packet_reasm_ip(CapturePcap *capinfo, const struct pcap_pkthdr *header,
                         u_char *packet, uint32_t *size, uint32_t *caplen);
 
 /**
@@ -278,7 +299,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
  * @return NULL when packet has not been completely assembled
  */
 packet_t *
-capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphdr *tcp,
+capture_packet_reasm_tcp(CapturePcap *capinfo, packet_t *packet, struct tcphdr *tcp,
                          u_char *payload, int size_payload);
 
 /**
@@ -305,160 +326,10 @@ int
 capture_packet_parse(packet_t *pkt);
 
 /**
- * @brief Create a capture thread for online mode
- *
- * @return 0 on success, 1 otherwise
- */
-int
-capture_launch_thread();
-
-/**
- * @brief PCAP Capture Thread
- *
- * This function is used as worker thread for capturing filtered packets and
- * pass them to the UI layer.
- */
-void
-capture_thread(void *none);
-
-/**
- * @brief Check if capture is in Online mode
- *
- * @return 1 if capture is online, 0 if offline
- */
-int
-capture_is_online();
-
-/**
- * @brief Check if at least one capture handle is opened
- *
- * @return 1 if any capture source is running, 0 if all ended
- */
-int
-capture_is_running();
-
-/**
- * @brief Set a bpf filter in open capture
- *
- * @param filter String containing the BPF filter text
- * @return 0 if valid, 1 otherwise
- */
-int
-capture_set_bpf_filter(const char *filter);
-
-/**
- * @brief Get the configured BPF filter
- *
- * @return String containing the BPF filter text or NULL
- */
-const char *
-capture_get_bpf_filter();
-
-/**
- * @brief Pause/Resume capture
- *
- * @param pause 1 to pause capture, 0 to resume
- */
-void
-capture_set_paused(int pause);
-
-/**
- * @brief Check if capture is actually running
- *
- * @return 1 if capture is paused, 0 otherwise
- */
-bool
-capture_paused();
-
-/**
- * @brief Get capture status value
- */
-int
-capture_status();
-
-/**
- * @brief Return a string representing current capture status
- */
-const char *
-capture_status_desc();
-
-/**
- * @brief Get Input file from Offline mode
- *
- * @return Input file in Offline mode
- * @return NULL in Online mode
- */
-const char*
-capture_input_file();
-
-/**
- * @brief Get Device interface from Online mode
- *
- * @return Device name used to capture packets
- * @return NULL in Offline or Mixed mode
- */
-const char *
-capture_device();
-
-/**
- * @brief Get Key file from decrypting TLS packets
- *
- * @return given keyfile
- */
-const char*
-capture_keyfile();
-
-/**
- * @brief Set Keyfile to decrypt TLS packets
- *
- * @param keyfile Full path to keyfile
- */
-void
-capture_set_keyfile(const char *keyfile);
-
-/**
- * @brief Get TLS Server address if configured
- * @return address scructure
- */
-address_t
-capture_tls_server();
-
-/**
- * @brief Return packet catprue sources count
- * @return capture sources count
- */
-int
-capture_sources_count();
-
-/**
  * @brief Return the last capture error
  */
 char *
 capture_last_error();
-
-/**
- * @brief Avoid parsing more packets
- */
-void
-capture_lock();
-
-/**
- * @brief Allow parsing more packets
- */
-void
-capture_unlock();
-
-/**
- * @brief Sorter by time for captured packets
- */
-gint
-capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
-
-/**
- * @brief Close pcap handler
- */
-void
-capture_close();
 
 /**
  * @brief Get datalink header size
@@ -495,5 +366,23 @@ dump_close(pcap_dumper_t *pd);
  */
 int
 is_local_address(in_addr_t address);
+
+/**
+ * @brief Get Input file from Offline mode
+ *
+ * @return Input file in Offline mode
+ * @return NULL in Online mode
+ */
+const gchar*
+capture_input_pcap_file(CaptureManager *manager);
+
+/**
+ * @brief Get Device interface from Online mode
+ *
+ * @return Device name used to capture packets
+ * @return NULL in Offline or Mixed mode
+ */
+const gchar *
+capture_input_pcap_device(CaptureManager *manager);
 
 #endif

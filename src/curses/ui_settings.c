@@ -48,8 +48,8 @@ settings_category_t categories[] = {
     { CAT_SETTINGS_INTERFACE,  "Interface" },
     { CAT_SETTINGS_CAPTURE,    "Capture" },
     { CAT_SETTINGS_CALL_FLOW,  "Call Flow" },
-#ifdef USE_EEP
-    { CAT_SETTINGS_EEP_HOMER,  "EEP/HEP Homer" },
+#ifdef USE_HEP
+    { CAT_SETTINGS_HEP_HOMER,  "EEP/HEP Homer" },
 #endif
     { 0 , NULL },
 };
@@ -75,19 +75,19 @@ settings_entry_t entries[] = {
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DELTA,           SETTING_CF_DELTA,           "Show delta time between messages .........." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_MEDIA,           SETTING_CF_MEDIA,           "Show RTP media streams ...................." },
     { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SCROLLSTEP,      SETTING_CF_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
-#ifdef USE_EEP
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND,           SETTING_EEP_SEND,           "Send all captured SIP packets ............." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_VER,       SETTING_EEP_SEND_VER,       "Send EEP version .........................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_ADDR,      SETTING_EEP_SEND_ADDR,      "Send EEP packet address ..................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_PORT,      SETTING_EEP_SEND_PORT,      "Send EEP packet port ......................" },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_PASS,      SETTING_EEP_SEND_PASS,      "EEP send password ........................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_ID,        SETTING_EEP_SEND_ID,        "EEP send capture id ......................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN,         SETTING_EEP_LISTEN,         "Listen for eep packets ...................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_VER,     SETTING_EEP_LISTEN_VER,     "Listen EEP version  ......................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_ADDR,    SETTING_EEP_LISTEN_ADDR,    "Listen EEP packet address ................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PORT,    SETTING_EEP_LISTEN_PORT,    "Listen EEP packet port ...................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PASS,    SETTING_EEP_LISTEN_PASS,    "EEP server password ......................." },
-    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_UUID,    SETTING_EEP_LISTEN_UUID,    "EEP server expects UUID (Asterisk) ........" },
+#ifdef USE_HEP
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND,           SETTING_HEP_SEND,           "Send all captured SIP packets ............." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_VER,       SETTING_HEP_SEND_VER,       "Send EEP version .........................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_ADDR,      SETTING_HEP_SEND_ADDR,      "Send EEP packet address ..................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_PORT,      SETTING_HEP_SEND_PORT,      "Send EEP packet port ......................" },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_PASS,      SETTING_HEP_SEND_PASS,      "EEP send password ........................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_ID,        SETTING_HEP_SEND_ID,        "EEP send capture id ......................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN,         SETTING_HEP_LISTEN,         "Listen for eep packets ...................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_VER,     SETTING_HEP_LISTEN_VER,     "Listen EEP version  ......................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_ADDR,    SETTING_HEP_LISTEN_ADDR,    "Listen EEP packet address ................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_PORT,    SETTING_HEP_LISTEN_PORT,    "Listen EEP packet port ...................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_PASS,    SETTING_HEP_LISTEN_PASS,    "EEP server password ......................." },
+    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_UUID,    SETTING_HEP_LISTEN_UUID,    "EEP server expects UUID (Asterisk) ........" },
 #endif
     { 0 , 0, 0, NULL },
 };

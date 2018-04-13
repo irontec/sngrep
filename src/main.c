@@ -29,13 +29,13 @@
 #include "config.h"
 #include <glib.h>
 #include "option.h"
-#include "capture.h"
-#include "capture_eep.h"
+#include "capture/capture.h"
+#include "capture/capture_hep.h"
 #ifdef WITH_GNUTLS
-#include "capture_gnutls.h"
+#include "capture/capture_gnutls.h"
 #endif
 #ifdef WITH_OPENSSL
-#include "capture_openssl.h"
+#include "capture/capture_openssl.h"
 #endif
 #include "curses/ui_manager.h"
 
@@ -60,7 +60,7 @@ print_version_info()
 #ifdef USE_IPV6
            " * Compiled with IPv6 support.\n"
 #endif
-#ifdef USE_EEP
+#ifdef USE_HEP
             " * Compiled with EEP/HEP support.\n"
 #endif
            "\nWritten by Ivan Alonso [aka Kaian]\n",
@@ -85,13 +85,15 @@ main(int argc, char* argv[])
     gboolean version = FALSE;
     gboolean config_dump = FALSE;
     gboolean no_config = FALSE;
+    gchar *output_file = NULL;
     gchar *config_file = NULL;
     gchar *keyfile = NULL;
     SStorageSortOpts storage_sopts = {};
     SStorageMatchOpts storage_mopts = {};
     SStorageCaptureOpts storage_copts = {};
-    GPtrArray *infiles = g_ptr_array_new();
-    GPtrArray *indevices = g_ptr_array_new();
+    CaptureManager *manager;
+    CaptureInput *input;
+    CaptureOutput *output;
 
     GOptionEntry main_entries[] = {
         { "version",'V', 0, G_OPTION_ARG_CALLBACK, &version,
@@ -100,7 +102,7 @@ main(int argc, char* argv[])
           "Use this capture device instead of default", "DEVICE" },
         { "input",  'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &input_files,
           "Read captured data from pcap file", "FILE" },
-        { "output", 'O', 0, G_OPTION_ARG_FILENAME, storage_copts.outfile,
+        { "output", 'O', 0, G_OPTION_ARG_FILENAME, &output_file,
           "Write captured data to pcap file", "FILE" },
         { "calls",  'c', 0, G_OPTION_ARG_NONE, &storage_mopts.invite,
           "Only display dialogs starting with INVITE", NULL },
@@ -128,7 +130,7 @@ main(int argc, char* argv[])
         { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
             "RSA private keyfile to decrypt captured packets", "KEYFILE" },
 #endif
-#ifdef USE_EEP
+#ifdef USE_HEP
         { "hep-listen", 'L', 0, G_OPTION_ARG_STRING, &hep_listen,
             "Listen for encapsulated HEP packets", "udp:X.X.X.X:XXXX" },
         { "hep-send", 'H', 0, G_OPTION_ARG_STRING, &hep_send,
@@ -184,73 +186,86 @@ main(int argc, char* argv[])
     if (!keyfile) keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
 #endif
 
-    // Handle capture inputs
-    if (input_devices) {
-        for (int i = 0; input_devices[i]; i++) {
-            g_ptr_array_add(indevices, input_devices[i]);
-        }
-    }
+    /***************************** Capture Inputs *****************************/
+    // Main packet capture manager
+    manager = capture_manager_new();
 
+    // Handle capture file inputs
     if (input_files) {
-        for (int i = 0; input_files[i]; i++) {
-            g_ptr_array_add(infiles, input_files[i]);
+        for (gint i = 0; input_files[i]; i++) {
+            if ((input = capture_input_pcap_offline(input_files[i], &error))) {
+                capture_manager_add_input(manager, input);
+            } else {
+                g_printerr("error: %s", error->message);
+                return 1;
+            }
         }
     }
 
-#ifdef USE_EEP
+    // Handle capture device inputs
+    if (input_devices) {
+        for (gint i = 0; input_devices[i]; i++) {
+            if ((input = capture_input_pcap_online(input_devices[i], &error))) {
+                capture_manager_add_input(manager, input);
+            } else {
+                g_printerr("error: %s", error->message);
+                return 1;
+            }
+        }
+    }
+
+#ifdef USE_HEP
     // Hep settings
-    if (hep_listen) capture_eep_set_server_url(hep_listen);
-    if (hep_send)  capture_eep_set_client_url(hep_send);
+    if (hep_listen) {
+        if ((input = capture_input_hep(hep_listen, &error))) {
+            capture_manager_add_input(manager, input);
+        } else {
+            g_printerr("error: %s", error->message);
+            return 1;
+        }
+    }
+
 #endif
 
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-    // Set capture decrypt key file
-    capture_set_keyfile(keyfile);
-    // Check if we have a keyfile and is valid
-    if (keyfile && !tls_check_keyfile(keyfile, &error)) {
-        g_printerr("Error: %s\n", error->message);
-        return 1;
+    if (keyfile) {
+        // Check if we have a keyfile and is valid
+        if (!tls_check_keyfile(keyfile, &error)) {
+            g_printerr("error: %s\n", error->message);
+            return 1;
+        } else {
+            // Set capture decrypt key file
+            capture_manager_set_keyfile(manager, keyfile, &error);
+        }
     }
 #endif
 
-    // Check if given argument is a file
-    if (argc == 2 && g_file_test(argv[1], G_FILE_TEST_IS_REGULAR)) {
-        // Old legacy option to open pcaps without other arguments
-        g_print("%s seems to be a file: You forgot -I flag?\n", argv[1]);
-        return 0;
-    }
-
-    // If no device or files has been specified in command line, use default
-    if (input_devices == NULL && input_files == NULL) {
-        g_ptr_array_add(indevices, (gpointer) setting_get_value(SETTING_CAPTURE_DEVICE));
-    }
-
-    // Set capture options
-    capture_init(storage_copts.limit, storage_copts.rtp, storage_copts.rotate);
-
-#ifdef USE_EEP
-    // Initialize EEP if enabled
-    capture_eep_init();
-#endif
-
-    // If we have an input file, load it
-    for (int i = 0; i < infiles->len; i++) {
-        // Try to load file
-        if (capture_offline(g_ptr_array_index(infiles, i), storage_copts.outfile) != 0)
+    // Old legacy option to open pcaps without other arguments
+    if (argc == 2 && g_file_test(argv[1], G_FILE_TEST_EXISTS)) {
+        g_print("%s seems to be a file: Use -I flag or press any key to read its contents.\n", argv[1]);
+        getchar();
+        // Read as a PCAP file
+        if ((input = capture_input_pcap_offline(argv[1], &error))) {
+            capture_manager_add_input(manager, input);
+            argc--;
+        } else {
+            g_printerr("error: %s\n", error->message);
             return 1;
+        }
     }
 
-    // If we have an input device, load it
-    for (int i = 0; i < indevices->len; i++) {
-        // Check if all capture data is valid
-        if (capture_online(g_ptr_array_index(indevices, i), storage_copts.outfile) != 0)
+    // If no capture file or device selected, use default capture device
+    if (g_slist_length(manager->inputs) == 0) {
+        gchar *default_device = (gchar *) setting_get_value(SETTING_CAPTURE_DEVICE);
+        if ((input = capture_input_pcap_online(default_device, &error))) {
+            capture_manager_add_input(manager, input);
+        } else {
+            g_printerr("error: %s\n", error->message);
             return 1;
+        }
     }
 
-    // Remove Input files vector
-    g_ptr_array_free(infiles, FALSE);
-    g_ptr_array_free(indevices, FALSE);
-
+    /***************************   Input Filtering  ***************************/
     // More arguments pending!
     if (argc > 1) {
         // Assume first pending argument is match expression
@@ -265,16 +280,14 @@ main(int argc, char* argv[])
         }
 
         // Check if this BPF filter is valid
-        if (capture_set_bpf_filter(bpf_filter->str) != 0) {
+        if (!capture_manager_set_filter(manager, bpf_filter->str, NULL)) {
             // BPF Filter invalid, check including match_expr
             g_string_prepend(bpf_filter, match_expr);
             match_expr = NULL;
 
             // Check bpf filter is valid again
-            if (capture_set_bpf_filter(bpf_filter->str) != 0) {
-                g_printerr( "Couldn't install filter %s: %s\n",
-                            bpf_filter->str,
-                            capture_last_error());
+            if (!capture_manager_set_filter(manager, bpf_filter->str, &error)) {
+                g_printerr("error: %s\n", error->message);
                 return 1;
             }
         }
@@ -283,18 +296,38 @@ main(int argc, char* argv[])
         storage_mopts.mexpr = match_expr;
     }
 
+    /***************************** Capture Outputs *****************************/
+    // Handle capture file output
+    if (output_file != NULL) {
+        if ((output = capture_output_pcap(output_file, &error))) {
+            capture_manager_add_output(manager, output);
+        } else {
+            g_printerr("error: %s\n", error->message);
+            return 1;
+        }
+    }
+
+#ifdef USE_HEP
+    // Handle capture HEP output
+    if (hep_send != NULL) {
+        if ((output = capture_output_hep(hep_send, &error))) {
+            capture_manager_add_output(manager, output);
+        } else {
+            g_printerr("error: %s\n", error->message);
+            return 1;
+        }
+    }
+#endif
+
+    /*****************************  Main Logic  *****************************/
     // Initialize SIP Messages Storage
     if (!sip_init(storage_copts, storage_mopts, storage_sopts, &error)) {
         g_printerr("Failed to initialize storage: %s\n", error->message);
         return 1;
     };
 
-    // Start a capture thread
-    if (capture_launch_thread() != 0) {
-        ncurses_deinit();
-        g_printerr("Failed to launch capture thread.\n");
-        return 1;
-    }
+    // Start capture threads
+    capture_manager_start(manager);
 
     if (!no_interface) {
         // Initialize interface
@@ -305,7 +338,7 @@ main(int argc, char* argv[])
         ui_wait_for_input();
     } else {
         setbuf(stdout, NULL);
-        while(capture_is_running()) {
+        while(capture_is_running(manager)) {
             if (!quiet)
                 g_print("\rDialog count: %d", sip_calls_count());
             g_usleep(500 * 1000);
@@ -315,7 +348,7 @@ main(int argc, char* argv[])
     }
 
     // Capture deinit
-    capture_deinit();
+    capture_manager_free(manager);
 
     // Deinitialize interface
     ncurses_deinit();

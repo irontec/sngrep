@@ -34,7 +34,7 @@
 #include <locale.h>
 #include "setting.h"
 #include "ui_manager.h"
-#include "capture.h"
+#include "capture/capture.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
@@ -199,16 +199,16 @@ ui_wait_for_input()
         halfdelay(REFRESHTHSECS);
 
         // Avoid parsing any packet while UI is being drawn
-        capture_lock();
+        capture_lock(capture_manager());
         // Query the interface if it needs to be redrawn
         if (ui_draw_redraw(ui)) {
             // Redraw this panel
             if (ui_draw_panel(ui) != 0) {
-                capture_unlock();
+                capture_unlock(capture_manager());
                 return -1;
             }
         }
-        capture_unlock();
+        capture_unlock(capture_manager());
 
         // Update panel stack
         update_panels();
@@ -228,7 +228,7 @@ ui_wait_for_input()
         if (c == ERR)
             continue;
 
-        capture_lock();
+        capture_lock(capture_manager());
         // Handle received key
         int hld = KEY_NOT_HANDLED;
         while (hld != KEY_HANDLED) {
@@ -248,7 +248,7 @@ ui_wait_for_input()
                 hld = ui_default_handle_key(ui, c);
             }
         }
-        capture_unlock();
+        capture_unlock(capture_manager());
     }
 
     return 0;
@@ -283,7 +283,7 @@ ui_default_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
-                capture_set_paused(!capture_paused());
+                capture_manager()->paused = !capture_manager()->paused;
                 break;
             case ACTION_SHOW_HELP:
                 ui_help(ui);

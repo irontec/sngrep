@@ -199,23 +199,23 @@ AS_IF([test "x$USE_IPV6" == "xyes"], [
 
 
 ####
-#### EEP Support
+#### HEP Support
 ####
-AC_ARG_ENABLE([eep],
-    AS_HELP_STRING([--enable-eep], [Enable EEP/HEP Support]),
-    [AC_SUBST(USE_EEP, $enableval)],
-    [AC_SUBST(USE_EEP, no)]
+AC_ARG_ENABLE([hep],
+    AS_HELP_STRING([--enable-hep], [Enable EEP/HEP Support]),
+    [AC_SUBST(USE_HEP, $enableval)],
+    [AC_SUBST(USE_HEP, no)]
 )
 
-AS_IF([test "x$USE_EEP" == "xyes"], [
-	AC_DEFINE([USE_EEP],[],[Compile With EEP support])
+AS_IF([test "x$USE_HEP" == "xyes"], [
+	AC_DEFINE([USE_HEP],[],[Compile With EEP support])
 ], [])
 
 
 # Conditional Source inclusion 
 AM_CONDITIONAL([WITH_GNUTLS], [test "x$WITH_GNUTLS" == "xyes"])
 AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" == "xyes"])
-AM_CONDITIONAL([USE_EEP], [test "x$USE_EEP" == "xyes"])
+AM_CONDITIONAL([USE_HEP], [test "x$USE_HEP" == "xyes"])
 
 
 ######################################################################
@@ -243,7 +243,7 @@ AC_MSG_NOTICE( GnuTLS Support               : ${WITH_GNUTLS}		)
 AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
 AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  		)
 AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )
-AC_MSG_NOTICE( EEP Support                  : ${USE_EEP}               )
+AC_MSG_NOTICE( HEP Support                  : ${USE_HEP}               )
 AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE
 

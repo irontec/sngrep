@@ -37,9 +37,8 @@
 #include <stdbool.h>
 #include "glib-utils.h"
 #include "capture.h"
-#ifdef USE_EEP
-#include "capture_eep.h"
-#endif
+#include "capture_hep.h"
+#include "capture_pcap.h"
 #ifdef WITH_GNUTLS
 #include "capture_gnutls.h"
 #endif
@@ -51,118 +50,75 @@
 #include "setting.h"
 #include "util.h"
 
-// Capture information
-capture_config_t capture_cfg =
-{ 0 };
-
-void
-capture_init(size_t limit, bool rtp_capture, bool rotate)
+GQuark
+capture_pcap_error_quark()
 {
-    capture_cfg.limit = limit;
-    capture_cfg.rtp_capture = rtp_capture;
-    capture_cfg.rotate = rotate;
-    capture_cfg.paused = 0;
-    capture_cfg.sources = g_sequence_new(g_free);
-
-    // Fixme
-    if (setting_has_value(SETTING_CAPTURE_STORAGE, "none")) {
-        capture_cfg.storage = CAPTURE_STORAGE_NONE;
-    } else if (setting_has_value(SETTING_CAPTURE_STORAGE, "memory")) {
-        capture_cfg.storage = CAPTURE_STORAGE_MEMORY;
-    } else if (setting_has_value(SETTING_CAPTURE_STORAGE, "disk")) {
-        capture_cfg.storage = CAPTURE_STORAGE_DISK;
-    }
-
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
-    // Parse TLS Server setting
-    capture_cfg.tlsserver = address_from_str(setting_get_value(SETTING_CAPTURE_TLSSERVER));
-#endif
-
-    // Initialize calls lock
-    g_rec_mutex_init(&capture_cfg.lock);
+    return  g_quark_from_static_string("capture-pcap");
 }
 
-void
-capture_deinit()
+CaptureInput *
+capture_input_pcap_online(const gchar *dev, GError **error)
 {
-    // Close pcap handler
-    capture_close();
-
-    // Deallocate vectors
-    g_sequence_free(capture_cfg.sources);
-}
-
-int
-capture_online(const char *dev, const char *outfile)
-{
-    capture_info_t *capinfo;
-
-    //! Error string
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Create a new structure to handle this capture source
-    if (!(capinfo = g_malloc0(sizeof(capture_info_t)))) {
-        fprintf(stderr, "Can't allocate memory for capture data!\n");
-        return 1;
-    }
+    CapturePcap *pcap = g_malloc(sizeof(CapturePcap));
 
     // Try to find capture device information
-    if (pcap_lookupnet(dev, &capinfo->net, &capinfo->mask, errbuf) == -1) {
-        capinfo->net = 0;
-        capinfo->mask = 0;
+    if (pcap_lookupnet(dev, &pcap->net, &pcap->mask, errbuf) == -1) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_DEVICE_LOOKUP,
+                     "Can't get netmask for device %s\n",
+                     dev);
+        return NULL;
     }
 
     // Open capture device
-    capinfo->handle = pcap_open_live(dev, MAXIMUM_SNAPLEN, 1, 1000, errbuf);
-    if (capinfo->handle == NULL) {
-        fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
-        return 2;
+    pcap->handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
+    if (pcap->handle == NULL) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_DEVICE_OPEN,
+                     "Couldn't open device %s: %s\n",
+                     dev, errbuf);
+        return NULL;
     }
 
-    // Store capture device
-    capinfo->device = dev;
-
     // Get datalink to parse packets correctly
-    capinfo->link = pcap_datalink(capinfo->handle);
+    pcap->link = pcap_datalink(pcap->handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if ((capinfo->link_hl = datalink_size(capinfo->link)) == -1) {
-        fprintf(stderr, "Unable to handle linktype %d\n", capinfo->link);
-        return 3;
+    if ((pcap->link_hl = datalink_size(pcap->link)) == -1) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
+                     "Unknown link type %d",
+                     pcap->link);
+        return NULL;
     }
 
     // Create Vectors for IP and TCP reassembly
-    capinfo->tcp_reasm = g_sequence_new(NULL);
-    capinfo->ip_reasm = g_sequence_new(NULL);
-
-    // Add this capture information as packet source
-    g_sequence_append(capture_cfg.sources, capinfo);
-
-    // If requested store packets in a dump file
-    if (outfile && !capture_cfg.pd) {
-        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
-            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo->handle));
-            return 2;
-        }
-    }
-
-    return 0;
-}
-
-int
-capture_offline(const char *infile, const char *outfile)
-{
-    capture_info_t *capinfo;
-
-    // Error text (in case of file open error)
-    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap->tcp_reasm = g_sequence_new(NULL);
+    pcap->ip_reasm  = g_sequence_new(NULL);
 
     // Create a new structure to handle this capture source
-    if (!(capinfo = g_malloc0(sizeof(capture_info_t)))) {
-        fprintf(stderr, "Can't allocate memory for capture data!\n");
-        return 1;
-    }
+    CaptureInput *input = g_malloc0(sizeof(CaptureInput));
+    input->source = dev;
+    input->priv   = pcap;
+    input->tech   = CAPTURE_TECH_PCAP;
+    input->mode   = CAPTURE_MODE_ONLINE;
+    input->start  = capture_input_pcap_start;
+    input->stop   = capture_input_pcap_stop;
+    input->filter = capture_input_pcap_filter;
+
+    return input;
+}
+
+CaptureInput *
+capture_input_pcap_offline(const gchar *infile, GError **error)
+{
+    char errbuf[PCAP_ERRBUF_SIZE];
 
     // Check if file is standard input
     if (strlen(infile) == 1 && *infile == '-') {
@@ -170,48 +126,152 @@ capture_offline(const char *infile, const char *outfile)
         freopen("/dev/tty", "r", stdin);
     }
 
-    // Set capture input file
-    capinfo->infile = infile;
+    // Create a new structure to handle this capture source
+    CapturePcap *pcap = g_malloc(sizeof(CapturePcap));
 
     // Open PCAP file
-    if ((capinfo->handle = pcap_open_offline(infile, errbuf)) == NULL) {
-        fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
-        return 1;
+    if ((pcap->handle = pcap_open_offline(infile, errbuf)) == NULL) {
+        gchar *filename = g_path_get_basename(infile);
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_FILE_OPEN,
+                     "Couldn't open pcap file %s: %s\n",
+                     filename, errbuf);
+        g_free(filename);
+        return NULL;
     }
 
     // Get datalink to parse packets correctly
-    capinfo->link = pcap_datalink(capinfo->handle);
+    pcap->link = pcap_datalink(pcap->handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if ((capinfo->link_hl = datalink_size(capinfo->link)) == -1) {
-        fprintf(stderr, "Unable to handle linktype %d\n", capinfo->link);
-        return 3;
+    if ((pcap->link_hl = datalink_size(pcap->link)) == -1) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
+                     "Unknown link type %d",
+                     pcap->link);
+        return NULL;
     }
 
     // Create Vectors for IP and TCP reassembly
-    capinfo->tcp_reasm = g_sequence_new(NULL);
-    capinfo->ip_reasm = g_sequence_new(NULL);
+    pcap->tcp_reasm = g_sequence_new(NULL);
+    pcap->ip_reasm  = g_sequence_new(NULL);
 
-    // Add this capture information as packet source
-    g_sequence_append(capture_cfg.sources, capinfo);
+    // Create a new structure to handle this capture source
+    CaptureInput *input = g_malloc0(sizeof(CaptureInput));
+    input->source = infile;
+    input->priv   = pcap;
+    input->tech   = CAPTURE_TECH_PCAP;
+    input->mode   = CAPTURE_MODE_OFFLINE;
+    input->start  = capture_input_pcap_start;
+    input->stop   = capture_input_pcap_stop;
+    input->filter = capture_input_pcap_filter;
 
-    // If requested store packets in a dump file
-    if (outfile && !capture_cfg.pd) {
-        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
-            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo->handle));
-            return 2;
-        }
-    }
-
-    return 0;
+    return input;
 }
 
 void
-parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packet)
+capture_input_pcap_start(CaptureInput *input)
 {
-    // Capture info
-    capture_info_t *capinfo = (capture_info_t *) info;
+    // Get private data
+    CapturePcap *pcap = (CapturePcap *) input->priv;
+
+    // Parse available packets
+    pcap_loop(pcap->handle, -1, capture_pcap_parse_packet, (u_char *) input);
+
+    // Close input file in offline mode
+    if (input->mode == CAPTURE_MODE_OFFLINE) {
+        // Finished reading packets
+        pcap_close(pcap->handle);
+        input->running = FALSE;
+    }
+}
+
+void
+capture_input_pcap_stop(CaptureInput *input)
+{
+    CapturePcap *pcap = (CapturePcap *)input->priv;
+
+    // Stop capturing packets
+    if (pcap->handle && input->running) {
+        pcap_breakloop(pcap->handle);
+        input->running = FALSE;
+    }
+}
+
+gboolean
+capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **error)
+{
+    // The compiled filter expression
+    struct bpf_program bpf;
+
+    // Capture PCAP private data
+    CapturePcap *pcap = (CapturePcap *)input->priv;
+
+    //! Check if filter compiles
+    if (pcap_compile(pcap->handle, &bpf, filter, 0, pcap->mask) == -1) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_FILTER_COMPILE,
+                     "Couldn't compile filter '%s': %s\n",
+                     filter, pcap_geterr(pcap->handle));
+        return FALSE;
+    }
+
+    // Set capture filter
+    if (pcap_setfilter(pcap->handle, &bpf) == -1) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_FILTER_APPLY,
+                     "Couldn't set filter '%s': %s\n",
+                     filter, pcap_geterr(pcap->handle));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+CaptureOutput *
+capture_output_pcap(const char *dumpfile, GError **error)
+{
+    CaptureOutput *output;
+    CapturePcap *pcap;
+
+    // Create a new structure to handle this capture source
+    pcap = malloc(sizeof(CapturePcap));
+
+    // TODO Handle errors
+    pcap_dump_open(pcap->handle, dumpfile);
+
+    // Create a new structure to handle this capture dumper
+    output = malloc(sizeof(CaptureOutput));
+    output->priv   = pcap;
+    output->write  = capture_output_pcap_dump;
+    output->close  = capture_output_pcap_close;
+    return output;
+}
+
+void
+capture_output_pcap_dump(CaptureOutput *output, packet_t *packet)
+{
+}
+
+void
+capture_output_pcap_close(CaptureOutput *output)
+{
+}
+
+void
+capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const guchar *content)
+{
+    // Capture Input info
+    CaptureInput *input = (CaptureInput *) info;
+    // Capture pcap info
+    CapturePcap *pcap = input->priv;
+    // Capture manager
+    CaptureManager *manager = input->manager;
+
     // UDP header data
     struct udphdr *udp;
     // UDP header size
@@ -227,18 +287,18 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     // Whole packet size
     uint32_t size_capture = header->caplen;
     // Packet payload size
-    uint32_t size_payload =  size_capture - capinfo->link_hl;
+    uint32_t size_payload =  size_capture - pcap->link_hl;
     // Captured packet info
     packet_t *pkt;
 
     // Ignore packets while capture is paused
-    if (capture_paused())
+    if (manager->paused)
         return;
 
     // Check if we have reached capture limit
-    if (capture_cfg.limit && sip_calls_count() >= capture_cfg.limit) {
+    if (storage_capture_options().limit && sip_calls_count() >= storage_capture_options().limit) {
         // If capture rotation is disabled, just skip this packet
-        if (!capture_cfg.rotate) {
+        if (!storage_capture_options().rotate) {
             return;
         }
     }
@@ -248,10 +308,10 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         return;
 
     // Copy packet payload
-    memcpy(data, packet, header->caplen);
+    memcpy(data, content, header->caplen);
 
     // Check if we have a complete IP packet
-    if (!(pkt = capture_packet_reasm_ip(capinfo, header, data, &size_payload, &size_capture)))
+    if (!(pkt = capture_packet_reasm_ip(pcap, header, data, &size_payload, &size_capture)))
         return;
 
     // Only interested in UDP packets
@@ -300,12 +360,12 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         packet_set_payload(pkt, payload, size_payload);
 
         // Create a structure for this captured packet
-        if (!(pkt = capture_packet_reasm_tcp(capinfo, pkt, tcp, payload, size_payload)))
+        if (!(pkt = capture_packet_reasm_tcp(pcap, pkt, tcp, payload, size_payload)))
             return;
 
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
         // Check if packet is TLS
-        if (capture_cfg.keyfile) {
+        if (manager->keyfile) {
             tls_process_segment(pkt, tcp);
         }
 #endif
@@ -320,32 +380,26 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
 
     // Avoid parsing from multiples sources.
     // Avoid parsing while screen in being redrawn
-    capture_lock();
+    capture_lock(manager);
+
     // Check if we can handle this packet
     if (capture_packet_parse(pkt) == 0) {
-#ifdef USE_EEP
-        // Send this packet through eep
-        capture_eep_send(pkt);
-#endif
-        // Store this packets in output file
-        dump_packet(capture_cfg.pd, pkt);
-        // If storage is disabled, delete frames payload
-        if (capture_cfg.storage == 0) {
-            packet_free_frames(pkt);
-        }
+        // Store this packet
+        capture_manager_output_packet(manager, pkt);
         // Allow Interface refresh and user input actions
-        capture_unlock();
+        capture_unlock(manager);
         return;
     }
+
 
     // Not an interesting packet ...
     packet_destroy(pkt);
     // Allow Interface refresh and user input actions
-    capture_unlock();
+    capture_unlock(manager);
 }
 
 packet_t *
-capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char *packet, uint32_t *size, uint32_t *caplen)
+capture_packet_reasm_ip(CapturePcap *capinfo, const struct pcap_pkthdr *header, u_char *packet, uint32_t *size, uint32_t *caplen)
 {
     // IP header data
     struct ip *ip4;
@@ -550,7 +604,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 }
 
 packet_t *
-capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload) {
+capture_packet_reasm_tcp(CapturePcap *capinfo, packet_t *packet, struct tcphdr *tcp, u_char *payload, int size_payload) {
 
     GSequenceIter *it = g_sequence_get_begin_iter(capinfo->tcp_reasm);
     packet_t *pkt;
@@ -772,7 +826,7 @@ capture_packet_parse(packet_t *packet)
             // We have an RTP packet!
             packet_set_type(packet, PACKET_RTP);
             // Store this pacekt if capture rtp is enabled
-            if (capture_cfg.rtp_capture) {
+            if (storage_capture_options().rtp) {
                 call_add_rtp_packet(stream_get_call(stream), packet);
                 return 0;
             }
@@ -781,272 +835,11 @@ capture_packet_parse(packet_t *packet)
     return 1;
 }
 
-void
-capture_close()
+ghar *
+capture_pcap_error(pcap_t *handle)
 {
-    capture_info_t *capinfo;
-
-    // Nothing to close
-    if (g_sequence_is_empty(capture_cfg.sources))
-        return;
-
-    // Close dump file
-    if (capture_cfg.pd) {
-        dump_close(capture_cfg.pd);
-    }
-
-    // Stop all captures
-    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        capinfo = g_sequence_get(it);
-        //Close PCAP file
-        if (capinfo->handle) {
-            if (capinfo->running) {
-                /* We must cancel the thread here instead of joining because, according to pcap_breakloop man page,
-                 * you can only break pcap_loop from within the same thread.
-                 * @see: https://www.tcpdump.org/manpages/pcap_breakloop.3pcap.html
-                 */
-                pcap_breakloop(capinfo->handle);
-                //FIXME pthread_cancel(capinfo->capture_t);
-                g_thread_join(capinfo->capture_t);
-            }
-        }
-    }
-
+    return pcap_geterr(handle);
 }
-
-int
-capture_launch_thread()
-{
-    capture_info_t *capinfo;
-
-    // Start all captures threads
-    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        capinfo = g_sequence_get(it);
-        // Mark capture as running
-        capinfo->running = true;
-        capinfo->capture_t = g_thread_new(NULL, (void *) capture_thread, capinfo);
-    }
-    return 0;
-}
-
-void
-capture_thread(void *info)
-{
-    capture_info_t *capinfo = (capture_info_t *) info;
-
-    // Parse available packets
-    pcap_loop(capinfo->handle, -1, parse_packet, (u_char *) capinfo);
-    capinfo->running = false;
-}
-
-int
-capture_is_online()
-{
-    capture_info_t *capinfo;
-    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        capinfo = g_sequence_get(it);
-        if (capinfo->infile)
-            return 0;
-    }
-    return 1;
-}
-
-int
-capture_is_running()
-{
-    capture_info_t *capinfo;
-    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        capinfo = g_sequence_get(it);
-        if (capinfo->running)
-            return 1;
-    }
-    return 0;
-}
-
-int
-capture_set_bpf_filter(const char *filter)
-{
-    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
-    capture_info_t *capinfo;
-
-    // Apply the given filter to all sources
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        capinfo = g_sequence_get(it);
-        //! Check if filter compiles
-        if (pcap_compile(capinfo->handle, &capture_cfg.fp, filter, 0, capinfo->mask) == -1)
-            return 1;
-
-        // Set capture filter
-        if (pcap_setfilter(capinfo->handle, &capture_cfg.fp) == -1)
-            return 1;
-
-    }
-
-    // Store valid capture filter
-    capture_cfg.filter = filter;
-
-    return 0;
-}
-
-const char *
-capture_get_bpf_filter()
-{
-    return capture_cfg.filter;
-}
-
-
-void
-capture_set_paused(int pause)
-{
-    capture_cfg.paused = pause;
-}
-
-bool
-capture_paused()
-{
-    return capture_cfg.paused;
-}
-
-const char *
-capture_status_desc()
-{
-    int online = 0, offline = 0, loading = 0;
-
-
-    capture_info_t *capinfo;
-    GSequenceIter *it = g_sequence_get_begin_iter(capture_cfg.sources);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        capinfo = g_sequence_get(it);
-        if (capinfo->infile) {
-            offline++;
-            if (capinfo->running) {
-                loading++;
-            }
-        } else {
-            online++;
-        }
-    }
-
-#ifdef USE_EEP
-    // EEP Listen mode is always considered online
-    if (capture_eep_listen_port()) {
-        online++;
-    }
-#endif
-
-    if (capture_paused()) {
-        if (online > 0 && offline == 0) {
-            return "Online (Paused)";
-        } else if (online == 0 && offline > 0) {
-            return "Offline (Paused)";
-        } else {
-            return "Mixed (Paused)";
-        }
-    } else if (loading > 0) {
-        if (online > 0 && offline == 0) {
-            return "Online (Loading)";
-        } else if (online == 0 && offline > 0) {
-            return "Offline (Loading)";
-        } else {
-            return "Mixed (Loading)";
-        }
-    } else {
-        if (online > 0 && offline == 0) {
-            return "Online";
-        } else if (online == 0 && offline > 0) {
-            return "Offline";
-        } else {
-            return "Mixed";
-        }
-    }
-}
-
-const char*
-capture_input_file()
-{
-    capture_info_t *capinfo;
-
-    if (g_sequence_get_length(capture_cfg.sources) == 1) {
-        capinfo = g_sequence_first(capture_cfg.sources);
-        if (capinfo->infile) {
-            return sng_basename(capinfo->infile);
-        } else {
-            return NULL;
-        }
-    } else {
-        return "Multiple files";
-    }
-}
-
-const char *
-capture_device()
-{
-    capture_info_t *capinfo;
-
-    if (g_sequence_get_length(capture_cfg.sources) == 1) {
-        capinfo = g_sequence_first(capture_cfg.sources);
-        return capinfo->device;
-    } else {
-        return "multi";
-    }
-    return NULL;
-}
-
-const char*
-capture_keyfile()
-{
-    return capture_cfg.keyfile;
-}
-
-void
-capture_set_keyfile(const char *keyfile)
-{
-    capture_cfg.keyfile = keyfile;
-}
-
-address_t
-capture_tls_server()
-{
-    return capture_cfg.tlsserver;
-}
-
-int
-capture_sources_count()
-{
-    return g_sequence_get_length(capture_cfg.sources);
-}
-
-char *
-capture_last_error()
-{
-    capture_info_t *capinfo;
-    if (g_sequence_get_length(capture_cfg.sources) == 1) {
-        capinfo = g_sequence_first(capture_cfg.sources);
-        return pcap_geterr(capinfo->handle);
-    }
-    return NULL;
-
-}
-
-void
-capture_lock()
-{
-    // Avoid parsing more packet
-    g_rec_mutex_lock(&capture_cfg.lock);
-}
-
-void
-capture_unlock()
-{
-    // Allow parsing more packets
-    g_rec_mutex_unlock(&capture_cfg.lock);
-}
-
-
 
 gint
 capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
@@ -1056,7 +849,6 @@ capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
             packet_time(b)
     );
 }
-
 
 int8_t
 datalink_size(int datalink)
@@ -1104,12 +896,14 @@ datalink_size(int datalink)
 pcap_dumper_t *
 dump_open(const char *dumpfile)
 {
+/** @todo
     capture_info_t *capinfo;
 
     if (g_sequence_get_length(capture_cfg.sources) == 1) {
         capinfo = g_sequence_first(capture_cfg.sources);
         return pcap_dump_open(capinfo->handle, dumpfile);
     }
+*/
     return NULL;
 }
 
@@ -1134,4 +928,30 @@ dump_close(pcap_dumper_t *pd)
     if (!pd)
         return;
     pcap_dump_close(pd);
+}
+
+const gchar*
+capture_input_pcap_file(CaptureManager *manager)
+{
+    if (g_slist_length(manager->inputs) > 1)
+        return "Multiple files";
+
+    CaptureInput *input = manager->inputs->data;
+    if (input->tech == CAPTURE_TECH_PCAP && input->mode == CAPTURE_MODE_OFFLINE)
+        return input->source;
+
+    return NULL;
+}
+
+const gchar *
+capture_input_pcap_device(CaptureManager *manager)
+{
+    if (g_slist_length(manager->inputs) > 1)
+        return "multi";
+
+    CaptureInput *input = manager->inputs->data;
+    if (input->tech == CAPTURE_TECH_PCAP && input->mode == CAPTURE_MODE_ONLINE)
+        return input->source;
+
+    return NULL;
 }

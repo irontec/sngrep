@@ -204,6 +204,9 @@ sip_init(SStorageCaptureOpts capture_options,
 void
 sip_deinit();
 
+SStorageCaptureOpts
+storage_capture_options();
+
 /**
  * @brief Parses Call-ID header of a SIP message payload
  *

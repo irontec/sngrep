@@ -198,7 +198,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     if (!(conn->ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return NULL;
 
-    SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_keyfile(),
+    SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_keyfile(capture_manager()),
                                 SSL_FILETYPE_PEM);
     if (!(conn->ssl = SSL_new(conn->ssl_ctx)))
         return NULL;
@@ -245,8 +245,8 @@ tls_connection_destroy(struct SSLConnection *conn)
  *
  * Most probably we only need one context and key for all connections
  */
-int
-tls_check_keyfile(const char *keyfile)
+gboolean
+tls_check_keyfile(const gchar *keyfile, GError **error)
 {
     SSL *ssl;
     SSL_CTX *ssl_ctx;
@@ -257,13 +257,13 @@ tls_check_keyfile(const char *keyfile)
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
-    if (access(capture_keyfile(), R_OK) != 0)
+    if (access(capture_keyfile(capture_manager()), R_OK) != 0)
         return 0;
 
     if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
         return 0;
 
-    if (!(SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_keyfile(), SSL_FILETYPE_PEM))) {
+    if (!(SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_keyfile(capture_manager()), SSL_FILETYPE_PEM))) {
         unsigned long n = ERR_get_error();
         fprintf(stderr, "%s\n", ERR_error_string(n, errbuf));
         return 0;
@@ -317,7 +317,7 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
     struct in_addr ip_src, ip_dst;
     uint16_t sport = packet->src.port;
     uint16_t dport = packet->dst.port;
-    address_t tlsserver = capture_tls_server();
+    address_t tlsserver = capture_tls_server(capture_manager());
 
     // Convert addresses
     inet_pton(AF_INET, packet->src.ip, &ip_src);

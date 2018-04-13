@@ -33,7 +33,7 @@
 #include "config.h"
 #include <sys/types.h>
 #include <glib.h>
-#include "capture.h"
+#include "capture/capture_pcap.h"
 
 #define MEDIATYPELEN 15
 

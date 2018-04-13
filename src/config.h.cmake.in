@@ -31,7 +31,7 @@
 #cmakedefine PROJECT_VERSION_MINOR
 #cmakedefine PROJECT_VERSION_PATCH
 
-#cmakedefine USE_EEP
+#cmakedefine USE_HEP
 
 #cmakedefine USE_IPV6
 

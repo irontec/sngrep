@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <gnutls/gnutls.h>
-#include "capture.h"
+#include "capture_pcap.h"
 #include "capture_gnutls.h"
 #include "option.h"
 #include "util.h"
@@ -213,7 +213,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     if (gnutls_init(&conn->ssl, GNUTLS_SERVER) < GNUTLS_E_SUCCESS)
         return NULL;
 
-    if (!(keyfp = fopen(capture_keyfile(), "rb")))
+    if (!(keyfp = fopen(capture_keyfile(capture_manager()), "rb")))
         return NULL;
 
     fseek(keyfp, 0, SEEK_END);
@@ -366,7 +366,7 @@ tls_process_segment(packet_t *packet, struct tcphdr *tcp)
     struct in_addr ip_src, ip_dst;
     uint16_t sport = packet->src.port;
     uint16_t dport = packet->dst.port;
-    address_t tlsserver = capture_tls_server();
+    address_t tlsserver = capture_tls_server(capture_manager());
 
     // Convert addresses
     inet_pton(AF_INET, packet->src.ip, &ip_src);

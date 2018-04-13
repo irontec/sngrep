@@ -229,6 +229,11 @@ sip_deinit()
     g_regex_unref(calls.reg_warning);
 }
 
+SStorageCaptureOpts
+storage_capture_options()
+{
+    return calls.capture;
+}
 
 char *
 sip_get_callid(const char* payload, char *callid)

@@ -47,32 +47,32 @@
 #define __SNGREP_CAPTURE_TLS_
 
 #include "config.h"
-#include <glib.h>
-#include <gnutls/gnutls.h>
-#include <gnutls/x509.h>
-#include <gcrypt.h>
-#include "capture.h"
-
-//! Error reporting domain
-#define S_GNUTLS_ERROR s_gnutls_error_quark()
-
-/**
- * @brief Get Capture domain struct for GError
- */
-GQuark
-s_gnutls_error_quark(void);
-
-enum {
-    S_GNUTLS_ERROR_KEYFILE_EMTPY,
-    S_GNUTLS_ERROR_PRIVATE_INIT,
-    S_GNUTLS_ERROR_PRIVATE_LOAD
-};
-
+#include <openssl/ssl.h>
+#include <openssl/tls1.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#include "capture_pcap.h"
 
 //! Cast two bytes into decimal (Big Endian)
 #define UINT16_INT(i) ((i.x[0] << 8) | i.x[1])
 //! Cast three bytes into decimal (Big Endian)
 #define UINT24_INT(i) ((i.x[0] << 16) | (i.x[1] << 8) | i.x[2])
+
+//The symbol SSL3_MT_NEWSESSION_TICKET appears to have been introduced at around
+//openssl 0.9.8f, and the use of if breaks builds with older openssls
+#if OPENSSL_VERSION_NUMBER < 0x00908070L
+#define OLD_OPENSSL_VERSION 1
+#endif
+
+/* LibreSSL declares OPENSSL_VERSION_NUMBER == 2.0 but does not include most
+ * changes from OpenSSL >= 1.1 (new functions, macros, deprecations, ...)
+ */
+#if defined(LIBRESSL_VERSION_NUMBER)
+#define MODSSL_USE_OPENSSL_PRE_1_1_API (1)
+#else
+#define MODSSL_USE_OPENSSL_PRE_1_1_API (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#endif
 
 //! Three bytes unsigned integer
 typedef struct uint16 {
@@ -103,44 +103,28 @@ enum SSLConnectionState {
     TCP_STATE_CLOSED
 };
 
-//! SSL Encoders algo
-enum SSLCipherEncoders {
-    ENC_AES         = 1,
-    ENC_AES256      = 2
-};
-
-//! SSL Digests algo
-enum SSLCIpherDigest {
-    DIG_SHA1        = 1,
-    DIG_SHA256      = 2,
-    DIG_SHA384      = 3
-};
-
-//! SSL Decode mode
-enum SSLCipherMode {
-    MODE_CBC,
-    MODE_GCM
-};
-
 //! ContentType values as defined in RFC5246
 enum ContentType {
-    change_cipher_spec  = 20,
-    alert               = 21,
-    handshake           = 22,
-    application_data    = 23
+    change_cipher_spec = SSL3_RT_CHANGE_CIPHER_SPEC,
+    alert = SSL3_RT_ALERT,
+    handshake = SSL3_RT_HANDSHAKE,
+    application_data = SSL3_RT_APPLICATION_DATA
 };
 
 //! HanshakeType values as defined in RFC5246
 enum HandshakeType {
-    hello_request       = GNUTLS_HANDSHAKE_HELLO_REQUEST,
-    client_hello        = GNUTLS_HANDSHAKE_CLIENT_HELLO,
-    server_hello        = GNUTLS_HANDSHAKE_SERVER_HELLO,
-    certificate         = GNUTLS_HANDSHAKE_CERTIFICATE_PKT,
-    certificate_request = GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST,
-    server_hello_done   = GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
-    certificate_verify  = GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
-    client_key_exchange = GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
-    finished            = GNUTLS_HANDSHAKE_FINISHED
+    hello_request = SSL3_MT_HELLO_REQUEST,
+    client_hello = SSL3_MT_CLIENT_HELLO,
+    server_hello = SSL3_MT_SERVER_HELLO,
+    certificate = SSL3_MT_CERTIFICATE,
+    certificate_request = SSL3_MT_CERTIFICATE_REQUEST,
+    server_hello_done = SSL3_MT_SERVER_DONE,
+    certificate_verify = SSL3_MT_CERTIFICATE_VERIFY,
+    client_key_exchange = SSL3_MT_CLIENT_KEY_EXCHANGE,
+#ifndef OLD_OPENSSL_VERSION
+    new_session_ticket = SSL3_MT_NEWSESSION_TICKET,
+#endif
+    finished = SSL3_MT_FINISHED
 };
 
 //! ProtocolVersion header as defined in RFC5246
@@ -171,16 +155,6 @@ struct Random {
 struct CipherSuite {
     uint8_t cs1;
     uint8_t cs2;
-};
-
-struct CipherData {
-    int num;
-    int enc;
-    int ivblock;
-    int bits;
-    int digest;
-    int diglen;
-    int mode;
 };
 
 struct ClientHelloSSLv2 {
@@ -254,27 +228,27 @@ struct SSLConnection {
     //! Server port
     uint16_t server_port;
 
-    gnutls_session_t ssl;
-    int ciph;
-    gnutls_x509_privkey_t server_private_key;
+    SSL *ssl;
+    SSL_CTX *ssl_ctx;
+    EVP_PKEY *server_private_key;
+    const EVP_CIPHER *ciph;
     struct Random client_random;
     struct Random server_random;
     struct CipherSuite cipher_suite;
-    struct CipherData cipher_data;
     struct PreMasterSecret pre_master_secret;
     struct MasterSecret master_secret;
 
     struct tls_data {
-        uint8_t *client_write_MAC_key;
-        uint8_t *server_write_MAC_key;
-        uint8_t *client_write_key;
-        uint8_t *server_write_key;
-        uint8_t *client_write_IV;
-        uint8_t *server_write_IV;
+        uint8_t client_write_MAC_key[20];
+        uint8_t server_write_MAC_key[20];
+        uint8_t client_write_key[32];
+        uint8_t server_write_key[32];
+        uint8_t client_write_IV[16];
+        uint8_t server_write_IV[16];
     } key_material;
 
-    gcry_cipher_hd_t client_cipher_ctx;
-    gcry_cipher_hd_t server_cipher_ctx;
+    EVP_CIPHER_CTX *client_cipher_ctx;
+    EVP_CIPHER_CTX *server_cipher_ctx;
 
     struct SSLConnection *next;
 };
@@ -300,6 +274,24 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
        unsigned char *seed, int slen);
 
 /**
+ * @brief Pseudorandom Function as defined in RFC5246
+ *
+ * This function will generate MasterSecret and KeyMaterial data from PreMasterSecret and Seed
+ *
+ * @param dest Destination of PRF function result. Memory must be already allocated
+ * @param dlen Destination length in bytes
+ * @param pre_master_secret PreMasterSecret decrypted from ClientKeyExchange Handhsake record
+ * @param pslen PreMasterSecret length in bytes
+ * @param label Fixed ASCII string
+ * @param seed Concatenation of Random data from Hello Handshake records
+ * @param slen Seed length in bytes
+ * @return destination length in bytes
+ */
+int
+PRF12(unsigned char *dest, int dlen, unsigned char *pre_master_secret,
+        int plen, unsigned char *label, unsigned char *seed, int slen);
+
+/**
  * @brief Pseudorandom Function as defined in RFC2246
  *
  * This function will generate MasterSecret and KeyMaterial data from PreMasterSecret and Seed
@@ -314,8 +306,8 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
  * @return destination length in bytes
  */
 int
-PRF(struct SSLConnection *conn, unsigned char *dest, int dlen, unsigned char *pre_master_secret,
-        int plen, unsigned char *label, unsigned char *seed, int slen);
+PRF(unsigned char *dest, int dlen, unsigned char *pre_master_secret, int plen, unsigned char *label,
+    unsigned char *seed, int slen);
 
 /**
  * @brief Create a new SSLConnection
@@ -488,32 +480,5 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment, cons
  */
 int
 tls_connection_load_cipher(struct SSLConnection *conn);
-
-/**
- * @brief Determine if the given version is valid for us
- *
- * We only handle some SSL/TLS versions. This function will filter out
- * records from unsupported versions.
- *
- * @return 0 if the version is supported, 1 otherwise
- */
-int
-tls_valid_version(struct ProtocolVersion version);
-
-/**
- * @brief Decrypt data using private RSA key
- *
- * This function code has been taken from wireshark.
- * Because wireshark simply rocks.
- *
- * @param key Imported RSA key data
- * @param flags decrpyt flag (no used)
- * @param ciphertext Encrypted data
- * @param plaintext Decrypted data
- * @return number of bytes of decrypted data
- */
-int
-tls_privkey_decrypt_data(gnutls_x509_privkey_t key, unsigned int flags,
-                const gnutls_datum_t * ciphertext, gnutls_datum_t * plaintext);
 
 #endif
