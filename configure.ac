@@ -52,8 +52,18 @@ AC_CHECK_HEADER([pcap.h], [], [
 ])
 
 ####
-#### Ncurses Wide character support
+#### Ncurses support
 ####
+if test "$enable_static" = "yes" ; then
+    AC_CHECK_LIB([tinfo], [_nc_setupterm], [], [
+        AC_MSG_ERROR([ You need to have libtinfo5 installed to staic-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB([gpm], [Gpm_GetEvent], [], [
+        AC_MSG_ERROR([ You need to have libgpm2 installed to static-compile sngrep.])
+    ])
+fi
+
 AC_ARG_ENABLE([unicode],
 	AC_HELP_STRING([--enable-unicode], [Enable Ncurses Unicode support]),
 	[AC_SUBST(UNICODE, $enableval)],
