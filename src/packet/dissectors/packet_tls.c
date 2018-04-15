@@ -31,23 +31,21 @@
  */
 #include "config.h"
 #include <glib.h>
-#include <unistd.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include <gnutls/gnutls.h>
-#include "capture_pcap.h"
-#include "capture_gnutls.h"
-#include "option.h"
-#include "util.h"
-#include "sip.h"
-
-struct SSLConnection *connections;
+#include "capture/capture.h"
+#include "packet/dissector.h"
+#include "packet/dissectors/packet_ip.h"
+#include "packet/dissectors/packet_tcp.h"
+#include "packet_tls.h"
 
 struct CipherData ciphers[] = {
-/*  { number, encoder,    ivlen, bits, digest, diglen, mode }, */
-    { 0x002F, ENC_AES,    16, 128, DIG_SHA1,   20, MODE_CBC },   /* TLS_RSA_WITH_AES_128_CBC_SHA     */
-    { 0x0035, ENC_AES256, 16, 256, DIG_SHA1,   20, MODE_CBC },   /* TLS_RSA_WITH_AES_256_CBC_SHA     */
-    { 0x009d, ENC_AES256, 4,  256, DIG_SHA384, 48, MODE_GCM },   /* TLS_RSA_WITH_AES_256_GCM_SHA384  */
-    { 0,      0,          0,  0,   0,          0,  0        }
+    /*  { number, encoder,    ivlen, bits, digest, diglen, mode }, */
+        { 0x002F, ENC_AES,    16, 128, DIG_SHA1,   20, MODE_CBC },   /* TLS_RSA_WITH_AES_128_CBC_SHA     */
+        { 0x0035, ENC_AES256, 16, 256, DIG_SHA1,   20, MODE_CBC },   /* TLS_RSA_WITH_AES_256_CBC_SHA     */
+        { 0x009d, ENC_AES256, 4,  256, DIG_SHA384, 48, MODE_GCM },   /* TLS_RSA_WITH_AES_256_GCM_SHA384  */
+        { 0,      0,          0,  0,   0,          0,  0        }
 };
 
 
@@ -57,7 +55,7 @@ s_gnutls_error_quark()
     return  g_quark_from_static_string("sngrep-gnutls");
 }
 
-#define TLS_DEBUG 0
+#define TLS_DEBUG 1
 
 void
 tls_debug_print_hex (char *desc, const void *ptr, int len) {
@@ -87,6 +85,114 @@ tls_debug_print_hex (char *desc, const void *ptr, int len) {
     }
     printf (" |%-16s|\n\n", buff);
 #endif
+}
+
+int
+tls_valid_version(struct ProtocolVersion version)
+{
+
+    switch(version.major) {
+        case 0x03:
+            switch(version.minor) {
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                    return 0;
+            }
+    }
+    return 1;
+}
+
+int
+tls_connection_load_cipher(struct SSLConnection *conn)
+{
+    int i;
+    int ciphnum = (conn->cipher_suite.cs1 << 8) | conn->cipher_suite.cs2;
+
+    // Check if this is one of the supported ciphers
+    for (i=0; ciphers[i].enc; i++) {
+        if (ciphnum == ciphers[i].num) {
+            conn->cipher_data = ciphers[i];
+            break;
+        }
+    }
+
+    // Set proper cipher encoder
+    switch (conn->cipher_data.enc) {
+        case ENC_AES:
+            conn->ciph = gcry_cipher_map_name("AES");
+            break;
+        case ENC_AES256:
+            conn->ciph = gcry_cipher_map_name("AES256");
+            break;
+        default:
+            return 1;
+    }
+
+    return 0;
+}
+
+int
+tls_privkey_decrypt_data(gnutls_x509_privkey_t key, unsigned int flags,
+                         const gnutls_datum_t * ciphertext, gnutls_datum_t * plaintext)
+{
+    size_t decr_len = 0, i = 0;
+    gcry_sexp_t s_data = NULL, s_plain = NULL;
+    gcry_mpi_t  encr_mpi = NULL, text = NULL;
+    size_t tmp_size;
+    gnutls_datum_t rsa_datum[6];
+    gcry_mpi_t rsa_params[6];
+    gcry_sexp_t rsa_priv_key = NULL;
+
+    // Extract data from RSA key
+    gnutls_x509_privkey_export_rsa_raw(key,
+                                       &rsa_datum[0], &rsa_datum[1], &rsa_datum[2],
+                                       &rsa_datum[3], &rsa_datum[4], &rsa_datum[5]);
+
+    // Convert to RSA params
+    for(i=0; i<6; i++) {
+        gcry_mpi_scan(&rsa_params[i], GCRYMPI_FMT_USG, rsa_datum[i].data, rsa_datum[i].size, &tmp_size);
+    }
+
+    if (gcry_mpi_cmp(rsa_params[3], rsa_params[4]) > 0)
+        gcry_mpi_swap(rsa_params[3], rsa_params[4]);
+
+    // Convert to sexp
+    gcry_mpi_invm(rsa_params[5], rsa_params[3], rsa_params[4]);
+    gcry_sexp_build(&rsa_priv_key, NULL,
+                    "(private-key(rsa((n%m)(e%m)(d%m)(p%m)(q%m)(u%m))))",
+                    rsa_params[0], rsa_params[1], rsa_params[2],
+                    rsa_params[3], rsa_params[4], rsa_params[5]);
+
+    // Free not longer required data
+    for (i=0; i< 6; i++) {
+        gcry_mpi_release(rsa_params[i]);
+        gnutls_free(rsa_datum[i].data);
+    }
+
+    gcry_mpi_scan(&encr_mpi, GCRYMPI_FMT_USG, ciphertext->data, ciphertext->size, NULL);
+    gcry_sexp_build(&s_data, NULL, "(enc-val(rsa(a%m)))", encr_mpi);
+    gcry_pk_decrypt(&s_plain, s_data, rsa_priv_key);
+    text = gcry_sexp_nth_mpi(s_plain, 0, 0);
+    gcry_mpi_print(GCRYMPI_FMT_USG, NULL, 0, &decr_len, text);
+    gcry_mpi_print(GCRYMPI_FMT_USG, ciphertext->data, ciphertext->size, &decr_len, text);
+
+    int pad = 0;
+    for (i = 1; i < decr_len; i++) {
+        if (ciphertext->data[i] == 0) {
+            pad = i+1;
+            break;
+        }
+    }
+
+    plaintext->size = decr_len - pad;
+    plaintext->data = gnutls_malloc(plaintext->size);
+    memmove(plaintext->data, ciphertext->data + pad, plaintext->size);
+    gcry_sexp_release(s_data);
+    gcry_sexp_release(s_plain);
+    gcry_mpi_release(encr_mpi);
+    gcry_mpi_release(text);
+    return (int) decr_len;
 }
 
 int
@@ -133,9 +239,82 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
 }
 
 int
+tls_process_record_data(struct SSLConnection *conn, const opaque *fragment,
+                        const int len, uint8_t **out, uint32_t *outl)
+{
+    gcry_cipher_hd_t *evp;
+    uint8_t pad;
+    size_t flen = len;
+    uint8_t nonce[16] = { 0 };
+
+    tls_debug_print_hex("Ciphertext", fragment, len);
+
+    if (conn->direction == 0) {
+        evp = &conn->client_cipher_ctx;
+    } else {
+        evp = &conn->server_cipher_ctx;
+    }
+
+    if (conn->cipher_data.mode == MODE_CBC) {
+        // TLS 1.1 and later extract explicit IV
+        if (conn->version >= 2 && len > 16) {
+            gcry_cipher_setiv(*evp, fragment, 16);
+            flen -= 16;
+            fragment += 16;
+        }
+    }
+
+    if (conn->cipher_data.mode == MODE_GCM) {
+        if (conn->direction == 0) {
+            memcpy(nonce, conn->key_material.client_write_IV, conn->cipher_data.ivblock);
+            memcpy(nonce + conn->cipher_data.ivblock, fragment, 8);
+            nonce[15] = 2;
+        } else {
+            memcpy(nonce, conn->key_material.server_write_IV, conn->cipher_data.ivblock);
+            memcpy(nonce + conn->cipher_data.ivblock, fragment, 8);
+            nonce[15] = 2;
+        }
+        gcry_cipher_setctr(*evp, nonce, sizeof(nonce));
+        flen -= 8;
+        fragment += 8;
+    }
+
+    size_t dlen = len;
+    uint8_t *decoded = g_malloc0(dlen);
+    gcry_cipher_decrypt(*evp, decoded, dlen, (void *) fragment, flen);
+    tls_debug_print_hex("Plaintext", decoded, flen);
+
+    // Strip mac from the decoded data
+    if (conn->cipher_data.mode == MODE_CBC) {
+        // Get padding counter and remove from data
+        pad = decoded[flen - 1];
+        dlen = flen - (pad + 1);
+        int mac_len = conn->cipher_data.diglen;
+        tls_debug_print_hex("Mac", decoded + (dlen - mac_len), mac_len);
+
+        if ((int32_t)dlen > 0 && dlen <= *outl) {
+            memcpy(*out, decoded, dlen);
+            *outl = dlen - mac_len /* Trailing MAC */;
+        }
+    }
+
+    // Strip auth tag from decoded data
+    if (conn->cipher_data.mode == MODE_GCM) {
+        if ((int32_t)flen > 16) {
+            memcpy(*out, decoded, dlen);
+            *outl = flen - 16;
+        }
+    }
+
+    // Clenaup decoded memory
+    g_free(decoded);
+    return *outl;
+}
+
+int
 PRF(struct SSLConnection *conn,
-        unsigned char *dest, int dlen, unsigned char *pre_master_secret,
-        int plen, unsigned char *label, unsigned char *seed, int slen) {
+    unsigned char *dest, int dlen, unsigned char *pre_master_secret,
+    int plen, unsigned char *label, unsigned char *seed, int slen) {
     int i;
 
     if (conn->version < 3) {
@@ -201,7 +380,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     int ret;
 
     // Allocate memory for this connection
-    conn = sng_malloc(sizeof(struct SSLConnection));
+    conn = g_malloc0(sizeof(struct SSLConnection));
 
     memcpy(&conn->client_addr, &caddr, sizeof(struct in_addr));
     memcpy(&conn->server_addr, &saddr, sizeof(struct in_addr));
@@ -219,7 +398,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     fseek(keyfp, 0, SEEK_END);
     keycontent.size = ftell(keyfp);
     fseek(keyfp, 0, SEEK_SET);
-    keycontent.data = sng_malloc(keycontent.size);
+    keycontent.data = g_malloc0(keycontent.size);
     fread(keycontent.data, 1, keycontent.size, keyfp);
     fclose(keyfp);
 
@@ -230,7 +409,7 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     if (ret != GNUTLS_E_SUCCESS)
         return NULL;
 
-    sng_free(keycontent.data);
+    g_free(keycontent.data);
 
     // Check this is a valid RSA key
     if (gnutls_x509_privkey_get_pk_algorithm(spkey) != GNUTLS_PK_RSA)
@@ -239,39 +418,21 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     // Store this key into the connection
     conn->server_private_key = spkey;
 
-    // Add this connection to the list
-    conn->next = connections;
-    connections = conn;
-
     return conn;
 }
 
 void
 tls_connection_destroy(struct SSLConnection *conn)
 {
-    struct SSLConnection *c;
-
-    // Remove connection from connections list
-    if (conn == connections) {
-        connections = conn->next;
-    } else {
-        for (c = connections; c; c = c->next) {
-            if (c->next == conn) {
-                c->next = conn->next;
-                break;
-            }
-        }
-    }
-
     // Deallocate connection memory
     gnutls_deinit(conn->ssl);
-    sng_free(conn->key_material.client_write_MAC_key);
-    sng_free(conn->key_material.server_write_MAC_key);
-    sng_free(conn->key_material.client_write_IV);
-    sng_free(conn->key_material.server_write_IV);
-    sng_free(conn->key_material.client_write_key);
-    sng_free(conn->key_material.server_write_key);
-    sng_free(conn);
+    g_free(conn->key_material.client_write_MAC_key);
+    g_free(conn->key_material.server_write_MAC_key);
+    g_free(conn->key_material.client_write_IV);
+    g_free(conn->key_material.server_write_IV);
+    g_free(conn->key_material.client_write_key);
+    g_free(conn->key_material.server_write_key);
+    g_free(conn);
 }
 
 /**
@@ -338,103 +499,31 @@ tls_connection_dir(struct SSLConnection *conn, struct in_addr addr, uint16_t por
 }
 
 struct SSLConnection*
-tls_connection_find(struct in_addr src, uint16_t sport, struct in_addr dst, uint16_t dport) {
-    struct SSLConnection *conn;
+tls_connection_find(PacketParser *parser, struct in_addr src, uint16_t sport, struct in_addr dst, uint16_t dport)
+{
+    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors, PACKET_TLS);
+    g_return_val_if_fail(priv != NULL, NULL);
 
-    for (conn = connections; conn; conn = conn->next) {
+    for (GSList *l = priv->connections; l != NULL; l= l->next) {
+        struct SSLConnection *conn = l->data;
+
         if (tls_connection_dir(conn, src, sport) == 0 &&
-                tls_connection_dir(conn, dst, dport) == 1) {
+            tls_connection_dir(conn, dst, dport) == 1) {
             return conn;
         }
         if (tls_connection_dir(conn, src, sport) == 1 &&
-                tls_connection_dir(conn, dst, dport) == 0) {
+            tls_connection_dir(conn, dst, dport) == 0) {
             return conn;
         }
     }
     return NULL;
 }
 
-int
-tls_process_segment(packet_t *packet, struct tcphdr *tcp)
-{
-    struct SSLConnection *conn;
-    const u_char *payload = packet_payload(packet);
-    uint32_t size_payload = packet_payloadlen(packet);
-    uint8_t *out;
-    uint32_t outl = packet->payload_len;
-    out = sng_malloc(outl);
-    struct in_addr ip_src, ip_dst;
-    uint16_t sport = packet->src.port;
-    uint16_t dport = packet->dst.port;
-    address_t tlsserver = capture_tls_server(capture_manager());
 
-    // Convert addresses
-    inet_pton(AF_INET, packet->src.ip, &ip_src);
-    inet_pton(AF_INET, packet->dst.ip, &ip_dst);
-
-    // Try to find a session for this ip
-    if ((conn = tls_connection_find(ip_src, sport, ip_dst, dport))) {
-        // Update last connection direction
-        conn->direction = tls_connection_dir(conn, ip_src, sport);
-
-        // Check current connection state
-        switch (conn->state) {
-            case TCP_STATE_SYN:
-                // First SYN received, this package must be SYN/ACK
-                if (tcp->th_flags & TH_SYN & ~TH_ACK)
-                    conn->state = TCP_STATE_SYN_ACK;
-                break;
-            case TCP_STATE_SYN_ACK:
-                // We expect an ACK packet here
-                if (tcp->th_flags & ~TH_SYN & TH_ACK)
-                    conn->state = TCP_STATE_ESTABLISHED;
-                break;
-            case TCP_STATE_ACK:
-            case TCP_STATE_ESTABLISHED:
-                // Check if we have a SSLv2 Handshake
-                if(tls_record_handshake_is_ssl2(conn, payload, size_payload)) {
-                    if (tls_process_record_ssl2(conn, payload, size_payload, &out, &outl) != 0)
-                        outl = 0;
-
-                } else {
-                    // Process data segment!
-                    if (tls_process_record(conn, payload, size_payload, &out, &outl) != 0)
-                        outl = 0;
-                }
-
-                // This seems a SIP TLS packet ;-)
-                if ((int32_t) outl > 0) {
-                    packet_set_payload(packet, out, outl);
-                    packet_set_type(packet, PACKET_SIP_TLS);
-                    return 0;
-                }
-                break;
-            case TCP_STATE_FIN:
-            case TCP_STATE_CLOSED:
-                // We can delete this connection
-                tls_connection_destroy(conn);
-                break;
-        }
-    } else {
-        // Only create new connections whose destination is tlsserver
-        if (tlsserver.port) {
-            if (addressport_equals(tlsserver, packet->dst)) {
-                // New connection, store it status and leave
-                tls_connection_create(ip_src, sport, ip_dst, dport);
-            }
-        } else {
-            // New connection, store it status and leave
-            tls_connection_create(ip_src, sport, ip_dst, dport);
-        }
-    }
-
-    sng_free(out);
-    return 0;
-}
 
 int
 tls_record_handshake_is_ssl2(struct SSLConnection *conn, const uint8_t *payload,
-                   const int len)
+                             const int len)
 {
     // This magic belongs to wireshark people <3
     if (len < 3) return 0;
@@ -448,7 +537,7 @@ tls_record_handshake_is_ssl2(struct SSLConnection *conn, const uint8_t *payload,
 
 int
 tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
-                   const int len, uint8_t **out, uint32_t *outl)
+                        const int len, uint8_t **out, uint32_t *outl)
 {
     int record_len_len;
     uint32_t record_len;
@@ -489,64 +578,11 @@ tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
 
         // Calculate where client random starts
         const opaque *random = fragment + sizeof(struct ClientHelloSSLv2)
-                            + UINT16_INT(clienthello->cipherlist_len)
-                            + UINT16_INT(clienthello->sessionid_len);
+                               + UINT16_INT(clienthello->cipherlist_len)
+                               + UINT16_INT(clienthello->sessionid_len);
 
         // Get Client random
         memcpy(&conn->client_random, random, sizeof(struct Random));
-    }
-
-    return 0;
-}
-
-int
-tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
-                   const int len, uint8_t **out, uint32_t *outl)
-{
-    struct TLSPlaintext *record;
-    int record_len;
-    const opaque *fragment;
-
-    // No record data here!
-    if (len == 0)
-        return 1;
-
-    // Get Record data
-    record = (struct TLSPlaintext *) payload;
-    record_len = sizeof(struct TLSPlaintext) + UINT16_INT(record->length);
-
-    // Process record fragment
-    if (UINT16_INT(record->length) > 0) {
-        // TLSPlaintext fragment pointer
-        fragment = (opaque *) payload + sizeof(struct TLSPlaintext);
-
-        switch (record->type) {
-            case handshake:
-                // Hanshake Record, Try to get MasterSecret data
-                if (tls_process_record_handshake(conn, fragment, UINT16_INT(record->length)) != 0)
-                    return 1;
-                break;
-            case change_cipher_spec:
-                // From now on, this connection will be encrypted using MasterSecret
-                if (conn->client_cipher_ctx && conn->server_cipher_ctx)
-                    conn->encrypted = 1;
-                break;
-            case application_data:
-                if (conn->encrypted) {
-                    // Decrypt application data using MasterSecret
-                    tls_process_record_data(conn, fragment, UINT16_INT(record->length), out, outl);
-                }
-                break;
-            default:
-                return 1;
-        }
-    }
-
-    // MultiRecord packet
-    // FIXME We're only using the last application_data record!! FIXME
-    if (len > record_len) {
-        *outl = len;
-        return tls_process_record(conn, payload + record_len, len - record_len, out, outl);
     }
 
     return 0;
@@ -623,7 +659,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 tls_debug_print_hex("server_random", &conn->server_random, sizeof(struct Random));
 
                 // Get MasterSecret
-                uint8_t *seed = sng_malloc(sizeof(struct Random) * 2);
+                uint8_t *seed = g_malloc0(sizeof(struct Random) * 2);
                 memcpy(seed, &conn->client_random, sizeof(struct Random));
                 memcpy(seed + sizeof(struct Random), &conn->server_random, sizeof(struct Random));
                 PRF(conn, (unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
@@ -641,7 +677,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 key_material_len += conn->cipher_data.bits / 4;
 
                 // Generate MACs, Write Keys and IVs
-                uint8_t *key_material = sng_malloc(key_material_len);
+                uint8_t *key_material = g_malloc0(key_material_len);
                 PRF(conn, (unsigned char *) key_material, key_material_len,
                     (unsigned char *) &conn->master_secret, sizeof(struct MasterSecret),
                     (unsigned char *) "key expansion", seed, sizeof(struct Random) * 2);
@@ -654,11 +690,11 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 } else {
                     // Copy prf output to ssl connection key material
                     int mk_len = conn->cipher_data.diglen;
-                    conn->key_material.client_write_MAC_key = sng_malloc(mk_len);
+                    conn->key_material.client_write_MAC_key = g_malloc0(mk_len);
                     memcpy(conn->key_material.client_write_MAC_key, key_material, mk_len);
                     tls_debug_print_hex("client_write_MAC_key", key_material, mk_len);
                     key_material += mk_len;
-                    conn->key_material.server_write_MAC_key = sng_malloc(mk_len);
+                    conn->key_material.server_write_MAC_key = g_malloc0(mk_len);
                     tls_debug_print_hex("server_write_MAC_key", key_material, mk_len);
                     memcpy(conn->key_material.server_write_MAC_key, key_material, mk_len);
                     key_material+=mk_len;
@@ -666,28 +702,28 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
 
                 // Get write keys
                 int wk_len = conn->cipher_data.bits / 8;
-                conn->key_material.client_write_key = sng_malloc(wk_len);
+                conn->key_material.client_write_key = g_malloc0(wk_len);
                 memcpy(conn->key_material.client_write_key, key_material, wk_len);
                 tls_debug_print_hex("client_write_key", key_material, wk_len);
                 key_material+=wk_len;
 
-                conn->key_material.server_write_key = sng_malloc(wk_len);
+                conn->key_material.server_write_key = g_malloc0(wk_len);
                 memcpy(conn->key_material.server_write_key, key_material, wk_len);
                 tls_debug_print_hex("server_write_key", key_material, wk_len);
                 key_material+=wk_len;
 
                 // Get IV blocks
-                conn->key_material.client_write_IV = sng_malloc(conn->cipher_data.ivblock);
+                conn->key_material.client_write_IV = g_malloc0(conn->cipher_data.ivblock);
                 memcpy(conn->key_material.client_write_IV, key_material, conn->cipher_data.ivblock);
                 tls_debug_print_hex("client_write_IV", key_material,  conn->cipher_data.ivblock);
                 key_material+=conn->cipher_data.ivblock;
-                conn->key_material.server_write_IV = sng_malloc(conn->cipher_data.ivblock);
+                conn->key_material.server_write_IV = g_malloc0(conn->cipher_data.ivblock);
                 memcpy(conn->key_material.server_write_IV, key_material, conn->cipher_data.ivblock);
                 tls_debug_print_hex("server_write_IV", key_material,  conn->cipher_data.ivblock);
                 /* key_material+=conn->cipher_data.ivblock; */
 
                 // Free temporally allocated memory
-                sng_free(seed);
+                g_free(seed);
                 //sng_free(key_material);
 
                 int mode = 0;
@@ -724,10 +760,10 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
             default:
                 if (conn->encrypted) {
                     // Encrypted Hanshake Message
-                    uint8_t *decoded = sng_malloc(len);
+                    uint8_t *decoded = g_malloc0(len);
                     uint32_t decodedlen = len;
                     tls_process_record_data(conn, fragment, len, &decoded, &decodedlen);
-                    sng_free(decoded);
+                    g_free(decoded);
                 }
                 break;
         }
@@ -737,182 +773,166 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
 }
 
 int
-tls_process_record_data(struct SSLConnection *conn, const opaque *fragment,
-                        const int len, uint8_t **out, uint32_t *outl)
+tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
+                   const int len, uint8_t **out, uint32_t *outl)
 {
-    gcry_cipher_hd_t *evp;
-    uint8_t pad;
-    size_t flen = len;
-    uint8_t nonce[16] = { 0 };
+    struct TLSPlaintext *record;
+    int record_len;
+    const opaque *fragment;
 
-    tls_debug_print_hex("Ciphertext", fragment, len);
+    // No record data here!
+    if (len == 0)
+        return 1;
 
-    if (conn->direction == 0) {
-        evp = &conn->client_cipher_ctx;
-    } else {
-        evp = &conn->server_cipher_ctx;
-    }
+    // Get Record data
+    record = (struct TLSPlaintext *) payload;
+    record_len = sizeof(struct TLSPlaintext) + UINT16_INT(record->length);
 
-    if (conn->cipher_data.mode == MODE_CBC) {
-        // TLS 1.1 and later extract explicit IV
-        if (conn->version >= 2 && len > 16) {
-            gcry_cipher_setiv(*evp, fragment, 16);
-            flen -= 16;
-            fragment += 16;
+    // Process record fragment
+    if (UINT16_INT(record->length) > 0) {
+        // TLSPlaintext fragment pointer
+        fragment = (opaque *) payload + sizeof(struct TLSPlaintext);
+
+        switch (record->type) {
+            case handshake:
+                // Hanshake Record, Try to get MasterSecret data
+                if (tls_process_record_handshake(conn, fragment, UINT16_INT(record->length)) != 0)
+                    return 1;
+                break;
+            case change_cipher_spec:
+                // From now on, this connection will be encrypted using MasterSecret
+                if (conn->client_cipher_ctx && conn->server_cipher_ctx)
+                    conn->encrypted = 1;
+                break;
+            case application_data:
+                if (conn->encrypted) {
+                    // Decrypt application data using MasterSecret
+                    tls_process_record_data(conn, fragment, UINT16_INT(record->length), out, outl);
+                }
+                break;
+            default:
+                return 1;
         }
     }
 
-    if (conn->cipher_data.mode == MODE_GCM) {
-        if (conn->direction == 0) {
-            memcpy(nonce, conn->key_material.client_write_IV, conn->cipher_data.ivblock);
-            memcpy(nonce + conn->cipher_data.ivblock, fragment, 8);
-            nonce[15] = 2;
-        } else {
-            memcpy(nonce, conn->key_material.server_write_IV, conn->cipher_data.ivblock);
-            memcpy(nonce + conn->cipher_data.ivblock, fragment, 8);
-            nonce[15] = 2;
-        }
-        gcry_cipher_setctr(*evp, nonce, sizeof(nonce));
-        flen -= 8;
-        fragment += 8;
-    }
-
-    size_t dlen = len;
-    uint8_t *decoded = sng_malloc(dlen);
-    gcry_cipher_decrypt(*evp, decoded, dlen, (void *) fragment, flen);
-    tls_debug_print_hex("Plaintext", decoded, flen);
-
-    // Strip mac from the decoded data
-    if (conn->cipher_data.mode == MODE_CBC) {
-        // Get padding counter and remove from data
-        pad = decoded[flen - 1];
-        dlen = flen - (pad + 1);
-        int mac_len = conn->cipher_data.diglen;
-        tls_debug_print_hex("Mac", decoded + (dlen - mac_len), mac_len);
-
-        if ((int32_t)dlen > 0 && dlen <= *outl) {
-            memcpy(*out, decoded, dlen);
-            *outl = dlen - mac_len /* Trailing MAC */;
-        }
-    }
-
-    // Strip auth tag from decoded data
-    if (conn->cipher_data.mode == MODE_GCM) {
-        if ((int32_t)flen > 16) {
-            memcpy(*out, decoded, dlen);
-            *outl = flen - 16;
-        }
-    }
-
-    // Clenaup decoded memory
-    sng_free(decoded);
-    return *outl;
-}
-
-int
-tls_connection_load_cipher(struct SSLConnection *conn)
-{
-    int i;
-    int ciphnum = (conn->cipher_suite.cs1 << 8) | conn->cipher_suite.cs2;
-
-    // Check if this is one of the supported ciphers
-    for (i=0; ciphers[i].enc; i++) {
-        if (ciphnum == ciphers[i].num) {
-            conn->cipher_data = ciphers[i];
-            break;
-        }
-    }
-
-    // Set proper cipher encoder
-    switch (conn->cipher_data.enc) {
-        case ENC_AES:
-            conn->ciph = gcry_cipher_map_name("AES");
-            break;
-        case ENC_AES256:
-            conn->ciph = gcry_cipher_map_name("AES256");
-            break;
-        default:
-            return 1;
+    // MultiRecord packet
+    // FIXME We're only using the last application_data record!! FIXME
+    if (len > record_len) {
+        *outl = len;
+        return tls_process_record(conn, payload + record_len, len - record_len, out, outl);
     }
 
     return 0;
 }
 
-int
-tls_valid_version(struct ProtocolVersion version)
+static GByteArray *
+packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
+    struct SSLConnection *conn;
+    const u_char *payload = data->data;
+    uint32_t size_payload = data->len;
+    uint8_t *out;
+    uint32_t outl = data->len;
+    out = g_malloc0(outl);
+    struct in_addr ip_src, ip_dst;
+    Address tlsserver = capture_tls_server(capture_manager());
 
-    switch(version.major) {
-        case 0x03:
-            switch(version.minor) {
-                case 0x01:
-                case 0x02:
-                case 0x03:
-                    return 0;
+    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors, PACKET_TLS);
+    g_return_val_if_fail(priv != NULL, NULL);
+
+    // Get TCP/IP data from this packet
+    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    g_return_val_if_fail(ipdata != NULL, NULL);
+    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
+    g_return_val_if_fail(tcpdata != NULL, NULL);
+
+    // Convert addresses
+    inet_pton(AF_INET, ipdata->saddr.ip, &ip_src);
+    inet_pton(AF_INET, ipdata->daddr.ip, &ip_dst);
+
+    // Try to find a session for this ip
+    if ((conn = tls_connection_find(parser, ip_src, tcpdata->sport, ip_dst, tcpdata->dport))) {
+        // Update last connection direction
+        conn->direction = tls_connection_dir(conn, ip_src, tcpdata->sport);
+
+        // Check current connection state
+        switch (conn->state) {
+            case TCP_STATE_SYN:
+                // First SYN received, this package must be SYN/ACK
+                if (tcpdata->syn != 0 && tcpdata->ack == 0)
+                    conn->state = TCP_STATE_SYN_ACK;
+                break;
+            case TCP_STATE_SYN_ACK:
+                // We expect an ACK packet here
+                if (tcpdata->syn == 0 && tcpdata->ack != 0)
+                    conn->state = TCP_STATE_ESTABLISHED;
+                break;
+            case TCP_STATE_ACK:
+            case TCP_STATE_ESTABLISHED:
+                // Check if we have a SSLv2 Handshake
+                if(tls_record_handshake_is_ssl2(conn, payload, size_payload)) {
+                    if (tls_process_record_ssl2(conn, payload, size_payload, &out, &outl) != 0)
+                        outl = 0;
+
+                } else {
+                    // Process data segment!
+                    if (tls_process_record(conn, payload, size_payload, &out, &outl) != 0)
+                        outl = 0;
+                }
+
+                // This seems a SIP TLS packet ;-)
+                if ((int32_t) outl > 0) {
+                    data = g_byte_array_new_take(out, outl);
+                    return packet_parser_next_dissector(parser, packet, data);
+                }
+                break;
+            case TCP_STATE_FIN:
+            case TCP_STATE_CLOSED:
+                // We can delete this connection
+                priv->connections = g_slist_remove(priv->connections, conn);
+                tls_connection_destroy(conn);
+                break;
+        }
+    } else {
+        // Only create new connections whose destination is tlsserver
+        if (tlsserver.port) {
+            Address packetaddr = ipdata->daddr;
+            packetaddr.port = tcpdata->dport;
+            if (addressport_equals(tlsserver, packetaddr)) {
+                // New connection, store it status and leave
+                priv->connections =
+                        g_slist_append(priv->connections,
+                                      tls_connection_create(ip_src, tcpdata->sport, ip_dst, tcpdata->dport)
+                        );
             }
-    }
-    return 1;
-}
-
-int
-tls_privkey_decrypt_data(gnutls_x509_privkey_t key, unsigned int flags,
-                const gnutls_datum_t * ciphertext, gnutls_datum_t * plaintext)
-{
-    size_t decr_len = 0, i = 0;
-    gcry_sexp_t s_data = NULL, s_plain = NULL;
-    gcry_mpi_t  encr_mpi = NULL, text = NULL;
-    size_t tmp_size;
-    gnutls_datum_t rsa_datum[6];
-    gcry_mpi_t rsa_params[6];
-    gcry_sexp_t rsa_priv_key = NULL;
-
-    // Extract data from RSA key
-    gnutls_x509_privkey_export_rsa_raw(key,
-             &rsa_datum[0], &rsa_datum[1], &rsa_datum[2],
-             &rsa_datum[3], &rsa_datum[4], &rsa_datum[5]);
-
-    // Convert to RSA params
-    for(i=0; i<6; i++) {
-        gcry_mpi_scan(&rsa_params[i], GCRYMPI_FMT_USG, rsa_datum[i].data, rsa_datum[i].size, &tmp_size);
-    }
-
-    if (gcry_mpi_cmp(rsa_params[3], rsa_params[4]) > 0)
-        gcry_mpi_swap(rsa_params[3], rsa_params[4]);
-
-    // Convert to sexp
-    gcry_mpi_invm(rsa_params[5], rsa_params[3], rsa_params[4]);
-    gcry_sexp_build(&rsa_priv_key, NULL,
-        "(private-key(rsa((n%m)(e%m)(d%m)(p%m)(q%m)(u%m))))",
-        rsa_params[0], rsa_params[1], rsa_params[2],
-        rsa_params[3], rsa_params[4], rsa_params[5]);
-
-    // Free not longer required data
-    for (i=0; i< 6; i++) {
-        gcry_mpi_release(rsa_params[i]);
-        gnutls_free(rsa_datum[i].data);
-    }
-
-    gcry_mpi_scan(&encr_mpi, GCRYMPI_FMT_USG, ciphertext->data, ciphertext->size, NULL);
-    gcry_sexp_build(&s_data, NULL, "(enc-val(rsa(a%m)))", encr_mpi);
-    gcry_pk_decrypt(&s_plain, s_data, rsa_priv_key);
-    text = gcry_sexp_nth_mpi(s_plain, 0, 0);
-    gcry_mpi_print(GCRYMPI_FMT_USG, NULL, 0, &decr_len, text);
-    gcry_mpi_print(GCRYMPI_FMT_USG, ciphertext->data, ciphertext->size, &decr_len, text);
-
-    int pad = 0;
-    for (i = 1; i < decr_len; i++) {
-        if (ciphertext->data[i] == 0) {
-            pad = i+1;
-            break;
+        } else {
+            // New connection, store it status and leave
+            priv->connections =
+                    g_slist_append(priv->connections,
+                                   tls_connection_create(ip_src, tcpdata->sport, ip_dst, tcpdata->dport)
+                    );
         }
     }
 
-    plaintext->size = decr_len - pad;
-    plaintext->data = gnutls_malloc(plaintext->size);
-    memmove(plaintext->data, ciphertext->data + pad, plaintext->size);
-    gcry_sexp_release(s_data);
-    gcry_sexp_release(s_plain);
-    gcry_mpi_release(encr_mpi);
-    gcry_mpi_release(text);
-    return (int) decr_len;
+    g_free(out);
+    return data;
+}
+
+static void
+packet_tls_init(PacketParser *parser)
+{
+    DissectorTlsData *tls_data = g_malloc0(sizeof(DissectorTlsData));
+    g_ptr_array_insert(parser->dissectors, PACKET_TLS, tls_data);
+}
+
+PacketDissector *
+packet_tls_new()
+{
+    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
+    proto->id = PACKET_TLS;
+    proto->init = packet_tls_init;
+    proto->dissect = packet_tls_parse;
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_WS));
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
+    return proto;
 }

@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include "glib-utils.h"
 #include "media.h"
-#include "rtp.h"
+#include "packet/rtp.h"
 #include "util.h"
 
 sdp_media_t *
@@ -67,7 +67,7 @@ media_set_type(sdp_media_t *media, const char *type)
 }
 
 void
-media_set_address(sdp_media_t *media, address_t addr)
+media_set_address(sdp_media_t *media, Address addr)
 {
     media->address = addr;
 }

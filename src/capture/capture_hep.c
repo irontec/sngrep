@@ -42,6 +42,7 @@
 #include "config.h"
 #include <glib.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -59,7 +60,7 @@ capture_hep_error_quark()
 static gboolean
 capture_hep_parse_url(const gchar *url_str, CaptureHepUrl *url, GError **error)
 {
-    // Parse url in format proto:host:port
+    // Parse url in format dissectors:host:port
     gchar **tokens = g_strsplit(url_str, ":", 3);
 
     // Check we have at least three tokens
@@ -67,7 +68,7 @@ capture_hep_parse_url(const gchar *url_str, CaptureHepUrl *url, GError **error)
         g_set_error (error,
                      CAPTURE_HEP_ERROR,
                      CAPTURE_HEP_ERROR_URL_PARSE,
-                     "Unable to parse URL %s: Invalid arguments number",
+                     "Unable to dissect URL %s: Invalid arguments number",
                      url_str);
         return FALSE;
     }
@@ -81,7 +82,7 @@ capture_hep_parse_url(const gchar *url_str, CaptureHepUrl *url, GError **error)
         g_set_error (error,
                      CAPTURE_HEP_ERROR,
                      CAPTURE_HEP_ERROR_URL_PARSE,
-                     "Unable to parse URL %s: Unsupported protocol %s",
+                     "Unable to dissect URL %s: Unsupported protocol %s",
                      url_str, url->proto);
         return FALSE;
     }
@@ -175,11 +176,11 @@ capture_input_hep_receive_v2(CaptureHep *hep)
     uint8_t family, proto;
     unsigned char *payload = 0;
     uint32_t pos;
-    char buffer[MAX_CAPTURE_LEN] ;
+    char buffer[MAX_HEP_BUFSIZE] ;
     //! Source Address
-    address_t src;
+    Address src;
     //! Destination address
-    address_t dst;
+    Address dst;
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
@@ -195,10 +196,10 @@ capture_input_hep_receive_v2(CaptureHep *hep)
 #endif
 
     // Initialize buffer
-    memset(buffer, 0, MAX_CAPTURE_LEN);
+    memset(buffer, 0, MAX_HEP_BUFSIZE);
 
     /* Receive HEP generic header */
-    if (recvfrom(hep->socket, buffer, MAX_CAPTURE_LEN, 0, &hep_client, &hep_client_len) == -1)
+    if (recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len) == -1)
         return NULL;
 
     /* Copy initial bytes to HEPv2 header */
@@ -208,7 +209,7 @@ capture_input_hep_receive_v2(CaptureHep *hep)
     if (hdr.hp_v != 2)
         return NULL;
 
-    /* IP proto */
+    /* IP dissectors */
     family = hdr.hp_f;
     /* Proto ID */
     proto = hdr.hp_p;
@@ -253,12 +254,13 @@ capture_input_hep_receive_v2(CaptureHep *hep)
     memcpy(payload, (void*) buffer + pos, header.caplen);
 
     // Create a new packet
+    /** @todo
     pkt = packet_create((family == AF_INET) ? 4 : 6, proto, src, dst, 0);
     packet_add_frame(pkt, &header, payload);
     packet_set_transport_data(pkt, src.port, dst.port);
     packet_set_type(pkt, PACKET_SIP_UDP);
     packet_set_payload(pkt, payload, header.caplen);
-
+    */
     /* FREE */
     sng_free(payload);
     return pkt;
@@ -281,9 +283,9 @@ capture_input_hep_receive_v3(CaptureHep *hep)
     size_t password_len, uuid_len;
     unsigned char *payload = 0;
     uint32_t pos;
-    char buffer[MAX_CAPTURE_LEN] ;
+    char buffer[MAX_HEP_BUFSIZE] ;
     //! Source and Destination Address
-    address_t src, dst;
+    Address src, dst;
     //! HEP client data
     struct sockaddr hep_client;
     socklen_t hep_client_len;
@@ -293,7 +295,7 @@ capture_input_hep_receive_v3(CaptureHep *hep)
     packet_t *pkt;
 
     /* Receive HEP generic header */
-    if (recvfrom(hep->socket, buffer, MAX_CAPTURE_LEN, 0, &hep_client, &hep_client_len) == -1)
+    if (recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len) == -1)
         return NULL;
 
     /* Copy initial bytes to HEP Generic header */
@@ -303,7 +305,7 @@ capture_input_hep_receive_v3(CaptureHep *hep)
     if (memcmp(hg.header.id, "\x48\x45\x50\x33", 4) != 0)
         return NULL;
 
-    /* IP proto */
+    /* IP dissectors */
     family = hg.ip_family.data;
     /* Proto ID */
     proto = hg.ip_proto.data;
@@ -379,15 +381,16 @@ capture_input_hep_receive_v3(CaptureHep *hep)
     // Receive packet payload
     payload = sng_malloc(header.caplen);
     memcpy(payload, (void*) buffer + pos, header.caplen);
-
+#if 0
     // Create a new packet
-    pkt = packet_create((family == AF_INET)?4:6, proto, src, dst, 0);
+    pkt = packet_create((family == AF_INET)?4:6, dissectors, src, dst, 0);
     packet_add_frame(pkt, &header, payload);
     packet_set_type(pkt, PACKET_SIP_UDP);
     packet_set_payload(pkt, payload, header.caplen);
 
     /* FREE */
     sng_free(payload);
+#endif
     return pkt;
 }
 
@@ -403,7 +406,7 @@ capture_input_hep_start(CaptureInput *input)
             pkt = capture_input_hep_receive_v2(hep);
         else
             pkt = capture_input_hep_receive_v3(hep);
-
+#if 0
         if (pkt != NULL) {
             // Avoid parsing from multiples sources.
             // Avoid parsing while screen in being redrawn
@@ -415,6 +418,7 @@ capture_input_hep_start(CaptureInput *input)
             }
             capture_unlock(capture_manager());
         }
+#endif
     }
 
     // Leave the thread gracefully
@@ -538,7 +542,7 @@ capture_output_hep_write_v2(CaptureOutput *output, packet_t *pkt)
     // Get HEP output data
     CaptureHep *hep = output->priv;
 
-    /* Version && proto */
+    /* Version && dissectors */
     hdr.hp_v = 2;
     hdr.hp_f = pkt->ip_version == 4 ? AF_INET : AF_INET6;
     hdr.hp_p = pkt->proto;
@@ -636,7 +640,7 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
     /* header set "HEP3" */
     memcpy(hg->header.id, "\x48\x45\x50\x33", 4);
 
-    /* IP proto */
+    /* IP dissectors */
     hg->ip_family.chunk.vendor_id   = htons(0x0000);
     hg->ip_family.chunk.type_id     = htons(0x0001);
     hg->ip_family.chunk.length      = htons(sizeof(hg->ip_family));
@@ -799,13 +803,15 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
 }
 
 void
-capture_output_hep_write(CaptureOutput *output, packet_t *packet)
+capture_output_hep_write(CaptureOutput *output, Packet *packet)
 {
+#if 0
     CaptureHep *hep = output->priv;
     if (hep->version == 2)
         capture_output_hep_write_v2(output, packet);
     else
         capture_output_hep_write_v3(output, packet);
+#endif
 }
 
 void

@@ -40,21 +40,21 @@
 #include <sys/types.h>
 #include <pcap.h>
 #include <glib.h>
-#include "address.h"
+#include "packet/address.h"
 
 //! Stored packet types
-enum packet_type {
-    PACKET_SIP_UDP = 0,
-    PACKET_SIP_TCP,
-    PACKET_SIP_TLS,
-    PACKET_SIP_WS,
-    PACKET_SIP_WSS,
-    PACKET_RTP,
-    PACKET_RTCP,
+enum packet_oldtype {
+    PACKET_OLD_SIP_UDP = 0,
+    PACKET_OLD_SIP_TCP,
+    PACKET_OLD_SIP_TLS,
+    PACKET_OLD_SIP_WS,
+    PACKET_OLD_SIP_WSS,
+    PACKET_OLD_RTP,
+    PACKET_OLD_RTCP,
 };
 
 //! Shorter declaration of packet structure
-typedef struct packet packet_t;
+typedef struct old_packet packet_t;
 //! Shorter declaration of frame structure
 typedef struct frame frame_t;
 
@@ -65,17 +65,17 @@ typedef struct frame frame_t;
  * one SIP message has one packet (maybe in multiple frames) and that one
  * packet can only contain one SIP message.
  */
-struct packet {
+struct old_packet {
     //! IP protocol
     uint8_t ip_version;
     //! Transport protocol
     uint8_t proto;
     //! Packet type as defined in capture_packet_type
-    enum packet_type type;
+    enum packet_oldtype type;
     //! Source
-    address_t src;
+    struct _Address src;
     //! Destination
-    address_t dst;
+    struct _Address dst;
     //! Packet IP id
     uint16_t ip_id;
     //! Packet IP fragmentation captured data
@@ -105,11 +105,8 @@ struct frame {
     u_char *data;
 };
 
-/**
- * @brief Allocate memory to store new packet data
- */
 packet_t *
-packet_create(uint8_t ip_ver, uint8_t proto, address_t src, address_t dst, uint32_t id);
+packet_create(uint8_t ip_ver, uint8_t proto, Address src, Address dst, uint32_t id);
 
 /**
  * @brief Deep clone one packet
@@ -147,7 +144,7 @@ packet_free_frames(packet_t *pkt);
  * @brief Set packet type
  */
 void
-packet_set_type(packet_t *packet, enum packet_type type);
+packet_set_type(packet_t *packet, enum packet_oldtype type);
 
 /**
  * @brief Set packet payload when it can not be get from packet

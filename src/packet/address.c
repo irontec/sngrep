@@ -35,20 +35,20 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-bool
-addressport_equals(address_t addr1, address_t addr2)
+gboolean
+addressport_equals(Address addr1, Address addr2)
 {
     return addr1.port == addr2.port && !strcmp(addr1.ip, addr2.ip);
 }
 
-bool
-address_equals(address_t addr1, address_t addr2)
+gboolean
+address_equals(Address addr1, Address addr2)
 {
     return !strcmp(addr1.ip, addr2.ip);
 }
 
-bool
-address_is_local(address_t addr)
+gboolean
+address_is_local(Address addr)
 {
     //! Local devices pointer
     static pcap_if_t *devices = 0;
@@ -78,42 +78,44 @@ address_is_local(address_t addr)
 
             // Get address representation
             switch (da->addr->sa_family) {
-            case AF_INET:
-                ipaddr = (struct sockaddr_in *) da->addr;
-                inet_ntop(AF_INET, &ipaddr->sin_addr, ip, sizeof(ip));
-                break;
+                case AF_INET:
+                    ipaddr = (struct sockaddr_in *) da->addr;
+                    inet_ntop(AF_INET, &ipaddr->sin_addr, ip, sizeof(ip));
+                    break;
 #ifdef USE_IPV6
-            case AF_INET6:
-                ip6addr = (struct sockaddr_in6 *) da->addr;
-                inet_ntop(AF_INET, &ip6addr->sin6_addr, ip, sizeof(ip));
-                break;
+                case AF_INET6:
+                    ip6addr = (struct sockaddr_in6 *) da->addr;
+                    inet_ntop(AF_INET, &ip6addr->sin6_addr, ip, sizeof(ip));
+                    break;
 #endif
+                default:
+                    return FALSE;
             }
 
             // Check if this address matches
             if (!strcmp(addr.ip, ip)) {
-                return true;
+                return TRUE;
             }
 
         }
     }
-    return false;
+    return FALSE;
 }
 
-address_t
+Address
 address_from_str(const char *ipport)
 {
-    address_t ret = {};
-    char scanipport[256];
-    char address[256];
-    int port;
+    Address ret = {};
+    gchar scanipport[256];
+    gchar address[256];
+    guint16 port;
 
     if (!ipport || strlen(ipport) > ADDRESSLEN + 6)
         return ret;
 
     strncpy(scanipport, ipport, strlen(ipport));
 
-    if (sscanf(scanipport, "%[^:]:%d", address, &port) == 2) {
+    if (sscanf(scanipport, "%[^:]:%hd", address, &port) == 2) {
         strncpy(ret.ip, address, strlen(address));
         ret.port = port;
     }

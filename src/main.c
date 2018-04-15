@@ -30,14 +30,13 @@
 #include <glib.h>
 #include "option.h"
 #include "capture/capture.h"
-#include "capture/capture_hep.h"
-#ifdef WITH_GNUTLS
-#include "capture/capture_gnutls.h"
-#endif
-#ifdef WITH_OPENSSL
-#include "capture/capture_openssl.h"
-#endif
 #include "curses/ui_manager.h"
+#ifdef USE_HEP
+#include "capture/capture_hep.h"
+#endif
+#ifdef WITH_GNUTLS
+#include "packet/dissectors/packet_tls.h"
+#endif
 
 void
 print_version_info()
@@ -126,7 +125,7 @@ main(int argc, char* argv[])
           "Read configuration from FILE", "FILE" },
         { "no-config", 'F', 0, G_OPTION_ARG_NONE, &no_config,
           "Do not read configuration from default config file", NULL },
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
+#ifdef WITH_GNUTLS
         { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
             "RSA private keyfile to decrypt captured packets", "KEYFILE" },
 #endif
@@ -182,7 +181,7 @@ main(int argc, char* argv[])
     if (!storage_copts.outfile)
         storage_copts.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
 
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
+#ifdef WITH_GNUTLS
     if (!keyfile) keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
 #endif
 
@@ -227,7 +226,7 @@ main(int argc, char* argv[])
 
 #endif
 
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
+#ifdef WITH_GNUTLS
     if (keyfile) {
         // Check if we have a keyfile and is valid
         if (!tls_check_keyfile(keyfile, &error)) {

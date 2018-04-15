@@ -47,96 +47,6 @@
 sip_call_list_t calls =
 { 0 };
 
-/* @brief list of methods and responses */
-sip_code_t sip_codes[] = {
-    { SIP_METHOD_REGISTER,  "REGISTER" },
-    { SIP_METHOD_INVITE,    "INVITE" },
-    { SIP_METHOD_SUBSCRIBE, "SUBSCRIBE" },
-    { SIP_METHOD_NOTIFY,    "NOTIFY" },
-    { SIP_METHOD_OPTIONS,   "OPTIONS" },
-    { SIP_METHOD_PUBLISH,   "PUBLISH" },
-    { SIP_METHOD_MESSAGE,   "MESSAGE" },
-    { SIP_METHOD_CANCEL,    "CANCEL" },
-    { SIP_METHOD_BYE,       "BYE" },
-    { SIP_METHOD_ACK,       "ACK" },
-    { SIP_METHOD_PRACK,     "PRACK" },
-    { SIP_METHOD_INFO,      "INFO" },
-    { SIP_METHOD_REFER,     "REFER" },
-    { SIP_METHOD_UPDATE,    "UPDATE" },
-    { 100, "100 Trying" },
-    { 180, "180 Ringing" },
-    { 181, "181 Call is Being Forwarded" },
-    { 182, "182 Queued" },
-    { 183, "183 Session Progress" },
-    { 199, "199 Early Dialog Terminated" },
-    { 200, "200 OK" },
-    { 202, "202 Accepted" },
-    { 204, "204 No Notification" },
-    { 300, "300 Multiple Choices" },
-    { 301, "301 Moved Permanently" },
-    { 302, "302 Moved Temporarily" },
-    { 305, "305 Use Proxy" },
-    { 380, "380 Alternative Service" },
-    { 400, "400 Bad Request" },
-    { 401, "401 Unauthorized" },
-    { 402, "402 Payment Required" },
-    { 403, "403 Forbidden" },
-    { 404, "404 Not Found" },
-    { 405, "405 Method Not Allowed" },
-    { 406, "406 Not Acceptable" },
-    { 407, "407 Proxy Authentication Required" },
-    { 408, "408 Request Timeout" },
-    { 409, "409 Conflict" },
-    { 410, "410 Gone" },
-    { 411, "411 Length Required" },
-    { 412, "412 Conditional Request Failed" },
-    { 413, "413 Request Entity Too Large" },
-    { 414, "414 Request-URI Too Long" },
-    { 415, "415 Unsupported Media Type" },
-    { 416, "416 Unsupported URI Scheme" },
-    { 417, "417 Unknown Resource-Priority" },
-    { 420, "420 Bad Extension" },
-    { 421, "421 Extension Required" },
-    { 422, "422 Session Interval Too Small" },
-    { 423, "423 Interval Too Brief" },
-    { 424, "424 Bad Location Information" },
-    { 428, "428 Use Identity Header" },
-    { 429, "429 Provide Referrer Identity" },
-    { 430, "430 Flow Failed" },
-    { 433, "433 Anonymity Disallowed" },
-    { 436, "436 Bad Identity-Info" },
-    { 437, "437 Unsupported Certificate" },
-    { 438, "438 Invalid Identity Header" },
-    { 439, "439 First Hop Lacks Outbound Support" },
-    { 470, "470 Consent Needed" },
-    { 480, "480 Temporarily Unavailable" },
-    { 481, "481 Call/Transaction Does Not Exist" },
-    { 482, "482 Loop Detected." },
-    { 483, "483 Too Many Hops" },
-    { 484, "484 Address Incomplete" },
-    { 485, "485 Ambiguous" },
-    { 486, "486 Busy Here" },
-    { 487, "487 Request Terminated" },
-    { 488, "488 Not Acceptable Here" },
-    { 489, "489 Bad Event" },
-    { 491, "491 Request Pending" },
-    { 493, "493 Undecipherable" },
-    { 494, "494 Security Agreement Required" },
-    { 500, "500 Server Internal Error" },
-    { 501, "501 Not Implemented" },
-    { 502, "502 Bad Gateway" },
-    { 503, "503 Service Unavailable" },
-    { 504, "504 Server Time-out" },
-    { 505, "505 Version Not Supported" },
-    { 513, "513 Message Too Large" },
-    { 580, "580 Precondition Failure" },
-    { 600, "600 Busy Everywhere" },
-    { 603, "603 Decline" },
-    { 604, "604 Does Not Exist Anywhere" },
-    { 606, "606 Not Acceptable" },
-    { -1 , NULL },
-};
-
 gboolean
 sip_init(SStorageCaptureOpts capture_options,
          SStorageMatchOpts match_options,
@@ -377,7 +287,7 @@ sip_check_packet(packet_t *packet)
         return NULL;
 
     // Get Method and request for the following checks
-    // There is no need to parse all payload at this point
+    // There is no need to dissect all payload at this point
     // If no response or request code is found, this is not a SIP message
     if (!sip_get_msg_reqresp(msg, payload)) {
         // Deallocate message memory
@@ -425,7 +335,7 @@ sip_check_packet(packet_t *packet)
     // At this point we know we're handling an interesting SIP Packet
     msg->packet = packet;
 
-    // Always parse first call message
+    // Always dissect first call message
     if (call_msg_count(call) == 0) {
         // Parse SIP payload
         sip_parse_msg_payload(msg, payload);
@@ -659,7 +569,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
       } \
     }
 
-    address_t dst, src = { };
+    Address dst, src = { };
     rtp_stream_t *rtp_stream = NULL, *rtcp_stream = NULL, *msg_rtp_stream = NULL;
     char media_type[MEDIATYPELEN] = { };
     char media_format[30] = { };
@@ -834,46 +744,22 @@ sip_check_match_expression(const char *payload)
 
 }
 
-const char *
-sip_method_str(int method)
-{
-    int i;
 
-    // Standard method
-    for (i = 0; sip_codes[i].id > 0; i++) {
-        if (method == sip_codes[i].id)
-            return sip_codes[i].text;
-    }
-    return NULL;
-}
-
-int
-sip_method_from_str(const char *method)
-{
-    int i;
-
-    // Standard method
-    for (i = 0; sip_codes[i].id > 0; i++) {
-        if (!strcmp(method, sip_codes[i].text))
-            return sip_codes[i].id;
-    }
-    return atoi(method);
-}
 
 const char *
 sip_transport_str(int transport)
 {
     switch(transport)
     {
-        case PACKET_SIP_UDP:
+        case PACKET_OLD_SIP_UDP:
             return "UDP";
-        case PACKET_SIP_TCP:
+        case PACKET_OLD_SIP_TCP:
             return "TCP";
-        case PACKET_SIP_TLS:
+        case PACKET_OLD_SIP_TLS:
             return "TLS";
-        case PACKET_SIP_WS:
+        case PACKET_OLD_SIP_WS:
             return "WS";
-        case PACKET_SIP_WSS:
+        case PACKET_OLD_SIP_WSS:
             return "WSS";
     }
     return "";

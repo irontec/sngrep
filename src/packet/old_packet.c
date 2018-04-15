@@ -31,10 +31,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "glib-utils.h"
-#include "packet.h"
+#include "old_packet.h"
 
 packet_t *
-packet_create(uint8_t ip_ver, uint8_t proto, address_t src, address_t dst, uint32_t id)
+packet_create(uint8_t ip_ver, uint8_t proto, Address src, Address dst, uint32_t id)
 {
     // Create a new packet
     packet_t *packet;
@@ -126,7 +126,7 @@ packet_add_frame(packet_t *pkt, const struct pcap_pkthdr *header, const u_char *
 }
 
 void
-packet_set_type(packet_t *packet, enum packet_type type)
+packet_set_type(packet_t *packet, enum packet_oldtype type)
 {
     packet->type = type;
 }

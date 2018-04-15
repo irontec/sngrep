@@ -15,36 +15,45 @@ configure_file(
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 set(SOURCES
-    src/address.c
-    src/capture/capture.c
-    src/capture/capture_pcap.c
-    src/curses/scrollbar.c
-    src/curses/ui_call_flow.c
-    src/curses/ui_call_list.c
-    src/curses/ui_call_raw.c
-    src/curses/ui_column_select.c
-    src/curses/ui_filter.c
-    src/curses/ui_manager.c
-    src/curses/ui_msg_diff.c
-    src/curses/ui_panel.c
-    src/curses/ui_save.c
-    src/curses/ui_settings.c
-    src/curses/ui_stats.c
-    src/filter.c
-    src/group.c
-    src/keybinding.c
-    src/main.c
-    src/media.c
-    src/option.c
-    src/packet.c
-    src/rtp.c
-    src/setting.c
-    src/sip_attr.c
-    src/sip.c
-    src/sip_call.c
-    src/sip_msg.c
-    src/util.c
-    src/glib-utils.c
+        src/packet/address.c
+        src/packet/packet.c
+        src/packet/parser.c
+        src/packet/dissectors/packet_link.c
+        src/packet/dissectors/packet_ip.c
+        src/packet/dissectors/packet_tcp.c
+        src/packet/dissectors/packet_udp.c
+        src/packet/dissectors/packet_sip.c
+        src/packet/dissectors/packet_rtp.c
+        src/packet/dissectors/packet_rtcp.c
+        src/capture/capture.c
+        src/capture/capture_pcap.c
+        src/curses/scrollbar.c
+        src/curses/ui_call_flow.c
+        src/curses/ui_call_list.c
+        src/curses/ui_call_raw.c
+        src/curses/ui_column_select.c
+        src/curses/ui_filter.c
+        src/curses/ui_manager.c
+        src/curses/ui_msg_diff.c
+        src/curses/ui_panel.c
+        src/curses/ui_save.c
+        src/curses/ui_settings.c
+        src/curses/ui_stats.c
+        src/filter.c
+        src/group.c
+        src/keybinding.c
+        src/main.c
+        src/packet/media.c
+        src/option.c
+        src/packet/old_packet.c
+        src/packet/rtp.c
+        src/setting.c
+        src/sip_attr.c
+        src/sip.c
+        src/sip_call.c
+        src/sip_msg.c
+        src/util.c
+        src/glib-utils.c
 )
 
 ######################################################################
@@ -60,7 +69,7 @@ option (USE_IPV6 "Enable IPv6 Support" ON)
 # GnuTLS Support
 option (WITH_GNUTLS "Enable SSL Support (TLS SIP Transport)" ON)
 if (WITH_GNUTLS)
-    set(SOURCES ${SOURCES} src/capture/capture_gnutls.c)
+    set(SOURCES ${SOURCES} src/packet/dissectors/packet_tls.c)
 endif(WITH_GNUTLS)
 
 ######################################################################

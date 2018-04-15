@@ -254,7 +254,7 @@ call_flow_draw_columns(ui_t *ui)
     sip_msg_t *msg = NULL;
     GSequenceIter *it;
     char coltext[MAX_SETTING_LEN];
-    address_t addr;
+    Address addr;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -427,8 +427,8 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     const char *callid;
     char msg_method[SIP_ATTR_MAXLEN];
     char msg_time[80];
-    address_t src;
-    address_t dst;
+    Address src;
+    Address dst;
     char method[80];
     char delta[15] = { };
     int flowh;
@@ -679,7 +679,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     sip_msg_t *msg;
     sip_call_t *call;
     call_flow_arrow_t *msgarrow;
-    address_t addr;
+    Address addr;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -1343,7 +1343,7 @@ call_flow_set_group(sip_call_group_t *group)
 }
 
 void
-call_flow_column_add(ui_t *ui, const char *callid, address_t addr)
+call_flow_column_add(ui_t *ui, const char *callid, Address addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
@@ -1379,7 +1379,7 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr)
 }
 
 call_flow_column_t *
-call_flow_column_get(ui_t *ui, const char *callid, address_t addr)
+call_flow_column_get(ui_t *ui, const char *callid, Address addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;

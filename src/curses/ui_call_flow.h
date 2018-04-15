@@ -120,7 +120,7 @@ struct call_flow_arrow {
  */
 struct call_flow_column {
     //! Address header for this column
-    address_t addr;
+    Address addr;
     //! Alias for the given address
     char alias[MAX_SETTING_LEN];
     //! Call Ids
@@ -426,7 +426,7 @@ call_flow_set_group(sip_call_group_t *group);
  * @param addr Address:port string
  */
 void
-call_flow_column_add(ui_t *ui, const char *callid, address_t addr);
+call_flow_column_add(ui_t *ui, const char *callid, Address addr);
 
 /**
  * @brief Get a flow column data
@@ -437,7 +437,7 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr);
  * @return column structure pointer or NULL if not found
  */
 call_flow_column_t *
-call_flow_column_get(ui_t *ui, const char *callid, address_t address);
+call_flow_column_get(ui_t *ui, const char *callid, Address address);
 
 /**
  * @brief Move selected cursor to given arrow

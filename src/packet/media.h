@@ -53,7 +53,7 @@ struct sdp_media_fmt {
 
 struct sdp_media {
     //! SDP Addresses information
-    address_t address;
+    Address address;
     char type[MEDIATYPELEN];
     uint32_t fmtcode;
     //! List of described formats in this media
@@ -80,7 +80,7 @@ void
 media_set_type(sdp_media_t *media, const char *type);
 
 void
-media_set_address(sdp_media_t *media, address_t addr);
+media_set_address(sdp_media_t *media, Address addr);
 
 void
 media_set_prefered_format(sdp_media_t *media, uint32_t code);

@@ -40,8 +40,7 @@
 
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
-//! Shorter declaration of sip codes structure
-typedef struct sip_code sip_code_t;
+
 //! Shorter declaration of sip stats
 typedef struct sip_stats sip_stats_t;
 //! Shorter declaration of sip sort
@@ -110,14 +109,7 @@ struct _SStorageCaptureOpts {
     gchar *outfile;
 };
 
-/**
- * @brief Different Request/Response codes in SIP Protocol
- */
-struct sip_code
-{
-    int id;
-    const char *text;
-};
+
 
 /**
  * @brief Structure to store dialog stats

@@ -173,7 +173,7 @@ call_msg_retrans_check(sip_msg_t *msg)
 }
 
 sip_msg_t *
-call_msg_with_media(sip_call_t *call, address_t dst)
+call_msg_with_media(sip_call_t *call, Address dst)
 {
     sip_msg_t *msg;
     sdp_media_t *media;
@@ -273,7 +273,7 @@ call_get_attribute(const sip_call_t *call, enum sip_attr_id id, char *value)
             break;
         case SIP_ATTR_TRANSPORT:
             first = g_sequence_first(call->msgs);
-            sprintf(value, "%s", sip_transport_str(first->packet->type));
+//@todo            sprintf(value, "%s", sip_transport_str(first->packet->type));
             break;
         case SIP_ATTR_CONVDUR:
             timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(call->cend_msg), value);

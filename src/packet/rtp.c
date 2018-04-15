@@ -37,39 +37,8 @@
 #include "rtp.h"
 #include "sip.h"
 
-/**
- * @brief Known RTP encodings
- */
-rtp_encoding_t encodings[] = {
-    { 0, "PCMU/8000", "g711u" },
-    { 3, "GSM/8000", "gsm" },
-    { 4, "G723/8000", "g723" },
-    { 5, "DVI4/8000", "dvi" },
-    { 6, "DVI4/16000", "dvi" },
-    { 7, "LPC/8000", "lpc" },
-    { 8, "PCMA/8000", "g711a" },
-    { 9, "G722/8000", "g722" },
-    { 10, "L16/44100", "l16" },
-    { 11, "L16/44100", "l16" },
-    { 12, "QCELP/8000", "qcelp" },
-    { 13, "CN/8000", "cn" },
-    { 14, "MPA/90000", "mpa" },
-    { 15, "G728/8000", "g728" },
-    { 16, "DVI4/11025", "dvi" },
-    { 17, "DVI4/22050", "dvi" },
-    { 18, "G729/8000", "g729" },
-    { 25, "CelB/90000", "celb" },
-    { 26, "JPEG/90000", "jpeg" },
-    { 28, "nv/90000", "nv" },
-    { 31, "H261/90000", "h261" },
-    { 32, "MPV/90000", "mpv" },
-    { 33, "MP2T/90000", "mp2t" },
-    { 34, "H263/90000", "h263" },
-    { 0, NULL, NULL }
-};
-
 rtp_stream_t *
-stream_create(sdp_media_t *media, address_t dst, int type)
+stream_create(sdp_media_t *media, Address dst, int type)
 {
     rtp_stream_t *stream;
 
@@ -86,7 +55,7 @@ stream_create(sdp_media_t *media, address_t dst, int type)
 }
 
 rtp_stream_t *
-stream_complete(rtp_stream_t *stream, address_t src)
+stream_complete(rtp_stream_t *stream, Address src)
 {
     stream->src = src;
     return stream;
@@ -143,24 +112,12 @@ stream_get_format(rtp_stream_t *stream)
     return NULL;
 }
 
-const char *
-rtp_get_standard_format(uint32_t code)
-{
-    int i;
 
-    // Format from RTP codec id
-    for (i = 0; encodings[i].format; i++) {
-        if (encodings[i].id == code)
-            return encodings[i].format;
-    }
-
-    return NULL;
-}
 
 rtp_stream_t *
 rtp_check_packet(packet_t *packet)
 {
-    address_t src, dst;
+    Address src, dst;
     rtp_stream_t *stream;
     rtp_stream_t *reverse;
     u_char format = 0;
@@ -330,7 +287,7 @@ rtp_check_packet(packet_t *packet)
 }
 
 rtp_stream_t *
-rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
+rtp_find_stream_format(Address src, Address dst, uint32_t format)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -382,7 +339,7 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
 }
 
 rtp_stream_t *
-rtp_find_stream(address_t src, address_t dst)
+rtp_find_stream(Address src, Address dst)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -408,7 +365,7 @@ rtp_find_stream(address_t src, address_t dst)
 
 
 rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
+rtp_find_call_stream(struct sip_call *call, Address src, Address dst)
 {
     rtp_stream_t *stream;
     GSequenceIter *it;
@@ -441,7 +398,7 @@ rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst)
 }
 
 rtp_stream_t *
-rtp_find_call_exact_stream(struct sip_call *call, address_t src, address_t dst)
+rtp_find_call_exact_stream(struct sip_call *call, Address src, Address dst)
 {
     rtp_stream_t *stream;
     GSequenceIter *it;

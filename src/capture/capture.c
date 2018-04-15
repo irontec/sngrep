@@ -160,7 +160,7 @@ capture_unlock(CaptureManager *manager)
 }
 
 void
-capture_manager_output_packet(CaptureManager *manager, packet_t *packet)
+capture_manager_output_packet(CaptureManager *manager, Packet *packet)
 {
     for (GSList *l = manager->outputs; l != NULL; l = l->next) {
         CaptureOutput *output = l->data;
@@ -254,7 +254,7 @@ capture_is_online(CaptureManager *manager)
     return TRUE;
 }
 
-address_t
+Address
 capture_tls_server(CaptureManager *manager)
 {
     return manager->tlsserver;

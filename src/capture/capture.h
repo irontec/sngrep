@@ -30,7 +30,7 @@
 #define __SNGREP_CAPTURE_H
 
 #include <glib.h>
-#include "packet.h"
+#include "packet/parser.h"
 
 //! Capture modes
 enum capture_mode
@@ -46,9 +46,9 @@ enum capture_tech
     CAPTURE_TECH_HEP,
 };
 
-typedef struct _CaptureInput CaptureInput;
-typedef struct _CaptureOutput CaptureOutput;
-typedef struct _CaptureManager CaptureManager;
+typedef struct _CaptureInput    CaptureInput;
+typedef struct _CaptureOutput   CaptureOutput;
+typedef struct _CaptureManager  CaptureManager;
 
 /**
  * @brief Capture common configuration
@@ -61,7 +61,7 @@ struct _CaptureManager {
     //! capture filter expression text
     const gchar *filter;
     //! TLS Server address
-    address_t tlsserver;
+    Address tlsserver;
     //! Flag to skip captured packets
     gboolean paused;
     //! Packet capture inputs (CaptureInput *)
@@ -75,14 +75,14 @@ struct _CaptureManager {
 };
 
 struct _CaptureInput {
-    //! Capture Input type
-    enum capture_tech tech;
-    //! Source string
-    const gchar *source;
     //! Manager owner of this capture input
     CaptureManager *manager;
+    //! Capture Input type
+    enum capture_tech tech;
     //! Are captured packets life
     enum capture_mode mode;
+    //! Source string
+    const gchar *source;
     //! Thread that runs capture callback
     GThread *thread;
     //! Private capture input data
@@ -91,7 +91,7 @@ struct _CaptureInput {
     gboolean running;
 
     //! Each packet type private data
-    //PacketParser *parser;
+    PacketParser *parser;
     //! Start capturing packets function
     void (*start)(CaptureInput *input);
     //! Stop capturing packets function
@@ -111,7 +111,7 @@ struct _CaptureOutput {
     void *priv;
 
     //! Dump packet function
-    void (*write)(CaptureOutput *output, packet_t *packet);
+    void (*write)(CaptureOutput *output, Packet *packet);
     //! Close dump packet  function
     void (*close)(CaptureOutput *output);
 };
@@ -219,7 +219,7 @@ capture_unlock(CaptureManager *manager);
  * @brief Store the given packet in call outputs
  */
 void
-capture_manager_output_packet(CaptureManager *manager, packet_t *packet);
+capture_manager_output_packet(CaptureManager *manager, Packet *packet);
 
 /**
  * @brief Determine if any of capture inputs is running
@@ -234,8 +234,6 @@ capture_is_running(CaptureManager *manager);
  */
 const gchar *
 capture_status_desc(CaptureManager *manager);
-
-
 
 /**
  * @brief Get Key file from decrypting TLS packets
@@ -257,7 +255,7 @@ capture_is_online(CaptureManager *manager);
  * @brief Get TLS Server address if configured
  * @return address scructure
  */
-address_t
+Address
 capture_tls_server(CaptureManager *manager);
 
 /**

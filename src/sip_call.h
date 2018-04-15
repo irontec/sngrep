@@ -32,7 +32,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <glib.h>
-#include "rtp.h"
+#include "packet/rtp.h"
 #include "sip_msg.h"
 #include "sip_attr.h"
 
@@ -209,7 +209,7 @@ call_msg_retrans_check(sip_msg_t *msg);
  * @return the message found or NULL
  */
 sip_msg_t *
-call_msg_with_media(sip_call_t *call, address_t dst);
+call_msg_with_media(sip_call_t *call, Address dst);
 
 /**
  * @brief Update Call State attribute with its last parsed message

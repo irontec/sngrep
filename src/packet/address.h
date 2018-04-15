@@ -34,8 +34,7 @@
 #define __SNGREP_ADDRESS_H
 
 #include <netinet/in.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <glib.h>
 
 //! Address string Length
 #ifdef USE_IPV6
@@ -49,16 +48,17 @@
 #endif
 
 //! Shorter declaration of address structure
-typedef struct address address_t;
+typedef struct _Address Address;
 
 /**
  * @brief Network address
  */
-struct address {
+struct _Address
+{
     //! IP address
-    char ip[ADDRESSLEN];
+    gchar ip[ADDRESSLEN];
     //! Port
-    uint16_t port;
+    guint16 port;
 };
 
 /**
@@ -68,8 +68,8 @@ struct address {
  * @param addr2 Address structure
  * @return true if addresses contain the IP address, false otherwise
  */
-bool
-addressport_equals(address_t addr1, address_t addr2);
+gboolean
+addressport_equals(Address addr1, Address addr2);
 
 /**
  * @brief Check if two address are equal (ignoring port)
@@ -78,8 +78,8 @@ addressport_equals(address_t addr1, address_t addr2);
  * @param addr2 Address structure
  * @return true if addresses contain the same data, false otherwise
  */
-bool
-address_equals(address_t addr1, address_t addr2);
+gboolean
+address_equals(Address addr1, Address addr2);
 
 /**
  * @brief Check if a given IP address belongs to a local device
@@ -87,8 +87,8 @@ address_equals(address_t addr1, address_t addr2);
  * @param address Address structure
  * @return true if address is local, false otherwise
  */
-bool
-address_is_local(address_t addr);
+gboolean
+address_is_local(Address addr);
 
 /**
  * @brief Convert string IP:PORT to address structure
@@ -96,8 +96,7 @@ address_is_local(address_t addr);
  * @param string in format IP:PORT
  * @return address structure
  */
-address_t
-address_from_str(const char *ipport);
-
+Address
+address_from_str(const gchar *ipport);
 
 #endif /* __SNGREP_ADDRESS_H */

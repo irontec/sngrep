@@ -43,6 +43,8 @@
 #define __SNGREP_CAPTURE_HEP_H
 #include <glib.h>
 
+//! Max allowed packet size
+#define MAX_HEP_BUFSIZE 20480
 //! Error reporting
 #define CAPTURE_HEP_ERROR (capture_hep_error_quark())
 
@@ -65,7 +67,8 @@ typedef struct _CaptureHepChunkIp6      CaptureHepChunkIp6;
 /**
  * @brief Hep URL Cliend/Server data
  */
-struct _CaptureHepUrl {
+struct _CaptureHepUrl
+{
     //! Protocol
     const gchar *proto;
     //! IP address to send/receive HEP data
@@ -77,7 +80,8 @@ struct _CaptureHepUrl {
 /**
  * @brief HEP Capture Input/Output private data
  */
-struct _CaptureHep {
+struct _CaptureHep
+{
     //! Client/Server socket
     int socket;
     //! Capture agent id
@@ -91,47 +95,55 @@ struct _CaptureHep {
 };
 
 /* HEPv3 types */
-struct _CaptureHepChunk {
+struct _CaptureHepChunk
+{
     guint16 vendor_id;
     guint16 type_id;
     guint16 length;
 }__attribute__((packed));
 
 
-struct _CaptureHepChunkUint8 {
+struct _CaptureHepChunkUint8
+{
     struct _CaptureHepChunk chunk;
     guint8 data;
 }__attribute__((packed));
 
 
-struct _CaptureHepChunkUint16 {
+struct _CaptureHepChunkUint16
+{
     struct _CaptureHepChunk chunk;
     guint16 data;
 }__attribute__((packed));
 
 
-struct _CaptureHepChunkUint32 {
+struct _CaptureHepChunkUint32
+{
     struct _CaptureHepChunk chunk;
     guint32 data;
 }__attribute__((packed));
 
-struct _CaptureHepChunkIp4 {
+struct _CaptureHepChunkIp4
+{
     struct _CaptureHepChunk chunk;
     struct in_addr data;
 }__attribute__((packed));
 
-struct _CaptureHepChunkIp6 {
+struct _CaptureHepChunkIp6
+{
     struct _CaptureHepChunk chunk;
     struct in6_addr data;
 }__attribute__((packed));
 
 
-struct _CaptureHepCtrl {
+struct _CaptureHepCtrl
+{
     gchar id[4];
     guint16 length;
 }__attribute__((packed));
 
-struct CaptureHepGeneric {
+struct CaptureHepGeneric
+{
     struct _CaptureHepCtrl header;
     struct _CaptureHepChunkUint8 ip_family;
     struct _CaptureHepChunkUint8 ip_proto;
@@ -143,7 +155,8 @@ struct CaptureHepGeneric {
     struct _CaptureHepChunkUint32 capt_id;
 }__attribute__((packed));
 
-struct _CaptureHepHdr {
+struct _CaptureHepHdr
+{
     guint8 hp_v;            /* version */
     guint8 hp_l;            /* length */
     guint8 hp_f;            /* family */
@@ -152,19 +165,22 @@ struct _CaptureHepHdr {
     guint16 hp_dport;       /* destination port */
 };
 
-struct _CaptureHepTimeHdr {
+struct _CaptureHepTimeHdr
+{
     guint32 tv_sec;         /* seconds */
     guint32 tv_usec;        /* useconds */
     guint16 captid;         /* Capture ID node */
 };
 
-struct _CaptureHepIpHdr {
+struct _CaptureHepIpHdr
+{
     struct in_addr hp_src;
     struct in_addr hp_dst;  /* source and dest address */
 };
 
 #ifdef USE_IPV6
-struct _CaptureHepIp6Hdr {
+struct _CaptureHepIp6Hdr
+{
     struct in6_addr hp6_src; /* source address */
     struct in6_addr hp6_dst; /* destination address */
 };
@@ -235,7 +251,7 @@ capture_output_hep(const gchar *url, GError **error);
  * @param pkt Packet Structure data
  */
 void
-capture_output_hep_write(CaptureOutput *output, packet_t *pkt);
+capture_output_hep_write(CaptureOutput *output, Packet *pkt);
 
 /**
  * @brief Close a HEP capture output
