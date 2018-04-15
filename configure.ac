@@ -128,13 +128,66 @@ AC_ARG_WITH([gnutls],
 
 AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
 
-    m4_ifdef([PKG_CHECK_MODULES], [
-        PKG_CHECK_MODULES([LIBGNUTLS], [gnutls])
-    ], [
-	AC_CHECK_LIB([gnutls], [gnutls_init], [], [
-	    AC_MSG_ERROR([ You need to have gnutls installed to compile sngrep])
-	])
+  if test "$enable_static" = "yes" ; then
+
+    echo ''
+    echo ' *******************************************************'
+    echo ' = GnuTLS without "p11-kit" is required static linking ='
+    echo ' *******************************************************'
+    echo ''
+
+    AC_CHECK_LIB([dl], [dlopen], [], [
+      AC_MSG_ERROR([ You need to have libdl installed to static-compile sngrep.])
     ])
+
+    AC_CHECK_LIB([m], [__ieee754_logf], [], [
+      AC_MSG_ERROR([ You need to have libm installed to static-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB([gpg-error], [gpg_err_code_from_errno], [], [
+      AC_MSG_ERROR([ You need to have libgpg-error installed to static-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB([gmp], [__gmpz_init], [], [
+      AC_MSG_ERROR([ You need to have libgmp installed to static-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB([nettle], [nettle_memxor], [], [
+      AC_MSG_ERROR([ You need to have libnettle installed to static-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB([tasn1], [asn1_create_element], [], [
+      AC_MSG_ERROR([ You need to have libtasn1 installed to static-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB([hogweed], [nettle_mpz_sizeinbase_256_u], [], [
+      AC_MSG_ERROR([ You need to have libhogweed installed to static-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB([gcrypt], [gcry_md_map_name], [], [
+      AC_MSG_ERROR([ You need to have libgcrypt installed to static-compile sngrep])
+    ])
+
+    AC_CHECK_LIB([idn], [idna_to_ascii_4i], [], [
+      AC_MSG_ERROR([ You need to have libidn installed to static-compile sngrep])
+    ])
+
+    AC_CHECK_LIB([z], [adler32], [], [
+      AC_MSG_ERROR([ You need to have libz installed to static-compile sngrep])
+    ])
+
+    AC_CHECK_LIB([gnutls], [gnutls_init], [], [
+      AC_MSG_ERROR([ You need to have libgnutls without "p11-kit" installed to static-compile sngrep])
+    ])
+  fi
+
+  m4_ifdef([PKG_CHECK_MODULES], [
+      PKG_CHECK_MODULES([LIBGNUTLS], [gnutls])
+    ], [
+    AC_CHECK_LIB([gnutls], [gnutls_init], [], [
+      AC_MSG_ERROR([ You need to have gnutls installed to compile sngrep])
+    ])
+  ])
 
 	AC_PATH_PROG([LIBGCRYPT_CONFIG],[libgcrypt-config],[no])
 	if test "x${LIBGCRYPT_CONFIG}" = "xno"; then
@@ -255,7 +308,7 @@ AS_IF([test "x$USE_EEP" == "xyes"], [
 ], [])
 
 
-# Conditional Source inclusion 
+# Conditional Source inclusion
 AM_CONDITIONAL([WITH_GNUTLS], [test "x$WITH_GNUTLS" == "xyes"])
 AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" == "xyes"])
 AM_CONDITIONAL([USE_EEP], [test "x$USE_EEP" == "xyes"])
