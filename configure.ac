@@ -20,6 +20,15 @@ if test "$enable_debug" = "yes" ; then
     CXXFLAGS="$CXXFLAGS $CFLAGS"
 fi
 
+# static compilation
+AC_ARG_ENABLE(static,
+    AC_HELP_STRING(--enable-static, [Static compilation (Default = no)]),
+    enable_static=$enableval, enable_static=no)
+
+if test "$enable_static" = "yes" ; then
+    CFLAGS="$CFLAGS  -static"
+fi
+
 # Minimum checks for a C program :)
 AC_PROG_CC
 AC_PROG_CXX
