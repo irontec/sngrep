@@ -37,14 +37,18 @@ On most systems the commands to build will be the standard autotools procedure:
 
 You can pass following flags to ./configure to enable some features
 
-| configure flag | Feature |
-| ------------- | ------------- |
-| `--with-openssl` | Adds OpenSSL support to parse TLS captured messages (req. libssl)  |
-| `--with-gnutls` | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
-| `--with-pcre`|  Adds Perl Compatible regular expressions support in regexp fields |
-| `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
-| `--enable-ipv6`   | Enable IPv6 packet capture support. |
-| `--enable-eep`   | Enable EEP packet send/receive support. |
+| configure flag     | Feature                                                           |
+|--------------------|-------------------------------------------------------------------|
+| `--with-openssl`   | Adds OpenSSL support to parse TLS captured messages (req. libssl) |
+| `--with-gnutls`    | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
+|                    |   - GnuTLS without "p11-kit" is required for static compilation   |
+|                    |                                                                   |
+| `--with-pcre`      | Adds Perl Compatible regular expressions support in regexp fields |
+| `--enable-unicode` | Adds Ncurses UTF-8/Unicode support (req. libncursesw5)            |
+| `--enable-ipv6`    | Enable IPv6 packet capture support.                               |
+| `--enable-eep`     | Enable EEP packet send/receive support.                           |
+| `--enable-static`  | Enable compilation of statically linked binary.                   |
+
 
 You can find [detailed instructions for some distributions](https://github.com/irontec/sngrep/wiki/Building) on wiki.
 
