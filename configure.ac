@@ -164,19 +164,35 @@ AC_ARG_WITH([openssl],
 )
 
 AS_IF([test "x$WITH_OPENSSL" == "xyes"], [
-	AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
-	    AC_MSG_ERROR([ GnuTLS and OpenSSL can not be enabled at the same time ])
+  AS_IF([test "x$WITH_GNUTLS" == "xyes"], [
+    AC_MSG_ERROR([ GnuTLS and OpenSSL can not be enabled at the same time ])
 	], [])
-    m4_ifdef([PKG_CHECK_MODULES], [
-        PKG_CHECK_MODULES([SSL], [libssl libcrypto])
-    ], [
-        AC_CHECK_LIB([ssl], [SSL_new], [], [
-           AC_MSG_ERROR([ You need to have libssl installed to compile sngrep])
-        ])
-        AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
-            AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep])
-        ])
+
+  if test "$enable_static" = "yes" ; then
+    AC_CHECK_LIB([dl], [dlopen], [], [
+      AC_MSG_ERROR([ You need to have libdl installed to static-compile sngrep.])
     ])
+
+    AC_CHECK_LIB(crypto, EVP_get_cipherbyname, [], [
+      AC_MSG_ERROR([ You need to have libcrypto installed to static-compile sngrep.])
+    ])
+
+    AC_CHECK_LIB(ssl, SSL_new, [], [
+      AC_MSG_ERROR([ You need to have libcrypto installed to static-compile sngrep.])
+    ])
+  fi
+
+  m4_ifdef([PKG_CHECK_MODULES], [
+      PKG_CHECK_MODULES([SSL], [libssl libcrypto])
+  ], [
+      AC_CHECK_LIB([ssl], [SSL_new], [], [
+        AC_MSG_ERROR([ You need to have libssl installed to compile sngrep])
+      ])
+      AC_CHECK_LIB([crypto], [EVP_get_cipherbyname], [], [
+        AC_MSG_ERROR([ You need to have libcrypto installed to compile sngrep])
+      ])
+  ])
+
 	AC_DEFINE([WITH_OPENSSL],[],[Compile With Openssl compatibility])
 ], [])
 
