@@ -106,12 +106,9 @@ struct _PacketFrame {
 Packet *
 packet_new();
 
-///**
-// * @brief Allocate memory to store new packet data
-// */
-//Packet *
-//packet_create(Address src, Address dst);
-//
+void
+packet_free(Packet *packet);
+
 ///**
 // * @brief Create a new frame from libpcap data
 // *
@@ -124,22 +121,6 @@ packet_new();
 // */
 //void
 //packet_add_frame(Packet *pkt, PacketFrame *frame);
-
-void
-packet_take_frames(Packet *dst, Packet *src);
-
-//
-///**
-// * @brief Deallocate a packet structure memory
-// */
-//void
-//packet_destroy(Packet *packet);
-//
-///**
-// * @brief Get The timestamp for a packet.
-// */
-//struct timeval
-//packet_time(Packet *packet);
 
 gboolean
 packet_has_type(Packet *packet, enum packet_proto type);

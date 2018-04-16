@@ -153,7 +153,7 @@ sip_method_from_str(const char *method)
 }
 
 static GByteArray *
-packet_sip_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray *data)
+packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
     GMatchInfo *pmatch;
     DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
@@ -185,22 +185,18 @@ packet_sip_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray 
             // Not a SIP message or not complete
             return data;
         }
-
-        // Get the SIP message body length
-        ssize_t bodylen = strlen(g_match_info_fetch(pmatch, 1));
+        gint start, end;
+        g_match_info_fetch_pos(pmatch, 1, &start, &end);
 
         // The SDP body of the SIP message ends in another packet
-        if (content_len > bodylen) {
+        if (start + content_len > data->len) {
             g_match_info_free(pmatch);
             // Not a SIP message or not complete
             return data;
         }
 
         // We got more than one SIP message in the same packet
-        if (content_len < bodylen) {
-            gint start, end;
-            g_match_info_fetch_pos(pmatch, 1, &start, &end);
-
+        if (start + content_len < data->len) {
             // Limit the size of the string to the end of the body
             g_string_set_size(payload, start + content_len);
         }

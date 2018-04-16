@@ -55,5 +55,4 @@ struct _PacketDissector
     void (*deinit)(PacketParser *parser);
 };
 
-
 #endif

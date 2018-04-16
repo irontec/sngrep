@@ -40,82 +40,17 @@ packet_new()
 {
     // Create a new packet
     Packet *packet = g_malloc0(sizeof(Packet));
-    packet->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
+    packet->proto = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_set_size(packet->proto, PACKET_PROTO_COUNT);
     return packet;
 }
 
-
-#if 0
-
-Packet *
-packet_create(Address src, Address dst)
-{
-    // Create a new packet
-    Packet *packet;
-    packet = g_malloc0(sizeof(Packet));
-    packet->src = src;
-    packet->dst = dst;
-    return packet;
-}
-
 void
-packet_destroy(Packet *packet)
+packet_free(Packet *packet)
 {
-    // Check we have a valid packet pointer
-    if (!packet) return;
-
-    // Destroy frames
-    GList *l;
-    for (l = packet->frames; l != NULL; l = l->next) {
-        PacketFrame *frame = l->data;
-        g_free(frame->header);
-        g_free(frame->data);
-    }
-
-    g_list_free(packet->frames);
+    g_return_if_fail(packet != NULL);
+    g_ptr_array_free(packet->proto, TRUE);
     g_free(packet);
-}
-
-PacketFrame *
-packet_frame_create(const struct pcap_pkthdr *header, const guchar *data)
-{
-    PacketFrame *frame = g_malloc(sizeof(PacketFrame));
-    frame->header = g_memdup(header, sizeof(struct pcap_pkthdr));
-    frame->data = g_memdup(data, header->caplen);
-    return frame;
-}
-
-void
-packet_add_frame(Packet *pkt, PacketFrame *frame)
-{
-    pkt->frames = g_list_append(pkt->frames, frame);
-}
-
-struct timeval
-packet_time(Packet *packet)
-{
-    GList *first;
-    struct timeval ts = { 0 };
-
-    // Return first frame timestamp
-    if (packet && (first = g_list_first(packet->frames))) {
-        PacketFrame *frame = first->data;
-        ts.tv_sec = frame->header->ts.tv_sec;
-        ts.tv_usec = frame->header->ts.tv_usec;
-    }
-
-    // Return packe timestamp
-    return ts;
-}
-#endif
-
-void
-packet_take_frames(Packet *dst, Packet *src)
-{
-//    for (GList *l = src->frames; l != NULL; l = l->next) {
-//        dst->frames = g_list_append(dst->frames, l->data);
-//    }
 }
 
 gboolean

@@ -166,6 +166,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // TCP packet data
     segment = g_malloc0(sizeof(PacketTcpSegment));
     segment->data = data;
+    segment->packet = packet;
     segment->src = ipdata->saddr;
     segment->dst = ipdata->daddr;
 
@@ -206,7 +207,6 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         stream->src = segment->src;
         stream->dst = segment->dst;
         stream->segments = g_ptr_array_new_with_free_func(g_free);
-        g_ptr_array_add(stream->segments, segment);
         priv->assembly = g_list_append(priv->assembly, stream);
     }
 
@@ -214,14 +214,19 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_ptr_array_add(stream->segments, segment);
     g_ptr_array_sort(stream->segments, packet_tcp_sort_segments);
 
+    // Assemble all sorted contents and frames on current packet
+    GList *frames = NULL;
     data = g_byte_array_new();
     for (guint i = 0; i < stream->segments->len; i++) {
         segment = g_ptr_array_index(stream->segments, i);
         // Join all sorted segments data toguether
         g_byte_array_append(data, segment->data->data, segment->data->len);
-        // Take the segment frames in current packet
-        packet_take_frames(packet, segment->packet);
+        // Store all stream frames
+        frames = g_list_append(frames, segment->packet->frames);
     }
+
+    // Set all frames on current packet
+    packet->frames = frames;
 
     // Set packet protocol data
     PacketTcpData *tcp_data = g_malloc0(sizeof(PacketTcpData));
@@ -232,11 +237,16 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_ptr_array_insert(packet->proto, PACKET_TCP, tcp_data);
 
     // Call next dissector
-    data = packet_parser_next_dissector(parser, packet, data);
+    GByteArray *pending = packet_parser_next_dissector(parser, packet, data);
 
     // Check if the next dissectors left something
-    if (data != NULL) {
-        //@todo
+    if (pending == NULL) {
+        // Stream fully parsed!
+        priv->assembly = g_list_remove(priv->assembly, stream);
+        g_free(segment);
+        g_free(stream);
+    } else if (pending->len < data->len) {
+        // Partially parsed
     }
 }
 

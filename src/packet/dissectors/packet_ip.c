@@ -48,8 +48,7 @@ static GByteArray *
 packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
     DissectorIpData *priv = g_ptr_array_index(parser->dissectors, PACKET_IP);
-    PacketIpDatagram *datagram = NULL;
-    PacketIpFragment *fragment;
+    g_return_val_if_fail(priv != NULL, NULL);
 
     // Get IP header
     struct ip *ip4 = (struct ip *) data->data;
@@ -60,7 +59,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
 
     // Reserve memory for storing fragment information
-    fragment = g_malloc0(sizeof(PacketIpFragment));
+    PacketIpFragment *fragment = g_malloc0(sizeof(PacketIpFragment));
 
     // Store packet information
     fragment->packet = packet;
@@ -136,6 +135,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     fragment->data = data;
 
     // Look for another packet with same id in IP reassembly vector
+    PacketIpDatagram *datagram = NULL;
     for (GList *l = priv->assembly; l != NULL; l = l->next) {
         datagram = l->data;
         if (addressport_equals(fragment->src, datagram->src)
@@ -153,7 +153,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         datagram = g_malloc0(sizeof(PacketIpDatagram));
         datagram->src = fragment->src;
         datagram->dst = fragment->dst;
-        datagram->id = fragment->id;
+        datagram->id  = fragment->id;
         datagram->fragments = g_ptr_array_new_with_free_func(g_free);
         g_ptr_array_add(datagram->fragments, fragment);
         priv->assembly = g_list_append(priv->assembly, datagram);
@@ -174,13 +174,15 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     if (datagram->seen == datagram->len) {
         // Calculate assembled IP payload data
         g_ptr_array_sort(datagram->fragments, packet_ip_sort_fragments);
+
+        // Join all fragment payload
+        GList *frames = NULL;
         data = g_byte_array_new();
         for (guint i = 0; i < datagram->fragments->len; i++) {
             fragment = g_ptr_array_index(datagram->fragments, i);
-            // Join all sorted fragments data together
             g_byte_array_append(data, fragment->data->data, fragment->data->len);
             // Store all the fragments in current packet
-            packet_take_frames(packet, fragment->packet);
+            frames = g_list_append(frames, fragment->packet->frames);
             // Free fragment data
             g_byte_array_free(fragment->data, TRUE);
         }
@@ -200,6 +202,7 @@ packet_ip_init(PacketParser *parser)
 {
     // Initialize parser private data
     DissectorIpData *ipdata = g_malloc0(sizeof(DissectorIpData));
+    g_return_if_fail(ipdata != NULL);
 
     // Store parser private information
     g_ptr_array_insert(parser->dissectors, PACKET_IP, ipdata);
