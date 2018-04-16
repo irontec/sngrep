@@ -28,6 +28,10 @@
  */
 #include "config.h"
 #include <glib.h>
+#include "packet/dissectors/packet_ip.h"
+#include "packet/dissectors/packet_tcp.h"
+#include "packet/dissectors/packet_udp.h"
+#include "packet/dissectors/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "packet.h"
 
@@ -136,3 +140,33 @@ packet_transport(Packet *packet)
     return "???";
 }
 
+packet_t *
+packet_to_oldpkt(Packet *packet)
+{
+    packet_t *oldpkt = g_malloc0(sizeof(packet_t));
+
+    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    oldpkt->src = ipdata->saddr;
+    oldpkt->dst = ipdata->daddr;
+
+    if (packet_has_type(packet, PACKET_TCP)) {
+        PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
+        oldpkt->src.port = tcpdata->sport;
+        oldpkt->dst.port = tcpdata->dport;
+    } else {
+        PacketUdpData *udpdata = g_ptr_array_index(packet->proto, PACKET_UDP);
+        oldpkt->src.port = udpdata->sport;
+        oldpkt->dst.port = udpdata->dport;
+    }
+
+    PacketSipData *sipdata = g_ptr_array_index(packet->proto, PACKET_SIP);
+    packet_set_payload(oldpkt, sipdata->payload, strlen(sipdata->payload));
+
+    oldpkt->frames = g_sequence_new(NULL);
+    for (GList *l = packet->frames; l != NULL; l = l->next) {
+        PacketFrame *frame = l->data;
+        packet_add_frame(oldpkt, frame->header, frame->data);
+    }
+
+    return oldpkt;
+}

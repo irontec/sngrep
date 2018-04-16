@@ -275,6 +275,7 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
         prev = g_sequence_nth(messages, g_sequence_index(messages, msg) - 1);
     }
     g_sequence_free(messages);
+
     prev = sip_parse_msg(prev);
     if (prev && group->sdp_only && !msg_has_sdp(prev)) {
         return call_group_get_prev_msg(group, prev);

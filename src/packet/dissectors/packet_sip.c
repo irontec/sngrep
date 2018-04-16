@@ -37,7 +37,7 @@
 #include "packet/old_packet.h"
 
 /* @brief list of methods and responses */
-sip_code_t sip_codes[] = {
+PacketSipCode sip_codes[] = {
     { SIP_METHOD_REGISTER,  "REGISTER" },
     { SIP_METHOD_INVITE,    "INVITE" },
     { SIP_METHOD_SUBSCRIBE, "SUBSCRIBE" },
@@ -152,49 +152,222 @@ sip_method_from_str(const char *method)
     return atoi(method);
 }
 
-GByteArray *
+static GByteArray *
 packet_sip_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray *data)
 {
-    packet_t *oldpkt = g_malloc0(sizeof(packet_t));
+    GMatchInfo *pmatch;
+    DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
 
-    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
-    oldpkt->src = ipdata->saddr;
-    oldpkt->dst = ipdata->daddr;
-
-    if (packet_has_type(packet, PACKET_TCP)) {
-        PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
-        oldpkt->src.port = tcpdata->sport;
-        oldpkt->dst.port = tcpdata->dport;
-    } else {
-        PacketUdpData *udpdata = g_ptr_array_index(packet->proto, PACKET_UDP);
-        oldpkt->src.port = udpdata->sport;
-        oldpkt->dst.port = udpdata->dport;
-    }
-
-    packet_set_payload(oldpkt, data->data, data->len);
-
-    oldpkt->frames = g_sequence_new(NULL);
-    for (GList *l = packet->frames; l != NULL; l = l->next) {
-        PacketFrame *frame = l->data;
-        packet_add_frame(oldpkt, frame->header, frame->data);
-    }
-
-    if (sip_check_packet(oldpkt) != NULL)
-        return NULL;
-    else
+    if (!g_utf8_validate(data->data, data->len, NULL)) {
         return data;
+    }
+
+    // Convert payload to something we can parse with regular expressions
+    GString *payload = g_string_new_len(data->data, data->len);
+
+    // If this comes from a TCP stream, check we have a whole packet
+    if (packet_has_type(packet, PACKET_TCP)) {
+        // Content-Lenght is mandatory for SIP TCP
+        g_regex_match(sip->reg_cl, payload->str, 0, &pmatch);
+        if (!g_match_info_matches(pmatch)) {
+            g_match_info_free(pmatch);
+            // Not a SIP message or not complete
+            return data;
+        }
+        gchar *cl_header = g_match_info_fetch_named(pmatch, "clen");
+        gint content_len = atoi(cl_header);
+        g_match_info_free(pmatch);
+
+        // Check if we have Body separator field
+        g_regex_match(sip->reg_body, payload->str, 0, &pmatch);
+        if (!g_match_info_matches(pmatch)) {
+            g_match_info_free(pmatch);
+            // Not a SIP message or not complete
+            return data;
+        }
+
+        // Get the SIP message body length
+        ssize_t bodylen = strlen(g_match_info_fetch(pmatch, 1));
+
+        // The SDP body of the SIP message ends in another packet
+        if (content_len > bodylen) {
+            g_match_info_free(pmatch);
+            // Not a SIP message or not complete
+            return data;
+        }
+
+        // We got more than one SIP message in the same packet
+        if (content_len < bodylen) {
+            gint start, end;
+            g_match_info_fetch_pos(pmatch, 1, &start, &end);
+
+            // Limit the size of the string to the end of the body
+            g_string_set_size(payload, start + content_len);
+        }
+
+        g_match_info_free(pmatch);
+    }
+
+    // Allocate packet sip data
+    PacketSipData *sip_data = g_malloc0(sizeof(PacketSipData));
+    sip_data->payload = g_strdup(payload->str);
+
+    // Try to get Call-ID from payload
+    g_regex_match(sip->reg_callid, payload->str, 0, &pmatch);
+    if (g_match_info_matches(pmatch)) {
+        // Copy the matching part of payload
+        sip_data->callid =  g_match_info_fetch_named(pmatch, "callid");
+    }
+    g_match_info_free(pmatch);
+
+    // Method
+    if (g_regex_match(sip->reg_method, payload->str, 0, &pmatch)) {
+        sip_data->reqresp = sip_method_from_str(g_match_info_fetch_named(pmatch, "method"));
+    }
+    g_match_info_free(pmatch);
+
+    g_regex_match(sip->reg_xcallid, payload->str, 0, &pmatch);
+    if (g_match_info_matches(pmatch)) {
+        sip_data->xcallid =  g_match_info_fetch_named(pmatch, "xcallid");
+    }
+    g_match_info_free(pmatch);
+
+    // From
+    if (g_regex_match(sip->reg_from, payload->str, 0, &pmatch)) {
+        sip_data->from = g_match_info_fetch_named(pmatch, "from");
+    } else {
+        sip_data->from = strdup("<malformed>");
+    }
+    g_match_info_free(pmatch);
+
+    // To
+    if (g_regex_match(sip->reg_to, payload->str, 0, &pmatch)) {
+        sip_data->to = g_match_info_fetch_named(pmatch, "to");
+    } else {
+        sip_data->to = strdup("<malformed>");
+    }
+    g_match_info_free(pmatch);
+
+    // Reason text
+    if (g_regex_match(sip->reg_reason, payload->str, 0, &pmatch)) {
+        sip_data->reasontxt = strdup(g_match_info_fetch(pmatch, 1));
+    }
+    g_match_info_free(pmatch);
+
+    // Warning code
+    if (g_regex_match(sip->reg_warning, payload->str, 0, &pmatch)) {
+        sip_data->warning = atoi(g_match_info_fetch_named(pmatch, "warning"));
+    }
+    g_match_info_free(pmatch);
+
+    // CSeq
+    if (g_regex_match(sip->reg_cseq, payload->str, 0, &pmatch)) {
+        sip_data->cseq = atoi(g_match_info_fetch_named(pmatch, "cseq"));
+    }
+    g_match_info_free(pmatch);
+
+    // Response code
+    if (g_regex_match(sip->reg_response, payload->str, 0, &pmatch)) {
+        sip_data->resp_str = g_strdup(g_match_info_fetch_named(pmatch, "text"));
+        sip_data->reqresp = sip_method_from_str(g_match_info_fetch_named(pmatch, "code"));
+    }
+    g_match_info_free(pmatch);
+
+
+    g_ptr_array_insert(packet->proto, PACKET_SIP, sip_data);
+
+    if (sip_data->callid != NULL) {
+        sip_check_packet(packet);
+        return NULL;
+    }
+
+    return data;
 }
 
 static void
-packet_sip_init(PacketParser *parser G_GNUC_UNUSED)
+packet_sip_init(PacketParser *parser)
 {
+
+    DissectorSipData *sip = g_malloc0(sizeof(DissectorSipData));
+
+    // Initialize payload parsing regexp
+    GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
+    GRegexCompileFlags cflags = G_REGEX_OPTIMIZE | G_REGEX_CASELESS | G_REGEX_NEWLINE_CRLF | G_REGEX_MULTILINE;
+
+    sip->reg_method = g_regex_new(
+            "(?P<method>\\w+) [^:]+:\\S* SIP/2.0",
+            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+
+    sip->reg_callid = g_regex_new(
+            "^(Call-ID|i):\\s*(?P<callid>.+)$",
+            cflags, mflags, NULL);
+
+    sip->reg_xcallid = g_regex_new(
+            "^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$",
+            cflags, mflags, NULL);
+
+    sip->reg_response = g_regex_new(
+            "SIP/2.0 (?P<text>(?P<code>\\d{3}) .*)",
+            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+
+    sip->reg_cseq = g_regex_new(
+            "^CSeq:\\s*(?P<cseq>\\d+)\\s+\\w+$",
+            cflags, mflags, NULL);
+
+    sip->reg_from = g_regex_new(
+            "^(From|f):[^:]+:(?P<from>((?P<fromuser>[^@;>\r]+)@)?[^;>\r]+)",
+            cflags, mflags, NULL);
+
+    sip->reg_to = g_regex_new(
+            "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r]+)@)?[^;>\r]+)",
+            cflags, mflags, NULL);
+
+    sip->reg_valid = g_regex_new(
+            "^(\\w+ \\w+:|SIP/2.0 \\d{3})",
+            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+
+    sip->reg_cl = g_regex_new(
+            "^(Content-Length|l):\\s*(?P<clen>\\d+)$",
+            cflags, mflags, NULL);
+
+    sip->reg_body = g_regex_new(
+            "\r\n\r\n(.*)",
+            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+
+    sip->reg_reason = g_regex_new(
+            "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"",
+            cflags, mflags, NULL);
+
+    sip->reg_warning = g_regex_new(
+            "^Warning:\\s*(?P<warning>\\d+)",
+            cflags, mflags, NULL);
+
+    g_ptr_array_insert(parser->dissectors, PACKET_SIP, sip);
 
 }
 
 static void
-packet_sip_deinit(PacketParser *parser G_GNUC_UNUSED)
+packet_sip_deinit(PacketParser *parser)
 {
+    DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
+    g_return_if_fail(sip != NULL);
 
+    // Deallocate regular expressions
+    g_regex_unref(sip->reg_method);
+    g_regex_unref(sip->reg_callid);
+    g_regex_unref(sip->reg_xcallid);
+    g_regex_unref(sip->reg_response);
+    g_regex_unref(sip->reg_cseq);
+    g_regex_unref(sip->reg_from);
+    g_regex_unref(sip->reg_to);
+    g_regex_unref(sip->reg_valid);
+    g_regex_unref(sip->reg_cl);
+    g_regex_unref(sip->reg_body);
+    g_regex_unref(sip->reg_reason);
+    g_regex_unref(sip->reg_warning);
+
+    // Free dissector data
+    g_free(sip);
 }
 
 PacketDissector *

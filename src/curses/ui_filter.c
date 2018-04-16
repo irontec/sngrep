@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <form.h>
+#include "packet/dissectors/packet_sip.h"
 #include "ui_manager.h"
 #include "ui_filter.h"
 #include "ui_call_list.h"

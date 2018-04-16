@@ -33,6 +33,7 @@
 #include <time.h>
 #include <stdarg.h>
 #include "glib-utils.h"
+#include "packet/dissectors/packet_sip.h"
 #include "sip.h"
 #include "option.h"
 #include "setting.h"
@@ -94,22 +95,6 @@ sip_init(SStorageCaptureOpts capture_options,
         calls.sort.asc = true;
     }
 
-    // Initialize payload parsing regexp
-    mflags = G_REGEX_MATCH_NEWLINE_CRLF;
-    cflags = G_REGEX_OPTIMIZE | G_REGEX_CASELESS | G_REGEX_NEWLINE_CRLF | G_REGEX_MULTILINE;
-
-    calls.reg_method = g_regex_new("(?P<method>\\w+) [^:]+:\\S* SIP/2.0", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
-    calls.reg_callid = g_regex_new("^(Call-ID|i):\\s*(?P<callid>.+)$", cflags, mflags, NULL);
-    calls.reg_xcallid = g_regex_new("^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$", cflags, mflags, NULL);
-    calls.reg_response = g_regex_new("SIP/2.0 (?P<text>(?P<code>\\d{3}) .*)", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
-    calls.reg_cseq = g_regex_new("^CSeq:\\s*(?P<cseq>\\d+)\\s+\\w+$", cflags, mflags, NULL);
-    calls.reg_from = g_regex_new("^(From|f):[^:]+:(?P<from>((?P<fromuser>[^@;>\r]+)@)?[^;>\r]+)", cflags, mflags, NULL);
-    calls.reg_to = g_regex_new("^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r]+)@)?[^;>\r]+)", cflags, mflags, NULL);
-    calls.reg_valid = g_regex_new("^(\\w+ \\w+:|SIP/2.0 \\d{3})", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
-    calls.reg_cl = g_regex_new( "^(Content-Length|l):\\s*(?P<clen>\\d+)$", cflags, mflags, NULL);
-    calls.reg_body = g_regex_new("\r\n\r\n(.*)", cflags & ~G_REGEX_MULTILINE, mflags, NULL);
-    calls.reg_reason = g_regex_new("Reason:[ ]*[^\r]*;text=\"([^\r]+)\"", cflags, mflags, NULL);
-    calls.reg_warning = g_regex_new("^Warning:\\s*(?P<warning>\\d+)", cflags, mflags, NULL);
 
     return TRUE;
 }
@@ -124,19 +109,7 @@ sip_deinit()
     // Remove calls vector
     g_sequence_free(calls.list);
     g_sequence_free(calls.active);
-    // Deallocate regular expressions
-    g_regex_unref(calls.reg_method);
-    g_regex_unref(calls.reg_callid);
-    g_regex_unref(calls.reg_xcallid);
-    g_regex_unref(calls.reg_response);
-    g_regex_unref(calls.reg_cseq);
-    g_regex_unref(calls.reg_from);
-    g_regex_unref(calls.reg_to);
-    g_regex_unref(calls.reg_valid);
-    g_regex_unref(calls.reg_cl);
-    g_regex_unref(calls.reg_body);
-    g_regex_unref(calls.reg_reason);
-    g_regex_unref(calls.reg_warning);
+
 }
 
 SStorageCaptureOpts
@@ -145,161 +118,28 @@ storage_capture_options()
     return calls.capture;
 }
 
-char *
-sip_get_callid(const char* payload, char *callid)
-{
-    GMatchInfo *pmatch;
-
-    // Try to get Call-ID from payload
-    g_regex_match(calls.reg_callid, payload, 0, &pmatch);
-    if (g_match_info_matches(pmatch)) {
-        // Copy the matching part of payload
-        strcpy(callid, g_match_info_fetch_named(pmatch, "callid"));
-    }
-    g_match_info_free(pmatch);
-
-    return callid;
-}
-
-char *
-sip_get_xcallid(const char *payload, char *xcallid)
-{
-    GMatchInfo *pmatch;
-
-    g_regex_match(calls.reg_xcallid, payload, 0, &pmatch);
-    if (g_match_info_matches(pmatch)) {
-        strcpy(xcallid, g_match_info_fetch_named(pmatch, "xcallid"));
-    }
-    g_match_info_free(pmatch);
-
-    return xcallid;
-}
-
-int
-sip_validate_packet(packet_t *packet)
-{
-    uint32_t plen = packet_payloadlen(packet);
-    u_char payload[MAX_SIP_PAYLOAD];
-    GMatchInfo *pmatch;
-    char cl_header[10];
-    int content_len;
-    int bodylen;
-
-    // Max SIP payload allowed
-    if (plen == 0 || plen > MAX_SIP_PAYLOAD)
-        return VALIDATE_NOT_SIP;
-
-    // Get payload from packet(s)
-    memset(payload, 0, MAX_SIP_PAYLOAD);
-    memcpy(payload, packet_payload(packet), plen);
-
-    // Initialize variables
-    memset(cl_header, 0, sizeof(cl_header));
-
-    // Check if payload is UTF8
-    // @TODO what about binary content-body
-    if (!g_utf8_validate((const char *) payload, plen, NULL)) {
-        return VALIDATE_NOT_SIP;
-    }
-
-    // Check if the first line follows SIP request or response format
-    if (g_regex_match(calls.reg_valid, (const char *) payload, 0, NULL)) {
-        // Not a SIP message AT ALL
-        return VALIDATE_NOT_SIP;
-    }
-
-    // Check if we have Content Length header
-    g_regex_match(calls.reg_cl, (const char *) payload, 0, &pmatch);
-    if (!g_match_info_matches(pmatch)) {
-        g_match_info_free(pmatch);
-        // Not a SIP message or not complete
-        return VALIDATE_PARTIAL_SIP;
-    }
-
-    strncpy(cl_header, g_match_info_fetch_named(pmatch, "clen"), sizeof(cl_header));
-    content_len = atoi(cl_header);
-    g_match_info_free(pmatch);
-
-    // Check if we have Body separator field
-    g_regex_match(calls.reg_body, (const char *) payload, 0, &pmatch);
-    if (!g_match_info_matches(pmatch)) {
-        g_match_info_free(pmatch);
-        // Not a SIP message or not complete
-        return VALIDATE_PARTIAL_SIP;
-    }
-
-    // Get the SIP message body length
-    bodylen = strlen(g_match_info_fetch(pmatch, 1));
-
-    // The SDP body of the SIP message ends in another packet
-    if (content_len > bodylen) {
-        g_match_info_free(pmatch);
-        return VALIDATE_PARTIAL_SIP;
-    }
-
-    if (content_len < bodylen) {
-        // We got more than one SIP message in the same packet
-        gint start, end;
-        g_match_info_fetch_pos(pmatch, 1, &start, &end);
-        packet_set_payload(packet, payload, start + content_len);
-        g_match_info_free(pmatch);
-        return VALIDATE_MULTIPLE_SIP;
-    }
-
-    g_match_info_free(pmatch);
-
-    // We got all the SDP body of the SIP message
-    return VALIDATE_COMPLETE_SIP;
-}
-
 sip_msg_t *
-sip_check_packet(packet_t *packet)
+sip_check_packet(Packet *packet)
 {
     sip_msg_t *msg;
     sip_call_t *call;
-    char callid[1024], xcallid[1024];
-    u_char payload[MAX_SIP_PAYLOAD];
     bool newcall = false;
 
-    // Max SIP payload allowed
-    if (packet->payload_len > MAX_SIP_PAYLOAD)
-        return NULL;
-
-    // Initialize local variables
-    memset(callid, 0, sizeof(callid));
-    memset(xcallid, 0, sizeof(xcallid));
-
-    // Get payload from packet(s)
-    memset(payload, 0, MAX_SIP_PAYLOAD);
-    memcpy(payload, packet_payload(packet), packet_payloadlen(packet));
-
-    // Check if payload is UTF8
-    // @TODO what about binary content-body
-    if (!g_utf8_validate((const char *)payload, -1, NULL))
-        return NULL;
-
-    // Get the Call-ID of this message
-    if (!sip_get_callid((const char*) payload, callid))
-        return NULL;
+    PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
 
     // Create a new message from this data
-    if (!(msg = msg_create((const char*) payload)))
-        return NULL;
-
-    // Get Method and request for the following checks
-    // There is no need to dissect all payload at this point
-    // If no response or request code is found, this is not a SIP message
-    if (!sip_get_msg_reqresp(msg, payload)) {
-        // Deallocate message memory
-        msg_destroy(msg);
-        return NULL;
-    }
+    msg = msg_create();
+    msg->cseq       = sip_data->cseq;
+    msg->sip_from   = sip_data->from;
+    msg->sip_to     = sip_data->to;
+    msg->reqresp    = sip_data->reqresp;
+    msg->resp_str   = sip_data->resp_str;
 
     // Find the call for this msg
-    if (!(call = sip_find_by_callid(callid))) {
+    if (!(call = sip_find_by_callid(sip_data->callid))) {
 
         // Check if payload matches expression
-        if (!sip_check_match_expression((const char*) payload))
+        if (!sip_check_match_expression(sip_data->payload))
             goto skip_message;
 
         // User requested only INVITE starting dialogs
@@ -311,15 +151,12 @@ sip_check_packet(packet_t *packet)
         if (calls.match.complete && msg->reqresp > SIP_METHOD_MESSAGE)
             goto skip_message;
 
-        // Get the Call-ID of this message
-        sip_get_xcallid((const char*) payload, xcallid);
-
         // Rotate call list if limit has been reached
         if (calls.capture.limit == sip_calls_count())
             sip_calls_rotate();
 
         // Create the call if not found
-        if (!(call = call_create(callid, xcallid)))
+        if (!(call = call_create(sip_data->callid, sip_data->xcallid)))
             goto skip_message;
 
         // Add this Call-Id to hash table
@@ -333,12 +170,10 @@ sip_check_packet(packet_t *packet)
     }
 
     // At this point we know we're handling an interesting SIP Packet
-    msg->packet = packet;
+    msg->packet = packet_to_oldpkt(packet);
 
     // Always dissect first call message
     if (call_msg_count(call) == 0) {
-        // Parse SIP payload
-        sip_parse_msg_payload(msg, payload);
         // If this call has X-Call-Id, append it to the parent call
         if (strlen(call->xcallid)) {
             call_add_xcall(sip_find_by_callid(call->xcallid), call);
@@ -353,11 +188,9 @@ sip_check_packet(packet_t *packet)
 
     if (call_is_invite(call)) {
         // Parse media data
-        sip_parse_msg_media(msg, payload);
+        sip_parse_msg_media(msg, sip_data->payload);
         // Update Call State
         call_update_state(call, msg);
-        // Parse extra fields
-        sip_parse_extra_headers(msg, payload);
         // Check if this call should be in active call list
         if (call_is_active(call)) {
             if (sip_call_is_active(call)) {
@@ -460,56 +293,6 @@ sip_find_by_callid(const char *callid)
     return g_hash_table_lookup(calls.callids, callid);
 }
 
-int
-sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
-{
-    GMatchInfo *pmatch;
-    char resp_str[SIP_ATTR_MAXLEN];
-    char reqresp[SIP_ATTR_MAXLEN];
-    char cseq[11];
-    const char *resp_def;
-
-    // Initialize variables
-    memset(resp_str, 0, sizeof(resp_str));
-    memset(reqresp, 0, sizeof(reqresp));
-
-    // If not already parsed
-    if (!msg->reqresp) {
-        // Method & CSeq
-        if (g_regex_match(calls.reg_method, (const char *) payload, 0, &pmatch)) {
-            strncpy(reqresp, g_match_info_fetch_named(pmatch, "method"), sizeof(reqresp));
-        }
-        g_match_info_free(pmatch);
-
-        // CSeq
-        if (g_regex_match(calls.reg_cseq, (const char *) payload, 0, &pmatch)) {
-            strncpy(cseq, g_match_info_fetch_named(pmatch, "cseq"), sizeof(cseq));
-            msg->cseq = atoi(cseq);
-        }
-        g_match_info_free(pmatch);
-
-        // Response code
-        if (g_regex_match(calls.reg_response, (const char *) payload, 0, &pmatch)) {
-            strncpy(resp_str, g_match_info_fetch_named(pmatch, "text"), sizeof(resp_str));
-            strncpy(reqresp, g_match_info_fetch_named(pmatch, "code"), sizeof(reqresp));
-        }
-        g_match_info_free(pmatch);
-
-        // Get Request/Response Code
-        msg->reqresp = sip_method_from_str(reqresp);
-
-        // For response codes, check if the text matches the default
-        if (!msg_is_request(msg)) {
-            resp_def = sip_method_str(msg->reqresp);
-            if (!resp_def || strcmp(resp_def, resp_str)) {
-                msg->resp_str = strdup(resp_str);
-            }
-        }
-    }
-
-    return msg->reqresp;
-}
-
 const char *
 sip_get_msg_reqresp_str(sip_msg_t *msg)
 {
@@ -519,40 +302,6 @@ sip_get_msg_reqresp_str(sip_msg_t *msg)
     } else {
         return sip_method_str(msg->reqresp);
     }
-}
-
-sip_msg_t *
-sip_parse_msg(sip_msg_t *msg)
-{
-    if (msg && !msg->cseq) {
-        sip_parse_msg_payload(msg, (u_char*) msg_get_payload(msg));
-    }
-    return msg;
-}
-
-int
-sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
-{
-    GMatchInfo *pmatch;
-
-    // From
-    if (g_regex_match(calls.reg_from, (const char *) payload, 0, &pmatch)) {
-        msg->sip_from = g_match_info_fetch_named(pmatch, "from");
-    } else {
-        msg->sip_from = strdup("<malformed>");
-    }
-    g_match_info_free(pmatch);
-
-
-    // To
-    if (g_regex_match(calls.reg_to, (const char *) payload, 0, &pmatch)) {
-        msg->sip_to = g_match_info_fetch_named(pmatch, "to");
-    } else {
-        msg->sip_to = strdup("<malformed>");
-    }
-    g_match_info_free(pmatch);
-
-    return 0;
 }
 
 void
@@ -654,24 +403,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 #undef ADD_STREAM
 }
 
-void
-sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
-{
-    GMatchInfo *pmatch;
 
-    // Reason text
-    if (g_regex_match(calls.reg_reason, (const char *) payload, 0, &pmatch)) {
-        msg->call->reasontxt = strdup(g_match_info_fetch(pmatch, 1));
-    }
-    g_match_info_free(pmatch);
-
-    // Warning code
-    if (g_regex_match(calls.reg_warning, (const char *) payload, 0, &pmatch)) {
-        msg->call->warning = atoi(g_match_info_fetch_named(pmatch, "warning"));
-    }
-    g_match_info_free(pmatch);
-
-}
 
 void
 sip_calls_clear()

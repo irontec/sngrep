@@ -50,24 +50,6 @@ typedef struct _SStorageSortOpts    SStorageSortOpts;
 typedef struct _SStorageMatchOpts   SStorageMatchOpts;
 typedef struct _SStorageCaptureOpts SStorageCaptureOpts;
 
-//! SIP Methods
-enum sip_methods {
-    SIP_METHOD_REGISTER = 1,
-    SIP_METHOD_INVITE,
-    SIP_METHOD_SUBSCRIBE,
-    SIP_METHOD_NOTIFY,
-    SIP_METHOD_OPTIONS,
-    SIP_METHOD_PUBLISH,
-    SIP_METHOD_INFO,
-    SIP_METHOD_REFER,
-    SIP_METHOD_UPDATE,
-    SIP_METHOD_MESSAGE,
-    SIP_METHOD_CANCEL,
-    SIP_METHOD_BYE,
-    SIP_METHOD_ACK,
-    SIP_METHOD_PRACK,
-};
-
 //! Return values for sip_validate_packet
 enum validate_result {
     VALIDATE_NOT_SIP        = -1,
@@ -108,8 +90,6 @@ struct _SStorageCaptureOpts {
     //! Save all stored packets in file
     gchar *outfile;
 };
-
-
 
 /**
  * @brief Structure to store dialog stats
@@ -155,20 +135,6 @@ struct sip_call_list {
     int last_index;
     //! Call-Ids hash table
     GHashTable *callids;
-
-    //! Regexp for payload matching
-    GRegex *reg_method;
-    GRegex *reg_callid;
-    GRegex *reg_xcallid;
-    GRegex *reg_response;
-    GRegex *reg_cseq;
-    GRegex *reg_from;
-    GRegex *reg_to;
-    GRegex *reg_valid;
-    GRegex *reg_cl;
-    GRegex *reg_body;
-    GRegex *reg_reason;
-    GRegex *reg_warning;
 };
 
 /**
@@ -200,49 +166,6 @@ SStorageCaptureOpts
 storage_capture_options();
 
 /**
- * @brief Parses Call-ID header of a SIP message payload
- *
- * Mainly used to check if a payload contains a callid.
- *
- * @param payload SIP message payload
- * @param callid Character array to store callid
- * @return callid parsed from Call-ID header
- */
-char *
-sip_get_callid(const char* payload, char *callid);
-
-/**
- * @brief Parses X-Call-ID header of a SIP message payload
- *
- * Mainly used to check if a payload contains a xcallid.
- *
- * @param payload SIP message payload
- * @paramx callid Character array to store callid
- * @return xcallid parsed from Call-ID header
- */
-char *
-sip_get_xcallid(const char* payload, char *xcallid);
-
-/**
- * @brief Validate the packet payload is a SIP message
- *
- * This function will validate the payload of a packet to determine if it
- * contains a full SIP packet. In order to be valid, the SIP packet must
- * have a initial line with Request or Respones, a Content-Length header
- * field and a body matching the length of that header.
- *
- * This function will only be used for TCP captured packets, when the
- * Content-Length header field is a MUST.
- *
- * @param packet TCP assembled packet structure
- * @return -1 if the packet first line doesn't match a SIP message
- * @return 0 if the packet contains SIP but is not yet complete
- * @return 1 if the packet is a complete SIP message
- */
-int
-sip_validate_packet(packet_t *packet);
-
-/**
  * @brief Loads a new message from raw header/payload
  *
  * Use this function to convert raw data into call and message
@@ -252,7 +175,7 @@ sip_validate_packet(packet_t *packet);
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_check_packet(packet_t *packet);
+sip_check_packet(Packet *packet);
 
 /**
  * @brief Return if the call list has changed
@@ -339,18 +262,6 @@ sip_find_by_index(int index);
 sip_call_t *
 sip_find_by_callid(const char *callid);
 
-
-/**
- * @brief Parse extra fields only for dialogs strarting with invite
- *
- * @note This function assumes the msg is already part of a call
- *
- * @param msg SIP message structure
- * @param payload SIP message payload
- */
-void
-sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload);
-
 /**
  * @brief Remove al calls
  *
@@ -379,48 +290,12 @@ void
 sip_calls_rotate();
 
 /**
- * @brief Get message Request/Response code
- *
- * Parse Payload to get Message Request/Response code.
- *
- * @param msg SIP Message to be parsed
- * @return numeric representation of Request/ResponseCode
- */
-int
-sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload);
-
-/**
  * @brief Get full Response code (including text)
  *
  *
  */
 const char *
 sip_get_msg_reqresp_str(sip_msg_t *msg);
-
-/**
- * @brief Parse SIP Message payload if not parsed
- *
- * This function can be used for delayed parsing. This way
- * the message will only use the minimun required memory
- * to store basic information.
- *
- * @param msg SIP message structure
- * @return parsed message
- */
-sip_msg_t *
-sip_parse_msg(sip_msg_t *msg);
-
-/**
- * @brief Parse SIP Message payload to fill sip_msg structe
- *
- * Parse the payload content to set message attributes.
- *
- * @param msg SIP message structure
- * @param payload SIP message payload
- * @return 0 in all cases
- */
-int
-sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload);
 
 /**
  * @brief Parse SIP Message payload for SDP media streams
@@ -449,34 +324,6 @@ sip_get_match_expression();
  */
 int
 sip_check_match_expression(const char *payload);
-
-/**
- * @brief Get String value for a Method
- *
- * @param method One of the methods defined in @sip_codes
- * @return a string representing the method text
- */
-const char *
-sip_method_str(int method);
-
-/*
- * @brief Get String value of Transport
- */
-const char *
-sip_transport_str(int transport);
-
-/**
- * @brief Converts Request Name or Response code to number
- *
- * If the argument is a method, the corresponding value of @sip_methods
- * will be returned. If a Resposne code, the numeric value of the code
- * will be returned.
- *
- * @param a string representing the Request/Resposne code text
- * @return numeric representation of Request/Response code
- */
-int
-sip_method_from_str(const char *method);
 
 /**
  * @brief Get summary of message header data

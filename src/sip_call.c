@@ -32,6 +32,7 @@
 #include <glib.h>
 #include "glib-utils.h"
 #include "sip_call.h"
+#include "packet/dissectors/packet_sip.h"
 #include "sip.h"
 #include "setting.h"
 
@@ -61,7 +62,7 @@ call_create(char *callid, char *xcallid)
 
     // Set message callid
     call->callid = strdup(callid);
-    call->xcallid = strdup(xcallid);
+    call->xcallid = (xcallid) ? strdup(xcallid) : strdup("");
 
     return call;
 }

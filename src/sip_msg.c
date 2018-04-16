@@ -32,6 +32,7 @@
 #include <glib.h>
 #include "glib-utils.h"
 #include "sip_msg.h"
+#include "packet/dissectors/packet_sip.h"
 #include "packet/media.h"
 #include "sip.h"
 

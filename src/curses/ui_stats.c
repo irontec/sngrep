@@ -57,6 +57,7 @@
 #include <glib.h>
 #include "glib-utils.h"
 #include "sip.h"
+#include "packet/dissectors/packet_sip.h"
 #include "ui_manager.h"
 #include "ui_stats.h"
 

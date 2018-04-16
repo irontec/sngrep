@@ -33,27 +33,13 @@
 #include "../packet.h"
 #include "packet_sdp.h"
 
-//! Shorter declaration of sip codes structure
-typedef struct sip_code sip_code_t;
+typedef struct _PacketSipData PacketSipData;
+typedef struct _PacketSipCode PacketSipCode;
+typedef struct _DissectorSipData DissectorSipData;
 
-/**
- * @brief Different Request/Response codes in SIP Protocol
- */
-struct sip_code
-{
-    int id;
-    const char *text;
-};
-
-#if 0
-#define SIP_CRLF            "\r\n"
-#define SIP_VERSION         "SIP/2.0"
-#define SIP_VERSION_LEN     7
-#define SIP_MAX_PAYLOAD     10240
-
-//! SIP Method ids
-enum sip_method_ids {
-    SIP_METHOD_REGISTER     = 1,
+//! SIP Methods
+enum sip_methods {
+    SIP_METHOD_REGISTER = 1,
     SIP_METHOD_INVITE,
     SIP_METHOD_SUBSCRIBE,
     SIP_METHOD_NOTIFY,
@@ -67,112 +53,63 @@ enum sip_method_ids {
     SIP_METHOD_INFO,
     SIP_METHOD_REFER,
     SIP_METHOD_UPDATE,
-    SIP_METHOD_DO,
-    SIP_METHOD_QAUTH,
-    SIP_METHOD_SPRACK
 };
 
-//! SIP Wanted Header ids
-enum sip_header_ids {
-	SIP_HEADER_CALLID	    = 1,
-	SIP_HEADER_FROM,
-	SIP_HEADER_TO,
-	SIP_HEADER_CSEQ,
-	SIP_HEADER_XCALLID,
-	SIP_HEADER_CONTENTLEN,	
-	SIP_HEADER_CONTENTTYPE,
-	SIP_HEADER_REASON
-};
-
-//! Return values for sip_validate_packet
-enum sip_payload_status {
-    SIP_PAYLOAD_INVALID     = -1,
-    SIP_PAYLOAD_INCOMPLETE  = 0,
-    SIP_PAYLOAD_VALID       = 1
-};
-
-//! Type definitions for SIP structures
-typedef struct _SIPMethod SIPMethod;
-typedef struct _SIPHeader SIPHeader;
-typedef struct _SIPPacket SIPPacket;
-typedef struct _SIPParser SIPParser;
-typedef struct _SIPRequest  SIPRequest;
-typedef struct _SIPResponse SIPResponse;
-
-//! SIP Method struct
-struct _SIPMethod {
-    //! Method ID
-    enum sip_method_ids id;
-    //! Method name
-    const gchar *name;
-};
-
-//! SIP Response
-struct _SIPRequest {
-    int method;
-    const gchar* text;
-};
-
-//! SIP Response
-struct _SIPResponse {
-    int code;
-    const gchar* text;
-};
-
-//! SIP Headers struct
-struct _SIPHeader {
-    //! SIP Header Id
-	enum sip_header_ids id;
-	//! SIP parsin function
-	void (*parse)(PacketDissector *, Packet *);
-};
-
-//! SIP specific packet data
-struct _SIPPacket
+/**
+ * @brief Different Request/Response codes in SIP Protocol
+ */
+struct _PacketSipCode
 {
-    // SIP Request packet
-    gboolean isrequest;
+    int id;
+    const char *text;
+};
 
-    //! SIP content payload
+struct _PacketSipData
+{
+    //! Request Method or Response Code @see sip_methods
+    int reqresp;
+    //!  Response text if it doesn't matches an standard
+    char *resp_str;
+    //! SIP payload (Headers + Body)
     gchar *payload;
+    //! SIP Call-Id Heder value
+    gchar *callid;
+    //! SIP X-Call-Id Heder value
+    gchar *xcallid;
 
-    union {
-        //! Request data
-        SIPRequest req;
-        //! Response data
-        SIPResponse resp;
-    };
+    //! Message Cseq
+    int cseq;
+    //! SIP From Header
+    char *from;
+    //! SIP To Header
+    char *to;
 
-	gchar *callid;
-	gchar *from;
-	gchar *fromuser;
-	gchar *to;
-	gchar *touser;
-	gchar *xcallid;
-	gchar *contenttype;
-    gint contentlen;
-    gint cseq;
-
-	//! SDP packet specific data
-	struct sdp_pvt *sdp;
+    gchar *reasontxt;
+    int warning;
 };
 
-//! SIP Pareser private data
-struct _SIPParser
+struct _DissectorSipData
 {
-    GRegex *reg_request_line;
-    GRegex *reg_status_line;
-    GRegex *reg_header;
+    //! Regexp for payload matching
+    GRegex *reg_method;
     GRegex *reg_callid;
     GRegex *reg_xcallid;
+    GRegex *reg_response;
+    GRegex *reg_cseq;
     GRegex *reg_from;
     GRegex *reg_to;
-    GRegex *reg_cseq;
-    GRegex *reg_clen;
-    GRegex *reg_ctype;
+    GRegex *reg_valid;
+    GRegex *reg_cl;
+    GRegex *reg_body;
+    GRegex *reg_reason;
+    GRegex *reg_warning;
 };
 
-#endif
+int
+sip_method_from_str(const char *method);
+
+const char *
+sip_method_str(int method);
 
 /**
  * @brief Create a SIP parser

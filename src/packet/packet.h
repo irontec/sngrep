@@ -39,6 +39,7 @@
 #include <glib.h>
 #include <time.h>
 #include <sys/types.h>
+#include "packet/old_packet.h"
 #include "packet/address.h"
 
 /**
@@ -146,5 +147,7 @@ packet_has_type(Packet *packet, enum packet_proto type);
 //const char *
 //packet_transport(Packet *packet);
 
+packet_t *
+packet_to_oldpkt(Packet *packet);
 
 #endif /* __SNGREP_PACKET_H */

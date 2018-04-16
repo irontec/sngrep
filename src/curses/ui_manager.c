@@ -34,6 +34,7 @@
 #include <locale.h>
 #include "setting.h"
 #include "ui_manager.h"
+#include "packet/dissectors/packet_sip.h"
 #include "capture/capture.h"
 #include "ui_call_list.h"
 #include "ui_call_flow.h"

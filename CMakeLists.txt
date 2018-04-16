@@ -67,10 +67,10 @@ endif (USE_HEP)
 option (USE_IPV6 "Enable IPv6 Support" ON)
 
 # GnuTLS Support
-option (WITH_GNUTLS "Enable SSL Support (TLS SIP Transport)" ON)
-if (WITH_GNUTLS)
+option (WITH_SSL "Enable SSL Support (TLS SIP Transport)" ON)
+if (WITH_SSL)
     set(SOURCES ${SOURCES} src/packet/dissectors/packet_tls.c)
-endif(WITH_GNUTLS)
+endif(WITH_SSL)
 
 ######################################################################
 add_executable(sngrep ${SOURCES})
@@ -90,12 +90,12 @@ find_package(PkgConfig REQUIRED)
 find_package (Threads)
 target_link_libraries (sngrep ${CMAKE_THREAD_LIBS_INIT})
 
-if (WITH_GNUTLS)
+if (WITH_SSL)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GNUTLS REQUIRED gnutls)
     include_directories(${GNUTLS_INCLUDE_DIRS})
     target_link_libraries(sngrep ${GNUTLS_LIBRARIES} gcrypt)
-endif(WITH_GNUTLS)
+endif(WITH_SSL)
 
 
 ######################################################################
@@ -117,10 +117,10 @@ if (DISPLAY_LOGO)
 endif (DISPLAY_LOGO)
 
 message(" ")
-message("   sngrep configure finished                            	")
-message(" ====================================================== 	")
-message(" SSL Support                  : ${WITH_GNUTLS}	   	            ")
+message("   sngrep configure finished                               ")
+message(" ======================================================    ")
+message(" SSL Support                  : ${WITH_SSL}	   	        ")
 message(" IPv6 Support                 : ${USE_IPV6}                ")
 message(" EEP Support                  : ${USE_EEP}                 ")
-message(" ====================================================== 	")
+message(" ======================================================    ")
 message(" ")

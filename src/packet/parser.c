@@ -86,9 +86,11 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum packet_proto i
         case PACKET_RTCP:
             dissector = packet_rtcp_new();
             break;
+#ifdef WITH_SSL
         case PACKET_TLS:
             dissector = packet_tls_new();
             break;
+#endif
         default:
             // Unsuported protocol id
             return NULL;
