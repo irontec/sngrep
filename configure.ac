@@ -27,6 +27,9 @@ AC_ARG_ENABLE(static,
 
 if test "$enable_static" = "yes" ; then
     CFLAGS="$CFLAGS  -static"
+    AC_SUBST(ENABLE_STATIC, $enableval)
+else
+    AC_SUBST(ENABLE_STATIC, no)
 fi
 
 # Minimum checks for a C program :)
@@ -333,15 +336,16 @@ AS_IF([test "x$enable_logo" == "xyes"], [
 ])
 
 AC_MSG_NOTICE
-AC_MSG_NOTICE(   sngrep configure finished                            	)
-AC_MSG_NOTICE( ====================================================== 	)
-AC_MSG_NOTICE( GnuTLS Support               : ${WITH_GNUTLS}		)
-AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
-AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  		)
-AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
-AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )
-AC_MSG_NOTICE( EEP Support                  : ${USE_EEP}               )
-AC_MSG_NOTICE( ====================================================== 	)
+AC_MSG_NOTICE(   sngrep configure finished                            )
+AC_MSG_NOTICE( ====================================================== )
+AC_MSG_NOTICE( GnuTLS Support               : ${WITH_GNUTLS}          )
+AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL}         )
+AC_MSG_NOTICE( Unicode Support              : ${UNICODE}              )
+AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}            )
+AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}             )
+AC_MSG_NOTICE( EEP Support                  : ${USE_EEP}              )
+AC_MSG_NOTICE( Static Compile               : ${ENABLE_STATIC}        )
+AC_MSG_NOTICE( ====================================================== )
 AC_MSG_NOTICE
 
 
