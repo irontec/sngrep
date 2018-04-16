@@ -24,9 +24,11 @@ Prerequisites
  - libncurses5 - for UI, windows, panels.
  - libpcap - for capturing packets.
  - libssl - (optional) for TLS transport decrypt using OpenSSL and libcrypt
- - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
  - libncursesw5 - (optional) for UI, windows, panels (wide-character support)
  - libpcre - (optional) for Perl Compatible regular expressions
+ - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
+    - GnuTLS must be compiled with `--without-p11-kit` for `sngrep`
+      to be built with `--enable-static=yes`
 
 On most systems the commands to build will be the standard autotools procedure:
 
@@ -41,7 +43,7 @@ You can pass following flags to ./configure to enable some features
 |--------------------|-------------------------------------------------------------------|
 | `--with-openssl`   | Adds OpenSSL support to parse TLS captured messages (req. libssl) |
 | `--with-gnutls`    | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
-|                    |   - GnuTLS without "p11-kit" is required for static compilation   |
+|                    |   - GnuTLS without `p11-kit` is required for static-compile       |
 |                    |                                                                   |
 | `--with-pcre`      | Adds Perl Compatible regular expressions support in regexp fields |
 | `--enable-unicode` | Adds Ncurses UTF-8/Unicode support (req. libncursesw5)            |
