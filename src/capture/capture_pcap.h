@@ -122,6 +122,8 @@ enum capture_pcap_errors
     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
     CAPTURE_PCAP_ERROR_FILTER_COMPILE,
     CAPTURE_PCAP_ERROR_FILTER_APPLY,
+    CAPTURE_PCAP_ERROR_SAVE_MULTIPLE,
+    CAPTURE_PCAP_ERROR_SAVE_NOT_PCAP
 };
 
 //! Shorter declaration of capture_info structure
@@ -136,6 +138,8 @@ struct _CapturePcap
 {
     //! libpcap capture handler
     pcap_t *handle;
+    //! libpcap dumper for capture outputs
+    pcap_dumper_t *dumper;
     //! Netmask of our sniffing device
     bpf_u_int32 mask;
     //! The IP of our sniffing device
@@ -213,7 +217,7 @@ capture_input_pcap_set_keyfile(CaptureInput *input, const gchar *keyfile);
  * @brief Open a new dumper file for capture handler
  */
 CaptureOutput *
-capture_output_pcap(const char *dumpfile, GError **error);
+capture_output_pcap(const gchar *filename, GError **error);
 
 /**
  * @brief Store a packet in dump file

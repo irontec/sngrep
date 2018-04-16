@@ -232,20 +232,68 @@ capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **err
     return TRUE;
 }
 
-CaptureOutput *
-capture_output_pcap(const char *dumpfile, GError **error)
+static void
+capture_output_pcap_write(CaptureOutput *output, Packet *packet)
 {
-    CaptureOutput *output;
-    CapturePcap *pcap;
+    CapturePcap *pcap = output->priv;
+
+    g_return_if_fail(pcap != NULL);
+    g_return_if_fail(pcap->dumper != NULL);
+
+    for (GList *l = packet->frames; l != NULL; l = l->next) {
+        PacketFrame *frame = l->data;
+        pcap_dump((u_char*) pcap->dumper, frame->header, frame->data);
+    }
+}
+
+static void
+capture_output_pcap_close(CaptureOutput *output)
+{
+    CapturePcap *pcap = output->priv;
+
+    g_return_if_fail(pcap != NULL);
+    g_return_if_fail(pcap->dumper != NULL);
+
+    dump_close(pcap->dumper);
+}
+
+CaptureOutput *
+capture_output_pcap(const gchar *filename, GError **error)
+{
+
+    // PCAP Output is only availble if capture has a single input
+    // and thas input is from PCAP thech
+    CaptureManager *manager = capture_manager();
+    g_return_val_if_fail(manager != NULL, NULL);
+
+    if (g_slist_length(manager->inputs) != 1) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_SAVE_MULTIPLE,
+                     "Save is only supported with a single capture input.");
+        return NULL;
+    }
+
+    CaptureInput *input = g_slist_nth_data(manager->inputs, 0);
+    g_return_val_if_fail(input != NULL, NULL);
+
+    if (input->tech != CAPTURE_TECH_PCAP) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_SAVE_NOT_PCAP,
+                     "Save is only supported from PCAP capture inputs.");
+        return NULL;
+    }
+
+    CapturePcap *input_pcap = input->priv;
 
     // Create a new structure to handle this capture source
-    pcap = malloc(sizeof(CapturePcap));
+    CapturePcap *pcap = malloc(sizeof(CapturePcap));
 
-    // TODO Handle errors
-    pcap_dump_open(pcap->handle, dumpfile);
+    pcap->dumper = pcap_dump_open(input_pcap->handle, filename);
 
     // Create a new structure to handle this capture dumper
-    output = malloc(sizeof(CaptureOutput));
+    CaptureOutput *output = malloc(sizeof(CaptureOutput));
     output->priv   = pcap;
     output->write  = capture_output_pcap_dump;
     output->close  = capture_output_pcap_close;
