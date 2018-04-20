@@ -20,22 +20,32 @@
  **
  ****************************************************************************/
 /**
- * @file proto.h
+ * @file dissector.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage captured packet protocols
+ * @brief Functions to manage captured packet protocols handlers
  *
  */
 
-#ifndef __SNGREP_PACKET_PROTO_H
-#define __SNGREP_PACKET_PROTO_H
+#ifndef __SNGREP_DISSECTOR_H
+#define __SNGREP_DISSECTOR_H
 
 #include <glib.h>
 #include "parser.h"
 #include "packet.h"
 
+//! Dissector type
+typedef struct _PacketDissector PacketDissector;
+
+//! Dissector functions types
+typedef GByteArray *(*PacketDissectorDissectFunc)(PacketParser *, Packet *, GByteArray *);
+
+typedef void (*PacketDissectorInitFunc)(PacketParser *);
+
+typedef void (*PacketDissectorDeinitFunc)(PacketParser *);
+
 /**
- * @brief Packet handler interface
+ * @brief Packet dissector interface
  *
  * A packet handler is able to check raw captured data from the wire
  * and convert it into Packets to be stored.
@@ -44,15 +54,15 @@ struct _PacketDissector
 {
     //! Protocol id
     enum packet_proto id;
-    //! SubProtocol children
+    //! SubProtocol children dissectors
     GSList *subdissectors;
 
     //! Protocol initialization funtion
-    void (*init)(PacketParser *parser);
-    //! Protocol raw packet data parser
-    GByteArray* (*dissect)(PacketParser *parser, Packet *packet, GByteArray *data);
+    PacketDissectorInitFunc init;
+    //! Protocol packet dissector function
+    PacketDissectorDissectFunc dissect;
     //! Protocol deinitialization funtion
-    void (*deinit)(PacketParser *parser);
+    PacketDissectorDeinitFunc deinit;
 };
 
 #endif

@@ -23,15 +23,10 @@
  * @file packet_parser.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage captured packet parsers
+ * @brief Functions to manage captured packet dissectors
  *
  */
 #include "config.h"
 #include <glib.h>
-#include "packet/proto/packet_link.h"
-#include "packet/proto/packet_ip.h"
-#include "packet/proto/packet_udp.h"
-#include "packet/proto/packet_tcp.h"
-#include "packet/proto/packet_sip.h"
 #include "dissector.h"
 

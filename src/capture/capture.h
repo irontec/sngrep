@@ -46,16 +46,31 @@ enum capture_tech
     CAPTURE_TECH_HEP,
 };
 
-typedef struct _CaptureInput    CaptureInput;
-typedef struct _CaptureOutput   CaptureOutput;
-typedef struct _CaptureManager  CaptureManager;
+//! Capture function types
+typedef struct _CaptureInput CaptureInput;
+typedef struct _CaptureOutput CaptureOutput;
+typedef struct _CaptureManager CaptureManager;
+
+//! Capture Input functions types
+
+typedef void (*CaptureInputStartFunc)(CaptureInput *);
+
+typedef void (*CaptureInputStopFunc)(CaptureInput *);
+
+typedef int (*CaptureInputFilterFunc)(CaptureInput *, const char *, GError **);
+
+//! Capture Output function types
+typedef void (*CaptureOuptutWriteFunc)(CaptureOutput *, Packet *);
+
+typedef void (*CaptureOutputCloseFunc)(CaptureOutput *);
 
 /**
  * @brief Capture common configuration
  *
  * Store capture configuration and global data
  */
-struct _CaptureManager {
+struct _CaptureManager
+{
     //! Key file for TLS decrypt
     const gchar *keyfile;
     //! capture filter expression text
@@ -74,7 +89,8 @@ struct _CaptureManager {
     GRecMutex lock;
 };
 
-struct _CaptureInput {
+struct _CaptureInput
+{
     //! Manager owner of this capture input
     CaptureManager *manager;
     //! Capture Input type
@@ -89,18 +105,19 @@ struct _CaptureInput {
     void *priv;
     //! Flag to check if capture is running
     gboolean running;
-
     //! Each packet type private data
     PacketParser *parser;
+
     //! Start capturing packets function
-    void (*start)(CaptureInput *input);
+    CaptureInputStartFunc start;
     //! Stop capturing packets function
-    void (*stop)(CaptureInput *input);
-    //! Capture filtering expression
-    int (*filter)(CaptureInput *input, const char *filter, GError **error);
+    CaptureInputStopFunc stop;
+    //! Capture filtering function
+    CaptureInputFilterFunc filter;
 };
 
-struct _CaptureOutput {
+struct _CaptureOutput
+{
     //! Capture Output type
     enum capture_tech tech;
     //! Sink string
@@ -111,9 +128,9 @@ struct _CaptureOutput {
     void *priv;
 
     //! Dump packet function
-    void (*write)(CaptureOutput *output, Packet *packet);
+    CaptureOuptutWriteFunc write;
     //! Close dump packet  function
-    void (*close)(CaptureOutput *output);
+    CaptureOutputCloseFunc close;
 };
 
 /**
@@ -240,7 +257,7 @@ capture_status_desc(CaptureManager *manager);
  *
  * @return given keyfile
  */
-const gchar*
+const gchar *
 capture_keyfile(CaptureManager *manager);
 
 /**
