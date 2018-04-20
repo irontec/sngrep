@@ -227,6 +227,9 @@ capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **err
         return FALSE;
     }
 
+    // Deallocate BPF program data
+    pcap_freecode(&bpf);
+
     return TRUE;
 }
 
@@ -342,6 +345,18 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
 
     // Request initial dissector parsing
     packet_parser_next_dissector(parser, packet, data);
+
+    // Free not parsed packet data
+    if (data) {
+        g_byte_array_free(data, TRUE);
+
+        g_free(frame->header);
+        g_free(frame->data);
+        g_free(frame);
+
+        g_list_free(packet->frames);
+        g_free(packet);
+    }
 }
 
 ghar *

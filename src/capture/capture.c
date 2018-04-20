@@ -58,7 +58,13 @@ capture_manager_free(CaptureManager *manager)
     if (capture_is_running(manager))
         capture_manager_stop(manager);
 
+    if (manager->filter)
+        g_free(manager->filter);
+
+    g_slist_free(manager->inputs);
+    g_slist_free(manager->outputs);
     g_rec_mutex_clear(&manager->lock);
+    g_async_queue_unref(manager->queue);
     g_free(manager);
 }
 

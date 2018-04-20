@@ -74,7 +74,7 @@ struct _CaptureManager
     //! Key file for TLS decrypt
     const gchar *keyfile;
     //! capture filter expression text
-    const gchar *filter;
+    gchar *filter;
     //! TLS Server address
     Address tlsserver;
     //! Flag to skip captured packets

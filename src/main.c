@@ -140,9 +140,9 @@ main(int argc, char* argv[])
 
     /************************** Command Line Parsing **************************/
     GOptionContext *context = g_option_context_new("[<match expression>] [<bpf filter>]");
-    g_option_context_add_main_entries (context, main_entries, NULL);
-    g_option_context_parse (context, &argc, &argv, &error);
-    g_option_context_free (context);
+    g_option_context_add_main_entries(context, main_entries, NULL);
+    g_option_context_parse(context, &argc, &argv, &error);
+    g_option_context_free(context);
 
     if (error != NULL) {
         g_printerr("Options parsing failed: %s\n", error->message);
