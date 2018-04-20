@@ -20,17 +20,17 @@
  **
  ****************************************************************************/
 /**
- * @file rtp.h
+ * @file stream.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage rtp captured packets
+ * @brief Functions to manage rtp streams
  *
  * @note RTP_VERSION and RTP_PAYLOAD_TYPE macros has been taken from wireshark
  *       source code: packet-rtp.c
  */
 
-#ifndef __SNGREP_RTP_H
-#define __SNGREP_RTP_H
+#ifndef __SNGREP_STREAM_H
+#define __SNGREP_STREAM_H
 
 #include "config.h"
 #include "sip_msg.h"
@@ -78,23 +78,12 @@ stream_add_packet(rtp_stream_t *stream, packet_t *packet);
 uint32_t
 stream_get_count(rtp_stream_t *stream);
 
-struct sip_call *
-stream_get_call(rtp_stream_t *stream);
-
 const char *
 stream_get_format(rtp_stream_t *stream);
 
 rtp_stream_t *
-rtp_find_stream_format(Address src, Address dst, uint32_t format);
+stream_find_by_format(Address src, Address dst, uint32_t format);
 
-rtp_stream_t *
-rtp_find_stream(Address src, Address dst);
-
-rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, Address src, Address dst);
-
-rtp_stream_t *
-rtp_find_call_exact_stream(struct sip_call *call, Address src, Address dst);
 
 /**
  * @brief Check if a message is older than other
@@ -122,4 +111,4 @@ stream_is_complete(rtp_stream_t *stream);
 int
 stream_is_active(rtp_stream_t *stream);
 
-#endif /* __SNGREP_RTP_H */
+#endif /* __SNGREP_STREAM_H */

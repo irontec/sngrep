@@ -254,7 +254,7 @@ storage_check_rtp_packet(packet_t *packet)
         guint8 format = rtp->encoding->id;
 
         // Find the matching stream
-        stream = rtp_find_stream_format(src, dst, format);
+        stream = stream_find_by_format(src, dst, format);
 
         // Check if a valid stream has been found
         if (!stream)
@@ -294,7 +294,7 @@ storage_check_rtp_packet(packet_t *packet)
              */
 
             // Check if an stream in the opposite direction exists
-            if (!(reverse = rtp_find_call_stream(stream->msg->call, stream->dst, stream->src))) {
+            if (!(reverse = call_find_stream(stream->msg->call, stream->dst, stream->src))) {
                 reverse = stream_create(packet->newpacket, stream->media);
                 stream_complete(reverse, stream->dst);
                 stream_set_format(reverse, format);
@@ -302,7 +302,7 @@ storage_check_rtp_packet(packet_t *packet)
             } else {
                 // If the reverse stream has other source configured
                 if (reverse->src.port && !addressport_equals(stream->src, reverse->src)) {
-                    if (!(reverse = rtp_find_call_exact_stream(stream->msg->call, stream->dst, stream->src))) {
+                    if (!(reverse = call_find_stream_exact(stream->msg->call, stream->dst, stream->src))) {
                         // Create a new reverse stream
                         reverse = stream_create(packet->newpacket, stream->media);
                         stream_complete(reverse, stream->dst);
@@ -409,7 +409,7 @@ storage_register_streams(sip_msg_t *msg)
         g_sequence_append(msg->medias, media);
 
         // Create RTP stream for this media
-        if (rtp_find_call_stream(msg->call, emptyaddr, media->address) == NULL) {
+        if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
             rtp_stream_t *stream = stream_create(packet, media);
             stream->type = PACKET_RTP;
             stream->msg = msg;
@@ -417,7 +417,7 @@ storage_register_streams(sip_msg_t *msg)
         }
 
         // Create RTCP stream for this media
-        if (rtp_find_call_stream(msg->call, emptyaddr, media->address) == NULL) {
+        if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
             rtp_stream_t *stream = stream_create(packet, media);
             stream->dst.port = (media->rtcpport) ? media->rtcpport : (guint16) (media->rtpport + 1);
             stream->type = PACKET_RTCP;
@@ -426,7 +426,7 @@ storage_register_streams(sip_msg_t *msg)
         }
 
         // Create RTP stream with source of message as destination address
-        if (rtp_find_call_stream(msg->call, msg->packet->src, media->address) == NULL) {
+        if (call_find_stream(msg->call, msg->packet->src, media->address) == NULL) {
             rtp_stream_t *stream = stream_create(packet, media);
             stream->type = PACKET_RTP;
             stream->msg = msg;

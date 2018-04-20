@@ -42,7 +42,7 @@
 #include "capture_pcap.h"
 #include "packet/dissectors/packet_link.h"
 #include "storage.h"
-#include "packet/rtp.h"
+#include "stream.h"
 #include "setting.h"
 #include "util.h"
 

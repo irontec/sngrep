@@ -32,7 +32,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <glib.h>
-#include "packet/rtp.h"
+#include "stream.h"
 #include "sip_msg.h"
 #include "sip_attr.h"
 
@@ -261,5 +261,11 @@ call_attr_compare(const sip_call_t *one, const sip_call_t *two, enum sip_attr_id
  */
 void
 call_add_xcall(sip_call_t *call, sip_call_t *xcall);
+
+rtp_stream_t *
+call_find_stream(struct sip_call *call, Address src, Address dst);
+
+rtp_stream_t *
+call_find_stream_exact(struct sip_call *call, Address src, Address dst);
 
 #endif /* __SNGREP_SIP_CALL_H */

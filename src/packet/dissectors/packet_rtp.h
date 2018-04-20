@@ -25,6 +25,8 @@
  *
  * @brief Functions to manage RTP packets
  *
+ * @note RTP_VERSION and RTP_PAYLOAD_TYPE macros has been taken from wireshark
+ *       source code: packet-rtp.c
  */
 
 #ifndef __SNGREP_PACKET_RTP_H

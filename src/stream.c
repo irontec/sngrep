@@ -34,7 +34,7 @@
 #include <stddef.h>
 #include <time.h>
 #include "glib-utils.h"
-#include "rtp.h"
+#include "stream.h"
 #include "storage.h"
 
 rtp_stream_t *
@@ -83,13 +83,6 @@ stream_get_count(rtp_stream_t *stream)
     return stream->pktcnt;
 }
 
-struct sip_call *
-stream_get_call(rtp_stream_t *stream) {
-    if (stream && stream->media && stream->msg)
-        return stream->msg->call;
-    return NULL;
-}
-
 const char *
 stream_get_format(rtp_stream_t *stream)
 {
@@ -118,7 +111,7 @@ stream_get_format(rtp_stream_t *stream)
 }
 
 rtp_stream_t *
-rtp_find_stream_format(Address src, Address dst, uint32_t format)
+stream_find_by_format(Address src, Address dst, uint32_t format)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -170,7 +163,7 @@ rtp_find_stream_format(Address src, Address dst, uint32_t format)
 }
 
 rtp_stream_t *
-rtp_find_stream(Address src, Address dst)
+stream_find(Address src, Address dst)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -186,7 +179,7 @@ rtp_find_stream(Address src, Address dst)
         calls = g_sequence_iter_prev(calls);
         call = g_sequence_get(calls);
         // Check if this call has an RTP stream for current packet data
-        if ((stream = rtp_find_call_stream(call, src, dst))) {
+        if ((stream = call_find_stream(call, src, dst))) {
             return stream;
         }
     }
@@ -195,60 +188,6 @@ rtp_find_stream(Address src, Address dst)
 }
 
 
-rtp_stream_t *
-rtp_find_call_stream(struct sip_call *call, Address src, Address dst)
-{
-    rtp_stream_t *stream;
-    GSequenceIter *it;
-
-    // Create an iterator for call streams
-    it = g_sequence_get_end_iter(call->streams);
-
-    // Look for an incomplete stream with this destination
-    while(!g_sequence_iter_is_begin(it)) {
-        it = g_sequence_iter_prev(it);
-        stream = g_sequence_get(it);
-        if (addressport_equals(dst, stream->dst)) {
-            if (!src.port) {
-                return stream;
-            } else {
-                if (!stream->pktcnt) {
-                    return stream;
-                }
-            }
-        }
-    }
-
-    // Try to look for a complete stream with this destination
-    if (src.port) {
-        return rtp_find_call_exact_stream(call, src, dst);
-    }
-
-    // Nothing found
-    return NULL;
-}
-
-rtp_stream_t *
-rtp_find_call_exact_stream(struct sip_call *call, Address src, Address dst)
-{
-    rtp_stream_t *stream;
-    GSequenceIter *it;
-
-    // Create an iterator for call streams
-    it = g_sequence_get_end_iter(call->streams);
-
-    while(!g_sequence_iter_is_begin(it)) {
-        it = g_sequence_iter_prev(it);
-        stream = g_sequence_get(it);
-        if (addressport_equals(src, stream->src) &&
-            addressport_equals(dst, stream->dst)) {
-            return stream;
-        }
-    }
-
-    // Nothing found
-    return NULL;
-}
 
 int
 stream_is_older(rtp_stream_t *one, rtp_stream_t *two)

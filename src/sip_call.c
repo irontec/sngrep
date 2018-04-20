@@ -380,3 +380,58 @@ call_add_xcall(sip_call_t *call, sip_call_t *xcall)
     // Add the xcall to the list
     g_sequence_append(call->xcalls, xcall);
 }
+
+rtp_stream_t *
+call_find_stream(struct sip_call *call, Address src, Address dst)
+{
+    rtp_stream_t *stream;
+    GSequenceIter *it;
+
+    // Create an iterator for call streams
+    it = g_sequence_get_end_iter(call->streams);
+
+    // Look for an incomplete stream with this destination
+    while(!g_sequence_iter_is_begin(it)) {
+        it = g_sequence_iter_prev(it);
+        stream = g_sequence_get(it);
+        if (addressport_equals(dst, stream->dst)) {
+            if (!src.port) {
+                return stream;
+            } else {
+                if (!stream->pktcnt) {
+                    return stream;
+                }
+            }
+        }
+    }
+
+    // Try to look for a complete stream with this destination
+    if (src.port) {
+        return call_find_stream_exact(call, src, dst);
+    }
+
+    // Nothing found
+    return NULL;
+}
+
+rtp_stream_t *
+call_find_stream_exact(struct sip_call *call, Address src, Address dst)
+{
+    rtp_stream_t *stream;
+    GSequenceIter *it;
+
+    // Create an iterator for call streams
+    it = g_sequence_get_end_iter(call->streams);
+
+    while(!g_sequence_iter_is_begin(it)) {
+        it = g_sequence_iter_prev(it);
+        stream = g_sequence_get(it);
+        if (addressport_equals(src, stream->src) &&
+            addressport_equals(dst, stream->dst)) {
+            return stream;
+        }
+    }
+
+    // Nothing found
+    return NULL;
+}

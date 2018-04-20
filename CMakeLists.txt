@@ -46,7 +46,7 @@ set(SOURCES
         src/main.c
         src/option.c
         src/packet/old_packet.c
-        src/packet/rtp.c
+        src/stream.c
         src/setting.c
         src/sip_attr.c
         src/storage.c
