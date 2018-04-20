@@ -20,19 +20,16 @@
  **
  ****************************************************************************/
 /**
- * @file sip.h
+ * @file storage.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage SIP calls and messages
+ * @brief Functions to manage calls, messages and streams Storage
  *
- * This file contains the functions and structures to manage the SIP calls and
- * messages.
  */
 
 #ifndef __SNGREP_SIP_H
 #define __SNGREP_SIP_H
 
-#include <stdbool.h>
 #include <glib.h>
 #include "sip_call.h"
 
@@ -44,8 +41,8 @@ typedef struct sip_call_list sip_call_list_t;
 typedef struct sip_stats sip_stats_t;
 
 //! Shorter declaration of structs
-typedef struct _SStorageSortOpts SStorageSortOpts;
-typedef struct _SStorageMatchOpts SStorageMatchOpts;
+typedef struct _SStorageSortOpts    SStorageSortOpts;
+typedef struct _SStorageMatchOpts   SStorageMatchOpts;
 typedef struct _SStorageCaptureOpts SStorageCaptureOpts;
 
 struct _SStorageSortOpts
@@ -160,7 +157,7 @@ storage_check_packet(Packet *packet);
  *
  * @return true if list has changed, false otherwise
  */
-bool
+gboolean
 storage_calls_changed();
 
 /**
@@ -183,7 +180,7 @@ storage_calls_iterator();
  * @param call Call to be searched
  * @return TRUE if call is active, FALSE otherwise
  */
-bool
+gboolean
 storage_call_is_active(sip_call_t *call);
 
 /**
@@ -244,14 +241,6 @@ void
 storage_calls_rotate();
 
 /**
- * @brief Get full Response code (including text)
- *
- *
- */
-const char *
-sip_get_msg_reqresp_str(sip_msg_t *msg);
-
-/**
  * @brief Parse SIP Message payload for SDP media streams
  *
  * Parse the payload content to get SDP information
@@ -278,19 +267,6 @@ storage_match_expr();
  */
 int
 storage_check_match_expr(const char *payload);
-
-/**
- * @brief Get summary of message header data
- *
- * For raw prints, it's handy to have the ngrep header style message
- * data.
- *
- * @param msg SIP message
- * @param out pointer to allocated memory to contain the header output
- * @returns pointer to out
- */
-char *
-sip_get_msg_header(sip_msg_t *msg, char *out);
 
 void
 storage_set_sort_options(SStorageSortOpts sort);

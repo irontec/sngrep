@@ -116,7 +116,7 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             sprintf(value, "%s:%u", msg->packet->dst.ip, msg->packet->dst.port);
             break;
         case SIP_ATTR_METHOD:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, sip_get_msg_reqresp_str(msg));
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg_reqresp_str(msg));
             break;
         case SIP_ATTR_SIPFROM:
             sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_from);
@@ -174,4 +174,31 @@ msg_get_preferred_codec_alias(sip_msg_t *msg)
     g_return_val_if_fail(format != NULL, NULL);
 
     return format->alias;
+}
+
+char *
+msg_get_header(sip_msg_t *msg, char *out)
+{
+    char from_addr[80], to_addr[80], time[80], date[80];
+
+    // Source and Destination address
+    msg_get_attribute(msg, SIP_ATTR_DATE, date);
+    msg_get_attribute(msg, SIP_ATTR_TIME, time);
+    msg_get_attribute(msg, SIP_ATTR_SRC, from_addr);
+    msg_get_attribute(msg, SIP_ATTR_DST, to_addr);
+
+    // Get msg header
+    sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
+    return out;
+}
+
+const char *
+msg_reqresp_str(sip_msg_t *msg)
+{
+    // Check if code has non-standard text
+    if (msg->resp_str) {
+        return msg->resp_str;
+    } else {
+        return sip_method_str(msg->reqresp);
+    }
 }

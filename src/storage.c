@@ -25,17 +25,10 @@
  *
  * @brief Source of functions defined in sip.h
  */
-#include "config.h"
 #include <glib.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <stdarg.h>
 #include "glib-utils.h"
 #include "packet/dissectors/packet_sip.h"
 #include "storage.h"
-#include "option.h"
 #include "setting.h"
 #include "filter.h"
 
@@ -46,7 +39,7 @@
  * this awesome structure, so, keep it thread-safe.
  */
 sip_call_list_t calls =
-{ 0 };
+        {0};
 
 gboolean
 storage_init(SStorageCaptureOpts capture_options,
@@ -131,17 +124,17 @@ storage_check_packet(Packet *packet)
 {
     sip_msg_t *msg;
     sip_call_t *call;
-    bool newcall = false;
+    gboolean newcall = false;
 
     PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
 
     // Create a new message from this data
     msg = msg_create();
-    msg->cseq       = sip_data->cseq;
-    msg->sip_from   = sip_data->from;
-    msg->sip_to     = sip_data->to;
-    msg->reqresp    = sip_data->reqresp;
-    msg->resp_str   = sip_data->resp_str;
+    msg->cseq = sip_data->cseq;
+    msg->sip_from = sip_data->from;
+    msg->sip_to = sip_data->to;
+    msg->reqresp = sip_data->reqresp;
+    msg->resp_str = sip_data->resp_str;
 
     // Find the call for this msg
     if (!(call = storage_find_by_callid(sip_data->callid))) {
@@ -229,10 +222,10 @@ skip_message:
 
 }
 
-bool
+gboolean
 storage_calls_changed()
 {
-    bool changed = calls.changed;
+    gboolean changed = calls.changed;
     calls.changed = false;
     return changed;
 }
@@ -249,13 +242,7 @@ storage_calls_iterator()
     return g_sequence_get_begin_iter(calls.list);
 }
 
-GSequenceIter *
-sip_active_calls_iterator()
-{
-    return g_sequence_get_begin_iter(calls.active);
-}
-
-bool
+gboolean
 storage_call_is_active(sip_call_t *call)
 {
     return g_sequence_index(calls.active, call) != -1;
@@ -282,7 +269,7 @@ storage_calls_stats()
     // Total number of calls without filtering
     stats.total = g_sequence_iter_length(it);
     // Total number of calls after filtering
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         if (filter_check_call(g_sequence_get(it), NULL))
             stats.displayed++;
     }
@@ -290,26 +277,9 @@ storage_calls_stats()
 }
 
 sip_call_t *
-sip_find_by_index(int index)
-{
-    return g_sequence_nth(calls.list, index);
-}
-
-sip_call_t *
 storage_find_by_callid(const char *callid)
 {
     return g_hash_table_lookup(calls.callids, callid);
-}
-
-const char *
-sip_get_msg_reqresp_str(sip_msg_t *msg)
-{
-    // Check if code has non-standard text
-    if (msg->resp_str) {
-        return msg->resp_str;
-    } else {
-        return sip_method_str(msg->reqresp);
-    }
 }
 
 void
@@ -319,7 +289,10 @@ storage_register_streams(sip_msg_t *msg)
     Address emptyaddr = {};
 
     PacketSdpData *sdp = g_ptr_array_index(packet->proto, PACKET_SDP);
-    if (sdp == NULL) return;
+    if (sdp == NULL) {
+        // Packet with SDP content
+        return;
+    }
 
     for (guint i = 0; i < g_list_length(sdp->medias); i++) {
         PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
@@ -375,7 +348,7 @@ storage_calls_clear_soft()
     sip_call_t *call;
     GSequenceIter *it = g_sequence_get_begin_iter(calls.list);
 
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         call = g_sequence_get(it);
         g_hash_table_insert(calls.callids, call->callid, call);
     }
@@ -386,7 +359,7 @@ storage_calls_rotate()
 {
     sip_call_t *call;
     GSequenceIter *it = g_sequence_get_begin_iter(calls.list);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         call = g_sequence_get(it);
         if (!call->locked) {
             // Remove from callids hash
@@ -419,43 +392,6 @@ storage_check_match_expr(const char *payload)
         return 1 == calls.match.minvert;
     }
 
-}
-
-
-
-const char *
-sip_transport_str(int transport)
-{
-    switch(transport)
-    {
-        case PACKET_OLD_SIP_UDP:
-            return "UDP";
-        case PACKET_OLD_SIP_TCP:
-            return "TCP";
-        case PACKET_OLD_SIP_TLS:
-            return "TLS";
-        case PACKET_OLD_SIP_WS:
-            return "WS";
-        case PACKET_OLD_SIP_WSS:
-            return "WSS";
-    }
-    return "";
-}
-
-char *
-sip_get_msg_header(sip_msg_t *msg, char *out)
-{
-    char from_addr[80], to_addr[80], time[80], date[80];
-
-    // Source and Destination address
-    msg_get_attribute(msg, SIP_ATTR_DATE, date);
-    msg_get_attribute(msg, SIP_ATTR_TIME, time);
-    msg_get_attribute(msg, SIP_ATTR_SRC, from_addr);
-    msg_get_attribute(msg, SIP_ATTR_DST, to_addr);
-
-    // Get msg header
-    sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
-    return out;
 }
 
 void

@@ -173,5 +173,24 @@ msg_is_older(sip_msg_t *one, sip_msg_t *two);
 const gchar *
 msg_get_preferred_codec_alias(sip_msg_t *msg);
 
+/**
+ * @brief Get summary of message header data
+ *
+ * For raw prints, it's handy to have the ngrep header style message
+ * data.
+ *
+ * @param msg SIP message
+ * @param out pointer to allocated memory to contain the header output
+ * @returns pointer to out
+ */
+char *
+msg_get_header(sip_msg_t *msg, char *out);
+
+/**
+ * @brief Get full Response code (including text)
+ */
+const char *
+msg_reqresp_str(sip_msg_t *msg);
+
 
 #endif /* __SNGREP_SIP_MSG_H */
