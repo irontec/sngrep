@@ -1076,15 +1076,6 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
     mvwvline(ui->win, 1, ui->width - raw_width - 2, ACS_VLINE, ui->height - 2);
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
-    mvwprintw(raw_win, 0, 0, "============ RTCP Information ============");
-    mvwprintw(raw_win, 2, 0, "Sender's packet count: %d", stream->rtcpinfo.spc);
-    mvwprintw(raw_win, 3, 0, "Fraction Lost: %d / 256", stream->rtcpinfo.flost);
-    mvwprintw(raw_win, 4, 0, "Fraction discarded: %d / 256", stream->rtcpinfo.fdiscard);
-    mvwprintw(raw_win, 6, 0, "MOS - Listening Quality: %.1f", (float) stream->rtcpinfo.mosl / 10);
-    mvwprintw(raw_win, 7, 0, "MOS - Conversational Quality: %.1f", (float) stream->rtcpinfo.mosc / 10);
-
-
-
     // Copy the raw_win contents into the panel
     copywin(raw_win, ui->win, 0, 0, 1, ui->width - raw_width - 1, raw_height, ui->width - 2, 0);
 

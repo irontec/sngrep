@@ -85,7 +85,7 @@ packet_rtp_standard_codec(guint8 code)
  * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
  */
 static gboolean
-data_is_rtp(GByteArray *data)
+packet_rtp_valid(GByteArray *data)
 {
     g_return_val_if_fail(data != NULL, FALSE);
 
@@ -106,7 +106,7 @@ static GByteArray *
 packet_rtp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray *data)
 {
     // Not RTP
-    if (data_is_rtp(data) != 1) {
+    if (!packet_rtp_valid(data)) {
         return data;
     }
 
@@ -125,28 +125,7 @@ packet_rtp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray 
     g_ptr_array_insert(packet->proto, PACKET_RTP, rtp);
 
     /** @TODO Backwards compatibility during refactoring */
-    packet_t *oldpkt = g_malloc0(sizeof(packet_t));
-
-    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
-    g_return_val_if_fail(ipdata != NULL, NULL);
-    oldpkt->newpacket = packet;
-    oldpkt->src = ipdata->saddr;
-    oldpkt->dst = ipdata->daddr;
-
-    PacketUdpData *udpdata = g_ptr_array_index(packet->proto, PACKET_UDP);
-    g_return_val_if_fail(udpdata != NULL, NULL);
-    oldpkt->src.port = udpdata->sport;
-    oldpkt->dst.port = udpdata->dport;
-
-    packet_set_payload(oldpkt, data->data, data->len);
-
-    oldpkt->frames = g_sequence_new(NULL);
-    for (GList *l = packet->frames; l != NULL; l = l->next) {
-        PacketFrame *frame = l->data;
-        packet_add_frame(oldpkt, frame->header, frame->data);
-    }
-
-    storage_check_rtp_packet(oldpkt);
+    storage_check_rtp_packet(packet_to_oldpkt(packet));
     return NULL;
 }
 

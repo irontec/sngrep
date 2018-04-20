@@ -59,26 +59,8 @@ struct rtp_stream {
     struct timeval time;
     //! Unix timestamp of last received packet
     int lasttm;
-
-    // Stream information (depending on type)
-    union {
-        struct {
-            //! Format of first received packet of stre
-            guint8 fmtcode;
-        } rtpinfo;
-        struct {
-            //! Sender packet count
-            uint32_t spc;
-            //! Fraction lost x/256
-            uint8_t flost;
-            //! uint8_t discarded x/256
-            uint8_t fdiscard;
-            //! MOS - listening Quality
-            uint8_t mosl;
-            //! MOS - Conversational Quality
-            uint8_t mosc;
-        } rtcpinfo;
-    };
+    //! Format of first received packet of stre
+    guint8 fmtcode;
 };
 
 rtp_stream_t *
@@ -139,13 +121,5 @@ stream_is_complete(rtp_stream_t *stream);
  */
 int
 stream_is_active(rtp_stream_t *stream);
-
-/**
- * @brief Check if the data is a RTCP packet
- * RFC 5761 Section 4.  Distinguishable RTP and RTCP Packets
- * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
- */
-int
-data_is_rtcp(u_char *data, uint32_t len);
 
 #endif /* __SNGREP_RTP_H */

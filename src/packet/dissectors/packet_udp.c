@@ -92,7 +92,7 @@ packet_udp_new()
     proto->dissect = packet_udp_parse;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTP));
-//    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTCP));
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTCP));
 
     return proto;
 }

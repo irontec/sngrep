@@ -228,7 +228,7 @@ packet_ip_new()
     proto->init = packet_ip_init;
     proto->dissect = packet_ip_parse;
     proto->deinit = packet_ip_deinit;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TCP));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_UDP));
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TCP));
     return proto;
 }

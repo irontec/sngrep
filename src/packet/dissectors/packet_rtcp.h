@@ -32,6 +32,9 @@
 
 #include <glib.h>
 
+typedef struct _PacketRtcpData  PacketRtcpData;
+
+
 // RTCP header types
 //! http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml
 enum rtcp_header_types
@@ -202,6 +205,20 @@ struct rtcp_blk_xr_voip
     guint16 jbmdelay;
     //! jitter buffer absolute maximum delay (JB abs max): 16 bits
     guint16 jbadelay;
+};
+
+struct _PacketRtcpData
+{
+    //! Sender packet count
+    guint32 spc;
+    //! Fraction lost x/256
+    guint8 flost;
+    //! guint8 discarded x/256
+    guint8 fdiscard;
+    //! MOS - listening Quality
+    guint8 mosl;
+    //! MOS - Conversational Quality
+    guint8 mosc;
 };
 
 PacketDissector *

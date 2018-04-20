@@ -261,7 +261,7 @@ storage_check_rtp_packet(packet_t *packet)
             return NULL;
 
         // We have found a stream, but with different format
-        if (stream_is_complete(stream) && stream->rtpinfo.fmtcode != format) {
+        if (stream_is_complete(stream) && stream->fmtcode != format) {
             // Create a new stream for this new format
             stream = stream_create(packet->newpacket, stream->media);
             stream_complete(stream, src);
@@ -317,80 +317,12 @@ storage_check_rtp_packet(packet_t *packet)
         stream_add_packet(stream, packet);
     }
 
-    if (data_is_rtcp(payload, size) == 0) {
-        // Find the matching stream
-        if ((stream = rtp_find_stream(src, dst))) {
-
-            // Parse all packet payload headers
-            while ((int32_t) size > 0) {
-
-                // Check we have at least rtcp generic info
-                if (size < sizeof(struct rtcp_hdr_generic))
-                    break;
-
-                memcpy(&hdr, payload, sizeof(hdr));
-
-                // Check RTP version
-                if (RTP_VERSION(hdr.version) != RTP_VERSION_RFC1889)
-                    break;
-
-                // Header length
-                if ((len = ntohs(hdr.len) * 4 + 4) > size)
-                    break;
-
-                // Check RTCP packet header typ
-                switch (hdr.type) {
-                    case RTCP_HDR_SR:
-                        // Get Sender Report header
-                        memcpy(&hdr_sr, payload, sizeof(hdr_sr));
-                        stream->rtcpinfo.spc = ntohl(hdr_sr.spc);
-                        break;
-                    case RTCP_HDR_RR:
-                    case RTCP_HDR_SDES:
-                    case RTCP_HDR_BYE:
-                    case RTCP_HDR_APP:
-                    case RTCP_RTPFB:
-                    case RTCP_PSFB:
-                        break;
-                    case RTCP_XR:
-                        // Get Sender Report Extended header
-                        memcpy(&hdr_xr, payload, sizeof(hdr_xr));
-                        bsize = sizeof(hdr_xr);
-
-                        // Read all report blocks
-                        while (bsize < ntohs(hdr_xr.len) * 4 + 4) {
-                            // Read block header
-                            memcpy(&blk_xr, payload + bsize, sizeof(blk_xr));
-                            // Check block type
-                            switch (blk_xr.type) {
-                                case RTCP_XR_VOIP_METRCS:
-                                    memcpy(&blk_xr_voip, payload + sizeof(hdr_xr), sizeof(blk_xr_voip));
-                                    stream->rtcpinfo.fdiscard = blk_xr_voip.drate;
-                                    stream->rtcpinfo.flost = blk_xr_voip.lrate;
-                                    stream->rtcpinfo.mosl = blk_xr_voip.moslq;
-                                    stream->rtcpinfo.mosc = blk_xr_voip.moscq;
-                                    break;
-                                default: break;
-                            }
-                            bsize += ntohs(blk_xr.len) * 4 + 4;
-                        }
-                        break;
-                    case RTCP_AVB:
-                    case RTCP_RSI:
-                    case RTCP_TOKEN:
-                    default:
-                        // Not handled headers. Skip the rest of this packet
-                        size = 0;
-                        break;
-                }
-                payload += len;
-                size -= len;
-            }
-
-            // Add packet to stream
-            stream_complete(stream, src);
-            stream_add_packet(stream, packet);
-        }
+    // Check if packet has RTP data
+    PacketRtcpData *rtcp = g_ptr_array_index(packet->newpacket->proto, PACKET_RTP);
+    if (rtcp != NULL) {
+        // Add packet to stream
+        stream_complete(stream, src);
+        stream_add_packet(stream, packet);
     } else {
         return NULL;
     }

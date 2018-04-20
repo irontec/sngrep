@@ -64,7 +64,7 @@ stream_complete(rtp_stream_t *stream, Address src)
 void
 stream_set_format(rtp_stream_t *stream, uint32_t format)
 {
-    stream->rtpinfo.fmtcode = format;
+    stream->fmtcode = format;
 }
 
 void
@@ -101,14 +101,14 @@ stream_get_format(rtp_stream_t *stream)
         return NULL;
 
     // Try to get standard format form code
-    PacketRtpEncoding *encoding = packet_rtp_standard_codec(stream->rtpinfo.fmtcode);
+    PacketRtpEncoding *encoding = packet_rtp_standard_codec(stream->fmtcode);
     if (encoding != NULL)
         return encoding->format;
 
     // Try to get format form SDP payload
     for (guint i = 0; i < g_list_length(stream->media->formats); i++) {
         PacketSdpFormat *format = g_list_nth_data(stream->media->formats, i);
-        if (format->id == stream->rtpinfo.fmtcode) {
+        if (format->id == stream->fmtcode) {
             return format->alias;
         }
     }
@@ -150,7 +150,7 @@ rtp_find_stream_format(Address src, Address dst, uint32_t format)
                 if (addressport_equals(stream->src, src) &&
                     addressport_equals(stream->dst, dst)) {
                     // Exact searched stream format
-                    if (stream->rtpinfo.fmtcode == format) {
+                    if (stream->fmtcode == format) {
                         return stream;
                     } else {
                         // Matching addresses but different format
@@ -275,20 +275,4 @@ int
 stream_is_active(rtp_stream_t *stream)
 {
     return ((int) time(NULL) - stream->lasttm <= STREAM_INACTIVE_SECS);
-}
-
-int
-data_is_rtcp(u_char *data, uint32_t len)
-{
-    struct rtcp_hdr_generic *hdr = (struct rtcp_hdr_generic*) data;
-
-    if ((len >= RTCP_HDR_LENGTH) &&
-        (RTP_VERSION(*data) == RTP_VERSION_RFC1889) &&
-        (data[0] > 127 && data[0] < 192) &&
-        (hdr->type >= 192 && hdr->type <= 223)) {
-        return 0;
-    }
-
-    // Not a RTCP packet
-    return 1;
 }
