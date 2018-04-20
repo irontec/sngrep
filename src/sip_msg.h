@@ -35,7 +35,9 @@
 #include "util.h"
 
 //! Shorter declaration of sip_msg structure
-typedef struct sip_msg sip_msg_t;
+typedef struct _SipMsg SipMsg;
+//! Forward declarition of SipCall type
+typedef struct _SipCall SipCall;
 
 /**
  * @brief Information of a single message withing a dialog.
@@ -45,29 +47,27 @@ typedef struct sip_msg sip_msg_t;
  * purpose. It also works as a linked lists of messages in a
  * call.
  */
-struct sip_call;
-
-struct sip_msg {
+struct _SipMsg {
     //! Request Method or Response Code @see sip_methods
-    int reqresp;
+    gint reqresp;
     //!  Response text if it doesn't matches an standard
-    char *resp_str;
+    gchar *resp_str;
     //! Message Cseq
-    uint32_t cseq;
+    guint32 cseq;
     //! SIP From Header
-    char *sip_from;
+    gchar *sip_from;
     //! SIP To Header
-    char *sip_to;
+    gchar *sip_to;
     //! SDP payload information (sdp_media_t *)
     GSequence *medias;
     //! Captured packet for this message
     packet_t *packet;
     //! Index of this message in call
-    uint32_t index;
+    guint32 index;
     //! Message owner
-    struct sip_call *call;
+    SipCall *call;
     //! Message is a retransmission from other message
-    sip_msg_t *retrans;
+    SipMsg *retrans;
 };
 
 
@@ -81,7 +81,7 @@ struct sip_msg {
  * @param payload Raw payload content
  * @return a new allocated message
  */
-sip_msg_t *
+SipMsg *
 msg_create();
 
 /**
@@ -99,8 +99,8 @@ msg_destroy(gpointer item);
 /**
  * @brief Return the call owner of this message
  */
-struct sip_call *
-msg_get_call(const sip_msg_t *msg);
+SipCall *
+msg_get_call(const SipMsg *msg);
 
 /**
  * @brief Getter for media of given messages
@@ -111,29 +111,29 @@ msg_get_call(const sip_msg_t *msg);
  * @param msg SIP message structure
  * @return how many media structures are in the msg
  */
-int
-msg_media_count(sip_msg_t *msg);
+guint
+msg_media_count(SipMsg *msg);
 
 /**
  * @brief Check if given message has spd content
  */
-int
+gboolean
 msg_has_sdp(void *item);
 
 /**
  * @brief Check if a message is a Request or response
  *
  * @param msg SIP message that will be checked
- * @return 1 if the message is a request, 0 if a response
+ * @return TRUE if the message is a request, FALSE if a response
  */
-int
-msg_is_request(sip_msg_t *msg);
+gboolean
+msg_is_request(SipMsg *msg);
 
 /**
  * @brief Get SIP Message payload
  */
-const char *
-msg_get_payload(sip_msg_t *msg);
+const gchar *
+msg_get_payload(SipMsg *msg);
 
 /**
  * @brief Get Time of message from packet header
@@ -142,7 +142,7 @@ msg_get_payload(sip_msg_t *msg);
  * @return timeval structure with message first packet time
  */
 struct timeval
-msg_get_time(const sip_msg_t *msg);
+msg_get_time(const SipMsg *msg);
 
 /**
  * @brief Return a message attribute value
@@ -155,23 +155,23 @@ msg_get_time(const sip_msg_t *msg);
  * @param out Buffer to store attribute value
  * @return Attribute value or NULL if not found
  */
-const char *
-msg_get_attribute(struct sip_msg *msg, int id, char *value);
+const gchar *
+msg_get_attribute(SipMsg *msg, gint id, char *value);
 
 /**
  * @brief Check if a message is older than other
  *
  * @param one SIP message pointer
  * @param two SIP message pointer
- * @return 1 if one is older than two
- * @return 0 if equal or two is older than one
+ * @return TRUE if one is older than two
+ * @return FALSE if equal or two is older than one
  */
-int
-msg_is_older(sip_msg_t *one, sip_msg_t *two);
+gboolean
+msg_is_older(SipMsg *one, SipMsg *two);
 
 
 const gchar *
-msg_get_preferred_codec_alias(sip_msg_t *msg);
+msg_get_preferred_codec_alias(SipMsg *msg);
 
 /**
  * @brief Get summary of message header data
@@ -183,14 +183,14 @@ msg_get_preferred_codec_alias(sip_msg_t *msg);
  * @param out pointer to allocated memory to contain the header output
  * @returns pointer to out
  */
-char *
-msg_get_header(sip_msg_t *msg, char *out);
+const gchar *
+msg_get_header(SipMsg *msg, gchar *out);
 
 /**
  * @brief Get full Response code (including text)
  */
-const char *
-msg_reqresp_str(sip_msg_t *msg);
+const gchar *
+msg_reqresp_str(SipMsg *msg);
 
 
 #endif /* __SNGREP_SIP_MSG_H */

@@ -52,7 +52,7 @@ struct rtp_stream {
     //! SDP media that setup this stream
     PacketSdpMedia *media;
     //! SIP message that setup this stream
-    sip_msg_t *msg;
+    SipMsg *msg;
     //! Packet count for this stream
     uint32_t pktcnt;
     //! Time of first received packet of stream

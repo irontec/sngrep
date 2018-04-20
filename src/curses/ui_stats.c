@@ -77,8 +77,8 @@ stats_create(ui_t *ui)
 {
     GSequenceIter *calls;
     GSequenceIter *msgs;
-    sip_call_t *call;
-    sip_msg_t *msg;
+    SipCall *call;
+    SipMsg *msg;
 
     // Counters!
     struct {

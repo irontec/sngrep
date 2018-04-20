@@ -339,13 +339,13 @@ title_foot_box(PANEL *panel)
 }
 
 int
-draw_message(WINDOW *win, sip_msg_t *msg)
+draw_message(WINDOW *win, SipMsg *msg)
 {
     return draw_message_pos(win, msg, 0);
 }
 
 int
-draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
+draw_message_pos(WINDOW *win, SipMsg *msg, int starting)
 {
     int height, width, line, column, i;
     const char *cur_line, *payload, *method = NULL;

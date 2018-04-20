@@ -115,16 +115,16 @@ storage_capture_options()
 gint
 storage_sorter(gconstpointer a, gconstpointer b, gpointer user_data G_GNUC_UNUSED)
 {
-    const sip_call_t *calla = a, *callb = b;
+    const SipCall *calla = a, *callb = b;
     int cmp = call_attr_compare(calla, callb, calls.sort.by);
     return (calls.sort.asc) ? cmp : cmp * -1;
 }
 
-sip_msg_t *
+SipMsg *
 storage_check_sip_packet(Packet *packet)
 {
-    sip_msg_t *msg;
-    sip_call_t *call;
+    SipMsg *msg;
+    SipCall *call;
     gboolean newcall = false;
 
     PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
@@ -351,7 +351,7 @@ storage_calls_iterator()
 }
 
 gboolean
-storage_call_is_active(sip_call_t *call)
+storage_call_is_active(SipCall *call)
 {
     return g_sequence_index(calls.active, call) != -1;
 }
@@ -384,14 +384,14 @@ storage_calls_stats()
     return stats;
 }
 
-sip_call_t *
+SipCall *
 storage_find_by_callid(const char *callid)
 {
     return g_hash_table_lookup(calls.callids, callid);
 }
 
 void
-storage_register_streams(sip_msg_t *msg)
+storage_register_streams(SipMsg *msg)
 {
     Packet *packet = msg->packet->newpacket;
     Address emptyaddr = {};
@@ -459,7 +459,7 @@ storage_calls_clear_soft()
     calls.active = g_sequence_copy(storage_active_calls_vector(), filter_check_call, NULL);
 
     // Repopulate callids based on filtered list
-    sip_call_t *call;
+    SipCall *call;
     GSequenceIter *it = g_sequence_get_begin_iter(calls.list);
 
     for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
@@ -471,7 +471,7 @@ storage_calls_clear_soft()
 void
 storage_calls_rotate()
 {
-    sip_call_t *call;
+    SipCall *call;
     GSequenceIter *it = g_sequence_get_begin_iter(calls.list);
     for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         call = g_sequence_get(it);

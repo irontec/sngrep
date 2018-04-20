@@ -105,7 +105,7 @@ call_group_clone(sip_call_group_t *original);
  * @param call Pointer to an existing call
  */
 void
-call_group_add(sip_call_group_t *group, sip_call_t *call);
+call_group_add(sip_call_group_t *group, SipCall *call);
 
 /**
  * @brief Add several Calls to the group
@@ -123,7 +123,7 @@ call_group_add_calls(sip_call_group_t *group, GSequence *calls);
  * @param call Pointer to an existing call
  */
 void
-call_group_del(sip_call_group_t *group, sip_call_t *call);
+call_group_del(sip_call_group_t *group, SipCall *call);
 
 /**
  * @brief Check if a call is in the group
@@ -133,7 +133,7 @@ call_group_del(sip_call_group_t *group, sip_call_t *call);
  * @return 1 if the call is in the group, 0 otherwise
  */
 int
-call_group_exists(sip_call_group_t *group, sip_call_t *call);
+call_group_exists(sip_call_group_t *group, SipCall *call);
 
 /**
  * @brief Return the color pair number of a call
@@ -147,7 +147,7 @@ call_group_exists(sip_call_group_t *group, sip_call_t *call);
  * @return Color pair number
  */
 int
-call_group_color(sip_call_group_t *group, sip_call_t *call);
+call_group_color(sip_call_group_t *group, SipCall *call);
 
 /**
  * @brief Return the next call in the group
@@ -160,8 +160,8 @@ call_group_color(sip_call_group_t *group, sip_call_t *call);
  * @param call Pointer to an existing call or NULL
  * @return Next call of the group, or NULL
  */
-sip_call_t *
-call_group_get_next(sip_call_group_t *group, sip_call_t *call);
+SipCall *
+call_group_get_next(sip_call_group_t *group, SipCall *call);
 
 /**
  * @brief Return number of calls in a group
@@ -194,7 +194,7 @@ call_group_msg_count(sip_call_group_t *group);
  * @return The position of given message in the group
  */
 int
-call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg);
+call_group_msg_number(sip_call_group_t *group, SipMsg *msg);
 
 /**
  * @brief Finds the next msg in a call group.
@@ -206,8 +206,8 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg);
  * @param msg Actual SIP msg from any call of the group (can be NULL)
  * @return Next chronological message in the group or NULL
  */
-sip_msg_t *
-call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg);
+SipMsg *
+call_group_get_next_msg(sip_call_group_t *group, SipMsg *msg);
 
 /**
  * @brief Find the previous message in a call group
@@ -216,8 +216,8 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg);
  * @param msg Actual SIP msg from any call of the group
  * @return Previous chronological message in the group or NULL
  */
-sip_msg_t *
-call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg);
+SipMsg *
+call_group_get_prev_msg(sip_call_group_t *group, SipMsg *msg);
 
 /**
  * @brief Find the next stream in a call group

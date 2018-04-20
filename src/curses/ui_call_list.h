@@ -230,7 +230,7 @@ call_list_form_activate(ui_t *ui, int active);
  * @return A pointer to text
  */
 const char*
-call_list_line_text(ui_t *ui, sip_call_t *call, char *text);
+call_list_line_text(ui_t *ui, SipCall *call, char *text);
 
 /**
  * @brief Handle Call list key strokes

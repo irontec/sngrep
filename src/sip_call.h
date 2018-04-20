@@ -37,10 +37,10 @@
 #include "sip_attr.h"
 
 //! Shorter declaration of sip_call structure
-typedef struct sip_call sip_call_t;
+typedef struct _SipCall SipCall;
 
 //! SIP Call State
-enum call_state
+enum CallState
 {
     SIP_CALLSTATE_CALLSETUP = 1,
     SIP_CALLSTATE_INCALL,
@@ -58,25 +58,25 @@ enum call_state
  * callid (considered a dialog). It contains some replicated
  * data from its messages to speed up searches.
  */
-struct sip_call {
+struct _SipCall {
     // Call index in the call list
-    int index;
+    guint index;
     // Call identifier
-    char *callid;
+    gchar *callid;
     //! Related Call identifier
-    char *xcallid;
+    gchar *xcallid;
     //! Flag this call as filtered so won't be displayed
-    signed char filtered;
+    gchar filtered;
     //! Call State. For dialogs starting with an INVITE method
-    int state;
+    enum CallState state;
     //! Changed flag. For interface optimal updates
-    bool changed;
+    gboolean changed;
     //! Locked flag. Calls locked are never deleted
-    bool locked;
+    gboolean locked;
     //! Last reason text value for this call
-    char *reasontxt;
+    gchar *reasontxt;
     //! Last warning text value for this call
-    int warning;
+    gint warning;
     //! List of calls with with this call as X-Call-Id
     GSequence *xcalls;
     //! Cseq from invite startint the call
@@ -84,7 +84,7 @@ struct sip_call {
     //! List of messages of this call (sip_msg_t*)
     GSequence *msgs;
     //! Message when conversation started and ended
-    sip_msg_t *cstart_msg, *cend_msg;
+    SipMsg *cstart_msg, *cend_msg;
     //! RTP streams for this call (rtp_stream_t *)
     GSequence *streams;
     //! RTP packets for this call (capture_packet_t *)
@@ -101,8 +101,8 @@ struct sip_call {
  * @param xcallid X-Call-ID Header value
  * @return pointer to the sip_call created
  */
-sip_call_t *
-call_create(char *callid, char *xcallid);
+SipCall *
+call_create(gchar *callid, gchar *xcallid);
 
 /**
  * @brief Free all related memory from a call and remove from call list
@@ -125,8 +125,8 @@ call_destroy(gpointer item);
  *
  * @return true if call has changed, false otherwise
  */
-bool
-call_has_changed(sip_call_t *call);
+gboolean
+call_has_changed(SipCall *call);
 
 /**
  * @brief Append message to the call's message list
@@ -138,7 +138,7 @@ call_has_changed(sip_call_t *call);
  * @param msg SIP message structure
  */
 void
-call_add_message(sip_call_t *call, sip_msg_t *msg);
+call_add_message(SipCall *call, SipMsg *msg);
 
 /**
  * @brief Append a new RTP stream to the call
@@ -149,7 +149,7 @@ call_add_message(sip_call_t *call, sip_msg_t *msg);
  * @param stream RTP stream data
  */
 void
-call_add_stream(sip_call_t *call, rtp_stream_t *stream);
+call_add_stream(SipCall *call, rtp_stream_t *stream);
 
 /**
  * @brief Append a new RTP packet to the call
@@ -158,7 +158,7 @@ call_add_stream(sip_call_t *call, rtp_stream_t *stream);
  * @param packet new RTP packet from call rtp streams
  */
 void
-call_add_rtp_packet(sip_call_t *call, packet_t *packet);
+call_add_rtp_packet(SipCall *call, packet_t *packet);
 
 /**
  * @brief Getter for call messages linked list size
@@ -169,26 +169,26 @@ call_add_rtp_packet(sip_call_t *call, packet_t *packet);
  * @param call SIP call structure
  * @return how many messages are in the call
  */
-int
-call_msg_count(const sip_call_t *call);
+guint
+call_msg_count(const SipCall *call);
 
 /**
  * @brief Determine if a dilog is a call in progress
  *
  * @param call SIP call structure
- * @return 1 if the passed call state is active, 0 otherwise
+ * @return TRUE if the passed call state is active, FALSE otherwise
  */
-int
-call_is_active(sip_call_t *call);
+gboolean
+call_is_active(SipCall *call);
 
 /**
  * @brief Determine if this call starts with an Invite request
  *
  * @param call SIP call structure
- * @return 1 if first call message has method INVITE, 0 otherwise
+ * @return TRUE if first call message has method INVITE, FALSE otherwise
  */
-int
-call_is_invite(sip_call_t *call);
+gboolean
+call_is_invite(SipCall *call);
 
 /**
  * @brief Check if a message is a retransmission
@@ -199,7 +199,7 @@ call_is_invite(sip_call_t *call);
  * @param msg SIP message that will be checked
  */
 void
-call_msg_retrans_check(sip_msg_t *msg);
+call_msg_retrans_check(SipMsg *msg);
 
 /**
  * @brief Find a message in the call with SDP with the given address
@@ -208,8 +208,8 @@ call_msg_retrans_check(sip_msg_t *msg);
  * @param dst address:port structure to be searched
  * @return the message found or NULL
  */
-sip_msg_t *
-call_msg_with_media(sip_call_t *call, Address dst);
+SipMsg *
+call_msg_with_media(SipCall *call, Address dst);
 
 /**
  * @brief Update Call State attribute with its last parsed message
@@ -218,7 +218,7 @@ call_msg_with_media(sip_call_t *call, Address dst);
  * @param msg Last received message of this call
  */
 void
-call_update_state(sip_call_t *call, sip_msg_t *msg);
+call_update_state(SipCall *call, SipMsg *msg);
 
 /**
  * @brief Return a call attribute value
@@ -230,15 +230,15 @@ call_update_state(sip_call_t *call, sip_msg_t *msg);
  * @param id Attribute id
  * @return Attribute value or NULL if not found
  */
-const char *
-call_get_attribute(const struct sip_call *call, enum sip_attr_id id, char *value);
+const gchar *
+call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value);
 
 /**
  * @brief Return the string represtation of a call state
  *
  */
-const char *
-call_state_to_str(int state);
+const gchar *
+call_state_to_str(enum CallState state);
 
 /**
  * @brief Compare two calls based on a given attribute
@@ -247,8 +247,8 @@ call_state_to_str(int state);
  * @return 1 if first call is greater
  * @return -1 if first call is lesser
  */
-int
-call_attr_compare(const sip_call_t *one, const sip_call_t *two, enum sip_attr_id id);
+gint
+call_attr_compare(const SipCall *one, const SipCall *two, enum sip_attr_id id);
 
 /**
  * @brief Relate this two calls
@@ -260,12 +260,12 @@ call_attr_compare(const sip_call_t *one, const sip_call_t *two, enum sip_attr_id
  * @param xcall SIP call structure
  */
 void
-call_add_xcall(sip_call_t *call, sip_call_t *xcall);
+call_add_xcall(SipCall *call, SipCall *xcall);
 
 rtp_stream_t *
-call_find_stream(struct sip_call *call, Address src, Address dst);
+call_find_stream(SipCall *call, Address src, Address dst);
 
 rtp_stream_t *
-call_find_stream_exact(struct sip_call *call, Address src, Address dst);
+call_find_stream_exact(SipCall *call, Address src, Address dst);
 
 #endif /* __SNGREP_SIP_CALL_H */

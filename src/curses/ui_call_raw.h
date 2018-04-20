@@ -48,9 +48,9 @@ struct call_raw_info {
     //! Group of calls displayed on the panel (Call raw display)
     sip_call_group_t *group;
     //! Message to display on the panel (Single message raw display)
-    sip_msg_t *msg;
+    SipMsg *msg;
     //! Last printed message on panel (Call raw display)
-    sip_msg_t *last;
+    SipMsg *last;
     //! Window pad to copy on displayed screen
     WINDOW *pad;
     //! Already used lines of the window pad
@@ -125,7 +125,7 @@ call_raw_draw(ui_t *ui);
  * @return 0 in call cases
  */
 int
-call_raw_print_msg(ui_t *ui, sip_msg_t *msg);
+call_raw_print_msg(ui_t *ui, SipMsg *msg);
 
 /**
  * @brief Handle Call Raw key strokes
@@ -160,6 +160,6 @@ call_raw_set_group(sip_call_group_t *group);
  * @param msg Message pointer to be set in the internal info struct
  */
 int
-call_raw_set_msg(sip_msg_t *msg);
+call_raw_set_msg(SipMsg *msg);
 
 #endif

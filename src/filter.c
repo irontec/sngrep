@@ -76,8 +76,8 @@ filter_check_call(gconstpointer item, gconstpointer user_data)
 {
     int i;
     char data[MAX_SIP_PAYLOAD];
-    sip_call_t *call = (sip_call_t*) item;
-    sip_msg_t *msg;
+    SipCall *call = (SipCall*) item;
+    SipMsg *msg;
     GSequenceIter *it;
 
     // Dont filter calls without messages
@@ -173,7 +173,7 @@ filter_reset_calls()
 
     // Force filter evaluation
     for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        sip_call_t *call = g_sequence_get(it);
+        SipCall *call = g_sequence_get(it);
         call->filtered = -1;
     }
 }

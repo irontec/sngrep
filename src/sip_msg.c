@@ -36,11 +36,11 @@
 #include "packet/dissectors/packet_sdp.h"
 #include "storage.h"
 
-sip_msg_t *
+SipMsg *
 msg_create()
 {
-    sip_msg_t *msg;
-    if (!(msg = sng_malloc(sizeof(sip_msg_t))))
+    SipMsg *msg;
+    if (!(msg = sng_malloc(sizeof(SipMsg))))
         return NULL;
     msg->medias = g_sequence_new(NULL);
     return msg;
@@ -49,7 +49,7 @@ msg_create()
 void
 msg_destroy(gpointer item)
 {
-    sip_msg_t *msg = item;
+    SipMsg *msg = item;
 
     // Free message SDP media
     if (!msg->retrans)
@@ -64,37 +64,37 @@ msg_destroy(gpointer item)
     sng_free(msg);
 }
 
-struct sip_call *
-msg_get_call(const sip_msg_t *msg) {
+SipCall *
+msg_get_call(const SipMsg *msg) {
     return msg->call;
 }
 
-int
-msg_media_count(sip_msg_t *msg)
+guint
+msg_media_count(SipMsg *msg)
 {
     return g_sequence_get_length(msg->medias);
 }
 
-int
+gboolean
 msg_has_sdp(void *item)
 {
-    return msg_media_count(item);
+    return msg_media_count(item) > 0;
 }
 
-int
-msg_is_request(sip_msg_t *msg)
+gboolean
+msg_is_request(SipMsg *msg)
 {
     return msg->reqresp < 100;
 }
 
-const char *
-msg_get_payload(sip_msg_t *msg)
+const gchar *
+msg_get_payload(SipMsg *msg)
 {
     return (const char *) packet_payload(msg->packet);
 }
 
 struct timeval
-msg_get_time(const sip_msg_t *msg) {
+msg_get_time(const SipMsg *msg) {
     struct timeval t = { };
     frame_t *frame;
 
@@ -103,8 +103,8 @@ msg_get_time(const sip_msg_t *msg) {
     return t;
 }
 
-const char *
-msg_get_attribute(sip_msg_t *msg, int id, char *value)
+const gchar *
+msg_get_attribute(SipMsg *msg, gint id, char *value)
 {
     char *ar;
 
@@ -141,16 +141,16 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             timeval_to_time(msg_get_time(msg), value);
             break;
         default:
-            fprintf(stderr, "Unhandled attribute %s (%d)\n", sip_attr_get_name(id), id); abort();
-        break;
+            fprintf(stderr, "Unhandled attribute %s (%d)\n", sip_attr_get_name(id), id);
+            break;
     }
 
     return strlen(value) ? value : NULL;
 
 }
 
-int
-msg_is_older(sip_msg_t *one, sip_msg_t *two)
+gboolean
+msg_is_older(SipMsg *one, SipMsg *two)
 {
     // Yes, you are older than nothing
     if (!two)
@@ -165,7 +165,7 @@ msg_is_older(sip_msg_t *one, sip_msg_t *two)
 }
 
 const gchar *
-msg_get_preferred_codec_alias(sip_msg_t *msg)
+msg_get_preferred_codec_alias(SipMsg *msg)
 {
     PacketSdpMedia *media = g_sequence_first(msg->medias);
     g_return_val_if_fail(media != NULL, NULL);
@@ -176,8 +176,8 @@ msg_get_preferred_codec_alias(sip_msg_t *msg)
     return format->alias;
 }
 
-char *
-msg_get_header(sip_msg_t *msg, char *out)
+const gchar *
+msg_get_header(SipMsg *msg, char *out)
 {
     char from_addr[80], to_addr[80], time[80], date[80];
 
@@ -193,7 +193,7 @@ msg_get_header(sip_msg_t *msg, char *out)
 }
 
 const char *
-msg_reqresp_str(sip_msg_t *msg)
+msg_reqresp_str(SipMsg *msg)
 {
     // Check if code has non-standard text
     if (msg->resp_str) {

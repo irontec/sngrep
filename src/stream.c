@@ -116,7 +116,7 @@ stream_find_by_format(Address src, Address dst, uint32_t format)
     // Structure for RTP packet streams
     rtp_stream_t *stream;
     // Check if this is a RTP packet from active calls
-    sip_call_t *call;
+    SipCall *call;
     // Iterator for active calls
     GSequenceIter *calls;
     // Iterator for call streams
@@ -168,7 +168,7 @@ stream_find(Address src, Address dst)
     // Structure for RTP packet streams
     rtp_stream_t *stream;
     // Check if this is a RTP packet from active calls
-    sip_call_t *call;
+    SipCall *call;
     // Iterator for active calls
     GSequenceIter *calls;
 

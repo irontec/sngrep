@@ -145,7 +145,7 @@ storage_capture_options();
  * @param packet Packet structure pointer
  * @return a SIP msg structure pointer
  */
-sip_msg_t *
+SipMsg *
 storage_check_sip_packet(Packet *packet);
 
 /**
@@ -190,7 +190,7 @@ storage_calls_iterator();
  * @return TRUE if call is active, FALSE otherwise
  */
 gboolean
-storage_call_is_active(sip_call_t *call);
+storage_call_is_active(SipCall *call);
 
 /**
  * @brief Return the call list
@@ -219,7 +219,7 @@ storage_calls_stats();
  * @param callid Call-ID Header value
  * @return pointer to the sip_call structure found or NULL
  */
-sip_call_t *
+SipCall *
 storage_find_by_callid(const char *callid);
 
 /**
@@ -258,7 +258,7 @@ storage_calls_rotate();
  * @return 0 in all cases
  */
 void
-storage_register_streams(sip_msg_t *msg);
+storage_register_streams(SipMsg *msg);
 
 /**
  * @brief Get Capture Matching expression

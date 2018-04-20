@@ -97,7 +97,7 @@ struct save_info {
     //! Call group to be saved
     sip_call_group_t *group;
     //! Message to be saved
-    sip_msg_t *msg;
+    SipMsg *msg;
 };
 
 /**
@@ -183,7 +183,7 @@ save_set_group(ui_t *ui, sip_call_group_t *group);
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-save_set_msg(ui_t *ui, sip_msg_t *msg);
+save_set_msg(ui_t *ui, SipMsg *msg);
 
 /**
  * @brief Print an error message in Save panel
@@ -215,6 +215,6 @@ save_to_file(ui_t *ui);
  * @param msg a SIP Message
  */
 void
-save_msg_txt(FILE *f, sip_msg_t *msg);
+save_msg_txt(FILE *f, SipMsg *msg);
 
 #endif

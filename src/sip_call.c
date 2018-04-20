@@ -36,13 +36,13 @@
 #include "storage.h"
 #include "setting.h"
 
-sip_call_t *
+SipCall *
 call_create(char *callid, char *xcallid)
 {
-    sip_call_t *call;
+    SipCall *call;
 
     // Initialize a new call structure
-    if (!(call = sng_malloc(sizeof(sip_call_t))))
+    if (!(call = sng_malloc(sizeof(SipCall))))
         return NULL;
 
     // Create a vector to store call messages
@@ -70,7 +70,7 @@ call_create(char *callid, char *xcallid)
 void
 call_destroy(gpointer item)
 {
-    sip_call_t *call = item;
+    SipCall *call = item;
     // Remove all call messages
     g_sequence_free(call->msgs);
     // Remove all call streams
@@ -86,26 +86,26 @@ call_destroy(gpointer item)
     sng_free(call);
 }
 
-bool
-call_has_changed(sip_call_t *call)
+gboolean
+call_has_changed(SipCall *call)
 {
     return call->changed;
 }
 
 void
-call_add_message(sip_call_t *call, sip_msg_t *msg)
+call_add_message(SipCall *call, SipMsg *msg)
 {
     // Set the message owner
     msg->call = call;
     // Put this msg at the end of the msg list
     g_sequence_append(call->msgs, msg);
-    msg->index = g_sequence_get_length(call->msgs);
+    msg->index = (guint) g_sequence_get_length(call->msgs);
     // Flag this call as changed
     call->changed = true;
 }
 
 void
-call_add_stream(sip_call_t *call, rtp_stream_t *stream)
+call_add_stream(SipCall *call, rtp_stream_t *stream)
 {
     // Store stream
     g_sequence_append(call->streams, stream);
@@ -114,7 +114,7 @@ call_add_stream(sip_call_t *call, rtp_stream_t *stream)
 }
 
 void
-call_add_rtp_packet(sip_call_t *call, packet_t *packet)
+call_add_rtp_packet(SipCall *call, packet_t *packet)
 {
     // Store packet
     g_sequence_append(call->rtp_packets, packet);
@@ -122,22 +122,22 @@ call_add_rtp_packet(sip_call_t *call, packet_t *packet)
     call->changed = true;
 }
 
-int
-call_msg_count(const sip_call_t *call)
+guint
+call_msg_count(const SipCall *call)
 {
-    return g_sequence_get_length(call->msgs);
+    return (guint) g_sequence_get_length(call->msgs);
 }
 
 int
-call_is_active(sip_call_t *call)
+call_is_active(SipCall *call)
 {
     return (call->state == SIP_CALLSTATE_CALLSETUP || call->state == SIP_CALLSTATE_INCALL);
 }
 
 int
-call_is_invite(sip_call_t *call)
+call_is_invite(SipCall *call)
 {
-    sip_msg_t *first;
+    SipMsg *first;
     if ((first = g_sequence_first(call->msgs)))
         return (first->reqresp == SIP_METHOD_INVITE);
 
@@ -145,9 +145,9 @@ call_is_invite(sip_call_t *call)
 }
 
 void
-call_msg_retrans_check(sip_msg_t *msg)
+call_msg_retrans_check(SipMsg *msg)
 {
-    sip_msg_t *prev = NULL;
+    SipMsg *prev = NULL;
     GSequenceIter *it;
 
     // Get previous message in call with same origin and destination
@@ -173,10 +173,10 @@ call_msg_retrans_check(sip_msg_t *msg)
 
 }
 
-sip_msg_t *
-call_msg_with_media(sip_call_t *call, Address dst)
+SipMsg *
+call_msg_with_media(SipCall *call, Address dst)
 {
-    sip_msg_t *msg;
+    SipMsg *msg;
     PacketSdpMedia *media;
     GSequenceIter *itmsg;
     GSequenceIter *itmedia;
@@ -198,7 +198,7 @@ call_msg_with_media(sip_call_t *call, Address dst)
 }
 
 void
-call_update_state(sip_call_t *call, sip_msg_t *msg)
+call_update_state(SipCall *call, SipMsg *msg)
 {
     int reqresp;
 
@@ -249,9 +249,9 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
 }
 
 const char *
-call_get_attribute(const sip_call_t *call, enum sip_attr_id id, char *value)
+call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value)
 {
-    sip_msg_t *first, *last;
+    SipMsg *first, *last;
 
     if (!call)
         return NULL;
@@ -294,14 +294,13 @@ call_get_attribute(const sip_call_t *call, enum sip_attr_id id, char *value)
             break;
         default:
             return msg_get_attribute(g_sequence_first(call->msgs), id, value);
-            break;
     }
 
     return strlen(value) ? value : NULL;
 }
 
-const char *
-call_state_to_str(int state)
+const gchar *
+call_state_to_str(enum CallState state)
 {
     switch (state) {
         case SIP_CALLSTATE_CALLSETUP:
@@ -322,11 +321,11 @@ call_state_to_str(int state)
     return "";
 }
 
-int
-call_attr_compare(const sip_call_t *one, const sip_call_t *two, enum sip_attr_id id)
+gint
+call_attr_compare(const SipCall *one, const SipCall *two, enum sip_attr_id id)
 {
     char onevalue[256], twovalue[256];
-    int oneintvalue, twointvalue;
+    int oneintvalue = 0, twointvalue = 0;
     int comparetype; /* TODO 0 = string compare, 1 = int comprare */
 
     switch (id) {
@@ -370,7 +369,7 @@ call_attr_compare(const sip_call_t *one, const sip_call_t *two, enum sip_attr_id
 }
 
 void
-call_add_xcall(sip_call_t *call, sip_call_t *xcall)
+call_add_xcall(SipCall *call, SipCall *xcall)
 {
     if (!call || !xcall)
         return;
@@ -382,7 +381,7 @@ call_add_xcall(sip_call_t *call, sip_call_t *xcall)
 }
 
 rtp_stream_t *
-call_find_stream(struct sip_call *call, Address src, Address dst)
+call_find_stream(SipCall *call, Address src, Address dst)
 {
     rtp_stream_t *stream;
     GSequenceIter *it;
@@ -415,7 +414,7 @@ call_find_stream(struct sip_call *call, Address src, Address dst)
 }
 
 rtp_stream_t *
-call_find_stream_exact(struct sip_call *call, Address src, Address dst)
+call_find_stream_exact(SipCall *call, Address src, Address dst)
 {
     rtp_stream_t *stream;
     GSequenceIter *it;

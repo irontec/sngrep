@@ -345,7 +345,7 @@ call_list_draw_list(ui_t *ui)
 {
     WINDOW *list_win;
     int listh, listw, cline = 0;
-    struct sip_call *call = NULL;
+    SipCall *call = NULL;
     int i, collen;
     char coltext[SIP_ATTR_MAXLEN];
     int colid;
@@ -517,7 +517,7 @@ call_list_form_activate(ui_t *ui, int active)
 }
 
 const char *
-call_list_line_text(ui_t *ui, sip_call_t *call, char *text)
+call_list_line_text(ui_t *ui, SipCall *call, char *text)
 {
     int i, collen;
     char call_attr[SIP_ATTR_MAXLEN];
@@ -567,7 +567,7 @@ call_list_handle_key(ui_t *ui, int key)
     ui_t *next_ui;
     sip_call_group_t *group;
     int action = -1;
-    sip_call_t *call;
+    SipCall *call;
     SStorageSortOpts sort;
 
     // Sanity check, this should not happen

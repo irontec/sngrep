@@ -397,7 +397,7 @@ save_set_group(ui_t *ui, sip_call_group_t *group)
 }
 
 void
-save_set_msg(ui_t *ui, sip_msg_t *msg)
+save_set_msg(ui_t *ui, SipMsg *msg)
 {
     // Get panel information
     save_info_t *info = save_info(ui);
@@ -413,8 +413,8 @@ save_to_file(ui_t *ui)
     char savepath[MAX_SETTING_LEN];
     char savefile[MAX_SETTING_LEN];
     char fullfile[MAX_SETTING_LEN*2];
-    sip_call_t *call = NULL;
-    sip_msg_t *msg = NULL;
+    SipCall *call = NULL;
+    SipMsg *msg = NULL;
     pcap_dumper_t *pd = NULL;
     FILE *f = NULL;
     int cur = 0, total = 0;
@@ -586,7 +586,7 @@ save_to_file(ui_t *ui)
 }
 
 void
-save_msg_txt(FILE *f, sip_msg_t *msg)
+save_msg_txt(FILE *f, SipMsg *msg)
 {
     char date[20], time[20], src[80], dst[80];
 
