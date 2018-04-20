@@ -146,7 +146,16 @@ storage_capture_options();
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-storage_check_packet(Packet *packet);
+storage_check_sip_packet(Packet *packet);
+
+/**
+ * @brief Check RTP packet streams
+ *
+ * @param packet Packet structure pointer
+ * @return a SIP msg structure pointer
+ */
+rtp_stream_t *
+storage_check_rtp_packet(packet_t *packet);
 
 /**
  * @brief Return if the call list has changed

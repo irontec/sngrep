@@ -64,7 +64,7 @@ struct rtp_stream {
     union {
         struct {
             //! Format of first received packet of stre
-            uint32_t fmtcode;
+            guint8 fmtcode;
         } rtpinfo;
         struct {
             //! Sender packet count
@@ -103,9 +103,6 @@ const char *
 stream_get_format(rtp_stream_t *stream);
 
 rtp_stream_t *
-rtp_check_packet(packet_t *packet);
-
-rtp_stream_t *
 rtp_find_stream_format(Address src, Address dst, uint32_t format);
 
 rtp_stream_t *
@@ -142,14 +139,6 @@ stream_is_complete(rtp_stream_t *stream);
  */
 int
 stream_is_active(rtp_stream_t *stream);
-
-/**
- * @brief Check if the data is a RTP packet
- * RFC 5761 Section 4.  Distinguishable RTP and RTCP Packets
- * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
- */
-int
-data_is_rtp(u_char *data, uint32_t len);
 
 /**
  * @brief Check if the data is a RTCP packet

@@ -28,8 +28,8 @@
 
 #include "config.h"
 #include <glib.h>
+#include "storage.h"
 #include "packet/packet.h"
-#include "packet/rtp.h"
 #include "packet/dissector.h"
 #include "packet/old_packet.h"
 #include "packet/dissectors/packet_ip.h"
@@ -39,7 +39,7 @@
 /**
  * @brief Known RTP encodings
  */
-rtp_encoding_t encodings[] = {
+PacketRtpEncoding encodings[] = {
     { 0,    "PCMU/8000",    "g711u"     },
     { 3,    "GSM/8000",     "gsm"       },
     { 4,    "G723/8000",    "g723"      },
@@ -67,27 +67,69 @@ rtp_encoding_t encodings[] = {
     { 0,    NULL,           NULL        }
 };
 
-const gchar *
-rtp_get_standard_format(guint32 code)
+PacketRtpEncoding *
+packet_rtp_standard_codec(guint8 code)
 {
-    int i;
-
     // Format from RTP codec id
-    for (i = 0; encodings[i].format; i++) {
+    for (guint i = 0; encodings[i].format; i++) {
         if (encodings[i].id == code)
-            return encodings[i].format;
+            return &encodings[i];
     }
 
     return NULL;
 }
 
+/**
+ * @brief Check if the data is a RTP packet
+ * RFC 5761 Section 4.  Distinguishable RTP and RTCP Packets
+ * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
+ */
+static gboolean
+data_is_rtp(GByteArray *data)
+{
+    g_return_val_if_fail(data != NULL, FALSE);
+
+    guint8 pt = RTP_PAYLOAD_TYPE(data->data[1]);
+
+    if ((data->len >= RTP_HDR_LENGTH) &&
+        (RTP_VERSION(data->data[0]) == RTP_VERSION_RFC1889) &&
+        (data->data[0] > 127 && data->data[0] < 192) &&
+        (pt <= 64 || pt >= 96)) {
+        return TRUE;
+    }
+
+    // Not a RTP packet
+    return FALSE;
+}
+
 static GByteArray *
 packet_rtp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray *data)
 {
+    // Not RTP
+    if (data_is_rtp(data) != 1) {
+        return data;
+    }
+
+    guint8 codec = RTP_PAYLOAD_TYPE(data->data[1]);
+
+    PacketRtpData *rtp = g_malloc0(sizeof(PacketRtpData));
+    rtp->encoding = packet_rtp_standard_codec(codec);
+
+    // Not standard codec, just set the id and let storage search in SDP rtpmap
+    if (rtp->encoding == NULL) {
+        rtp->encoding = g_malloc0(sizeof(PacketRtpEncoding));
+        rtp->encoding->id = codec;
+    }
+
+    // Set packet RTP informaiton
+    g_ptr_array_insert(packet->proto, PACKET_RTP, rtp);
+
+    /** @TODO Backwards compatibility during refactoring */
     packet_t *oldpkt = g_malloc0(sizeof(packet_t));
 
     PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
     g_return_val_if_fail(ipdata != NULL, NULL);
+    oldpkt->newpacket = packet;
     oldpkt->src = ipdata->saddr;
     oldpkt->dst = ipdata->daddr;
 
@@ -104,7 +146,7 @@ packet_rtp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray 
         packet_add_frame(oldpkt, frame->header, frame->data);
     }
 
-    rtp_check_packet(oldpkt);
+    storage_check_rtp_packet(oldpkt);
     return NULL;
 }
 
@@ -114,6 +156,5 @@ packet_rtp_new()
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_RTP;
     proto->dissect = packet_rtp_parse;
-
     return proto;
 }

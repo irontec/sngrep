@@ -35,7 +35,7 @@
 // Version is the first 2 bits of the first octet
 #define RTP_VERSION(octet) ((octet) >> 6)
 // Payload type is the last 7 bits
-#define RTP_PAYLOAD_TYPE(octet) ((octet) & 0x7F)
+#define RTP_PAYLOAD_TYPE(octet) (guint8)((octet) & 0x7F)
 
 // Handled RTP versions
 #define RTP_VERSION_RFC1889 2
@@ -49,17 +49,22 @@
 // If stream does not receive a packet in this seconds, we consider it inactive
 #define STREAM_INACTIVE_SECS 3
 
-//! Shorter declaration of rtp_encoding structure
-typedef struct rtp_encoding rtp_encoding_t;
+typedef struct _PacketRtpData PacketRtpData;
+typedef struct _PacketRtpEncoding PacketRtpEncoding;
 
-struct rtp_encoding {
-    guint32 id;
-    const char *name;
-    const char *format;
+struct _PacketRtpData
+{
+    PacketRtpEncoding *encoding;
 };
 
-const gchar *
-rtp_get_standard_format(guint32 code);
+struct _PacketRtpEncoding {
+    guint8 id;
+    const gchar *name;
+    const gchar *format;
+};
+
+PacketRtpEncoding *
+packet_rtp_standard_codec(guint8 code);
 
 PacketDissector *
 packet_rtp_new();

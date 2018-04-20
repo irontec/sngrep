@@ -28,8 +28,8 @@
 
 #include "config.h"
 #include <glib.h>
+#include "storage.h"
 #include "packet/packet.h"
-#include "packet/rtp.h"
 #include "packet/dissector.h"
 #include "packet/old_packet.h"
 #include "packet/dissectors/packet_ip.h"
@@ -48,6 +48,7 @@ packet_rtcp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray
 
     PacketUdpData *udpdata = g_ptr_array_index(packet->proto, PACKET_UDP);
     g_return_val_if_fail(udpdata != NULL, NULL);
+    oldpkt->newpacket = packet;
     oldpkt->src.port = udpdata->sport;
     oldpkt->dst.port = udpdata->dport;
 
@@ -59,7 +60,7 @@ packet_rtcp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray
         packet_add_frame(oldpkt, frame->header, frame->data);
     }
 
-    rtp_check_packet(oldpkt);
+    storage_check_rtp_packet(oldpkt);
     return NULL;
 }
 
