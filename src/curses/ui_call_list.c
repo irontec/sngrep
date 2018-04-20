@@ -46,7 +46,7 @@
 #include "ui_call_raw.h"
 #include "ui_filter.h"
 #include "ui_save.h"
-#include "sip.h"
+#include "storage.h"
 
 /**
  * Ui Structure definition for Call List panel
@@ -162,7 +162,7 @@ call_list_info(ui_t *ui)
 bool
 call_list_redraw(ui_t *ui)
 {
-    return sip_calls_has_changed();
+    return storage_calls_changed();
 }
 
 int
@@ -243,7 +243,7 @@ call_list_draw_header(ui_t *ui)
     mvwprintw(ui->win, 2, 2, "Match Expression: ");
 
     wattron(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    if ((filterexpr = sip_get_match_expression()))
+    if ((filterexpr = storage_match_expr()))
         wprintw(ui->win, "%s", filterexpr);
     wattroff(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
 
@@ -258,7 +258,7 @@ call_list_draw_header(ui_t *ui)
         wattron(ui->win, A_REVERSE);
 
     // Get configured sorting options
-    SStorageSortOpts sort = sip_sort_options();
+    SStorageSortOpts sort = storage_sort_options();
 
     // Draw columns titles
     wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
@@ -309,7 +309,7 @@ call_list_draw_header(ui_t *ui)
     }
 
     // Print calls count (also filtered)
-    sip_stats_t stats = sip_calls_stats();
+    sip_stats_t stats = storage_calls_stats();
     mvwprintw(ui->win, 1, 45, "%*s", 30, "");
     if (stats.total != stats.displayed) {
         mvwprintw(ui->win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
@@ -365,7 +365,7 @@ call_list_draw_list(ui_t *ui)
 
     // Get the list of calls that are goint to be displayed
     g_sequence_free(info->dcalls);
-    info->dcalls = g_sequence_copy(sip_calls_vector(), filter_check_call, NULL);
+    info->dcalls = g_sequence_copy(storage_calls_vector(), filter_check_call, NULL);
 
     // If no active call, use the fist one (if exists)
     if (info->cur_call == -1 && g_sequence_get_length(info->dcalls)) {
@@ -374,7 +374,7 @@ call_list_draw_list(ui_t *ui)
 
     // If autoscroll is enabled, select the last dialog
     if (info->autoscroll)  {
-        SStorageSortOpts sort = sip_sort_options();
+        SStorageSortOpts sort = storage_sort_options();
         if (sort.asc) {
             call_list_move(ui, g_sequence_get_length(info->dcalls) - 1);
         } else {
@@ -669,13 +669,13 @@ call_list_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_CLEAR_CALLS:
                 // Remove all stored calls
-                sip_calls_clear();
+                storage_calls_clear();
                 // Clear List
                 call_list_clear(ui);
                 break;
             case ACTION_CLEAR_CALLS_SOFT:
                 // Remove stored calls, keeping the currently displayed calls
-                sip_calls_clear_soft();
+                storage_calls_clear_soft();
                 // Clear List
                 call_list_clear(ui);
                 break;
@@ -695,9 +695,9 @@ call_list_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_SORT_SWAP:
                 // Change sort order
-                sort = sip_sort_options();
+                sort = storage_sort_options();
                 sort.asc = (sort.asc) ? false : true;
-                sip_set_sort_options(sort);
+                storage_set_sort_options(sort);
                 break;
             case ACTION_SORT_NEXT:
             case ACTION_SORT_PREV:
@@ -861,14 +861,14 @@ call_list_handle_menu_key(ui_t *ui, int key)
               case ACTION_CONFIRM:
               case ACTION_SELECT:
                   // Change sort attribute
-                  sort = sip_sort_options();
+                  sort = storage_sort_options();
                   id = sip_attr_from_name(item_name(current_item(info->menu)));
                   if (sort.by == id) {
                       sort.asc = (sort.asc) ? false : true;
                   } else {
                       sort.by = id;
                   }
-                  sip_set_sort_options(sort);
+                  storage_set_sort_options(sort);
                   /* no break */
               case ACTION_PREV_SCREEN:
                   // Desactive sorting menu

@@ -38,7 +38,7 @@
 #include "config.h"
 #include "theme.h"
 #include "ui_panel.h"
-#include "sip.h"
+#include "storage.h"
 #include "group.h"
 #include "keybinding.h"
 #include "setting.h"

@@ -34,7 +34,7 @@
 #define __SNGREP_GROUP_H_
 
 #include <glib.h>
-#include "sip.h"
+#include "storage.h"
 
 //! Shorter declaration of sip_call_group structure
 typedef struct sip_call_group sip_call_group_t;

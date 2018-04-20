@@ -40,32 +40,24 @@
 
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
-
 //! Shorter declaration of sip stats
 typedef struct sip_stats sip_stats_t;
-//! Shorter declaration of sip sort
-typedef struct sip_sort sip_sort_t;
+
 //! Shorter declaration of structs
-typedef struct _SStorageSortOpts    SStorageSortOpts;
-typedef struct _SStorageMatchOpts   SStorageMatchOpts;
+typedef struct _SStorageSortOpts SStorageSortOpts;
+typedef struct _SStorageMatchOpts SStorageMatchOpts;
 typedef struct _SStorageCaptureOpts SStorageCaptureOpts;
 
-//! Return values for sip_validate_packet
-enum validate_result {
-    VALIDATE_NOT_SIP        = -1,
-    VALIDATE_PARTIAL_SIP    = 0,
-    VALIDATE_COMPLETE_SIP   = 1,
-    VALIDATE_MULTIPLE_SIP   = 2
-};
-
-struct _SStorageSortOpts {
+struct _SStorageSortOpts
+{
     //! Sort call list by this attribute
     enum sip_attr_id by;
     //! Sory by attribute ascending
     gboolean asc;
 };
 
-struct _SStorageMatchOpts {
+struct _SStorageMatchOpts
+{
     //! Only store dialogs starting with INVITE
     gboolean invite;
     //! Only store dialogs starting with a Method without to-tag
@@ -80,7 +72,8 @@ struct _SStorageMatchOpts {
     GRegex *mregex;
 };
 
-struct _SStorageCaptureOpts {
+struct _SStorageCaptureOpts
+{
     //! Max number of calls in the list
     guint limit;
     //! Rotate first call when the limit is reached
@@ -103,22 +96,12 @@ struct sip_stats
 };
 
 /**
- * @brief Sorting information for the sip list
- */
-struct sip_sort
-{
-    //! Sort call list by this attribute
-    enum sip_attr_id by;
-    //! Sory by attribute ascending
-    bool asc;
-};
-
-/**
  * @brief call structures head list
  *
  * This structure acts as header of calls list
  */
-struct sip_call_list {
+struct sip_call_list
+{
     // Matching options
     struct _SStorageMatchOpts match;
     // Capture options
@@ -138,29 +121,20 @@ struct sip_call_list {
 };
 
 /**
- * @brief Get Capture domain struct for GError
- */
-GQuark
-capture_pcap_error_quark();
-
-/**
  * @brief Initialize SIP Storage structures
  *
- * @param limit Max number of Stored calls
- * @param only_calls only parse dialogs starting with INVITE
- * @param no_incomplete only parse dialog starting with some methods
  */
 gboolean
-sip_init(SStorageCaptureOpts capture_options,
-         SStorageMatchOpts match_options,
-         SStorageSortOpts sort_options,
-         GError **error);
+storage_init(SStorageCaptureOpts capture_options,
+             SStorageMatchOpts match_options,
+             SStorageSortOpts sort_options,
+             GError **error);
 
 /**
  * @brief Deallocate all memory used for SIP calls
  */
 void
-sip_deinit();
+storage_deinit();
 
 SStorageCaptureOpts
 storage_capture_options();
@@ -175,7 +149,7 @@ storage_capture_options();
  * @return a SIP msg structure pointer
  */
 sip_msg_t *
-sip_check_packet(Packet *packet);
+storage_check_packet(Packet *packet);
 
 /**
  * @brief Return if the call list has changed
@@ -187,7 +161,7 @@ sip_check_packet(Packet *packet);
  * @return true if list has changed, false otherwise
  */
 bool
-sip_calls_has_changed();
+storage_calls_changed();
 
 /**
  * @brief Getter for calls linked list size
@@ -195,23 +169,13 @@ sip_calls_has_changed();
  * @return how many calls are linked in the list
  */
 int
-sip_calls_count();
+storage_calls_count();
 
 /**
  * @brief Return an iterator of call list
  */
 GSequenceIter *
-sip_calls_iterator();
-
-/**
- * @brief Return an iterator of call list
- *
- * We consider 'active' calls those that are willing to have
- * an rtp stream that will receive new packets.
- *
- */
-GSequenceIter *
-sip_active_calls_iterator();
+storage_calls_iterator();
 
 /**
  * @brief Return if a call is in active's call vector
@@ -220,19 +184,19 @@ sip_active_calls_iterator();
  * @return TRUE if call is active, FALSE otherwise
  */
 bool
-sip_call_is_active(sip_call_t *call);
+storage_call_is_active(sip_call_t *call);
 
 /**
  * @brief Return the call list
  */
 GSequence *
-sip_calls_vector();
+storage_calls_vector();
 
 /**
  * @brief Return the active call list
  */
 GSequence *
-sip_active_calls_vector();
+storage_active_calls_vector();
 
 /**
  * @brief Return stats from call list
@@ -241,17 +205,7 @@ sip_active_calls_vector();
  * @param displayed number of calls matching filters
  */
 sip_stats_t
-sip_calls_stats();
-
-
-/**
- * @brief Find a call structure in calls linked list given a call index
- *
- * @param index Position of the call in the calls vector
- * @return pointer to the sip_call structure found or NULL
- */
-sip_call_t *
-sip_find_by_index(int index);
+storage_calls_stats();
 
 /**
  * @brief Find a call structure in calls linked list given an callid
@@ -260,7 +214,7 @@ sip_find_by_index(int index);
  * @return pointer to the sip_call structure found or NULL
  */
 sip_call_t *
-sip_find_by_callid(const char *callid);
+storage_find_by_callid(const char *callid);
 
 /**
  * @brief Remove al calls
@@ -269,7 +223,7 @@ sip_find_by_callid(const char *callid);
  * function for each one.
  */
 void
-sip_calls_clear();
+storage_calls_clear();
 
 /**
  * @brief Remove al calls
@@ -278,7 +232,7 @@ sip_calls_clear();
  * fitting the current filter
  */
 void
-sip_calls_clear_soft();
+storage_calls_clear_soft();
 
 /**
  * @brief Remove first call in the call list
@@ -287,7 +241,7 @@ sip_calls_clear_soft();
  * reaching the capture limit.
  */
 void
-sip_calls_rotate();
+storage_calls_rotate();
 
 /**
  * @brief Get full Response code (including text)
@@ -306,7 +260,7 @@ sip_get_msg_reqresp_str(sip_msg_t *msg);
  * @return 0 in all cases
  */
 void
-sip_parse_msg_media(sip_msg_t *msg);
+storage_register_streams(sip_msg_t *msg);
 
 /**
  * @brief Get Capture Matching expression
@@ -314,7 +268,7 @@ sip_parse_msg_media(sip_msg_t *msg);
  * @return String containing matching expression
  */
 const char *
-sip_get_match_expression();
+storage_match_expr();
 
 /**
  * @brief Checks if a given payload matches expression
@@ -323,7 +277,7 @@ sip_get_match_expression();
  * @return 1 if matches, 0 otherwise
  */
 int
-sip_check_match_expression(const char *payload);
+storage_check_match_expr(const char *payload);
 
 /**
  * @brief Get summary of message header data
@@ -339,15 +293,9 @@ char *
 sip_get_msg_header(sip_msg_t *msg, char *out);
 
 void
-sip_set_sort_options(SStorageSortOpts sort);
+storage_set_sort_options(SStorageSortOpts sort);
 
 SStorageSortOpts
-sip_sort_options();
-
-void
-sip_sort_list();
-
-gint
-sip_list_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
+storage_sort_options();
 
 #endif

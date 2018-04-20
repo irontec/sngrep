@@ -167,7 +167,7 @@ save_create(ui_t *ui)
     curs_set(1);
 
     // Get filter stats
-    sip_stats_t stats = sip_calls_stats();
+    sip_stats_t stats = storage_calls_stats();
 
     // Set default save modes
     info->savemode = (stats.displayed == stats.total) ? SAVE_ALL : SAVE_DISPLAYED;
@@ -218,7 +218,7 @@ save_draw(ui_t *ui)
     save_info_t *info = save_info(ui);
 
     // Get filter stats
-    sip_stats_t stats = sip_calls_stats();
+    sip_stats_t stats = storage_calls_stats();
 
     mvwprintw(ui->win, 7, 3, "( ) all dialogs ");
     mvwprintw(ui->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
@@ -485,7 +485,7 @@ save_to_file(ui_t *ui)
         case SAVE_ALL:
         case SAVE_DISPLAYED:
             // Get calls iterator
-            calls = sip_calls_iterator();
+            calls = storage_calls_iterator();
             break;
         case SAVE_SELECTED:
             // Save selected packets to file

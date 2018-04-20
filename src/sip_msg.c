@@ -34,7 +34,7 @@
 #include "sip_msg.h"
 #include "packet/dissectors/packet_sip.h"
 #include "packet/dissectors/packet_sdp.h"
-#include "sip.h"
+#include "storage.h"
 
 sip_msg_t *
 msg_create()

@@ -34,7 +34,7 @@
 #include "ui_manager.h"
 #include "ui_filter.h"
 #include "ui_call_list.h"
-#include "sip.h"
+#include "storage.h"
 #include "filter.h"
 #include "setting.h"
 

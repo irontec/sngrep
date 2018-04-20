@@ -35,7 +35,7 @@
 #include <time.h>
 #include "glib-utils.h"
 #include "rtp.h"
-#include "sip.h"
+#include "storage.h"
 
 rtp_stream_t *
 stream_create(Packet *packet, PacketSdpMedia *media)
@@ -305,7 +305,7 @@ rtp_find_stream_format(Address src, Address dst, uint32_t format)
     rtp_stream_t *candidate = NULL;
 
     // Get active calls (during conversation)
-    calls = g_sequence_get_end_iter(sip_calls_vector());
+    calls = g_sequence_get_end_iter(storage_calls_vector());
 
     while(!g_sequence_iter_is_begin(calls)) {
         calls = g_sequence_iter_prev(calls);
@@ -353,7 +353,7 @@ rtp_find_stream(Address src, Address dst)
     GSequenceIter *calls;
 
     // Get active calls (during conversation)
-    calls = g_sequence_get_end_iter(sip_calls_vector());
+    calls = g_sequence_get_end_iter(storage_calls_vector());
 
     while(!g_sequence_iter_is_begin(calls)) {
         calls = g_sequence_iter_prev(calls);

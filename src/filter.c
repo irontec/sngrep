@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "glib-utils.h"
-#include "sip.h"
+#include "storage.h"
 #include "curses/ui_call_list.h"
 #include "filter.h"
 
@@ -169,7 +169,7 @@ filter_check_expr(filter_t filter, const char *data)
 void
 filter_reset_calls()
 {
-    GSequenceIter *it = sip_calls_iterator();
+    GSequenceIter *it = storage_calls_iterator();
 
     // Force filter evaluation
     for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {

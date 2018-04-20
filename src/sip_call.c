@@ -33,7 +33,7 @@
 #include "glib-utils.h"
 #include "sip_call.h"
 #include "packet/dissectors/packet_sip.h"
-#include "sip.h"
+#include "storage.h"
 #include "setting.h"
 
 sip_call_t *

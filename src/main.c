@@ -320,7 +320,7 @@ main(int argc, char* argv[])
 
     /*****************************  Main Logic  *****************************/
     // Initialize SIP Messages Storage
-    if (!sip_init(storage_copts, storage_mopts, storage_sopts, &error)) {
+    if (!storage_init(storage_copts, storage_mopts, storage_sopts, &error)) {
         g_printerr("Failed to initialize storage: %s\n", error->message);
         return 1;
     };
@@ -339,11 +339,11 @@ main(int argc, char* argv[])
         setbuf(stdout, NULL);
         while(capture_is_running(manager)) {
             if (!quiet)
-                g_print("\rDialog count: %d", sip_calls_count());
+                g_print("\rDialog count: %d", storage_calls_count());
             g_usleep(500 * 1000);
         }
         if (!quiet)
-            g_print("\rDialog count: %d\n", sip_calls_count());
+            g_print("\rDialog count: %d\n", storage_calls_count());
     }
 
     // Capture deinit
@@ -356,7 +356,7 @@ main(int argc, char* argv[])
     deinit_options();
 
     // Deallocate sip stored messages
-    sip_deinit();
+    storage_deinit();
 
     // Leaving!
     return 0;

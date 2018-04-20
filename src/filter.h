@@ -41,7 +41,7 @@
 #define __SNGREP_FILTER_H_
 
 #include <glib.h>
-#include "sip.h"
+#include "storage.h"
 
 //! Shorter declaration of sip_call_group structure
 typedef struct filter filter_t;

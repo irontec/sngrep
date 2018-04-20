@@ -31,7 +31,7 @@
 #include <packet/old_packet.h>
 #include "packet_tcp.h"
 #include "packet_sdp.h"
-#include "sip.h"
+#include "storage.h"
 #include "packet_sip.h"
 #include "packet/old_packet.h"
 
@@ -288,7 +288,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     packet_parser_next_dissector(parser, packet, data);
 
     // Add data to storage
-    sip_check_packet(packet);
+    storage_check_packet(packet);
 
     return data;
 }

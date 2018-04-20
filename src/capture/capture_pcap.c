@@ -41,7 +41,7 @@
 #include "capture_hep.h"
 #include "capture_pcap.h"
 #include "packet/dissectors/packet_link.h"
-#include "sip.h"
+#include "storage.h"
 #include "packet/rtp.h"
 #include "setting.h"
 #include "util.h"
@@ -316,7 +316,7 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
         return;
 
     // Check if we have reached capture limit
-    if (storage_capture_options().limit && sip_calls_count() >= storage_capture_options().limit) {
+    if (storage_capture_options().limit && storage_calls_count() >= storage_capture_options().limit) {
         // If capture rotation is disabled, just skip this packet
         if (!storage_capture_options().rotate) {
             return;

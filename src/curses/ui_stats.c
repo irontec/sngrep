@@ -56,7 +56,7 @@
 #include "config.h"
 #include <glib.h>
 #include "glib-utils.h"
-#include "sip.h"
+#include "storage.h"
 #include "packet/dissectors/packet_sip.h"
 #include "ui_manager.h"
 #include "ui_stats.h"
@@ -103,7 +103,7 @@ stats_create(ui_t *ui)
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Parse the data
-    calls = sip_calls_iterator();
+    calls = storage_calls_iterator();
     stats.dtotal = g_sequence_iter_length(calls);
 
     // Ignore this screen when no dialog exists
