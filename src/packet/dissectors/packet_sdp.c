@@ -175,7 +175,7 @@ packet_sdp_dissect_attribute(PacketSdpData *sdp G_GNUC_UNUSED, PacketSdpMedia *m
     // a=<attribute>:<value>
     gchar **rtpattr = g_strsplit_set(line, " :", -1);
 
-    if (g_ascii_strncasecmp(rtpattr[SDP_ATTR_NAME], "rtpmap", 6) == 0) {
+    if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtpmap") == 0) {
         // Check if format code is standard
         guint32 code = (guint32)strtoul(rtpattr[2], NULL, 10);
         PacketSdpFormat *format = packet_sdp_standard_format(code);
@@ -189,7 +189,7 @@ packet_sdp_dissect_attribute(PacketSdpData *sdp G_GNUC_UNUSED, PacketSdpMedia *m
                 }
             }
         }
-    } else if (g_ascii_strncasecmp(rtpattr[SDP_ATTR_NAME], "rtcp", 4) == 0) {
+    } else if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtcp") == 0) {
         media->rtcpport = (guint16)strtoul(rtpattr[SDP_ATTR_VALUE], NULL, 10);
     }
 }
