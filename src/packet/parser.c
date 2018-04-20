@@ -33,6 +33,7 @@
 #include "packet/dissectors/packet_tcp.h"
 #include "packet/dissectors/packet_tls.h"
 #include "packet/dissectors/packet_sip.h"
+#include "packet/dissectors/packet_sdp.h"
 #include "packet/dissectors/packet_rtp.h"
 #include "packet/dissectors/packet_rtcp.h"
 #include "parser.h"
@@ -79,6 +80,9 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum packet_proto i
             break;
         case PACKET_SIP:
             dissector = packet_sip_new();
+            break;
+        case PACKET_SDP:
+            dissector = packet_sdp_new();
             break;
         case PACKET_RTP:
             dissector = packet_rtp_new();

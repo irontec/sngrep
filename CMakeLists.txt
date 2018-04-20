@@ -23,6 +23,7 @@ set(SOURCES
         src/packet/dissectors/packet_tcp.c
         src/packet/dissectors/packet_udp.c
         src/packet/dissectors/packet_sip.c
+        src/packet/dissectors/packet_sdp.c
         src/packet/dissectors/packet_rtp.c
         src/packet/dissectors/packet_rtcp.c
         src/capture/capture.c
@@ -43,7 +44,6 @@ set(SOURCES
         src/group.c
         src/keybinding.c
         src/main.c
-        src/packet/media.c
         src/option.c
         src/packet/old_packet.c
         src/packet/rtp.c

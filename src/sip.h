@@ -306,7 +306,7 @@ sip_get_msg_reqresp_str(sip_msg_t *msg);
  * @return 0 in all cases
  */
 void
-sip_parse_msg_media(sip_msg_t *msg, const u_char *payload);
+sip_parse_msg_media(sip_msg_t *msg);
 
 /**
  * @brief Get Capture Matching expression

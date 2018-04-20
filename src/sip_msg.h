@@ -31,7 +31,6 @@
 
 #include <stdarg.h>
 #include <glib.h>
-#include "packet/media.h"
 #include "sip_attr.h"
 #include "util.h"
 
@@ -122,15 +121,6 @@ int
 msg_has_sdp(void *item);
 
 /**
- * @brief Add a media structure to a msg
- *
- * @param cmsg SIP Message to be updated
- * @param media Media structure to be added
- */
-void
-msg_add_media(sip_msg_t *msg, sdp_media_t *media);
-
-/**
  * @brief Check if a message is a Request or response
  *
  * @param msg SIP message that will be checked
@@ -138,18 +128,6 @@ msg_add_media(sip_msg_t *msg, sdp_media_t *media);
  */
 int
 msg_is_request(sip_msg_t *msg);
-
-/**
- * @brief Add a new media for given message
- *
- * A SIP message can have multiple media description in
- * the SIP payload content
- *
- * @param msg SIP message that will store this packet
- * @param media parsed media structure from payload
- */
-void
-msg_add_media(sip_msg_t *msg, sdp_media_t *media);
 
 /**
  * @brief Get SIP Message payload
@@ -190,6 +168,10 @@ msg_get_attribute(struct sip_msg *msg, int id, char *value);
  */
 int
 msg_is_older(sip_msg_t *one, sip_msg_t *two);
+
+
+const gchar *
+msg_get_preferred_codec_alias(sip_msg_t *msg);
 
 
 #endif /* __SNGREP_SIP_MSG_H */

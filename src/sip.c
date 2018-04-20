@@ -188,7 +188,7 @@ sip_check_packet(Packet *packet)
 
     if (call_is_invite(call)) {
         // Parse media data
-        sip_parse_msg_media(msg, sip_data->payload);
+        sip_parse_msg_media(msg);
         // Update Call State
         call_update_state(call, msg);
         // Check if this call should be in active call list
@@ -305,105 +305,42 @@ sip_get_msg_reqresp_str(sip_msg_t *msg)
 }
 
 void
-sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
+sip_parse_msg_media(sip_msg_t *msg)
 {
+    Packet *packet = msg->packet->newpacket;
+    Address emptyaddr = {};
 
-#define ADD_STREAM(stream) \
-    if (stream) { \
-        if (!rtp_find_call_stream(call, src, stream->dst)) { \
-          call_add_stream(call, stream); \
-      } else { \
-          sng_free(stream); \
-          stream = NULL; \
-      } \
+    PacketSdpData *sdp = g_ptr_array_index(packet->proto, PACKET_SDP);
+    if (sdp == NULL) return;
+
+    for (guint i = 0; i < g_list_length(sdp->medias); i++) {
+        PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
+
+        // Add to the message
+        g_sequence_append(msg->medias, media);
+
+        // Create RTP stream for this media
+        if (rtp_find_call_stream(msg->call, emptyaddr, media->address) == NULL) {
+            rtp_stream_t *stream = stream_create(packet, media);
+            call_add_stream(msg->call, stream);
+        }
+
+        // Create RTCP stream for this media
+        if (rtp_find_call_stream(msg->call, emptyaddr, media->address) == NULL) {
+            rtp_stream_t *stream = stream_create(packet, media);
+            stream->dst.port = (media->rtcpport) ? media->rtcpport : (guint16) (media->rtpport + 1);
+            call_add_stream(msg->call, stream);
+        }
+
+        // Create RTP stream with source of message as destination address
+        if (rtp_find_call_stream(msg->call, msg->packet->src, media->address) == NULL) {
+            rtp_stream_t *stream = stream_create(packet, media);
+            stream->dst = msg->packet->src;
+            stream->dst.port = media->rtpport;
+            call_add_stream(msg->call, stream);
+        }
     }
-
-    Address dst, src = { };
-    rtp_stream_t *rtp_stream = NULL, *rtcp_stream = NULL, *msg_rtp_stream = NULL;
-    char media_type[MEDIATYPELEN] = { };
-    char media_format[30] = { };
-    uint32_t media_fmt_pref;
-    uint32_t media_fmt_code;
-    sdp_media_t *media = NULL;
-    char *payload2, *tofree, *line;
-    sip_call_t *call = msg_get_call(msg);
-
-    // Parse each line of payload looking for sdp information
-    tofree = payload2 = strdup((char*)payload);
-    while ((line = strsep(&payload2, "\r\n")) != NULL) {
-        // Check if we have a media string
-        if (!strncmp(line, "m=", 2)) {
-            if (sscanf(line, "m=%s %hu RTP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3) {
-
-                // Add streams from previous 'm=' line to the call
-                ADD_STREAM(msg_rtp_stream);
-                ADD_STREAM(rtp_stream);
-                ADD_STREAM(rtcp_stream);
-
-                // Create a new media structure for this message
-                if ((media = media_create(msg))) {
-                    media_set_type(media, media_type);
-                    media_set_address(media, dst);
-                    media_set_prefered_format(media, media_fmt_pref);
-                    msg_add_media(msg, media);
-
-                    /**
-                     * From SDP we can only guess destination address port. RTP Capture proccess
-                     * will determine when the stream has been completed, getting source address
-                     * and port of the stream.
-                     */
-                    // Create a new stream with this destination address:port
-
-                    // Create RTP stream with source of message as destination address
-                    msg_rtp_stream = stream_create(media, dst, PACKET_RTP);
-                    msg_rtp_stream->dst = msg->packet->src;
-                    msg_rtp_stream->dst.port = dst.port;
-
-                    // Create RTP stream
-                    rtp_stream = stream_create(media, dst, PACKET_RTP);
-
-                    // Create RTCP stream
-                    rtcp_stream = stream_create(media, dst, PACKET_RTCP);
-                    rtcp_stream->dst.port++;
-                }
-            }
-        }
-
-        // Check if we have a connection string
-        if (!strncmp(line, "c=", 2)) {
-            if (sscanf(line, "c=IN IP4 %s", dst.ip) && media) {
-                media_set_address(media, dst);
-                strcpy(rtp_stream->dst.ip, dst.ip);
-                strcpy(rtcp_stream->dst.ip, dst.ip);
-            }
-        }
-
-        // Check if we have attribute format string
-        if (!strncmp(line, "a=rtpmap:", 9)) {
-            if (media && sscanf(line, "a=rtpmap:%u %[^ ]", &media_fmt_code, media_format)) {
-                media_add_format(media, media_fmt_code, media_format);
-            }
-        }
-
-        // Check if we have attribute format RTCP port
-        if (!strncmp(line, "a=rtcp:", 7) && rtcp_stream) {
-            sscanf(line, "a=rtcp:%hu", &rtcp_stream->dst.port);
-        }
-
-
-    }
-
-    // Add streams from last 'm=' line to the call
-    ADD_STREAM(msg_rtp_stream);
-    ADD_STREAM(rtp_stream);
-    ADD_STREAM(rtcp_stream);
-
-    sng_free(tofree);
-
-#undef ADD_STREAM
 }
-
-
 
 void
 sip_calls_clear()

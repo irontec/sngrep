@@ -56,7 +56,6 @@ packet_free(Packet *packet)
 gboolean
 packet_has_type(Packet *packet, enum packet_proto type)
 {
-//    return (packet->types & ( 1 << type))  != 0;
     return g_ptr_array_index(packet->proto, type) != NULL;
 }
 
@@ -81,6 +80,7 @@ packet_to_oldpkt(Packet *packet)
     packet_t *oldpkt = g_malloc0(sizeof(packet_t));
 
     PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    oldpkt->newpacket = packet;
     oldpkt->src = ipdata->saddr;
     oldpkt->dst = ipdata->daddr;
 

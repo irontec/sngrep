@@ -57,6 +57,8 @@ enum packet_oldtype {
 typedef struct old_packet packet_t;
 //! Shorter declaration of frame structure
 typedef struct frame frame_t;
+//! Forward declaration Packet structure
+typedef struct _Packet Packet;
 
 /**
  * @brief Packet capture data.
@@ -66,6 +68,7 @@ typedef struct frame frame_t;
  * packet can only contain one SIP message.
  */
 struct old_packet {
+    Packet *newpacket;
     //! IP protocol
     uint8_t ip_version;
     //! Transport protocol

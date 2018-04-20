@@ -38,7 +38,7 @@
 #include "sip.h"
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, Address dst, int type)
+stream_create(Packet *packet, PacketSdpMedia *media)
 {
     rtp_stream_t *stream;
 
@@ -47,9 +47,9 @@ stream_create(sdp_media_t *media, Address dst, int type)
         return NULL;
 
     // Initialize all fields
-    stream->type = type;
+    stream->type = media->type;
     stream->media = media;
-    stream->dst = dst;
+    stream->dst = media->address;
 
     return stream;
 }
@@ -85,8 +85,8 @@ stream_get_count(rtp_stream_t *stream)
 
 struct sip_call *
 stream_get_call(rtp_stream_t *stream) {
-    if (stream && stream->media && stream->media->msg)
-        return stream->media->msg->call;
+    if (stream && stream->media && stream->msg)
+        return stream->msg->call;
     return NULL;
 }
 
@@ -105,8 +105,12 @@ stream_get_format(rtp_stream_t *stream)
         return fmt;
 
     // Try to get format form SDP payload
-    if ((fmt = media_get_format(stream->media, stream->rtpinfo.fmtcode)))
-        return fmt;
+    for (guint i = 0; i < g_list_length(stream->media->formats); i++) {
+        PacketSdpFormat *format = g_list_nth_data(stream->media->formats, i);
+        if (format->id == stream->rtpinfo.fmtcode) {
+            return format->alias;
+        }
+    }
 
     // Not found format for this code
     return NULL;
@@ -153,10 +157,10 @@ rtp_check_packet(packet_t *packet)
         // We have found a stream, but with different format
         if (stream_is_complete(stream) && stream->rtpinfo.fmtcode != format) {
             // Create a new stream for this new format
-            stream = stream_create(stream->media, dst, PACKET_RTP);
+            stream = stream_create(packet->newpacket, stream->media);
             stream_complete(stream, src);
             stream_set_format(stream, format);
-            call_add_stream(msg_get_call(stream->media->msg), stream);
+            call_add_stream(msg_get_call(stream->msg), stream);
         }
 
         // First packet for this stream, set source data
@@ -184,20 +188,20 @@ rtp_check_packet(packet_t *packet)
              */
 
             // Check if an stream in the opposite direction exists
-            if (!(reverse = rtp_find_call_stream(stream->media->msg->call, stream->dst, stream->src))) {
-                reverse = stream_create(stream->media, stream->src, PACKET_RTP);
+            if (!(reverse = rtp_find_call_stream(stream->msg->call, stream->dst, stream->src))) {
+                reverse = stream_create(packet->newpacket, stream->media);
                 stream_complete(reverse, stream->dst);
                 stream_set_format(reverse, format);
-                call_add_stream(msg_get_call(stream->media->msg), reverse);
+                call_add_stream(msg_get_call(stream->msg), reverse);
             } else {
                 // If the reverse stream has other source configured
                 if (reverse->src.port && !addressport_equals(stream->src, reverse->src)) {
-                    if (!(reverse = rtp_find_call_exact_stream(stream->media->msg->call, stream->dst, stream->src))) {
+                    if (!(reverse = rtp_find_call_exact_stream(stream->msg->call, stream->dst, stream->src))) {
                         // Create a new reverse stream
-                        reverse = stream_create(stream->media, stream->src, PACKET_RTP);
+                        reverse = stream_create(packet->newpacket, stream->media);
                         stream_complete(reverse, stream->dst);
                         stream_set_format(reverse, format);
-                        call_add_stream(msg_get_call(stream->media->msg), reverse);
+                        call_add_stream(msg_get_call(stream->msg), reverse);
                     }
                 }
             }

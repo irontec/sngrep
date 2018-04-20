@@ -177,7 +177,7 @@ sip_msg_t *
 call_msg_with_media(sip_call_t *call, Address dst)
 {
     sip_msg_t *msg;
-    sdp_media_t *media;
+    PacketSdpMedia *media;
     GSequenceIter *itmsg;
     GSequenceIter *itmedia;
 

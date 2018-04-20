@@ -33,7 +33,7 @@
 #include "glib-utils.h"
 #include "sip_msg.h"
 #include "packet/dissectors/packet_sip.h"
-#include "packet/media.h"
+#include "packet/dissectors/packet_sdp.h"
 #include "sip.h"
 
 sip_msg_t *
@@ -42,7 +42,7 @@ msg_create()
     sip_msg_t *msg;
     if (!(msg = sng_malloc(sizeof(sip_msg_t))))
         return NULL;
-    msg->medias = g_sequence_new(media_destroy);
+    msg->medias = g_sequence_new(NULL);
     return msg;
 }
 
@@ -85,12 +85,6 @@ int
 msg_is_request(sip_msg_t *msg)
 {
     return msg->reqresp < 100;
-}
-
-void
-msg_add_media(sip_msg_t *msg, sdp_media_t *media)
-{
-    g_sequence_append(msg->medias, media);
 }
 
 const char *
@@ -168,4 +162,16 @@ msg_is_older(sip_msg_t *one, sip_msg_t *two)
 
     // Otherwise
     return timeval_is_older(msg_get_time(one), msg_get_time(two));
+}
+
+const gchar *
+msg_get_preferred_codec_alias(sip_msg_t *msg)
+{
+    PacketSdpMedia *media = g_sequence_first(msg->medias);
+    g_return_val_if_fail(media != NULL, NULL);
+
+    PacketSdpFormat *format = g_list_nth_data(media->formats, 0);
+    g_return_val_if_fail(format != NULL, NULL);
+
+    return format->alias;
 }

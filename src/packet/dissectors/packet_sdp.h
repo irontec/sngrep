@@ -34,21 +34,39 @@
 #include "packet/dissector.h"
 
 
+//! Connection Data fields
+#define SDP_CONN_NETTYPE    0
+#define SDP_CONN_ADDRTYPE   1
+#define SDP_CONN_ADDRESS    2
+
+//! Media Description fields
+#define SDP_MEDIA_MEDIA     0
+#define SDP_MEDIA_PORT      1
+#define SDP_MEDIA_PROTO     2
+#define SDP_MEDIA_FORMAT    3
+
+//! Attribute fields
+#define SDP_ATTR_NAME       0
+#define SDP_ATTR_VALUE      1
+
+
 //! SDP handled media types
-enum sdp_media_type
+enum PacketSdpMediaType
 {
-    SDP_MEDIA_AUDIO = 0,
-    SDP_MEDIA_VIDEO,
-    SDP_MEDIA_TEXT,
-    SDP_MEDIA_APPLICATION,
-    SDP_MEDIA_MESSAGE,
-    SDP_MEDIA_IMAGE,
+    SDP_MEDIA_UNKNOWN       = -1,
+    SDP_MEDIA_AUDIO         = 0,
+    SDP_MEDIA_VIDEO         = 1,
+    SDP_MEDIA_TEXT          = 2,
+    SDP_MEDIA_APPLICATION   = 3,
+    SDP_MEDIA_MESSAGE       = 4,
+    SDP_MEDIA_IMAGE         = 5,
 };
 
 //! Shorter declaration of SDP structures
-typedef struct _SDPConnection SDPConnection;
-typedef struct _SDPMedia SDPMedia;
-typedef struct _SDPFormat SDPFormat;
+typedef struct _PacketSdpConnection PacketSdpConnection;
+typedef struct _PacketSdpMedia      PacketSdpMedia;
+typedef struct _PacketSdpFormat     PacketSdpFormat;
+typedef struct _PacketSdpData       PacketSdpData;
 
 /**
  * @brief SDP ConnectionData (c=) information
@@ -67,9 +85,10 @@ typedef struct _SDPFormat SDPFormat;
  * We only support one connection data per media description. If multicast
  * connection strings are provided, only one will be parsed.
  */
-struct _SDPConnection {
+struct _PacketSdpConnection
+{
     //! Connection Address
-    Address addr;
+    gchar address[ADDRESSLEN];
 };
 
 /**
@@ -82,11 +101,18 @@ struct _SDPConnection {
  * present in one of the media formats description lines.
  *
  */
-struct SDPMedia {
+struct _PacketSdpMedia
+{
     //! Media type
-    enum sdp_media_type type;
-    //! Transport port + connection data Address
-    Address port;
+    enum PacketSdpMediaType type;
+    //! Session connection address (if not global)
+    PacketSdpConnection *sconn;
+    //! RTP Transport port
+    guint16 rtpport;
+    //! RTCP Transport port
+    guint16 rtcpport;
+    //! RTP Address (Connection IP + RTP port)
+    Address address;
     //! Media formats list (SDPFormat)
     GList *formats;
 };
@@ -100,7 +126,8 @@ struct SDPMedia {
  * Note that sngrep only supports RTP transport protocol so all SDP format
  * ids are actually RTP Payload type numbers.
  */
-struct _SDPFormat {
+struct _PacketSdpFormat
+{
     //! RTP payload
     guint32 id;
     //! RTP Encoding name from RFC3551 or SDP fmt attribute
@@ -109,16 +136,18 @@ struct _SDPFormat {
     const gchar *alias;
 };
 
-
-struct sdp_pvt {
+struct _PacketSdpData
+{
     //! Session connection address (optional)
-    SDPConnection sconn;
+    PacketSdpConnection *sconn;
     //! SDP Media description list (SDPMedia)
     GList *medias;
 };
 
-void
-packet_parse_sdp(PacketDissector *handler, Packet *packet, GByteArray *data);
+const gchar*
+packet_sdp_media_type_str(enum PacketSdpMediaType type);
 
+PacketDissector *
+packet_sdp_new();
 
 #endif /* PACKET_PACKET_SDP_H_ */

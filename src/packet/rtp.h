@@ -33,8 +33,9 @@
 #define __SNGREP_RTP_H
 
 #include "config.h"
+#include "sip_msg.h"
 #include "capture/capture_pcap.h"
-#include "media.h"
+#include "packet/dissectors/packet_sdp.h"
 #include "packet/dissectors/packet_rtp.h"
 #include "packet/dissectors/packet_rtcp.h"
 
@@ -49,7 +50,9 @@ struct rtp_stream {
     //! Destination address
     Address dst;
     //! SDP media that setup this stream
-    sdp_media_t *media;
+    PacketSdpMedia *media;
+    //! SIP message that setup this stream
+    sip_msg_t *msg;
     //! Packet count for this stream
     uint32_t pktcnt;
     //! Time of first received packet of stream
@@ -79,7 +82,7 @@ struct rtp_stream {
 };
 
 rtp_stream_t *
-stream_create(sdp_media_t *media, Address dst, int type);
+stream_create(Packet *packet, PacketSdpMedia *media);
 
 rtp_stream_t *
 stream_complete(rtp_stream_t *stream, Address src);

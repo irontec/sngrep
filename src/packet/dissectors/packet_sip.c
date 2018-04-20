@@ -29,11 +29,10 @@
 #include "config.h"
 #include <stdlib.h>
 #include <packet/old_packet.h>
-#include "packet_sip.h"
-#include "packet_ip.h"
 #include "packet_tcp.h"
-#include "packet_udp.h"
+#include "packet_sdp.h"
 #include "sip.h"
+#include "packet_sip.h"
 #include "packet/old_packet.h"
 
 /* @brief list of methods and responses */
@@ -156,11 +155,14 @@ static GByteArray *
 packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
     GMatchInfo *pmatch;
-    DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
+    gint start, end;
 
+    // Only handle UTF-8 SIP payloads
     if (!g_utf8_validate(data->data, data->len, NULL)) {
         return data;
     }
+
+    DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
 
     // Convert payload to something we can parse with regular expressions
     GString *payload = g_string_new_len(data->data, data->len);
@@ -185,7 +187,6 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             // Not a SIP message or not complete
             return data;
         }
-        gint start, end;
         g_match_info_fetch_pos(pmatch, 1, &start, &end);
 
         // The SDP body of the SIP message ends in another packet
@@ -215,6 +216,10 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         sip_data->callid =  g_match_info_fetch_named(pmatch, "callid");
     }
     g_match_info_free(pmatch);
+
+    // Check we have a valid SIP packet
+    if (sip_data->callid == NULL)
+        return data;
 
     // Method
     if (g_regex_match(sip->reg_method, payload->str, 0, &pmatch)) {
@@ -269,13 +274,21 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
     g_match_info_free(pmatch);
 
-
+    // Add SIP information to the packet
     g_ptr_array_insert(packet->proto, PACKET_SIP, sip_data);
 
-    if (sip_data->callid != NULL) {
-        sip_check_packet(packet);
-        return NULL;
-    }
+    // Check if we have Body separator field
+    g_regex_match(sip->reg_body, payload->str, 0, &pmatch);
+    g_match_info_fetch_pos(pmatch, 0, &start, &end);
+
+    // Remove SIP headers from data
+    data = g_byte_array_remove_range(data, 0, end);
+
+    // Pass data to subdissectors
+    packet_parser_next_dissector(parser, packet, data);
+
+    // Add data to storage
+    sip_check_packet(packet);
 
     return data;
 }
@@ -327,7 +340,7 @@ packet_sip_init(PacketParser *parser)
             cflags, mflags, NULL);
 
     sip->reg_body = g_regex_new(
-            "\r\n\r\n(.*)",
+            "\r\n\r\n",
             cflags & ~G_REGEX_MULTILINE, mflags, NULL);
 
     sip->reg_reason = g_regex_new(
@@ -374,5 +387,6 @@ packet_sip_new()
     proto->init = packet_sip_init;
     proto->dissect = packet_sip_parse;
     proto->deinit = packet_sip_deinit;
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SDP));
     return proto;
 }

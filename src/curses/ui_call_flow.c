@@ -423,7 +423,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *flow_win;
-    sdp_media_t *media;
+    PacketSdpMedia *media;
     const char *callid;
     char msg_method[SIP_ATTR_MAXLEN];
     char msg_time[80];
@@ -486,12 +486,12 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
         sprintf(method, "%.3s (%s:%u)",
                 msg_method,
-                media->address.ip,
-                media->address.port);
+                media->sconn->address,
+                media->rtpport);
     }
 
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        sprintf(method, "%.3s (%s)", msg_method, media->address.ip);
+        sprintf(method, "%.3s (%s)", msg_method, media->sconn->address);
     }
 
     // Draw message type or status and line
@@ -568,16 +568,10 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
             media = g_sequence_get(it);
             sprintf(mediastr, "%s %d (%s)",
-                    media->type,
-                    media->address.port,
-                    media_get_prefered_format(media));
-            if (arrow->dir == CF_ARROW_SPIRAL) {
-                mvwprintw(flow_win, cline + 1, startpos + 5, mediastr);
-            } else {
-                mvwprintw(flow_win, cline + 1, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
-            }
-            cline++;
-            aline++;
+                    packet_sdp_media_type_str(media->type),
+                    media->rtpport,
+                    msg_get_preferred_codec_alias(msg));
+            mvwprintw(flow_win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
         }
     }
 
@@ -701,7 +695,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     sprintf(text, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
 
     // Get message data
-    call = stream->media->msg->call;
+    call = stream->msg->call;
 
     /**
      * This logic will try to use the same columns for the stream representation
@@ -709,7 +703,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
      * if they share the same IP addresses.
      */
     // Message with Stream destination configured in SDP content
-    msg = stream->media->msg;
+    msg = stream->msg;
 
     // If message and stream share the same IP address
     if (address_equals(msg->packet->src, stream->dst)) {
@@ -747,7 +741,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Prefer message that configured this stream rather than any column
     if (!arrow->scolumn) {
-        msg = stream->media->msg;
+        msg = stream->msg;
         // If message and stream share the same IP address
         if (address_equals(msg->packet->dst, stream->src)) {
             // Reuse the msg arrow columns as destination column
@@ -954,7 +948,7 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow)
 
     if (arrow->type == CF_ARROW_RTP) {
         rtp_stream_t *stream = arrow->item;
-        return stream->media->msg;
+        return stream->msg;
     }
 
     return NULL;
