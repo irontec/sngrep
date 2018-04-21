@@ -430,7 +430,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     Address src;
     Address dst;
     char method[80];
-    char delta[15] = { };
+    char delta[15] = { 0 };
     int flowh;
     char mediastr[40];
     SipMsg *msg = arrow->item;

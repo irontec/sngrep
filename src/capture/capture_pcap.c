@@ -85,7 +85,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     pcap->link = pcap_datalink(pcap->handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if (proto_link_size(pcap->link) == -1) {
+    if (proto_link_size(pcap->link) == 0) {
         g_set_error (error,
                      CAPTURE_PCAP_ERROR,
                      CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
@@ -142,7 +142,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     pcap->link = pcap_datalink(pcap->handle);
 
     // Check linktypes sngrep knowns before start parsing packets
-    if (proto_link_size(pcap->link) == -1) {
+    if (proto_link_size(pcap->link) == 0) {
         g_set_error (error,
                      CAPTURE_PCAP_ERROR,
                      CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
@@ -307,11 +307,9 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
 
     // Capture Input info
     CaptureInput *input = (CaptureInput *) info;
-    // Capture pcap info
-    CapturePcap *pcap = input->priv;
     // Capture manager
     CaptureManager *manager = input->manager;
-    //
+    // Packet dissectors parser
     PacketParser *parser = input->parser;
 
     // Ignore packets while capture is paused

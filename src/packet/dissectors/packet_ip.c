@@ -195,6 +195,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         // Call next dissector
         return packet_parser_next_dissector(parser, packet, data);
     }
+
+    return data;
 }
 
 static void

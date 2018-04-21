@@ -160,7 +160,7 @@ call_list_info(ui_t *ui)
 }
 
 bool
-call_list_redraw(ui_t *ui)
+call_list_redraw(G_GNUC_UNUSED ui_t *ui)
 {
     return storage_calls_changed();
 }

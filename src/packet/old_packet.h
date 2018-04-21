@@ -33,8 +33,8 @@
  *
  */
 
-#ifndef __SNGREP_CAPTURE_PACKET_H
-#define __SNGREP_CAPTURE_PACKET_H
+#ifndef __SNGREP_CAPTURE_OLD_PACKET_H
+#define __SNGREP_CAPTURE_OLD_PACKET_H
 
 #include <time.h>
 #include <sys/types.h>
@@ -173,4 +173,4 @@ packet_payload(packet_t *packet);
 struct timeval
 packet_time(const packet_t *packet);
 
-#endif /* __SNGREP_CAPTURE_PACKET_H */
+#endif /* __SNGREP_CAPTURE_OLD_PACKET_H */

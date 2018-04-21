@@ -248,6 +248,8 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     } else if (pending->len < data->len) {
         // Partially parsed
     }
+
+    return pending;
 }
 
 static void

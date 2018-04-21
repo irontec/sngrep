@@ -172,14 +172,14 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     gint start, end;
 
     // Only handle UTF-8 SIP payloads
-    if (!g_utf8_validate(data->data, data->len, NULL)) {
+    if (!g_utf8_validate((gchar *) data->data, data->len, NULL)) {
         return data;
     }
 
     DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
 
     // Convert payload to something we can parse with regular expressions
-    GString *payload = g_string_new_len(data->data, data->len);
+    GString *payload = g_string_new_len((const gchar *) data->data, data->len);
 
     // If this comes from a TCP stream, check we have a whole packet
     if (packet_has_type(packet, PACKET_TCP)) {
@@ -204,14 +204,14 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         g_match_info_fetch_pos(pmatch, 1, &start, &end);
 
         // The SDP body of the SIP message ends in another packet
-        if (start + content_len > data->len) {
+        if ((guint) (start + content_len) > data->len) {
             g_match_info_free(pmatch);
             // Not a SIP message or not complete
             return data;
         }
 
         // We got more than one SIP message in the same packet
-        if (start + content_len < data->len) {
+        if ((guint) (start + content_len) < data->len) {
             // Limit the size of the string to the end of the body
             g_string_set_size(payload, start + content_len);
         }

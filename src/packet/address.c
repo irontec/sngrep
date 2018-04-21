@@ -105,7 +105,7 @@ address_is_local(Address addr)
 Address
 address_from_str(const char *ipport)
 {
-    Address ret = {};
+    Address ret = { 0 };
     gchar scanipport[256];
     gchar address[256];
     guint16 port;
@@ -115,7 +115,7 @@ address_from_str(const char *ipport)
 
     strncpy(scanipport, ipport, strlen(ipport));
 
-    if (sscanf(scanipport, "%[^:]:%hd", address, &port) == 2) {
+    if (sscanf(scanipport, "%[^:]:%hu", address, &port) == 2) {
         strncpy(ret.ip, address, strlen(address));
         ret.port = port;
     }

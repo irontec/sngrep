@@ -45,7 +45,7 @@ packet_link_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_return_val_if_fail(priv, NULL);
 
     // Get Layer header size from link type
-    gint offset = priv->link_size;
+    guint offset = (guint) priv->link_size;
 
     // For ethernet, skip VLAN header if present
     if (priv->link_type == DLT_EN10MB) {
@@ -162,7 +162,7 @@ packet_link_init(PacketParser *parser)
 }
 
 static void
-packet_link_deinit(PacketParser *parser)
+packet_link_deinit(G_GNUC_UNUSED PacketParser *parser)
 {
 //    g_free(proto->priv);
 //    g_free(proto);

@@ -81,7 +81,7 @@ capture_manager_start(CaptureManager *manager)
     for (GSList *le = manager->inputs; le != NULL; le = le->next) {
         CaptureInput *input = le->data;
         input->running = TRUE;
-        input->thread = g_thread_new(NULL, (void *) input->start, input);
+        input->thread = g_thread_new(NULL, (GThreadFunc) input->start, input);
     }
 }
 
@@ -132,7 +132,7 @@ capture_manager_filter(CaptureManager *manager)
 }
 
 void
-capture_manager_set_keyfile(CaptureManager *manager, gchar *keyfile, GError **error)
+capture_manager_set_keyfile(CaptureManager *manager, gchar *keyfile, G_GNUC_UNUSED GError **error)
 {
     manager->keyfile = keyfile;
 }

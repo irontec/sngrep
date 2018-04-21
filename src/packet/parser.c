@@ -113,6 +113,8 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum packet_proto i
     for (GSList *l = dissector->subdissectors; l != NULL; l = l->next) {
         packet_parser_add_proto(parser, node, GPOINTER_TO_UINT(l->data));
     }
+
+    return dissector;
 }
 
 

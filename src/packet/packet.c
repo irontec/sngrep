@@ -144,7 +144,7 @@ packet_to_oldpkt(Packet *packet)
 
     PacketSipData *sipdata = g_ptr_array_index(packet->proto, PACKET_SIP);
     if (sipdata) {
-        packet_set_payload(oldpkt, sipdata->payload, strlen(sipdata->payload));
+        packet_set_payload(oldpkt, (guchar *) sipdata->payload, strlen(sipdata->payload));
     }
 
     oldpkt->frames = g_sequence_new(NULL);

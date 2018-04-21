@@ -91,7 +91,7 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
             break;
 
         // Header length
-        gint hlen = g_ntohs(hdr.len) * 4 + 4;
+        guint hlen = (guint) g_ntohs(hdr.len) * 4 + 4;
 
         // No enough data for this RTCP header
         if (hlen > data->len)
@@ -117,7 +117,7 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
                 size_t bsize = sizeof(hdr_xr);
 
                 // Read all report blocks
-                while (bsize < ntohs(hdr_xr.len) * 4 + 4) {
+                while (bsize < (guint) ntohs(hdr_xr.len) * 4 + 4) {
                     // Read block header
                     memcpy(&blk_xr, data->data + bsize, sizeof(blk_xr));
                     // Check block type
