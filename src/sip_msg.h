@@ -146,7 +146,7 @@ msg_get_payload(SipMsg *msg);
  * @param msg SIP message
  * @return timeval structure with message first packet time
  */
-struct timeval
+GTimeVal
 msg_get_time(const SipMsg *msg);
 
 /**

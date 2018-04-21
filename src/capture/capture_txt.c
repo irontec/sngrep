@@ -59,8 +59,8 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     g_return_if_fail(frame != NULL);
 
     // Get packet data
-    timeval_to_date(frame->header->ts, date);
-    timeval_to_time(frame->header->ts, time);
+    timeval_to_date(frame->ts, date);
+    timeval_to_time(frame->ts, time);
     src = packet_src_address(packet);
     dst = packet_dst_address(packet);
 

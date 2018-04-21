@@ -637,15 +637,13 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
             if (info->selected == -1) {
                 if (setting_enabled(SETTING_CF_DELTA)) {
-                    struct timeval selts, curts;
-                    selts = msg_get_time(call_group_get_prev_msg(info->group, msg));
-                    curts = msg_get_time(msg);
+                    GTimeVal selts = msg_get_time(call_group_get_prev_msg(info->group, msg));
+                    GTimeVal curts = msg_get_time(msg);
                     timeval_to_delta(selts, curts, delta);
                 }
             } else if (arrow == g_sequence_nth(info->darrows, info->cur_arrow)) {
-                struct timeval selts, curts;
-                selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(ui)));
-                curts = msg_get_time(msg);
+                GTimeVal selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(ui)));
+                GTimeVal curts = msg_get_time(msg);
                 timeval_to_delta(selts, curts, delta);
             }
 
@@ -1501,10 +1499,10 @@ call_flow_arrow_selected(ui_t *ui)
 
 }
 
-struct timeval
+GTimeVal
 call_flow_arrow_time(const call_flow_arrow_t *arrow)
 {
-    struct timeval ts = { 0 };
+    GTimeVal ts = { 0 };
     SipMsg *msg;
     rtp_stream_t *stream;
 

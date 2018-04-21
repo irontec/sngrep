@@ -243,7 +243,14 @@ capture_output_pcap_write(CaptureOutput *output, Packet *packet)
 
     for (GList *l = packet->frames; l != NULL; l = l->next) {
         PacketFrame *frame = l->data;
-        pcap_dump((u_char*) pcap->dumper, frame->header, frame->data);
+        // PCAP Frame Header data
+        struct pcap_pkthdr header;
+        header.caplen = frame->caplen;
+        header.len = frame->len;
+        header.ts.tv_sec = frame->ts.tv_sec;
+        header.ts.tv_usec = frame->ts.tv_usec;
+        // Save this packet
+        pcap_dump((u_char*) pcap->dumper, &header, frame->data->data);
     }
 }
 
@@ -331,11 +338,12 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     // Create a new packet for this data
     Packet *packet = packet_new();
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
-    frame->header = g_malloc0(sizeof(struct pcap_pkthdr));
-    frame->header->caplen = header->caplen;
-    frame->header->len = header->len;
-    frame->header->ts = header->ts;
-    frame->data = g_memdup(content, header->caplen);
+    frame->ts.tv_sec = header->ts.tv_sec;
+    frame->ts.tv_usec = header->ts.tv_usec;
+    frame->caplen = header->caplen;
+    frame->len = header->len;
+    frame->data = g_byte_array_new();
+    g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
 
     // Initialize parser dissector to first one
@@ -347,9 +355,6 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     // Free not parsed packet data
     if (data != NULL) {
         g_byte_array_free(data, TRUE);
-
-        g_free(frame->header);
-        g_free(frame->data);
         g_free(frame);
 
         g_list_free(packet->frames);
@@ -358,12 +363,9 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
 }
 
 gint
-capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
+capture_packet_time_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
 {
-    return timeval_is_older(
-        packet_time(a),
-        packet_time(b)
-    );
+    return timeval_is_older(packet_time(a), packet_time(b));
 }
 
 const gchar*

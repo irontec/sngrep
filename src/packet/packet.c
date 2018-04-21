@@ -122,16 +122,16 @@ packet_transport(Packet *packet)
     return "???";
 }
 
-struct timeval
+GTimeVal
 packet_time(const Packet *packet)
 {
     PacketFrame *first;
-    struct timeval ts = { 0 };
+    GTimeVal ts = { 0 };
 
     // Return first frame timestamp
     if (packet && (first = g_list_nth_data(packet->frames, 0))) {
-        ts.tv_sec = first->header->ts.tv_sec;
-        ts.tv_usec = first->header->ts.tv_usec;
+        ts.tv_sec = first->ts.tv_sec;
+        ts.tv_usec = first->ts.tv_usec;
     }
 
     // Return packe timestamp

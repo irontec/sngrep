@@ -279,11 +279,12 @@ capture_input_hep_receive_v2(CaptureInput *input)
 
     // Create Packet frame data
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
-    frame->header = g_malloc0(sizeof(struct pcap_pkthdr));
-    frame->header->caplen = header.caplen;
-    frame->header->len = header.len;
-    frame->header->ts = header.ts;
-    frame->data = g_memdup(data->data, data->len);
+    frame->caplen = header.caplen;
+    frame->len = header.len;
+    frame->ts.tv_sec = header.ts.tv_sec;
+    frame->ts.tv_usec = header.ts.tv_usec;
+    frame->data = g_byte_array_new();
+    g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
 
     // Parse SIP payload
@@ -422,11 +423,12 @@ capture_input_hep_receive_v3(CaptureInput *input)
 
     // Create Packet frame data
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
-    frame->header = g_malloc0(sizeof(struct pcap_pkthdr));
-    frame->header->caplen = header.caplen;
-    frame->header->len = header.len;
-    frame->header->ts = header.ts;
-    frame->data = g_memdup(data->data, data->len);
+    frame->caplen = header.caplen;
+    frame->len = header.len;
+    frame->ts.tv_sec = header.ts.tv_sec;
+    frame->ts.tv_usec = header.ts.tv_usec;
+    frame->data = g_byte_array_new();
+    g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
 
     // Parse SIP payload
@@ -592,8 +594,8 @@ capture_output_hep_write_v2(CaptureOutput *output, Packet *packet)
     hdr.hp_dport = htons(udp->dport);
 
     /* Timestamp */
-    hep_time.tv_sec = (guint32) frame->header->ts.tv_sec;
-    hep_time.tv_usec = (guint32) frame->header->ts.tv_usec;
+    hep_time.tv_sec = (guint32) frame->ts.tv_sec;
+    hep_time.tv_usec = (guint32) frame->ts.tv_usec;
     hep_time.captid = hep->id;
 
     /* Calculate initial HEP packet size */
@@ -756,13 +758,13 @@ capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
     hg->time_sec.chunk.vendor_id    = htons(0x0000);
     hg->time_sec.chunk.type_id      = htons(0x0009);
     hg->time_sec.chunk.length       = htons(sizeof(hg->time_sec));
-    hg->time_sec.data               = htonl(frame->header->ts.tv_sec);
+    hg->time_sec.data               = htonl(frame->ts.tv_sec);
 
     /* TIMESTAMP USEC */
     hg->time_usec.chunk.vendor_id   = htons(0x0000);
     hg->time_usec.chunk.type_id     = htons(0x000a);
     hg->time_usec.chunk.length      = htons(sizeof(hg->time_usec));
-    hg->time_usec.data              = htonl(frame->header->ts.tv_usec);
+    hg->time_usec.data              = htonl(frame->ts.tv_usec);
 
     /* Protocol TYPE */
     hg->proto_t.chunk.vendor_id     = htons(0x0000);

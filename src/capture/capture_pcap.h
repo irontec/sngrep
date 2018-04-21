@@ -47,15 +47,6 @@
 #define _BSD_SOURCE 1
 #endif
 
-/* Old versions of libpcap in OpenBSD use <net/bpf.h>
- * which actually defines timestamps as bpf_timeval instead
- * of simple timeval. This no longer happens in newest libpcap
- * versions, where header packets have timestamps in timeval
- * structs */
-#if defined (__OpenBSD__) && defined(_NET_BPF_H_)
-#define timeval bpf_timeval
-#endif
-
 #if defined(BSD) || defined (__OpenBSD__) || defined(__FreeBSD__)
 #include <sys/types.h>
 #include <sys/socket.h>

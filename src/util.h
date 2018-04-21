@@ -62,19 +62,19 @@ sng_basename(const char *name);
  * @return 1 if t1 > t2, 0 if t1 <= t2
  */
 int
-timeval_is_older(struct timeval t1, struct timeval t2);
+timeval_is_older(GTimeVal t1, GTimeVal t2);
 
 /**
  * @brief Convert timeval to yyyy/mm/dd format
  */
 const char *
-timeval_to_date(struct timeval time, char *out);
+timeval_to_date(GTimeVal time, char *out);
 
 /**
  * @brief Convert timeval to HH:MM:SS.mmmmmm format
  */
 const char *
-timeval_to_time(struct timeval time, char *out);
+timeval_to_time(GTimeVal time, char *out);
 
 /**
  * @brief Calculate the time difference between two timeval
@@ -82,13 +82,13 @@ timeval_to_time(struct timeval time, char *out);
  * @return Human readable time difference in mm:ss format
  */
 const char *
-timeval_to_duration(struct timeval start, struct timeval end, char *out);
+timeval_to_duration(GTimeVal start, GTimeVal end, char *out);
 
 /**
  * @brief Convert timeval diference to +mm:ss.mmmmmm
  */
 const char *
-timeval_to_delta(struct timeval start, struct timeval end, char *out);
+timeval_to_delta(GTimeVal start, GTimeVal end, char *out);
 
 /**
  * @brief Return a given string without trailing spaces

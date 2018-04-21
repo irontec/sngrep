@@ -56,7 +56,7 @@ struct rtp_stream {
     //! Packet count for this stream
     uint32_t pktcnt;
     //! Time of first received packet of stream
-    struct timeval time;
+    GTimeVal time;
     //! Unix timestamp of last received packet
     int lasttm;
     //! Format of first received packet of stre

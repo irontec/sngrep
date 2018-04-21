@@ -26,12 +26,8 @@
  * @brief Source of functions defined in util.h
  *
  */
-#include "config.h"
-#include <time.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
+#include "config.h"
 #include "util.h"
 
 
@@ -75,7 +71,7 @@ sng_basename(const char *name)
 }
 
 int
-timeval_is_older(struct timeval t1, struct timeval t2)
+timeval_is_older(GTimeVal t1, GTimeVal t2)
 {
     long long int t1sec, t2sec;
     t1sec = t1.tv_sec;
@@ -86,7 +82,7 @@ timeval_is_older(struct timeval t1, struct timeval t2)
 }
 
 const char *
-timeval_to_date(struct timeval time, char *out)
+timeval_to_date(GTimeVal time, char *out)
 {
     time_t t = (time_t) time.tv_sec;
     struct tm *timestamp = localtime(&t);
@@ -96,7 +92,7 @@ timeval_to_date(struct timeval time, char *out)
 
 
 const char *
-timeval_to_time(struct timeval time, char *out)
+timeval_to_time(GTimeVal time, char *out)
 {
     time_t t = (time_t) time.tv_sec;
     struct tm *timestamp = localtime(&t);
@@ -106,7 +102,7 @@ timeval_to_time(struct timeval time, char *out)
 }
 
 const char *
-timeval_to_duration(struct timeval start, struct timeval end, char *out)
+timeval_to_duration(GTimeVal start, GTimeVal end, char *out)
 {
     int seconds;
     char duration[20];
@@ -123,7 +119,7 @@ timeval_to_duration(struct timeval start, struct timeval end, char *out)
 }
 
 const char *
-timeval_to_delta(struct timeval start, struct timeval end, char *out)
+timeval_to_delta(GTimeVal start, GTimeVal end, char *out)
 {
     long diff;
     int nsec, nusec;
@@ -143,6 +139,7 @@ timeval_to_delta(struct timeval start, struct timeval end, char *out)
     sprintf(out, "%c%d.%06d", sign, abs(nsec), nusec);
     return out;
 }
+
 char *
 strtrim(char *str)
 {

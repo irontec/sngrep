@@ -93,13 +93,13 @@ msg_get_payload(SipMsg *msg)
     return packet_sip_payload(msg->packet);
 }
 
-struct timeval
+GTimeVal
 msg_get_time(const SipMsg *msg) {
-    struct timeval t = { };
+    GTimeVal t = { };
     PacketFrame *frame;
 
     if (msg && (frame = g_list_nth_data(msg->packet->frames, 0)))
-        return frame->header->ts;
+        return frame->ts;
     return t;
 }
 

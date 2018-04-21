@@ -476,7 +476,7 @@ call_flow_arrow_selected(ui_t *ui);
  * @param arrow Arrow structure pointer
  * @return timestamp for given arrow
  */
-struct timeval
+GTimeVal
 call_flow_arrow_time(const call_flow_arrow_t *arrow);
 
 /**

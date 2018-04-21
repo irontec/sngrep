@@ -96,10 +96,14 @@ struct _Packet {
  *  the required information to save a packet into a PCAP file.
  */
 struct _PacketFrame {
-    //! PCAP Frame Header data
-    struct pcap_pkthdr *header;
+    //! Frace received time
+    GTimeVal ts;
+    //! Capture lenght (effective)
+    guint32 len;
+    //! Capture lenght (from wire)
+    guint32 caplen;
     //! PCAP Frame content
-    guchar *data;
+    GByteArray *data;
 };
 
 Packet *
@@ -136,7 +140,7 @@ packet_dst_address(const Packet *packet);
 /**
  * @brief Get The timestamp for a packet.
  */
-struct timeval
+GTimeVal
 packet_time(const Packet *packet);
 
 #endif /* __SNGREP_PACKET_H */
