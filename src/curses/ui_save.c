@@ -419,6 +419,7 @@ save_to_file(ui_t *ui)
     CaptureOutput *output = NULL;
     int cur = 0, total = 0;
     WINDOW *progress;
+    GSequence *groupcalls;
     GSequenceIter *calls, *msgs, *rtps, *packets;
     GSequence *sorted;
     GError *error = NULL;
@@ -490,7 +491,11 @@ save_to_file(ui_t *ui)
             break;
         case SAVE_SELECTED:
             // Save selected packets to file
-            calls = g_sequence_get_begin_iter(info->group->calls);
+            groupcalls = g_sequence_new(NULL);
+            for (GList *l = info->group->calls; l != NULL; l = l->next)
+                g_sequence_append(groupcalls, l->data);
+
+            calls = g_sequence_get_begin_iter(groupcalls);
             break;
         default:
             break;

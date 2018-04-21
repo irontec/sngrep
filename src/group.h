@@ -50,7 +50,9 @@ struct _SipCallGroup {
     //! For extended display, main call-id
     gchar *callid;
     //! Calls array in the group
-    GSequence *calls;
+    GList *calls;
+    //! Messages in the group
+    GList *msgs;
     //! Color of the last printed call in mode Color-by-Call
     gint color;
     //! Only consider SDP messages from Calls
@@ -123,7 +125,15 @@ call_group_add_calls(SipCallGroup *group, GSequence *calls);
  * @param call Pointer to an existing call
  */
 void
-call_group_del(SipCallGroup *group, SipCall *call);
+call_group_remove(SipCallGroup *group, SipCall *call);
+
+/**
+ * @brief Remove all calls from the group
+ *
+ * @param group
+ */
+void
+call_group_remove_all(SipCallGroup *group);
 
 /**
  * @brief Check if a call is in the group
@@ -184,19 +194,6 @@ gint
 call_group_msg_count(SipCallGroup *group);
 
 /**
- * @brief Return Message position in the group
- *
- * Return how many messages are before the given message
- * sorting all messages in all group calls by timestamp
- *
- * @param group Pointer to an existing group
- * @param msg A sip message from a call in the group
- * @return The position of given message in the group
- */
-gint
-call_group_msg_number(SipCallGroup *group, SipMsg *msg);
-
-/**
  * @brief Finds the next msg in a call group.
  *
  * If the passed msg is NULL it returns the first message
@@ -228,13 +225,5 @@ call_group_get_prev_msg(SipCallGroup *group, SipMsg *msg);
  */
 rtp_stream_t *
 call_group_get_next_stream(SipCallGroup *group, rtp_stream_t *stream);
-
-/**
- * @brief Sort messages in a group by message time
- * @param vector sorted vector
- * @param item item to add to the vector
- */
-gint
-call_group_msg_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
 
 #endif /* __SNGREP_GROUP_H_ */

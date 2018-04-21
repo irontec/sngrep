@@ -86,12 +86,6 @@ call_destroy(gpointer item)
     sng_free(call);
 }
 
-gboolean
-call_has_changed(SipCall *call)
-{
-    return call->changed;
-}
-
 void
 call_add_message(SipCall *call, SipMsg *msg)
 {

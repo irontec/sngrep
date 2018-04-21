@@ -117,18 +117,6 @@ void
 call_destroy(gpointer item);
 
 /**
- * @brief Return if the call has changed
- *
- * Check if the call has changed since the last time * this function was
- * invoked. We consider list has changed when a new message or stream
- * has been added to the call.
- *
- * @return true if call has changed, false otherwise
- */
-gboolean
-call_has_changed(SipCall *call);
-
-/**
  * @brief Append message to the call's message list
  *
  * Creates a relation between this call and the message, appending it

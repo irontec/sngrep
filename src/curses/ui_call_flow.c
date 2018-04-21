@@ -268,8 +268,8 @@ call_flow_draw_columns(ui_t *ui)
 
     // Load columns
     while((msg = call_group_get_next_msg(info->group, msg))) {
-        call_flow_column_add(ui, msg->call->callid, packet_src_address(msg->packet));
-        call_flow_column_add(ui, msg->call->callid, packet_dst_address(msg->packet));
+        call_flow_column_add(ui, msg->call->callid, msg_src_address(msg));
+        call_flow_column_add(ui, msg->call->callid, msg_dst_address(msg));
     }
 
     // Add RTP columns FIXME Really
@@ -1126,12 +1126,12 @@ call_flow_handle_key(ui_t *ui, int key)
             case ACTION_SHOW_FLOW_EX:
                 werase(ui->win);
                 if (call_group_count(info->group) == 1) {
-                    call = g_sequence_first(info->group->calls);
+                    call = call_group_get_next(info->group, NULL);
                     call_group_add_calls(info->group, call->xcalls);
                     info->group->callid = call->callid;
                 } else {
-                    call = g_sequence_first(info->group->calls);
-                    g_sequence_remove_all(info->group->calls);
+                    call = call_group_get_next(info->group, NULL);
+                    call_group_remove_all(info->group);
                     call_group_add(info->group, call);
                     info->group->callid = 0;
                 }

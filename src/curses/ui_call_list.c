@@ -665,7 +665,7 @@ call_list_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_CLEAR:
                 // Clear group calls
-                g_sequence_remove_all(info->group->calls);
+                call_group_remove_all(info->group);
                 break;
             case ACTION_CLEAR_CALLS:
                 // Remove all stored calls
@@ -688,7 +688,7 @@ call_list_handle_key(ui_t *ui, int key)
             case ACTION_SELECT:
                 call = g_sequence_nth(info->dcalls, info->cur_call);
                 if (call_group_exists(info->group, call)) {
-                    call_group_del(info->group, call);
+                    call_group_remove(info->group, call);
                 } else {
                     call_group_add(info->group, call);
                 }
@@ -993,7 +993,7 @@ call_list_clear(ui_t *ui)
 
     // Initialize structures
     info->scroll.pos = info->cur_call = -1;
-    g_sequence_remove_all(info->group->calls);
+    call_group_remove_all(info->group);
 
     // Clear Displayed lines
     werase(info->list_win);
