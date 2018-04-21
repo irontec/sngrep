@@ -73,7 +73,7 @@ void
 stream_set_format(rtp_stream_t *stream, uint32_t format);
 
 void
-stream_add_packet(rtp_stream_t *stream, packet_t *packet);
+stream_add_packet(rtp_stream_t *stream, Packet *packet);
 
 uint32_t
 stream_get_count(rtp_stream_t *stream);

@@ -155,7 +155,7 @@ storage_check_sip_packet(Packet *packet);
  * @return a SIP msg structure pointer
  */
 rtp_stream_t *
-storage_check_rtp_packet(packet_t *packet);
+storage_check_rtp_packet(Packet *packet);
 
 /**
  * @brief Return if the call list has changed

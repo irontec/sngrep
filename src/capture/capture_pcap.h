@@ -64,7 +64,7 @@
 #include <netinet/in_systm.h>
 #endif
 
-#include "packet/old_packet.h"
+#include "packet/packet.h"
 #include "capture.h"
 
 //! Max allowed packet length (for libpcap)

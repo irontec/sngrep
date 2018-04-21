@@ -420,7 +420,6 @@ save_to_file(ui_t *ui)
     int cur = 0, total = 0;
     WINDOW *progress;
     GSequenceIter *calls, *msgs, *rtps, *packets;
-    packet_t *packet;
     GSequence *sorted;
     GError *error = NULL;
 
@@ -499,7 +498,7 @@ save_to_file(ui_t *ui)
 
     if (info->savemode == SAVE_MESSAGE) {
         // Save selected message packet to pcap
-        output->write(output, info->msg->packet->newpacket);
+        output->write(output, info->msg->packet);
     } else if (info->saveformat == SAVE_TXT) {
         // Save selected packets to file
         for (;!g_sequence_iter_is_end(calls); calls = g_sequence_iter_next(calls)) {
@@ -508,7 +507,7 @@ save_to_file(ui_t *ui)
             // Save SIP message content
             for (;!g_sequence_iter_is_end(msgs); msgs = g_sequence_iter_next(msgs)) {
                 msg = g_sequence_get(msgs);
-                output->write(output, msg->packet->newpacket);
+                output->write(output, msg->packet);
             }
         }
     } else {
@@ -547,10 +546,9 @@ save_to_file(ui_t *ui)
             if (info->saveformat == SAVE_PCAP_RTP) {
                 rtps = g_sequence_get_begin_iter(call->rtp_packets);
                 for (;!g_sequence_iter_is_end(rtps); rtps = g_sequence_iter_next(rtps)) {
-                    packet = g_sequence_get(rtps);
                     // Update progress bar dialog
                     dialog_progress_set_value(progress, (++cur * 100) / total);
-                    g_sequence_insert_sorted(sorted, packet, capture_packet_time_sorter, NULL);
+                    g_sequence_insert_sorted(sorted, g_sequence_get(rtps), capture_packet_time_sorter, NULL);
                 }
             }
         }
@@ -558,8 +556,7 @@ save_to_file(ui_t *ui)
         // Save sorted packets
         packets = g_sequence_get_begin_iter(sorted);
         for (;!g_sequence_iter_is_end(packets); packets = g_sequence_iter_next(packets)) {
-            packet = g_sequence_get(packets);
-            output->write(output, packet->newpacket);
+            output->write(output, g_sequence_get(packets));
         }
 
         dialog_progress_destroy(progress);

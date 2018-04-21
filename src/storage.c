@@ -172,7 +172,7 @@ storage_check_sip_packet(Packet *packet)
     }
 
     // At this point we know we're handling an interesting SIP Packet
-    msg->packet = packet_to_oldpkt(packet);
+    msg->packet = packet;
 
     // Always dissect first call message
     if (call_msg_count(call) == 0) {
@@ -213,6 +213,10 @@ storage_check_sip_packet(Packet *packet)
     // Mark the list as changed
     calls.changed = true;
 
+    // Send this packet to all capture outputs
+    capture_manager_output_packet(capture_manager(), packet);
+
+
     // Return the loaded message
     return msg;
 
@@ -224,14 +228,14 @@ skip_message:
 }
 
 rtp_stream_t *
-storage_check_rtp_packet(packet_t *packet)
+storage_check_rtp_packet(Packet *packet)
 {
     Address src, dst;
     rtp_stream_t *stream;
     rtp_stream_t *reverse;
     u_char format = 0;
-    u_char *payload;
-    uint32_t size, bsize;
+    const gchar *payload;
+    size_t size, bsize;
     uint16_t len;
     struct rtcp_hdr_generic hdr;
     struct rtcp_hdr_sr hdr_sr;
@@ -239,16 +243,12 @@ storage_check_rtp_packet(packet_t *packet)
     struct rtcp_blk_xr blk_xr;
     struct rtcp_blk_xr_voip blk_xr_voip;
 
-    // Get packet data
-    payload = packet_payload(packet);
-    size = packet_payloadlen(packet);
-
     // Get Addresses from packet
-    src = packet->src;
-    dst = packet->dst;
+    src = packet_src_address(packet);
+    dst = packet_dst_address(packet);
 
     // Check if packet has RTP data
-    PacketRtpData *rtp = g_ptr_array_index(packet->newpacket->proto, PACKET_RTP);
+    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
     if (rtp != NULL) {
         // Get RTP Encoding information
         guint8 format = rtp->encoding->id;
@@ -263,7 +263,7 @@ storage_check_rtp_packet(packet_t *packet)
         // We have found a stream, but with different format
         if (stream_is_complete(stream) && stream->fmtcode != format) {
             // Create a new stream for this new format
-            stream = stream_create(packet->newpacket, stream->media);
+            stream = stream_create(packet, stream->media);
             stream_complete(stream, src);
             stream_set_format(stream, format);
             call_add_stream(msg_get_call(stream->msg), stream);
@@ -295,7 +295,7 @@ storage_check_rtp_packet(packet_t *packet)
 
             // Check if an stream in the opposite direction exists
             if (!(reverse = call_find_stream(stream->msg->call, stream->dst, stream->src))) {
-                reverse = stream_create(packet->newpacket, stream->media);
+                reverse = stream_create(packet, stream->media);
                 stream_complete(reverse, stream->dst);
                 stream_set_format(reverse, format);
                 call_add_stream(msg_get_call(stream->msg), reverse);
@@ -304,7 +304,7 @@ storage_check_rtp_packet(packet_t *packet)
                 if (reverse->src.port && !addressport_equals(stream->src, reverse->src)) {
                     if (!(reverse = call_find_stream_exact(stream->msg->call, stream->dst, stream->src))) {
                         // Create a new reverse stream
-                        reverse = stream_create(packet->newpacket, stream->media);
+                        reverse = stream_create(packet, stream->media);
                         stream_complete(reverse, stream->dst);
                         stream_set_format(reverse, format);
                         call_add_stream(msg_get_call(stream->msg), reverse);
@@ -318,7 +318,7 @@ storage_check_rtp_packet(packet_t *packet)
     }
 
     // Check if packet has RTP data
-    PacketRtcpData *rtcp = g_ptr_array_index(packet->newpacket->proto, PACKET_RTP);
+    PacketRtcpData *rtcp = g_ptr_array_index(packet->proto, PACKET_RTP);
     if (rtcp != NULL) {
         // Add packet to stream
         stream_complete(stream, src);
@@ -393,7 +393,7 @@ storage_find_by_callid(const char *callid)
 void
 storage_register_streams(SipMsg *msg)
 {
-    Packet *packet = msg->packet->newpacket;
+    Packet *packet = msg->packet;
     Address emptyaddr = {};
 
     PacketSdpData *sdp = g_ptr_array_index(packet->proto, PACKET_SDP);
@@ -426,11 +426,11 @@ storage_register_streams(SipMsg *msg)
         }
 
         // Create RTP stream with source of message as destination address
-        if (call_find_stream(msg->call, msg->packet->src, media->address) == NULL) {
+        if (call_find_stream(msg->call, msg_src_address(msg), media->address) == NULL) {
             rtp_stream_t *stream = stream_create(packet, media);
             stream->type = PACKET_RTP;
             stream->msg = msg;
-            stream->dst = msg->packet->src;
+            stream->dst = msg_src_address(msg);
             stream->dst.port = media->rtpport;
             call_add_stream(msg->call, stream);
         }

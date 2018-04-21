@@ -122,36 +122,18 @@ packet_transport(Packet *packet)
     return "???";
 }
 
-packet_t *
-packet_to_oldpkt(Packet *packet)
+struct timeval
+packet_time(const Packet *packet)
 {
-    packet_t *oldpkt = g_malloc0(sizeof(packet_t));
+    PacketFrame *first;
+    struct timeval ts = { 0 };
 
-    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
-    oldpkt->newpacket = packet;
-    oldpkt->src = ipdata->saddr;
-    oldpkt->dst = ipdata->daddr;
-
-    if (packet_has_type(packet, PACKET_TCP)) {
-        PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
-        oldpkt->src.port = tcpdata->sport;
-        oldpkt->dst.port = tcpdata->dport;
-    } else {
-        PacketUdpData *udpdata = g_ptr_array_index(packet->proto, PACKET_UDP);
-        oldpkt->src.port = udpdata->sport;
-        oldpkt->dst.port = udpdata->dport;
+    // Return first frame timestamp
+    if (packet && (first = g_list_nth_data(packet->frames, 0))) {
+        ts.tv_sec = first->header->ts.tv_sec;
+        ts.tv_usec = first->header->ts.tv_usec;
     }
 
-    PacketSipData *sipdata = g_ptr_array_index(packet->proto, PACKET_SIP);
-    if (sipdata) {
-        packet_set_payload(oldpkt, (guchar *) sipdata->payload, strlen(sipdata->payload));
-    }
-
-    oldpkt->frames = g_sequence_new(NULL);
-    for (GList *l = packet->frames; l != NULL; l = l->next) {
-        PacketFrame *frame = l->data;
-        packet_add_frame(oldpkt, frame->header, frame->data);
-    }
-
-    return oldpkt;
+    // Return packe timestamp
+    return ts;
 }

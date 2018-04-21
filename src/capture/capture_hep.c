@@ -49,6 +49,10 @@
 #include "util.h"
 #include "setting.h"
 #include "glib-utils.h"
+#include "packet/dissectors/packet_ip.h"
+#include "packet/dissectors/packet_udp.h"
+#include "packet/dissectors/packet_sip.h"
+#include "packet/packet.h"
 #include "capture_hep.h"
 
 GQuark
@@ -167,11 +171,16 @@ capture_input_hep(const gchar *url, GError **error)
     input->start  = capture_input_hep_start;
     input->stop   = capture_input_hep_stop;
 
+    // Ceate packet parser tree
+    PacketParser *parser = packet_parser_new(input);
+    packet_parser_add_proto(parser, parser->dissector_tree, PACKET_SIP);
+    input->parser = parser;
+
     return input;
 }
 
-static packet_t *
-capture_input_hep_receive_v2(CaptureHep *hep)
+static void
+capture_input_hep_receive_v2(CaptureInput *input)
 {
     uint8_t family, proto;
     unsigned char *payload = 0;
@@ -183,8 +192,6 @@ capture_input_hep_receive_v2(CaptureHep *hep)
     Address dst;
     //! Packet header
     struct pcap_pkthdr header;
-    //! New created packet pointer
-    packet_t *pkt;
     //! HEP client data
     struct sockaddr hep_client;
     socklen_t hep_client_len;
@@ -194,20 +201,21 @@ capture_input_hep_receive_v2(CaptureHep *hep)
 #ifdef USE_IPV6
     struct _CaptureHepIp6Hdr hep_ip6header;
 #endif
+    CaptureHep *hep = input->priv;
 
     // Initialize buffer
     memset(buffer, 0, MAX_HEP_BUFSIZE);
 
     /* Receive HEP generic header */
     if (recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len) == -1)
-        return NULL;
+        return;
 
     /* Copy initial bytes to HEPv2 header */
     memcpy(&hdr, buffer, sizeof(struct _CaptureHepHdr));
 
     // Check HEP version
     if (hdr.hp_v != 2)
-        return NULL;
+        return;
 
     /* IP dissectors */
     family = hdr.hp_f;
@@ -250,25 +258,40 @@ capture_input_hep_receive_v2(CaptureHep *hep)
     header.caplen = header.len = ntohs(hdr.hp_l) - pos;
 
     // Copy packet payload
-    payload = sng_malloc(header.caplen + 1);
-    memcpy(payload, (void*) buffer + pos, header.caplen);
+    GByteArray *data = g_byte_array_new_take((guint8 *)(buffer + pos), header.caplen);
 
     // Create a new packet
-    /** @todo
-    pkt = packet_create((family == AF_INET) ? 4 : 6, proto, src, dst, 0);
-    packet_add_frame(pkt, &header, payload);
-    packet_set_transport_data(pkt, src.port, dst.port);
-    packet_set_type(pkt, PACKET_SIP_UDP);
-    packet_set_payload(pkt, payload, header.caplen);
-    */
-    /* FREE */
-    sng_free(payload);
-    return pkt;
+    Packet *packet = packet_new();
 
+    // Generate Packet IP data
+    PacketIpData *ip = g_malloc0(sizeof(PacketIpData));
+    ip->saddr = src;
+    ip->daddr = dst;
+    ip->protocol = proto;
+    ip->version = (family == AF_INET) ? 4 : 6;
+    g_ptr_array_insert(packet->proto, PACKET_IP, ip);
+
+    // Generate Packet UDP data
+    PacketUdpData *udp = g_malloc0(sizeof(PacketUdpData));
+    udp->sport = src.port;
+    udp->dport = dst.port;
+    g_ptr_array_insert(packet->proto, PACKET_UDP, udp);
+
+    // Create Packet frame data
+    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
+    frame->header = g_malloc0(sizeof(struct pcap_pkthdr));
+    frame->header->caplen = header.caplen;
+    frame->header->len = header.len;
+    frame->header->ts = header.ts;
+    frame->data = g_memdup(data->data, data->len);
+    packet->frames = g_list_append(packet->frames, frame);
+
+    // Parse SIP payload
+    packet_parser_next_dissector(input->parser, packet, data);
 }
 
-static packet_t *
-capture_input_hep_receive_v3(CaptureHep *hep)
+static void
+capture_input_hep_receive_v3(CaptureInput *input)
 {
     struct CaptureHepGeneric hg;
     CaptureHepChunkIp4 src_ip4, dst_ip4;
@@ -291,19 +314,18 @@ capture_input_hep_receive_v3(CaptureHep *hep)
     socklen_t hep_client_len;
     //! Packet header
     struct pcap_pkthdr header;
-    //! New created packet pointer
-    packet_t *pkt;
+    CaptureHep *hep = input->priv;
 
     /* Receive HEP generic header */
     if (recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len) == -1)
-        return NULL;
+        return;
 
     /* Copy initial bytes to HEP Generic header */
     memcpy(&hg, buffer, sizeof(struct CaptureHepGeneric));
 
     /* header check */
     if (memcmp(hg.header.id, "\x48\x45\x50\x33", 4) != 0)
-        return NULL;
+        return;
 
     /* IP dissectors */
     family = hg.ip_family.data;
@@ -360,7 +382,7 @@ capture_input_hep_receive_v3(CaptureHep *hep)
 
         // Validate the password
         if (strncmp(password, hep->password, password_len) != 0)
-            return NULL;
+            return;
     }
 
     if (setting_enabled(SETTING_HEP_LISTEN_UUID)) {
@@ -378,47 +400,55 @@ capture_input_hep_receive_v3(CaptureHep *hep)
     // Calculate payload size
     header.caplen = header.len = ntohs(payload_chunk.length) - sizeof(payload_chunk);
 
-    // Receive packet payload
-    payload = sng_malloc(header.caplen);
-    memcpy(payload, (void*) buffer + pos, header.caplen);
-#if 0
-    // Create a new packet
-    pkt = packet_create((family == AF_INET)?4:6, dissectors, src, dst, 0);
-    packet_add_frame(pkt, &header, payload);
-    packet_set_type(pkt, PACKET_SIP_UDP);
-    packet_set_payload(pkt, payload, header.caplen);
+    // Copy packet payload
+    GByteArray *data = g_byte_array_new_take((guint8 *)(buffer + pos), header.caplen);
 
-    /* FREE */
-    sng_free(payload);
-#endif
-    return pkt;
+    // Create a new packet
+    Packet *packet = packet_new();
+
+    // Generate Packet IP data
+    PacketIpData *ip = g_malloc0(sizeof(PacketIpData));
+    ip->saddr = src;
+    ip->daddr = dst;
+    ip->protocol = proto;
+    ip->version = (family == AF_INET) ? 4 : 6;
+    g_ptr_array_insert(packet->proto, PACKET_IP, ip);
+
+    // Generate Packet UDP data
+    PacketUdpData *udp = g_malloc0(sizeof(PacketUdpData));
+    udp->sport = src.port;
+    udp->dport = dst.port;
+    g_ptr_array_insert(packet->proto, PACKET_UDP, udp);
+
+    // Create Packet frame data
+    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
+    frame->header = g_malloc0(sizeof(struct pcap_pkthdr));
+    frame->header->caplen = header.caplen;
+    frame->header->len = header.len;
+    frame->header->ts = header.ts;
+    frame->data = g_memdup(data->data, data->len);
+    packet->frames = g_list_append(packet->frames, frame);
+
+    // Parse SIP payload
+    packet_parser_next_dissector(input->parser, packet, data);
+
 }
 
 void
 capture_input_hep_start(CaptureInput *input)
 {
     CaptureHep *hep = input->priv;
-    packet_t *pkt;
 
     // Begin accepting connections
     while (hep->socket > 0) {
-        if (hep->version == 2)
-            pkt = capture_input_hep_receive_v2(hep);
-        else
-            pkt = capture_input_hep_receive_v3(hep);
-#if 0
-        if (pkt != NULL) {
-            // Avoid parsing from multiples sources.
-            // Avoid parsing while screen in being redrawn
-            capture_lock(capture_manager());
-            if (capture_packet_parse(pkt) != 0) {
-                packet_destroy(pkt);
-            } else {
-                capture_manager_output_packet(input->manager, pkt);
-            }
-            capture_unlock(capture_manager());
+        // Reset dissector for next packet
+        input->parser->current = input->parser->dissector_tree;
+
+        if (hep->version == 2) {
+            capture_input_hep_receive_v2(input);
+        } else {
+            capture_input_hep_receive_v3(input);
         }
-#endif
     }
 
     // Leave the thread gracefully
@@ -525,7 +555,7 @@ capture_output_hep(const gchar *url, GError **error)
 }
 
 void
-capture_output_hep_write_v2(CaptureOutput *output, packet_t *pkt)
+capture_output_hep_write_v2(CaptureOutput *output, Packet *packet)
 {
     void* buffer;
     uint32_t buflen = 0, tlen = 0;
@@ -535,19 +565,31 @@ capture_output_hep_write_v2(CaptureOutput *output, packet_t *pkt)
 #ifdef USE_IPV6
     struct _CaptureHepIp6Hdr hep_ip6header;
 #endif
-    unsigned char *data = packet_payload(pkt);
-    uint32_t len = packet_payloadlen(pkt);
-    frame_t *frame = g_sequence_first(pkt->frames);
 
     // Get HEP output data
     CaptureHep *hep = output->priv;
 
+    // Get first frame information (for timestamps)
+    PacketFrame *frame = g_list_nth_data(packet->frames, 0);
+
+    // Packet IP Data
+    PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
+    g_return_if_fail(ip != NULL);
+
+    // Packet UDP Data
+    PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+    g_return_if_fail(udp != NULL);
+
+    // Packet SIP Data
+    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
+    g_return_if_fail(sip != NULL);
+
     /* Version && dissectors */
     hdr.hp_v = 2;
-    hdr.hp_f = pkt->ip_version == 4 ? AF_INET : AF_INET6;
-    hdr.hp_p = pkt->proto;
-    hdr.hp_sport = htons(pkt->src.port);
-    hdr.hp_dport = htons(pkt->dst.port);
+    hdr.hp_f = (guint8) (ip->version == 4 ? AF_INET : AF_INET6);
+    hdr.hp_p = ip->protocol;
+    hdr.hp_sport = htons(udp->sport);
+    hdr.hp_dport = htons(udp->dport);
 
     /* Timestamp */
     hep_time.tv_sec = (guint32) frame->header->ts.tv_sec;
@@ -558,25 +600,25 @@ capture_output_hep_write_v2(CaptureOutput *output, packet_t *pkt)
     tlen = sizeof(struct _CaptureHepHdr) + sizeof(struct _CaptureHepTimeHdr);
 
     /* IPv4 */
-    if (pkt->ip_version == 4) {
-        inet_pton(AF_INET, pkt->src.ip, &hep_ipheader.hp_src);
-        inet_pton(AF_INET, pkt->dst.ip, &hep_ipheader.hp_dst);
+    if (ip->version == 4) {
+        inet_pton(AF_INET, ip->saddr.ip, &hep_ipheader.hp_src);
+        inet_pton(AF_INET, ip->daddr.ip, &hep_ipheader.hp_dst);
         tlen += sizeof(struct _CaptureHepIpHdr);
         hdr.hp_l += sizeof(struct _CaptureHepIpHdr);
     }
 
 #ifdef USE_IPV6
     /* IPv6 */
-    else if(pkt->ip_version == 6) {
-        inet_pton(AF_INET6, pkt->src.ip, &hep_ip6header.hp6_src);
-        inet_pton(AF_INET6, pkt->dst.ip, &hep_ip6header.hp6_dst);
+    else if(ip->version == 6) {
+        inet_pton(AF_INET6, ip->saddr.ip, &hep_ip6header.hp6_src);
+        inet_pton(AF_INET6, ip->daddr.ip, &hep_ip6header.hp6_dst);
         tlen += sizeof(struct _CaptureHepIp6Hdr);
         hdr.hp_l += sizeof(struct _CaptureHepIp6Hdr);
     }
 #endif
 
     // Add payload size to the final size of HEP packet
-    tlen += len;
+    tlen += strlen(sip->payload);
     hdr.hp_l = htons(tlen);
 
     // Allocate memory for HEPv2 packet
@@ -589,12 +631,12 @@ capture_output_hep_write_v2(CaptureOutput *output, packet_t *pkt)
     buflen += sizeof(struct _CaptureHepHdr);
 
     // Copy IP header
-    if (pkt->ip_version == 4) {
+    if (ip->version == 4) {
         memcpy(buffer + buflen, &hep_ipheader, sizeof(struct _CaptureHepIpHdr));
         buflen += sizeof(struct _CaptureHepIpHdr);
     }
 #ifdef USE_IPV6
-    else if(pkt->ip_version == 6) {
+    else if(ip->version == 6) {
         memcpy(buffer + buflen, &hep_ip6header, sizeof(struct _CaptureHepIp6Hdr));
         buflen += sizeof(struct _CaptureHepIp6Hdr);
     }
@@ -605,8 +647,8 @@ capture_output_hep_write_v2(CaptureOutput *output, packet_t *pkt)
     buflen += sizeof(struct _CaptureHepTimeHdr);
 
     // Now copy payload itself
-    memcpy(buffer + buflen, data, len);
-    buflen += len;
+    memcpy(buffer + buflen, sip->payload, strlen(sip->payload));
+    buflen += strlen(sip->payload);
 
     if (send(hep->socket, buffer, buflen, 0) == -1) {
         return;
@@ -617,9 +659,8 @@ capture_output_hep_write_v2(CaptureOutput *output, packet_t *pkt)
 }
 
 void
-capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
+capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
 {
-    struct CaptureHepGeneric *hg = NULL;
     void* buffer;
     uint32_t buflen = 0, iplen = 0, tlen = 0;
     CaptureHepChunkIp4 src_ip4, dst_ip4;
@@ -628,61 +669,72 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
 #endif
     CaptureHepChunk payload_chunk;
     CaptureHepChunk authkey_chunk;
-    frame_t *frame = g_sequence_first(pkt->frames);
-    unsigned char *data = packet_payload(pkt);
-    uint32_t len = packet_payloadlen(pkt);
+
+    // Get first frame information (for timestamps)
+    PacketFrame *frame = g_list_nth_data(packet->frames, 0);
+
+    // Packet IP Data
+    PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
+    g_return_if_fail(ip != NULL);
+
+    // Packet UDP Data
+    PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+    g_return_if_fail(udp != NULL);
+
+    // Packet SIP Data
+    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
+    g_return_if_fail(sip != NULL);
 
     // Get HEP output data
     CaptureHep *hep = output->priv;
 
-    hg = sng_malloc(sizeof(struct CaptureHepGeneric));
-
     /* header set "HEP3" */
+    struct CaptureHepGeneric *hg = sng_malloc(sizeof(struct CaptureHepGeneric));
     memcpy(hg->header.id, "\x48\x45\x50\x33", 4);
 
     /* IP dissectors */
     hg->ip_family.chunk.vendor_id   = htons(0x0000);
     hg->ip_family.chunk.type_id     = htons(0x0001);
     hg->ip_family.chunk.length      = htons(sizeof(hg->ip_family));
-    hg->ip_family.data              = pkt->ip_version == 4 ? AF_INET : AF_INET6;
+    hg->ip_family.data              = (guint8) (ip->version == 4 ? AF_INET : AF_INET6);
 
     /* Proto ID */
     hg->ip_proto.chunk.vendor_id    = htons(0x0000);
     hg->ip_proto.chunk.type_id      = htons(0x0002);
     hg->ip_proto.chunk.length       = htons(sizeof(hg->ip_proto));
-    hg->ip_proto.data               = pkt->proto;
+    hg->ip_proto.data               = (guint8) ip->protocol;
 
     /* IPv4 */
-    if (pkt->ip_version == 4) {
+    if (ip->version == 4) {
         /* SRC IP */
         src_ip4.chunk.vendor_id     = htons(0x0000);
         src_ip4.chunk.type_id       = htons(0x0003);
         src_ip4.chunk.length        = htons(sizeof(src_ip4));
-        inet_pton(AF_INET, pkt->src.ip, &src_ip4.data);
+        inet_pton(AF_INET, ip->saddr.ip, &src_ip4.data);
 
         /* DST IP */
         dst_ip4.chunk.vendor_id     = htons(0x0000);
         dst_ip4.chunk.type_id       = htons(0x0004);
         dst_ip4.chunk.length        = htons(sizeof(dst_ip4));
-        inet_pton(AF_INET, pkt->dst.ip, &dst_ip4.data);
+        inet_pton(AF_INET, ip->daddr.ip, &dst_ip4.data);
 
         iplen = sizeof(dst_ip4) + sizeof(src_ip4);
     }
 
 #ifdef USE_IPV6
     /* IPv6 */
-    else if(pkt->ip_version == 6) {
+    else if(ip->version == 6) {
         /* SRC IPv6 */
         src_ip6.chunk.vendor_id     = htons(0x0000);
         src_ip6.chunk.type_id       = htons(0x0005);
         src_ip6.chunk.length        = htons(sizeof(src_ip6));
-        inet_pton(AF_INET6, pkt->src.ip, &src_ip6.data);
+        inet_pton(AF_INET6, ip->saddr.ip, &src_ip6.data);
 
         /* DST IPv6 */
         dst_ip6.chunk.vendor_id     = htons(0x0000);
         dst_ip6.chunk.type_id       = htons(0x0006);
         dst_ip6.chunk.length        = htons(sizeof(dst_ip6));
-        inet_pton(AF_INET6, pkt->dst.ip, &dst_ip6.data);
+        inet_pton(AF_INET6, ip->daddr.ip, &dst_ip6.data);
 
         iplen = sizeof(dst_ip6) + sizeof(src_ip6);
     }
@@ -692,13 +744,13 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
     hg->src_port.chunk.vendor_id    = htons(0x0000);
     hg->src_port.chunk.type_id      = htons(0x0007);
     hg->src_port.chunk.length       = htons(sizeof(hg->src_port));
-    hg->src_port.data               = htons(pkt->src.port);
+    hg->src_port.data               = htons(udp->sport);
 
     /* DST PORT */
     hg->dst_port.chunk.vendor_id    = htons(0x0000);
     hg->dst_port.chunk.type_id      = htons(0x0008);
     hg->dst_port.chunk.length       = htons(sizeof(hg->dst_port));
-    hg->dst_port.data               = htons(pkt->dst.port);
+    hg->dst_port.data               = htons(udp->dport);
 
     /* TIMESTAMP SEC */
     hg->time_sec.chunk.vendor_id    = htons(0x0000);
@@ -727,9 +779,9 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
     /* Payload */
     payload_chunk.vendor_id         = htons(0x0000);
     payload_chunk.type_id           = htons(0x000f);
-    payload_chunk.length            = htons(sizeof(payload_chunk) + len);
+    payload_chunk.length            = htons(sizeof(payload_chunk) + strlen(sip->payload));
 
-    tlen = sizeof(struct CaptureHepGeneric) + len + iplen + sizeof(CaptureHepChunk);
+    tlen = sizeof(struct CaptureHepGeneric) + strlen(sip->payload) + iplen + sizeof(CaptureHepChunk);
 
     /* auth key */
     if (hep->password != NULL) {
@@ -753,7 +805,7 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
     buflen = sizeof(struct CaptureHepGeneric);
 
     /* IPv4 */
-    if (pkt->ip_version == 4) {
+    if (ip->version == 4) {
         /* SRC IP */
         memcpy(buffer + buflen, &src_ip4, sizeof(struct _CaptureHepChunkIp4));
         buflen += sizeof(struct _CaptureHepChunkIp4);
@@ -764,7 +816,7 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
 
 #ifdef USE_IPV6
     /* IPv6 */
-    else if(pkt->ip_version == 6) {
+    else if(ip->version == 6) {
         /* SRC IPv6 */
         memcpy(buffer + buflen, &src_ip4, sizeof(struct _CaptureHepChunkIp6));
         buflen += sizeof(struct _CaptureHepChunkIp6);
@@ -790,8 +842,8 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
     buflen += sizeof(struct _CaptureHepChunk);
 
     /* Now copying payload itself */
-    memcpy(buffer + buflen, data, len);
-    buflen += len;
+    memcpy(buffer + buflen, sip->payload, strlen(sip->payload));
+    buflen += strlen(sip->payload);
 
     if (send(hep->socket, buffer, buflen, 0) == -1) {
         return;
@@ -805,13 +857,12 @@ capture_output_hep_write_v3(CaptureOutput *output, packet_t *pkt)
 void
 capture_output_hep_write(CaptureOutput *output, Packet *packet)
 {
-#if 0
     CaptureHep *hep = output->priv;
-    if (hep->version == 2)
+    if (hep->version == 2) {
         capture_output_hep_write_v2(output, packet);
-    else
+    } else {
         capture_output_hep_write_v3(output, packet);
-#endif
+    }
 }
 
 void
@@ -835,9 +886,3 @@ capture_output_hep_port(CaptureManager *manager)
         }
     }
 }
-
-
-
-
-
-

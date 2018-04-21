@@ -29,9 +29,8 @@
 #include "config.h"
 #include <glib.h>
 #include "storage.h"
-#include "packet/packet.h"
 #include "packet/dissector.h"
-#include "packet/old_packet.h"
+#include "packet/packet.h"
 #include "packet/dissectors/packet_ip.h"
 #include "packet/dissectors/packet_udp.h"
 #include "packet_rtp.h"
@@ -151,7 +150,7 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
     g_ptr_array_insert(packet->proto, PACKET_RTCP, rtcp);
 
     /** @TODO Backwards compatibility during refactoring */
-    storage_check_rtp_packet(packet_to_oldpkt(packet));
+    storage_check_rtp_packet(packet);
     return NULL;
 }
 

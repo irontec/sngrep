@@ -268,8 +268,8 @@ call_flow_draw_columns(ui_t *ui)
 
     // Load columns
     while((msg = call_group_get_next_msg(info->group, msg))) {
-        call_flow_column_add(ui, msg->call->callid, msg->packet->src);
-        call_flow_column_add(ui, msg->call->callid, msg->packet->dst);
+        call_flow_column_add(ui, msg->call->callid, packet_src_address(msg->packet));
+        call_flow_column_add(ui, msg->call->callid, packet_dst_address(msg->packet));
     }
 
     // Add RTP columns FIXME Really
@@ -458,8 +458,8 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // For extended, use xcallid nstead
     callid = msg->call->callid;
-    src = msg->packet->src;
-    dst = msg->packet->dst;
+    src = msg_src_address(msg);
+    dst = msg_dst_address(msg);
     media = g_sequence_first(msg->medias);
     msg_get_attribute(msg, SIP_ATTR_METHOD, msg_method);
     timeval_to_time(msg_get_time(msg), msg_time);
@@ -706,11 +706,11 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     msg = stream->msg;
 
     // If message and stream share the same IP address
-    if (address_equals(msg->packet->src, stream->dst)) {
+    if (address_equals(msg_src_address(msg), stream->dst)) {
         // Reuse the msg arrow columns as destination column
         if ((msgarrow = call_flow_arrow_find(ui, msg))) {
             // Get origin and destination column
-            arrow->dcolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->src);
+            arrow->dcolumn = call_flow_column_get(ui, msg->call->callid, msg_src_address(msg));
         }
     }
 
@@ -731,11 +731,11 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     msg = call_msg_with_media(call, stream->src);
 
     // Try to find a message with configured SDP matching the source of this stream
-    if (msg && address_equals(msg->packet->src, stream->src)) {
+    if (msg && address_equals(msg_src_address(msg), stream->src)) {
         // Reuse the msg arrow columns as destination column
         if ((msgarrow = call_flow_arrow_find(ui, msg))) {
             // Get origin and destination column
-            arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->src);
+            arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg_src_address(msg));
         }
     }
 
@@ -743,10 +743,10 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     if (!arrow->scolumn) {
         msg = stream->msg;
         // If message and stream share the same IP address
-        if (address_equals(msg->packet->dst, stream->src)) {
+        if (address_equals(msg_dst_address(msg), stream->src)) {
             // Reuse the msg arrow columns as destination column
             if ((msgarrow = call_flow_arrow_find(ui, msg))) {
-                arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->dst);
+                arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg_dst_address(msg));
             }
         }
     }

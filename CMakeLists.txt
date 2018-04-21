@@ -47,7 +47,6 @@ set(SOURCES
         src/keybinding.c
         src/main.c
         src/option.c
-        src/packet/old_packet.c
         src/stream.c
         src/setting.c
         src/sip_attr.c

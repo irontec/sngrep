@@ -56,7 +56,7 @@ msg_destroy(gpointer item)
         g_sequence_free(msg->medias);
 
     // Free message packets
-    packet_destroy(msg->packet);
+    packet_free(msg->packet);
     // Free all memory
     sng_free(msg->resp_str);
     sng_free(msg->sip_from);
@@ -90,15 +90,15 @@ msg_is_request(SipMsg *msg)
 const gchar *
 msg_get_payload(SipMsg *msg)
 {
-    return (const char *) packet_payload(msg->packet);
+    return packet_sip_payload(msg->packet);
 }
 
 struct timeval
 msg_get_time(const SipMsg *msg) {
     struct timeval t = { };
-    frame_t *frame;
+    PacketFrame *frame;
 
-    if (msg && (frame = g_sequence_first(msg->packet->frames)))
+    if (msg && (frame = g_list_nth_data(msg->packet->frames, 0)))
         return frame->header->ts;
     return t;
 }
@@ -110,10 +110,10 @@ msg_get_attribute(SipMsg *msg, gint id, char *value)
 
     switch (id) {
         case SIP_ATTR_SRC:
-            sprintf(value, "%s:%u", msg->packet->src.ip, msg->packet->src.port);
+            sprintf(value, "%s:%u", msg_src_address(msg).ip, msg_src_address(msg).port);
             break;
         case SIP_ATTR_DST:
-            sprintf(value, "%s:%u", msg->packet->dst.ip, msg->packet->dst.port);
+            sprintf(value, "%s:%u", msg_dst_address(msg).ip, msg_dst_address(msg).port);
             break;
         case SIP_ATTR_METHOD:
             sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg_reqresp_str(msg));

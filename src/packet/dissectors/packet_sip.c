@@ -28,12 +28,11 @@
 
 #include "config.h"
 #include <stdlib.h>
-#include <packet/old_packet.h>
-#include "packet_tcp.h"
-#include "packet_sdp.h"
 #include "storage.h"
-#include "packet_sip.h"
-#include "packet/old_packet.h"
+#include "packet/packet.h"
+#include "packet/dissectors/packet_tcp.h"
+#include "packet/dissectors/packet_sdp.h"
+#include "packet/dissectors/packet_sip.h"
 
 /* @brief list of methods and responses */
 PacketSipCode sip_codes[] = {

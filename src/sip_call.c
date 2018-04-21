@@ -49,7 +49,7 @@ call_create(char *callid, char *xcallid)
     call->msgs = g_sequence_new(msg_destroy);
 
     // Create an empty vector to store rtp packets
-    call->rtp_packets = g_sequence_new(packet_destroy);
+    call->rtp_packets = g_sequence_new((GDestroyNotify) packet_free);
 
     // Create an empty vector to strore stream data
     call->streams = g_sequence_new(sng_free);
@@ -114,7 +114,7 @@ call_add_stream(SipCall *call, rtp_stream_t *stream)
 }
 
 void
-call_add_rtp_packet(SipCall *call, packet_t *packet)
+call_add_rtp_packet(SipCall *call, Packet *packet)
 {
     // Store packet
     g_sequence_append(call->rtp_packets, packet);
@@ -160,8 +160,8 @@ call_msg_retrans_check(SipMsg *msg)
         it = g_sequence_iter_prev(it);
         prev = g_sequence_get(it);
         // Same addresses
-        if (addressport_equals(prev->packet->src, msg->packet->src) &&
-            addressport_equals(prev->packet->dst, msg->packet->dst)) {
+        if (addressport_equals(msg_src_address(prev), msg_src_address(msg)) &&
+            addressport_equals(msg_dst_address(prev), msg_dst_address(msg))) {
             // Same payload
             if (!strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
                 // Store the flag that determines if message is retrans

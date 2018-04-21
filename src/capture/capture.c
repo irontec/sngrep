@@ -182,11 +182,11 @@ capture_is_running(CaptureManager *manager)
     // Check if all capture inputs are running
     for (GSList *l = manager->inputs; l != NULL; l = l->next) {
         CaptureInput *input = l->data;
-        if (input->running == FALSE) {
-            return FALSE;
+        if (input->running == TRUE) {
+            return TRUE;
         }
     }
-    return TRUE;
+    return FALSE;
 }
 
 const gchar *

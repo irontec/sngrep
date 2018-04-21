@@ -158,7 +158,7 @@ call_add_stream(SipCall *call, rtp_stream_t *stream);
  * @param packet new RTP packet from call rtp streams
  */
 void
-call_add_rtp_packet(SipCall *call, packet_t *packet);
+call_add_rtp_packet(SipCall *call, Packet *packet);
 
 /**
  * @brief Getter for call messages linked list size

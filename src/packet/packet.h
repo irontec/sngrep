@@ -39,7 +39,6 @@
 #include <glib.h>
 #include <time.h>
 #include <sys/types.h>
-#include "packet/old_packet.h"
 #include "packet/address.h"
 
 /**
@@ -134,7 +133,10 @@ packet_dst_address(const Packet *packet);
 //const char *
 //packet_transport(Packet *packet);
 
-packet_t *
-packet_to_oldpkt(Packet *packet);
+/**
+ * @brief Get The timestamp for a packet.
+ */
+struct timeval
+packet_time(const Packet *packet);
 
 #endif /* __SNGREP_PACKET_H */

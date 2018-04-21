@@ -34,6 +34,11 @@
 #include "sip_attr.h"
 #include "util.h"
 
+//! Get IP Address info from message's packet
+#define msg_src_address(msg)   (packet_src_address(msg->packet))
+#define msg_dst_address(msg)   (packet_dst_address(msg->packet))
+
+
 //! Shorter declaration of sip_msg structure
 typedef struct _SipMsg SipMsg;
 //! Forward declarition of SipCall type
@@ -61,7 +66,7 @@ struct _SipMsg {
     //! SDP payload information (sdp_media_t *)
     GSequence *medias;
     //! Captured packet for this message
-    packet_t *packet;
+    Packet *packet;
     //! Index of this message in call
     guint32 index;
     //! Message owner
