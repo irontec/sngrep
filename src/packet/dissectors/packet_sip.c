@@ -151,6 +151,20 @@ sip_method_from_str(const char *method)
     return atoi(method);
 }
 
+const gchar *
+packet_sip_payload(const Packet *packet)
+{
+    g_return_val_if_fail(packet != NULL, NULL);
+
+    // Get Packet sip data
+    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
+    g_return_val_if_fail(sip != NULL, NULL);
+    g_return_val_if_fail(sip->payload != NULL, NULL);
+
+    return sip->payload;
+}
+
+
 static GByteArray *
 packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
@@ -290,7 +304,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Add data to storage
     storage_check_sip_packet(packet);
 
-    return data;
+    return NULL;
 }
 
 static void

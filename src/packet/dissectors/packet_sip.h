@@ -111,6 +111,9 @@ sip_method_from_str(const char *method);
 const char *
 sip_method_str(int method);
 
+const gchar *
+packet_sip_payload(const Packet *packet);
+
 /**
  * @brief Create a SIP parser
  *

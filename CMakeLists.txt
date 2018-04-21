@@ -28,6 +28,7 @@ set(SOURCES
         src/packet/dissectors/packet_rtcp.c
         src/capture/capture.c
         src/capture/capture_pcap.c
+        src/capture/capture_txt.c
         src/curses/scrollbar.c
         src/curses/ui_call_flow.c
         src/curses/ui_call_list.c

@@ -123,7 +123,13 @@ packet_free(Packet *packet);
 //packet_add_frame(Packet *pkt, PacketFrame *frame);
 
 gboolean
-packet_has_type(Packet *packet, enum packet_proto type);
+packet_has_type(const Packet *packet, enum packet_proto type);
+
+Address
+packet_src_address(const Packet *packet);
+
+Address
+packet_dst_address(const Packet *packet);
 
 //const char *
 //packet_transport(Packet *packet);

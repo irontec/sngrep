@@ -37,7 +37,8 @@
 #include "glib-utils.h"
 #include "ui_save.h"
 #include "setting.h"
-#include "capture/capture.h"
+#include "capture/capture_pcap.h"
+#include "capture/capture_txt.h"
 #include "filter.h"
 
 /**
@@ -415,13 +416,13 @@ save_to_file(ui_t *ui)
     char fullfile[MAX_SETTING_LEN*2];
     SipCall *call = NULL;
     SipMsg *msg = NULL;
-    pcap_dumper_t *pd = NULL;
-    FILE *f = NULL;
+    CaptureOutput *output = NULL;
     int cur = 0, total = 0;
     WINDOW *progress;
     GSequenceIter *calls, *msgs, *rtps, *packets;
     packet_t *packet;
     GSequence *sorted;
+    GError *error = NULL;
 
     // Get panel information
     save_info_t *info = save_info(ui);
@@ -455,7 +456,9 @@ save_to_file(ui_t *ui)
     sprintf(fullfile, "%s%s", savepath, savefile);
 
     if (access(fullfile, R_OK) == 0) {
-        if (dialog_confirm("Overwrite confirmation", "Selected file already exits.\n Do you want to overwrite it?", "Yes,No") != 0)
+        if (dialog_confirm("Overwrite confirmation",
+                           "Selected file already exits.\n Do you want to overwrite it?",
+                           "Yes,No") != 0)
             return 1;
     }
 
@@ -466,18 +469,17 @@ save_to_file(ui_t *ui)
     }
 
     if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
-        // Open dump file
-        pd = dump_open(fullfile);
-        if (access(fullfile, W_OK) != 0) {
-            dialog_run("%s", capture_pcap_error(NULL));
-            return 1;
-        }
+        // Open PCAP ouptut file
+        output = capture_output_pcap(fullfile, &error);
     } else {
-        // Open a text file
-        if (!(f = fopen(fullfile, "w"))) {
-            dialog_run("Error: %s", strerror(errno));
-            return 0;
-        }
+        // Open TXT output file
+        output = capture_output_txt(fullfile, &error);
+    }
+
+    // Output creation error checking
+    if (error != NULL) {
+        dialog_run("Error: %s", error->message);
+        return 1;
     }
 
     // Get calls iterator
@@ -496,13 +498,8 @@ save_to_file(ui_t *ui)
     }
 
     if (info->savemode == SAVE_MESSAGE) {
-        if (info->saveformat == SAVE_TXT) {
-            // Save selected message to file
-            save_msg_txt(f, info->msg);
-        } else {
-            // Save selected message packet to pcap
-            dump_packet(pd, info->msg->packet);
-        }
+        // Save selected message packet to pcap
+        output->write(output, info->msg->packet->newpacket);
     } else if (info->saveformat == SAVE_TXT) {
         // Save selected packets to file
         for (;!g_sequence_iter_is_end(calls); calls = g_sequence_iter_next(calls)) {
@@ -511,7 +508,7 @@ save_to_file(ui_t *ui)
             // Save SIP message content
             for (;!g_sequence_iter_is_end(msgs); msgs = g_sequence_iter_next(msgs)) {
                 msg = g_sequence_get(msgs);
-                save_msg_txt(f, msg);
+                output->write(output, msg->packet->newpacket);
             }
         }
     } else {
@@ -562,18 +559,14 @@ save_to_file(ui_t *ui)
         packets = g_sequence_get_begin_iter(sorted);
         for (;!g_sequence_iter_is_end(packets); packets = g_sequence_iter_next(packets)) {
             packet = g_sequence_get(packets);
-            dump_packet(pd, packet);
+            output->write(output, packet->newpacket);
         }
 
         dialog_progress_destroy(progress);
     }
 
     // Close saved file
-    if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
-        dump_close(pd);
-    } else {
-        fclose(f);
-    }
+    output->close(output);
 
     // Show success popup
     if (info->savemode == SAVE_MESSAGE) {
@@ -583,17 +576,4 @@ save_to_file(ui_t *ui)
     }
 
     return 0;
-}
-
-void
-save_msg_txt(FILE *f, SipMsg *msg)
-{
-    char date[20], time[20], src[80], dst[80];
-
-    fprintf(f, "%s %s %s -> %s\n%s\n\n",
-            msg_get_attribute(msg, SIP_ATTR_DATE, date),
-            msg_get_attribute(msg, SIP_ATTR_TIME, time),
-            msg_get_attribute(msg, SIP_ATTR_SRC, src),
-            msg_get_attribute(msg, SIP_ATTR_DST, dst),
-            msg_get_payload(msg));
 }

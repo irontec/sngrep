@@ -54,9 +54,57 @@ packet_free(Packet *packet)
 }
 
 gboolean
-packet_has_type(Packet *packet, enum packet_proto type)
+packet_has_type(const Packet *packet, enum packet_proto type)
 {
     return g_ptr_array_index(packet->proto, type) != NULL;
+}
+
+Address
+packet_src_address(const Packet *packet)
+{
+    Address address;
+
+    // Get IP address from IP parsed protocol
+    PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
+    g_return_val_if_fail(ip, address);
+    g_utf8_strncpy(address.ip, ip->saddr.ip, ADDRESSLEN);
+
+    // Get Port from UDP or TCP parsed protocol
+    if (packet_has_type(packet, PACKET_UDP)) {
+        PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+        g_return_val_if_fail(udp, address);
+        address.port = udp->sport;
+    } else {
+        PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
+        g_return_val_if_fail(tcp, address);
+        address.port = tcp->sport;
+    }
+
+    return address;
+}
+
+Address
+packet_dst_address(const Packet *packet)
+{
+    Address address;
+
+    // Get IP address from IP parsed protocol
+    PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
+    g_return_val_if_fail(ip, address);
+    g_utf8_strncpy(address.ip, ip->daddr.ip, ADDRESSLEN);
+
+    // Get Port from UDP or TCP parsed protocol
+    if (packet_has_type(packet, PACKET_UDP)) {
+        PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+        g_return_val_if_fail(udp, address);
+        address.port = udp->dport;
+    } else {
+        PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
+        g_return_val_if_fail(tcp, address);
+        address.port = tcp->dport;
+    }
+
+    return address;
 }
 
 const char *

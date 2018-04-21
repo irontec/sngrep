@@ -255,7 +255,7 @@ capture_output_pcap_close(CaptureOutput *output)
     g_return_if_fail(pcap != NULL);
     g_return_if_fail(pcap->dumper != NULL);
 
-    dump_close(pcap->dumper);
+    pcap_dump_close(pcap->dumper);
 }
 
 CaptureOutput *
@@ -289,12 +289,12 @@ capture_output_pcap(const gchar *filename, GError **error)
     CapturePcap *input_pcap = input->priv;
 
     // Create a new structure to handle this capture source
-    CapturePcap *pcap = malloc(sizeof(CapturePcap));
+    CapturePcap *pcap = g_malloc0(sizeof(CapturePcap));
 
     pcap->dumper = pcap_dump_open(input_pcap->handle, filename);
 
     // Create a new structure to handle this capture dumper
-    CaptureOutput *output = malloc(sizeof(CaptureOutput));
+    CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));
     output->priv   = pcap;
     output->write  = capture_output_pcap_write;
     output->close  = capture_output_pcap_close;
@@ -344,10 +344,10 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     parser->current = parser->dissector_tree;
 
     // Request initial dissector parsing
-    packet_parser_next_dissector(parser, packet, data);
+    data = packet_parser_next_dissector(parser, packet, data);
 
     // Free not parsed packet data
-    if (data) {
+    if (data != NULL) {
         g_byte_array_free(data, TRUE);
 
         g_free(frame->header);
@@ -359,12 +359,6 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     }
 }
 
-ghar *
-capture_pcap_error(pcap_t *handle)
-{
-    return pcap_geterr(handle);
-}
-
 gint
 capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
 {
@@ -372,43 +366,6 @@ capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
         packet_time(a),
         packet_time(b)
     );
-}
-
-pcap_dumper_t *
-dump_open(const char *dumpfile)
-{
-/** @todo
-    capture_info_t *capinfo;
-
-    if (g_sequence_get_length(capture_cfg.sources) == 1) {
-        capinfo = g_sequence_first(capture_cfg.sources);
-        return pcap_dump_open(capinfo->handle, dumpfile);
-    }
-*/
-    return NULL;
-}
-
-void
-dump_packet(pcap_dumper_t *pd, const packet_t *packet)
-{
-    if (!pd || !packet)
-        return;
-
-    GSequenceIter *it = g_sequence_get_begin_iter(packet->frames);
-    frame_t *frame;
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        frame = g_sequence_get(it);
-        pcap_dump((u_char*) pd, frame->header, frame->data);
-    }
-    pcap_dump_flush(pd);
-}
-
-void
-dump_close(pcap_dumper_t *pd)
-{
-    if (!pd)
-        return;
-    pcap_dump_close(pd);
 }
 
 const gchar*

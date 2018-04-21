@@ -182,44 +182,10 @@ void
 capture_pcap_parse_packet(u_char *input, const struct pcap_pkthdr *header, const guchar *content);
 
 /**
- * @brief Return the last error in the pcap handler
- * @param pcap handler
- * @return a string representing the last error
- */
-char *
-capture_pcap_error(pcap_t *handle);
-
-/**
  * @brief Sorter by time for captured packets
  */
 gint
 capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
-
-/**
- * @brief Return the last capture error
- */
-char *
-capture_last_error();
-
-/**
- * @brief Open a new dumper file for capture handler
- */
-pcap_dumper_t *
-dump_open(const char *dumpfile);
-
-/**
- * @brief Store a packet in dump file
- *
- * File must be previously opened with dump_open
- */
-void
-dump_packet(pcap_dumper_t *pd, const packet_t *packet);
-
-/**
- * @brief Close a dump file
- */
-void
-dump_close(pcap_dumper_t *pd);
 
 /**
  * @brief Get Input file from Offline mode

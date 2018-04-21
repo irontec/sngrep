@@ -165,11 +165,11 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // TCP packet data
     segment = g_malloc0(sizeof(PacketTcpSegment));
-    segment->data = data;
     segment->packet = packet;
     segment->src = ipdata->saddr;
     segment->dst = ipdata->daddr;
-
+    segment->data = g_byte_array_sized_new(data->len);
+    g_byte_array_append(segment->data, data->data, data->len);
 
 #ifdef __FAVOR_BSD
     segment->off = (tcp->th_off * 4);

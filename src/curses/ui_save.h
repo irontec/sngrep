@@ -208,13 +208,4 @@ save_error_message(ui_t *ui, const char *message);
 int
 save_to_file(ui_t *ui);
 
-/**
- * @brief Save one SIP message into open file
- *
- * @param f File opened with fopen
- * @param msg a SIP Message
- */
-void
-save_msg_txt(FILE *f, SipMsg *msg);
-
 #endif
