@@ -113,7 +113,7 @@ storage_capture_options()
 }
 
 gint
-storage_sorter(gconstpointer a, gconstpointer b, gpointer user_data G_GNUC_UNUSED)
+storage_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
 {
     const SipCall *calla = a, *callb = b;
     int cmp = call_attr_compare(calla, callb, calls.sort.by);

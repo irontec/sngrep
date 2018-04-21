@@ -103,7 +103,7 @@ packet_rtp_valid(GByteArray *data)
 }
 
 static GByteArray *
-packet_rtp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray *data)
+packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray *data)
 {
     // Not RTP
     if (!packet_rtp_valid(data)) {

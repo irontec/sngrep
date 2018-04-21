@@ -174,7 +174,7 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
 }
 
 static void
-packet_sdp_dissect_attribute(PacketSdpData *sdp G_GNUC_UNUSED, PacketSdpMedia *media, gchar *line)
+packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *media, gchar *line)
 {
     // a=<attribute>
     // a=<attribute>:<value>
@@ -200,7 +200,7 @@ packet_sdp_dissect_attribute(PacketSdpData *sdp G_GNUC_UNUSED, PacketSdpMedia *m
 }
 
 static GByteArray *
-packet_sdp_dissect(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray *data)
+packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray *data)
 {
     GString *payload = g_string_new_len((const gchar *) data->data, data->len);
 

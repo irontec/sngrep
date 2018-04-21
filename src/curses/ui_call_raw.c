@@ -93,7 +93,7 @@ call_raw_redraw(ui_t *ui)
     call_raw_info_t *info = call_raw_info(ui);
 
     // Check if any of the group has changed
-    return call_group_has_changed(info->group);
+    return call_group_changed(info->group);
 
 }
 
@@ -290,7 +290,7 @@ call_raw_handle_key(ui_t *ui, int key)
 }
 
 int
-call_raw_set_group(sip_call_group_t *group)
+call_raw_set_group(SipCallGroup *group)
 {
     ui_t *ui;
     call_raw_info_t *info;

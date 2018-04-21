@@ -46,7 +46,7 @@ typedef struct call_raw_info call_raw_info_t;
  */
 struct call_raw_info {
     //! Group of calls displayed on the panel (Call raw display)
-    sip_call_group_t *group;
+    SipCallGroup *group;
     //! Message to display on the panel (Single message raw display)
     SipMsg *msg;
     //! Last printed message on panel (Call raw display)
@@ -149,7 +149,7 @@ call_raw_handle_key(ui_t *ui, int key);
  * @param group Call Group pointer to be set in the internal info struct
  */
 int
-call_raw_set_group(sip_call_group_t *group);
+call_raw_set_group(SipCallGroup *group);
 
 /**
  * @brief Set the active msg of the panel

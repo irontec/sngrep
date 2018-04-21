@@ -141,7 +141,7 @@ struct call_flow_info {
     //! Window to diplay arrows
     WINDOW *flow_win;
     //! Group of calls displayed on the panel
-    sip_call_group_t *group;
+    SipCallGroup *group;
     //! List of arrows (call_flow_arrow_t *)
     GSequence *arrows;
     //! List of displayed arrows
@@ -411,7 +411,7 @@ call_flow_help(ui_t *ui);
  * @param group Call group pointer to be set in the internal info struct
  */
 int
-call_flow_set_group(sip_call_group_t *group);
+call_flow_set_group(SipCallGroup *group);
 
 /**
  * @brief Add a new column (if required)

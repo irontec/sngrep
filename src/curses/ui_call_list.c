@@ -113,7 +113,7 @@ call_list_create(ui_t *ui)
     info->scroll = ui_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
 
     // Group of selected calls
-    info->group = call_group_create();
+    info->group = call_group_new();
 
     // Get current call list
     info->cur_call = -1;
@@ -142,7 +142,7 @@ call_list_destroy(ui_t *ui)
         }
 
         // Deallocate group data
-        call_group_destroy(info->group);
+        call_group_free(info->group);
         g_sequence_free(info->dcalls);
 
         // Deallocate panel windows
@@ -565,7 +565,7 @@ call_list_handle_key(ui_t *ui, int key)
     int rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     call_list_info_t *info;
     ui_t *next_ui;
-    sip_call_group_t *group;
+    SipCallGroup *group;
     int action = -1;
     SipCall *call;
     SStorageSortOpts sort;

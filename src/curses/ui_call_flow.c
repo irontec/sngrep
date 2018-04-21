@@ -120,7 +120,7 @@ call_flow_destroy(ui_t *ui)
         delwin(info->flow_win);
         delwin(info->raw_win);
         // Delete displayed call group
-        call_group_destroy(info->group);
+        call_group_free(info->group);
         // Free panel info
         free(info);
     }
@@ -157,7 +157,7 @@ call_flow_redraw(ui_t *ui)
     call_flow_draw(ui);
 
     // Check if any of the group has changed
-    // return call_group_has_changed(info->group);
+    // return call_group_changed(info->group);
     return 0;
 }
 
@@ -1307,7 +1307,7 @@ call_flow_help(ui_t *ui)
 }
 
 int
-call_flow_set_group(sip_call_group_t *group)
+call_flow_set_group(SipCallGroup *group)
 {
     ui_t *ui;
     call_flow_info_t *info;

@@ -33,19 +33,16 @@
 #include "glib-utils.h"
 #include "group.h"
 
-sip_call_group_t *
-call_group_create()
+SipCallGroup *
+call_group_new()
 {
-    sip_call_group_t *group;
-    if (!(group = sng_malloc(sizeof(sip_call_group_t)))) {
-        return NULL;
-    }
+    SipCallGroup *group = g_malloc0(sizeof(SipCallGroup));
     group->calls = g_sequence_new(NULL);
     return group;
 }
 
 void
-call_group_destroy(sip_call_group_t *group)
+call_group_free(SipCallGroup *group)
 {
     // Remove all calls of the group
     SipCall *call;
@@ -56,10 +53,10 @@ call_group_destroy(sip_call_group_t *group)
     sng_free(group);
 }
 
-bool
-call_group_has_changed(sip_call_group_t *group)
+gboolean
+call_group_changed(SipCallGroup *group)
 {
-    bool changed = false;
+    gboolean  changed = FALSE;
 
     // Check if any of the group has changed
     // We check all the calls even after we found a changed one to reset all
@@ -68,7 +65,7 @@ call_group_has_changed(sip_call_group_t *group)
     while ((call = call_group_get_next(group, call))) {
         if (call_has_changed(call)) {
             call->changed = false;
-            changed = true;
+            changed = TRUE;
 
             // If this group is based on a Call-Id, check there are no new call related
             if (group->callid && !strcmp(group->callid, call->callid)) {
@@ -81,15 +78,15 @@ call_group_has_changed(sip_call_group_t *group)
     return changed;
 }
 
-sip_call_group_t *
-call_group_clone(sip_call_group_t *original)
+SipCallGroup *
+call_group_clone(SipCallGroup *original)
 {
-    sip_call_group_t *clone;
+    SipCallGroup *clone;
 
     if (!original)
         return NULL;
 
-    if (!(clone = sng_malloc(sizeof(sip_call_group_t)))) {
+    if (!(clone = sng_malloc(sizeof(SipCallGroup)))) {
         return NULL;
     }
 
@@ -98,7 +95,7 @@ call_group_clone(sip_call_group_t *original)
 }
 
 void
-call_group_add(sip_call_group_t *group, SipCall *call)
+call_group_add(SipCallGroup *group, SipCall *call)
 {
     if (!call) return;
 
@@ -109,7 +106,7 @@ call_group_add(sip_call_group_t *group, SipCall *call)
 }
 
 void
-call_group_add_calls(sip_call_group_t *group, GSequence *calls)
+call_group_add_calls(SipCallGroup *group, GSequence *calls)
 {
     GSequenceIter *it = g_sequence_get_begin_iter(calls);
 
@@ -124,31 +121,30 @@ call_group_add_calls(sip_call_group_t *group, GSequence *calls)
 }
 
 void
-call_group_del(sip_call_group_t *group, SipCall *call)
+call_group_del(SipCallGroup *group, SipCall *call)
 {
     if (!call) return;
     call->locked = false;
     g_sequence_remove_data(group->calls, call);
 }
 
-int
-call_group_exists(sip_call_group_t *group, SipCall *call)
+gboolean
+call_group_exists(SipCallGroup *group, SipCall *call)
 {
-    return (g_sequence_index(group->calls, call) >= 0) ? 1 : 0;
+    return (g_sequence_index(group->calls, call) >= 0) ? TRUE : FALSE;
 }
 
-int
-call_group_color(sip_call_group_t *group, SipCall *call)
+gint
+call_group_color(SipCallGroup *group, SipCall *call)
 {
     return (g_sequence_index(group->calls, call) % 7) + 1;
 }
 
 SipCall *
-call_group_get_next(sip_call_group_t *group, SipCall *call)
+call_group_get_next(SipCallGroup *group, SipCall *call)
 {
     SipMsg *next, *first;
     SipCall *c;
-    int i;
 
     if (!group)
         return NULL;
@@ -165,7 +161,7 @@ call_group_get_next(sip_call_group_t *group, SipCall *call)
     next = NULL;
 
     // Get the call with the next chronological message
-    for (i = 0; i < g_sequence_get_length(group->calls); i++) {
+    for (guint i = 0; i < g_sequence_get_length(group->calls); i++) {
         if ((c = g_sequence_nth(group->calls, i)) == call)
             continue;
 
@@ -183,21 +179,21 @@ call_group_get_next(sip_call_group_t *group, SipCall *call)
     return (next) ? next->call : NULL;
 }
 
-int
-call_group_count(sip_call_group_t *group)
+gint
+call_group_count(SipCallGroup *group)
 {
     return g_sequence_get_length(group->calls);
 }
 
-int
-call_group_msg_count(sip_call_group_t *group)
+gint
+call_group_msg_count(SipCallGroup *group)
 {
     SipCall *call;
     SipMsg *msg;
     GSequenceIter *msgs;
-    int msgcnt = 0, i;
+    gint msgcnt = 0;
 
-    for (i = 0; i < g_sequence_get_length(group->calls); i++) {
+    for (guint i = 0; i < g_sequence_get_length(group->calls); i++) {
         call = g_sequence_nth(group->calls, i);
         msgs = g_sequence_get_begin_iter(call->msgs);
         for (;!g_sequence_iter_is_end(msgs); msgs = g_sequence_iter_next(msgs)) {
@@ -211,11 +207,12 @@ call_group_msg_count(sip_call_group_t *group)
     return msgcnt;
 }
 
-int
-call_group_msg_number(sip_call_group_t *group, SipMsg *msg)
+gint
+call_group_msg_number(SipCallGroup *group, SipMsg *msg)
 {
-    int number = 0;
+    gint number = 0;
     SipMsg *cur = NULL;
+
     while ((cur = call_group_get_next_msg(group, cur))) {
         if (group->sdp_only && !msg_has_sdp(msg))
             continue;
@@ -224,11 +221,12 @@ call_group_msg_number(sip_call_group_t *group, SipMsg *msg)
             return number;
         number++;
     }
+
     return 0;
 }
 
 SipMsg *
-call_group_get_next_msg(sip_call_group_t *group, SipMsg *msg)
+call_group_get_next_msg(SipCallGroup *group, SipMsg *msg)
 {
     SipMsg *next;
     GSequence *messages = g_sequence_new(NULL);
@@ -256,7 +254,7 @@ call_group_get_next_msg(sip_call_group_t *group, SipMsg *msg)
 }
 
 SipMsg *
-call_group_get_prev_msg(sip_call_group_t *group, SipMsg *msg)
+call_group_get_prev_msg(SipCallGroup *group, SipMsg *msg)
 {
     SipMsg *prev;
     GSequence *messages = g_sequence_new(NULL);
@@ -286,15 +284,14 @@ call_group_get_prev_msg(sip_call_group_t *group, SipMsg *msg)
 }
 
 rtp_stream_t *
-call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream)
+call_group_get_next_stream(SipCallGroup *group, rtp_stream_t *stream)
 {
     rtp_stream_t *next = NULL;
     rtp_stream_t *cand;
     SipCall *call;
     GSequenceIter *streams;
-    int i;
 
-    for (i = 0; i < g_sequence_get_length(group->calls); i++) {
+    for (guint i = 0; i < g_sequence_get_length(group->calls); i++) {
         call = g_sequence_nth(group->calls, i);
         streams = g_sequence_get_begin_iter(call->streams);
         for (;!g_sequence_iter_is_end(streams); streams = g_sequence_iter_next(streams)) {
@@ -315,7 +312,7 @@ call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream)
 }
 
 gint
-call_group_msg_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
+call_group_msg_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
 {
     return timeval_is_older(
         msg_get_time(a),

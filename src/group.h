@@ -37,7 +37,7 @@
 #include "storage.h"
 
 //! Shorter declaration of sip_call_group structure
-typedef struct sip_call_group sip_call_group_t;
+typedef struct _SipCallGroup SipCallGroup;
 
 /**
  * @brief Contains a list of calls
@@ -46,15 +46,15 @@ typedef struct sip_call_group sip_call_group_t;
  * same call flow. Instead of displaying a call flow, we will display
  * a calls group flow.
  */
-struct sip_call_group {
+struct _SipCallGroup {
     //! For extended display, main call-id
-    char *callid;
+    gchar *callid;
     //! Calls array in the group
     GSequence *calls;
     //! Color of the last printed call in mode Color-by-Call
-    int color;
+    gint color;
     //! Only consider SDP messages from Calls
-    int sdp_only;
+    gint sdp_only;
 };
 
 /**
@@ -64,8 +64,8 @@ struct sip_call_group {
  *
  * @return Pointer to a new group
  */
-sip_call_group_t *
-call_group_create();
+SipCallGroup *
+call_group_new();
 
 /**
  * @brief Deallocate memory of an existing group
@@ -73,7 +73,7 @@ call_group_create();
  * @param Pointer to an existing group
  */
 void
-call_group_destroy(sip_call_group_t *group);
+call_group_free(SipCallGroup *group);
 
 /**
  * @brief Check if any of the calls of the group has changed
@@ -84,8 +84,8 @@ call_group_destroy(sip_call_group_t *group);
  * @param ggroup Call group structure pointer
  * @return true if any of the calls of the group has changed, false otherwise
  */
-bool
-call_group_has_changed(sip_call_group_t *group);
+gboolean
+call_group_changed(SipCallGroup *group);
 
 /**
  * @brief Clone an existing call group
@@ -95,8 +95,8 @@ call_group_has_changed(sip_call_group_t *group);
  * original and clone groups.
  *
  */
-sip_call_group_t *
-call_group_clone(sip_call_group_t *original);
+SipCallGroup *
+call_group_clone(SipCallGroup *original);
 
 /**
  * @brief Add a Call to the group
@@ -105,7 +105,7 @@ call_group_clone(sip_call_group_t *original);
  * @param call Pointer to an existing call
  */
 void
-call_group_add(sip_call_group_t *group, SipCall *call);
+call_group_add(SipCallGroup *group, SipCall *call);
 
 /**
  * @brief Add several Calls to the group
@@ -114,7 +114,7 @@ call_group_add(sip_call_group_t *group, SipCall *call);
  * @param calls Pointer to a vector with calls
  */
 void
-call_group_add_calls(sip_call_group_t *group, GSequence *calls);
+call_group_add_calls(SipCallGroup *group, GSequence *calls);
 
 /**
  * @brief Remove a call from the group
@@ -123,17 +123,17 @@ call_group_add_calls(sip_call_group_t *group, GSequence *calls);
  * @param call Pointer to an existing call
  */
 void
-call_group_del(sip_call_group_t *group, SipCall *call);
+call_group_del(SipCallGroup *group, SipCall *call);
 
 /**
  * @brief Check if a call is in the group
  *
  * @param group Pointer to an existing group
  * @param call Pointer to an existing call
- * @return 1 if the call is in the group, 0 otherwise
+ * @return TRUE if the call is in the group, FALSE otherwise
  */
-int
-call_group_exists(sip_call_group_t *group, SipCall *call);
+gboolean
+call_group_exists(SipCallGroup *group, SipCall *call);
 
 /**
  * @brief Return the color pair number of a call
@@ -146,8 +146,8 @@ call_group_exists(sip_call_group_t *group, SipCall *call);
  * @param call Pointer to an existing call
  * @return Color pair number
  */
-int
-call_group_color(sip_call_group_t *group, SipCall *call);
+gint
+call_group_color(SipCallGroup *group, SipCall *call);
 
 /**
  * @brief Return the next call in the group
@@ -161,7 +161,7 @@ call_group_color(sip_call_group_t *group, SipCall *call);
  * @return Next call of the group, or NULL
  */
 SipCall *
-call_group_get_next(sip_call_group_t *group, SipCall *call);
+call_group_get_next(SipCallGroup *group, SipCall *call);
 
 /**
  * @brief Return number of calls in a group
@@ -169,8 +169,8 @@ call_group_get_next(sip_call_group_t *group, SipCall *call);
  * @param group Pointer to an existing group
  * @return How many calls the group has
  */
-int
-call_group_count(sip_call_group_t *group);
+gint
+call_group_count(SipCallGroup *group);
 
 /**
  * @brief Return message count in the group
@@ -180,8 +180,8 @@ call_group_count(sip_call_group_t *group);
  * @param group Pointer to an existing group
  * @return How many messages have the calls in the group
  */
-int
-call_group_msg_count(sip_call_group_t *group);
+gint
+call_group_msg_count(SipCallGroup *group);
 
 /**
  * @brief Return Message position in the group
@@ -193,8 +193,8 @@ call_group_msg_count(sip_call_group_t *group);
  * @param msg A sip message from a call in the group
  * @return The position of given message in the group
  */
-int
-call_group_msg_number(sip_call_group_t *group, SipMsg *msg);
+gint
+call_group_msg_number(SipCallGroup *group, SipMsg *msg);
 
 /**
  * @brief Finds the next msg in a call group.
@@ -207,7 +207,7 @@ call_group_msg_number(sip_call_group_t *group, SipMsg *msg);
  * @return Next chronological message in the group or NULL
  */
 SipMsg *
-call_group_get_next_msg(sip_call_group_t *group, SipMsg *msg);
+call_group_get_next_msg(SipCallGroup *group, SipMsg *msg);
 
 /**
  * @brief Find the previous message in a call group
@@ -217,7 +217,7 @@ call_group_get_next_msg(sip_call_group_t *group, SipMsg *msg);
  * @return Previous chronological message in the group or NULL
  */
 SipMsg *
-call_group_get_prev_msg(sip_call_group_t *group, SipMsg *msg);
+call_group_get_prev_msg(SipCallGroup *group, SipMsg *msg);
 
 /**
  * @brief Find the next stream in a call group
@@ -227,7 +227,7 @@ call_group_get_prev_msg(sip_call_group_t *group, SipMsg *msg);
  * @return next chronological stream in the group or NULL
  */
 rtp_stream_t *
-call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream);
+call_group_get_next_stream(SipCallGroup *group, rtp_stream_t *stream);
 
 /**
  * @brief Sort messages in a group by message time

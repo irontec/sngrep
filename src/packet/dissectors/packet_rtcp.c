@@ -60,7 +60,7 @@ packet_rtcp_valid(GByteArray *data)
 }
 
 static GByteArray *
-packet_rtcp_parse(PacketParser *parser G_GNUC_UNUSED, Packet *packet, GByteArray *data)
+packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray *data)
 {
     struct rtcp_hdr_generic hdr;
     struct rtcp_hdr_sr hdr_sr;

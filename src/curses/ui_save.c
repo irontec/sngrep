@@ -387,7 +387,7 @@ save_handle_key(ui_t *ui, int key)
 }
 
 void
-save_set_group(ui_t *ui, sip_call_group_t *group)
+save_set_group(ui_t *ui, SipCallGroup *group)
 {
     // Get panel information
     save_info_t *info = save_info(ui);
