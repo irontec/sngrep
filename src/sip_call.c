@@ -39,11 +39,8 @@
 SipCall *
 call_create(char *callid, char *xcallid)
 {
-    SipCall *call;
-
     // Initialize a new call structure
-    if (!(call = sng_malloc(sizeof(SipCall))))
-        return NULL;
+    SipCall *call = g_malloc0(sizeof(SipCall));
 
     // Create a vector to store call messages
     call->msgs = g_sequence_new(msg_destroy);
@@ -52,7 +49,7 @@ call_create(char *callid, char *xcallid)
     call->rtp_packets = g_sequence_new((GDestroyNotify) packet_free);
 
     // Create an empty vector to strore stream data
-    call->streams = g_sequence_new(sng_free);
+    call->streams = g_sequence_new(g_free);
 
     // Create an empty vector to store x-calls
     call->xcalls = g_sequence_new(NULL);
@@ -61,8 +58,8 @@ call_create(char *callid, char *xcallid)
     call->filtered = -1;
 
     // Set message callid
-    call->callid = strdup(callid);
-    call->xcallid = (xcallid) ? strdup(xcallid) : strdup("");
+    call->callid = g_strdup(callid);
+    call->xcallid = (xcallid) ? g_strdup(xcallid) : g_strdup("");
 
     return call;
 }
@@ -79,11 +76,12 @@ call_destroy(gpointer item)
     g_sequence_free(call->rtp_packets);
     // Remove all xcalls
     g_sequence_free(call->xcalls);
+
     // Deallocate call memory
-    sng_free(call->callid);
-    sng_free(call->xcallid);
-    sng_free(call->reasontxt);
-    sng_free(call);
+    g_free(call->callid);
+    g_free(call->xcallid);
+    g_free(call->reasontxt);
+    g_free(call);
 }
 
 void

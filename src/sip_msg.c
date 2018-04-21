@@ -39,9 +39,7 @@
 SipMsg *
 msg_create()
 {
-    SipMsg *msg;
-    if (!(msg = sng_malloc(sizeof(SipMsg))))
-        return NULL;
+    SipMsg *msg = g_malloc0(sizeof(SipMsg));
     msg->medias = g_sequence_new(NULL);
     return msg;
 }
@@ -58,10 +56,10 @@ msg_destroy(gpointer item)
     // Free message packets
     packet_free(msg->packet);
     // Free all memory
-    sng_free(msg->resp_str);
-    sng_free(msg->sip_from);
-    sng_free(msg->sip_to);
-    sng_free(msg);
+    g_free(msg->resp_str);
+    g_free(msg->sip_from);
+    g_free(msg->sip_to);
+    g_free(msg);
 }
 
 SipCall *

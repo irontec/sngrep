@@ -25,6 +25,12 @@
  *
  * @brief Source of functions defined in ui_settings.h
  */
+#include "config.h"
+#include <glib/gstdio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -104,7 +110,7 @@ settings_create(ui_t *ui)
     ui_panel_create(ui, 24, 70);
 
     // Initialize Filter panel specific data
-    info = sng_malloc(sizeof(settings_info_t));
+    info = g_malloc0(sizeof(settings_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);
@@ -434,7 +440,7 @@ ui_settings_update_settings(ui_t *ui)
             // Get field value.
             memset(field_value, 0, sizeof(field_value));
             strcpy(field_value, field_buffer(info->fields[i], 0));
-            strtrim(field_value);
+            g_strstrip(field_value);
             // Change setting value
             setting_set_value(entry->setting_id, field_value);
         }
@@ -446,89 +452,80 @@ ui_settings_update_settings(ui_t *ui)
 void
 ui_settings_save(ui_t *ui)
 {
-    int i;
-    FILE *fi, *fo;
-    char line[1024];
-    char *rcfile;
-    char *userconf = NULL;
-    char *tmpfile  = NULL;
-    char field_value[180];
-    settings_entry_t *entry;
-
     // Get panel information
     settings_info_t *info = settings_info(ui);
 
-    // Use current $SNGREPRC or $HOME/.sngreprc file
-    if ((rcfile = getenv("SNGREPRC"))) {
-        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-            if ((tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-                sprintf(userconf, "%s", rcfile);
-                sprintf(tmpfile, "%s.old", rcfile);
-            } else {
-                sng_free(userconf);
-                return;
-            }
-        } else {
-            return;
-        }
-    } else if ((rcfile = getenv("HOME"))) {
-        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-            if ((tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-                sprintf(userconf, "%s/.sngreprc", rcfile);
-                sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
-            } else {
-                sng_free(userconf);
-                return;
-            }
-        } else {
-            return;
-        }
+    g_autoptr(GString) userconf = g_string_new(NULL);
+    g_autoptr(GString) tmpfile  = g_string_new(NULL);
+
+    // Use $SNGREPRC/.sngreprc file
+    const gchar *rcfile = g_getenv("SNGREPRC");
+    if (rcfile != NULL) {
+        g_string_append(userconf, rcfile);
     } else {
+        // Or Use $HOME/.sngreprc file
+        rcfile = g_getenv("HOME");
+        if (rcfile != NULL) {
+            g_string_append_printf(userconf, "%s/.sngreprc", rcfile);
+        }
+    }
+
+    // No user configuration found!
+    if (userconf->len == 0) {
         dialog_run("Unable to save configuration. User has no $SNGREPRC or $HOME dir.");
         return;
     }
 
+    // Path for backup file
+    g_string_append_printf(tmpfile, "%s.old", userconf->str);
+
     // Remove old config file
-    unlink(tmpfile);
+    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
+        g_unlink(tmpfile->str);
+    }
 
     // Move user conf file to temporal file
-    rename(userconf, tmpfile);
+    g_rename(userconf->str, tmpfile->str);
 
     // Create a new user conf file
-    if (!(fo = fopen(userconf, "w"))) {
-        sng_free(userconf);
-        sng_free(tmpfile);
+    FILE *fo = g_fopen(userconf->str, "w");
+    if (fo == NULL) {
+        dialog_run("Unable to open %s: %s", userconf->str, g_strerror(errno));
         return;
     }
 
-    // Read all lines of old sngreprc file
-    if ((fi = fopen(tmpfile, "r"))) {
-        // Read all configuration file
-        while (fgets(line, 1024, fi) != NULL) {
-            // Ignore lines starting with set (but keep set column ones)
-            if (strncmp(line, "set ", 4) || !strncmp(line, "set cl.column", 13)) {
-                // Put everyting in new user conf file
-                fputs(line, fo);
+    // Check if there was configuration already
+    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
+        // Get old configuration contents
+        gchar *usercontents = NULL;
+        g_file_get_contents(tmpfile->str, &usercontents, NULL, NULL);
+
+        // Separate configuration in lines
+        gchar **contents = g_strsplit(usercontents, "\n", -1);
+
+        // Put exiting config in the new file
+        for (guint i = 0; i < g_strv_length(contents); i++) {
+            if (g_ascii_strncasecmp(contents[i], "set cl.column", 13) == 0) {
+                g_fprintf(fo, "%s\n", contents[i]);
             }
         }
-        fclose(fi);
+
+        g_strfreev(contents);
+        g_free(usercontents);
     }
 
-    for (i=0; i < FLD_SETTINGS_COUNT; i++) {
-        if ((entry = ui_settings_is_entry(info->fields[i]))) {
-            // Get field value.
-            memset(field_value, 0, sizeof(field_value));
-            strcpy(field_value, field_buffer(info->fields[i], 0));
-            strtrim(field_value);
-
+    for (guint i = 0; i < FLD_SETTINGS_COUNT; i++) {
+        settings_entry_t *entry = ui_settings_is_entry(info->fields[i]);
+        if (entry != NULL) {
             // Change setting value
-            fprintf(fo, "set %s %s\n", setting_name(entry->setting_id), field_value);
+            gchar *field_value = g_strchomp(g_strdup(field_buffer(info->fields[i], 0)));
+            g_fprintf(fo, "set %s %s\n", setting_name(entry->setting_id), field_value);
+            g_free(field_value);
+
         }
     }
+
     fclose(fo);
 
-    dialog_run("Settings successfully saved to %s", userconf);
-
-    sng_free(userconf);
-    sng_free(tmpfile);
+    dialog_run("Settings successfully saved to %s", userconf->str);
 }

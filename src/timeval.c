@@ -20,73 +20,47 @@
  **
  ****************************************************************************/
 /**
- * @file util.c
+ * @file timeval.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in util.h
  *
  */
-#include <ctype.h>
 #include "config.h"
-#include "util.h"
+#include <glib.h>
+#include <ctype.h>
+#include <glib/gprintf.h>
+#include <stdlib.h>
+#include "timeval.h"
 
-
-void *
-sng_malloc(size_t size)
-{
-    void *data;
-
-    // Check memory allocation size
-    if (size <= 0 || size > MALLOC_MAX_SIZE)
-        return NULL;
-
-    // Allocate memory
-    if (!(data = malloc(size)))
-        return NULL;
-
-    // Initialize allocated memory
-    memset(data, 0, size);
-    return data;
-}
-
-void
-sng_free(void *ptr)
-{
-    if (ptr)
-        free(ptr);
-}
-
-char *
-sng_basename(const char *name)
-{
-    const char *base = name;
-
-    while (*name)
-    {
-        if (*name++ == '/') {
-            base = name;
-        }
-    }
-    return (char *) base;
-}
-
-int
+gint
 timeval_is_older(GTimeVal t1, GTimeVal t2)
 {
-    long long int t1sec, t2sec;
-    t1sec = t1.tv_sec;
-    t1sec = t1sec * 1000000;
-    t2sec = t2.tv_sec;
-    t2sec = t2sec * 1000000;
-    return ((t2sec + t2.tv_usec) - (t1sec + t1.tv_usec) <= 0);
+    if (t1.tv_sec > t2.tv_sec) {
+        return -1;
+    }
+
+    if (t1.tv_sec < t2.tv_sec) {
+        return 1;
+    }
+
+    if(t1.tv_usec == t2.tv_usec) {
+        return 0;
+    }
+
+    if (t1.tv_usec < t2.tv_usec) {
+        return -1;
+    }
+
+    return 1;
 }
 
-const char *
-timeval_to_date(GTimeVal time, char *out)
+const gchar *
+timeval_to_date(GTimeVal time, gchar *out)
 {
-    time_t t = (time_t) time.tv_sec;
-    struct tm *timestamp = localtime(&t);
-    strftime(out, 11, "%Y/%m/%d", timestamp);
+    GDate date;
+    g_date_set_time_val(&date, &time);
+    g_date_strftime(out, 11, "%Y/%m/%d", &date);
     return out;
 }
 
@@ -94,18 +68,19 @@ timeval_to_date(GTimeVal time, char *out)
 const char *
 timeval_to_time(GTimeVal time, char *out)
 {
-    time_t t = (time_t) time.tv_sec;
-    struct tm *timestamp = localtime(&t);
-    strftime(out, 19, "%H:%M:%S", timestamp);
-    sprintf(out + 8, ".%06d", (int) time.tv_usec);
+    GDate date;
+    gchar date_out[20];
+    g_date_set_time_val(&date, &time);
+    g_date_strftime(date_out, 19, "%H:%M:%S", &date);
+    g_sprintf(out, "%s.%06d", date_out, (guint) time.tv_usec);
     return out;
 }
 
 const char *
 timeval_to_duration(GTimeVal start, GTimeVal end, char *out)
 {
-    int seconds;
-    char duration[20];
+    gint seconds;
+    gchar duration[20];
 
     if (!out || !start.tv_sec || !end.tv_sec)
         return NULL;
@@ -113,17 +88,17 @@ timeval_to_duration(GTimeVal start, GTimeVal end, char *out)
     // Differnce in secons
     seconds = end.tv_sec - start.tv_sec;
     // Set Human readable format
-    sprintf(duration, "%d:%02d", seconds / 60, seconds % 60);
-    sprintf(out, "%7s", duration);
+    g_sprintf(duration, "%d:%02d", seconds / 60, seconds % 60);
+    g_sprintf(out, "%7s", duration);
     return out;
 }
 
-const char *
-timeval_to_delta(GTimeVal start, GTimeVal end, char *out)
+const gchar *
+timeval_to_delta(GTimeVal start, GTimeVal end, gchar *out)
 {
-    long diff;
-    int nsec, nusec;
-    int sign;
+    glong diff;
+    gint nsec, nusec;
+    gint sign;
 
     if (!out || !start.tv_sec || !end.tv_sec)
         return NULL;
@@ -136,20 +111,6 @@ timeval_to_delta(GTimeVal start, GTimeVal end, char *out)
 
     sign = (diff >= 0) ? '+' : '-';
 
-    sprintf(out, "%c%d.%06d", sign, abs(nsec), nusec);
+    g_sprintf(out, "%c%d.%06d", sign, abs(nsec), nusec);
     return out;
-}
-
-char *
-strtrim(char *str)
-{
-    int i;
-
-    if (!str || !strlen(str))
-        return str;
-
-    for (i = strlen(str) - 1; i >= 0 && isspace(str[i]); i--)
-        str[i] = 0;
-
-    return str;
 }

@@ -27,9 +27,12 @@
  * @brief Source of functions defined in ui_column_select.h
  *
  */
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "config.h"
+#include <glib.h>
+#include <glib/gstdio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include "ui_manager.h"
 #include "ui_call_list.h"
@@ -57,7 +60,7 @@ column_select_create(ui_t *ui)
     ui_panel_create(ui, 20, 60);
 
     // Initialize Filter panel specific data
-    info = sng_malloc(sizeof(column_select_info_t));
+    info = g_malloc0(sizeof(column_select_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);
@@ -159,7 +162,7 @@ column_select_destroy(ui_t *ui)
     for (i = 0; i < FLD_COLUMNS_COUNT; i++)
         free_field(info->fields[i]);
 
-    sng_free(info);
+    g_free(info);
 
     // Remove panel window and custom info
     ui_panel_destroy(ui);
@@ -273,7 +276,7 @@ column_select_handle_key_form(ui_t *ui, int key)
     // Get current field value.
     memset(field_value, 0, sizeof(field_value));
     strcpy(field_value, field_buffer(current_field(info->form), 0));
-    strtrim(field_value);
+    g_strstrip(field_value);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -369,91 +372,79 @@ column_select_update_columns(ui_t *ui)
 void
 column_select_save_columns(ui_t *ui)
 {
-    int column;
-    FILE *fi, *fo;
-    char columnopt[128];
-    char line[1024];
-    char *rcfile;
-    char *userconf = NULL;
-    char *tmpfile  = NULL;
+    g_autoptr(GString) userconf = g_string_new(NULL);
+    g_autoptr(GString) tmpfile  = g_string_new(NULL);
 
-    // Use current $SNGREPRC or $HOME/.sngreprc file
-    if ((rcfile = getenv("SNGREPRC"))) {
-        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-            if ((tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-                sprintf(userconf, "%s", rcfile);
-                sprintf(tmpfile, "%s.old", rcfile);
-            } else {
-                sng_free(userconf);
-                return;
-            }
-        } else {
-            return;
-        }
-    } else if ((rcfile = getenv("HOME"))) {
-        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-            if ((tmpfile = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-                sprintf(userconf, "%s/.sngreprc", rcfile);
-                sprintf(tmpfile, "%s/.sngreprc.old", rcfile);
-            } else {
-                sng_free(userconf);
-                return;
-            }
-        } else {
-            return;
-        }
+    // Use $SNGREPRC/.sngreprc file
+    const gchar *rcfile = g_getenv("SNGREPRC");
+    if (rcfile != NULL) {
+        g_string_append(userconf, rcfile);
     } else {
-        return;
+        // Or Use $HOME/.sngreprc file
+        rcfile = g_getenv("HOME");
+        if (rcfile != NULL) {
+            g_string_append_printf(userconf, "%s/.sngreprc", rcfile);
+        }
     }
+
+    // No user configuration found!
+    if (userconf->len == 0) return;
+
+    // Path for backup file
+    g_string_append_printf(tmpfile, "%s.old", userconf->str);
 
     // Remove old config file
-    unlink(tmpfile);
+    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
+        g_unlink(tmpfile->str);
+    }
 
     // Move user conf file to temporal file
-    rename(userconf, tmpfile);
+    g_rename(userconf->str, tmpfile->str);
 
     // Create a new user conf file
-    if (!(fo = fopen(userconf, "w"))) {
-        dialog_run("Unable to open %s: %s", userconf, strerror(errno));
-        sng_free(userconf);
-        sng_free(tmpfile);
+    FILE *fo = g_fopen(userconf->str, "w");
+    if (fo == NULL) {
+        dialog_run("Unable to open %s: %s", userconf->str, g_strerror(errno));
         return;
     }
 
-    // Read all lines of old sngreprc file
-    if ((fi = fopen(tmpfile, "r"))) {
+    // Check if there was configuration already
+    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
+        // Get old configuration contents
+        gchar *usercontents = NULL;
+        g_file_get_contents(tmpfile->str, &usercontents, NULL, NULL);
 
-        // Read all configuration file
-        while (fgets(line, 1024, fi) != NULL) {
-            // Ignore lines starting with set (but keep settings)
-            if (strncmp(line, "set ", 4) || strncmp(line, "set cl.column", 13)) {
-                // Put everyting in new user conf file
-                fputs(line, fo);
+        // Separate configuration in lines
+        gchar **contents = g_strsplit(usercontents, "\n", -1);
+
+        // Put exiting config in the new file
+        for (guint i = 0; i < g_strv_length(contents); i++) {
+            if (g_ascii_strncasecmp(contents[i], "set cl.column", 13) != 0) {
+                g_fprintf(fo, "%s\n", contents[i]);
             }
         }
-        fclose(fi);
+
+        g_strfreev(contents);
+        g_free(usercontents);
     }
 
     // Get panel information
     column_select_info_t *info = column_select_info(ui);
 
     // Add all selected columns
-    for (column = 0; column < item_count(info->menu); column++) {
+    for (guint i = 0; i < item_count(info->menu); i++) {
         // If column is active
-        if (!strncmp(item_name(info->items[column]), "[ ]", 3))
+        if (!strncmp(item_name(info->items[i]), "[ ]", 3))
             continue;
 
         // Add the columns settings
-        sprintf(columnopt, "set cl.column%d %s\n", column, (const char*) item_userptr(info->items[column]));
-        fputs(columnopt, fo);
+        g_fprintf(fo, "set cl.column%d %s\n", i, (const char*) item_userptr(info->items[i]));
     }
+
     fclose(fo);
 
     // Show a information dialog
-    dialog_run("Column layout successfully saved to %s", userconf);
-
-    sng_free(userconf);
-    sng_free(tmpfile);
+    dialog_run("Column layout successfully saved to %s", userconf->str);
 }
 
 

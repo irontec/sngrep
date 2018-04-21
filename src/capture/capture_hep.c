@@ -46,7 +46,8 @@
 #include <errno.h>
 #include <netdb.h>
 #include <unistd.h>
-#include "util.h"
+#include <string.h>
+#include "timeval.h"
 #include "setting.h"
 #include "glib-utils.h"
 #include "packet/dissectors/packet_ip.h"
@@ -183,15 +184,12 @@ static void
 capture_input_hep_receive_v2(CaptureInput *input)
 {
     uint8_t family, proto;
-    unsigned char *payload = 0;
     uint32_t pos;
     char buffer[MAX_HEP_BUFSIZE] ;
     //! Source Address
     Address src;
     //! Destination address
     Address dst;
-    //! Packet header
-    struct pcap_pkthdr header;
     //! HEP client data
     struct sockaddr hep_client;
     socklen_t hep_client_len;
@@ -248,17 +246,19 @@ capture_input_hep_receive_v2(CaptureInput *input)
     /* TIMESTAMP*/
     memcpy(&hep_time, (void*) buffer + pos, sizeof(struct _CaptureHepTimeHdr));
     pos += sizeof(struct _CaptureHepTimeHdr);
-    header.ts.tv_sec    = hep_time.tv_sec;
-    header.ts.tv_usec   = hep_time.tv_usec;
+
+    // Create Packet frame data
+    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
+    frame->caplen = ntohs(hdr.hp_l) - pos;
+    frame->len = frame->caplen;
+    frame->ts.tv_sec = hep_time.tv_sec;
+    frame->ts.tv_usec = hep_time.tv_usec;
 
     /* Protocol TYPE */
     /* Capture ID */
 
-    // Calculate payload size (Total size - headers size)
-    header.caplen = header.len = ntohs(hdr.hp_l) - pos;
-
     // Copy packet payload
-    GByteArray *data = g_byte_array_new_take((guint8 *)(buffer + pos), header.caplen);
+    GByteArray *data = g_byte_array_new_take((guint8 *)(buffer + pos), frame->caplen);
 
     // Create a new packet
     Packet *packet = packet_new();
@@ -277,13 +277,7 @@ capture_input_hep_receive_v2(CaptureInput *input)
     udp->dport = dst.port;
     g_ptr_array_insert(packet->proto, PACKET_UDP, udp);
 
-    // Create Packet frame data
-    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
-    frame->caplen = header.caplen;
-    frame->len = header.len;
-    frame->ts.tv_sec = header.ts.tv_sec;
-    frame->ts.tv_usec = header.ts.tv_usec;
-    frame->data = g_byte_array_new();
+     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
 
@@ -305,7 +299,6 @@ capture_input_hep_receive_v3(CaptureInput *input)
     uint8_t family, proto;
     char password[100];
     size_t password_len, uuid_len;
-    unsigned char *payload = 0;
     uint32_t pos;
     char buffer[MAX_HEP_BUFSIZE] ;
     //! Source and Destination Address
@@ -313,8 +306,6 @@ capture_input_hep_receive_v3(CaptureInput *input)
     //! HEP client data
     struct sockaddr hep_client;
     socklen_t hep_client_len;
-    //! Packet header
-    struct pcap_pkthdr header;
     CaptureHep *hep = input->priv;
 
     /* Receive HEP generic header */
@@ -367,8 +358,10 @@ capture_input_hep_receive_v3(CaptureInput *input)
     /* DST PORT */
     dst.port = ntohs(hg.dst_port.data);
     /* TIMESTAMP*/
-    header.ts.tv_sec = ntohl(hg.time_sec.data);
-    header.ts.tv_usec = ntohl(hg.time_usec.data);
+    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
+    frame->ts.tv_sec =  ntohl(hg.time_sec.data);
+    frame->ts.tv_usec = ntohl(hg.time_usec.data);
+
     /* Protocol TYPE */
     /* Capture ID */
 
@@ -399,10 +392,10 @@ capture_input_hep_receive_v3(CaptureInput *input)
     pos += sizeof(payload_chunk);
 
     // Calculate payload size
-    header.caplen = header.len = ntohs(payload_chunk.length) - sizeof(payload_chunk);
+    frame->caplen = frame->len = ntohs(payload_chunk.length) - sizeof(payload_chunk);
 
     // Copy packet payload
-    GByteArray *data = g_byte_array_new_take((guint8 *)(buffer + pos), header.caplen);
+    GByteArray *data = g_byte_array_new_take((guint8 *)(buffer + pos), frame->caplen);
 
     // Create a new packet
     Packet *packet = packet_new();
@@ -422,11 +415,6 @@ capture_input_hep_receive_v3(CaptureInput *input)
     g_ptr_array_insert(packet->proto, PACKET_UDP, udp);
 
     // Create Packet frame data
-    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
-    frame->caplen = header.caplen;
-    frame->len = header.len;
-    frame->ts.tv_sec = header.ts.tv_sec;
-    frame->ts.tv_usec = header.ts.tv_usec;
     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
@@ -691,7 +679,7 @@ capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
     CaptureHep *hep = output->priv;
 
     /* header set "HEP3" */
-    struct CaptureHepGeneric *hg = sng_malloc(sizeof(struct CaptureHepGeneric));
+    struct CaptureHepGeneric *hg = g_malloc0(sizeof(struct CaptureHepGeneric));
     memcpy(hg->header.id, "\x48\x45\x50\x33", 4);
 
     /* IP dissectors */
@@ -799,10 +787,7 @@ capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
     /* total */
     hg->header.length = htons(tlen);
 
-    if (!(buffer = sng_malloc(tlen))) {
-        sng_free(hg);
-        return;
-    }
+    buffer = g_malloc0(tlen);
     memcpy(buffer, hg, sizeof(struct CaptureHepGeneric));
     buflen = sizeof(struct CaptureHepGeneric);
 
@@ -852,8 +837,8 @@ capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
     }
 
     /* FREE */
-    sng_free(buffer);
-    sng_free(hg);
+    g_free(buffer);
+    g_free(hg);
 }
 
 void

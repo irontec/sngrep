@@ -36,7 +36,7 @@
 #include "ui_call_raw.h"
 #include "ui_msg_diff.h"
 #include "ui_save.h"
-#include "util.h"
+#include "timeval.h"
 #include "glib-utils.h"
 #include "option.h"
 
@@ -98,8 +98,8 @@ call_flow_create(ui_t *ui)
     info->scroll = ui_set_scrollbar(info->flow_win, SB_VERTICAL, SB_LEFT);
 
     // Create vectors for columns and flow arrows
-    info->columns = g_sequence_new(sng_free);
-    info->arrows = g_sequence_new(sng_free);
+    info->columns = g_sequence_new(g_free);
+    info->arrows = g_sequence_new(g_free);
 
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);

@@ -29,6 +29,7 @@
 #define __SNGREP_CAPTURE_TXT_H
 
 #include <glib.h>
+#include <bits/types/FILE.h>
 #include "capture/capture.h"
 
 //! Error reporting

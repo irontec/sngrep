@@ -31,7 +31,8 @@
 #include "config.h"
 #include <glib.h>
 #include <errno.h>
-#include "util.h"
+#include <stdio.h>
+#include "timeval.h"
 #include "packet/packet.h"
 #include "packet/dissectors/packet_sip.h"
 #include "capture/capture_txt.h"

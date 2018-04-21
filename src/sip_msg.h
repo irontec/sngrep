@@ -31,8 +31,9 @@
 
 #include <stdarg.h>
 #include <glib.h>
+#include "packet/packet.h"
 #include "sip_attr.h"
-#include "util.h"
+#include "timeval.h"
 
 //! Get IP Address info from message's packet
 #define msg_src_address(msg)   (packet_src_address(msg->packet))

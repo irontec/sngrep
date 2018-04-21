@@ -66,7 +66,7 @@ save_create(ui_t *ui)
     ui_panel_create(ui, 15, 68);
 
     // Initialize save panel specific data
-    info = sng_malloc(sizeof(save_info_t));
+    info = g_malloc0(sizeof(save_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);
@@ -191,7 +191,7 @@ save_destroy(ui_t *ui)
             free_field(info->fields[i]);
 
         // Remove panel window and custom info
-        sng_free(info);
+        g_free(info);
     }
 
     // Delete panel
@@ -236,7 +236,7 @@ save_draw(ui_t *ui)
     // Get filename field value.
     memset(field_value, 0, sizeof(field_value));
     strcpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0));
-    strtrim(field_value);
+    g_strstrip(field_value);
 
     mvwprintw(ui->win, 4, 60, "     ");
     if (strstr(field_value, ".pcap")) {
@@ -430,14 +430,14 @@ save_to_file(ui_t *ui)
     // Get current path field value.
     memset(savepath, 0, sizeof(savepath));
     strcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0));
-    strtrim(savepath);
+    g_strstrip(savepath);
     if (strlen(savepath))
         strcat(savepath, "/");
 
     // Get current file field value.
     memset(savefile, 0, sizeof(savefile));
     strcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0));
-    strtrim(savefile);
+    g_strstrip(savefile);
 
     if (!strlen(savefile)) {
         dialog_run("Please enter a valid filename");

@@ -56,7 +56,7 @@ call_raw_create(ui_t *ui)
     ui_panel_create(ui, LINES, COLS);
 
     // Initialize Call List specific data
-    call_raw_info_t *info = sng_malloc(sizeof(call_raw_info_t));
+    call_raw_info_t *info = g_malloc0(sizeof(call_raw_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);
@@ -75,7 +75,7 @@ call_raw_destroy(ui_t *ui)
     if ((info = call_raw_info(ui))) {
         // Delete panel windows
         delwin(info->pad);
-        sng_free(info);
+        g_free(info);
     }
     ui_panel_destroy(ui);
 }

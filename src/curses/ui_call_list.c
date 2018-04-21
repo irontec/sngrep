@@ -147,7 +147,7 @@ call_list_destroy(ui_t *ui)
 
         // Deallocate panel windows
         delwin(info->list_win);
-        sng_free(info);
+        g_free(info);
     }
 
     ui_panel_destroy(ui);
@@ -818,7 +818,7 @@ call_list_handle_form_key(ui_t *ui, int key)
     memset(dfilter, 0, field_len + 1);
     strncpy(dfilter, field_buffer(info->fields[FLD_LIST_FILTER], 0), field_len);
     // Trim any trailing spaces
-    strtrim(dfilter);
+    g_strstrip(dfilter);
 
     // Set display filter
     filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);

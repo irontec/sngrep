@@ -54,7 +54,7 @@ filter_set(int type, const char *expr)
 
     // Remove previous value
     if (filters[type].expr) {
-        sng_free(filters[type].expr);
+        g_free(filters[type].expr);
         g_regex_unref(filters[type].regex);
     }
 

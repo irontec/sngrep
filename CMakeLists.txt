@@ -53,7 +53,7 @@ set(SOURCES
         src/storage.c
         src/sip_call.c
         src/sip_msg.c
-        src/util.c
+        src/timeval.c
         src/glib-utils.c
 )
 

@@ -42,6 +42,7 @@
 #ifndef __SNGREP_CAPTURE_HEP_H
 #define __SNGREP_CAPTURE_HEP_H
 #include <glib.h>
+#include "capture.h"
 
 //! Max allowed packet size
 #define MAX_HEP_BUFSIZE 20480

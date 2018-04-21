@@ -658,7 +658,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
     while ((option = strsep(&str, ",")) != NULL) {
         strcpy(opts[i++], option);
     }
-    sng_free(tofree);
+    g_free(tofree);
 
     // Create a new panel and show centered
     dialog_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
@@ -703,7 +703,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
             newl = 0;
         }
     }
-    sng_free(tofree);
+    g_free(tofree);
     wattroff(dialog_win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     for (;;) {

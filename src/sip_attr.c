@@ -32,7 +32,7 @@
 #include <stdarg.h>
 #include "option.h"
 #include "sip_attr.h"
-#include "util.h"
+#include "timeval.h"
 #include "packet/dissectors/packet_sip.h"
 #include "curses/ui_manager.h"
 

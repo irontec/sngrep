@@ -26,74 +26,46 @@
  * @brief Functions for general use in the program
  *
  */
-#ifndef __SNGREP_UTIL_H
-#define __SNGREP_UTIL_H
+#ifndef __SNGREP_TIMEVAL_H
+#define __SNGREP_TIMEVAL_H
 
-// Capture headers has some fixes for pcap timevals in BSD systems
-#include "capture/capture_pcap.h"
-
-// Max Memmory allocation
-#define MALLOC_MAX_SIZE 102400
-
-
-/**
- * @brief Wrapper for memory allocation
- */
-void *
-sng_malloc(size_t size);
-
-/**
- * @brief Wrapper for memmory deallocation
- */
-void
-sng_free(void *ptr);
-
-/*
- * @brief Generic implementation of basename
- */
-char *
-sng_basename(const char *name);
+#include <glib.h>
 
 /**
  * @brief Compare two timeval structures
  *
- * @param t1 First timeval structure
+ * @param time1 First timeval structure
  * @param t2 Second timval structure
- * @return 1 if t1 > t2, 0 if t1 <= t2
+ * @return -1 if t1 > t2, 1 if t1 < t2, 0 if t1 == t2
  */
-int
+gint
 timeval_is_older(GTimeVal t1, GTimeVal t2);
 
 /**
  * @brief Convert timeval to yyyy/mm/dd format
  */
-const char *
-timeval_to_date(GTimeVal time, char *out);
+const gchar *
+timeval_to_date(GTimeVal time, gchar *out);
 
 /**
  * @brief Convert timeval to HH:MM:SS.mmmmmm format
  */
-const char *
-timeval_to_time(GTimeVal time, char *out);
+const gchar *
+timeval_to_time(GTimeVal time, gchar *out);
 
 /**
  * @brief Calculate the time difference between two timeval
  *
  * @return Human readable time difference in mm:ss format
  */
-const char *
-timeval_to_duration(GTimeVal start, GTimeVal end, char *out);
+const gchar *
+timeval_to_duration(GTimeVal start, GTimeVal end, gchar *out);
 
 /**
  * @brief Convert timeval diference to +mm:ss.mmmmmm
  */
-const char *
-timeval_to_delta(GTimeVal start, GTimeVal end, char *out);
+const gchar *
+timeval_to_delta(GTimeVal start, GTimeVal end, gchar *out);
 
-/**
- * @brief Return a given string without trailing spaces
- */
-char *
-strtrim(char *str);
 
-#endif /* __SNGREP_UTIL_H */
+#endif /* __SNGREP_TIMEVAL_H */

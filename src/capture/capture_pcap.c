@@ -44,7 +44,7 @@
 #include "storage.h"
 #include "stream.h"
 #include "setting.h"
-#include "util.h"
+#include "timeval.h"
 
 GQuark
 capture_pcap_error_quark()

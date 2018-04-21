@@ -75,7 +75,7 @@ msg_diff_create(ui_t *ui)
     ui_panel_create(ui, LINES, COLS);
 
     // Initialize panel specific data
-    info = sng_malloc(sizeof(msg_diff_info_t));
+    info = g_malloc0(sizeof(msg_diff_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);
@@ -100,7 +100,7 @@ msg_diff_create(ui_t *ui)
 void
 msg_diff_destroy(ui_t *ui)
 {
-    sng_free(msg_diff_info(ui));
+    g_free(msg_diff_info(ui));
     ui_panel_destroy(ui);
 }
 

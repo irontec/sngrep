@@ -40,11 +40,7 @@
 rtp_stream_t *
 stream_create(Packet *packet, PacketSdpMedia *media)
 {
-    rtp_stream_t *stream;
-
-    // Allocate memory for this stream structure
-    if (!(stream = sng_malloc(sizeof(rtp_stream_t))))
-        return NULL;
+    rtp_stream_t *stream = g_malloc0(sizeof(rtp_stream_t));
 
     // Initialize all fields
     stream->type = media->type;

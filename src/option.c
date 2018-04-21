@@ -35,7 +35,7 @@
 #include "keybinding.h"
 #include "option.h"
 #include "setting.h"
-#include "util.h"
+#include "timeval.h"
 
 /**
  * @brief Configuration options array
@@ -50,7 +50,7 @@ int
 init_options(int no_config)
 {
     // Custom user conf file
-    char *userconf = NULL;
+    GString *userconf = NULL;
     char *rcfile;
     char pwd[MAX_SETTING_LEN];
 
@@ -80,15 +80,15 @@ init_options(int no_config)
     // Read options from configuration files
     read_options("/etc/sngreprc");
     read_options("/usr/local/etc/sngreprc");
+
     // Get user configuration
     if ((rcfile = getenv("SNGREPRC"))) {
         read_options(rcfile);
     } else if ((rcfile = getenv("HOME"))) {
-        if ((userconf = sng_malloc(strlen(rcfile) + RCFILE_EXTRA_LEN))) {
-            sprintf(userconf, "%s/.sngreprc", rcfile);
-            read_options(userconf);
-            sng_free(userconf);
-        }
+        userconf = g_string_new(rcfile);
+        g_string_append(userconf, "/.sngreprc");
+        read_options(userconf->str);
+        g_string_free(userconf, TRUE);
     }
 
     return 0;
@@ -100,8 +100,8 @@ deinit_options()
     int i;
     // Deallocate options memory
     for (i = 0; i < optscnt; i++) {
-        sng_free(options[i].opt);
-        sng_free(options[i].value);
+        g_free(options[i].opt);
+        g_free(options[i].value);
     }
 }
 
@@ -178,7 +178,7 @@ set_option_value(const char *opt, const char *value)
     } else {
         for (i = 0; i < optscnt; i++) {
             if (!strcasecmp(opt, options[i].opt)) {
-                sng_free(options[i].value);
+                g_free(options[i].value);
                 options[i].value = strdup(value);
             }
         }

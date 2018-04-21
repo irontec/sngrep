@@ -59,7 +59,7 @@ filter_create(ui_t *ui)
     ui_panel_create(ui, 17, 50);
 
     // Initialize Filter panel specific data
-    info = sng_malloc(sizeof(filter_info_t));
+    info = g_malloc0(sizeof(filter_info_t));
 
     // Store it into panel userptr
     set_panel_userptr(ui->panel, (void*) info);
@@ -216,7 +216,7 @@ filter_handle_key(ui_t *ui, int key)
     // space characters
     memset(field_value, 0, sizeof(field_value));
     strcpy(field_value, field_buffer(current_field(info->form), 0));
-    strtrim(field_value);
+    g_strstrip(field_value);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -344,7 +344,7 @@ filter_save_options(ui_t *ui)
         // space characters
         memset(field_value, 0, sizeof(field_value));
         strcpy(field_value, field_buffer(info->fields[field_id], 0));
-        strtrim(field_value);
+        g_strstrip(field_value);
 
         // Set filter expression
         expr = strlen(field_value) ? field_value : NULL;
