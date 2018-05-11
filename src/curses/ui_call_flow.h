@@ -82,6 +82,7 @@ enum call_flow_arrow_type {
 enum call_flow_arrow_dir {
     CF_ARROW_RIGHT = 0,
     CF_ARROW_LEFT,
+    CF_ARROW_SPIRAL
 };
 
 /**
@@ -100,6 +101,8 @@ struct call_flow_arrow {
     int height;
     //! Line of flow window this line starts
     int line;
+    //! Arrow direction
+    enum call_flow_arrow_dir dir;
     //! Source column for this arrow
     call_flow_column_t *scolumn;
     //! Destination column for this arrow

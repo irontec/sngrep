@@ -420,13 +420,14 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     address_t src;
     address_t dst;
     char method[80];
-    char delta[15] = { };
+    char delta[15] = {};
     int flowh, floww;
     char mediastr[40];
     sip_msg_t *msg = arrow->item;
     vector_iter_t medias;
     int color = 0;
     int msglen;
+    int aline = cline + 1;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -491,13 +492,17 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     arrow->dcolumn = call_flow_column_get(ui, callid, dst);
 
     // Determine start and end position of the arrow line
-    int arrow_dir, startpos, endpos;
-    if (arrow->scolumn->colpos < arrow->dcolumn->colpos) {
-        arrow_dir = CF_ARROW_RIGHT;
+    int startpos, endpos;
+    if (arrow->scolumn == arrow->dcolumn) {
+        arrow->dir = CF_ARROW_SPIRAL;
+        startpos = 19 + 30 * arrow->dcolumn->colpos;
+        endpos = 20 + 30 * arrow->scolumn->colpos;
+    } else if (arrow->scolumn->colpos < arrow->dcolumn->colpos) {
+        arrow->dir = CF_ARROW_RIGHT;
         startpos = 20 + 30 * arrow->scolumn->colpos;
         endpos = 20 + 30 * arrow->dcolumn->colpos;
     } else {
-        arrow_dir = CF_ARROW_LEFT;
+        arrow->dir = CF_ARROW_LEFT;
         startpos = 20 + 30 * arrow->dcolumn->colpos;
         endpos = 20 + 30 * arrow->scolumn->colpos;
     }
@@ -529,16 +534,23 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         color = msg->cseq % 7 + 1;
     }
 
+    // Print arrow in the same line than message
+    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        aline = cline;
+    }
+
     // Turn on the message color
     wattron(flow_win, COLOR_PAIR(color));
 
     // Clear the line
     mvwprintw(flow_win, cline, startpos + 2, "%*s", distance, "");
-    // Draw method
-    mvwprintw(flow_win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
 
-    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
-        cline++;
+    // Draw method
+    if (arrow->dir == CF_ARROW_SPIRAL) {
+        mvwprintw(flow_win, cline, startpos + 5, "%.26s", method);
+    } else {
+        mvwprintw(flow_win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
+    }
 
     // Draw media information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
@@ -548,28 +560,48 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
                     media->type,
                     media->address.port,
                     media_get_prefered_format(media));
-            mvwprintw(flow_win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
+            if (arrow->dir == CF_ARROW_SPIRAL) {
+                mvwprintw(flow_win, cline + 1, startpos + 5, mediastr);
+            } else {
+                mvwprintw(flow_win, cline + 1, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
+            }
+            cline++;
+            aline++;
         }
     }
 
-    if (arrow == call_flow_arrow_selected(ui)) {
-        mvwhline(flow_win, cline, startpos + 2, '=', distance);
-    } else {
-        mvwhline(flow_win, cline, startpos + 2, ACS_HLINE, distance);
+    if (arrow->dir != CF_ARROW_SPIRAL) {
+        if (arrow == call_flow_arrow_selected(ui)) {
+            mvwhline(flow_win, aline, startpos + 2, '=', distance);
+        } else {
+            mvwhline(flow_win, aline, startpos + 2, ACS_HLINE, distance);
+        }
     }
 
-    // Write the arrow at the end of the message (two arros if this is a retrans)
-    if (arrow_dir == CF_ARROW_RIGHT) {
-        mvwaddch(flow_win, cline, endpos - 2, '>');
+    // Write the arrow at the end of the message (two arrows if this is a retrans)
+    if (arrow->dir == CF_ARROW_SPIRAL) {
+        mvwaddch(flow_win, aline, startpos + 2, '<');
         if (msg->retrans) {
-            mvwaddch(flow_win, cline, endpos - 3, '>');
-            mvwaddch(flow_win, cline, endpos - 4, '>');
+            mvwaddch(flow_win, aline, startpos + 3, '<');
+            mvwaddch(flow_win, aline, startpos + 4, '<');
+        }
+        // If multiple lines are available, print a spiral icon
+        if (aline != cline) {
+            mvwaddch(flow_win, aline, startpos + 3, ACS_LRCORNER);
+            mvwaddch(flow_win, aline - 1, startpos + 3, ACS_URCORNER);
+            mvwaddch(flow_win, aline - 1, startpos + 2, ACS_HLINE);
+        }
+    } else if (arrow->dir == CF_ARROW_RIGHT) {
+        mvwaddch(flow_win, aline, endpos - 2, '>');
+        if (msg->retrans) {
+            mvwaddch(flow_win, aline, endpos - 3, '>');
+            mvwaddch(flow_win, aline, endpos - 4, '>');
         }
     } else {
-        mvwaddch(flow_win, cline, startpos + 2, '<');
+        mvwaddch(flow_win, aline, startpos + 2, '<');
         if (msg->retrans) {
-            mvwaddch(flow_win, cline, startpos + 3, '<');
-            mvwaddch(flow_win, cline, startpos + 4, '<');
+            mvwaddch(flow_win, aline, startpos + 3, '<');
+            mvwaddch(flow_win, aline, startpos + 4, '<');
         }
     }
 
@@ -724,13 +756,13 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     }
 
     // Determine start and end position of the arrow line
-    int arrow_dir, startpos, endpos;
+    int startpos, endpos;
     if (arrow->scolumn->colpos < arrow->dcolumn->colpos) {
-        arrow_dir = CF_ARROW_RIGHT;
+        arrow->dir= CF_ARROW_RIGHT;
         startpos = 20 + 30 * arrow->scolumn->colpos;
         endpos = 20 + 30 * arrow->dcolumn->colpos;
     } else {
-        arrow_dir = CF_ARROW_LEFT;
+        arrow->dir = CF_ARROW_LEFT;
         startpos = 20 + 30 * arrow->dcolumn->colpos;
         endpos = 20 + 30 * arrow->scolumn->colpos;
     }
@@ -752,9 +784,9 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
         // Fix arrow direction based on ports
         if (stream->src.port < stream->dst.port) {
-            arrow_dir = CF_ARROW_RIGHT;
+            arrow->dir = CF_ARROW_RIGHT;
         } else {
-            arrow_dir = CF_ARROW_LEFT;
+            arrow->dir = CF_ARROW_LEFT;
         }
     }
 
@@ -790,7 +822,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
 
     // Write the arrow at the end of the message (two arrows if this is a retrans)
-    if (arrow_dir == CF_ARROW_RIGHT) {
+    if (arrow->dir == CF_ARROW_RIGHT) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
             mvwprintw(win, cline, startpos - 4, "%d", stream->src.port);
             mvwprintw(win, cline, endpos, "%d", stream->dst.port);
@@ -926,6 +958,8 @@ call_flow_draw_raw(ui_t *ui, sip_msg_t *msg)
 {
     call_flow_info_t *info;
     WINDOW *raw_win;
+    vector_iter_t arrows;
+    call_flow_arrow_t *arrow;
     int raw_width, raw_height;
     int min_raw_width, fixed_raw_width;
 
@@ -939,6 +973,17 @@ call_flow_draw_raw(ui_t *ui, sip_msg_t *msg)
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
     raw_width = ui->width - (30 * vector_count(info->columns)) - 2;
+
+    // If last column has spirals, add an extra column with
+    arrows = vector_iterator(info->arrows);
+    while ((arrow = vector_iterator_next(&arrows))) {
+        if (arrow->dir == CF_ARROW_SPIRAL
+            && arrow->scolumn == vector_last(info->columns)) {
+            raw_width -= 15;
+            break;
+        }
+    }
+
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
         raw_width = min_raw_width;
