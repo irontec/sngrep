@@ -224,23 +224,30 @@ sip_msg_t *
 call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
 {
     sip_msg_t *next;
-    vector_t *messages = vector_create(1,10);
-    vector_set_sorter(messages, call_group_msg_sorter);
 
-    vector_iter_t callsit = vector_iterator(group->calls);
-    sip_call_t *call;
-    while ((call = vector_iterator_next(&callsit))) {
-        vector_append_vector(messages, call->msgs);
-    }
-
-    if (msg == NULL) {
-        next = vector_first(messages);
+    if (call_group_count(group) == 1) {
+        sip_call_t *call = vector_first(group->calls);
+        vector_iter_t it = vector_iterator(call->msgs);
+        vector_iterator_set_current(&it, vector_index(call->msgs, msg));
+        next = vector_iterator_next(&it);
     } else {
-        next = vector_item(messages, vector_index(messages, msg) + 1);
-    }
-    vector_destroy(messages);
-    next = sip_parse_msg(next);
+        vector_t *messages = vector_create(1,10);
+        vector_set_sorter(messages, call_group_msg_sorter);
+        vector_iter_t callsit = vector_iterator(group->calls);
+        sip_call_t *call;
+        while ((call = vector_iterator_next(&callsit))) {
+            vector_append_vector(messages, call->msgs);
+        }
 
+        if (msg == NULL) {
+            next = vector_first(messages);
+        } else {
+            next = vector_item(messages, vector_index(messages, msg) + 1);
+        }
+        vector_destroy(messages);
+    }
+
+    next = sip_parse_msg(next);
     if (next && group->sdp_only && !msg_has_sdp(next)) {
         return call_group_get_next_msg(group, next);
     }
@@ -252,23 +259,32 @@ sip_msg_t *
 call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
 {
     sip_msg_t *prev;
-    vector_t *messages = vector_create(1,10);
-    vector_set_sorter(messages, call_group_msg_sorter);
 
-    vector_iter_t callsit = vector_iterator(group->calls);
-    sip_call_t *call;
-    while ((call = vector_iterator_next(&callsit))) {
-        vector_append_vector(messages, call->msgs);
-    }
-
-    if (msg == NULL) {
-        prev = vector_last(messages);
+    if (call_group_count(group) == 1) {
+        sip_call_t *call = vector_first(group->calls);
+        vector_iter_t it = vector_iterator(call->msgs);
+        vector_iterator_set_current(&it, vector_index(call->msgs, msg));
+        prev = vector_iterator_prev(&it);
     } else {
-        prev = vector_item(messages, vector_index(messages, msg) - 1);
-    }
-    vector_destroy(messages);
-    prev = sip_parse_msg(prev);
+        vector_t *messages = vector_create(1, 10);
+        vector_set_sorter(messages, call_group_msg_sorter);
 
+
+        vector_iter_t callsit = vector_iterator(group->calls);
+        sip_call_t *call;
+        while ((call = vector_iterator_next(&callsit))) {
+            vector_append_vector(messages, call->msgs);
+        }
+
+        if (msg == NULL) {
+            prev = vector_last(messages);
+        } else {
+            prev = vector_item(messages, vector_index(messages, msg) - 1);
+        }
+        vector_destroy(messages);
+    }
+
+    prev = sip_parse_msg(prev);
     if (prev && group->sdp_only && !msg_has_sdp(prev)) {
         return call_group_get_prev_msg(group, prev);
     }
