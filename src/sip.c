@@ -526,8 +526,8 @@ int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[3];
-    char resp_str[256];
-    char reqresp[40];
+    char resp_str[SIP_ATTR_MAXLEN];
+    char reqresp[SIP_ATTR_MAXLEN];
     char cseq[11];
     const char *resp_def;
 
@@ -541,7 +541,11 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 
         // Method & CSeq
         if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
-            sprintf(reqresp, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+            if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
+                strncpy(reqresp, "<malformed>", 11);
+            } else {
+                sprintf(reqresp, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+            }
         }
 
         // CSeq
@@ -553,8 +557,16 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 
         // Response code
         if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
-            sprintf(resp_str, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
-            sprintf(reqresp, "%.*s", (int)(pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
+            if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
+                strncpy(resp_str, "<malformed>", 11);
+            } else {
+                sprintf(resp_str, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+            }
+            if ((int)(pmatch[2].rm_eo - pmatch[2].rm_so) >= SIP_ATTR_MAXLEN) {
+                strncpy(resp_str, "<malformed>", 11);
+            } else {
+                sprintf(reqresp, "%.*s", (int) (pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
+            }
         }
 
         // Get Request/Response Code
