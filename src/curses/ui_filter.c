@@ -55,7 +55,7 @@ filter_create(ui_t *ui)
     const char *method, *payload;
 
     // Cerate a new indow for the panel and form
-    ui_panel_create(ui, 16, 50);
+    ui_panel_create(ui, 17, 50);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(filter_info_t));
@@ -73,9 +73,12 @@ filter_create(ui_t *ui)
     info->fields[FLD_FILTER_INVITE] = new_field(1, 1, 10, 15, 0, 0);
     info->fields[FLD_FILTER_SUBSCRIBE] = new_field(1, 1, 11, 15, 0, 0);
     info->fields[FLD_FILTER_NOTIFY] = new_field(1, 1, 12, 15, 0, 0);
+    info->fields[FLD_FILTER_INFO] = new_field(1, 1, 13, 15, 0, 0);
     info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 9, 37, 0, 0);
     info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 10, 37, 0, 0);
     info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 11, 37, 0, 0);
+    info->fields[FLD_FILTER_REFER] = new_field(1, 1, 12, 37, 0, 0);
+    info->fields[FLD_FILTER_UPDATE] = new_field(1, 1, 13, 37, 0, 0);
     info->fields[FLD_FILTER_FILTER] = new_field(1, 10, ui->height - 2, 11, 0, 0);
     info->fields[FLD_FILTER_CANCEL] = new_field(1, 10, ui->height - 2, 30, 0, 0);
     info->fields[FLD_FILTER_COUNT] = NULL;
@@ -90,9 +93,12 @@ filter_create(ui_t *ui)
     field_opts_off(info->fields[FLD_FILTER_INVITE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SUBSCRIBE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_NOTIFY], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_INFO], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_OPTIONS], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_PUBLISH], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_MESSAGE], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_REFER], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_UPDATE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_FILTER], O_EDIT);
     field_opts_off(info->fields[FLD_FILTER_CANCEL], O_EDIT);
 
@@ -118,9 +124,12 @@ filter_create(ui_t *ui)
     mvwprintw(ui->win, 10, 3, "INVITE     [ ]");
     mvwprintw(ui->win, 11, 3, "SUBSCRIBE  [ ]");
     mvwprintw(ui->win, 12, 3, "NOTIFY     [ ]");
+    mvwprintw(ui->win, 13, 3, "INFO       [ ]");
     mvwprintw(ui->win, 9, 25, "OPTIONS    [ ]");
     mvwprintw(ui->win, 10, 25, "PUBLISH    [ ]");
     mvwprintw(ui->win, 11, 25, "MESSAGE    [ ]");
+    mvwprintw(ui->win, 12, 25, "REFER      [ ]");
+    mvwprintw(ui->win, 13, 25, "UPDATE     [ ]");
 
     // Get Method filter
     if (!(method = filter_get(FILTER_METHOD)))
@@ -144,12 +153,18 @@ filter_create(ui_t *ui)
                      strcasestr(method,sip_method_str(SIP_METHOD_SUBSCRIBE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_NOTIFY], 0,
                      strcasestr(method, sip_method_str(SIP_METHOD_NOTIFY)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_INFO], 0,
+                     strcasestr(method, sip_method_str(SIP_METHOD_INFO)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_OPTIONS], 0,
                      strcasestr(method, sip_method_str(SIP_METHOD_OPTIONS)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_PUBLISH], 0,
-                     strcasestr(method,  sip_method_str(SIP_METHOD_PUBLISH)) ? "*" : "");
+                     strcasestr(method, sip_method_str(SIP_METHOD_PUBLISH)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_MESSAGE], 0,
-                     strcasestr(method,  sip_method_str(SIP_METHOD_MESSAGE)) ? "*" : "");
+                     strcasestr(method, sip_method_str(SIP_METHOD_MESSAGE)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_REFER], 0,
+                     strcasestr(method, sip_method_str(SIP_METHOD_REFER)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_UPDATE], 0,
+                     strcasestr(method, sip_method_str(SIP_METHOD_UPDATE)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_FILTER], 0, "[ Filter ]");
     set_field_buffer(info->fields[FLD_FILTER_CANCEL], 0, "[ Cancel ]");
 
@@ -254,9 +269,12 @@ filter_handle_key(ui_t *ui, int key)
                     case FLD_FILTER_INVITE:
                     case FLD_FILTER_SUBSCRIBE:
                     case FLD_FILTER_NOTIFY:
+                    case FLD_FILTER_INFO:
                     case FLD_FILTER_OPTIONS:
                     case FLD_FILTER_PUBLISH:
                     case FLD_FILTER_MESSAGE:
+                    case FLD_FILTER_REFER:
+                    case FLD_FILTER_UPDATE:
                         if (field_value[0] == '*') {
                             form_driver(info->form, REQ_DEL_CHAR);
                         } else {
@@ -353,6 +371,9 @@ filter_save_options(ui_t *ui)
             case FLD_FILTER_OPTIONS:
             case FLD_FILTER_PUBLISH:
             case FLD_FILTER_MESSAGE:
+            case FLD_FILTER_INFO:
+            case FLD_FILTER_REFER:
+            case FLD_FILTER_UPDATE:
                 if (!strcmp(field_value, "*")) {
                     if (strlen(method_expr)) {
                         sprintf(method_expr + strlen(method_expr), ",%s", filter_field_method(field_id));
@@ -401,6 +422,15 @@ filter_field_method(int field_id)
             break;
         case FLD_FILTER_MESSAGE:
             method = SIP_METHOD_MESSAGE;
+            break;
+        case FLD_FILTER_INFO:
+            method = SIP_METHOD_INFO;
+            break;
+        case FLD_FILTER_REFER:
+            method = SIP_METHOD_REFER;
+            break;
+        case FLD_FILTER_UPDATE:
+            method = SIP_METHOD_UPDATE;
             break;
     }
 

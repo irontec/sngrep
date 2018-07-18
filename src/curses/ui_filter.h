@@ -53,9 +53,12 @@ enum filter_field_list {
     FLD_FILTER_INVITE,
     FLD_FILTER_SUBSCRIBE,
     FLD_FILTER_NOTIFY,
+    FLD_FILTER_INFO,
     FLD_FILTER_OPTIONS,
     FLD_FILTER_PUBLISH,
     FLD_FILTER_MESSAGE,
+    FLD_FILTER_REFER,
+    FLD_FILTER_UPDATE,
     FLD_FILTER_FILTER,
     FLD_FILTER_CANCEL,
     //! Never remove this field id @see filter_info
