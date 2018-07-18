@@ -808,8 +808,11 @@ capture_close()
         //Close PCAP file
         if (capinfo->handle) {
             if (capinfo->running) {
-                pcap_breakloop(capinfo->handle);
-                pthread_join(capinfo->capture_t, NULL);
+                /* We must cancel the thread here instead of joining because, according to pcap_breakloop man page,
+                 * you can only break pcap_loop from within the same thread.
+                 * @see: https://www.tcpdump.org/manpages/pcap_breakloop.3pcap.html
+                 */
+                pthread_cancel(capinfo->capture_t);
             }
         }
     }
