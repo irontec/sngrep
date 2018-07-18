@@ -311,11 +311,21 @@ call_flow_draw_columns(ui_t *ui)
         if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr.port) {
             snprintf(coltext, MAX_SETTING_LEN, "%s", column->alias);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-            snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
-                MAX_SETTING_LEN - 7, column->alias, column->addr.port);
+            if (strlen(column->addr.ip) > 15) {
+                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%u",
+                         MAX_SETTING_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr.port);
+            } else {
+                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
+                         MAX_SETTING_LEN - 7, column->alias, column->addr.port);
+            }
         } else {
-            snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
-                MAX_SETTING_LEN - 7, column->addr.ip, column->addr.port);
+            if (strlen(column->addr.ip) > 15) {
+                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%u",
+                         MAX_SETTING_LEN - 7, column->addr.ip + strlen(column->addr.ip) - 13, column->addr.port);
+            } else {
+                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
+                         MAX_SETTING_LEN - 7, column->addr.ip, column->addr.port);
+            }
         }
 
         mvwprintw(ui->win, 2, 10 + 30 * column->colpos + (22 - strlen(coltext)) / 2, "%s", coltext);
