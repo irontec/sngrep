@@ -812,7 +812,9 @@ capture_close()
                  * you can only break pcap_loop from within the same thread.
                  * @see: https://www.tcpdump.org/manpages/pcap_breakloop.3pcap.html
                  */
+                pcap_breakloop(capinfo->handle);
                 pthread_cancel(capinfo->capture_t);
+                pthread_join(capinfo->capture_t, NULL);
             }
         }
     }
