@@ -137,7 +137,7 @@ call_add_message(SipCall *call, SipMsg *msg);
  * @param stream RTP stream data
  */
 void
-call_add_stream(SipCall *call, rtp_stream_t *stream);
+call_add_stream(SipCall *call, RtpStream *stream);
 
 /**
  * @brief Append a new RTP packet to the call
@@ -239,10 +239,10 @@ call_attr_compare(const SipCall *one, const SipCall *two, enum sip_attr_id id);
 void
 call_add_xcall(SipCall *call, SipCall *xcall);
 
-rtp_stream_t *
+RtpStream *
 call_find_stream(SipCall *call, Address src, Address dst);
 
-rtp_stream_t *
+RtpStream *
 call_find_stream_exact(SipCall *call, Address src, Address dst);
 
 #endif /* __SNGREP_SIP_CALL_H */

@@ -40,9 +40,10 @@
 #include "packet/dissectors/packet_rtcp.h"
 
 //! Shorter declaration of rtp_stream structure
-typedef struct rtp_stream rtp_stream_t;
+typedef struct _RtpStream RtpStream;
 
-struct rtp_stream {
+struct _RtpStream
+{
     //! Determine stream type
     uint32_t type;
     //! Source address
@@ -53,37 +54,37 @@ struct rtp_stream {
     PacketSdpMedia *media;
     //! SIP message that setup this stream
     SipMsg *msg;
-    //! Packet count for this stream
-    uint32_t pktcnt;
-    //! Time of first received packet of stream
-    GTimeVal time;
     //! Unix timestamp of last received packet
-    int lasttm;
+    gint64 lasttm;
     //! Format of first received packet of stre
     guint8 fmtcode;
+    //! List of stream packets
+    GPtrArray *packets;
 };
 
-rtp_stream_t *
+RtpStream *
 stream_create(Packet *packet, PacketSdpMedia *media);
 
-rtp_stream_t *
-stream_complete(rtp_stream_t *stream, Address src);
+RtpStream *
+stream_complete(RtpStream *stream, Address src);
 
 void
-stream_set_format(rtp_stream_t *stream, uint32_t format);
+stream_set_format(RtpStream *stream, guint8 format);
 
 void
-stream_add_packet(rtp_stream_t *stream, Packet *packet);
+stream_add_packet(RtpStream *stream, Packet *packet);
 
-uint32_t
-stream_get_count(rtp_stream_t *stream);
+guint
+stream_get_count(RtpStream *stream);
 
 const char *
-stream_get_format(rtp_stream_t *stream);
+stream_get_format(RtpStream *stream);
 
-rtp_stream_t *
+RtpStream *
 stream_find_by_format(Address src, Address dst, uint32_t format);
 
+GTimeVal
+stream_time(RtpStream *stream);
 
 /**
  * @brief Check if a message is older than other
@@ -93,11 +94,11 @@ stream_find_by_format(Address src, Address dst, uint32_t format);
  * @return 1 if one is older than two
  * @return 0 if equal or two is older than one
  */
-int
-stream_is_older(rtp_stream_t *one, rtp_stream_t *two);
+gint
+stream_is_older(RtpStream *one, RtpStream *two);
 
-int
-stream_is_complete(rtp_stream_t *stream);
+gboolean
+stream_is_complete(RtpStream *stream);
 
 /**
  * @brief Determine if a stream is still active
@@ -108,7 +109,7 @@ stream_is_complete(rtp_stream_t *stream);
  * @return 1 if stream is active
  * @return 0 if stream is inactive
  */
-int
-stream_is_active(rtp_stream_t *stream);
+gboolean
+stream_is_active(RtpStream *stream);
 
 #endif /* __SNGREP_STREAM_H */

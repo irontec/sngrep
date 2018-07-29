@@ -257,11 +257,11 @@ call_group_get_prev_msg(SipCallGroup *group, SipMsg *msg)
     return NULL;
 }
 
-rtp_stream_t *
-call_group_get_next_stream(SipCallGroup *group, rtp_stream_t *stream)
+RtpStream *
+call_group_get_next_stream(SipCallGroup *group, RtpStream *stream)
 {
-    rtp_stream_t *next = NULL;
-    rtp_stream_t *cand;
+    RtpStream *next = NULL;
+    RtpStream *cand;
     SipCall *call;
     GSequenceIter *streams;
 

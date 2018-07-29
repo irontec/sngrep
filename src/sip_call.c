@@ -98,7 +98,7 @@ call_add_message(SipCall *call, SipMsg *msg)
 }
 
 void
-call_add_stream(SipCall *call, rtp_stream_t *stream)
+call_add_stream(SipCall *call, RtpStream *stream)
 {
     // Store stream
     g_sequence_append(call->streams, stream);
@@ -343,10 +343,10 @@ call_add_xcall(SipCall *call, SipCall *xcall)
     g_sequence_append(call->xcalls, xcall);
 }
 
-rtp_stream_t *
+RtpStream *
 call_find_stream(SipCall *call, Address src, Address dst)
 {
-    rtp_stream_t *stream;
+    RtpStream *stream;
     GSequenceIter *it;
 
     // Create an iterator for call streams
@@ -360,7 +360,7 @@ call_find_stream(SipCall *call, Address src, Address dst)
             if (!src.port) {
                 return stream;
             } else {
-                if (!stream->pktcnt) {
+                if (!stream->packets->len) {
                     return stream;
                 }
             }
@@ -376,10 +376,10 @@ call_find_stream(SipCall *call, Address src, Address dst)
     return NULL;
 }
 
-rtp_stream_t *
+RtpStream *
 call_find_stream_exact(SipCall *call, Address src, Address dst)
 {
-    rtp_stream_t *stream;
+    RtpStream *stream;
     GSequenceIter *it;
 
     // Create an iterator for call streams

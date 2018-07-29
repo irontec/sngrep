@@ -223,7 +223,7 @@ call_group_get_prev_msg(SipCallGroup *group, SipMsg *msg);
  * @param msg Actual stream structure from any call of the group
  * @return next chronological stream in the group or NULL
  */
-rtp_stream_t *
-call_group_get_next_stream(SipCallGroup *group, rtp_stream_t *stream);
+RtpStream *
+call_group_get_next_stream(SipCallGroup *group, RtpStream *stream);
 
 #endif /* __SNGREP_GROUP_H_ */

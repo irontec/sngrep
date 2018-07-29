@@ -375,7 +375,7 @@ call_flow_draw_raw(ui_t *ui, SipMsg *msg);
  * @return 0 in all cases
  */
 int
-call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *rtcp);
+call_flow_draw_raw_rtcp(ui_t *ui, RtpStream *rtcp);
 
 /**
  * @brief Handle Call flow extended key strokes

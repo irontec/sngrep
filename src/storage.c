@@ -304,12 +304,12 @@ storage_check_sip_packet(Packet *packet)
     return msg;
 }
 
-static rtp_stream_t *
+static RtpStream *
 storage_check_rtp_packet(Packet *packet)
 {
     Address src, dst;
-    rtp_stream_t *stream;
-    rtp_stream_t *reverse;
+    RtpStream *stream;
+    RtpStream *reverse;
     u_char format = 0;
     const gchar *payload;
     size_t size, bsize;
@@ -427,7 +427,7 @@ storage_register_streams(SipMsg *msg)
 
         // Create RTP stream for this media
         if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
-            rtp_stream_t *stream = stream_create(packet, media);
+            RtpStream *stream = stream_create(packet, media);
             stream->type = PACKET_RTP;
             stream->msg = msg;
             call_add_stream(msg->call, stream);
@@ -435,7 +435,7 @@ storage_register_streams(SipMsg *msg)
 
         // Create RTCP stream for this media
         if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
-            rtp_stream_t *stream = stream_create(packet, media);
+            RtpStream *stream = stream_create(packet, media);
             stream->dst.port = (media->rtcpport) ? media->rtcpport : (guint16) (media->rtpport + 1);
             stream->type = PACKET_RTCP;
             stream->msg = msg;
@@ -444,7 +444,7 @@ storage_register_streams(SipMsg *msg)
 
         // Create RTP stream with source of message as destination address
         if (call_find_stream(msg->call, msg_src_address(msg), media->address) == NULL) {
-            rtp_stream_t *stream = stream_create(packet, media);
+            RtpStream *stream = stream_create(packet, media);
             stream->type = PACKET_RTP;
             stream->msg = msg;
             stream->dst = msg_src_address(msg);

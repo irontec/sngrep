@@ -29,58 +29,51 @@
  *
  */
 
-#include "config.h"
 #include <glib.h>
-#include <stddef.h>
-#include <time.h>
-#include "glib-utils.h"
 #include "stream.h"
 #include "storage.h"
 
-rtp_stream_t *
+RtpStream *
 stream_create(Packet *packet, PacketSdpMedia *media)
 {
-    rtp_stream_t *stream = g_malloc0(sizeof(rtp_stream_t));
+    RtpStream *stream = g_malloc0(sizeof(RtpStream));
 
     // Initialize all fields
     stream->type = media->type;
     stream->media = media;
     stream->dst = media->address;
-
+    stream->packets = g_ptr_array_sized_new(500);
     return stream;
 }
 
-rtp_stream_t *
-stream_complete(rtp_stream_t *stream, Address src)
+RtpStream *
+stream_complete(RtpStream *stream, Address src)
 {
     stream->src = src;
     return stream;
 }
 
 void
-stream_set_format(rtp_stream_t *stream, uint32_t format)
+stream_set_format(RtpStream *stream, guint8 format)
 {
     stream->fmtcode = format;
 }
 
 void
-stream_add_packet(rtp_stream_t *stream, Packet *packet)
+stream_add_packet(RtpStream *stream, Packet *packet)
 {
-    if (stream->pktcnt == 0)
-        stream->time = packet_time(packet);
-
-    stream->lasttm = (int) time(NULL);
-    stream->pktcnt++;
+    stream->lasttm = g_get_monotonic_time();
+    g_ptr_array_add(stream->packets, packet);
 }
 
-uint32_t
-stream_get_count(rtp_stream_t *stream)
+guint
+stream_get_count(RtpStream *stream)
 {
-    return stream->pktcnt;
+    return stream->packets->len;
 }
 
 const char *
-stream_get_format(rtp_stream_t *stream)
+stream_get_format(RtpStream *stream)
 {
 
     const char *fmt;
@@ -106,11 +99,11 @@ stream_get_format(rtp_stream_t *stream)
     return NULL;
 }
 
-rtp_stream_t *
+RtpStream *
 stream_find_by_format(Address src, Address dst, uint32_t format)
 {
     // Structure for RTP packet streams
-    rtp_stream_t *stream;
+    RtpStream *stream;
     // Check if this is a RTP packet from active calls
     SipCall *call;
     // Iterator for active calls
@@ -118,16 +111,16 @@ stream_find_by_format(Address src, Address dst, uint32_t format)
     // Iterator for call streams
     GSequenceIter *streams;
     // Candiate stream
-    rtp_stream_t *candidate = NULL;
+    RtpStream *candidate = NULL;
 
     // Get active calls (during conversation)
     calls = g_sequence_get_end_iter(storage_calls_vector());
 
-    while(!g_sequence_iter_is_begin(calls)) {
+    while (!g_sequence_iter_is_begin(calls)) {
         calls = g_sequence_iter_prev(calls);
         call = g_sequence_get(calls);
         streams = g_sequence_get_end_iter(call->streams);
-        while(!g_sequence_iter_is_begin(streams)) {
+        while (!g_sequence_iter_is_begin(streams)) {
             streams = g_sequence_iter_prev(streams);
             stream = g_sequence_get(streams);
             // Only look RTP packets
@@ -149,7 +142,7 @@ stream_find_by_format(Address src, Address dst, uint32_t format)
             } else {
                 // Incomplete stream, if dst match is enough
                 if (addressport_equals(stream->dst, dst)) {
-                       return stream;
+                    return stream;
                 }
             }
         }
@@ -158,11 +151,11 @@ stream_find_by_format(Address src, Address dst, uint32_t format)
     return candidate;
 }
 
-rtp_stream_t *
+RtpStream *
 stream_find(Address src, Address dst)
 {
     // Structure for RTP packet streams
-    rtp_stream_t *stream;
+    RtpStream *stream;
     // Check if this is a RTP packet from active calls
     SipCall *call;
     // Iterator for active calls
@@ -171,7 +164,7 @@ stream_find(Address src, Address dst)
     // Get active calls (during conversation)
     calls = g_sequence_get_end_iter(storage_calls_vector());
 
-    while(!g_sequence_iter_is_begin(calls)) {
+    while (!g_sequence_iter_is_begin(calls)) {
         calls = g_sequence_iter_prev(calls);
         call = g_sequence_get(calls);
         // Check if this call has an RTP stream for current packet data
@@ -183,31 +176,29 @@ stream_find(Address src, Address dst)
     return NULL;
 }
 
-
-
-int
-stream_is_older(rtp_stream_t *one, rtp_stream_t *two)
+GTimeVal
+stream_time(RtpStream *stream)
 {
-    // Yes, you are older than nothing
-    if (!two)
-        return 1;
-
-    // No, you are not older than yourself
-    if (one == two)
-        return 0;
-
-    // Otherwise
-    return timeval_is_older(one->time, two->time);
+    return packet_time(g_ptr_array_index(stream->packets, 0));
 }
 
-int
-stream_is_complete(rtp_stream_t *stream)
+gint
+stream_is_older(RtpStream *one, RtpStream *two)
 {
-    return (stream->pktcnt != 0);
+    return timeval_is_older(
+            stream_time(one),
+            stream_time(two)
+    );
 }
 
-int
-stream_is_active(rtp_stream_t *stream)
+gboolean
+stream_is_complete(RtpStream *stream)
 {
-    return ((int) time(NULL) - stream->lasttm <= STREAM_INACTIVE_SECS);
+    return stream->packets->len > 0;
+}
+
+gboolean
+stream_is_active(RtpStream *stream)
+{
+    return g_get_monotonic_time() - stream->lasttm <= STREAM_INACTIVE_SECS;
 }

@@ -251,7 +251,7 @@ call_flow_draw_columns(ui_t *ui)
     call_flow_info_t *info;
     call_flow_column_t *column;
     SipCall *call = NULL;
-    rtp_stream_t *stream;
+    RtpStream *stream;
     SipMsg *msg = NULL;
     GSequenceIter *it;
     char coltext[MAX_SETTING_LEN];
@@ -353,7 +353,7 @@ call_flow_draw_arrows(ui_t *ui)
     }
 
     // Create pending RTP arrows
-    rtp_stream_t *stream = NULL;
+    RtpStream *stream = NULL;
     while ((stream = call_group_get_next_stream(info->group, stream))) {
         if (!call_flow_arrow_find(ui, stream)) {
             arrow = call_flow_arrow_create(ui, stream, CF_ARROW_RTP);
@@ -669,7 +669,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     WINDOW *win;
     char text[50], time[20];
     int height;
-    rtp_stream_t *stream = arrow->item;
+    RtpStream *stream = arrow->item;
     SipMsg *msg;
     SipCall *call;
     call_flow_arrow_t *msgarrow;
@@ -856,7 +856,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Print timestamp
     if (info->arrowtime) {
-        timeval_to_time(stream->time, time);
+        timeval_to_time(stream_time(stream), time);
         if (arrow == g_sequence_nth(info->darrows, info->cur_arrow)) {
             wattron(win, A_BOLD);
             mvwprintw(win, cline, 2, "%s", time);
@@ -947,7 +947,7 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow)
     }
 
     if (arrow->type == CF_ARROW_RTP) {
-        rtp_stream_t *stream = arrow->item;
+        RtpStream *stream = arrow->item;
         return stream->msg;
     }
 
@@ -1019,7 +1019,7 @@ call_flow_draw_raw(ui_t *ui, SipMsg *msg)
 
 
 int
-call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
+call_flow_draw_raw_rtcp(ui_t *ui, RtpStream *stream)
 {
     /**
      * TODO This is too experimental to even display it
@@ -1505,7 +1505,7 @@ call_flow_arrow_time(const call_flow_arrow_t *arrow)
 {
     GTimeVal ts = { 0 };
     SipMsg *msg;
-    rtp_stream_t *stream;
+    RtpStream *stream;
 
     if (!arrow)
         return ts;
@@ -1514,8 +1514,8 @@ call_flow_arrow_time(const call_flow_arrow_t *arrow)
         msg = (SipMsg *) arrow->item;
         ts = packet_time(msg->packet);
     } else if (arrow->type == CF_ARROW_RTP) {
-        stream = (rtp_stream_t *) arrow->item;
-        ts = stream->time;
+        stream = (RtpStream *) arrow->item;
+        ts = stream_time(stream);
     }
     return ts;
 
