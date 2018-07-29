@@ -243,8 +243,9 @@ call_list_draw_header(ui_t *ui)
     mvwprintw(ui->win, 2, 2, "Match Expression: ");
 
     wattron(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    if ((filterexpr = storage_match_expr()))
-        wprintw(ui->win, "%s", filterexpr);
+    StorageMatchOpts match = storage_match_options();
+    if (match.mexpr)
+        wprintw(ui->win, "%s", match.mexpr);
     wattroff(ui->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
 
     mvwprintw(ui->win, 2, 45, "BPF Filter: ");

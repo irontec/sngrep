@@ -25,7 +25,6 @@
  *
  * @brief Source of functions defined in sip.h
  */
-#include "config.h"
 #include <glib.h>
 #include "glib-utils.h"
 #include "packet/dissectors/packet_sip.h"
@@ -39,96 +38,7 @@
  * All parsed calls will be added to this list, only accesible from
  * this awesome structure, so, keep it thread-safe.
  */
-Storage storage = { };
-
-gboolean
-storage_init(StorageCaptureOpts capture_options,
-             StorageMatchOpts match_options,
-             StorageSortOpts sort_options,
-             GError **error)
-{
-    GRegexCompileFlags cflags = G_REGEX_EXTENDED;
-    GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
-
-    storage.capture = capture_options;
-    storage.match = match_options;
-    storage.sort = sort_options;
-
-    // Store capture limit
-    storage.last_index = 0;
-
-    // Validate match expression
-    if (storage.match.mexpr) {
-        // Case insensitive requested
-        if (storage.match.micase) {
-            cflags |= G_REGEX_CASELESS;
-        }
-
-        // Check the expresion is a compilable regexp
-        storage.match.mregex = g_regex_new(storage.match.mexpr, cflags, mflags, error);
-        if (storage.match.mregex == NULL) {
-            return FALSE;
-        }
-    }
-
-    // Initialize storage packet queue
-    storage.pkt_queue = g_async_queue_new();
-
-    // Create a vector to store calls
-    storage.list = g_sequence_new(call_destroy);
-    storage.active = g_sequence_new(NULL);
-
-    // Create hash table for callid search
-    storage.callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-
-    // Set default sorting field
-    if (sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
-        storage.sort.by = sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD));
-        storage.sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
-    } else {
-        // Fallback to default sorting field
-        storage.sort.by = SIP_ATTR_CALLINDEX;
-        storage.sort.asc = true;
-    }
-
-    storage.running = TRUE;
-    storage.thread = g_thread_new(NULL, (GThreadFunc) storage_check_packet, NULL);
-
-    return TRUE;
-}
-
-void
-storage_deinit()
-{
-    // Stop storage thread
-    storage.running = FALSE;
-    g_thread_join(storage.thread);
-
-    // Remove all calls
-    storage_calls_clear();
-    // Remove Call-id hash table
-    g_hash_table_destroy(storage.callids);
-    // Remove calls vector
-    g_sequence_free(storage.list);
-    g_sequence_free(storage.active);
-
-}
-
-//! Start capturing packets function
-void storage_check_packet()
-{
-    while (storage.running) {
-
-        Packet *packet = g_async_queue_timeout_pop(storage.pkt_queue, 500000);
-        if (packet) {
-            if (packet_has_type(packet, PACKET_SIP)) {
-                storage_check_sip_packet(packet);
-            } else if (packet_has_type(packet, PACKET_RTP)) {
-                storage_check_rtp_packet(packet);
-            }
-        }
-    }
-}
+Storage storage = {};
 
 void
 storage_add_packet(Packet *packet)
@@ -136,13 +46,7 @@ storage_add_packet(Packet *packet)
     g_async_queue_push(storage.pkt_queue, packet);
 }
 
-StorageCaptureOpts
-storage_capture_options()
-{
-    return storage.capture;
-}
-
-gint
+static gint
 storage_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
 {
     const SipCall *calla = a, *callb = b;
@@ -150,7 +54,145 @@ storage_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_dat
     return (storage.sort.asc) ? cmp : cmp * -1;
 }
 
-SipMsg *
+gboolean
+storage_calls_changed()
+{
+    gboolean changed = storage.changed;
+    storage.changed = false;
+    return changed;
+}
+
+int
+storage_calls_count()
+{
+    return g_sequence_get_length(storage.list);
+}
+
+GSequenceIter *
+storage_calls_iterator()
+{
+    return g_sequence_get_begin_iter(storage.list);
+}
+
+static gboolean
+storage_call_is_active(SipCall *call)
+{
+    return g_sequence_index(storage.active, call) != -1;
+}
+
+GSequence *
+storage_calls_vector()
+{
+    return storage.list;
+}
+
+GSequence *
+storage_active_calls_vector()
+{
+    return storage.active;
+}
+
+sip_stats_t
+storage_calls_stats()
+{
+    sip_stats_t stats = {};
+    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
+
+    // Total number of calls without filtering
+    stats.total = g_sequence_iter_length(it);
+    // Total number of calls after filtering
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        if (filter_check_call(g_sequence_get(it), NULL))
+            stats.displayed++;
+    }
+    return stats;
+}
+
+void
+storage_calls_clear()
+{
+    // Create again the callid hash table
+    g_hash_table_remove_all(storage.callids);
+
+    // Remove all items from vector
+    g_sequence_remove_all(storage.list);
+    g_sequence_remove_all(storage.active);
+}
+
+void
+storage_calls_clear_soft()
+{
+    // Create again the callid hash table
+    g_hash_table_remove_all(storage.callids);
+
+    // Repopulate list applying current filter
+    storage.list = g_sequence_copy(storage_calls_vector(), filter_check_call, NULL);
+    storage.active = g_sequence_copy(storage_active_calls_vector(), filter_check_call, NULL);
+
+    // Repopulate callids based on filtered list
+    SipCall *call;
+    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
+
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        call = g_sequence_get(it);
+        g_hash_table_insert(storage.callids, call->callid, call);
+    }
+}
+
+static void
+storage_calls_rotate()
+{
+    SipCall *call;
+    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+        call = g_sequence_get(it);
+        if (!call->locked) {
+            // Remove from callids hash
+            g_hash_table_remove(storage.callids, call->callid);
+            // Remove first call from active and call lists
+            g_sequence_remove_data(storage.active, call);
+            g_sequence_remove_data(storage.list, call);
+            return;
+        }
+    }
+}
+
+static gboolean
+storage_check_match_expr(const char *payload)
+{
+    // Everything matches when there is no match
+    if (storage.match.mexpr == NULL)
+        return 1;
+
+    // Check if payload matches the given expresion
+    if (g_regex_match(storage.match.mregex, payload, 0, NULL)) {
+        return 0 == storage.match.minvert;
+    } else {
+        return 1 == storage.match.minvert;
+    }
+
+}
+
+const StorageMatchOpts
+storage_match_options()
+{
+    return storage.match;
+}
+
+void
+storage_set_sort_options(StorageSortOpts sort)
+{
+    storage.sort = sort;
+    g_sequence_sort(storage.list, storage_sorter, NULL);
+}
+
+const StorageSortOpts
+storage_sort_options()
+{
+    return storage.sort;
+}
+
+static SipMsg *
 storage_check_sip_packet(Packet *packet)
 {
     SipMsg *msg;
@@ -168,7 +210,7 @@ storage_check_sip_packet(Packet *packet)
     msg->resp_str = sip_data->resp_str;
 
     // Find the call for this msg
-    if (!(call = storage_find_by_callid(sip_data->callid))) {
+    if (!(call = g_hash_table_lookup(storage.callids, sip_data->callid))) {
 
         // Check if payload matches expression
         if (!storage_check_match_expr(sip_data->payload))
@@ -208,7 +250,7 @@ storage_check_sip_packet(Packet *packet)
     if (call_msg_count(call) == 0) {
         // If this call has X-Call-Id, append it to the parent call
         if (strlen(call->xcallid)) {
-            call_add_xcall(storage_find_by_callid(call->xcallid), call);
+            call_add_xcall(g_hash_table_lookup(storage.callids, call->xcallid), call);
         }
     }
 
@@ -250,7 +292,7 @@ storage_check_sip_packet(Packet *packet)
     return msg;
 }
 
-rtp_stream_t *
+static rtp_stream_t *
 storage_check_rtp_packet(Packet *packet)
 {
     Address src, dst;
@@ -353,66 +395,6 @@ storage_check_rtp_packet(Packet *packet)
     return stream;
 }
 
-gboolean
-storage_calls_changed()
-{
-    gboolean changed = storage.changed;
-    storage.changed = false;
-    return changed;
-}
-
-int
-storage_calls_count()
-{
-    return g_sequence_get_length(storage.list);
-}
-
-GSequenceIter *
-storage_calls_iterator()
-{
-    return g_sequence_get_begin_iter(storage.list);
-}
-
-gboolean
-storage_call_is_active(SipCall *call)
-{
-    return g_sequence_index(storage.active, call) != -1;
-}
-
-GSequence *
-storage_calls_vector()
-{
-    return storage.list;
-}
-
-GSequence *
-storage_active_calls_vector()
-{
-    return storage.active;
-}
-
-sip_stats_t
-storage_calls_stats()
-{
-    sip_stats_t stats = {};
-    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
-
-    // Total number of calls without filtering
-    stats.total = g_sequence_iter_length(it);
-    // Total number of calls after filtering
-    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        if (filter_check_call(g_sequence_get(it), NULL))
-            stats.displayed++;
-    }
-    return stats;
-}
-
-SipCall *
-storage_find_by_callid(const char *callid)
-{
-    return g_hash_table_lookup(storage.callids, callid);
-}
-
 void
 storage_register_streams(SipMsg *msg)
 {
@@ -460,87 +442,90 @@ storage_register_streams(SipMsg *msg)
     }
 }
 
-void
-storage_calls_clear()
+//! Start capturing packets function
+static void storage_check_packet()
 {
-    // Create again the callid hash table
-    g_hash_table_remove_all(storage.callids);
+    while (storage.running) {
 
-    // Remove all items from vector
-    g_sequence_remove_all(storage.list);
-    g_sequence_remove_all(storage.active);
-}
-
-void
-storage_calls_clear_soft()
-{
-    // Create again the callid hash table
-    g_hash_table_remove_all(storage.callids);
-
-    // Repopulate list applying current filter
-    storage.list = g_sequence_copy(storage_calls_vector(), filter_check_call, NULL);
-    storage.active = g_sequence_copy(storage_active_calls_vector(), filter_check_call, NULL);
-
-    // Repopulate callids based on filtered list
-    SipCall *call;
-    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
-
-    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        call = g_sequence_get(it);
-        g_hash_table_insert(storage.callids, call->callid, call);
-    }
-}
-
-void
-storage_calls_rotate()
-{
-    SipCall *call;
-    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
-    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        call = g_sequence_get(it);
-        if (!call->locked) {
-            // Remove from callids hash
-            g_hash_table_remove(storage.callids, call->callid);
-            // Remove first call from active and call lists
-            g_sequence_remove_data(storage.active, call);
-            g_sequence_remove_data(storage.list, call);
-            return;
+        Packet *packet = g_async_queue_timeout_pop(storage.pkt_queue, 500000);
+        if (packet) {
+            if (packet_has_type(packet, PACKET_SIP)) {
+                storage_check_sip_packet(packet);
+            } else if (packet_has_type(packet, PACKET_RTP)) {
+                storage_check_rtp_packet(packet);
+            }
         }
     }
 }
 
-const char *
-storage_match_expr()
+gboolean
+storage_init(StorageCaptureOpts capture_options,
+             StorageMatchOpts match_options,
+             StorageSortOpts sort_options,
+             GError **error)
 {
-    return storage.match.mexpr;
-}
+    GRegexCompileFlags cflags = G_REGEX_EXTENDED;
+    GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
 
-int
-storage_check_match_expr(const char *payload)
-{
-    // Everything matches when there is no match
-    if (storage.match.mexpr == NULL)
-        return 1;
+    storage.capture = capture_options;
+    storage.match = match_options;
+    storage.sort = sort_options;
 
-    // Check if payload matches the given expresion
-    if (g_regex_match(storage.match.mregex, payload, 0, NULL)) {
-        return 0 == storage.match.minvert;
-    } else {
-        return 1 == storage.match.minvert;
+    // Store capture limit
+    storage.last_index = 0;
+
+    // Validate match expression
+    if (storage.match.mexpr) {
+        // Case insensitive requested
+        if (storage.match.micase) {
+            cflags |= G_REGEX_CASELESS;
+        }
+
+        // Check the expresion is a compilable regexp
+        storage.match.mregex = g_regex_new(storage.match.mexpr, cflags, mflags, error);
+        if (storage.match.mregex == NULL) {
+            return FALSE;
+        }
     }
 
+    // Initialize storage packet queue
+    storage.pkt_queue = g_async_queue_new();
+
+    // Create a vector to store calls
+    storage.list = g_sequence_new(call_destroy);
+    storage.active = g_sequence_new(NULL);
+
+    // Create hash table for callid search
+    storage.callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+
+    // Set default sorting field
+    if (sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
+        storage.sort.by = sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD));
+        storage.sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
+    } else {
+        // Fallback to default sorting field
+        storage.sort.by = SIP_ATTR_CALLINDEX;
+        storage.sort.asc = true;
+    }
+
+    storage.running = TRUE;
+    storage.thread = g_thread_new(NULL, (GThreadFunc) storage_check_packet, NULL);
+
+    return TRUE;
 }
 
 void
-storage_set_sort_options(StorageSortOpts sort)
+storage_deinit()
 {
-    storage.sort = sort;
-    g_sequence_sort(storage.list, storage_sorter, NULL);
-}
+    // Stop storage thread
+    storage.running = FALSE;
+    g_thread_join(storage.thread);
+    // Remove all calls
+    storage_calls_clear();
+    // Remove Call-id hash table
+    g_hash_table_destroy(storage.callids);
+    // Remove calls vector
+    g_sequence_free(storage.list);
+    g_sequence_free(storage.active);
 
-StorageSortOpts
-storage_sort_options()
-{
-    return storage.sort;
 }
-

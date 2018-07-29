@@ -150,7 +150,7 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
     g_ptr_array_insert(packet->proto, PACKET_RTCP, rtcp);
 
     /** @TODO Backwards compatibility during refactoring */
-    storage_check_rtp_packet(packet);
+    storage_add_packet(packet);
     return NULL;
 }
 

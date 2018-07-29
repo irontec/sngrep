@@ -110,9 +110,9 @@ struct _Storage
     //! List of active captured calls
     GSequence *active;
     //! Changed flag. For interface optimal updates
-    bool changed;
+    gboolean changed;
     //! Last created id
-    int last_index;
+    guint last_index;
     //! Call-Ids hash table
     GHashTable *callids;
     //! Pending packets to be parsed queue
@@ -126,6 +126,8 @@ struct _Storage
 /**
  * @brief Initialize SIP Storage structures
  *
+ * FIXME This function initializes storage structure and starts storage
+ * thread.
  */
 gboolean
 storage_init(StorageCaptureOpts capture_options,
@@ -135,41 +137,23 @@ storage_init(StorageCaptureOpts capture_options,
 
 /**
  * @brief Deallocate all memory used for SIP calls
+ *
+ * Stop storage thread and free its memory
  */
 void
 storage_deinit();
 
-void
-storage_check_packet();
-
+/**
+ * @brief Add a new packet to storage queue
+ *
+ * This function must be used to include a new packet into the storage from
+ * capture threads. Storage will periodically check the internal queue for
+ * new packets to be stored or discarded.
+ *
+ * @param packet Packet structure pointer with fully captured data
+ */
 void
 storage_add_packet(Packet *packet);
-
-StorageCaptureOpts
-storage_capture_options();
-
-
-
-/**
- * @brief Loads a new message from raw header/payload
- *
- * Use this function to convert raw data into call and message
- * structures. This is mainly used to load data from a file or
- *
- * @param packet Packet structure pointer
- * @return a SIP msg structure pointer
- */
-SipMsg *
-storage_check_sip_packet(Packet *packet);
-
-/**
- * @brief Check RTP packet streams
- *
- * @param packet Packet structure pointer
- * @return a SIP msg structure pointer
- */
-rtp_stream_t *
-storage_check_rtp_packet(Packet *packet);
 
 /**
  * @brief Return if the call list has changed
@@ -198,15 +182,6 @@ GSequenceIter *
 storage_calls_iterator();
 
 /**
- * @brief Return if a call is in active's call vector
- *
- * @param call Call to be searched
- * @return TRUE if call is active, FALSE otherwise
- */
-gboolean
-storage_call_is_active(SipCall *call);
-
-/**
  * @brief Return the call list
  */
 GSequence *
@@ -228,15 +203,6 @@ sip_stats_t
 storage_calls_stats();
 
 /**
- * @brief Find a call structure in calls linked list given an callid
- *
- * @param callid Call-ID Header value
- * @return pointer to the sip_call structure found or NULL
- */
-SipCall *
-storage_find_by_callid(const char *callid);
-
-/**
  * @brief Remove al calls
  *
  * This funtion will clear the call list invoking the destroy
@@ -255,15 +221,6 @@ void
 storage_calls_clear_soft();
 
 /**
- * @brief Remove first call in the call list
- *
- * This function removes the first call in the calls vector avoiding
- * reaching the capture limit.
- */
-void
-storage_calls_rotate();
-
-/**
  * @brief Parse SIP Message payload for SDP media streams
  *
  * Parse the payload content to get SDP information
@@ -275,26 +232,28 @@ void
 storage_register_streams(SipMsg *msg);
 
 /**
- * @brief Get Capture Matching expression
+ * @brief Get Storage Matching options
  *
- * @return String containing matching expression
+ * @return Struct containing matching options
  */
-const char *
-storage_match_expr();
+const StorageMatchOpts
+storage_match_options();
 
 /**
- * @brief Checks if a given payload matches expression
+ * @brief Get Storage Sorting options
  *
- * @param payload Packet payload
- * @return 1 if matches, 0 otherwise
+ * @return Struct containing sorting options
  */
-int
-storage_check_match_expr(const char *payload);
+const StorageSortOpts
+storage_sort_options();
 
+
+/**
+ * @brief Set Storage Sorting options
+ *
+ * @param sort Struct with sorting information
+ */
 void
 storage_set_sort_options(StorageSortOpts sort);
-
-StorageSortOpts
-storage_sort_options();
 
 #endif

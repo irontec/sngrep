@@ -124,7 +124,7 @@ packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray 
     g_ptr_array_insert(packet->proto, PACKET_RTP, rtp);
 
     /** @TODO Backwards compatibility during refactoring */
-    storage_check_rtp_packet(packet);
+    storage_add_packet(packet);
     return NULL;
 }
 
