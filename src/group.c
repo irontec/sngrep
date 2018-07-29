@@ -48,17 +48,6 @@ call_group_free(SipCallGroup *group)
     g_free(group);
 }
 
-/**
- * @brief Sort messages in a group by message time
- * @param vector sorted vector
- * @param item item to add to the vector
- */
-static gint
-call_group_msg_sorter(gconstpointer a, gconstpointer b)
-{
-    return timeval_is_older(msg_get_time(a), msg_get_time(b));
-}
-
 gboolean
 call_group_changed(SipCallGroup *group)
 {
@@ -262,7 +251,6 @@ call_group_get_next_stream(SipCallGroup *group, RtpStream *stream)
     RtpStream *next = NULL;
     RtpStream *cand;
     SipCall *call;
-    GSequenceIter *streams;
 
     for (guint i = 0; i < g_list_length(group->calls); i++) {
         call = g_list_nth_data(group->calls, i);

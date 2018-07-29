@@ -36,7 +36,7 @@
 #include "filter.h"
 
 //! Storage of filter information
-filter_t filters[FILTER_COUNT] = { };
+filter_t filters[FILTER_COUNT] = { 0 };
 
 int
 filter_set(int type, const char *expr)
@@ -72,13 +72,12 @@ filter_get(int type)
 }
 
 gboolean
-filter_check_call(gconstpointer item, gconstpointer user_data)
+filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
 {
     int i;
     char data[MAX_SIP_PAYLOAD];
     SipCall *call = (SipCall*) item;
     SipMsg *msg;
-    GSequenceIter *it;
 
     // Dont filter calls without messages
     if (call_msg_count(call) == 0)

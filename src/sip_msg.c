@@ -90,7 +90,7 @@ msg_get_payload(SipMsg *msg)
 
 GTimeVal
 msg_get_time(const SipMsg *msg) {
-    GTimeVal t = { };
+    GTimeVal t = { 0 };
     PacketFrame *frame;
 
     if (msg && (frame = g_list_nth_data(msg->packet->frames, 0)))

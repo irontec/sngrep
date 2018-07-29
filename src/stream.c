@@ -35,7 +35,7 @@
 #include "storage.h"
 
 RtpStream *
-stream_create(Packet *packet, PacketSdpMedia *media)
+stream_create(G_GNUC_UNUSED Packet *packet, PacketSdpMedia *media)
 {
     RtpStream *stream = g_malloc0(sizeof(RtpStream));
 
@@ -77,8 +77,6 @@ const char *
 stream_get_format(RtpStream *stream)
 {
 
-    const char *fmt;
-
     // Get format for media payload
     if (!stream || !stream->media)
         return NULL;
@@ -109,8 +107,6 @@ stream_find_by_format(Address src, Address dst, uint32_t format)
     SipCall *call;
     // Iterator for active calls
     GSequenceIter *calls;
-    // Iterator for call streams
-    GSequenceIter *streams;
     // Candiate stream
     RtpStream *candidate = NULL;
 

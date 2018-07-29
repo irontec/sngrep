@@ -127,7 +127,7 @@ int
 call_raw_print_msg(ui_t *ui, SipMsg *msg)
 {
     call_raw_info_t *info;
-    int payload_lines, i, column, height, width;
+    int payload_lines, column, height, width;
     // Message ngrep style Header
     char header[256];
     char payload[MAX_SIP_PAYLOAD];
@@ -149,7 +149,7 @@ call_raw_print_msg(ui_t *ui, SipMsg *msg)
     // Check how many lines we well need to draw this message
     payload_lines = 0;
     column = 0;
-    for (i = 0; i < strlen(payload); i++) {
+    for (guint i = 0; i < strlen(payload); i++) {
         if (column == width || payload[i] == '\n') {
             payload_lines++;
             column = 0;
@@ -229,14 +229,14 @@ call_raw_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                /* no break */
+                __attribute__((fallthrough));
             case ACTION_NPAGE:
                 // Next page => N key down strokes
                 info->scroll += rnpag_steps;
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                /* no break */
+                __attribute__((fallthrough));
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
                 info->scroll -= rnpag_steps;

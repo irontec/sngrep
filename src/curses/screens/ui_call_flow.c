@@ -885,7 +885,7 @@ call_flow_arrow_create(ui_t *ui, void *item, int type)
 }
 
 int
-call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow)
+call_flow_arrow_height(G_GNUC_UNUSED ui_t *ui, const call_flow_arrow_t *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
         if (setting_enabled(SETTING_CF_ONLYMEDIA))
@@ -957,7 +957,6 @@ call_flow_draw_raw(ui_t *ui, SipMsg *msg)
 {
     call_flow_info_t *info;
     WINDOW *raw_win;
-    call_flow_arrow_t *arrow;
     int raw_width, raw_height;
     int min_raw_width, fixed_raw_width;
 
@@ -1017,7 +1016,7 @@ call_flow_draw_raw(ui_t *ui, SipMsg *msg)
 
 
 int
-call_flow_draw_raw_rtcp(ui_t *ui, RtpStream *stream)
+call_flow_draw_raw_rtcp(ui_t *ui, G_GNUC_UNUSED RtpStream *stream)
 {
     /**
      * TODO This is too experimental to even display it
@@ -1105,13 +1104,13 @@ call_flow_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                /* no break */
+                __attribute__((fallthrough));
             case ACTION_NPAGE:
                 call_flow_move(ui, info->cur_arrow + rnpag_steps);
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                /* no break */
+                __attribute__((fallthrough));
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
                 call_flow_move(ui, info->cur_arrow - rnpag_steps);
@@ -1241,7 +1240,7 @@ call_flow_handle_key(ui_t *ui, int key)
 }
 
 int
-call_flow_help(ui_t *ui)
+call_flow_help(G_GNUC_UNUSED ui_t *ui)
 {
     WINDOW *help_win;
     int height, width;

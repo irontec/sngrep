@@ -114,13 +114,13 @@ int
 msg_diff_line_highlight(const char* payload1, const char* payload2, char *highlight)
 {
     char search[MAX_SIP_PAYLOAD];
-    int len, i;
+    int len;
 
     // Initialize search terms
     memset(search, 0, sizeof(search));
     len = 0;
 
-    for (i = 0; i < strlen(payload1); i++) {
+    for (guint i = 0; i < strlen(payload1); i++) {
         // Store this char in the search term
         search[len++] = payload1[i];
         // If we have a full line in search array
@@ -176,7 +176,7 @@ msg_diff_draw(ui_t *ui)
 int
 msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight)
 {
-    int height, width, line, column, i;
+    int height, width, line, column;
     char header[MAX_SIP_PAYLOAD];
     const char * payload = msg_get_payload(msg);
 
@@ -193,7 +193,7 @@ msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight)
     // Print msg payload
     line = 2;
     column = 0;
-    for (i = 0; i < strlen(payload); i++) {
+    for (guint i = 0; i < strlen(payload); i++) {
         if (payload[i] == '\r')
             continue;
 

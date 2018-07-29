@@ -197,7 +197,7 @@ call_list_draw_header(ui_t *ui)
     int colpos, collen, i;
     char sortind;
     const char *countlb;
-    const char *device, *filterexpr, *filterbpf;
+    const char *device, *filterbpf;
 
     // Get panel info
     call_list_info_t *info = call_list_info(ui);
@@ -283,7 +283,7 @@ call_list_draw_header(ui_t *ui)
         coldesc = sip_attr_get_title(info->columns[i].id);
 
         // Check if the column will fit in the remaining space of the screen
-        if (colpos + strlen(coldesc) >= ui->width)
+        if (colpos + strlen(coldesc) >= (guint) ui->width)
             break;
 
         // Print sort column indicator
@@ -538,7 +538,7 @@ call_list_line_text(ui_t *ui, SipCall *call, char *text)
         collen = info->columns[i].width;
 
         // Check if next column fits on window width
-        if (strlen(text) + collen >= ui->width)
+        if ((gint)(strlen(text) + collen) >= ui->width)
             collen = ui->width - strlen(text);
 
         // If no space left on the screen stop processing columns
@@ -594,14 +594,14 @@ call_list_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                /* no break */
+                __attribute__((fallthrough));
             case ACTION_NPAGE:
                 // Next page => N key down strokes
                 call_list_move(ui, info->cur_call + rnpag_steps);
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                /* no break */
+                __attribute__((fallthrough));
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
                 call_list_move(ui, info->cur_call - rnpag_steps);
@@ -870,7 +870,7 @@ call_list_handle_menu_key(ui_t *ui, int key)
                       sort.by = id;
                   }
                   storage_set_sort_options(sort);
-                  /* no break */
+                  __attribute__((fallthrough));
               case ACTION_PREV_SCREEN:
                   // Desactive sorting menu
                   info->menu_active = 0;
@@ -905,7 +905,7 @@ call_list_handle_menu_key(ui_t *ui, int key)
 }
 
 int
-call_list_help(ui_t *ui)
+call_list_help(G_GNUC_UNUSED ui_t *ui)
 {
     WINDOW *help_win;
     int height, width;

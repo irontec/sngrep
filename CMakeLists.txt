@@ -4,7 +4,7 @@ project(sngrep
         LANGUAGES C)
 
 set(PROJECT_NAME sngrep)
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 #add_compile_options(-Werror -g)
 add_compile_options(-Werror -g -Wall -pedantic -Wextra)
 

@@ -420,7 +420,7 @@ save_to_file(ui_t *ui)
     int cur = 0, total = 0;
     WINDOW *progress;
     GSequence *groupcalls;
-    GSequenceIter *calls, *msgs, *rtps, *packets;
+    GSequenceIter *calls, *rtps, *packets;
     GSequence *sorted;
     GError *error = NULL;
 

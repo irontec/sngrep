@@ -130,7 +130,7 @@ packet_sip_header(const Packet *packet, enum sip_headers header);
 const gchar *
 packet_sip_method_str(const Packet *packet);
 
-const guint
+guint
 packet_sip_method(const Packet *packet);
 
 PacketSipData *

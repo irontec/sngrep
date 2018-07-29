@@ -133,7 +133,7 @@ tls_connection_load_cipher(struct SSLConnection *conn)
 }
 
 int
-tls_privkey_decrypt_data(gnutls_x509_privkey_t key, unsigned int flags,
+tls_privkey_decrypt_data(gnutls_x509_privkey_t key, G_GNUC_UNUSED unsigned int flags,
                          const gnutls_datum_t * ciphertext, gnutls_datum_t * plaintext)
 {
     size_t decr_len = 0, i = 0;
@@ -229,7 +229,7 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
         memcpy(hmac, gcry_md_read(md, algo), algolen);
         hlen = algolen;
 
-        hlen = (hlen > pending) ? pending : hlen;
+        hlen = ((gint) hlen > pending) ? pending : (gint) hlen;
         memcpy(out, hmac, hlen);
         out += hlen;
         pending -= hlen;
@@ -522,7 +522,7 @@ tls_connection_find(PacketParser *parser, struct in_addr src, uint16_t sport, st
 
 
 int
-tls_record_handshake_is_ssl2(struct SSLConnection *conn, const uint8_t *payload,
+tls_record_handshake_is_ssl2(G_GNUC_UNUSED struct SSLConnection *conn, const uint8_t *payload,
                              const int len)
 {
     // This magic belongs to wireshark people <3
@@ -537,7 +537,7 @@ tls_record_handshake_is_ssl2(struct SSLConnection *conn, const uint8_t *payload,
 
 int
 tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
-                        const int len, uint8_t **out, uint32_t *outl)
+                        const int len, G_GNUC_UNUSED uint8_t **out, G_GNUC_UNUSED uint32_t *outl)
 {
     int record_len_len;
     uint32_t record_len;
@@ -569,7 +569,7 @@ tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
     }
 
     // We only handle Client Hello handshake SSLv2 records
-    if (record_type == 0x01 && flen > sizeof(struct ClientHelloSSLv2)) {
+    if (record_type == 0x01 && (guint) flen > sizeof(struct ClientHelloSSLv2)) {
         // Client Hello SSLv2
         struct ClientHelloSSLv2 *clienthello = (struct ClientHelloSSLv2 *) fragment;
 

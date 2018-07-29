@@ -37,25 +37,25 @@
 #include "curses/ui_manager.h"
 
 static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
-    { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 },
-    { SIP_ATTR_SIPFROM,     "sipfrom",     NULL,   "SIP From",      25 },
-    { SIP_ATTR_SIPFROMUSER, "sipfromuser", NULL,   "SIP From User", 20 },
-    { SIP_ATTR_SIPTO,       "sipto",       NULL,   "SIP To",        25 },
-    { SIP_ATTR_SIPTOUSER,   "siptouser",   NULL,   "SIP To User",   20 },
-    { SIP_ATTR_SRC,         "src",         NULL,   "Source",        22 },
-    { SIP_ATTR_DST,         "dst",         NULL,   "Destination",   22 },
-    { SIP_ATTR_CALLID,      "callid",      NULL,   "Call-ID",       50 },
-    { SIP_ATTR_XCALLID,     "xcallid",     NULL,   "X-Call-ID",     50 },
-    { SIP_ATTR_DATE,        "date",        NULL,   "Date",          10 },
-    { SIP_ATTR_TIME,        "time",        NULL,   "Time",          8 },
+    { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 , NULL },
+    { SIP_ATTR_SIPFROM,     "sipfrom",     NULL,   "SIP From",      25, NULL },
+    { SIP_ATTR_SIPFROMUSER, "sipfromuser", NULL,   "SIP From User", 20, NULL },
+    { SIP_ATTR_SIPTO,       "sipto",       NULL,   "SIP To",        25, NULL },
+    { SIP_ATTR_SIPTOUSER,   "siptouser",   NULL,   "SIP To User",   20, NULL },
+    { SIP_ATTR_SRC,         "src",         NULL,   "Source",        22, NULL },
+    { SIP_ATTR_DST,         "dst",         NULL,   "Destination",   22, NULL },
+    { SIP_ATTR_CALLID,      "callid",      NULL,   "Call-ID",       50, NULL },
+    { SIP_ATTR_XCALLID,     "xcallid",     NULL,   "X-Call-ID",     50, NULL },
+    { SIP_ATTR_DATE,        "date",        NULL,   "Date",          10, NULL },
+    { SIP_ATTR_TIME,        "time",        NULL,   "Time",          8, NULL },
     { SIP_ATTR_METHOD,      "method",      NULL,   "Method",        10, sip_attr_color_method },
-    { SIP_ATTR_TRANSPORT,   "transport",   "Trans", "Transport",    3 },
-    { SIP_ATTR_MSGCNT,      "msgcnt",      "Msgs", "Message Count", 5 },
+    { SIP_ATTR_TRANSPORT,   "transport",   "Trans", "Transport",    3, NULL },
+    { SIP_ATTR_MSGCNT,      "msgcnt",      "Msgs", "Message Count", 5, NULL },
     { SIP_ATTR_CALLSTATE,   "state",       NULL,   "Call State",    10, sip_attr_color_state },
-    { SIP_ATTR_CONVDUR,     "convdur",     "ConvDur", "Conversation Duration", 7 },
-    { SIP_ATTR_TOTALDUR,    "totaldur",    "TotalDur", "Total Duration", 8 },
-    { SIP_ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text", 25 },
-    { SIP_ATTR_WARNING,     "warning",     "Warning", "Warning code", 4 }
+    { SIP_ATTR_CONVDUR,     "convdur",     "ConvDur", "Conversation Duration", 7, NULL },
+    { SIP_ATTR_TOTALDUR,    "totaldur",    "TotalDur", "Total Duration", 8, NULL },
+    { SIP_ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text", 25, NULL },
+    { SIP_ATTR_WARNING,     "warning",     "Warning", "Warning code", 4, NULL }
 };
 
 sip_attr_hdr_t *

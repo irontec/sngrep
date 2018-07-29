@@ -319,7 +319,7 @@ call_attr_compare(const SipCall *one, const SipCall *two, enum sip_attr_id id)
             if (oneintvalue == twointvalue) return 0;
             if (oneintvalue > twointvalue) return 1;
             if (oneintvalue < twointvalue) return -1;
-            /* no break */
+            __attribute__((fallthrough));
         default:
             return 0;
     }
@@ -341,7 +341,6 @@ RtpStream *
 call_find_stream(SipCall *call, Address src, Address dst)
 {
     RtpStream *stream;
-    GSequenceIter *it;
 
     // Look for an incomplete stream with this destination
     for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {

@@ -34,9 +34,13 @@
 
 //! Shorter declaration of packet parser structure
 typedef struct _PacketParser PacketParser;
+
 //! Forward declaration of Capture input structure
+struct _CaptureInput;
 typedef struct _CaptureInput CaptureInput;
+
 //! Forward declaration of packet parser structure
+struct _PacketDissector;
 typedef struct _PacketDissector PacketDissector;
 
 /**

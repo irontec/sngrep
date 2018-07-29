@@ -347,7 +347,7 @@ draw_message(WINDOW *win, SipMsg *msg)
 int
 draw_message_pos(WINDOW *win, SipMsg *msg, int starting)
 {
-    int height, width, line, column, i;
+    int height, width, line, column;
     const char *cur_line, *payload, *method = NULL;
     int syntax = setting_enabled(SETTING_SYNTAX);
     const char *nonascii = setting_get_value(SETTING_CR_NON_ASCII);
@@ -371,7 +371,7 @@ draw_message_pos(WINDOW *win, SipMsg *msg, int starting)
     // Print msg payload
     line = starting;
     column = 0;
-    for (i = 0; i < strlen(payload); i++) {
+    for (guint i = 0; i < strlen(payload); i++) {
         // If syntax highlighting is enabled
         if (syntax) {
             // First line highlight
@@ -506,7 +506,7 @@ dialog_run(const char *fmt, ...)
 
     // Write the message into the screen
     for (word = strtok(textva, " "); word; word = strtok(NULL, " ")) {
-        if (col + strlen(word) > width - 2) {
+        if ((gint)(col + strlen(word)) > width - 2) {
             line++;
             col = 2;
         }
@@ -563,7 +563,7 @@ dialog_progress_run(const char *fmt, ...)
 
     // Write the message into the screen
     for (word = strtok(textva, " "); word; word = strtok(NULL, " ")) {
-        if (col + strlen(word) > width - 2) {
+        if ((gint)(col + strlen(word)) > width - 2) {
             line++;
             col = 2;
         }
@@ -632,9 +632,9 @@ dialog_confirm(const char *title, const char *text, const char *options)
 
     // Calculate proper width taking into acount longest data
     width = strlen(options) + 6 * optioncnt;
-    if (strlen(title) + 4 > width)
+    if ((gint)strlen(title) + 4 > width)
         width = strlen(title) + 4;
-    if (strlen(text) > width && strlen(text) < 50)
+    if ((gint)strlen(text) > width && strlen(text) < 50)
         width = strlen(text);
 
     // Check we don't want a too big or small window
@@ -691,7 +691,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
             newl = 1;
         }
 
-        if (col + strlen(word) > width - 2) {
+        if ((gint)(col + strlen(word)) > width - 2) {
             line++;
             col = 2;
         }

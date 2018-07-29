@@ -191,7 +191,7 @@ packet_sip_method_str(const Packet *packet)
     }
 }
 
-const guint
+guint
 packet_sip_method(const Packet *packet)
 {
     return packet_sip_data(packet)->reqresp;

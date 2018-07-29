@@ -432,7 +432,7 @@ column_select_save_columns(ui_t *ui)
     column_select_info_t *info = column_select_info(ui);
 
     // Add all selected columns
-    for (guint i = 0; i < item_count(info->menu); i++) {
+    for (gint i = 0; i < item_count(info->menu); i++) {
         // If column is active
         if (!strncmp(item_name(info->items[i]), "[ ]", 3))
             continue;

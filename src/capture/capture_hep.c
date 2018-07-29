@@ -224,7 +224,7 @@ capture_input_hep_receive_v2(CaptureInput *input)
 
     /* IPv4 */
     if (family == AF_INET) {
-        memcpy(&hep_ipheader, (void*) buffer + pos, sizeof(struct _CaptureHepIpHdr));
+        memcpy(&hep_ipheader, (gchar *) buffer + pos, sizeof(struct _CaptureHepIpHdr));
         inet_ntop(AF_INET, &hep_ipheader.hp_src, src.ip, sizeof(src.ip));
         inet_ntop(AF_INET, &hep_ipheader.hp_dst, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct _CaptureHepIpHdr);
@@ -232,7 +232,7 @@ capture_input_hep_receive_v2(CaptureInput *input)
 #ifdef USE_IPV6
         /* IPv6 */
     else if(family == AF_INET6) {
-        memcpy(&hep_ip6header, (void*) buffer + pos, sizeof(struct _CaptureHepIp6Hdr));
+        memcpy(&hep_ip6header, (gchar *) buffer + pos, sizeof(struct _CaptureHepIp6Hdr));
         inet_ntop(AF_INET6, &hep_ip6header.hp6_src, src.ip, sizeof(src.ip));
         inet_ntop(AF_INET6, &hep_ip6header.hp6_dst, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct _CaptureHepIp6Hdr);
@@ -244,7 +244,7 @@ capture_input_hep_receive_v2(CaptureInput *input)
     dst.port = ntohs(hdr.hp_dport);
 
     /* TIMESTAMP*/
-    memcpy(&hep_time, (void*) buffer + pos, sizeof(struct _CaptureHepTimeHdr));
+    memcpy(&hep_time, (gchar *) buffer + pos, sizeof(struct _CaptureHepTimeHdr));
     pos += sizeof(struct _CaptureHepTimeHdr);
 
     // Create Packet frame data
@@ -329,12 +329,12 @@ capture_input_hep_receive_v3(CaptureInput *input)
     /* IPv4 */
     if (family == AF_INET) {
         /* SRC IP */
-        memcpy(&src_ip4, (void*) buffer + pos, sizeof(struct _CaptureHepChunkIp4));
+        memcpy(&src_ip4, (gchar *) buffer + pos, sizeof(struct _CaptureHepChunkIp4));
         inet_ntop(AF_INET, &src_ip4.data, src.ip, sizeof(src.ip));
         pos += sizeof(struct _CaptureHepChunkIp4);
 
         /* DST IP */
-        memcpy(&dst_ip4, (void*) buffer + pos, sizeof(struct _CaptureHepChunkIp4));
+        memcpy(&dst_ip4, (gchar *) buffer + pos, sizeof(struct _CaptureHepChunkIp4));
         inet_ntop(AF_INET, &dst_ip4.data, dst.ip, sizeof(src.ip));
         pos += sizeof(struct _CaptureHepChunkIp4);
     }
@@ -342,12 +342,12 @@ capture_input_hep_receive_v3(CaptureInput *input)
         /* IPv6 */
     else if(family == AF_INET6) {
         /* SRC IPv6 */
-        memcpy(&src_ip6, (void*) buffer + pos, sizeof(struct _CaptureHepChunkIp6));
+        memcpy(&src_ip6, (gchar *) buffer + pos, sizeof(struct _CaptureHepChunkIp6));
         inet_ntop(AF_INET6, &src_ip6.data, src.ip, sizeof(src.ip));
         pos += sizeof(struct _CaptureHepChunkIp6);
 
         /* DST IP */
-        memcpy(&src_ip6, (void*) buffer + pos, sizeof(struct _CaptureHepChunkIp6));
+        memcpy(&src_ip6, (gchar *) buffer + pos, sizeof(struct _CaptureHepChunkIp6));
         inet_ntop(AF_INET6, &dst_ip6.data, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct _CaptureHepChunkIp6);
     }
@@ -367,11 +367,11 @@ capture_input_hep_receive_v3(CaptureInput *input)
 
     /* auth key */
     if (hep->password != NULL) {
-        memcpy(&authkey_chunk, (void*) buffer + pos, sizeof(authkey_chunk));
+        memcpy(&authkey_chunk, (gchar *) buffer + pos, sizeof(authkey_chunk));
         pos += sizeof(authkey_chunk);
 
         password_len = ntohs(authkey_chunk.length) - sizeof(authkey_chunk);
-        memcpy(password, (void*) buffer + pos, password_len);
+        memcpy(password, (gchar *) buffer + pos, password_len);
         pos += password_len;
 
         // Validate the password
@@ -380,7 +380,7 @@ capture_input_hep_receive_v3(CaptureInput *input)
     }
 
     if (setting_enabled(SETTING_HEP_LISTEN_UUID)) {
-        memcpy(&uuid_chunk, (void*) buffer + pos, sizeof(uuid_chunk));
+        memcpy(&uuid_chunk, (gchar *) buffer + pos, sizeof(uuid_chunk));
         pos += sizeof(uuid_chunk);
 
         uuid_len = ntohs(uuid_chunk.length) - sizeof(uuid_chunk);
@@ -388,7 +388,7 @@ capture_input_hep_receive_v3(CaptureInput *input)
     }
 
     /* Payload */
-    memcpy(&payload_chunk, (void*) buffer + pos, sizeof(payload_chunk));
+    memcpy(&payload_chunk, (gchar *) buffer + pos, sizeof(payload_chunk));
     pos += sizeof(payload_chunk);
 
     // Calculate payload size
@@ -465,6 +465,8 @@ capture_input_hep_port(CaptureManager *manager)
             return hep->url.port;
         }
     }
+
+    return "";
 }
 
 CaptureOutput *
@@ -617,27 +619,27 @@ capture_output_hep_write_v2(CaptureOutput *output, Packet *packet)
 
     // Copy basic headers
     buflen = 0;
-    memcpy(buffer + buflen, &hdr, sizeof(struct _CaptureHepHdr));
+    memcpy((gchar *) buffer + buflen, &hdr, sizeof(struct _CaptureHepHdr));
     buflen += sizeof(struct _CaptureHepHdr);
 
     // Copy IP header
     if (ip->version == 4) {
-        memcpy(buffer + buflen, &hep_ipheader, sizeof(struct _CaptureHepIpHdr));
+        memcpy((gchar *) buffer + buflen, &hep_ipheader, sizeof(struct _CaptureHepIpHdr));
         buflen += sizeof(struct _CaptureHepIpHdr);
     }
 #ifdef USE_IPV6
     else if(ip->version == 6) {
-        memcpy(buffer + buflen, &hep_ip6header, sizeof(struct _CaptureHepIp6Hdr));
+        memcpy((gchar *) buffer + buflen, &hep_ip6header, sizeof(struct _CaptureHepIp6Hdr));
         buflen += sizeof(struct _CaptureHepIp6Hdr);
     }
 #endif
 
     // Copy TImestamp header
-    memcpy(buffer + buflen, &hep_time, sizeof(struct _CaptureHepTimeHdr));
+    memcpy((gchar *) buffer + buflen, &hep_time, sizeof(struct _CaptureHepTimeHdr));
     buflen += sizeof(struct _CaptureHepTimeHdr);
 
     // Now copy payload itself
-    memcpy(buffer + buflen, sip->payload, strlen(sip->payload));
+    memcpy((gchar *) buffer + buflen, sip->payload, strlen(sip->payload));
     buflen += strlen(sip->payload);
 
     if (send(hep->socket, buffer, buflen, 0) == -1) {
@@ -788,16 +790,16 @@ capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
     hg->header.length = htons(tlen);
 
     buffer = g_malloc0(tlen);
-    memcpy(buffer, hg, sizeof(struct CaptureHepGeneric));
+    memcpy((gchar *) buffer, hg, sizeof(struct CaptureHepGeneric));
     buflen = sizeof(struct CaptureHepGeneric);
 
     /* IPv4 */
     if (ip->version == 4) {
         /* SRC IP */
-        memcpy(buffer + buflen, &src_ip4, sizeof(struct _CaptureHepChunkIp4));
+        memcpy((gchar *) buffer + buflen, &src_ip4, sizeof(struct _CaptureHepChunkIp4));
         buflen += sizeof(struct _CaptureHepChunkIp4);
 
-        memcpy(buffer + buflen, &dst_ip4, sizeof(struct _CaptureHepChunkIp4));
+        memcpy((gchar *) buffer + buflen, &dst_ip4, sizeof(struct _CaptureHepChunkIp4));
         buflen += sizeof(struct _CaptureHepChunkIp4);
     }
 
@@ -805,10 +807,10 @@ capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
     /* IPv6 */
     else if(ip->version == 6) {
         /* SRC IPv6 */
-        memcpy(buffer + buflen, &src_ip4, sizeof(struct _CaptureHepChunkIp6));
+        memcpy((gchar *) buffer + buflen, &src_ip4, sizeof(struct _CaptureHepChunkIp6));
         buflen += sizeof(struct _CaptureHepChunkIp6);
 
-        memcpy(buffer + buflen, &dst_ip6, sizeof(struct _CaptureHepChunkIp6));
+        memcpy((gchar *) buffer + buflen, &dst_ip6, sizeof(struct _CaptureHepChunkIp6));
         buflen += sizeof(struct _CaptureHepChunkIp6);
     }
 #endif
@@ -816,20 +818,20 @@ capture_output_hep_write_v3(CaptureOutput *output, Packet *packet)
     /* AUTH KEY CHUNK */
     if (hep->password != NULL) {
 
-        memcpy(buffer + buflen, &authkey_chunk, sizeof(struct _CaptureHepChunk));
+        memcpy((gchar *) buffer + buflen, &authkey_chunk, sizeof(struct _CaptureHepChunk));
         buflen += sizeof(struct _CaptureHepChunk);
 
         /* Now copying payload self */
-        memcpy(buffer + buflen, hep->password, strlen(hep->password));
+        memcpy((gchar *) buffer + buflen, hep->password, strlen(hep->password));
         buflen += strlen(hep->password);
     }
 
     /* PAYLOAD CHUNK */
-    memcpy(buffer + buflen, &payload_chunk, sizeof(struct _CaptureHepChunk));
+    memcpy((gchar *) buffer + buflen, &payload_chunk, sizeof(struct _CaptureHepChunk));
     buflen += sizeof(struct _CaptureHepChunk);
 
     /* Now copying payload itself */
-    memcpy(buffer + buflen, sip->payload, strlen(sip->payload));
+    memcpy((gchar *) buffer + buflen, sip->payload, strlen(sip->payload));
     buflen += strlen(sip->payload);
 
     if (send(hep->socket, buffer, buflen, 0) == -1) {
@@ -872,4 +874,6 @@ capture_output_hep_port(CaptureManager *manager)
             return hep->url.port;
         }
     }
+
+    return "";
 }

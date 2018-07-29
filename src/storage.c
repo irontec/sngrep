@@ -59,7 +59,7 @@
 /**
  * @brief Global Structure with all storage information
  */
-Storage storage = {};
+Storage storage = { 0 };
 
 void
 storage_add_packet(Packet *packet)
@@ -83,7 +83,7 @@ storage_calls_changed()
     return changed;
 }
 
-int
+guint
 storage_calls_count()
 {
     return g_sequence_get_length(storage.list);
@@ -116,7 +116,7 @@ storage_active_calls_vector()
 sip_stats_t
 storage_calls_stats()
 {
-    sip_stats_t stats = {};
+    sip_stats_t stats = { 0 };
     GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
 
     // Total number of calls without filtering
@@ -194,7 +194,7 @@ storage_check_match_expr(const char *payload)
 
 }
 
-const StorageMatchOpts
+StorageMatchOpts
 storage_match_options()
 {
     return storage.match;
@@ -207,7 +207,7 @@ storage_set_sort_options(StorageSortOpts sort)
     g_sequence_sort(storage.list, storage_sorter, NULL);
 }
 
-const StorageSortOpts
+StorageSortOpts
 storage_sort_options()
 {
     return storage.sort;
@@ -310,15 +310,6 @@ storage_check_rtp_packet(Packet *packet)
     Address src, dst;
     RtpStream *stream;
     RtpStream *reverse;
-    u_char format = 0;
-    const gchar *payload;
-    size_t size, bsize;
-    uint16_t len;
-    struct rtcp_hdr_generic hdr;
-    struct rtcp_hdr_sr hdr_sr;
-    struct rtcp_hdr_xr hdr_xr;
-    struct rtcp_blk_xr blk_xr;
-    struct rtcp_blk_xr_voip blk_xr_voip;
 
     // Get Addresses from packet
     src = packet_src_address(packet);
@@ -411,7 +402,7 @@ void
 storage_register_streams(SipMsg *msg)
 {
     Packet *packet = msg->packet;
-    Address emptyaddr = {};
+    Address emptyaddr = { 0 };
 
     PacketSdpData *sdp = g_ptr_array_index(packet->proto, PACKET_SDP);
     if (sdp == NULL) {

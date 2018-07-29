@@ -71,8 +71,10 @@ main(int argc, char* argv[])
     GError *error = NULL;
     gchar **input_files = NULL;
     gchar **input_devices = NULL;
+#ifdef USE_HEP
     gchar *hep_listen = NULL;
     gchar *hep_send = NULL;
+#endif
     gboolean no_interface = FALSE;
     gboolean quiet = FALSE;
     gboolean version = FALSE;
@@ -80,10 +82,12 @@ main(int argc, char* argv[])
     gboolean no_config = FALSE;
     gchar *output_file = NULL;
     gchar *config_file = NULL;
+#ifdef WITH_SSL
     gchar *keyfile = NULL;
-    StorageSortOpts storage_sopts = {};
-    StorageMatchOpts storage_mopts = {};
-    StorageCaptureOpts storage_copts = {};
+#endif
+    StorageSortOpts storage_sopts = { 0 };
+    StorageMatchOpts storage_mopts = { 0 };
+    StorageCaptureOpts storage_copts = { 0 };
     CaptureManager *manager;
     CaptureInput *input;
     CaptureOutput *output;

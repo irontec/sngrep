@@ -172,7 +172,7 @@ storage_calls_changed();
  *
  * @return how many calls are linked in the list
  */
-int
+guint
 storage_calls_count();
 
 /**
@@ -236,7 +236,7 @@ storage_register_streams(SipMsg *msg);
  *
  * @return Struct containing matching options
  */
-const StorageMatchOpts
+StorageMatchOpts
 storage_match_options();
 
 /**
@@ -244,7 +244,7 @@ storage_match_options();
  *
  * @return Struct containing sorting options
  */
-const StorageSortOpts
+StorageSortOpts
 storage_sort_options();
 
 

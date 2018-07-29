@@ -99,7 +99,7 @@ setting_by_id(int id)
 {
     int i;
     for (i = 0; i < SETTING_COUNT; i++) {
-        if (id == settings[i].id)
+        if ((guint) id == settings[i].id)
             return &settings[i];
     }
     return NULL;
@@ -120,7 +120,7 @@ int
 setting_id(const char *name)
 {
     const setting_t *sett = setting_by_name(name);
-    return (sett) ? sett->id : -1;
+    return (sett) ? (int) sett->id : -1;
 }
 
 const char *
@@ -134,7 +134,7 @@ int
 setting_format(int id)
 {
     const setting_t *sett = setting_by_id(id);
-    return (sett) ? sett->fmt : -1;
+    return (sett) ? (int) sett->fmt : -1;
 }
 
 const char **
