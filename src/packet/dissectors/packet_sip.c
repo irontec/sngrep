@@ -301,7 +301,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     packet_parser_next_dissector(parser, packet, data);
 
     // Add data to storage
-    storage_check_sip_packet(packet);
+    storage_add_packet(packet);
 
     return NULL;
 }

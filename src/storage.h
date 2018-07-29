@@ -36,16 +36,16 @@
 #define MAX_SIP_PAYLOAD 10240
 
 //! Shorter declaration of sip_call_list structure
-typedef struct sip_call_list sip_call_list_t;
+typedef struct _Storage Storage;
 //! Shorter declaration of sip stats
 typedef struct sip_stats sip_stats_t;
 
 //! Shorter declaration of structs
-typedef struct _SStorageSortOpts    SStorageSortOpts;
-typedef struct _SStorageMatchOpts   SStorageMatchOpts;
-typedef struct _SStorageCaptureOpts SStorageCaptureOpts;
+typedef struct _StorageSortOpts    StorageSortOpts;
+typedef struct _StorageMatchOpts   StorageMatchOpts;
+typedef struct _StorageCaptureOpts StorageCaptureOpts;
 
-struct _SStorageSortOpts
+struct _StorageSortOpts
 {
     //! Sort call list by this attribute
     enum sip_attr_id by;
@@ -53,7 +53,7 @@ struct _SStorageSortOpts
     gboolean asc;
 };
 
-struct _SStorageMatchOpts
+struct _StorageMatchOpts
 {
     //! Only store dialogs starting with INVITE
     gboolean invite;
@@ -69,7 +69,7 @@ struct _SStorageMatchOpts
     GRegex *mregex;
 };
 
-struct _SStorageCaptureOpts
+struct _StorageCaptureOpts
 {
     //! Max number of calls in the list
     guint limit;
@@ -97,14 +97,14 @@ struct sip_stats
  *
  * This structure acts as header of calls list
  */
-struct sip_call_list
+struct _Storage
 {
-    // Matching options
-    struct _SStorageMatchOpts match;
-    // Capture options
-    struct _SStorageCaptureOpts capture;
+    //! Matching options
+    StorageMatchOpts match;
+    //! Capture options
+    StorageCaptureOpts capture;
     //! Sort call list following this options
-    struct _SStorageSortOpts sort;
+    StorageSortOpts sort;
     //! List of all captured calls
     GSequence *list;
     //! List of active captured calls
@@ -115,6 +115,12 @@ struct sip_call_list
     int last_index;
     //! Call-Ids hash table
     GHashTable *callids;
+    //! Pending packets to be parsed queue
+    GAsyncQueue *pkt_queue;
+    //! Storage thread
+    GThread *thread;
+    //! Running thread flag
+    gboolean running;
 };
 
 /**
@@ -122,9 +128,9 @@ struct sip_call_list
  *
  */
 gboolean
-storage_init(SStorageCaptureOpts capture_options,
-             SStorageMatchOpts match_options,
-             SStorageSortOpts sort_options,
+storage_init(StorageCaptureOpts capture_options,
+             StorageMatchOpts match_options,
+             StorageSortOpts sort_options,
              GError **error);
 
 /**
@@ -133,8 +139,16 @@ storage_init(SStorageCaptureOpts capture_options,
 void
 storage_deinit();
 
-SStorageCaptureOpts
+void
+storage_check_packet();
+
+void
+storage_add_packet(Packet *packet);
+
+StorageCaptureOpts
 storage_capture_options();
+
+
 
 /**
  * @brief Loads a new message from raw header/payload
@@ -278,9 +292,9 @@ int
 storage_check_match_expr(const char *payload);
 
 void
-storage_set_sort_options(SStorageSortOpts sort);
+storage_set_sort_options(StorageSortOpts sort);
 
-SStorageSortOpts
+StorageSortOpts
 storage_sort_options();
 
 #endif

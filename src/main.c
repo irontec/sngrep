@@ -81,9 +81,9 @@ main(int argc, char* argv[])
     gchar *output_file = NULL;
     gchar *config_file = NULL;
     gchar *keyfile = NULL;
-    SStorageSortOpts storage_sopts = {};
-    SStorageMatchOpts storage_mopts = {};
-    SStorageCaptureOpts storage_copts = {};
+    StorageSortOpts storage_sopts = {};
+    StorageMatchOpts storage_mopts = {};
+    StorageCaptureOpts storage_copts = {};
     CaptureManager *manager;
     CaptureInput *input;
     CaptureOutput *output;
