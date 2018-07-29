@@ -46,7 +46,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CAPTURE_LIMIT,      "capture.limit",      SETTING_FMT_NUMBER,  "20000",     NULL },
     { SETTING_CAPTURE_DEVICE,     "capture.device",     SETTING_FMT_STRING,  "any",       NULL },
     { SETTING_CAPTURE_OUTFILE,    "capture.outfile",    SETTING_FMT_STRING,  "",          NULL },
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
+#ifdef WITH_SSL
     { SETTING_CAPTURE_KEYFILE,    "capture.keyfile",    SETTING_FMT_STRING,  "",          NULL },
     { SETTING_CAPTURE_TLSSERVER,  "capture.tlsserver",  SETTING_FMT_STRING,  "",          NULL },
 #endif

@@ -14,6 +14,9 @@ configure_file(
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/src/curses)
+include_directories(${CMAKE_SOURCE_DIR}/src/curses/widgets)
+include_directories(${CMAKE_SOURCE_DIR}/src/curses/screens)
 
 set(SOURCES
         src/packet/address.c
@@ -30,21 +33,21 @@ set(SOURCES
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
-        src/curses/scrollbar.c
-        src/curses/ui_call_flow.c
-        src/curses/ui_call_list.c
-        src/curses/ui_call_raw.c
-        src/curses/ui_column_select.c
-        src/curses/ui_filter.c
         src/curses/ui_manager.c
-        src/curses/ui_msg_diff.c
-        src/curses/ui_panel.c
-        src/curses/ui_save.c
-        src/curses/ui_settings.c
-        src/curses/ui_stats.c
+        src/curses/screens/ui_call_flow.c
+        src/curses/screens/ui_call_list.c
+        src/curses/screens/ui_call_raw.c
+        src/curses/screens/ui_column_select.c
+        src/curses/screens/ui_filter.c
+        src/curses/screens/ui_msg_diff.c
+        src/curses/screens/ui_save.c
+        src/curses/screens/ui_settings.c
+        src/curses/screens/ui_stats.c
+        src/curses/screens/ui_panel.c
+        src/curses/keybinding.c
+        src/curses/scrollbar.c
         src/filter.c
         src/group.c
-        src/keybinding.c
         src/main.c
         src/option.c
         src/stream.c
@@ -59,7 +62,7 @@ set(SOURCES
 
 ######################################################################
 # HEP  Support
-option (USE_HEP "Enable EEP/HEP Support" ON)
+option (USE_HEP "Enable EEP/HEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
 endif (USE_HEP)
@@ -68,7 +71,7 @@ endif (USE_HEP)
 option (USE_IPV6 "Enable IPv6 Support" ON)
 
 # GnuTLS Support
-option (WITH_SSL "Enable SSL Support (TLS SIP Transport)" ON)
+option (WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
     set(SOURCES ${SOURCES} src/packet/dissectors/packet_tls.c)
 endif(WITH_SSL)
@@ -78,14 +81,19 @@ add_executable(sngrep ${SOURCES})
 target_link_libraries(sngrep pcap)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(CURSES REQUIRED ncursesw)
+pkg_check_modules(CURSES REQUIRED ncursesw menuw panelw formw)
 include_directories(${CURSES_INCLUDE_DIR})
-target_link_libraries(sngrep ${CURSES_LIBRARIES} menu panel form)
+target_link_libraries(sngrep ${CURSES_LIBRARIES} )
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GOBJECT REQUIRED gobject-2.0)
+include_directories(${GOBJECT_INCLUDE_DIRS})
+target_link_libraries(sngrep ${GOBJECT_LIBRARIES})
 
 find_package(PkgConfig REQUIRED)
 find_package (Threads)
@@ -101,6 +109,16 @@ endif(WITH_SSL)
 
 ######################################################################
 add_definitions(-D_GNU_SOURCE)
+add_definitions(-D_XOPEN_SOURCE_EXTENDED)
+
+######################################################################
+ADD_CUSTOM_COMMAND(OUTPUT src/curses/gnt/gntmarshal.h src/curses/gnt/gntmarshal.c
+        WORKING_DIRECTORY src/curses/gnt/
+        COMMAND glib-genmarshal --body --prefix=gnt_closure_marshal genmarshal > gntmarshal.c
+        COMMAND glib-genmarshal --header --prefix=gnt_closure_marshal genmarshal > gntmarshal.h
+        DEPENDS "src/curses/widgets/genmarshal"
+        VERBATIM
+        COMMENT "Generating GObject Marshal code...")
 
 ######################################################################
 # Print Logo
@@ -121,7 +139,7 @@ message(" ")
 message("   sngrep configure finished                               ")
 message(" ======================================================    ")
 message(" SSL Support                  : ${WITH_SSL}	   	        ")
+message(" HEP Support                  : ${USE_HEP}                 ")
 message(" IPv6 Support                 : ${USE_IPV6}                ")
-message(" EEP Support                  : ${USE_EEP}                 ")
 message(" ======================================================    ")
 message(" ")

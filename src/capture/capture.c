@@ -42,7 +42,7 @@ capture_manager_new()
     manager->queue = g_async_queue_new();
     manager->paused = FALSE;
 
-#if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
+#ifdef WITH_SSL
     // Parse TLS Server setting
     manager->tlsserver = address_from_str(setting_get_value(SETTING_CAPTURE_TLSSERVER));
 #endif

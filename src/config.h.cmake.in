@@ -35,9 +35,7 @@
 
 #cmakedefine USE_IPV6
 
-#cmakedefine WITH_GNUTLS
-
-#cmakedefine WITH_OPENSSL
+#cmakedefine WITH_SSL
 
 
 #endif //SNGREP_CONFIG_H

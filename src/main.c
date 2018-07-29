@@ -34,7 +34,7 @@
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif
-#ifdef WITH_GNUTLS
+#ifdef WITH_SSL
 #include "packet/dissectors/packet_tls.h"
 #endif
 
@@ -47,14 +47,8 @@ print_version_info()
            "This is free software: you are free to change and redistribute it.\n"
            "There is NO WARRANTY, to the extent permitted by law.\n"
 
-#ifdef WITH_GNUTLS
+#ifdef WITH_SSL
            " * Compiled with GnuTLS support.\n"
-#endif
-#ifdef WITH_OPENSSL
-           " * Compiled with OpenSSL support.\n"
-#endif
-#ifdef WITH_UNICODE
-           " * Compiled with Wide-character support.\n"
 #endif
 #ifdef USE_IPV6
            " * Compiled with IPv6 support.\n"
@@ -95,7 +89,7 @@ main(int argc, char* argv[])
     CaptureOutput *output;
 
     GOptionEntry main_entries[] = {
-        { "version",'V', 0, G_OPTION_ARG_CALLBACK, &version,
+        { "version",'V', 0, G_OPTION_ARG_NONE, &version,
           "Version information", NULL },
         { "device", 'd', 0, G_OPTION_ARG_STRING_ARRAY,  &input_devices,
           "Use this capture device instead of default", "DEVICE" },
@@ -125,7 +119,7 @@ main(int argc, char* argv[])
           "Read configuration from FILE", "FILE" },
         { "no-config", 'F', 0, G_OPTION_ARG_NONE, &no_config,
           "Do not read configuration from default config file", NULL },
-#ifdef WITH_GNUTLS
+#ifdef WITH_SSL
         { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
             "RSA private keyfile to decrypt captured packets", "KEYFILE" },
 #endif
@@ -181,7 +175,7 @@ main(int argc, char* argv[])
     if (!storage_copts.outfile)
         storage_copts.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
 
-#ifdef WITH_GNUTLS
+#ifdef WITH_SSL
     if (!keyfile) keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
 #endif
 
@@ -226,7 +220,7 @@ main(int argc, char* argv[])
 
 #endif
 
-#ifdef WITH_GNUTLS
+#ifdef WITH_SSL
     if (keyfile) {
         // Check if we have a keyfile and is valid
         if (!tls_check_keyfile(keyfile, &error)) {
@@ -241,8 +235,6 @@ main(int argc, char* argv[])
 
     // Old legacy option to open pcaps without other arguments
     if (argc == 2 && g_file_test(argv[1], G_FILE_TEST_EXISTS)) {
-        g_print("%s seems to be a file: Use -I flag or press any key to read its contents.\n", argv[1]);
-        getchar();
         // Read as a PCAP file
         if ((input = capture_input_pcap_offline(argv[1], &error))) {
             capture_manager_add_input(manager, input);
