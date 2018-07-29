@@ -30,6 +30,7 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
+#include <packet/dissectors/packet_sip.h>
 #include "capture/capture_pcap.h"
 #include "ui_manager.h"
 #include "ui_call_flow.h"
@@ -541,7 +542,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
         color = call_group_color(info->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        color = msg->cseq % 7 + 1;
+        color = atoi(packet_sip_header(msg->packet, SIP_HEADER_CSEQ)) % 7 + 1;
     }
 
     // Print arrow in the same line than message

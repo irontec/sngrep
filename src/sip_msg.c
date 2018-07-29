@@ -56,9 +56,6 @@ msg_destroy(gpointer item)
     // Free message packets
     packet_free(msg->packet);
     // Free all memory
-    g_free(msg->resp_str);
-    g_free(msg->sip_from);
-    g_free(msg->sip_to);
     g_free(msg);
 }
 
@@ -82,7 +79,7 @@ msg_has_sdp(void *item)
 gboolean
 msg_is_request(SipMsg *msg)
 {
-    return msg->reqresp < 100;
+    return packet_sip_method(msg->packet) < 100;
 }
 
 const gchar *
@@ -114,23 +111,23 @@ msg_get_attribute(SipMsg *msg, gint id, char *value)
             sprintf(value, "%s:%u", msg_dst_address(msg).ip, msg_dst_address(msg).port);
             break;
         case SIP_ATTR_METHOD:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg_reqresp_str(msg));
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_method_str(msg->packet));
             break;
         case SIP_ATTR_SIPFROM:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_from);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
             break;
         case SIP_ATTR_SIPTO:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_to);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
             break;
         case SIP_ATTR_SIPFROMUSER:
-            if ((ar = strchr(msg->sip_from, '@'))) {
-                strncpy(value, msg->sip_from, ar - msg->sip_from);
-            }
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
+            if ((ar = strchr(value, '@')))
+                *ar = '\0';
             break;
         case SIP_ATTR_SIPTOUSER:
-            if ((ar = strchr(msg->sip_to, '@'))) {
-                strncpy(value, msg->sip_to, ar - msg->sip_to);
-            }
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
+            if ((ar = strchr(value, '@')))
+                *ar = '\0';
             break;
         case SIP_ATTR_DATE:
             timeval_to_date(msg_get_time(msg), value);
@@ -145,21 +142,6 @@ msg_get_attribute(SipMsg *msg, gint id, char *value)
 
     return strlen(value) ? value : NULL;
 
-}
-
-gboolean
-msg_is_older(SipMsg *one, SipMsg *two)
-{
-    // Yes, you are older than nothing
-    if (!two)
-        return 1;
-
-    // No, you are not older than yourself
-    if (one == two)
-        return 0;
-
-    // Otherwise
-    return timeval_is_older(msg_get_time(one), msg_get_time(two));
 }
 
 const gchar *
@@ -188,17 +170,6 @@ msg_get_header(SipMsg *msg, char *out)
     // Get msg header
     sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
     return out;
-}
-
-const char *
-msg_reqresp_str(SipMsg *msg)
-{
-    // Check if code has non-standard text
-    if (msg->resp_str) {
-        return msg->resp_str;
-    } else {
-        return sip_method_str(msg->reqresp);
-    }
 }
 
 const SipMsg *

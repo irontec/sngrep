@@ -362,7 +362,7 @@ draw_message_pos(WINDOW *win, SipMsg *msg, int starting)
 
     // Get message method (if request)
     if (msg_is_request(msg)) {
-        method = sip_method_str(msg->reqresp);
+        method = packet_sip_method_str(msg->packet);
     }
 
     // Get packet payload

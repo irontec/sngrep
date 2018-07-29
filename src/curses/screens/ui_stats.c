@@ -129,6 +129,9 @@ stats_create(ui_t *ui)
                 case SIP_CALLSTATE_COMPLETED: stats.completed++; break;
             }
         }
+
+        guint method = packet_sip_method(msg->packet);
+
         // For each message in call
         msgs = g_sequence_get_begin_iter(call->msgs);
         for (msg = NULL; !g_sequence_iter_is_end(msgs); msgs = g_sequence_iter_next(msgs)) {
@@ -136,7 +139,7 @@ stats_create(ui_t *ui)
             // Increase message counter
             stats.mtotal++;
             // Check message type
-            switch (msg->reqresp) {
+            switch (method) {
                 case SIP_METHOD_REGISTER: stats.regist++; break;
                 case SIP_METHOD_INVITE: stats.invite++; break;
                 case SIP_METHOD_SUBSCRIBE: stats.subscribe++; break;
@@ -152,14 +155,14 @@ stats_create(ui_t *ui)
                 // case SIP_METHOD_REFER:
                 case SIP_METHOD_UPDATE: stats.update++; break;
                 default:
-                    if (msg->reqresp >= 800) stats.r800++;
-                    else if (msg->reqresp >= 700) stats.r700++;
-                    else if (msg->reqresp >= 600) stats.r600++;
-                    else if (msg->reqresp >= 500) stats.r500++;
-                    else if (msg->reqresp >= 400) stats.r400++;
-                    else if (msg->reqresp >= 300) stats.r300++;
-                    else if (msg->reqresp >= 200) stats.r200++;
-                    else if (msg->reqresp >= 100) stats.r100++;
+                    if (method >= 800) stats.r800++;
+                    else if (method >= 700) stats.r700++;
+                    else if (method >= 600) stats.r600++;
+                    else if (method >= 500) stats.r500++;
+                    else if (method >= 400) stats.r400++;
+                    else if (method >= 300) stats.r300++;
+                    else if (method >= 200) stats.r200++;
+                    else if (method >= 100) stats.r100++;
             }
         }
 

@@ -91,7 +91,6 @@ call_add_message(SipCall *call, SipMsg *msg)
     msg->call = call;
     // Put this msg at the end of the msg list
     g_sequence_append(call->msgs, msg);
-    msg->index = (guint) g_sequence_get_length(call->msgs);
     // Flag this call as changed
     call->changed = true;
     // Check if message is a retransmission
@@ -133,7 +132,7 @@ call_is_invite(SipCall *call)
 {
     SipMsg *first;
     if ((first = g_sequence_first(call->msgs)))
-        return (first->reqresp == SIP_METHOD_INVITE);
+        return (packet_sip_method(first->packet) == SIP_METHOD_INVITE);
 
     return 0;
 }
@@ -165,49 +164,48 @@ call_msg_with_media(SipCall *call, Address dst)
 void
 call_update_state(SipCall *call, SipMsg *msg)
 {
-    int reqresp;
-
     if (!call_is_invite(call))
         return;
 
     // Get current message Method / Response Code
-    reqresp = msg->reqresp;
+    guint msg_reqresp = packet_sip_method(msg->packet);
+    gint msg_cseq = atoi(packet_sip_header(msg->packet, SIP_HEADER_CSEQ));
 
     // If this message is actually a call, get its current state
     if (call->state) {
         if (call->state == SIP_CALLSTATE_CALLSETUP) {
-            if (reqresp == SIP_METHOD_ACK && call->invitecseq == msg->cseq) {
+            if (msg_reqresp == SIP_METHOD_ACK && call->invitecseq == msg_cseq) {
                 // Alice and Bob are talking
                 call->state = SIP_CALLSTATE_INCALL;
                 call->cstart_msg = msg;
-            } else if (reqresp == SIP_METHOD_CANCEL) {
+            } else if (msg_reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
                 call->state = SIP_CALLSTATE_CANCELLED;
-            } else if ((reqresp == 480) || (reqresp == 486) || (reqresp == 600 )) {
+            } else if ((msg_reqresp == 480) || (msg_reqresp == 486) || (msg_reqresp == 600 )) {
                 // Bob is busy
                 call->state = SIP_CALLSTATE_BUSY;
-            } else if (reqresp > 400 && call->invitecseq == msg->cseq) {
+            } else if (msg_reqresp > 400 && call->invitecseq == msg_cseq) {
                 // Bob is not in the mood
                 call->state = SIP_CALLSTATE_REJECTED;
-            } else if (reqresp > 300) {
+            } else if (msg_reqresp > 300) {
                 // Bob has diversion
                 call->state = SIP_CALLSTATE_DIVERTED;
             }
         } else if (call->state == SIP_CALLSTATE_INCALL) {
-            if (reqresp == SIP_METHOD_BYE) {
+            if (msg_reqresp == SIP_METHOD_BYE) {
                 // Thanks for all the fish!
                 call->state = SIP_CALLSTATE_COMPLETED;
                 call->cend_msg = msg;
             }
-        } else if (reqresp == SIP_METHOD_INVITE && call->state !=  SIP_CALLSTATE_INCALL) {
+        } else if (msg_reqresp == SIP_METHOD_INVITE && call->state !=  SIP_CALLSTATE_INCALL) {
             // Call is being setup (after proper authentication)
-            call->invitecseq = msg->cseq;
+            call->invitecseq = msg_cseq;
             call->state = SIP_CALLSTATE_CALLSETUP;
         }
     } else {
         // This is actually a call
-        if (reqresp == SIP_METHOD_INVITE) {
-            call->invitecseq = msg->cseq;
+        if (msg_reqresp == SIP_METHOD_INVITE) {
+            call->invitecseq = msg_cseq;
             call->state = SIP_CALLSTATE_CALLSETUP;
         }
     }

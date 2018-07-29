@@ -55,6 +55,18 @@ enum sip_methods {
     SIP_METHOD_BYE,
 };
 
+//! SIP Headers
+enum sip_headers {
+    SIP_HEADER_FROM = 0,
+    SIP_HEADER_TO,
+    SIP_HEADER_CALLID,
+    SIP_HEADER_XCALLID,
+    SIP_HEADER_CSEQ,
+    SIP_HEADER_REASON,
+    SIP_HEADER_WARNING,
+    SIP_HEADER_COUNT,
+};
+
 /**
  * @brief Different Request/Response codes in SIP Protocol
  */
@@ -67,11 +79,13 @@ struct _PacketSipCode
 struct _PacketSipData
 {
     //! Request Method or Response Code @see sip_methods
-    int reqresp;
+    guint reqresp;
     //!  Response text if it doesn't matches an standard
     char *resp_str;
     //! SIP payload (Headers + Body)
     gchar *payload;
+    //! Parsed headers
+    GPtrArray *headers;
     //! SIP Call-Id Heder value
     gchar *callid;
     //! SIP X-Call-Id Heder value
@@ -79,10 +93,6 @@ struct _PacketSipData
 
     //! Message Cseq
     int cseq;
-    //! SIP From Header
-    char *from;
-    //! SIP To Header
-    char *to;
 
     gchar *reasontxt;
     int warning;
@@ -113,6 +123,18 @@ sip_method_str(int method);
 
 const gchar *
 packet_sip_payload(const Packet *packet);
+
+const gchar *
+packet_sip_header(const Packet *packet, enum sip_headers header);
+
+const gchar *
+packet_sip_method_str(const Packet *packet);
+
+const guint
+packet_sip_method(const Packet *packet);
+
+PacketSipData *
+packet_sip_data(const Packet *packet);
 
 /**
  * @brief Create a SIP parser

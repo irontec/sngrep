@@ -222,14 +222,6 @@ storage_check_sip_packet(Packet *packet)
 
     PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
 
-    // FIXME Create a new message from this data
-    msg = msg_create();
-    msg->cseq = sip_data->cseq;
-    msg->sip_from = sip_data->from;
-    msg->sip_to = sip_data->to;
-    msg->reqresp = sip_data->reqresp;
-    msg->resp_str = sip_data->resp_str;
-
     // Find the call for this msg
     if (!(call = g_hash_table_lookup(storage.callids, sip_data->callid))) {
 
@@ -265,6 +257,8 @@ storage_check_sip_packet(Packet *packet)
     }
 
     // At this point we know we're handling an interesting SIP Packet
+    // FIXME Create a new message from this data
+    msg = msg_create();
     msg->packet = packet;
 
     // Always dissect first call message

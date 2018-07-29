@@ -80,7 +80,7 @@ struct _SipCall {
     //! List of calls with with this call as X-Call-Id
     GSequence *xcalls;
     //! Cseq from invite startint the call
-    uint32_t invitecseq;
+    gint invitecseq;
     //! List of messages of this call (sip_msg_t*)
     GSequence *msgs;
     //! Message when conversation started and ended

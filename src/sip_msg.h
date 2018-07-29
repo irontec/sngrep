@@ -54,22 +54,10 @@ typedef struct _SipCall SipCall;
  * call.
  */
 struct _SipMsg {
-    //! Request Method or Response Code @see sip_methods
-    gint reqresp;
-    //!  Response text if it doesn't matches an standard
-    gchar *resp_str;
-    //! Message Cseq
-    guint32 cseq;
-    //! SIP From Header
-    gchar *sip_from;
-    //! SIP To Header
-    gchar *sip_to;
-    //! SDP payload information (sdp_media_t *)
+        //! SDP payload information (sdp_media_t *)
     GSequence *medias;
     //! Captured packet for this message
     Packet *packet;
-    //! Index of this message in call
-    guint32 index;
     //! Message owner
     SipCall *call;
     //! Message is a retransmission from other message
@@ -164,18 +152,6 @@ msg_get_time(const SipMsg *msg);
 const gchar *
 msg_get_attribute(SipMsg *msg, gint id, char *value);
 
-/**
- * @brief Check if a message is older than other
- *
- * @param one SIP message pointer
- * @param two SIP message pointer
- * @return TRUE if one is older than two
- * @return FALSE if equal or two is older than one
- */
-gboolean
-msg_is_older(SipMsg *one, SipMsg *two);
-
-
 const gchar *
 msg_get_preferred_codec_alias(SipMsg *msg);
 
@@ -191,12 +167,6 @@ msg_get_preferred_codec_alias(SipMsg *msg);
  */
 const gchar *
 msg_get_header(SipMsg *msg, gchar *out);
-
-/**
- * @brief Get full Response code (including text)
- */
-const gchar *
-msg_reqresp_str(SipMsg *msg);
 
 /**
  * @brief Check if given message is a retransmission

@@ -29,12 +29,14 @@
  * @todo Replace the panel refresh. Wclear sucks on high latency conections.
  *
  */
+#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include "ui_manager.h"
 #include "ui_call_raw.h"
 #include "ui_save.h"
 #include "capture/capture_pcap.h"
+#include "packet/dissectors/packet_sip.h"
 
 /**
  * Ui Structure definition for Call Raw panel
@@ -181,7 +183,7 @@ call_raw_print_msg(ui_t *ui, SipMsg *msg)
         color = call_group_color(info->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        color = msg->cseq % 7 + 1;
+        color = atoi(packet_sip_header(msg->packet, SIP_HEADER_CSEQ)) % 7 + 1;
     }
 
     // Turn on the message color

@@ -150,19 +150,52 @@ sip_method_from_str(const char *method)
     return atoi(method);
 }
 
-const gchar *
-packet_sip_payload(const Packet *packet)
+PacketSipData *
+packet_sip_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
 
     // Get Packet sip data
     PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
     g_return_val_if_fail(sip != NULL, NULL);
-    g_return_val_if_fail(sip->payload != NULL, NULL);
 
+    return sip;
+}
+
+const gchar *
+packet_sip_payload(const Packet *packet)
+{
+    // Get Packet sip data
+    PacketSipData *sip = packet_sip_data(packet);
     return sip->payload;
 }
 
+const gchar *
+packet_sip_header(const Packet *packet, enum sip_headers header)
+{
+    // Get Packet sip data
+    PacketSipData *sip = packet_sip_data(packet);
+    return g_ptr_array_index(sip->headers, header);
+}
+
+const gchar *
+packet_sip_method_str(const Packet *packet)
+{
+    PacketSipData *sip = packet_sip_data(packet);
+
+    // Check if code has non-standard text
+    if (sip->resp_str) {
+        return sip->resp_str;
+    } else {
+        return sip_method_str(sip->reqresp);
+    }
+}
+
+const guint
+packet_sip_method(const Packet *packet)
+{
+    return packet_sip_data(packet)->reqresp;
+}
 
 static GByteArray *
 packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
@@ -221,12 +254,15 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Allocate packet sip data
     PacketSipData *sip_data = g_malloc0(sizeof(PacketSipData));
     sip_data->payload = g_strdup(payload->str);
+    sip_data->headers = g_ptr_array_new();
+    g_ptr_array_set_size(sip_data->headers, SIP_HEADER_COUNT);
 
     // Try to get Call-ID from payload
     g_regex_match(sip->reg_callid, payload->str, 0, &pmatch);
     if (g_match_info_matches(pmatch)) {
         // Copy the matching part of payload
         sip_data->callid =  g_match_info_fetch_named(pmatch, "callid");
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_CALLID, g_match_info_fetch_named(pmatch, "callid"));
     }
     g_match_info_free(pmatch);
 
@@ -243,40 +279,44 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_regex_match(sip->reg_xcallid, payload->str, 0, &pmatch);
     if (g_match_info_matches(pmatch)) {
         sip_data->xcallid =  g_match_info_fetch_named(pmatch, "xcallid");
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_XCALLID, g_match_info_fetch_named(pmatch, "xcallid"));
     }
     g_match_info_free(pmatch);
 
     // From
     if (g_regex_match(sip->reg_from, payload->str, 0, &pmatch)) {
-        sip_data->from = g_match_info_fetch_named(pmatch, "from");
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_FROM, g_match_info_fetch_named(pmatch, "from"));
     } else {
-        sip_data->from = strdup("<malformed>");
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_FROM, strdup("<malformed>"));
     }
     g_match_info_free(pmatch);
 
     // To
     if (g_regex_match(sip->reg_to, payload->str, 0, &pmatch)) {
-        sip_data->to = g_match_info_fetch_named(pmatch, "to");
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_TO, g_match_info_fetch_named(pmatch, "to"));
     } else {
-        sip_data->to = strdup("<malformed>");
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_TO, strdup("<malformed>"));
     }
     g_match_info_free(pmatch);
 
     // Reason text
     if (g_regex_match(sip->reg_reason, payload->str, 0, &pmatch)) {
         sip_data->reasontxt = strdup(g_match_info_fetch(pmatch, 1));
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_REASON, strdup(g_match_info_fetch(pmatch, 1)));
     }
     g_match_info_free(pmatch);
 
     // Warning code
     if (g_regex_match(sip->reg_warning, payload->str, 0, &pmatch)) {
         sip_data->warning = atoi(g_match_info_fetch_named(pmatch, "warning"));
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_WARNING, g_match_info_fetch_named(pmatch, "warning"));
     }
     g_match_info_free(pmatch);
 
     // CSeq
     if (g_regex_match(sip->reg_cseq, payload->str, 0, &pmatch)) {
         sip_data->cseq = atoi(g_match_info_fetch_named(pmatch, "cseq"));
+        g_ptr_array_insert(sip_data->headers, SIP_HEADER_CSEQ, g_match_info_fetch_named(pmatch, "cseq"));
     }
     g_match_info_free(pmatch);
 
