@@ -124,7 +124,7 @@ call_msg_count(const SipCall *call)
 int
 call_is_active(SipCall *call)
 {
-    return (call->state == SIP_CALLSTATE_CALLSETUP || call->state == SIP_CALLSTATE_INCALL);
+    return (call->state == CALL_STATE_CALLSETUP || call->state == CALL_STATE_INCALL);
 }
 
 int
@@ -173,40 +173,40 @@ call_update_state(SipCall *call, SipMsg *msg)
 
     // If this message is actually a call, get its current state
     if (call->state) {
-        if (call->state == SIP_CALLSTATE_CALLSETUP) {
+        if (call->state == CALL_STATE_CALLSETUP) {
             if (msg_reqresp == SIP_METHOD_ACK && call->invitecseq == msg_cseq) {
                 // Alice and Bob are talking
-                call->state = SIP_CALLSTATE_INCALL;
+                call->state = CALL_STATE_INCALL;
                 call->cstart_msg = msg;
             } else if (msg_reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
-                call->state = SIP_CALLSTATE_CANCELLED;
+                call->state = CALL_STATE_CANCELLED;
             } else if ((msg_reqresp == 480) || (msg_reqresp == 486) || (msg_reqresp == 600 )) {
                 // Bob is busy
-                call->state = SIP_CALLSTATE_BUSY;
+                call->state = CALL_STATE_BUSY;
             } else if (msg_reqresp > 400 && call->invitecseq == msg_cseq) {
                 // Bob is not in the mood
-                call->state = SIP_CALLSTATE_REJECTED;
+                call->state = CALL_STATE_REJECTED;
             } else if (msg_reqresp > 300) {
                 // Bob has diversion
-                call->state = SIP_CALLSTATE_DIVERTED;
+                call->state = CALL_STATE_DIVERTED;
             }
-        } else if (call->state == SIP_CALLSTATE_INCALL) {
+        } else if (call->state == CALL_STATE_INCALL) {
             if (msg_reqresp == SIP_METHOD_BYE) {
                 // Thanks for all the fish!
-                call->state = SIP_CALLSTATE_COMPLETED;
+                call->state = CALL_STATE_COMPLETED;
                 call->cend_msg = msg;
             }
-        } else if (msg_reqresp == SIP_METHOD_INVITE && call->state !=  SIP_CALLSTATE_INCALL) {
+        } else if (msg_reqresp == SIP_METHOD_INVITE && call->state !=  CALL_STATE_INCALL) {
             // Call is being setup (after proper authentication)
             call->invitecseq = msg_cseq;
-            call->state = SIP_CALLSTATE_CALLSETUP;
+            call->state = CALL_STATE_CALLSETUP;
         }
     } else {
         // This is actually a call
         if (msg_reqresp == SIP_METHOD_INVITE) {
             call->invitecseq = msg_cseq;
-            call->state = SIP_CALLSTATE_CALLSETUP;
+            call->state = CALL_STATE_CALLSETUP;
         }
     }
 }
@@ -263,22 +263,22 @@ call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value)
 }
 
 const gchar *
-call_state_to_str(enum CallState state)
+call_state_to_str(enum call_state state)
 {
     switch (state) {
-        case SIP_CALLSTATE_CALLSETUP:
+        case CALL_STATE_CALLSETUP:
             return "CALL SETUP";
-        case SIP_CALLSTATE_INCALL:
+        case CALL_STATE_INCALL:
             return "IN CALL";
-        case SIP_CALLSTATE_CANCELLED:
+        case CALL_STATE_CANCELLED:
             return "CANCELLED";
-        case SIP_CALLSTATE_REJECTED:
+        case CALL_STATE_REJECTED:
             return "REJECTED";
-        case SIP_CALLSTATE_BUSY:
+        case CALL_STATE_BUSY:
             return "BUSY";
-        case SIP_CALLSTATE_DIVERTED:
+        case CALL_STATE_DIVERTED:
             return "DIVERTED";
-        case SIP_CALLSTATE_COMPLETED:
+        case CALL_STATE_COMPLETED:
             return "COMPLETED";
     }
     return "";

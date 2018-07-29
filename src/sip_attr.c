@@ -156,19 +156,19 @@ sip_attr_color_method(const char *value)
 int
 sip_attr_color_state(const char *value)
 {
-    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_CALLSETUP)))
+    if (!strcmp(value, call_state_to_str(CALL_STATE_CALLSETUP)))
         return COLOR_PAIR(CP_YELLOW_ON_DEF);
-    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_INCALL)))
+    if (!strcmp(value, call_state_to_str(CALL_STATE_INCALL)))
         return COLOR_PAIR(CP_BLUE_ON_DEF);
-    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_COMPLETED)))
+    if (!strcmp(value, call_state_to_str(CALL_STATE_COMPLETED)))
         return COLOR_PAIR(CP_GREEN_ON_DEF);
-    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_CANCELLED)))
+    if (!strcmp(value, call_state_to_str(CALL_STATE_CANCELLED)))
         return COLOR_PAIR(CP_RED_ON_DEF);
-    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_REJECTED)))
+    if (!strcmp(value, call_state_to_str(CALL_STATE_REJECTED)))
         return COLOR_PAIR(CP_RED_ON_DEF);
-    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_BUSY)))
+    if (!strcmp(value, call_state_to_str(CALL_STATE_BUSY)))
         return COLOR_PAIR(CP_MAGENTA_ON_DEF);
-    if (!strcmp(value, call_state_to_str(SIP_CALLSTATE_DIVERTED)))
+    if (!strcmp(value, call_state_to_str(CALL_STATE_DIVERTED)))
         return COLOR_PAIR(CP_CYAN_ON_DEF);
     return 0;
 }

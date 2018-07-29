@@ -40,15 +40,15 @@
 typedef struct _SipCall SipCall;
 
 //! SIP Call State
-enum CallState
+enum call_state
 {
-    SIP_CALLSTATE_CALLSETUP = 1,
-    SIP_CALLSTATE_INCALL,
-    SIP_CALLSTATE_CANCELLED,
-    SIP_CALLSTATE_REJECTED,
-    SIP_CALLSTATE_DIVERTED,
-    SIP_CALLSTATE_BUSY,
-    SIP_CALLSTATE_COMPLETED
+    CALL_STATE_CALLSETUP = 1,
+    CALL_STATE_INCALL,
+    CALL_STATE_CANCELLED,
+    CALL_STATE_REJECTED,
+    CALL_STATE_DIVERTED,
+    CALL_STATE_BUSY,
+    CALL_STATE_COMPLETED
 };
 
 /**
@@ -59,16 +59,16 @@ enum CallState
  * data from its messages to speed up searches.
  */
 struct _SipCall {
-    // Call index in the call list
+    //! Call index in the call list
     guint index;
-    // Call identifier
+    //! Call identifier
     gchar *callid;
     //! Related Call identifier
     gchar *xcallid;
     //! Flag this call as filtered so won't be displayed
     gchar filtered;
     //! Call State. For dialogs starting with an INVITE method
-    enum CallState state;
+    enum call_state state;
     //! Changed flag. For interface optimal updates
     gboolean changed;
     //! Locked flag. Calls locked are never deleted
@@ -215,7 +215,7 @@ call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value);
  *
  */
 const gchar *
-call_state_to_str(enum CallState state);
+call_state_to_str(enum call_state state);
 
 /**
  * @brief Compare two calls based on a given attribute

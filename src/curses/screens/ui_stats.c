@@ -120,13 +120,13 @@ stats_create(ui_t *ui)
             stats.dcalls++;
             // Increase call status counter
             switch (call->state) {
-                case SIP_CALLSTATE_CALLSETUP: stats.setup++; break;
-                case SIP_CALLSTATE_INCALL: stats.incall++; break;
-                case SIP_CALLSTATE_CANCELLED: stats.cancelled++; break;
-                case SIP_CALLSTATE_REJECTED: stats.rejected++; break;
-                case SIP_CALLSTATE_BUSY: stats.busy++; break;
-                case SIP_CALLSTATE_DIVERTED: stats.diverted++; break;
-                case SIP_CALLSTATE_COMPLETED: stats.completed++; break;
+                case CALL_STATE_CALLSETUP: stats.setup++; break;
+                case CALL_STATE_INCALL: stats.incall++; break;
+                case CALL_STATE_CANCELLED: stats.cancelled++; break;
+                case CALL_STATE_REJECTED: stats.rejected++; break;
+                case CALL_STATE_BUSY: stats.busy++; break;
+                case CALL_STATE_DIVERTED: stats.diverted++; break;
+                case CALL_STATE_COMPLETED: stats.completed++; break;
             }
         }
 
