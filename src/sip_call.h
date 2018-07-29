@@ -81,8 +81,8 @@ struct _SipCall {
     GSequence *xcalls;
     //! Cseq from invite startint the call
     gint invitecseq;
-    //! List of messages of this call (sip_msg_t*)
-    GSequence *msgs;
+    //! Array of messages of this call (sip_msg_t*)
+    GPtrArray *msgs;
     //! Message when conversation started and ended
     SipMsg *cstart_msg, *cend_msg;
     //! RTP streams for this call (rtp_stream_t *)

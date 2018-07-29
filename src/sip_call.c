@@ -43,7 +43,7 @@ call_create(char *callid, char *xcallid)
     SipCall *call = g_malloc0(sizeof(SipCall));
 
     // Create a vector to store call messages
-    call->msgs = g_sequence_new(msg_destroy);
+    call->msgs = g_ptr_array_new_with_free_func(msg_destroy);
 
     // Create an empty vector to store rtp packets
     call->rtp_packets = g_sequence_new((GDestroyNotify) packet_free);
@@ -69,7 +69,7 @@ call_destroy(gpointer item)
 {
     SipCall *call = item;
     // Remove all call messages
-    g_sequence_free(call->msgs);
+    g_ptr_array_free(call->msgs, TRUE);
     // Remove all call streams
     g_sequence_free(call->streams);
     // Remove all call rtp packets
@@ -90,7 +90,7 @@ call_add_message(SipCall *call, SipMsg *msg)
     // Set the message owner
     msg->call = call;
     // Put this msg at the end of the msg list
-    g_sequence_append(call->msgs, msg);
+    g_ptr_array_add(call->msgs, msg);
     // Flag this call as changed
     call->changed = true;
     // Check if message is a retransmission
@@ -118,7 +118,7 @@ call_add_rtp_packet(SipCall *call, Packet *packet)
 guint
 call_msg_count(const SipCall *call)
 {
-    return (guint) g_sequence_get_length(call->msgs);
+    return g_ptr_array_len(call->msgs);
 }
 
 int
@@ -130,11 +130,10 @@ call_is_active(SipCall *call)
 int
 call_is_invite(SipCall *call)
 {
-    SipMsg *first;
-    if ((first = g_sequence_first(call->msgs)))
-        return (packet_sip_method(first->packet) == SIP_METHOD_INVITE);
+    SipMsg *first = g_ptr_array_first(call->msgs);
+    g_return_val_if_fail(first != NULL, 0);
 
-    return 0;
+    return packet_sip_method(first->packet) == SIP_METHOD_INVITE;
 }
 
 SipMsg *
@@ -142,13 +141,11 @@ call_msg_with_media(SipCall *call, Address dst)
 {
     SipMsg *msg;
     PacketSdpMedia *media;
-    GSequenceIter *itmsg;
     GSequenceIter *itmedia;
 
     // Get message with media address configured in given dst
-    itmsg = g_sequence_get_begin_iter(call->msgs);
-    for (;!g_sequence_iter_is_end(itmsg); itmsg = g_sequence_iter_next(itmsg)) {
-        msg = g_sequence_get(itmsg);
+    for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
+        msg = g_ptr_array_index(call->msgs, i);
         itmedia = g_sequence_get_begin_iter(msg->medias);
         for (;!g_sequence_iter_is_end(itmedia); itmedia = g_sequence_iter_next(itmedia)) {
             media = g_sequence_get(itmedia);
@@ -214,10 +211,10 @@ call_update_state(SipCall *call, SipMsg *msg)
 const char *
 call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value)
 {
-    SipMsg *first, *last;
+    g_return_val_if_fail(call != NULL, NULL);
 
-    if (!call)
-        return NULL;
+    SipMsg *first = g_ptr_array_first(call->msgs);
+    SipMsg *last = g_ptr_array_last(call->msgs);
 
     switch (id) {
         case SIP_ATTR_CALLINDEX:
@@ -230,21 +227,18 @@ call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value)
             sprintf(value, "%s", call->xcallid);
             break;
         case SIP_ATTR_MSGCNT:
-            sprintf(value, "%d", g_sequence_get_length(call->msgs));
+            sprintf(value, "%d", call_msg_count(call));
             break;
         case SIP_ATTR_CALLSTATE:
             sprintf(value, "%s", call_state_to_str(call->state));
             break;
         case SIP_ATTR_TRANSPORT:
-            first = g_sequence_first(call->msgs);
 //@todo            sprintf(value, "%s", sip_transport_str(first->packet->type));
             break;
         case SIP_ATTR_CONVDUR:
             timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(call->cend_msg), value);
             break;
         case SIP_ATTR_TOTALDUR:
-            first = g_sequence_first(call->msgs);
-            last = g_sequence_last(call->msgs);
             timeval_to_duration(msg_get_time(first), msg_get_time(last), value);
             break;
         case SIP_ATTR_REASON_TXT:
@@ -256,7 +250,7 @@ call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value)
                 sprintf(value, "%d", call->warning);
             break;
         default:
-            return msg_get_attribute(g_sequence_first(call->msgs), id, value);
+            return msg_get_attribute(g_ptr_array_first(call->msgs), id, value);
     }
 
     return strlen(value) ? value : NULL;

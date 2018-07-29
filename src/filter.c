@@ -133,9 +133,8 @@ filter_check_call(gconstpointer item, gconstpointer user_data)
             // Assume this call doesn't match the filter
             call->filtered = 1;
             // Create an iterator for the call messages
-            it = g_sequence_get_begin_iter(call->msgs);
-            for (msg = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-                msg = g_sequence_get(it);
+            for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
+                msg = g_ptr_array_index(call->msgs, i);
                 // Copy message payload
                 strcpy(data, msg_get_payload(msg));
                 // Check if this payload matches the filter

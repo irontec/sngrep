@@ -175,24 +175,17 @@ msg_get_header(SipMsg *msg, char *out)
 const SipMsg *
 msg_is_retrans(SipMsg *msg)
 {
-    SipMsg *prev = NULL;
-    GSequenceIter *it;
+    for (gint i = g_ptr_array_len(msg->call->msgs) - 1; i >= 0; i--) {
+        SipMsg *prev = g_ptr_array_index(msg->call->msgs, i);
 
-    // Get previous message in call with same origin and destination
-    it = g_sequence_get_end_iter(msg->call->msgs);
+        // Skip yourself
+        if (prev == msg) continue;
 
-    // Skip already added message
-    it = g_sequence_iter_prev(it);
-
-    while(!g_sequence_iter_is_begin(it)) {
-        it = g_sequence_iter_prev(it);
-        prev = g_sequence_get(it);
-        // Same addresses
+        // Check source and destination addresses are equal
         if (addressport_equals(msg_src_address(prev), msg_src_address(msg)) &&
             addressport_equals(msg_dst_address(prev), msg_dst_address(msg))) {
-            // Same payload
+            // Check they have the same payload
             if (!strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
-                // Store the flag that determines if message is retrans
                 return prev;
             }
         }

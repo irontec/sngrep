@@ -5,7 +5,7 @@ project(sngrep
 
 set(PROJECT_NAME sngrep)
 set(CMAKE_C_STANDARD 99)
-add_compile_options(-Werror -pg)
+add_compile_options(-Werror -g)
 #add_compile_options(-Werror -Wall -pedantic -Wextra)
 
 configure_file(

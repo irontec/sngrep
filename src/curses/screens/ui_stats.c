@@ -133,9 +133,8 @@ stats_create(ui_t *ui)
         guint method = packet_sip_method(msg->packet);
 
         // For each message in call
-        msgs = g_sequence_get_begin_iter(call->msgs);
-        for (msg = NULL; !g_sequence_iter_is_end(msgs); msgs = g_sequence_iter_next(msgs)) {
-            msg = g_sequence_get(msgs);
+        for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
+            msg = g_ptr_array_index(call->msgs, i);
             // Increase message counter
             stats.mtotal++;
             // Check message type

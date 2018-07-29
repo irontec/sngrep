@@ -108,9 +108,8 @@ call_group_add(SipCallGroup *group, SipCall *call)
         call->locked = TRUE;
         group->calls = g_list_append(group->calls, call);
         // Add all call messages
-        GSequenceIter *msgs = g_sequence_get_begin_iter(call->msgs);
-        for (;!g_sequence_iter_is_end(msgs); msgs = g_sequence_iter_next(msgs)) {
-            group->msgs = g_list_insert_sorted(group->msgs, g_sequence_get(msgs), call_group_msg_sorter);
+        for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
+            group->msgs = g_list_append(group->msgs, g_ptr_array_index(call->msgs, i));
         }
     }
 }
