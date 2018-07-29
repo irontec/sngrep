@@ -86,7 +86,7 @@ struct _SipCall {
     //! Message when conversation started and ended
     SipMsg *cstart_msg, *cend_msg;
     //! RTP streams for this call (rtp_stream_t *)
-    GSequence *streams;
+    GPtrArray *streams;
     //! RTP packets for this call (capture_packet_t *)
     GSequence *rtp_packets;
 };

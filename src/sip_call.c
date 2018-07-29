@@ -49,7 +49,7 @@ call_create(char *callid, char *xcallid)
     call->rtp_packets = g_sequence_new((GDestroyNotify) packet_free);
 
     // Create an empty vector to strore stream data
-    call->streams = g_sequence_new(g_free);
+    call->streams = g_ptr_array_new_with_free_func(g_free);
 
     // Create an empty vector to store x-calls
     call->xcalls = g_sequence_new(NULL);
@@ -71,7 +71,7 @@ call_destroy(gpointer item)
     // Remove all call messages
     g_ptr_array_free(call->msgs, TRUE);
     // Remove all call streams
-    g_sequence_free(call->streams);
+    g_ptr_array_free(call->streams, TRUE);
     // Remove all call rtp packets
     g_sequence_free(call->rtp_packets);
     // Remove all xcalls
@@ -101,7 +101,7 @@ void
 call_add_stream(SipCall *call, RtpStream *stream)
 {
     // Store stream
-    g_sequence_append(call->streams, stream);
+    g_ptr_array_add(call->streams, stream);
     // Flag this call as changed
     call->changed = true;
 }
@@ -343,13 +343,9 @@ call_find_stream(SipCall *call, Address src, Address dst)
     RtpStream *stream;
     GSequenceIter *it;
 
-    // Create an iterator for call streams
-    it = g_sequence_get_end_iter(call->streams);
-
     // Look for an incomplete stream with this destination
-    while(!g_sequence_iter_is_begin(it)) {
-        it = g_sequence_iter_prev(it);
-        stream = g_sequence_get(it);
+    for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
+        stream = g_ptr_array_index(call->streams, i);
         if (addressport_equals(dst, stream->dst)) {
             if (!src.port) {
                 return stream;
@@ -374,14 +370,10 @@ RtpStream *
 call_find_stream_exact(SipCall *call, Address src, Address dst)
 {
     RtpStream *stream;
-    GSequenceIter *it;
 
     // Create an iterator for call streams
-    it = g_sequence_get_end_iter(call->streams);
-
-    while(!g_sequence_iter_is_begin(it)) {
-        it = g_sequence_iter_prev(it);
-        stream = g_sequence_get(it);
+    for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
+        stream = g_ptr_array_index(call->streams, i);
         if (addressport_equals(src, stream->src) &&
             addressport_equals(dst, stream->dst)) {
             return stream;

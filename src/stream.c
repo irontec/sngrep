@@ -28,8 +28,9 @@
  * This file contains the functions and structures to manage the RTP streams
  *
  */
-
+#include "config.h"
 #include <glib.h>
+#include "glib-utils.h"
 #include "stream.h"
 #include "storage.h"
 
@@ -119,10 +120,8 @@ stream_find_by_format(Address src, Address dst, uint32_t format)
     while (!g_sequence_iter_is_begin(calls)) {
         calls = g_sequence_iter_prev(calls);
         call = g_sequence_get(calls);
-        streams = g_sequence_get_end_iter(call->streams);
-        while (!g_sequence_iter_is_begin(streams)) {
-            streams = g_sequence_iter_prev(streams);
-            stream = g_sequence_get(streams);
+        for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
+            stream = g_ptr_array_index(call->streams, i);
             // Only look RTP packets
             if (stream->type != PACKET_RTP)
                 continue;

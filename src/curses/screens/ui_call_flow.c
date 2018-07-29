@@ -276,10 +276,8 @@ call_flow_draw_columns(ui_t *ui)
     // Add RTP columns FIXME Really
     if (!setting_disabled(SETTING_CF_MEDIA)) {
         while ((call = call_group_get_next(info->group, call)) ) {
-            it = g_sequence_get_begin_iter(call->streams);
-
-            for (stream = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-                stream = g_sequence_get(it);
+            for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
+                stream = g_ptr_array_index(call->streams, i);
                 if (stream->type == PACKET_RTP && stream_get_count(stream)) {
                     addr = stream->src;
                     addr.port = 0;

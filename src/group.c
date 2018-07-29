@@ -266,9 +266,9 @@ call_group_get_next_stream(SipCallGroup *group, RtpStream *stream)
 
     for (guint i = 0; i < g_list_length(group->calls); i++) {
         call = g_list_nth_data(group->calls, i);
-        streams = g_sequence_get_begin_iter(call->streams);
-        for (;!g_sequence_iter_is_end(streams); streams = g_sequence_iter_next(streams)) {
-            cand = g_sequence_get(streams);
+        for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
+            cand = g_ptr_array_index(call->streams, i);
+
             if (!stream_get_count(cand))
                 continue;
             if (cand->type != PACKET_RTP)
