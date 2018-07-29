@@ -323,14 +323,6 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     if (manager->paused)
         return;
 
-    // Check if we have reached capture limit
-    if (storage_capture_options().limit && storage_calls_count() >= storage_capture_options().limit) {
-        // If capture rotation is disabled, just skip this packet
-        if (!storage_capture_options().rotate) {
-            return;
-        }
-    }
-
     // Convert packet data
     GByteArray *data = g_byte_array_new();
     g_byte_array_append(data, content, header->caplen);
