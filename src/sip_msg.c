@@ -193,10 +193,10 @@ msg_is_retrans(SipMsg *msg)
             // Same payload
             if (!strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
                 // Store the flag that determines if message is retrans
-                msg->retrans = prev;
-                break;
+                return prev;
             }
         }
     }
 
+    return NULL;
 }
