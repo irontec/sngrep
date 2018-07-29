@@ -351,6 +351,7 @@ call_flow_draw_arrows(ui_t *ui)
             g_sequence_insert_sorted(info->arrows, arrow, call_flow_arrow_sorter, NULL);
         }
     }
+
     // Create pending RTP arrows
     rtp_stream_t *stream = NULL;
     while ((stream = call_group_get_next_stream(info->group, stream))) {
@@ -958,7 +959,6 @@ call_flow_draw_raw(ui_t *ui, SipMsg *msg)
 {
     call_flow_info_t *info;
     WINDOW *raw_win;
-    vector_iter_t arrows;
     call_flow_arrow_t *arrow;
     int raw_width, raw_height;
     int min_raw_width, fixed_raw_width;
@@ -1522,7 +1522,7 @@ call_flow_arrow_time(const call_flow_arrow_t *arrow)
 }
 
 gint
-call_flow_arrow_sorter(gconstpointer a, gconstpointer b, gpointer user_data)
+call_flow_arrow_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
 {
     return timeval_is_older(
             call_flow_arrow_time(a),

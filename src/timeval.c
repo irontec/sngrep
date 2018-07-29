@@ -37,11 +37,11 @@ gint
 timeval_is_older(GTimeVal t1, GTimeVal t2)
 {
     if (t1.tv_sec > t2.tv_sec) {
-        return -1;
+        return 1;
     }
 
     if (t1.tv_sec < t2.tv_sec) {
-        return 1;
+        return -1;
     }
 
     if(t1.tv_usec == t2.tv_usec) {
@@ -68,11 +68,12 @@ timeval_to_date(GTimeVal time, gchar *out)
 const char *
 timeval_to_time(GTimeVal time, char *out)
 {
-    GDate date;
-    gchar date_out[20];
-    g_date_set_time_val(&date, &time);
-    g_date_strftime(date_out, 19, "%H:%M:%S", &date);
-    g_sprintf(out, "%s.%06d", date_out, (guint) time.tv_usec);
+    GDateTime *datetime = g_date_time_new_from_timeval_local(&time);
+    g_sprintf(out, "%s.%06d",
+              g_date_time_format(datetime, "%H:%M:%S"),
+              (guint) time.tv_usec
+    );
+    g_date_time_unref(datetime);
     return out;
 }
 
