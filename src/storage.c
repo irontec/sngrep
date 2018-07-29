@@ -23,8 +23,32 @@
  * @file sip.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in sip.h
+ * @brief Source of functions defined in storage.h
+ *
+ *
+ * Contains all stored calls, storage thread, pending packet queue and matching
+ * information. Capture threads send their packet information to storage, that provides the
+ * data that will be printed in the screen.
+ *
+ *
+ *             +--------------------------+
+ *             |                          |
+ *        +--->|      User Interface      |
+ *        |    |                          |
+ *        |    +--------------------------+
+ *        |    +--------------------------+
+ *        +--->|                          | <----------- You are here.
+ *             |         Storage          |
+ *        +--->|                          |----+
+ * Packet |    +--------------------------+    | Capture
+ * Queue  |    +--------------------------+    | Output
+ *        |    |                          |    |
+ *        +--- |     Capture Manager      |<---+
+ *             |                          |
+ *             +--------------------------+
+ *
  */
+#include "config.h"
 #include <glib.h>
 #include "glib-utils.h"
 #include "packet/dissectors/packet_sip.h"
@@ -33,10 +57,7 @@
 #include "filter.h"
 
 /**
- * @brief Linked list of parsed calls
- *
- * All parsed calls will be added to this list, only accesible from
- * this awesome structure, so, keep it thread-safe.
+ * @brief Global Structure with all storage information
  */
 Storage storage = {};
 
@@ -256,9 +277,6 @@ storage_check_sip_packet(Packet *packet)
 
     // Add the message to the call
     call_add_message(call, msg);
-
-    // check if message is a retransmission
-    call_msg_retrans_check(msg);
 
     if (call_is_invite(call)) {
         // Parse media data

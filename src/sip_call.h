@@ -179,17 +179,6 @@ gboolean
 call_is_invite(SipCall *call);
 
 /**
- * @brief Check if a message is a retransmission
- *
- * This function will compare its payload with the previous message
- * in the dialog, to check if it has the same content.
- *
- * @param msg SIP message that will be checked
- */
-void
-call_msg_retrans_check(SipMsg *msg);
-
-/**
  * @brief Find a message in the call with SDP with the given address
  *
  * @param call SIP call structure

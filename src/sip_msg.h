@@ -73,7 +73,7 @@ struct _SipMsg {
     //! Message owner
     SipCall *call;
     //! Message is a retransmission from other message
-    SipMsg *retrans;
+    const SipMsg *retrans;
 };
 
 
@@ -198,5 +198,16 @@ msg_get_header(SipMsg *msg, gchar *out);
 const gchar *
 msg_reqresp_str(SipMsg *msg);
 
+/**
+ * @brief Check if given message is a retransmission
+ *
+ * Compare message payload with the previous messages in the dialog,
+ * to check if it one has the same content.
+ *
+ * @param msg SIP Message
+ * @return pointer to original message or NULL if message is not a retransmission
+ */
+const SipMsg *
+msg_is_retrans(SipMsg *msg);
 
 #endif /* __SNGREP_SIP_MSG_H */

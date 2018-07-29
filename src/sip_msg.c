@@ -200,3 +200,32 @@ msg_reqresp_str(SipMsg *msg)
         return sip_method_str(msg->reqresp);
     }
 }
+
+const SipMsg *
+msg_is_retrans(SipMsg *msg)
+{
+    SipMsg *prev = NULL;
+    GSequenceIter *it;
+
+    // Get previous message in call with same origin and destination
+    it = g_sequence_get_end_iter(msg->call->msgs);
+
+    // Skip already added message
+    it = g_sequence_iter_prev(it);
+
+    while(!g_sequence_iter_is_begin(it)) {
+        it = g_sequence_iter_prev(it);
+        prev = g_sequence_get(it);
+        // Same addresses
+        if (addressport_equals(msg_src_address(prev), msg_src_address(msg)) &&
+            addressport_equals(msg_dst_address(prev), msg_dst_address(msg))) {
+            // Same payload
+            if (!strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
+                // Store the flag that determines if message is retrans
+                msg->retrans = prev;
+                break;
+            }
+        }
+    }
+
+}
