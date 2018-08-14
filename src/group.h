@@ -48,7 +48,7 @@ typedef struct _SipCallGroup SipCallGroup;
  */
 struct _SipCallGroup {
     //! For extended display, main call-id
-    gchar *callid;
+    const gchar *callid;
     //! Calls array in the group
     GList *calls;
     //! Messages in the group

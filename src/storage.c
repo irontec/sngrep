@@ -156,7 +156,7 @@ storage_calls_clear_soft()
 
     for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         call = g_sequence_get(it);
-        g_hash_table_insert(storage.callids, call->callid, call);
+        g_hash_table_insert(storage.callids, g_strdup(call->callid), call);
     }
 }
 
@@ -247,7 +247,7 @@ storage_check_sip_packet(Packet *packet)
             return NULL;
 
         // Add this Call-Id to hash table
-        g_hash_table_insert(storage.callids, call->callid, call);
+        g_hash_table_insert(storage.callids, g_strdup(call->callid), call);
 
         // Set call index
         call->index = ++storage.last_index;
@@ -264,7 +264,7 @@ storage_check_sip_packet(Packet *packet)
     // Always dissect first call message
     if (call_msg_count(call) == 0) {
         // If this call has X-Call-Id, append it to the parent call
-        if (strlen(call->xcallid)) {
+        if (call->xcallid) {
             call_add_xcall(g_hash_table_lookup(storage.callids, call->xcallid), call);
         }
     }
@@ -530,5 +530,4 @@ storage_deinit()
     // Remove calls vector
     g_sequence_free(storage.list);
     g_sequence_free(storage.active);
-
 }

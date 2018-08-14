@@ -62,9 +62,9 @@ struct _SipCall {
     //! Call index in the call list
     guint index;
     //! Call identifier
-    gchar *callid;
+    const gchar *callid;
     //! Related Call identifier
-    gchar *xcallid;
+    const gchar *xcallid;
     //! Flag this call as filtered so won't be displayed
     gchar filtered;
     //! Call State. For dialogs starting with an INVITE method
@@ -102,7 +102,7 @@ struct _SipCall {
  * @return pointer to the sip_call created
  */
 SipCall *
-call_create(gchar *callid, gchar *xcallid);
+call_create(const gchar *callid, const gchar *xcallid);
 
 /**
  * @brief Free all related memory from a call and remove from call list

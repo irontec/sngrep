@@ -37,7 +37,7 @@
 #include "setting.h"
 
 SipCall *
-call_create(char *callid, char *xcallid)
+call_create(const gchar *callid, const gchar *xcallid)
 {
     // Initialize a new call structure
     SipCall *call = g_malloc0(sizeof(SipCall));
@@ -58,8 +58,8 @@ call_create(char *callid, char *xcallid)
     call->filtered = -1;
 
     // Set message callid
-    call->callid = g_strdup(callid);
-    call->xcallid = (xcallid) ? g_strdup(xcallid) : g_strdup("");
+    call->callid = callid;
+    call->xcallid = xcallid;
 
     return call;
 }
@@ -78,8 +78,6 @@ call_destroy(gpointer item)
     g_sequence_free(call->xcalls);
 
     // Deallocate call memory
-    g_free(call->callid);
-    g_free(call->xcallid);
     g_free(call->reasontxt);
     g_free(call);
 }
