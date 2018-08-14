@@ -107,7 +107,7 @@ packet_sdp_dissect_connection(PacketSdpData *sdp, PacketSdpMedia *media, gchar *
         sdp->sconn = conn;
     } else {
         media->sconn = conn;
-        g_utf8_strncpy(media->address.ip, sdp->sconn->address, ADDRESSLEN);
+        g_utf8_strncpy(media->address.ip, conn->address, ADDRESSLEN);
     }
 }
 
@@ -150,8 +150,10 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
     media->type = packet_sdp_media_type(media_data[SDP_MEDIA_MEDIA]);
 
     // @todo For backwards compatibility with stream searching
-    g_utf8_strncpy(media->address.ip, sdp->sconn->address, ADDRESSLEN);
-    media->address.port = media->rtpport;
+    if (sdp->sconn) {
+        g_utf8_strncpy(media->address.ip, sdp->sconn->address, ADDRESSLEN);
+        media->address.port = media->rtpport;
+    }
 
     // Parse SDP preferred codec order
     gchar **formats = g_strsplit(media_data[SDP_MEDIA_FORMAT], " ", -1);
