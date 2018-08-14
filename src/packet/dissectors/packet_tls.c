@@ -835,6 +835,17 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     uint32_t outl = data->len;
     out = g_malloc0(outl);
     struct in_addr ip_src, ip_dst;
+
+    // Get capture input from this parser
+    CaptureInput *input = parser->input;
+    g_assert(input != NULL);
+
+    // Get manager information
+    CaptureManager *manager = input->manager;
+    if (capture_keyfile(manager) == NULL) {
+        return data;
+    }
+
     Address tlsserver = capture_tls_server(capture_manager());
 
     DissectorTlsData *priv = g_ptr_array_index(parser->dissectors, PACKET_TLS);
