@@ -120,7 +120,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     // Check if file is standard input
     if (strlen(infile) == 1 && *infile == '-') {
         infile = "/dev/stdin";
-        freopen("/dev/tty", "r", stdin);
+        G_GNUC_UNUSED FILE *tty = freopen("/dev/tty", "r", stdin);
     }
 
     // Create a new structure to handle this capture source
@@ -129,7 +129,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     // Open PCAP file
     if ((pcap->handle = pcap_open_offline(infile, errbuf)) == NULL) {
         gchar *filename = g_path_get_basename(infile);
-        g_set_error (error,
+        g_set_error(error,
                      CAPTURE_PCAP_ERROR,
                      CAPTURE_PCAP_ERROR_FILE_OPEN,
                      "Couldn't open pcap file %s: %s\n",
@@ -169,7 +169,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     return input;
 }
 
-void
+gpointer
 capture_input_pcap_start(CaptureInput *input)
 {
     // Get private data
@@ -184,6 +184,8 @@ capture_input_pcap_start(CaptureInput *input)
         pcap_close(pcap->handle);
         input->running = FALSE;
     }
+
+    return NULL;
 }
 
 void

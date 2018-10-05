@@ -132,7 +132,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error);
  * This function is used as worker thread for capturing filtered packets and
  * pass them to the UI layer.
  */
-void
+gpointer
 capture_input_pcap_start(CaptureInput *input);
 
 /**

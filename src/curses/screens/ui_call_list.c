@@ -594,14 +594,14 @@ call_list_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                __attribute__((fallthrough));
+                /* fall-thru */
             case ACTION_NPAGE:
                 // Next page => N key down strokes
                 call_list_move(ui, info->cur_call + rnpag_steps);
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                __attribute__((fallthrough));
+                /* fall-thru */
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
                 call_list_move(ui, info->cur_call - rnpag_steps);
@@ -870,7 +870,7 @@ call_list_handle_menu_key(ui_t *ui, int key)
                       sort.by = id;
                   }
                   storage_set_sort_options(sort);
-                  __attribute__((fallthrough));
+                  /* fall-thru */
               case ACTION_PREV_SCREEN:
                   // Desactive sorting menu
                   info->menu_active = 0;

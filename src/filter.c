@@ -36,12 +36,12 @@
 #include "filter.h"
 
 //! Storage of filter information
-filter_t filters[FILTER_COUNT] = { 0 };
+filter_t filters[FILTER_COUNT] = { { 0 } };
 
 int
 filter_set(int type, const char *expr)
 {
-    GRegex *regex;
+    GRegex *regex = NULL;
 
     // If we have an expression, check if compiles before changing the filter
     if (expr) {

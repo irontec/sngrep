@@ -62,7 +62,7 @@ packet_has_type(const Packet *packet, enum packet_proto type)
 Address
 packet_src_address(const Packet *packet)
 {
-    Address address;
+    Address address = { 0 };
 
     // Get IP address from IP parsed protocol
     PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
@@ -86,7 +86,7 @@ packet_src_address(const Packet *packet)
 Address
 packet_dst_address(const Packet *packet)
 {
-    Address address;
+    Address address = { 0 };
 
     // Get IP address from IP parsed protocol
     PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);

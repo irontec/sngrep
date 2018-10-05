@@ -53,7 +53,7 @@ typedef struct _CaptureManager CaptureManager;
 
 //! Capture Input functions types
 
-typedef void (*CaptureInputStartFunc)(CaptureInput *);
+typedef gpointer (*CaptureInputStartFunc)(CaptureInput *);
 
 typedef void (*CaptureInputStopFunc)(CaptureInput *);
 

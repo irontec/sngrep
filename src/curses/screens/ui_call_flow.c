@@ -308,18 +308,18 @@ call_flow_draw_columns(ui_t *ui)
             snprintf(coltext, MAX_SETTING_LEN, "%s", column->alias);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
             if (strlen(column->addr.ip) > 15) {
-                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%u",
+                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%hu",
                          MAX_SETTING_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr.port);
             } else {
-                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
+                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%hu",
                          MAX_SETTING_LEN - 7, column->alias, column->addr.port);
             }
         } else {
             if (strlen(column->addr.ip) > 15) {
-                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%u",
+                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%hu",
                          MAX_SETTING_LEN - 7, column->addr.ip + strlen(column->addr.ip) - 13, column->addr.port);
             } else {
-                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
+                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%hu",
                          MAX_SETTING_LEN - 7, column->addr.ip, column->addr.port);
             }
         }
@@ -380,6 +380,7 @@ call_flow_draw_arrows(ui_t *ui)
         // Stop if we have reached the bottom of the screen
         if (cline >= getmaxy(info->flow_win))
             break;
+
         // Draw arrow
         cline += call_flow_draw_arrow(ui, arrow, cline);
     }
@@ -429,7 +430,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     char msg_time[80];
     Address src;
     Address dst;
-    char method[80];
+    char method[SIP_ATTR_MAXLEN + 7];
     char delta[15] = { 0 };
     int flowh;
     char mediastr[40];
@@ -1104,13 +1105,13 @@ call_flow_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                __attribute__((fallthrough));
+                /* fall-thru */
             case ACTION_NPAGE:
                 call_flow_move(ui, info->cur_arrow + rnpag_steps);
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                __attribute__((fallthrough));
+                /* fall-thru */
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
                 call_flow_move(ui, info->cur_arrow - rnpag_steps);

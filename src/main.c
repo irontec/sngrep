@@ -221,7 +221,6 @@ main(int argc, char* argv[])
             return 1;
         }
     }
-
 #endif
 
 #ifdef WITH_SSL

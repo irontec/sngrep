@@ -446,7 +446,8 @@ storage_register_streams(SipMsg *msg)
 }
 
 //! Start capturing packets function
-static void storage_check_packet()
+static gpointer
+storage_check_packet()
 {
     while (storage.running) {
 
@@ -459,6 +460,8 @@ static void storage_check_packet()
             }
         }
     }
+
+    return NULL;
 }
 
 gboolean

@@ -259,7 +259,11 @@ call_group_get_next_stream(SipCallGroup *group, RtpStream *stream)
 
             if (!stream_get_count(cand))
                 continue;
+
             if (cand->type != PACKET_RTP)
+                continue;
+
+            if (cand == stream)
                 continue;
 
             // candidate must be between msg and next

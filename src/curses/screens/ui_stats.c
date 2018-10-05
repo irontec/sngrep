@@ -58,7 +58,6 @@
 #include "glib-utils.h"
 #include "storage.h"
 #include "packet/dissectors/packet_sip.h"
-#include "ui_manager.h"
 #include "ui_stats.h"
 
 /**
@@ -129,11 +128,11 @@ stats_create(ui_t *ui)
             }
         }
 
-        guint method = packet_sip_method(msg->packet);
-
         // For each message in call
         for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
             msg = g_ptr_array_index(call->msgs, i);
+            guint method = packet_sip_method(msg->packet);
+
             // Increase message counter
             stats.mtotal++;
             // Check message type

@@ -229,14 +229,14 @@ call_raw_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                __attribute__((fallthrough));
+                /* fall-thru */
             case ACTION_NPAGE:
                 // Next page => N key down strokes
                 info->scroll += rnpag_steps;
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
-                __attribute__((fallthrough));
+                /* fall-thru */
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
                 info->scroll -= rnpag_steps;

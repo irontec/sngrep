@@ -317,7 +317,7 @@ call_attr_compare(const SipCall *one, const SipCall *two, enum sip_attr_id id)
             if (oneintvalue == twointvalue) return 0;
             if (oneintvalue > twointvalue) return 1;
             if (oneintvalue < twointvalue) return -1;
-            __attribute__((fallthrough));
+            /* fall-thru */
         default:
             return 0;
     }

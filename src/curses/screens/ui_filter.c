@@ -402,6 +402,7 @@ const char*
 filter_field_method(int field_id)
 {
     int method;
+
     switch(field_id) {
         case FLD_FILTER_REGISTER:
             method = SIP_METHOD_REGISTER;
@@ -433,6 +434,9 @@ filter_field_method(int field_id)
         case FLD_FILTER_UPDATE:
             method = SIP_METHOD_UPDATE;
             break;
+        default:
+            method = -1;
+            break;
     }
 
     return sip_method_str(method);
@@ -441,7 +445,7 @@ filter_field_method(int field_id)
 void
 filter_method_from_setting(const char *value)
 {
-    char methods[256], method_expr[256];
+    char methods[200], method_expr[256];
     int methods_len = strlen(value);
     char *comma;
 

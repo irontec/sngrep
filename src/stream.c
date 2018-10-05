@@ -180,6 +180,10 @@ stream_time(RtpStream *stream)
 gint
 stream_is_older(RtpStream *one, RtpStream *two)
 {
+    if (two == NULL) {
+        return 1;
+    }
+
     return timeval_is_older(
             stream_time(one),
             stream_time(two)

@@ -165,6 +165,8 @@ settings_create(ui_t *ui)
                     field_opts_off(entry, O_EDIT);
                     set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
                     break;
+                default:
+                    return;
             }
 
             field_opts_off(entry, O_AUTOSKIP);
