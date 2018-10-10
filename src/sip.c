@@ -170,7 +170,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
 
     // Initialize payload parsing regexp
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
-    regcomp(&calls.reg_method, "^([a-zA-Z]+) [a-zA-Z]+:[^ ]+ SIP/2.0[ ]*\r", match_flags & ~REG_NEWLINE);
+    regcomp(&calls.reg_method, "^([a-zA-Z]+) [a-zA-Z]+:.+ SIP/2.0[ ]*\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_callid, "^(Call-ID|i):[ ]*([^ ]+)[ ]*\r$", match_flags);
     setting = setting_get_value(SETTING_SIP_HEADER_X_CID);
     reg_rule_len = strlen(setting) + 22;
