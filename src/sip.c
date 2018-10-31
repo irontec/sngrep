@@ -668,7 +668,8 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     while ((line = strsep(&payload2, "\r\n")) != NULL) {
         // Check if we have a media string
         if (!strncmp(line, "m=", 2)) {
-            if (sscanf(line, "m=%s %hu RTP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3) {
+            if (sscanf(line, "m=%s %hu RTP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3
+            ||  sscanf(line, "m=%s %hu UDP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3) {
 
                 // Add streams from previous 'm=' line to the call
                 ADD_STREAM(msg_rtp_stream);
