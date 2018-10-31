@@ -1,3 +1,15 @@
+2018-10-31 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.6 released
+
+	* capture: fixed pcap reading from stdin
+	* capture: make SIP regexp more tolerant to invalid uris
+	* capture: SIP dialogs can now start with INFO, REFER and UPDATE
+	* call list: Added methods and key bindings for soft clear of call list
+	* call flow: improved performance while displaying a dialog with lots of messages
+	* call flow: arrows are now sorted by time while displaying multiple dialogs
+	* ui: fixed multiples buffer overflows crashes
+	* ui: improve compatibility with newest ncurses version
+
 2018-01-19 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.5 released
 
