@@ -178,7 +178,6 @@ capture_offline(const char *infile, const char *outfile)
     // Check if file is standard input
     if (strlen(infile) == 1 && *infile == '-') {
         infile = "/dev/stdin";
-        fstdin = freopen("/dev/tty", "r", stdin);
     }
 
     // Set capture input file
@@ -188,6 +187,14 @@ capture_offline(const char *infile, const char *outfile)
     if ((capinfo->handle = pcap_open_offline(infile, errbuf)) == NULL) {
         fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
+    }
+
+    // Reopen tty for ncurses after pcap have used stdin
+    if (!strncmp(infile, "/dev/stdin", 10)) {
+        if (!(stdin = freopen("/dev/tty", "r", stdin))) {
+            fprintf(stderr, "Failed to reopen tty while using stdin for capture.");
+            return 1;
+        }
     }
 
     // Get datalink to parse packets correctly
