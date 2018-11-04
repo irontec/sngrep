@@ -191,7 +191,7 @@ capture_offline(const char *infile, const char *outfile)
 
     // Reopen tty for ncurses after pcap have used stdin
     if (!strncmp(infile, "/dev/stdin", 10)) {
-        if (!(stdin = freopen("/dev/tty", "r", stdin))) {
+        if (!(fstdin = freopen("/dev/tty", "r", stdin))) {
             fprintf(stderr, "Failed to reopen tty while using stdin for capture.");
             return 1;
         }
