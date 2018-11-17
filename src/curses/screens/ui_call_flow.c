@@ -278,7 +278,7 @@ call_flow_draw_columns(ui_t *ui)
         while ((call = call_group_get_next(info->group, call)) ) {
             for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
                 stream = g_ptr_array_index(call->streams, i);
-                if (stream->type == PACKET_RTP && stream_get_count(stream)) {
+                if (stream->type == STREAM_RTP && stream_get_count(stream)) {
                     addr = stream->src;
                     addr.port = 0;
                     call_flow_column_add(ui, NULL, addr);
@@ -435,7 +435,6 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     int flowh;
     char mediastr[40];
     SipMsg *msg = arrow->item;
-    GSequenceIter *it;
     int color = 0;
     int msglen;
     int aline = cline + 1;
@@ -461,7 +460,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     callid = msg->call->callid;
     src = msg_src_address(msg);
     dst = msg_dst_address(msg);
-    media = g_sequence_first(msg->medias);
+    media = g_list_nth_data(msg->medias, 0);
     msg_get_attribute(msg, SIP_ATTR_METHOD, msg_method);
     timeval_to_time(msg_get_time(msg), msg_time);
 
@@ -565,14 +564,15 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Draw media information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        it = g_sequence_get_begin_iter(msg->medias);
-        for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-            media = g_sequence_get(it);
+        for (GList *l = msg->medias; l != NULL; l = l->next) {
+            aline++;
+            cline++;
+            PacketSdpMedia *media = l->data;
             sprintf(mediastr, "%s %d (%s)",
                     packet_sdp_media_type_str(media->type),
                     media->rtpport,
                     msg_get_preferred_codec_alias(msg));
-            mvwprintw(flow_win, cline++, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
+            mvwprintw(flow_win, cline, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
         }
     }
 
@@ -670,7 +670,6 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     int height;
     RtpStream *stream = arrow->item;
     SipMsg *msg;
-    SipCall *call;
     call_flow_arrow_t *msgarrow;
     Address addr;
 
@@ -692,9 +691,6 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Get arrow text
     sprintf(text, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
-
-    // Get message data
-    call = stream->msg->call;
 
     /**
      * This logic will try to use the same columns for the stream representation
@@ -727,7 +723,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
      * column, othwerise any column with the source IP will be used.
      */
     // Message with Stream source configured in SDP content
-    msg = call_msg_with_media(call, stream->src);
+    msg = stream->msg;
 
     // Try to find a message with configured SDP matching the source of this stream
     if (msg && address_equals(msg_src_address(msg), stream->src)) {

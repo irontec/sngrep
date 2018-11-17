@@ -62,6 +62,7 @@ call_group_add(SipCallGroup *group, SipCall *call)
         call->locked = TRUE;
         g_ptr_array_add(group->calls, call);
         g_ptr_array_add_array(group->msgs, call->msgs);
+        g_ptr_array_add_array(group->streams, call->streams);
     }
 }
 
@@ -214,7 +215,7 @@ call_group_get_next_stream(SipCallGroup *group, RtpStream *stream)
     RtpStream *next = g_ptr_array_next(group->streams, stream);
 
     if (next != NULL) {
-        if (next->type != PACKET_RTP)
+        if (next->type != STREAM_RTP)
             return call_group_get_next_stream(group, next);
 
         if (stream_get_count(next) == 0)

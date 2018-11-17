@@ -49,7 +49,7 @@ call_create(const gchar *callid, const gchar *xcallid)
     call->rtp_packets = g_sequence_new((GDestroyNotify) packet_free);
 
     // Create an empty vector to strore stream data
-    call->streams = g_ptr_array_new_with_free_func(g_free);
+    call->streams = g_ptr_array_new_with_free_func((GDestroyNotify) stream_free);
 
     // Create an empty vector to store x-calls
     call->xcalls = g_ptr_array_new();
@@ -104,15 +104,6 @@ call_add_stream(SipCall *call, RtpStream *stream)
     call->changed = true;
 }
 
-void
-call_add_rtp_packet(SipCall *call, Packet *packet)
-{
-    // Store packet
-    g_sequence_append(call->rtp_packets, packet);
-    // Flag this call as changed
-    call->changed = true;
-}
-
 guint
 call_msg_count(const SipCall *call)
 {
@@ -132,28 +123,6 @@ call_is_invite(SipCall *call)
     g_return_val_if_fail(first != NULL, 0);
 
     return packet_sip_method(first->packet) == SIP_METHOD_INVITE;
-}
-
-SipMsg *
-call_msg_with_media(SipCall *call, Address dst)
-{
-    SipMsg *msg;
-    PacketSdpMedia *media;
-    GSequenceIter *itmedia;
-
-    // Get message with media address configured in given dst
-    for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
-        msg = g_ptr_array_index(call->msgs, i);
-        itmedia = g_sequence_get_begin_iter(msg->medias);
-        for (;!g_sequence_iter_is_end(itmedia); itmedia = g_sequence_iter_next(itmedia)) {
-            media = g_sequence_get(itmedia);
-            if (addressport_equals(dst, media->address)) {
-                return msg;
-            }
-        }
-    }
-
-    return NULL;
 }
 
 void

@@ -35,23 +35,42 @@
 #include "storage.h"
 
 RtpStream *
-stream_create(G_GNUC_UNUSED Packet *packet, PacketSdpMedia *media)
+stream_new(enum RtpStreamType type, SipMsg *msg, PacketSdpMedia *media)
 {
     RtpStream *stream = g_malloc0(sizeof(RtpStream));
 
     // Initialize all fields
-    stream->type = media->type;
+    stream->type = type;
+    stream->msg = msg;
     stream->media = media;
-    stream->dst = media->address;
-    stream->packets = g_ptr_array_sized_new(500);
+    stream->packets = g_ptr_array_new_with_free_func((GDestroyNotify) packet_free);
     return stream;
 }
 
-RtpStream *
-stream_complete(RtpStream *stream, Address src)
+void
+stream_free(RtpStream *stream)
+{
+    g_ptr_array_free(stream->packets, TRUE);
+    g_free(stream);
+}
+
+void
+stream_set_src(RtpStream *stream, Address src)
 {
     stream->src = src;
-    return stream;
+}
+
+void
+stream_set_dst(RtpStream *stream, Address dst)
+{
+    stream->dst = dst;
+}
+
+void
+stream_set_data(RtpStream *stream, Address src, Address dst)
+{
+    stream->src = src;
+    stream->dst = dst;
 }
 
 void
@@ -76,7 +95,6 @@ stream_get_count(RtpStream *stream)
 const char *
 stream_get_format(RtpStream *stream)
 {
-
     // Get format for media payload
     if (!stream || !stream->media)
         return NULL;
@@ -98,96 +116,10 @@ stream_get_format(RtpStream *stream)
     return NULL;
 }
 
-RtpStream *
-stream_find_by_format(Address src, Address dst, uint32_t format)
-{
-    // Structure for RTP packet streams
-    RtpStream *stream;
-    // Check if this is a RTP packet from active calls
-    SipCall *call;
-    // Candiate stream
-    RtpStream *candidate = NULL;
-
-    GPtrArray *calls = storage_calls();
-
-    // Get active calls (during conversation)
-    for (gint i = g_ptr_array_len(calls) - 1; i >= 0; i--) {
-        call = g_ptr_array_index(calls, i);
-        for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
-            stream = g_ptr_array_index(call->streams, j);
-
-            // Only look RTP packets
-            if (stream->type != PACKET_RTP)
-                continue;
-
-            // Stream complete, check source, dst
-            if (stream_is_complete(stream)) {
-                if (addressport_equals(stream->src, src) &&
-                    addressport_equals(stream->dst, dst)) {
-                    // Exact searched stream format
-                    if (stream->fmtcode == format) {
-                        return stream;
-                    } else {
-                        // Matching addresses but different format
-                        candidate = stream;
-                    }
-                }
-            } else {
-                // Incomplete stream, if dst match is enough
-                if (addressport_equals(stream->dst, dst)) {
-                    return stream;
-                }
-            }
-        }
-    }
-
-    return candidate;
-}
-
-RtpStream *
-stream_find(Address src, Address dst)
-{
-    // Structure for RTP packet streams
-    RtpStream *stream;
-
-    // Get active calls
-    GPtrArray *calls = storage_calls();
-
-    for (guint i = 0; i < g_ptr_array_len(calls); i++) {
-        SipCall *call = g_ptr_array_index(calls, i);
-
-        // Check if this call has an RTP stream for current packet data
-        if ((stream = call_find_stream(call, src, dst))) {
-            return stream;
-        }
-    }
-
-    return NULL;
-}
-
 GTimeVal
 stream_time(RtpStream *stream)
 {
     return packet_time(g_ptr_array_index(stream->packets, 0));
-}
-
-gint
-stream_is_older(RtpStream *one, RtpStream *two)
-{
-    if (two == NULL) {
-        return 1;
-    }
-
-    return timeval_is_older(
-            stream_time(one),
-            stream_time(two)
-    );
-}
-
-gboolean
-stream_is_complete(RtpStream *stream)
-{
-    return stream->packets->len > 0;
 }
 
 gboolean

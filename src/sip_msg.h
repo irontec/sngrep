@@ -31,6 +31,7 @@
 
 #include <stdarg.h>
 #include <glib.h>
+#include <packet/dissectors/packet_sdp.h>
 #include "packet/packet.h"
 #include "sip_attr.h"
 #include "timeval.h"
@@ -54,8 +55,8 @@ typedef struct _SipCall SipCall;
  * call.
  */
 struct _SipMsg {
-        //! SDP payload information (sdp_media_t *)
-    GSequence *medias;
+    //! SDP payload information (sdp_media_t *)
+    GList *medias;
     //! Captured packet for this message
     Packet *packet;
     //! Message owner
@@ -107,6 +108,15 @@ msg_get_call(const SipMsg *msg);
  */
 guint
 msg_media_count(SipMsg *msg);
+
+/**
+ * @brief Get Media information for a given destination address
+ * @param msg SIP message structure*
+ * @param dst Address structure
+ * @return Media info or NULL for not match
+ */
+PacketSdpMedia *
+msg_media_for_addr(SipMsg *msg, Address dst);
 
 /**
  * @brief Check if given message has spd content

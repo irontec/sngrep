@@ -81,6 +81,15 @@ addressport_equals(Address addr1, Address addr2);
 gboolean
 address_equals(Address addr1, Address addr2);
 
+
+/**
+ * @brief Check if Address structure is empty
+ * @param addr Address structure
+ * @return true if the address has its initial value
+ */
+gboolean
+address_empty(Address addr);
+
 /**
  * @brief Check if a given IP address belongs to a local device
  *

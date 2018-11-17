@@ -140,15 +140,6 @@ void
 call_add_stream(SipCall *call, RtpStream *stream);
 
 /**
- * @brief Append a new RTP packet to the call
- *
- * @param call pointer to the call owner of the stream
- * @param packet new RTP packet from call rtp streams
- */
-void
-call_add_rtp_packet(SipCall *call, Packet *packet);
-
-/**
  * @brief Getter for call messages linked list size
  *
  * Return the number of messages stored in this call. All messages
@@ -161,15 +152,6 @@ guint
 call_msg_count(const SipCall *call);
 
 /**
- * @brief Determine if a dilog is a call in progress
- *
- * @param call SIP call structure
- * @return TRUE if the passed call state is active, FALSE otherwise
- */
-gboolean
-call_is_active(SipCall *call);
-
-/**
  * @brief Determine if this call starts with an Invite request
  *
  * @param call SIP call structure
@@ -177,16 +159,6 @@ call_is_active(SipCall *call);
  */
 gboolean
 call_is_invite(SipCall *call);
-
-/**
- * @brief Find a message in the call with SDP with the given address
- *
- * @param call SIP call structure
- * @param dst address:port structure to be searched
- * @return the message found or NULL
- */
-SipMsg *
-call_msg_with_media(SipCall *call, Address dst);
 
 /**
  * @brief Update Call State attribute with its last parsed message

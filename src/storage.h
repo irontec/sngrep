@@ -107,14 +107,14 @@ struct _Storage
     StorageSortOpts sort;
     //! List of all captured calls
     GPtrArray *calls;
-    //! List of active captured calls
-    GPtrArray *active;
     //! Changed flag. For interface optimal updates
     gboolean changed;
     //! Last created id
     guint last_index;
     //! Call-Ids hash table
     GHashTable *callids;
+    //! Streams hash table
+    GHashTable *streams;
     //! Pending packets to be parsed queue
     GAsyncQueue *pkt_queue;
     //! Storage thread

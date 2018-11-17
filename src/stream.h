@@ -42,10 +42,16 @@
 //! Shorter declaration of rtp_stream structure
 typedef struct _RtpStream RtpStream;
 
+enum RtpStreamType
+{
+    STREAM_RTP      = 0,
+    STREAM_RTCP
+};
+
 struct _RtpStream
 {
     //! Determine stream type
-    uint32_t type;
+    enum RtpStreamType type;
     //! Source address
     Address src;
     //! Destination address
@@ -63,10 +69,19 @@ struct _RtpStream
 };
 
 RtpStream *
-stream_create(Packet *packet, PacketSdpMedia *media);
+stream_new(enum RtpStreamType type, SipMsg *msg, PacketSdpMedia *media);
 
-RtpStream *
-stream_complete(RtpStream *stream, Address src);
+void
+stream_free(RtpStream *stream);
+
+void
+stream_set_src(RtpStream *stream, Address src);
+
+void
+stream_set_dst(RtpStream *stream, Address dst);
+
+void
+stream_set_data(RtpStream *stream, Address src, Address dst);
 
 void
 stream_set_format(RtpStream *stream, guint8 format);
@@ -80,25 +95,8 @@ stream_get_count(RtpStream *stream);
 const char *
 stream_get_format(RtpStream *stream);
 
-RtpStream *
-stream_find_by_format(Address src, Address dst, uint32_t format);
-
 GTimeVal
 stream_time(RtpStream *stream);
-
-/**
- * @brief Check if a message is older than other
- *
- * @param one rtp stream pointer
- * @param two rtp stream pointer
- * @return 1 if one is older than two
- * @return 0 if equal or two is older than one
- */
-gint
-stream_is_older(RtpStream *one, RtpStream *two);
-
-gboolean
-stream_is_complete(RtpStream *stream);
 
 /**
  * @brief Determine if a stream is still active

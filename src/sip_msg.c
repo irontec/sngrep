@@ -40,7 +40,7 @@ SipMsg *
 msg_create()
 {
     SipMsg *msg = g_malloc0(sizeof(SipMsg));
-    msg->medias = g_sequence_new(NULL);
+    msg->medias = NULL;
     return msg;
 }
 
@@ -51,7 +51,7 @@ msg_destroy(gpointer item)
 
     // Free message SDP media
     if (!msg->retrans)
-        g_sequence_free(msg->medias);
+        g_list_free(msg->medias);
 
     // Free message packets
     packet_free(msg->packet);
@@ -67,7 +67,20 @@ msg_get_call(const SipMsg *msg) {
 guint
 msg_media_count(SipMsg *msg)
 {
-    return g_sequence_get_length(msg->medias);
+    return g_list_length(msg->medias);
+}
+
+PacketSdpMedia *
+msg_media_for_addr(SipMsg *msg, Address dst)
+{
+    for (GList *l = msg->medias; l != NULL; l = l->next) {
+        PacketSdpMedia *media = l->data;
+        if (addressport_equals(media->address, dst)) {
+            return media;
+        }
+    }
+
+    return NULL;
 }
 
 gboolean
@@ -147,7 +160,7 @@ msg_get_attribute(SipMsg *msg, gint id, char *value)
 const gchar *
 msg_get_preferred_codec_alias(SipMsg *msg)
 {
-    PacketSdpMedia *media = g_sequence_first(msg->medias);
+    PacketSdpMedia *media = g_list_nth_data(msg->medias, 0);
     g_return_val_if_fail(media != NULL, NULL);
 
     PacketSdpFormat *format = g_list_nth_data(media->formats, 0);
