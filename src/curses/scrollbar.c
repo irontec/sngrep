@@ -36,6 +36,8 @@ ui_set_scrollbar(WINDOW *win, int alignment, int dock)
     sb.win = win;
     sb.alignment = alignment;
     sb.dock = dock;
+    sb.pos = 0;
+    sb.max = 0;
     return sb;
 }
 
@@ -49,7 +51,7 @@ ui_scrollbar_draw(scrollbar_t sb)
     getmaxyx(sb.win, height, width);
 
     // If no even a screen has been filled, don't draw it
-    if (sb.max < height)
+    if (sb.max < (guint) height)
         return;
 
     // Display the scrollbar left or right

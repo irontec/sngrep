@@ -116,8 +116,7 @@ call_list_create(ui_t *ui)
     info->group = call_group_new();
 
     // Get current call list
-    info->cur_call = -1;
-    info->dcalls = g_sequence_new(NULL);
+    info->dcalls = g_ptr_array_new();
 
     // Set autoscroll default status
     info->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
@@ -143,7 +142,7 @@ call_list_destroy(ui_t *ui)
 
         // Deallocate group data
         call_group_free(info->group);
-        g_sequence_free(info->dcalls);
+        g_ptr_array_free(info->dcalls, FALSE);
 
         // Deallocate panel windows
         delwin(info->list_win);
@@ -157,6 +156,95 @@ call_list_info_t *
 call_list_info(ui_t *ui)
 {
     return (call_list_info_t*) panel_userptr(ui->panel);
+}
+
+/**
+ * @brief Move selected cursor to given line
+ *
+ * This function will move the cursor to given line, taking into account
+ * selected line and scrolling position.
+ *
+ * @param ui UI structure pointer
+ * @param line Position to move the cursor
+ */
+static void
+call_list_move(ui_t *ui, guint line)
+{
+    call_list_info_t *info;
+
+    // Get panel info
+    if (!(info = call_list_info(ui)))
+        return;
+
+    // Already in this position?
+    if (info->cur_call == line)
+        return;
+
+    // Moving down or up?
+    bool move_down = (info->cur_call < line);
+
+    if (move_down) {
+        while (info->cur_call < line) {
+            // Check if there is a call below us
+            if (info->cur_call == g_ptr_array_len(info->dcalls) - 1)
+                break;
+
+            // Increase current call position
+            info->cur_call++;
+
+            // If we are out of the bottom of the displayed list
+            // refresh it starting in the next call
+            if ((gint)(info->cur_call - info->scroll.pos) == getmaxy(info->list_win)) {
+                info->scroll.pos++;
+            }
+        }
+    } else {
+        while (info->cur_call > line) {
+            // Check if there is a call above us
+            if (info->cur_call == 0)
+                break;
+
+            // If we are out of the top of the displayed list
+            // refresh it starting in the previous (in fact current) call
+            if (info->cur_call ==  info->scroll.pos) {
+                info->scroll.pos--;
+            }
+            // Move current call position
+            info->cur_call--;
+        }
+    }
+}
+
+static void
+call_list_move_up(ui_t *ui, guint times)
+{
+    call_list_info_t *info;
+
+    // Get panel info
+    if (!(info = call_list_info(ui)))
+        return;
+
+    gint newpos = info->cur_call - times;
+    if (newpos < 0)
+        newpos = 0;
+
+    call_list_move(ui, newpos);
+}
+
+static void
+call_list_move_down(ui_t *ui, guint times)
+{
+    call_list_info_t *info;
+
+    // Get panel info
+    if (!(info = call_list_info(ui)))
+        return;
+
+    guint newpos = info->cur_call + times;
+    if (newpos >= g_ptr_array_len(info->dcalls))
+        newpos = g_ptr_array_len(info->dcalls) - 1;
+
+    call_list_move(ui, newpos);
 }
 
 bool
@@ -194,7 +282,7 @@ void
 call_list_draw_header(ui_t *ui)
 {
     const char *infile, *coldesc;
-    int colpos, collen, i;
+    int colpos, collen;
     char sortind;
     const char *countlb;
     const char *device, *filterbpf;
@@ -276,7 +364,7 @@ call_list_draw_header(ui_t *ui)
         colpos = 6;
     }
 
-    for (i = 0; i < info->columncnt; i++) {
+    for (guint i = 0; i < info->columncnt; i++) {
         // Get current column width
         collen = info->columns[i].width;
         // Get current column title
@@ -347,7 +435,7 @@ call_list_draw_list(ui_t *ui)
     WINDOW *list_win;
     int listh, listw, cline = 0;
     SipCall *call = NULL;
-    int i, collen;
+    int collen;
     char coltext[SIP_ATTR_MAXLEN];
     int colid;
     int colpos;
@@ -360,60 +448,44 @@ call_list_draw_list(ui_t *ui)
     list_win = info->list_win;
     getmaxyx(list_win, listh, listw);
 
-    // Store selected call
-    if (info->cur_call >= 0)
-        call = g_sequence_nth(info->dcalls, info->cur_call);
-
     // Get the list of calls that are goint to be displayed
-    g_sequence_free(info->dcalls);
-    info->dcalls = g_sequence_copy(storage_calls_vector(), filter_check_call, NULL);
+    g_ptr_array_free(info->dcalls, FALSE);
+    info->dcalls = g_ptr_array_copy_filtered(storage_calls(), filter_check_call, NULL);
 
-    // If no active call, use the fist one (if exists)
-    if (info->cur_call == -1 && g_sequence_get_length(info->dcalls)) {
-        info->cur_call = info->scroll.pos = 0;
-    }
+    // Empty list, nothing to draw
+    if (g_ptr_array_len(info->dcalls) == 0)
+        return;
 
     // If autoscroll is enabled, select the last dialog
     if (info->autoscroll)  {
         StorageSortOpts sort = storage_sort_options();
         if (sort.asc) {
-            call_list_move(ui, g_sequence_get_length(info->dcalls) - 1);
+            call_list_move(ui, g_ptr_array_len(info->dcalls) - 1);
         } else {
             call_list_move(ui, 0);
         }
-    } else if (call) {
-        call_list_move(ui, g_sequence_index(info->dcalls, call));
     }
 
     // Clear call list before redrawing
     werase(list_win);
 
-    // Set the iterator position to the first call
-    GSequenceIter *it = g_sequence_get_iter_at_pos(info->dcalls, info->scroll.pos);
-
     // Fill the call list
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        call = g_sequence_get(it);
+    for (guint i = info->scroll.pos; i < g_ptr_array_len(info->dcalls); i++) {
+        call = g_ptr_array_index(info->dcalls, i);
 
         // Stop if we have reached the bottom of the list
         if (cline == listh)
             break;
-
-        // We only print calls with messages (In fact, all call should have msgs)
-        if (!call_msg_count(call))
-            continue;
 
         // Show bold selected rows
         if (call_group_exists(info->group, call))
             wattron(list_win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (info->cur_call == g_sequence_iter_get_position(it)) {
+        if (info->cur_call == i) {
             wattron(list_win, COLOR_PAIR(CP_WHITE_ON_BLUE));
-            // Reverse colors on monochrome terminals
-            if (!has_colors())
-                wattron(list_win, A_REVERSE);
         }
+
         // Set current line background
         mvwprintw(list_win, cline, 0, "%*s", listw, "");
         // Set current line selection box
@@ -421,11 +493,12 @@ call_list_draw_list(ui_t *ui)
 
         // Print requested columns
         colpos = 6;
-        for (i = 0; i < info->columncnt; i++) {
+        for (guint j = 0; j < info->columncnt; j++) {
             // Get current column id
-            colid = info->columns[i].id;
+            colid = info->columns[j].id;
             // Get current column width
-            collen = info->columns[i].width;
+            collen = info->columns[j].width;
+
             // Check if next column fits on window width
             if (colpos + collen >= listw)
                 break;
@@ -441,7 +514,7 @@ call_list_draw_list(ui_t *ui)
 
             // Enable attribute color (if not current one)
             color = 0;
-            if (info->cur_call != g_sequence_iter_get_position(it)) {
+            if (info->cur_call !=  i) {
                 if ((color = sip_attr_get_color(colid, coltext)) > 0) {
                     wattron(list_win, color);
                 }
@@ -463,7 +536,7 @@ call_list_draw_list(ui_t *ui)
     }
 
     // Draw scrollbar to the right
-    info->scroll.max = g_sequence_get_length(info->dcalls) - 1;
+    info->scroll.max = g_ptr_array_len(info->dcalls) - 1;
     ui_scrollbar_draw(info->scroll);
 
     // Refresh the list
@@ -520,7 +593,7 @@ call_list_form_activate(ui_t *ui, int active)
 const char *
 call_list_line_text(ui_t *ui, SipCall *call, char *text)
 {
-    int i, collen;
+    int collen;
     char call_attr[SIP_ATTR_MAXLEN];
     char coltext[SIP_ATTR_MAXLEN];
     int colid;
@@ -529,7 +602,7 @@ call_list_line_text(ui_t *ui, SipCall *call, char *text)
     call_list_info_t *info = call_list_info(ui);
 
     // Print requested columns
-    for (i = 0; i < info->columncnt; i++) {
+    for (guint i = 0; i < info->columncnt; i++) {
 
         // Get current column id
         colid = info->columns[i].id;
@@ -587,31 +660,31 @@ call_list_handle_key(ui_t *ui, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
-                call_list_move(ui, info->cur_call + 1);
+                call_list_move_down(ui, 1);
                 break;
             case ACTION_UP:
-                call_list_move(ui, info->cur_call - 1);
+                call_list_move_up(ui, 1);
                 break;
             case ACTION_HNPAGE:
                 rnpag_steps = rnpag_steps / 2;
                 /* fall-thru */
             case ACTION_NPAGE:
                 // Next page => N key down strokes
-                call_list_move(ui, info->cur_call + rnpag_steps);
+                call_list_move_down(ui, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
                 rnpag_steps = rnpag_steps / 2;
                 /* fall-thru */
             case ACTION_PPAGE:
                 // Prev page => N key up strokes
-                call_list_move(ui, info->cur_call - rnpag_steps);
+                call_list_move_up(ui, rnpag_steps);
                 break;
             case ACTION_BEGIN:
                 // Move to first list entry
                 call_list_move(ui, 0);
                 break;
             case ACTION_END:
-                call_list_move(ui, g_sequence_get_length(info->dcalls));
+                call_list_move(ui, g_ptr_array_len(info->dcalls) - 1);
                 break;
             case ACTION_DISP_FILTER:
                 // Activate Form
@@ -621,18 +694,19 @@ call_list_handle_key(ui_t *ui, int key)
             case ACTION_SHOW_FLOW_EX:
             case ACTION_SHOW_RAW:
                 // Check we have calls in the list
-                if (info->cur_call == -1)
+                if (g_ptr_array_len(info->dcalls) == 0)
                     break;
+
                 // Create a new group of calls
                 group = call_group_clone(info->group);
 
                 // If not selected call, show current call flow
                 if (call_group_count(info->group) == 0)
-                    call_group_add(group, g_sequence_nth(info->dcalls, info->cur_call));
+                    call_group_add(group, g_ptr_array_index(info->dcalls, info->cur_call));
 
                 // Add xcall to the group
                 if (action == ACTION_SHOW_FLOW_EX) {
-                    call = g_sequence_nth(info->dcalls, info->cur_call);
+                    call = g_ptr_array_index(info->dcalls, info->cur_call);
                     call_group_add_calls(group, call->xcalls);
                     group->callid = call->callid;
                 }
@@ -687,7 +761,7 @@ call_list_handle_key(ui_t *ui, int key)
                 ui_create_panel(PANEL_SETTINGS);
                 break;
             case ACTION_SELECT:
-                call = g_sequence_nth(info->dcalls, info->cur_call);
+                call = g_ptr_array_index(info->dcalls, info->cur_call);
                 if (call_group_exists(info->group, call)) {
                     call_group_remove(info->group, call);
                 } else {
@@ -993,69 +1067,18 @@ call_list_clear(ui_t *ui)
         return;
 
     // Initialize structures
-    info->scroll.pos = info->cur_call = -1;
+    info->scroll.pos = info->cur_call = 0;
     call_group_remove_all(info->group);
 
     // Clear Displayed lines
     werase(info->list_win);
-}
-
-void
-call_list_move(ui_t *ui, int line)
-{
-    call_list_info_t *info;
-
-    // Get panel info
-    if (!(info = call_list_info(ui)))
-        return;
-
-    // Already in this position?
-    if (info->cur_call == line)
-        return;
-
-    // Moving down or up?
-    bool move_down = (info->cur_call < line);
-
-    GSequenceIter *it = g_sequence_get_begin_iter(info->dcalls);
-    g_sequence_iter_set_pos(&it, info->cur_call);
-
-    if (move_down) {
-        while (info->cur_call < line) {
-            // Check if there is a call below us
-            if (g_sequence_iter_is_end(g_sequence_iter_next(it)))
-               break;
-
-            // Increase current call position
-            info->cur_call++;
-
-            // If we are out of the bottom of the displayed list
-            // refresh it starting in the next call
-            if (info->cur_call - info->scroll.pos == getmaxy(info->list_win)) {
-               info->scroll.pos++;
-            }
-        }
-    } else {
-        while (info->cur_call > line) {
-            // Check if there is a call above us
-            if (g_sequence_iter_is_begin(it))
-              break;
-
-            // If we are out of the top of the displayed list
-            // refresh it starting in the previous (in fact current) call
-            if (info->cur_call ==  info->scroll.pos) {
-              info->scroll.pos--;
-            }
-            // Move current call position
-            info->cur_call--;
-        }
-    }
+    wnoutrefresh(info->list_win);
 }
 
 void
 call_list_select_sort_attribute(ui_t *ui)
 {
     call_list_info_t *info;
-    int i;
 
     // Get panel info
     if (!(info = call_list_info(ui)))
@@ -1068,9 +1091,10 @@ call_list_select_sort_attribute(ui_t *ui)
     mvderwin(info->list_win, 5, 12);
 
     // Create menu entries
-    for (i = 0; i < info->columncnt; i++) {
+    for (guint i = 0; i < info->columncnt; i++) {
         info->items[i] = new_item(sip_attr_get_name(info->columns[i].id), 0);
     }
+
     info->items[info->columncnt] = NULL;
     // Create the columns menu and post it
     info->menu = new_menu(info->items);

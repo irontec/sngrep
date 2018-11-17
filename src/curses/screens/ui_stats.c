@@ -74,7 +74,6 @@ ui_t ui_stats = {
 void
 stats_create(ui_t *ui)
 {
-    GSequenceIter *calls;
     SipCall *call;
     SipMsg *msg;
 
@@ -101,8 +100,8 @@ stats_create(ui_t *ui)
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Parse the data
-    calls = storage_calls_iterator();
-    stats.dtotal = g_sequence_iter_length(calls);
+    GPtrArray *calls = storage_calls();
+    stats.dtotal = g_ptr_array_len(calls);
 
     // Ignore this screen when no dialog exists
     if (!stats.dtotal) {
@@ -110,8 +109,9 @@ stats_create(ui_t *ui)
         return;
     }
 
-    for (call = NULL; !g_sequence_iter_is_end(calls); calls = g_sequence_iter_next(calls)) {
-        call = g_sequence_get(calls);
+    for (guint i = 0; i < g_ptr_array_len(calls); i++) {
+        call = g_ptr_array_index(calls, i);
+
         // If this dialog is a call
         if (call->state) {
             // Increase call counter

@@ -74,15 +74,15 @@ struct call_list_column {
  */
 struct call_list_info {
     //! Displayed calls vector
-    GSequence *dcalls;
+    GPtrArray *dcalls;
     //! Selected call in the list
-    int cur_call;
+    guint cur_call;
     //! Selected calls with space
     SipCallGroup *group;
     //! Displayed column list, make it configurable in the future
     call_list_column_t columns[SIP_ATTR_COUNT];
     //! Displayed column count.
-    int columncnt;
+    guint columncnt;
     //! List subwindow
     WINDOW *list_win;
     //! Form that contains the display filter
@@ -306,18 +306,6 @@ call_list_add_column(ui_t *ui, enum sip_attr_id id, const char* attr, const char
  */
 void
 call_list_clear(ui_t *ui);
-
-/**
- * @brief Move selected cursor to given line
- *
- * This function will move the cursor to given line, taking into account
- * selected line and scrolling position.
- *
- * @param ui UI structure pointer
- * @param line Position to move the cursor
- */
-void
-call_list_move(ui_t *ui, int line);
 
 /**
  * @brief Select column to sort by

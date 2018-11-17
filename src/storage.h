@@ -106,9 +106,9 @@ struct _Storage
     //! Sort call list following this options
     StorageSortOpts sort;
     //! List of all captured calls
-    GSequence *list;
+    GPtrArray *calls;
     //! List of active captured calls
-    GSequence *active;
+    GPtrArray *active;
     //! Changed flag. For interface optimal updates
     gboolean changed;
     //! Last created id
@@ -184,14 +184,14 @@ storage_calls_iterator();
 /**
  * @brief Return the call list
  */
-GSequence *
-storage_calls_vector();
+GPtrArray *
+storage_calls();
 
 /**
  * @brief Return the active call list
  */
-GSequence *
-storage_active_calls_vector();
+GPtrArray *
+storage_active_calls();
 
 /**
  * @brief Return stats from call list

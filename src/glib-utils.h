@@ -38,4 +38,22 @@ g_sequence_append_sequence(GSequence *sequence, GSequence *items);
 GSequence *
 g_sequence_copy(GSequence *sequence, GEqualFunc filter_func, gpointer filter_data);
 
+GPtrArray *
+g_ptr_array_copy(GPtrArray *origin);
+
+GPtrArray *
+g_ptr_array_copy_filtered(GPtrArray *origin, GEqualFunc filter_func, gpointer filter_data);
+
+gint
+g_ptr_array_data_index(GPtrArray *array, gconstpointer data);
+
+gpointer
+g_ptr_array_next(GPtrArray *array, gconstpointer data);
+
+gboolean
+g_ptr_array_find(GPtrArray *haystack, gconstpointer needle, guint *index);
+
+gboolean
+g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle, GEqualFunc equal_func, guint *index);
+
 #endif //SNGREP_GLIB_UTILS_H

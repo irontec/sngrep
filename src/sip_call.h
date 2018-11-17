@@ -78,7 +78,7 @@ struct _SipCall {
     //! Last warning text value for this call
     gint warning;
     //! List of calls with with this call as X-Call-Id
-    GSequence *xcalls;
+    GPtrArray *xcalls;
     //! Cseq from invite startint the call
     gint invitecseq;
     //! Array of messages of this call (sip_msg_t*)

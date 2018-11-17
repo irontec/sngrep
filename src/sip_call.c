@@ -52,7 +52,7 @@ call_create(const gchar *callid, const gchar *xcallid)
     call->streams = g_ptr_array_new_with_free_func(g_free);
 
     // Create an empty vector to store x-calls
-    call->xcalls = g_sequence_new(NULL);
+    call->xcalls = g_ptr_array_new();
 
     // Initialize call filter status
     call->filtered = -1;
@@ -75,7 +75,7 @@ call_destroy(gpointer item)
     // Remove all call rtp packets
     g_sequence_free(call->rtp_packets);
     // Remove all xcalls
-    g_sequence_free(call->xcalls);
+    g_ptr_array_free(call->xcalls, FALSE);
 
     // Deallocate call memory
     g_free(call->reasontxt);
@@ -331,8 +331,9 @@ call_add_xcall(SipCall *call, SipCall *xcall)
 
     // Mark this call as changed
     call->changed = true;
+
     // Add the xcall to the list
-    g_sequence_append(call->xcalls, xcall);
+    g_ptr_array_add(call->xcalls, xcall);
 }
 
 RtpStream *

@@ -37,14 +37,15 @@ SipCallGroup *
 call_group_new()
 {
     SipCallGroup *group = g_malloc0(sizeof(SipCallGroup));
+    group->calls = g_ptr_array_new();
     return group;
 }
 
 void
 call_group_free(SipCallGroup *group)
 {
+    g_ptr_array_free(group->calls, FALSE);
     g_list_free(group->msgs);
-    g_list_free(group->calls);
     g_free(group);
 }
 
@@ -56,8 +57,8 @@ call_group_changed(SipCallGroup *group)
     // Check if any of the group has changed
     // We check all the calls even after we found a changed one to reset all
     // the changed pointers
-    for (GList *l = group->calls; l != NULL; l = l->next) {
-        SipCall *call = l->data;
+    for (guint i = 0; i < g_ptr_array_len(group->calls); i++) {
+        SipCall *call = g_ptr_array_index(group->calls, i);
         if (call->changed) {
             // Reset the change flag
             call->changed = FALSE;
@@ -82,7 +83,7 @@ call_group_clone(SipCallGroup *original)
 
     // Copy Calls and messages
     SipCallGroup *clone = g_malloc0(sizeof(SipCallGroup));
-    clone->calls = g_list_copy(original->calls);
+    clone->calls = g_ptr_array_copy(original->calls);
     clone->msgs = g_list_copy(original->msgs);
     return clone;
 }
@@ -95,7 +96,8 @@ call_group_add(SipCallGroup *group, SipCall *call)
 
     if (!call_group_exists(group, call)) {
         call->locked = TRUE;
-        group->calls = g_list_append(group->calls, call);
+        g_ptr_array_add(group->calls, call);
+
         // Add all call messages
         for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
             group->msgs = g_list_append(group->msgs, g_ptr_array_index(call->msgs, i));
@@ -104,14 +106,10 @@ call_group_add(SipCallGroup *group, SipCall *call)
 }
 
 void
-call_group_add_calls(SipCallGroup *group, GSequence *calls)
+call_group_add_calls(SipCallGroup *group, GPtrArray *calls)
 {
-    GSequenceIter *it = g_sequence_get_begin_iter(calls);
-
-    // Get the call with the next chronological message
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        call_group_add(group, g_sequence_get(it));
-    }
+    for (guint i = 0; i < g_ptr_array_len(calls); i++)
+        call_group_add(group, g_ptr_array_index(calls, i));
 }
 
 void
@@ -124,7 +122,7 @@ call_group_remove(SipCallGroup *group, SipCall *call)
     call->locked = FALSE;
 
     // Remove the call from the group
-    group->calls = g_list_remove(group->calls, call);
+    g_ptr_array_remove(group->calls, call);
 
     // Remove all messages of this call from the group
     GList *l = group->msgs;
@@ -140,41 +138,41 @@ call_group_remove(SipCallGroup *group, SipCall *call)
 void
 call_group_remove_all(SipCallGroup *group)
 {
-    g_list_free(group->calls);
+    g_ptr_array_free(group->calls, FALSE);
     g_list_free(group->msgs);
 }
 
 gboolean
 call_group_exists(SipCallGroup *group, SipCall *call)
 {
-    return (g_list_index(group->calls, call) != -1) ? TRUE : FALSE;
+    return g_ptr_array_find(group->calls, call, NULL);
 }
 
 gint
 call_group_color(SipCallGroup *group, SipCall *call)
 {
-    return (g_list_index(group->calls, call) % 7) + 1;
+    return (g_ptr_array_data_index(group->calls, call) % 7) + 1;
 }
 
 SipCall *
 call_group_get_next(SipCallGroup *group, SipCall *call)
 {
     if (call == NULL && group->calls != NULL) {
-        return g_list_nth_data(group->calls, 0);
+        return g_ptr_array_index(group->calls, 0);
     }
 
-    GList *l = g_list_find(group->calls, call);
-    if (l != NULL) {
-        GList *next = g_list_next(l);
-        return (next != NULL) ? next->data : NULL;
+    guint index;
+    if (g_ptr_array_find(group->calls, call, &index)) {
+        return g_ptr_array_index(group->calls, index + 1);
     }
+
     return NULL;
 }
 
 gint
 call_group_count(SipCallGroup *group)
 {
-    return g_list_length(group->calls);
+    return g_ptr_array_len(group->calls);
 }
 
 gint
@@ -252,8 +250,9 @@ call_group_get_next_stream(SipCallGroup *group, RtpStream *stream)
     RtpStream *cand;
     SipCall *call;
 
-    for (guint i = 0; i < g_list_length(group->calls); i++) {
-        call = g_list_nth_data(group->calls, i);
+    for (guint i = 0; i < g_ptr_array_len(group->calls); i++) {
+        call = g_ptr_array_index(group->calls, i);
+
         for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
             cand = g_ptr_array_index(call->streams, i);
 

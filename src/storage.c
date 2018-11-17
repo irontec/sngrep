@@ -68,7 +68,7 @@ storage_add_packet(Packet *packet)
 }
 
 static gint
-storage_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
+storage_sorter(gconstpointer a, gconstpointer b)
 {
     const SipCall *calla = a, *callb = b;
     int cmp = call_attr_compare(calla, callb, storage.sort.by);
@@ -86,46 +86,35 @@ storage_calls_changed()
 guint
 storage_calls_count()
 {
-    return g_sequence_get_length(storage.list);
-}
-
-GSequenceIter *
-storage_calls_iterator()
-{
-    return g_sequence_get_begin_iter(storage.list);
+    return g_ptr_array_len(storage.calls);
 }
 
 static gboolean
 storage_call_is_active(SipCall *call)
 {
-    return g_sequence_index(storage.active, call) != -1;
+    return g_ptr_array_find(storage.active, call, NULL) != -1;
 }
 
-GSequence *
-storage_calls_vector()
+GPtrArray *
+storage_calls()
 {
-    return storage.list;
-}
-
-GSequence *
-storage_active_calls_vector()
-{
-    return storage.active;
+    return storage.calls;
 }
 
 sip_stats_t
 storage_calls_stats()
 {
     sip_stats_t stats = { 0 };
-    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
 
     // Total number of calls without filtering
-    stats.total = g_sequence_iter_length(it);
+    stats.total = g_ptr_array_len(storage.calls);
+
     // Total number of calls after filtering
-    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        if (filter_check_call(g_sequence_get(it), NULL))
+    for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
+        if (filter_check_call(g_ptr_array_index(storage.calls, i), NULL))
             stats.displayed++;
     }
+
     return stats;
 }
 
@@ -136,43 +125,41 @@ storage_calls_clear()
     g_hash_table_remove_all(storage.callids);
 
     // Remove all items from vector
-    g_sequence_remove_all(storage.list);
-    g_sequence_remove_all(storage.active);
+    g_ptr_array_free(storage.calls, TRUE);
+    g_ptr_array_free(storage.active, FALSE);
 }
 
 void
 storage_calls_clear_soft()
 {
-    // Create again the callid hash table
-    g_hash_table_remove_all(storage.callids);
+    // Filter current call list
+    for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
+        SipCall *call = g_ptr_array_index(storage.calls, i);
 
-    // Repopulate list applying current filter
-    storage.list = g_sequence_copy(storage_calls_vector(), filter_check_call, NULL);
-    storage.active = g_sequence_copy(storage_active_calls_vector(), filter_check_call, NULL);
-
-    // Repopulate callids based on filtered list
-    SipCall *call;
-    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
-
-    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        call = g_sequence_get(it);
-        g_hash_table_insert(storage.callids, g_strdup(call->callid), call);
+        // Filtered call, remove from all lists
+        if (filter_check_call(call, NULL)) {
+            // Remove from Call-Id hash table
+            g_hash_table_remove(storage.callids, call->callid);
+            // Remove from active calls list (if present)
+            g_ptr_array_remove(storage.active, call);
+            // Remove from calls list
+            g_ptr_array_remove(storage.calls, call);
+        }
     }
 }
 
 static void
 storage_calls_rotate()
 {
-    SipCall *call;
-    GSequenceIter *it = g_sequence_get_begin_iter(storage.list);
-    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        call = g_sequence_get(it);
+    for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
+        SipCall *call = g_ptr_array_index(storage.calls, i);
+
         if (!call->locked) {
             // Remove from callids hash
             g_hash_table_remove(storage.callids, call->callid);
             // Remove first call from active and call lists
-            g_sequence_remove_data(storage.active, call);
-            g_sequence_remove_data(storage.list, call);
+            g_ptr_array_remove(storage.active, call);
+            g_ptr_array_remove(storage.calls, call);
             return;
         }
     }
@@ -204,7 +191,6 @@ void
 storage_set_sort_options(StorageSortOpts sort)
 {
     storage.sort = sort;
-    g_sequence_sort(storage.list, storage_sorter, NULL);
 }
 
 StorageSortOpts
@@ -280,18 +266,19 @@ storage_check_sip_packet(Packet *packet)
         // Check if this call should be in active call list
         if (call_is_active(call)) {
             if (storage_call_is_active(call)) {
-                g_sequence_append(storage.active, call);
+                g_ptr_array_add(storage.active, call);
             }
         } else {
             if (storage_call_is_active(call)) {
-                g_sequence_remove_data(storage.active, call);
+                g_ptr_array_remove(storage.active, call);
             }
         }
     }
 
     if (newcall) {
         // Append this call to the call list
-        g_sequence_insert_sorted(storage.list, call, storage_sorter, NULL);
+        g_ptr_array_add(storage.calls, call);
+        g_ptr_array_sort(storage.calls, storage_sorter);
     }
 
     // Mark the list as changed
@@ -498,8 +485,8 @@ storage_init(StorageCaptureOpts capture_options,
     storage.pkt_queue = g_async_queue_new();
 
     // Create a vector to store calls
-    storage.list = g_sequence_new(call_destroy);
-    storage.active = g_sequence_new(NULL);
+    storage.calls = g_ptr_array_new_with_free_func(call_destroy);
+    storage.active = g_ptr_array_new();
 
     // Create hash table for callid search
     storage.callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -530,7 +517,4 @@ storage_deinit()
     storage_calls_clear();
     // Remove Call-id hash table
     g_hash_table_destroy(storage.callids);
-    // Remove calls vector
-    g_sequence_free(storage.list);
-    g_sequence_free(storage.active);
 }

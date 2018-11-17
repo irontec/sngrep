@@ -414,14 +414,11 @@ save_to_file(ui_t *ui)
     char savepath[MAX_SETTING_LEN];
     char savefile[MAX_SETTING_LEN];
     char fullfile[MAX_SETTING_LEN*2];
-    SipCall *call = NULL;
-    SipMsg *msg = NULL;
     CaptureOutput *output = NULL;
     int cur = 0, total = 0;
     WINDOW *progress;
-    GSequence *groupcalls;
-    GSequenceIter *calls, *rtps, *packets;
-    GSequence *sorted;
+    GPtrArray *calls = NULL;
+    GPtrArray *packets = g_ptr_array_new();
     GError *error = NULL;
 
     // Get panel information
@@ -487,15 +484,11 @@ save_to_file(ui_t *ui)
         case SAVE_ALL:
         case SAVE_DISPLAYED:
             // Get calls iterator
-            calls = storage_calls_iterator();
+            calls = storage_calls();
             break;
         case SAVE_SELECTED:
             // Save selected packets to file
-            groupcalls = g_sequence_new(NULL);
-            for (GList *l = info->group->calls; l != NULL; l = l->next)
-                g_sequence_append(groupcalls, l->data);
-
-            calls = g_sequence_get_begin_iter(groupcalls);
+            calls = info->group->calls;
             break;
         default:
             break;
@@ -506,60 +499,62 @@ save_to_file(ui_t *ui)
         output->write(output, info->msg->packet);
     } else if (info->saveformat == SAVE_TXT) {
         // Save selected packets to file
-        for (;!g_sequence_iter_is_end(calls); calls = g_sequence_iter_next(calls)) {
-            call = g_sequence_get(calls);
+        for (guint i = 0; i < g_ptr_array_len(calls); i++) {
+            SipCall *call = g_ptr_array_index(calls, i);
             // Save SIP message content
             for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
-                msg = g_ptr_array_index(call->msgs, i);
+                SipMsg *msg = g_ptr_array_index(call->msgs, i);
                 output->write(output, msg->packet);
             }
         }
     } else {
-        // Store all messages in a time sorted vector
-        sorted = g_sequence_new(NULL);
-
         // Count packages for progress bar
-        for (;!g_sequence_iter_is_end(calls); calls = g_sequence_iter_next(calls)) {
-            call = g_sequence_get(calls);
+        for (guint i = 0; i < g_ptr_array_len(calls); i++) {
+            SipCall *call = g_ptr_array_index(calls, i);
+
             if (info->savemode == SAVE_DISPLAYED && !filter_check_call(call, NULL))
                 continue;
+
             total += call_msg_count(call);
+
             if (info->saveformat == SAVE_PCAP_RTP)
                 total += g_sequence_get_length(call->rtp_packets);
         }
-        g_sequence_iter_set_pos(&calls, 0);
 
         progress = dialog_progress_run("Saving packets...");
         dialog_progress_set_value(progress, 0);
 
         // Save selected packets to file
-        for (;!g_sequence_iter_is_end(calls); calls = g_sequence_iter_next(calls)) {
-            call = g_sequence_get(calls);
+        for (guint i = 0; i < g_ptr_array_len(calls); i++) {
+            SipCall *call = g_ptr_array_index(calls, i);
+
             if (info->savemode == SAVE_DISPLAYED && !filter_check_call(call, NULL))
                 continue;
+
             // Save SIP message content
             for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
-                msg = g_ptr_array_index(call->msgs, i);
+                SipMsg * msg = g_ptr_array_index(call->msgs, i);
                 // Update progress bar dialog
                 dialog_progress_set_value(progress, (++cur * 100) / total);
-                g_sequence_insert_sorted(sorted, msg->packet, capture_packet_time_sorter, NULL);
+                g_ptr_array_add(packets, msg->packet);
             }
 
             // Save RTP packets
             if (info->saveformat == SAVE_PCAP_RTP) {
-                rtps = g_sequence_get_begin_iter(call->rtp_packets);
+                GSequenceIter *rtps = g_sequence_get_begin_iter(call->rtp_packets);
                 for (;!g_sequence_iter_is_end(rtps); rtps = g_sequence_iter_next(rtps)) {
                     // Update progress bar dialog
                     dialog_progress_set_value(progress, (++cur * 100) / total);
-                    g_sequence_insert_sorted(sorted, g_sequence_get(rtps), capture_packet_time_sorter, NULL);
+                    g_ptr_array_add(packets, g_sequence_get(rtps));
                 }
             }
         }
 
+        g_ptr_array_sort(packets, capture_packet_time_sorter);
+
         // Save sorted packets
-        packets = g_sequence_get_begin_iter(sorted);
-        for (;!g_sequence_iter_is_end(packets); packets = g_sequence_iter_next(packets)) {
-            output->write(output, g_sequence_get(packets));
+        for (guint i = 0; i < g_ptr_array_len(packets); i++) {
+            output->write(output, g_ptr_array_index(packets, i));
         }
 
         dialog_progress_destroy(progress);
@@ -572,7 +567,7 @@ save_to_file(ui_t *ui)
     if (info->savemode == SAVE_MESSAGE) {
       dialog_run("Successfully saved selected SIP message to %s", savefile);
     } else {
-      dialog_run("Successfully saved %d dialogs to %s", g_sequence_iter_length(calls), savefile);
+      dialog_run("Successfully saved %d dialogs to %s", total, savefile);
     }
 
     return 0;

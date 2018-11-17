@@ -35,6 +35,7 @@
 #include <wctype.h>
 #endif
 #include <ncurses.h>
+#include <glib.h>
 
 //! Shorter declaration of scrollbar
 typedef struct scrollbar scrollbar_t;
@@ -70,9 +71,9 @@ struct scrollbar
     //! Position
     enum sb_dock dock;
     //! Current scrollbar position
-    int pos;
+    guint pos;
     //! Max scrollbar positions
-    int max;
+    guint max;
 };
 
 scrollbar_t

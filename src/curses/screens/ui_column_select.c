@@ -52,7 +52,7 @@ ui_t ui_column_select = {
 void
 column_select_create(ui_t *ui)
 {
-    int attr_id, column;
+    int attr_id;
     MENU *menu;
     column_select_info_t *info;
 
@@ -100,7 +100,7 @@ column_select_create(ui_t *ui)
     call_list_info_t *list_info = call_list_info(ui_find_by_type(PANEL_CALL_LIST));
 
     // Enable current enabled fields and move them to the top
-    for (column = 0; column < list_info->columncnt; column++) {
+    for (guint column = 0; column < list_info->columncnt; column++) {
         const char *attr = list_info->columns[column].attr;
         for (attr_id = 0; attr_id < item_count(menu); attr_id++) {
             if (!strcmp(item_userptr(info->items[attr_id]), attr)) {

@@ -105,19 +105,17 @@ stream_find_by_format(Address src, Address dst, uint32_t format)
     RtpStream *stream;
     // Check if this is a RTP packet from active calls
     SipCall *call;
-    // Iterator for active calls
-    GSequenceIter *calls;
     // Candiate stream
     RtpStream *candidate = NULL;
 
-    // Get active calls (during conversation)
-    calls = g_sequence_get_end_iter(storage_calls_vector());
+    GPtrArray *calls = storage_calls();
 
-    while (!g_sequence_iter_is_begin(calls)) {
-        calls = g_sequence_iter_prev(calls);
-        call = g_sequence_get(calls);
-        for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
-            stream = g_ptr_array_index(call->streams, i);
+    // Get active calls (during conversation)
+    for (gint i = g_ptr_array_len(calls) - 1; i >= 0; i--) {
+        call = g_ptr_array_index(calls, i);
+        for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
+            stream = g_ptr_array_index(call->streams, j);
+
             // Only look RTP packets
             if (stream->type != PACKET_RTP)
                 continue;
@@ -151,17 +149,13 @@ stream_find(Address src, Address dst)
 {
     // Structure for RTP packet streams
     RtpStream *stream;
-    // Check if this is a RTP packet from active calls
-    SipCall *call;
-    // Iterator for active calls
-    GSequenceIter *calls;
 
-    // Get active calls (during conversation)
-    calls = g_sequence_get_end_iter(storage_calls_vector());
+    // Get active calls
+    GPtrArray *calls = storage_calls();
 
-    while (!g_sequence_iter_is_begin(calls)) {
-        calls = g_sequence_iter_prev(calls);
-        call = g_sequence_get(calls);
+    for (guint i = 0; i < g_ptr_array_len(calls); i++) {
+        SipCall *call = g_ptr_array_index(calls, i);
+
         // Check if this call has an RTP stream for current packet data
         if ((stream = call_find_stream(call, src, dst))) {
             return stream;

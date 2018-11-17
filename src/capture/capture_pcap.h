@@ -176,7 +176,7 @@ capture_pcap_parse_packet(u_char *input, const struct pcap_pkthdr *header, const
  * @brief Sorter by time for captured packets
  */
 gint
-capture_packet_time_sorter(gconstpointer a, gconstpointer b, gpointer user_data);
+capture_packet_time_sorter(gconstpointer a, gconstpointer b);
 
 /**
  * @brief Get Input file from Offline mode

@@ -357,7 +357,7 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
 }
 
 gint
-capture_packet_time_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
+capture_packet_time_sorter(gconstpointer a, gconstpointer b)
 {
     return timeval_is_older(packet_time(a), packet_time(b));
 }

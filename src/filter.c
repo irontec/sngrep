@@ -164,14 +164,14 @@ filter_check_expr(filter_t filter, const char *data)
     return (g_regex_match(filter.regex, data, 0, NULL)) ? 0 : 1;
 }
 
+static void
+filter_mark_call_unfiltered(SipCall *call, G_GNUC_UNUSED gpointer user_data)
+{
+    call->filtered = -1;
+}
+
 void
 filter_reset_calls()
 {
-    GSequenceIter *it = storage_calls_iterator();
-
-    // Force filter evaluation
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        SipCall *call = g_sequence_get(it);
-        call->filtered = -1;
-    }
+    g_ptr_array_foreach(storage_calls(), (GFunc) filter_mark_call_unfiltered, NULL);
 }

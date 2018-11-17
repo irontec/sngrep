@@ -50,7 +50,7 @@ struct _SipCallGroup {
     //! For extended display, main call-id
     const gchar *callid;
     //! Calls array in the group
-    GList *calls;
+    GPtrArray *calls;
     //! Messages in the group
     GList *msgs;
     //! Color of the last printed call in mode Color-by-Call
@@ -116,7 +116,7 @@ call_group_add(SipCallGroup *group, SipCall *call);
  * @param calls Pointer to a vector with calls
  */
 void
-call_group_add_calls(SipCallGroup *group, GSequence *calls);
+call_group_add_calls(SipCallGroup *group, GPtrArray *calls);
 
 /**
  * @brief Remove a call from the group
