@@ -126,6 +126,12 @@ g_ptr_array_next(GPtrArray *array, gconstpointer data)
 {
     guint pos;
 
+    if (g_ptr_array_len(array) == 0)
+        return NULL;
+
+    if (data == NULL)
+        return g_ptr_array_first(array);
+
     if (g_ptr_array_find(array, data, &pos)) {
         if ((pos + 1) != g_ptr_array_len(array)) {
             return g_ptr_array_index(array, pos + 1);
@@ -133,6 +139,52 @@ g_ptr_array_next(GPtrArray *array, gconstpointer data)
     }
 
     return NULL;
+}
+
+gpointer
+g_ptr_array_prev(GPtrArray *array, gconstpointer data)
+{
+    guint pos;
+
+    if (g_ptr_array_len(array) == 0)
+        return NULL;
+
+    if (data == NULL)
+        return g_ptr_array_last(array);
+
+    if (g_ptr_array_find(array, data, &pos)) {
+        if (pos > 0) {
+            return g_ptr_array_index(array, pos - 1);
+        }
+    }
+
+    return NULL;
+}
+
+static void
+g_ptr_array_add_cb(gpointer item, GPtrArray *array)
+{
+    if (!g_ptr_array_find(array, item, NULL)) {
+        g_ptr_array_add(array, item);
+    }
+}
+
+void
+g_ptr_array_add_array(GPtrArray *array, GPtrArray *items)
+{
+    g_ptr_array_foreach(items, (GFunc) g_ptr_array_add_cb, array);
+}
+
+static void
+g_ptr_array_remove_cb(gpointer item, GPtrArray *array)
+{
+    g_ptr_array_remove(array, item);
+}
+
+void
+g_ptr_array_remove_array(GPtrArray *array, GPtrArray *items)
+{
+    g_ptr_array_foreach(items, (GFunc) g_ptr_array_remove_cb, array);
 }
 
 /**

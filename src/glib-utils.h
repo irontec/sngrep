@@ -50,6 +50,16 @@ g_ptr_array_data_index(GPtrArray *array, gconstpointer data);
 gpointer
 g_ptr_array_next(GPtrArray *array, gconstpointer data);
 
+gpointer
+g_ptr_array_prev(GPtrArray *array, gconstpointer data);
+
+void
+g_ptr_array_add_array(GPtrArray *array, GPtrArray *items);
+
+void
+g_ptr_array_remove_array(GPtrArray *array, GPtrArray *items);
+
+
 gboolean
 g_ptr_array_find(GPtrArray *haystack, gconstpointer needle, guint *index);
 

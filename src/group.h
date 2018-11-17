@@ -52,7 +52,9 @@ struct _SipCallGroup {
     //! Calls array in the group
     GPtrArray *calls;
     //! Messages in the group
-    GList *msgs;
+    GPtrArray *msgs;
+    //! Streams in the group
+    GPtrArray *streams;
     //! Color of the last printed call in mode Color-by-Call
     gint color;
     //! Only consider SDP messages from Calls
