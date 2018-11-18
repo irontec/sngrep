@@ -37,7 +37,7 @@
 //! Shorter declaration of sip_attr_hdr structure
 typedef struct _AttributeHeader AttributeHeader;
 //! Shorter declaration of sip_attr structure
-typedef struct attribute Attribute;
+typedef struct _Attribute Attribute;
 
 /**
  * @brief Available SIP Attributes
@@ -115,7 +115,7 @@ struct _AttributeHeader {
 /**
  * @brief Attribute storage struct
  */
-struct attribute {
+struct _Attribute {
     //! Attribute id
     enum AttributeId id;
     //! Attribute value
@@ -154,7 +154,7 @@ attr_description(enum AttributeId id);
  * @param id Attribute id
  * @return Attribute title from its header
  */
-const char *
+const gchar *
 attr_title(enum AttributeId id);
 
 /**

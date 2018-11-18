@@ -176,22 +176,11 @@ guint
 storage_calls_count();
 
 /**
- * @brief Return an iterator of call list
- */
-GSequenceIter *
-storage_calls_iterator();
-
-/**
  * @brief Return the call list
  */
 GPtrArray *
 storage_calls();
 
-/**
- * @brief Return the active call list
- */
-GPtrArray *
-storage_active_calls();
 
 /**
  * @brief Return stats from call list
