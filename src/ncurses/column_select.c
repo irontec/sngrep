@@ -170,14 +170,14 @@ column_select_update_columns(Window *ui)
             continue;
 
         // Get column attribute
-        attr_id = sip_attr_from_name(item_userptr(info->items[column]));
+        attr_id = attr_find_by_name(item_userptr(info->items[column]));
 
         // Add a new column to the list
         CallListColumn *column = g_malloc0(sizeof(CallListColumn));
         column->id = attr_id;
-        column->attr = sip_attr_get_name(attr_id);
-        column->title = sip_attr_get_title(attr_id);
-        column->width = (guint)  sip_attr_get_width(attr_id);
+        column->attr = attr_name(attr_id);
+        column->title = attr_title(attr_id);
+        column->width = (guint) attr_width(attr_id);
         g_ptr_array_add(info->selected, column);
     }
 }
@@ -508,7 +508,7 @@ column_select_free(Window *ui)
     // Remove menu and items
     unpost_menu(info->menu);
     free_menu(info->menu);
-    for (i = 0; i < SIP_ATTR_COUNT; i++)
+    for (i = 0; i < ATTR_COUNT; i++)
         free_item(info->items[i]);
 
     // Remove form and fields
@@ -561,12 +561,12 @@ column_select_new()
     info->menu_win = derwin(window->win, 10, window->width - 2, 7, 0);
 
     // Initialize one field for each attribute
-    for (guint attr_id = 0; attr_id < SIP_ATTR_COUNT; attr_id++) {
+    for (guint attr_id = 0; attr_id < ATTR_COUNT; attr_id++) {
         // Create a new field for this column
-        info->items[attr_id] = new_item("[ ]", sip_attr_get_description(attr_id));
-        set_item_userptr(info->items[attr_id], (void*) sip_attr_get_name(attr_id));
+        info->items[attr_id] = new_item("[ ]", attr_description(attr_id));
+        set_item_userptr(info->items[attr_id], (void*) attr_name(attr_id));
     }
-    info->items[SIP_ATTR_COUNT] = NULL;
+    info->items[ATTR_COUNT] = NULL;
 
     // Create the columns menu and post it
     info->menu = new_menu(info->items);

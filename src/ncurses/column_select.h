@@ -34,7 +34,7 @@
 #include <form.h>
 #include "ncurses/ui_manager.h"
 #include "ncurses/scrollbar.h"
-#include "sip_attr.h"
+#include "attribute.h"
 
 /**
  * @brief Enum of available fields
@@ -62,7 +62,7 @@ struct _ColumnSelectInfo {
     //! Columns menu
     MENU *menu;
     // Columns Items
-    ITEM *items[SIP_ATTR_COUNT + 1];
+    ITEM *items[ATTR_COUNT + 1];
     //! Current selected columns
     GPtrArray *selected;
     //! Form that contains the save fields

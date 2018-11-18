@@ -61,7 +61,7 @@ typedef struct _CallListInfo CallListInfo;
  */
 struct _CallListColumn {
     //! Attribute id of the column
-    enum sip_attr_id id;
+    enum AttributeId id;
     //! Attribute name
     const char *attr;
     //! Column title
@@ -96,7 +96,7 @@ struct _CallListInfo {
     // Columns sort menu
     MENU *menu;
     // Columns sort menu items
-    ITEM *items[SIP_ATTR_COUNT + 1];
+    ITEM *items[ATTR_COUNT + 1];
     //! We're selecting sorting field
     gboolean menu_active;
     //! Move to last list entry if autoscroll is enabled

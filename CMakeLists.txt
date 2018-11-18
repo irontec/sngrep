@@ -52,7 +52,7 @@ set(SOURCES
         src/option.c
         src/stream.c
         src/setting.c
-        src/sip_attr.c
+        src/attribute.c
         src/storage.c
         src/sip_call.c
         src/sip_msg.c

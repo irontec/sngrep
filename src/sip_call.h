@@ -34,7 +34,7 @@
 #include <glib.h>
 #include "stream.h"
 #include "sip_msg.h"
-#include "sip_attr.h"
+#include "attribute.h"
 
 //! Shorter declaration of sip_call structure
 typedef struct _SipCall SipCall;
@@ -180,7 +180,7 @@ call_update_state(SipCall *call, SipMsg *msg);
  * @return Attribute value or NULL if not found
  */
 const gchar *
-call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value);
+call_get_attribute(const SipCall *call, enum AttributeId id, char *value);
 
 /**
  * @brief Return the string represtation of a call state
@@ -197,7 +197,7 @@ call_state_to_str(enum call_state state);
  * @return -1 if first call is lesser
  */
 gint
-call_attr_compare(const SipCall *one, const SipCall *two, enum sip_attr_id id);
+call_attr_compare(const SipCall *one, const SipCall *two, enum AttributeId id);
 
 /**
  * @brief Relate this two calls

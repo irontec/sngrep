@@ -20,65 +20,60 @@
  **
  ****************************************************************************/
 /**
- * @file sip_attr.c
+ * @file attribute.c.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in sip_attr.h
+ * @brief Source of functions defined in attribute.h
  *
  */
 #include "config.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include "option.h"
-#include "sip_attr.h"
-#include "timeval.h"
+#include "attribute.h"
 #include "packet/dissectors/packet_sip.h"
 #include "ncurses/ui_manager.h"
 
-static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
-    { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 , NULL },
-    { SIP_ATTR_SIPFROM,     "sipfrom",     NULL,   "SIP From",      25, NULL },
-    { SIP_ATTR_SIPFROMUSER, "sipfromuser", NULL,   "SIP From User", 20, NULL },
-    { SIP_ATTR_SIPTO,       "sipto",       NULL,   "SIP To",        25, NULL },
-    { SIP_ATTR_SIPTOUSER,   "siptouser",   NULL,   "SIP To User",   20, NULL },
-    { SIP_ATTR_SRC,         "src",         NULL,   "Source",        22, NULL },
-    { SIP_ATTR_DST,         "dst",         NULL,   "Destination",   22, NULL },
-    { SIP_ATTR_CALLID,      "callid",      NULL,   "Call-ID",       50, NULL },
-    { SIP_ATTR_XCALLID,     "xcallid",     NULL,   "X-Call-ID",     50, NULL },
-    { SIP_ATTR_DATE,        "date",        NULL,   "Date",          10, NULL },
-    { SIP_ATTR_TIME,        "time",        NULL,   "Time",          8, NULL },
-    { SIP_ATTR_METHOD,      "method",      NULL,   "Method",        10, sip_attr_color_method },
-    { SIP_ATTR_TRANSPORT,   "transport",   "Trans", "Transport",    3, NULL },
-    { SIP_ATTR_MSGCNT,      "msgcnt",      "Msgs", "Message Count", 5, NULL },
-    { SIP_ATTR_CALLSTATE,   "state",       NULL,   "Call State",    10, sip_attr_color_state },
-    { SIP_ATTR_CONVDUR,     "convdur",     "ConvDur", "Conversation Duration", 7, NULL },
-    { SIP_ATTR_TOTALDUR,    "totaldur",    "TotalDur", "Total Duration", 8, NULL },
-    { SIP_ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text", 25, NULL },
-    { SIP_ATTR_WARNING,     "warning",     "Warning", "Warning code", 4, NULL }
+static AttributeHeader attrs[ATTR_COUNT] = {
+    { ATTR_CALLINDEX,   "index",       "Idx",       "Call Index",       4 , NULL },
+    { ATTR_SIPFROM,     "sipfrom",     NULL,        "SIP From",         25, NULL },
+    { ATTR_SIPFROMUSER, "sipfromuser", NULL,        "SIP From User",    20, NULL },
+    { ATTR_SIPTO,       "sipto",       NULL,        "SIP To",           25, NULL },
+    { ATTR_SIPTOUSER,   "siptouser",   NULL,        "SIP To User",      20, NULL },
+    { ATTR_SRC,         "src",         NULL,        "Source",           22, NULL },
+    { ATTR_DST,         "dst",         NULL,        "Destination",      22, NULL },
+    { ATTR_CALLID,      "callid",      NULL,        "Call-ID",          50, NULL },
+    { ATTR_XCALLID,     "xcallid",     NULL,        "X-Call-ID",        50, NULL },
+    { ATTR_DATE,        "date",        NULL,        "Date",             10, NULL },
+    { ATTR_TIME,        "time",        NULL,        "Time",             8, NULL },
+    { ATTR_METHOD,      "method",      NULL,        "Method",           10, attr_color_sip_method },
+    { ATTR_TRANSPORT,   "transport",   "Trans",     "Transport",        3, NULL },
+    { ATTR_MSGCNT,      "msgcnt",      "Msgs",      "Message Count",    5, NULL },
+    { ATTR_CALLSTATE,   "state",       NULL,        "Call State",       10, attr_color_call_state },
+    { ATTR_CONVDUR,     "convdur",     "ConvDur",   "Conversation Duration", 7, NULL },
+    { ATTR_TOTALDUR,    "totaldur",    "TotalDur",  "Total Duration",   8, NULL },
+    { ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text",  25, NULL },
+    { ATTR_WARNING,     "warning",     "Warning",   "Warning code",     4, NULL }
 };
 
-sip_attr_hdr_t *
-sip_attr_get_header(enum sip_attr_id id)
+AttributeHeader *
+attr_header(enum AttributeId id)
 {
     return &attrs[id];
 }
 
-const char *
-sip_attr_get_description(enum sip_attr_id id)
+const gchar *
+attr_description(enum AttributeId id)
 {
-    sip_attr_hdr_t *header;
-    if ((header = sip_attr_get_header(id))) {
+    AttributeHeader *header;
+    if ((header = attr_header(id))) {
         return header->desc;
     }
     return NULL;
 }
 
-const char *
-sip_attr_get_title(enum sip_attr_id id)
+const gchar *
+attr_title(enum AttributeId id)
 {
-    sip_attr_hdr_t *header;
-    if ((header = sip_attr_get_header(id))) {
+    AttributeHeader *header;
+    if ((header = attr_header(id))) {
         if (header->title)
             return header->title;
         return header->desc;
@@ -86,31 +81,30 @@ sip_attr_get_title(enum sip_attr_id id)
     return NULL;
 }
 
-const char *
-sip_attr_get_name(enum sip_attr_id id)
+const gchar *
+attr_name(enum AttributeId id)
 {
-    sip_attr_hdr_t *header;
-    if ((header = sip_attr_get_header(id))) {
+    AttributeHeader *header;
+    if ((header = attr_header(id))) {
         return header->name;
     }
     return NULL;
 }
 
-int
-sip_attr_get_width(enum sip_attr_id id)
+gint
+attr_width(enum AttributeId id)
 {
-    sip_attr_hdr_t *header;
-    if ((header = sip_attr_get_header(id))) {
+    AttributeHeader *header;
+    if ((header = attr_header(id))) {
         return header->dwidth;
     }
     return 0;
 }
 
-int
-sip_attr_from_name(const char *name)
+gint
+attr_find_by_name(const gchar *name)
 {
-    int i;
-    for (i = 0; i < SIP_ATTR_COUNT; i++) {
+    for (guint i = 0; i < ATTR_COUNT; i++) {
         if (!strcasecmp(name, attrs[i].name)) {
             return attrs[i].id;
         }
@@ -118,15 +112,15 @@ sip_attr_from_name(const char *name)
     return -1;
 }
 
-int
-sip_attr_get_color(int id, const char *value)
+gint
+attr_color(enum AttributeId id, const gchar *value)
 {
-    sip_attr_hdr_t *header;
+    AttributeHeader *header;
 
     if (!setting_enabled(SETTING_CL_COLORATTR))
         return 0;
 
-    if ((header = sip_attr_get_header(id))) {
+    if ((header = attr_header(id))) {
         if (header->color) {
             return header->color(value);
         }
@@ -134,8 +128,8 @@ sip_attr_get_color(int id, const char *value)
     return 0;
 }
 
-int
-sip_attr_color_method(const char *value)
+gint
+attr_color_sip_method(const gchar *value)
 {
     switch (sip_method_from_str(value)) {
         case SIP_METHOD_INVITE:
@@ -153,8 +147,8 @@ sip_attr_color_method(const char *value)
     }
 }
 
-int
-sip_attr_color_state(const char *value)
+gint
+attr_color_call_state(const gchar *value)
 {
     if (!strcmp(value, call_state_to_str(CALL_STATE_CALLSETUP)))
         return COLOR_PAIR(CP_YELLOW_ON_DEF);

@@ -420,11 +420,11 @@ call_flow_draw_message(Window *ui, call_flow_arrow_t *arrow, int cline)
     WINDOW *flow_win;
     PacketSdpMedia *media;
     const char *callid;
-    char msg_method[SIP_ATTR_MAXLEN];
+    char msg_method[ATTR_MAXLEN];
     char msg_time[80];
     Address src;
     Address dst;
-    char method[SIP_ATTR_MAXLEN + 7];
+    char method[ATTR_MAXLEN + 7];
     char delta[15] = { 0 };
     int flowh;
     char mediastr[40];
@@ -455,7 +455,7 @@ call_flow_draw_message(Window *ui, call_flow_arrow_t *arrow, int cline)
     src = msg_src_address(msg);
     dst = msg_dst_address(msg);
     media = g_list_nth_data(msg->medias, 0);
-    msg_get_attribute(msg, SIP_ATTR_METHOD, msg_method);
+    msg_get_attribute(msg, ATTR_METHOD, msg_method);
     timeval_to_time(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)

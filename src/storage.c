@@ -480,12 +480,12 @@ storage_init(StorageCaptureOpts capture_options,
     storage.streams = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     // Set default sorting field
-    if (sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
-        storage.sort.by = sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD));
+    if (attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
+        storage.sort.by = attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD));
         storage.sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
     } else {
         // Fallback to default sorting field
-        storage.sort.by = SIP_ATTR_CALLINDEX;
+        storage.sort.by = ATTR_CALLINDEX;
         storage.sort.asc = true;
     }
 

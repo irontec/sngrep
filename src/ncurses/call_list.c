@@ -301,7 +301,7 @@ call_list_draw_header(Window *window)
     for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
         CallListColumn *column = g_ptr_array_index(info->columns, i);
         // Get current column title
-        const gchar *coldesc = sip_attr_get_title(column->id);
+        const gchar *coldesc = attr_title(column->id);
 
         // Check if the column will fit in the remaining space of the screen
         if (colpos + strlen(coldesc) >= (guint) window->width)
@@ -382,7 +382,7 @@ call_list_draw_list(Window *window)
 {
     int listh, listw, cline = 0;
     SipCall *call = NULL;
-    char coltext[SIP_ATTR_MAXLEN];
+    char coltext[ATTR_MAXLEN];
     int colpos;
     int color;
 
@@ -458,7 +458,7 @@ call_list_draw_list(Window *window)
             // Enable attribute color (if not current one)
             color = 0;
             if (info->cur_idx !=  i) {
-                if ((color = sip_attr_get_color(column->id, coltext)) > 0) {
+                if ((color = attr_color(column->id, coltext)) > 0) {
                     wattron(list_win, color);
                 }
             }
@@ -568,8 +568,8 @@ call_list_form_activate(Window *window, gboolean active)
 const char *
 call_list_line_text(Window *window, SipCall *call, char *text)
 {
-    char call_attr[SIP_ATTR_MAXLEN];
-    char coltext[SIP_ATTR_MAXLEN];
+    char call_attr[ATTR_MAXLEN];
+    char coltext[ATTR_MAXLEN];
 
     // Get panel info
     CallListInfo *info = call_list_info(window);
@@ -628,7 +628,7 @@ call_list_select_sort_attribute(Window *window)
     // Create menu entries
     for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
         CallListColumn *column = g_ptr_array_index(info->columns, i);
-        info->items[i] = new_item(sip_attr_get_name(column->id), 0);
+        info->items[i] = new_item(attr_name(column->id), 0);
     }
 
     info->items[g_ptr_array_len(info->columns)] = NULL;
@@ -754,7 +754,7 @@ call_list_handle_menu_key(Window *window, int key)
     int i;
     int action = -1;
     StorageSortOpts sort;
-    enum sip_attr_id id;
+    enum AttributeId id;
 
     // Get panel information
     CallListInfo *info = call_list_info(window);
@@ -782,7 +782,7 @@ call_list_handle_menu_key(Window *window, int key)
             case ACTION_SELECT:
                 // Change sort attribute
                 sort = storage_sort_options();
-                id = sip_attr_from_name(item_name(current_item(info->menu)));
+                id = attr_find_by_name(item_name(current_item(info->menu)));
                 if (sort.by == id) {
                     sort.asc = (sort.asc) ? false : true;
                 } else {
@@ -799,7 +799,7 @@ call_list_handle_menu_key(Window *window, int key)
                 free_menu(info->menu);
 
                 // Remove items
-                for (i = 0; i < SIP_ATTR_COUNT; i++) {
+                for (i = 0; i < ATTR_COUNT; i++) {
                     if (!info->items[i])
                         break;
                     free_item(info->items[i]);
@@ -1102,7 +1102,7 @@ call_list_help(G_GNUC_UNUSED Window *window)
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
 static void
-call_list_add_column(Window *window, enum sip_attr_id id, const char* attr,
+call_list_add_column(Window *window, enum AttributeId id, const char* attr,
                      const char *title, int width)
 {
     CallListInfo *info = call_list_info(window);
@@ -1184,22 +1184,22 @@ call_list_new()
 
     // Add configured columns
     info->columns = g_ptr_array_new_with_free_func(g_free);
-    for (guint i = 0; i < SIP_ATTR_COUNT; i++) {
+    for (guint i = 0; i < ATTR_COUNT; i++) {
         // Get column attribute name from options
         gchar *option = g_strdup_printf("cl.column%d", i);
         const gchar *field = NULL;
         if ((field = get_option_value(option)) != NULL) {
             gint attrid, collen;
-            if ((attrid = sip_attr_from_name(field)) == -1)
+            if ((attrid = attr_find_by_name(field)) == -1)
                 continue;
 
             // Get column width from options
             sprintf(option, "cl.column%d.width", i);
             if ((collen = get_option_int_value(option)) == -1)
-                collen = sip_attr_get_width(attrid);
+                collen = attr_width(attrid);
 
             // Get column title
-            const gchar *title = sip_attr_get_title(attrid);
+            const gchar *title = attr_title(attrid);
             // Add column to the list
             call_list_add_column(window, attrid, field, title, collen);
         }

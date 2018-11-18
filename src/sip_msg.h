@@ -33,7 +33,7 @@
 #include <glib.h>
 #include <packet/dissectors/packet_sdp.h>
 #include "packet/packet.h"
-#include "sip_attr.h"
+#include "attribute.h"
 #include "timeval.h"
 
 //! Get IP Address info from message's packet

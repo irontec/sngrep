@@ -117,39 +117,39 @@ msg_get_attribute(SipMsg *msg, gint id, char *value)
     char *ar;
 
     switch (id) {
-        case SIP_ATTR_SRC:
+        case ATTR_SRC:
             sprintf(value, "%s:%u", msg_src_address(msg).ip, msg_src_address(msg).port);
             break;
-        case SIP_ATTR_DST:
+        case ATTR_DST:
             sprintf(value, "%s:%u", msg_dst_address(msg).ip, msg_dst_address(msg).port);
             break;
-        case SIP_ATTR_METHOD:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_method_str(msg->packet));
+        case ATTR_METHOD:
+            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_method_str(msg->packet));
             break;
-        case SIP_ATTR_SIPFROM:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
+        case ATTR_SIPFROM:
+            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
             break;
-        case SIP_ATTR_SIPTO:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
+        case ATTR_SIPTO:
+            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
             break;
-        case SIP_ATTR_SIPFROMUSER:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
+        case ATTR_SIPFROMUSER:
+            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
             if ((ar = strchr(value, '@')))
                 *ar = '\0';
             break;
-        case SIP_ATTR_SIPTOUSER:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
+        case ATTR_SIPTOUSER:
+            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
             if ((ar = strchr(value, '@')))
                 *ar = '\0';
             break;
-        case SIP_ATTR_DATE:
+        case ATTR_DATE:
             timeval_to_date(msg_get_time(msg), value);
             break;
-        case SIP_ATTR_TIME:
+        case ATTR_TIME:
             timeval_to_time(msg_get_time(msg), value);
             break;
         default:
-            fprintf(stderr, "Unhandled attribute %s (%d)\n", sip_attr_get_name(id), id);
+            fprintf(stderr, "Unhandled attribute %s (%d)\n", attr_name(id), id);
             break;
     }
 
@@ -175,10 +175,10 @@ msg_get_header(SipMsg *msg, char *out)
     char from_addr[80], to_addr[80], time[80], date[80];
 
     // Source and Destination address
-    msg_get_attribute(msg, SIP_ATTR_DATE, date);
-    msg_get_attribute(msg, SIP_ATTR_TIME, time);
-    msg_get_attribute(msg, SIP_ATTR_SRC, from_addr);
-    msg_get_attribute(msg, SIP_ATTR_DST, to_addr);
+    msg_get_attribute(msg, ATTR_DATE, date);
+    msg_get_attribute(msg, ATTR_TIME, time);
+    msg_get_attribute(msg, ATTR_SRC, from_addr);
+    msg_get_attribute(msg, ATTR_DST, to_addr);
 
     // Get msg header
     sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);

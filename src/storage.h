@@ -48,7 +48,7 @@ typedef struct _StorageCaptureOpts StorageCaptureOpts;
 struct _StorageSortOpts
 {
     //! Sort call list by this attribute
-    enum sip_attr_id by;
+    enum AttributeId by;
     //! Sory by attribute ascending
     gboolean asc;
 };

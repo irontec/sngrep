@@ -20,22 +20,24 @@
  **
  ****************************************************************************/
 /**
- * @file sip_attr.h
+ * @file attribute.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage SIP calls and messages attributes
  */
 
-#ifndef __SNGREP_SIP_ATTR_H
-#define __SNGREP_SIP_ATTR_H
+#ifndef __SNGREP_ATTRIBUTE_H
+#define __SNGREP_ATTRIBUTE_H
+
+#include <glib.h>
 
 //! Max attribute length
-#define SIP_ATTR_MAXLEN 255
+#define ATTR_MAXLEN 255
 
 //! Shorter declaration of sip_attr_hdr structure
-typedef struct sip_attr_hdr sip_attr_hdr_t;
+typedef struct _AttributeHeader AttributeHeader;
 //! Shorter declaration of sip_attr structure
-typedef struct sip_attr sip_attr_t;
+typedef struct attribute Attribute;
 
 /**
  * @brief Available SIP Attributes
@@ -43,47 +45,47 @@ typedef struct sip_attr sip_attr_t;
  * This enum contains the list of available attributes
  * a call or message can have.
  */
-enum sip_attr_id {
+enum AttributeId {
     //! Call index in the Call List
-    SIP_ATTR_CALLINDEX = 0,
+    ATTR_CALLINDEX = 0,
     //! SIP Message From: header
-    SIP_ATTR_SIPFROM,
+    ATTR_SIPFROM,
     //! SIP Message User of From: header
-    SIP_ATTR_SIPFROMUSER,
+    ATTR_SIPFROMUSER,
     //! SIP Message To: header
-    SIP_ATTR_SIPTO,
+    ATTR_SIPTO,
     //! SIP Message User of To: header
-    SIP_ATTR_SIPTOUSER,
+    ATTR_SIPTOUSER,
     //! Package IP source address and port
-    SIP_ATTR_SRC,
+    ATTR_SRC,
     //! Package IP destination address and port
-    SIP_ATTR_DST,
+    ATTR_DST,
     //! SIP Message Call-ID header
-    SIP_ATTR_CALLID,
+    ATTR_CALLID,
     //! SIP Message X-Call-ID or X-CID header
-    SIP_ATTR_XCALLID,
+    ATTR_XCALLID,
     //! SIP Message Date
-    SIP_ATTR_DATE,
+    ATTR_DATE,
     //! SIP Message Time
-    SIP_ATTR_TIME,
+    ATTR_TIME,
     //! SIP Message Method or Response code
-    SIP_ATTR_METHOD,
+    ATTR_METHOD,
     //! SIP Message transport
-    SIP_ATTR_TRANSPORT,
+    ATTR_TRANSPORT,
     //! SIP Call message counter
-    SIP_ATTR_MSGCNT,
+    ATTR_MSGCNT,
     //! SIP Call state
-    SIP_ATTR_CALLSTATE,
+    ATTR_CALLSTATE,
     //! Conversation duration
-    SIP_ATTR_CONVDUR,
+    ATTR_CONVDUR,
     //! Total call duration
-    SIP_ATTR_TOTALDUR,
+    ATTR_TOTALDUR,
     //! Text from SIP Reason header
-    SIP_ATTR_REASON_TXT,
+    ATTR_REASON_TXT,
     //! Warning Header
-    SIP_ATTR_WARNING,
+    ATTR_WARNING,
     //! SIP Attribute count
-    SIP_ATTR_COUNT
+    ATTR_COUNT
 };
 
 /**
@@ -95,17 +97,17 @@ enum sip_attr_id {
  * attributes pointer to its type.
  *
  */
-struct sip_attr_hdr {
+struct _AttributeHeader {
     //! Attribute id
-    enum sip_attr_id id;
+    enum AttributeId id;
     //! Attribute name
-    char *name;
+    gchar *name;
     //! Attribute column title
-    char *title;
+    gchar *title;
     //! Attribute description
-    char *desc;
+    gchar *desc;
     //! Attribute default display width
-    int dwidth;
+    guint dwidth;
     //! This function determines the color of this attribute in CallList
     int (*color)(const char *value);
 };
@@ -113,11 +115,11 @@ struct sip_attr_hdr {
 /**
  * @brief Attribute storage struct
  */
-struct sip_attr {
+struct attribute {
     //! Attribute id
-    enum sip_attr_id id;
+    enum AttributeId id;
     //! Attribute value
-    char *value;
+    gchar *value;
 };
 
 /**
@@ -128,8 +130,8 @@ struct sip_attr {
  * @param id Attribute id
  * @return Attribute header data structure pointer
  */
-sip_attr_hdr_t *
-sip_attr_get_header(enum sip_attr_id id);
+AttributeHeader *
+attr_header(enum AttributeId id);
 
 /**
  * @brief Get Attribute description
@@ -140,8 +142,8 @@ sip_attr_get_header(enum sip_attr_id id);
  * @param id Attribute id
  * @return Attribute description from its header
  */
-const char *
-sip_attr_get_description(enum sip_attr_id id);
+const gchar *
+attr_description(enum AttributeId id);
 
 /**
  * @brief Get Attribute title
@@ -153,7 +155,7 @@ sip_attr_get_description(enum sip_attr_id id);
  * @return Attribute title from its header
  */
 const char *
-sip_attr_get_title(enum sip_attr_id id);
+attr_title(enum AttributeId id);
 
 /**
  * @brief Get Attribute name
@@ -164,8 +166,8 @@ sip_attr_get_title(enum sip_attr_id id);
  * @param id Attribute id
  * @return Attribute name from its header
  */
-const char *
-sip_attr_get_name(enum sip_attr_id id);
+const gchar *
+attr_name(enum AttributeId id);
 
 /**
  * @brief Get Attribute prefered display width
@@ -174,7 +176,7 @@ sip_attr_get_name(enum sip_attr_id id);
  * @return prefered attribute width
  */
 int
-sip_attr_get_width(enum sip_attr_id id);
+attr_width(enum AttributeId id);
 
 /**
  * @brief Get Attribute id from its name
@@ -184,8 +186,8 @@ sip_attr_get_width(enum sip_attr_id id);
  * @param name Attribut name
  * @return Attribute id or -1 if not found
  */
-int
-sip_attr_from_name(const char *name);
+gint
+attr_find_by_name(const gchar *name);
 
 /**
  * @brief Determine the color of the attribute in Call List
@@ -193,8 +195,8 @@ sip_attr_from_name(const char *name);
  * Return the color pair to display an attribute in
  * call list or -1 if default color must be used.
  */
-int
-sip_attr_get_color(int id, const char *value);
+gint
+attr_color(enum AttributeId id, const gchar *value);
 
 /**
  * @brief Determine the color of the attribute in Call List
@@ -202,8 +204,8 @@ sip_attr_get_color(int id, const char *value);
  * This function can be used to show the Method attribute
  * with different colours in Call List.
  */
-int
-sip_attr_color_method(const char *value);
+gint
+attr_color_sip_method(const gchar *value);
 
 /**
  * @brief Determine the color of the attribute in Call List
@@ -211,7 +213,7 @@ sip_attr_color_method(const char *value);
  * This function can be used to show the state attribute
  * with different colours in Call List.
  */
-int
-sip_attr_color_state(const char *value);
+gint
+attr_color_call_state(const gchar *value);
 
-#endif /* __SNGREP_SIP_ATTR_H */
+#endif /* __SNGREP_ATTRIBUTE_H */

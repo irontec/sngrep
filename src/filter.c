@@ -102,19 +102,19 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
         // Get filtered field
         switch(i) {
             case FILTER_SIPFROM:
-                call_get_attribute(call, SIP_ATTR_SIPFROM, data);
+                call_get_attribute(call, ATTR_SIPFROM, data);
                 break;
             case FILTER_SIPTO:
-                call_get_attribute(call, SIP_ATTR_SIPTO, data);
+                call_get_attribute(call, ATTR_SIPTO, data);
                 break;
             case FILTER_SOURCE:
-                call_get_attribute(call, SIP_ATTR_SRC, data);
+                call_get_attribute(call, ATTR_SRC, data);
                 break;
             case FILTER_DESTINATION:
-                call_get_attribute(call, SIP_ATTR_DST, data);
+                call_get_attribute(call, ATTR_DST, data);
                 break;
             case FILTER_METHOD:
-                call_get_attribute(call, SIP_ATTR_METHOD, data);
+                call_get_attribute(call, ATTR_METHOD, data);
                 break;
             case FILTER_PAYLOAD:
                 break;

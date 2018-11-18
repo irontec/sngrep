@@ -176,7 +176,7 @@ call_update_state(SipCall *call, SipMsg *msg)
 }
 
 const char *
-call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value)
+call_get_attribute(const SipCall *call, enum AttributeId id, char *value)
 {
     g_return_val_if_fail(call != NULL, NULL);
 
@@ -184,35 +184,35 @@ call_get_attribute(const SipCall *call, enum sip_attr_id id, char *value)
     SipMsg *last = g_ptr_array_last(call->msgs);
 
     switch (id) {
-        case SIP_ATTR_CALLINDEX:
+        case ATTR_CALLINDEX:
             sprintf(value, "%d", call->index);
             break;
-        case SIP_ATTR_CALLID:
+        case ATTR_CALLID:
             sprintf(value, "%s", call->callid);
             break;
-        case SIP_ATTR_XCALLID:
+        case ATTR_XCALLID:
             sprintf(value, "%s", call->xcallid);
             break;
-        case SIP_ATTR_MSGCNT:
+        case ATTR_MSGCNT:
             sprintf(value, "%d", call_msg_count(call));
             break;
-        case SIP_ATTR_CALLSTATE:
+        case ATTR_CALLSTATE:
             sprintf(value, "%s", call_state_to_str(call->state));
             break;
-        case SIP_ATTR_TRANSPORT:
+        case ATTR_TRANSPORT:
 //@todo            sprintf(value, "%s", sip_transport_str(first->packet->type));
             break;
-        case SIP_ATTR_CONVDUR:
+        case ATTR_CONVDUR:
             timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(call->cend_msg), value);
             break;
-        case SIP_ATTR_TOTALDUR:
+        case ATTR_TOTALDUR:
             timeval_to_duration(msg_get_time(first), msg_get_time(last), value);
             break;
-        case SIP_ATTR_REASON_TXT:
+        case ATTR_REASON_TXT:
             if (call->reasontxt)
                 sprintf(value, "%s", call->reasontxt);
             break;
-        case SIP_ATTR_WARNING:
+        case ATTR_WARNING:
             if (call->warning)
                 sprintf(value, "%d", call->warning);
             break;
@@ -246,19 +246,19 @@ call_state_to_str(enum call_state state)
 }
 
 gint
-call_attr_compare(const SipCall *one, const SipCall *two, enum sip_attr_id id)
+call_attr_compare(const SipCall *one, const SipCall *two, enum AttributeId id)
 {
     char onevalue[256], twovalue[256];
     int oneintvalue = 0, twointvalue = 0;
     int comparetype; /* TODO 0 = string compare, 1 = int comprare */
 
     switch (id) {
-        case SIP_ATTR_CALLINDEX:
+        case ATTR_CALLINDEX:
             oneintvalue = one->index;
             twointvalue = two->index;
             comparetype = 1;
             break;
-        case SIP_ATTR_MSGCNT:
+        case ATTR_MSGCNT:
             oneintvalue = call_msg_count(one);
             twointvalue = call_msg_count(two);
             comparetype = 1;
