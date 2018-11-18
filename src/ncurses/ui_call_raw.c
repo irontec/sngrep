@@ -107,7 +107,7 @@ int
 call_raw_draw(Window *ui)
 {
     call_raw_info_t *info;
-    SipMsg *msg = NULL;
+    Message *msg = NULL;
 
     // Get panel information
     if(!(info = call_raw_info(ui)))
@@ -128,7 +128,7 @@ call_raw_draw(Window *ui)
 }
 
 int
-call_raw_print_msg(Window *ui, SipMsg *msg)
+call_raw_print_msg(Window *ui, Message *msg)
 {
     call_raw_info_t *info;
     int payload_lines, column, height, width;
@@ -333,7 +333,7 @@ call_raw_set_group(SipCallGroup *group)
 }
 
 int
-call_raw_set_msg(SipMsg *msg)
+call_raw_set_msg(Message *msg)
 {
     Window *ui;
     call_raw_info_t *info;

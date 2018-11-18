@@ -42,9 +42,9 @@ typedef struct msg_diff_info msg_diff_info_t;
  */
 struct msg_diff_info {
     //! First message to compare
-    SipMsg *one;
+    Message *one;
     //! Second message to compare
-    SipMsg *two;
+    Message *two;
     //! Left displayed subwindow
     WINDOW *one_win;
     //! Right displayed subwindow
@@ -121,7 +121,7 @@ msg_diff_draw_footer(Window *ui);
  *
  */
 int
-msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight);
+msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight);
 
 /**
  * @brief Set the panel working messages
@@ -135,6 +135,6 @@ msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight);
  * @return 0 in all cases
  */
 int
-msg_diff_set_msgs(Window *ui, SipMsg *one, SipMsg *two);
+msg_diff_set_msgs(Window *ui, Message *one, Message *two);
 
 #endif

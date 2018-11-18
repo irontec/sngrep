@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file sip_call.c
+ * @file call.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage SIP call data
@@ -31,16 +31,16 @@
 #include "config.h"
 #include <glib.h>
 #include "glib-utils.h"
-#include "sip_call.h"
+#include "call.h"
 #include "packet/dissectors/packet_sip.h"
 #include "storage.h"
 #include "setting.h"
 
-SipCall *
+Call *
 call_create(const gchar *callid, const gchar *xcallid)
 {
     // Initialize a new call structure
-    SipCall *call = g_malloc0(sizeof(SipCall));
+    Call *call = g_malloc0(sizeof(Call));
 
     // Create a vector to store call messages
     call->msgs = g_ptr_array_new_with_free_func(msg_destroy);
@@ -67,7 +67,7 @@ call_create(const gchar *callid, const gchar *xcallid)
 void
 call_destroy(gpointer item)
 {
-    SipCall *call = item;
+    Call *call = item;
     // Remove all call messages
     g_ptr_array_free(call->msgs, TRUE);
     // Remove all call streams
@@ -83,7 +83,7 @@ call_destroy(gpointer item)
 }
 
 void
-call_add_message(SipCall *call, SipMsg *msg)
+call_add_message(Call *call, Message *msg)
 {
     // Set the message owner
     msg->call = call;
@@ -96,7 +96,7 @@ call_add_message(SipCall *call, SipMsg *msg)
 }
 
 void
-call_add_stream(SipCall *call, RtpStream *stream)
+call_add_stream(Call *call, RtpStream *stream)
 {
     // Store stream
     g_ptr_array_add(call->streams, stream);
@@ -105,28 +105,28 @@ call_add_stream(SipCall *call, RtpStream *stream)
 }
 
 guint
-call_msg_count(const SipCall *call)
+call_msg_count(const Call *call)
 {
     return g_ptr_array_len(call->msgs);
 }
 
 int
-call_is_active(SipCall *call)
+call_is_active(Call *call)
 {
     return (call->state == CALL_STATE_CALLSETUP || call->state == CALL_STATE_INCALL);
 }
 
 int
-call_is_invite(SipCall *call)
+call_is_invite(Call *call)
 {
-    SipMsg *first = g_ptr_array_first(call->msgs);
+    Message *first = g_ptr_array_first(call->msgs);
     g_return_val_if_fail(first != NULL, 0);
 
     return packet_sip_method(first->packet) == SIP_METHOD_INVITE;
 }
 
 void
-call_update_state(SipCall *call, SipMsg *msg)
+call_update_state(Call *call, Message *msg)
 {
     if (!call_is_invite(call))
         return;
@@ -176,12 +176,12 @@ call_update_state(SipCall *call, SipMsg *msg)
 }
 
 const char *
-call_get_attribute(const SipCall *call, enum AttributeId id, char *value)
+call_get_attribute(const Call *call, enum AttributeId id, char *value)
 {
     g_return_val_if_fail(call != NULL, NULL);
 
-    SipMsg *first = g_ptr_array_first(call->msgs);
-    SipMsg *last = g_ptr_array_last(call->msgs);
+    Message *first = g_ptr_array_first(call->msgs);
+    Message *last = g_ptr_array_last(call->msgs);
 
     switch (id) {
         case ATTR_CALLINDEX:
@@ -224,7 +224,7 @@ call_get_attribute(const SipCall *call, enum AttributeId id, char *value)
 }
 
 const gchar *
-call_state_to_str(enum call_state state)
+call_state_to_str(enum CallState state)
 {
     switch (state) {
         case CALL_STATE_CALLSETUP:
@@ -246,7 +246,7 @@ call_state_to_str(enum call_state state)
 }
 
 gint
-call_attr_compare(const SipCall *one, const SipCall *two, enum AttributeId id)
+call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
 {
     char onevalue[256], twovalue[256];
     int oneintvalue = 0, twointvalue = 0;
@@ -293,7 +293,7 @@ call_attr_compare(const SipCall *one, const SipCall *two, enum AttributeId id)
 }
 
 void
-call_add_xcall(SipCall *call, SipCall *xcall)
+call_add_xcall(Call *call, Call *xcall)
 {
     if (!call || !xcall)
         return;
@@ -306,7 +306,7 @@ call_add_xcall(SipCall *call, SipCall *xcall)
 }
 
 RtpStream *
-call_find_stream(SipCall *call, Address src, Address dst)
+call_find_stream(Call *call, Address src, Address dst)
 {
     RtpStream *stream;
 
@@ -334,7 +334,7 @@ call_find_stream(SipCall *call, Address src, Address dst)
 }
 
 RtpStream *
-call_find_stream_exact(SipCall *call, Address src, Address dst)
+call_find_stream_exact(Call *call, Address src, Address dst)
 {
     RtpStream *stream;
 

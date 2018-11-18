@@ -398,7 +398,7 @@ save_set_group(Window *ui, SipCallGroup *group)
 }
 
 void
-save_set_msg(Window *ui, SipMsg *msg)
+save_set_msg(Window *ui, Message *msg)
 {
     // Get panel information
     save_info_t *info = save_info(ui);
@@ -500,17 +500,17 @@ save_to_file(Window *ui)
     } else if (info->saveformat == SAVE_TXT) {
         // Save selected packets to file
         for (guint i = 0; i < g_ptr_array_len(calls); i++) {
-            SipCall *call = g_ptr_array_index(calls, i);
+            Call *call = g_ptr_array_index(calls, i);
             // Save SIP message content
             for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
-                SipMsg *msg = g_ptr_array_index(call->msgs, i);
+                Message *msg = g_ptr_array_index(call->msgs, i);
                 output->write(output, msg->packet);
             }
         }
     } else {
         // Count packages for progress bar
         for (guint i = 0; i < g_ptr_array_len(calls); i++) {
-            SipCall *call = g_ptr_array_index(calls, i);
+            Call *call = g_ptr_array_index(calls, i);
 
             if (info->savemode == SAVE_DISPLAYED && !filter_check_call(call, NULL))
                 continue;
@@ -526,14 +526,14 @@ save_to_file(Window *ui)
 
         // Save selected packets to file
         for (guint i = 0; i < g_ptr_array_len(calls); i++) {
-            SipCall *call = g_ptr_array_index(calls, i);
+            Call *call = g_ptr_array_index(calls, i);
 
             if (info->savemode == SAVE_DISPLAYED && !filter_check_call(call, NULL))
                 continue;
 
             // Save SIP message content
             for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
-                SipMsg * msg = g_ptr_array_index(call->msgs, i);
+                Message * msg = g_ptr_array_index(call->msgs, i);
                 // Update progress bar dialog
                 dialog_progress_set_value(progress, (++cur * 100) / total);
                 g_ptr_array_add(packets, msg->packet);

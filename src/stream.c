@@ -35,7 +35,7 @@
 #include "storage.h"
 
 RtpStream *
-stream_new(enum RtpStreamType type, SipMsg *msg, PacketSdpMedia *media)
+stream_new(enum RtpStreamType type, Message *msg, PacketSdpMedia *media)
 {
     RtpStream *stream = g_malloc0(sizeof(RtpStream));
 

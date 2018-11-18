@@ -381,7 +381,7 @@ static void
 call_list_draw_list(Window *window)
 {
     int listh, listw, cline = 0;
-    SipCall *call = NULL;
+    Call *call = NULL;
     char coltext[ATTR_MAXLEN];
     int colpos;
     int color;
@@ -566,7 +566,7 @@ call_list_form_activate(Window *window, gboolean active)
  * @return A pointer to text
  */
 const char *
-call_list_line_text(Window *window, SipCall *call, char *text)
+call_list_line_text(Window *window, Call *call, char *text)
 {
     char call_attr[ATTR_MAXLEN];
     char coltext[ATTR_MAXLEN];
@@ -840,7 +840,7 @@ call_list_handle_key(Window *window, int key)
     Window *next_window;
     SipCallGroup *group;
     int action = -1;
-    SipCall *call;
+    Call *call;
     StorageSortOpts sort;
 
     CallListInfo *info = call_list_info(window);

@@ -33,7 +33,7 @@
 #define __SNGREP_STREAM_H
 
 #include "config.h"
-#include "sip_msg.h"
+#include "message.h"
 #include "capture/capture_pcap.h"
 #include "packet/dissectors/packet_sdp.h"
 #include "packet/dissectors/packet_rtp.h"
@@ -59,7 +59,7 @@ struct _RtpStream
     //! SDP media that setup this stream
     PacketSdpMedia *media;
     //! SIP message that setup this stream
-    SipMsg *msg;
+    Message *msg;
     //! Unix timestamp of last received packet
     gint64 lasttm;
     //! Format of first received packet of stre
@@ -69,7 +69,7 @@ struct _RtpStream
 };
 
 RtpStream *
-stream_new(enum RtpStreamType type, SipMsg *msg, PacketSdpMedia *media);
+stream_new(enum RtpStreamType type, Message *msg, PacketSdpMedia *media);
 
 void
 stream_free(RtpStream *stream);

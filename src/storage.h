@@ -31,7 +31,7 @@
 #define __SNGREP_SIP_H
 
 #include <glib.h>
-#include "sip_call.h"
+#include "call.h"
 
 #define MAX_SIP_PAYLOAD 10240
 
@@ -229,7 +229,7 @@ storage_calls_clear_soft();
  * @return 0 in all cases
  */
 void
-storage_register_streams(SipMsg *msg);
+storage_register_streams(Message *msg);
 
 /**
  * @brief Get Storage Matching options

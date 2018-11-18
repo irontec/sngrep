@@ -20,27 +20,27 @@
  **
  ****************************************************************************/
 /**
- * @file sip_call.h
+ * @file call.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage sip calls
  *
  */
-#ifndef __SNGREP_SIP_CALL_H
-#define __SNGREP_SIP_CALL_H
+#ifndef __SNGREP_CALL_H
+#define __SNGREP_CALL_H
 
 #include <stdarg.h>
 #include <stdbool.h>
 #include <glib.h>
 #include "stream.h"
-#include "sip_msg.h"
+#include "message.h"
 #include "attribute.h"
 
 //! Shorter declaration of sip_call structure
-typedef struct _SipCall SipCall;
+typedef struct _Call Call;
 
 //! SIP Call State
-enum call_state
+enum CallState
 {
     CALL_STATE_CALLSETUP = 1,
     CALL_STATE_INCALL,
@@ -58,7 +58,7 @@ enum call_state
  * callid (considered a dialog). It contains some replicated
  * data from its messages to speed up searches.
  */
-struct _SipCall {
+struct _Call {
     //! Call index in the call list
     guint index;
     //! Call identifier
@@ -68,7 +68,7 @@ struct _SipCall {
     //! Flag this call as filtered so won't be displayed
     gchar filtered;
     //! Call State. For dialogs starting with an INVITE method
-    enum call_state state;
+    enum CallState state;
     //! Changed flag. For interface optimal updates
     gboolean changed;
     //! Locked flag. Calls locked are never deleted
@@ -84,7 +84,7 @@ struct _SipCall {
     //! Array of messages of this call (sip_msg_t*)
     GPtrArray *msgs;
     //! Message when conversation started and ended
-    SipMsg *cstart_msg, *cend_msg;
+    Message *cstart_msg, *cend_msg;
     //! RTP streams for this call (rtp_stream_t *)
     GPtrArray *streams;
     //! RTP packets for this call (capture_packet_t *)
@@ -101,7 +101,7 @@ struct _SipCall {
  * @param xcallid X-Call-ID Header value
  * @return pointer to the sip_call created
  */
-SipCall *
+Call *
 call_create(const gchar *callid, const gchar *xcallid);
 
 /**
@@ -126,7 +126,7 @@ call_destroy(gpointer item);
  * @param msg SIP message structure
  */
 void
-call_add_message(SipCall *call, SipMsg *msg);
+call_add_message(Call *call, Message *msg);
 
 /**
  * @brief Append a new RTP stream to the call
@@ -137,7 +137,7 @@ call_add_message(SipCall *call, SipMsg *msg);
  * @param stream RTP stream data
  */
 void
-call_add_stream(SipCall *call, RtpStream *stream);
+call_add_stream(Call *call, RtpStream *stream);
 
 /**
  * @brief Getter for call messages linked list size
@@ -149,7 +149,7 @@ call_add_stream(SipCall *call, RtpStream *stream);
  * @return how many messages are in the call
  */
 guint
-call_msg_count(const SipCall *call);
+call_msg_count(const Call *call);
 
 /**
  * @brief Determine if this call starts with an Invite request
@@ -158,7 +158,7 @@ call_msg_count(const SipCall *call);
  * @return TRUE if first call message has method INVITE, FALSE otherwise
  */
 gboolean
-call_is_invite(SipCall *call);
+call_is_invite(Call *call);
 
 /**
  * @brief Update Call State attribute with its last parsed message
@@ -167,7 +167,7 @@ call_is_invite(SipCall *call);
  * @param msg Last received message of this call
  */
 void
-call_update_state(SipCall *call, SipMsg *msg);
+call_update_state(Call *call, Message *msg);
 
 /**
  * @brief Return a call attribute value
@@ -180,14 +180,14 @@ call_update_state(SipCall *call, SipMsg *msg);
  * @return Attribute value or NULL if not found
  */
 const gchar *
-call_get_attribute(const SipCall *call, enum AttributeId id, char *value);
+call_get_attribute(const Call *call, enum AttributeId id, char *value);
 
 /**
  * @brief Return the string represtation of a call state
  *
  */
 const gchar *
-call_state_to_str(enum call_state state);
+call_state_to_str(enum CallState state);
 
 /**
  * @brief Compare two calls based on a given attribute
@@ -197,7 +197,7 @@ call_state_to_str(enum call_state state);
  * @return -1 if first call is lesser
  */
 gint
-call_attr_compare(const SipCall *one, const SipCall *two, enum AttributeId id);
+call_attr_compare(const Call *one, const Call *two, enum AttributeId id);
 
 /**
  * @brief Relate this two calls
@@ -209,12 +209,12 @@ call_attr_compare(const SipCall *one, const SipCall *two, enum AttributeId id);
  * @param xcall SIP call structure
  */
 void
-call_add_xcall(SipCall *call, SipCall *xcall);
+call_add_xcall(Call *call, Call *xcall);
 
 RtpStream *
-call_find_stream(SipCall *call, Address src, Address dst);
+call_find_stream(Call *call, Address src, Address dst);
 
 RtpStream *
-call_find_stream_exact(SipCall *call, Address src, Address dst);
+call_find_stream_exact(Call *call, Address src, Address dst);
 
-#endif /* __SNGREP_SIP_CALL_H */
+#endif /* __SNGREP_CALL_H */

@@ -174,7 +174,7 @@ msg_diff_draw(Window *ui)
 }
 
 int
-msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight)
+msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight)
 {
     int height, width, line, column;
     char header[MAX_SIP_PAYLOAD];
@@ -223,7 +223,7 @@ msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight)
 }
 
 int
-msg_diff_set_msgs(Window *ui, SipMsg *one, SipMsg *two)
+msg_diff_set_msgs(Window *ui, Message *one, Message *two)
 {
     msg_diff_info_t *info;
 

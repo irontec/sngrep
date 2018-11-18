@@ -339,7 +339,7 @@ call_flow_arrow_find(Window *ui, const void *data);
  * @param arrow Call Flow Arrow pointer
  * @return associated SIP message with the arrow
  */
-SipMsg *
+Message *
 call_flow_arrow_message(const call_flow_arrow_t *arrow);
 
 /**
@@ -352,7 +352,7 @@ call_flow_arrow_message(const call_flow_arrow_t *arrow);
  * @return 0 in all cases
  */
 int
-call_flow_draw_raw(Window *ui, SipMsg *msg);
+call_flow_draw_raw(Window *ui, Message *msg);
 
 /**
  * @brief Draw raw panel with RTCP data

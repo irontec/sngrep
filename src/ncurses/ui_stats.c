@@ -74,8 +74,8 @@ Window ui_stats = {
 void
 stats_create(Window *ui)
 {
-    SipCall *call;
-    SipMsg *msg;
+    Call *call;
+    Message *msg;
 
     // Counters!
     struct {

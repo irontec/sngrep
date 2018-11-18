@@ -76,8 +76,8 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
 {
     int i;
     char data[MAX_SIP_PAYLOAD];
-    SipCall *call = (SipCall*) item;
-    SipMsg *msg;
+    Call *call = (Call*) item;
+    Message *msg;
 
     // Dont filter calls without messages
     if (call_msg_count(call) == 0)
@@ -165,7 +165,7 @@ filter_check_expr(filter_t filter, const char *data)
 }
 
 static void
-filter_mark_call_unfiltered(SipCall *call, G_GNUC_UNUSED gpointer user_data)
+filter_mark_call_unfiltered(Call *call, G_GNUC_UNUSED gpointer user_data)
 {
     call->filtered = -1;
 }

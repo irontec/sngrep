@@ -31,15 +31,15 @@
 #include "config.h"
 #include <glib.h>
 #include "glib-utils.h"
-#include "sip_msg.h"
+#include "message.h"
 #include "packet/dissectors/packet_sip.h"
 #include "packet/dissectors/packet_sdp.h"
 #include "storage.h"
 
-SipMsg *
+Message *
 msg_create()
 {
-    SipMsg *msg = g_malloc0(sizeof(SipMsg));
+    Message *msg = g_malloc0(sizeof(Message));
     msg->medias = NULL;
     return msg;
 }
@@ -47,7 +47,7 @@ msg_create()
 void
 msg_destroy(gpointer item)
 {
-    SipMsg *msg = item;
+    Message *msg = item;
 
     // Free message SDP media
     if (!msg->retrans)
@@ -59,19 +59,19 @@ msg_destroy(gpointer item)
     g_free(msg);
 }
 
-SipCall *
-msg_get_call(const SipMsg *msg) {
+Call *
+msg_get_call(const Message *msg) {
     return msg->call;
 }
 
 guint
-msg_media_count(SipMsg *msg)
+msg_media_count(Message *msg)
 {
     return g_list_length(msg->medias);
 }
 
 PacketSdpMedia *
-msg_media_for_addr(SipMsg *msg, Address dst)
+msg_media_for_addr(Message *msg, Address dst)
 {
     for (GList *l = msg->medias; l != NULL; l = l->next) {
         PacketSdpMedia *media = l->data;
@@ -90,19 +90,19 @@ msg_has_sdp(void *item)
 }
 
 gboolean
-msg_is_request(SipMsg *msg)
+msg_is_request(Message *msg)
 {
     return packet_sip_method(msg->packet) < 100;
 }
 
 const gchar *
-msg_get_payload(SipMsg *msg)
+msg_get_payload(Message *msg)
 {
     return packet_sip_payload(msg->packet);
 }
 
 GTimeVal
-msg_get_time(const SipMsg *msg) {
+msg_get_time(const Message *msg) {
     GTimeVal t = { 0 };
     PacketFrame *frame;
 
@@ -112,7 +112,7 @@ msg_get_time(const SipMsg *msg) {
 }
 
 const gchar *
-msg_get_attribute(SipMsg *msg, gint id, char *value)
+msg_get_attribute(Message *msg, gint id, char *value)
 {
     char *ar;
 
@@ -158,7 +158,7 @@ msg_get_attribute(SipMsg *msg, gint id, char *value)
 }
 
 const gchar *
-msg_get_preferred_codec_alias(SipMsg *msg)
+msg_get_preferred_codec_alias(Message *msg)
 {
     PacketSdpMedia *media = g_list_nth_data(msg->medias, 0);
     g_return_val_if_fail(media != NULL, NULL);
@@ -170,7 +170,7 @@ msg_get_preferred_codec_alias(SipMsg *msg)
 }
 
 const gchar *
-msg_get_header(SipMsg *msg, char *out)
+msg_get_header(Message *msg, char *out)
 {
     char from_addr[80], to_addr[80], time[80], date[80];
 
@@ -185,11 +185,11 @@ msg_get_header(SipMsg *msg, char *out)
     return out;
 }
 
-const SipMsg *
-msg_is_retrans(SipMsg *msg)
+const Message *
+msg_is_retrans(Message *msg)
 {
     for (gint i = g_ptr_array_len(msg->call->msgs) - 1; i >= 0; i--) {
-        SipMsg *prev = g_ptr_array_index(msg->call->msgs, i);
+        Message *prev = g_ptr_array_index(msg->call->msgs, i);
 
         // Skip yourself
         if (prev == msg) continue;

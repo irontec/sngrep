@@ -97,7 +97,7 @@ struct save_info {
     //! Call group to be saved
     SipCallGroup *group;
     //! Message to be saved
-    SipMsg *msg;
+    Message *msg;
 };
 
 /**
@@ -183,7 +183,7 @@ save_set_group(Window *ui, SipCallGroup *group);
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-save_set_msg(Window *ui, SipMsg *msg);
+save_set_msg(Window *ui, Message *msg);
 
 /**
  * @brief Print an error message in Save panel

@@ -54,8 +54,8 @@ set(SOURCES
         src/setting.c
         src/attribute.c
         src/storage.c
-        src/sip_call.c
-        src/sip_msg.c
+        src/call.c
+        src/message.c
         src/timeval.c
         src/glib-utils.c
 )

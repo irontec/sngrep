@@ -171,7 +171,7 @@ call_flow_draw(Window *ui)
     if (info->group->callid) {
         sprintf(title, "Extended Call flow for %s", info->group->callid);
     } else if (call_group_count(info->group) == 1) {
-        SipCall *call = call_group_get_next(info->group, NULL);
+        Call *call = call_group_get_next(info->group, NULL);
         sprintf(title, "Call flow for %s", call->callid);
     } else {
         sprintf(title, "Call flow for %d dialogs", call_group_count(info->group));
@@ -244,9 +244,9 @@ call_flow_draw_columns(Window *ui)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
-    SipCall *call = NULL;
+    Call *call = NULL;
     RtpStream *stream;
-    SipMsg *msg = NULL;
+    Message *msg = NULL;
     GSequenceIter *it;
     char coltext[MAX_SETTING_LEN];
     Address addr;
@@ -336,7 +336,7 @@ call_flow_draw_arrows(Window *ui)
     info = call_flow_info(ui);
 
     // Create pending SIP arrows
-    SipMsg *msg = NULL;
+    Message *msg = NULL;
     while ((msg = call_group_get_next_msg(info->group, msg))) {
         if (!call_flow_arrow_find(ui, msg)) {
             arrow = call_flow_arrow_create(ui, msg, CF_ARROW_SIP);
@@ -428,7 +428,7 @@ call_flow_draw_message(Window *ui, call_flow_arrow_t *arrow, int cline)
     char delta[15] = { 0 };
     int flowh;
     char mediastr[40];
-    SipMsg *msg = arrow->item;
+    Message *msg = arrow->item;
     int color = 0;
     int msglen;
     int aline = cline + 1;
@@ -663,7 +663,7 @@ call_flow_draw_rtp_stream(Window *ui, call_flow_arrow_t *arrow, int cline)
     char text[50], time[20];
     int height;
     RtpStream *stream = arrow->item;
-    SipMsg *msg;
+    Message *msg;
     call_flow_arrow_t *msgarrow;
     Address addr;
 
@@ -925,7 +925,7 @@ call_flow_arrow_find(Window *ui, const void *data)
     return NULL;
 }
 
-SipMsg *
+Message *
 call_flow_arrow_message(const  call_flow_arrow_t *arrow)
 {
     if (!arrow)
@@ -944,7 +944,7 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow)
 }
 
 int
-call_flow_draw_raw(Window *ui, SipMsg *msg)
+call_flow_draw_raw(Window *ui, Message *msg)
 {
     call_flow_info_t *info;
     WINDOW *raw_win;
@@ -1075,7 +1075,7 @@ call_flow_handle_key(Window *ui, int key)
     int raw_width;
     call_flow_info_t *info = call_flow_info(ui);
     Window *next_ui;
-    SipCall *call = NULL;
+    Call *call = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
 
@@ -1492,14 +1492,14 @@ GTimeVal
 call_flow_arrow_time(const call_flow_arrow_t *arrow)
 {
     GTimeVal ts = { 0 };
-    SipMsg *msg;
+    Message *msg;
     RtpStream *stream;
 
     if (!arrow)
         return ts;
 
     if (arrow->type == CF_ARROW_SIP) {
-        msg = (SipMsg *) arrow->item;
+        msg = (Message *) arrow->item;
         ts = packet_time(msg->packet);
     } else if (arrow->type == CF_ARROW_RTP) {
         stream = (RtpStream *) arrow->item;

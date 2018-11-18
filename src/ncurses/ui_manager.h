@@ -157,7 +157,7 @@ title_foot_box(PANEL *panel);
  * @param msg Msg to be drawn
  */
 int
-draw_message(WINDOW *win, SipMsg *msg);
+draw_message(WINDOW *win, Message *msg);
 
 /**
  * @brief Draw a message payload in a window starting at a given line
@@ -171,7 +171,7 @@ draw_message(WINDOW *win, SipMsg *msg);
  * @param starting Number of win line to start writting payload
  */
 int
-draw_message_pos(WINDOW *win, SipMsg *msg, int starting);
+draw_message_pos(WINDOW *win, Message *msg, int starting);
 
 /**
  * @brief Draw a centered dialog with a message

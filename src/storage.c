@@ -71,7 +71,7 @@ storage_add_packet(Packet *packet)
 static gint
 storage_sorter(gconstpointer a, gconstpointer b)
 {
-    const SipCall *calla = a, *callb = b;
+    const Call *calla = a, *callb = b;
     int cmp = call_attr_compare(calla, callb, storage.sort.by);
     return (storage.sort.asc) ? cmp : cmp * -1;
 }
@@ -129,7 +129,7 @@ storage_calls_clear_soft()
 {
     // Filter current call list
     for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
-        SipCall *call = g_ptr_array_index(storage.calls, i);
+        Call *call = g_ptr_array_index(storage.calls, i);
 
         // Filtered call, remove from all lists
         if (filter_check_call(call, NULL)) {
@@ -145,7 +145,7 @@ static void
 storage_calls_rotate()
 {
     for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
-        SipCall *call = g_ptr_array_index(storage.calls, i);
+        Call *call = g_ptr_array_index(storage.calls, i);
 
         if (!call->locked) {
             // Remove from callids hash
@@ -191,11 +191,11 @@ storage_sort_options()
     return storage.sort;
 }
 
-static SipMsg *
+static Message *
 storage_check_sip_packet(Packet *packet)
 {
-    SipMsg *msg;
-    SipCall *call;
+    Message *msg;
+    Call *call;
     gboolean newcall = false;
 
     PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
@@ -293,13 +293,13 @@ storage_check_rtp_packet(Packet *packet)
     // Find the stream by destination
     gchar hashkey[ADDRESSLEN + 5 + 1];
     g_sprintf(hashkey, "%s:%hu", dst.ip, dst.port);
-    SipMsg *msg = g_hash_table_lookup(storage.streams, hashkey);
+    Message *msg = g_hash_table_lookup(storage.streams, hashkey);
 
     // No call has setup this stream
     if (msg == NULL) return NULL;
 
     // Get Call streams
-    SipCall *call = msg_get_call(msg);
+    Call *call = msg_get_call(msg);
 
     // Find a matching stream in the call
     RtpStream *stream = NULL;
@@ -372,7 +372,7 @@ storage_check_rtcp_packet(Packet *packet)
 }
 
 void
-storage_register_streams(SipMsg *msg)
+storage_register_streams(Message *msg)
 {
     Packet *packet = msg->packet;
     Address emptyaddr = { 0 };

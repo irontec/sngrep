@@ -53,7 +53,7 @@ call_group_free(SipCallGroup *group)
 }
 
 void
-call_group_add(SipCallGroup *group, SipCall *call)
+call_group_add(SipCallGroup *group, Call *call)
 {
     g_return_if_fail(group != NULL);
     g_return_if_fail(call != NULL);
@@ -73,7 +73,7 @@ call_group_add_calls(SipCallGroup *group, GPtrArray *calls)
 }
 
 void
-call_group_remove(SipCallGroup *group, SipCall *call)
+call_group_remove(SipCallGroup *group, Call *call)
 {
     g_return_if_fail(group != NULL);
     g_return_if_fail(call != NULL);
@@ -97,7 +97,7 @@ call_group_remove_all(SipCallGroup *group)
 }
 
 gboolean
-call_group_exists(SipCallGroup *group, SipCall *call)
+call_group_exists(SipCallGroup *group, Call *call)
 {
     g_return_val_if_fail(group != NULL, FALSE);
     return g_ptr_array_find(group->calls, call, NULL);
@@ -112,7 +112,7 @@ call_group_changed(SipCallGroup *group)
     // We check all the calls even after we found a changed one to reset all
     // the changed pointers
     for (guint i = 0; i < g_ptr_array_len(group->calls); i++) {
-        SipCall *call = g_ptr_array_index(group->calls, i);
+        Call *call = g_ptr_array_index(group->calls, i);
         if (call->changed) {
             // Reset the change flag
             call->changed = FALSE;
@@ -149,13 +149,13 @@ call_group_clone(SipCallGroup *original)
 
 
 gint
-call_group_color(SipCallGroup *group, SipCall *call)
+call_group_color(SipCallGroup *group, Call *call)
 {
     return (g_ptr_array_data_index(group->calls, call) % 7) + 1;
 }
 
-SipCall *
-call_group_get_next(SipCallGroup *group, SipCall *call)
+Call *
+call_group_get_next(SipCallGroup *group, Call *call)
 {
     g_return_val_if_fail(group != NULL, NULL);
     return g_ptr_array_next(group->calls, call);
@@ -173,12 +173,12 @@ call_group_msg_count(SipCallGroup *group)
     return g_ptr_array_len(group->msgs);
 }
 
-SipMsg *
-call_group_get_next_msg(SipCallGroup *group, SipMsg *msg)
+Message *
+call_group_get_next_msg(SipCallGroup *group, Message *msg)
 {
     g_return_val_if_fail(group != NULL, NULL);
 
-    SipMsg *next = g_ptr_array_next(group->msgs, msg);
+    Message *next = g_ptr_array_next(group->msgs, msg);
 
     // If we have a next message
     if (next != NULL) {
@@ -191,12 +191,12 @@ call_group_get_next_msg(SipCallGroup *group, SipMsg *msg)
     return next;
 }
 
-SipMsg *
-call_group_get_prev_msg(SipCallGroup *group, SipMsg *msg)
+Message *
+call_group_get_prev_msg(SipCallGroup *group, Message *msg)
 {
     g_return_val_if_fail(group != NULL, NULL);
 
-    SipMsg *prev = g_ptr_array_next(group->msgs, msg);
+    Message *prev = g_ptr_array_next(group->msgs, msg);
 
     // If we have a next message
     if (prev != NULL) {

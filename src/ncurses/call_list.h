@@ -131,7 +131,7 @@ call_list_new();
  * @return A pointer to text
  */
 const char*
-call_list_line_text(Window *window, SipCall *call, char *text);
+call_list_line_text(Window *window, Call *call, char *text);
 
 /**
  * @brief Remove all calls from the list and calls storage

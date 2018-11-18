@@ -42,9 +42,9 @@
 
 
 //! Shorter declaration of sip_msg structure
-typedef struct _SipMsg SipMsg;
+typedef struct _Message Message;
 //! Forward declarition of SipCall type
-typedef struct _SipCall SipCall;
+typedef struct _Call Call;
 
 /**
  * @brief Information of a single message withing a dialog.
@@ -54,15 +54,15 @@ typedef struct _SipCall SipCall;
  * purpose. It also works as a linked lists of messages in a
  * call.
  */
-struct _SipMsg {
+struct _Message {
     //! SDP payload information (sdp_media_t *)
     GList *medias;
     //! Captured packet for this message
     Packet *packet;
     //! Message owner
-    SipCall *call;
+    Call *call;
     //! Message is a retransmission from other message
-    const SipMsg *retrans;
+    const Message *retrans;
 };
 
 
@@ -76,7 +76,7 @@ struct _SipMsg {
  * @param payload Raw payload content
  * @return a new allocated message
  */
-SipMsg *
+Message *
 msg_create();
 
 /**
@@ -94,8 +94,8 @@ msg_destroy(gpointer item);
 /**
  * @brief Return the call owner of this message
  */
-SipCall *
-msg_get_call(const SipMsg *msg);
+Call *
+msg_get_call(const Message *msg);
 
 /**
  * @brief Getter for media of given messages
@@ -107,7 +107,7 @@ msg_get_call(const SipMsg *msg);
  * @return how many media structures are in the msg
  */
 guint
-msg_media_count(SipMsg *msg);
+msg_media_count(Message *msg);
 
 /**
  * @brief Get Media information for a given destination address
@@ -116,7 +116,7 @@ msg_media_count(SipMsg *msg);
  * @return Media info or NULL for not match
  */
 PacketSdpMedia *
-msg_media_for_addr(SipMsg *msg, Address dst);
+msg_media_for_addr(Message *msg, Address dst);
 
 /**
  * @brief Check if given message has spd content
@@ -131,13 +131,13 @@ msg_has_sdp(void *item);
  * @return TRUE if the message is a request, FALSE if a response
  */
 gboolean
-msg_is_request(SipMsg *msg);
+msg_is_request(Message *msg);
 
 /**
  * @brief Get SIP Message payload
  */
 const gchar *
-msg_get_payload(SipMsg *msg);
+msg_get_payload(Message *msg);
 
 /**
  * @brief Get Time of message from packet header
@@ -146,7 +146,7 @@ msg_get_payload(SipMsg *msg);
  * @return timeval structure with message first packet time
  */
 GTimeVal
-msg_get_time(const SipMsg *msg);
+msg_get_time(const Message *msg);
 
 /**
  * @brief Return a message attribute value
@@ -160,10 +160,10 @@ msg_get_time(const SipMsg *msg);
  * @return Attribute value or NULL if not found
  */
 const gchar *
-msg_get_attribute(SipMsg *msg, gint id, char *value);
+msg_get_attribute(Message *msg, gint id, char *value);
 
 const gchar *
-msg_get_preferred_codec_alias(SipMsg *msg);
+msg_get_preferred_codec_alias(Message *msg);
 
 /**
  * @brief Get summary of message header data
@@ -176,7 +176,7 @@ msg_get_preferred_codec_alias(SipMsg *msg);
  * @returns pointer to out
  */
 const gchar *
-msg_get_header(SipMsg *msg, gchar *out);
+msg_get_header(Message *msg, gchar *out);
 
 /**
  * @brief Check if given message is a retransmission
@@ -187,7 +187,7 @@ msg_get_header(SipMsg *msg, gchar *out);
  * @param msg SIP Message
  * @return pointer to original message or NULL if message is not a retransmission
  */
-const SipMsg *
-msg_is_retrans(SipMsg *msg);
+const Message *
+msg_is_retrans(Message *msg);
 
 #endif /* __SNGREP_SIP_MSG_H */
