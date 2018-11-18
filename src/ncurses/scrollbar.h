@@ -38,17 +38,17 @@
 #include <glib.h>
 
 //! Shorter declaration of scrollbar
-typedef struct scrollbar scrollbar_t;
+typedef struct _Scrollbar Scrollbar;
 
 //! Available scrollbar alignments
-enum sb_alignment
+enum ScrollbarAlignment
 {
     SB_HORIZONTAL,
     SB_VERTICAL
 };
 
 //! Available scrollbar positions
-enum sb_dock
+enum ScrollbarDock
 {
     SB_TOP,
     SB_BOTTOM,
@@ -62,25 +62,27 @@ enum sb_dock
  * This struct contains the required information to draw
  * a scrollbar into a ncurses window
  */
-struct scrollbar
+struct _Scrollbar
 {
     //! Ncurses window associated to this scrollbar
     WINDOW *win;
     //! Alignment
-    enum sb_alignment alignment;
+    enum ScrollbarAlignment alignment;
     //! Position
-    enum sb_dock dock;
+    enum ScrollbarDock dock;
     //! Current scrollbar position
     guint pos;
     //! Max scrollbar positions
     guint max;
 };
 
-scrollbar_t
-ui_set_scrollbar(WINDOW *win, int alignment, int dock);
 
+// FIXME scrollbar_new + window_set_scrollbar
+Scrollbar
+window_set_scrollbar(WINDOW *win, int alignment, int dock);
 
+// FIXME work with pointers
 void
-ui_scrollbar_draw(scrollbar_t sb);
+scrollbar_draw(Scrollbar scrollbar);
 
 #endif /* __SNGREP_SCROLLBAR_H */

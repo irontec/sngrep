@@ -480,7 +480,7 @@ call_list_draw_list(Window *window)
 
     // Draw scrollbar to the right
     info->scroll.max = g_ptr_array_len(info->dcalls) - 1;
-    ui_scrollbar_draw(info->scroll);
+    scrollbar_draw(info->scroll);
 
     // Refresh the list
     if (!info->menu_active)
@@ -1220,7 +1220,7 @@ call_list_new()
 
     // Calculate available printable area
     info->list_win = subwin(window->win, window->height - 6, window->width, 5, 0);
-    info->scroll = ui_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
+    info->scroll = window_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
 
     // Group of selected calls
     info->group = call_group_new();

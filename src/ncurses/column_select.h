@@ -72,7 +72,7 @@ struct _ColumnSelectInfo {
     //! Flag to handle key inputs
     gboolean form_active;
     //! Scrollbar for the menu window
-    scrollbar_t scroll;
+    Scrollbar scroll;
 };
 
 /**

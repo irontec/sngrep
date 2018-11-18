@@ -82,7 +82,7 @@ call_flow_create(Window *ui)
 
     // Calculate available printable area for messages
     info->flow_win = subwin(ui->win, ui->height - 6, ui->width - 2, 4, 0);
-    info->scroll = ui_set_scrollbar(info->flow_win, SB_VERTICAL, SB_LEFT);
+    info->scroll = window_set_scrollbar(info->flow_win, SB_VERTICAL, SB_LEFT);
 
     // Create vectors for columns and flow arrows
     info->columns = g_sequence_new(g_free);
@@ -212,7 +212,7 @@ call_flow_draw(Window *ui)
         }
         info->scroll.max += call_flow_arrow_height(ui, arrow);
     }
-    ui_scrollbar_draw(info->scroll);
+    scrollbar_draw(info->scroll);
 
     // Redraw flow win
     wnoutrefresh(info->flow_win);

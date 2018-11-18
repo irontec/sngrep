@@ -153,7 +153,7 @@ struct call_flow_info {
     //! Selected arrow to compare
     int selected;
     //! Current line for scrolling
-    scrollbar_t scroll;
+    Scrollbar scroll;
     //! List of columns in the panel
     GSequence *columns;
     //! Max callids per column

@@ -341,7 +341,7 @@ column_select_handle_key_menu(Window *ui, int key)
 
     // Draw a scrollbar to the right
     info->scroll.pos = (guint) top_row(info->menu);
-    ui_scrollbar_draw(info->scroll);
+    scrollbar_draw(info->scroll);
     wnoutrefresh(info->menu_win);
 
     // Return if this panel has handled or not the key
@@ -581,9 +581,9 @@ column_select_new()
     post_menu(info->menu);
 
     // Draw a scrollbar to the right
-    info->scroll = ui_set_scrollbar(info->menu_win, SB_VERTICAL, SB_RIGHT);
+    info->scroll = window_set_scrollbar(info->menu_win, SB_VERTICAL, SB_RIGHT);
     info->scroll.max = (guint) (item_count(info->menu) - 1);
-    ui_scrollbar_draw(info->scroll);
+    scrollbar_draw(info->scroll);
 
     // Set the window title and boxes
     mvwprintw(window->win, 1, window->width / 2 - 14, "Call List columns selection");

@@ -102,7 +102,7 @@ struct _CallListInfo {
     //! Move to last list entry if autoscroll is enabled
     gboolean autoscroll;
     //! List scrollbar
-    scrollbar_t scroll;
+    Scrollbar scroll;
 };
 
 /**

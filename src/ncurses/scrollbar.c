@@ -29,47 +29,47 @@
 #include "config.h"
 #include "scrollbar.h"
 
-scrollbar_t
-ui_set_scrollbar(WINDOW *win, int alignment, int dock)
+Scrollbar
+window_set_scrollbar(WINDOW *win, int alignment, int dock)
 {
-    scrollbar_t sb;
-    sb.win = win;
-    sb.alignment = alignment;
-    sb.dock = dock;
-    sb.pos = 0;
-    sb.max = 0;
-    return sb;
+    Scrollbar scrollbar;
+    scrollbar.win = win;
+    scrollbar.alignment = alignment;
+    scrollbar.dock = dock;
+    scrollbar.pos = 0;
+    scrollbar.max = 0;
+    return scrollbar;
 }
 
 
 void
-ui_scrollbar_draw(scrollbar_t sb)
+scrollbar_draw(Scrollbar scrollbar)
 {
     int height, width, cline, scrollen, scrollypos, scrollxpos;
 
     // Get window available space
-    getmaxyx(sb.win, height, width);
+    getmaxyx(scrollbar.win, height, width);
 
     // If no even a screen has been filled, don't draw it
-    if (sb.max < (guint) height)
+    if (scrollbar.max < (guint) height)
         return;
 
     // Display the scrollbar left or right
-    scrollxpos = (sb.dock == SB_LEFT) ? 0 : width - 1;
+    scrollxpos = (scrollbar.dock == SB_LEFT) ? 0 : width - 1;
 
     // Initialize scrollbar line
-    mvwvline(sb.win, 0, scrollxpos, ACS_VLINE, height);
+    mvwvline(scrollbar.win, 0, scrollxpos, ACS_VLINE, height);
 
     // How long the scroll will be
-    if (!(scrollen = (height * 1.0f / sb.max * height) + 0.5))
+    if (!(scrollen = (height * 1.0f / scrollbar.max * height) + 0.5))
         scrollen = 1;
 
     // Where will the scroll start
-    scrollypos = height * (sb.pos * 1.0f / sb.max);
+    scrollypos = height * (scrollbar.pos * 1.0f / scrollbar.max);
 
     // Draw the N blocks of the scrollbar
     for (cline = 0; cline < scrollen; cline++) {
-        mvwaddch(sb.win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
+        mvwaddch(scrollbar.win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
     }
 
 }
