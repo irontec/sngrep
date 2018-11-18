@@ -170,7 +170,7 @@ window_init(Window *window, int height, int width)
 }
 
 void
-ui_panel_destroy(Window *ui)
+window_deinit(Window *ui)
 {
     // Deallocate panel window
     delwin(ui->win);
@@ -179,7 +179,7 @@ ui_panel_destroy(Window *ui)
 }
 
 void
-ui_set_title(Window *ui, const char *title)
+window_set_title(Window *ui, const char *title)
 {
     // FIXME Reverse colors on monochrome terminals
     if (!has_colors()) {
@@ -188,13 +188,13 @@ ui_set_title(Window *ui, const char *title)
 
     // Center the title on the window
     wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    ui_clear_line(ui, 0);
+    ncurses_clear_line(ui, 0);
     mvwprintw(ui->win, 0, (ui->width - strlen(title)) / 2, "%s", title);
     wattroff(ui->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 }
 
 void
-ui_clear_line(Window *ui, int line)
+ncurses_clear_line(Window *ui, int line)
 {
     // We could do this with wcleartoel but we want to
     // preserve previous window attributes. That way we
@@ -203,7 +203,7 @@ ui_clear_line(Window *ui, int line)
 }
 
 void
-ui_draw_bindings(Window *ui, const char *keybindings[], int count)
+window_draw_bindings(Window *ui, const char **keybindings, int count)
 {
     int key, xpos = 0;
 
@@ -214,7 +214,7 @@ ui_draw_bindings(Window *ui, const char *keybindings[], int count)
 
     // Write a line all the footer width
     wattron(ui->win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    ui_clear_line(ui, ui->height - 1);
+    ncurses_clear_line(ui, ui->height - 1);
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {

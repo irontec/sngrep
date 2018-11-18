@@ -67,7 +67,7 @@ Window ui_stats = {
     .type = PANEL_STATS,
     .panel = NULL,
     .create = stats_create,
-    .destroy = ui_panel_destroy,
+    .destroy = window_deinit,
     .handle_key = NULL
 };
 

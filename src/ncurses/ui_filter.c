@@ -33,7 +33,7 @@
 #include "packet/dissectors/packet_sip.h"
 #include "ncurses/ui_manager.h"
 #include "ncurses/ui_filter.h"
-#include "ncurses/ui_call_list.h"
+#include "ncurses/call_list.h"
 #include "storage.h"
 #include "filter.h"
 #include "setting.h"
@@ -188,7 +188,7 @@ void
 filter_destroy(Window *ui)
 {
     curs_set(0);
-    ui_panel_destroy(ui);
+    window_deinit(ui);
 }
 
 

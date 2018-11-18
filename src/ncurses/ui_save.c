@@ -195,7 +195,7 @@ save_destroy(Window *ui)
     }
 
     // Delete panel
-    ui_panel_destroy(ui);
+    window_deinit(ui);
 
     // Resume capture
     capture_manager()->paused = FALSE;

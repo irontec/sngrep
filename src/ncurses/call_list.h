@@ -60,10 +60,14 @@ typedef struct _CallListInfo CallListInfo;
  * This structure is one step towards configurable stuff
  */
 struct _CallListColumn {
+    //! Attribute id of the column
     enum sip_attr_id id;
+    //! Attribute name
     const char *attr;
+    //! Column title
     const char *title;
-    int width;
+    //! Current width
+    guint width;
 };
 
 /**
@@ -76,7 +80,7 @@ struct _CallListInfo {
     //! Displayed calls vector
     GPtrArray *dcalls;
     //! Selected call in the list
-    guint cur_call;
+    guint cur_idx;
     //! Selected calls with space
     SipCallGroup *group;
     //! Displayed column list, make it configurable in the future
@@ -90,15 +94,15 @@ struct _CallListInfo {
     //! An array of window form fields
     FIELD *fields[FLD_LIST_COUNT + 1];
     //! We're entering keys on form
-    int form_active;
+    gboolean form_active;
     // Columns sort menu
     MENU *menu;
     // Columns sort menu items
     ITEM *items[SIP_ATTR_COUNT + 1];
     //! We're selecting sorting field
-    int menu_active;
+    gboolean menu_active;
     //! Move to last list entry if autoscroll is enabled
-    int autoscroll;
+    gboolean autoscroll;
     //! List scrollbar
     scrollbar_t scroll;
 };

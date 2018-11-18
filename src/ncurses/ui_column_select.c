@@ -35,7 +35,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "ncurses/ui_manager.h"
-#include "ncurses/ui_call_list.h"
+#include "ncurses/call_list.h"
 #include "ncurses/ui_column_select.h"
 
 /**
@@ -165,7 +165,7 @@ column_select_destroy(Window *ui)
     g_free(info);
 
     // Remove panel window and custom info
-    ui_panel_destroy(ui);
+    window_deinit(ui);
 }
 
 

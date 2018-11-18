@@ -236,7 +236,7 @@ window_init(Window *window, int height, int width);
  * @param ui UI structure
  */
 void
-ui_panel_destroy(Window *ui);
+window_deinit(Window *ui);
 
 /**
  * @brief Draw title at the top of the panel UI
@@ -248,7 +248,7 @@ ui_panel_destroy(Window *ui);
  * @param title String containing the title
  */
 void
-ui_set_title(Window *ui, const char *title);
+window_set_title(Window *ui, const char *title);
 
 /**
  * @brief Clear a given window line
@@ -260,7 +260,7 @@ ui_set_title(Window *ui, const char *title);
  * @param line Number of line to be cleared
  */
 void
-ui_clear_line(Window *ui, int line);
+ncurses_clear_line(Window *ui, int line);
 
 /**
  * @brief Draw keybinding info at the bottom of the panel
@@ -270,6 +270,6 @@ ui_clear_line(Window *ui, int line);
  *
  */
 void
-ui_draw_bindings(Window *ui, const char *keybindings[], int count);
+window_draw_bindings(Window *ui, const char **keybindings, int count);
 
 #endif /* __SNGREP_UI_PANEL_H */

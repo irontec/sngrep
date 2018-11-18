@@ -214,7 +214,7 @@ void
 settings_destroy(Window *ui)
 {
     curs_set(0);
-    ui_panel_destroy(ui);
+    window_deinit(ui);
 }
 
 settings_info_t *

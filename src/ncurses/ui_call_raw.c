@@ -81,7 +81,7 @@ call_raw_destroy(Window *ui)
         delwin(info->pad);
         g_free(info);
     }
-    ui_panel_destroy(ui);
+    window_deinit(ui);
 }
 
 /**

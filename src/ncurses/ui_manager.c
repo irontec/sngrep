@@ -36,7 +36,7 @@
 #include "ui_manager.h"
 #include "packet/dissectors/packet_sip.h"
 #include "capture/capture.h"
-#include "ncurses/ui_call_list.h"
+#include "ncurses/call_list.h"
 #include "ncurses/ui_call_flow.h"
 #include "ncurses/ui_call_raw.h"
 #include "ncurses/ui_filter.h"

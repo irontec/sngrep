@@ -41,7 +41,7 @@
 #include "capture/capture_hep.h"
 #endif
 #include "ncurses/ui_manager.h"
-#include "ncurses/ui_call_list.h"
+#include "ncurses/call_list.h"
 #include "ncurses/ui_call_flow.h"
 #include "ncurses/ui_call_raw.h"
 #include "ncurses/ui_filter.h"
@@ -57,7 +57,6 @@
  * @param window UI structure pointer
  * @return a pointer to info structure of given panel
  */
-/* @FIXME static */
 CallListInfo *
 call_list_info(Window *window)
 {
@@ -80,64 +79,75 @@ call_list_move(Window *window, guint line)
     g_return_if_fail(info != NULL);
 
     // Already in this position?
-    if (info->cur_call == line)
+    if (info->cur_idx == line)
         return;
 
     // Moving down or up?
-    bool move_down = (info->cur_call < line);
+    gboolean move_down = (info->cur_idx < line);
 
     if (move_down) {
-        while (info->cur_call < line) {
+        while (info->cur_idx < line) {
             // Check if there is a call below us
-            if (info->cur_call == g_ptr_array_len(info->dcalls) - 1)
+            if (info->cur_idx == g_ptr_array_len(info->dcalls) - 1)
                 break;
 
             // Increase current call position
-            info->cur_call++;
+            info->cur_idx++;
 
             // If we are out of the bottom of the displayed list
             // refresh it starting in the next call
-            if ((gint)(info->cur_call - info->scroll.pos) == getmaxy(info->list_win)) {
+            if ((gint)(info->cur_idx - info->scroll.pos) == getmaxy(info->list_win)) {
                 info->scroll.pos++;
             }
         }
     } else {
-        while (info->cur_call > line) {
+        while (info->cur_idx > line) {
             // Check if there is a call above us
-            if (info->cur_call == 0)
+            if (info->cur_idx == 0)
                 break;
 
             // If we are out of the top of the displayed list
             // refresh it starting in the previous (in fact current) call
-            if (info->cur_call == info->scroll.pos) {
+            if (info->cur_idx == info->scroll.pos) {
                 info->scroll.pos--;
             }
             // Move current call position
-            info->cur_call--;
+            info->cur_idx--;
         }
     }
 }
 
+/**
+ * @brief Move selection cursor up N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move up
+ */
 static void
 call_list_move_up(Window *window, guint times)
 {
     CallListInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
-    gint newpos = info->cur_call - times;
-    if (newpos < 0)
-        newpos = 0;
+    gint newpos = info->cur_idx - times;
+    if (newpos < 0) newpos = 0;
 
     call_list_move(window, (guint) newpos);
 }
 
+/**
+ * @brief Move selection cursor down N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move down
+ */
 static void
 call_list_move_down(Window *window, guint times)
 {
     CallListInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
-    guint newpos = info->cur_call + times;
+    guint newpos = info->cur_idx + times;
     if (newpos >= g_ptr_array_len(info->dcalls))
         newpos = g_ptr_array_len(info->dcalls) - 1;
 
@@ -187,6 +197,7 @@ call_list_resize(Window *window)
 
     // Calculate available printable area
     wresize(info->list_win, maxy - 6, maxx); //-4
+
     // Force list redraw
     call_list_clear(window);
 
@@ -205,7 +216,6 @@ call_list_draw_header(Window *window)
 {
     const char *infile, *coldesc;
     int colpos, collen;
-    char sortind;
     const char *countlb;
     const char *device, *filterbpf;
 
@@ -214,10 +224,10 @@ call_list_draw_header(Window *window)
     g_return_if_fail(info != NULL);
 
     // Draw panel title
-    ui_set_title(window, "sngrep - SIP messages flow viewer");
+    window_set_title(window, "sngrep - SIP messages flow viewer");
 
     // Draw a Panel header lines
-    ui_clear_line(window, 1);
+    ncurses_clear_line(window, 1);
 
     // Print Open filename in Offline mode
     if (!capture_is_online(capture_manager()) && (infile = capture_input_pcap_file(capture_manager())))
@@ -274,7 +284,7 @@ call_list_draw_header(Window *window)
 
     // Draw columns titles
     wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    ui_clear_line(window, 4);
+    ncurses_clear_line(window, 4);
 
     // Draw separator line
     if (info->menu_active) {
@@ -300,7 +310,7 @@ call_list_draw_header(Window *window)
         // Print sort column indicator
         if (info->columns[i].id == sort.by) {
             wattron(window->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-            sortind = (sort.asc) ? '^' : 'v';
+            gchar sortind = (gchar) ((sort.asc) ? '^' : 'v');
             mvwprintw(window->win, 4, colpos, "%c%.*s", sortind, collen, coldesc);
             wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
         } else {
@@ -308,6 +318,7 @@ call_list_draw_header(Window *window)
         }
         colpos += collen + 1;
     }
+
     // Print Autoscroll indicator
     if (info->autoscroll)
         mvwprintw(window->win, 4, 0, "A");
@@ -357,7 +368,7 @@ call_list_draw_footer(Window *window)
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    ui_draw_bindings(window, keybindings, 23);
+    window_draw_bindings(window, keybindings, 23);
 }
 
 /**
@@ -421,7 +432,7 @@ call_list_draw_list(Window *window)
             wattron(list_win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (info->cur_call == i) {
+        if (info->cur_idx == i) {
             wattron(list_win, COLOR_PAIR(CP_WHITE_ON_BLUE));
         }
 
@@ -453,7 +464,7 @@ call_list_draw_list(Window *window)
 
             // Enable attribute color (if not current one)
             color = 0;
-            if (info->cur_call !=  i) {
+            if (info->cur_idx !=  i) {
                 if ((color = sip_attr_get_color(colid, coltext)) > 0) {
                     wattron(list_win, color);
                 }
@@ -525,7 +536,7 @@ call_list_draw(Window *window)
  * @param active Enable/Disable flag
  */
 static void
-call_list_form_activate(Window *window, int active)
+call_list_form_activate(Window *window, gboolean active)
 {
     CallListInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
@@ -561,14 +572,11 @@ call_list_form_activate(Window *window, int active)
  * @param text Text pointer to store the generated line
  * @return A pointer to text
  */
-/* FIXME static */
 const char *
 call_list_line_text(Window *window, SipCall *call, char *text)
 {
-    int collen;
     char call_attr[SIP_ATTR_MAXLEN];
     char coltext[SIP_ATTR_MAXLEN];
-    int colid;
 
     // Get panel info
     CallListInfo *info = call_list_info(window);
@@ -578,14 +586,14 @@ call_list_line_text(Window *window, SipCall *call, char *text)
     for (guint i = 0; i < info->columncnt; i++) {
 
         // Get current column id
-        colid = info->columns[i].id;
+        enum sip_attr_id colid = info->columns[i].id;
 
         // Get current column width
-        collen = info->columns[i].width;
+        gint collen = info->columns[i].width;
 
         // Check if next column fits on window width
         if ((gint)(strlen(text) + collen) >= window->width)
-            collen = window->width - strlen(text);
+            collen = (gint) (window->width - strlen(text));
 
         // If no space left on the screen stop processing columns
         if (collen <= 0)
@@ -658,7 +666,6 @@ call_list_select_sort_attribute(Window *window)
 static int
 call_list_handle_form_key(Window *window, int key)
 {
-    char *dfilter;
     int action = -1;
 
     // Get panel information
@@ -726,16 +733,14 @@ call_list_handle_form_key(Window *window, int key)
     form_driver(info->form, REQ_VALIDATION);
 
     // Store dfilter input
-    int field_len = strlen(field_buffer(info->fields[FLD_LIST_FILTER], 0));
-    dfilter = malloc(field_len + 1);
-    memset(dfilter, 0, field_len + 1);
+    gsize field_len = strlen(field_buffer(info->fields[FLD_LIST_FILTER], 0));
+    gchar *dfilter = g_malloc0(field_len + 1);
     strncpy(dfilter, field_buffer(info->fields[FLD_LIST_FILTER], 0), field_len);
-    // Trim any trailing spaces
-    g_strstrip(dfilter);
+    g_strstrip(dfilter);    // Trim any trailing spaces
 
     // Set display filter
     filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);
-    free(dfilter);
+    g_free(dfilter);
 
     // Return if this panel has handled or not the key
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
@@ -795,7 +800,7 @@ call_list_handle_menu_key(Window *window, int key)
                 /* fall-thru */
             case ACTION_PREV_SCREEN:
                 // Desactive sorting menu
-                info->menu_active = 0;
+                info->menu_active = FALSE;
 
                 // Remove menu
                 unpost_menu(info->menu);
@@ -839,7 +844,7 @@ call_list_handle_menu_key(Window *window, int key)
 static int
 call_list_handle_key(Window *window, int key)
 {
-    int rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
+    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     Window *next_ui;
     SipCallGroup *group;
     int action = -1;
@@ -903,11 +908,11 @@ call_list_handle_key(Window *window, int key)
 
                 // If not selected call, show current call flow
                 if (call_group_count(info->group) == 0)
-                    call_group_add(group, g_ptr_array_index(info->dcalls, info->cur_call));
+                    call_group_add(group, g_ptr_array_index(info->dcalls, info->cur_idx));
 
                 // Add xcall to the group
                 if (action == ACTION_SHOW_FLOW_EX) {
-                    call = g_ptr_array_index(info->dcalls, info->cur_call);
+                    call = g_ptr_array_index(info->dcalls, info->cur_idx);
                     call_group_add_calls(group, call->xcalls);
                     group->callid = call->callid;
                 }
@@ -962,7 +967,7 @@ call_list_handle_key(Window *window, int key)
                 ncurses_create_window(PANEL_SETTINGS);
                 break;
             case ACTION_SELECT:
-                call = g_ptr_array_index(info->dcalls, info->cur_call);
+                call = g_ptr_array_index(info->dcalls, info->cur_idx);
                 if (call_group_exists(info->group, call)) {
                     call_group_remove(info->group, call);
                 } else {
@@ -989,7 +994,6 @@ call_list_handle_key(Window *window, int key)
                     ui_destroy(window);
                 }
                 return KEY_HANDLED;
-                break;
             default:
                 // Parse next action
                 continue;
@@ -1011,6 +1015,8 @@ call_list_handle_key(Window *window, int key)
         case ACTION_END:
         case ACTION_DISP_FILTER:
             info->autoscroll = 0;
+            break;
+        default:
             break;
     }
 
@@ -1094,7 +1100,6 @@ call_list_help(G_GNUC_UNUSED Window *window)
  * @brief Add a column the Call List
  *
  * This function will add a new column to the Call List panel
- * @todo Columns are not configurable yet.
  *
  * @param window UI structure pointer
  * @param id SIP call attribute id
@@ -1113,7 +1118,7 @@ call_list_add_column(Window *window, enum sip_attr_id id, const char* attr,
     info->columns[info->columncnt].id = id;
     info->columns[info->columncnt].attr = attr;
     info->columns[info->columncnt].title = title;
-    info->columns[info->columncnt].width = width;
+    info->columns[info->columncnt].width = (guint) width;
     info->columncnt++;
 }
 
@@ -1124,13 +1129,14 @@ call_list_clear(Window *window)
     g_return_if_fail(info != NULL);
 
     // Initialize structures
-    info->scroll.pos = info->cur_call = 0;
+    info->scroll.pos = info->cur_idx = 0;
     call_group_remove_all(info->group);
 
     // Clear Displayed lines
     werase(info->list_win);
     wnoutrefresh(info->list_win);
 }
+
 /**
  * @brief Destroy panel
  *
@@ -1151,15 +1157,15 @@ call_list_free(Window *window)
         free_field(info->fields[FLD_LIST_FILTER]);
     }
 
-    // Deallocate group data
+    // Deallocate window private data
     call_group_free(info->group);
     g_ptr_array_free(info->dcalls, FALSE);
-
-    // Deallocate panel windows
     delwin(info->list_win);
     g_free(info);
 
-    ui_panel_destroy(window);
+    // Deallocate window
+    window_deinit(window);
+    g_free(window);
 }
 
 Window *
@@ -1174,10 +1180,6 @@ call_list_new()
     window->handle_key  = call_list_handle_key;
     window->help        = call_list_help;
 
-    int i, attrid, collen;
-    char option[80];
-    const char *field, *title;
-
     // Create a new panel that fill all the screen
     window_init(window, getmaxy(stdscr), getmaxx(stdscr));
 
@@ -1186,21 +1188,26 @@ call_list_new()
     set_panel_userptr(window->panel, (void*) info);
 
     // Add configured columns
-    for (i = 0; i < SIP_ATTR_COUNT; i++) {
+    for (guint i = 0; i < SIP_ATTR_COUNT; i++) {
         // Get column attribute name from options
-        sprintf(option, "cl.column%d", i);
-        if ((field = get_option_value(option))) {
+        gchar *option = g_strdup_printf("cl.column%d", i);
+        const gchar *field = NULL;
+        if ((field = get_option_value(option)) != NULL) {
+            gint attrid, collen;
             if ((attrid = sip_attr_from_name(field)) == -1)
                 continue;
+
             // Get column width from options
             sprintf(option, "cl.column%d.width", i);
             if ((collen = get_option_int_value(option)) == -1)
                 collen = sip_attr_get_width(attrid);
+
             // Get column title
-            title = sip_attr_get_title(attrid);
+            const gchar *title = sip_attr_get_title(attrid);
             // Add column to the list
             call_list_add_column(window, attrid, field, title, collen);
         }
+        g_free(option);
     }
 
     // Initialize the fields
@@ -1213,7 +1220,7 @@ call_list_new()
 
     // Form starts inactive
     call_list_form_activate(window, 0);
-    info->menu_active = 0;
+    info->menu_active = FALSE;
 
     // Calculate available printable area
     info->list_win = subwin(window->win, window->height - 6, window->width, 5, 0);

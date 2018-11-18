@@ -111,7 +111,7 @@ call_flow_destroy(Window *ui)
         // Free panel info
         free(info);
     }
-    ui_panel_destroy(ui);
+    window_deinit(ui);
 }
 
 call_flow_info_t *
@@ -186,7 +186,7 @@ call_flow_draw(Window *ui)
         strcat(title, " (Color by CSeq)");
 
     // Draw panel title
-    ui_set_title(ui, title);
+    window_set_title(ui, title);
 
     // Show some keybinding
     call_flow_draw_footer(ui);
@@ -236,7 +236,7 @@ call_flow_draw_footer(Window *ui)
         key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
     };
 
-    ui_draw_bindings(ui, keybindings, 22);
+    window_draw_bindings(ui, keybindings, 22);
 }
 
 int
