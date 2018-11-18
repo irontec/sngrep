@@ -37,7 +37,7 @@
 #include "packet/dissectors/packet_sip.h"
 #include "capture/capture.h"
 #include "ncurses/call_list.h"
-#include "ncurses/ui_call_flow.h"
+#include "ncurses/call_flow.h"
 #include "ncurses/ui_call_raw.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_msg_diff.h"
@@ -54,7 +54,6 @@
 
  */
 static Window *panel_pool[] = {
-    &ui_call_flow,
     &ui_call_raw,
     &ui_filter,
     &ui_save,
@@ -231,6 +230,11 @@ ncurses_find_by_type(enum WindowTypes type)
         return window;
     }
 
+    if (type == WINDOW_CALL_FLOW) {
+        Window *window = call_flow_new();
+        g_ptr_array_add(windows, window);
+        return window;
+    }
 
     // Return ui pointer if found
     for (i = 0; i < PANEL_COUNT; i++) {

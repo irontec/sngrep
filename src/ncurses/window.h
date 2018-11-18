@@ -57,7 +57,7 @@ enum WindowTypes {
     //! Call List ui screen
     WINDOW_CALL_LIST = 0,
     //! Call-Flow ui screen
-    PANEL_CALL_FLOW,
+    WINDOW_CALL_FLOW,
     //! Raw SIP messages ui screen
     PANEL_CALL_RAW,
     //! Filters panel

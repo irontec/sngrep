@@ -42,7 +42,7 @@
 #endif
 #include "ncurses/manager.h"
 #include "ncurses/call_list.h"
-#include "ncurses/ui_call_flow.h"
+#include "ncurses/call_flow.h"
 #include "ncurses/ui_call_raw.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_save.h"
@@ -915,8 +915,8 @@ call_list_handle_key(Window *window, int key)
                     call_raw_set_group(group);
                 } else {
                     // Display current call flow (normal or extended)
-                    ncurses_create_window(PANEL_CALL_FLOW);
-                    call_flow_set_group(group);
+                    next_window = ncurses_create_window(WINDOW_CALL_FLOW);
+                    call_flow_set_group(next_window, group);
                 }
                 break;
             case ACTION_SHOW_FILTERS:

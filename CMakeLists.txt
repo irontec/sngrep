@@ -34,7 +34,7 @@ set(SOURCES
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
         src/ncurses/manager.c
-        src/ncurses/ui_call_flow.c
+        src/ncurses/call_flow.c
         src/ncurses/call_list.c
         src/ncurses/ui_call_raw.c
         src/ncurses/column_select.c
