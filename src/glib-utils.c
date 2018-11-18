@@ -1,8 +1,31 @@
-//
-// Created by kaian on 9/04/18.
-//
-
-#include <glib.h>
+/**************************************************************************
+ **
+ ** sngrep - SIP Messages flow viewer
+ **
+ ** Copyright (C) 2013-2018 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2018 Irontec SL. All rights reserved.
+ **
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
+ **
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
+ **
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **
+ ****************************************************************************/
+/**
+ * @file glib-utils.c
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief Helper function for glib containers
+ *
+ */
 #include "glib-utils.h"
 
 gpointer
@@ -30,7 +53,7 @@ g_sequence_index(GSequence *sequence, gconstpointer item)
 {
     GSequenceIter *it = g_sequence_get_begin_iter(sequence);
 
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         if (g_sequence_get(it) == item) {
             return g_sequence_iter_get_position(it);
         }
@@ -44,7 +67,7 @@ g_sequence_remove_data(GSequence *sequence, gconstpointer item)
 {
     GSequenceIter *it = g_sequence_get_begin_iter(sequence);
 
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         if (g_sequence_get(it) == item) {
             g_sequence_remove(g_sequence_iter_prev(it));
             break;
@@ -56,8 +79,8 @@ void
 g_sequence_remove_all(GSequence *sequence)
 {
     g_sequence_remove_range(
-        g_sequence_get_begin_iter(sequence),
-        g_sequence_get_end_iter(sequence)
+            g_sequence_get_begin_iter(sequence),
+            g_sequence_get_end_iter(sequence)
     );
 }
 
@@ -65,7 +88,7 @@ void
 g_sequence_append_sequence(GSequence *sequence, GSequence *items)
 {
     GSequenceIter *it = g_sequence_get_begin_iter(items);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
         g_sequence_append(sequence, g_sequence_get(it));
     }
 }
@@ -76,7 +99,7 @@ g_sequence_copy(GSequence *sequence, GEqualFunc filter_func, gpointer filter_dat
     GSequence *copy = g_sequence_new(NULL);
 
     GSequenceIter *it = g_sequence_get_begin_iter(sequence);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
+    for (; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
 
         if (filter_func && !filter_func(g_sequence_get(it), filter_data))
             continue;
@@ -187,60 +210,16 @@ g_ptr_array_remove_array(GPtrArray *array, GPtrArray *items)
     g_ptr_array_foreach(items, (GFunc) g_ptr_array_remove_cb, array);
 }
 
-/**
- * g_ptr_array_find: (skip)
- * @haystack: pointer array to be searched
- * @needle: pointer to look for
- * @index_: (optional) (out caller-allocates): return location for the index of
- *    the element, if found
- *
- * Checks whether @needle exists in @haystack. If the element is found, %TRUE is
- * returned and the element’s index is returned in @index_ (if non-%NULL).
- * Otherwise, %FALSE is returned and @index_ is undefined. If @needle exists
- * multiple times in @haystack, the index of the first instance is returned.
- *
- * This does pointer comparisons only. If you want to use more complex equality
- * checks, such as string comparisons, use g_ptr_array_find_with_equal_func().
- *
- * Returns: %TRUE if @needle is one of the elements of @haystack
- * Since: 2.54
- */
+#if !GLIB_CHECK_VERSION(2, 54, 0)
 gboolean
-g_ptr_array_find (GPtrArray     *haystack,
-                  gconstpointer  needle,
-                  guint         *index_)
+g_ptr_array_find(GPtrArray *haystack, gconstpointer needle, guint *index_)
 {
-    return g_ptr_array_find_with_equal_func (haystack, needle, NULL, index_);
+    return g_ptr_array_find_with_equal_func(haystack, needle, NULL, index_);
 }
 
-/**
- * g_ptr_array_find_with_equal_func: (skip)
- * @haystack: pointer array to be searched
- * @needle: pointer to look for
- * @equal_func: (nullable): the function to call for each element, which should
- *    return %TRUE when the desired element is found; or %NULL to use pointer
- *    equality
- * @index_: (optional) (out caller-allocates): return location for the index of
- *    the element, if found
- *
- * Checks whether @needle exists in @haystack, using the given @equal_func.
- * If the element is found, %TRUE is returned and the element’s index is
- * returned in @index_ (if non-%NULL). Otherwise, %FALSE is returned and @index_
- * is undefined. If @needle exists multiple times in @haystack, the index of
- * the first instance is returned.
- *
- * @equal_func is called with the element from the array as its first parameter,
- * and @needle as its second parameter. If @equal_func is %NULL, pointer
- * equality is used.
- *
- * Returns: %TRUE if @needle is one of the elements of @haystack
- * Since: 2.54
- */
 gboolean
-g_ptr_array_find_with_equal_func (GPtrArray     *haystack,
-                                  gconstpointer  needle,
-                                  GEqualFunc     equal_func,
-                                  guint         *index_)
+g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle,
+        GEqualFunc equal_func, guint *index_)
 {
     guint i;
 
@@ -249,10 +228,8 @@ g_ptr_array_find_with_equal_func (GPtrArray     *haystack,
     if (equal_func == NULL)
         equal_func = g_direct_equal;
 
-    for (i = 0; i < haystack->len; i++)
-    {
-        if (equal_func (g_ptr_array_index (haystack, i), needle))
-        {
+    for (i = 0; i < haystack->len; i++) {
+        if (equal_func(g_ptr_array_index (haystack, i), needle)) {
             if (index_ != NULL)
                 *index_ = i;
             return TRUE;
@@ -261,3 +238,4 @@ g_ptr_array_find_with_equal_func (GPtrArray     *haystack,
 
     return FALSE;
 }
+#endif
