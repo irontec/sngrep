@@ -270,7 +270,7 @@ call_raw_handle_key(Window *ui, int key)
             case ACTION_TOGGLE_SYNTAX:
             case ACTION_CYCLE_COLOR:
                 // Handle colors using default handler
-                ui_default_handle_key(ui, key);
+                ncurses_default_keyhandler(ui, key);
                 // Create a new pad (forces messages draw)
                 delwin(info->pad);
                 info->pad = newpad(500, COLS);
@@ -315,7 +315,7 @@ call_raw_set_group(SipCallGroup *group)
     if (!group)
         return -1;
 
-    if (!(ui = ui_find_by_type(PANEL_CALL_RAW)))
+    if (!(ui = ncurses_find_by_type(PANEL_CALL_RAW)))
         return -1;
 
     if (!(info = call_raw_info(ui)))
@@ -341,7 +341,7 @@ call_raw_set_msg(SipMsg *msg)
     if (!msg)
         return -1;
 
-    if (!(ui = ui_find_by_type(PANEL_CALL_RAW)))
+    if (!(ui = ncurses_find_by_type(PANEL_CALL_RAW)))
         return -1;
 
     if (!(info = call_raw_info(ui)))

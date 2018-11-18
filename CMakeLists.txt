@@ -37,7 +37,7 @@ set(SOURCES
         src/ncurses/ui_call_flow.c
         src/ncurses/call_list.c
         src/ncurses/ui_call_raw.c
-        src/ncurses/ui_column_select.c
+        src/ncurses/column_select.c
         src/ncurses/ui_filter.c
         src/ncurses/ui_msg_diff.c
         src/ncurses/ui_save.c

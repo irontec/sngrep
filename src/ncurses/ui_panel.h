@@ -43,7 +43,9 @@ enum key_handler_ret {
     //! Panel has not handled the key, try defualt key handler
     KEY_NOT_HANDLED     = -1,
     //! Panel destroys and requests previous panel to handle key
-    KEY_PROPAGATED      = -2
+    KEY_PROPAGATED      = -2,
+    //! Panel request destroy
+    KEY_DESTROY         = -3
 };
 
 /**
@@ -65,7 +67,7 @@ enum WindowTypes {
     //! Message comprare
     PANEL_MSG_DIFF,
     //! Column selector panel
-    PANEL_COLUMN_SELECT,
+    WINDOW_COLUMN_SELECT,
     //! Settings panel
     PANEL_SETTINGS,
     //! Stats panel

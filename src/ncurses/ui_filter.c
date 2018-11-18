@@ -394,7 +394,7 @@ filter_save_options(Window *ui)
     // Force filter evaluation
     filter_reset_calls();
     // TODO FIXME Refresh call list FIXME
-    call_list_clear(ui_find_by_type(WINDOW_CALL_LIST));
+    call_list_clear(ncurses_find_by_type(WINDOW_CALL_LIST));
 
 }
 

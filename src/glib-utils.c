@@ -210,6 +210,14 @@ g_ptr_array_remove_array(GPtrArray *array, GPtrArray *items)
     g_ptr_array_foreach(items, (GFunc) g_ptr_array_remove_cb, array);
 }
 
+void
+g_ptr_array_remove_all(GPtrArray *array)
+{
+    if (g_ptr_array_len(array) != 0) {
+        g_ptr_array_remove_range(array, 0, g_ptr_array_len(array));
+    }
+}
+
 #if !GLIB_CHECK_VERSION(2, 54, 0)
 gboolean
 g_ptr_array_find(GPtrArray *haystack, gconstpointer needle, guint *index_)

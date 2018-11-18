@@ -57,7 +57,6 @@ extern Window ui_call_raw;
 extern Window ui_filter;
 extern Window ui_save;
 extern Window ui_msg_diff;
-extern Window ui_column_select;
 extern Window ui_settings;
 extern Window ui_stats;
 
@@ -98,13 +97,13 @@ ncurses_create_window(enum WindowTypes type);
  * @brief Find a ui from its pannel pointer
  */
 Window *
-ui_find_by_panel(PANEL *panel);
+ncurses_find_by_panel(PANEL *panel);
 
 /**
  * @brief Find a ui form its panel id
  */
 Window *
-ui_find_by_type(enum WindowTypes type);
+ncurses_find_by_type(enum WindowTypes type);
 
 /**
  * @brief Wait for user input in topmost panel
@@ -122,11 +121,11 @@ ui_wait_for_input();
  * If ui doesn't handle the given key (ui_handle_key returns the key value)
  * then the default handler will be invoked
  *
- * @param ui Current displayed UI structure
+ * @param window Current displayed UI structure
  * @param key key pressed by user
  */
 int
-ui_default_handle_key(Window *ui, int key);
+ncurses_default_keyhandler(Window *window, int key);
 
 /**
  * @brief Call Resize function in all panels in the stack

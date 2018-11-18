@@ -120,7 +120,7 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
                 break;
             case FILTER_CALL_LIST:
                 // FIXME Maybe call should know hot to calculate this line
-                call_list_line_text(ui_find_by_type(WINDOW_CALL_LIST), call, data);
+                call_list_line_text(ncurses_find_by_type(WINDOW_CALL_LIST), call, data);
                 break;
             default:
                 // Unknown filter id

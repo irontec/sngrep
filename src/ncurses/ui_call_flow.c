@@ -1299,7 +1299,7 @@ call_flow_set_group(SipCallGroup *group)
     Window *ui;
     call_flow_info_t *info;
 
-    if (!(ui = ui_find_by_type(PANEL_CALL_FLOW)))
+    if (!(ui = ncurses_find_by_type(PANEL_CALL_FLOW)))
         return -1;
 
     if (!(info = call_flow_info(ui)))

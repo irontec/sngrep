@@ -47,6 +47,7 @@
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_save.h"
 #include "storage.h"
+#include "column_select.h"
 
 /**
  * @brief Get custom information of given panel
@@ -57,7 +58,7 @@
  * @param window UI structure pointer
  * @return a pointer to info structure of given panel
  */
-CallListInfo *
+static CallListInfo *
 call_list_info(Window *window)
 {
     return (CallListInfo*) panel_userptr(window->panel);
@@ -214,8 +215,8 @@ call_list_resize(Window *window)
 static void
 call_list_draw_header(Window *window)
 {
-    const char *infile, *coldesc;
-    int colpos, collen;
+    const char *infile;
+    int colpos;
     const char *countlb;
     const char *device, *filterbpf;
 
@@ -297,26 +298,25 @@ call_list_draw_header(Window *window)
         colpos = 6;
     }
 
-    for (guint i = 0; i < info->columncnt; i++) {
-        // Get current column width
-        collen = info->columns[i].width;
+    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
+        CallListColumn *column = g_ptr_array_index(info->columns, i);
         // Get current column title
-        coldesc = sip_attr_get_title(info->columns[i].id);
+        const gchar *coldesc = sip_attr_get_title(column->id);
 
         // Check if the column will fit in the remaining space of the screen
         if (colpos + strlen(coldesc) >= (guint) window->width)
             break;
 
         // Print sort column indicator
-        if (info->columns[i].id == sort.by) {
+        if (column->id == sort.by) {
             wattron(window->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
             gchar sortind = (gchar) ((sort.asc) ? '^' : 'v');
-            mvwprintw(window->win, 4, colpos, "%c%.*s", sortind, collen, coldesc);
+            mvwprintw(window->win, 4, colpos, "%c%.*s", sortind, column->width, coldesc);
             wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
         } else {
-            mvwprintw(window->win, 4, colpos, "%.*s", collen, coldesc);
+            mvwprintw(window->win, 4, colpos, "%.*s", column->width, coldesc);
         }
-        colpos += collen + 1;
+        colpos += column->width + 1;
     }
 
     // Print Autoscroll indicator
@@ -339,7 +339,6 @@ call_list_draw_header(Window *window)
     } else {
         mvwprintw(window->win, 1, 45, "%s: %d", countlb, stats.total);
     }
-
 }
 
 /**
@@ -381,12 +380,9 @@ call_list_draw_footer(Window *window)
 static void
 call_list_draw_list(Window *window)
 {
-    WINDOW *list_win;
     int listh, listw, cline = 0;
     SipCall *call = NULL;
-    int collen;
     char coltext[SIP_ATTR_MAXLEN];
-    int colid;
     int colpos;
     int color;
 
@@ -395,7 +391,7 @@ call_list_draw_list(Window *window)
     g_return_if_fail(info != NULL);
 
     // Get window of call list panel
-    list_win = info->list_win;
+    WINDOW *list_win = info->list_win;
     getmaxyx(list_win, listh, listw);
 
     // Get the list of calls that are goint to be displayed
@@ -443,36 +439,33 @@ call_list_draw_list(Window *window)
 
         // Print requested columns
         colpos = 6;
-        for (guint j = 0; j < info->columncnt; j++) {
-            // Get current column id
-            colid = info->columns[j].id;
-            // Get current column width
-            collen = info->columns[j].width;
+        for (guint j = 0; j < g_ptr_array_len(info->columns); j++) {
+            CallListColumn *column = g_ptr_array_index(info->columns, j);
 
             // Check if next column fits on window width
-            if (colpos + collen >= listw)
+            if (colpos + column->width >= (guint) listw)
                 break;
 
             // Initialize column text
             memset(coltext, 0, sizeof(coltext));
 
             // Get call attribute for current column
-            if (!call_get_attribute(call, colid, coltext)) {
-                colpos += collen + 1;
+            if (!call_get_attribute(call, column->id, coltext)) {
+                colpos += column->width + 1;
                 continue;
             }
 
             // Enable attribute color (if not current one)
             color = 0;
             if (info->cur_idx !=  i) {
-                if ((color = sip_attr_get_color(colid, coltext)) > 0) {
+                if ((color = sip_attr_get_color(column->id, coltext)) > 0) {
                     wattron(list_win, color);
                 }
             }
 
             // Add the column text to the existing columns
-            mvwprintw(list_win, cline, colpos, "%.*s", collen, coltext);
-            colpos += collen + 1;
+            mvwprintw(list_win, cline, colpos, "%.*s", column->width, coltext);
+            colpos += column->width + 1;
 
             // Disable attribute color
             if (color > 0)
@@ -583,13 +576,11 @@ call_list_line_text(Window *window, SipCall *call, char *text)
     g_return_val_if_fail(info != NULL, text);
 
     // Print requested columns
-    for (guint i = 0; i < info->columncnt; i++) {
-
-        // Get current column id
-        enum sip_attr_id colid = info->columns[i].id;
+    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
+        CallListColumn *column = g_ptr_array_index(info->columns, i);
 
         // Get current column width
-        gint collen = info->columns[i].width;
+        gint collen = column->width;
 
         // Check if next column fits on window width
         if ((gint)(strlen(text) + collen) >= window->width)
@@ -604,7 +595,7 @@ call_list_line_text(Window *window, SipCall *call, char *text)
         memset(call_attr, 0, sizeof(call_attr));
 
         // Get call attribute for current column
-        if (call_get_attribute(call, colid, call_attr)) {
+        if (call_get_attribute(call, column->id, call_attr)) {
             sprintf(coltext, "%.*s", collen, call_attr);
         }
         // Add the column text to the existing columns
@@ -635,11 +626,12 @@ call_list_select_sort_attribute(Window *window)
     mvderwin(info->list_win, 5, 12);
 
     // Create menu entries
-    for (guint i = 0; i < info->columncnt; i++) {
-        info->items[i] = new_item(sip_attr_get_name(info->columns[i].id), 0);
+    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
+        CallListColumn *column = g_ptr_array_index(info->columns, i);
+        info->items[i] = new_item(sip_attr_get_name(column->id), 0);
     }
 
-    info->items[info->columncnt] = NULL;
+    info->items[g_ptr_array_len(info->columns)] = NULL;
     // Create the columns menu and post it
     info->menu = new_menu(info->items);
 
@@ -845,7 +837,7 @@ static int
 call_list_handle_key(Window *window, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
-    Window *next_ui;
+    Window *next_window;
     SipCallGroup *group;
     int action = -1;
     SipCall *call;
@@ -931,7 +923,8 @@ call_list_handle_key(Window *window, int key)
                 ncurses_create_window(PANEL_FILTER);
                 break;
             case ACTION_SHOW_COLUMNS:
-                ncurses_create_window(PANEL_COLUMN_SELECT);
+                next_window = ncurses_create_window(WINDOW_COLUMN_SELECT);
+                column_select_set_columns(next_window, info->columns);
                 break;
             case ACTION_SHOW_STATS:
                 ncurses_create_window(PANEL_STATS);
@@ -941,8 +934,8 @@ call_list_handle_key(Window *window, int key)
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }
-                next_ui = ncurses_create_window(PANEL_SAVE);
-                save_set_group(next_ui, info->group);
+                next_window = ncurses_create_window(PANEL_SAVE);
+                save_set_group(next_window, info->group);
                 break;
             case ACTION_CLEAR:
                 // Clear group calls
@@ -1108,18 +1101,19 @@ call_list_help(G_GNUC_UNUSED Window *window)
  * @param width Column Width
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
-void
+static void
 call_list_add_column(Window *window, enum sip_attr_id id, const char* attr,
                      const char *title, int width)
 {
     CallListInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
-    info->columns[info->columncnt].id = id;
-    info->columns[info->columncnt].attr = attr;
-    info->columns[info->columncnt].title = title;
-    info->columns[info->columncnt].width = (guint) width;
-    info->columncnt++;
+    CallListColumn *column = g_malloc0(sizeof(CallListColumn));
+    column->id = id;
+    column->attr = attr;
+    column->title = title;
+    column->width = (guint) width;
+    g_ptr_array_add(info->columns, column);
 }
 
 void
@@ -1159,6 +1153,7 @@ call_list_free(Window *window)
 
     // Deallocate window private data
     call_group_free(info->group);
+    g_ptr_array_free(info->columns, TRUE);
     g_ptr_array_free(info->dcalls, FALSE);
     delwin(info->list_win);
     g_free(info);
@@ -1188,6 +1183,7 @@ call_list_new()
     set_panel_userptr(window->panel, (void*) info);
 
     // Add configured columns
+    info->columns = g_ptr_array_new_with_free_func(g_free);
     for (guint i = 0; i < SIP_ATTR_COUNT; i++) {
         // Get column attribute name from options
         gchar *option = g_strdup_printf("cl.column%d", i);

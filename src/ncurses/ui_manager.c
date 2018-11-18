@@ -41,7 +41,7 @@
 #include "ncurses/ui_call_raw.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_msg_diff.h"
-#include "ncurses/ui_column_select.h"
+#include "ncurses/column_select.h"
 #include "ncurses/ui_save.h"
 #include "ncurses/ui_settings.h"
 
@@ -58,7 +58,6 @@ static Window *panel_pool[] = {
     &ui_filter,
     &ui_save,
     &ui_msg_diff,
-    &ui_column_select,
     &ui_settings,
     &ui_stats
 };
@@ -160,7 +159,16 @@ Window *
 ncurses_create_window(enum WindowTypes type)
 {
     // Find the panel of given type and create it
-    return ui_create(ui_find_by_type(type));
+    return ui_create(ncurses_find_by_type(type));
+}
+
+void
+ncurses_destroy_window(Window *window)
+{
+    // Remove from the window list
+    g_ptr_array_remove(windows, window);
+    // Deallocate window memory
+    ui_destroy(window);
 }
 
 static gboolean
@@ -176,7 +184,7 @@ ncurses_window_type_cmp(Window *window, gpointer type)
 }
 
 Window *
-ui_find_by_panel(PANEL *panel)
+ncurses_find_by_panel(PANEL *panel)
 {
     guint index;
     if (g_ptr_array_find_with_equal_func(windows, panel,
@@ -195,7 +203,7 @@ ui_find_by_panel(PANEL *panel)
 }
 
 Window *
-ui_find_by_type(enum WindowTypes type)
+ncurses_find_by_type(enum WindowTypes type)
 {
     int i;
 
@@ -211,6 +219,13 @@ ui_find_by_type(enum WindowTypes type)
         g_ptr_array_add(windows, window);
         return window;
     }
+
+    if (type == WINDOW_COLUMN_SELECT) {
+        Window *window = column_select_new();
+        g_ptr_array_add(windows, window);
+        return window;
+    }
+
 
     // Return ui pointer if found
     for (i = 0; i < PANEL_COUNT; i++) {
@@ -231,7 +246,7 @@ ui_wait_for_input()
     while ((panel = panel_below(NULL))) {
 
         // Get panel interface structure
-        ui = ui_find_by_panel(panel);
+        ui = ncurses_find_by_panel(panel);
 
         // Set character input timeout 200 ms
         halfdelay(REFRESHTHSECS);
@@ -278,12 +293,15 @@ ui_wait_for_input()
                 continue;
             } else if (hld == KEY_PROPAGATED) {
                 // Destroy current panel
-                ui_destroy(ui);
+                ncurses_destroy_window(ui);
                 // Try to handle this key with the previus panel
-                ui = ui_find_by_panel(panel_below(NULL));
+                ui = ncurses_find_by_panel(panel_below(NULL));
+            } else if (hld == KEY_DESTROY) {
+                ncurses_destroy_window(ui);
+                break;
             } else {
                 // Key not handled by UI nor propagated. Use default handler
-                hld = ui_default_handle_key(ui, c);
+                hld = ncurses_default_keyhandler(ui, c);
             }
         }
         capture_unlock(capture_manager());
@@ -293,7 +311,7 @@ ui_wait_for_input()
 }
 
 int
-ui_default_handle_key(Window *ui, int key)
+ncurses_default_keyhandler(Window *window, int key)
 {
     int action = -1;
 
@@ -324,10 +342,10 @@ ui_default_handle_key(Window *ui, int key)
                 capture_manager()->paused = !capture_manager()->paused;
                 break;
             case ACTION_SHOW_HELP:
-                ui_help(ui);
+                ui_help(window);
                 break;
             case ACTION_PREV_SCREEN:
-                ui_destroy(ui);
+                ncurses_destroy_window(window);
                 break;
             default:
                 // Parse next action
@@ -349,7 +367,7 @@ ui_resize_panels()
     // While there are still panels
     while ((panel = panel_below(panel))) {
         // Invoke resize for this panel
-        ui_resize_panel(ui_find_by_panel(panel));
+        ui_resize_panel(ncurses_find_by_panel(panel));
     }
 }
 

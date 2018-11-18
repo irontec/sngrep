@@ -84,9 +84,7 @@ struct _CallListInfo {
     //! Selected calls with space
     SipCallGroup *group;
     //! Displayed column list, make it configurable in the future
-    CallListColumn columns[SIP_ATTR_COUNT];
-    //! Displayed column count.
-    guint columncnt;
+    GPtrArray *columns;
     //! List subwindow
     WINDOW *list_win;
     //! Form that contains the display filter
@@ -122,18 +120,6 @@ Window *
 call_list_new();
 
 /**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param window UI structure pointer
- * @return a pointer to info structure of given panel
- */
-CallListInfo *
-call_list_info(Window *window);
-
-/**
  * @brief Get List line from the given call
  *
  * Get the list line of the given call to display in the list
@@ -146,22 +132,6 @@ call_list_info(Window *window);
  */
 const char*
 call_list_line_text(Window *window, SipCall *call, char *text);
-
-/**
- * @brief Add a column the Call List
- *
- * This function will add a new column to the Call List panel
- * @todo Columns are not configurable yet.
- *
- * @param window UI structure pointer
- * @param id SIP call attribute id
- * @param attr SIP call attribute name
- * @param title SIP call attribute description
- * @param width Column Width
- */
-void
-call_list_add_column(Window *window, enum sip_attr_id id, const char* attr,
-                     const char *title, int width);
 
 /**
  * @brief Remove all calls from the list and calls storage
