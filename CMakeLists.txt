@@ -42,7 +42,7 @@ set(SOURCES
         src/ncurses/ui_msg_diff.c
         src/ncurses/ui_save.c
         src/ncurses/ui_settings.c
-        src/ncurses/ui_stats.c
+        src/ncurses/stats.c
         src/ncurses/window.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c

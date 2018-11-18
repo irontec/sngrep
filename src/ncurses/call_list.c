@@ -927,7 +927,7 @@ call_list_handle_key(Window *window, int key)
                 column_select_set_columns(next_window, info->columns);
                 break;
             case ACTION_SHOW_STATS:
-                ncurses_create_window(PANEL_STATS);
+                ncurses_create_window(WINDOW_STATS);
                 break;
             case ACTION_SAVE:
                 if (capture_sources_count(capture_manager()) > 1) {

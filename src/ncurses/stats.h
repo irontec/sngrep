@@ -20,13 +20,13 @@
  **
  ****************************************************************************/
 /**
- * @file ui_stats.h
+ * @file stats.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage ui window for capture stats display
  */
-#ifndef __SNGREP_UI_STATS_H
-#define __SNGREP_UI_STATS_H
+#ifndef __SNGREP_STATS_H
+#define __SNGREP_STATS_H
 
 #include "ncurses/manager.h"
 
@@ -38,9 +38,8 @@
  * static information of the panel that will never be
  * redrawn.
  *
- * @param ui UI structure pointer
  */
-void
-stats_create(Window *ui);
+Window *
+stats_new();
 
-#endif /* __SNGREP_UI_STATS_H */
+#endif /* __SNGREP_STATS_H */

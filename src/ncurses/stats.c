@@ -20,10 +20,10 @@
  **
  ****************************************************************************/
 /**
- * @file ui_stats.c
+ * @file stats.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in ui_stats.h
+ * @brief Source of functions defined in stats.h
  */
 /*
  * +---------------------------------------------------------+
@@ -58,24 +58,14 @@
 #include "glib-utils.h"
 #include "storage.h"
 #include "packet/dissectors/packet_sip.h"
-#include "ui_stats.h"
+#include "stats.h"
 
-/**
- * Ui Structure definition for Stats panel
- */
-Window ui_stats = {
-    .type = PANEL_STATS,
-    .panel = NULL,
-    .create = stats_create,
-    .destroy = window_deinit,
-    .handle_key = NULL
-};
-
-void
-stats_create(Window *ui)
+Window *
+stats_new()
 {
-    Call *call;
-    Message *msg;
+    Window *window = g_malloc0(sizeof(Window));
+    window->type = WINDOW_STATS;
+    window->destroy = window_deinit;
 
     // Counters!
     struct {
@@ -87,17 +77,17 @@ stats_create(Window *ui)
     memset(&stats, 0, sizeof(stats));
 
     // Calculate window dimensions
-    window_init(ui, 25, 60);
+    window_init(window, 25, 60);
 
     // Set the window title and boxes
-    mvwprintw(ui->win, 1, ui->width / 2 - 9, "Stats Information");
-    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(ui->panel);
-    mvwhline(ui->win, 10, 1, ACS_HLINE, ui->width - 1);
-    mvwaddch(ui->win, 10, 0, ACS_LTEE);
-    mvwaddch(ui->win, 10, ui->width - 1, ACS_RTEE);
-    mvwprintw(ui->win, ui->height - 2, ui->width / 2 - 9, "Press ESC to leave");
-    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwprintw(window->win, 1, window->width / 2 - 9, "Stats Information");
+    wattron(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    title_foot_box(window->panel);
+    mvwhline(window->win, 10, 1, ACS_HLINE, window->width - 1);
+    mvwaddch(window->win, 10, 0, ACS_LTEE);
+    mvwaddch(window->win, 10, window->width - 1, ACS_RTEE);
+    mvwprintw(window->win, window->height - 2, window->width / 2 - 9, "Press ESC to leave");
+    wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Parse the data
     GPtrArray *calls = storage_calls();
@@ -105,12 +95,12 @@ stats_create(Window *ui)
 
     // Ignore this screen when no dialog exists
     if (!stats.dtotal) {
-        mvwprintw(ui->win, 3, 3, "No information to display");
-        return;
+        mvwprintw(window->win, 3, 3, "No information to display");
+        return window;
     }
 
     for (guint i = 0; i < g_ptr_array_len(calls); i++) {
-        call = g_ptr_array_index(calls, i);
+        Call *call = g_ptr_array_index(calls, i);
 
         // If this dialog is a call
         if (call->state) {
@@ -130,7 +120,7 @@ stats_create(Window *ui)
 
         // For each message in call
         for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
-            msg = g_ptr_array_index(call->msgs, i);
+            Message *msg = g_ptr_array_index(call->msgs, i);
             guint method = packet_sip_method(msg->packet);
 
             // Increase message counter
@@ -167,38 +157,40 @@ stats_create(Window *ui)
     }
 
     // Print parses data
-    mvwprintw(ui->win, 3,  3,  "Dialogs: %d", stats.dtotal);
-    mvwprintw(ui->win, 4,  3,  "Calls: %d (%.1f\\%)", stats.dcalls, (float) stats.dcalls * 100 / stats.dtotal);
-    mvwprintw(ui->win, 5,  3,  "Messages: %d", stats.mtotal);
+    mvwprintw(window->win, 3,  3,  "Dialogs: %d", stats.dtotal);
+    mvwprintw(window->win, 4,  3,  "Calls: %d (%.1f%%)", stats.dcalls, (float) stats.dcalls * 100 / stats.dtotal);
+    mvwprintw(window->win, 5,  3,  "Messages: %d", stats.mtotal);
     // Print status of calls if any
     if (stats.dcalls) {
-        mvwprintw(ui->win, 3,  33, "COMPLETED:  %d (%.1f\\%)", stats.completed, (float) stats.completed * 100 / stats.dcalls);
-        mvwprintw(ui->win, 4,  33, "CANCELLED:  %d (%.1f\\%)", stats.cancelled, (float) stats.cancelled * 100 / stats.dcalls);
-        mvwprintw(ui->win, 5,  33, "IN CALL:    %d (%.1f\\%)", stats.incall,    (float) stats.incall * 100 / stats.dcalls);
-        mvwprintw(ui->win, 6,  33, "REJECTED:   %d (%.1f\\%)", stats.rejected,  (float) stats.rejected * 100 / stats.dcalls);
-        mvwprintw(ui->win, 7,  33, "BUSY:       %d (%.1f\\%)", stats.busy,      (float) stats.busy * 100 / stats.dcalls);
-        mvwprintw(ui->win, 8,  33, "DIVERTED:   %d (%.1f\\%)", stats.diverted,  (float) stats.diverted * 100 / stats.dcalls);
-        mvwprintw(ui->win, 9,  33, "CALL SETUP: %d (%.1f\\%)", stats.setup,     (float) stats.setup * 100 / stats.dcalls);
+        mvwprintw(window->win, 3,  33, "COMPLETED:  %d (%.1f%%)", stats.completed, (float) stats.completed * 100 / stats.dcalls);
+        mvwprintw(window->win, 4,  33, "CANCELLED:  %d (%.1f%%)", stats.cancelled, (float) stats.cancelled * 100 / stats.dcalls);
+        mvwprintw(window->win, 5,  33, "IN CALL:    %d (%.1f%%)", stats.incall,    (float) stats.incall * 100 / stats.dcalls);
+        mvwprintw(window->win, 6,  33, "REJECTED:   %d (%.1f%%)", stats.rejected,  (float) stats.rejected * 100 / stats.dcalls);
+        mvwprintw(window->win, 7,  33, "BUSY:       %d (%.1f%%)", stats.busy,      (float) stats.busy * 100 / stats.dcalls);
+        mvwprintw(window->win, 8,  33, "DIVERTED:   %d (%.1f%%)", stats.diverted,  (float) stats.diverted * 100 / stats.dcalls);
+        mvwprintw(window->win, 9,  33, "CALL SETUP: %d (%.1f%%)", stats.setup,     (float) stats.setup * 100 / stats.dcalls);
     }
 
-    mvwprintw(ui->win, 11, 3, "INVITE:    %d (%.1f\\%)", stats.invite,    (float) stats.invite * 100 / stats.mtotal);
-    mvwprintw(ui->win, 12, 3, "REGISTER:  %d (%.1f\\%)", stats.regist,    (float) stats.regist * 100 / stats.mtotal);
-    mvwprintw(ui->win, 13, 3, "SUBSCRIBE: %d (%.1f\\%)", stats.subscribe, (float) stats.subscribe * 100 / stats.mtotal);
-    mvwprintw(ui->win, 14, 3, "UPDATE:    %d (%.1f\\%)", stats.update,    (float) stats.update * 100 / stats.mtotal);
-    mvwprintw(ui->win, 15, 3, "NOTIFY:    %d (%.1f\\%)", stats.notify,    (float) stats.notify * 100 / stats.mtotal);
-    mvwprintw(ui->win, 16, 3, "OPTIONS:   %d (%.1f\\%)", stats.options,   (float) stats.options * 100 / stats.mtotal);
-    mvwprintw(ui->win, 17, 3, "PUBLISH:   %d (%.1f\\%)", stats.publish,   (float) stats.publish * 100 / stats.mtotal);
-    mvwprintw(ui->win, 18, 3, "MESSAGE:   %d (%.1f\\%)", stats.message,   (float) stats.message * 100 / stats.mtotal);
-    mvwprintw(ui->win, 19, 3, "INFO:      %d (%.1f\\%)", stats.info,      (float) stats.info * 100 / stats.mtotal);
-    mvwprintw(ui->win, 20, 3, "BYE:       %d (%.1f\\%)", stats.bye,       (float) stats.bye * 100 / stats.mtotal);
-    mvwprintw(ui->win, 21, 3, "CANCEL:    %d (%.1f\\%)", stats.cancel,    (float) stats.cancel * 100 / stats.mtotal);
+    mvwprintw(window->win, 11, 3, "INVITE:    %d (%.1f%%)", stats.invite,    (float) stats.invite * 100 / stats.mtotal);
+    mvwprintw(window->win, 12, 3, "REGISTER:  %d (%.1f%%)", stats.regist,    (float) stats.regist * 100 / stats.mtotal);
+    mvwprintw(window->win, 13, 3, "SUBSCRIBE: %d (%.1f%%)", stats.subscribe, (float) stats.subscribe * 100 / stats.mtotal);
+    mvwprintw(window->win, 14, 3, "UPDATE:    %d (%.1f%%)", stats.update,    (float) stats.update * 100 / stats.mtotal);
+    mvwprintw(window->win, 15, 3, "NOTIFY:    %d (%.1f%%)", stats.notify,    (float) stats.notify * 100 / stats.mtotal);
+    mvwprintw(window->win, 16, 3, "OPTIONS:   %d (%.1f%%)", stats.options,   (float) stats.options * 100 / stats.mtotal);
+    mvwprintw(window->win, 17, 3, "PUBLISH:   %d (%.1f%%)", stats.publish,   (float) stats.publish * 100 / stats.mtotal);
+    mvwprintw(window->win, 18, 3, "MESSAGE:   %d (%.1f%%)", stats.message,   (float) stats.message * 100 / stats.mtotal);
+    mvwprintw(window->win, 19, 3, "INFO:      %d (%.1f%%)", stats.info,      (float) stats.info * 100 / stats.mtotal);
+    mvwprintw(window->win, 20, 3, "BYE:       %d (%.1f%%)", stats.bye,       (float) stats.bye * 100 / stats.mtotal);
+    mvwprintw(window->win, 21, 3, "CANCEL:    %d (%.1f%%)", stats.cancel,    (float) stats.cancel * 100 / stats.mtotal);
 
-    mvwprintw(ui->win, 11, 33, "1XX: %d (%.1f\\%)", stats.r100, (float) stats.r100 * 100 / stats.mtotal);
-    mvwprintw(ui->win, 12, 33, "2XX: %d (%.1f\\%)", stats.r200, (float) stats.r200 * 100 / stats.mtotal);
-    mvwprintw(ui->win, 13, 33, "3XX: %d (%.1f\\%)", stats.r300, (float) stats.r300 * 100 / stats.mtotal);
-    mvwprintw(ui->win, 14, 33, "4XX: %d (%.1f\\%)", stats.r400, (float) stats.r400 * 100 / stats.mtotal);
-    mvwprintw(ui->win, 15, 33, "5XX: %d (%.1f\\%)", stats.r500, (float) stats.r500 * 100 / stats.mtotal);
-    mvwprintw(ui->win, 16, 33, "6XX: %d (%.1f\\%)", stats.r600, (float) stats.r600 * 100 / stats.mtotal);
-    mvwprintw(ui->win, 17, 33, "7XX: %d (%.1f\\%)", stats.r700, (float) stats.r700 * 100 / stats.mtotal);
-    mvwprintw(ui->win, 18, 33, "8XX: %d (%.1f\\%)", stats.r800, (float) stats.r800 * 100 / stats.mtotal);
+    mvwprintw(window->win, 11, 33, "1XX: %d (%.1f%%)", stats.r100, (float) stats.r100 * 100 / stats.mtotal);
+    mvwprintw(window->win, 12, 33, "2XX: %d (%.1f%%)", stats.r200, (float) stats.r200 * 100 / stats.mtotal);
+    mvwprintw(window->win, 13, 33, "3XX: %d (%.1f%%)", stats.r300, (float) stats.r300 * 100 / stats.mtotal);
+    mvwprintw(window->win, 14, 33, "4XX: %d (%.1f%%)", stats.r400, (float) stats.r400 * 100 / stats.mtotal);
+    mvwprintw(window->win, 15, 33, "5XX: %d (%.1f%%)", stats.r500, (float) stats.r500 * 100 / stats.mtotal);
+    mvwprintw(window->win, 16, 33, "6XX: %d (%.1f%%)", stats.r600, (float) stats.r600 * 100 / stats.mtotal);
+    mvwprintw(window->win, 17, 33, "7XX: %d (%.1f%%)", stats.r700, (float) stats.r700 * 100 / stats.mtotal);
+    mvwprintw(window->win, 18, 33, "8XX: %d (%.1f%%)", stats.r800, (float) stats.r800 * 100 / stats.mtotal);
+
+    return window;
 }

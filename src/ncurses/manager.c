@@ -42,6 +42,7 @@
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_msg_diff.h"
 #include "ncurses/column_select.h"
+#include "ncurses/stats.h"
 #include "ncurses/ui_save.h"
 #include "ncurses/ui_settings.h"
 
@@ -58,8 +59,7 @@ static Window *panel_pool[] = {
     &ui_filter,
     &ui_save,
     &ui_msg_diff,
-    &ui_settings,
-    &ui_stats
+    &ui_settings
 };
 
 static GPtrArray *windows;
@@ -221,6 +221,12 @@ ncurses_find_by_type(enum WindowTypes type)
 
     if (type == WINDOW_COLUMN_SELECT) {
         Window *window = column_select_new();
+        g_ptr_array_add(windows, window);
+        return window;
+    }
+
+    if (type == WINDOW_STATS) {
+        Window *window = stats_new();
         g_ptr_array_add(windows, window);
         return window;
     }

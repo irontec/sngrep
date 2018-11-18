@@ -71,7 +71,7 @@ enum WindowTypes {
     //! Settings panel
     PANEL_SETTINGS,
     //! Stats panel
-    PANEL_STATS,
+    WINDOW_STATS,
     //! Panel Counter
     PANEL_COUNT,
 };
