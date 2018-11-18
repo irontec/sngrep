@@ -32,7 +32,11 @@
 
 #include <netinet/tcp.h>
 #include <glib.h>
+#include "packet/address.h"
 #include "packet/dissector.h"
+
+//! Ignore too segmented TCP packets
+#define TCP_MAX_SEGMENTS    5
 
 typedef struct _PacketTcpData       PacketTcpData;
 typedef struct _PacketTcpStream     PacketTcpStream;
@@ -74,7 +78,7 @@ struct _PacketTcpData
 
 struct _DissectorTcpData
 {
-    GList *assembly;
+    GHashTable *assembly;
 };
 
 /**

@@ -184,7 +184,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             // Store all the fragments in current packet
             frames = g_list_append(frames, fragment->packet->frames);
             // Free fragment data
-            g_byte_array_free(fragment->data, TRUE);
+            g_byte_array_free(fragment->data, FALSE);
         }
 
         // Remove the datagram information
