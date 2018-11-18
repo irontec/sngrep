@@ -328,7 +328,7 @@ main(int argc, char* argv[])
         ncurses_init();
         // This is a blocking call.
         // Create the first panel and wait for user input
-        ui_create_panel(PANEL_CALL_LIST);
+        ncurses_create_window(WINDOW_CALL_LIST);
         ui_wait_for_input();
     } else {
         setbuf(stdout, NULL);

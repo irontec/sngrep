@@ -63,7 +63,7 @@ struct msg_diff_info {
  * @return the allocated ncurses panel
  */
 void
-msg_diff_create(ui_t *ui);
+msg_diff_create(Window *ui);
 
 /**
  * @brief Deallocate panel memory
@@ -74,7 +74,7 @@ msg_diff_create(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-msg_diff_destroy(ui_t *ui);
+msg_diff_destroy(Window *ui);
 
 /**
  * @brief Get panel information structure
@@ -88,7 +88,7 @@ msg_diff_destroy(ui_t *ui);
  * @return a pointer to the info structure or NULL if no structure exists
  */
 msg_diff_info_t *
-msg_diff_info(ui_t *ui);
+msg_diff_info(Window *ui);
 
 /**
  * @brief Redraw panel data
@@ -100,7 +100,7 @@ msg_diff_info(ui_t *ui);
  * @return 0 in all cases
  */
 int
-msg_diff_draw(ui_t *ui);
+msg_diff_draw(Window *ui);
 
 /**
  * @brief Draw panel footer
@@ -111,7 +111,7 @@ msg_diff_draw(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-msg_diff_draw_footer(ui_t *ui);
+msg_diff_draw_footer(Window *ui);
 
 /**
  * @brief Draw a message into a raw subwindow
@@ -135,6 +135,6 @@ msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight);
  * @return 0 in all cases
  */
 int
-msg_diff_set_msgs(ui_t *ui, SipMsg *one, SipMsg *two);
+msg_diff_set_msgs(Window *ui, SipMsg *one, SipMsg *two);
 
 #endif

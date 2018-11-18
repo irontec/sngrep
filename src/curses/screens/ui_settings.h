@@ -184,7 +184,7 @@ struct settings_info {
  * @param ui UI structure pointer
  */
 void
-settings_create(ui_t *ui);
+settings_create(Window *ui);
 
 /**
  * @brief Destroy settings panel
@@ -194,7 +194,7 @@ settings_create(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-settings_destroy(ui_t *ui);
+settings_destroy(Window *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -206,7 +206,7 @@ settings_destroy(ui_t *ui);
  * @return a pointer to info structure of given panel
  */
 settings_info_t *
-settings_info(ui_t *ui);
+settings_info(Window *ui);
 
 /**
  * @brief Draw the settings panel
@@ -218,7 +218,7 @@ settings_info(ui_t *ui);
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
-settings_draw(ui_t *ui);
+settings_draw(Window *ui);
 
 /**
  * @brief Manage pressed keys for settings panel
@@ -232,7 +232,7 @@ settings_draw(ui_t *ui);
  * @return enum @key_handler_ret
  */
 int
-settings_handle_key(ui_t *ui, int key);
+settings_handle_key(Window *ui, int key);
 
 /**
  * @brief Return entry information of the field
@@ -257,7 +257,7 @@ ui_settings_is_entry(FIELD *field);
  * @return 0 in all cases
  */
 int
-ui_settings_update_settings(ui_t *ui);
+ui_settings_update_settings(Window *ui);
 
 /**
  * @brief Update user resource file with panel values
@@ -268,6 +268,6 @@ ui_settings_update_settings(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-ui_settings_save(ui_t *ui);
+ui_settings_save(Window *ui);
 
 #endif /* __SNGREP_UI_SETTINGS_H */

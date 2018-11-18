@@ -68,7 +68,7 @@ struct call_raw_info {
  * store it in the panel's userpointer
  */
 void
-call_raw_create(ui_t *ui);
+call_raw_create(Window *ui);
 
 /**
  * @brief Destroy panel
@@ -78,30 +78,7 @@ call_raw_create(ui_t *ui);
  * @param panel Ncurses panel pointer
  */
 void
-call_raw_destroy(ui_t *ui);
-
-/**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param panel Ncurses panel pointer
- * @return a pointer to info structure of given panel
- */
-call_raw_info_t *
-call_raw_info(ui_t *ui);
-
-/**
- * @brief Determine if the screen requires redrawn
- *
- * This will query the interface if it requires to be redraw again.
- *
- * @param ui UI structure pointer
- * @return true if the panel requires redraw, false otherwise
- */
-bool
-call_raw_redraw(ui_t *ui);
+call_raw_destroy(Window *ui);
 
 /**
  * @brief Draw the Call Raw panel
@@ -113,7 +90,7 @@ call_raw_redraw(ui_t *ui);
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
-call_raw_draw(ui_t *ui);
+call_raw_draw(Window *ui);
 
 /**
  * @brief Draw a message in call Raw
@@ -125,20 +102,7 @@ call_raw_draw(ui_t *ui);
  * @return 0 in call cases
  */
 int
-call_raw_print_msg(ui_t *ui, SipMsg *msg);
-
-/**
- * @brief Handle Call Raw key strokes
- *
- * This function will manage the custom keybindings of the panel.
- * This function return one of the values defined in @key_handler_ret
- *
- * @param panel Ncurses panel pointer
- * @param key Pressed keycode
- * @return enum @key_handler_ret
- */
-int
-call_raw_handle_key(ui_t *ui, int key);
+call_raw_print_msg(Window *ui, SipMsg *msg);
 
 /**
  * @brief Set the active call group of the panel

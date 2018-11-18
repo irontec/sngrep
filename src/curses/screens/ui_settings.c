@@ -41,7 +41,7 @@
 /**
  * Ui Structure definition for Settings panel
  */
-ui_t ui_settings = {
+Window ui_settings = {
     .type = PANEL_SETTINGS,
     .panel = NULL,
     .create = settings_create,
@@ -99,7 +99,7 @@ settings_entry_t entries[] = {
 };
 
 void
-settings_create(ui_t *ui)
+settings_create(Window *ui)
 {
     int i, j, line;
     settings_info_t *info;
@@ -107,7 +107,7 @@ settings_create(ui_t *ui)
     int field = 0;
 
     // Cerate a new window for the panel and form
-    ui_panel_create(ui, 24, 70);
+    window_init(ui, 24, 70);
 
     // Initialize Filter panel specific data
     info = g_malloc0(sizeof(settings_info_t));
@@ -211,20 +211,20 @@ settings_create(ui_t *ui)
 }
 
 void
-settings_destroy(ui_t *ui)
+settings_destroy(Window *ui)
 {
     curs_set(0);
     ui_panel_destroy(ui);
 }
 
 settings_info_t *
-settings_info(ui_t *ui)
+settings_info(Window *ui)
 {
     return (settings_info_t*) panel_userptr(ui->panel);
 }
 
 int
-settings_draw(ui_t *ui)
+settings_draw(Window *ui)
 {
     int i;
     int cury, curx;
@@ -277,7 +277,7 @@ settings_draw(ui_t *ui)
 }
 
 int
-settings_handle_key(ui_t *ui, int key)
+settings_handle_key(Window *ui, int key)
 {
     int action = -1;
     int field_idx;
@@ -428,7 +428,7 @@ ui_settings_is_entry(FIELD *field)
 }
 
 int
-ui_settings_update_settings(ui_t *ui)
+ui_settings_update_settings(Window *ui)
 {
     int i;
     char field_value[180];
@@ -452,7 +452,7 @@ ui_settings_update_settings(ui_t *ui)
 }
 
 void
-ui_settings_save(ui_t *ui)
+ui_settings_save(Window *ui)
 {
     // Get panel information
     settings_info_t *info = settings_info(ui);

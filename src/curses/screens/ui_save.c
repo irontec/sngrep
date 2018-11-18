@@ -44,7 +44,7 @@
 /**
  * Ui Structure definition for Save panel
  */
-ui_t ui_save = {
+Window ui_save = {
     .type = PANEL_SAVE,
     .panel = NULL,
     .create = save_create,
@@ -54,7 +54,7 @@ ui_t ui_save = {
 };
 
 void
-save_create(ui_t *ui)
+save_create(Window *ui)
 {
     save_info_t *info;
     char savepath[MAX_SETTING_LEN];
@@ -63,7 +63,7 @@ save_create(ui_t *ui)
     capture_manager()->paused = TRUE;
 
     // Cerate a new indow for the panel and form
-    ui_panel_create(ui, 15, 68);
+    window_init(ui, 15, 68);
 
     // Initialize save panel specific data
     info = g_malloc0(sizeof(save_info_t));
@@ -177,7 +177,7 @@ save_create(ui_t *ui)
 }
 
 void
-save_destroy(ui_t *ui)
+save_destroy(Window *ui)
 {
     save_info_t *info;
     int i;
@@ -205,13 +205,13 @@ save_destroy(ui_t *ui)
 }
 
 save_info_t *
-save_info(ui_t *ui)
+save_info(Window *ui)
 {
     return (save_info_t*) panel_userptr(ui->panel);
 }
 
 int
-save_draw(ui_t *ui)
+save_draw(Window *ui)
 {
     char field_value[MAX_SETTING_LEN];
 
@@ -272,7 +272,7 @@ save_draw(ui_t *ui)
 }
 
 int
-save_handle_key(ui_t *ui, int key)
+save_handle_key(Window *ui, int key)
 {
     int field_idx;
     int action = -1;
@@ -387,7 +387,7 @@ save_handle_key(ui_t *ui, int key)
 }
 
 void
-save_set_group(ui_t *ui, SipCallGroup *group)
+save_set_group(Window *ui, SipCallGroup *group)
 {
     // Get panel information
     save_info_t *info = save_info(ui);
@@ -398,7 +398,7 @@ save_set_group(ui_t *ui, SipCallGroup *group)
 }
 
 void
-save_set_msg(ui_t *ui, SipMsg *msg)
+save_set_msg(Window *ui, SipMsg *msg)
 {
     // Get panel information
     save_info_t *info = save_info(ui);
@@ -409,7 +409,7 @@ save_set_msg(ui_t *ui, SipMsg *msg)
 }
 
 int
-save_to_file(ui_t *ui)
+save_to_file(Window *ui)
 {
     char savepath[MAX_SETTING_LEN];
     char savefile[MAX_SETTING_LEN];

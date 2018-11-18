@@ -84,7 +84,7 @@ struct column_select_info {
  * @param ui UI structure pointer
  */
 void
-column_select_create(ui_t *ui);
+column_select_create(Window *ui);
 
 /**
  * @brief Destroy column selection panel
@@ -94,7 +94,7 @@ column_select_create(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-column_select_destroy(ui_t *ui);
+column_select_destroy(Window *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -106,7 +106,7 @@ column_select_destroy(ui_t *ui);
  * @return a pointer to info structure of given panel
  */
 column_select_info_t *
-column_select_info(ui_t *ui);
+column_select_info(Window *ui);
 
 /**
  * @brief Manage pressed keys for column selection panel
@@ -120,7 +120,7 @@ column_select_info(ui_t *ui);
  * @return enum @key_handler_ret
  */
 int
-column_select_handle_key(ui_t *ui, int key);
+column_select_handle_key(Window *ui, int key);
 
 /**
  * @brief Manage pressed keys for column selection panel
@@ -134,7 +134,7 @@ column_select_handle_key(ui_t *ui, int key);
  * @return enum @key_handler_ret
  */
 int
-column_select_handle_key_menu(ui_t *ui, int key);
+column_select_handle_key_menu(Window *ui, int key);
 
 /**
  * @brief Manage pressed keys for column selection panel
@@ -148,7 +148,7 @@ column_select_handle_key_menu(ui_t *ui, int key);
  * @return enum @key_handler_ret
  */
 int
-column_select_handle_key_form(ui_t *ui, int key);
+column_select_handle_key_form(Window *ui, int key);
 
 /**
  * @brief Update Call List columns
@@ -158,7 +158,7 @@ column_select_handle_key_form(ui_t *ui, int key);
  * @param ui UI structure pointer
  */
 void
-column_select_update_columns(ui_t *ui);
+column_select_update_columns(Window *ui);
 
 /**
  * @brief Save selected columns to user config file
@@ -169,7 +169,7 @@ column_select_update_columns(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-column_select_save_columns(ui_t *ui);
+column_select_save_columns(Window *ui);
 
 /**
  * @brief Move a item to a new position
@@ -181,7 +181,7 @@ column_select_save_columns(ui_t *ui);
  * @param post New position in the menu
  */
 void
-column_select_move_item(ui_t *ui, ITEM *item, int pos);
+column_select_move_item(Window *ui, ITEM *item, int pos);
 
 /**
  * @brief Select/Deselect a menu item
@@ -193,7 +193,7 @@ column_select_move_item(ui_t *ui, ITEM *item, int pos);
  * @param item Menu item to be (de)selected
  */
 void
-column_select_toggle_item(ui_t *ui, ITEM *item);
+column_select_toggle_item(Window *ui, ITEM *item);
 
 /**
  * @brief Update menu after a change
@@ -204,6 +204,6 @@ column_select_toggle_item(ui_t *ui, ITEM *item);
  * @param ui UI structure pointer
  */
 void
-column_select_update_menu(ui_t *ui);
+column_select_update_menu(Window *ui);
 
 #endif /* __UI_COLUMN_SELECT_H */

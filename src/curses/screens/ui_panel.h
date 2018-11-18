@@ -31,14 +31,10 @@
 #ifndef __SNGREP_UI_PANEL_H
 #define __SNGREP_UI_PANEL_H
 
-#ifdef WITH_UNICODE
-#define _X_OPEN_SOURCE_EXTENDED
-#include <wctype.h>
-#endif
-#include <ncurses.h>
+#include <glib.h>
+#include <ncursesw/ncurses.h>
 #include <panel.h>
 #include <form.h>
-#include <stdbool.h>
 
 //! Possible key handler results
 enum key_handler_ret {
@@ -55,9 +51,9 @@ enum key_handler_ret {
  *
  * Mostly used for managing keybindings and offloop ui refresh
  */
-enum panel_types {
+enum WindowTypes {
     //! Call List ui screen
-    PANEL_CALL_LIST = 0,
+    WINDOW_CALL_LIST = 0,
     //! Call-Flow ui screen
     PANEL_CALL_FLOW,
     //! Raw SIP messages ui screen
@@ -79,7 +75,7 @@ enum panel_types {
 };
 
 //! Shorter declaration of ui structure
-typedef struct ui ui_t;
+typedef struct _Panel Window;
 
 /**
  * @brief Panel information structure
@@ -87,7 +83,7 @@ typedef struct ui ui_t;
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct ui {
+struct _Panel {
     //! Curses panel pointer
     PANEL *panel;
     //! Window for the curses panel
@@ -100,25 +96,25 @@ struct ui {
     int x;
     //! Horizontal starting position of the window
     int y;
-    //! Panel Type @see panel_types enum
-    enum panel_types type;
+    //! Panel Type @see PanelTypes enum
+    enum WindowTypes type;
     //! Flag this panel as redraw required
-    bool changed;
+    gboolean changed;
 
     //! Constructor for this panel
-    void (*create)(ui_t *);
+    void (*create)(Window *);
     //! Destroy current panel
-    void (*destroy)(ui_t *);
+    void (*destroy)(Window *);
     //! Query the panel if redraw is required
-    bool (*redraw)(ui_t *);
+    gboolean (*redraw)(Window *);
     //! Request the panel to redraw its data
-    int (*draw)(ui_t *);
+    int (*draw)(Window *);
     //! Notifies the panel the screen has changed
-    int (*resize)(ui_t *);
+    int (*resize)(Window *);
     //! Handle a custom keybind on this panel
-    int (*handle_key)(ui_t *, int key);
+    int (*handle_key)(Window *, int key);
     //! Show help window for this panel (if any)
-    int (*help)(ui_t *);
+    int (*help)(Window *);
 };
 
 /**
@@ -130,8 +126,8 @@ struct ui {
  * @param ui UI structure
  * @return the ui structure with the panel pointer created
  */
-ui_t *
-ui_create(ui_t *ui);
+Window *
+ui_create(Window *ui);
 
 /**
  * @brief Destroy a panel structure
@@ -143,7 +139,7 @@ ui_create(ui_t *ui);
  * @param ui UI structure
  */
 void
-ui_destroy(ui_t *ui);
+ui_destroy(Window *ui);
 
 /**
  * @brief Get panel pointer from an ui element
@@ -156,7 +152,7 @@ ui_destroy(ui_t *ui);
  * @return ncurses panel pointer of given UI
  */
 PANEL *
-ui_get_panel(ui_t *ui);
+ui_get_panel(Window *ui);
 
 /**
  * @brief Redrawn current ui
@@ -168,7 +164,7 @@ ui_get_panel(ui_t *ui);
  * @return 0 if ui has been drawn, -1 otherwise
  */
 int
-ui_resize_panel(ui_t *ui);
+ui_resize_panel(Window *ui);
 
 /**
  * @brief Check if the panel requires redraw
@@ -180,7 +176,7 @@ ui_resize_panel(ui_t *ui);
  * @return true if the panel must be drawn, false otherwise
  */
 bool
-ui_draw_redraw(ui_t *ui);
+ui_draw_redraw(Window *ui);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -192,7 +188,7 @@ ui_draw_redraw(ui_t *ui);
  * @return 0 if ui has been resize, -1 otherwise
  */
 int
-ui_draw_panel(ui_t *ui);
+ui_draw_panel(Window *ui);
 
 /**
  * @brief Show help screen from current UI (if any)
@@ -204,7 +200,7 @@ ui_draw_panel(ui_t *ui);
  * @param ui UI structure
  */
 void
-ui_help(ui_t *ui);
+ui_help(Window *ui);
 
 /**
  * @brief Handle key inputs on given UI
@@ -217,7 +213,7 @@ ui_help(ui_t *ui);
  * @return enum @key_handler_ret*
  */
 int
-ui_handle_key(ui_t *ui, int key);
+ui_handle_key(Window *ui, int key);
 
 /**
  * @brief Create a ncurses panel for the given ui
@@ -227,12 +223,12 @@ ui_handle_key(ui_t *ui, int key);
  * If height and widht doesn't match the screen dimensions
  * the panel will be centered on the screen.
  *
- * @param ui UI structure
+ * @param window UI structure
  * @param height panel window height
  * @param width panel windo width
  */
 void
-ui_panel_create(ui_t *ui, int height, int width);
+window_init(Window *window, int height, int width);
 
 /**
  * @brief Deallocate ncurses panel and window
@@ -240,7 +236,7 @@ ui_panel_create(ui_t *ui, int height, int width);
  * @param ui UI structure
  */
 void
-ui_panel_destroy(ui_t *ui);
+ui_panel_destroy(Window *ui);
 
 /**
  * @brief Draw title at the top of the panel UI
@@ -252,7 +248,7 @@ ui_panel_destroy(ui_t *ui);
  * @param title String containing the title
  */
 void
-ui_set_title(ui_t *ui, const char *title);
+ui_set_title(Window *ui, const char *title);
 
 /**
  * @brief Clear a given window line
@@ -264,7 +260,7 @@ ui_set_title(ui_t *ui, const char *title);
  * @param line Number of line to be cleared
  */
 void
-ui_clear_line(ui_t *ui, int line);
+ui_clear_line(Window *ui, int line);
 
 /**
  * @brief Draw keybinding info at the bottom of the panel
@@ -274,6 +270,6 @@ ui_clear_line(ui_t *ui, int line);
  *
  */
 void
-ui_draw_bindings(ui_t *ui, const char *keybindings[], int count);
+ui_draw_bindings(Window *ui, const char *keybindings[], int count);
 
 #endif /* __SNGREP_UI_PANEL_H */

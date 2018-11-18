@@ -173,7 +173,7 @@ struct call_flow_info {
  * @param ui UI structure pointer
  */
 void
-call_flow_create(ui_t *ui);
+call_flow_create(Window *ui);
 
 /**
  * @brief Destroy panel
@@ -183,7 +183,7 @@ call_flow_create(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-call_flow_destroy(ui_t *ui);
+call_flow_destroy(Window *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -195,18 +195,7 @@ call_flow_destroy(ui_t *ui);
  * @return a pointer to info structure of given panel
  */
 call_flow_info_t *
-call_flow_info(ui_t *ui);
-
-/**
- * @brief Determine if the screen requires redrawn
- *
- * This will query the interface if it requires to be redraw again.
- *
- * @param ui UI structure pointer
- * @return true if the panel requires redraw, false otherwise
- */
-bool
-call_flow_redraw(ui_t *ui);
+call_flow_info(Window *ui);
 
 /**
  * @brief Draw the Call flow extended panel
@@ -218,7 +207,7 @@ call_flow_redraw(ui_t *ui);
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 int
-call_flow_draw(ui_t *ui);
+call_flow_draw(Window *ui);
 
 /**
  * @brief Draw the footer of the panel with keybindings info
@@ -226,7 +215,7 @@ call_flow_draw(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-call_flow_draw_footer(ui_t *ui);
+call_flow_draw_footer(Window *ui);
 
 /**
  * @brief Draw the visible columns in panel window
@@ -234,7 +223,7 @@ call_flow_draw_footer(ui_t *ui);
  * @param ui UI structure pointer
  */
 int
-call_flow_draw_columns(ui_t *ui);
+call_flow_draw_columns(Window *ui);
 
 /**
  * @brief Draw arrows in the visible part of the panel
@@ -242,7 +231,7 @@ call_flow_draw_columns(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-call_flow_draw_arrows(ui_t *ui);
+call_flow_draw_arrows(Window *ui);
 
 /**
  * @brief Draw panel preview of current arrow
@@ -252,7 +241,7 @@ call_flow_draw_arrows(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-call_flow_draw_preview(ui_t *ui);
+call_flow_draw_preview(Window *ui);
 
 /**
  * @brief Draw a single arrow in arrow flow
@@ -265,7 +254,7 @@ call_flow_draw_preview(ui_t *ui);
  * @return the number of screen lines this arrow uses on screen
  */
 int
-call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line);
+call_flow_draw_arrow(Window *ui, call_flow_arrow_t *arrow, int line);
 
 /**
  * @brief Draw the message arrow in the given line
@@ -281,7 +270,7 @@ call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line);
  * @return the number of screen lines this arrow uses on screen
  */
 int
-call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline);
+call_flow_draw_message(Window *ui, call_flow_arrow_t *arrow, int cline);
 
 /**
  * @brief Draw the stream data in the given line
@@ -294,7 +283,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline);
  * @return the number of screen lines this arrow uses on screen
  */
 int
-call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline);
+call_flow_draw_rtp_stream(Window *ui, call_flow_arrow_t *arrow, int cline);
 
 /**
  * @brief Create a new arrow of given type
@@ -311,7 +300,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline);
  * @return an arrow pointer or NULL in case of error
  */
 call_flow_arrow_t *
-call_flow_arrow_create(ui_t *ui, void *item, int type);
+call_flow_arrow_create(Window *ui, void *item, int type);
 
 /**
  * @brief Get how many lines of screen an arrow will use
@@ -325,7 +314,7 @@ call_flow_arrow_create(ui_t *ui, void *item, int type);
  * @return height the arrow will have
  */
 int
-call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow);
+call_flow_arrow_height(Window *ui, const call_flow_arrow_t *arrow);
 
 /**
  * @brief Return the arrow of a SIP msg or RTP stream
@@ -338,7 +327,7 @@ call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow);
  * @return a pointer to the found arrow or NULL
  */
 call_flow_arrow_t *
-call_flow_arrow_find(ui_t *ui, const void *data);
+call_flow_arrow_find(Window *ui, const void *data);
 
 /**
  * @brief Return the SIP message associated with the arrow
@@ -363,7 +352,7 @@ call_flow_arrow_message(const call_flow_arrow_t *arrow);
  * @return 0 in all cases
  */
 int
-call_flow_draw_raw(ui_t *ui, SipMsg *msg);
+call_flow_draw_raw(Window *ui, SipMsg *msg);
 
 /**
  * @brief Draw raw panel with RTCP data
@@ -375,7 +364,7 @@ call_flow_draw_raw(ui_t *ui, SipMsg *msg);
  * @return 0 in all cases
  */
 int
-call_flow_draw_raw_rtcp(ui_t *ui, RtpStream *rtcp);
+call_flow_draw_raw_rtcp(Window *ui, RtpStream *rtcp);
 
 /**
  * @brief Handle Call flow extended key strokes
@@ -388,7 +377,7 @@ call_flow_draw_raw_rtcp(ui_t *ui, RtpStream *rtcp);
  * @return enum @key_handler_ret
  */
 int
-call_flow_handle_key(ui_t *ui, int key);
+call_flow_handle_key(Window *ui, int key);
 
 /**
  * @brief Request the panel to show its help
@@ -400,7 +389,7 @@ call_flow_handle_key(ui_t *ui, int key);
  * @return 0 if the screen has help, -1 otherwise
  */
 int
-call_flow_help(ui_t *ui);
+call_flow_help(Window *ui);
 
 /**
  * @brief Set the group call of the panel
@@ -426,7 +415,7 @@ call_flow_set_group(SipCallGroup *group);
  * @param addr Address:port string
  */
 void
-call_flow_column_add(ui_t *ui, const char *callid, Address addr);
+call_flow_column_add(Window *ui, const char *callid, Address addr);
 
 /**
  * @brief Get a flow column data
@@ -437,7 +426,7 @@ call_flow_column_add(ui_t *ui, const char *callid, Address addr);
  * @return column structure pointer or NULL if not found
  */
 call_flow_column_t *
-call_flow_column_get(ui_t *ui, const char *callid, Address address);
+call_flow_column_get(Window *ui, const char *callid, Address address);
 
 /**
  * @brief Move selected cursor to given arrow
@@ -449,7 +438,7 @@ call_flow_column_get(ui_t *ui, const char *callid, Address address);
  * @param arrowindex Position to move the cursor
  */
 void
-call_flow_move(ui_t *ui, int arrowindex);
+call_flow_move(Window *ui, int arrowindex);
 
 /*
  * @brief Return selected flow arrow
@@ -461,7 +450,7 @@ call_flow_move(ui_t *ui, int arrowindex);
  * @return user selected arrow
  */
 call_flow_arrow_t *
-call_flow_arrow_selected(ui_t *ui);
+call_flow_arrow_selected(Window *ui);
 
 /**
  * @brief Return timestamp for given arrow

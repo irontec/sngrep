@@ -41,7 +41,7 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_t ui_column_select = {
+Window ui_column_select = {
     .type = PANEL_COLUMN_SELECT,
     .panel = NULL,
     .create = column_select_create,
@@ -50,14 +50,14 @@ ui_t ui_column_select = {
 };
 
 void
-column_select_create(ui_t *ui)
+column_select_create(Window *ui)
 {
     int attr_id;
     MENU *menu;
     column_select_info_t *info;
 
     // Cerate a new indow for the panel and form
-    ui_panel_create(ui, 20, 60);
+    window_init(ui, 20, 60);
 
     // Initialize Filter panel specific data
     info = g_malloc0(sizeof(column_select_info_t));
@@ -97,7 +97,7 @@ column_select_create(ui_t *ui)
 
     // Set current enabled fields
     // FIXME Stealing Call list columns :/
-    call_list_info_t *list_info = call_list_info(ui_find_by_type(PANEL_CALL_LIST));
+    CallListInfo *list_info = call_list_info(ui_find_by_type(WINDOW_CALL_LIST));
 
     // Enable current enabled fields and move them to the top
     for (guint column = 0; column < list_info->columncnt; column++) {
@@ -145,7 +145,7 @@ column_select_create(ui_t *ui)
 }
 
 void
-column_select_destroy(ui_t *ui)
+column_select_destroy(Window *ui)
 {
     int i;
     column_select_info_t *info = column_select_info(ui);
@@ -170,13 +170,13 @@ column_select_destroy(ui_t *ui)
 
 
 column_select_info_t *
-column_select_info(ui_t *ui)
+column_select_info(Window *ui)
 {
     return (column_select_info_t*) panel_userptr(ui->panel);
 }
 
 int
-column_select_handle_key(ui_t *ui, int key)
+column_select_handle_key(Window *ui, int key)
 {
     // Get panel information
     column_select_info_t *info = column_select_info(ui);
@@ -190,7 +190,7 @@ column_select_handle_key(ui_t *ui, int key)
 }
 
 int
-column_select_handle_key_menu(ui_t *ui, int key)
+column_select_handle_key_menu(Window *ui, int key)
 {
     MENU *menu;
     ITEM *current;
@@ -261,7 +261,7 @@ column_select_handle_key_menu(ui_t *ui, int key)
 }
 
 int
-column_select_handle_key_form(ui_t *ui, int key)
+column_select_handle_key_form(Window *ui, int key)
 {
     int field_idx, new_field_idx;
     char field_value[48];
@@ -341,7 +341,7 @@ column_select_handle_key_form(ui_t *ui, int key)
 }
 
 void
-column_select_update_columns(ui_t *ui)
+column_select_update_columns(Window *ui)
 {
     int column, attr_id;
 
@@ -349,8 +349,8 @@ column_select_update_columns(ui_t *ui)
     column_select_info_t *info = column_select_info(ui);
 
     // Set enabled fields
-    ui_t *ui_list = ui_find_by_type(PANEL_CALL_LIST);
-    call_list_info_t *list_info = call_list_info(ui_list);
+    Window *ui_list = ui_find_by_type(WINDOW_CALL_LIST);
+    CallListInfo *list_info = call_list_info(ui_list);
 
     // Reset column count
     list_info->columncnt = 0;
@@ -370,7 +370,7 @@ column_select_update_columns(ui_t *ui)
 }
 
 void
-column_select_save_columns(ui_t *ui)
+column_select_save_columns(Window *ui)
 {
     g_autoptr(GString) userconf = g_string_new(NULL);
     g_autoptr(GString) tmpfile  = g_string_new(NULL);
@@ -449,7 +449,7 @@ column_select_save_columns(ui_t *ui)
 
 
 void
-column_select_move_item(ui_t *ui, ITEM *item, int pos)
+column_select_move_item(Window *ui, ITEM *item, int pos)
 {
     // Get panel information
     column_select_info_t *info = column_select_info(ui);
@@ -466,7 +466,7 @@ column_select_move_item(ui_t *ui, ITEM *item, int pos)
 }
 
 void
-column_select_toggle_item(ui_t *ui, ITEM *item)
+column_select_toggle_item(Window *ui, ITEM *item)
 {
     // Get panel information
     column_select_info_t *info = column_select_info(ui);
@@ -489,7 +489,7 @@ column_select_toggle_item(ui_t *ui, ITEM *item)
 }
 
 void
-column_select_update_menu(ui_t *ui)
+column_select_update_menu(Window *ui)
 {
     // Get panel information
     column_select_info_t *info = column_select_info(ui);

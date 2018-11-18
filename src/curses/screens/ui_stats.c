@@ -63,7 +63,7 @@
 /**
  * Ui Structure definition for Stats panel
  */
-ui_t ui_stats = {
+Window ui_stats = {
     .type = PANEL_STATS,
     .panel = NULL,
     .create = stats_create,
@@ -72,7 +72,7 @@ ui_t ui_stats = {
 };
 
 void
-stats_create(ui_t *ui)
+stats_create(Window *ui)
 {
     SipCall *call;
     SipMsg *msg;
@@ -87,7 +87,7 @@ stats_create(ui_t *ui)
     memset(&stats, 0, sizeof(stats));
 
     // Calculate window dimensions
-    ui_panel_create(ui, 25, 60);
+    window_init(ui, 25, 60);
 
     // Set the window title and boxes
     mvwprintw(ui->win, 1, ui->width / 2 - 9, "Stats Information");

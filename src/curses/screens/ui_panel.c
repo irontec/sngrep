@@ -31,8 +31,8 @@
 #include "curses/screens/ui_panel.h"
 #include "curses/theme.h"
 
-ui_t *
-ui_create(ui_t *ui)
+Window *
+ui_create(Window *ui)
 {
     // If ui has no panel
     if (!ui->panel) {
@@ -50,7 +50,7 @@ ui_create(ui_t *ui)
 }
 
 void
-ui_destroy(ui_t *ui)
+ui_destroy(Window *ui)
 {
     // If there is no ui panel, we're done
     if (!ui || !ui->panel)
@@ -69,14 +69,14 @@ ui_destroy(ui_t *ui)
 }
 
 PANEL *
-ui_get_panel(ui_t *ui)
+ui_get_panel(Window *ui)
 {
     // Return panel pointer of ui struct
     return (ui) ? ui->panel : NULL;
 }
 
 bool
-ui_draw_redraw(ui_t *ui)
+ui_draw_redraw(Window *ui)
 {
     // Sanity check, this should not happen
     if (!ui || !ui->panel)
@@ -96,7 +96,7 @@ ui_draw_redraw(ui_t *ui)
 }
 
 int
-ui_draw_panel(ui_t *ui)
+ui_draw_panel(Window *ui)
 {
     //! Sanity check, this should not happen
     if (!ui || !ui->panel)
@@ -113,7 +113,7 @@ ui_draw_panel(ui_t *ui)
 }
 
 int
-ui_resize_panel(ui_t *ui)
+ui_resize_panel(Window *ui)
 {
     //! Sanity check, this should not happen
     if (!ui)
@@ -128,7 +128,7 @@ ui_resize_panel(ui_t *ui)
 }
 
 void
-ui_help(ui_t *ui)
+ui_help(Window *ui)
 {
     // Disable input timeout
     nocbreak();
@@ -141,7 +141,7 @@ ui_help(ui_t *ui)
 }
 
 int
-ui_handle_key(ui_t *ui, int key)
+ui_handle_key(Window *ui, int key)
 {
     int hld = KEY_NOT_HANDLED;
     // Request the panel to handle the key
@@ -155,22 +155,22 @@ ui_handle_key(ui_t *ui, int key)
 
 
 void
-ui_panel_create(ui_t *ui, int height, int width)
+window_init(Window *window, int height, int width)
 {
-    ui->width = width;
-    ui->height = height;
-    ui->x = ui->y = 0;
+    window->width = width;
+    window->height = height;
+    window->x = window->y = 0;
 
     // If panel doesn't fill the screen center it
-    if (ui->height != LINES) ui->x = (LINES - height) / 2;
-    if (ui->width != COLS) ui->y = (COLS - width) / 2;
+    if (window->height != LINES) window->x = (LINES - height) / 2;
+    if (window->width != COLS) window->y = (COLS - width) / 2;
 
-    ui->win = newwin(height, width, ui->x, ui->y);
-    ui->panel = new_panel(ui->win);
+    window->win = newwin(height, width, window->x, window->y);
+    window->panel = new_panel(window->win);
 }
 
 void
-ui_panel_destroy(ui_t *ui)
+ui_panel_destroy(Window *ui)
 {
     // Deallocate panel window
     delwin(ui->win);
@@ -179,7 +179,7 @@ ui_panel_destroy(ui_t *ui)
 }
 
 void
-ui_set_title(ui_t *ui, const char *title)
+ui_set_title(Window *ui, const char *title)
 {
     // FIXME Reverse colors on monochrome terminals
     if (!has_colors()) {
@@ -194,7 +194,7 @@ ui_set_title(ui_t *ui, const char *title)
 }
 
 void
-ui_clear_line(ui_t *ui, int line)
+ui_clear_line(Window *ui, int line)
 {
     // We could do this with wcleartoel but we want to
     // preserve previous window attributes. That way we
@@ -203,7 +203,7 @@ ui_clear_line(ui_t *ui, int line)
 }
 
 void
-ui_draw_bindings(ui_t *ui, const char *keybindings[], int count)
+ui_draw_bindings(Window *ui, const char *keybindings[], int count)
 {
     int key, xpos = 0;
 

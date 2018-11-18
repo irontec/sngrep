@@ -55,7 +55,7 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-ui_t ui_msg_diff = {
+Window ui_msg_diff = {
     .type = PANEL_MSG_DIFF,
     .panel = NULL,
     .create = msg_diff_create,
@@ -66,13 +66,13 @@ ui_t ui_msg_diff = {
 };
 
 void
-msg_diff_create(ui_t *ui)
+msg_diff_create(Window *ui)
 {
     int hwidth;
     msg_diff_info_t *info;
 
     // Create a new panel to fill all the screen
-    ui_panel_create(ui, LINES, COLS);
+    window_init(ui, LINES, COLS);
 
     // Initialize panel specific data
     info = g_malloc0(sizeof(msg_diff_info_t));
@@ -98,14 +98,14 @@ msg_diff_create(ui_t *ui)
 }
 
 void
-msg_diff_destroy(ui_t *ui)
+msg_diff_destroy(Window *ui)
 {
     g_free(msg_diff_info(ui));
     ui_panel_destroy(ui);
 }
 
 msg_diff_info_t *
-msg_diff_info(ui_t *ui)
+msg_diff_info(Window *ui)
 {
     return (msg_diff_info_t*) panel_userptr(ui->panel);
 }
@@ -141,7 +141,7 @@ msg_diff_line_highlight(const char* payload1, const char* payload2, char *highli
 }
 
 void
-msg_diff_draw_footer(ui_t *ui)
+msg_diff_draw_footer(Window *ui)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls Flow",
@@ -152,7 +152,7 @@ msg_diff_draw_footer(ui_t *ui)
 }
 
 int
-msg_diff_draw(ui_t *ui)
+msg_diff_draw(Window *ui)
 {
     // Get panel information
     msg_diff_info_t *info = msg_diff_info(ui);
@@ -223,7 +223,7 @@ msg_diff_draw_message(WINDOW *win, SipMsg *msg, char *highlight)
 }
 
 int
-msg_diff_set_msgs(ui_t *ui, SipMsg *one, SipMsg *two)
+msg_diff_set_msgs(Window *ui, SipMsg *one, SipMsg *two)
 {
     msg_diff_info_t *info;
 

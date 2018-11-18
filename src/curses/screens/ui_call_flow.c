@@ -67,25 +67,11 @@
  *
  */
 
-/**
- * Ui Structure definition for Call Flow panel
- */
-ui_t ui_call_flow = {
-    .type = PANEL_CALL_FLOW,
-    .panel = NULL,
-    .create = call_flow_create,
-    .destroy = call_flow_destroy,
-    .redraw = call_flow_redraw,
-    .draw = call_flow_draw,
-    .handle_key = call_flow_handle_key,
-    .help = call_flow_help
-};
-
 void
-call_flow_create(ui_t *ui)
+call_flow_create(Window *ui)
 {
     // Create a new panel to fill all the screen
-    ui_panel_create(ui, LINES, COLS);
+    window_init(ui, LINES, COLS);
 
     // Initialize Call List specific data
     call_flow_info_t *info = malloc(sizeof(call_flow_info_t));
@@ -107,7 +93,7 @@ call_flow_create(ui_t *ui)
 }
 
 void
-call_flow_destroy(ui_t *ui)
+call_flow_destroy(Window *ui)
 {
     call_flow_info_t *info;
 
@@ -129,13 +115,21 @@ call_flow_destroy(ui_t *ui)
 }
 
 call_flow_info_t *
-call_flow_info(ui_t *ui)
+call_flow_info(Window *ui)
 {
     return (call_flow_info_t*) panel_userptr(ui->panel);
 }
 
-bool
-call_flow_redraw(ui_t *ui)
+/**
+ * @brief Determine if the screen requires redrawn
+ *
+ * This will query the interface if it requires to be redraw again.
+ *
+ * @param ui UI structure pointer
+ * @return true if the panel requires redraw, false otherwise
+ */
+static gboolean
+call_flow_redraw(Window *ui)
 {
     int maxx, maxy;
 
@@ -163,7 +157,7 @@ call_flow_redraw(ui_t *ui)
 }
 
 int
-call_flow_draw(ui_t *ui)
+call_flow_draw(Window *ui)
 {
     char title[256];
 
@@ -226,7 +220,7 @@ call_flow_draw(ui_t *ui)
 }
 
 void
-call_flow_draw_footer(ui_t *ui)
+call_flow_draw_footer(Window *ui)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
@@ -246,7 +240,7 @@ call_flow_draw_footer(ui_t *ui)
 }
 
 int
-call_flow_draw_columns(ui_t *ui)
+call_flow_draw_columns(Window *ui)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
@@ -332,7 +326,7 @@ call_flow_draw_columns(ui_t *ui)
 }
 
 void
-call_flow_draw_arrows(ui_t *ui)
+call_flow_draw_arrows(Window *ui)
 {
     call_flow_info_t *info;
     call_flow_arrow_t *arrow = NULL;
@@ -387,7 +381,7 @@ call_flow_draw_arrows(ui_t *ui)
 }
 
 int
-call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line)
+call_flow_draw_arrow(Window *ui, call_flow_arrow_t *arrow, int line)
 {
     if (arrow->type == CF_ARROW_SIP) {
         return call_flow_draw_message(ui, arrow, line);
@@ -397,7 +391,7 @@ call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line)
 }
 
 void
-call_flow_draw_preview(ui_t *ui)
+call_flow_draw_preview(Window *ui)
 {
     call_flow_arrow_t *arrow = NULL;
     call_flow_info_t *info;
@@ -420,7 +414,7 @@ call_flow_draw_preview(ui_t *ui)
 }
 
 int
-call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
+call_flow_draw_message(Window *ui, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *flow_win;
@@ -662,7 +656,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
 
 int
-call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
+call_flow_draw_rtp_stream(Window *ui, call_flow_arrow_t *arrow, int cline)
 {
     call_flow_info_t *info;
     WINDOW *win;
@@ -866,7 +860,7 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 }
 
 call_flow_arrow_t *
-call_flow_arrow_create(ui_t *ui, void *item, int type)
+call_flow_arrow_create(Window *ui, void *item, int type)
 {
     call_flow_arrow_t *arrow;
 
@@ -882,7 +876,7 @@ call_flow_arrow_create(ui_t *ui, void *item, int type)
 }
 
 int
-call_flow_arrow_height(G_GNUC_UNUSED ui_t *ui, const call_flow_arrow_t *arrow)
+call_flow_arrow_height(G_GNUC_UNUSED Window *ui, const call_flow_arrow_t *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
         if (setting_enabled(SETTING_CF_ONLYMEDIA))
@@ -909,7 +903,7 @@ call_flow_arrow_height(G_GNUC_UNUSED ui_t *ui, const call_flow_arrow_t *arrow)
 }
 
 call_flow_arrow_t *
-call_flow_arrow_find(ui_t *ui, const void *data)
+call_flow_arrow_find(Window *ui, const void *data)
 {
     call_flow_info_t *info;
     call_flow_arrow_t *arrow;
@@ -950,7 +944,7 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow)
 }
 
 int
-call_flow_draw_raw(ui_t *ui, SipMsg *msg)
+call_flow_draw_raw(Window *ui, SipMsg *msg)
 {
     call_flow_info_t *info;
     WINDOW *raw_win;
@@ -1013,7 +1007,7 @@ call_flow_draw_raw(ui_t *ui, SipMsg *msg)
 
 
 int
-call_flow_draw_raw_rtcp(ui_t *ui, G_GNUC_UNUSED RtpStream *stream)
+call_flow_draw_raw_rtcp(Window *ui, G_GNUC_UNUSED RtpStream *stream)
 {
     /**
      * TODO This is too experimental to even display it
@@ -1076,11 +1070,11 @@ call_flow_draw_raw_rtcp(ui_t *ui, G_GNUC_UNUSED RtpStream *stream)
 }
 
 int
-call_flow_handle_key(ui_t *ui, int key)
+call_flow_handle_key(Window *ui, int key)
 {
     int raw_width;
     call_flow_info_t *info = call_flow_info(ui);
-    ui_t *next_ui;
+    Window *next_ui;
     SipCall *call = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
@@ -1134,7 +1128,7 @@ call_flow_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode
-                ui_create_panel(PANEL_CALL_RAW);
+                ncurses_create_window(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
                 break;
             case ACTION_DECREASE_RAW:
@@ -1186,7 +1180,7 @@ call_flow_handle_key(ui_t *ui, int key)
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }
-                next_ui = ui_create_panel(PANEL_SAVE);
+                next_ui = ncurses_create_window(PANEL_SAVE);
                 save_set_group(next_ui, info->group);
                 save_set_msg(next_ui,
                     call_flow_arrow_message(g_sequence_nth(info->darrows, info->cur_arrow)));
@@ -1202,7 +1196,7 @@ call_flow_handle_key(ui_t *ui, int key)
                         info->selected = -1;
                     } else {
                         // Show diff panel
-                        next_ui = ui_create_panel(PANEL_MSG_DIFF);
+                        next_ui = ncurses_create_window(PANEL_MSG_DIFF);
                         msg_diff_set_msgs(next_ui,
                                           call_flow_arrow_message(g_sequence_nth(info->darrows, info->selected)),
                                           call_flow_arrow_message(g_sequence_nth(info->darrows, info->cur_arrow)));
@@ -1214,7 +1208,7 @@ call_flow_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_CONFIRM:
                 // KEY_ENTER, display current message in raw mode
-                ui_create_panel(PANEL_CALL_RAW);
+                ncurses_create_window(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
                 call_raw_set_msg(call_flow_arrow_message(g_sequence_nth(info->darrows, info->cur_arrow)));
                 break;
@@ -1237,7 +1231,7 @@ call_flow_handle_key(ui_t *ui, int key)
 }
 
 int
-call_flow_help(G_GNUC_UNUSED ui_t *ui)
+call_flow_help(G_GNUC_UNUSED Window *ui)
 {
     WINDOW *help_win;
     int height, width;
@@ -1302,7 +1296,7 @@ call_flow_help(G_GNUC_UNUSED ui_t *ui)
 int
 call_flow_set_group(SipCallGroup *group)
 {
-    ui_t *ui;
+    Window *ui;
     call_flow_info_t *info;
 
     if (!(ui = ui_find_by_type(PANEL_CALL_FLOW)))
@@ -1321,7 +1315,7 @@ call_flow_set_group(SipCallGroup *group)
 }
 
 void
-call_flow_column_add(ui_t *ui, const char *callid, Address addr)
+call_flow_column_add(Window *ui, const char *callid, Address addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
@@ -1357,7 +1351,7 @@ call_flow_column_add(ui_t *ui, const char *callid, Address addr)
 }
 
 call_flow_column_t *
-call_flow_column_get(ui_t *ui, const char *callid, Address addr)
+call_flow_column_get(Window *ui, const char *callid, Address addr)
 {
     call_flow_info_t *info;
     call_flow_column_t *column;
@@ -1402,7 +1396,7 @@ call_flow_column_get(ui_t *ui, const char *callid, Address addr)
 }
 
 void
-call_flow_move(ui_t *ui, int arrowindex)
+call_flow_move(Window *ui, int arrowindex)
 {
     call_flow_info_t *info;
     call_flow_arrow_t *arrow;
@@ -1482,7 +1476,7 @@ call_flow_move(ui_t *ui, int arrowindex)
 }
 
 call_flow_arrow_t *
-call_flow_arrow_selected(ui_t *ui)
+call_flow_arrow_selected(Window *ui)
 {
     // Get panel info
     call_flow_info_t *info = call_flow_info(ui);
@@ -1546,3 +1540,18 @@ call_flow_arrow_filter(void *item)
     // Rest of the arrows are never displayed
     return 0;
 }
+
+
+/**
+ * Ui Structure definition for Call Flow panel
+ */
+Window ui_call_flow = {
+        .type = PANEL_CALL_FLOW,
+        .panel = NULL,
+        .create = call_flow_create,
+        .destroy = call_flow_destroy,
+        .redraw = call_flow_redraw,
+        .draw = call_flow_draw,
+        .handle_key = call_flow_handle_key,
+        .help = call_flow_help
+};

@@ -39,23 +39,25 @@
 #include "packet/dissectors/packet_sip.h"
 
 /**
- * Ui Structure definition for Call Raw panel
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param panel Ncurses panel pointer
+ * @return a pointer to info structure of given panel
  */
-ui_t ui_call_raw = {
-    .type = PANEL_CALL_RAW,
-    .panel = NULL,
-    .create = call_raw_create,
-    .destroy = call_raw_destroy,
-    .redraw = call_raw_redraw,
-    .draw = call_raw_draw,
-    .handle_key = call_raw_handle_key
-};
+static call_raw_info_t *
+call_raw_info(Window *ui)
+{
+    return (call_raw_info_t*) panel_userptr(ui->panel);
+}
 
 void
-call_raw_create(ui_t *ui)
+call_raw_create(Window *ui)
 {
     // Create a new panel to fill all the screen
-    ui_panel_create(ui, LINES, COLS);
+    window_init(ui, LINES, COLS);
 
     // Initialize Call List specific data
     call_raw_info_t *info = g_malloc0(sizeof(call_raw_info_t));
@@ -70,7 +72,7 @@ call_raw_create(ui_t *ui)
 }
 
 void
-call_raw_destroy(ui_t *ui)
+call_raw_destroy(Window *ui)
 {
     call_raw_info_t *info;
 
@@ -82,14 +84,16 @@ call_raw_destroy(ui_t *ui)
     ui_panel_destroy(ui);
 }
 
-call_raw_info_t *
-call_raw_info(ui_t *ui)
-{
-    return (call_raw_info_t*) panel_userptr(ui->panel);
-}
-
-bool
-call_raw_redraw(ui_t *ui)
+/**
+ * @brief Determine if the screen requires redrawn
+ *
+ * This will query the interface if it requires to be redraw again.
+ *
+ * @param ui UI structure pointer
+ * @return true if the panel requires redraw, false otherwise
+ */
+static gboolean
+call_raw_redraw(Window *ui)
 {
     // Get panel information
     call_raw_info_t *info = call_raw_info(ui);
@@ -100,7 +104,7 @@ call_raw_redraw(ui_t *ui)
 }
 
 int
-call_raw_draw(ui_t *ui)
+call_raw_draw(Window *ui)
 {
     call_raw_info_t *info;
     SipMsg *msg = NULL;
@@ -124,7 +128,7 @@ call_raw_draw(ui_t *ui)
 }
 
 int
-call_raw_print_msg(ui_t *ui, SipMsg *msg)
+call_raw_print_msg(Window *ui, SipMsg *msg)
 {
     call_raw_info_t *info;
     int payload_lines, column, height, width;
@@ -205,11 +209,22 @@ call_raw_print_msg(ui_t *ui, SipMsg *msg)
     return 0;
 }
 
-int
-call_raw_handle_key(ui_t *ui, int key)
+
+/**
+ * @brief Handle Call Raw key strokes
+ *
+ * This function will manage the custom keybindings of the panel.
+ * This function return one of the values defined in @key_handler_ret
+ *
+ * @param panel Ncurses panel pointer
+ * @param key Pressed keycode
+ * @return enum @key_handler_ret
+ */
+static int
+call_raw_handle_key(Window *ui, int key)
 {
     call_raw_info_t *info;
-    ui_t *next_ui;
+    Window *next_ui;
     int rnpag_steps = setting_get_intvalue(SETTING_CR_SCROLLSTEP);
     int action = -1;
 
@@ -248,7 +263,7 @@ call_raw_handle_key(ui_t *ui, int key)
                 }
                 if (info->group) {
                     // KEY_S, Display save panel
-                    next_ui = ui_create_panel(PANEL_SAVE);
+                    next_ui = ncurses_create_window(PANEL_SAVE);
                     save_set_group(next_ui, info->group);
                 }
                 break;
@@ -294,7 +309,7 @@ call_raw_handle_key(ui_t *ui, int key)
 int
 call_raw_set_group(SipCallGroup *group)
 {
-    ui_t *ui;
+    Window *ui;
     call_raw_info_t *info;
 
     if (!group)
@@ -320,7 +335,7 @@ call_raw_set_group(SipCallGroup *group)
 int
 call_raw_set_msg(SipMsg *msg)
 {
-    ui_t *ui;
+    Window *ui;
     call_raw_info_t *info;
 
     if (!msg)
@@ -346,3 +361,16 @@ call_raw_set_msg(SipMsg *msg)
     return 0;
 
 }
+
+/**
+ * Ui Structure definition for Call Raw panel
+ */
+Window ui_call_raw = {
+        .type = PANEL_CALL_RAW,
+        .panel = NULL,
+        .create = call_raw_create,
+        .destroy = call_raw_destroy,
+        .redraw = call_raw_redraw,
+        .draw = call_raw_draw,
+        .handle_key = call_raw_handle_key
+};

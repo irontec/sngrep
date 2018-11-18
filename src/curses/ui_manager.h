@@ -52,15 +52,14 @@
 /**
  * Define existing panels
  */
-extern ui_t ui_call_list;
-extern ui_t ui_call_flow;
-extern ui_t ui_call_raw;
-extern ui_t ui_filter;
-extern ui_t ui_save;
-extern ui_t ui_msg_diff;
-extern ui_t ui_column_select;
-extern ui_t ui_settings;
-extern ui_t ui_stats;
+extern Window ui_call_flow;
+extern Window ui_call_raw;
+extern Window ui_filter;
+extern Window ui_save;
+extern Window ui_msg_diff;
+extern Window ui_column_select;
+extern Window ui_settings;
+extern Window ui_stats;
 
 /**
  * @brief Initialize ncurses mode
@@ -92,20 +91,20 @@ ncurses_deinit();
  * @param type Panel Type
  * @return the ui structure with the panel pointer created*
  */
-ui_t *
-ui_create_panel(enum panel_types type);
+Window *
+ncurses_create_window(enum WindowTypes type);
 
 /**
  * @brief Find a ui from its pannel pointer
  */
-ui_t *
+Window *
 ui_find_by_panel(PANEL *panel);
 
 /**
  * @brief Find a ui form its panel id
  */
-ui_t *
-ui_find_by_type(enum panel_types type);
+Window *
+ui_find_by_type(enum WindowTypes type);
 
 /**
  * @brief Wait for user input in topmost panel
@@ -127,7 +126,7 @@ ui_wait_for_input();
  * @param key key pressed by user
  */
 int
-ui_default_handle_key(ui_t *ui, int key);
+ui_default_handle_key(Window *ui, int key);
 
 /**
  * @brief Call Resize function in all panels in the stack

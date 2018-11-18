@@ -91,7 +91,7 @@ struct filter_info {
  * @param ui UI structure pointer
  */
 void
-filter_create(ui_t *ui);
+filter_create(Window *ui);
 
 /**
  * @brief Destroy filter panel
@@ -100,7 +100,7 @@ filter_create(ui_t *ui);
  * @param ui UI structure pointer
  */
 void
-filter_destroy(ui_t *ui);
+filter_destroy(Window *ui);
 
 /**
  * @brief Get custom information of given panel
@@ -112,7 +112,7 @@ filter_destroy(ui_t *ui);
  * @return a pointer to info structure of given panel
  */
 filter_info_t *
-filter_info(ui_t *ui);
+filter_info(Window *ui);
 
 /**
  * @brief Manage pressed keys for filter panel
@@ -126,7 +126,7 @@ filter_info(ui_t *ui);
  * @return enum @key_handler_ret
  */
 int
-filter_handle_key(ui_t *ui, int key);
+filter_handle_key(Window *ui, int key);
 
 /**
  * @brief Save form data to options
@@ -137,7 +137,7 @@ filter_handle_key(ui_t *ui, int key);
  * @param ui UI structure pointer
  */
 void
-filter_save_options(ui_t *ui);
+filter_save_options(Window *ui);
 
 /**
  * @brief Return String value for a filter field

@@ -41,7 +41,7 @@
 /**
  * Ui Structure definition for Filter panel
  */
-ui_t ui_filter = {
+Window ui_filter = {
     .type = PANEL_FILTER,
     .panel = NULL,
     .create = filter_create,
@@ -50,13 +50,13 @@ ui_t ui_filter = {
 };
 
 void
-filter_create(ui_t *ui)
+filter_create(Window *ui)
 {
     filter_info_t *info;
     const char *method, *payload;
 
     // Cerate a new indow for the panel and form
-    ui_panel_create(ui, 17, 50);
+    window_init(ui, 17, 50);
 
     // Initialize Filter panel specific data
     info = g_malloc0(sizeof(filter_info_t));
@@ -185,7 +185,7 @@ filter_create(ui_t *ui)
 }
 
 void
-filter_destroy(ui_t *ui)
+filter_destroy(Window *ui)
 {
     curs_set(0);
     ui_panel_destroy(ui);
@@ -193,13 +193,13 @@ filter_destroy(ui_t *ui)
 
 
 filter_info_t *
-filter_info(ui_t *ui)
+filter_info(Window *ui)
 {
     return (filter_info_t*) panel_userptr(ui->panel);
 }
 
 int
-filter_handle_key(ui_t *ui, int key)
+filter_handle_key(Window *ui, int key)
 {
     int field_idx;
     char field_value[MAX_SETTING_LEN];
@@ -325,7 +325,7 @@ filter_handle_key(ui_t *ui, int key)
 }
 
 void
-filter_save_options(ui_t *ui)
+filter_save_options(Window *ui)
 {
     char field_value[MAX_SETTING_LEN];
     char *expr;
@@ -394,7 +394,7 @@ filter_save_options(ui_t *ui)
     // Force filter evaluation
     filter_reset_calls();
     // TODO FIXME Refresh call list FIXME
-    call_list_clear(ui_find_by_type(PANEL_CALL_LIST));
+    call_list_clear(ui_find_by_type(WINDOW_CALL_LIST));
 
 }
 

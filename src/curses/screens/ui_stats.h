@@ -41,6 +41,6 @@
  * @param ui UI structure pointer
  */
 void
-stats_create(ui_t *ui);
+stats_create(Window *ui);
 
 #endif /* __SNGREP_UI_STATS_H */

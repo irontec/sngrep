@@ -52,8 +52,7 @@
  * and pointer to their main functions.
 
  */
-static ui_t *panel_pool[] = {
-    &ui_call_list,
+static Window *panel_pool[] = {
     &ui_call_flow,
     &ui_call_raw,
     &ui_filter,
@@ -63,6 +62,8 @@ static ui_t *panel_pool[] = {
     &ui_settings,
     &ui_stats
 };
+
+static GPtrArray *windows;
 
 int
 ncurses_init()
@@ -140,6 +141,9 @@ ncurses_init()
     init_pair(CP_CYAN_ON_WHITE, COLOR_CYAN, COLOR_WHITE);
     init_pair(CP_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
 
+    // Initialize windows stack
+    windows = g_ptr_array_new();
+
     return 0;
 }
 
@@ -152,29 +156,62 @@ ncurses_deinit()
     endwin();
 }
 
-ui_t *
-ui_create_panel(enum panel_types type)
+Window *
+ncurses_create_window(enum WindowTypes type)
 {
     // Find the panel of given type and create it
     return ui_create(ui_find_by_type(type));
 }
 
-ui_t *
+static gboolean
+ncurses_window_panel_cmp(Window *window, PANEL *panel)
+{
+    return window->panel == panel;
+}
+
+static gboolean
+ncurses_window_type_cmp(Window *window, gpointer type)
+{
+    return window->type == GPOINTER_TO_UINT(type);
+}
+
+Window *
 ui_find_by_panel(PANEL *panel)
 {
+    guint index;
+    if (g_ptr_array_find_with_equal_func(windows, panel,
+            (GEqualFunc) ncurses_window_panel_cmp, &index)) {
+        return g_ptr_array_index(windows, index);
+    }
+
     int i;
     // Return ui pointer if found
     for (i = 0; i < PANEL_COUNT; i++) {
         if (panel_pool[i]->panel == panel)
             return panel_pool[i];
     }
+
     return NULL;
 }
 
-ui_t *
-ui_find_by_type(enum panel_types type)
+Window *
+ui_find_by_type(enum WindowTypes type)
 {
     int i;
+
+    guint index;
+    if (g_ptr_array_find_with_equal_func(windows, GUINT_TO_POINTER(type),
+            (GEqualFunc) ncurses_window_type_cmp, &index)) {
+        return g_ptr_array_index(windows, index);
+    }
+
+    // TODO
+    if (type == WINDOW_CALL_LIST) {
+        Window *window = call_list_new();
+        g_ptr_array_add(windows, window);
+        return window;
+    }
+
     // Return ui pointer if found
     for (i = 0; i < PANEL_COUNT; i++) {
         if (panel_pool[i]->type == type)
@@ -186,7 +223,7 @@ ui_find_by_type(enum panel_types type)
 int
 ui_wait_for_input()
 {
-    ui_t *ui;
+    Window *ui;
     WINDOW *win;
     PANEL *panel;
 
@@ -256,7 +293,7 @@ ui_wait_for_input()
 }
 
 int
-ui_default_handle_key(ui_t *ui, int key)
+ui_default_handle_key(Window *ui, int key)
 {
     int action = -1;
 
@@ -280,7 +317,7 @@ ui_default_handle_key(ui_t *ui, int key)
                 setting_toggle(SETTING_DISPLAY_ALIAS);
                 break;
             case ACTION_SHOW_SETTINGS:
-                ui_create_panel(PANEL_SETTINGS);
+                ncurses_create_window(PANEL_SETTINGS);
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
