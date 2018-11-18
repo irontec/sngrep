@@ -30,7 +30,7 @@
 #include <glib.h>
 #include "option.h"
 #include "capture/capture.h"
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif
@@ -329,7 +329,7 @@ main(int argc, char* argv[])
         // This is a blocking call.
         // Create the first panel and wait for user input
         ncurses_create_window(WINDOW_CALL_LIST);
-        ui_wait_for_input();
+        ncurses_wait_for_input();
     } else {
         setbuf(stdout, NULL);
         while(capture_is_running(manager)) {

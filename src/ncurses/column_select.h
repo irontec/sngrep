@@ -32,7 +32,7 @@
 #include "config.h"
 #include <menu.h>
 #include <form.h>
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/scrollbar.h"
 #include "attribute.h"
 

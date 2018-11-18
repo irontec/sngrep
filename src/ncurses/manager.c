@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <locale.h>
 #include "setting.h"
-#include "ui_manager.h"
+#include "manager.h"
 #include "packet/dissectors/packet_sip.h"
 #include "capture/capture.h"
 #include "ncurses/call_list.h"
@@ -159,7 +159,7 @@ Window *
 ncurses_create_window(enum WindowTypes type)
 {
     // Find the panel of given type and create it
-    return ui_create(ncurses_find_by_type(type));
+    return window_create(ncurses_find_by_type(type));
 }
 
 void
@@ -168,7 +168,7 @@ ncurses_destroy_window(Window *window)
     // Remove from the window list
     g_ptr_array_remove(windows, window);
     // Deallocate window memory
-    ui_destroy(window);
+    window_destroy(window);
 }
 
 static gboolean
@@ -192,9 +192,8 @@ ncurses_find_by_panel(PANEL *panel)
         return g_ptr_array_index(windows, index);
     }
 
-    int i;
     // Return ui pointer if found
-    for (i = 0; i < PANEL_COUNT; i++) {
+    for (guint i = 0; i < PANEL_COUNT; i++) {
         if (panel_pool[i]->panel == panel)
             return panel_pool[i];
     }
@@ -236,7 +235,7 @@ ncurses_find_by_type(enum WindowTypes type)
 }
 
 int
-ui_wait_for_input()
+ncurses_wait_for_input()
 {
     Window *ui;
     WINDOW *win;
@@ -254,9 +253,9 @@ ui_wait_for_input()
         // Avoid parsing any packet while UI is being drawn
         capture_lock(capture_manager());
         // Query the interface if it needs to be redrawn
-        if (ui_draw_redraw(ui)) {
+        if (window_redraw(ui)) {
             // Redraw this panel
-            if (ui_draw_panel(ui) != 0) {
+            if (window_draw(ui) != 0) {
                 capture_unlock(capture_manager());
                 return -1;
             }
@@ -286,7 +285,7 @@ ui_wait_for_input()
         int hld = KEY_NOT_HANDLED;
         while (hld != KEY_HANDLED) {
             // Check if current panel has custom bindings for that key
-            hld = ui_handle_key(ui, c);
+            hld = window_handle_key(ui, c);
 
             if (hld == KEY_HANDLED) {
                 // Panel handled this key
@@ -320,7 +319,7 @@ ncurses_default_keyhandler(Window *window, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_RESIZE_SCREEN:
-                ui_resize_panels();
+                ncurses_resize_panels();
                 break;
             case ACTION_TOGGLE_SYNTAX:
                 setting_toggle(SETTING_SYNTAX);
@@ -342,7 +341,7 @@ ncurses_default_keyhandler(Window *window, int key)
                 capture_manager()->paused = !capture_manager()->paused;
                 break;
             case ACTION_SHOW_HELP:
-                ui_help(window);
+                window_help(window);
                 break;
             case ACTION_PREV_SCREEN:
                 ncurses_destroy_window(window);
@@ -360,14 +359,14 @@ ncurses_default_keyhandler(Window *window, int key)
 }
 
 void
-ui_resize_panels()
+ncurses_resize_panels()
 {
     PANEL *panel = NULL;
 
     // While there are still panels
     while ((panel = panel_below(panel))) {
         // Invoke resize for this panel
-        ui_resize_panel(ncurses_find_by_panel(panel));
+        window_resize(ncurses_find_by_panel(panel));
     }
 }
 

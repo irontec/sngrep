@@ -33,7 +33,7 @@ set(SOURCES
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
-        src/ncurses/ui_manager.c
+        src/ncurses/manager.c
         src/ncurses/ui_call_flow.c
         src/ncurses/call_list.c
         src/ncurses/ui_call_raw.c
@@ -43,7 +43,7 @@ set(SOURCES
         src/ncurses/ui_save.c
         src/ncurses/ui_settings.c
         src/ncurses/ui_stats.c
-        src/ncurses/ui_panel.c
+        src/ncurses/window.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c
         src/filter.c

@@ -36,7 +36,7 @@
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
 #include "config.h"
-#include "ncurses/ui_panel.h"
+#include "ncurses/window.h"
 #include "ncurses/theme.h"
 #include "ncurses/keybinding.h"
 #include "storage.h"
@@ -113,7 +113,7 @@ ncurses_find_by_type(enum WindowTypes type);
  *
  */
 int
-ui_wait_for_input();
+ncurses_wait_for_input();
 
 /**
  * @brief Default handler for keys
@@ -134,7 +134,7 @@ ncurses_default_keyhandler(Window *window, int key);
  * resize functions of panels that implement it.
  */
 void
-ui_resize_panels();
+ncurses_resize_panels();
 
 /**
  * @brief Draw a box around passed windows

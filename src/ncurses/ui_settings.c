@@ -34,7 +34,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/ui_settings.h"
 #include "setting.h"
 
@@ -363,7 +363,7 @@ settings_handle_key(Window *ui, int key)
                     break;
                 case ACTION_CONFIRM:
                     ui_settings_update_settings(ui);
-                    ui_destroy(ui);
+                    window_destroy(ui);
                     return KEY_HANDLED;
                 default:
                     // Parse next action
@@ -395,7 +395,7 @@ settings_handle_key(Window *ui, int key)
                     if (field_idx == BTN_SETTINGS_SAVE)
                         ui_settings_save(ui);
                     ui_settings_update_settings(ui);
-                    ui_destroy(ui);
+                    window_destroy(ui);
                     return KEY_HANDLED;
                 default:
                     continue;

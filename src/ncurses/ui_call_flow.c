@@ -32,7 +32,7 @@
 #include <string.h>
 #include <packet/dissectors/packet_sip.h>
 #include "capture/capture_pcap.h"
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/ui_call_flow.h"
 #include "ncurses/ui_call_raw.h"
 #include "ncurses/ui_msg_diff.h"

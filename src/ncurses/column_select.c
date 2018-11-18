@@ -35,7 +35,7 @@
 #include <errno.h>
 #include <glib/gstdio.h>
 #include "glib-utils.h"
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/call_list.h"
 #include "ncurses/column_select.h"
 

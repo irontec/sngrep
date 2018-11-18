@@ -28,128 +28,121 @@
 
 #include "config.h"
 #include <string.h>
-#include "ncurses/ui_panel.h"
+#include "ncurses/window.h"
 #include "ncurses/theme.h"
 
 Window *
-ui_create(Window *ui)
+window_create(Window *window)
 {
     // If ui has no panel
-    if (!ui->panel) {
+    if (!window->panel) {
         // Create the new panel for this ui
-        if (ui->create) {
-            ui->create(ui);
+        if (window->create) {
+            window->create(window);
         }
     }
 
     // Force screen draw for the first time
-    ui->changed = true;
+    window->changed = true;
 
     // And return it
-    return ui;
+    return window;
 }
 
 void
-ui_destroy(Window *ui)
+window_destroy(Window *window)
 {
     // If there is no ui panel, we're done
-    if (!ui || !ui->panel)
+    if (!window || !window->panel)
         return;
 
     // Hide this panel before destroying
-    hide_panel(ui->panel);
+    hide_panel(window->panel);
 
     // If panel has a destructor function use it
-    if (ui->destroy) {
-        ui->destroy(ui);
+    if (window->destroy) {
+        window->destroy(window);
     }
 
     // Initialize panel pointer
-    ui->panel = NULL;
+    window->panel = NULL;
 }
 
-PANEL *
-ui_get_panel(Window *ui)
-{
-    // Return panel pointer of ui struct
-    return (ui) ? ui->panel : NULL;
-}
-
-bool
-ui_draw_redraw(Window *ui)
+gboolean
+window_redraw(Window *window)
 {
     // Sanity check, this should not happen
-    if (!ui || !ui->panel)
+    if (!window || !window->panel)
         return false;
 
     // If ui has changed, force redraw. Don't even ask.
-    if (ui->changed) {
-        ui->changed = false;
+    if (window->changed) {
+        window->changed = false;
         return true;
     }
 
     // Query the panel if its needs to be redrawn
-    if (ui->redraw) {
-        return ui->redraw(ui);
+    if (window->redraw) {
+        return window->redraw(window);
     }
     return true;
 }
 
 int
-ui_draw_panel(Window *ui)
+window_draw(Window *window)
 {
     //! Sanity check, this should not happen
-    if (!ui || !ui->panel)
+    if (!window || !window->panel)
         return -1;
 
     // Request the panel to draw on the scren
-    if (ui->draw) {
-        return ui->draw(ui);
+    if (window->draw) {
+        return window->draw(window);
     } else {
-        touchwin(ui->win);
+        touchwin(window->win);
     }
 
     return 0;
 }
 
 int
-ui_resize_panel(Window *ui)
+window_resize(Window *window)
 {
     //! Sanity check, this should not happen
-    if (!ui)
+    if (!window)
         return -1;
 
     // Notify the panel screen size has changed
-    if (ui->resize) {
-        return ui->resize(ui);
+    if (window->resize) {
+        return window->resize(window);
     }
 
     return 0;
 }
 
 void
-ui_help(Window *ui)
+window_help(Window *window)
 {
     // Disable input timeout
     nocbreak();
     cbreak();
 
-    // If current ui has help function
-    if (ui->help) {
-        ui->help(ui);
+    // If current window has help function
+    if (window->help) {
+        window->help(window);
     }
 }
 
 int
-ui_handle_key(Window *ui, int key)
+window_handle_key(Window *window, int key)
 {
     int hld = KEY_NOT_HANDLED;
     // Request the panel to handle the key
-    if (ui->handle_key) {
-        hld = ui->handle_key(ui, key);
+    if (window->handle_key) {
+        hld = window->handle_key(window, key);
     }
     // Force redraw when the user presses keys
-    ui->changed = true;
+    window->changed = true;
     return hld;
 }
 
@@ -170,66 +163,66 @@ window_init(Window *window, int height, int width)
 }
 
 void
-window_deinit(Window *ui)
+window_deinit(Window *window)
 {
     // Deallocate panel window
-    delwin(ui->win);
+    delwin(window->win);
     // Deallocate panel pointer
-    del_panel(ui->panel);
+    del_panel(window->panel);
 }
 
 void
-window_set_title(Window *ui, const char *title)
+window_set_title(Window *window, const gchar *title)
 {
     // FIXME Reverse colors on monochrome terminals
     if (!has_colors()) {
-        wattron(ui->win, A_REVERSE);
+        wattron(window->win, A_REVERSE);
     }
 
     // Center the title on the window
-    wattron(ui->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    ncurses_clear_line(ui, 0);
-    mvwprintw(ui->win, 0, (ui->width - strlen(title)) / 2, "%s", title);
-    wattroff(ui->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
+    wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    window_clear_line(window, 0);
+    mvwprintw(window->win, 0, (window->width - strlen(title)) / 2, "%s", title);
+    wattroff(window->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
 }
 
 void
-ncurses_clear_line(Window *ui, int line)
+window_clear_line(Window *window, int line)
 {
     // We could do this with wcleartoel but we want to
     // preserve previous window attributes. That way we
     // can set the background of the line.
-    mvwprintw(ui->win, line, 0, "%*s", ui->width, "");
+    mvwprintw(window->win, line, 0, "%*s", window->width, "");
 }
 
 void
-window_draw_bindings(Window *ui, const char **keybindings, int count)
+window_draw_bindings(Window *window, const char **keybindings, int count)
 {
     int key, xpos = 0;
 
     // Reverse colors on monochrome terminals
     if (!has_colors()) {
-        wattron(ui->win, A_REVERSE);
+        wattron(window->win, A_REVERSE);
     }
 
     // Write a line all the footer width
-    wattron(ui->win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    ncurses_clear_line(ui, ui->height - 1);
+    wattron(window->win, COLOR_PAIR(CP_DEF_ON_CYAN));
+    window_clear_line(window, window->height - 1);
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
-        wattron(ui->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        mvwprintw(ui->win, ui->height - 1, xpos, "%-*s",
+        wattron(window->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        mvwprintw(window->win, window->height - 1, xpos, "%-*s",
                   strlen(keybindings[key]) + 1, keybindings[key]);
         xpos += strlen(keybindings[key]) + 1;
-        wattroff(ui->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        wattron(ui->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        mvwprintw(ui->win, ui->height - 1, xpos, "%-*s",
+        wattroff(window->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        wattron(window->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
+        mvwprintw(window->win, window->height - 1, xpos, "%-*s",
                   strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);
-        wattroff(ui->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
+        wattroff(window->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         xpos += strlen(keybindings[key + 1]) + 3;
     }
 
     // Disable reverse mode in all cases
-    wattroff(ui->win, A_REVERSE | A_BOLD);
+    wattroff(window->win, A_REVERSE | A_BOLD);
 }

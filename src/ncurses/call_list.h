@@ -34,7 +34,7 @@
 
 #include <menu.h>
 #include <glib.h>
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/scrollbar.h"
 
 /**

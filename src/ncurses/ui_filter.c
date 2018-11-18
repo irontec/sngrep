@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <form.h>
 #include "packet/dissectors/packet_sip.h"
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/call_list.h"
 #include "storage.h"
@@ -283,18 +283,18 @@ filter_handle_key(Window *ui, int key)
                         }
                         break;
                     case FLD_FILTER_CANCEL:
-                        ui_destroy(ui);
+                        window_destroy(ui);
                         return KEY_HANDLED;
                     case FLD_FILTER_FILTER:
                         filter_save_options(ui);
-                        ui_destroy(ui);
+                        window_destroy(ui);
                         return KEY_HANDLED;
                 }
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_FILTER_CANCEL)
                     filter_save_options(ui);
-                ui_destroy(ui);
+                window_destroy(ui);
                 return KEY_HANDLED;
             default:
                 // Parse next action

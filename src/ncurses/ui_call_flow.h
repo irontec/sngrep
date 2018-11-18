@@ -56,7 +56,7 @@
 #define __SNGREP_UI_CALL_FLOW_H
 
 #include <stdbool.h>
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/scrollbar.h"
 #include "group.h"
 

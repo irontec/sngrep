@@ -356,7 +356,7 @@ save_handle_key(Window *ui, int key)
                 if (field_idx != FLD_SAVE_CANCEL) {
                     save_to_file(ui);
                 }
-                ui_destroy(ui);
+                window_destroy(ui);
                 return KEY_HANDLED;
             default:
                 // Parse next action

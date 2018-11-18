@@ -37,7 +37,7 @@
 #include <form.h>
 
 //! Possible key handler results
-enum key_handler_ret {
+enum WindowKeyHandlerRet {
     //! Panel has handled the key, dont'use default key handler
     KEY_HANDLED         = 0,
     //! Panel has not handled the key, try defualt key handler
@@ -77,7 +77,7 @@ enum WindowTypes {
 };
 
 //! Shorter declaration of ui structure
-typedef struct _Panel Window;
+typedef struct _Window Window;
 
 /**
  * @brief Panel information structure
@@ -85,7 +85,7 @@ typedef struct _Panel Window;
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct _Panel {
+struct _Window {
     //! Curses panel pointer
     PANEL *panel;
     //! Window for the curses panel
@@ -125,11 +125,11 @@ struct _Panel {
  * Create a ncurses panel associated to the given ui
  * This function is a small wrapper for panel create function
  *
- * @param ui UI structure
+ * @param window UI structure
  * @return the ui structure with the panel pointer created
  */
 Window *
-ui_create(Window *ui);
+window_create(Window *window);
 
 /**
  * @brief Destroy a panel structure
@@ -138,26 +138,13 @@ ui_create(Window *ui);
  * its memory. Most part of this task is done in the custom
  * destroy function of the panel.
  *
- * @param ui UI structure
+ * @param window UI structure
  */
 void
-ui_destroy(Window *ui);
+window_destroy(Window *window);
 
 /**
- * @brief Get panel pointer from an ui element
- *
- * Basic getter to get the Ncurses PANEL pointer
- * from ui structure. Use this instead of accessing
- * directly to the pointer.
- *
- * @param ui UI structure
- * @return ncurses panel pointer of given UI
- */
-PANEL *
-ui_get_panel(Window *ui);
-
-/**
- * @brief Redrawn current ui
+ * @brief Resize current ui
  *
  * This function acts as wrapper to custom ui draw functions
  * with some checks
@@ -166,7 +153,7 @@ ui_get_panel(Window *ui);
  * @return 0 if ui has been drawn, -1 otherwise
  */
 int
-ui_resize_panel(Window *ui);
+window_resize(Window *window);
 
 /**
  * @brief Check if the panel requires redraw
@@ -174,11 +161,11 @@ ui_resize_panel(Window *ui);
  * This function acts as wrapper to custom ui redraw function
  * with some checks
  *
- * @param ui UI structure
+ * @param window UI structure
  * @return true if the panel must be drawn, false otherwise
  */
-bool
-ui_draw_redraw(Window *ui);
+gboolean
+window_redraw(Window *window);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -186,11 +173,11 @@ ui_draw_redraw(Window *ui);
  * This function acts as wrapper to custom ui resize functions
  * with some checks
  *
- * @param ui UI structure
+ * @param window UI structure
  * @return 0 if ui has been resize, -1 otherwise
  */
 int
-ui_draw_panel(Window *ui);
+window_draw(Window *window);
 
 /**
  * @brief Show help screen from current UI (if any)
@@ -199,10 +186,10 @@ ui_draw_panel(Window *ui);
  * ui if exits.
  * All help screens exits after any character input
  *
- * @param ui UI structure
+ * @param window UI structure
  */
 void
-ui_help(Window *ui);
+window_help(Window *window);
 
 /**
  * @brief Handle key inputs on given UI
@@ -215,7 +202,7 @@ ui_help(Window *ui);
  * @return enum @key_handler_ret*
  */
 int
-ui_handle_key(Window *ui, int key);
+window_handle_key(Window *window, int key);
 
 /**
  * @brief Create a ncurses panel for the given ui
@@ -238,7 +225,7 @@ window_init(Window *window, int height, int width);
  * @param ui UI structure
  */
 void
-window_deinit(Window *ui);
+window_deinit(Window *window);
 
 /**
  * @brief Draw title at the top of the panel UI
@@ -250,7 +237,7 @@ window_deinit(Window *ui);
  * @param title String containing the title
  */
 void
-window_set_title(Window *ui, const char *title);
+window_set_title(Window *window, const gchar *title);
 
 /**
  * @brief Clear a given window line
@@ -258,11 +245,11 @@ window_set_title(Window *ui, const char *title);
  * This function can be used to clear a given line on the
  * screen.
  *
- * @param ui UI structure
+ * @param window UI structure
  * @param line Number of line to be cleared
  */
 void
-ncurses_clear_line(Window *ui, int line);
+window_clear_line(Window *window, int line);
 
 /**
  * @brief Draw keybinding info at the bottom of the panel
@@ -272,6 +259,6 @@ ncurses_clear_line(Window *ui, int line);
  *
  */
 void
-window_draw_bindings(Window *ui, const char **keybindings, int count);
+window_draw_bindings(Window *window, const char **keybindings, int count);
 
 #endif /* __SNGREP_UI_PANEL_H */

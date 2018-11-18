@@ -40,7 +40,7 @@
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/call_list.h"
 #include "ncurses/ui_call_flow.h"
 #include "ncurses/ui_call_raw.h"
@@ -228,7 +228,7 @@ call_list_draw_header(Window *window)
     window_set_title(window, "sngrep - SIP messages flow viewer");
 
     // Draw a Panel header lines
-    ncurses_clear_line(window, 1);
+    window_clear_line(window, 1);
 
     // Print Open filename in Offline mode
     if (!capture_is_online(capture_manager()) && (infile = capture_input_pcap_file(capture_manager())))
@@ -285,7 +285,7 @@ call_list_draw_header(Window *window)
 
     // Draw columns titles
     wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    ncurses_clear_line(window, 4);
+    window_clear_line(window, 4);
 
     // Draw separator line
     if (info->menu_active) {
@@ -981,10 +981,10 @@ call_list_handle_key(Window *window, int key)
                 // Handle quit from this screen unless requested
                 if (setting_enabled(SETTING_EXITPROMPT)) {
                     if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
-                        ui_destroy(window);
+                        window_destroy(window);
                     }
                 } else {
-                    ui_destroy(window);
+                    window_destroy(window);
                 }
                 return KEY_HANDLED;
             default:

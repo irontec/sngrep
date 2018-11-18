@@ -29,7 +29,7 @@
 #include "config.h"
 #include "attribute.h"
 #include "packet/dissectors/packet_sip.h"
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 
 static AttributeHeader attrs[ATTR_COUNT] = {
     { ATTR_CALLINDEX,   "index",       "Idx",       "Call Index",       4 , NULL },

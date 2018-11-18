@@ -32,7 +32,7 @@
 #include "config.h"
 #include <string.h>
 #include <stdlib.h>
-#include "ncurses/ui_manager.h"
+#include "ncurses/manager.h"
 #include "ncurses/ui_call_raw.h"
 #include "ncurses/ui_save.h"
 #include "capture/capture_pcap.h"
