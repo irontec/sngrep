@@ -102,7 +102,7 @@ call_flow_arrow_selected(Window *window)
     if (info->selected == -1)
         return NULL;
 
-    return g_sequence_nth(info->darrows, info->selected);
+    return g_ptr_array_index(info->darrows, info->selected);
 
 }
 
@@ -149,7 +149,7 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
  * @param item Call Flow arrow structure pointer
  */
 static gint
-call_flow_arrow_sorter(gconstpointer a, gconstpointer b, G_GNUC_UNUSED gpointer user_data)
+call_flow_arrow_sorter(gconstpointer a, gconstpointer b)
 {
     return timeval_is_older(
             call_flow_arrow_time(a),
@@ -184,6 +184,15 @@ call_flow_arrow_filter(void *item)
 }
 
 /**
+ * @brief Callback for searching arrows by item
+ */
+static gboolean
+call_flow_arrow_find_item_cb(CallFlowArrow *arrow, gpointer item)
+{
+    return arrow->item == item;
+}
+
+/**
  * @brief Return the arrow of a SIP msg or RTP stream
  *
  * This function will try to find an existing arrow with a
@@ -196,19 +205,14 @@ call_flow_arrow_filter(void *item)
 static CallFlowArrow *
 call_flow_arrow_find(Window *window, const void *data)
 {
-
-    CallFlowArrow *arrow;
-    GSequenceIter *it;
-
     CallFlowInfo *info = call_flow_info(window);
     g_return_val_if_fail(info != NULL, NULL);
     g_return_val_if_fail(data != NULL, NULL);
 
-    it = g_sequence_get_begin_iter(info->arrows);
-    for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        arrow = g_sequence_get(it);
-        if (arrow->item == data)
-            return arrow;
+    guint index;
+    if (g_ptr_array_find_with_equal_func(info->arrows, data,
+            (GEqualFunc) call_flow_arrow_find_item_cb, &index)) {
+        return g_ptr_array_index(info->arrows, index);
     }
 
     return NULL;
@@ -233,14 +237,13 @@ call_flow_arrow_create(Window *window, void *item, int type)
 {
     CallFlowArrow *arrow;
 
-    if ((arrow = call_flow_arrow_find(window, item)))
-        return arrow;
+    if ((arrow = call_flow_arrow_find(window, item)) == NULL) {
+        // Create a new arrow of the given type
+        arrow = g_malloc0(sizeof(CallFlowArrow));
+        arrow->type = type;
+        arrow->item = item;
+    }
 
-    // Create a new arrow of the given type
-    arrow = malloc(sizeof(CallFlowArrow));
-    memset(arrow, 0, sizeof(CallFlowArrow));
-    arrow->type = type;
-    arrow->item = item;
     return arrow;
 }
 
@@ -320,23 +323,18 @@ call_flow_arrow_message(const  CallFlowArrow *arrow)
 static CallFlowColumn *
 call_flow_column_get(Window *window, const char *callid, Address addr)
 {
-    CallFlowColumn *column;
-    GSequenceIter *columns;
-    int match_port;
-    const char *alias;
-
     CallFlowInfo *info = call_flow_info(window);
     g_return_val_if_fail(info != NULL, NULL);
 
     // Look for address or address:port ?
-    match_port = addr.port != 0;
+    gboolean match_port = addr.port != 0;
 
     // Get alias value for given address
-    alias = get_alias_value(addr.ip);
+    const gchar *alias = get_alias_value(addr.ip);
 
-    columns = g_sequence_get_begin_iter(info->columns);
-    for (;!g_sequence_iter_is_end(columns); columns = g_sequence_iter_next(columns)) {
-        column = g_sequence_get(columns);
+    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
+        CallFlowColumn *column = g_ptr_array_index(info->columns, i);
+
         // In compressed mode, we search using alias instead of address
         if (setting_enabled(SETTING_CF_SPLITCALLID)) {
             if (!strcmp(column->alias, alias)) {
@@ -376,9 +374,6 @@ call_flow_column_get(Window *window, const char *callid, Address addr)
 static void
 call_flow_column_add(Window *window, const char *callid, Address addr)
 {
-    CallFlowColumn *column;
-    GSequenceIter *columns;
-
     CallFlowInfo *info = call_flow_info(window);
     g_return_if_fail(info != NULL);
 
@@ -386,9 +381,9 @@ call_flow_column_add(Window *window, const char *callid, Address addr)
         return;
 
     // Try to fill the second Call-Id of the column
-    columns = g_sequence_get_begin_iter(info->columns);
-    for (;!g_sequence_iter_is_end(columns); columns = g_sequence_iter_next(columns)) {
-        column = g_sequence_get(columns);
+    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
+        CallFlowColumn *column = g_ptr_array_index(info->columns, i);
+
         if (addressport_equals(column->addr, addr)) {
             if (column->colpos != 0 && g_sequence_get_length(column->callids) < info->maxcallids) {
                 g_sequence_append(column->callids, (void*)callid);
@@ -398,14 +393,13 @@ call_flow_column_add(Window *window, const char *callid, Address addr)
     }
 
     // Create a new column
-    column = malloc(sizeof(CallFlowColumn));
-    memset(column, 0, sizeof(CallFlowColumn));
+    CallFlowColumn * column = g_malloc0(sizeof(CallFlowColumn));
     column->callids = g_sequence_new(NULL);
     g_sequence_append(column->callids, (void*)callid);
     column->addr = addr;
     strcpy(column->alias, get_alias_value(addr.ip));
-    column->colpos = g_sequence_get_length(info->columns);
-    g_sequence_append(info->columns, column);
+    column->colpos = g_ptr_array_len(info->columns);
+    g_ptr_array_add(info->columns, column);
 }
 
 /**
@@ -441,11 +435,9 @@ call_flow_draw_footer(Window *window)
 static void
 call_flow_draw_columns(Window *window)
 {
-    CallFlowColumn *column;
     Call *call = NULL;
     RtpStream *stream;
     Message *msg = NULL;
-    GSequenceIter *it;
     char coltext[MAX_SETTING_LEN];
     Address addr;
 
@@ -484,9 +476,9 @@ call_flow_draw_columns(Window *window)
     }
 
     // Draw columns
-    it = g_sequence_get_begin_iter(info->columns);
-    for (column = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        column = g_sequence_get(it);
+    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
+        CallFlowColumn *column = g_ptr_array_index(info->columns, i);
+
         mvwvline(info->flow_win, 0, 20 + 30 * column->colpos, ACS_VLINE, window->height - 6);
         mvwhline(window->win, 3, 10 + 30 * column->colpos, ACS_HLINE, 20);
         mvwaddch(window->win, 3, 20 + 30 * column->colpos, ACS_TTEE);
@@ -635,7 +627,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, int cline)
     int distance = abs(endpos - startpos) - 3;
 
     // Highlight current message
-    if (arrow == g_sequence_nth(info->darrows, info->cur_arrow)) {
+    if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
             wattron(flow_win, A_REVERSE);
         }
@@ -742,7 +734,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, int cline)
         if (arrow == call_flow_arrow_selected(window))
             wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
-        if (arrow == g_sequence_nth(info->darrows, info->cur_arrow)) {
+        if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
             wattron(flow_win, A_BOLD);
             mvwprintw(flow_win, cline, 2, "%s", msg_time);
             wattroff(flow_win, A_BOLD);
@@ -758,7 +750,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, int cline)
                     GTimeVal curts = msg_get_time(msg);
                     timeval_to_delta(selts, curts, delta);
                 }
-            } else if (arrow == g_sequence_nth(info->darrows, info->cur_arrow)) {
+            } else if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
                 GTimeVal selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window)));
                 GTimeVal curts = msg_get_time(msg);
                 timeval_to_delta(selts, curts, delta);
@@ -915,7 +907,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     }
 
     // Highlight current message
-    if (arrow == g_sequence_nth(info->darrows, info->cur_arrow)) {
+    if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
             wattron(win, A_REVERSE);
         }
@@ -978,7 +970,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Print timestamp
     if (info->arrowtime) {
         timeval_to_time(stream_time(stream), time);
-        if (arrow == g_sequence_nth(info->darrows, info->cur_arrow)) {
+        if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
             wattron(win, A_BOLD);
             mvwprintw(win, cline, 2, "%s", time);
             wattroff(win, A_BOLD);
@@ -1033,7 +1025,8 @@ call_flow_draw_arrows(Window *window)
     while ((msg = call_group_get_next_msg(info->group, msg))) {
         if (!call_flow_arrow_find(window, msg)) {
             arrow = call_flow_arrow_create(window, msg, CF_ARROW_SIP);
-            g_sequence_insert_sorted(info->arrows, arrow, call_flow_arrow_sorter, NULL);
+            g_ptr_array_add(info->arrows, arrow);
+            g_ptr_array_sort(info->arrows, (GCompareFunc) call_flow_arrow_sorter);
         }
     }
 
@@ -1042,7 +1035,8 @@ call_flow_draw_arrows(Window *window)
     while ((stream = call_group_get_next_stream(info->group, stream))) {
         if (!call_flow_arrow_find(window, stream)) {
             arrow = call_flow_arrow_create(window, stream, CF_ARROW_RTP);
-            g_sequence_insert_sorted(info->arrows, arrow, call_flow_arrow_sorter, NULL);
+            g_ptr_array_add(info->arrows, arrow);
+            g_ptr_array_sort(info->arrows, (GCompareFunc) call_flow_arrow_sorter);
         }
     }
 
@@ -1051,15 +1045,9 @@ call_flow_draw_arrows(Window *window)
     //info->darrows = vector_copy_if(info->arrows, call_flow_arrow_filter);
     info->darrows = info->arrows;
 
-    // If no active call, use the fist one (if exists)
-    if (info->cur_arrow == -1 && g_sequence_get_length(info->darrows)) {
-        info->cur_arrow = info->first_arrow = 0;
-    }
-
     // Draw arrows
-    GSequenceIter *it = g_sequence_get_iter_at_pos(info->darrows, info->first_arrow);
-    for (arrow = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        arrow = g_sequence_get(it);
+    for (guint i = info->first_idx; i < g_ptr_array_len(info->darrows); i++) {
+        CallFlowArrow *arrow = g_ptr_array_index(info->darrows, i);
 
         if (!call_flow_arrow_filter(arrow))
             continue;
@@ -1097,7 +1085,7 @@ call_flow_draw_raw(Window *window, Message *msg)
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = window->width - (30 * g_sequence_get_length(info->columns)) - 2;
+    raw_width = window->width - (30 * g_ptr_array_len(info->columns)) - 2;
 
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
@@ -1171,7 +1159,8 @@ call_flow_draw_raw_rtcp(Window *window, G_GNUC_UNUSED RtpStream *stream)
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = window->width - (30 * g_sequence_get_length(info->columns)) - 2;
+    raw_width = window->width - (30 * g_ptr_array_len(info->columns)) - 2;
+
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
         raw_width = min_raw_width;
@@ -1233,7 +1222,7 @@ call_flow_draw_preview(Window *window)
     g_return_if_fail(info != NULL);
 
     // Draw current arrow preview
-    if ((arrow = g_sequence_nth(info->darrows, info->cur_arrow))) {
+    if ((arrow = g_ptr_array_index(info->darrows, info->cur_idx))) {
         if (arrow->type == CF_ARROW_SIP) {
             call_flow_draw_raw(window, arrow->item);
         } else {
@@ -1249,79 +1238,75 @@ call_flow_draw_preview(Window *window)
  * selected line and scrolling position.
  *
  * @param window UI structure pointer
- * @param arrowindex Position to move the cursor
+ * @param idx Position to move the cursor
  */
 static void
-call_flow_move(Window *window, int arrowindex)
+call_flow_move(Window *window, guint idx)
 {
-    CallFlowInfo *info;
-    CallFlowArrow *arrow;
-    int flowh;
     int curh = 0;
 
     // Get panel info
-    if (!(info = call_flow_info(window)))
-        return;
+    CallFlowInfo *info = call_flow_info(window);
+    g_return_if_fail(info != NULL);
 
     // Already in this position?
-    if (info->cur_arrow == arrowindex)
+    if (info->cur_idx == idx)
         return;
 
     // Get flow subwindow height (for scrolling)
-    flowh  = getmaxy(info->flow_win);
+    gint flowh  = getmaxy(info->flow_win);
 
     // Moving down or up?
-    gboolean move_down = (info->cur_arrow < arrowindex);
-
-    GSequenceIter *it = g_sequence_get_iter_at_pos(info->darrows, info->cur_arrow);
+    gboolean move_down = (info->cur_idx < idx);
 
     if (move_down) {
-        for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-            if (!call_flow_arrow_filter(g_sequence_get(it)))
+        for (guint i = info->cur_idx + 1; i < g_ptr_array_len(info->darrows); i++) {
+            CallFlowArrow *arrow = g_ptr_array_index(info->darrows, i);
+
+            if (!call_flow_arrow_filter(arrow))
                 continue;
 
             // Get next selected arrow
-            info->cur_arrow = g_sequence_iter_get_position(it);
+            info->cur_idx = i;
 
             // We have reached our destination
-            if (info->cur_arrow >= arrowindex) {
+            if (info->cur_idx >= idx) {
                 break;
             }
         }
     } else {
-        while(!g_sequence_iter_is_begin(it)) {
-            it = g_sequence_iter_prev(it);
+        for (gint i = info->cur_idx - 1; i >= 0; i--) {
+            CallFlowArrow *arrow = g_ptr_array_index(info->darrows, i);
 
-            if (!call_flow_arrow_filter(g_sequence_get(it)))
+            if (!call_flow_arrow_filter(arrow))
                 continue;
 
             // Get previous selected arrow
-            info->cur_arrow = g_sequence_iter_get_position(it);
+            info->cur_idx = (guint) i;
 
             // We have reached our destination
-            if (info->cur_arrow <= arrowindex) {
+            if (info->cur_idx <= idx) {
                 break;
             }
         }
     }
 
     // Update the first displayed arrow
-    if (info->cur_arrow <= info->first_arrow) {
-        info->first_arrow = info->cur_arrow;
+    if (info->cur_idx <= info->first_idx) {
+        info->first_idx = info->cur_idx;
     } else {
         // Draw the scrollbar
-        g_sequence_iter_set_pos(&it, info->first_arrow);
-        for (;!g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-            arrow = g_sequence_get(it);
+        for (guint i = info->first_idx; i < g_ptr_array_len(info->darrows); i++) {
+            CallFlowArrow *arrow = g_ptr_array_index(info->darrows, i);
+
             // Increase current arrow height position
             curh += call_flow_arrow_height(window, arrow);
             // If we have reached current arrow
-            if (g_sequence_iter_get_position(it) == info->cur_arrow) {
+            if (i == info->cur_idx) {
                 if (curh > flowh) {
                     // Go to the next first arrow and check if current arrow
                     // is still out of bottom bounds
-                    info->first_arrow++;
-                    g_sequence_iter_set_pos(&it, info->first_arrow - 1);
+                    info->first_idx++;
                     curh = 0;
                 } else {
                     break;
@@ -1329,6 +1314,43 @@ call_flow_move(Window *window, int arrowindex)
             }
         }
     }
+}
+
+/**
+ * @brief Move selection cursor up N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move up
+ */
+static void
+call_flow_move_up(Window *window, guint times)
+{
+    CallFlowInfo *info = call_flow_info(window);
+    g_return_if_fail(info != NULL);
+
+    gint newpos = info->cur_idx - times;
+    if (newpos < 0) newpos = 0;
+
+    call_flow_move(window, (guint) newpos);
+}
+
+/**
+ * @brief Move selection cursor down N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move down
+ */
+static void
+call_flow_move_down(Window *window, guint times)
+{
+    CallFlowInfo *info = call_flow_info(window);
+    g_return_if_fail(info != NULL);
+
+    guint newpos = info->cur_idx + times;
+    if (newpos >= g_ptr_array_len(info->darrows))
+        newpos = g_ptr_array_len(info->darrows) - 1;
+
+    call_flow_move(window, newpos);
 }
 
 /**
@@ -1347,7 +1369,7 @@ call_flow_handle_key(Window *window, int key)
     int raw_width;
     Window *next_ui;
     Call *call = NULL;
-    int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
+    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
 
     // Sanity check, this should not happen
@@ -1359,29 +1381,28 @@ call_flow_handle_key(Window *window, int key)
         // Check if we handle this action
         switch(action) {
             case ACTION_DOWN:
-                call_flow_move(window, info->cur_arrow + 1);
+                call_flow_move_down(window, 1);
                 break;
             case ACTION_UP:
-                call_flow_move(window, info->cur_arrow - 1);
+                call_flow_move_up(window, 1);
                 break;
             case ACTION_HNPAGE:
-                rnpag_steps = rnpag_steps / 2;
-                /* fall-thru */
+                call_flow_move_down(window, rnpag_steps / 2);;
+                break;
             case ACTION_NPAGE:
-                call_flow_move(window, info->cur_arrow + rnpag_steps);
+                call_flow_move_down(window, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                rnpag_steps = rnpag_steps / 2;
-                /* fall-thru */
+                call_flow_move_up(window, rnpag_steps / 2);;
+                break;
             case ACTION_PPAGE:
-                // Prev page => N key up strokes
-                call_flow_move(window, info->cur_arrow - rnpag_steps);
+                call_flow_move_down(window, rnpag_steps);
                 break;
             case ACTION_BEGIN:
                 call_flow_move(window, 0);
                 break;
             case ACTION_END:
-                call_flow_move(window, g_sequence_get_length(info->darrows));
+                call_flow_move(window, g_ptr_array_len(info->darrows));
                 break;
             case ACTION_SHOW_FLOW_EX:
                 werase(window->win);
@@ -1454,23 +1475,23 @@ call_flow_handle_key(Window *window, int key)
                 next_ui = ncurses_create_window(PANEL_SAVE);
                 save_set_group(next_ui, info->group);
                 save_set_msg(next_ui,
-                    call_flow_arrow_message(g_sequence_nth(info->darrows, info->cur_arrow)));
+                    call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                 break;
             case ACTION_TOGGLE_TIME:
                 info->arrowtime = (info->arrowtime) ? false : true;
                 break;
             case ACTION_SELECT:
                 if (info->selected == -1) {
-                    info->selected = info->cur_arrow;
+                    info->selected = info->cur_idx;
                 } else {
-                    if (info->selected == info->cur_arrow) {
+                    if (info->selected == (gint) info->cur_idx) {
                         info->selected = -1;
                     } else {
                         // Show diff panel
                         next_ui = ncurses_create_window(PANEL_MSG_DIFF);
                         msg_diff_set_msgs(next_ui,
-                                          call_flow_arrow_message(g_sequence_nth(info->darrows, info->selected)),
-                                          call_flow_arrow_message(g_sequence_nth(info->darrows, info->cur_arrow)));
+                                          call_flow_arrow_message(g_ptr_array_index(info->darrows, info->selected)),
+                                          call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                     }
                 }
                 break;
@@ -1481,7 +1502,7 @@ call_flow_handle_key(Window *window, int key)
                 // KEY_ENTER, display current message in raw mode
                 ncurses_create_window(PANEL_CALL_RAW);
                 call_raw_set_group(info->group);
-                call_raw_set_msg(call_flow_arrow_message(g_sequence_nth(info->darrows, info->cur_arrow)));
+                call_raw_set_msg(call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                 break;
             case ACTION_CLEAR_CALLS:
             case ACTION_CLEAR_CALLS_SOFT:
@@ -1579,11 +1600,12 @@ call_flow_set_group(Window *window, SipCallGroup *group)
     CallFlowInfo *info = call_flow_info(window);
     g_return_if_fail(info != NULL);
 
-    g_sequence_remove_all(info->columns);
-    g_sequence_remove_all(info->arrows);
+    g_ptr_array_remove_all(info->columns);
+    g_ptr_array_remove_all(info->arrows);
 
     info->group = group;
-    info->cur_arrow = info->selected = -1;
+    info->cur_idx = info->first_idx = 0;
+    info->selected = -1;
 }
 
 /**
@@ -1641,13 +1663,12 @@ call_flow_draw(Window *window)
     call_flow_draw_preview(window);
 
     // Draw the scrollbar
-    GSequenceIter *it = g_sequence_get_begin_iter(info->darrows);
-    CallFlowArrow *arrow = NULL;
     info->scroll.max = info->scroll.pos = 0;
-    for (arrow = NULL; !g_sequence_iter_is_end(it); it = g_sequence_iter_next(it)) {
-        arrow = g_sequence_get(it);
+    for (guint i = 0; i < g_ptr_array_len(info->darrows); i++) {
+        CallFlowArrow *arrow = g_ptr_array_index(info->darrows, i);
+
         // Store current position arrow
-        if (g_sequence_iter_get_position(it) == info->first_arrow) {
+        if (i == info->first_idx) {
             info->scroll.pos = info->scroll.max;
         }
         info->scroll.max += call_flow_arrow_height(window, arrow);
@@ -1702,11 +1723,13 @@ call_flow_free(Window *window)
     g_return_if_fail(info != NULL);
 
     // Free the panel information
-    g_sequence_free(info->columns);
-    g_sequence_free(info->arrows);
+    g_ptr_array_free(info->columns, TRUE);
+    g_ptr_array_free(info->arrows, TRUE);
+
     // Delete panel windows
     delwin(info->flow_win);
     delwin(info->raw_win);
+
     // Delete displayed call group
     call_group_free(info->group);
     // Free panel info
@@ -1740,8 +1763,8 @@ call_flow_new()
     info->scroll = window_set_scrollbar(info->flow_win, SB_VERTICAL, SB_LEFT);
 
     // Create vectors for columns and flow arrows
-    info->columns = g_sequence_new(g_free);
-    info->arrows = g_sequence_new(g_free);
+    info->columns = g_ptr_array_new_with_free_func(g_free);
+    info->arrows = g_ptr_array_new_with_free_func(g_free);
 
     // Store it into panel userptr
     set_panel_userptr(window->panel, (void*) info);

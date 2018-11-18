@@ -143,19 +143,19 @@ struct _CallFlowInfo {
     //! Group of calls displayed on the panel
     SipCallGroup *group;
     //! List of arrows (call_flow_arrow_t *)
-    GSequence *arrows;
+    GPtrArray *arrows;
     //! List of displayed arrows
-    GSequence *darrows;
+    GPtrArray *darrows;
     //! First displayed arrow in the list
-    int first_arrow;
+    guint first_idx;
     //! Current arrow index where the cursor is
-    int cur_arrow;
+    guint cur_idx;
     //! Selected arrow to compare
-    int selected;
+    gint selected;
     //! Current line for scrolling
     Scrollbar scroll;
     //! List of columns in the panel
-    GSequence *columns;
+    GPtrArray *columns;
     //! Max callids per column
     int maxcallids;
     //! Print timestamp next to the arrow
