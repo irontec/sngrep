@@ -34,9 +34,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include "curses/ui_manager.h"
-#include "curses/screens/ui_call_list.h"
-#include "curses/screens/ui_column_select.h"
+#include "ncurses/ui_manager.h"
+#include "ncurses/ui_call_list.h"
+#include "ncurses/ui_column_select.h"
 
 /**
  * Ui Structure definition for Message Diff panel

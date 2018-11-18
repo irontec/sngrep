@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include "setting.h"
 #include "keybinding.h"
-#include "curses/ui_manager.h"
+#include "ncurses/ui_manager.h"
 
 //! sngrep keybindings
 key_binding_t bindings[ACTION_SENTINEL] = {

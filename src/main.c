@@ -30,7 +30,7 @@
 #include <glib.h>
 #include "option.h"
 #include "capture/capture.h"
-#include "curses/ui_manager.h"
+#include "ncurses/ui_manager.h"
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif

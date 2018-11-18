@@ -31,9 +31,9 @@
 #include <stdlib.h>
 #include <form.h>
 #include "packet/dissectors/packet_sip.h"
-#include "curses/ui_manager.h"
-#include "curses/screens/ui_filter.h"
-#include "curses/screens/ui_call_list.h"
+#include "ncurses/ui_manager.h"
+#include "ncurses/ui_filter.h"
+#include "ncurses/ui_call_list.h"
 #include "storage.h"
 #include "filter.h"
 #include "setting.h"

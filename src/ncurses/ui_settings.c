@@ -34,8 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "curses/ui_manager.h"
-#include "curses/screens/ui_settings.h"
+#include "ncurses/ui_manager.h"
+#include "ncurses/ui_settings.h"
 #include "setting.h"
 
 /**

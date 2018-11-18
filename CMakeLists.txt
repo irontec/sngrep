@@ -33,19 +33,19 @@ set(SOURCES
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
-        src/curses/ui_manager.c
-        src/curses/screens/ui_call_flow.c
-        src/curses/screens/ui_call_list.c
-        src/curses/screens/ui_call_raw.c
-        src/curses/screens/ui_column_select.c
-        src/curses/screens/ui_filter.c
-        src/curses/screens/ui_msg_diff.c
-        src/curses/screens/ui_save.c
-        src/curses/screens/ui_settings.c
-        src/curses/screens/ui_stats.c
-        src/curses/screens/ui_panel.c
-        src/curses/keybinding.c
-        src/curses/scrollbar.c
+        src/ncurses/ui_manager.c
+        src/ncurses/ui_call_flow.c
+        src/ncurses/ui_call_list.c
+        src/ncurses/ui_call_raw.c
+        src/ncurses/ui_column_select.c
+        src/ncurses/ui_filter.c
+        src/ncurses/ui_msg_diff.c
+        src/ncurses/ui_save.c
+        src/ncurses/ui_settings.c
+        src/ncurses/ui_stats.c
+        src/ncurses/ui_panel.c
+        src/ncurses/keybinding.c
+        src/ncurses/scrollbar.c
         src/filter.c
         src/group.c
         src/main.c
@@ -112,11 +112,11 @@ add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_XOPEN_SOURCE_EXTENDED)
 
 ######################################################################
-ADD_CUSTOM_COMMAND(OUTPUT src/curses/gnt/gntmarshal.h src/curses/gnt/gntmarshal.c
-        WORKING_DIRECTORY src/curses/gnt/
+ADD_CUSTOM_COMMAND(OUTPUT src/ncurses/gnt/gntmarshal.h src/ncurses/gnt/gntmarshal.c
+        WORKING_DIRECTORY src/ncurses/gnt/
         COMMAND glib-genmarshal --body --prefix=gnt_closure_marshal genmarshal > gntmarshal.c
         COMMAND glib-genmarshal --header --prefix=gnt_closure_marshal genmarshal > gntmarshal.h
-        DEPENDS "src/curses/widgets/genmarshal"
+        DEPENDS "src/ncurses/widgets/genmarshal"
         VERBATIM
         COMMENT "Generating GObject Marshal code...")
 

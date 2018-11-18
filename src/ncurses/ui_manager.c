@@ -36,14 +36,14 @@
 #include "ui_manager.h"
 #include "packet/dissectors/packet_sip.h"
 #include "capture/capture.h"
-#include "curses/screens/ui_call_list.h"
-#include "curses/screens/ui_call_flow.h"
-#include "curses/screens/ui_call_raw.h"
-#include "curses/screens/ui_filter.h"
-#include "curses/screens/ui_msg_diff.h"
-#include "curses/screens/ui_column_select.h"
-#include "curses/screens/ui_save.h"
-#include "curses/screens/ui_settings.h"
+#include "ncurses/ui_call_list.h"
+#include "ncurses/ui_call_flow.h"
+#include "ncurses/ui_call_raw.h"
+#include "ncurses/ui_filter.h"
+#include "ncurses/ui_msg_diff.h"
+#include "ncurses/ui_column_select.h"
+#include "ncurses/ui_save.h"
+#include "ncurses/ui_settings.h"
 
 /**
  * @brief Available panel windows list

@@ -40,12 +40,12 @@
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif
-#include "curses/ui_manager.h"
-#include "curses/screens/ui_call_list.h"
-#include "curses/screens/ui_call_flow.h"
-#include "curses/screens/ui_call_raw.h"
-#include "curses/screens/ui_filter.h"
-#include "curses/screens/ui_save.h"
+#include "ncurses/ui_manager.h"
+#include "ncurses/ui_call_list.h"
+#include "ncurses/ui_call_flow.h"
+#include "ncurses/ui_call_raw.h"
+#include "ncurses/ui_filter.h"
+#include "ncurses/ui_save.h"
 #include "storage.h"
 
 /**

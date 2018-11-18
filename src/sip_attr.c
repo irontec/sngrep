@@ -34,7 +34,7 @@
 #include "sip_attr.h"
 #include "timeval.h"
 #include "packet/dissectors/packet_sip.h"
-#include "curses/ui_manager.h"
+#include "ncurses/ui_manager.h"
 
 static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_CALLINDEX,   "index",       "Idx",  "Call Index",    4 , NULL },

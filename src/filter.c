@@ -32,7 +32,7 @@
 #include <string.h>
 #include "glib-utils.h"
 #include "storage.h"
-#include "curses/screens/ui_call_list.h"
+#include "ncurses/ui_call_list.h"
 #include "filter.h"
 
 //! Storage of filter information

@@ -33,7 +33,7 @@
 #define __UI_CALL_RAW_H
 
 #include "config.h"
-#include "curses/ui_manager.h"
+#include "ncurses/ui_manager.h"
 
 //! Sorter declaration of struct call_raw_info
 typedef struct call_raw_info call_raw_info_t;

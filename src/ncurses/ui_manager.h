@@ -36,9 +36,9 @@
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
 #include "config.h"
-#include "curses/screens/ui_panel.h"
-#include "curses/theme.h"
-#include "curses/keybinding.h"
+#include "ncurses/ui_panel.h"
+#include "ncurses/theme.h"
+#include "ncurses/keybinding.h"
 #include "storage.h"
 #include "group.h"
 #include "setting.h"

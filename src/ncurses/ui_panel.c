@@ -28,8 +28,8 @@
 
 #include "config.h"
 #include <string.h>
-#include "curses/screens/ui_panel.h"
-#include "curses/theme.h"
+#include "ncurses/ui_panel.h"
+#include "ncurses/theme.h"
 
 Window *
 ui_create(Window *ui)
