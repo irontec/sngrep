@@ -27,9 +27,9 @@
  */
 
 #include "config.h"
-#include "ui_panel.h"
 #include <string.h>
-#include "theme.h"
+#include "curses/screens/ui_panel.h"
+#include "curses/theme.h"
 
 ui_t *
 ui_create(ui_t *ui)

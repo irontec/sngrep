@@ -36,11 +36,11 @@
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
 #include "config.h"
-#include "theme.h"
-#include "ui_panel.h"
+#include "curses/screens/ui_panel.h"
+#include "curses/theme.h"
+#include "curses/keybinding.h"
 #include "storage.h"
 #include "group.h"
-#include "keybinding.h"
 #include "setting.h"
 
 //! Refresh UI every 200 ms

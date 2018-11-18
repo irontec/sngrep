@@ -56,9 +56,9 @@
 #define __SNGREP_UI_CALL_FLOW_H
 
 #include <stdbool.h>
-#include "ui_manager.h"
+#include "curses/ui_manager.h"
+#include "curses/scrollbar.h"
 #include "group.h"
-#include "scrollbar.h"
 
 //! Sorter declaration of struct call_flow_info
 typedef struct call_flow_info call_flow_info_t;

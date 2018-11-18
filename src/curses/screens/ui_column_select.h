@@ -32,8 +32,8 @@
 #include "config.h"
 #include <menu.h>
 #include <form.h>
-#include "ui_manager.h"
-#include "scrollbar.h"
+#include "curses/ui_manager.h"
+#include "curses/scrollbar.h"
 #include "sip_attr.h"
 
 /**

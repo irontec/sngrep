@@ -28,7 +28,7 @@
 #ifndef __SNGREP_UI_STATS_H
 #define __SNGREP_UI_STATS_H
 
-#include "ui_manager.h"
+#include "curses/ui_manager.h"
 
 /**
  * @brief Creates a new stats panel

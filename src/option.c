@@ -32,7 +32,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include "keybinding.h"
+#include "curses/keybinding.h"
 #include "option.h"
 #include "setting.h"
 #include "timeval.h"

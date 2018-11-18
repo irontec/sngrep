@@ -35,7 +35,7 @@
 #include "config.h"
 #include <form.h>
 #include "group.h"
-#include "ui_manager.h"
+#include "curses/ui_manager.h"
 
 /**
  * @brief Enum of available dialog fields

@@ -29,7 +29,7 @@
 #ifndef __UI_MSG_DIFF_H
 #define __UI_MSG_DIFF_H
 #include "config.h"
-#include "ui_manager.h"
+#include "curses/ui_manager.h"
 
 //! Sorter declaration of struct msg_diff_info
 typedef struct msg_diff_info msg_diff_info_t;

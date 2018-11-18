@@ -32,9 +32,9 @@
 #include "config.h"
 #include <string.h>
 #include <stdlib.h>
-#include "ui_manager.h"
-#include "ui_call_raw.h"
-#include "ui_save.h"
+#include "curses/ui_manager.h"
+#include "curses/screens/ui_call_raw.h"
+#include "curses/screens/ui_save.h"
 #include "capture/capture_pcap.h"
 #include "packet/dissectors/packet_sip.h"
 

@@ -34,8 +34,8 @@
 
 #include <menu.h>
 #include <glib.h>
-#include "ui_manager.h"
-#include "scrollbar.h"
+#include "curses/ui_manager.h"
+#include "curses/scrollbar.h"
 
 /**
  * @brief Enum of available fields

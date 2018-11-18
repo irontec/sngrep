@@ -32,11 +32,11 @@
 #include <string.h>
 #include <packet/dissectors/packet_sip.h>
 #include "capture/capture_pcap.h"
-#include "ui_manager.h"
-#include "ui_call_flow.h"
-#include "ui_call_raw.h"
-#include "ui_msg_diff.h"
-#include "ui_save.h"
+#include "curses/ui_manager.h"
+#include "curses/screens/ui_call_flow.h"
+#include "curses/screens/ui_call_raw.h"
+#include "curses/screens/ui_msg_diff.h"
+#include "curses/screens/ui_save.h"
 #include "timeval.h"
 #include "glib-utils.h"
 #include "option.h"
