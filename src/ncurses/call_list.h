@@ -82,7 +82,7 @@ struct _CallListInfo {
     //! Selected call in the list
     guint cur_idx;
     //! Selected calls with space
-    SipCallGroup *group;
+    CallGroup *group;
     //! Displayed column list, make it configurable in the future
     GPtrArray *columns;
     //! List subwindow

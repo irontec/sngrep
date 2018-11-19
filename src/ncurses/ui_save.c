@@ -387,7 +387,7 @@ save_handle_key(Window *ui, int key)
 }
 
 void
-save_set_group(Window *ui, SipCallGroup *group)
+save_set_group(Window *ui, CallGroup *group)
 {
     // Get panel information
     save_info_t *info = save_info(ui);

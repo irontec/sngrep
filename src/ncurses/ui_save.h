@@ -95,7 +95,7 @@ struct save_info {
     //! Save format @see save_formats
     enum save_format saveformat;
     //! Call group to be saved
-    SipCallGroup *group;
+    CallGroup *group;
     //! Message to be saved
     Message *msg;
 };
@@ -171,7 +171,7 @@ save_handle_key(Window *ui, int key);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-save_set_group(Window *ui, SipCallGroup *group);
+save_set_group(Window *ui, CallGroup *group);
 
 /**
  * @brief Set the SIP message to be saved

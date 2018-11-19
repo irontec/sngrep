@@ -1595,7 +1595,7 @@ call_flow_help(G_GNUC_UNUSED Window *window)
 }
 
 void
-call_flow_set_group(Window *window, SipCallGroup *group)
+call_flow_set_group(Window *window, CallGroup *group)
 {
     CallFlowInfo *info = call_flow_info(window);
     g_return_if_fail(info != NULL);

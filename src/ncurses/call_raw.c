@@ -320,7 +320,7 @@ call_raw_handle_key(Window *window, int key)
 }
 
 void
-call_raw_set_group(Window *window, SipCallGroup *group)
+call_raw_set_group(Window *window, CallGroup *group)
 {
     CallRawInfo *info = call_raw_info(window);
     g_return_if_fail(info != NULL);

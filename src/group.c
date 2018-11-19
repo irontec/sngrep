@@ -33,10 +33,10 @@
 #include "glib-utils.h"
 #include "group.h"
 
-SipCallGroup *
+CallGroup *
 call_group_new()
 {
-    SipCallGroup *group = g_malloc0(sizeof(SipCallGroup));
+    CallGroup *group = g_malloc0(sizeof(CallGroup));
     group->calls = g_ptr_array_new();
     group->msgs = g_ptr_array_new();
     group->streams = g_ptr_array_new();
@@ -44,7 +44,7 @@ call_group_new()
 }
 
 void
-call_group_free(SipCallGroup *group)
+call_group_free(CallGroup *group)
 {
     g_return_if_fail(group != NULL);
     g_ptr_array_free(group->calls, FALSE);
@@ -53,7 +53,7 @@ call_group_free(SipCallGroup *group)
 }
 
 void
-call_group_add(SipCallGroup *group, Call *call)
+call_group_add(CallGroup *group, Call *call)
 {
     g_return_if_fail(group != NULL);
     g_return_if_fail(call != NULL);
@@ -67,13 +67,13 @@ call_group_add(SipCallGroup *group, Call *call)
 }
 
 void
-call_group_add_calls(SipCallGroup *group, GPtrArray *calls)
+call_group_add_calls(CallGroup *group, GPtrArray *calls)
 {
     g_ptr_array_add_array(group->calls, calls);
 }
 
 void
-call_group_remove(SipCallGroup *group, Call *call)
+call_group_remove(CallGroup *group, Call *call)
 {
     g_return_if_fail(group != NULL);
     g_return_if_fail(call != NULL);
@@ -88,7 +88,7 @@ call_group_remove(SipCallGroup *group, Call *call)
 }
 
 void
-call_group_remove_all(SipCallGroup *group)
+call_group_remove_all(CallGroup *group)
 {
     g_return_if_fail(group != NULL);
     g_ptr_array_free(group->calls, FALSE);
@@ -97,14 +97,14 @@ call_group_remove_all(SipCallGroup *group)
 }
 
 gboolean
-call_group_exists(SipCallGroup *group, Call *call)
+call_group_exists(CallGroup *group, Call *call)
 {
     g_return_val_if_fail(group != NULL, FALSE);
     return g_ptr_array_find(group->calls, call, NULL);
 }
 
 gboolean
-call_group_changed(SipCallGroup *group)
+call_group_changed(CallGroup *group)
 {
     gboolean changed = FALSE;
 
@@ -134,13 +134,13 @@ call_group_changed(SipCallGroup *group)
     return changed;
 }
 
-SipCallGroup *
-call_group_clone(SipCallGroup *original)
+CallGroup *
+call_group_clone(CallGroup *original)
 {
     g_return_val_if_fail(original != NULL, NULL);
 
     // Copy Calls and messages
-    SipCallGroup *clone = g_malloc0(sizeof(SipCallGroup));
+    CallGroup *clone = g_malloc0(sizeof(CallGroup));
     clone->calls = g_ptr_array_copy(original->calls);
     clone->msgs = g_ptr_array_copy(original->msgs);
     clone->streams = g_ptr_array_copy(original->streams);
@@ -149,32 +149,32 @@ call_group_clone(SipCallGroup *original)
 
 
 gint
-call_group_color(SipCallGroup *group, Call *call)
+call_group_color(CallGroup *group, Call *call)
 {
     return (g_ptr_array_data_index(group->calls, call) % 7) + 1;
 }
 
 Call *
-call_group_get_next(SipCallGroup *group, Call *call)
+call_group_get_next(CallGroup *group, Call *call)
 {
     g_return_val_if_fail(group != NULL, NULL);
     return g_ptr_array_next(group->calls, call);
 }
 
 gint
-call_group_count(SipCallGroup *group)
+call_group_count(CallGroup *group)
 {
     return g_ptr_array_len(group->calls);
 }
 
 gint
-call_group_msg_count(SipCallGroup *group)
+call_group_msg_count(CallGroup *group)
 {
     return g_ptr_array_len(group->msgs);
 }
 
 Message *
-call_group_get_next_msg(SipCallGroup *group, Message *msg)
+call_group_get_next_msg(CallGroup *group, Message *msg)
 {
     g_return_val_if_fail(group != NULL, NULL);
 
@@ -192,7 +192,7 @@ call_group_get_next_msg(SipCallGroup *group, Message *msg)
 }
 
 Message *
-call_group_get_prev_msg(SipCallGroup *group, Message *msg)
+call_group_get_prev_msg(CallGroup *group, Message *msg)
 {
     g_return_val_if_fail(group != NULL, NULL);
 
@@ -210,7 +210,7 @@ call_group_get_prev_msg(SipCallGroup *group, Message *msg)
 }
 
 RtpStream *
-call_group_get_next_stream(SipCallGroup *group, RtpStream *stream)
+call_group_get_next_stream(CallGroup *group, RtpStream *stream)
 {
     RtpStream *next = g_ptr_array_next(group->streams, stream);
 

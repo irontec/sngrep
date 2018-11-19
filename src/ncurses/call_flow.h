@@ -141,7 +141,7 @@ struct _CallFlowInfo {
     //! Window to diplay arrows
     WINDOW *flow_win;
     //! Group of calls displayed on the panel
-    SipCallGroup *group;
+    CallGroup *group;
     //! List of arrows (call_flow_arrow_t *)
     GPtrArray *arrows;
     //! List of displayed arrows
@@ -194,6 +194,6 @@ call_flow_free(Window *window);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-call_flow_set_group(Window *window, SipCallGroup *group);
+call_flow_set_group(Window *window, CallGroup *group);
 
 #endif /* __SNGREP_CALL_FLOW_H */

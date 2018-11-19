@@ -838,7 +838,7 @@ static int
 call_list_handle_key(Window *window, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
-    SipCallGroup *group;
+    CallGroup *group;
     int action = -1;
     Call *call;
     StorageSortOpts sort;
