@@ -43,7 +43,7 @@
 #include "ncurses/msg_diff_win.h"
 #include "ncurses/column_select_win.h"
 #include "ncurses/stats_win.h"
-#include "ncurses/ui_save.h"
+#include "ncurses/save_win.h"
 #include "ncurses/ui_settings.h"
 
 /**
@@ -223,6 +223,9 @@ ncurses_find_by_type(enum WindowTypes type)
             break;
         case WINDOW_MSG_DIFF:
             window = msg_diff_win_new();
+            break;
+        case WINDOW_SAVE:
+            window = save_win_new();
             break;
         default: break;
     }

@@ -271,3 +271,9 @@ capture_sources_count(CaptureManager *manager)
 {
     return g_slist_length(manager->inputs);
 }
+
+void
+capture_manager_set_pause(CaptureManager *manager, gboolean paused)
+{
+    manager->paused = paused;
+}

@@ -36,7 +36,7 @@
 #include "ncurses/call_flow_win.h"
 #include "ncurses/call_raw_win.h"
 #include "ncurses/msg_diff_win.h"
-#include "ncurses/ui_save.h"
+#include "ncurses/save_win.h"
 #include "timeval.h"
 #include "glib-utils.h"
 #include "option.h"

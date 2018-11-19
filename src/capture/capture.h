@@ -282,4 +282,10 @@ capture_tls_server(CaptureManager *manager);
 guint
 capture_sources_count(CaptureManager *manager);
 
+/**
+ * @brief Set pause status in given capture manager
+ */
+void
+capture_manager_set_pause(CaptureManager *manager, gboolean paused);
+
 #endif

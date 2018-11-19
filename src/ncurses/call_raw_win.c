@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include "ncurses/manager.h"
 #include "ncurses/call_raw_win.h"
-#include "ncurses/ui_save.h"
+#include "ncurses/save_win.h"
 #include "capture/capture_pcap.h"
 #include "packet/dissectors/packet_sip.h"
 
@@ -246,7 +246,6 @@ call_raw_move_down(Window *window, guint times)
 static int
 call_raw_handle_key(Window *window, int key)
 {
-    Window *next_ui;
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CR_SCROLLSTEP);
     int action = -1;
 
@@ -281,9 +280,8 @@ call_raw_handle_key(Window *window, int key)
                     break;
                 }
                 if (info->group) {
-                    // KEY_S, Display save panel
-                    next_ui = ncurses_create_window(WINDOW_SAVE);
-                    save_set_group(next_ui, info->group);
+                    // Display save panel
+                    save_set_group(ncurses_create_window(WINDOW_SAVE), info->group);
                 }
                 break;
             case ACTION_TOGGLE_SYNTAX:

@@ -20,18 +20,19 @@
  **
  ****************************************************************************/
 /**
- * @file ui_save_pcap.h
+ * @file save_win.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage ui window for saving captured packages
+ * @brief Functions to manage ui window for saving captured packets
  *
  * This file contains the functions and structures to manage the save
  * dialog, that can be used to copy the temporal sngrep file to another location
  *
  */
 
-#ifndef __UI_SAVE_PCAP_H
-#define __UI_SAVE_PCAP_H
+#ifndef __SNGREP_SAVE_WIN_H
+#define __SNGREP_SAVE_WIN_H
+
 #include "config.h"
 #include <form.h>
 #include "group.h"
@@ -43,7 +44,7 @@
  * Dialog form has a field array. Following enum represents the
  * order this fields are stored in panel info structure.
  */
-enum save_field_list {
+enum SaveWinField {
     FLD_SAVE_PATH = 0,
     FLD_SAVE_FILE,
     FLD_SAVE_ALL,
@@ -61,7 +62,7 @@ enum save_field_list {
 /**
  * @brief Dialogs to be saved
  */
-enum save_mode {
+enum SaveWinMode {
     SAVE_ALL = 0,
     SAVE_SELECTED,
     SAVE_DISPLAYED,
@@ -71,29 +72,29 @@ enum save_mode {
 /**
  * @brief Save file formats
  */
-enum save_format {
+enum SaveWinFormat {
     SAVE_PCAP = 0,
     SAVE_PCAP_RTP,
     SAVE_TXT
 };
 
 //! Sorter declaration of struct save_info
-typedef struct save_info save_info_t;
+typedef struct _SaveWinInfo SaveWinInfo;
 
 /**
  * @brief Save panel private information
  *
  * This structure contains the durable data of save panel.
  */
-struct save_info {
+struct _SaveWinInfo {
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields
     FIELD *fields[FLD_SAVE_COUNT + 1];
     //! Save mode @see save_modes
-    enum save_mode savemode;
+    enum SaveWinMode savemode;
     //! Save format @see save_formats
-    enum save_format saveformat;
+    enum SaveWinFormat saveformat;
     //! Call group to be saved
     CallGroup *group;
     //! Message to be saved
@@ -108,58 +109,20 @@ struct save_info {
  * static information of the panel that will never be
  * redrawn.
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  */
-void
-save_create(Window *ui);
+Window *
+save_win_new();
 
 /**
  * @brief Destroy save panel
  *
  * This function do the final cleanups for this panel
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  */
 void
-save_destroy(Window *ui);
-
-/**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param ui UI structure pointer
- * @return a pointer to info structure of given panel
- */
-save_info_t *
-save_info(Window *ui);
-
-/**
- * @brief Draw the Save panel
- *
- * This function will drawn the panel into the screen based on its stored
- * status
- *
- * @param ui UI structure pointer
- * @return 0 if the panel has been drawn, -1 otherwise
- */
-int
-save_draw(Window *ui);
-
-/**
- * @brief Manage pressed keys for save panel
- *
- * This function is called by UI manager every time a
- * key is pressed. This allow the save panel to manage
- * its own keys.
- *
- * @param ui UI structure pointer
- * @param key   key code
- * @return enum @key_handler_ret
- */
-int
-save_handle_key(Window *ui, int key);
+save_win_free(Window *window);
 
 /**
  * @brief Set the group call of the panel
@@ -167,11 +130,11 @@ save_handle_key(Window *ui, int key);
  * This function will access the panel information and will set the
  * group call pointer to the selected calls
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-save_set_group(Window *ui, CallGroup *group);
+save_set_group(Window *window, CallGroup *group);
 
 /**
  * @brief Set the SIP message to be saved
@@ -179,33 +142,10 @@ save_set_group(Window *ui, CallGroup *group);
  * This function will access the panel information and will set the
  * pointer to the selected SIP message
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-save_set_msg(Window *ui, Message *msg);
-
-/**
- * @brief Print an error message in Save panel
- *
- * General function to print any save error message
- *
- * @param ui UI structure pointer
- * @param message Message to be printed in the panel
- */
-void
-save_error_message(Window *ui, const char *message);
-
-/**
- * @brief Save form data to options
- *
- * Save capture packets to a file based on selected modes on screen
- * It will display an error or success dialog before exit
- *
- * @param ui UI structure pointer
- * @returns 1 in case of error, 0 otherwise.
- */
-int
-save_to_file(Window *ui);
+save_set_msg(Window *window, Message *msg);
 
 #endif
