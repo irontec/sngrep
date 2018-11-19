@@ -45,7 +45,7 @@
 #include "ncurses/call_flow_win.h"
 #include "ncurses/call_raw_win.h"
 #include "ncurses/stats_win.h"
-#include "ncurses/ui_filter.h"
+#include "ncurses/filter_win.h"
 #include "ncurses/ui_save.h"
 #include "storage.h"
 #include "column_select_win.h"
@@ -918,7 +918,7 @@ call_list_handle_key(Window *window, int key)
                 }
                 break;
             case ACTION_SHOW_FILTERS:
-                ncurses_create_window(PANEL_FILTER);
+                ncurses_create_window(WINDOW_FILTER);
                 break;
             case ACTION_SHOW_COLUMNS:
                 column_select_win_set_columns(ncurses_create_window(WINDOW_COLUMN_SELECT), info->columns);

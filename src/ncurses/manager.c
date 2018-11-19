@@ -39,7 +39,7 @@
 #include "ncurses/call_list_win.h"
 #include "ncurses/call_flow_win.h"
 #include "ncurses/call_raw_win.h"
-#include "ncurses/ui_filter.h"
+#include "ncurses/filter_win.h"
 #include "ncurses/ui_msg_diff.h"
 #include "ncurses/column_select_win.h"
 #include "ncurses/stats_win.h"
@@ -217,6 +217,9 @@ ncurses_find_by_type(enum WindowTypes type)
             break;
         case WINDOW_CALL_RAW:
             window = call_raw_win_new();
+            break;
+        case WINDOW_FILTER:
+            window = filter_win_new();
             break;
         default: break;
     }

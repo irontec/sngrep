@@ -38,7 +38,7 @@ set(SOURCES
         src/ncurses/call_list_win.c
         src/ncurses/call_raw_win.c
         src/ncurses/column_select_win.c
-        src/ncurses/ui_filter.c
+        src/ncurses/filter_win.c
         src/ncurses/ui_msg_diff.c
         src/ncurses/ui_save.c
         src/ncurses/ui_settings.c

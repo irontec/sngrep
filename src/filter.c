@@ -175,3 +175,35 @@ filter_reset_calls()
 {
     g_ptr_array_foreach(storage_calls(), (GFunc) filter_mark_call_unfiltered, NULL);
 }
+
+void
+filter_method_from_setting(const char *value)
+{
+    char methods[200], method_expr[256];
+    int methods_len = strlen(value);
+    char *comma;
+
+    // If there's a method filter
+    if (methods_len) {
+        // Copy value into temporal array
+        memset(methods, 0, sizeof(methods));
+        strncpy(methods, value, methods_len);
+
+        // Replace all commas with pippes
+        while ((comma = strchr(methods, ',')))
+            *comma = '|';
+
+        // Create a regular expression
+        memset(method_expr, 0, sizeof(method_expr));
+        sprintf(method_expr, "(%s)", methods);
+        filter_set(FILTER_METHOD, method_expr);
+    } else {
+        filter_set(FILTER_METHOD, " ");
+    }
+}
+
+void
+filter_payload_from_setting(const char *value)
+{
+    if (value) filter_set(FILTER_PAYLOAD, value);
+}

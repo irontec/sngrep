@@ -127,4 +127,16 @@ filter_check_expr(filter_t filter, const char *data);
 void
 filter_reset_calls();
 
+/**
+ * @brief Set Method filtering from filter.methods setting format
+ */
+void
+filter_method_from_setting(const char *value);
+
+/**
+ * @brief Set Payload filter from filter.payload setting
+ */
+void
+filter_payload_from_setting(const char *value);
+
 #endif /* __SNGREP_FILTER_H_ */

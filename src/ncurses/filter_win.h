@@ -29,8 +29,8 @@
  * dialog, that can be used to filter the lines in call list window.
  */
 
-#ifndef __UI_FILTER_H
-#define __UI_FILTER_H
+#ifndef __SNGREP_FILTER_WIN_H
+#define __SNGREP_FILTER_WIN_H
 
 #include "config.h"
 #include <form.h>
@@ -43,7 +43,7 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum filter_field_list {
+enum FilterWinFields {
     FLD_FILTER_SIPFROM = 0,
     FLD_FILTER_SIPTO,
     FLD_FILTER_SRC,
@@ -61,19 +61,18 @@ enum filter_field_list {
     FLD_FILTER_UPDATE,
     FLD_FILTER_FILTER,
     FLD_FILTER_CANCEL,
-    //! Never remove this field id @see filter_info
     FLD_FILTER_COUNT
 };
 
-//! Sorter declaration of struct filter_info
-typedef struct filter_info filter_info_t;
+//! Sorter declaration of struct _FilterWinInfo
+typedef struct _FilterWinInfo FilterWinInfo;
 
 /**
  * @brief Filter panel private information
  *
  * This structure contains the durable data of filter panel.
  */
-struct filter_info {
+struct _FilterWinInfo {
     //! Form that contains the filter fields
     FORM *form;
     //! An array of fields
@@ -87,11 +86,9 @@ struct filter_info {
  * displaying the filter panel. It also draws all the
  * static information of the panel that will never be
  * redrawn.
- *
- * @param ui UI structure pointer
  */
-void
-filter_create(Window *ui);
+Window *
+filter_win_new();
 
 /**
  * @brief Destroy filter panel
@@ -100,63 +97,6 @@ filter_create(Window *ui);
  * @param ui UI structure pointer
  */
 void
-filter_destroy(Window *ui);
+filter_win_free(Window *ui);
 
-/**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param ui UI structure pointer
- * @return a pointer to info structure of given panel
- */
-filter_info_t *
-filter_info(Window *ui);
-
-/**
- * @brief Manage pressed keys for filter panel
- *
- * This function is called by UI manager every time a
- * key is pressed. This allow the filter panel to manage
- * its own keys.
- *
- * @param ui UI structure pointer
- * @param key   key code
- * @return enum @key_handler_ret
- */
-int
-filter_handle_key(Window *ui, int key);
-
-/**
- * @brief Save form data to options
- *
- * This function will update the options values
- * of filter fields with its new value.
- *
- * @param ui UI structure pointer
- */
-void
-filter_save_options(Window *ui);
-
-/**
- * @brief Return String value for a filter field
- *
- * @return method name
- */
-const char*
-filter_field_method(int field_id);
-
-/**
- * @brief Set Method filtering from filter.methods setting format
- */
-void
-filter_method_from_setting(const char *value);
-
-/**
- * @brief Set Payload filter from filter.payload setting
- */
-void
-filter_payload_from_setting(const char *value);
-
-#endif
+#endif /* __SNGREP_FILTER_WIN_H */

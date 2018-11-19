@@ -61,7 +61,7 @@ enum WindowTypes {
     //! Raw SIP messages ui screen
     WINDOW_CALL_RAW,
     //! Filters panel
-    PANEL_FILTER,
+    WINDOW_FILTER,
     //! Save to pcap panel
     PANEL_SAVE,
     //! Message comprare
