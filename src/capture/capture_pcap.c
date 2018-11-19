@@ -301,6 +301,14 @@ capture_output_pcap(const gchar *filename, GError **error)
     CapturePcap *pcap = g_malloc0(sizeof(CapturePcap));
 
     pcap->dumper = pcap_dump_open(input_pcap->handle, filename);
+    if (pcap->dumper == NULL) {
+        g_set_error (error,
+                     CAPTURE_PCAP_ERROR,
+                     CAPTURE_PCAP_ERROR_DUMP_OPEN,
+                     "Error while opening dump file: %s",
+                     pcap_geterr(input_pcap->handle));
+        return NULL;
+    }
 
     // Create a new structure to handle this capture dumper
     CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));

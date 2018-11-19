@@ -41,7 +41,6 @@
 #include "capture/capture_txt.h"
 #include "filter.h"
 
-
 /**
  * @brief Get custom information of given panel
  *
@@ -402,8 +401,7 @@ save_handle_key(Window *window, int key)
                 if (field_idx != FLD_SAVE_CANCEL) {
                     save_to_file(window);
                 }
-                window_destroy(window);
-                return KEY_HANDLED;
+                return KEY_DESTROY;
             default:
                 // Parse next action
                 continue;
@@ -482,7 +480,7 @@ save_win_free(Window *window)
     window_deinit(window);
 
     // Resume capture
-    capture_manager()->paused = FALSE;
+    capture_manager_set_pause(capture_manager(), FALSE);
 
     // Disable cursor position
     curs_set(0);
