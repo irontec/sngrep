@@ -41,14 +41,14 @@
 #include "capture/capture_hep.h"
 #endif
 #include "ncurses/manager.h"
-#include "ncurses/call_list.h"
-#include "ncurses/call_flow.h"
-#include "ncurses/call_raw.h"
-#include "ncurses/stats.h"
+#include "ncurses/call_list_win.h"
+#include "ncurses/call_flow_win.h"
+#include "ncurses/call_raw_win.h"
+#include "ncurses/stats_win.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_save.h"
 #include "storage.h"
-#include "column_select.h"
+#include "column_select_win.h"
 
 /**
  * @brief Get custom information of given panel
@@ -59,10 +59,10 @@
  * @param window UI structure pointer
  * @return a pointer to info structure of given panel
  */
-static CallListInfo *
+static CallListWinInfo *
 call_list_info(Window *window)
 {
-    return (CallListInfo*) panel_userptr(window->panel);
+    return (CallListWinInfo*) panel_userptr(window->panel);
 }
 
 /**
@@ -77,7 +77,7 @@ call_list_info(Window *window)
 static void
 call_list_move(Window *window, guint line)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     // Already in this position?
@@ -128,7 +128,7 @@ call_list_move(Window *window, guint line)
 static void
 call_list_move_up(Window *window, guint times)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     gint newpos = info->cur_idx - times;
@@ -146,7 +146,7 @@ call_list_move_up(Window *window, guint times)
 static void
 call_list_move_down(Window *window, guint times)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     guint newpos = info->cur_idx + times;
@@ -184,7 +184,7 @@ call_list_resize(Window *window)
     int maxx, maxy;
 
     // Get panel info
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_val_if_fail(info != NULL, -1);
 
     // Get current screen dimensions
@@ -201,7 +201,7 @@ call_list_resize(Window *window)
     wresize(info->list_win, maxy - 6, maxx); //-4
 
     // Force list redraw
-    call_list_clear(window);
+    call_list_win_clear(window);
 
     return 0;
 }
@@ -222,7 +222,7 @@ call_list_draw_header(Window *window)
     const char *device, *filterbpf;
 
     // Get panel info
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     // Draw panel title
@@ -388,7 +388,7 @@ call_list_draw_list(Window *window)
     int color;
 
     // Get panel info
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     // Get window of call list panel
@@ -532,7 +532,7 @@ call_list_draw(Window *window)
 static void
 call_list_form_activate(Window *window, gboolean active)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     // Store form state
@@ -567,13 +567,13 @@ call_list_form_activate(Window *window, gboolean active)
  * @return A pointer to text
  */
 const char *
-call_list_line_text(Window *window, Call *call, char *text)
+call_list_win_line_text(Window *window, Call *call, char *text)
 {
     char call_attr[ATTR_MAXLEN];
     char coltext[ATTR_MAXLEN];
 
     // Get panel info
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_val_if_fail(info != NULL, text);
 
     // Print requested columns
@@ -617,7 +617,7 @@ call_list_line_text(Window *window, Call *call, char *text)
 static void
 call_list_select_sort_attribute(Window *window)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     // Activete sorting menu
@@ -662,7 +662,7 @@ call_list_handle_form_key(Window *window, int key)
     int action = -1;
 
     // Get panel information
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_val_if_fail(info != NULL, -1);
 
     // Check actions for this key
@@ -717,7 +717,7 @@ call_list_handle_form_key(Window *window, int key)
     if (action == ACTION_PRINTABLE || action == ACTION_BACKSPACE ||
         action == ACTION_DELETE || action == ACTION_CLEAR) {
         // Updated displayed results
-        call_list_clear(window);
+        call_list_win_clear(window);
         // Reset filters on each key stroke
         filter_reset_calls();
     }
@@ -758,7 +758,7 @@ call_list_handle_menu_key(Window *window, int key)
     enum AttributeId id;
 
     // Get panel information
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_val_if_fail(info != NULL, -1);
 
     menu = info->menu;
@@ -843,7 +843,7 @@ call_list_handle_key(Window *window, int key)
     Call *call;
     StorageSortOpts sort;
 
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_val_if_fail(info != NULL, -1);
 
     // Handle form key
@@ -911,17 +911,17 @@ call_list_handle_key(Window *window, int key)
 
                 if (action == ACTION_SHOW_RAW) {
                     // Create a Call raw panel
-                    call_raw_set_group(ncurses_create_window(WINDOW_CALL_RAW), group);
+                    call_raw_win_set_group(ncurses_create_window(WINDOW_CALL_RAW), group);
                 } else {
                     // Display current call flow (normal or extended)
-                    call_flow_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
+                    call_flow_win_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
                 }
                 break;
             case ACTION_SHOW_FILTERS:
                 ncurses_create_window(PANEL_FILTER);
                 break;
             case ACTION_SHOW_COLUMNS:
-                column_select_set_columns(ncurses_create_window(WINDOW_COLUMN_SELECT), info->columns);
+                column_select_win_set_columns(ncurses_create_window(WINDOW_COLUMN_SELECT), info->columns);
                 break;
             case ACTION_SHOW_STATS:
                 ncurses_create_window(WINDOW_STATS);
@@ -941,13 +941,13 @@ call_list_handle_key(Window *window, int key)
                 // Remove all stored calls
                 storage_calls_clear();
                 // Clear List
-                call_list_clear(window);
+                call_list_win_clear(window);
                 break;
             case ACTION_CLEAR_CALLS_SOFT:
                 // Remove stored calls, keeping the currently displayed calls
                 storage_calls_clear_soft();
                 // Clear List
-                call_list_clear(window);
+                call_list_win_clear(window);
                 break;
             case ACTION_AUTOSCROLL:
                 info->autoscroll = (info->autoscroll) ? 0 : 1;
@@ -1101,7 +1101,7 @@ static void
 call_list_add_column(Window *window, enum AttributeId id, const char* attr,
                      const char *title, int width)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     CallListColumn *column = g_malloc0(sizeof(CallListColumn));
@@ -1113,9 +1113,9 @@ call_list_add_column(Window *window, enum AttributeId id, const char* attr,
 }
 
 void
-call_list_clear(Window *window)
+call_list_win_clear(Window *window)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     // Initialize structures
@@ -1137,7 +1137,7 @@ call_list_clear(Window *window)
 static void
 call_list_free(Window *window)
 {
-    CallListInfo *info = call_list_info(window);
+    CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
     // Deallocate forms data
@@ -1160,7 +1160,7 @@ call_list_free(Window *window)
 }
 
 Window *
-call_list_new()
+call_list_win_new()
 {
     Window *window = g_malloc0(sizeof(Window));
     window->type = WINDOW_CALL_LIST;
@@ -1175,7 +1175,7 @@ call_list_new()
     window_init(window, getmaxy(stdscr), getmaxx(stdscr));
 
     // Initialize Call List specific data
-    CallListInfo *info = g_malloc0(sizeof(CallListInfo));
+    CallListWinInfo *info = g_malloc0(sizeof(CallListWinInfo));
     set_panel_userptr(window->panel, (void*) info);
 
     // Add configured columns

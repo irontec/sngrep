@@ -29,8 +29,8 @@
  * output screen.
  *
  */
-#ifndef __SNGREP_CALL_RAW_H
-#define __SNGREP_CALL_RAW_H
+#ifndef __SNGREP_CALL_RAW_WIN_H
+#define __SNGREP_CALL_RAW_WIN_H
 
 #include "config.h"
 #include "group.h"
@@ -38,7 +38,7 @@
 #include "ncurses/manager.h"
 
 //! Sorter declaration of struct call_raw_info
-typedef struct _CallRawInfo CallRawInfo;
+typedef struct _CallRawWinInfo CallRawWinInfo;
 
 /**
  * @brief Call raw status information
@@ -46,7 +46,7 @@ typedef struct _CallRawInfo CallRawInfo;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _CallRawInfo {
+struct _CallRawWinInfo {
     //! Group of calls displayed on the panel (Call raw display)
     CallGroup *group;
     //! Message to display on the panel (Single message raw display)
@@ -70,7 +70,7 @@ struct _CallRawInfo {
  * store it in the panel's userpointer
  */
 Window *
-call_raw_new();
+call_raw_win_new();
 
 /**
  * @brief Destroy panel
@@ -80,7 +80,7 @@ call_raw_new();
  * @param panel Ncurses panel pointer
  */
 void
-call_raw_free(Window *window);
+call_raw_win_free(Window *window);
 
 /**
  * @brief Set the active call group of the panel
@@ -92,7 +92,7 @@ call_raw_free(Window *window);
  * @param group Call Group pointer to be set in the internal info struct
  */
 void
-call_raw_set_group(Window *window, CallGroup *group);
+call_raw_win_set_group(Window *window, CallGroup *group);
 
 /**
  * @brief Set the active msg of the panel
@@ -103,6 +103,6 @@ call_raw_set_group(Window *window, CallGroup *group);
  * @param msg Message pointer to be set in the internal info struct
  */
 void
-call_raw_set_msg(Window *window, Message *msg);
+call_raw_win_set_msg(Window *window, Message *msg);
 
-#endif
+#endif /* __SNGREP_CALL_RAW_WIN_H */

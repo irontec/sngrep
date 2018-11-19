@@ -25,8 +25,8 @@
  *
  * @brief Functions to manage ui window for capture stats display
  */
-#ifndef __SNGREP_STATS_H
-#define __SNGREP_STATS_H
+#ifndef __SNGREP_STATS_WIN_H
+#define __SNGREP_STATS_WIN_H
 
 #include "ncurses/manager.h"
 
@@ -40,6 +40,6 @@
  *
  */
 Window *
-stats_new();
+stats_win_new();
 
-#endif /* __SNGREP_STATS_H */
+#endif /* __SNGREP_STATS_WIN_H */

@@ -33,7 +33,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ncurses/manager.h"
-#include "ncurses/call_raw.h"
+#include "ncurses/call_raw_win.h"
 #include "ncurses/ui_save.h"
 #include "capture/capture_pcap.h"
 #include "packet/dissectors/packet_sip.h"
@@ -47,10 +47,10 @@
  * @param panel Ncurses panel pointer
  * @return a pointer to info structure of given panel
  */
-static CallRawInfo *
+static CallRawWinInfo *
 call_raw_info(Window *window)
 {
-    return (CallRawInfo*) panel_userptr(window->panel);
+    return (CallRawWinInfo*) panel_userptr(window->panel);
 }
 
 /**
@@ -65,7 +65,7 @@ static gboolean
 call_raw_redraw(Window *window)
 {
     // Get panel information
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_val_if_fail(info != NULL, FALSE);
 
     // Check if any of the group has changed
@@ -91,7 +91,7 @@ call_raw_print_msg(Window *window, Message *msg)
     int color = 0;
 
     // Get panel information
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_if_fail(info != NULL);
 
     // Get the pad window
@@ -175,7 +175,7 @@ call_raw_draw(Window *window)
     Message *msg = NULL;
 
     // Get panel information
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_val_if_fail(info != NULL, -1);
 
     if (info->group) {
@@ -184,7 +184,7 @@ call_raw_draw(Window *window)
             call_raw_print_msg(window, msg);
         }
     } else {
-        call_raw_set_msg(window, info->msg);
+        call_raw_win_set_msg(window, info->msg);
     }
 
     // Copy the visible part of the pad into the panel window
@@ -203,7 +203,7 @@ static void
 call_raw_move_up(Window *window, guint times)
 {
     // Get panel information
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_if_fail(info != NULL);
 
     if (info->scroll < times) {
@@ -224,7 +224,7 @@ static void
 call_raw_move_down(Window *window, guint times)
 {
     // Get panel information
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_if_fail(info != NULL);
 
     info->scroll += times;
@@ -250,7 +250,7 @@ call_raw_handle_key(Window *window, int key)
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CR_SCROLLSTEP);
     int action = -1;
 
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_val_if_fail(info != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
@@ -296,9 +296,9 @@ call_raw_handle_key(Window *window, int key)
                 info->last = NULL;
                 // Force refresh panel
                 if (info->group) {
-                    call_raw_set_group(window, info->group);
+                    call_raw_win_set_group(window, info->group);
                 } else {
-                    call_raw_set_msg(window, info->msg);
+                    call_raw_win_set_msg(window, info->msg);
                 }
                 break;
             case ACTION_CLEAR_CALLS:
@@ -320,9 +320,9 @@ call_raw_handle_key(Window *window, int key)
 }
 
 void
-call_raw_set_group(Window *window, CallGroup *group)
+call_raw_win_set_group(Window *window, CallGroup *group)
 {
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_if_fail(info != NULL);
     g_return_if_fail(group != NULL);
 
@@ -336,9 +336,9 @@ call_raw_set_group(Window *window, CallGroup *group)
 }
 
 void
-call_raw_set_msg(Window *window, Message *msg)
+call_raw_win_set_msg(Window *window, Message *msg)
 {
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_if_fail(info != NULL);
     g_return_if_fail(msg != NULL);
 
@@ -355,9 +355,9 @@ call_raw_set_msg(Window *window, Message *msg)
 }
 
 void
-call_raw_free(Window *window)
+call_raw_win_free(Window *window)
 {
-    CallRawInfo *info = call_raw_info(window);
+    CallRawWinInfo *info = call_raw_info(window);
     g_return_if_fail(info != NULL);
 
     // Delete panel windows
@@ -368,11 +368,11 @@ call_raw_free(Window *window)
 }
 
 Window *
-call_raw_new()
+call_raw_win_new()
 {
     Window *window = g_malloc0(sizeof(Window));
     window->type = WINDOW_CALL_RAW;
-    window->destroy = call_raw_free;
+    window->destroy = call_raw_win_free;
     window->redraw = call_raw_redraw;
     window->draw = call_raw_draw;
     window->handle_key = call_raw_handle_key;
@@ -381,7 +381,7 @@ call_raw_new()
     window_init(window, getmaxy(stdscr), getmaxx(stdscr));
 
     // Initialize Call Raw specific data
-    CallRawInfo *info = g_malloc0(sizeof(CallRawInfo));
+    CallRawWinInfo *info = g_malloc0(sizeof(CallRawWinInfo));
     set_panel_userptr(window->panel, (void*) info);
 
     // Create a initial pad of 1000 lines

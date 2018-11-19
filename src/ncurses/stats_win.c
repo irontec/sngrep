@@ -58,10 +58,10 @@
 #include "glib-utils.h"
 #include "storage.h"
 #include "packet/dissectors/packet_sip.h"
-#include "stats.h"
+#include "stats_win.h"
 
 Window *
-stats_new()
+stats_win_new()
 {
     Window *window = g_malloc0(sizeof(Window));
     window->type = WINDOW_STATS;

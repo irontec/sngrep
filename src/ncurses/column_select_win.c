@@ -36,8 +36,8 @@
 #include <glib/gstdio.h>
 #include "glib-utils.h"
 #include "ncurses/manager.h"
-#include "ncurses/call_list.h"
-#include "ncurses/column_select.h"
+#include "ncurses/call_list_win.h"
+#include "ncurses/column_select_win.h"
 
 /**
  * @brief Get custom information of given panel
@@ -48,10 +48,10 @@
  * @param ui UI structure pointer
  * @return a pointer to info structure of given panel
  */
-static ColumnSelectInfo *
+static ColumnSelectWinInfo *
 column_select_info(Window *ui)
 {
-    return (ColumnSelectInfo*) panel_userptr(ui->panel);
+    return (ColumnSelectWinInfo*) panel_userptr(ui->panel);
 }
 
 /**
@@ -67,7 +67,7 @@ static void
 column_select_move_item(Window *ui, ITEM *item, int pos)
 {
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
 
     // Check we have a valid position
     if (pos == item_count(info->menu) || pos < 0)
@@ -93,7 +93,7 @@ static void
 column_select_toggle_item(Window *ui, ITEM *item)
 {
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
 
     int pos = item_index(item);
 
@@ -124,7 +124,7 @@ static void
 column_select_update_menu(Window *ui)
 {
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
     ITEM *current = current_item(info->menu);
     int top_idx = top_row(info->menu);
 
@@ -157,7 +157,7 @@ column_select_update_columns(Window *ui)
     int column, attr_id;
 
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
     g_return_if_fail(info != NULL);
 
     // Reset column count
@@ -250,7 +250,7 @@ column_select_save_columns(Window *ui)
     }
 
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
 
     // Add all selected columns
     for (gint i = 0; i < item_count(info->menu); i++) {
@@ -287,7 +287,7 @@ column_select_handle_key_menu(Window *ui, int key)
     int action = -1;
 
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
     g_return_val_if_fail(info != NULL, KEY_DESTROY);
 
     current = current_item(info->menu);
@@ -368,7 +368,7 @@ column_select_handle_key_form(Window *ui, int key)
     int action = -1;
 
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
     g_return_val_if_fail(info != NULL, KEY_DESTROY);
 
     // Get current field id
@@ -454,7 +454,7 @@ static int
 column_select_handle_key(Window *window, int key)
 {
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(window);
+    ColumnSelectWinInfo *info = column_select_info(window);
     g_return_val_if_fail(info != NULL, KEY_DESTROY);
 
     if (info->form_active) {
@@ -465,10 +465,10 @@ column_select_handle_key(Window *window, int key)
 }
 
 void
-column_select_set_columns(Window *window, GPtrArray *columns)
+column_select_win_set_columns(Window *window, GPtrArray *columns)
 {
     // Get panel information
-    ColumnSelectInfo *info = column_select_info(window);
+    ColumnSelectWinInfo *info = column_select_info(window);
     g_return_if_fail(info != NULL);
 
     // Set selected column array
@@ -503,7 +503,7 @@ void
 column_select_free(Window *ui)
 {
     int i;
-    ColumnSelectInfo *info = column_select_info(ui);
+    ColumnSelectWinInfo *info = column_select_info(ui);
 
     // Remove menu and items
     unpost_menu(info->menu);
@@ -524,7 +524,7 @@ column_select_free(Window *ui)
 }
 
 Window *
-column_select_new()
+column_select_win_new()
 {
     Window *window = g_malloc0(sizeof(Window));
     window->type = WINDOW_COLUMN_SELECT;
@@ -535,7 +535,7 @@ column_select_new()
     window_init(window, 20, 60);
 
     // Initialize Filter panel specific data
-    ColumnSelectInfo *info = g_malloc0(sizeof(ColumnSelectInfo));
+    ColumnSelectWinInfo *info = g_malloc0(sizeof(ColumnSelectWinInfo));
     set_panel_userptr(window->panel, (void*) info);
 
     // Initialize attributes

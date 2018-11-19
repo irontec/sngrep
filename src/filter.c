@@ -32,7 +32,7 @@
 #include <string.h>
 #include "glib-utils.h"
 #include "storage.h"
-#include "ncurses/call_list.h"
+#include "ncurses/call_list_win.h"
 #include "filter.h"
 
 //! Storage of filter information
@@ -120,7 +120,7 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
                 break;
             case FILTER_CALL_LIST:
                 // FIXME Maybe call should know hot to calculate this line
-                call_list_line_text(ncurses_find_by_type(WINDOW_CALL_LIST), call, data);
+                call_list_win_line_text(ncurses_find_by_type(WINDOW_CALL_LIST), call, data);
                 break;
             default:
                 // Unknown filter id

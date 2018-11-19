@@ -33,7 +33,7 @@
 #include "packet/dissectors/packet_sip.h"
 #include "ncurses/manager.h"
 #include "ncurses/ui_filter.h"
-#include "ncurses/call_list.h"
+#include "ncurses/call_list_win.h"
 #include "storage.h"
 #include "filter.h"
 #include "setting.h"
@@ -394,7 +394,7 @@ filter_save_options(Window *ui)
     // Force filter evaluation
     filter_reset_calls();
     // TODO FIXME Refresh call list FIXME
-    call_list_clear(ncurses_find_by_type(WINDOW_CALL_LIST));
+    call_list_win_clear(ncurses_find_by_type(WINDOW_CALL_LIST));
 
 }
 

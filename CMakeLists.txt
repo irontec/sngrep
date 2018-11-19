@@ -34,15 +34,15 @@ set(SOURCES
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
         src/ncurses/manager.c
-        src/ncurses/call_flow.c
-        src/ncurses/call_list.c
-        src/ncurses/call_raw.c
-        src/ncurses/column_select.c
+        src/ncurses/call_flow_win.c
+        src/ncurses/call_list_win.c
+        src/ncurses/call_raw_win.c
+        src/ncurses/column_select_win.c
         src/ncurses/ui_filter.c
         src/ncurses/ui_msg_diff.c
         src/ncurses/ui_save.c
         src/ncurses/ui_settings.c
-        src/ncurses/stats.c
+        src/ncurses/stats_win.c
         src/ncurses/window.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c

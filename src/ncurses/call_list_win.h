@@ -29,8 +29,8 @@
  * screen.
  *
  */
-#ifndef __UI_CALL_LIST_H
-#define __UI_CALL_LIST_H
+#ifndef __UI_CALL_LIST_WIN_H
+#define __UI_CALL_LIST_WIN_H
 
 #include <menu.h>
 #include <glib.h>
@@ -50,7 +50,7 @@ enum CallListFieldList {
 //! Sorter declaration of column struct
 typedef struct _CallListColumn CallListColumn;
 //! Sorter declaration of info struct
-typedef struct _CallListInfo CallListInfo;
+typedef struct _CallListWinInfo CallListWinInfo;
 
 /**
  * @brief Call List column information
@@ -76,7 +76,7 @@ struct _CallListColumn {
  * This data stores the actual status of the panel. It's stored in the
  * panel pointer.
  */
-struct _CallListInfo {
+struct _CallListWinInfo {
     //! Displayed calls vector
     GPtrArray *dcalls;
     //! Selected call in the list
@@ -117,7 +117,7 @@ struct _CallListInfo {
  * @return the allocated window structure
  */
 Window *
-call_list_new();
+call_list_win_new();
 
 /**
  * @brief Get List line from the given call
@@ -131,7 +131,7 @@ call_list_new();
  * @return A pointer to text
  */
 const char*
-call_list_line_text(Window *window, Call *call, char *text);
+call_list_win_line_text(Window *window, Call *call, char *text);
 
 /**
  * @brief Remove all calls from the list and calls storage
@@ -140,6 +140,6 @@ call_list_line_text(Window *window, Call *call, char *text);
  * @param window UI structure pointer
  */
 void
-call_list_clear(Window *window);
+call_list_win_clear(Window *window);
 
 #endif

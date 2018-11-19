@@ -52,8 +52,8 @@
  * +--------------------------------------------------------+
  *
  */
-#ifndef __SNGREP_CALL_FLOW_H
-#define __SNGREP_CALL_FLOW_H
+#ifndef __SNGREP_CALL_FLOW_WIN_H
+#define __SNGREP_CALL_FLOW_WIN_H
 
 #include <glib.h>
 #include "ncurses/manager.h"
@@ -61,7 +61,7 @@
 #include "group.h"
 
 //! Sorter declaration of struct _CallFlowInfo
-typedef struct _CallFlowInfo CallFlowInfo;
+typedef struct _CallFlowWinInfo CallFlowWinInfo;
 //! Sorter declaration of struct _CallFlowColumn
 typedef struct _CallFlowColumn CallFlowColumn;
 //! Sorter declaration of struct _CallFlowArrow
@@ -135,7 +135,7 @@ struct _CallFlowColumn {
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _CallFlowInfo {
+struct _CallFlowWinInfo {
     //! Window to display SIP payload
     WINDOW *raw_win;
     //! Window to diplay arrows
@@ -173,7 +173,7 @@ struct _CallFlowInfo {
  * @param ui UI structure pointer
  */
 Window *
-call_flow_new();
+call_flow_win_new();
 
 /**
  * @brief Destroy panel
@@ -183,7 +183,7 @@ call_flow_new();
  * @param ui UI structure pointer
  */
 void
-call_flow_free(Window *window);
+call_flow_win_free(Window *window);
 
 /**
  * @brief Set the group call of the panel
@@ -194,6 +194,6 @@ call_flow_free(Window *window);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-call_flow_set_group(Window *window, CallGroup *group);
+call_flow_win_set_group(Window *window, CallGroup *group);
 
-#endif /* __SNGREP_CALL_FLOW_H */
+#endif /* __SNGREP_CALL_FLOW_WIN_H */

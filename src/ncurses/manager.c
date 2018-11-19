@@ -36,13 +36,13 @@
 #include "manager.h"
 #include "packet/dissectors/packet_sip.h"
 #include "capture/capture.h"
-#include "ncurses/call_list.h"
-#include "ncurses/call_flow.h"
-#include "ncurses/call_raw.h"
+#include "ncurses/call_list_win.h"
+#include "ncurses/call_flow_win.h"
+#include "ncurses/call_raw_win.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_msg_diff.h"
-#include "ncurses/column_select.h"
-#include "ncurses/stats.h"
+#include "ncurses/column_select_win.h"
+#include "ncurses/stats_win.h"
 #include "ncurses/ui_save.h"
 #include "ncurses/ui_settings.h"
 
@@ -204,19 +204,19 @@ ncurses_find_by_type(enum WindowTypes type)
 
     switch (type) {
         case WINDOW_CALL_LIST:
-            window = call_list_new();
+            window = call_list_win_new();
             break;
         case WINDOW_COLUMN_SELECT:
-            window = column_select_new();
+            window = column_select_win_new();
             break;
         case WINDOW_STATS:
-            window = stats_new();
+            window = stats_win_new();
             break;
         case WINDOW_CALL_FLOW:
-            window = call_flow_new();
+            window = call_flow_win_new();
             break;
         case WINDOW_CALL_RAW:
-            window = call_raw_new();
+            window = call_raw_win_new();
             break;
         default: break;
     }

@@ -20,14 +20,14 @@
  **
  ****************************************************************************/
 /**
- * @file ui_column_select.h
+ * @file column_select.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage columns select panel
  */
 
-#ifndef __UI_COLUMN_SELECT_H
-#define __UI_COLUMN_SELECT_H
+#ifndef __COLUMN_SELECT_WIN_H
+#define __COLUMN_SELECT_WIN_H
 
 #include "config.h"
 #include <menu.h>
@@ -49,14 +49,14 @@ enum ColumnSelectFields {
 
 
 //! Sorter declaration of struct columns_select_info
-typedef struct _ColumnSelectInfo ColumnSelectInfo;
+typedef struct _ColumnSelectWinInfo ColumnSelectWinInfo;
 
 /**
  * @brief Column selector panel private information
  *
  * This structure contains the durable data of column selection panel.
  */
-struct _ColumnSelectInfo {
+struct _ColumnSelectWinInfo {
     //! Section of panel where menu is being displayed
     WINDOW *menu_win;
     //! Columns menu
@@ -86,13 +86,13 @@ struct _ColumnSelectInfo {
  * @return Window UI structure pointer
  */
 Window *
-column_select_new();
+column_select_win_new();
 
 /**
  * @brief Set Column array to be updated
  * @param columns Array of currect active columns
  */
 void
-column_select_set_columns(Window *window, GPtrArray *columns);
+column_select_win_set_columns(Window *window, GPtrArray *columns);
 
-#endif /* __UI_COLUMN_SELECT_H */
+#endif /* __COLUMN_SELECT_WIN_H */
