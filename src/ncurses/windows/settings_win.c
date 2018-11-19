@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "ncurses/manager.h"
-#include "ncurses/settings_win.h"
+#include "settings_win.h"
 #include "setting.h"
 
 SettingsWinCategory categories[] = {

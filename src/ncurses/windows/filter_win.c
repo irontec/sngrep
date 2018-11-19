@@ -32,8 +32,8 @@
 #include <form.h>
 #include "packet/dissectors/packet_sip.h"
 #include "ncurses/manager.h"
-#include "ncurses/filter_win.h"
-#include "ncurses/call_list_win.h"
+#include "filter_win.h"
+#include "call_list_win.h"
 #include "storage.h"
 #include "filter.h"
 #include "setting.h"

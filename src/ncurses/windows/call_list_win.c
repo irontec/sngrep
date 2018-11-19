@@ -41,12 +41,12 @@
 #include "capture/capture_hep.h"
 #endif
 #include "ncurses/manager.h"
-#include "ncurses/call_list_win.h"
-#include "ncurses/call_flow_win.h"
-#include "ncurses/call_raw_win.h"
-#include "ncurses/stats_win.h"
-#include "ncurses/filter_win.h"
-#include "ncurses/save_win.h"
+#include "call_list_win.h"
+#include "call_flow_win.h"
+#include "call_raw_win.h"
+#include "stats_win.h"
+#include "filter_win.h"
+#include "save_win.h"
 #include "storage.h"
 #include "column_select_win.h"
 

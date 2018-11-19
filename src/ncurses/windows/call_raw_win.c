@@ -33,8 +33,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ncurses/manager.h"
-#include "ncurses/call_raw_win.h"
-#include "ncurses/save_win.h"
+#include "call_raw_win.h"
+#include "save_win.h"
 #include "capture/capture_pcap.h"
 #include "packet/dissectors/packet_sip.h"
 

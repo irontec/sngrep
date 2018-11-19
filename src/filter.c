@@ -32,7 +32,7 @@
 #include <string.h>
 #include "glib-utils.h"
 #include "storage.h"
-#include "ncurses/call_list_win.h"
+#include "ncurses/windows/call_list_win.h"
 #include "filter.h"
 
 //! Storage of filter information

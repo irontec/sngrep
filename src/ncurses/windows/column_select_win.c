@@ -36,8 +36,8 @@
 #include <glib/gstdio.h>
 #include "glib-utils.h"
 #include "ncurses/manager.h"
-#include "ncurses/call_list_win.h"
-#include "ncurses/column_select_win.h"
+#include "call_list_win.h"
+#include "column_select_win.h"
 
 /**
  * @brief Get custom information of given panel
