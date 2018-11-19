@@ -35,7 +35,7 @@
 #include "ncurses/manager.h"
 #include "ncurses/call_flow_win.h"
 #include "ncurses/call_raw_win.h"
-#include "ncurses/ui_msg_diff.h"
+#include "ncurses/msg_diff_win.h"
 #include "ncurses/ui_save.h"
 #include "timeval.h"
 #include "glib-utils.h"
@@ -1367,7 +1367,7 @@ static int
 call_flow_handle_key(Window *window, int key)
 {
     int raw_width;
-    Window *next_ui, *next_window;
+    Window *next_window;
     Call *call = NULL;
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
@@ -1472,10 +1472,9 @@ call_flow_handle_key(Window *window, int key)
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }
-                next_ui = ncurses_create_window(PANEL_SAVE);
-                save_set_group(next_ui, info->group);
-                save_set_msg(next_ui,
-                    call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+                next_window = ncurses_create_window(WINDOW_SAVE);
+                save_set_group(next_window, info->group);
+                save_set_msg(next_window, call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                 break;
             case ACTION_TOGGLE_TIME:
                 info->arrowtime = (info->arrowtime) ? false : true;
@@ -1488,10 +1487,10 @@ call_flow_handle_key(Window *window, int key)
                         info->selected = -1;
                     } else {
                         // Show diff panel
-                        next_ui = ncurses_create_window(PANEL_MSG_DIFF);
-                        msg_diff_set_msgs(next_ui,
-                                          call_flow_arrow_message(g_ptr_array_index(info->darrows, info->selected)),
-                                          call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+                        next_window = ncurses_create_window(WINDOW_MSG_DIFF);
+                        msg_diff_win_set_msgs(next_window,
+                                call_flow_arrow_message(g_ptr_array_index(info->darrows, info->selected)),
+                                call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                     }
                 }
                 break;
@@ -1503,7 +1502,7 @@ call_flow_handle_key(Window *window, int key)
                 next_window = ncurses_create_window(WINDOW_CALL_RAW);
                 call_raw_win_set_group(next_window, info->group);
                 call_raw_win_set_msg(next_window,
-                                     call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+                        call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                 break;
             case ACTION_CLEAR_CALLS:
             case ACTION_CLEAR_CALLS_SOFT:

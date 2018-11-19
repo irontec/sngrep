@@ -40,7 +40,7 @@
 #include "ncurses/call_flow_win.h"
 #include "ncurses/call_raw_win.h"
 #include "ncurses/filter_win.h"
-#include "ncurses/ui_msg_diff.h"
+#include "ncurses/msg_diff_win.h"
 #include "ncurses/column_select_win.h"
 #include "ncurses/stats_win.h"
 #include "ncurses/ui_save.h"
@@ -221,6 +221,9 @@ ncurses_find_by_type(enum WindowTypes type)
         case WINDOW_FILTER:
             window = filter_win_new();
             break;
+        case WINDOW_MSG_DIFF:
+            window = msg_diff_win_new();
+            break;
         default: break;
     }
 
@@ -331,7 +334,7 @@ ncurses_default_keyhandler(Window *window, int key)
                 setting_toggle(SETTING_DISPLAY_ALIAS);
                 break;
             case ACTION_SHOW_SETTINGS:
-                ncurses_create_window(PANEL_SETTINGS);
+                ncurses_create_window(WINDOW_SETTINGS);
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture

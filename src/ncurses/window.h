@@ -63,13 +63,13 @@ enum WindowTypes {
     //! Filters panel
     WINDOW_FILTER,
     //! Save to pcap panel
-    PANEL_SAVE,
+    WINDOW_SAVE,
     //! Message comprare
-    PANEL_MSG_DIFF,
+    WINDOW_MSG_DIFF,
     //! Column selector panel
     WINDOW_COLUMN_SELECT,
     //! Settings panel
-    PANEL_SETTINGS,
+    WINDOW_SETTINGS,
     //! Stats panel
     WINDOW_STATS,
     //! Panel Counter

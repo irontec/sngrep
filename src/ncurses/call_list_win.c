@@ -931,7 +931,7 @@ call_list_handle_key(Window *window, int key)
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }
-                save_set_group(ncurses_create_window(PANEL_SAVE), info->group);
+                save_set_group(ncurses_create_window(WINDOW_SAVE), info->group);
                 break;
             case ACTION_CLEAR:
                 // Clear group calls
@@ -953,7 +953,7 @@ call_list_handle_key(Window *window, int key)
                 info->autoscroll = (info->autoscroll) ? 0 : 1;
                 break;
             case ACTION_SHOW_SETTINGS:
-                ncurses_create_window(PANEL_SETTINGS);
+                ncurses_create_window(WINDOW_SETTINGS);
                 break;
             case ACTION_SELECT:
                 call = g_ptr_array_index(info->dcalls, info->cur_idx);

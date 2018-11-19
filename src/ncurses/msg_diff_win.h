@@ -20,19 +20,20 @@
  **
  ****************************************************************************/
 /**
- * @file ui_msg_diff.h
+ * @file msg_diff_win.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage diff display
  *
  */
-#ifndef __UI_MSG_DIFF_H
-#define __UI_MSG_DIFF_H
+#ifndef __SNGREP_MSG_DIFF_WIN_H
+#define __SNGREP_MSG_DIFF_WIN_H
+
 #include "config.h"
 #include "ncurses/manager.h"
 
 //! Sorter declaration of struct msg_diff_info
-typedef struct msg_diff_info msg_diff_info_t;
+typedef struct _MsgDiffWinInfo MsgDiffWinInfo;
 
 /**
  * @brief Call raw status information
@@ -40,7 +41,7 @@ typedef struct msg_diff_info msg_diff_info_t;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct msg_diff_info {
+struct _MsgDiffWinInfo {
     //! First message to compare
     Message *one;
     //! Second message to compare
@@ -59,11 +60,10 @@ struct msg_diff_info {
  * It will also create an information structure of the panel status and
  * store it in the panel's userpointer
  *
- * @param ui UI structure pointer
  * @return the allocated ncurses panel
  */
-void
-msg_diff_create(Window *ui);
+Window *
+msg_diff_win_new();
 
 /**
  * @brief Deallocate panel memory
@@ -71,57 +71,10 @@ msg_diff_create(Window *ui);
  * This function will be called from ui manager logic to free
  * message diff panel memory
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  */
 void
-msg_diff_destroy(Window *ui);
-
-/**
- * @brief Get panel information structure
- *
- * All required information of the panel is stored in the info pointer
- * of the panel.
- * This function will return the pointer to the info structure of the
- * panel.
- *
- * @param ui UI structure pointer
- * @return a pointer to the info structure or NULL if no structure exists
- */
-msg_diff_info_t *
-msg_diff_info(Window *ui);
-
-/**
- * @brief Redraw panel data
- *
- * This function will be called from ui manager logic when the panels
- * needs to be redrawn.
- *
- * @param ui UI structure pointer
- * @return 0 in all cases
- */
-int
-msg_diff_draw(Window *ui);
-
-/**
- * @brief Draw panel footer
- *
- * Usually panel footer contains useful keybidings. This function
- * will draw that footer
- *
- * @param ui UI structure pointer
- */
-void
-msg_diff_draw_footer(Window *ui);
-
-/**
- * @brief Draw a message into a raw subwindow
- *
- * This function will be called for each message that wants to be draw
- * in the panel.
- *
- */
-int
-msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight);
+msg_diff_win_free(Window *window);
 
 /**
  * @brief Set the panel working messages
@@ -129,12 +82,11 @@ msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight);
  * This function will access the panel information and will set the
  * msg pointers to the processed messages.
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  * @param one Message pointer to be set in the internal info struct
  * @param two Message pointer to be set in the internal info struct
- * @return 0 in all cases
  */
-int
-msg_diff_set_msgs(Window *ui, Message *one, Message *two);
+void
+msg_diff_win_set_msgs(Window *window, Message *one, Message *two);
 
 #endif

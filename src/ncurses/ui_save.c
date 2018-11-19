@@ -45,7 +45,7 @@
  * Ui Structure definition for Save panel
  */
 Window ui_save = {
-    .type = PANEL_SAVE,
+    .type = WINDOW_SAVE,
     .panel = NULL,
     .create = save_create,
     .draw = save_draw,

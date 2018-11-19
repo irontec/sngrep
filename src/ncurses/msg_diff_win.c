@@ -28,7 +28,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
-#include "ui_msg_diff.h"
+#include "msg_diff_win.h"
 #include "option.h"
 
 /***
@@ -53,65 +53,24 @@
  */
 
 /**
- * Ui Structure definition for Message Diff panel
+ * @brief Get panel information structure
+ *
+ * All required information of the panel is stored in the info pointer
+ * of the panel.
+ * This function will return the pointer to the info structure of the
+ * panel.
+ *
+ * @param ui UI structure pointer
+ * @return a pointer to the info structure or NULL if no structure exists
  */
-Window ui_msg_diff = {
-    .type = PANEL_MSG_DIFF,
-    .panel = NULL,
-    .create = msg_diff_create,
-    .handle_key = NULL,
-    .destroy = msg_diff_destroy,
-    .draw = msg_diff_draw,
-    .help = NULL
-};
-
-void
-msg_diff_create(Window *ui)
-{
-    int hwidth;
-    msg_diff_info_t *info;
-
-    // Create a new panel to fill all the screen
-    window_init(ui, LINES, COLS);
-
-    // Initialize panel specific data
-    info = g_malloc0(sizeof(msg_diff_info_t));
-
-    // Store it into panel userptr
-    set_panel_userptr(ui->panel, (void*) info);
-
-    // Calculate subwindows width
-    hwidth = ui->width / 2 - 1;
-
-    // Create 2 subwindows, one for each message
-    info->one_win = subwin(ui->win, ui->height - 2, hwidth, 1, 0);
-    info->two_win = subwin(ui->win, ui->height - 2, hwidth, 1, hwidth + 1); // Header - Footer - Address
-
-    // Draw a vertical line to separe both subwindows
-    mvwvline(ui->win, 0, hwidth, ACS_VLINE, ui->height);
-
-    // Draw title
-    window_set_title(ui, "sngrep - SIP messages flow viewer");
-
-    // Draw keybindings
-    msg_diff_draw_footer(ui);
-}
-
-void
-msg_diff_destroy(Window *ui)
-{
-    g_free(msg_diff_info(ui));
-    window_deinit(ui);
-}
-
-msg_diff_info_t *
+static MsgDiffWinInfo *
 msg_diff_info(Window *ui)
 {
-    return (msg_diff_info_t*) panel_userptr(ui->panel);
+    return (MsgDiffWinInfo*) panel_userptr(ui->panel);
 }
 
-int
-msg_diff_line_highlight(const char* payload1, const char* payload2, char *highlight)
+static int
+msg_diff_line_highlight(const char *payload1, const char *payload2, char *highlight)
 {
     char search[MAX_SIP_PAYLOAD];
     int len;
@@ -140,40 +99,33 @@ msg_diff_line_highlight(const char* payload1, const char* payload2, char *highli
     return 0;
 }
 
-void
-msg_diff_draw_footer(Window *ui)
+/**
+ * @brief Draw panel footer
+ *
+ * Usually panel footer contains useful keybidings. This function
+ * will draw that footer
+ *
+ * @param window UI structure pointer
+ */
+static void
+msg_diff_draw_footer(Window *window)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls Flow",
         key_action_key_str(ACTION_SHOW_HELP), "Help"
     };
 
-    window_draw_bindings(ui, keybindings, 4);
+    window_draw_bindings(window, keybindings, 4);
 }
 
-int
-msg_diff_draw(Window *ui)
-{
-    // Get panel information
-    msg_diff_info_t *info = msg_diff_info(ui);
-    char highlight[MAX_SIP_PAYLOAD];
-
-    // Draw first message
-    memset(highlight, 0, sizeof(highlight));
-    msg_diff_line_highlight(msg_get_payload(info->one), msg_get_payload(info->two), highlight);
-    msg_diff_draw_message(info->one_win, info->one, highlight);
-    // Draw second message
-    memset(highlight, 0, sizeof(highlight));
-    msg_diff_line_highlight(msg_get_payload(info->two), msg_get_payload(info->one), highlight);
-    msg_diff_draw_message(info->two_win, info->two, highlight);
-
-    // Redraw footer
-    msg_diff_draw_footer(ui);
-
-    return 0;
-}
-
-int
+/**
+ * @brief Draw a message into a raw subwindow
+ *
+ * This function will be called for each message that wants to be draw
+ * in the panel.
+ *
+ */
+static int
 msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight)
 {
     int height, width, line, column;
@@ -222,16 +174,93 @@ msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight)
     return 0;
 }
 
-int
-msg_diff_set_msgs(Window *ui, Message *one, Message *two)
+/**
+ * @brief Redraw panel data
+ *
+ * This function will be called from ui manager logic when the panels
+ * needs to be redrawn.
+ *
+ * @param window UI structure pointer
+ * @return 0 in all cases
+ */
+static int
+msg_diff_draw(Window *window)
 {
-    msg_diff_info_t *info;
-
     // Get panel information
-    info = msg_diff_info(ui);
-    info->one = one;
-    info->two = two;
+    MsgDiffWinInfo *info = msg_diff_info(window);
+    g_return_val_if_fail(info != NULL, -1);
+
+    char highlight[MAX_SIP_PAYLOAD];
+
+    // Draw first message
+    memset(highlight, 0, sizeof(highlight));
+    msg_diff_line_highlight(msg_get_payload(info->one), msg_get_payload(info->two), highlight);
+    msg_diff_draw_message(info->one_win, info->one, highlight);
+
+    // Draw second message
+    memset(highlight, 0, sizeof(highlight));
+    msg_diff_line_highlight(msg_get_payload(info->two), msg_get_payload(info->one), highlight);
+    msg_diff_draw_message(info->two_win, info->two, highlight);
+
+    // Redraw footer
+    msg_diff_draw_footer(window);
 
     return 0;
 }
 
+
+void
+msg_diff_win_set_msgs(Window *window, Message *one, Message *two)
+{
+    MsgDiffWinInfo *info = msg_diff_info(window);
+    g_return_if_fail(info != NULL);
+
+    g_return_if_fail(one != NULL);
+    g_return_if_fail(two != NULL);
+
+    info->one = one;
+    info->two = two;
+}
+
+void
+msg_diff_win_free(Window *window)
+{
+    MsgDiffWinInfo *info = msg_diff_info(window);
+    g_return_if_fail(info != NULL);
+
+    g_free(info);
+    window_deinit(window);
+}
+
+Window *
+msg_diff_win_new()
+{
+    Window *window = g_malloc0(sizeof(Window));
+    window->type = WINDOW_MSG_DIFF;
+    window->destroy = msg_diff_win_free;
+    window->draw = msg_diff_draw;
+
+    // Create a new panel to fill all the screen
+    window_init(window, getmaxy(stdscr), getmaxx(stdscr));
+
+    // Initialize panel specific data
+    MsgDiffWinInfo *info = g_malloc0(sizeof(MsgDiffWinInfo));
+
+    // Store it into panel userptr
+    set_panel_userptr(window->panel, (void*) info);
+
+    // Calculate subwindows width
+    gint hwidth = window->width / 2 - 1;
+
+    // Create 2 subwindows, one for each message
+    info->one_win = subwin(window->win, window->height - 2, hwidth, 1, 0);
+    info->two_win = subwin(window->win, window->height - 2, hwidth, 1, hwidth + 1); // Header - Footer - Address
+
+    // Draw a vertical line to separe both subwindows
+    mvwvline(window->win, 0, hwidth, ACS_VLINE, window->height);
+
+    // Draw title
+    window_set_title(window, "sngrep - SIP messages flow viewer");
+
+    return window;
+}

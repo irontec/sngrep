@@ -39,7 +39,7 @@ set(SOURCES
         src/ncurses/call_raw_win.c
         src/ncurses/column_select_win.c
         src/ncurses/filter_win.c
-        src/ncurses/ui_msg_diff.c
+        src/ncurses/msg_diff_win.c
         src/ncurses/ui_save.c
         src/ncurses/ui_settings.c
         src/ncurses/stats_win.c

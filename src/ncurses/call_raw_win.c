@@ -282,7 +282,7 @@ call_raw_handle_key(Window *window, int key)
                 }
                 if (info->group) {
                     // KEY_S, Display save panel
-                    next_ui = ncurses_create_window(PANEL_SAVE);
+                    next_ui = ncurses_create_window(WINDOW_SAVE);
                     save_set_group(next_ui, info->group);
                 }
                 break;

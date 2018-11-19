@@ -42,7 +42,7 @@
  * Ui Structure definition for Settings panel
  */
 Window ui_settings = {
-    .type = PANEL_SETTINGS,
+    .type = WINDOW_SETTINGS,
     .panel = NULL,
     .create = settings_create,
     .draw = settings_draw,
