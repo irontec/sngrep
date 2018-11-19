@@ -41,7 +41,7 @@ set(SOURCES
         src/ncurses/filter_win.c
         src/ncurses/msg_diff_win.c
         src/ncurses/save_win.c
-        src/ncurses/ui_settings.c
+        src/ncurses/settings_win.c
         src/ncurses/stats_win.c
         src/ncurses/window.c
         src/ncurses/keybinding.c

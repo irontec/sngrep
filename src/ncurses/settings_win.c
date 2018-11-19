@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_settings.c
+ * @file settings_win.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in ui_settings.h
@@ -35,32 +35,20 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "ncurses/manager.h"
-#include "ncurses/ui_settings.h"
+#include "ncurses/settings_win.h"
 #include "setting.h"
 
-/**
- * Ui Structure definition for Settings panel
- */
-Window ui_settings = {
-    .type = WINDOW_SETTINGS,
-    .panel = NULL,
-    .create = settings_create,
-    .draw = settings_draw,
-    .handle_key = settings_handle_key,
-    .destroy = settings_destroy
-};
-
-settings_category_t categories[] = {
+SettingsWinCategory categories[] = {
     { CAT_SETTINGS_INTERFACE,  "Interface" },
     { CAT_SETTINGS_CAPTURE,    "Capture" },
     { CAT_SETTINGS_CALL_FLOW,  "Call Flow" },
 #ifdef USE_HEP
-    { CAT_SETTINGS_HEP_HOMER,  "EEP/HEP Homer" },
+    { CAT_SETTINGS_HEP_HOMER,  "HEP Homer" },
 #endif
     { 0 , NULL },
 };
 
-settings_entry_t entries[] = {
+SettingsWinEntry entries[] = {
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_BACKGROUND,         SETTING_BACKGROUND,         "Background * .............................." },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX,             SETTING_SYNTAX,             "SIP message syntax ........................" },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX_TAG,         SETTING_SYNTAX_TAG,         "SIP tag syntax ............................" },
@@ -98,132 +86,31 @@ settings_entry_t entries[] = {
     { 0 , 0, 0, NULL },
 };
 
-void
-settings_create(Window *ui)
-{
-    int i, j, line;
-    settings_info_t *info;
-    FIELD *entry, *label;
-    int field = 0;
-
-    // Cerate a new window for the panel and form
-    window_init(ui, 24, 70);
-
-    // Initialize Filter panel specific data
-    info = g_malloc0(sizeof(settings_info_t));
-
-    // Store it into panel userptr
-    set_panel_userptr(ui->panel, (void*) info);
-
-    // Create a scrollable subwindow for settings
-    info->form_win = derwin(ui->win, ui->height - 11, ui->width - 2, 8, 1);
-
-    // Configure panel buttons
-    info->buttons[BTN_SETTINGS_ACCEPT] = new_field(1, 10, ui->height - 2, 12, 0, 0);
-    info->buttons[BTN_SETTINGS_SAVE]   = new_field(1, 10, ui->height - 2, 29, 0, 0);
-    info->buttons[BTN_SETTINGS_CANCEL] = new_field(1, 10, ui->height - 2, 46, 0, 0);
-    info->buttons[BTN_SETTINGS_COUNT]  = NULL;
-    field_opts_off(info->buttons[BTN_SETTINGS_ACCEPT], O_EDIT);
-    field_opts_off(info->buttons[BTN_SETTINGS_SAVE], O_EDIT);
-    field_opts_off(info->buttons[BTN_SETTINGS_CANCEL], O_EDIT);
-    set_field_buffer(info->buttons[BTN_SETTINGS_ACCEPT], 0, "[ Accept ]");
-    set_field_buffer(info->buttons[BTN_SETTINGS_SAVE],   0, "[  Save  ]");
-    set_field_buffer(info->buttons[BTN_SETTINGS_CANCEL], 0, "[ Cancel ]");
-    info->buttons_form = new_form(info->buttons);
-    set_form_sub(info->buttons_form, ui->win);
-    post_form(info->buttons_form);
-
-    // Initialize rest of settings fields
-    for (i = 0; categories[i].cat_id; i++) {
-        // Each category section begins with fields in the first line
-        line = 0;
-
-        for (j = 0; entries[j].cat_id; j++) {
-            // Ignore entries of other categories
-            if (entries[j].cat_id != categories[i].cat_id)
-                continue;
-
-            // Create the label
-            label = new_field(1, 45, line, 3, 0, 0);
-            set_field_buffer(label, 0, entries[j].label);
-            field_opts_off(label, O_ACTIVE);
-
-            // Change field properties according to field type
-            switch(setting_format(entries[j].setting_id)) {
-                case SETTING_FMT_NUMBER:
-                    entry = new_field(1, 18, line, 48, 0, 0);
-                    set_field_back(entry, A_UNDERLINE);
-                    set_field_type(entry, TYPE_REGEXP, "[0-9]+");
-                    break;
-                case SETTING_FMT_STRING:
-                    entry = new_field(1, 18, line, 48, 0, 0);
-                    field_opts_off(entry, O_STATIC);
-                    set_field_back(entry, A_UNDERLINE);
-                    break;
-                case SETTING_FMT_ENUM:
-                    entry = new_field(1, 12, line, 48, 0, 0);
-                    field_opts_off(entry, O_EDIT);
-                    set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
-                    break;
-                default:
-                    return;
-            }
-
-            field_opts_off(entry, O_AUTOSKIP);
-            set_field_buffer(entry, 0, setting_get_value(entries[j].setting_id));
-            set_field_userptr(entry, (void *) &entries[j]);
-
-            if (line == 0) {
-                // Set last field as page breaker
-                set_new_page(entry, TRUE);
-            }
-
-            // Store field
-            info->fields[field++] = entry;
-            info->fields[field++] = label;
-
-            line++;
-        }
-    }
-
-    // Create the form and post it
-    info->form = new_form(info->fields);
-    set_form_sub(info->form, info->form_win);
-    post_form(info->form);
-
-    // Set the window title and boxes
-    mvwprintw(ui->win, 1, ui->width / 2 - 5, "Settings");
-    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(ui->panel);
-    mvwhline(ui->win, 6, 1, ACS_HLINE, ui->width - 1);
-    mvwaddch(ui->win, 6, 0, ACS_LTEE);
-    mvwaddch(ui->win, 6, ui->width - 1, ACS_RTEE);
-    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    wattron(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(ui->win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move around settings.");
-    mvwprintw(ui->win, 4, 1, " Settings with (*) requires restart.");
-    wattroff(ui->win, COLOR_PAIR(CP_CYAN_ON_DEF));
-
-    // Set default field
-    info->active_form = info->form;
-    set_current_field(info->form, *info->fields);
-    info->active_category = form_page(info->form) + 1;
-}
-
-void
-settings_destroy(Window *ui)
-{
-    curs_set(0);
-    window_deinit(ui);
-}
-
-settings_info_t *
+/**
+ * @brief Get custom information of given panel
+ *
+ * Return ncurses users pointer of the given panel into panel's
+ * information structure pointer.
+ *
+ * @param ui UI structure pointer
+ * @return a pointer to info structure of given panel
+ */
+static SettingsWinInfo *
 settings_info(Window *ui)
 {
-    return (settings_info_t*) panel_userptr(ui->panel);
+    return (SettingsWinInfo*) panel_userptr(ui->panel);
 }
 
-int
+/**
+ * @brief Draw the settings panel
+ *
+ * This function will drawn the panel into the screen with
+ * current status settings
+ *
+ * @param ui UI structure pointer
+ * @return 0 if the panel has been drawn, -1 otherwise
+ */
+static int
 settings_draw(Window *ui)
 {
     int i;
@@ -231,7 +118,7 @@ settings_draw(Window *ui)
 
 
     // Get panel information
-    settings_info_t *info = settings_info(ui);
+    SettingsWinInfo *info = settings_info(ui);
 
     // Store cursor position
     getyx(ui->win, cury, curx);
@@ -276,22 +163,171 @@ settings_draw(Window *ui)
     return 0;
 }
 
-int
+/**
+ * @brief Return entry information of the field
+ *
+ * If field is storing a setting value, return the entry
+ * structure associated to the setting
+ *
+ * @param field Ncurses field pointer of screen
+ * @return Setting information structure
+ */
+static SettingsWinEntry *
+settings_is_entry(FIELD *field)
+{
+    return (SettingsWinEntry *) field_userptr(field);
+}
+
+/**
+ * @brief Update settings with panel values
+ *
+ * Update all settings with the selected on screen.
+ * Note that some settings require application restart to
+ * take effect.
+ *
+ * @param ui UI structure pointer
+ * @return 0 in all cases
+ */
+static int
+settings_update_settings(Window *ui)
+{
+    int i;
+    char field_value[180];
+    SettingsWinEntry *entry;
+
+    // Get panel information
+    SettingsWinInfo *info = settings_info(ui);
+
+    for (i=0; i < FLD_SETTINGS_COUNT; i++) {
+        if ((entry = settings_is_entry(info->fields[i]))) {
+            // Get field value.
+            memset(field_value, 0, sizeof(field_value));
+            strcpy(field_value, field_buffer(info->fields[i], 0));
+            g_strstrip(field_value);
+            // Change setting value
+            setting_set_value(entry->setting_id, field_value);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Update user resource file with panel values
+ *
+ * Save all settings into user configuration file located
+ * in it's home directory.
+ *
+ * @param ui UI structure pointer
+ */
+static void
+settings_save(Window *ui)
+{
+    // Get panel information
+    SettingsWinInfo *info = settings_info(ui);
+
+    g_autoptr(GString) userconf = g_string_new(NULL);
+    g_autoptr(GString) tmpfile  = g_string_new(NULL);
+
+    // Use $SNGREPRC/.sngreprc file
+    const gchar *rcfile = g_getenv("SNGREPRC");
+    if (rcfile != NULL) {
+        g_string_append(userconf, rcfile);
+    } else {
+        // Or Use $HOME/.sngreprc file
+        rcfile = g_getenv("HOME");
+        if (rcfile != NULL) {
+            g_string_append_printf(userconf, "%s/.sngreprc", rcfile);
+        }
+    }
+
+    // No user configuration found!
+    if (userconf->len == 0) {
+        dialog_run("Unable to save configuration. User has no $SNGREPRC or $HOME dir.");
+        return;
+    }
+
+    // Path for backup file
+    g_string_append_printf(tmpfile, "%s.old", userconf->str);
+
+    // Remove old config file
+    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
+        g_unlink(tmpfile->str);
+    }
+
+    // Move user conf file to temporal file
+    g_rename(userconf->str, tmpfile->str);
+
+    // Create a new user conf file
+    FILE *fo = g_fopen(userconf->str, "w");
+    if (fo == NULL) {
+        dialog_run("Unable to open %s: %s", userconf->str, g_strerror(errno));
+        return;
+    }
+
+    // Check if there was configuration already
+    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
+        // Get old configuration contents
+        gchar *usercontents = NULL;
+        g_file_get_contents(tmpfile->str, &usercontents, NULL, NULL);
+
+        // Separate configuration in lines
+        gchar **contents = g_strsplit(usercontents, "\n", -1);
+
+        // Put exiting config in the new file
+        for (guint i = 0; i < g_strv_length(contents); i++) {
+            if (g_ascii_strncasecmp(contents[i], "set cl.column", 13) == 0) {
+                g_fprintf(fo, "%s\n", contents[i]);
+            }
+        }
+
+        g_strfreev(contents);
+        g_free(usercontents);
+    }
+
+    for (guint i = 0; i < FLD_SETTINGS_COUNT; i++) {
+        SettingsWinEntry *entry = settings_is_entry(info->fields[i]);
+        if (entry != NULL) {
+            // Change setting value
+            gchar *field_value = g_strchomp(g_strdup(field_buffer(info->fields[i], 0)));
+            g_fprintf(fo, "set %s %s\n", setting_name(entry->setting_id), field_value);
+            g_free(field_value);
+
+        }
+    }
+
+    fclose(fo);
+
+    dialog_run("Settings successfully saved to %s", userconf->str);
+}
+
+/**
+ * @brief Manage pressed keys for settings panel
+ *
+ * This function is called by UI manager every time a
+ * key is pressed. This allow the filter panel to manage
+ * its own keys.
+ *
+ * @param ui UI structure pointer
+ * @param key   key code
+ * @return enum @key_handler_ret
+ */
+static int
 settings_handle_key(Window *ui, int key)
 {
     int action = -1;
     int field_idx;
-    settings_entry_t *entry;
+    SettingsWinEntry *entry;
     enum setting_fmt sett_fmt = -1;
 
     // Get panel information
-    settings_info_t *info = settings_info(ui);
+    SettingsWinInfo *info = settings_info(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->active_form));
 
     // Get current setting id;
-    if ((entry = ui_settings_is_entry(current_field(info->active_form)))) {
+    if ((entry = settings_is_entry(current_field(info->active_form)))) {
         sett_fmt = setting_format(entry->setting_id);
     }
 
@@ -362,7 +398,7 @@ settings_handle_key(Window *ui, int key)
                     }
                     break;
                 case ACTION_CONFIRM:
-                    ui_settings_update_settings(ui);
+                    settings_update_settings(ui);
                     window_destroy(ui);
                     return KEY_HANDLED;
                 default:
@@ -393,8 +429,8 @@ settings_handle_key(Window *ui, int key)
                 case ACTION_SELECT:
                 case ACTION_CONFIRM:
                     if (field_idx == BTN_SETTINGS_SAVE)
-                        ui_settings_save(ui);
-                    ui_settings_update_settings(ui);
+                        settings_save(ui);
+                    settings_update_settings(ui);
                     window_destroy(ui);
                     return KEY_HANDLED;
                 default:
@@ -410,7 +446,7 @@ settings_handle_key(Window *ui, int key)
     form_driver(info->active_form, REQ_VALIDATION);
 
     // Get current setting id
-    if ((entry = ui_settings_is_entry(current_field(info->active_form)))) {
+    if ((entry = settings_is_entry(current_field(info->active_form)))) {
         // Enable cursor on string and number fields
         curs_set(setting_format(entry->setting_id) != SETTING_FMT_ENUM);
     } else {
@@ -421,113 +457,125 @@ settings_handle_key(Window *ui, int key)
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
-settings_entry_t *
-ui_settings_is_entry(FIELD *field)
-{
-    return (settings_entry_t *) field_userptr(field);
-}
-
-int
-ui_settings_update_settings(Window *ui)
-{
-    int i;
-    char field_value[180];
-    settings_entry_t *entry;
-
-    // Get panel information
-    settings_info_t *info = settings_info(ui);
-
-    for (i=0; i < FLD_SETTINGS_COUNT; i++) {
-        if ((entry = ui_settings_is_entry(info->fields[i]))) {
-            // Get field value.
-            memset(field_value, 0, sizeof(field_value));
-            strcpy(field_value, field_buffer(info->fields[i], 0));
-            g_strstrip(field_value);
-            // Change setting value
-            setting_set_value(entry->setting_id, field_value);
-        }
-    }
-
-    return 0;
-}
-
 void
-ui_settings_save(Window *ui)
+settings_win_free(Window *window)
 {
-    // Get panel information
-    settings_info_t *info = settings_info(ui);
+    curs_set(0);
+    window_deinit(window);
+}
 
-    g_autoptr(GString) userconf = g_string_new(NULL);
-    g_autoptr(GString) tmpfile  = g_string_new(NULL);
+Window *
+settings_win_new()
+{
+    int i, j, line;
+    FIELD *entry, *label;
+    int field = 0;
 
-    // Use $SNGREPRC/.sngreprc file
-    const gchar *rcfile = g_getenv("SNGREPRC");
-    if (rcfile != NULL) {
-        g_string_append(userconf, rcfile);
-    } else {
-        // Or Use $HOME/.sngreprc file
-        rcfile = g_getenv("HOME");
-        if (rcfile != NULL) {
-            g_string_append_printf(userconf, "%s/.sngreprc", rcfile);
-        }
-    }
+    Window *window = g_malloc0(sizeof(Window));
+    window->type = WINDOW_SETTINGS;
+    window->destroy = settings_win_free;
+    window->draw = settings_draw;
+    window->handle_key = settings_handle_key;
 
-    // No user configuration found!
-    if (userconf->len == 0) {
-        dialog_run("Unable to save configuration. User has no $SNGREPRC or $HOME dir.");
-        return;
-    }
+    // Cerate a new window for the panel and form
+    window_init(window, 24, 70);
 
-    // Path for backup file
-    g_string_append_printf(tmpfile, "%s.old", userconf->str);
+    // Initialize Filter panel specific data
+    SettingsWinInfo *info = g_malloc0(sizeof(SettingsWinInfo));
+    set_panel_userptr(window->panel, (void*) info);
 
-    // Remove old config file
-    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
-        g_unlink(tmpfile->str);
-    }
+    // Create a scrollable subwindow for settings
+    info->form_win = derwin(window->win, window->height - 11, window->width - 2, 8, 1);
 
-    // Move user conf file to temporal file
-    g_rename(userconf->str, tmpfile->str);
+    // Configure panel buttons
+    info->buttons[BTN_SETTINGS_ACCEPT] = new_field(1, 10, window->height - 2, 12, 0, 0);
+    info->buttons[BTN_SETTINGS_SAVE]   = new_field(1, 10, window->height - 2, 29, 0, 0);
+    info->buttons[BTN_SETTINGS_CANCEL] = new_field(1, 10, window->height - 2, 46, 0, 0);
+    info->buttons[BTN_SETTINGS_COUNT]  = NULL;
+    field_opts_off(info->buttons[BTN_SETTINGS_ACCEPT], O_EDIT);
+    field_opts_off(info->buttons[BTN_SETTINGS_SAVE], O_EDIT);
+    field_opts_off(info->buttons[BTN_SETTINGS_CANCEL], O_EDIT);
+    set_field_buffer(info->buttons[BTN_SETTINGS_ACCEPT], 0, "[ Accept ]");
+    set_field_buffer(info->buttons[BTN_SETTINGS_SAVE],   0, "[  Save  ]");
+    set_field_buffer(info->buttons[BTN_SETTINGS_CANCEL], 0, "[ Cancel ]");
+    info->buttons_form = new_form(info->buttons);
+    set_form_sub(info->buttons_form, window->win);
+    post_form(info->buttons_form);
 
-    // Create a new user conf file
-    FILE *fo = g_fopen(userconf->str, "w");
-    if (fo == NULL) {
-        dialog_run("Unable to open %s: %s", userconf->str, g_strerror(errno));
-        return;
-    }
+    // Initialize rest of settings fields
+    for (i = 0; categories[i].cat_id; i++) {
+        // Each category section begins with fields in the first line
+        line = 0;
 
-    // Check if there was configuration already
-    if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
-        // Get old configuration contents
-        gchar *usercontents = NULL;
-        g_file_get_contents(tmpfile->str, &usercontents, NULL, NULL);
+        for (j = 0; entries[j].cat_id; j++) {
+            // Ignore entries of other categories
+            if (entries[j].cat_id != categories[i].cat_id)
+                continue;
 
-        // Separate configuration in lines
-        gchar **contents = g_strsplit(usercontents, "\n", -1);
+            // Create the label
+            label = new_field(1, 45, line, 3, 0, 0);
+            set_field_buffer(label, 0, entries[j].label);
+            field_opts_off(label, O_ACTIVE);
 
-        // Put exiting config in the new file
-        for (guint i = 0; i < g_strv_length(contents); i++) {
-            if (g_ascii_strncasecmp(contents[i], "set cl.column", 13) == 0) {
-                g_fprintf(fo, "%s\n", contents[i]);
+            // Change field properties according to field type
+            switch(setting_format(entries[j].setting_id)) {
+                case SETTING_FMT_NUMBER:
+                    entry = new_field(1, 18, line, 48, 0, 0);
+                    set_field_back(entry, A_UNDERLINE);
+                    set_field_type(entry, TYPE_REGEXP, "[0-9]+");
+                    break;
+                case SETTING_FMT_STRING:
+                    entry = new_field(1, 18, line, 48, 0, 0);
+                    field_opts_off(entry, O_STATIC);
+                    set_field_back(entry, A_UNDERLINE);
+                    break;
+                case SETTING_FMT_ENUM:
+                    entry = new_field(1, 12, line, 48, 0, 0);
+                    field_opts_off(entry, O_EDIT);
+                    set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
+                    break;
+                default: break;
             }
-        }
 
-        g_strfreev(contents);
-        g_free(usercontents);
+            field_opts_off(entry, O_AUTOSKIP);
+            set_field_buffer(entry, 0, setting_get_value(entries[j].setting_id));
+            set_field_userptr(entry, (void *) &entries[j]);
+
+            if (line == 0) {
+                // Set last field as page breaker
+                set_new_page(entry, TRUE);
+            }
+
+            // Store field
+            info->fields[field++] = entry;
+            info->fields[field++] = label;
+
+            line++;
+        }
     }
 
-    for (guint i = 0; i < FLD_SETTINGS_COUNT; i++) {
-        settings_entry_t *entry = ui_settings_is_entry(info->fields[i]);
-        if (entry != NULL) {
-            // Change setting value
-            gchar *field_value = g_strchomp(g_strdup(field_buffer(info->fields[i], 0)));
-            g_fprintf(fo, "set %s %s\n", setting_name(entry->setting_id), field_value);
-            g_free(field_value);
+    // Create the form and post it
+    info->form = new_form(info->fields);
+    set_form_sub(info->form, info->form_win);
+    post_form(info->form);
 
-        }
-    }
+    // Set the window title and boxes
+    mvwprintw(window->win, 1, window->width / 2 - 5, "Settings");
+    wattron(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    title_foot_box(window->panel);
+    mvwhline(window->win, 6, 1, ACS_HLINE, window->width - 1);
+    mvwaddch(window->win, 6, 0, ACS_LTEE);
+    mvwaddch(window->win, 6, window->width - 1, ACS_RTEE);
+    wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattron(window->win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(window->win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move around settings.");
+    mvwprintw(window->win, 4, 1, " Settings with (*) requires restart.");
+    wattroff(window->win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
-    fclose(fo);
+    // Set default field
+    info->active_form = info->form;
+    set_current_field(info->form, *info->fields);
+    info->active_category = form_page(info->form) + 1;
 
-    dialog_run("Settings successfully saved to %s", userconf->str);
+    return window;
 }

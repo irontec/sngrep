@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_settings.h
+ * @file settings_win.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to change sngrep configurable settings
@@ -30,17 +30,20 @@
  *
  */
 
-#ifndef __SNGREP_UI_SETTINGS_H
-#define __SNGREP_UI_SETTINGS_H
+#ifndef __SNGREP_SETTINGS_WIN_H
+#define __SNGREP_SETTINGS_WIN_H
+
+#include <glib.h>
+#include "ncurses/manager.h"
 
 //! Sorter declaration of struct option_info
-typedef struct settings_info settings_info_t;
+typedef struct _SettingsWinInfo SettingsWinInfo;
 //! Sorter declaration of struct settings_category
-typedef struct settings_category settings_category_t;
+typedef struct _SettingsWinCategory SettingsWinCategory;
 //! Sorter declaration of struct settings_entry
-typedef struct settings_entry settings_entry_t;
+typedef struct _SettingsWinEntry SettingsWinEntry;
 
-enum settings_category_list {
+enum SettingWinCategory {
     CAT_SETTINGS_INTERFACE = 1,
     CAT_SETTINGS_CAPTURE,
     CAT_SETTINGS_CALL_FLOW,
@@ -55,7 +58,7 @@ enum settings_category_list {
  * order this fields are stored in panel info structure.
  *
  */
-enum settings_field_list {
+enum SettingWinField {
     FLD_SETTINGS_BACKGROUND = 0,
     FLD_SETTINGS_BACKGROUND_LB,
     FLD_SETTINGS_SYNTAX,
@@ -125,7 +128,7 @@ enum settings_field_list {
     FLD_SETTINGS_COUNT,
 };
 
-enum settings_button_list {
+enum SettingsWinButton {
     BTN_SETTINGS_ACCEPT = 0,
     BTN_SETTINGS_SAVE,
     BTN_SETTINGS_CANCEL,
@@ -134,17 +137,17 @@ enum settings_button_list {
 
 #define SETTINGS_ENTRY_COUNT (FLD_SETTINGS_COUNT - 3)
 
-struct settings_category {
+struct _SettingsWinCategory {
     // Category id
-    enum settings_category_list cat_id;
+    enum SettingWinCategory cat_id;
     // Category label
     const char *title;
 };
 
-struct settings_entry {
-    enum settings_category_list cat_id;
+struct _SettingsWinEntry {
+    enum SettingWinCategory cat_id;
     //! Field id in settings_info array
-    enum settings_field_list field_id;
+    enum SettingWinField field_id;
     //! Setting id of current entry
     enum setting_id setting_id;
     //! Entry text
@@ -156,8 +159,8 @@ struct settings_entry {
  *
  * This structure contains the durable data of settings panel.
  */
-struct settings_info {
-    // Window containing form data (and buttons)
+struct _SettingsWinInfo {
+    //! Window containing form data (and buttons)
     WINDOW *form_win;
     //! Form that contains the filter fields
     FORM *form;
@@ -170,7 +173,7 @@ struct settings_info {
     //! Active form
     FORM *active_form;
     //! Active category
-    enum settings_category_list active_category;
+    enum SettingWinCategory active_category;
 };
 
 /**
@@ -180,94 +183,18 @@ struct settings_info {
  * displaying the save panel. It also draws all the
  * static information of the panel that will never be
  * redrawn.
- *
- * @param ui UI structure pointer
  */
-void
-settings_create(Window *ui);
+Window *
+settings_win_new();
 
 /**
  * @brief Destroy settings panel
  *
  * This function do the final cleanups for this panel
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  */
 void
-settings_destroy(Window *ui);
+settings_win_free(Window *window);
 
-/**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param ui UI structure pointer
- * @return a pointer to info structure of given panel
- */
-settings_info_t *
-settings_info(Window *ui);
-
-/**
- * @brief Draw the settings panel
- *
- * This function will drawn the panel into the screen with
- * current status settings
- *
- * @param ui UI structure pointer
- * @return 0 if the panel has been drawn, -1 otherwise
- */
-int
-settings_draw(Window *ui);
-
-/**
- * @brief Manage pressed keys for settings panel
- *
- * This function is called by UI manager every time a
- * key is pressed. This allow the filter panel to manage
- * its own keys.
- *
- * @param ui UI structure pointer
- * @param key   key code
- * @return enum @key_handler_ret
- */
-int
-settings_handle_key(Window *ui, int key);
-
-/**
- * @brief Return entry information of the field
- *
- * If field is storing a setting value, return the entry
- * structure associated to the setting
- *
- * @param field Ncurses field pointer of screen
- * @return Setting information structure
- */
-settings_entry_t *
-ui_settings_is_entry(FIELD *field);
-
-/**
- * @brief Update settings with panel values
- *
- * Update all settings with the selected on screen.
- * Note that some settings require application restart to
- * take effect.
- *
- * @param ui UI structure pointer
- * @return 0 in all cases
- */
-int
-ui_settings_update_settings(Window *ui);
-
-/**
- * @brief Update user resource file with panel values
- *
- * Save all settings into user configuration file located
- * in it's home directory.
- *
- * @param ui UI structure pointer
- */
-void
-ui_settings_save(Window *ui);
-
-#endif /* __SNGREP_UI_SETTINGS_H */
+#endif /* __SNGREP_SETTINGS_WIN_H */

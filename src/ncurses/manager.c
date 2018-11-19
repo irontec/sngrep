@@ -44,7 +44,7 @@
 #include "ncurses/column_select_win.h"
 #include "ncurses/stats_win.h"
 #include "ncurses/save_win.h"
-#include "ncurses/ui_settings.h"
+#include "ncurses/settings_win.h"
 
 /**
  * @brief Active windows list
@@ -227,6 +227,8 @@ ncurses_find_by_type(enum WindowTypes type)
         case WINDOW_SAVE:
             window = save_win_new();
             break;
+        case WINDOW_SETTINGS:
+            window = settings_win_new();
         default: break;
     }
 
