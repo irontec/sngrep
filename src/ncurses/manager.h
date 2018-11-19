@@ -35,6 +35,7 @@
  */
 #ifndef __SNGREP_UI_MANAGER_H
 #define __SNGREP_UI_MANAGER_H
+
 #include "config.h"
 #include "ncurses/window.h"
 #include "ncurses/theme.h"
@@ -48,17 +49,6 @@
 //! Default dialog dimensions
 #define DIALOG_MAX_WIDTH 100
 #define DIALOG_MIN_WIDTH 40
-
-/**
- * Define existing panels
- */
-extern Window ui_call_flow;
-extern Window ui_call_raw;
-extern Window ui_filter;
-extern Window ui_save;
-extern Window ui_msg_diff;
-extern Window ui_settings;
-extern Window ui_stats;
 
 /**
  * @brief Initialize ncurses mode
@@ -79,7 +69,6 @@ ncurses_init();
  */
 void
 ncurses_deinit();
-
 
 /**
  * @brief Create a panel of a given type

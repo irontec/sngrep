@@ -43,7 +43,8 @@
 #include "ncurses/manager.h"
 #include "ncurses/call_list.h"
 #include "ncurses/call_flow.h"
-#include "ncurses/ui_call_raw.h"
+#include "ncurses/call_raw.h"
+#include "ncurses/stats.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_save.h"
 #include "storage.h"
@@ -837,7 +838,6 @@ static int
 call_list_handle_key(Window *window, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
-    Window *next_window;
     SipCallGroup *group;
     int action = -1;
     Call *call;
@@ -910,21 +910,18 @@ call_list_handle_key(Window *window, int key)
                 }
 
                 if (action == ACTION_SHOW_RAW) {
-                    // Create a Call Flow panel
-                    ncurses_create_window(PANEL_CALL_RAW);
-                    call_raw_set_group(group);
+                    // Create a Call raw panel
+                    call_raw_set_group(ncurses_create_window(WINDOW_CALL_RAW), group);
                 } else {
                     // Display current call flow (normal or extended)
-                    next_window = ncurses_create_window(WINDOW_CALL_FLOW);
-                    call_flow_set_group(next_window, group);
+                    call_flow_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
                 }
                 break;
             case ACTION_SHOW_FILTERS:
                 ncurses_create_window(PANEL_FILTER);
                 break;
             case ACTION_SHOW_COLUMNS:
-                next_window = ncurses_create_window(WINDOW_COLUMN_SELECT);
-                column_select_set_columns(next_window, info->columns);
+                column_select_set_columns(ncurses_create_window(WINDOW_COLUMN_SELECT), info->columns);
                 break;
             case ACTION_SHOW_STATS:
                 ncurses_create_window(WINDOW_STATS);
@@ -934,8 +931,7 @@ call_list_handle_key(Window *window, int key)
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }
-                next_window = ncurses_create_window(PANEL_SAVE);
-                save_set_group(next_window, info->group);
+                save_set_group(ncurses_create_window(PANEL_SAVE), info->group);
                 break;
             case ACTION_CLEAR:
                 // Clear group calls

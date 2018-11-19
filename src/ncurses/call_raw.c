@@ -9,7 +9,7 @@
  ** it under the terms of the GNU General Public License as published by
  ** the Free Software Foundation, either version 3 of the License, or
  ** (at your option) any later version.
- ** == 1)
+ **
  ** This program is distributed in the hope that it will be useful,
  ** but WITHOUT ANY WARRANTY; without even the implied warranty of
  ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,10 +20,10 @@
  **
  ****************************************************************************/
 /**
- * @file ui_call_raw.c
+ * @file call_raw.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in ui_call_raw.h
+ * @brief Source of functions defined in call_raw.h
  *
  * @todo Code help screen. Please.
  * @todo Replace the panel refresh. Wclear sucks on high latency conections.
@@ -33,7 +33,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ncurses/manager.h"
-#include "ncurses/ui_call_raw.h"
+#include "ncurses/call_raw.h"
 #include "ncurses/ui_save.h"
 #include "capture/capture_pcap.h"
 #include "packet/dissectors/packet_sip.h"
@@ -47,41 +47,10 @@
  * @param panel Ncurses panel pointer
  * @return a pointer to info structure of given panel
  */
-static call_raw_info_t *
-call_raw_info(Window *ui)
+static CallRawInfo *
+call_raw_info(Window *window)
 {
-    return (call_raw_info_t*) panel_userptr(ui->panel);
-}
-
-void
-call_raw_create(Window *ui)
-{
-    // Create a new panel to fill all the screen
-    window_init(ui, LINES, COLS);
-
-    // Initialize Call List specific data
-    call_raw_info_t *info = g_malloc0(sizeof(call_raw_info_t));
-
-    // Store it into panel userptr
-    set_panel_userptr(ui->panel, (void*) info);
-
-    // Create a initial pad of 1000 lines
-    info->pad = newpad(500, COLS);
-    info->padline = 0;
-    info->scroll = 0;
-}
-
-void
-call_raw_destroy(Window *ui)
-{
-    call_raw_info_t *info;
-
-    if ((info = call_raw_info(ui))) {
-        // Delete panel windows
-        delwin(info->pad);
-        g_free(info);
-    }
-    window_deinit(ui);
+    return (CallRawInfo*) panel_userptr(window->panel);
 }
 
 /**
@@ -89,48 +58,32 @@ call_raw_destroy(Window *ui)
  *
  * This will query the interface if it requires to be redraw again.
  *
- * @param ui UI structure pointer
+ * @param window UI structure pointer
  * @return true if the panel requires redraw, false otherwise
  */
 static gboolean
-call_raw_redraw(Window *ui)
+call_raw_redraw(Window *window)
 {
     // Get panel information
-    call_raw_info_t *info = call_raw_info(ui);
+    CallRawInfo *info = call_raw_info(window);
+    g_return_val_if_fail(info != NULL, FALSE);
 
     // Check if any of the group has changed
     return call_group_changed(info->group);
 
 }
 
-int
-call_raw_draw(Window *ui)
+/**
+ * @brief Draw a message in call Raw
+ *
+ * Draw a new message in the Raw pad.
+ *
+ * @param panel Ncurses panel pointer
+ * @param msg New message to be printed
+ */
+static void
+call_raw_print_msg(Window *window, Message *msg)
 {
-    call_raw_info_t *info;
-    Message *msg = NULL;
-
-    // Get panel information
-    if(!(info = call_raw_info(ui)))
-        return -1;
-
-    if (info->group) {
-        // Print the call group messages into the pad
-        while ((msg = call_group_get_next_msg(info->group, info->last)))
-            call_raw_print_msg(ui, msg);
-    } else {
-        call_raw_set_msg(info->msg);
-    }
-
-    // Copy the visible part of the pad into the panel window
-    copywin(info->pad, ui->win, info->scroll, 0, 0, 0, ui->height - 1, ui->width - 1, 0);
-    touchwin(ui->win);
-    return 0;
-}
-
-int
-call_raw_print_msg(Window *ui, Message *msg)
-{
-    call_raw_info_t *info;
     int payload_lines, column, height, width;
     // Message ngrep style Header
     char header[256];
@@ -138,8 +91,8 @@ call_raw_print_msg(Window *ui, Message *msg)
     int color = 0;
 
     // Get panel information
-    if (!(info = call_raw_info(ui)))
-        return -1;
+    CallRawInfo *info = call_raw_info(window);
+    g_return_if_fail(info != NULL);
 
     // Get the pad window
     WINDOW *pad = info->pad;
@@ -163,7 +116,7 @@ call_raw_print_msg(Window *ui, Message *msg)
     }
 
     // Check if we have enough space in our huge pad to store this message
-    if (info->padline + payload_lines > height) {
+    if (info->padline + payload_lines > (guint) height) {
         // Create a new pad with more lines!
         pad = newpad(height + 500, COLS);
         // And copy all previous information
@@ -205,10 +158,80 @@ call_raw_print_msg(Window *ui, Message *msg)
 
     // Set this as the last printed message
     info->last = msg;
+}
 
+/**
+ * @brief Draw the Call Raw panel
+ *
+ * This function will drawn the panel into the screen based on its stored
+ * status
+ *
+ * @param panel Ncurses panel pointer
+ * @return 0 if the panel has been drawn, -1 otherwise
+ */
+static gint
+call_raw_draw(Window *window)
+{
+    Message *msg = NULL;
+
+    // Get panel information
+    CallRawInfo *info = call_raw_info(window);
+    g_return_val_if_fail(info != NULL, -1);
+
+    if (info->group) {
+        // Print the call group messages into the pad
+        while ((msg = call_group_get_next_msg(info->group, info->last))) {
+            call_raw_print_msg(window, msg);
+        }
+    } else {
+        call_raw_set_msg(window, info->msg);
+    }
+
+    // Copy the visible part of the pad into the panel window
+    copywin(info->pad, window->win, info->scroll, 0, 0, 0, window->height - 1, window->width - 1, 0);
+    touchwin(window->win);
     return 0;
 }
 
+/**
+ * @brief Move selection cursor up N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move up
+ */
+static void
+call_raw_move_up(Window *window, guint times)
+{
+    // Get panel information
+    CallRawInfo *info = call_raw_info(window);
+    g_return_if_fail(info != NULL);
+
+    if (info->scroll < times) {
+        info->scroll = 0;
+    } else {
+        info->scroll -= times;
+    }
+}
+
+
+/**
+ * @brief Move selection cursor down N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move up
+ */
+static void
+call_raw_move_down(Window *window, guint times)
+{
+    // Get panel information
+    CallRawInfo *info = call_raw_info(window);
+    g_return_if_fail(info != NULL);
+
+    info->scroll += times;
+
+    if (info->scroll > info->padline)
+        info->scroll = info->padline;
+}
 
 /**
  * @brief Handle Call Raw key strokes
@@ -221,40 +244,36 @@ call_raw_print_msg(Window *ui, Message *msg)
  * @return enum @key_handler_ret
  */
 static int
-call_raw_handle_key(Window *ui, int key)
+call_raw_handle_key(Window *window, int key)
 {
-    call_raw_info_t *info;
     Window *next_ui;
-    int rnpag_steps = setting_get_intvalue(SETTING_CR_SCROLLSTEP);
+    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CR_SCROLLSTEP);
     int action = -1;
 
-    // Sanity check, this should not happen
-    if (!(info  = call_raw_info(ui)))
-        return -1;
+    CallRawInfo *info = call_raw_info(window);
+    g_return_val_if_fail(info != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
-                info->scroll++;
+                call_raw_move_down(window, 1);
                 break;
             case ACTION_UP:
-                info->scroll--;
+                call_raw_move_up(window, 1);
                 break;
             case ACTION_HNPAGE:
-                rnpag_steps = rnpag_steps / 2;
-                /* fall-thru */
+                call_raw_move_down(window, rnpag_steps / 2);
+                break;
             case ACTION_NPAGE:
-                // Next page => N key down strokes
-                info->scroll += rnpag_steps;
+                call_raw_move_down(window, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                rnpag_steps = rnpag_steps / 2;
-                /* fall-thru */
+                call_raw_move_up(window, rnpag_steps / 2);
+                break;
             case ACTION_PPAGE:
-                // Prev page => N key up strokes
-                info->scroll -= rnpag_steps;
+                call_raw_move_up(window, rnpag_steps);
                 break;
             case ACTION_SAVE:
                 if (capture_sources_count(capture_manager()) > 1) {
@@ -270,16 +289,16 @@ call_raw_handle_key(Window *ui, int key)
             case ACTION_TOGGLE_SYNTAX:
             case ACTION_CYCLE_COLOR:
                 // Handle colors using default handler
-                ncurses_default_keyhandler(ui, key);
+                ncurses_default_keyhandler(window, key);
                 // Create a new pad (forces messages draw)
                 delwin(info->pad);
                 info->pad = newpad(500, COLS);
                 info->last = NULL;
                 // Force refresh panel
                 if (info->group) {
-                    call_raw_set_group(info->group);
+                    call_raw_set_group(window, info->group);
                 } else {
-                    call_raw_set_msg(info->msg);
+                    call_raw_set_msg(window, info->msg);
                 }
                 break;
             case ACTION_CLEAR_CALLS:
@@ -295,31 +314,17 @@ call_raw_handle_key(Window *ui, int key)
         break;
     }
 
-    if (info->scroll < 0 || info->padline < LINES) {
-        info->scroll = 0;   // Disable scrolling if there's nothing to scroll
-    } else {
-        if (info->scroll + LINES / 2 > info->padline)
-            info->scroll = info->padline - LINES / 2;
-    }
 
     // Return if this panel has handled or not the key
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
-int
-call_raw_set_group(SipCallGroup *group)
+void
+call_raw_set_group(Window *window, SipCallGroup *group)
 {
-    Window *ui;
-    call_raw_info_t *info;
-
-    if (!group)
-        return -1;
-
-    if (!(ui = ncurses_find_by_type(PANEL_CALL_RAW)))
-        return -1;
-
-    if (!(info = call_raw_info(ui)))
-        return -1;
+    CallRawInfo *info = call_raw_info(window);
+    g_return_if_fail(info != NULL);
+    g_return_if_fail(group != NULL);
 
     // Set call raw call group
     info->group = group;
@@ -328,24 +333,14 @@ call_raw_set_group(SipCallGroup *group)
     // Initialize internal pad
     info->padline = 0;
     wclear(info->pad);
-
-    return 0;
 }
 
-int
-call_raw_set_msg(Message *msg)
+void
+call_raw_set_msg(Window *window, Message *msg)
 {
-    Window *ui;
-    call_raw_info_t *info;
-
-    if (!msg)
-        return -1;
-
-    if (!(ui = ncurses_find_by_type(PANEL_CALL_RAW)))
-        return -1;
-
-    if (!(info = call_raw_info(ui)))
-        return -1;
+    CallRawInfo *info = call_raw_info(window);
+    g_return_if_fail(info != NULL);
+    g_return_if_fail(msg != NULL);
 
     // Set call raw message
     info->group = NULL;
@@ -356,21 +351,43 @@ call_raw_set_msg(Message *msg)
     wclear(info->pad);
 
     // Print the message in the pad
-    call_raw_print_msg(ui, msg);
-
-    return 0;
-
+    call_raw_print_msg(window, msg);
 }
 
-/**
- * Ui Structure definition for Call Raw panel
- */
-Window ui_call_raw = {
-        .type = PANEL_CALL_RAW,
-        .panel = NULL,
-        .create = call_raw_create,
-        .destroy = call_raw_destroy,
-        .redraw = call_raw_redraw,
-        .draw = call_raw_draw,
-        .handle_key = call_raw_handle_key
-};
+void
+call_raw_free(Window *window)
+{
+    CallRawInfo *info = call_raw_info(window);
+    g_return_if_fail(info != NULL);
+
+    // Delete panel windows
+    delwin(info->pad);
+    g_free(info);
+
+    window_deinit(window);
+}
+
+Window *
+call_raw_new()
+{
+    Window *window = g_malloc0(sizeof(Window));
+    window->type = WINDOW_CALL_RAW;
+    window->destroy = call_raw_free;
+    window->redraw = call_raw_redraw;
+    window->draw = call_raw_draw;
+    window->handle_key = call_raw_handle_key;
+
+    // Create a new panel to fill all the screen
+    window_init(window, getmaxy(stdscr), getmaxx(stdscr));
+
+    // Initialize Call Raw specific data
+    CallRawInfo *info = g_malloc0(sizeof(CallRawInfo));
+    set_panel_userptr(window->panel, (void*) info);
+
+    // Create a initial pad of 1000 lines
+    info->pad = newpad(500, COLS);
+    info->padline = 0;
+    info->scroll = 0;
+
+    return window;
+}

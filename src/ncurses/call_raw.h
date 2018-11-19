@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_call_raw.h
+ * @file call_raw.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage Raw output screen of Sip messages
@@ -29,14 +29,16 @@
  * output screen.
  *
  */
-#ifndef __UI_CALL_RAW_H
-#define __UI_CALL_RAW_H
+#ifndef __SNGREP_CALL_RAW_H
+#define __SNGREP_CALL_RAW_H
 
 #include "config.h"
+#include "group.h"
+#include "message.h"
 #include "ncurses/manager.h"
 
 //! Sorter declaration of struct call_raw_info
-typedef struct call_raw_info call_raw_info_t;
+typedef struct _CallRawInfo CallRawInfo;
 
 /**
  * @brief Call raw status information
@@ -44,7 +46,7 @@ typedef struct call_raw_info call_raw_info_t;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct call_raw_info {
+struct _CallRawInfo {
     //! Group of calls displayed on the panel (Call raw display)
     SipCallGroup *group;
     //! Message to display on the panel (Single message raw display)
@@ -54,9 +56,9 @@ struct call_raw_info {
     //! Window pad to copy on displayed screen
     WINDOW *pad;
     //! Already used lines of the window pad
-    int padline;
+    guint padline;
     //! Scroll position of the window pad
-    int scroll;
+    guint scroll;
 };
 
 /**
@@ -67,8 +69,8 @@ struct call_raw_info {
  * It will also create an information structure of the panel status and
  * store it in the panel's userpointer
  */
-void
-call_raw_create(Window *ui);
+Window *
+call_raw_new();
 
 /**
  * @brief Destroy panel
@@ -78,42 +80,19 @@ call_raw_create(Window *ui);
  * @param panel Ncurses panel pointer
  */
 void
-call_raw_destroy(Window *ui);
-
-/**
- * @brief Draw the Call Raw panel
- *
- * This function will drawn the panel into the screen based on its stored
- * status
- *
- * @param panel Ncurses panel pointer
- * @return 0 if the panel has been drawn, -1 otherwise
- */
-int
-call_raw_draw(Window *ui);
-
-/**
- * @brief Draw a message in call Raw
- *
- * Draw a new message in the Raw pad.
- *
- * @param panel Ncurses panel pointer
- * @param msg New message to be printed
- * @return 0 in call cases
- */
-int
-call_raw_print_msg(Window *ui, Message *msg);
+call_raw_free(Window *window);
 
 /**
  * @brief Set the active call group of the panel
  *
  * This function will access the panel information and will set the
  * call group pointer to the processed calls.
- *
+*
+ * @param window Call raw window pointer
  * @param group Call Group pointer to be set in the internal info struct
  */
-int
-call_raw_set_group(SipCallGroup *group);
+void
+call_raw_set_group(Window *window, SipCallGroup *group);
 
 /**
  * @brief Set the active msg of the panel
@@ -123,7 +102,7 @@ call_raw_set_group(SipCallGroup *group);
  *
  * @param msg Message pointer to be set in the internal info struct
  */
-int
-call_raw_set_msg(Message *msg);
+void
+call_raw_set_msg(Window *window, Message *msg);
 
 #endif

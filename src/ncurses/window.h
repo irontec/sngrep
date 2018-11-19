@@ -59,7 +59,7 @@ enum WindowTypes {
     //! Call-Flow ui screen
     WINDOW_CALL_FLOW,
     //! Raw SIP messages ui screen
-    PANEL_CALL_RAW,
+    WINDOW_CALL_RAW,
     //! Filters panel
     PANEL_FILTER,
     //! Save to pcap panel

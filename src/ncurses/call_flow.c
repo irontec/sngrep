@@ -34,7 +34,7 @@
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
 #include "ncurses/call_flow.h"
-#include "ncurses/ui_call_raw.h"
+#include "ncurses/call_raw.h"
 #include "ncurses/ui_msg_diff.h"
 #include "ncurses/ui_save.h"
 #include "timeval.h"
@@ -1367,7 +1367,7 @@ static int
 call_flow_handle_key(Window *window, int key)
 {
     int raw_width;
-    Window *next_ui;
+    Window *next_ui, *next_window;
     Call *call = NULL;
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
@@ -1420,8 +1420,8 @@ call_flow_handle_key(Window *window, int key)
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode
-                ncurses_create_window(PANEL_CALL_RAW);
-                call_raw_set_group(info->group);
+                next_window = ncurses_create_window(WINDOW_CALL_RAW);
+                call_raw_set_group(next_window, info->group);
                 break;
             case ACTION_DECREASE_RAW:
                 raw_width = getmaxx(info->raw_win);
@@ -1500,9 +1500,9 @@ call_flow_handle_key(Window *window, int key)
                 break;
             case ACTION_CONFIRM:
                 // KEY_ENTER, display current message in raw mode
-                ncurses_create_window(PANEL_CALL_RAW);
-                call_raw_set_group(info->group);
-                call_raw_set_msg(call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+                next_window = ncurses_create_window(WINDOW_CALL_RAW);
+                call_raw_set_group(next_window, info->group);
+                call_raw_set_msg(next_window, call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                 break;
             case ACTION_CLEAR_CALLS:
             case ACTION_CLEAR_CALLS_SOFT:

@@ -38,7 +38,7 @@
 #include "capture/capture.h"
 #include "ncurses/call_list.h"
 #include "ncurses/call_flow.h"
-#include "ncurses/ui_call_raw.h"
+#include "ncurses/call_raw.h"
 #include "ncurses/ui_filter.h"
 #include "ncurses/ui_msg_diff.h"
 #include "ncurses/column_select.h"
@@ -47,20 +47,11 @@
 #include "ncurses/ui_settings.h"
 
 /**
- * @brief Available panel windows list
+ * @brief Active windows list
  *
- * This list contains the available list of windows
+ * This list contains the created list of windows
  * and pointer to their main functions.
-
  */
-static Window *panel_pool[] = {
-    &ui_call_raw,
-    &ui_filter,
-    &ui_save,
-    &ui_msg_diff,
-    &ui_settings
-};
-
 static GPtrArray *windows;
 
 int
@@ -192,10 +183,10 @@ ncurses_find_by_panel(PANEL *panel)
     }
 
     // Return ui pointer if found
-    for (guint i = 0; i < PANEL_COUNT; i++) {
-        if (panel_pool[i]->panel == panel)
-            return panel_pool[i];
-    }
+//    for (guint i = 0; i < PANEL_COUNT; i++) {
+//        if (panel_pool[i]->panel == panel)
+//            return panel_pool[i];
+//    }
 
     return NULL;
 }
@@ -203,45 +194,38 @@ ncurses_find_by_panel(PANEL *panel)
 Window *
 ncurses_find_by_type(enum WindowTypes type)
 {
-    int i;
-
     guint index;
     if (g_ptr_array_find_with_equal_func(windows, GUINT_TO_POINTER(type),
             (GEqualFunc) ncurses_window_type_cmp, &index)) {
         return g_ptr_array_index(windows, index);
     }
 
-    // TODO
-    if (type == WINDOW_CALL_LIST) {
-        Window *window = call_list_new();
-        g_ptr_array_add(windows, window);
-        return window;
+    Window *window = NULL;
+
+    switch (type) {
+        case WINDOW_CALL_LIST:
+            window = call_list_new();
+            break;
+        case WINDOW_COLUMN_SELECT:
+            window = column_select_new();
+            break;
+        case WINDOW_STATS:
+            window = stats_new();
+            break;
+        case WINDOW_CALL_FLOW:
+            window = call_flow_new();
+            break;
+        case WINDOW_CALL_RAW:
+            window = call_raw_new();
+            break;
+        default: break;
     }
 
-    if (type == WINDOW_COLUMN_SELECT) {
-        Window *window = column_select_new();
+    if (window != NULL) {
         g_ptr_array_add(windows, window);
-        return window;
     }
 
-    if (type == WINDOW_STATS) {
-        Window *window = stats_new();
-        g_ptr_array_add(windows, window);
-        return window;
-    }
-
-    if (type == WINDOW_CALL_FLOW) {
-        Window *window = call_flow_new();
-        g_ptr_array_add(windows, window);
-        return window;
-    }
-
-    // Return ui pointer if found
-    for (i = 0; i < PANEL_COUNT; i++) {
-        if (panel_pool[i]->type == type)
-            return panel_pool[i];
-    }
-    return NULL;
+    return window;
 }
 
 int
