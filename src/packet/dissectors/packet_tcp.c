@@ -138,11 +138,9 @@ capture_packet_reasm_tcp(Packet *packet, struct tcphdr *tcp, u_char *payload, in
 #endif
 
 static gint
-packet_tcp_sort_segments(gconstpointer a, gconstpointer b)
+packet_tcp_sort_segments(const PacketTcpSegment **a, const PacketTcpSegment **b)
 {
-    const PacketTcpSegment *sa = a;
-    const PacketTcpSegment *sb = b;
-    return sa->seq - sb->seq;
+    return (*a)->seq - (*b)->seq;
 }
 
 static gchar *
@@ -217,7 +215,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Add new segment
     g_ptr_array_add(stream->segments, segment);
-    g_ptr_array_sort(stream->segments, packet_tcp_sort_segments);
+    g_ptr_array_sort(stream->segments, (GCompareFunc) packet_tcp_sort_segments);
 
     // Check if stream is too segmented
     if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {

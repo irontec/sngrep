@@ -49,6 +49,7 @@ call_group_free(CallGroup *group)
     g_return_if_fail(group != NULL);
     g_ptr_array_free(group->calls, FALSE);
     g_ptr_array_free(group->msgs, FALSE);
+    g_ptr_array_free(group->streams, FALSE);
     g_free(group);
 }
 
@@ -66,10 +67,16 @@ call_group_add(CallGroup *group, Call *call)
     }
 }
 
+static void
+call_group_add_call_cb(Call *call, CallGroup *group)
+{
+    call_group_add(group, call);
+}
+
 void
 call_group_add_calls(CallGroup *group, GPtrArray *calls)
 {
-    g_ptr_array_add_array(group->calls, calls);
+    g_ptr_array_foreach(calls, (GFunc) call_group_add_call_cb, group);
 }
 
 void
@@ -91,9 +98,9 @@ void
 call_group_remove_all(CallGroup *group)
 {
     g_return_if_fail(group != NULL);
-    g_ptr_array_free(group->calls, FALSE);
-    g_ptr_array_free(group->msgs, FALSE);
-    g_ptr_array_free(group->streams, FALSE);
+    g_ptr_array_remove_all(group->calls);
+    g_ptr_array_remove_all(group->msgs);
+    g_ptr_array_remove_all(group->streams);
 }
 
 gboolean

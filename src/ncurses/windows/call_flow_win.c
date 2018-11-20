@@ -144,17 +144,11 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
  *
  * This function acts as sorter for arrows vector. Each time a new arrow
  * is appended, it's sorted based on its timestamp.
- *
- * @param vector Arrows vector pointer
- * @param item Call Flow arrow structure pointer
  */
 static gint
-call_flow_arrow_sorter(gconstpointer a, gconstpointer b)
+call_flow_arrow_time_sorter(const CallFlowArrow **a, const CallFlowArrow **b)
 {
-    return timeval_is_older(
-            call_flow_arrow_time(a),
-            call_flow_arrow_time(b)
-    );
+    return timeval_is_older(call_flow_arrow_time(*a), call_flow_arrow_time(*b));
 }
 
 /**
@@ -229,11 +223,11 @@ call_flow_arrow_find(Window *window, const void *data)
  *
  * @param window UI structure pointer
  * @param item Item pointer to associate to the arrow
- * @param type Type of arrow as defined in enum @call_flow_arrow_type
+ * @param type Type of arrow as defined in enum @CallFlowArrowType
  * @return an arrow pointer or NULL in case of error
  */
 static CallFlowArrow *
-call_flow_arrow_create(Window *window, void *item, int type)
+call_flow_arrow_create(Window *window, void *item, enum CallFlowArrowType type)
 {
     CallFlowArrow *arrow;
 
@@ -1013,7 +1007,6 @@ call_flow_draw_arrow(Window *window, CallFlowArrow *arrow, int line)
 static void
 call_flow_draw_arrows(Window *window)
 {
-    CallFlowArrow *arrow = NULL;
     int cline = 0;
 
     // Get panel information
@@ -1024,9 +1017,8 @@ call_flow_draw_arrows(Window *window)
     Message *msg = NULL;
     while ((msg = call_group_get_next_msg(info->group, msg))) {
         if (!call_flow_arrow_find(window, msg)) {
-            arrow = call_flow_arrow_create(window, msg, CF_ARROW_SIP);
+            CallFlowArrow *arrow = call_flow_arrow_create(window, msg, CF_ARROW_SIP);
             g_ptr_array_add(info->arrows, arrow);
-            g_ptr_array_sort(info->arrows, (GCompareFunc) call_flow_arrow_sorter);
         }
     }
 
@@ -1034,11 +1026,13 @@ call_flow_draw_arrows(Window *window)
     RtpStream *stream = NULL;
     while ((stream = call_group_get_next_stream(info->group, stream))) {
         if (!call_flow_arrow_find(window, stream)) {
-            arrow = call_flow_arrow_create(window, stream, CF_ARROW_RTP);
+            CallFlowArrow *arrow = call_flow_arrow_create(window, stream, CF_ARROW_RTP);
             g_ptr_array_add(info->arrows, arrow);
-            g_ptr_array_sort(info->arrows, (GCompareFunc) call_flow_arrow_sorter);
         }
     }
+
+    // Sort arrows by time
+    g_ptr_array_sort(info->arrows, (GCompareFunc) call_flow_arrow_time_sorter);
 
     // Copy displayed arrows
     // vector_destroy(info->darrows);

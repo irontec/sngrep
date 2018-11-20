@@ -899,7 +899,7 @@ call_list_handle_key(Window *window, int key)
                 group = call_group_clone(info->group);
 
                 // If not selected call, show current call flow
-                if (call_group_count(info->group) == 0)
+                if (call_group_count(group) == 0)
                     call_group_add(group, g_ptr_array_index(info->dcalls, info->cur_idx));
 
                 // Add xcall to the group

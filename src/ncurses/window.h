@@ -28,8 +28,8 @@
  * This file contains common functions shared by all panels.
  */
 
-#ifndef __SNGREP_UI_PANEL_H
-#define __SNGREP_UI_PANEL_H
+#ifndef __SNGREP_WINDOW_H
+#define __SNGREP_WINDOW_H
 
 #include <glib.h>
 #include <ncursesw/ncurses.h>
@@ -72,8 +72,6 @@ enum WindowTypes {
     WINDOW_SETTINGS,
     //! Stats panel
     WINDOW_STATS,
-    //! Panel Counter
-    PANEL_COUNT,
 };
 
 //! Shorter declaration of ui structure
@@ -261,4 +259,4 @@ window_clear_line(Window *window, int line);
 void
 window_draw_bindings(Window *window, const char **keybindings, int count);
 
-#endif /* __SNGREP_UI_PANEL_H */
+#endif /* __SNGREP_WINDOW_H */

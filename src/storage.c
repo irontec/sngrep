@@ -69,10 +69,9 @@ storage_add_packet(Packet *packet)
 }
 
 static gint
-storage_sorter(gconstpointer a, gconstpointer b)
+storage_sorter(const Call **a, const Call **b)
 {
-    const Call *calla = a, *callb = b;
-    int cmp = call_attr_compare(calla, callb, storage.sort.by);
+    int cmp = call_attr_compare(*a, *b, storage.sort.by);
     return (storage.sort.asc) ? cmp : cmp * -1;
 }
 
@@ -260,7 +259,7 @@ storage_check_sip_packet(Packet *packet)
     if (newcall) {
         // Append this call to the call list
         g_ptr_array_add(storage.calls, call);
-        g_ptr_array_sort(storage.calls, storage_sorter);
+        g_ptr_array_sort(storage.calls, (GCompareFunc) storage_sorter);
     }
 
     // Mark the list as changed

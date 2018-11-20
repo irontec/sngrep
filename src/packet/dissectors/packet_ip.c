@@ -37,11 +37,9 @@
 #include "packet/dissectors/packet_ip.h"
 
 static gint
-packet_ip_sort_fragments(gconstpointer a, gconstpointer b)
+packet_ip_sort_fragments(const PacketIpFragment **a, const PacketIpFragment **b)
 {
-    const PacketIpFragment *fa = a;
-    const PacketIpFragment *fb = b;
-    return fb->frag_off - fa->frag_off;
+    return (*b)->frag_off - (*a)->frag_off;
 }
 
 static GByteArray *
@@ -173,7 +171,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // If we have the whole packet (captured length is expected length)
     if (datagram->seen == datagram->len) {
         // Calculate assembled IP payload data
-        g_ptr_array_sort(datagram->fragments, packet_ip_sort_fragments);
+        g_ptr_array_sort(datagram->fragments, (GCompareFunc) packet_ip_sort_fragments);
 
         // Join all fragment payload
         GList *frames = NULL;

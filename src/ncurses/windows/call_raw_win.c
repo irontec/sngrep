@@ -68,9 +68,12 @@ call_raw_redraw(Window *window)
     CallRawWinInfo *info = call_raw_info(window);
     g_return_val_if_fail(info != NULL, FALSE);
 
-    // Check if any of the group has changed
-    return call_group_changed(info->group);
+    if (info->group) {
+        // Check if any of the group has changed
+        return call_group_changed(info->group);
+    }
 
+    return FALSE;
 }
 
 /**
