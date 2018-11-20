@@ -122,11 +122,9 @@ struct _CallFlowColumn {
     //! Address header for this column
     Address addr;
     //! Alias for the given address
-    gchar alias[MAX_SETTING_LEN];
+    gchar *alias;
     //! Call Ids
-    GSequence *callids;
-    //! Column position (starting with zero) // FIXME array position?
-    int colpos;
+    GList *callids;
 };
 
 /**
@@ -157,7 +155,7 @@ struct _CallFlowWinInfo {
     //! List of columns in the panel
     GPtrArray *columns;
     //! Max callids per column
-    int maxcallids;
+    guint maxcallids;
     //! Print timestamp next to the arrow
     gboolean arrowtime;
 };

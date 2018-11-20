@@ -95,6 +95,12 @@ msg_is_request(Message *msg)
     return packet_sip_method(msg->packet) < 100;
 }
 
+gboolean
+msg_is_initial_transaction(Message *msg)
+{
+    return packet_sip_to_tag(msg->packet) == NULL;
+}
+
 const gchar *
 msg_get_payload(Message *msg)
 {

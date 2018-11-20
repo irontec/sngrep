@@ -134,6 +134,15 @@ gboolean
 msg_is_request(Message *msg);
 
 /**
+ * @brief Determine if message is part of initial transaction
+ *
+ * @param msg SIP message that will be checked
+ * @return TRUE if the message is part of the initial transaction
+ */
+gboolean
+msg_is_initial_transaction(Message *msg);
+
+/**
  * @brief Get SIP Message payload
  */
 const gchar *

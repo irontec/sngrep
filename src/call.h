@@ -151,6 +151,16 @@ call_add_stream(Call *call, RtpStream *stream);
 guint
 call_msg_count(const Call *call);
 
+
+/**
+ * @brief Get given call call state
+ *
+ * @param call SIP call structure
+ * @return TRUE if call is during conversation
+ */
+enum CallState
+call_state(Call *call);
+
 /**
  * @brief Determine if this call starts with an Invite request
  *

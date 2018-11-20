@@ -197,6 +197,12 @@ packet_sip_method(const Packet *packet)
     return packet_sip_data(packet)->reqresp;
 }
 
+const gchar *
+packet_sip_to_tag(const Packet *packet)
+{
+    return packet_sip_data(packet)->to_tag;
+}
+
 static GByteArray *
 packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
@@ -286,6 +292,8 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // From
     if (g_regex_match(sip->reg_from, payload->str, 0, &pmatch)) {
         g_ptr_array_insert(sip_data->headers, SIP_HEADER_FROM, g_match_info_fetch_named(pmatch, "from"));
+        sip_data->from_user = g_match_info_fetch_named(pmatch, "fromuser");
+        sip_data->from_tag = g_match_info_fetch_named(pmatch, "fromtag");
     } else {
         g_ptr_array_insert(sip_data->headers, SIP_HEADER_FROM, strdup("<malformed>"));
     }
@@ -294,6 +302,8 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // To
     if (g_regex_match(sip->reg_to, payload->str, 0, &pmatch)) {
         g_ptr_array_insert(sip_data->headers, SIP_HEADER_TO, g_match_info_fetch_named(pmatch, "to"));
+        sip_data->to_user = g_match_info_fetch_named(pmatch, "touser");
+        sip_data->to_tag = g_match_info_fetch_named(pmatch, "totag");
     } else {
         g_ptr_array_insert(sip_data->headers, SIP_HEADER_TO, strdup("<malformed>"));
     }
@@ -381,7 +391,7 @@ packet_sip_init(PacketParser *parser)
             cflags, mflags, NULL);
 
     sip->reg_to = g_regex_new(
-            "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r]+)@)?[^;>\r]+)",
+            "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r]+)@)?[^\r;>]+(>?;tag=(?P<totag>[^\r]+))?)",
             cflags, mflags, NULL);
 
     sip->reg_valid = g_regex_new(

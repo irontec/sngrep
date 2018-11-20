@@ -110,10 +110,10 @@ call_msg_count(const Call *call)
     return g_ptr_array_len(call->msgs);
 }
 
-int
-call_is_active(Call *call)
+enum CallState
+call_state(Call *call)
 {
-    return (call->state == CALL_STATE_CALLSETUP || call->state == CALL_STATE_INCALL);
+    return call->state;
 }
 
 int

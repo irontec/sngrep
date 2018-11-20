@@ -96,6 +96,10 @@ struct _PacketSipData
 
     gchar *reasontxt;
     int warning;
+    gchar *from_user;
+    gchar *from_tag;
+    gchar *to_user;
+    gchar *to_tag;
 };
 
 struct _DissectorSipData
@@ -132,6 +136,9 @@ packet_sip_method_str(const Packet *packet);
 
 guint
 packet_sip_method(const Packet *packet);
+
+const gchar *
+packet_sip_to_tag(const Packet *packet);
 
 PacketSipData *
 packet_sip_data(const Packet *packet);
