@@ -864,17 +864,15 @@ call_list_handle_key(Window *window, int key)
                 call_list_move_up(window, 1);
                 break;
             case ACTION_HNPAGE:
-                rnpag_steps = rnpag_steps / 2;
-                /* fall-thru */
+                call_list_move_down(window, rnpag_steps / 2);
+                break;
             case ACTION_NPAGE:
-                // Next page => N key down strokes
                 call_list_move_down(window, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                rnpag_steps = rnpag_steps / 2;
-                /* fall-thru */
+                call_list_move_up(window, rnpag_steps / 2);
+                break;
             case ACTION_PPAGE:
-                // Prev page => N key up strokes
                 call_list_move_up(window, rnpag_steps);
                 break;
             case ACTION_BEGIN:

@@ -1349,6 +1349,7 @@ call_flow_move(Window *window, guint idx)
                 if (curh > flowh) {
                     // Go to the next first arrow and check if current arrow
                     // is still out of bottom bounds
+                    i = info->first_idx;
                     info->first_idx++;
                     curh = 0;
                 } else {
