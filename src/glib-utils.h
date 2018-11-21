@@ -33,6 +33,7 @@
 #include <glib.h>
 
 #define g_ptr_array_len(array) (array->len)
+#define g_ptr_array_empty(array) (array->len == 0)
 #define g_ptr_array_first(array) g_ptr_array_index(array, 0)
 #define g_ptr_array_last(array)  g_ptr_array_index(array, array->len-1)
 

@@ -400,7 +400,7 @@ call_list_draw_list(Window *window)
     info->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
 
     // Empty list, nothing to draw
-    if (g_ptr_array_len(info->dcalls) == 0)
+    if (g_ptr_array_empty(info->dcalls))
         return;
 
     // If autoscroll is enabled, select the last dialog
@@ -890,7 +890,7 @@ call_list_handle_key(Window *window, int key)
             case ACTION_SHOW_FLOW_EX:
             case ACTION_SHOW_RAW:
                 // Check we have calls in the list
-                if (g_ptr_array_len(info->dcalls) == 0)
+                if (g_ptr_array_empty(info->dcalls))
                     break;
 
                 // Create a new group of calls

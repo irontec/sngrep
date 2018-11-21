@@ -149,7 +149,7 @@ g_ptr_array_next(GPtrArray *array, gconstpointer data)
 {
     guint pos;
 
-    if (g_ptr_array_len(array) == 0)
+    if (g_ptr_array_empty(array))
         return NULL;
 
     if (data == NULL)
@@ -169,7 +169,7 @@ g_ptr_array_prev(GPtrArray *array, gconstpointer data)
 {
     guint pos;
 
-    if (g_ptr_array_len(array) == 0)
+    if (g_ptr_array_empty(array))
         return NULL;
 
     if (data == NULL)
@@ -213,7 +213,7 @@ g_ptr_array_remove_array(GPtrArray *array, GPtrArray *items)
 void
 g_ptr_array_remove_all(GPtrArray *array)
 {
-    if (g_ptr_array_len(array) != 0) {
+    if (!g_ptr_array_empty(array)) {
         g_ptr_array_remove_range(array, 0, g_ptr_array_len(array));
     }
 }
