@@ -315,7 +315,6 @@ settings_save(Window *ui)
 static int
 settings_handle_key(Window *ui, int key)
 {
-    int action = -1;
     int field_idx;
     SettingsWinEntry *entry;
     enum setting_fmt sett_fmt = -1;
@@ -332,6 +331,7 @@ settings_handle_key(Window *ui, int key)
     }
 
     // Check actions for this key
+    enum KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         if (info->active_form == info->form) {
             // Check if we handle this action

@@ -40,6 +40,8 @@
 #ifndef __SNGREP_KEYBINDING_H_
 #define __SNGREP_KEYBINDING_H_
 
+#include <glib.h>
+
 //! Number of keybindings per action
 #define MAX_BINDINGS    5
 
@@ -55,7 +57,8 @@
 /**
  * @brief Available Key actions
  */
-enum key_actions {
+enum KeybindingAction {
+    ACTION_UNKNOWN = -1,
     ACTION_PRINTABLE = 0,
     ACTION_UP,
     ACTION_DOWN,
@@ -114,20 +117,20 @@ enum key_actions {
 };
 
 //! Shorter declaration of key_binding structure
-typedef struct key_binding key_binding_t;
+typedef struct _Keybinding Keybinding;
 
 /**
  * @brief Struct to hold a keybinding data
  */
-struct key_binding {
+struct _Keybinding {
     //! Keybinding action id
-    int id;
+    enum KeybindingAction id;
     //! Keybinding action name
-    const char *name;
+    const gchar *name;
     //! keybindings for this action
-    int keys[MAX_BINDINGS];
+    gint keys[MAX_BINDINGS];
     //! How many keys are binded to this action
-    int bindcnt;
+    guint bindcnt;
 };
 
 /**
@@ -137,29 +140,22 @@ void
 key_bindings_dump();
 
 /**
- * @brief Return Keybinding data for a given action
- * @return key_binding_t structure pointer or NULL if not found
- */
-key_binding_t *
-key_binding_data(int action);
-
-/**
  * @brief Bind a key to an action
  *
- * @param action One action defined in @key_actions
+ * @param action One action defined in @KeybindingAction
  * @param key Keycode returned by getch
  */
 void
-key_bind_action(int action, int key);
+key_bind_action(enum KeybindingAction action, gint key);
 
 /**
  * @brief Unbind a key to an action
  *
- * @param action One action defined in @key_actions
+ * @param action One action defined in @KeybindingAction
  * @param key Keycode returned by getch
  */
 void
-key_unbind_action(int action, int key);
+key_unbind_action(enum KeybindingAction action, gint key);
 
 /**
  * @brief Find the next action for a given key
@@ -167,11 +163,10 @@ key_unbind_action(int action, int key);
  * Set start parameter to -1 for start searching the
  * first action.
  *
- * @param action One action defined in @key_actions
  * @param key Keycode returned by getch
  */
-int
-key_find_action(int key, int start);
+enum KeybindingAction
+key_find_action(gint key, enum KeybindingAction start);
 
 /**
  * @brief Return the action id associate to an action str
@@ -180,26 +175,10 @@ key_find_action(int key, int start);
  * found in sngreprc file to internal Action IDs
  *
  * @param action Configuration string for an action
- * @return action id from @key_actions or -1 if none found
+ * @return action id from @KeybindingAction (may be ACTION_UNKNOWN)
  */
-int
-key_action_id(const char *action);
-
-/**
- * @brief Check if key is a printable ascii character
- *
- * @return 1 if key is alphanumeric or space
- */
-int
-key_is_printable(int key);
-
-/**
- * @brief Return a Human readable representation of a key
- *
- * @return Character string representing the key
- */
-const char *
-key_to_str(int key);
+enum KeybindingAction
+key_action_id(const gchar *action);
 
 /**
  * @brief Parse Human key declaration to curses key
@@ -209,8 +188,8 @@ key_to_str(int key);
  *
  * @return ncurses keycode for the given key string
  */
-int
-key_from_str(const char *key);
+gint
+key_from_str(const gchar *key);
 
 /**
  * @brief Return Human readable key for an action
@@ -220,19 +199,10 @@ key_from_str(const char *key);
  * first associated keybding with the action or the second one
  * (aka alternative).
  *
- * @param action One action defined in @key_actions
+ * @param action One action defined in @KeybindingAction
  * @return Main/Alt keybinding for the given action
  */
-const char *
-key_action_key_str(int action);
-
-/**
- * @brief Return key value for a given action
- *
- * @param action One action defined in @key_actions
- * @return Main/Alt keybinding for the given action
- */
-int
-key_action_key(int action);
+const gchar *
+key_action_key_str(enum KeybindingAction action);
 
 #endif /* __SNGREP_KEYBINDING_H_ */

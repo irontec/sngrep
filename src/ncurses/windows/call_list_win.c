@@ -659,14 +659,13 @@ call_list_select_sort_attribute(Window *window)
 static int
 call_list_handle_form_key(Window *window, int key)
 {
-    int action = -1;
-
     // Get panel information
     CallListWinInfo *info = call_list_info(window);
     g_return_val_if_fail(info != NULL, -1);
 
     // Check actions for this key
-    while ((action = key_find_action(key, action)) != ERR) {
+    enum KeybindingAction action = ACTION_UNKNOWN;
+    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
             case ACTION_PRINTABLE:
@@ -753,7 +752,6 @@ call_list_handle_menu_key(Window *window, int key)
 {
     MENU *menu;
     int i;
-    int action = -1;
     StorageSortOpts sort;
     enum AttributeId id;
 
@@ -764,7 +762,8 @@ call_list_handle_menu_key(Window *window, int key)
     menu = info->menu;
 
     // Check actions for this key
-    while ((action = key_find_action(key, action)) != ERR) {
+    enum KeybindingAction action = ACTION_UNKNOWN;
+    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
@@ -839,7 +838,6 @@ call_list_handle_key(Window *window, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     CallGroup *group;
-    int action = -1;
     Call *call;
     StorageSortOpts sort;
 
@@ -854,7 +852,8 @@ call_list_handle_key(Window *window, int key)
         return call_list_handle_menu_key(window, key);
 
     // Check actions for this key
-    while ((action = key_find_action(key, action)) != ERR) {
+    enum KeybindingAction action = ACTION_UNKNOWN;
+    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:

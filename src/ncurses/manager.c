@@ -317,10 +317,10 @@ ncurses_wait_for_input()
 int
 ncurses_default_keyhandler(Window *window, int key)
 {
-    int action = -1;
+    enum KeybindingAction action = ACTION_UNKNOWN;
 
     // Check actions for this key
-    while ((action = key_find_action(key, action)) != ERR) {
+    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
             case ACTION_RESIZE_SCREEN:
@@ -674,7 +674,6 @@ dialog_confirm(const char *title, const char *text, const char *options)
     int col = 2;
     int line = 3;
     char opts[4][10];
-    int action = -1;
 
     // Initialize
     memset(opts, 0, 4 * 10);
@@ -777,7 +776,8 @@ dialog_confirm(const char *title, const char *text, const char *options)
         key = wgetch(dialog_win);
 
         // Check actions for this key
-        while ((action = key_find_action(key, action)) != ERR) {
+        enum KeybindingAction action = ACTION_UNKNOWN;
+        while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
             // Check if we handle this action
             switch (action) {
                 case ACTION_RIGHT:

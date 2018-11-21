@@ -202,7 +202,6 @@ filter_handle_key(Window *ui, int key)
 {
     int field_idx;
     char field_value[MAX_SETTING_LEN];
-    int action = -1;
 
     // Get panel information
     FilterWinInfo *info = filter_info(ui);
@@ -219,6 +218,7 @@ filter_handle_key(Window *ui, int key)
     g_strstrip(field_value);
 
     // Check actions for this key
+    enum KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
@@ -253,9 +253,6 @@ filter_handle_key(Window *ui, int key)
                 break;
             case ACTION_CLEAR:
                 form_driver(info->form, REQ_CLR_FIELD);
-                break;
-            case KEY_DC:
-                form_driver(info->form, REQ_DEL_CHAR);
                 break;
             case ACTION_DELETE:
                 form_driver(info->form, REQ_DEL_CHAR);

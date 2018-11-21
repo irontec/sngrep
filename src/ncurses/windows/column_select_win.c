@@ -284,7 +284,6 @@ column_select_handle_key_menu(Window *ui, int key)
 {
     ITEM *current;
     int current_idx;
-    int action = -1;
 
     // Get panel information
     ColumnSelectWinInfo *info = column_select_info(ui);
@@ -294,6 +293,7 @@ column_select_handle_key_menu(Window *ui, int key)
     current_idx = item_index(current);
 
     // Check actions for this key
+    enum KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
@@ -365,7 +365,6 @@ column_select_handle_key_form(Window *ui, int key)
 {
     int field_idx, new_field_idx;
     char field_value[48];
-    int action = -1;
 
     // Get panel information
     ColumnSelectWinInfo *info = column_select_info(ui);
@@ -380,6 +379,7 @@ column_select_handle_key_form(Window *ui, int key)
     g_strstrip(field_value);
 
     // Check actions for this key
+    enum KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {

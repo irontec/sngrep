@@ -1414,14 +1414,14 @@ call_flow_handle_key(Window *window, int key)
     Window *next_window;
     Call *call = NULL;
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CF_SCROLLSTEP);
-    int action = -1;
 
     // Sanity check, this should not happen
     CallFlowWinInfo *info = call_flow_win_info(window);
     g_return_val_if_fail(info != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
-    while ((action = key_find_action(key, action)) != ERR) {
+    enum KeybindingAction action = ACTION_UNKNOWN;
+    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch(action) {
             case ACTION_DOWN:
