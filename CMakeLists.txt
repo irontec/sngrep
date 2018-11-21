@@ -90,15 +90,6 @@ pkg_check_modules(GLIB REQUIRED glib-2.0)
 include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GOBJECT REQUIRED gobject-2.0)
-include_directories(${GOBJECT_INCLUDE_DIRS})
-target_link_libraries(sngrep ${GOBJECT_LIBRARIES})
-
-find_package(PkgConfig REQUIRED)
-find_package (Threads)
-target_link_libraries (sngrep ${CMAKE_THREAD_LIBS_INIT})
-
 if (WITH_SSL)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GNUTLS REQUIRED gnutls)
@@ -110,15 +101,6 @@ endif(WITH_SSL)
 ######################################################################
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_XOPEN_SOURCE_EXTENDED)
-
-######################################################################
-ADD_CUSTOM_COMMAND(OUTPUT src/ncurses/gnt/gntmarshal.h src/ncurses/gnt/gntmarshal.c
-        WORKING_DIRECTORY src/ncurses/gnt/
-        COMMAND glib-genmarshal --body --prefix=gnt_closure_marshal genmarshal > gntmarshal.c
-        COMMAND glib-genmarshal --header --prefix=gnt_closure_marshal genmarshal > gntmarshal.h
-        DEPENDS "src/ncurses/widgets/genmarshal"
-        VERBATIM
-        COMMENT "Generating GObject Marshal code...")
 
 ######################################################################
 # Print Logo
