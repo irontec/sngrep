@@ -180,8 +180,7 @@ capture_input_pcap_start(CaptureInput *input)
 
     // Close input file in offline mode
     if (input->mode == CAPTURE_MODE_OFFLINE) {
-        // Finished reading packets
-        pcap_close(pcap->handle);
+        // Mark as finished reading packets
         input->running = FALSE;
     }
 
@@ -191,13 +190,21 @@ capture_input_pcap_start(CaptureInput *input)
 void
 capture_input_pcap_stop(CaptureInput *input)
 {
-    CapturePcap *pcap = (CapturePcap *)input->priv;
+    g_return_if_fail(input != NULL);
+    CapturePcap *pcap = (CapturePcap *) input->priv;
+    g_return_if_fail(pcap != NULL);
 
-    // Stop capturing packets
-    if (pcap->handle && input->running) {
+    if (pcap->handle == NULL)
+        return;
+
+    if (input->mode == CAPTURE_MODE_OFFLINE) {
+        pcap_close(pcap->handle);
+    } else {
         pcap_breakloop(pcap->handle);
-        input->running = FALSE;
     }
+
+    // Mark as finished reading packets
+    input->running = FALSE;
 }
 
 gboolean
