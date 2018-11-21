@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file option.h
+ * @file filter.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage filtering options
@@ -44,12 +44,12 @@
 #include "storage.h"
 
 //! Shorter declaration of sip_call_group structure
-typedef struct filter filter_t;
+typedef struct _Filter Filter;
 
 /**
  * @brief Available filter types
  */
-enum filter_type {
+enum FilterType {
     //! SIP From header in packet payload
     FILTER_SIPFROM = 0,
     //! SIP To header in packet payload
@@ -71,9 +71,9 @@ enum filter_type {
 /**
  * @brief Filter information
  */
-struct filter {
+struct _Filter {
     //! The filter text
-    char *expr;
+    gchar *expr;
     //! The filter compiled expression
     GRegex *regex;
 };
@@ -89,8 +89,8 @@ struct filter {
  * @param expr Regexpression to match
  * @return 0 if the filter is valid, 1 otherwise
  */
-int
-filter_set(int type, const char *expr);
+gboolean
+filter_set(enum FilterType type, const gchar *expr);
 
 /**
  * @brief Get filter text expression
@@ -98,8 +98,8 @@ filter_set(int type, const char *expr);
  * @param type filter type
  * @return filter text expressions
  */
-const char *
-filter_get(int type);
+const gchar *
+filter_get(enum FilterType type);
 
 /**
  * @brief Check if a call if filtered
@@ -108,15 +108,15 @@ filter_get(int type);
  * @return TRUE if call is filtered
  */
 gboolean
-filter_check_call(gconstpointer item, gconstpointer user_data);
+filter_check_call(Call *call, gconstpointer user_data);
 
 /**
  * @brief Check if data matches the filter regexp
  *
  * @return 0 if the given data matches the filter
  */
-int
-filter_check_expr(filter_t filter, const char *data);
+gint
+filter_check_expr(Filter filter, const gchar *data);
 
 /**
  * @brief Reset filtered flag in all calls
@@ -131,12 +131,12 @@ filter_reset_calls();
  * @brief Set Method filtering from filter.methods setting format
  */
 void
-filter_method_from_setting(const char *value);
+filter_method_from_setting(const gchar *value);
 
 /**
  * @brief Set Payload filter from filter.payload setting
  */
 void
-filter_payload_from_setting(const char *value);
+filter_payload_from_setting(const gchar *value);
 
 #endif /* __SNGREP_FILTER_H_ */

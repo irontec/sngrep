@@ -397,7 +397,7 @@ call_list_draw_list(Window *window)
 
     // Get the list of calls that are goint to be displayed
     g_ptr_array_free(info->dcalls, FALSE);
-    info->dcalls = g_ptr_array_copy_filtered(storage_calls(), filter_check_call, NULL);
+    info->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
 
     // Empty list, nothing to draw
     if (g_ptr_array_len(info->dcalls) == 0)

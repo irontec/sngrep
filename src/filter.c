@@ -29,26 +29,25 @@
 #include "config.h"
 #include <glib.h>
 #include <stdlib.h>
-#include <string.h>
 #include "glib-utils.h"
 #include "storage.h"
 #include "ncurses/windows/call_list_win.h"
 #include "filter.h"
 
 //! Storage of filter information
-filter_t filters[FILTER_COUNT] = { { 0 } };
+Filter filters[FILTER_COUNT] = { { 0 } };
 
-int
-filter_set(int type, const char *expr)
+gboolean
+filter_set(enum FilterType type, const gchar *expr)
 {
     GRegex *regex = NULL;
 
     // If we have an expression, check if compiles before changing the filter
-    if (expr) {
+    if (expr != NULL) {
         // Check if we have a valid expression
         regex = g_regex_new(expr, G_REGEX_CASELESS, 0, NULL);
         if (regex == NULL) {
-            return 1;
+            return FALSE;
         }
     }
 
@@ -59,26 +58,21 @@ filter_set(int type, const char *expr)
     }
 
     // Set new expresion values
-    filters[type].expr = (expr) ? strdup(expr) : NULL;
+    filters[type].expr = (expr) ? g_strdup(expr) : NULL;
     filters[type].regex = regex;
 
-    return 0;
+    return FALSE;
 }
 
-const char *
-filter_get(int type)
+const gchar *
+filter_get(enum FilterType type)
 {
     return filters[type].expr;
 }
 
 gboolean
-filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
+filter_check_call(Call *call, G_GNUC_UNUSED gconstpointer user_data)
 {
-    int i;
-    char data[MAX_SIP_PAYLOAD];
-    Call *call = (Call*) item;
-    Message *msg;
-
     // Dont filter calls without messages
     if (call_msg_count(call) == 0)
         return FALSE;
@@ -91,16 +85,18 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
     call->filtered = 0;
 
     // Check all filter types
-    for (i=0; i < FILTER_COUNT; i++) {
+    for (guint filter_type = 0; filter_type < FILTER_COUNT; filter_type++) {
+
         // If filter is not enabled, go to the next
-        if (!filters[i].expr)
+        if (!filters[filter_type].expr)
             continue;
 
         // Initialize
+        gchar data[MAX_SIP_PAYLOAD];
         memset(data, 0, sizeof(data));
 
         // Get filtered field
-        switch(i) {
+        switch(filter_type) {
             case FILTER_SIPFROM:
                 call_get_attribute(call, ATTR_SIPFROM, data);
                 break;
@@ -128,16 +124,16 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
         }
 
         // For payload filtering, check all messages payload
-        if (i == FILTER_PAYLOAD) {
+        if (filter_type == FILTER_PAYLOAD) {
             // Assume this call doesn't match the filter
             call->filtered = 1;
             // Create an iterator for the call messages
-            for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
-                msg = g_ptr_array_index(call->msgs, i);
+            for (guint j = 0; j < g_ptr_array_len(call->msgs); j++) {
+                Message *msg = g_ptr_array_index(call->msgs, j);
                 // Copy message payload
                 strcpy(data, msg_get_payload(msg));
                 // Check if this payload matches the filter
-                if (filter_check_expr(filters[i], data) == 0) {
+                if (filter_check_expr(filters[j], data) == 0) {
                     call->filtered = 0;
                     break;
                 }
@@ -146,7 +142,7 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
                 break;
         } else {
             // Check the filter against given data
-            if (filter_check_expr(filters[i], data) != 0) {
+            if (filter_check_expr(filters[filter_type], data) != 0) {
                 // The data didn't matched the filter
                 call->filtered = 1;
                 break;
@@ -159,7 +155,7 @@ filter_check_call(gconstpointer item, G_GNUC_UNUSED gconstpointer user_data)
 }
 
 int
-filter_check_expr(filter_t filter, const char *data)
+filter_check_expr(Filter filter, const gchar *data)
 {
     return (g_regex_match(filter.regex, data, 0, NULL)) ? 0 : 1;
 }
@@ -177,33 +173,32 @@ filter_reset_calls()
 }
 
 void
-filter_method_from_setting(const char *value)
+filter_method_from_setting(const gchar *value)
 {
-    char methods[200], method_expr[256];
-    int methods_len = strlen(value);
-    char *comma;
-
     // If there's a method filter
-    if (methods_len) {
-        // Copy value into temporal array
-        memset(methods, 0, sizeof(methods));
-        strncpy(methods, value, methods_len);
+    if (value != NULL && strlen(value) > 0) {
+        gchar *methods = g_strdup_printf("(%s)", value);
 
-        // Replace all commas with pippes
-        while ((comma = strchr(methods, ',')))
+        // Replace all commas with pipes
+        gchar *comma = NULL;
+        while ((comma = strchr(methods, ','))) {
             *comma = '|';
+        }
 
         // Create a regular expression
-        memset(method_expr, 0, sizeof(method_expr));
-        sprintf(method_expr, "(%s)", methods);
-        filter_set(FILTER_METHOD, method_expr);
+        filter_set(FILTER_METHOD, methods);
+
+        // Free me
+        g_free(methods);
     } else {
         filter_set(FILTER_METHOD, " ");
     }
 }
 
 void
-filter_payload_from_setting(const char *value)
+filter_payload_from_setting(const gchar *value)
 {
-    if (value) filter_set(FILTER_PAYLOAD, value);
+    if (value) {
+        filter_set(FILTER_PAYLOAD, value);
+    }
 }
