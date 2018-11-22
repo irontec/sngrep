@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <gnutls/gnutls.h>
+#include "glib-utils.h"
 #include "capture/capture.h"
 #include "packet/dissector.h"
 #include "packet/dissectors/packet_ip.h"
@@ -933,7 +934,7 @@ static void
 packet_tls_init(PacketParser *parser)
 {
     DissectorTlsData *tls_data = g_malloc0(sizeof(DissectorTlsData));
-    g_ptr_array_insert(parser->dissectors, PACKET_TLS, tls_data);
+    g_ptr_array_set(parser->dissectors, PACKET_TLS, tls_data);
 }
 
 PacketDissector *

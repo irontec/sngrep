@@ -53,7 +53,7 @@ typedef void (*PacketDissectorDeinitFunc)(PacketParser *);
 struct _PacketDissector
 {
     //! Protocol id
-    enum packet_proto id;
+    enum PacketProtoId id;
     //! SubProtocol children dissectors
     GSList *subdissectors;
 

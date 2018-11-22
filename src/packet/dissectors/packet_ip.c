@@ -32,6 +32,7 @@
 #include "config.h"
 #include <netdb.h>
 #include <arpa/inet.h>
+#include "glib-utils.h"
 #include "packet/packet.h"
 #include "packet/parser.h"
 #include "packet/dissectors/packet_ip.h"
@@ -113,7 +114,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     ipdata->daddr       = fragment->dst;
     ipdata->version     = fragment->version;
     ipdata->protocol    = fragment->proto;
-    g_ptr_array_insert(packet->proto, PACKET_IP, ipdata);
+    packet->proto->pdata[PACKET_IP] = ipdata;
 
     // Get pending payload
     g_byte_array_remove_range(data, 0, fragment->hl);
@@ -205,7 +206,7 @@ packet_ip_init(PacketParser *parser)
     g_return_if_fail(ipdata != NULL);
 
     // Store parser private information
-    g_ptr_array_insert(parser->dissectors, PACKET_IP, ipdata);
+    g_ptr_array_set(parser->dissectors, PACKET_IP, ipdata);
 
 }
 

@@ -245,7 +245,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     tcp_data->dport = segment->dst.port;
     tcp_data->ack   = segment->ack;
     tcp_data->syn   = segment->syn;
-    g_ptr_array_insert(packet->proto, PACKET_TCP, tcp_data);
+    g_ptr_array_set(packet->proto, PACKET_TCP, tcp_data);
 
     // Call next dissector
     GByteArray *pending = packet_parser_next_dissector(parser, packet, data);
@@ -268,7 +268,7 @@ packet_tcp_init(PacketParser *parser)
 {
     DissectorTcpData *tcp_data = g_malloc0(sizeof(DissectorTcpData));
     tcp_data->assembly = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    g_ptr_array_insert(parser->dissectors, PACKET_TCP, tcp_data);
+    g_ptr_array_set(parser->dissectors, PACKET_TCP, tcp_data);
 }
 
 PacketDissector *

@@ -54,7 +54,7 @@ print_version_info()
            " * Compiled with IPv6 support.\n"
 #endif
 #ifdef USE_HEP
-            " * Compiled with EEP/HEP support.\n"
+            " * Compiled with HEPv3 support.\n"
 #endif
            "\nWritten by Ivan Alonso [aka Kaian]\n",
            PACKAGE, VERSION);

@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
+#include "glib-utils.h"
 #include "storage.h"
 #include "packet/dissector.h"
 #include "packet/packet.h"
@@ -147,7 +148,7 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
     }
 
     // Set packet RTP informaiton
-    g_ptr_array_insert(packet->proto, PACKET_RTCP, rtcp);
+    g_ptr_array_set(packet->proto, PACKET_RTCP, rtcp);
 
     /** @TODO Backwards compatibility during refactoring */
     storage_add_packet(packet);

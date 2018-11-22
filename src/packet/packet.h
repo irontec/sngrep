@@ -47,7 +47,7 @@
  * Note that packet types are stored as flags and a packet have more than
  * one type.
  */
-enum packet_proto {
+enum PacketProtoId {
     PACKET_LINK = 0,
     PACKET_IP   = 1,
     PACKET_UDP,
@@ -126,7 +126,7 @@ packet_free(Packet *packet);
 //packet_add_frame(Packet *pkt, PacketFrame *frame);
 
 gboolean
-packet_has_type(const Packet *packet, enum packet_proto type);
+packet_has_type(const Packet *packet, enum PacketProtoId type);
 
 Address
 packet_src_address(const Packet *packet);

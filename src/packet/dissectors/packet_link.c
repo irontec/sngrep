@@ -34,6 +34,7 @@
 #ifdef DLT_LINUX_SLL
 #include <pcap/sll.h>
 #endif
+#include "glib-utils.h"
 #include "capture/capture_pcap.h"
 #include "packet_ip.h"
 #include "packet_link.h"
@@ -158,7 +159,7 @@ packet_link_init(PacketParser *parser)
     link_data->link_size = proto_link_size(pcap->link);
 
     // Store private data for this protocol
-    g_ptr_array_insert(parser->dissectors, PACKET_LINK, link_data);
+    g_ptr_array_set(parser->dissectors, PACKET_LINK, link_data);
 }
 
 static void

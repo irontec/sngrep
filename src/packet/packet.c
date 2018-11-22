@@ -28,6 +28,7 @@
  */
 #include "config.h"
 #include <glib.h>
+#include "glib-utils.h"
 #include "packet/dissectors/packet_ip.h"
 #include "packet/dissectors/packet_tcp.h"
 #include "packet/dissectors/packet_udp.h"
@@ -54,7 +55,7 @@ packet_free(Packet *packet)
 }
 
 gboolean
-packet_has_type(const Packet *packet, enum packet_proto type)
+packet_has_type(const Packet *packet, enum PacketProtoId type)
 {
     return g_ptr_array_index(packet->proto, type) != NULL;
 }

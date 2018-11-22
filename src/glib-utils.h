@@ -36,6 +36,7 @@
 #define g_ptr_array_empty(array) (array->len == 0)
 #define g_ptr_array_first(array) g_ptr_array_index(array, 0)
 #define g_ptr_array_last(array)  g_ptr_array_index(array, array->len-1)
+#define g_ptr_array_set(array, index, item)  (array->pdata[index] = item)
 
 #define g_sequence_first(sequence) g_sequence_nth(sequence, 0)
 #define g_sequence_last(sequence) g_sequence_nth(sequence, g_sequence_get_length(sequence))

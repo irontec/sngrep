@@ -28,6 +28,7 @@
 #include "config.h"
 #include <glib.h>
 #include <stdlib.h>
+#include "glib-utils.h"
 #include "packet_sdp.h"
 
 /**
@@ -228,7 +229,7 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
     }
 
     // Set packet SDP data
-    g_ptr_array_insert(packet->proto, PACKET_SDP, sdp);
+    g_ptr_array_set(packet->proto, PACKET_SDP, sdp);
 
     return data;
 }

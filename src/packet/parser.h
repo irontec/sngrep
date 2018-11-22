@@ -91,7 +91,7 @@ packet_parser_free(PacketParser *parser);
  * @return
  */
 PacketDissector *
-packet_parser_add_proto(PacketParser *parser, GNode *parent, enum packet_proto id);
+packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId id);
 
 /**
  * @brief Send packet data to current dissector children

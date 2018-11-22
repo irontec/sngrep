@@ -31,6 +31,7 @@
 
 #include "config.h"
 #include <netinet/udp.h>
+#include "glib-utils.h"
 #include "packet/dissectors/packet_ip.h"
 #include "packet/packet.h"
 #include "packet_udp.h"
@@ -63,7 +64,7 @@ packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
 
     // Store udp data
-    g_ptr_array_insert(packet->proto, PACKET_UDP, udp_data);
+    g_ptr_array_set(packet->proto, PACKET_UDP, udp_data);
 
     // Get pending payload
     data = g_byte_array_remove_range(data, 0, udp_off);
@@ -93,6 +94,7 @@ packet_udp_new()
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTP));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTCP));
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_HEP));
 
     return proto;
 }

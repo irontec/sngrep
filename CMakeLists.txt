@@ -62,9 +62,10 @@ set(SOURCES
 
 ######################################################################
 # HEP  Support
-option (USE_HEP "Enable EEP/HEP Support" OFF)
+option (USE_HEP "Enable HEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
+    set(SOURCES ${SOURCES} src/packet/dissectors/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support

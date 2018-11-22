@@ -36,6 +36,7 @@
 #include "packet/dissectors/packet_sdp.h"
 #include "packet/dissectors/packet_rtp.h"
 #include "packet/dissectors/packet_rtcp.h"
+#include "packet/dissectors/packet_hep.h"
 #include "parser.h"
 
 PacketParser *
@@ -61,7 +62,7 @@ packet_parser_free(PacketParser *parser)
 }
 
 PacketDissector *
-packet_parser_add_proto(PacketParser *parser, GNode *parent, enum packet_proto id)
+packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId id)
 {
     PacketDissector *dissector;
 
@@ -90,6 +91,11 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum packet_proto i
         case PACKET_RTCP:
             dissector = packet_rtcp_new();
             break;
+#ifdef USE_HEP
+        case PACKET_HEP:
+            dissector = packet_hep_new();
+            break;
+#endif
 #ifdef WITH_SSL
         case PACKET_TLS:
             dissector = packet_tls_new();

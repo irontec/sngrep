@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include <stdlib.h>
+#include "glib-utils.h"
 #include "storage.h"
 #include "packet/packet.h"
 #include "packet/dissectors/packet_tcp.h"
@@ -268,7 +269,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     if (g_match_info_matches(pmatch)) {
         // Copy the matching part of payload
         sip_data->callid =  g_match_info_fetch_named(pmatch, "callid");
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_CALLID, g_match_info_fetch_named(pmatch, "callid"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_CALLID, g_match_info_fetch_named(pmatch, "callid"));
     }
     g_match_info_free(pmatch);
 
@@ -285,48 +286,48 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_regex_match(sip->reg_xcallid, payload->str, 0, &pmatch);
     if (g_match_info_matches(pmatch)) {
         sip_data->xcallid =  g_match_info_fetch_named(pmatch, "xcallid");
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_XCALLID, g_match_info_fetch_named(pmatch, "xcallid"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_XCALLID, g_match_info_fetch_named(pmatch, "xcallid"));
     }
     g_match_info_free(pmatch);
 
     // From
     if (g_regex_match(sip->reg_from, payload->str, 0, &pmatch)) {
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_FROM, g_match_info_fetch_named(pmatch, "from"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_FROM, g_match_info_fetch_named(pmatch, "from"));
         sip_data->from_user = g_match_info_fetch_named(pmatch, "fromuser");
         sip_data->from_tag = g_match_info_fetch_named(pmatch, "fromtag");
     } else {
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_FROM, strdup("<malformed>"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_FROM, strdup("<malformed>"));
     }
     g_match_info_free(pmatch);
 
     // To
     if (g_regex_match(sip->reg_to, payload->str, 0, &pmatch)) {
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_TO, g_match_info_fetch_named(pmatch, "to"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_TO, g_match_info_fetch_named(pmatch, "to"));
         sip_data->to_user = g_match_info_fetch_named(pmatch, "touser");
         sip_data->to_tag = g_match_info_fetch_named(pmatch, "totag");
     } else {
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_TO, strdup("<malformed>"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_TO, strdup("<malformed>"));
     }
     g_match_info_free(pmatch);
 
     // Reason text
     if (g_regex_match(sip->reg_reason, payload->str, 0, &pmatch)) {
         sip_data->reasontxt = strdup(g_match_info_fetch(pmatch, 1));
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_REASON, strdup(g_match_info_fetch(pmatch, 1)));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_REASON, strdup(g_match_info_fetch(pmatch, 1)));
     }
     g_match_info_free(pmatch);
 
     // Warning code
     if (g_regex_match(sip->reg_warning, payload->str, 0, &pmatch)) {
         sip_data->warning = atoi(g_match_info_fetch_named(pmatch, "warning"));
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_WARNING, g_match_info_fetch_named(pmatch, "warning"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_WARNING, g_match_info_fetch_named(pmatch, "warning"));
     }
     g_match_info_free(pmatch);
 
     // CSeq
     if (g_regex_match(sip->reg_cseq, payload->str, 0, &pmatch)) {
         sip_data->cseq = atoi(g_match_info_fetch_named(pmatch, "cseq"));
-        g_ptr_array_insert(sip_data->headers, SIP_HEADER_CSEQ, g_match_info_fetch_named(pmatch, "cseq"));
+        g_ptr_array_set(sip_data->headers, SIP_HEADER_CSEQ, g_match_info_fetch_named(pmatch, "cseq"));
     }
     g_match_info_free(pmatch);
 
@@ -338,7 +339,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_match_info_free(pmatch);
 
     // Add SIP information to the packet
-    g_ptr_array_insert(packet->proto, PACKET_SIP, sip_data);
+    g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
 
     // Check if we have Body separator field
     g_regex_match(sip->reg_body, payload->str, 0, &pmatch);
@@ -414,7 +415,7 @@ packet_sip_init(PacketParser *parser)
             "^Warning:\\s*(?P<warning>\\d+)",
             cflags, mflags, NULL);
 
-    g_ptr_array_insert(parser->dissectors, PACKET_SIP, sip);
+    g_ptr_array_set(parser->dissectors, PACKET_SIP, sip);
 
 }
 

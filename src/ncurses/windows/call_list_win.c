@@ -250,10 +250,10 @@ call_list_draw_header(Window *window)
 #ifdef USE_HEP
     const char *eep_port;
     if ((eep_port = capture_output_hep_port(capture_manager()))) {
-        wprintw(ui->win, "[H:%s]", eep_port);
+        wprintw(window->win, "[H:%s]", eep_port);
     }
     if ((eep_port = capture_input_hep_port(capture_manager()))) {
-        wprintw(ui->win, "[L:%s]", eep_port);
+        wprintw(window->win, "[L:%s]", eep_port);
     }
 #endif
 
