@@ -306,6 +306,38 @@ call_flow_arrow_message(const  CallFlowArrow *arrow)
     return NULL;
 }
 
+static CallFlowArrow *
+call_flow_arrow_find_prev_callid(Window *window, const CallFlowArrow *arrow)
+{
+    CallFlowWinInfo *info = call_flow_win_info(window);
+    g_return_val_if_fail(info != NULL, NULL);
+    g_return_val_if_fail(arrow->type == CF_ARROW_SIP, NULL);
+
+    Message *msg = call_flow_arrow_message(arrow);
+
+    // Given arrow index
+    gint cur_idx = g_ptr_array_data_index(info->darrows, arrow);
+
+    for (gint i = cur_idx - 1; i > 0; i--) {
+        CallFlowArrow *prev = g_ptr_array_index(info->darrows, i);
+
+        if (prev->type != CF_ARROW_SIP)
+            continue;
+
+        Message *prev_msg = call_flow_arrow_message(prev);
+        g_return_val_if_fail(prev_msg != NULL, NULL);
+
+        if (msg_get_call(msg) == msg_get_call(prev_msg)
+            && msg_is_request(msg) == msg_is_request(prev_msg)
+            && !msg_is_retrans(prev_msg)) {
+
+            return prev;
+        }
+    }
+
+    return NULL;
+}
+
 /**
  * @brief Get a flow column data starting at a given column index
  *
@@ -677,9 +709,17 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     // Determine start and end position of the arrow line
     int startpos, endpos;
     if (arrow->scolumn == arrow->dcolumn) {
-        arrow->dir = CF_ARROW_SPIRAL;
-        startpos = 19 + 30 * dcolumn_idx;
-        endpos = 20 + 30 * scolumn_idx;
+        // Try to follow previous arrow direction
+        CallFlowArrow *prev_arrow = call_flow_arrow_find_prev_callid(window, arrow);
+        if (prev_arrow != NULL && prev_arrow->dir == CF_ARROW_LEFT) {
+            arrow->dir = CF_ARROW_SPIRAL_LEFT;
+            startpos = 21 + 30 * dcolumn_idx;
+            endpos = 17 + 30 * scolumn_idx;
+        } else {
+            arrow->dir = CF_ARROW_SPIRAL_RIGHT;
+            startpos = 19 + 30 * dcolumn_idx;
+            endpos = 20 + 30 * scolumn_idx;
+        }
     } else if (scolumn_idx < dcolumn_idx) {
         arrow->dir = CF_ARROW_RIGHT;
         startpos = 20 + 30 * scolumn_idx;
@@ -729,8 +769,10 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     mvwprintw(flow_win, cline, startpos + 2, "%*s", distance, "");
 
     // Draw method
-    if (arrow->dir == CF_ARROW_SPIRAL) {
+    if (arrow->dir == CF_ARROW_SPIRAL_RIGHT) {
         mvwprintw(flow_win, cline, startpos + 5, "%.26s", method);
+    } else if (arrow->dir == CF_ARROW_SPIRAL_LEFT) {
+        mvwprintw(flow_win, cline, startpos - msglen - 4, "%.26s", method);
     } else {
         mvwprintw(flow_win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
     }
@@ -749,7 +791,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         }
     }
 
-    if (arrow->dir != CF_ARROW_SPIRAL) {
+    if (arrow->dir != CF_ARROW_SPIRAL_RIGHT && arrow->dir != CF_ARROW_SPIRAL_LEFT) {
         if (arrow == call_flow_arrow_selected(window)) {
             mvwhline(flow_win, aline, startpos + 2, '=', distance);
         } else {
@@ -758,7 +800,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     }
 
     // Write the arrow at the end of the message (two arrows if this is a retrans)
-    if (arrow->dir == CF_ARROW_SPIRAL) {
+    if (arrow->dir == CF_ARROW_SPIRAL_RIGHT) {
         mvwaddch(flow_win, aline, startpos + 2, '<');
         if (msg->retrans) {
             mvwaddch(flow_win, aline, startpos + 3, '<');
@@ -769,6 +811,18 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
             mvwaddch(flow_win, aline, startpos + 3, ACS_LRCORNER);
             mvwaddch(flow_win, aline - 1, startpos + 3, ACS_URCORNER);
             mvwaddch(flow_win, aline - 1, startpos + 2, ACS_HLINE);
+        }
+    } else if (arrow->dir == CF_ARROW_SPIRAL_LEFT) {
+        mvwaddch(flow_win, aline, startpos - 2, '>');
+        if (msg->retrans) {
+            mvwaddch(flow_win, aline, startpos - 3, '>');
+            mvwaddch(flow_win, aline, startpos - 4, '>');
+        }
+        // If multiple lines are available, print a spiral icon
+        if (aline != cline) {
+            mvwaddch(flow_win, aline, startpos - 3, ACS_LLCORNER);
+            mvwaddch(flow_win, aline - 1, startpos - 3, ACS_ULCORNER);
+            mvwaddch(flow_win, aline - 1, startpos - 2, ACS_HLINE);
         }
     } else if (arrow->dir == CF_ARROW_RIGHT) {
         mvwaddch(flow_win, aline, endpos - 2, '>');
@@ -1440,7 +1494,7 @@ call_flow_handle_key(Window *window, int key)
                 call_flow_move_up(window, rnpag_steps / 2);;
                 break;
             case ACTION_PPAGE:
-                call_flow_move_down(window, rnpag_steps);
+                call_flow_move_up(window, rnpag_steps);
                 break;
             case ACTION_BEGIN:
                 call_flow_move(window, 0);

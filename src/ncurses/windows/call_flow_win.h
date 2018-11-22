@@ -82,7 +82,8 @@ enum CallFlowArrowType {
 enum CallFlowArrowDir {
     CF_ARROW_RIGHT = 0,
     CF_ARROW_LEFT,
-    CF_ARROW_SPIRAL
+    CF_ARROW_SPIRAL_RIGHT,
+    CF_ARROW_SPIRAL_LEFT
 };
 
 /**
