@@ -93,17 +93,6 @@ Keybinding bindings[ACTION_SENTINEL] = {
 };
 
 /**
- * @brief Check if key is a printable ascii character
- *
- * @return TRUE if key is alphanumeric or space
- */
-static gboolean
-key_is_printable(gint key)
-{
-    return g_ascii_isalnum(key) || g_ascii_isspace(key);
-}
-
-/**
  * @brief Return a Human readable representation of a key
  *
  * @return Character string representing the key
@@ -140,7 +129,7 @@ key_to_str(gint key)
         case ' ':
             return "Space";
         default:
-            if (key_is_printable(key))
+            if (g_ascii_isprint(key))
                 return keyname(key);
     }
 
@@ -232,7 +221,7 @@ key_find_action(gint key, enum KeybindingAction start)
 {
     for (guint i = start + 1; i < ACTION_SENTINEL; i++) {
 
-        if (i == ACTION_PRINTABLE && key_is_printable(key))
+        if (i == ACTION_PRINTABLE && g_ascii_isprint(key))
             return ACTION_PRINTABLE;
 
         for (guint j = 0; j < bindings[i].bindcnt; j++)
