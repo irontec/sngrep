@@ -138,9 +138,6 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     memcpy(&payload_chunk, data->data, sizeof(payload_chunk));
     data = g_byte_array_remove_range(data, 0, sizeof(CaptureHepChunk));
 
-    // Calculate payload size
-    frame->caplen = frame->len = ntohs(payload_chunk.length) - sizeof(payload_chunk);
-
     // Generate Packet IP data
     PacketIpData *ip = g_malloc0(sizeof(PacketIpData));
     ip->saddr = src;

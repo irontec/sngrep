@@ -98,6 +98,7 @@ packet_sdp_dissect_connection(PacketSdpData *sdp, PacketSdpMedia *media, gchar *
 {
     // c=<nettype> <addrtype> <connection-address>
     gchar **conn_data = g_strsplit(line, " ", 3);
+    if (g_strv_length(conn_data) < 3) return;
 
     // Get connection address
     PacketSdpConnection *conn = g_malloc(sizeof(PacketSdpConnection));
