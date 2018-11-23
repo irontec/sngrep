@@ -5,8 +5,7 @@ project(sngrep
 
 set(PROJECT_NAME sngrep)
 set(CMAKE_C_STANDARD 11)
-#add_compile_options(-Werror -g)
-add_compile_options(-Werror -g -Wall -pedantic -Wextra)
+add_compile_options(-Wall -pedantic -Wextra)
 
 configure_file(
     ${PROJECT_SOURCE_DIR}/src/config.h.cmake.in
@@ -62,7 +61,7 @@ set(SOURCES
 
 ######################################################################
 # HEP  Support
-option (USE_HEP "Enable HEP Support" OFF)
+option (USE_HEP "Enable HEP Support" ON)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
     set(SOURCES ${SOURCES} src/packet/dissectors/packet_hep.c)

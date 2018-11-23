@@ -38,4 +38,4 @@
 #cmakedefine WITH_SSL
 
 
-#endif //SNGREP_CONFIG_H
+#endif

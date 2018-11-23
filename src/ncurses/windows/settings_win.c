@@ -226,8 +226,8 @@ settings_save(Window *ui)
     // Get panel information
     SettingsWinInfo *info = settings_info(ui);
 
-    g_autoptr(GString) userconf = g_string_new(NULL);
-    g_autoptr(GString) tmpfile  = g_string_new(NULL);
+    GString *userconf = g_string_new(NULL);
+    GString *tmpfile  = g_string_new(NULL);
 
     // Use $SNGREPRC/.sngreprc file
     const gchar *rcfile = g_getenv("SNGREPRC");
@@ -244,6 +244,8 @@ settings_save(Window *ui)
     // No user configuration found!
     if (userconf->len == 0) {
         dialog_run("Unable to save configuration. User has no $SNGREPRC or $HOME dir.");
+        g_string_free(userconf, TRUE);
+        g_string_free(tmpfile, TRUE);
         return;
     }
 
@@ -262,6 +264,8 @@ settings_save(Window *ui)
     FILE *fo = g_fopen(userconf->str, "w");
     if (fo == NULL) {
         dialog_run("Unable to open %s: %s", userconf->str, g_strerror(errno));
+        g_string_free(userconf, TRUE);
+        g_string_free(tmpfile, TRUE);
         return;
     }
 
@@ -299,6 +303,9 @@ settings_save(Window *ui)
     fclose(fo);
 
     dialog_run("Settings successfully saved to %s", userconf->str);
+
+    g_string_free(userconf, TRUE);
+    g_string_free(tmpfile, TRUE);
 }
 
 /**
