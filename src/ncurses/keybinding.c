@@ -75,6 +75,7 @@ Keybinding bindings[ACTION_SENTINEL] = {
    { ACTION_SDP_INFO,       "sdpinfo",          { KEY_F(2), 'd' }, 2 },
    { ACTION_DISP_FILTER,    "search",           { KEY_F(3), '/', KEY_TAB }, 3 },
    { ACTION_SAVE,           "save",             { KEY_F(2), 's', 'S'}, 3 },
+   { ACTION_AUTH_VALIDATE,  "validate",         { 'v' }, 1 },
    { ACTION_SELECT,         "select",           { KEY_SPACE }, 1 },
    { ACTION_CONFIRM,        "confirm",          { KEY_INTRO }, 1 },
    { ACTION_TOGGLE_MEDIA,   "togglemedia",      { KEY_F(3), 'm' }, 2 },

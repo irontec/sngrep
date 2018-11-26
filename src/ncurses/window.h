@@ -70,6 +70,8 @@ enum WindowTypes {
     WINDOW_COLUMN_SELECT,
     //! Settings panel
     WINDOW_SETTINGS,
+    //! Authentication validator panel
+    WINDOW_AUTH_VALIDATE,
     //! Stats panel
     WINDOW_STATS,
 };

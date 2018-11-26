@@ -100,6 +100,7 @@ struct _PacketSipData
     gchar *from_tag;
     gchar *to_user;
     gchar *to_tag;
+    gchar *auth_hdr;
 };
 
 struct _DissectorSipData
@@ -117,6 +118,7 @@ struct _DissectorSipData
     GRegex *reg_body;
     GRegex *reg_reason;
     GRegex *reg_warning;
+    GRegex *reg_authorization;
 };
 
 int

@@ -338,6 +338,12 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
     g_match_info_free(pmatch);
 
+    // Authorization header
+    if (g_regex_match(sip->reg_authorization, payload->str, 0, &pmatch)) {
+        sip_data->auth_hdr = g_strdup(g_match_info_fetch_named(pmatch, "authparams"));
+    }
+    g_match_info_free(pmatch);
+
     // Add SIP information to the packet
     g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
 
@@ -415,6 +421,10 @@ packet_sip_init(PacketParser *parser)
             "^Warning:\\s*(?P<warning>\\d+)",
             cflags, mflags, NULL);
 
+    sip->reg_authorization = g_regex_new(
+            "^Authorization:\\s*Digest\\s*(?P<authparams>[^\r]+)",
+            cflags, mflags, NULL);
+
     g_ptr_array_set(parser->dissectors, PACKET_SIP, sip);
 
 }
@@ -438,6 +448,7 @@ packet_sip_deinit(PacketParser *parser)
     g_regex_unref(sip->reg_body);
     g_regex_unref(sip->reg_reason);
     g_regex_unref(sip->reg_warning);
+    g_regex_unref(sip->reg_authorization);
 
     // Free dissector data
     g_free(sip);

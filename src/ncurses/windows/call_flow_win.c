@@ -36,6 +36,7 @@
 #include "call_flow_win.h"
 #include "call_raw_win.h"
 #include "msg_diff_win.h"
+#include "auth_validate_win.h"
 #include "save_win.h"
 #include "timeval.h"
 #include "glib-utils.h"
@@ -1573,6 +1574,10 @@ call_flow_handle_key(Window *window, int key)
                 next_window = ncurses_create_window(WINDOW_SAVE);
                 save_set_group(next_window, info->group);
                 save_set_msg(next_window, call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+                break;
+            case ACTION_AUTH_VALIDATE:
+                next_window = ncurses_create_window(WINDOW_AUTH_VALIDATE);
+                auth_validate_set_group(next_window, info->group);
                 break;
             case ACTION_TOGGLE_TIME:
                 info->arrowtime = (info->arrowtime) ? false : true;

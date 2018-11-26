@@ -37,6 +37,7 @@
 #include "manager.h"
 #include "packet/dissectors/packet_sip.h"
 #include "capture/capture.h"
+#include "ncurses/windows/auth_validate_win.h"
 #include "ncurses/windows/call_list_win.h"
 #include "ncurses/windows/call_flow_win.h"
 #include "ncurses/windows/call_raw_win.h"
@@ -230,6 +231,8 @@ ncurses_find_by_type(enum WindowTypes type)
             break;
         case WINDOW_SETTINGS:
             window = settings_win_new();
+        case WINDOW_AUTH_VALIDATE:
+            window = auth_validate_win_new();
         default: break;
     }
 
@@ -262,8 +265,9 @@ ncurses_wait_for_input()
         if (window_redraw(ui)) {
             // Redraw this panel
             if (window_draw(ui) != 0) {
+                ncurses_destroy_window(ui);
                 capture_unlock(capture_manager());
-                return -1;
+                continue;
             }
         }
         capture_unlock(capture_manager());
