@@ -49,7 +49,6 @@ set(SOURCES
         src/filter.c
         src/group.c
         src/main.c
-        src/option.c
         src/stream.c
         src/setting.c
         src/attribute.c

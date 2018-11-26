@@ -54,4 +54,3 @@ sngrep_SOURCES+=capture/capture.c
 sngrep_SOURCES+=capture/capture_txt.c
 sngrep_SOURCES+=capture/capture_pcap.c
 sngrep_SOURCES+=filter.c
-sngrep_SOURCES+=option.c

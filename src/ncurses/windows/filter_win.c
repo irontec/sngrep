@@ -113,7 +113,7 @@ filter_field_method(int field_id)
 static void
 filter_save_options(Window *ui)
 {
-    char field_value[MAX_SETTING_LEN];
+    char field_value[SETTING_MAX_LEN];
     char *expr;
     int field_id;
     char method_expr[256];
@@ -201,7 +201,7 @@ static int
 filter_handle_key(Window *ui, int key)
 {
     int field_idx;
-    char field_value[MAX_SETTING_LEN];
+    char field_value[SETTING_MAX_LEN];
 
     // Get panel information
     FilterWinInfo *info = filter_info(ui);

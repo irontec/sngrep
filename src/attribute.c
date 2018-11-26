@@ -32,25 +32,25 @@
 #include "ncurses/manager.h"
 
 static AttributeHeader attrs[ATTR_COUNT] = {
-    { ATTR_CALLINDEX,   "index",       "Idx",       "Call Index",       4 , NULL },
-    { ATTR_SIPFROM,     "sipfrom",     NULL,        "SIP From",         25, NULL },
-    { ATTR_SIPFROMUSER, "sipfromuser", NULL,        "SIP From User",    20, NULL },
-    { ATTR_SIPTO,       "sipto",       NULL,        "SIP To",           25, NULL },
-    { ATTR_SIPTOUSER,   "siptouser",   NULL,        "SIP To User",      20, NULL },
-    { ATTR_SRC,         "src",         NULL,        "Source",           22, NULL },
-    { ATTR_DST,         "dst",         NULL,        "Destination",      22, NULL },
-    { ATTR_CALLID,      "callid",      NULL,        "Call-ID",          50, NULL },
-    { ATTR_XCALLID,     "xcallid",     NULL,        "X-Call-ID",        50, NULL },
-    { ATTR_DATE,        "date",        NULL,        "Date",             10, NULL },
-    { ATTR_TIME,        "time",        NULL,        "Time",             8, NULL },
-    { ATTR_METHOD,      "method",      NULL,        "Method",           10, attr_color_sip_method },
-    { ATTR_TRANSPORT,   "transport",   "Trans",     "Transport",        3, NULL },
-    { ATTR_MSGCNT,      "msgcnt",      "Msgs",      "Message Count",    5, NULL },
-    { ATTR_CALLSTATE,   "state",       NULL,        "Call State",       10, attr_color_call_state },
-    { ATTR_CONVDUR,     "convdur",     "ConvDur",   "Conversation Duration", 7, NULL },
-    { ATTR_TOTALDUR,    "totaldur",    "TotalDur",  "Total Duration",   8, NULL },
-    { ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text",  25, NULL },
-    { ATTR_WARNING,     "warning",     "Warning",   "Warning code",     4, NULL }
+    { ATTR_CALLINDEX,   "index",       "Idx",       "Call Index",       NULL },
+    { ATTR_SIPFROM,     "sipfrom",     NULL,        "SIP From",         NULL },
+    { ATTR_SIPFROMUSER, "sipfromuser", NULL,        "SIP From User",    NULL },
+    { ATTR_SIPTO,       "sipto",       NULL,        "SIP To",           NULL },
+    { ATTR_SIPTOUSER,   "siptouser",   NULL,        "SIP To User",      NULL },
+    { ATTR_SRC,         "src",         NULL,        "Source",           NULL },
+    { ATTR_DST,         "dst",         NULL,        "Destination",      NULL },
+    { ATTR_CALLID,      "callid",      NULL,        "Call-ID",          NULL },
+    { ATTR_XCALLID,     "xcallid",     NULL,        "X-Call-ID",        NULL },
+    { ATTR_DATE,        "date",        NULL,        "Date",             NULL },
+    { ATTR_TIME,        "time",        NULL,        "Time",             NULL },
+    { ATTR_METHOD,      "method",      NULL,        "Method",           attr_color_sip_method },
+    { ATTR_TRANSPORT,   "transport",   "Trans",     "Transport",        NULL },
+    { ATTR_MSGCNT,      "msgcnt",      "Msgs",      "Message Count",    NULL },
+    { ATTR_CALLSTATE,   "state",       NULL,        "Call State",       attr_color_call_state },
+    { ATTR_CONVDUR,     "convdur",     "ConvDur",   "Conversation Duration", NULL },
+    { ATTR_TOTALDUR,    "totaldur",    "TotalDur",  "Total Duration",   NULL },
+    { ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text",  NULL },
+    { ATTR_WARNING,     "warning",     "Warning",   "Warning code",     NULL }
 };
 
 AttributeHeader *
@@ -89,16 +89,6 @@ attr_name(enum AttributeId id)
         return header->name;
     }
     return NULL;
-}
-
-gint
-attr_width(enum AttributeId id)
-{
-    AttributeHeader *header;
-    if ((header = attr_header(id))) {
-        return header->dwidth;
-    }
-    return 0;
 }
 
 gint

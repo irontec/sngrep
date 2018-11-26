@@ -42,36 +42,24 @@
 #ifndef __SNGREP_SETTING_H
 #define __SNGREP_SETTING_H
 
-//! Max setting value
-#define MAX_SETTING_LEN   1024
+#include <glib.h>
+#include "attribute.h"
 
-//! Max extra length needed for "/.sngreprc.old"
-#define RCFILE_EXTRA_LEN   16
+//! Max setting value
+#define SETTING_MAX_LEN   1024
 
 //! Shorter declarartion of setting_option struct
-typedef struct setting_option setting_t;
-
-//! Generic setting formats
-#define SETTING_ENUM_ONOFF       (const char *[]){ "on", "off", NULL }
-#define SETTING_ENUM_YESNO       (const char *[]){ "yes", "no", NULL }
-#define SETTING_ENUM_BACKGROUND  (const char *[]){ "dark" , "default", NULL }
-#define SETTING_ENUM_COLORMODE   (const char *[]){ "request", "cseq", "callid", NULL }
-#define SETTING_ENUM_HIGHLIGHT   (const char *[]){ "bold", "reverse", "reversebold", NULL }
-#define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", "compressed", NULL}
-#define SETTING_ENUM_STORAGE     (const char *[]){ "none", "memory", NULL }
-#define SETTING_ENUM_HEPVERSION  (const char *[]){ "2", "3", NULL }
-#define SETTING_ENUM_MEDIA       (const char *[]){ "off", "on", "active", NULL }
+typedef struct _Setting Setting;
+typedef struct _SettingStorage SettingStorage;
+typedef struct _SettingAlias SettingAlias;
 
 //! Other useful defines
 #define SETTING_ON  "on"
 #define SETTING_OFF "off"
-#define SETTING_YES "yes"
-#define SETTING_NO  "no"
-#define SETTING_ACTIVE "active"
-
 
 //! Available setting Options
-enum setting_id {
+enum SettingId {
+    SETTING_UNKNOWN = -1,
     SETTING_BACKGROUND = 0,
     SETTING_COLORMODE,
     SETTING_SYNTAX,
@@ -99,6 +87,44 @@ enum setting_id {
     SETTING_CL_AUTOSCROLL,
     SETTING_CL_SORTFIELD,
     SETTING_CL_SORTORDER,
+    SETTING_CL_COL_INDEX_POS,
+    SETTING_CL_COL_INDEX_WIDTH,
+    SETTING_CL_COL_SIPFROM_POS,
+    SETTING_CL_COL_SIPFROM_WIDTH,
+    SETTING_CL_COL_SIPFROMUSER_POS,
+    SETTING_CL_COL_SIPFROMUSER_WIDTH,
+    SETTING_CL_COL_SIPTO_POS,
+    SETTING_CL_COL_SIPTO_WIDTH,
+    SETTING_CL_COL_SIPTOUSER_POS,
+    SETTING_CL_COL_SIPTOUSER_WIDTH,
+    SETTING_CL_COL_SRC_POS,
+    SETTING_CL_COL_SRC_WIDTH,
+    SETTING_CL_COL_DST_POS,
+    SETTING_CL_COL_DST_WIDTH,
+    SETTING_CL_COL_CALLID_POS,
+    SETTING_CL_COL_CALLID_WIDTH,
+    SETTING_CL_COL_XCALLID_POS,
+    SETTING_CL_COL_XCALLID_WIDTH,
+    SETTING_CL_COL_DATE_POS,
+    SETTING_CL_COL_DATE_WIDTH,
+    SETTING_CL_COL_TIME_POS,
+    SETTING_CL_COL_TIME_WIDTH,
+    SETTING_CL_COL_METHOD_POS,
+    SETTING_CL_COL_METHOD_WIDTH,
+    SETTING_CL_COL_TRANSPORT_POS,
+    SETTING_CL_COL_TRANSPORT_WIDTH,
+    SETTING_CL_COL_MSGCNT_POS,
+    SETTING_CL_COL_MSGCNT_WIDTH,
+    SETTING_CL_COL_CALLSTATE_POS,
+    SETTING_CL_COL_CALLSTATE_WIDTH,
+    SETTING_CL_COL_CONVDUR_POS,
+    SETTING_CL_COL_CONVDUR_WIDTH,
+    SETTING_CL_COL_TOTALDUR_POS,
+    SETTING_CL_COL_TOTALDUR_WIDTH,
+    SETTING_CL_COL_REASON_TXT_POS,
+    SETTING_CL_COL_REASON_TXT_WIDTH,
+    SETTING_CL_COL_WARNING_POS,
+    SETTING_CL_COL_WARNING_WIDTH,
     SETTING_CF_FORCERAW,
     SETTING_CF_RAWMINWIDTH,
     SETTING_CF_RAWFIXEDWIDTH,
@@ -132,8 +158,9 @@ enum setting_id {
 };
 
 //! Available setting formats
-enum setting_fmt {
+enum SettingFormat {
     SETTING_FMT_STRING = 0,
+    SETTING_FMT_BOOLEAN,
     SETTING_FMT_NUMBER,
     SETTING_FMT_ENUM,
 };
@@ -141,23 +168,39 @@ enum setting_fmt {
 /**
  * @brief Configurable Setting structure
  */
-struct setting_option {
-    //! Setting id
-    enum setting_id id;
+struct _Setting {
     //! Setting name
-    const char *name;
+    const gchar *name;
     //! Setting format
-    enum setting_fmt fmt;
+    enum SettingFormat fmt;
     //! Value of the setting
-    char value[MAX_SETTING_LEN];
-    //! Compa separated valid values
-    const char **valuelist;
+    char value[SETTING_MAX_LEN];
+    //! Comma separated valid values
+    gchar **valuelist;
 };
 
-setting_t *
-setting_by_id(int id);
+/**
+ * @brief Alias setting structure
+ */
+struct _SettingAlias {
+    //! Original address value
+    const gchar *address;
+    //! Alias name
+    const gchar *alias;
 
-setting_t *
+};
+
+struct _SettingStorage {
+    //! Array of settings
+    GPtrArray *settings;
+    //! List of configured IP address aliases
+    GList *alias;
+};
+
+Setting *
+setting_by_id(enum SettingId id);
+
+Setting *
 setting_by_name(const char *name);
 
 /**
@@ -166,7 +209,7 @@ setting_by_name(const char *name);
  * @param name String representing configurable setting
  * @return setting id or -1 if setting is not found
  */
-int
+enum SettingId
 setting_id(const char *name);
 
 /**
@@ -176,40 +219,95 @@ setting_id(const char *name);
  * @return string representation of setting or NULL
  */
 const char *
-setting_name(int id);
+setting_name(enum SettingId id);
 
 int
-setting_format(int id);
+setting_format(enum SettingId id);
 
 const char **
-setting_valid_values(int id);
+setting_valid_values(enum SettingId id);
 
 const char*
-setting_get_value(int id);
+setting_get_value(enum SettingId id);
 
 int
-setting_get_intvalue(int id);
+setting_get_intvalue(enum SettingId id);
 
 void
-setting_set_value(int id, const char *value);
+setting_set_value(enum SettingId id, const char *value);
 
 void
-setting_set_intvalue(int id, int value);
+setting_set_intvalue(enum SettingId id, int value);
 
 int
-setting_enabled(int id);
+setting_enabled(enum SettingId id);
 
 int
-setting_disabled(int id);
+setting_disabled(enum SettingId id);
 
 int
-setting_has_value(int id, const char *value);
+setting_has_value(enum SettingId id, const char *value);
 
 void
-setting_toggle(int id);
+setting_toggle(enum SettingId id);
 
 const char *
-setting_enum_next(int id, const char *value);
+setting_enum_next(enum SettingId id, const char *value);
+
+gint
+setting_column_pos(enum AttributeId id);
+
+/**
+ * @brief Get Attribute column display width
+ *
+ * @param id Attribute id
+ * @return configured column width
+ */
+gint
+setting_column_width(enum AttributeId id);
+
+/**
+ * @brief Get alias for a given address (string)
+ *
+ * @param address IP Address
+ * @return configured alias or address if not alias found
+ */
+const gchar *
+setting_get_alias(const gchar *address);
+
+/**
+ * @brief Read optionuration directives from file
+ *
+ * This funtion will parse passed filenames searching for configuration
+ * directives of sngrep. See documentation for a list of available
+ * directives and attributes
+ *
+ * @param fname Full path configuration file name
+ * @return 0 in case of parse success, -1 otherwise
+ */
+int
+setting_read_file(const gchar *fname);
+
+/**
+ * @brief Initialize all program options
+ *
+ * This function will give all available settings an initial value.
+ * This values can be overriden using resources files, either from system dir
+ * or user home dir.
+ *
+ * @param no_config Do not load config file if set to 1
+ * @return 0 in all cases
+ */
+int
+settings_init(int no_config);
+
+/**
+ * @brief Deallocate options memory
+ *
+ * Deallocate memory used for program configurations
+ */
+void
+settings_deinit();
 
 /**
  * @brief Dump configuration settings

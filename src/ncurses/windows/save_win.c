@@ -68,7 +68,7 @@ save_info(Window *window)
 static int
 save_draw(Window *window)
 {
-    char field_value[MAX_SETTING_LEN];
+    char field_value[SETTING_MAX_LEN];
 
     // Get panel information
     SaveWinInfo *info = save_info(window);
@@ -148,9 +148,9 @@ save_packet_cb(Packet *packet, CaptureOutput *output)
 static int
 save_to_file(Window *window)
 {
-    char savepath[MAX_SETTING_LEN];
-    char savefile[MAX_SETTING_LEN];
-    char fullfile[MAX_SETTING_LEN*2];
+    char savepath[SETTING_MAX_LEN];
+    char savefile[SETTING_MAX_LEN];
+    char fullfile[SETTING_MAX_LEN*2];
     CaptureOutput *output = NULL;
     int cur = 0, total = 0;
     WINDOW *progress;
@@ -530,8 +530,8 @@ save_win_new()
     field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
 
     // Limit max save path and file length
-    set_max_field(info->fields[FLD_SAVE_PATH], MAX_SETTING_LEN);
-    set_max_field(info->fields[FLD_SAVE_FILE], MAX_SETTING_LEN);
+    set_max_field(info->fields[FLD_SAVE_PATH], SETTING_MAX_LEN);
+    set_max_field(info->fields[FLD_SAVE_FILE], SETTING_MAX_LEN);
 
     // Change background of input fields
     set_field_back(info->fields[FLD_SAVE_PATH], A_UNDERLINE);
@@ -548,7 +548,7 @@ save_win_new()
     form_opts_off(info->form, O_BS_OVERLOAD);
 
     // Set Default field values
-    char savepath[MAX_SETTING_LEN];
+    char savepath[SETTING_MAX_LEN];
     sprintf(savepath, "%s", setting_get_value(SETTING_SAVEPATH));
 
     set_field_buffer(info->fields[FLD_SAVE_PATH], 0, savepath);

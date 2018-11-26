@@ -324,7 +324,7 @@ settings_handle_key(Window *ui, int key)
 {
     int field_idx;
     SettingsWinEntry *entry;
-    enum setting_fmt sett_fmt = -1;
+    enum SettingFormat sett_fmt = -1;
 
     // Get panel information
     SettingsWinInfo *info = settings_info(ui);
@@ -535,6 +535,11 @@ settings_win_new()
                     entry = new_field(1, 18, line, 48, 0, 0);
                     field_opts_off(entry, O_STATIC);
                     set_field_back(entry, A_UNDERLINE);
+                    break;
+                case SETTING_FMT_BOOLEAN:
+                    entry = new_field(1, 12, line, 48, 0, 0);
+                    field_opts_off(entry, O_EDIT);
+                    set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
                     break;
                 case SETTING_FMT_ENUM:
                     entry = new_field(1, 12, line, 48, 0, 0);

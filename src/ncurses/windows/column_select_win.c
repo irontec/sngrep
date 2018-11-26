@@ -177,7 +177,7 @@ column_select_update_columns(Window *ui)
         column->id = attr_id;
         column->attr = attr_name(attr_id);
         column->title = attr_title(attr_id);
-        column->width = (guint) attr_width(attr_id);
+        column->width = setting_column_width(attr_id);
         g_ptr_array_add(info->selected, column);
     }
 }
@@ -257,11 +257,12 @@ column_select_save_columns(Window *ui)
     // Add all selected columns
     for (gint i = 0; i < item_count(info->menu); i++) {
         // If column is active
-        if (!strncmp(item_name(info->items[i]), "[ ]", 3))
-            continue;
-
-        // Add the columns settings
-        g_fprintf(fo, "set cl.column%d %s\n", i, (const char*) item_userptr(info->items[i]));
+        if (!strncmp(item_name(info->items[i]), "[ ]", 3)) {
+            g_fprintf(fo, "set cl.column.%s.pos -1\n", (const char*) item_userptr(info->items[i]));
+        } else {
+            // Add the columns settings
+            g_fprintf(fo, "set cl.column.%s.pos %d\n", (const char *) item_userptr(info->items[i]), i);
+        }
     }
 
     fclose(fo);

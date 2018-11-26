@@ -106,8 +106,6 @@ struct _AttributeHeader {
     gchar *title;
     //! Attribute description
     gchar *desc;
-    //! Attribute default display width
-    guint dwidth;
     //! This function determines the color of this attribute in CallList
     int (*color)(const char *value);
 };
@@ -168,15 +166,6 @@ attr_title(enum AttributeId id);
  */
 const gchar *
 attr_name(enum AttributeId id);
-
-/**
- * @brief Get Attribute prefered display width
- *
- * @param id Attribute id
- * @return prefered attribute width
- */
-int
-attr_width(enum AttributeId id);
 
 /**
  * @brief Get Attribute id from its name

@@ -66,8 +66,10 @@ struct _CallListColumn {
     const char *attr;
     //! Column title
     const char *title;
+    //! Current column position
+    gint position;
     //! Current width
-    guint width;
+    gint width;
 };
 
 /**

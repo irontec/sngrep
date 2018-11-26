@@ -40,7 +40,7 @@
 #include "save_win.h"
 #include "timeval.h"
 #include "glib-utils.h"
-#include "option.h"
+#include "setting.h"
 
 /***
  *
@@ -170,7 +170,7 @@ call_flow_arrow_filter(void *item)
         if (setting_enabled(SETTING_CF_MEDIA))
             return 1;
         // Otherwise only show active streams
-        if (setting_has_value(SETTING_CF_MEDIA, SETTING_ACTIVE))
+        if (setting_has_value(SETTING_CF_MEDIA, "active"))
             return stream_is_active(arrow->item);
     }
 
@@ -361,7 +361,7 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
     gboolean match_port = addr.port != 0;
 
     // Get alias value for given address
-    const gchar *alias = get_alias_value(addr.ip);
+    const gchar *alias = setting_get_alias(addr.ip);
 
     for (guint i = start; i < g_ptr_array_len(info->columns); i++) {
         CallFlowColumn *column = g_ptr_array_index(info->columns, i);
@@ -427,7 +427,7 @@ call_flow_column_new(Address addr)
     // Create a new column
     CallFlowColumn * column = g_malloc0(sizeof(CallFlowColumn));
     column->addr = addr;
-    column->alias = g_strdup(get_alias_value(addr.ip));
+    column->alias = setting_get_alias(addr.ip);
     return column;
 }
 
@@ -546,7 +546,7 @@ call_flow_draw_columns(Window *window)
 {
     Call *call = NULL;
     RtpStream *stream;
-    char coltext[MAX_SETTING_LEN];
+    char coltext[SETTING_MAX_LEN];
     Address addr;
 
     // Get panel information
@@ -592,22 +592,22 @@ call_flow_draw_columns(Window *window)
         }
 
         if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr.port) {
-            snprintf(coltext, MAX_SETTING_LEN, "%s", column->alias);
+            snprintf(coltext, SETTING_MAX_LEN, "%s", column->alias);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
             if (strlen(column->addr.ip) > 15) {
-                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%hu",
-                         MAX_SETTING_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr.port);
+                snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
+                         SETTING_MAX_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr.port);
             } else {
-                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%hu",
-                         MAX_SETTING_LEN - 7, column->alias, column->addr.port);
+                snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
+                         SETTING_MAX_LEN - 7, column->alias, column->addr.port);
             }
         } else {
             if (strlen(column->addr.ip) > 15) {
-                snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%hu",
-                         MAX_SETTING_LEN - 7, column->addr.ip + strlen(column->addr.ip) - 13, column->addr.port);
+                snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
+                         SETTING_MAX_LEN - 7, column->addr.ip + strlen(column->addr.ip) - 13, column->addr.port);
             } else {
-                snprintf(coltext, MAX_SETTING_LEN, "%.*s:%hu",
-                         MAX_SETTING_LEN - 7, column->addr.ip, column->addr.port);
+                snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
+                         SETTING_MAX_LEN - 7, column->addr.ip, column->addr.port);
             }
         }
 

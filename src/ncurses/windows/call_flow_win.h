@@ -123,7 +123,7 @@ struct _CallFlowColumn {
     //! Address header for this column
     Address addr;
     //! Alias for the given address
-    gchar *alias;
+    const gchar *alias;
     //! Call Ids
     GList *callids;
 };

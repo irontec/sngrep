@@ -149,7 +149,7 @@ struct _SettingsWinEntry {
     //! Field id in settings_info array
     enum SettingWinField field_id;
     //! Setting id of current entry
-    enum setting_id setting_id;
+    enum SettingId setting_id;
     //! Entry text
     const char *label;
 };

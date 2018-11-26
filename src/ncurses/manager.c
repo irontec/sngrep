@@ -231,8 +231,10 @@ ncurses_find_by_type(enum WindowTypes type)
             break;
         case WINDOW_SETTINGS:
             window = settings_win_new();
+            break;
         case WINDOW_AUTH_VALIDATE:
             window = auth_validate_win_new();
+            break;
         default: break;
     }
 

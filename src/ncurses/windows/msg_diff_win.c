@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "msg_diff_win.h"
-#include "option.h"
+#include "setting.h"
 
 /***
  *

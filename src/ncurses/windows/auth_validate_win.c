@@ -368,7 +368,7 @@ auth_validate_win_new()
     form_opts_off(info->form, O_BS_OVERLOAD);
 
     // Set Default field values
-    char savepath[MAX_SETTING_LEN];
+    char savepath[SETTING_MAX_LEN];
     sprintf(savepath, "%s", setting_get_value(SETTING_SAVEPATH));
 
     set_field_buffer(info->fields[FLD_AUTH_CLOSE], 0, "[ Close ]");

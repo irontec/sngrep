@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include "option.h"
+#include "setting.h"
 #include "capture/capture.h"
 #include "ncurses/manager.h"
 #ifdef USE_HEP
@@ -147,23 +147,13 @@ main(int argc, char* argv[])
         return 1;
     }
 
-    // Parse command line arguments that have high priority
-    if (version) {
-        print_version_info();
-        return 0;
-    } else if (config_dump) {
-        key_bindings_dump();
-        settings_dump();
-        return 0;
-    }
-
     /***************************** Configuration *****************************/
     // Initialize configuration options
-    init_options(no_config);
+    settings_init(no_config);
 
     // Override default configuration options if requested
     if (config_file)
-        read_options(config_file);
+        setting_read_file(config_file);
 
     // Get initial values for configurable arguments
     if (!storage_mopts.invite)
@@ -182,6 +172,16 @@ main(int argc, char* argv[])
 #ifdef WITH_SSL
     if (!keyfile) keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
 #endif
+
+    // Parse command line arguments that have high priority
+    if (version) {
+        print_version_info();
+        return 0;
+    } else if (config_dump) {
+        key_bindings_dump();
+        settings_dump();
+        return 0;
+    }
 
     /***************************** Capture Inputs *****************************/
     // Main packet capture manager
@@ -348,7 +348,7 @@ main(int argc, char* argv[])
     ncurses_deinit();
 
     // Deinitialize configuration options
-    deinit_options();
+    settings_deinit();
 
     // Deallocate sip stored messages
     storage_deinit();

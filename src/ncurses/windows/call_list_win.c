@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "glib-utils.h"
-#include "option.h"
+#include "setting.h"
 #include "filter.h"
 #include "capture/capture_pcap.h"
 #ifdef USE_HEP
@@ -1082,6 +1082,14 @@ call_list_help(G_GNUC_UNUSED Window *window)
     return 0;
 }
 
+static gint
+call_list_column_sorter(const CallListColumn **a, const CallListColumn **b)
+{
+    if ((*a)->position > (*b)->position) return 1;
+    if ((*a)->position < (*b)->position) return -1;
+    return 0;
+}
+
 /**
  * @brief Add a column the Call List
  *
@@ -1096,7 +1104,7 @@ call_list_help(G_GNUC_UNUSED Window *window)
  */
 static void
 call_list_add_column(Window *window, enum AttributeId id, const char* attr,
-                     const char *title, int width)
+                     const char *title, gint position, int width)
 {
     CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
@@ -1105,7 +1113,8 @@ call_list_add_column(Window *window, enum AttributeId id, const char* attr,
     column->id = id;
     column->attr = attr;
     column->title = title;
-    column->width = (guint) width;
+    column->position = position;
+    column->width = width;
     g_ptr_array_add(info->columns, column);
 }
 
@@ -1177,27 +1186,21 @@ call_list_win_new()
 
     // Add configured columns
     info->columns = g_ptr_array_new_with_free_func(g_free);
-    for (guint i = 0; i < ATTR_COUNT; i++) {
+    for (guint attr_id = 0; attr_id < ATTR_COUNT; attr_id++) {
         // Get column attribute name from options
-        gchar *option = g_strdup_printf("cl.column%d", i);
-        const gchar *field = NULL;
-        if ((field = get_option_value(option)) != NULL) {
-            gint attrid, collen;
-            if ((attrid = attr_find_by_name(field)) == -1)
-                continue;
+        gint position = setting_column_pos(attr_id);
+        // Check column is visible
+        if (position == -1) continue;
 
-            // Get column width from options
-            sprintf(option, "cl.column%d.width", i);
-            if ((collen = get_option_int_value(option)) == -1)
-                collen = attr_width(attrid);
+        // Get column information
+        gint collen = setting_column_width(attr_id);
+        const gchar *title = attr_title(attr_id);
+        const gchar *field = attr_name(attr_id);
 
-            // Get column title
-            const gchar *title = attr_title(attrid);
-            // Add column to the list
-            call_list_add_column(window, attrid, field, title, collen);
-        }
-        g_free(option);
+        // Add column to the list
+        call_list_add_column(window, attr_id, field, title, position, collen);
     }
+    g_ptr_array_sort(info->columns, (GCompareFunc) call_list_column_sorter);
 
     // Initialize the fields
     info->fields[FLD_LIST_FILTER] = new_field(1, window->width - 19, 3, 18, 0, 0);
