@@ -333,7 +333,7 @@ call_list_draw_header(Window *window)
     }
 
     // Print calls count (also filtered)
-    sip_stats_t stats = storage_calls_stats();
+    StorageStats stats = storage_calls_stats();
     mvwprintw(window->win, 1, 45, "%*s", 30, "");
     if (stats.total != stats.displayed) {
         mvwprintw(window->win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);

@@ -75,7 +75,7 @@ save_draw(Window *window)
     g_return_val_if_fail(info != NULL, -1);
 
     // Get filter stats
-    sip_stats_t stats = storage_calls_stats();
+    StorageStats stats = storage_calls_stats();
 
     mvwprintw(window->win, 7, 3, "( ) all dialogs ");
     mvwprintw(window->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
@@ -602,7 +602,7 @@ save_win_new()
     curs_set(1);
 
     // Get filter stats
-    sip_stats_t stats = storage_calls_stats();
+    StorageStats stats = storage_calls_stats();
 
     // Set default save modes
     info->savemode = (stats.displayed == stats.total) ? SAVE_ALL : SAVE_DISPLAYED;

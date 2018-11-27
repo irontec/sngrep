@@ -27,7 +27,7 @@
  */
 /*
  * +---------------------------------------------------------+
- * |                    Stats Information                    |
+ * |                    StorageStats Information                    |
  * +---------------------------------------------------------+
  * |  Dialogs: 725                  COMPLETED:  7 (22.1%)    |
  * |  Calls: 10                     CANCELLED:  2 (12.2%)    |
@@ -80,7 +80,7 @@ stats_win_new()
     window_init(window, 25, 60);
 
     // Set the window title and boxes
-    mvwprintw(window->win, 1, window->width / 2 - 9, "Stats Information");
+    mvwprintw(window->win, 1, window->width / 2 - 9, "StorageStats Information");
     wattron(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
     title_foot_box(window->panel);
     mvwhline(window->win, 10, 1, ACS_HLINE, window->width - 1);

@@ -38,23 +38,21 @@
 //! Shorter declaration of sip_call_list structure
 typedef struct _Storage Storage;
 //! Shorter declaration of sip stats
-typedef struct sip_stats sip_stats_t;
+typedef struct _StorageStats StorageStats;
 
 //! Shorter declaration of structs
 typedef struct _StorageSortOpts    StorageSortOpts;
 typedef struct _StorageMatchOpts   StorageMatchOpts;
 typedef struct _StorageCaptureOpts StorageCaptureOpts;
 
-struct _StorageSortOpts
-{
+struct _StorageSortOpts {
     //! Sort call list by this attribute
     enum AttributeId by;
     //! Sory by attribute ascending
     gboolean asc;
 };
 
-struct _StorageMatchOpts
-{
+struct _StorageMatchOpts {
     //! Only store dialogs starting with INVITE
     gboolean invite;
     //! Only store dialogs starting with a Method without to-tag
@@ -69,8 +67,7 @@ struct _StorageMatchOpts
     GRegex *mregex;
 };
 
-struct _StorageCaptureOpts
-{
+struct _StorageCaptureOpts {
     //! Max number of calls in the list
     guint limit;
     //! Rotate first call when the limit is reached
@@ -84,8 +81,7 @@ struct _StorageCaptureOpts
 /**
  * @brief Structure to store dialog stats
  */
-struct sip_stats
-{
+struct _StorageStats {
     //! Total number of captured dialogs
     int total;
     //! Total number of displayed dialogs after filtering
@@ -97,8 +93,7 @@ struct sip_stats
  *
  * This structure acts as header of calls list
  */
-struct _Storage
-{
+struct _Storage {
     //! Matching options
     StorageMatchOpts match;
     //! Capture options
@@ -188,7 +183,7 @@ storage_calls();
  * @param total Total calls processed
  * @param displayed number of calls matching filters
  */
-sip_stats_t
+StorageStats
 storage_calls_stats();
 
 /**

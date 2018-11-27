@@ -95,10 +95,10 @@ storage_calls()
     return storage.calls;
 }
 
-sip_stats_t
+StorageStats
 storage_calls_stats()
 {
-    sip_stats_t stats = { 0 };
+    StorageStats stats = { 0 };
 
     // Total number of calls without filtering
     stats.total = g_ptr_array_len(storage.calls);
