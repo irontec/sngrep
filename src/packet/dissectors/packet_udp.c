@@ -31,7 +31,7 @@
 
 #include "config.h"
 #include <netinet/udp.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "packet/dissectors/packet_ip.h"
 #include "packet/packet.h"
 #include "packet_udp.h"

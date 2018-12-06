@@ -28,7 +28,7 @@
 #include "config.h"
 #include <glib.h>
 #include <stdlib.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "packet_sdp.h"
 
 /**

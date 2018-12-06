@@ -39,7 +39,7 @@
 #include "auth_validate_win.h"
 #include "save_win.h"
 #include "timeval.h"
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "setting.h"
 
 /***

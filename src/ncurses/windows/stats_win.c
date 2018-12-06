@@ -55,7 +55,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "storage.h"
 #include "packet/dissectors/packet_sip.h"
 #include "stats_win.h"

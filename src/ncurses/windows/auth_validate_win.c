@@ -28,7 +28,7 @@
 #include "config.h"
 #include <glib.h>
 #include <packet/dissectors/packet_sip.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "auth_validate_win.h"
 #include "setting.h"
 

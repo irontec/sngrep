@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "storage.h"
 #include "packet/dissector.h"
 #include "packet/packet.h"

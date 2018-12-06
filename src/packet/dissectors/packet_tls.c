@@ -34,7 +34,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <gnutls/gnutls.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "capture/capture.h"
 #include "packet/dissector.h"
 #include "packet/dissectors/packet_ip.h"

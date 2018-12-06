@@ -34,7 +34,7 @@
 #ifdef DLT_LINUX_SLL
 #include <pcap/sll.h>
 #endif
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "capture/capture_pcap.h"
 #include "packet_ip.h"
 #include "packet_link.h"

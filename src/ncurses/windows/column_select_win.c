@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <glib/gstdio.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "ncurses/manager.h"
 #include "call_list_win.h"
 #include "column_select_win.h"

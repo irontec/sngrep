@@ -33,7 +33,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "setting.h"
 #include "filter.h"
 #include "capture/capture_pcap.h"

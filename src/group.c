@@ -30,7 +30,7 @@
 #include <glib.h>
 #include <string.h>
 #include <stdlib.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "group.h"
 
 CallGroup *

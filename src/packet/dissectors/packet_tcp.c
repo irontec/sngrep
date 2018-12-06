@@ -29,7 +29,7 @@
  *
  */
 
-#include <glib-utils.h>
+#include <glib-extra.h>
 #include <glib/gprintf.h>
 #include "config.h"
 #include "packet/packet.h"

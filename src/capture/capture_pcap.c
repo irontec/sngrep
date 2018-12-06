@@ -36,7 +36,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <pcap/sll.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "capture.h"
 #include "capture_hep.h"
 #include "capture_pcap.h"

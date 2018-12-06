@@ -34,7 +34,7 @@
 #include <errno.h>
 #include <form.h>
 #include <ctype.h>
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "save_win.h"
 #include "setting.h"
 #include "capture/capture_pcap.h"

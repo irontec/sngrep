@@ -49,7 +49,7 @@
 #include <string.h>
 #include "timeval.h"
 #include "setting.h"
-#include "glib-utils.h"
+#include "glib-extra.h"
 #include "packet/dissectors/packet_hep.h"
 #include "packet/dissectors/packet_ip.h"
 #include "packet/dissectors/packet_udp.h"

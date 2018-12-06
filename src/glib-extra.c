@@ -26,7 +26,7 @@
  * @brief Helper function for glib containers
  *
  */
-#include "glib-utils.h"
+#include "glib-extra.h"
 
 gpointer
 g_sequence_nth(GSequence *sequence, guint index)
