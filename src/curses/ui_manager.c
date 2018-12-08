@@ -241,7 +241,7 @@ ui_wait_for_input()
             } else if (hld == KEY_PROPAGATED) {
                 // Destroy current panel
                 ui_destroy(ui);
-                // Try to handle this key with the previus panel
+                // Try to handle this key with the previous panel
                 ui = ui_find_by_panel(panel_below(NULL));
             } else {
                 // Key not handled by UI nor propagated. Use default handler

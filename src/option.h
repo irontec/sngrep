@@ -43,7 +43,7 @@
 #ifndef __SNGREP_CONFIG_H
 #define __SNGREP_CONFIG_H
 
-//! Shorter declarartion of config_option struct
+//! Shorter declaration of config_option struct
 typedef struct config_option option_opt_t;
 
 //! Option types
@@ -91,7 +91,7 @@ deinit_options();
 /**
  * @brief Read optionuration directives from file
  *
- * This funtion will parse passed filenames searching for configuration
+ * This function will parse passed filenames searching for configuration
  * directives of sngrep. See documentation for a list of available
  * directives and attributes
  *
@@ -152,7 +152,7 @@ set_alias_value(const char *address, const char *alias);
  * @brief Get alias for a given address (string)
  *
  * @param address IP Address
- * @return configured alias or address if not alias found
+ * @return configured alias or address if alias not found
  */
 const char *
 get_alias_value(const char *address);
