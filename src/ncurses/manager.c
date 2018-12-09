@@ -305,7 +305,7 @@ ncurses_wait_for_input()
             } else if (hld == KEY_PROPAGATED) {
                 // Destroy current panel
                 ncurses_destroy_window(ui);
-                // Try to handle this key with the previus panel
+                // Try to handle this key with the previous panel
                 ui = ncurses_find_by_panel(panel_below(NULL));
             } else if (hld == KEY_DESTROY) {
                 ncurses_destroy_window(ui);

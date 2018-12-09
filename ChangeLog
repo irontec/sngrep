@@ -322,7 +322,7 @@
     * Allow saving selected dialogs into pcap
     * New UI design to maximize screen usage
     * Added a serach box in Call List window
-    * Added Funtion Keys keybindings
+    * Added function Keys keybindings
     * Added command line arguments
     * Fixed some memory bugs
 

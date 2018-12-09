@@ -138,7 +138,7 @@ call_list_win_line_text(Window *window, Call *call, char *text);
 /**
  * @brief Remove all calls from the list and calls storage
  *
- * This funtion will clear all call lines in the list
+ * This function will clear all call lines in the list
  * @param window UI structure pointer
  */
 void

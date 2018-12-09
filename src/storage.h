@@ -189,7 +189,7 @@ storage_calls_stats();
 /**
  * @brief Remove al calls
  *
- * This funtion will clear the call list invoking the destroy
+ * This function will clear the call list invoking the destroy
  * function for each one.
  */
 void
@@ -198,7 +198,7 @@ storage_calls_clear();
 /**
  * @brief Remove al calls
  *
- * This funtion will clear the call list of calls other than ones
+ * This function will clear the call list of calls other than ones
  * fitting the current filter
  */
 void

@@ -48,7 +48,7 @@
 //! Max setting value
 #define SETTING_MAX_LEN   1024
 
-//! Shorter declarartion of setting_option struct
+//! Shorter declaration of settings structs
 typedef struct _Setting Setting;
 typedef struct _SettingStorage SettingStorage;
 typedef struct _SettingAlias SettingAlias;
@@ -270,7 +270,7 @@ setting_column_width(enum AttributeId id);
  * @brief Get alias for a given address (string)
  *
  * @param address IP Address
- * @return configured alias or address if not alias found
+ * @return configured alias or address if alias not found
  */
 const gchar *
 setting_get_alias(const gchar *address);
@@ -278,7 +278,7 @@ setting_get_alias(const gchar *address);
 /**
  * @brief Read optionuration directives from file
  *
- * This funtion will parse passed filenames searching for configuration
+ * This function will parse passed filenames searching for configuration
  * directives of sngrep. See documentation for a list of available
  * directives and attributes
  *

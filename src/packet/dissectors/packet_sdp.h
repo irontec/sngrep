@@ -23,7 +23,7 @@
  * @file packet_sdp.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Funtions to manage SDP protocol
+ * @brief functions to manage SDP protocol
  */
 
 #ifndef PACKET_PACKET_SDP_H_

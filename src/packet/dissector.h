@@ -57,11 +57,11 @@ struct _PacketDissector
     //! SubProtocol children dissectors
     GSList *subdissectors;
 
-    //! Protocol initialization funtion
+    //! Protocol initialization function
     PacketDissectorInitFunc init;
     //! Protocol packet dissector function
     PacketDissectorDissectFunc dissect;
-    //! Protocol deinitialization funtion
+    //! Protocol deinitialization function
     PacketDissectorDeinitFunc deinit;
 };
 

@@ -209,7 +209,7 @@ call_list_resize(Window *window)
 /**
  * @brief Draw panel header
  *
- * This funtion will draw Call list header
+ * This function will draw Call list header
  *
  * @param window UI structure pointer
  */
@@ -345,7 +345,7 @@ call_list_draw_header(Window *window)
 /**
  * @brief Draw panel footer
  *
- * This funtion will draw Call list footer that contains
+ * This function will draw Call list footer that contains
  * keybinginds
  *
  * @param window UI structure pointer
@@ -374,7 +374,7 @@ call_list_draw_footer(Window *window)
 /**
  * @brief Draw panel list contents
  *
- * This funtion will draw Call list dialogs list
+ * This function will draw Call list dialogs list
  *
  * @param window UI structure pointer
  */

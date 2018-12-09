@@ -23,7 +23,7 @@
  * @file packet_sdp.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Funtions to manage SDP protocol
+ * @brief functions to manage SDP protocol
  */
 #include "config.h"
 #include <glib.h>
