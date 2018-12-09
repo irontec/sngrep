@@ -192,7 +192,7 @@ struct _SettingAlias {
 
 struct _SettingStorage {
     //! Array of settings
-    GPtrArray *settings;
+    GPtrArray *values;
     //! List of configured IP address aliases
     GList *alias;
 };
@@ -201,7 +201,7 @@ Setting *
 setting_by_id(enum SettingId id);
 
 Setting *
-setting_by_name(const char *name);
+setting_by_name(const gchar *name);
 
 /**
  * @brief Return the setting id of a given string
@@ -210,7 +210,7 @@ setting_by_name(const char *name);
  * @return setting id or -1 if setting is not found
  */
 enum SettingId
-setting_id(const char *name);
+setting_id(const gchar *name);
 
 /**
  * @brief Return string representing given setting id
@@ -218,41 +218,41 @@ setting_id(const char *name);
  * @param id Setting id from settings enum
  * @return string representation of setting or NULL
  */
-const char *
+const gchar *
 setting_name(enum SettingId id);
 
-int
+gint
 setting_format(enum SettingId id);
 
-const char **
+const gchar **
 setting_valid_values(enum SettingId id);
 
-const char*
+const gchar*
 setting_get_value(enum SettingId id);
 
-int
+gint
 setting_get_intvalue(enum SettingId id);
 
 void
-setting_set_value(enum SettingId id, const char *value);
+setting_set_value(enum SettingId id, const gchar *value);
 
 void
-setting_set_intvalue(enum SettingId id, int value);
+setting_set_intvalue(enum SettingId id, gint value);
 
-int
+gint
 setting_enabled(enum SettingId id);
 
-int
+gint
 setting_disabled(enum SettingId id);
 
-int
-setting_has_value(enum SettingId id, const char *value);
+gint
+setting_has_value(enum SettingId id, const gchar *value);
 
 void
 setting_toggle(enum SettingId id);
 
 const char *
-setting_enum_next(enum SettingId id, const char *value);
+setting_enum_next(enum SettingId id, const gchar *value);
 
 gint
 setting_column_pos(enum AttributeId id);
@@ -298,8 +298,8 @@ setting_read_file(const gchar *fname);
  * @param no_config Do not load config file if set to 1
  * @return 0 in all cases
  */
-int
-settings_init(int no_config);
+gint
+settings_init(gint no_config);
 
 /**
  * @brief Deallocate options memory

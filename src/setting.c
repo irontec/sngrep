@@ -46,7 +46,7 @@
  *  - Alias
  *  - Call List columns
  */
-static SettingStorage *storage = NULL;
+static SettingStorage *settings = NULL;
 
 /**
  * @brief Create a new number type setting
@@ -106,14 +106,14 @@ setting_enum_new(const gchar *name, const gchar *value, const gchar *valuelist)
 Setting *
 setting_by_id(enum SettingId id)
 {
-    return g_ptr_array_index(storage->settings, id);
+    return g_ptr_array_index(settings->values, id);
 }
 
 Setting *
 setting_by_name(const gchar *name)
 {
-    for (guint i = 0; i < g_ptr_array_len(storage->settings); i++) {
-        Setting *setting = g_ptr_array_index(storage->settings, i);
+    for (guint i = 0; i < g_ptr_array_len(settings->values); i++) {
+        Setting *setting = g_ptr_array_index(settings->values, i);
         if (g_strcmp0(setting->name, name) == 0) {
             return setting;
         }
@@ -125,7 +125,7 @@ enum SettingId
 setting_id(const gchar *name)
 {
     const Setting *sett = setting_by_name(name);
-    return (sett) ? g_ptr_array_data_index(storage->settings, sett): SETTING_UNKNOWN;
+    return (sett) ? g_ptr_array_data_index(settings->values, sett): SETTING_UNKNOWN;
 }
 
 const gchar *
@@ -135,28 +135,28 @@ setting_name(enum SettingId id)
     return (sett) ? sett->name : NULL;
 }
 
-int
+gint
 setting_format(enum SettingId id)
 {
     const Setting *sett = setting_by_id(id);
     return (sett) ? (int) sett->fmt : -1;
 }
 
-const char **
+const gchar **
 setting_valid_values(enum SettingId id)
 {
     const Setting *sett = setting_by_id(id);
-    return (sett) ? sett->valuelist : NULL;
+    return (const gchar **) ((sett) ? sett->valuelist : NULL);
 }
 
-const char *
+const gchar *
 setting_get_value(enum SettingId id)
 {
     const Setting *sett = setting_by_id(id);
     return (sett && strlen(sett->value)) ? sett->value : NULL;
 }
 
-int
+gint
 setting_get_intvalue(enum SettingId id)
 {
     const Setting *sett = setting_by_id(id);
@@ -164,7 +164,7 @@ setting_get_intvalue(enum SettingId id)
 }
 
 void
-setting_set_value(enum SettingId id, const char *value)
+setting_set_value(enum SettingId id, const gchar *value)
 {
     Setting *sett = setting_by_id(id);
     g_return_if_fail(sett != NULL);
@@ -180,29 +180,29 @@ setting_set_value(enum SettingId id, const char *value)
 }
 
 void
-setting_set_intvalue(enum SettingId id, int value)
+setting_set_intvalue(enum SettingId id, gint value)
 {
     char strvalue[80];
     sprintf(strvalue, "%d", value);
     setting_set_value(id, strvalue);
 }
 
-int
+gint
 setting_enabled(enum SettingId id)
 {
     return setting_has_value(id, "on") ||
            setting_has_value(id, "yes");
 }
 
-int
+gint
 setting_disabled(enum SettingId id)
 {
     return setting_has_value(id, "off") ||
            setting_has_value(id, "no");
 }
 
-int
-setting_has_value(enum SettingId id, const char *value)
+gint
+setting_has_value(enum SettingId id, const gchar *value)
 {
     Setting *sett = setting_by_id(id);
     if (sett) {
@@ -231,8 +231,8 @@ setting_toggle(enum SettingId id)
     }
 }
 
-const char *
-setting_enum_next(enum SettingId id, const char *value)
+const gchar *
+setting_enum_next(enum SettingId id, const gchar *value)
 {
     int i;
     const char *vnext;
@@ -307,7 +307,7 @@ setting_add_alias(const gchar *address, const gchar *alias)
     SettingAlias *setting = g_malloc0(sizeof(SettingAlias));
     setting->address = address;
     setting->alias = alias;
-    storage->alias = g_list_append(storage->alias, setting);
+    settings->alias = g_list_append(settings->alias, setting);
 }
 
 const gchar *
@@ -315,7 +315,7 @@ setting_get_alias(const gchar *address)
 {
     g_return_val_if_fail(address != NULL, NULL);
 
-    for (GList *l = storage->alias; l != NULL; l = l->next) {
+    for (GList *l = settings->alias; l != NULL; l = l->next) {
         SettingAlias *alias = l->data;
         if (g_strcmp0(alias->address, address) == 0) {
             return alias->alias;
@@ -325,7 +325,7 @@ setting_get_alias(const gchar *address)
     return NULL;
 }
 
-int
+gint
 setting_read_file(const gchar *fname)
 {
     FILE *fh;
@@ -364,32 +364,32 @@ settings_init(int no_config)
     char *rcfile;
 
     // Allocate memory for settings storage
-    storage = g_malloc0(sizeof(SettingStorage));
-    storage->settings = g_ptr_array_new_with_free_func(g_free);
-    g_ptr_array_set_size(storage->settings, SETTING_COUNT);
+    settings = g_malloc0(sizeof(SettingStorage));
+    settings->values = g_ptr_array_new_with_free_func(g_free);
+    g_ptr_array_set_size(settings->values, SETTING_COUNT);
 
     // Default settings values
-    g_ptr_array_set(storage->settings, SETTING_BACKGROUND,
+    g_ptr_array_set(settings->values, SETTING_BACKGROUND,
             setting_enum_new("background", "dark", "dark,default"));
-    g_ptr_array_set(storage->settings, SETTING_COLORMODE,
+    g_ptr_array_set(settings->values, SETTING_COLORMODE,
             setting_enum_new("colormode", "request", "request,cseq,callid"));
-    g_ptr_array_set(storage->settings, SETTING_SYNTAX,
+    g_ptr_array_set(settings->values, SETTING_SYNTAX,
             setting_bool_new("syntax", SETTING_ON));
-    g_ptr_array_set(storage->settings, SETTING_SYNTAX_TAG,
+    g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
             setting_bool_new("syntax.tag", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_SYNTAX_BRANCH,
+    g_ptr_array_set(settings->values, SETTING_SYNTAX_BRANCH,
             setting_bool_new("syntax.tag", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_ALTKEY_HINT,
+    g_ptr_array_set(settings->values, SETTING_ALTKEY_HINT,
             setting_bool_new("syntax.branch", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_SYNTAX_TAG,
+    g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
             setting_bool_new("hintkeyalt", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_EXITPROMPT,
+    g_ptr_array_set(settings->values, SETTING_EXITPROMPT,
             setting_bool_new("exitprompt", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_LIMIT,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_LIMIT,
             setting_number_new("capture.limit", "20000"));
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_DEVICE,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_DEVICE,
             setting_string_new("capture.device", "any"));
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_OUTFILE,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_OUTFILE,
             setting_string_new("capture.outfile", ""));
 #ifdef WITH_SSL
     g_ptr_array_set(storage->settings, SETTING_CAPTURE_KEYFILE,
@@ -397,163 +397,163 @@ settings_init(int no_config)
     g_ptr_array_set(storage->settings, SETTING_CAPTURE_TLSSERVER,
             setting_string_new("capture.tlsserver", ""));
 #endif
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_RTP,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
             setting_bool_new("capture.rtp", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_STORAGE,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_STORAGE,
             setting_enum_new("capture.storage", "memory", "none,memory"));
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_ROTATE,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_ROTATE,
             setting_bool_new("capture.rotate", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_SIP_NOINCOMPLETE,
+    g_ptr_array_set(settings->values, SETTING_SIP_NOINCOMPLETE,
             setting_bool_new("sip.noincomplete", SETTING_ON));
-    g_ptr_array_set(storage->settings, SETTING_SIP_HEADER_X_CID,
+    g_ptr_array_set(settings->values, SETTING_SIP_HEADER_X_CID,
             setting_string_new("sip.xcid", "X-Call-ID|X-CID"));
-    g_ptr_array_set(storage->settings, SETTING_SIP_CALLS,
+    g_ptr_array_set(settings->values, SETTING_SIP_CALLS,
             setting_bool_new("sip.calls", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_SAVEPATH,
+    g_ptr_array_set(settings->values, SETTING_SAVEPATH,
             setting_string_new("savepath", g_get_current_dir()));
-    g_ptr_array_set(storage->settings, SETTING_DISPLAY_ALIAS,
+    g_ptr_array_set(settings->values, SETTING_DISPLAY_ALIAS,
             setting_bool_new("displayalias", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_CL_SCROLLSTEP,
+    g_ptr_array_set(settings->values, SETTING_CL_SCROLLSTEP,
             setting_number_new("cl.scrollstep", "4"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COLORATTR,
+    g_ptr_array_set(settings->values, SETTING_CL_COLORATTR,
             setting_bool_new("cl.colorattr", SETTING_ON));
-    g_ptr_array_set(storage->settings, SETTING_CL_AUTOSCROLL,
+    g_ptr_array_set(settings->values, SETTING_CL_AUTOSCROLL,
             setting_bool_new("cl.autoscroll", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_CL_SORTFIELD,
+    g_ptr_array_set(settings->values, SETTING_CL_SORTFIELD,
             setting_string_new("cl.sortfield", attr_name(ATTR_CALLINDEX)));
-    g_ptr_array_set(storage->settings, SETTING_CL_SORTORDER,
+    g_ptr_array_set(settings->values, SETTING_CL_SORTORDER,
             setting_string_new("cl.sortorder", "asc"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_INDEX_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_POS,
             setting_number_new("cl.column.index.pos", "0"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_INDEX_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_WIDTH,
             setting_number_new("cl.column.index.width", "4"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPFROM_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_POS,
             setting_number_new("cl.column.sipfrom.pos", "2"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPFROM_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_WIDTH,
             setting_number_new("cl.column.sipfrom.width", "25"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPFROMUSER_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_POS,
             setting_number_new("cl.column.sipfromuser.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPFROMUSER_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_WIDTH,
             setting_number_new("cl.column.sipfromuser.width", "20"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPTO_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_POS,
             setting_number_new("cl.column.sipto.pos", "3"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPTO_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_WIDTH,
             setting_number_new("cl.column.sipto.width", "25"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPTOUSER_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_POS,
             setting_number_new("cl.column.siptouser.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SIPTOUSER_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_WIDTH,
             setting_number_new("cl.column.siptouser.width", "20"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SRC_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_POS,
             setting_number_new("cl.column.src.pos", "5"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_SRC_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_WIDTH,
             setting_number_new("cl.column.src.width", "22"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_DST_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_DST_POS,
             setting_number_new("cl.column.dst.pos", "6"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_DST_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_DST_WIDTH,
             setting_number_new("cl.column.dst.width", "22"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_CALLID_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_POS,
             setting_number_new("cl.column.callid.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_CALLID_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_WIDTH,
             setting_number_new("cl.column.callid.width", "50"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_XCALLID_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_POS,
             setting_number_new("cl.column.xcallid.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_XCALLID_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_WIDTH,
             setting_number_new("cl.column.xcallid.width", "50"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_DATE_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_POS,
             setting_number_new("cl.column.date.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_DATE_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_WIDTH,
             setting_number_new("cl.column.date.width", "10"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_TIME_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_POS,
             setting_number_new("cl.column.time.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_TIME_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_WIDTH,
             setting_number_new("cl.column.time.width", "8"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_METHOD_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_POS,
             setting_number_new("cl.column.method.pos", "1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_METHOD_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_WIDTH,
             setting_number_new("cl.column.method.width", "10"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_TRANSPORT_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_POS,
             setting_number_new("cl.column.transport.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_TRANSPORT_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_WIDTH,
             setting_number_new("cl.column.transport.width", "3"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_MSGCNT_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_POS,
             setting_number_new("cl.column.msgcnt.pos", "4"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_MSGCNT_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_WIDTH,
             setting_number_new("cl.column.msgcnt.width", "5"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_CALLSTATE_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_POS,
             setting_number_new("cl.column.state.pos", "7"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_CALLSTATE_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_WIDTH,
             setting_number_new("cl.column.state.width", "10"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_CONVDUR_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_POS,
             setting_number_new("cl.column.convdur.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_CONVDUR_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_WIDTH,
             setting_number_new("cl.column.convdur.width", "7"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_TOTALDUR_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_POS,
             setting_number_new("cl.column.totaldur.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_TOTALDUR_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_WIDTH,
             setting_number_new("cl.column.totaldur.width", "8"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_REASON_TXT_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_POS,
             setting_number_new("cl.column.reason.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_REASON_TXT_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_WIDTH,
             setting_number_new("cl.column.reason.width", "25"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_WARNING_POS,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_POS,
             setting_number_new("cl.column.warning.pos", "-1"));
-    g_ptr_array_set(storage->settings, SETTING_CL_COL_WARNING_WIDTH,
+    g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_WIDTH,
             setting_number_new("cl.column.warning.width", "4"));
-    g_ptr_array_set(storage->settings, SETTING_CF_FORCERAW,
+    g_ptr_array_set(settings->values, SETTING_CF_FORCERAW,
             setting_bool_new("cf.forceraw", SETTING_ON));
-    g_ptr_array_set(storage->settings, SETTING_CF_RAWMINWIDTH,
+    g_ptr_array_set(settings->values, SETTING_CF_RAWMINWIDTH,
             setting_number_new("cf.rawminwidth", "40"));
-    g_ptr_array_set(storage->settings, SETTING_CF_RAWFIXEDWIDTH,
+    g_ptr_array_set(settings->values, SETTING_CF_RAWFIXEDWIDTH,
             setting_number_new("cf.rawfixedwidth", ""));
-    g_ptr_array_set(storage->settings, SETTING_CF_SPLITCALLID,
+    g_ptr_array_set(settings->values, SETTING_CF_SPLITCALLID,
             setting_bool_new("cf.splitcallid", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_CF_HIGHTLIGHT,
+    g_ptr_array_set(settings->values, SETTING_CF_HIGHTLIGHT,
             setting_enum_new("cf.highlight", "bold", "bold,reverse,reversebold"));
-    g_ptr_array_set(storage->settings, SETTING_CF_SCROLLSTEP,
+    g_ptr_array_set(settings->values, SETTING_CF_SCROLLSTEP,
             setting_number_new("cf.scrollstep", "4"));
-    g_ptr_array_set(storage->settings, SETTING_CF_LOCALHIGHLIGHT,
+    g_ptr_array_set(settings->values, SETTING_CF_LOCALHIGHLIGHT,
             setting_bool_new("cf.localhighlight", SETTING_ON));
-    g_ptr_array_set(storage->settings, SETTING_CF_SDP_INFO,
+    g_ptr_array_set(settings->values, SETTING_CF_SDP_INFO,
             setting_enum_new("cf.sdpinfo", SETTING_OFF, "off,first,full,compressed"));
-    g_ptr_array_set(storage->settings, SETTING_CF_MEDIA,
+    g_ptr_array_set(settings->values, SETTING_CF_MEDIA,
             setting_bool_new("cf.media", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_CF_ONLYMEDIA,
+    g_ptr_array_set(settings->values, SETTING_CF_ONLYMEDIA,
             setting_bool_new("cf.onlymedia", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_CF_DELTA,
+    g_ptr_array_set(settings->values, SETTING_CF_DELTA,
             setting_bool_new("cf.deltatime", SETTING_ON));
-    g_ptr_array_set(storage->settings, SETTING_CR_SCROLLSTEP,
+    g_ptr_array_set(settings->values, SETTING_CR_SCROLLSTEP,
             setting_number_new("cr.scrollstep", "10"));
-    g_ptr_array_set(storage->settings, SETTING_CR_NON_ASCII,
+    g_ptr_array_set(settings->values, SETTING_CR_NON_ASCII,
             setting_string_new("cr.nonascii", "."));
-    g_ptr_array_set(storage->settings, SETTING_FILTER_PAYLOAD,
+    g_ptr_array_set(settings->values, SETTING_FILTER_PAYLOAD,
             setting_string_new("filter.payload", ""));
-    g_ptr_array_set(storage->settings, SETTING_FILTER_METHODS,
+    g_ptr_array_set(settings->values, SETTING_FILTER_METHODS,
             setting_string_new("filter.methods",
                     "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE,INFO,REFER,UPDATE"));
 #ifdef USE_HEP
-    g_ptr_array_set(storage->settings, SETTING_HEP_SEND,
+    g_ptr_array_set(settings->values, SETTING_HEP_SEND,
             setting_bool_new("eep.send", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_HEP_SEND_VER,
+    g_ptr_array_set(settings->values, SETTING_HEP_SEND_VER,
             setting_number_new("eep.send.version", "3"));
-    g_ptr_array_set(storage->settings, SETTING_HEP_SEND_ADDR,
+    g_ptr_array_set(settings->values, SETTING_HEP_SEND_ADDR,
             setting_string_new("eep.send.address", "127.0.0.1"));
-    g_ptr_array_set(storage->settings, SETTING_HEP_SEND_PORT,
+    g_ptr_array_set(settings->values, SETTING_HEP_SEND_PORT,
             setting_number_new("eep.send.port", "9060"));
-    g_ptr_array_set(storage->settings, SETTING_HEP_SEND_PASS,
+    g_ptr_array_set(settings->values, SETTING_HEP_SEND_PASS,
             setting_string_new("eep.send.pass", ""));
-    g_ptr_array_set(storage->settings, SETTING_HEP_SEND_ID,
+    g_ptr_array_set(settings->values, SETTING_HEP_SEND_ID,
             setting_number_new("eep.send.id", "2000"));
-    g_ptr_array_set(storage->settings, SETTING_HEP_LISTEN,
+    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN,
             setting_bool_new("eep.listen", SETTING_OFF));
-    g_ptr_array_set(storage->settings, SETTING_HEP_LISTEN_VER,
+    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_VER,
             setting_string_new("eep.listen.version", "3"));
-    g_ptr_array_set(storage->settings, SETTING_HEP_LISTEN_ADDR,
+    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_ADDR,
             setting_string_new("eep.listen.address", "0.0.0.0"));
-    g_ptr_array_set(storage->settings, SETTING_HEP_LISTEN_PORT,
+    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PORT,
             setting_number_new("eep.listen.port", "9060"));
-    g_ptr_array_set(storage->settings, SETTING_HEP_LISTEN_PASS,
+    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PASS,
             setting_string_new("eep.listen.pass", ""));
-    g_ptr_array_set(storage->settings, SETTING_HEP_LISTEN_UUID,
+    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_UUID,
             setting_bool_new("eep.listen.uuid", SETTING_OFF));
 #endif
 
@@ -582,9 +582,9 @@ settings_init(int no_config)
 void
 settings_deinit()
 {
-    g_ptr_array_free(storage->settings, TRUE);
-    g_list_free(storage->alias);
-    g_free(storage);
+    g_ptr_array_free(settings->values, TRUE);
+    g_list_free(settings->alias);
+    g_free(settings);
 }
 
 void
