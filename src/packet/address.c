@@ -50,7 +50,7 @@ address_equals(Address addr1, Address addr2)
 gboolean
 address_empty(Address addr)
 {
-    return addr.port == 0 && g_strcmp0(addr.ip, "");
+    return addr.port == 0 && g_strcmp0(addr.ip, "") == 0;
 }
 
 gboolean

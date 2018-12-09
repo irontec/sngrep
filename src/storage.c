@@ -275,7 +275,12 @@ storage_check_sip_packet(Packet *packet)
 static void
 storage_register_stream(RtpStream *stream)
 {
-    gchar *key = g_strdup_printf("%s:%hu", stream->dst.ip, stream->dst.port);
+    gchar *key;
+
+    key = g_strdup_printf("%s:%hu-%s:%hu",
+            stream->src.ip, stream->src.port,
+            stream->dst.ip, stream->dst.port);
+
     g_hash_table_insert(storage.streams, key, stream->msg);
 }
 
@@ -290,9 +295,16 @@ storage_check_rtp_packet(Packet *packet)
     Address dst = packet_dst_address(packet);
 
     // Find the stream by destination
-    gchar hashkey[ADDRESSLEN + 5 + 1];
-    g_sprintf(hashkey, "%s:%hu", dst.ip, dst.port);
+    gchar *hashkey = g_strdup_printf("%s:%hu-%s:%hu", src.ip, src.port, dst.ip, dst.port);
     Message *msg = g_hash_table_lookup(storage.streams, hashkey);
+    g_free(hashkey);
+
+    // If not found, check only with destination address
+    if (msg == NULL) {
+        hashkey = g_strdup_printf(":0-%s:%hu", dst.ip, dst.port);
+        msg = g_hash_table_lookup(storage.streams, hashkey);
+        g_free(hashkey);
+    }
 
     // No call has setup this stream
     if (msg == NULL) return NULL;
@@ -305,11 +317,12 @@ storage_check_rtp_packet(Packet *packet)
     for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
         stream = g_ptr_array_index(call->streams, i);
 
-        if (address_equals(stream->dst, dst)) {
+        if (addressport_equals(stream->dst, dst)) {
             // First packet of early setup stream from SDP
             if (address_empty(stream->src)) {
                 stream_set_src(stream, src);
                 stream_set_format(stream, rtp->encoding->id);
+                storage_register_stream(stream);
 
                 // Create an exact stream for the opposite direction
                 RtpStream *reverse = stream_new(STREAM_RTP, msg, stream->media);
@@ -320,7 +333,7 @@ storage_check_rtp_packet(Packet *packet)
             }
 
             // Add packet to existing matching stream
-            if (address_equals(stream->src, src) && stream->fmtcode == rtp->encoding->id) {
+            if (addressport_equals(stream->src, src) && stream->fmtcode == rtp->encoding->id) {
                 stream_add_packet(stream, packet);
                 break;
             }
@@ -354,9 +367,9 @@ storage_check_rtcp_packet(Packet *packet)
     Address dst = packet_dst_address(packet);
 
     // Find the stream by destination
-    gchar hashkey[ADDRESSLEN + 5 + 1];
-    g_sprintf(hashkey, "%s:%hu", dst.ip, dst.port);
+    gchar *hashkey = g_strdup_printf("%s:%hu-%s:%hu", src.ip, src.port, dst.ip, dst.port);
     GList *streams = g_hash_table_lookup(storage.streams, hashkey);
+    g_free(hashkey);
 
     // Check if one of the destination has the configured format
     for (GList *l = streams; l != NULL; l = l->next) {
