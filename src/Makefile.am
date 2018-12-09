@@ -9,7 +9,7 @@ if USE_HEP
 sngrep_SOURCES+=capture/capture_hep.c
 endif
 
-if WITH_GNUTLS
+if WITH_SSL
 sngrep_SOURCES+=packet/dissector/packet_tls.c
 sngrep_CFLAGS+=$(LIBGNUTLS_CFLAGS) $(LIBGCRYPT_CFLAGS)
 sngrep_LDADD+=$(LIBGNUTLS_LIBS) $(LIBGCRYPT_LIBS)

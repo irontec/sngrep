@@ -21,32 +21,42 @@ as PCAP viewer.
 ### Building from sources
 Prerequisites
 
- - libncurses5 - for UI, windows, panels.
+ - glib - core library
+ - libncursesw5 - for UI, windows, panels.
  - libpcap - for capturing packets.
- - libssl - (optional) for TLS transport decrypt using OpenSSL and libcrypt
  - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
  - libncursesw5 - (optional) for UI, windows, panels (wide-character support)
  - libpcre - (optional) for Perl Compatible regular expressions
 
-On most systems the commands to build will be the standard autotools procedure:
+#### Preparing source code
+
+Use cmake to generate required makefiles to build the project
+
+    cmake .
+
+Or, you can use traditional autotools generation scripts
 
     ./bootstrap.sh
 	./configure
-	make
-	make install (as root)
 
 You can pass following flags to ./configure to enable some features
 
 | configure flag | Feature |
 | ------------- | ------------- |
-| `--with-openssl` | Adds OpenSSL support to parse TLS captured messages (req. libssl)  |
-| `--with-gnutls` | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
-| `--with-pcre`|  Adds Perl Compatible regular expressions support in regexp fields |
+| `--with-ssl`    | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
 | `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
 | `--enable-ipv6`   | Enable IPv6 packet capture support. |
-| `--enable-eep`   | Enable EEP packet send/receive support. |
+| `--enable-hep`   | Enable EEP packet send/receive support. |
+
+
+#### Building and installing
+
+	make
+	make install (as root)
+
 
 You can find [detailed instructions for some distributions](https://github.com/irontec/sngrep/wiki/Building) on wiki.
+
 
 ## Usage
 

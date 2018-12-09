@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD 11)
 add_compile_options(-Wall -pedantic -Wextra)
 
 configure_file(
-    ${PROJECT_SOURCE_DIR}/src/config.h.cmake.in
+    ${PROJECT_SOURCE_DIR}/src/config.h.cmake
     ${PROJECT_SOURCE_DIR}/src/config.h
 )
 
