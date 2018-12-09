@@ -375,7 +375,7 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
             // Check if this column matches requested address
             if (match_port) {
                 if (addressport_equals(column->addr, addr)) {
-                    if (g_list_index(column->callids, (void*)callid) >= 0) {
+                    if (callid && g_list_index(column->callids, (void*)callid) >= 0) {
                         return column;
                     } else {
                         candidate = column;
@@ -393,7 +393,7 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
 }
 
 /**
- * @brief Get a flow column data starting at a given column index
+ * @brief Get a flow column data for a given call-id
  *
  * @param window UI structure pointer
  * @param callid Call-Id header of SIP payload
@@ -402,9 +402,24 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get(Window *window, const char *callid, Address addr)
+call_flow_column_get_callid(Window *window, const char *callid, Address addr)
 {
     return call_flow_column_get_starting(window, callid, addr, 0);
+}
+
+/**
+ * @brief Get a flow column data
+ *
+ * @param window UI structure pointer
+ * @param callid Call-Id header of SIP payload
+ * @param addr Address:port string
+ *
+ * @return column structure pointer or NULL if not found
+ */
+static CallFlowColumn *
+call_flow_column_get(Window *window, Address addr)
+{
+    return call_flow_column_get_starting(window, NULL, addr, 0);
 }
 
 /**
@@ -453,7 +468,7 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow)
     Call *call = msg_get_call(msg);
 
     // Find source column for this arrow
-    arrow->scolumn = call_flow_column_get(window, call->callid, msg_src_address(msg));
+    arrow->scolumn = call_flow_column_get_callid(window, call->callid, msg_src_address(msg));
     if (arrow->scolumn == NULL) {
         arrow->scolumn = call_flow_column_new(msg_src_address(msg));
         g_ptr_array_add(info->columns, arrow->scolumn);
@@ -465,7 +480,7 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow)
         guint scolumn_idx = (guint) g_ptr_array_data_index(info->columns, arrow->scolumn);
         arrow->dcolumn = call_flow_column_get_starting(window, call->callid, msg_dst_address(msg), scolumn_idx);
     } else {
-        arrow->dcolumn = call_flow_column_get(window, call->callid, msg_dst_address(msg));
+        arrow->dcolumn = call_flow_column_get_callid(window, call->callid, msg_dst_address(msg));
     }
 
     if (arrow->dcolumn == NULL) {
@@ -568,10 +583,14 @@ call_flow_draw_columns(Window *window)
                 if (stream->type == STREAM_RTP && stream_get_count(stream)) {
                     addr = stream->src;
                     addr.port = 0;
-                    g_ptr_array_add(info->columns, call_flow_column_new(addr));
+                    if (call_flow_column_get(window, addr) == NULL) {
+                        g_ptr_array_add(info->columns, call_flow_column_new(addr));
+                    }
                     addr = stream->dst;
                     addr.port = 0;
-                    g_ptr_array_add(info->columns, call_flow_column_new(addr));
+                    if (call_flow_column_get(window, addr) == NULL) {
+                        g_ptr_array_add(info->columns, call_flow_column_new(addr));
+                    }
                 }
             }
         }
@@ -592,7 +611,7 @@ call_flow_draw_columns(Window *window)
         }
 
         if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr.port) {
-            snprintf(coltext, SETTING_MAX_LEN, "%s", column->alias);
+            snprintf(coltext, SETTING_MAX_LEN, "%s", column->addr.ip);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
             if (strlen(column->addr.ip) > 15) {
                 snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
@@ -943,7 +962,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         // Reuse the msg arrow columns as destination column
         if ((msgarrow = call_flow_arrow_find(window, msg))) {
             // Get origin and destination column
-            arrow->dcolumn = call_flow_column_get(window, msg->call->callid, msg_src_address(msg));
+            arrow->dcolumn = call_flow_column_get_callid(window, msg->call->callid, msg_src_address(msg));
         }
     }
 
@@ -951,7 +970,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     if (!arrow->dcolumn) {
         // FIXME figure a better way to find ignoring port :(
         addr = stream->dst; addr.port = 0;
-        arrow->dcolumn = call_flow_column_get(window, 0, addr);
+        arrow->dcolumn = call_flow_column_get_callid(window, 0, addr);
     }
 
     /**
@@ -968,7 +987,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         // Reuse the msg arrow columns as destination column
         if ((msgarrow = call_flow_arrow_find(window, msg))) {
             // Get origin and destination column
-            arrow->scolumn = call_flow_column_get(window, msg->call->callid, msg_src_address(msg));
+            arrow->scolumn = call_flow_column_get_callid(window, msg->call->callid, msg_src_address(msg));
         }
     }
 
@@ -979,7 +998,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         if (address_equals(msg_dst_address(msg), stream->src)) {
             // Reuse the msg arrow columns as destination column
             if ((msgarrow = call_flow_arrow_find(window, msg))) {
-                arrow->scolumn = call_flow_column_get(window, msg->call->callid, msg_dst_address(msg));
+                arrow->scolumn = call_flow_column_get_callid(window, msg->call->callid, msg_dst_address(msg));
             }
         }
     }
@@ -988,7 +1007,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     if (!arrow->scolumn) {
         // FIXME figure a better way to find ignoring port :(
         addr = stream->src; addr.port = 0;
-        arrow->scolumn = call_flow_column_get(window, 0, addr);
+        arrow->scolumn = call_flow_column_get_callid(window, 0, addr);
     }
 
     // Get column positions
