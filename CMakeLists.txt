@@ -7,11 +7,6 @@ set(PROJECT_NAME sngrep)
 set(CMAKE_C_STANDARD 11)
 add_compile_options(-Wall -pedantic -Wextra)
 
-configure_file(
-    ${PROJECT_SOURCE_DIR}/src/config.h.cmake
-    ${PROJECT_SOURCE_DIR}/src/config.h
-)
-
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/curses)
 include_directories(${CMAKE_SOURCE_DIR}/src/curses/widgets)
@@ -97,6 +92,10 @@ if (WITH_SSL)
     target_link_libraries(sngrep ${GNUTLS_LIBRARIES} gcrypt)
 endif(WITH_SSL)
 
+configure_file(
+        ${PROJECT_SOURCE_DIR}/src/config.h.cmake
+        ${PROJECT_SOURCE_DIR}/src/config.h
+)
 
 ######################################################################
 add_definitions(-D_GNU_SOURCE)
