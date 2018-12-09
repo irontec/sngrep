@@ -390,7 +390,7 @@ packet_sip_init(PacketParser *parser)
             cflags & ~G_REGEX_MULTILINE, mflags, NULL);
 
     sip->reg_cseq = g_regex_new(
-            "^CSeq:\\s*(?P<cseq>\\d+)\\s+\\w+$",
+            "^CSeq:\\s*(?P<cseq>\\d{1,10})\\s+\\w+$",
             cflags, mflags, NULL);
 
     sip->reg_from = g_regex_new(
