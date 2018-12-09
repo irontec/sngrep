@@ -187,12 +187,6 @@ ncurses_find_by_panel(PANEL *panel)
         return g_ptr_array_index(windows, index);
     }
 
-    // Return ui pointer if found
-//    for (guint i = 0; i < PANEL_COUNT; i++) {
-//        if (panel_pool[i]->panel == panel)
-//            return panel_pool[i];
-//    }
-
     return NULL;
 }
 
