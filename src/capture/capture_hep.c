@@ -262,7 +262,7 @@ capture_input_hep_port(CaptureManager *manager)
         }
     }
 
-    return "";
+    return NULL;
 }
 
 CaptureOutput *
@@ -556,5 +556,5 @@ capture_output_hep_port(CaptureManager *manager)
         }
     }
 
-    return "";
+    return NULL;
 }
