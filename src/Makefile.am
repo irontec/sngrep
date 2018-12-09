@@ -50,6 +50,7 @@ sngrep_SOURCES+=ncurses/windows/call_raw_win.c
 sngrep_SOURCES+=ncurses/windows/column_select_win.c
 sngrep_SOURCES+=ncurses/windows/call_flow_win.c
 sngrep_SOURCES+=ncurses/windows/msg_diff_win.c
+sngrep_SOURCES+=ncurses/windows/auth_validate_win.c
 sngrep_SOURCES+=capture/capture.c
 sngrep_SOURCES+=capture/capture_txt.c
 sngrep_SOURCES+=capture/capture_pcap.c
