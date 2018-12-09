@@ -325,7 +325,11 @@ main(int argc, char* argv[])
 
     if (!no_interface) {
         // Initialize interface
-        ncurses_init();
+        if (!ncurses_init(&error)) {
+            g_printerr("error: %s\n", error->message);
+            return 1;
+        }
+
         // This is a blocking call.
         // Create the first panel and wait for user input
         ncurses_create_window(WINDOW_CALL_LIST);

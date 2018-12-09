@@ -49,16 +49,23 @@
 //! Default dialog dimensions
 #define DIALOG_MAX_WIDTH 100
 #define DIALOG_MIN_WIDTH 40
+//! Error reporting
+#define NCURSES_ERROR (capture_pcap_error_quark())
+
+//! Error codes
+enum ncurses_errors
+{
+    NCURSES_ERROR_INIT = 0,
+};
 
 /**
  * @brief Initialize ncurses mode
  *
- * This functions will initialize ncurses mode
- *
- * @returns 0 on ncurses initialization success, 1 otherwise
+ * @param error GError with failure description (optional)
+ * @return TRUE on initialization success, FALSE otherwise
  */
-int
-ncurses_init();
+gboolean
+ncurses_init(GError **error);
 
 /**
  * @brief Stops ncurses mode

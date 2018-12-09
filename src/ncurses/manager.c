@@ -56,19 +56,22 @@
  */
 static GPtrArray *windows;
 
-int
-ncurses_init()
+gboolean
+ncurses_init(GError **error)
 {
-    int bg, fg;
-    const char *term;
+    gshort bg, fg;
+    const gchar *term;
 
     // Set Locale
     setlocale(LC_CTYPE, "");
 
     // Initialize curses
     if (!initscr()) {
-        fprintf(stderr, "Unable to initialize ncurses mode.\n");
-        return -1;
+        g_set_error (error,
+                     NCURSES_ERROR,
+                     NCURSES_ERROR_INIT,
+                     "Unable to initialize ncurses mode.");
+        return FALSE;
     }
 
     // Check if user wants a black background
@@ -135,7 +138,7 @@ ncurses_init()
     // Initialize windows stack
     windows = g_ptr_array_new();
 
-    return 0;
+    return TRUE;
 }
 
 void
