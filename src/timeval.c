@@ -79,8 +79,9 @@ const gchar *
 timeval_to_duration(GTimeVal start, GTimeVal end, gchar *out)
 {
     g_return_val_if_fail(out != NULL, NULL);
-    g_return_val_if_fail(start.tv_sec != 0, NULL);
-    g_return_val_if_fail(end.tv_sec != 0, NULL);
+
+    if (start.tv_sec == 0 || end.tv_sec == 0)
+        return NULL;
 
     // Differnce in secons
     glong seconds = end.tv_sec - start.tv_sec;
@@ -94,8 +95,9 @@ const gchar *
 timeval_to_delta(GTimeVal start, GTimeVal end, gchar *out)
 {
     g_return_val_if_fail(out != NULL, NULL);
-    g_return_val_if_fail(start.tv_sec != 0, NULL);
-    g_return_val_if_fail(end.tv_sec != 0, NULL);
+
+    if (start.tv_sec == 0 || end.tv_sec == 0)
+        return NULL;
 
     glong diff = end.tv_sec * 1000000 + end.tv_usec;
     diff -= start.tv_sec * 1000000 + start.tv_usec;
