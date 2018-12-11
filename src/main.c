@@ -199,7 +199,7 @@ main(int argc, char *argv[])
                 // Open directory for reading files
                 GDir *dir = g_dir_open(dirname, 0, &error);
                 if (error != NULL) {
-                    g_printerr("error: %s", error->message);
+                    g_printerr("error: %s\n", error->message);
                     return 1;
                 }
 
@@ -233,7 +233,7 @@ main(int argc, char *argv[])
             if ((input = capture_input_pcap_offline(l->data, &error))) {
                 capture_manager_add_input(manager, input);
             } else {
-                g_printerr("error: %s", error->message);
+                g_printerr("error: %s\n", error->message);
                 return 1;
             }
         }
@@ -245,7 +245,7 @@ main(int argc, char *argv[])
             if ((input = capture_input_pcap_online(input_devices[i], &error))) {
                 capture_manager_add_input(manager, input);
             } else {
-                g_printerr("error: %s", error->message);
+                g_printerr("error: %s\n", error->message);
                 return 1;
             }
         }
@@ -257,7 +257,7 @@ main(int argc, char *argv[])
         if ((input = capture_input_hep(hep_listen, &error))) {
             capture_manager_add_input(manager, input);
         } else {
-            g_printerr("error: %s", error->message);
+            g_printerr("error: %s\n", error->message);
             return 1;
         }
     }

@@ -64,7 +64,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_DEVICE_LOOKUP,
-                    "Can't get netmask for device %s\n",
+                    "Can't get netmask for device %s",
                     dev);
         return NULL;
     }
@@ -75,7 +75,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_DEVICE_OPEN,
-                    "Couldn't open device %s: %s\n",
+                    "Couldn't open device %s: %s",
                     dev, errbuf);
         return NULL;
     }
@@ -131,7 +131,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_FILE_OPEN,
-                    "Couldn't open pcap file %s: %s\n",
+                    "Couldn't open pcap file %s: %s",
                     filename, errbuf);
         g_free(filename);
         return NULL;
@@ -220,7 +220,7 @@ capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **err
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_FILTER_COMPILE,
-                    "Couldn't compile filter '%s': %s\n",
+                    "Couldn't compile filter '%s': %s",
                     filter, pcap_geterr(pcap->handle));
         return FALSE;
     }
@@ -230,7 +230,7 @@ capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **err
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_FILTER_APPLY,
-                    "Couldn't set filter '%s': %s\n",
+                    "Couldn't set filter '%s': %s",
                     filter, pcap_geterr(pcap->handle));
         return FALSE;
     }
