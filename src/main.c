@@ -187,10 +187,50 @@ main(int argc, char *argv[])
     // Main packet capture manager
     manager = capture_manager_new();
 
-    // Handle capture file inputs
     if (input_files) {
-        for (gint i = 0; input_files[i]; i++) {
-            if ((input = capture_input_pcap_offline(input_files[i], &error))) {
+        // Handle input files glob matching
+        GList *files = NULL;
+        for (guint i = 0; i < g_strv_length(input_files); i++) {
+            if (g_strstr_len(input_files[i], -1, "*") ||
+                g_strstr_len(input_files[i], -1, "?")) {
+                gchar *dirname = g_path_get_dirname(input_files[i]);
+                gchar *glob = g_path_get_basename(input_files[i]);
+
+                // Open directory for reading files
+                GDir *dir = g_dir_open(dirname, 0, &error);
+                if (error != NULL) {
+                    g_printerr("error: %s", error->message);
+                    return 1;
+                }
+
+                // Check each file agains given pattern
+                const gchar *fname = NULL;
+                GPatternSpec *match = g_pattern_spec_new(glob);
+                while ((fname = g_dir_read_name(dir)) != NULL) {
+                    if (g_pattern_match_string(match, fname)) {
+                        files = g_list_append(files, g_strdup_printf(
+                            "%s%c%s",
+                            dirname, G_DIR_SEPARATOR, fname));
+                    }
+                }
+
+                if (files == NULL) {
+                    g_printerr("error: no file matched expression %s\n", glob);
+                    return 1;
+                }
+
+                g_free(dirname);
+                g_free(glob);
+                g_pattern_spec_free(match);
+            } else {
+                // Not a Glob pattern, just append file
+                files = g_list_append(files, input_files[i]);
+            }
+        }
+
+        // Handle capture file inputs
+        for (GList *l = files; l != NULL; l = l->next) {
+            if ((input = capture_input_pcap_offline(l->data, &error))) {
                 capture_manager_add_input(manager, input);
             } else {
                 g_printerr("error: %s", error->message);
