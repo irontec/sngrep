@@ -190,6 +190,7 @@ auth_validate_handle_key(Window *window, int key)
                 if (field_idx == FLD_AUTH_CLOSE) {
                     return KEY_DESTROY;
                 }
+                break;
             default:
                 // Parse next action
                 continue;

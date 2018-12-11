@@ -381,7 +381,7 @@ call_list_draw_footer(Window *window)
 static void
 call_list_draw_list(Window *window)
 {
-    int listh, listw, cline = 0;
+    gint listh, listw, cline = 0;
     Call *call = NULL;
     char coltext[ATTR_MAXLEN];
     int colpos;
@@ -444,7 +444,7 @@ call_list_draw_list(Window *window)
             CallListColumn *column = g_ptr_array_index(info->columns, j);
 
             // Check if next column fits on window width
-            if (colpos + column->width >= (guint) listw)
+            if (colpos + column->width >= listw)
                 break;
 
             // Initialize column text
