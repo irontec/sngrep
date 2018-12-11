@@ -20,15 +20,15 @@
  **
  ****************************************************************************/
 /**
- * @file packet_parser.h
+ * @file parser.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage captured packet parsers
  *
  */
 
-#ifndef __SNGREP_PACKET_PARSER_H
-#define __SNGREP_PACKET_PARSER_H
+#ifndef __SNGREP_PARSER_H
+#define __SNGREP_PARSER_H
 
 #include "packet.h"
 
@@ -60,7 +60,6 @@ struct _PacketParser
     //! Protocl node actually parsing
     GNode *current;
 };
-
 
 
 /**

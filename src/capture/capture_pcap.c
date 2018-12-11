@@ -34,7 +34,6 @@
 #include <glib.h>
 #include <netdb.h>
 #include <string.h>
-#include <stdbool.h>
 #include <pcap/sll.h>
 #include "glib-extra.h"
 #include "capture.h"
@@ -49,7 +48,7 @@
 GQuark
 capture_pcap_error_quark()
 {
-    return  g_quark_from_static_string("capture-pcap");
+    return g_quark_from_static_string("capture-pcap");
 }
 
 CaptureInput *
@@ -62,22 +61,22 @@ capture_input_pcap_online(const gchar *dev, GError **error)
 
     // Try to find capture device information
     if (pcap_lookupnet(dev, &pcap->net, &pcap->mask, errbuf) == -1) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_DEVICE_LOOKUP,
-                     "Can't get netmask for device %s\n",
-                     dev);
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_DEVICE_LOOKUP,
+                    "Can't get netmask for device %s\n",
+                    dev);
         return NULL;
     }
 
     // Open capture device
     pcap->handle = pcap_open_live(dev, MAXIMUM_SNAPLEN, 1, 1000, errbuf);
     if (pcap->handle == NULL) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_DEVICE_OPEN,
-                     "Couldn't open device %s: %s\n",
-                     dev, errbuf);
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_DEVICE_OPEN,
+                    "Couldn't open device %s: %s\n",
+                    dev, errbuf);
         return NULL;
     }
 
@@ -86,22 +85,22 @@ capture_input_pcap_online(const gchar *dev, GError **error)
 
     // Check linktypes sngrep knowns before start parsing packets
     if (proto_link_size(pcap->link) == 0) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
-                     "Unknown link type %d",
-                     pcap->link);
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
+                    "Unknown link type %d",
+                    pcap->link);
         return NULL;
     }
 
     // Create a new structure to handle this capture source
     CaptureInput *input = g_malloc0(sizeof(CaptureInput));
     input->source = dev;
-    input->priv   = pcap;
-    input->tech   = CAPTURE_TECH_PCAP;
-    input->mode   = CAPTURE_MODE_ONLINE;
-    input->start  = capture_input_pcap_start;
-    input->stop   = capture_input_pcap_stop;
+    input->priv = pcap;
+    input->tech = CAPTURE_TECH_PCAP;
+    input->mode = CAPTURE_MODE_ONLINE;
+    input->start = capture_input_pcap_start;
+    input->stop = capture_input_pcap_stop;
     input->filter = capture_input_pcap_filter;
 
     // Ceate packet parser tree
@@ -130,10 +129,10 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     if ((pcap->handle = pcap_open_offline(infile, errbuf)) == NULL) {
         gchar *filename = g_path_get_basename(infile);
         g_set_error(error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_FILE_OPEN,
-                     "Couldn't open pcap file %s: %s\n",
-                     filename, errbuf);
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_FILE_OPEN,
+                    "Couldn't open pcap file %s: %s\n",
+                    filename, errbuf);
         g_free(filename);
         return NULL;
     }
@@ -143,22 +142,22 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
 
     // Check linktypes sngrep knowns before start parsing packets
     if (proto_link_size(pcap->link) == 0) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
-                     "Unknown link type %d",
-                     pcap->link);
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
+                    "Unknown link type %d",
+                    pcap->link);
         return NULL;
     }
 
     // Create a new structure to handle this capture source
     CaptureInput *input = g_malloc0(sizeof(CaptureInput));
     input->source = infile;
-    input->priv   = pcap;
-    input->tech   = CAPTURE_TECH_PCAP;
-    input->mode   = CAPTURE_MODE_OFFLINE;
-    input->start  = capture_input_pcap_start;
-    input->stop   = capture_input_pcap_stop;
+    input->priv = pcap;
+    input->tech = CAPTURE_TECH_PCAP;
+    input->mode = CAPTURE_MODE_OFFLINE;
+    input->start = capture_input_pcap_start;
+    input->stop = capture_input_pcap_stop;
     input->filter = capture_input_pcap_filter;
 
     // Ceate packet parser tree
@@ -214,25 +213,25 @@ capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **err
     struct bpf_program bpf;
 
     // Capture PCAP private data
-    CapturePcap *pcap = (CapturePcap *)input->priv;
+    CapturePcap *pcap = (CapturePcap *) input->priv;
 
     //! Check if filter compiles
     if (pcap_compile(pcap->handle, &bpf, filter, 0, pcap->mask) == -1) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_FILTER_COMPILE,
-                     "Couldn't compile filter '%s': %s\n",
-                     filter, pcap_geterr(pcap->handle));
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_FILTER_COMPILE,
+                    "Couldn't compile filter '%s': %s\n",
+                    filter, pcap_geterr(pcap->handle));
         return FALSE;
     }
 
     // Set capture filter
     if (pcap_setfilter(pcap->handle, &bpf) == -1) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_FILTER_APPLY,
-                     "Couldn't set filter '%s': %s\n",
-                     filter, pcap_geterr(pcap->handle));
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_FILTER_APPLY,
+                    "Couldn't set filter '%s': %s\n",
+                    filter, pcap_geterr(pcap->handle));
         return FALSE;
     }
 
@@ -259,7 +258,7 @@ capture_output_pcap_write(CaptureOutput *output, Packet *packet)
         header.ts.tv_sec = frame->ts.tv_sec;
         header.ts.tv_usec = frame->ts.tv_usec;
         // Save this packet
-        pcap_dump((u_char*) pcap->dumper, &header, frame->data->data);
+        pcap_dump((u_char *) pcap->dumper, &header, frame->data->data);
     }
 }
 
@@ -284,10 +283,10 @@ capture_output_pcap(const gchar *filename, GError **error)
     g_return_val_if_fail(manager != NULL, NULL);
 
     if (g_slist_length(manager->inputs) != 1) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_SAVE_MULTIPLE,
-                     "Save is only supported with a single capture input.");
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_SAVE_MULTIPLE,
+                    "Save is only supported with a single capture input.");
         return NULL;
     }
 
@@ -295,10 +294,10 @@ capture_output_pcap(const gchar *filename, GError **error)
     g_return_val_if_fail(input != NULL, NULL);
 
     if (input->tech != CAPTURE_TECH_PCAP) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_SAVE_NOT_PCAP,
-                     "Save is only supported from PCAP capture inputs.");
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_SAVE_NOT_PCAP,
+                    "Save is only supported from PCAP capture inputs.");
         return NULL;
     }
 
@@ -309,19 +308,19 @@ capture_output_pcap(const gchar *filename, GError **error)
 
     pcap->dumper = pcap_dump_open(input_pcap->handle, filename);
     if (pcap->dumper == NULL) {
-        g_set_error (error,
-                     CAPTURE_PCAP_ERROR,
-                     CAPTURE_PCAP_ERROR_DUMP_OPEN,
-                     "Error while opening dump file: %s",
-                     pcap_geterr(input_pcap->handle));
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_DUMP_OPEN,
+                    "Error while opening dump file: %s",
+                    pcap_geterr(input_pcap->handle));
         return NULL;
     }
 
     // Create a new structure to handle this capture dumper
     CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));
-    output->priv   = pcap;
-    output->write  = capture_output_pcap_write;
-    output->close  = capture_output_pcap_close;
+    output->priv = pcap;
+    output->write = capture_output_pcap_write;
+    output->close = capture_output_pcap_close;
     return output;
 }
 
@@ -377,7 +376,7 @@ capture_packet_time_sorter(const Packet **a, const Packet **b)
     return timeval_is_older(packet_time(*a), packet_time(*b));
 }
 
-const gchar*
+const gchar *
 capture_input_pcap_file(CaptureManager *manager)
 {
     if (g_slist_length(manager->inputs) > 1)

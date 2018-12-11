@@ -53,20 +53,20 @@
 //! SDP handled media types
 enum PacketSdpMediaType
 {
-    SDP_MEDIA_UNKNOWN       = -1,
-    SDP_MEDIA_AUDIO         = 0,
-    SDP_MEDIA_VIDEO         = 1,
-    SDP_MEDIA_TEXT          = 2,
-    SDP_MEDIA_APPLICATION   = 3,
-    SDP_MEDIA_MESSAGE       = 4,
-    SDP_MEDIA_IMAGE         = 5,
+    SDP_MEDIA_UNKNOWN = -1,
+    SDP_MEDIA_AUDIO = 0,
+    SDP_MEDIA_VIDEO = 1,
+    SDP_MEDIA_TEXT = 2,
+    SDP_MEDIA_APPLICATION = 3,
+    SDP_MEDIA_MESSAGE = 4,
+    SDP_MEDIA_IMAGE = 5,
 };
 
 //! Shorter declaration of SDP structures
 typedef struct _PacketSdpConnection PacketSdpConnection;
-typedef struct _PacketSdpMedia      PacketSdpMedia;
-typedef struct _PacketSdpFormat     PacketSdpFormat;
-typedef struct _PacketSdpData       PacketSdpData;
+typedef struct _PacketSdpMedia PacketSdpMedia;
+typedef struct _PacketSdpFormat PacketSdpFormat;
+typedef struct _PacketSdpData PacketSdpData;
 
 /**
  * @brief SDP ConnectionData (c=) information
@@ -144,7 +144,7 @@ struct _PacketSdpData
     GList *medias;
 };
 
-const gchar*
+const gchar *
 packet_sdp_media_type_str(enum PacketSdpMediaType type);
 
 PacketDissector *

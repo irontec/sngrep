@@ -110,10 +110,10 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Save IP Addresses into packet
     PacketIpData *ipdata = g_malloc0(sizeof(PacketIpData));
-    ipdata->saddr       = fragment->src;
-    ipdata->daddr       = fragment->dst;
-    ipdata->version     = fragment->version;
-    ipdata->protocol    = fragment->proto;
+    ipdata->saddr = fragment->src;
+    ipdata->daddr = fragment->dst;
+    ipdata->version = fragment->version;
+    ipdata->protocol = fragment->proto;
     packet->proto->pdata[PACKET_IP] = ipdata;
 
     // Get pending payload
@@ -152,7 +152,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         datagram = g_malloc0(sizeof(PacketIpDatagram));
         datagram->src = fragment->src;
         datagram->dst = fragment->dst;
-        datagram->id  = fragment->id;
+        datagram->id = fragment->id;
         datagram->fragments = g_ptr_array_new_with_free_func(g_free);
         g_ptr_array_add(datagram->fragments, fragment);
         priv->assembly = g_list_append(priv->assembly, datagram);
@@ -221,7 +221,7 @@ packet_ip_deinit(PacketParser *parser)
     g_list_free(ipdata->assembly);
 }
 
-PacketDissector*
+PacketDissector *
 packet_ip_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));

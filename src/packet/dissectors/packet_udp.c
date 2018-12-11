@@ -39,7 +39,7 @@
 static GByteArray *
 packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
-    struct udphdr *udp  = (struct udphdr *) data->data;
+    struct udphdr *udp = (struct udphdr *) data->data;
     uint16_t udp_off = sizeof(struct udphdr);
 
     //! Is this a IP/TCP packet?

@@ -43,45 +43,46 @@
  *
  */
 PacketSdpFormat formats[] = {
-    { 0,    "PCMU/8000",    "g711u"     },
-    { 3,    "GSM/8000",     "gsm"       },
-    { 4,    "G723/8000",    "g723"      },
-    { 5,    "DVI4/8000",    "dvi"       },
-    { 6,    "DVI4/16000",   "dvi"       },
-    { 7,    "LPC/8000",     "lpc"       },
-    { 8,    "PCMA/8000",    "g711a"     },
-    { 9,    "G722/8000",    "g722"      },
-    { 10,   "L16/44100",    "l16"       },
-    { 11,   "L16/44100",    "l16"       },
-    { 12,   "QCELP/8000",   "qcelp"     },
-    { 13,   "CN/8000",      "cn"        },
-    { 14,   "MPA/90000",    "mpa"       },
-    { 15,   "G728/8000",    "g728"      },
-    { 16,   "DVI4/11025",   "dvi"       },
-    { 17,   "DVI4/22050",   "dvi"       },
-    { 18,   "G729/8000",    "g729"      },
-    { 25,   "CelB/90000",   "celb"      },
-    { 26,   "JPEG/90000",   "jpeg"      },
-    { 28,   "nv/90000",     "nv"        },
-    { 31,   "H261/90000",   "h261"      },
-    { 32,   "MPV/90000",    "mpv"       },
-    { 33,   "MP2T/90000",   "mp2t"      },
-    { 34,   "H263/90000",   "h263"      },
+    { 0,  "PCMU/8000",  "g711u" },
+    { 3,  "GSM/8000",   "gsm" },
+    { 4,  "G723/8000",  "g723" },
+    { 5,  "DVI4/8000",  "dvi" },
+    { 6,  "DVI4/16000", "dvi" },
+    { 7,  "LPC/8000",   "lpc" },
+    { 8,  "PCMA/8000",  "g711a" },
+    { 9,  "G722/8000",  "g722" },
+    { 10, "L16/44100",  "l16" },
+    { 11, "L16/44100",  "l16" },
+    { 12, "QCELP/8000", "qcelp" },
+    { 13, "CN/8000",    "cn" },
+    { 14, "MPA/90000",  "mpa" },
+    { 15, "G728/8000",  "g728" },
+    { 16, "DVI4/11025", "dvi" },
+    { 17, "DVI4/22050", "dvi" },
+    { 18, "G729/8000",  "g729" },
+    { 25, "CelB/90000", "celb" },
+    { 26, "JPEG/90000", "jpeg" },
+    { 28, "nv/90000",   "nv" },
+    { 31, "H261/90000", "h261" },
+    { 32, "MPV/90000",  "mpv" },
+    { 33, "MP2T/90000", "mp2t" },
+    { 34, "H263/90000", "h263" },
 };
 
-const struct {
+const struct
+{
     const gchar *str;
     enum PacketSdpMediaType type;
 } media_types[] = {
-    { "audio",          SDP_MEDIA_AUDIO         },
-    { "video",          SDP_MEDIA_VIDEO         },
-    { "text",           SDP_MEDIA_TEXT          },
-    { "application",    SDP_MEDIA_APPLICATION   },
-    { "message",        SDP_MEDIA_MESSAGE       },
-    { "image",          SDP_MEDIA_IMAGE         }
+    { "audio",       SDP_MEDIA_AUDIO },
+    { "video",       SDP_MEDIA_VIDEO },
+    { "text",        SDP_MEDIA_TEXT },
+    { "application", SDP_MEDIA_APPLICATION },
+    { "message",     SDP_MEDIA_MESSAGE },
+    { "image",       SDP_MEDIA_IMAGE }
 };
 
-const gchar*
+const gchar *
 packet_sdp_media_type_str(enum PacketSdpMediaType type)
 {
     for (guint i = 0; i < G_N_ELEMENTS(media_types); i++) {
@@ -130,9 +131,9 @@ packet_sdp_media_type(const gchar *media)
 static PacketSdpFormat *
 packet_sdp_standard_format(guint32 code)
 {
-    for (guint i = 0;i < G_N_ELEMENTS(formats); i++) {
+    for (guint i = 0; i < G_N_ELEMENTS(formats); i++) {
         if (formats[i].id == code) {
-            return  &formats[i];
+            return &formats[i];
         }
     }
 
@@ -148,7 +149,7 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
     // Create a new media container
     PacketSdpMedia *media = g_malloc0(sizeof(PacketSdpMedia));
     media->sconn = sdp->sconn;
-    media->rtpport = (guint16)strtoul(media_data[SDP_MEDIA_PORT], NULL, 10);
+    media->rtpport = (guint16) strtoul(media_data[SDP_MEDIA_PORT], NULL, 10);
     media->type = packet_sdp_media_type(media_data[SDP_MEDIA_MEDIA]);
 
     // @todo For backwards compatibility with stream searching
@@ -159,9 +160,9 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
 
     // Parse SDP preferred codec order
     gchar **formats = g_strsplit(media_data[SDP_MEDIA_FORMAT], " ", -1);
-    for (guint i = 0; i < g_strv_length(formats); i++ ) {
+    for (guint i = 0; i < g_strv_length(formats); i++) {
         // Check if format code is standard
-        guint32 code = (guint32)strtoul(formats[i], NULL, 10);
+        guint32 code = (guint32) strtoul(formats[i], NULL, 10);
 
         PacketSdpFormat *format = packet_sdp_standard_format(code);
         if (format == NULL) {
@@ -186,7 +187,7 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
 
     if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtpmap") == 0) {
         // Check if format code is standard
-        guint32 code = (guint32)strtoul(rtpattr[2], NULL, 10);
+        guint32 code = (guint32) strtoul(rtpattr[2], NULL, 10);
         PacketSdpFormat *format = packet_sdp_standard_format(code);
 
         if (format == NULL) {
@@ -199,7 +200,7 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
             }
         }
     } else if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtcp") == 0) {
-        media->rtcpport = (guint16)strtoul(rtpattr[SDP_ATTR_VALUE], NULL, 10);
+        media->rtcpport = (guint16) strtoul(rtpattr[SDP_ATTR_VALUE], NULL, 10);
     }
 }
 
@@ -212,7 +213,7 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
     PacketSdpMedia *media = NULL;
 
     gchar **lines = g_strsplit(payload->str, "\r\n", -1);
-    for (guint i = 0; i < g_strv_length(lines); i++ ) {
+    for (guint i = 0; i < g_strv_length(lines); i++) {
         gchar *line = lines[i] + 2;
         switch (lines[i][0]) {
             case 'c':

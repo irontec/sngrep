@@ -50,7 +50,7 @@
 static CallRawWinInfo *
 call_raw_info(Window *window)
 {
-    return (CallRawWinInfo*) panel_userptr(window->panel);
+    return (CallRawWinInfo *) panel_userptr(window->panel);
 }
 
 /**
@@ -383,7 +383,7 @@ call_raw_win_new()
 
     // Initialize Call Raw specific data
     CallRawWinInfo *info = g_malloc0(sizeof(CallRawWinInfo));
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     // Create a initial pad of 1000 lines
     info->pad = newpad(500, COLS);

@@ -80,7 +80,7 @@
 static CallFlowWinInfo *
 call_flow_win_info(Window *window)
 {
-    return (CallFlowWinInfo*) panel_userptr(window->panel);
+    return (CallFlowWinInfo *) panel_userptr(window->panel);
 }
 
 /*
@@ -205,8 +205,9 @@ call_flow_arrow_find(Window *window, const void *data)
     g_return_val_if_fail(data != NULL, NULL);
 
     guint index;
-    if (g_ptr_array_find_with_equal_func(info->arrows, data,
-            (GEqualFunc) call_flow_arrow_find_item_cb, &index)) {
+    if (g_ptr_array_find_with_equal_func(
+        info->arrows, data,
+        (GEqualFunc) call_flow_arrow_find_item_cb, &index)) {
         return g_ptr_array_index(info->arrows, index);
     }
 
@@ -291,7 +292,7 @@ call_flow_arrow_height(G_GNUC_UNUSED Window *window, const CallFlowArrow *arrow)
  * @return associated SIP message with the arrow
  */
 static Message *
-call_flow_arrow_message(const  CallFlowArrow *arrow)
+call_flow_arrow_message(const CallFlowArrow *arrow)
 {
     g_return_val_if_fail(arrow != NULL, NULL);
 
@@ -375,7 +376,7 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
             // Check if this column matches requested address
             if (match_port) {
                 if (addressport_equals(column->addr, addr)) {
-                    if (callid && g_list_index(column->callids, (void*)callid) >= 0) {
+                    if (callid && g_list_index(column->callids, (void *) callid) >= 0) {
                         return column;
                     } else {
                         candidate = column;
@@ -440,7 +441,7 @@ static CallFlowColumn *
 call_flow_column_new(Address addr)
 {
     // Create a new column
-    CallFlowColumn * column = g_malloc0(sizeof(CallFlowColumn));
+    CallFlowColumn *column = g_malloc0(sizeof(CallFlowColumn));
     column->addr = addr;
     column->alias = setting_get_alias(addr.ip);
     return column;
@@ -499,17 +500,17 @@ static void
 call_flow_draw_footer(Window *window)
 {
     const char *keybindings[] = {
-            key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
-            key_action_key_str(ACTION_CONFIRM), "Raw",
-            key_action_key_str(ACTION_SELECT), "Compare",
-            key_action_key_str(ACTION_SHOW_HELP), "Help",
-            key_action_key_str(ACTION_SDP_INFO), "SDP",
-            key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP",
-            key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
-            key_action_key_str(ACTION_COMPRESS), "Compressed",
-            key_action_key_str(ACTION_SHOW_RAW), "Raw",
-            key_action_key_str(ACTION_CYCLE_COLOR), "Colour by",
-            key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
+        key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
+        key_action_key_str(ACTION_CONFIRM), "Raw",
+        key_action_key_str(ACTION_SELECT), "Compare",
+        key_action_key_str(ACTION_SHOW_HELP), "Help",
+        key_action_key_str(ACTION_SDP_INFO), "SDP",
+        key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP",
+        key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
+        key_action_key_str(ACTION_COMPRESS), "Compressed",
+        key_action_key_str(ACTION_SHOW_RAW), "Raw",
+        key_action_key_str(ACTION_CYCLE_COLOR), "Colour by",
+        key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
     };
 
     window_draw_bindings(window, keybindings, 22);
@@ -577,7 +578,7 @@ call_flow_draw_columns(Window *window)
 
     // Add RTP columns FIXME Really
     if (!setting_disabled(SETTING_CF_MEDIA)) {
-        while ((call = call_group_get_next(info->group, call)) ) {
+        while ((call = call_group_get_next(info->group, call))) {
             for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
                 stream = g_ptr_array_index(call->streams, i);
                 if (stream->type == STREAM_RTP && stream_get_count(stream)) {
@@ -897,7 +898,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 
             if (strlen(delta)) {
                 wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-                mvwprintw(flow_win, cline - 1 , 2, "%15s", delta);
+                mvwprintw(flow_win, cline - 1, 2, "%15s", delta);
             }
             wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
         }
@@ -969,7 +970,8 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // fallback: Just use any column that have the destination IP printed
     if (!arrow->dcolumn) {
         // FIXME figure a better way to find ignoring port :(
-        addr = stream->dst; addr.port = 0;
+        addr = stream->dst;
+        addr.port = 0;
         arrow->dcolumn = call_flow_column_get_callid(window, 0, addr);
     }
 
@@ -1006,7 +1008,8 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // fallback: Just use any column that have the soruce IP printed
     if (!arrow->scolumn) {
         // FIXME figure a better way to find ignoring port :(
-        addr = stream->src; addr.port = 0;
+        addr = stream->src;
+        addr.port = 0;
         arrow->scolumn = call_flow_column_get_callid(window, 0, addr);
     }
 
@@ -1017,7 +1020,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Determine start and end position of the arrow line
     int startpos, endpos;
     if (scolumn_idx < dcolumn_idx) {
-        arrow->dir= CF_ARROW_RIGHT;
+        arrow->dir = CF_ARROW_RIGHT;
         startpos = 20 + 30 * scolumn_idx;
         endpos = 20 + 30 * dcolumn_idx;
     } else {
@@ -1371,7 +1374,7 @@ call_flow_move(Window *window, guint idx)
         return;
 
     // Get flow subwindow height (for scrolling)
-    gint flowh  = getmaxy(info->flow_win);
+    gint flowh = getmaxy(info->flow_win);
 
     // Moving down or up?
     gboolean move_down = (info->cur_idx < idx);
@@ -1497,7 +1500,7 @@ call_flow_handle_key(Window *window, int key)
     enum KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
-        switch(action) {
+        switch (action) {
             case ACTION_DOWN:
                 call_flow_move_down(window, 1);
                 break;
@@ -1599,7 +1602,7 @@ call_flow_handle_key(Window *window, int key)
                 auth_validate_set_group(next_window, info->group);
                 break;
             case ACTION_TOGGLE_TIME:
-                info->arrowtime = (info->arrowtime) ? false : true;
+                info->arrowtime = (info->arrowtime) ? FALSE : TRUE;
                 break;
             case ACTION_SELECT:
                 if (info->selected == -1) {
@@ -1611,8 +1614,8 @@ call_flow_handle_key(Window *window, int key)
                         // Show diff panel
                         next_window = ncurses_create_window(WINDOW_MSG_DIFF);
                         msg_diff_win_set_msgs(next_window,
-                                call_flow_arrow_message(g_ptr_array_index(info->darrows, info->selected)),
-                                call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+                                              call_flow_arrow_message(g_ptr_array_index(info->darrows, info->selected)),
+                                              call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                     }
                 }
                 break;
@@ -1624,7 +1627,7 @@ call_flow_handle_key(Window *window, int key)
                 next_window = ncurses_create_window(WINDOW_CALL_RAW);
                 call_raw_win_set_group(next_window, info->group);
                 call_raw_win_set_msg(next_window,
-                        call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+                                     call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
                 break;
             case ACTION_CLEAR_CALLS:
             case ACTION_CLEAR_CALLS_SOFT:
@@ -1892,7 +1895,7 @@ call_flow_win_new()
     info->arrows = g_ptr_array_new_with_free_func(g_free);
 
     // Store it into panel userptr
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     return window;
 }

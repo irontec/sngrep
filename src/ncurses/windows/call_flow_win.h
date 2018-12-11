@@ -70,7 +70,8 @@ typedef struct _CallFlowArrow CallFlowArrow;
 /**
  * @brief Call flow arrow types
  */
-enum CallFlowArrowType {
+enum CallFlowArrowType
+{
     CF_ARROW_SIP,
     CF_ARROW_RTP,
     CF_ARROW_RTCP,
@@ -79,7 +80,8 @@ enum CallFlowArrowType {
 /**
  * @brief Call flow arrow directions
  */
-enum CallFlowArrowDir {
+enum CallFlowArrowDir
+{
     CF_ARROW_RIGHT = 0,
     CF_ARROW_LEFT,
     CF_ARROW_SPIRAL_RIGHT,
@@ -89,7 +91,8 @@ enum CallFlowArrowDir {
 /**
  * @brief Call Flow arrow information
  */
-struct _CallFlowArrow {
+struct _CallFlowArrow
+{
     //! Type of arrow
     enum CallFlowArrowType type;
     //! Item owner of this arrow
@@ -119,7 +122,8 @@ struct _CallFlowArrow {
  * different dialogs.
  *
  */
-struct _CallFlowColumn {
+struct _CallFlowColumn
+{
     //! Address header for this column
     Address addr;
     //! Alias for the given address
@@ -134,7 +138,8 @@ struct _CallFlowColumn {
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _CallFlowWinInfo {
+struct _CallFlowWinInfo
+{
     //! Window to display SIP payload
     WINDOW *raw_win;
     //! Window to diplay arrows

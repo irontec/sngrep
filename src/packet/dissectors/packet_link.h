@@ -45,8 +45,8 @@
 #define DLT_NFLOG       239
 #define NFULA_PAYLOAD   9
 
-typedef struct _DissectorLinkData   DissectorLinkData;
-typedef struct _LinkNflogHdr        LinkNflogHdr;
+typedef struct _DissectorLinkData DissectorLinkData;
+typedef struct _LinkNflogHdr LinkNflogHdr;
 
 //! Private information structure for Link Protocol
 struct _DissectorLinkData

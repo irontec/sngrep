@@ -43,7 +43,8 @@ typedef struct _SettingsWinCategory SettingsWinCategory;
 //! Sorter declaration of struct settings_entry
 typedef struct _SettingsWinEntry SettingsWinEntry;
 
-enum SettingWinCategory {
+enum SettingWinCategory
+{
     CAT_SETTINGS_INTERFACE = 1,
     CAT_SETTINGS_CAPTURE,
     CAT_SETTINGS_CALL_FLOW,
@@ -58,7 +59,8 @@ enum SettingWinCategory {
  * order this fields are stored in panel info structure.
  *
  */
-enum SettingWinField {
+enum SettingWinField
+{
     FLD_SETTINGS_BACKGROUND = 0,
     FLD_SETTINGS_BACKGROUND_LB,
     FLD_SETTINGS_SYNTAX,
@@ -122,13 +124,14 @@ enum SettingWinField {
     FLD_SETTINGS_HEP_LISTEN_PORT_LB,
     FLD_SETTINGS_HEP_LISTEN_PASS,
     FLD_SETTINGS_HEP_LISTEN_PASS_LB,
-	FLD_SETTINGS_HEP_LISTEN_UUID,
-	FLD_SETTINGS_HEP_LISTEN_UUID_LB,
+    FLD_SETTINGS_HEP_LISTEN_UUID,
+    FLD_SETTINGS_HEP_LISTEN_UUID_LB,
 #endif
     FLD_SETTINGS_COUNT,
 };
 
-enum SettingsWinButton {
+enum SettingsWinButton
+{
     BTN_SETTINGS_ACCEPT = 0,
     BTN_SETTINGS_SAVE,
     BTN_SETTINGS_CANCEL,
@@ -137,14 +140,16 @@ enum SettingsWinButton {
 
 #define SETTINGS_ENTRY_COUNT (FLD_SETTINGS_COUNT - 3)
 
-struct _SettingsWinCategory {
+struct _SettingsWinCategory
+{
     // Category id
     enum SettingWinCategory cat_id;
     // Category label
     const char *title;
 };
 
-struct _SettingsWinEntry {
+struct _SettingsWinEntry
+{
     enum SettingWinCategory cat_id;
     //! Field id in settings_info array
     enum SettingWinField field_id;
@@ -159,7 +164,8 @@ struct _SettingsWinEntry {
  *
  * This structure contains the durable data of settings panel.
  */
-struct _SettingsWinInfo {
+struct _SettingsWinInfo
+{
     //! Window containing form data (and buttons)
     WINDOW *form_win;
     //! Form that contains the filter fields

@@ -39,51 +39,82 @@
 #include "setting.h"
 
 SettingsWinCategory categories[] = {
-    { CAT_SETTINGS_INTERFACE,  "Interface" },
-    { CAT_SETTINGS_CAPTURE,    "Capture" },
-    { CAT_SETTINGS_CALL_FLOW,  "Call Flow" },
+    { CAT_SETTINGS_INTERFACE, "Interface" },
+    { CAT_SETTINGS_CAPTURE, "Capture" },
+    { CAT_SETTINGS_CALL_FLOW, "Call Flow" },
 #ifdef USE_HEP
-    { CAT_SETTINGS_HEP_HOMER,  "HEP Homer" },
+    { CAT_SETTINGS_HEP_HOMER, "HEP Homer" },
 #endif
-    { 0 , NULL },
+    { 0, NULL },
 };
 
 SettingsWinEntry entries[] = {
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_BACKGROUND,         SETTING_BACKGROUND,         "Background * .............................." },
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX,             SETTING_SYNTAX,             "SIP message syntax ........................" },
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX_TAG,         SETTING_SYNTAX_TAG,         "SIP tag syntax ............................" },
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX_BRANCH,      SETTING_SYNTAX_BRANCH,      "SIP branch syntax ........................." },
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_ALTKEY_HINT,        SETTING_ALTKEY_HINT,        "Alternative keybinding hints .............." },
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_COLORMODE,          SETTING_COLORMODE,          "Default message color mode ................" },
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_EXITPROMPT,         SETTING_EXITPROMPT,         "Always prompt on quit ....................." },
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_DISPLAY_ALIAS,      SETTING_DISPLAY_ALIAS,      "Replace addresses with alias .............." },
-    { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_LIMIT,      SETTING_CAPTURE_LIMIT,      "Max dialogs * ............................." },
-    { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_DEVICE,     SETTING_CAPTURE_DEVICE,     "Capture device * .........................." },
-    { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_SIP_NOINCOMPLETE,   SETTING_SIP_NOINCOMPLETE,   "Capture full transactions ................." },
-    { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_SAVEPATH,           SETTING_SAVEPATH,           "Default Save path ........................." },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_FORCERAW,        SETTING_CF_FORCERAW,        "Show message preview panel ................" },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_HIGHTLIGHT,      SETTING_CF_HIGHTLIGHT,      "Selected message highlight ................" },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_LOCALHIGHLIGHT,  SETTING_CF_LOCALHIGHLIGHT,  "Highlight local addresses ................." },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SPLITCACALLID,   SETTING_CF_SPLITCALLID,     "Merge columns with same address ..........." },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SDPONLY,         SETTING_CF_SDP_INFO,        "Show SDP information in messages .........." },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_DELTA,           SETTING_CF_DELTA,           "Show delta time between messages .........." },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_MEDIA,           SETTING_CF_MEDIA,           "Show RTP media streams ...................." },
-    { CAT_SETTINGS_CALL_FLOW,  FLD_SETTINGS_CF_SCROLLSTEP,      SETTING_CF_SCROLLSTEP,      "Steps for PgUp/PgDown ....................." },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_BACKGROUND, SETTING_BACKGROUND,
+      "Background * .............................." },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_SYNTAX, SETTING_SYNTAX, "SIP message syntax ........................" },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_SYNTAX_TAG, SETTING_SYNTAX_TAG,
+      "SIP tag syntax ............................" },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_SYNTAX_BRANCH, SETTING_SYNTAX_BRANCH,
+      "SIP branch syntax ........................." },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_ALTKEY_HINT, SETTING_ALTKEY_HINT,
+      "Alternative keybinding hints .............." },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_COLORMODE, SETTING_COLORMODE,
+      "Default message color mode ................" },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_EXITPROMPT, SETTING_EXITPROMPT,
+      "Always prompt on quit ....................." },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_DISPLAY_ALIAS, SETTING_DISPLAY_ALIAS,
+      "Replace addresses with alias .............." },
+    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_CAPTURE_LIMIT, SETTING_CAPTURE_LIMIT,
+      "Max dialogs * ............................." },
+    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_CAPTURE_DEVICE, SETTING_CAPTURE_DEVICE,
+      "Capture device * .........................." },
+    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_SIP_NOINCOMPLETE, SETTING_SIP_NOINCOMPLETE,
+      "Capture full transactions ................." },
+    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_SAVEPATH, SETTING_SAVEPATH,
+      "Default Save path ........................." },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_FORCERAW, SETTING_CF_FORCERAW,
+      "Show message preview panel ................" },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_HIGHTLIGHT, SETTING_CF_HIGHTLIGHT,
+      "Selected message highlight ................" },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_LOCALHIGHLIGHT, SETTING_CF_LOCALHIGHLIGHT,
+      "Highlight local addresses ................." },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_SPLITCACALLID, SETTING_CF_SPLITCALLID,
+      "Merge columns with same address ..........." },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_SDPONLY, SETTING_CF_SDP_INFO,
+      "Show SDP information in messages .........." },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_DELTA, SETTING_CF_DELTA,
+      "Show delta time between messages .........." },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_MEDIA, SETTING_CF_MEDIA,
+      "Show RTP media streams ...................." },
+    { CAT_SETTINGS_CALL_FLOW, FLD_SETTINGS_CF_SCROLLSTEP, SETTING_CF_SCROLLSTEP,
+      "Steps for PgUp/PgDown ....................." },
 #ifdef USE_HEP
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND,           SETTING_HEP_SEND,           "Send all captured SIP packets ............." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_VER,       SETTING_HEP_SEND_VER,       "Send EEP version .........................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_ADDR,      SETTING_HEP_SEND_ADDR,      "Send EEP packet address ..................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_PORT,      SETTING_HEP_SEND_PORT,      "Send EEP packet port ......................" },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_PASS,      SETTING_HEP_SEND_PASS,      "EEP send password ........................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_SEND_ID,        SETTING_HEP_SEND_ID,        "EEP send capture id ......................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN,         SETTING_HEP_LISTEN,         "Listen for eep packets ...................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_VER,     SETTING_HEP_LISTEN_VER,     "Listen EEP version  ......................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_ADDR,    SETTING_HEP_LISTEN_ADDR,    "Listen EEP packet address ................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_PORT,    SETTING_HEP_LISTEN_PORT,    "Listen EEP packet port ...................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_PASS,    SETTING_HEP_LISTEN_PASS,    "EEP server password ......................." },
-    { CAT_SETTINGS_HEP_HOMER,  FLD_SETTINGS_HEP_LISTEN_UUID,    SETTING_HEP_LISTEN_UUID,    "EEP server expects UUID (Asterisk) ........" },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_SEND, SETTING_HEP_SEND,
+      "Send all captured SIP packets ............." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_SEND_VER, SETTING_HEP_SEND_VER,
+      "Send EEP version .........................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_SEND_ADDR, SETTING_HEP_SEND_ADDR,
+      "Send EEP packet address ..................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_SEND_PORT, SETTING_HEP_SEND_PORT,
+      "Send EEP packet port ......................" },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_SEND_PASS, SETTING_HEP_SEND_PASS,
+      "EEP send password ........................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_SEND_ID, SETTING_HEP_SEND_ID,
+      "EEP send capture id ......................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_LISTEN, SETTING_HEP_LISTEN,
+      "Listen for eep packets ...................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_LISTEN_VER, SETTING_HEP_LISTEN_VER,
+      "Listen EEP version  ......................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_LISTEN_ADDR, SETTING_HEP_LISTEN_ADDR,
+      "Listen EEP packet address ................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_LISTEN_PORT, SETTING_HEP_LISTEN_PORT,
+      "Listen EEP packet port ...................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_LISTEN_PASS, SETTING_HEP_LISTEN_PASS,
+      "EEP server password ......................." },
+    { CAT_SETTINGS_HEP_HOMER, FLD_SETTINGS_HEP_LISTEN_UUID, SETTING_HEP_LISTEN_UUID,
+      "EEP server expects UUID (Asterisk) ........" },
 #endif
-    { 0 , 0, 0, NULL },
+    { 0, 0, 0, NULL },
 };
 
 /**
@@ -98,7 +129,7 @@ SettingsWinEntry entries[] = {
 static SettingsWinInfo *
 settings_info(Window *ui)
 {
-    return (SettingsWinInfo*) panel_userptr(ui->panel);
+    return (SettingsWinInfo *) panel_userptr(ui->panel);
 }
 
 /**
@@ -144,7 +175,7 @@ settings_draw(Window *ui)
         if (!strncmp(field_buffer(info->fields[i], 0), "off", 3))
             set_field_fore(info->fields[i], COLOR_PAIR(CP_RED_ON_DEF));
     }
-    for (i=0; i < BTN_SETTINGS_COUNT; i++) {
+    for (i = 0; i < BTN_SETTINGS_COUNT; i++) {
         set_field_back(info->buttons[i], A_NORMAL);
     }
 
@@ -198,7 +229,7 @@ settings_update_settings(Window *ui)
     // Get panel information
     SettingsWinInfo *info = settings_info(ui);
 
-    for (i=0; i < FLD_SETTINGS_COUNT; i++) {
+    for (i = 0; i < FLD_SETTINGS_COUNT; i++) {
         if ((entry = settings_is_entry(info->fields[i]))) {
             // Get field value.
             memset(field_value, 0, sizeof(field_value));
@@ -227,7 +258,7 @@ settings_save(Window *ui)
     SettingsWinInfo *info = settings_info(ui);
 
     GString *userconf = g_string_new(NULL);
-    GString *tmpfile  = g_string_new(NULL);
+    GString *tmpfile = g_string_new(NULL);
 
     // Use $SNGREPRC/.sngreprc file
     const gchar *rcfile = g_getenv("SNGREPRC");
@@ -489,21 +520,21 @@ settings_win_new()
 
     // Initialize Filter panel specific data
     SettingsWinInfo *info = g_malloc0(sizeof(SettingsWinInfo));
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     // Create a scrollable subwindow for settings
     info->form_win = derwin(window->win, window->height - 11, window->width - 2, 8, 1);
 
     // Configure panel buttons
     info->buttons[BTN_SETTINGS_ACCEPT] = new_field(1, 10, window->height - 2, 12, 0, 0);
-    info->buttons[BTN_SETTINGS_SAVE]   = new_field(1, 10, window->height - 2, 29, 0, 0);
+    info->buttons[BTN_SETTINGS_SAVE] = new_field(1, 10, window->height - 2, 29, 0, 0);
     info->buttons[BTN_SETTINGS_CANCEL] = new_field(1, 10, window->height - 2, 46, 0, 0);
-    info->buttons[BTN_SETTINGS_COUNT]  = NULL;
+    info->buttons[BTN_SETTINGS_COUNT] = NULL;
     field_opts_off(info->buttons[BTN_SETTINGS_ACCEPT], O_EDIT);
     field_opts_off(info->buttons[BTN_SETTINGS_SAVE], O_EDIT);
     field_opts_off(info->buttons[BTN_SETTINGS_CANCEL], O_EDIT);
     set_field_buffer(info->buttons[BTN_SETTINGS_ACCEPT], 0, "[ Accept ]");
-    set_field_buffer(info->buttons[BTN_SETTINGS_SAVE],   0, "[  Save  ]");
+    set_field_buffer(info->buttons[BTN_SETTINGS_SAVE], 0, "[  Save  ]");
     set_field_buffer(info->buttons[BTN_SETTINGS_CANCEL], 0, "[ Cancel ]");
     info->buttons_form = new_form(info->buttons);
     set_form_sub(info->buttons_form, window->win);
@@ -525,7 +556,7 @@ settings_win_new()
             field_opts_off(label, O_ACTIVE);
 
             // Change field properties according to field type
-            switch(setting_format(entries[j].setting_id)) {
+            switch (setting_format(entries[j].setting_id)) {
                 case SETTING_FMT_NUMBER:
                     entry = new_field(1, 18, line, 48, 0, 0);
                     set_field_back(entry, A_UNDERLINE);
@@ -546,7 +577,8 @@ settings_win_new()
                     field_opts_off(entry, O_EDIT);
                     set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
                     break;
-                default: break;
+                default:
+                    break;
             }
 
             field_opts_off(entry, O_AUTOSKIP);

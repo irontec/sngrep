@@ -46,7 +46,7 @@ static gboolean
 packet_rtcp_valid(GByteArray *data)
 {
     g_return_val_if_fail(data != NULL, FALSE);
-    struct rtcp_hdr_generic *hdr = (struct rtcp_hdr_generic*) data;
+    struct rtcp_hdr_generic *hdr = (struct rtcp_hdr_generic *) data;
 
     if ((data->len >= RTCP_HDR_LENGTH) &&
         (RTP_VERSION(data->data[0]) == RTP_VERSION_RFC1889) &&
@@ -114,7 +114,7 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
             case RTCP_XR:
                 // Get Sender Report Extended header
                 memcpy(&hdr_xr, data->data, sizeof(hdr_xr));
-                size_t bsize = sizeof(hdr_xr);
+                gsize bsize = sizeof(hdr_xr);
 
                 // Read all report blocks
                 while (bsize < (guint) ntohs(hdr_xr.len) * 4 + 4) {
@@ -129,7 +129,8 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
                             rtcp->mosl = blk_xr_voip.moslq;
                             rtcp->mosc = blk_xr_voip.moscq;
                             break;
-                        default: break;
+                        default:
+                            break;
                     }
                     bsize += ntohs(blk_xr.len) * 4 + 4;
                 }

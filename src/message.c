@@ -60,7 +60,8 @@ msg_destroy(gpointer item)
 }
 
 Call *
-msg_get_call(const Message *msg) {
+msg_get_call(const Message *msg)
+{
     return msg->call;
 }
 
@@ -108,7 +109,8 @@ msg_get_payload(Message *msg)
 }
 
 GTimeVal
-msg_get_time(const Message *msg) {
+msg_get_time(const Message *msg)
+{
     GTimeVal t = { 0 };
     PacketFrame *frame;
 

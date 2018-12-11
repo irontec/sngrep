@@ -39,11 +39,11 @@
 /**
  * @brief Enum of available fields
  */
-enum ColumnSelectFields {
+enum ColumnSelectFields
+{
     FLD_COLUMNS_ACCEPT = 0,
     FLD_COLUMNS_SAVE,
     FLD_COLUMNS_CANCEL,
-    //! Never remove this field id
     FLD_COLUMNS_COUNT
 };
 
@@ -56,7 +56,8 @@ typedef struct _ColumnSelectWinInfo ColumnSelectWinInfo;
  *
  * This structure contains the durable data of column selection panel.
  */
-struct _ColumnSelectWinInfo {
+struct _ColumnSelectWinInfo
+{
     //! Section of panel where menu is being displayed
     WINDOW *menu_win;
     //! Columns menu

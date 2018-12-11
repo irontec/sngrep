@@ -38,10 +38,10 @@
 //! Ignore too segmented TCP packets
 #define TCP_MAX_SEGMENTS    5
 
-typedef struct _PacketTcpData       PacketTcpData;
-typedef struct _PacketTcpStream     PacketTcpStream;
-typedef struct _PacketTcpSegment    PacketTcpSegment;
-typedef struct _DissectorTcpData    DissectorTcpData;
+typedef struct _PacketTcpData PacketTcpData;
+typedef struct _PacketTcpStream PacketTcpStream;
+typedef struct _PacketTcpSegment PacketTcpSegment;
+typedef struct _DissectorTcpData DissectorTcpData;
 
 struct _PacketTcpStream
 {

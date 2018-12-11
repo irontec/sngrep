@@ -43,7 +43,7 @@ window_create(Window *window)
     }
 
     // Force screen draw for the first time
-    window->changed = true;
+    window->changed = TRUE;
 
     // And return it
     return window;
@@ -73,19 +73,19 @@ window_redraw(Window *window)
 {
     // Sanity check, this should not happen
     if (!window || !window->panel)
-        return false;
+        return FALSE;
 
     // If ui has changed, force redraw. Don't even ask.
     if (window->changed) {
-        window->changed = false;
-        return true;
+        window->changed = FALSE;
+        return TRUE;
     }
 
     // Query the panel if its needs to be redrawn
     if (window->redraw) {
         return window->redraw(window);
     }
-    return true;
+    return TRUE;
 }
 
 int
@@ -142,7 +142,7 @@ window_handle_key(Window *window, int key)
         hld = window->handle_key(window, key);
     }
     // Force redraw when the user presses keys
-    window->changed = true;
+    window->changed = TRUE;
     return hld;
 }
 

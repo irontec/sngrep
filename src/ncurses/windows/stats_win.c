@@ -68,7 +68,8 @@ stats_win_new()
     window->destroy = window_deinit;
 
     // Counters!
-    struct {
+    struct
+    {
         int dtotal, dcalls, completed, cancelled, incall, rejected, setup, busy, diverted;
         int mtotal, invite, regist, subscribe, update, notify, options;
         int publish, message, info, ack, bye, cancel;
@@ -108,13 +109,27 @@ stats_win_new()
             stats.dcalls++;
             // Increase call status counter
             switch (call->state) {
-                case CALL_STATE_CALLSETUP: stats.setup++; break;
-                case CALL_STATE_INCALL: stats.incall++; break;
-                case CALL_STATE_CANCELLED: stats.cancelled++; break;
-                case CALL_STATE_REJECTED: stats.rejected++; break;
-                case CALL_STATE_BUSY: stats.busy++; break;
-                case CALL_STATE_DIVERTED: stats.diverted++; break;
-                case CALL_STATE_COMPLETED: stats.completed++; break;
+                case CALL_STATE_CALLSETUP:
+                    stats.setup++;
+                    break;
+                case CALL_STATE_INCALL:
+                    stats.incall++;
+                    break;
+                case CALL_STATE_CANCELLED:
+                    stats.cancelled++;
+                    break;
+                case CALL_STATE_REJECTED:
+                    stats.rejected++;
+                    break;
+                case CALL_STATE_BUSY:
+                    stats.busy++;
+                    break;
+                case CALL_STATE_DIVERTED:
+                    stats.diverted++;
+                    break;
+                case CALL_STATE_COMPLETED:
+                    stats.completed++;
+                    break;
             }
         }
 
@@ -127,20 +142,44 @@ stats_win_new()
             stats.mtotal++;
             // Check message type
             switch (method) {
-                case SIP_METHOD_REGISTER: stats.regist++; break;
-                case SIP_METHOD_INVITE: stats.invite++; break;
-                case SIP_METHOD_SUBSCRIBE: stats.subscribe++; break;
-                case SIP_METHOD_NOTIFY: stats.notify++; break;
-                case SIP_METHOD_OPTIONS: stats.options++; break;
-                case SIP_METHOD_PUBLISH: stats.publish++; break;
-                case SIP_METHOD_MESSAGE: stats.message++; break;
-                case SIP_METHOD_CANCEL: stats.cancel++; break;
-                case SIP_METHOD_BYE: stats.bye++; break;
-                case SIP_METHOD_ACK: stats.ack++; break;
-                // case SIP_METHOD_PRACK:
-                case SIP_METHOD_INFO: stats.info++; break;
-                // case SIP_METHOD_REFER:
-                case SIP_METHOD_UPDATE: stats.update++; break;
+                case SIP_METHOD_REGISTER:
+                    stats.regist++;
+                    break;
+                case SIP_METHOD_INVITE:
+                    stats.invite++;
+                    break;
+                case SIP_METHOD_SUBSCRIBE:
+                    stats.subscribe++;
+                    break;
+                case SIP_METHOD_NOTIFY:
+                    stats.notify++;
+                    break;
+                case SIP_METHOD_OPTIONS:
+                    stats.options++;
+                    break;
+                case SIP_METHOD_PUBLISH:
+                    stats.publish++;
+                    break;
+                case SIP_METHOD_MESSAGE:
+                    stats.message++;
+                    break;
+                case SIP_METHOD_CANCEL:
+                    stats.cancel++;
+                    break;
+                case SIP_METHOD_BYE:
+                    stats.bye++;
+                    break;
+                case SIP_METHOD_ACK:
+                    stats.ack++;
+                    break;
+                    // case SIP_METHOD_PRACK:
+                case SIP_METHOD_INFO:
+                    stats.info++;
+                    break;
+                    // case SIP_METHOD_REFER:
+                case SIP_METHOD_UPDATE:
+                    stats.update++;
+                    break;
                 default:
                     if (method >= 800) stats.r800++;
                     else if (method >= 700) stats.r700++;
@@ -157,31 +196,37 @@ stats_win_new()
     }
 
     // Print parses data
-    mvwprintw(window->win, 3,  3,  "Dialogs: %d", stats.dtotal);
-    mvwprintw(window->win, 4,  3,  "Calls: %d (%.1f%%)", stats.dcalls, (float) stats.dcalls * 100 / stats.dtotal);
-    mvwprintw(window->win, 5,  3,  "Messages: %d", stats.mtotal);
+    mvwprintw(window->win, 3, 3, "Dialogs: %d", stats.dtotal);
+    mvwprintw(window->win, 4, 3, "Calls: %d (%.1f%%)", stats.dcalls, (float) stats.dcalls * 100 / stats.dtotal);
+    mvwprintw(window->win, 5, 3, "Messages: %d", stats.mtotal);
     // Print status of calls if any
     if (stats.dcalls) {
-        mvwprintw(window->win, 3,  33, "COMPLETED:  %d (%.1f%%)", stats.completed, (float) stats.completed * 100 / stats.dcalls);
-        mvwprintw(window->win, 4,  33, "CANCELLED:  %d (%.1f%%)", stats.cancelled, (float) stats.cancelled * 100 / stats.dcalls);
-        mvwprintw(window->win, 5,  33, "IN CALL:    %d (%.1f%%)", stats.incall,    (float) stats.incall * 100 / stats.dcalls);
-        mvwprintw(window->win, 6,  33, "REJECTED:   %d (%.1f%%)", stats.rejected,  (float) stats.rejected * 100 / stats.dcalls);
-        mvwprintw(window->win, 7,  33, "BUSY:       %d (%.1f%%)", stats.busy,      (float) stats.busy * 100 / stats.dcalls);
-        mvwprintw(window->win, 8,  33, "DIVERTED:   %d (%.1f%%)", stats.diverted,  (float) stats.diverted * 100 / stats.dcalls);
-        mvwprintw(window->win, 9,  33, "CALL SETUP: %d (%.1f%%)", stats.setup,     (float) stats.setup * 100 / stats.dcalls);
+        mvwprintw(window->win, 3, 33, "COMPLETED:  %d (%.1f%%)", stats.completed,
+                  (float) stats.completed * 100 / stats.dcalls);
+        mvwprintw(window->win, 4, 33, "CANCELLED:  %d (%.1f%%)", stats.cancelled,
+                  (float) stats.cancelled * 100 / stats.dcalls);
+        mvwprintw(window->win, 5, 33, "IN CALL:    %d (%.1f%%)", stats.incall,
+                  (float) stats.incall * 100 / stats.dcalls);
+        mvwprintw(window->win, 6, 33, "REJECTED:   %d (%.1f%%)", stats.rejected,
+                  (float) stats.rejected * 100 / stats.dcalls);
+        mvwprintw(window->win, 7, 33, "BUSY:       %d (%.1f%%)", stats.busy, (float) stats.busy * 100 / stats.dcalls);
+        mvwprintw(window->win, 8, 33, "DIVERTED:   %d (%.1f%%)", stats.diverted,
+                  (float) stats.diverted * 100 / stats.dcalls);
+        mvwprintw(window->win, 9, 33, "CALL SETUP: %d (%.1f%%)", stats.setup, (float) stats.setup * 100 / stats.dcalls);
     }
 
-    mvwprintw(window->win, 11, 3, "INVITE:    %d (%.1f%%)", stats.invite,    (float) stats.invite * 100 / stats.mtotal);
-    mvwprintw(window->win, 12, 3, "REGISTER:  %d (%.1f%%)", stats.regist,    (float) stats.regist * 100 / stats.mtotal);
-    mvwprintw(window->win, 13, 3, "SUBSCRIBE: %d (%.1f%%)", stats.subscribe, (float) stats.subscribe * 100 / stats.mtotal);
-    mvwprintw(window->win, 14, 3, "UPDATE:    %d (%.1f%%)", stats.update,    (float) stats.update * 100 / stats.mtotal);
-    mvwprintw(window->win, 15, 3, "NOTIFY:    %d (%.1f%%)", stats.notify,    (float) stats.notify * 100 / stats.mtotal);
-    mvwprintw(window->win, 16, 3, "OPTIONS:   %d (%.1f%%)", stats.options,   (float) stats.options * 100 / stats.mtotal);
-    mvwprintw(window->win, 17, 3, "PUBLISH:   %d (%.1f%%)", stats.publish,   (float) stats.publish * 100 / stats.mtotal);
-    mvwprintw(window->win, 18, 3, "MESSAGE:   %d (%.1f%%)", stats.message,   (float) stats.message * 100 / stats.mtotal);
-    mvwprintw(window->win, 19, 3, "INFO:      %d (%.1f%%)", stats.info,      (float) stats.info * 100 / stats.mtotal);
-    mvwprintw(window->win, 20, 3, "BYE:       %d (%.1f%%)", stats.bye,       (float) stats.bye * 100 / stats.mtotal);
-    mvwprintw(window->win, 21, 3, "CANCEL:    %d (%.1f%%)", stats.cancel,    (float) stats.cancel * 100 / stats.mtotal);
+    mvwprintw(window->win, 11, 3, "INVITE:    %d (%.1f%%)", stats.invite, (float) stats.invite * 100 / stats.mtotal);
+    mvwprintw(window->win, 12, 3, "REGISTER:  %d (%.1f%%)", stats.regist, (float) stats.regist * 100 / stats.mtotal);
+    mvwprintw(window->win, 13, 3, "SUBSCRIBE: %d (%.1f%%)", stats.subscribe,
+              (float) stats.subscribe * 100 / stats.mtotal);
+    mvwprintw(window->win, 14, 3, "UPDATE:    %d (%.1f%%)", stats.update, (float) stats.update * 100 / stats.mtotal);
+    mvwprintw(window->win, 15, 3, "NOTIFY:    %d (%.1f%%)", stats.notify, (float) stats.notify * 100 / stats.mtotal);
+    mvwprintw(window->win, 16, 3, "OPTIONS:   %d (%.1f%%)", stats.options, (float) stats.options * 100 / stats.mtotal);
+    mvwprintw(window->win, 17, 3, "PUBLISH:   %d (%.1f%%)", stats.publish, (float) stats.publish * 100 / stats.mtotal);
+    mvwprintw(window->win, 18, 3, "MESSAGE:   %d (%.1f%%)", stats.message, (float) stats.message * 100 / stats.mtotal);
+    mvwprintw(window->win, 19, 3, "INFO:      %d (%.1f%%)", stats.info, (float) stats.info * 100 / stats.mtotal);
+    mvwprintw(window->win, 20, 3, "BYE:       %d (%.1f%%)", stats.bye, (float) stats.bye * 100 / stats.mtotal);
+    mvwprintw(window->win, 21, 3, "CANCEL:    %d (%.1f%%)", stats.cancel, (float) stats.cancel * 100 / stats.mtotal);
 
     mvwprintw(window->win, 11, 33, "1XX: %d (%.1f%%)", stats.r100, (float) stats.r100 * 100 / stats.mtotal);
     mvwprintw(window->win, 12, 33, "2XX: %d (%.1f%%)", stats.r200, (float) stats.r200 * 100 / stats.mtotal);

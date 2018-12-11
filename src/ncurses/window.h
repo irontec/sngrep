@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file u_panel.h
+ * @file window.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Common process for all Interface panels
@@ -37,15 +37,13 @@
 #include <form.h>
 
 //! Possible key handler results
-enum WindowKeyHandlerRet {
-    //! Panel has handled the key, dont'use default key handler
-    KEY_HANDLED         = 0,
-    //! Panel has not handled the key, try defualt key handler
-    KEY_NOT_HANDLED     = -1,
-    //! Panel destroys and requests previous panel to handle key
-    KEY_PROPAGATED      = -2,
-    //! Panel request destroy
-    KEY_DESTROY         = -3
+enum WindowKeyHandlerRet
+{
+    KEY_HANDLED = 0,        // Panel has handled the key, dont'use default key handler
+    KEY_NOT_HANDLED = -1,   // Panel has not handled the key, try defualt key handler
+    KEY_PROPAGATED = -2,    // Panel destroys and requests previous panel to handle key
+    KEY_DESTROY = -3        // Panel request destroy
+
 };
 
 /**
@@ -53,27 +51,18 @@ enum WindowKeyHandlerRet {
  *
  * Mostly used for managing keybindings and offloop ui refresh
  */
-enum WindowTypes {
-    //! Call List ui screen
-    WINDOW_CALL_LIST = 0,
-    //! Call-Flow ui screen
-    WINDOW_CALL_FLOW,
-    //! Raw SIP messages ui screen
-    WINDOW_CALL_RAW,
-    //! Filters panel
-    WINDOW_FILTER,
-    //! Save to pcap panel
-    WINDOW_SAVE,
-    //! Message comprare
-    WINDOW_MSG_DIFF,
-    //! Column selector panel
-    WINDOW_COLUMN_SELECT,
-    //! Settings panel
-    WINDOW_SETTINGS,
-    //! Authentication validator panel
-    WINDOW_AUTH_VALIDATE,
-    //! Stats panel
-    WINDOW_STATS,
+enum WindowTypes
+{
+    WINDOW_CALL_LIST = 0,    // Call List ui screen
+    WINDOW_CALL_FLOW,        // Call-Flow ui screen
+    WINDOW_CALL_RAW,         // Raw SIP messages ui screen
+    WINDOW_FILTER,           // Filters panel
+    WINDOW_SAVE,             // Save to pcap panel
+    WINDOW_MSG_DIFF,         // Message comprare
+    WINDOW_COLUMN_SELECT,    // Column selector panel
+    WINDOW_SETTINGS,         // Settings panel
+    WINDOW_AUTH_VALIDATE,    // Authentication validator panel
+    WINDOW_STATS,            // Stats panel
 };
 
 //! Shorter declaration of ui structure
@@ -85,7 +74,8 @@ typedef struct _Window Window;
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct _Window {
+struct _Window
+{
     //! Curses panel pointer
     PANEL *panel;
     //! Window for the curses panel
@@ -105,16 +95,22 @@ struct _Window {
 
     //! Constructor for this panel
     void (*create)(Window *);
+
     //! Destroy current panel
     void (*destroy)(Window *);
+
     //! Query the panel if redraw is required
     gboolean (*redraw)(Window *);
+
     //! Request the panel to redraw its data
     int (*draw)(Window *);
+
     //! Notifies the panel the screen has changed
     int (*resize)(Window *);
+
     //! Handle a custom keybind on this panel
     int (*handle_key)(Window *, int key);
+
     //! Show help window for this panel (if any)
     int (*help)(Window *);
 };

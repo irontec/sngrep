@@ -47,9 +47,10 @@
  * Note that packet types are stored as flags and a packet have more than
  * one type.
  */
-enum PacketProtoId {
+enum PacketProtoId
+{
     PACKET_LINK = 0,
-    PACKET_IP   = 1,
+    PACKET_IP = 1,
     PACKET_UDP,
     PACKET_TCP,
     PACKET_TLS,
@@ -74,15 +75,8 @@ typedef struct _PacketFrame PacketFrame;
  * one SIP message has one packet (maybe in multiple frames) and that one
  * packet can only contain one SIP message.
  */
-struct _Packet {
-//    //! Packet types (bit flags array)
-//    guint16 types;
-//    //! Source address and port data
-//    Address src;
-//    //! Destination address and port data
-//    Address dst;
-//    //! Assembled/Decoded full packet payload
-//    GByteArray *payload;
+struct _Packet
+{
     //! Each packet protocol information
     GPtrArray *proto;
     //! Packet frame list (frame_t)
@@ -95,7 +89,8 @@ struct _Packet {
  *  One packet can contain multiple frames. This structure is designed to store
  *  the required information to save a packet into a PCAP file.
  */
-struct _PacketFrame {
+struct _PacketFrame
+{
     //! Frace received time
     GTimeVal ts;
     //! Capture lenght (effective)
@@ -112,19 +107,6 @@ packet_new();
 void
 packet_free(Packet *packet);
 
-///**
-// * @brief Create a new frame from libpcap data
-// *
-// */
-//PacketFrame *
-//packet_frame_create(const struct pcap_pkthdr *header, const guchar *packet);
-//
-///**
-// * @brief Add a new frame to the given packet
-// */
-//void
-//packet_add_frame(Packet *pkt, PacketFrame *frame);
-
 gboolean
 packet_has_type(const Packet *packet, enum PacketProtoId type);
 
@@ -133,9 +115,6 @@ packet_src_address(const Packet *packet);
 
 Address
 packet_dst_address(const Packet *packet);
-
-//const char *
-//packet_transport(Packet *packet);
 
 /**
  * @brief Get The timestamp for a packet.

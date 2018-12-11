@@ -45,47 +45,28 @@ typedef struct _Attribute Attribute;
  * This enum contains the list of available attributes
  * a call or message can have.
  */
-enum AttributeId {
-    //! Call index in the Call List
-    ATTR_CALLINDEX = 0,
-    //! SIP Message From: header
-    ATTR_SIPFROM,
-    //! SIP Message User of From: header
-    ATTR_SIPFROMUSER,
-    //! SIP Message To: header
-    ATTR_SIPTO,
-    //! SIP Message User of To: header
-    ATTR_SIPTOUSER,
-    //! Package IP source address and port
-    ATTR_SRC,
-    //! Package IP destination address and port
-    ATTR_DST,
-    //! SIP Message Call-ID header
-    ATTR_CALLID,
-    //! SIP Message X-Call-ID or X-CID header
-    ATTR_XCALLID,
-    //! SIP Message Date
-    ATTR_DATE,
-    //! SIP Message Time
-    ATTR_TIME,
-    //! SIP Message Method or Response code
-    ATTR_METHOD,
-    //! SIP Message transport
-    ATTR_TRANSPORT,
-    //! SIP Call message counter
-    ATTR_MSGCNT,
-    //! SIP Call state
-    ATTR_CALLSTATE,
-    //! Conversation duration
-    ATTR_CONVDUR,
-    //! Total call duration
-    ATTR_TOTALDUR,
-    //! Text from SIP Reason header
-    ATTR_REASON_TXT,
-    //! Warning Header
-    ATTR_WARNING,
-    //! SIP Attribute count
-    ATTR_COUNT
+enum AttributeId
+{
+    ATTR_CALLINDEX = 0,     //! Call index in the Call List
+    ATTR_SIPFROM,           //! SIP Message From: header
+    ATTR_SIPFROMUSER,       //! SIP Message User of From: header
+    ATTR_SIPTO,             //! SIP Message To: header
+    ATTR_SIPTOUSER,         //! SIP Message User of To: header
+    ATTR_SRC,               //! Package IP source address and port
+    ATTR_DST,               //! Package IP destination address and port
+    ATTR_CALLID,            //! SIP Message Call-ID header
+    ATTR_XCALLID,           //! SIP Message X-Call-ID or X-CID header
+    ATTR_DATE,              //! SIP Message Date
+    ATTR_TIME,              //! SIP Message Time
+    ATTR_METHOD,            //! SIP Message Method or Response code
+    ATTR_TRANSPORT,         //! SIP Message transport
+    ATTR_MSGCNT,            //! SIP Call message counter
+    ATTR_CALLSTATE,         //! SIP Call state
+    ATTR_CONVDUR,           //! Conversation duration
+    ATTR_TOTALDUR,          //! Total call duration
+    ATTR_REASON_TXT,        //! Text from SIP Reason header
+    ATTR_WARNING,           //! Warning Header
+    ATTR_COUNT              //! SIP Attribute count
 };
 
 /**
@@ -97,7 +78,8 @@ enum AttributeId {
  * attributes pointer to its type.
  *
  */
-struct _AttributeHeader {
+struct _AttributeHeader
+{
     //! Attribute id
     enum AttributeId id;
     //! Attribute name
@@ -106,6 +88,7 @@ struct _AttributeHeader {
     gchar *title;
     //! Attribute description
     gchar *desc;
+
     //! This function determines the color of this attribute in CallList
     int (*color)(const char *value);
 };
@@ -113,7 +96,8 @@ struct _AttributeHeader {
 /**
  * @brief Attribute storage struct
  */
-struct _Attribute {
+struct _Attribute
+{
     //! Attribute id
     enum AttributeId id;
     //! Attribute value

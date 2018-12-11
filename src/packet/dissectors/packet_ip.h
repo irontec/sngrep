@@ -39,10 +39,10 @@
 #include "packet/address.h"
 #include "packet/dissector.h"
 
-typedef struct _PacketIpData     PacketIpData;
+typedef struct _PacketIpData PacketIpData;
 typedef struct _PacketIpDatagram PacketIpDatagram;
 typedef struct _PacketIpFragment PacketIpFragment;
-typedef struct _DissectorIpData  DissectorIpData;
+typedef struct _DissectorIpData DissectorIpData;
 
 struct _PacketIpData
 {

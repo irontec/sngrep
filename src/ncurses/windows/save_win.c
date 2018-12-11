@@ -53,7 +53,7 @@
 static SaveWinInfo *
 save_info(Window *window)
 {
-    return (SaveWinInfo*) panel_userptr(window->panel);
+    return (SaveWinInfo *) panel_userptr(window->panel);
 }
 
 /**
@@ -96,7 +96,7 @@ save_draw(Window *window)
 
     mvwprintw(window->win, 4, 60, "     ");
     if (strstr(field_value, ".pcap")) {
-        info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
+        info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP)) ? SAVE_PCAP_RTP : SAVE_PCAP;
     } else if (strstr(field_value, ".txt")) {
         info->saveformat = SAVE_TXT;
     } else {
@@ -150,7 +150,7 @@ save_to_file(Window *window)
 {
     char savepath[SETTING_MAX_LEN];
     char savefile[SETTING_MAX_LEN];
-    char fullfile[SETTING_MAX_LEN*2];
+    char fullfile[SETTING_MAX_LEN * 2];
     CaptureOutput *output = NULL;
     int cur = 0, total = 0;
     WINDOW *progress;
@@ -270,7 +270,7 @@ save_to_file(Window *window)
 
             // Save SIP message content
             for (guint j = 0; j < g_ptr_array_len(call->msgs); j++) {
-                Message * msg = g_ptr_array_index(call->msgs, j);
+                Message *msg = g_ptr_array_index(call->msgs, j);
                 // Update progress bar dialog
                 dialog_progress_set_value(progress, (++cur * 100) / total);
                 g_ptr_array_add(packets, msg->packet);
@@ -279,7 +279,7 @@ save_to_file(Window *window)
             // Save RTP packets
             if (info->saveformat == SAVE_PCAP_RTP) {
                 GSequenceIter *rtps = g_sequence_get_begin_iter(call->rtp_packets);
-                for (;!g_sequence_iter_is_end(rtps); rtps = g_sequence_iter_next(rtps)) {
+                for (; !g_sequence_iter_is_end(rtps); rtps = g_sequence_iter_next(rtps)) {
                     // Update progress bar dialog
                     dialog_progress_set_value(progress, (++cur * 100) / total);
                     g_ptr_array_add(packets, g_sequence_get(rtps));
@@ -503,21 +503,21 @@ save_win_new()
 
     // Initialize save panel specific data
     SaveWinInfo *info = g_malloc0(sizeof(SaveWinInfo));
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     // Initialize the fields    int total, displayed;
-    info->fields[FLD_SAVE_PATH]         = new_field(1, 52, 3, 13, 0, 0);
-    info->fields[FLD_SAVE_FILE]         = new_field(1, 47, 4, 13, 0, 0);
-    info->fields[FLD_SAVE_ALL]          = new_field(1, 1, 7, 4, 0, 0);
-    info->fields[FLD_SAVE_SELECTED]     = new_field(1, 1, 8, 4, 0, 0);
-    info->fields[FLD_SAVE_DISPLAYED]    = new_field(1, 1, 9, 4, 0, 0);
-    info->fields[FLD_SAVE_MESSAGE]      = new_field(1, 1, 10, 4, 0, 0);
-    info->fields[FLD_SAVE_PCAP]         = new_field(1, 1, 7, 36, 0, 0);
-    info->fields[FLD_SAVE_PCAP_RTP]     = new_field(1, 1, 8, 36, 0, 0);
-    info->fields[FLD_SAVE_TXT]          = new_field(1, 1, 9, 36, 0, 0);
-    info->fields[FLD_SAVE_SAVE]         = new_field(1, 10, window->height - 2, 20, 0, 0);
-    info->fields[FLD_SAVE_CANCEL]       = new_field(1, 10, window->height - 2, 40, 0, 0);
-    info->fields[FLD_SAVE_COUNT]        = NULL;
+    info->fields[FLD_SAVE_PATH] = new_field(1, 52, 3, 13, 0, 0);
+    info->fields[FLD_SAVE_FILE] = new_field(1, 47, 4, 13, 0, 0);
+    info->fields[FLD_SAVE_ALL] = new_field(1, 1, 7, 4, 0, 0);
+    info->fields[FLD_SAVE_SELECTED] = new_field(1, 1, 8, 4, 0, 0);
+    info->fields[FLD_SAVE_DISPLAYED] = new_field(1, 1, 9, 4, 0, 0);
+    info->fields[FLD_SAVE_MESSAGE] = new_field(1, 1, 10, 4, 0, 0);
+    info->fields[FLD_SAVE_PCAP] = new_field(1, 1, 7, 36, 0, 0);
+    info->fields[FLD_SAVE_PCAP_RTP] = new_field(1, 1, 8, 36, 0, 0);
+    info->fields[FLD_SAVE_TXT] = new_field(1, 1, 9, 36, 0, 0);
+    info->fields[FLD_SAVE_SAVE] = new_field(1, 10, window->height - 2, 20, 0, 0);
+    info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, window->height - 2, 40, 0, 0);
+    info->fields[FLD_SAVE_COUNT] = NULL;
 
     // Set fields options
     field_opts_off(info->fields[FLD_SAVE_PATH], O_STATIC);
@@ -606,7 +606,7 @@ save_win_new()
 
     // Set default save modes
     info->savemode = (stats.displayed == stats.total) ? SAVE_ALL : SAVE_DISPLAYED;
-    info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
+    info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP)) ? SAVE_PCAP_RTP : SAVE_PCAP;
 
     return window;
 }

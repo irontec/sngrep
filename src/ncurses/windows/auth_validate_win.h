@@ -44,7 +44,8 @@
  * Dialog form has a field array. Following enum represents the
  * order this fields are stored in panel info structure.
  */
-enum AuthValidateWinField {
+enum AuthValidateWinField
+{
     FLD_AUTH_PASS,
     FLD_AUTH_CLOSE,
     FLD_AUTH_COUNT
@@ -57,7 +58,8 @@ typedef struct _AuthValidateWinInfo AuthValidateWinInfo;
  *
  * This structure contains the durable data of auth validator panel.
  */
-struct _AuthValidateWinInfo {
+struct _AuthValidateWinInfo
+{
     //! Form that contains the validator fields
     FORM *form;
     //! An array of fields

@@ -32,7 +32,7 @@
 
 #include <glib.h>
 
-typedef struct _PacketRtcpData  PacketRtcpData;
+typedef struct _PacketRtcpData PacketRtcpData;
 
 
 // RTCP header types
@@ -110,7 +110,8 @@ struct rtcp_blk_sr
     //! fraction lost: 8 bits
     guint8 flost;
     //! cumulative number of packets lost: 24 bits
-    struct {
+    struct
+    {
         guint8 pl1;
         guint8 pl2;
         guint8 pl3;

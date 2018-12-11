@@ -127,7 +127,7 @@ packet_ws_dissect(PacketParser *parser, Packet *packet, GByteArray *data)
     return data;
 }
 
-PacketDissector*
+PacketDissector *
 packet_ws_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));

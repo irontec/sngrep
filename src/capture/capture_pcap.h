@@ -185,7 +185,7 @@ capture_packet_time_sorter(const Packet **a, const Packet **b);
  * @return Input file in Offline mode
  * @return NULL in Online mode
  */
-const gchar*
+const gchar *
 capture_input_pcap_file(CaptureManager *manager);
 
 /**

@@ -35,7 +35,7 @@
 #include "filter.h"
 
 //! Storage of filter information
-Filter filters[FILTER_COUNT] = { { 0 } };
+Filter filters[FILTER_COUNT] = {{ 0 }};
 
 gboolean
 filter_set(enum FilterType type, const gchar *expr)
@@ -96,7 +96,7 @@ filter_check_call(Call *call, G_GNUC_UNUSED gconstpointer user_data)
         memset(data, 0, sizeof(data));
 
         // Get filtered field
-        switch(filter_type) {
+        switch (filter_type) {
             case FILTER_SIPFROM:
                 call_get_attribute(call, ATTR_SIPFROM, data);
                 break;

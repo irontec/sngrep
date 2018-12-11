@@ -34,11 +34,11 @@
 
 typedef struct _PacketHepData PacketHepData;
 
-typedef struct _CaptureHepHdr           CaptureHepHdr;
-typedef struct _CaptureHepGeneric       CaptureHepGeneric;
-typedef struct _CaptureHepChunk         CaptureHepChunk;
-typedef struct _CaptureHepChunkIp4      CaptureHepChunkIp4;
-typedef struct _CaptureHepChunkIp6      CaptureHepChunkIp6;
+typedef struct _CaptureHepHdr CaptureHepHdr;
+typedef struct _CaptureHepGeneric CaptureHepGeneric;
+typedef struct _CaptureHepChunk CaptureHepChunk;
+typedef struct _CaptureHepChunkIp4 CaptureHepChunkIp4;
+typedef struct _CaptureHepChunkIp6 CaptureHepChunkIp6;
 
 /* HEPv3 types */
 struct _CaptureHepChunk

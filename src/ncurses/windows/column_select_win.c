@@ -51,7 +51,7 @@
 static ColumnSelectWinInfo *
 column_select_info(Window *ui)
 {
-    return (ColumnSelectWinInfo*) panel_userptr(ui->panel);
+    return (ColumnSelectWinInfo *) panel_userptr(ui->panel);
 }
 
 /**
@@ -194,7 +194,7 @@ static void
 column_select_save_columns(Window *ui)
 {
     GString *userconf = g_string_new(NULL);
-    GString *tmpfile  = g_string_new(NULL);
+    GString *tmpfile = g_string_new(NULL);
 
     // Use $SNGREPRC/.sngreprc file
     const gchar *rcfile = g_getenv("SNGREPRC");
@@ -258,7 +258,7 @@ column_select_save_columns(Window *ui)
     for (gint i = 0; i < item_count(info->menu); i++) {
         // If column is active
         if (!strncmp(item_name(info->items[i]), "[ ]", 3)) {
-            g_fprintf(fo, "set cl.column.%s.pos -1\n", (const char*) item_userptr(info->items[i]));
+            g_fprintf(fo, "set cl.column.%s.pos -1\n", (const char *) item_userptr(info->items[i]));
         } else {
             // Add the columns settings
             g_fprintf(fo, "set cl.column.%s.pos %d\n", (const char *) item_userptr(info->items[i]), i);
@@ -399,7 +399,7 @@ column_select_handle_key_form(Window *ui, int key)
                 break;
             case ACTION_SELECT:
             case ACTION_CONFIRM:
-                switch(field_idx) {
+                switch (field_idx) {
                     case FLD_COLUMNS_ACCEPT:
                         column_select_update_columns(ui);
                         return KEY_DESTROY;
@@ -409,7 +409,8 @@ column_select_handle_key_form(Window *ui, int key)
                         column_select_update_columns(ui);
                         column_select_save_columns(ui);
                         return KEY_DESTROY;
-                    default:break;
+                    default:
+                        break;
                 }
                 break;
             default:
@@ -426,7 +427,7 @@ column_select_handle_key_form(Window *ui, int key)
 
     // Change background and cursor of "button fields"
     set_field_back(info->fields[FLD_COLUMNS_ACCEPT], A_NORMAL);
-    set_field_back(info->fields[FLD_COLUMNS_SAVE],   A_NORMAL);
+    set_field_back(info->fields[FLD_COLUMNS_SAVE], A_NORMAL);
     set_field_back(info->fields[FLD_COLUMNS_CANCEL], A_NORMAL);
 
     // Get current selected field
@@ -542,20 +543,20 @@ column_select_win_new()
 
     // Initialize Filter panel specific data
     ColumnSelectWinInfo *info = g_malloc0(sizeof(ColumnSelectWinInfo));
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     // Initialize attributes
     info->form_active = FALSE;
 
     // Initialize the fields
     info->fields[FLD_COLUMNS_ACCEPT] = new_field(1, 10, window->height - 2, 13, 0, 0);
-    info->fields[FLD_COLUMNS_SAVE]   = new_field(1, 10, window->height - 2, 25, 0, 0);
+    info->fields[FLD_COLUMNS_SAVE] = new_field(1, 10, window->height - 2, 25, 0, 0);
     info->fields[FLD_COLUMNS_CANCEL] = new_field(1, 10, window->height - 2, 37, 0, 0);
-    info->fields[FLD_COLUMNS_COUNT]  = NULL;
+    info->fields[FLD_COLUMNS_COUNT] = NULL;
 
     // Field Labels
     set_field_buffer(info->fields[FLD_COLUMNS_ACCEPT], 0, "[ Accept ]");
-    set_field_buffer(info->fields[FLD_COLUMNS_SAVE],   0, "[  Save  ]");
+    set_field_buffer(info->fields[FLD_COLUMNS_SAVE], 0, "[  Save  ]");
     set_field_buffer(info->fields[FLD_COLUMNS_CANCEL], 0, "[ Cancel ]");
 
     // Create the form and post it
@@ -570,7 +571,7 @@ column_select_win_new()
     for (guint attr_id = 0; attr_id < ATTR_COUNT; attr_id++) {
         // Create a new field for this column
         info->items[attr_id] = new_item("[ ]", attr_description(attr_id));
-        set_item_userptr(info->items[attr_id], (void*) attr_name(attr_id));
+        set_item_userptr(info->items[attr_id], (void *) attr_name(attr_id));
     }
     info->items[ATTR_COUNT] = NULL;
 

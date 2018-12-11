@@ -41,10 +41,11 @@
  * @brief Enum of available fields
  *
  */
-enum CallListFieldList {
+enum CallListFieldList
+{
     FLD_LIST_FILTER = 0,
     //! Never remove this field id
-    FLD_LIST_COUNT
+        FLD_LIST_COUNT
 };
 
 //! Sorter declaration of column struct
@@ -59,7 +60,8 @@ typedef struct _CallListWinInfo CallListWinInfo;
  * in which order a configurable option.
  * This structure is one step towards configurable stuff
  */
-struct _CallListColumn {
+struct _CallListColumn
+{
     //! Attribute id of the column
     enum AttributeId id;
     //! Attribute name
@@ -78,7 +80,8 @@ struct _CallListColumn {
  * This data stores the actual status of the panel. It's stored in the
  * panel pointer.
  */
-struct _CallListWinInfo {
+struct _CallListWinInfo
+{
     //! Displayed calls vector
     GPtrArray *dcalls;
     //! Selected call in the list
@@ -132,7 +135,7 @@ call_list_win_new();
  * @param text Text pointer to store the generated line
  * @return A pointer to text
  */
-const char*
+const char *
 call_list_win_line_text(Window *window, Call *call, char *text);
 
 /**

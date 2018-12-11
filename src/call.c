@@ -90,7 +90,7 @@ call_add_message(Call *call, Message *msg)
     // Put this msg at the end of the msg list
     g_ptr_array_add(call->msgs, msg);
     // Flag this call as changed
-    call->changed = true;
+    call->changed = TRUE;
     // Check if message is a retransmission
     msg->retrans = msg_is_retrans(msg);
 }
@@ -101,7 +101,7 @@ call_add_stream(Call *call, RtpStream *stream)
     // Store stream
     g_ptr_array_add(call->streams, stream);
     // Flag this call as changed
-    call->changed = true;
+    call->changed = TRUE;
 }
 
 guint
@@ -145,7 +145,7 @@ call_update_state(Call *call, Message *msg)
             } else if (msg_reqresp == SIP_METHOD_CANCEL) {
                 // Alice is not in the mood
                 call->state = CALL_STATE_CANCELLED;
-            } else if ((msg_reqresp == 480) || (msg_reqresp == 486) || (msg_reqresp == 600 )) {
+            } else if ((msg_reqresp == 480) || (msg_reqresp == 486) || (msg_reqresp == 600)) {
                 // Bob is busy
                 call->state = CALL_STATE_BUSY;
             } else if (msg_reqresp > 400 && call->invitecseq == msg_cseq) {
@@ -161,7 +161,7 @@ call_update_state(Call *call, Message *msg)
                 call->state = CALL_STATE_COMPLETED;
                 call->cend_msg = msg;
             }
-        } else if (msg_reqresp == SIP_METHOD_INVITE && call->state !=  CALL_STATE_INCALL) {
+        } else if (msg_reqresp == SIP_METHOD_INVITE && call->state != CALL_STATE_INCALL) {
             // Call is being setup (after proper authentication)
             call->invitecseq = msg_cseq;
             call->state = CALL_STATE_CALLSETUP;
@@ -299,7 +299,7 @@ call_add_xcall(Call *call, Call *xcall)
         return;
 
     // Mark this call as changed
-    call->changed = true;
+    call->changed = TRUE;
 
     // Add the xcall to the list
     g_ptr_array_add(call->xcalls, xcall);

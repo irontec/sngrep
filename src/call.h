@@ -29,8 +29,6 @@
 #ifndef __SNGREP_CALL_H
 #define __SNGREP_CALL_H
 
-#include <stdarg.h>
-#include <stdbool.h>
 #include <glib.h>
 #include "stream.h"
 #include "message.h"
@@ -58,7 +56,8 @@ enum CallState
  * callid (considered a dialog). It contains some replicated
  * data from its messages to speed up searches.
  */
-struct _Call {
+struct _Call
+{
     //! Call index in the call list
     guint index;
     //! Call identifier

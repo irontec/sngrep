@@ -148,8 +148,8 @@ packet_tcp_segment_hashkey(PacketTcpSegment *segment)
 {
     static gchar hashkey[ADDRESSLEN + ADDRESSLEN + 12];
     g_sprintf(hashkey, "%s:%hu-%s:%hu",
-            segment->src.ip, segment->src.port,
-            segment->dst.ip, segment->dst.port
+              segment->src.ip, segment->src.port,
+              segment->dst.ip, segment->dst.port
     );
     return hashkey;
 }
@@ -243,8 +243,8 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     PacketTcpData *tcp_data = g_malloc0(sizeof(PacketTcpData));
     tcp_data->sport = segment->src.port;
     tcp_data->dport = segment->dst.port;
-    tcp_data->ack   = segment->ack;
-    tcp_data->syn   = segment->syn;
+    tcp_data->ack = segment->ack;
+    tcp_data->syn = segment->syn;
     g_ptr_array_set(packet->proto, PACKET_TCP, tcp_data);
 
     // Call next dissector

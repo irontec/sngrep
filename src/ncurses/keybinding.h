@@ -57,7 +57,8 @@
 /**
  * @brief Available Key actions
  */
-enum KeybindingAction {
+enum KeybindingAction
+{
     ACTION_UNKNOWN = -1,
     ACTION_PRINTABLE = 0,
     ACTION_UP,
@@ -123,7 +124,8 @@ typedef struct _Keybinding Keybinding;
 /**
  * @brief Struct to hold a keybinding data
  */
-struct _Keybinding {
+struct _Keybinding
+{
     //! Keybinding action id
     enum KeybindingAction id;
     //! Keybinding action name

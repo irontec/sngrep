@@ -67,10 +67,10 @@ ncurses_init(GError **error)
 
     // Initialize curses
     if (!initscr()) {
-        g_set_error (error,
-                     NCURSES_ERROR,
-                     NCURSES_ERROR_INIT,
-                     "Unable to initialize ncurses mode.");
+        g_set_error(error,
+                    NCURSES_ERROR,
+                    NCURSES_ERROR_INIT,
+                    "Unable to initialize ncurses mode.");
         return FALSE;
     }
 
@@ -182,8 +182,9 @@ Window *
 ncurses_find_by_panel(PANEL *panel)
 {
     guint index;
-    if (g_ptr_array_find_with_equal_func(windows, panel,
-            (GEqualFunc) ncurses_window_panel_cmp, &index)) {
+    if (g_ptr_array_find_with_equal_func(
+        windows, panel,
+        (GEqualFunc) ncurses_window_panel_cmp, &index)) {
         return g_ptr_array_index(windows, index);
     }
 
@@ -194,8 +195,9 @@ Window *
 ncurses_find_by_type(enum WindowTypes type)
 {
     guint index;
-    if (g_ptr_array_find_with_equal_func(windows, GUINT_TO_POINTER(type),
-            (GEqualFunc) ncurses_window_type_cmp, &index)) {
+    if (g_ptr_array_find_with_equal_func(
+        windows, GUINT_TO_POINTER(type),
+        (GEqualFunc) ncurses_window_type_cmp, &index)) {
         return g_ptr_array_index(windows, index);
     }
 
@@ -232,7 +234,8 @@ ncurses_find_by_type(enum WindowTypes type)
         case WINDOW_AUTH_VALIDATE:
             window = auth_validate_win_new();
             break;
-        default: break;
+        default:
+            break;
     }
 
     if (window != NULL) {
@@ -506,7 +509,7 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
 
         // Store where the line begins
         if (payload[i] == '\n')
-            cur_line =payload + i + 1;
+            cur_line = payload + i + 1;
 
         // Move to the next line if line is filled or a we reach a line break
         if (column > width || payload[i] == '\n') {
@@ -569,7 +572,7 @@ dialog_run(const char *fmt, ...)
 
     // Write the message into the screen
     for (word = strtok(textva, " "); word; word = strtok(NULL, " ")) {
-        if ((gint)(col + strlen(word)) > width - 2) {
+        if ((gint) (col + strlen(word)) > width - 2) {
             line++;
             col = 2;
         }
@@ -579,7 +582,7 @@ dialog_run(const char *fmt, ...)
 
     // Write Accept button
     wattron(win, A_REVERSE);
-    mvwprintw(win, height - 2, width/2 - 5, "[ Accept ]");
+    mvwprintw(win, height - 2, width / 2 - 5, "[ Accept ]");
 
     curs_set(0);
     // Disable input timeout
@@ -626,7 +629,7 @@ dialog_progress_run(const char *fmt, ...)
 
     // Write the message into the screen
     for (word = strtok(textva, " "); word; word = strtok(NULL, " ")) {
-        if ((gint)(col + strlen(word)) > width - 2) {
+        if ((gint) (col + strlen(word)) > width - 2) {
             line++;
             col = 2;
         }
@@ -656,7 +659,7 @@ dialog_progress_set_value(WINDOW *win, int perc)
     mvwprintw(win, 4, width - 5, "%d%%", perc);
 
     if (perc > 0 && perc <= 100)
-        mvwhline(win, 4, 4, ACS_CKBOARD, (width - 10) * ((float)perc/100));
+        mvwhline(win, 4, 4, ACS_CKBOARD, (width - 10) * ((float) perc / 100));
 
     wrefresh(win);
 }
@@ -683,7 +686,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
     memset(opts, 0, 4 * 10);
 
     // Check how many options exists
-    for (i=0; options[i]; i++) {
+    for (i = 0; options[i]; i++) {
         if (options[i] == ',')
             optioncnt++;
     }
@@ -694,9 +697,9 @@ dialog_confirm(const char *title, const char *text, const char *options)
 
     // Calculate proper width taking into acount longest data
     width = strlen(options) + 6 * optioncnt;
-    if ((gint)strlen(title) + 4 > width)
+    if ((gint) strlen(title) + 4 > width)
         width = strlen(title) + 4;
-    if ((gint)strlen(text) > width && strlen(text) < 50)
+    if ((gint) strlen(text) > width && strlen(text) < 50)
         width = strlen(text);
 
     // Check we don't want a too big or small window
@@ -709,13 +712,13 @@ dialog_confirm(const char *title, const char *text, const char *options)
     height = 7; // Minimum for header and button lines
     height += (strlen(text) / width);   // Space for the text.
     // Add one extra line for each newline in the text
-    for (i=0; text[i]; i++) {
+    for (i = 0; text[i]; i++) {
         if (text[i] == '\n')
             height++;
     }
 
     // Parse each line of payload looking for sdp information
-    tofree = str = strdup((char*)options);
+    tofree = str = strdup((char *) options);
     i = 0;
     while ((option = strsep(&str, ",")) != NULL) {
         strcpy(opts[i++], option);
@@ -745,15 +748,15 @@ dialog_confirm(const char *title, const char *text, const char *options)
     // Exit confirmation message message
     wattron(dialog_win, COLOR_PAIR(CP_CYAN_ON_DEF));
     // Write the message into the screen
-    tofree = str = strdup((char*)text);
+    tofree = str = strdup((char *) text);
     newl = 0;
     while ((word = strsep(&str, " ")) != NULL) {
-        if (word[strlen(word)-1] == '\n') {
-            word[strlen(word)-1] = '\0';
+        if (word[strlen(word) - 1] == '\n') {
+            word[strlen(word) - 1] = '\0';
             newl = 1;
         }
 
-        if ((gint)(col + strlen(word)) > width - 2) {
+        if ((gint) (col + strlen(word)) > width - 2) {
             line++;
             col = 2;
         }
@@ -770,7 +773,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
 
     for (;;) {
         // A list of available keys in this window
-        for (i = 0; i < optioncnt; i++ ) {
+        for (i = 0; i < optioncnt; i++) {
             if (i == selected) wattron(dialog_win, A_REVERSE);
             mvwprintw(dialog_win, height - 2, 10 + 10 * i, "[  %s  ]", opts[i]);
             wattroff(dialog_win, A_REVERSE);

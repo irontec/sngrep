@@ -41,7 +41,8 @@ typedef struct _MsgDiffWinInfo MsgDiffWinInfo;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _MsgDiffWinInfo {
+struct _MsgDiffWinInfo
+{
     //! First message to compare
     Message *one;
     //! Second message to compare

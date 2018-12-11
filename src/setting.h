@@ -58,7 +58,8 @@ typedef struct _SettingAlias SettingAlias;
 #define SETTING_OFF "off"
 
 //! Available setting Options
-enum SettingId {
+enum SettingId
+{
     SETTING_UNKNOWN = -1,
     SETTING_BACKGROUND = 0,
     SETTING_COLORMODE,
@@ -158,7 +159,8 @@ enum SettingId {
 };
 
 //! Available setting formats
-enum SettingFormat {
+enum SettingFormat
+{
     SETTING_FMT_STRING = 0,
     SETTING_FMT_BOOLEAN,
     SETTING_FMT_NUMBER,
@@ -168,7 +170,8 @@ enum SettingFormat {
 /**
  * @brief Configurable Setting structure
  */
-struct _Setting {
+struct _Setting
+{
     //! Setting name
     const gchar *name;
     //! Setting format
@@ -182,7 +185,8 @@ struct _Setting {
 /**
  * @brief Alias setting structure
  */
-struct _SettingAlias {
+struct _SettingAlias
+{
     //! Original address value
     const gchar *address;
     //! Alias name
@@ -190,7 +194,8 @@ struct _SettingAlias {
 
 };
 
-struct _SettingStorage {
+struct _SettingStorage
+{
     //! Array of settings
     GPtrArray *values;
     //! List of configured IP address aliases
@@ -227,7 +232,7 @@ setting_format(enum SettingId id);
 const gchar **
 setting_valid_values(enum SettingId id);
 
-const gchar*
+const gchar *
 setting_get_value(enum SettingId id);
 
 gint

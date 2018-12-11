@@ -40,7 +40,7 @@
 GQuark
 capture_txt_error_quark()
 {
-    return  g_quark_from_static_string("capture-txt");
+    return g_quark_from_static_string("capture-txt");
 }
 
 static void
@@ -66,8 +66,8 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     dst = packet_dst_address(packet);
 
     fprintf(txt->file, "%s %s %s:%u -> %s:%u\n%s\n\n",
-        date, time, src.ip, src.port, dst.ip, dst.port,
-        packet_sip_payload(packet)
+            date, time, src.ip, src.port, dst.ip, dst.port,
+            packet_sip_payload(packet)
     );
 }
 
@@ -88,18 +88,18 @@ capture_output_txt(const gchar *filename, GError **error)
     CaptureTxt *txt = g_malloc0(sizeof(CaptureTxt));
 
     if (!(txt->file = fopen(filename, "w"))) {
-        g_set_error (error,
-                     CAPTURE_TXT_ERROR,
-                     CAPTURE_TXT_ERROR_OPEN,
-                     "Unable to open file: %s",
-                     g_strerror(errno));
+        g_set_error(error,
+                    CAPTURE_TXT_ERROR,
+                    CAPTURE_TXT_ERROR_OPEN,
+                    "Unable to open file: %s",
+                    g_strerror(errno));
         return NULL;
     }
 
     // Create a new structure to handle this capture dumper
     CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));
-    output->priv   = txt;
-    output->write  = capture_output_txt_write;
-    output->close  = capture_output_txt_close;
+    output->priv = txt;
+    output->write = capture_output_txt_write;
+    output->close = capture_output_txt_close;
     return output;
 }

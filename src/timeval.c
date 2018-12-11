@@ -28,9 +28,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include <ctype.h>
 #include <glib/gprintf.h>
-#include <stdlib.h>
 #include "timeval.h"
 
 gint
@@ -44,7 +42,7 @@ timeval_is_older(GTimeVal t1, GTimeVal t2)
         return -1;
     }
 
-    if(t1.tv_usec == t2.tv_usec) {
+    if (t1.tv_usec == t2.tv_usec) {
         return 0;
     }
 
@@ -65,8 +63,8 @@ timeval_to_date(GTimeVal time, gchar *out)
 }
 
 
-const char *
-timeval_to_time(GTimeVal time, char *out)
+const gchar *
+timeval_to_time(GTimeVal time, gchar *out)
 {
     GDateTime *datetime = g_date_time_new_from_timeval_local(&time);
     g_sprintf(out, "%s.%06d",
@@ -77,41 +75,36 @@ timeval_to_time(GTimeVal time, char *out)
     return out;
 }
 
-const char *
-timeval_to_duration(GTimeVal start, GTimeVal end, char *out)
+const gchar *
+timeval_to_duration(GTimeVal start, GTimeVal end, gchar *out)
 {
-    gint seconds;
-    gchar duration[20];
-
-    if (!out || !start.tv_sec || !end.tv_sec)
-        return NULL;
+    g_return_val_if_fail(out != NULL, NULL);
+    g_return_val_if_fail(start.tv_sec != 0, NULL);
+    g_return_val_if_fail(end.tv_sec != 0, NULL);
 
     // Differnce in secons
-    seconds = end.tv_sec - start.tv_sec;
+    glong seconds = end.tv_sec - start.tv_sec;
+
     // Set Human readable format
-    g_sprintf(duration, "%d:%02d", seconds / 60, seconds % 60);
-    g_sprintf(out, "%7s", duration);
+    g_sprintf(out, "%lu:%02lu", seconds / 60, seconds % 60);
     return out;
 }
 
 const gchar *
 timeval_to_delta(GTimeVal start, GTimeVal end, gchar *out)
 {
-    glong diff;
-    gint nsec, nusec;
-    gint sign;
+    g_return_val_if_fail(out != NULL, NULL);
+    g_return_val_if_fail(start.tv_sec != 0, NULL);
+    g_return_val_if_fail(end.tv_sec != 0, NULL);
 
-    if (!out || !start.tv_sec || !end.tv_sec)
-        return NULL;
-
-    diff = end.tv_sec  * 1000000 + end.tv_usec;
+    glong diff = end.tv_sec * 1000000 + end.tv_usec;
     diff -= start.tv_sec * 1000000 + start.tv_usec;
 
-    nsec = diff / 1000000;
-    nusec = labs(diff - (nsec * 1000000));
+    glong nsec = diff / 1000000;
+    glong nusec = labs(diff - (nsec * 1000000));
 
-    sign = (diff >= 0) ? '+' : '-';
+    gint sign = (diff >= 0) ? '+' : '-';
 
-    g_sprintf(out, "%c%d.%06d", sign, abs(nsec), nusec);
+    g_sprintf(out, "%c%d.%06lu", sign, abs(nsec), nusec);
     return out;
 }

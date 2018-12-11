@@ -20,15 +20,15 @@
  **
  ****************************************************************************/
 /**
- * @file glib-utils.h
+ * @file glib-extra.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Helper function for glib containers
  *
  */
 
-#ifndef SNGREP_GLIB_UTILS_H
-#define SNGREP_GLIB_UTILS_H
+#ifndef __SNGREP_GLIB_EXTRA_H
+#define __SNGREP_GLIB_EXTRA_H
 
 #include <glib.h>
 
@@ -37,33 +37,6 @@
 #define g_ptr_array_first(array) g_ptr_array_index(array, 0)
 #define g_ptr_array_last(array)  g_ptr_array_index(array, array->len-1)
 #define g_ptr_array_set(array, index, item)  (array->pdata[index] = item)
-
-#define g_sequence_first(sequence) g_sequence_nth(sequence, 0)
-#define g_sequence_last(sequence) g_sequence_nth(sequence, g_sequence_get_length(sequence))
-
-gpointer
-g_sequence_nth(GSequence *sequence, guint index);
-
-gint
-g_sequence_iter_length(GSequenceIter *iter);
-
-void
-g_sequence_iter_set_pos(GSequenceIter **iter, gint pos);
-
-gint
-g_sequence_index(GSequence *sequence, gconstpointer item);
-
-void
-g_sequence_remove_data(GSequence *sequence, gconstpointer item);
-
-void
-g_sequence_remove_all(GSequence *sequence);
-
-void
-g_sequence_append_sequence(GSequence *sequence, GSequence *items);
-
-GSequence *
-g_sequence_copy(GSequence *sequence, GEqualFunc filter_func, gpointer filter_data);
 
 GPtrArray *
 g_ptr_array_copy(GPtrArray *origin);
@@ -89,7 +62,7 @@ g_ptr_array_remove_array(GPtrArray *array, GPtrArray *items);
 void
 g_ptr_array_remove_all(GPtrArray *array);
 
-#if !GLIB_CHECK_VERSION(2,54,0)
+#if !GLIB_CHECK_VERSION(2, 54, 0)
 gboolean
 g_ptr_array_find(GPtrArray *haystack, gconstpointer needle, guint *index);
 
@@ -97,4 +70,4 @@ gboolean
 g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle, GEqualFunc equal_func, guint *index);
 #endif
 
-#endif //SNGREP_GLIB_UTILS_H
+#endif //__SNGREP_GLIB_EXTRA_H

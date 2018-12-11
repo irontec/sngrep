@@ -44,7 +44,7 @@
 static AuthValidateWinInfo *
 auth_validate_info(Window *window)
 {
-    return (AuthValidateWinInfo*) panel_userptr(window->panel);
+    return (AuthValidateWinInfo *) panel_userptr(window->panel);
 }
 
 /**
@@ -108,16 +108,16 @@ auth_validate_calulate(Window *window)
 
     gchar *str1 = g_strdup_printf("%s:%s:%s", info->username, info->realm, password);
     g_return_if_fail(str1 != NULL);
-    gchar *md51 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str1, strlen(str1));
+    gchar *md51 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str1, (gsize) strlen(str1));
     g_return_if_fail(md51 != NULL);
     gchar *str2 = g_strdup_printf("%s:%s", info->method, info->uri);
     g_return_if_fail(str2 != NULL);
-    gchar *md52 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str2, strlen(str2));
+    gchar *md52 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str2, (gsize) strlen(str2));
     g_return_if_fail(md52 != NULL);
     gchar *str3 = g_strdup_printf("%s:%s:%s", md51, info->nonce, md52);
     g_return_if_fail(str3 != NULL);
 
-    info->calculated = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str3, strlen(str3));;
+    info->calculated = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str3, (gsize) strlen(str3));;
 
     // Free all allocated data
     g_free(str1);
@@ -266,11 +266,11 @@ auth_validate_set_msg(Window *window, Message *msg)
     info->method = sip_method_str(sip->reqresp);
 
     GRegex *auth_param = g_regex_new(
-            "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
-            G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
+        "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
+        G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
 
     gchar **auth_data = g_strsplit(sip->auth_hdr, ",", -1);
-    for (guint i = 0; i < g_strv_length(auth_data); i++ ) {
+    for (guint i = 0; i < g_strv_length(auth_data); i++) {
         // Trim parameter string
         g_strstrip(auth_data[i]);
 
@@ -278,7 +278,7 @@ auth_validate_set_msg(Window *window, Message *msg)
         GMatchInfo *pmatch;
         g_regex_match(auth_param, auth_data[i], 0, &pmatch);
         if (g_match_info_matches(pmatch)) {
-            const gchar *authhdrname =  g_match_info_fetch_named(pmatch, "authhdrname");
+            const gchar *authhdrname = g_match_info_fetch_named(pmatch, "authhdrname");
             const gchar *authhdrvalue = g_match_info_fetch_named(pmatch, "authhdrvalue");
 
             if (g_strcmp0(authhdrname, "username") == 0) {
@@ -349,12 +349,12 @@ auth_validate_win_new()
 
     // Initialize save panel specific data
     AuthValidateWinInfo *info = g_malloc0(sizeof(AuthValidateWinInfo));
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     // Initialize the fields    int total, displayed;
-    info->fields[FLD_AUTH_PASS]         = new_field(1, 50, 10, 13, 0, 0);
-    info->fields[FLD_AUTH_CLOSE]        = new_field(1, 9, window->height - 2, 27, 0, 0);
-    info->fields[FLD_AUTH_COUNT]        = NULL;
+    info->fields[FLD_AUTH_PASS] = new_field(1, 50, 10, 13, 0, 0);
+    info->fields[FLD_AUTH_CLOSE] = new_field(1, 9, window->height - 2, 27, 0, 0);
+    info->fields[FLD_AUTH_COUNT] = NULL;
 
     // Set fields options
     field_opts_off(info->fields[FLD_AUTH_PASS], O_STATIC);

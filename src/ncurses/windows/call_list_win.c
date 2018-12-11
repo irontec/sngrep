@@ -62,7 +62,7 @@
 static CallListWinInfo *
 call_list_info(Window *window)
 {
-    return (CallListWinInfo*) panel_userptr(window->panel);
+    return (CallListWinInfo *) panel_userptr(window->panel);
 }
 
 /**
@@ -98,7 +98,7 @@ call_list_move(Window *window, guint line)
 
             // If we are out of the bottom of the displayed list
             // refresh it starting in the next call
-            if ((gint)(info->cur_idx - info->scroll.pos) == getmaxy(info->list_win)) {
+            if ((gint) (info->cur_idx - info->scroll.pos) == getmaxy(info->list_win)) {
                 info->scroll.pos++;
             }
         }
@@ -404,7 +404,7 @@ call_list_draw_list(Window *window)
         return;
 
     // If autoscroll is enabled, select the last dialog
-    if (info->autoscroll)  {
+    if (info->autoscroll) {
         StorageSortOpts sort = storage_sort_options();
         if (sort.asc) {
             call_list_move(window, g_ptr_array_len(info->dcalls) - 1);
@@ -458,7 +458,7 @@ call_list_draw_list(Window *window)
 
             // Enable attribute color (if not current one)
             color = 0;
-            if (info->cur_idx !=  i) {
+            if (info->cur_idx != i) {
                 if ((color = attr_color(column->id, coltext)) > 0) {
                     wattron(list_win, color);
                 }
@@ -584,7 +584,7 @@ call_list_win_line_text(Window *window, Call *call, char *text)
         gint collen = column->width;
 
         // Check if next column fits on window width
-        if ((gint)(strlen(text) + collen) >= window->width)
+        if ((gint) (strlen(text) + collen) >= window->width)
             collen = (gint) (window->width - strlen(text));
 
         // If no space left on the screen stop processing columns
@@ -784,7 +784,7 @@ call_list_handle_menu_key(Window *window, int key)
                 sort = storage_sort_options();
                 id = attr_find_by_name(item_name(current_item(info->menu)));
                 if (sort.by == id) {
-                    sort.asc = (sort.asc) ? false : true;
+                    sort.asc = (sort.asc) ? FALSE : TRUE;
                 } else {
                     sort.by = id;
                 }
@@ -963,7 +963,7 @@ call_list_handle_key(Window *window, int key)
             case ACTION_SORT_SWAP:
                 // Change sort order
                 sort = storage_sort_options();
-                sort.asc = (sort.asc) ? false : true;
+                sort.asc = (sort.asc) ? FALSE : TRUE;
                 storage_set_sort_options(sort);
                 break;
             case ACTION_SORT_NEXT:
@@ -990,7 +990,7 @@ call_list_handle_key(Window *window, int key)
     }
 
     // Disable autoscroll on some key pressed
-    switch(action) {
+    switch (action) {
         case ACTION_DOWN:
         case ACTION_UP:
         case ACTION_HNPAGE:
@@ -1103,7 +1103,7 @@ call_list_column_sorter(const CallListColumn **a, const CallListColumn **b)
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
 static void
-call_list_add_column(Window *window, enum AttributeId id, const char* attr,
+call_list_add_column(Window *window, enum AttributeId id, const char *attr,
                      const char *title, gint position, int width)
 {
     CallListWinInfo *info = call_list_info(window);
@@ -1170,19 +1170,19 @@ call_list_win_new()
 {
     Window *window = g_malloc0(sizeof(Window));
     window->type = WINDOW_CALL_LIST;
-    window->destroy     = call_list_free;
-    window->redraw      = call_list_redraw;
-    window->draw        = call_list_draw;
-    window->resize      = call_list_resize;
-    window->handle_key  = call_list_handle_key;
-    window->help        = call_list_help;
+    window->destroy = call_list_free;
+    window->redraw = call_list_redraw;
+    window->draw = call_list_draw;
+    window->resize = call_list_resize;
+    window->handle_key = call_list_handle_key;
+    window->help = call_list_help;
 
     // Create a new panel that fill all the screen
     window_init(window, getmaxy(stdscr), getmaxx(stdscr));
 
     // Initialize Call List specific data
     CallListWinInfo *info = g_malloc0(sizeof(CallListWinInfo));
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     // Add configured columns
     info->columns = g_ptr_array_new_with_free_func(g_free);

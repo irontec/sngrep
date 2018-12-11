@@ -44,7 +44,8 @@
  * Dialog form has a field array. Following enum represents the
  * order this fields are stored in panel info structure.
  */
-enum SaveWinField {
+enum SaveWinField
+{
     FLD_SAVE_PATH = 0,
     FLD_SAVE_FILE,
     FLD_SAVE_ALL,
@@ -62,7 +63,8 @@ enum SaveWinField {
 /**
  * @brief Dialogs to be saved
  */
-enum SaveWinMode {
+enum SaveWinMode
+{
     SAVE_ALL = 0,
     SAVE_SELECTED,
     SAVE_DISPLAYED,
@@ -72,7 +74,8 @@ enum SaveWinMode {
 /**
  * @brief Save file formats
  */
-enum SaveWinFormat {
+enum SaveWinFormat
+{
     SAVE_PCAP = 0,
     SAVE_PCAP_RTP,
     SAVE_TXT
@@ -86,7 +89,8 @@ typedef struct _SaveWinInfo SaveWinInfo;
  *
  * This structure contains the durable data of save panel.
  */
-struct _SaveWinInfo {
+struct _SaveWinInfo
+{
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields

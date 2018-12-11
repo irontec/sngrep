@@ -29,7 +29,6 @@
 #include "config.h"
 #include <glib.h>
 #include <string.h>
-#include <stdlib.h>
 #include "glib-extra.h"
 #include "group.h"
 

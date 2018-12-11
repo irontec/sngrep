@@ -64,7 +64,6 @@ void
 packet_parser_free(PacketParser *parser)
 {
     g_ptr_array_free(parser->dissectors, FALSE);
-    return /* @todo */;
 }
 
 PacketDissector *

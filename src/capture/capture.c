@@ -241,7 +241,7 @@ capture_status_desc(CaptureManager *manager)
     }
 }
 
-const gchar*
+const gchar *
 capture_keyfile(CaptureManager *manager)
 {
     return manager->keyfile;

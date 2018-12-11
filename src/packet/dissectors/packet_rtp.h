@@ -59,7 +59,8 @@ struct _PacketRtpData
     PacketRtpEncoding *encoding;
 };
 
-struct _PacketRtpEncoding {
+struct _PacketRtpEncoding
+{
     guint8 id;
     const gchar *name;
     const gchar *format;

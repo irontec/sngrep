@@ -125,7 +125,7 @@ enum SettingId
 setting_id(const gchar *name)
 {
     const Setting *sett = setting_by_name(name);
-    return (sett) ? g_ptr_array_data_index(settings->values, sett): SETTING_UNKNOWN;
+    return (sett) ? g_ptr_array_data_index(settings->values, sett) : SETTING_UNKNOWN;
 }
 
 const gchar *
@@ -218,15 +218,18 @@ setting_toggle(enum SettingId id)
     Setting *sett = setting_by_id(id);
 
     if (sett) {
-        switch(sett->fmt) {
+        switch (sett->fmt) {
             case SETTING_FMT_BOOLEAN:
                 (setting_enabled(id)) ? setting_set_value(id, SETTING_OFF) : setting_set_value(id, SETTING_ON);
                 break;
             case SETTING_FMT_ENUM:
                 setting_set_value(id, setting_enum_next(id, sett->value));
-            case SETTING_FMT_STRING: break;
-            case SETTING_FMT_NUMBER: break;
-            default: break;
+            case SETTING_FMT_STRING:
+                break;
+            case SETTING_FMT_NUMBER:
+                break;
+            default:
+                break;
         }
     }
 }
@@ -370,27 +373,27 @@ settings_init(int no_config)
 
     // Default settings values
     g_ptr_array_set(settings->values, SETTING_BACKGROUND,
-            setting_enum_new("background", "dark", "dark,default"));
+                    setting_enum_new("background", "dark", "dark,default"));
     g_ptr_array_set(settings->values, SETTING_COLORMODE,
-            setting_enum_new("colormode", "request", "request,cseq,callid"));
+                    setting_enum_new("colormode", "request", "request,cseq,callid"));
     g_ptr_array_set(settings->values, SETTING_SYNTAX,
-            setting_bool_new("syntax", SETTING_ON));
+                    setting_bool_new("syntax", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
-            setting_bool_new("syntax.tag", SETTING_OFF));
+                    setting_bool_new("syntax.tag", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SYNTAX_BRANCH,
-            setting_bool_new("syntax.tag", SETTING_OFF));
+                    setting_bool_new("syntax.tag", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_ALTKEY_HINT,
-            setting_bool_new("syntax.branch", SETTING_OFF));
+                    setting_bool_new("syntax.branch", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
-            setting_bool_new("hintkeyalt", SETTING_OFF));
+                    setting_bool_new("hintkeyalt", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_EXITPROMPT,
-            setting_bool_new("exitprompt", SETTING_OFF));
+                    setting_bool_new("exitprompt", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_LIMIT,
-            setting_number_new("capture.limit", "20000"));
+                    setting_number_new("capture.limit", "20000"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_DEVICE,
-            setting_string_new("capture.device", "any"));
+                    setting_string_new("capture.device", "any"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_OUTFILE,
-            setting_string_new("capture.outfile", ""));
+                    setting_string_new("capture.outfile", ""));
 #ifdef WITH_SSL
     g_ptr_array_set(storage->settings, SETTING_CAPTURE_KEYFILE,
             setting_string_new("capture.keyfile", ""));
@@ -398,167 +401,167 @@ settings_init(int no_config)
             setting_string_new("capture.tlsserver", ""));
 #endif
     g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
-            setting_bool_new("capture.rtp", SETTING_OFF));
+                    setting_bool_new("capture.rtp", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_STORAGE,
-            setting_enum_new("capture.storage", "memory", "none,memory"));
+                    setting_enum_new("capture.storage", "memory", "none,memory"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_ROTATE,
-            setting_bool_new("capture.rotate", SETTING_OFF));
+                    setting_bool_new("capture.rotate", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SIP_NOINCOMPLETE,
-            setting_bool_new("sip.noincomplete", SETTING_ON));
+                    setting_bool_new("sip.noincomplete", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_SIP_HEADER_X_CID,
-            setting_string_new("sip.xcid", "X-Call-ID|X-CID"));
+                    setting_string_new("sip.xcid", "X-Call-ID|X-CID"));
     g_ptr_array_set(settings->values, SETTING_SIP_CALLS,
-            setting_bool_new("sip.calls", SETTING_OFF));
+                    setting_bool_new("sip.calls", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SAVEPATH,
-            setting_string_new("savepath", g_get_current_dir()));
+                    setting_string_new("savepath", g_get_current_dir()));
     g_ptr_array_set(settings->values, SETTING_DISPLAY_ALIAS,
-            setting_bool_new("displayalias", SETTING_OFF));
+                    setting_bool_new("displayalias", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CL_SCROLLSTEP,
-            setting_number_new("cl.scrollstep", "4"));
+                    setting_number_new("cl.scrollstep", "4"));
     g_ptr_array_set(settings->values, SETTING_CL_COLORATTR,
-            setting_bool_new("cl.colorattr", SETTING_ON));
+                    setting_bool_new("cl.colorattr", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CL_AUTOSCROLL,
-            setting_bool_new("cl.autoscroll", SETTING_OFF));
+                    setting_bool_new("cl.autoscroll", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CL_SORTFIELD,
-            setting_string_new("cl.sortfield", attr_name(ATTR_CALLINDEX)));
+                    setting_string_new("cl.sortfield", attr_name(ATTR_CALLINDEX)));
     g_ptr_array_set(settings->values, SETTING_CL_SORTORDER,
-            setting_string_new("cl.sortorder", "asc"));
+                    setting_string_new("cl.sortorder", "asc"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_POS,
-            setting_number_new("cl.column.index.pos", "0"));
+                    setting_number_new("cl.column.index.pos", "0"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_WIDTH,
-            setting_number_new("cl.column.index.width", "4"));
+                    setting_number_new("cl.column.index.width", "4"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_POS,
-            setting_number_new("cl.column.sipfrom.pos", "2"));
+                    setting_number_new("cl.column.sipfrom.pos", "2"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_WIDTH,
-            setting_number_new("cl.column.sipfrom.width", "25"));
+                    setting_number_new("cl.column.sipfrom.width", "25"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_POS,
-            setting_number_new("cl.column.sipfromuser.pos", "-1"));
+                    setting_number_new("cl.column.sipfromuser.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_WIDTH,
-            setting_number_new("cl.column.sipfromuser.width", "20"));
+                    setting_number_new("cl.column.sipfromuser.width", "20"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_POS,
-            setting_number_new("cl.column.sipto.pos", "3"));
+                    setting_number_new("cl.column.sipto.pos", "3"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_WIDTH,
-            setting_number_new("cl.column.sipto.width", "25"));
+                    setting_number_new("cl.column.sipto.width", "25"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_POS,
-            setting_number_new("cl.column.siptouser.pos", "-1"));
+                    setting_number_new("cl.column.siptouser.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_WIDTH,
-            setting_number_new("cl.column.siptouser.width", "20"));
+                    setting_number_new("cl.column.siptouser.width", "20"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_POS,
-            setting_number_new("cl.column.src.pos", "5"));
+                    setting_number_new("cl.column.src.pos", "5"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_WIDTH,
-            setting_number_new("cl.column.src.width", "22"));
+                    setting_number_new("cl.column.src.width", "22"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DST_POS,
-            setting_number_new("cl.column.dst.pos", "6"));
+                    setting_number_new("cl.column.dst.pos", "6"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DST_WIDTH,
-            setting_number_new("cl.column.dst.width", "22"));
+                    setting_number_new("cl.column.dst.width", "22"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_POS,
-            setting_number_new("cl.column.callid.pos", "-1"));
+                    setting_number_new("cl.column.callid.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_WIDTH,
-            setting_number_new("cl.column.callid.width", "50"));
+                    setting_number_new("cl.column.callid.width", "50"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_POS,
-            setting_number_new("cl.column.xcallid.pos", "-1"));
+                    setting_number_new("cl.column.xcallid.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_WIDTH,
-            setting_number_new("cl.column.xcallid.width", "50"));
+                    setting_number_new("cl.column.xcallid.width", "50"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_POS,
-            setting_number_new("cl.column.date.pos", "-1"));
+                    setting_number_new("cl.column.date.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_WIDTH,
-            setting_number_new("cl.column.date.width", "10"));
+                    setting_number_new("cl.column.date.width", "10"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_POS,
-            setting_number_new("cl.column.time.pos", "-1"));
+                    setting_number_new("cl.column.time.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_WIDTH,
-            setting_number_new("cl.column.time.width", "8"));
+                    setting_number_new("cl.column.time.width", "8"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_POS,
-            setting_number_new("cl.column.method.pos", "1"));
+                    setting_number_new("cl.column.method.pos", "1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_WIDTH,
-            setting_number_new("cl.column.method.width", "10"));
+                    setting_number_new("cl.column.method.width", "10"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_POS,
-            setting_number_new("cl.column.transport.pos", "-1"));
+                    setting_number_new("cl.column.transport.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_WIDTH,
-            setting_number_new("cl.column.transport.width", "3"));
+                    setting_number_new("cl.column.transport.width", "3"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_POS,
-            setting_number_new("cl.column.msgcnt.pos", "4"));
+                    setting_number_new("cl.column.msgcnt.pos", "4"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_WIDTH,
-            setting_number_new("cl.column.msgcnt.width", "5"));
+                    setting_number_new("cl.column.msgcnt.width", "5"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_POS,
-            setting_number_new("cl.column.state.pos", "7"));
+                    setting_number_new("cl.column.state.pos", "7"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_WIDTH,
-            setting_number_new("cl.column.state.width", "10"));
+                    setting_number_new("cl.column.state.width", "10"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_POS,
-            setting_number_new("cl.column.convdur.pos", "-1"));
+                    setting_number_new("cl.column.convdur.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_WIDTH,
-            setting_number_new("cl.column.convdur.width", "7"));
+                    setting_number_new("cl.column.convdur.width", "7"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_POS,
-            setting_number_new("cl.column.totaldur.pos", "-1"));
+                    setting_number_new("cl.column.totaldur.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_WIDTH,
-            setting_number_new("cl.column.totaldur.width", "8"));
+                    setting_number_new("cl.column.totaldur.width", "8"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_POS,
-            setting_number_new("cl.column.reason.pos", "-1"));
+                    setting_number_new("cl.column.reason.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_WIDTH,
-            setting_number_new("cl.column.reason.width", "25"));
+                    setting_number_new("cl.column.reason.width", "25"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_POS,
-            setting_number_new("cl.column.warning.pos", "-1"));
+                    setting_number_new("cl.column.warning.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_WIDTH,
-            setting_number_new("cl.column.warning.width", "4"));
+                    setting_number_new("cl.column.warning.width", "4"));
     g_ptr_array_set(settings->values, SETTING_CF_FORCERAW,
-            setting_bool_new("cf.forceraw", SETTING_ON));
+                    setting_bool_new("cf.forceraw", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CF_RAWMINWIDTH,
-            setting_number_new("cf.rawminwidth", "40"));
+                    setting_number_new("cf.rawminwidth", "40"));
     g_ptr_array_set(settings->values, SETTING_CF_RAWFIXEDWIDTH,
-            setting_number_new("cf.rawfixedwidth", ""));
+                    setting_number_new("cf.rawfixedwidth", ""));
     g_ptr_array_set(settings->values, SETTING_CF_SPLITCALLID,
-            setting_bool_new("cf.splitcallid", SETTING_OFF));
+                    setting_bool_new("cf.splitcallid", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CF_HIGHTLIGHT,
-            setting_enum_new("cf.highlight", "bold", "bold,reverse,reversebold"));
+                    setting_enum_new("cf.highlight", "bold", "bold,reverse,reversebold"));
     g_ptr_array_set(settings->values, SETTING_CF_SCROLLSTEP,
-            setting_number_new("cf.scrollstep", "4"));
+                    setting_number_new("cf.scrollstep", "4"));
     g_ptr_array_set(settings->values, SETTING_CF_LOCALHIGHLIGHT,
-            setting_bool_new("cf.localhighlight", SETTING_ON));
+                    setting_bool_new("cf.localhighlight", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CF_SDP_INFO,
-            setting_enum_new("cf.sdpinfo", SETTING_OFF, "off,first,full,compressed"));
+                    setting_enum_new("cf.sdpinfo", SETTING_OFF, "off,first,full,compressed"));
     g_ptr_array_set(settings->values, SETTING_CF_MEDIA,
-            setting_bool_new("cf.media", SETTING_OFF));
+                    setting_bool_new("cf.media", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CF_ONLYMEDIA,
-            setting_bool_new("cf.onlymedia", SETTING_OFF));
+                    setting_bool_new("cf.onlymedia", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CF_DELTA,
-            setting_bool_new("cf.deltatime", SETTING_ON));
+                    setting_bool_new("cf.deltatime", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CR_SCROLLSTEP,
-            setting_number_new("cr.scrollstep", "10"));
+                    setting_number_new("cr.scrollstep", "10"));
     g_ptr_array_set(settings->values, SETTING_CR_NON_ASCII,
-            setting_string_new("cr.nonascii", "."));
+                    setting_string_new("cr.nonascii", "."));
     g_ptr_array_set(settings->values, SETTING_FILTER_PAYLOAD,
-            setting_string_new("filter.payload", ""));
+                    setting_string_new("filter.payload", ""));
     g_ptr_array_set(settings->values, SETTING_FILTER_METHODS,
-            setting_string_new("filter.methods",
-                    "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE,INFO,REFER,UPDATE"));
+                    setting_string_new("filter.methods",
+                                       "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE,INFO,REFER,UPDATE"));
 #ifdef USE_HEP
     g_ptr_array_set(settings->values, SETTING_HEP_SEND,
-            setting_bool_new("eep.send", SETTING_OFF));
+                    setting_bool_new("eep.send", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_VER,
-            setting_number_new("eep.send.version", "3"));
+                    setting_number_new("eep.send.version", "3"));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_ADDR,
-            setting_string_new("eep.send.address", "127.0.0.1"));
+                    setting_string_new("eep.send.address", "127.0.0.1"));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_PORT,
-            setting_number_new("eep.send.port", "9060"));
+                    setting_number_new("eep.send.port", "9060"));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_PASS,
-            setting_string_new("eep.send.pass", ""));
+                    setting_string_new("eep.send.pass", ""));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_ID,
-            setting_number_new("eep.send.id", "2000"));
+                    setting_number_new("eep.send.id", "2000"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN,
-            setting_bool_new("eep.listen", SETTING_OFF));
+                    setting_bool_new("eep.listen", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_VER,
-            setting_string_new("eep.listen.version", "3"));
+                    setting_string_new("eep.listen.version", "3"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_ADDR,
-            setting_string_new("eep.listen.address", "0.0.0.0"));
+                    setting_string_new("eep.listen.address", "0.0.0.0"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PORT,
-            setting_number_new("eep.listen.port", "9060"));
+                    setting_number_new("eep.listen.port", "9060"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PASS,
-            setting_string_new("eep.listen.pass", ""));
+                    setting_string_new("eep.listen.pass", ""));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_UUID,
-            setting_bool_new("eep.listen.uuid", SETTING_OFF));
+                    setting_bool_new("eep.listen.uuid", SETTING_OFF));
 #endif
 
     // Done if config file should not be read
-    if(no_config) {
+    if (no_config) {
         return 0;
     }
 

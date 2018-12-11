@@ -59,8 +59,8 @@ enum capture_hep_errors
     CAPTURE_HEP_ERROR_CONNECT
 };
 
-typedef struct _CaptureHep              CaptureHep;
-typedef struct _CaptureHepUrl           CaptureHepUrl;
+typedef struct _CaptureHep CaptureHep;
+typedef struct _CaptureHepUrl CaptureHepUrl;
 
 /**
  * @brief Hep URL Cliend/Server data

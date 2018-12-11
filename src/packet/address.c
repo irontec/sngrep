@@ -74,7 +74,7 @@ address_is_local(Address addr)
     }
 
     for (dev = devices; dev; dev = dev->next) {
-        for (da = dev->addresses; da ; da = da->next) {
+        for (da = dev->addresses; da; da = da->next) {
             // Ingore empty addresses
             if (!da->addr)
                 continue;

@@ -79,7 +79,7 @@ gboolean
 storage_calls_changed()
 {
     gboolean changed = storage.changed;
-    storage.changed = false;
+    storage.changed = TRUE;
     return changed;
 }
 
@@ -190,12 +190,78 @@ storage_sort_options()
     return storage.sort;
 }
 
+static void
+storage_register_stream(RtpStream *stream)
+{
+    gchar *key;
+
+    key = g_strdup_printf("%s:%hu-%s:%hu",
+                          stream->src.ip, stream->src.port,
+                          stream->dst.ip, stream->dst.port);
+
+    g_hash_table_insert(storage.streams, key, stream->msg);
+}
+
+/**
+ * @brief Parse SIP Message payload for SDP media streams
+ *
+ * Parse the payload content to get SDP information
+ *
+ * @param msg SIP message structure
+ * @return 0 in all cases
+ */
+static void
+storage_register_streams(Message *msg)
+{
+    Packet *packet = msg->packet;
+    Address emptyaddr = { 0 };
+
+    PacketSdpData *sdp = g_ptr_array_index(packet->proto, PACKET_SDP);
+    if (sdp == NULL) {
+        // Packet with SDP content
+        return;
+    }
+
+    for (guint i = 0; i < g_list_length(sdp->medias); i++) {
+        PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
+
+        // Add to the message
+        msg->medias = g_list_append(msg->medias, media);
+
+        // Create RTP stream for this media
+        if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
+            RtpStream *stream = stream_new(STREAM_RTP, msg, media);
+            stream_set_dst(stream, media->address);
+            call_add_stream(msg->call, stream);
+            storage_register_stream(stream);
+        }
+
+        // Create RTCP stream for this media
+        if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
+            RtpStream *stream = stream_new(STREAM_RTCP, msg, media);
+            stream_set_dst(stream, media->address);
+            stream->dst.port = (media->rtcpport) ? media->rtcpport : (guint16) (media->rtpport + 1);
+            call_add_stream(msg->call, stream);
+            storage_register_stream(stream);
+        }
+
+        // Create RTP stream with source of message as destination address
+        if (call_find_stream(msg->call, msg_src_address(msg), media->address) == NULL) {
+            RtpStream *stream = stream_new(STREAM_RTP, msg, media);
+            stream_set_dst(stream, msg_src_address(msg));
+            stream->dst.port = media->rtpport;
+            call_add_stream(msg->call, stream);
+            storage_register_stream(stream);
+        }
+    }
+}
+
 static Message *
 storage_check_sip_packet(Packet *packet)
 {
     Message *msg;
     Call *call;
-    gboolean newcall = false;
+    gboolean newcall = FALSE;
 
     PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
 
@@ -230,7 +296,7 @@ storage_check_sip_packet(Packet *packet)
         call->index = ++storage.last_index;
 
         // Mark this as a new call
-        newcall = true;
+        newcall = TRUE;
     }
 
     // At this point we know we're handling an interesting SIP Packet
@@ -263,25 +329,13 @@ storage_check_sip_packet(Packet *packet)
     }
 
     // Mark the list as changed
-    storage.changed = true;
+    storage.changed = TRUE;
 
     // Send this packet to all capture outputs
     capture_manager_output_packet(capture_manager(), packet);
 
     // Return the loaded message
     return msg;
-}
-
-static void
-storage_register_stream(RtpStream *stream)
-{
-    gchar *key;
-
-    key = g_strdup_printf("%s:%hu-%s:%hu",
-            stream->src.ip, stream->src.port,
-            stream->dst.ip, stream->dst.port);
-
-    g_hash_table_insert(storage.streams, key, stream->msg);
 }
 
 static RtpStream *
@@ -383,52 +437,6 @@ storage_check_rtcp_packet(Packet *packet)
     return NULL;
 }
 
-void
-storage_register_streams(Message *msg)
-{
-    Packet *packet = msg->packet;
-    Address emptyaddr = { 0 };
-
-    PacketSdpData *sdp = g_ptr_array_index(packet->proto, PACKET_SDP);
-    if (sdp == NULL) {
-        // Packet with SDP content
-        return;
-    }
-
-    for (guint i = 0; i < g_list_length(sdp->medias); i++) {
-        PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
-
-        // Add to the message
-        msg->medias = g_list_append(msg->medias, media);
-
-        // Create RTP stream for this media
-        if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
-            RtpStream *stream = stream_new(STREAM_RTP, msg, media);
-            stream_set_dst(stream, media->address);
-            call_add_stream(msg->call, stream);
-            storage_register_stream(stream);
-        }
-
-        // Create RTCP stream for this media
-        if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
-            RtpStream *stream = stream_new(STREAM_RTCP, msg, media);
-            stream_set_dst(stream, media->address);
-            stream->dst.port = (media->rtcpport) ? media->rtcpport : (guint16) (media->rtpport + 1);
-            call_add_stream(msg->call, stream);
-            storage_register_stream(stream);
-        }
-
-        // Create RTP stream with source of message as destination address
-        if (call_find_stream(msg->call, msg_src_address(msg), media->address) == NULL) {
-            RtpStream *stream = stream_new(STREAM_RTP, msg, media);
-            stream_set_dst(stream, msg_src_address(msg));
-            stream->dst.port = media->rtpport;
-            call_add_stream(msg->call, stream);
-            storage_register_stream(stream);
-        }
-    }
-}
-
 //! Start capturing packets function
 static gpointer
 storage_check_packet()
@@ -498,7 +506,7 @@ storage_init(StorageCaptureOpts capture_options,
     } else {
         // Fallback to default sorting field
         storage.sort.by = ATTR_CALLINDEX;
-        storage.sort.asc = true;
+        storage.sort.asc = TRUE;
     }
 
     storage.running = TRUE;

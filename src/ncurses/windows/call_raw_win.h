@@ -46,7 +46,8 @@ typedef struct _CallRawWinInfo CallRawWinInfo;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _CallRawWinInfo {
+struct _CallRawWinInfo
+{
     //! Group of calls displayed on the panel (Call raw display)
     CallGroup *group;
     //! Message to display on the panel (Single message raw display)

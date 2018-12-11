@@ -41,7 +41,7 @@
 #define WS_OPCODE_TEXT 0x1
 
 
-PacketDissector*
+PacketDissector *
 packet_ws_new();
 
 #endif

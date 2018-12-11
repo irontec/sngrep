@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file sip_msg.h
+ * @file message.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage sip messages
@@ -29,7 +29,6 @@
 #ifndef __SNGREP_SIP_MSG_H
 #define __SNGREP_SIP_MSG_H
 
-#include <stdarg.h>
 #include <glib.h>
 #include <packet/dissectors/packet_sdp.h>
 #include "packet/packet.h"
@@ -54,7 +53,8 @@ typedef struct _Call Call;
  * purpose. It also works as a linked lists of messages in a
  * call.
  */
-struct _Message {
+struct _Message
+{
     //! SDP payload information (sdp_media_t *)
     GList *medias;
     //! Captured packet for this message

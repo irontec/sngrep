@@ -44,7 +44,7 @@ typedef struct _RtpStream RtpStream;
 
 enum RtpStreamType
 {
-    STREAM_RTP      = 0,
+    STREAM_RTP = 0,
     STREAM_RTCP
 };
 

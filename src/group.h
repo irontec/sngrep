@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file option.h
+ * @file group.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage call groups
@@ -46,7 +46,8 @@ typedef struct _SipCallGroup CallGroup;
  * same call flow. Instead of displaying a call flow, we will display
  * a calls group flow.
  */
-struct _SipCallGroup {
+struct _SipCallGroup
+{
     //! For extended display, main call-id
     const gchar *callid;
     //! Calls array in the group
@@ -55,8 +56,6 @@ struct _SipCallGroup {
     GPtrArray *msgs;
     //! Streams in the group
     GPtrArray *streams;
-    //! Color of the last printed call in mode Color-by-Call
-    gint color;
     //! Only consider SDP messages from Calls
     gint sdp_only;
 };

@@ -66,7 +66,7 @@
 static MsgDiffWinInfo *
 msg_diff_info(Window *ui)
 {
-    return (MsgDiffWinInfo*) panel_userptr(ui->panel);
+    return (MsgDiffWinInfo *) panel_userptr(ui->panel);
 }
 
 static int
@@ -130,7 +130,7 @@ msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight)
 {
     int height, width, line, column;
     char header[MAX_SIP_PAYLOAD];
-    const char * payload = msg_get_payload(msg);
+    const char *payload = msg_get_payload(msg);
 
     // Clear the window
     werase(win);
@@ -247,7 +247,7 @@ msg_diff_win_new()
     MsgDiffWinInfo *info = g_malloc0(sizeof(MsgDiffWinInfo));
 
     // Store it into panel userptr
-    set_panel_userptr(window->panel, (void*) info);
+    set_panel_userptr(window->panel, (void *) info);
 
     // Calculate subwindows width
     gint hwidth = window->width / 2 - 1;

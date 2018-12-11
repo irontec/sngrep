@@ -37,60 +37,60 @@
 
 //! sngrep keybindings
 Keybinding bindings[ACTION_SENTINEL] = {
-   { ACTION_PRINTABLE,      "",                 { 0 }, 0 },
-   { ACTION_UP,             "up",               { KEY_UP, 'k' }, 2 },
-   { ACTION_DOWN,           "down",             { KEY_DOWN, 'j' }, 2 },
-   { ACTION_LEFT,           "left",             { KEY_LEFT, 'h' }, 2 },
-   { ACTION_RIGHT,          "right",            { KEY_RIGHT, 'l'}, 2 },
-   { ACTION_DELETE,         "delete",           { KEY_DC }, 1 },
-   { ACTION_BACKSPACE,      "backspace",        { KEY_BACKSPACE, KEY_BACKSPACE2, KEY_BACKSPACE3 }, 3 },
-   { ACTION_NPAGE,          "npage",            { KEY_NPAGE, KEY_CTRL('F') }, 2 },
-   { ACTION_PPAGE,          "ppage",            { KEY_PPAGE, KEY_CTRL('B') }, 2 },
-   { ACTION_HNPAGE,         "hnpage",           { KEY_CTRL('D') }, 1 },
-   { ACTION_HPPAGE,         "hppage",           { KEY_CTRL('U') }, 2 },
-   { ACTION_BEGIN,          "begin",            { KEY_HOME, KEY_CTRL('A') }, 2 },
-   { ACTION_END,            "end",              { KEY_END, KEY_CTRL('E') }, 2 },
-   { ACTION_PREV_FIELD,     "pfield",           { KEY_UP }, 1 },
-   { ACTION_NEXT_FIELD,     "nfield",           { KEY_DOWN, KEY_TAB }, 2 },
-   { ACTION_RESIZE_SCREEN,  "resize",           { KEY_RESIZE }, 1 },
-   { ACTION_CLEAR,          "clear",            { KEY_CTRL('U'), KEY_CTRL('W')}, 2 },
-   { ACTION_CLEAR_CALLS,    "clearcalls",       { KEY_F(5), KEY_CTRL('L')}, 2 },
-   { ACTION_CLEAR_CALLS_SOFT, "clearcallssoft", {KEY_F(9)}, 2 },
-   { ACTION_TOGGLE_SYNTAX,  "togglesyntax",     { KEY_F(8), 'C' }, 2 },
-   { ACTION_CYCLE_COLOR,    "colormode",        { 'c' }, 1 },
-   { ACTION_COMPRESS,       "compress",         { 's' }, 1 },
-   { ACTION_SHOW_ALIAS,     "togglealias",      { 'a' }, 1 },
-   { ACTION_TOGGLE_PAUSE,   "pause",            { 'p' }, 1 },
-   { ACTION_PREV_SCREEN,    "prevscreen",       { KEY_ESC, 'q', 'Q' }, 3 },
-   { ACTION_SHOW_HELP,      "help",             { KEY_F(1), 'h', 'H', '?' }, 4 },
-   { ACTION_SHOW_RAW,       "raw",              { KEY_F(6), 'R', 'r' }, 3 },
-   { ACTION_SHOW_FLOW,      "flow",             { KEY_INTRO }, 1 },
-   { ACTION_SHOW_FLOW_EX,   "flowex",           { KEY_F(4), 'x' }, 2 },
-   { ACTION_SHOW_FILTERS,   "filters",          { KEY_F(7), 'f', 'F' }, 3 },
-   { ACTION_SHOW_COLUMNS,   "columns",          { KEY_F(10), 't', 'T' }, 3 },
-   { ACTION_SHOW_SETTINGS,  "settings",         { KEY_F(8), 'o', 'O' }, 3 },
-   { ACTION_SHOW_STATS,     "stats",            { 'i' }, 1 },
-   { ACTION_COLUMN_MOVE_UP, "columnup",         { '-' }, 1 },
-   { ACTION_COLUMN_MOVE_DOWN, "columndown",     { '+' }, 1 },
-   { ACTION_SDP_INFO,       "sdpinfo",          { KEY_F(2), 'd' }, 2 },
-   { ACTION_DISP_FILTER,    "search",           { KEY_F(3), '/', KEY_TAB }, 3 },
-   { ACTION_SAVE,           "save",             { KEY_F(2), 's', 'S'}, 3 },
-   { ACTION_AUTH_VALIDATE,  "validate",         { 'v' }, 1 },
-   { ACTION_SELECT,         "select",           { KEY_SPACE }, 1 },
-   { ACTION_CONFIRM,        "confirm",          { KEY_INTRO }, 1 },
-   { ACTION_TOGGLE_MEDIA,   "togglemedia",      { KEY_F(3), 'm' }, 2 },
-   { ACTION_ONLY_MEDIA,     "onlymedia",        { 'M' }, 1 },
-   { ACTION_TOGGLE_RAW,     "rawpreview",       { 't' }, 1 },
-   { ACTION_INCREASE_RAW,   "morerawpreview",   { '9' }, 1 },
-   { ACTION_DECREASE_RAW,   "lessrawpreview",   { '0' }, 1 },
-   { ACTION_RESET_RAW,      "resetrawpreview",  { 'T' }, 1 },
-   { ACTION_ONLY_SDP,       "onlysdp",          { 'D' }, 1 },
-   { ACTION_AUTOSCROLL,     "autoscroll",       { 'A' }, 1 },
-   { ACTION_TOGGLE_HINT,    "hintalt",          { 'K' }, 1 },
-   { ACTION_SORT_PREV,      "sortprev",         { '<' }, 1 },
-   { ACTION_SORT_NEXT,      "sortnext",         { '>' }, 1 },
-   { ACTION_SORT_SWAP,      "sortswap",         { 'z' }, 1 },
-   { ACTION_TOGGLE_TIME,    "toggletime",       { 'w' }, 1 },
+    { ACTION_PRINTABLE,        "",                { 0 },                                             0 },
+    { ACTION_UP,               "up",              { KEY_UP,    'k' },                                2 },
+    { ACTION_DOWN,             "down",            { KEY_DOWN,  'j' },                                2 },
+    { ACTION_LEFT,             "left",            { KEY_LEFT,  'h' },                                2 },
+    { ACTION_RIGHT,            "right",           { KEY_RIGHT, 'l' },                                2 },
+    { ACTION_DELETE,           "delete",          { KEY_DC },                                        1 },
+    { ACTION_BACKSPACE,        "backspace",       { KEY_BACKSPACE, KEY_BACKSPACE2, KEY_BACKSPACE3 }, 3 },
+    { ACTION_NPAGE,            "npage",           { KEY_NPAGE,     KEY_CTRL('F') },                  2 },
+    { ACTION_PPAGE,            "ppage",           { KEY_PPAGE,     KEY_CTRL('B') },                  2 },
+    { ACTION_HNPAGE,           "hnpage",          { KEY_CTRL('D') },                                 1 },
+    { ACTION_HPPAGE,           "hppage",          { KEY_CTRL('U') },                                 2 },
+    { ACTION_BEGIN,            "begin",           { KEY_HOME,      KEY_CTRL('A') },                  2 },
+    { ACTION_END,              "end",             { KEY_END,       KEY_CTRL('E') },                  2 },
+    { ACTION_PREV_FIELD,       "pfield",          { KEY_UP },                                        1 },
+    { ACTION_NEXT_FIELD,       "nfield",          { KEY_DOWN,      KEY_TAB },                        2 },
+    { ACTION_RESIZE_SCREEN,    "resize",          { KEY_RESIZE },                                    1 },
+    { ACTION_CLEAR,            "clear",           { KEY_CTRL('U'), KEY_CTRL('W') },                  2 },
+    { ACTION_CLEAR_CALLS,      "clearcalls",      { KEY_F(5),      KEY_CTRL('L') },                  2 },
+    { ACTION_CLEAR_CALLS_SOFT, "clearcallssoft",  { KEY_F(9) },                                      2 },
+    { ACTION_TOGGLE_SYNTAX,    "togglesyntax",    { KEY_F(8),  'C' },                                2 },
+    { ACTION_CYCLE_COLOR,      "colormode",       { 'c' },                                           1 },
+    { ACTION_COMPRESS,         "compress",        { 's' },                                           1 },
+    { ACTION_SHOW_ALIAS,       "togglealias",     { 'a' },                                           1 },
+    { ACTION_TOGGLE_PAUSE,     "pause",           { 'p' },                                           1 },
+    { ACTION_PREV_SCREEN,      "prevscreen",      { KEY_ESC,   'q', 'Q' },                           3 },
+    { ACTION_SHOW_HELP,        "help",            { KEY_F(1),  'h', 'H', '?' },                      4 },
+    { ACTION_SHOW_RAW,         "raw",             { KEY_F(6),  'R', 'r' },                           3 },
+    { ACTION_SHOW_FLOW,        "flow",            { KEY_INTRO },                                     1 },
+    { ACTION_SHOW_FLOW_EX,     "flowex",          { KEY_F(4),  'x' },                                2 },
+    { ACTION_SHOW_FILTERS,     "filters",         { KEY_F(7),  'f', 'F' },                           3 },
+    { ACTION_SHOW_COLUMNS,     "columns",         { KEY_F(10), 't', 'T' },                           3 },
+    { ACTION_SHOW_SETTINGS,    "settings",        { KEY_F(8),  'o', 'O' },                           3 },
+    { ACTION_SHOW_STATS,       "stats",           { 'i' },                                           1 },
+    { ACTION_COLUMN_MOVE_UP,   "columnup",        { '-' },                                           1 },
+    { ACTION_COLUMN_MOVE_DOWN, "columndown",      { '+' },                                           1 },
+    { ACTION_SDP_INFO,         "sdpinfo",         { KEY_F(2),  'd' },                                2 },
+    { ACTION_DISP_FILTER,      "search",          { KEY_F(3),  '/',                KEY_TAB },        3 },
+    { ACTION_SAVE,             "save",            { KEY_F(2),  's', 'S' },                           3 },
+    { ACTION_AUTH_VALIDATE,    "validate",        { 'v' },                                           1 },
+    { ACTION_SELECT,           "select",          { KEY_SPACE },                                     1 },
+    { ACTION_CONFIRM,          "confirm",         { KEY_INTRO },                                     1 },
+    { ACTION_TOGGLE_MEDIA,     "togglemedia",     { KEY_F(3),  'm' },                                2 },
+    { ACTION_ONLY_MEDIA,       "onlymedia",       { 'M' },                                           1 },
+    { ACTION_TOGGLE_RAW,       "rawpreview",      { 't' },                                           1 },
+    { ACTION_INCREASE_RAW,     "morerawpreview",  { '9' },                                           1 },
+    { ACTION_DECREASE_RAW,     "lessrawpreview",  { '0' },                                           1 },
+    { ACTION_RESET_RAW,        "resetrawpreview", { 'T' },                                           1 },
+    { ACTION_ONLY_SDP,         "onlysdp",         { 'D' },                                           1 },
+    { ACTION_AUTOSCROLL,       "autoscroll",      { 'A' },                                           1 },
+    { ACTION_TOGGLE_HINT,      "hintalt",         { 'K' },                                           1 },
+    { ACTION_SORT_PREV,        "sortprev",        { '<' },                                           1 },
+    { ACTION_SORT_NEXT,        "sortnext",        { '>' },                                           1 },
+    { ACTION_SORT_SWAP,        "sortswap",        { 'z' },                                           1 },
+    { ACTION_TOGGLE_TIME,      "toggletime",      { 'w' },                                           1 },
 };
 
 /**
@@ -102,7 +102,7 @@ static const gchar *
 key_to_str(gint key)
 {
     //! Check function keys and Special keys
-    switch(key) {
+    switch (key) {
         case KEY_F(1):
             return "F1";
         case KEY_F(2):
@@ -149,13 +149,13 @@ key_from_str(const gchar *key)
 
     // Function keys
     if (*key == 'F')
-        return KEY_F(atoi(key+1));
+        return KEY_F(atoi(key + 1));
 
     // Control Secuences
     if (*key == '^')
-        return KEY_CTRL(toupper(*(key+1)));
+        return KEY_CTRL(toupper(*(key + 1)));
     if (!strncasecmp(key, "Ctrl-", 5))
-        return KEY_CTRL(toupper(*(key+5)));
+        return KEY_CTRL(toupper(*(key + 5)));
 
     // Special Name characters
     if (!strcasecmp(key, "Esc"))

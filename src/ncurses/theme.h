@@ -32,7 +32,8 @@
 /**
  * @brief Enum for available color pairs
  */
-enum sngrep_colors_pairs {
+enum sngrep_colors_pairs
+{
     CP_DEFAULT = 0,
     CP_CYAN_ON_DEF,
     CP_YELLOW_ON_DEF,

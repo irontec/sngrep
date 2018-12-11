@@ -37,8 +37,8 @@
  *
  */
 
-#ifndef __SNGREP_FILTER_H_
-#define __SNGREP_FILTER_H_
+#ifndef __SNGREP_FILTER_H
+#define __SNGREP_FILTER_H
 
 #include <glib.h>
 #include "storage.h"
@@ -49,29 +49,23 @@ typedef struct _Filter Filter;
 /**
  * @brief Available filter types
  */
-enum FilterType {
-    //! SIP From header in packet payload
-    FILTER_SIPFROM = 0,
-    //! SIP To header in packet payload
-    FILTER_SIPTO,
-    //! Packet source address
-    FILTER_SOURCE,
-    //! Packet destination address
-    FILTER_DESTINATION,
-    //! SIP Method in packet payload
-    FILTER_METHOD,
-    //! SIP Payload in any call packet
-    FILTER_PAYLOAD,
-    //! Displayed line in call list
-    FILTER_CALL_LIST,
-    //! Number of available filter types
-    FILTER_COUNT,
+enum FilterType
+{
+    FILTER_SIPFROM = 0,    // SIP From header in packet payload
+    FILTER_SIPTO,          // SIP To header in packet payload
+    FILTER_SOURCE,         // Packet source address
+    FILTER_DESTINATION,    // Packet destination address
+    FILTER_METHOD,         // SIP Method in packet payload
+    FILTER_PAYLOAD,        // SIP Payload in any call packet
+    FILTER_CALL_LIST,      // Displayed line in call list
+    FILTER_COUNT,          // Number of available filter types
 };
 
 /**
  * @brief Filter information
  */
-struct _Filter {
+struct _Filter
+{
     //! The filter text
     gchar *expr;
     //! The filter compiled expression
@@ -139,4 +133,4 @@ filter_method_from_setting(const gchar *value);
 void
 filter_payload_from_setting(const gchar *value);
 
-#endif /* __SNGREP_FILTER_H_ */
+#endif /* __SNGREP_FILTER_H */

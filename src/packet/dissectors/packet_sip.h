@@ -38,7 +38,8 @@ typedef struct _PacketSipCode PacketSipCode;
 typedef struct _DissectorSipData DissectorSipData;
 
 //! SIP Methods
-enum sip_methods {
+enum sip_methods
+{
     SIP_METHOD_REGISTER = 1,
     SIP_METHOD_INVITE,
     SIP_METHOD_SUBSCRIBE,
@@ -56,7 +57,8 @@ enum sip_methods {
 };
 
 //! SIP Headers
-enum sip_headers {
+enum sip_headers
+{
     SIP_HEADER_FROM = 0,
     SIP_HEADER_TO,
     SIP_HEADER_CALLID,

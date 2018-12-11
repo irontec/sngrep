@@ -43,7 +43,8 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum FilterWinFields {
+enum FilterWinFields
+{
     FLD_FILTER_SIPFROM = 0,
     FLD_FILTER_SIPTO,
     FLD_FILTER_SRC,
@@ -72,7 +73,8 @@ typedef struct _FilterWinInfo FilterWinInfo;
  *
  * This structure contains the durable data of filter panel.
  */
-struct _FilterWinInfo {
+struct _FilterWinInfo
+{
     //! Form that contains the filter fields
     FORM *form;
     //! An array of fields

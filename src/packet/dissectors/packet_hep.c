@@ -81,7 +81,7 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
 #ifdef USE_IPV6
         /* IPv6 */
-    else if(family == AF_INET6) {
+    else if (family == AF_INET6) {
         /* SRC IPv6 */
         memcpy(&src_ip6, data->data, sizeof(struct _CaptureHepChunkIp6));
         inet_ntop(AF_INET6, &src_ip6.data, src.ip, sizeof(src.ip));
@@ -101,7 +101,7 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     /* TIMESTAMP*/
     PacketFrame *frame = g_list_nth_data(packet->frames, 0);
-    frame->ts.tv_sec =  ntohl(hg.time_sec.data);
+    frame->ts.tv_sec = ntohl(hg.time_sec.data);
     frame->ts.tv_usec = ntohl(hg.time_usec.data);
 
     /* Protocol TYPE */

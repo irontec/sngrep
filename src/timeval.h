@@ -20,10 +20,10 @@
  **
  ****************************************************************************/
 /**
- * @file util.h
+ * @file timeval.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions for general use in the program
+ * @brief Functions for working with timestamps
  *
  */
 #ifndef __SNGREP_TIMEVAL_H

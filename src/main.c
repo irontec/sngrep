@@ -42,22 +42,22 @@ void
 print_version_info()
 {
     g_print("%s - %s\n"
-           "Copyright (C) 2013-2018 Irontec S.L.\n"
-           "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
-           "This is free software: you are free to change and redistribute it.\n"
-           "There is NO WARRANTY, to the extent permitted by law.\n"
+            "Copyright (C) 2013-2018 Irontec S.L.\n"
+            "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+            "This is free software: you are free to change and redistribute it.\n"
+            "There is NO WARRANTY, to the extent permitted by law.\n"
 
-#ifdef WITH_SSL
-           " * Compiled with GnuTLS support.\n"
-#endif
-#ifdef USE_IPV6
-           " * Compiled with IPv6 support.\n"
-#endif
-#ifdef USE_HEP
+            #ifdef WITH_SSL
+            " * Compiled with GnuTLS support.\n"
+            #endif
+            #ifdef USE_IPV6
+            " * Compiled with IPv6 support.\n"
+            #endif
+            #ifdef USE_HEP
             " * Compiled with HEPv3 support.\n"
-#endif
-           "\nWritten by Ivan Alonso [aka Kaian]\n",
-           PACKAGE, VERSION);
+            #endif
+            "\nWritten by Ivan Alonso [aka Kaian]\n",
+            PACKAGE, VERSION);
 }
 
 /**
@@ -66,7 +66,7 @@ print_version_info()
  * Parse command line options and start running threads
  */
 int
-main(int argc, char* argv[])
+main(int argc, char *argv[])
 {
     GError *error = NULL;
     gchar **input_files = NULL;
@@ -93,27 +93,27 @@ main(int argc, char* argv[])
     CaptureOutput *output;
 
     GOptionEntry main_entries[] = {
-        { "version",'V', 0, G_OPTION_ARG_NONE, &version,
+        { "version", 'V', 0, G_OPTION_ARG_NONE, &version,
           "Version information", NULL },
-        { "device", 'd', 0, G_OPTION_ARG_STRING_ARRAY,  &input_devices,
+        { "device", 'd', 0, G_OPTION_ARG_STRING_ARRAY, &input_devices,
           "Use this capture device instead of default", "DEVICE" },
-        { "input",  'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &input_files,
+        { "input", 'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &input_files,
           "Read captured data from pcap file", "FILE" },
         { "output", 'O', 0, G_OPTION_ARG_FILENAME, &output_file,
           "Write captured data to pcap file", "FILE" },
-        { "calls",  'c', 0, G_OPTION_ARG_NONE, &storage_mopts.invite,
+        { "calls", 'c', 0, G_OPTION_ARG_NONE, &storage_mopts.invite,
           "Only display dialogs starting with INVITE", NULL },
-        { "rtp",    'r', 0, G_OPTION_ARG_NONE, &storage_copts.rtp,
+        { "rtp", 'r', 0, G_OPTION_ARG_NONE, &storage_copts.rtp,
           "Store captured RTP packets (enables saving RTP)", NULL },
-        { "limit",  'l', 0, G_OPTION_ARG_INT, &storage_copts.limit,
+        { "limit", 'l', 0, G_OPTION_ARG_INT, &storage_copts.limit,
           "Set capture limit to N dialogs", "N" },
         { "rotate", 'R', 0, G_OPTION_ARG_NONE, &storage_copts.rotate,
           "Rotate calls when capture limit have been reached", NULL },
         { "no-interface", 'N', 0, G_OPTION_ARG_NONE, &no_interface,
           "Don't display sngrep interface, just capture", NULL },
-        { "quiet",  'q', 0, G_OPTION_ARG_NONE, &quiet,
+        { "quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet,
           "Don't print captured dialogs in no interface mode", NULL },
-        { "icase",  'i', 0, G_OPTION_ARG_NONE, &storage_mopts.micase,
+        { "icase", 'i', 0, G_OPTION_ARG_NONE, &storage_mopts.micase,
           "Make <match expression> case insensitive", NULL },
         { "invert", 'v', 0, G_OPTION_ARG_NONE, &storage_mopts.minvert,
           "Invert <match expression>", NULL },
@@ -124,14 +124,14 @@ main(int argc, char* argv[])
         { "no-config", 'F', 0, G_OPTION_ARG_NONE, &no_config,
           "Do not read configuration from default config file", NULL },
 #ifdef WITH_SSL
-        { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
-            "RSA private keyfile to decrypt captured packets", "KEYFILE" },
+    { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
+        "RSA private keyfile to decrypt captured packets", "KEYFILE" },
 #endif
 #ifdef USE_HEP
         { "hep-listen", 'L', 0, G_OPTION_ARG_STRING, &hep_listen,
-            "Listen for encapsulated HEP packets", "udp:X.X.X.X:XXXX" },
+          "Listen for encapsulated HEP packets", "udp:X.X.X.X:XXXX" },
         { "hep-send", 'H', 0, G_OPTION_ARG_STRING, &hep_send,
-            "Homer sipcapture URL", "udp:X.X.X.X:XXXX" },
+          "Homer sipcapture URL", "udp:X.X.X.X:XXXX" },
 #endif
         { NULL }
     };
@@ -336,7 +336,7 @@ main(int argc, char* argv[])
         ncurses_wait_for_input();
     } else {
         setbuf(stdout, NULL);
-        while(capture_is_running(manager)) {
+        while (capture_is_running(manager)) {
             if (!quiet)
                 g_print("\rDialog count: %d", storage_calls_count());
             g_usleep(500 * 1000);

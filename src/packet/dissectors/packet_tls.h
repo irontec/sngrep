@@ -51,6 +51,7 @@
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gcrypt.h>
+#include "packet/dissector.h"
 
 //! Error reporting domain
 #define S_GNUTLS_ERROR s_gnutls_error_quark()
@@ -128,15 +129,15 @@ enum ContentType
 //! HanshakeType values as defined in RFC5246
 enum HandshakeType
 {
-    hello_request       = GNUTLS_HANDSHAKE_HELLO_REQUEST,
-    client_hello        = GNUTLS_HANDSHAKE_CLIENT_HELLO,
-    server_hello        = GNUTLS_HANDSHAKE_SERVER_HELLO,
-    certificate         = GNUTLS_HANDSHAKE_CERTIFICATE_PKT,
+    hello_request = GNUTLS_HANDSHAKE_HELLO_REQUEST,
+    client_hello = GNUTLS_HANDSHAKE_CLIENT_HELLO,
+    server_hello = GNUTLS_HANDSHAKE_SERVER_HELLO,
+    certificate = GNUTLS_HANDSHAKE_CERTIFICATE_PKT,
     certificate_request = GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST,
-    server_hello_done   = GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
-    certificate_verify  = GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
+    server_hello_done = GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
+    certificate_verify = GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
     client_key_exchange = GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
-    finished            = GNUTLS_HANDSHAKE_FINISHED
+    finished = GNUTLS_HANDSHAKE_FINISHED
 };
 
 //! ProtocolVersion header as defined in RFC5246

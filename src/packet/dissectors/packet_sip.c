@@ -51,78 +51,78 @@ PacketSipCode sip_codes[] = {
     { SIP_METHOD_INFO,      "INFO" },
     { SIP_METHOD_REFER,     "REFER" },
     { SIP_METHOD_UPDATE,    "UPDATE" },
-    { 100, "100 Trying" },
-    { 180, "180 Ringing" },
-    { 181, "181 Call is Being Forwarded" },
-    { 182, "182 Queued" },
-    { 183, "183 Session Progress" },
-    { 199, "199 Early Dialog Terminated" },
-    { 200, "200 OK" },
-    { 202, "202 Accepted" },
-    { 204, "204 No Notification" },
-    { 300, "300 Multiple Choices" },
-    { 301, "301 Moved Permanently" },
-    { 302, "302 Moved Temporarily" },
-    { 305, "305 Use Proxy" },
-    { 380, "380 Alternative Service" },
-    { 400, "400 Bad Request" },
-    { 401, "401 Unauthorized" },
-    { 402, "402 Payment Required" },
-    { 403, "403 Forbidden" },
-    { 404, "404 Not Found" },
-    { 405, "405 Method Not Allowed" },
-    { 406, "406 Not Acceptable" },
-    { 407, "407 Proxy Authentication Required" },
-    { 408, "408 Request Timeout" },
-    { 409, "409 Conflict" },
-    { 410, "410 Gone" },
-    { 411, "411 Length Required" },
-    { 412, "412 Conditional Request Failed" },
-    { 413, "413 Request Entity Too Large" },
-    { 414, "414 Request-URI Too Long" },
-    { 415, "415 Unsupported Media Type" },
-    { 416, "416 Unsupported URI Scheme" },
-    { 417, "417 Unknown Resource-Priority" },
-    { 420, "420 Bad Extension" },
-    { 421, "421 Extension Required" },
-    { 422, "422 Session Interval Too Small" },
-    { 423, "423 Interval Too Brief" },
-    { 424, "424 Bad Location Information" },
-    { 428, "428 Use Identity Header" },
-    { 429, "429 Provide Referrer Identity" },
-    { 430, "430 Flow Failed" },
-    { 433, "433 Anonymity Disallowed" },
-    { 436, "436 Bad Identity-Info" },
-    { 437, "437 Unsupported Certificate" },
-    { 438, "438 Invalid Identity Header" },
-    { 439, "439 First Hop Lacks Outbound Support" },
-    { 470, "470 Consent Needed" },
-    { 480, "480 Temporarily Unavailable" },
-    { 481, "481 Call/Transaction Does Not Exist" },
-    { 482, "482 Loop Detected." },
-    { 483, "483 Too Many Hops" },
-    { 484, "484 Address Incomplete" },
-    { 485, "485 Ambiguous" },
-    { 486, "486 Busy Here" },
-    { 487, "487 Request Terminated" },
-    { 488, "488 Not Acceptable Here" },
-    { 489, "489 Bad Event" },
-    { 491, "491 Request Pending" },
-    { 493, "493 Undecipherable" },
-    { 494, "494 Security Agreement Required" },
-    { 500, "500 Server Internal Error" },
-    { 501, "501 Not Implemented" },
-    { 502, "502 Bad Gateway" },
-    { 503, "503 Service Unavailable" },
-    { 504, "504 Server Time-out" },
-    { 505, "505 Version Not Supported" },
-    { 513, "513 Message Too Large" },
-    { 580, "580 Precondition Failure" },
-    { 600, "600 Busy Everywhere" },
-    { 603, "603 Decline" },
-    { 604, "604 Does Not Exist Anywhere" },
-    { 606, "606 Not Acceptable" },
-    { -1 , NULL },
+    { 100,                  "100 Trying" },
+    { 180,                  "180 Ringing" },
+    { 181,                  "181 Call is Being Forwarded" },
+    { 182,                  "182 Queued" },
+    { 183,                  "183 Session Progress" },
+    { 199,                  "199 Early Dialog Terminated" },
+    { 200,                  "200 OK" },
+    { 202,                  "202 Accepted" },
+    { 204,                  "204 No Notification" },
+    { 300,                  "300 Multiple Choices" },
+    { 301,                  "301 Moved Permanently" },
+    { 302,                  "302 Moved Temporarily" },
+    { 305,                  "305 Use Proxy" },
+    { 380,                  "380 Alternative Service" },
+    { 400,                  "400 Bad Request" },
+    { 401,                  "401 Unauthorized" },
+    { 402,                  "402 Payment Required" },
+    { 403,                  "403 Forbidden" },
+    { 404,                  "404 Not Found" },
+    { 405,                  "405 Method Not Allowed" },
+    { 406,                  "406 Not Acceptable" },
+    { 407,                  "407 Proxy Authentication Required" },
+    { 408,                  "408 Request Timeout" },
+    { 409,                  "409 Conflict" },
+    { 410,                  "410 Gone" },
+    { 411,                  "411 Length Required" },
+    { 412,                  "412 Conditional Request Failed" },
+    { 413,                  "413 Request Entity Too Large" },
+    { 414,                  "414 Request-URI Too Long" },
+    { 415,                  "415 Unsupported Media Type" },
+    { 416,                  "416 Unsupported URI Scheme" },
+    { 417,                  "417 Unknown Resource-Priority" },
+    { 420,                  "420 Bad Extension" },
+    { 421,                  "421 Extension Required" },
+    { 422,                  "422 Session Interval Too Small" },
+    { 423,                  "423 Interval Too Brief" },
+    { 424,                  "424 Bad Location Information" },
+    { 428,                  "428 Use Identity Header" },
+    { 429,                  "429 Provide Referrer Identity" },
+    { 430,                  "430 Flow Failed" },
+    { 433,                  "433 Anonymity Disallowed" },
+    { 436,                  "436 Bad Identity-Info" },
+    { 437,                  "437 Unsupported Certificate" },
+    { 438,                  "438 Invalid Identity Header" },
+    { 439,                  "439 First Hop Lacks Outbound Support" },
+    { 470,                  "470 Consent Needed" },
+    { 480,                  "480 Temporarily Unavailable" },
+    { 481,                  "481 Call/Transaction Does Not Exist" },
+    { 482,                  "482 Loop Detected." },
+    { 483,                  "483 Too Many Hops" },
+    { 484,                  "484 Address Incomplete" },
+    { 485,                  "485 Ambiguous" },
+    { 486,                  "486 Busy Here" },
+    { 487,                  "487 Request Terminated" },
+    { 488,                  "488 Not Acceptable Here" },
+    { 489,                  "489 Bad Event" },
+    { 491,                  "491 Request Pending" },
+    { 493,                  "493 Undecipherable" },
+    { 494,                  "494 Security Agreement Required" },
+    { 500,                  "500 Server Internal Error" },
+    { 501,                  "501 Not Implemented" },
+    { 502,                  "502 Bad Gateway" },
+    { 503,                  "503 Service Unavailable" },
+    { 504,                  "504 Server Time-out" },
+    { 505,                  "505 Version Not Supported" },
+    { 513,                  "513 Message Too Large" },
+    { 580,                  "580 Precondition Failure" },
+    { 600,                  "600 Busy Everywhere" },
+    { 603,                  "603 Decline" },
+    { 604,                  "604 Does Not Exist Anywhere" },
+    { 606,                  "606 Not Acceptable" },
+    { -1, NULL },
 };
 
 const char *
@@ -268,7 +268,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_regex_match(sip->reg_callid, payload->str, 0, &pmatch);
     if (g_match_info_matches(pmatch)) {
         // Copy the matching part of payload
-        sip_data->callid =  g_match_info_fetch_named(pmatch, "callid");
+        sip_data->callid = g_match_info_fetch_named(pmatch, "callid");
         g_ptr_array_set(sip_data->headers, SIP_HEADER_CALLID, g_match_info_fetch_named(pmatch, "callid"));
     }
     g_match_info_free(pmatch);
@@ -285,7 +285,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     g_regex_match(sip->reg_xcallid, payload->str, 0, &pmatch);
     if (g_match_info_matches(pmatch)) {
-        sip_data->xcallid =  g_match_info_fetch_named(pmatch, "xcallid");
+        sip_data->xcallid = g_match_info_fetch_named(pmatch, "xcallid");
         g_ptr_array_set(sip_data->headers, SIP_HEADER_XCALLID, g_match_info_fetch_named(pmatch, "xcallid"));
     }
     g_match_info_free(pmatch);
@@ -374,56 +374,56 @@ packet_sip_init(PacketParser *parser)
     GRegexCompileFlags cflags = G_REGEX_OPTIMIZE | G_REGEX_CASELESS | G_REGEX_NEWLINE_CRLF | G_REGEX_MULTILINE;
 
     sip->reg_method = g_regex_new(
-            "(?P<method>\\w+) [^:]+:\\S* SIP/2.0",
-            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+        "(?P<method>\\w+) [^:]+:\\S* SIP/2.0",
+        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
 
     sip->reg_callid = g_regex_new(
-            "^(Call-ID|i):\\s*(?P<callid>.+)$",
-            cflags, mflags, NULL);
+        "^(Call-ID|i):\\s*(?P<callid>.+)$",
+        cflags, mflags, NULL);
 
     sip->reg_xcallid = g_regex_new(
-            "^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$",
-            cflags, mflags, NULL);
+        "^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$",
+        cflags, mflags, NULL);
 
     sip->reg_response = g_regex_new(
-            "SIP/2.0 (?P<text>(?P<code>\\d{3}) .*)",
-            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+        "SIP/2.0 (?P<text>(?P<code>\\d{3}) .*)",
+        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
 
     sip->reg_cseq = g_regex_new(
-            "^CSeq:\\s*(?P<cseq>\\d{1,10})\\s+\\w+$",
-            cflags, mflags, NULL);
+        "^CSeq:\\s*(?P<cseq>\\d{1,10})\\s+\\w+$",
+        cflags, mflags, NULL);
 
     sip->reg_from = g_regex_new(
-            "^(From|f):[^:]+:(?P<from>((?P<fromuser>[^@;>\r]+)@)?[^;>\r]+)",
-            cflags, mflags, NULL);
+        "^(From|f):[^:]+:(?P<from>((?P<fromuser>[^@;>\r]+)@)?[^;>\r]+)",
+        cflags, mflags, NULL);
 
     sip->reg_to = g_regex_new(
-            "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r]+)@)?[^\r;>]+(>?;tag=(?P<totag>[^\r]+))?)",
-            cflags, mflags, NULL);
+        "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r]+)@)?[^\r;>]+(>?;tag=(?P<totag>[^\r]+))?)",
+        cflags, mflags, NULL);
 
     sip->reg_valid = g_regex_new(
-            "^(\\w+ \\w+:|SIP/2.0 \\d{3})",
-            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+        "^(\\w+ \\w+:|SIP/2.0 \\d{3})",
+        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
 
     sip->reg_cl = g_regex_new(
-            "^(Content-Length|l):\\s*(?P<clen>\\d+)$",
-            cflags, mflags, NULL);
+        "^(Content-Length|l):\\s*(?P<clen>\\d+)$",
+        cflags, mflags, NULL);
 
     sip->reg_body = g_regex_new(
-            "\r\n\r\n",
-            cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+        "\r\n\r\n",
+        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
 
     sip->reg_reason = g_regex_new(
-            "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"",
-            cflags, mflags, NULL);
+        "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"",
+        cflags, mflags, NULL);
 
     sip->reg_warning = g_regex_new(
-            "^Warning:\\s*(?P<warning>\\d+)",
-            cflags, mflags, NULL);
+        "^Warning:\\s*(?P<warning>\\d+)",
+        cflags, mflags, NULL);
 
     sip->reg_authorization = g_regex_new(
-            "^Authorization:\\s*Digest\\s*(?P<authparams>[^\r]+)",
-            cflags, mflags, NULL);
+        "^Authorization:\\s*Digest\\s*(?P<authparams>[^\r]+)",
+        cflags, mflags, NULL);
 
     g_ptr_array_set(parser->dissectors, PACKET_SIP, sip);
 

@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef __SNGREP_SIP_H
-#define __SNGREP_SIP_H
+#ifndef __SNGREP_STORAGE_H
+#define __SNGREP_STORAGE_H
 
 #include <glib.h>
 #include "call.h"
@@ -41,18 +41,20 @@ typedef struct _Storage Storage;
 typedef struct _StorageStats StorageStats;
 
 //! Shorter declaration of structs
-typedef struct _StorageSortOpts    StorageSortOpts;
-typedef struct _StorageMatchOpts   StorageMatchOpts;
+typedef struct _StorageSortOpts StorageSortOpts;
+typedef struct _StorageMatchOpts StorageMatchOpts;
 typedef struct _StorageCaptureOpts StorageCaptureOpts;
 
-struct _StorageSortOpts {
+struct _StorageSortOpts
+{
     //! Sort call list by this attribute
     enum AttributeId by;
     //! Sory by attribute ascending
     gboolean asc;
 };
 
-struct _StorageMatchOpts {
+struct _StorageMatchOpts
+{
     //! Only store dialogs starting with INVITE
     gboolean invite;
     //! Only store dialogs starting with a Method without to-tag
@@ -67,7 +69,8 @@ struct _StorageMatchOpts {
     GRegex *mregex;
 };
 
-struct _StorageCaptureOpts {
+struct _StorageCaptureOpts
+{
     //! Max number of calls in the list
     guint limit;
     //! Rotate first call when the limit is reached
@@ -81,11 +84,12 @@ struct _StorageCaptureOpts {
 /**
  * @brief Structure to store dialog stats
  */
-struct _StorageStats {
+struct _StorageStats
+{
     //! Total number of captured dialogs
-    int total;
+    guint total;
     //! Total number of displayed dialogs after filtering
-    int displayed;
+    guint displayed;
 };
 
 /**
@@ -93,7 +97,8 @@ struct _StorageStats {
  *
  * This structure acts as header of calls list
  */
-struct _Storage {
+struct _Storage
+{
     //! Matching options
     StorageMatchOpts match;
     //! Capture options
@@ -205,17 +210,6 @@ void
 storage_calls_clear_soft();
 
 /**
- * @brief Parse SIP Message payload for SDP media streams
- *
- * Parse the payload content to get SDP information
- *
- * @param msg SIP message structure
- * @return 0 in all cases
- */
-void
-storage_register_streams(Message *msg);
-
-/**
  * @brief Get Storage Matching options
  *
  * @return Struct containing matching options
@@ -231,7 +225,6 @@ storage_match_options();
 StorageSortOpts
 storage_sort_options();
 
-
 /**
  * @brief Set Storage Sorting options
  *
@@ -240,4 +233,4 @@ storage_sort_options();
 void
 storage_set_sort_options(StorageSortOpts sort);
 
-#endif
+#endif /* __SNGREP_STORAGE_H */
