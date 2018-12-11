@@ -348,8 +348,12 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
 
     // Check if we have Body separator field
-    g_regex_match(sip->reg_body, payload->str, 0, &pmatch);
-    g_match_info_fetch_pos(pmatch, 0, &start, &end);
+    if (g_regex_match(sip->reg_body, payload->str, 0, &pmatch)) {
+        g_match_info_fetch_pos(pmatch, 0, &start, &end);
+    } else {
+        // No end of packet found. Skipping
+        return data;
+    }
 
     // Remove SIP headers from data
     data = g_byte_array_remove_range(data, 0, end);
