@@ -187,67 +187,76 @@ main(int argc, char *argv[])
     // Main packet capture manager
     manager = capture_manager_new();
 
-    if (input_files) {
+    // Handle capture input from files
+    GList *files = NULL;
+    for (guint i = 0; input_files && i < g_strv_length(input_files); i++) {
+        if (g_file_test(input_files[i], G_FILE_TEST_EXISTS)) {
+            // An actual file, just append to the list
+            files = g_list_append(files, input_files[i]);
+            continue;
+        }
+
         // Handle input files glob matching
-        GList *files = NULL;
-        for (guint i = 0; i < g_strv_length(input_files); i++) {
-            if (g_strstr_len(input_files[i], -1, "*") ||
-                g_strstr_len(input_files[i], -1, "?")) {
-                gchar *dirname = g_path_get_dirname(input_files[i]);
-                gchar *glob = g_path_get_basename(input_files[i]);
+        gchar *dirname = g_path_get_dirname(input_files[i]);
+        gchar *glob = g_path_get_basename(input_files[i]);
 
-                // Open directory for reading files
-                GDir *dir = g_dir_open(dirname, 0, &error);
-                if (error != NULL) {
-                    g_printerr("error: %s\n", error->message);
-                    return 1;
-                }
+        // Support home dir shell shortcuts
+        if (*dirname == '~') {
+            dirname = g_strdup_printf("%s/%s", g_get_home_dir(), dirname + 1);
+        }
 
-                // Check each file agains given pattern
-                const gchar *fname = NULL;
-                GPatternSpec *match = g_pattern_spec_new(glob);
-                while ((fname = g_dir_read_name(dir)) != NULL) {
-                    if (g_pattern_match_string(match, fname)) {
-                        files = g_list_append(files, g_strdup_printf(
-                            "%s%c%s",
-                            dirname, G_DIR_SEPARATOR, fname));
-                    }
-                }
+        // Open directory for reading files
+        GDir *dir = g_dir_open(dirname, 0, &error);
+        if (error != NULL) {
+            g_printerr("error: %s\n", error->message);
+            return 1;
+        }
 
-                if (files == NULL) {
-                    g_printerr("error: no file matched expression %s\n", glob);
-                    return 1;
-                }
-
-                g_free(dirname);
-                g_free(glob);
-                g_pattern_spec_free(match);
-            } else {
-                // Not a Glob pattern, just append file
-                files = g_list_append(files, input_files[i]);
+        // Check each file agains given pattern
+        const gchar *fname = NULL;
+        GPatternSpec *match = g_pattern_spec_new(glob);
+        while ((fname = g_dir_read_name(dir)) != NULL) {
+            if (g_pattern_match_string(match, fname)) {
+                files = g_list_append(files, g_strdup_printf(
+                    "%s%c%s",
+                    dirname, G_DIR_SEPARATOR, fname));
             }
         }
 
-        // Handle capture file inputs
-        for (GList *l = files; l != NULL; l = l->next) {
-            if ((input = capture_input_pcap_offline(l->data, &error))) {
-                capture_manager_add_input(manager, input);
-            } else {
-                g_printerr("error: %s\n", error->message);
-                return 1;
-            }
+        if (files == NULL) {
+            g_printerr("error: no file matched expression %s\n", glob);
+            return 1;
+        }
+
+        g_free(dirname);
+        g_free(glob);
+        g_pattern_spec_free(match);
+    }
+
+    // Old legacy option to open pcaps without other arguments
+    if (argc == 2 && g_file_test(argv[1], G_FILE_TEST_EXISTS)) {
+        // Read as a PCAP file
+        files = g_list_append(files, argv[1]);
+        argc--;
+    }
+
+    // Handle capture file inputs
+    for (GList *l = files; l != NULL; l = l->next) {
+        if ((input = capture_input_pcap_offline(l->data, &error))) {
+            capture_manager_add_input(manager, input);
+        } else {
+            g_printerr("error: %s\n", error->message);
+            return 1;
         }
     }
 
     // Handle capture device inputs
-    if (input_devices) {
-        for (gint i = 0; input_devices[i]; i++) {
-            if ((input = capture_input_pcap_online(input_devices[i], &error))) {
-                capture_manager_add_input(manager, input);
-            } else {
-                g_printerr("error: %s\n", error->message);
-                return 1;
-            }
+    for (guint i = 0; input_devices && i < g_strv_length(input_devices); i++) {
+        if ((input = capture_input_pcap_online(input_devices[i], &error))) {
+            capture_manager_add_input(manager, input);
+        } else {
+            g_printerr("error: %s\n", error->message);
+            return 1;
         }
     }
 
@@ -275,18 +284,6 @@ main(int argc, char *argv[])
         }
     }
 #endif
-
-    // Old legacy option to open pcaps without other arguments
-    if (argc == 2 && g_file_test(argv[1], G_FILE_TEST_EXISTS)) {
-        // Read as a PCAP file
-        if ((input = capture_input_pcap_offline(argv[1], &error))) {
-            capture_manager_add_input(manager, input);
-            argc--;
-        } else {
-            g_printerr("error: %s\n", error->message);
-            return 1;
-        }
-    }
 
     // If no capture file or device selected, use default capture device
     if (g_slist_length(manager->inputs) == 0) {
