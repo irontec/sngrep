@@ -29,11 +29,14 @@
 #include "config.h"
 #include "glib-extra.h"
 
-gpointer
-g_sequence_nth(GSequence *sequence, guint index)
+GList *
+g_list_concat_deep(GList *dst, GList *src)
 {
-    GSequenceIter *pos = g_sequence_get_iter_at_pos(sequence, index);
-    return (g_sequence_iter_is_end(pos)) ? NULL : g_sequence_get(pos);
+    for (GList *l = src; l != NULL; l = l->next) {
+        dst = g_list_append(dst, l->data);
+    }
+
+    return dst;
 }
 
 GPtrArray *

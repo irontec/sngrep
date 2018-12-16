@@ -220,8 +220,9 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
                 packet_sdp_dissect_connection(sdp, media, line);
                 break;
             case 'm':
-                media = packet_sdp_dissect_media(sdp, line);
-                sdp->medias = g_list_append(sdp->medias, media);
+                if ((media = packet_sdp_dissect_media(sdp, line)) != NULL) {
+                    sdp->medias = g_list_append(sdp->medias, media);
+                }
                 break;
             case 'a':
                 packet_sdp_dissect_attribute(sdp, media, line);

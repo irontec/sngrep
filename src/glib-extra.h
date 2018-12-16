@@ -38,6 +38,17 @@
 #define g_ptr_array_last(array)  g_ptr_array_index(array, array->len-1)
 #define g_ptr_array_set(array, index, item)  (array->pdata[index] = item)
 
+/**
+ * @brief Make a deep concat from one Double-Linked list to another
+ *
+ * @param dst Destination list. May already have values or be NULL
+ * @param src Source list. May be empty or be NULL
+ *
+ * @return Destination list with source nodes appended
+ */
+GList *
+g_list_concat_deep(GList *dst, GList *src);
+
 GPtrArray *
 g_ptr_array_copy(GPtrArray *origin);
 

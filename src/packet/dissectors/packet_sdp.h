@@ -30,7 +30,7 @@
 #define PACKET_PACKET_SDP_H_
 
 #include <glib.h>
-#include "../packet.h"
+#include "packet/packet.h"
 #include "packet/dissector.h"
 
 

@@ -364,7 +364,6 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     if (data != NULL) {
         g_byte_array_free(data, TRUE);
         g_free(frame);
-
         g_list_free(packet->frames);
         g_free(packet);
     }

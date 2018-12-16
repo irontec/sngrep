@@ -230,12 +230,12 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Assemble all sorted contents and frames on current packet
     GList *frames = NULL;
     data = g_byte_array_new();
-    for (guint i = 0; i < stream->segments->len; i++) {
+    for (guint i = 0; i < g_ptr_array_len(stream->segments); i++) {
         segment = g_ptr_array_index(stream->segments, i);
         // Join all sorted segments data toguether
         g_byte_array_append(data, segment->data->data, segment->data->len);
         // Store all stream frames
-        frames = g_list_append(frames, segment->packet->frames);
+        frames = g_list_concat_deep(frames, segment->packet->frames);
     }
 
     // Set all frames on current packet
@@ -260,6 +260,10 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         g_free(stream);
     } else if (pending->len < data->len) {
         // Partially parsed
+        return NULL;
+    } else {
+        // @TODO multiples messages in multiples TCP packets
+        return NULL;
     }
 
     return pending;

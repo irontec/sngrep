@@ -345,7 +345,12 @@ setting_read_file(const gchar *fname)
         // Get configuration option from setting line
         if (sscanf(line, "%s %s %[^\t\n]", type, option, value) == 3) {
             if (!strcasecmp(type, "set")) {
-                setting_set_value(setting_id(option), value);
+                enum SettingId id = setting_id(option);
+                if (id == SETTING_UNKNOWN) {
+                    g_printerr("error: Unknown setting: %s\n", option);
+                    continue;
+                }
+                setting_set_value(id, value);
             } else if (!strcasecmp(type, "alias")) {
                 setting_add_alias(option, value);
             } else if (!strcasecmp(type, "bind")) {
