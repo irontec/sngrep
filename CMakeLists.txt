@@ -5,7 +5,7 @@ project(sngrep
 
 set(PROJECT_NAME sngrep)
 set(CMAKE_C_STANDARD 11)
-add_compile_options(-Wall -pedantic -Wextra)
+add_compile_options(-Wall -pedantic -Wextra -Werror)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/curses)
@@ -39,6 +39,7 @@ set(SOURCES
         src/ncurses/windows/stats_win.c
         src/ncurses/windows/auth_validate_win.c
         src/ncurses/window.c
+        src/ncurses/dialog.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c
         src/filter.c

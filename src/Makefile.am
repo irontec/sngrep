@@ -40,6 +40,7 @@ sngrep_SOURCES+=storage.c
 sngrep_SOURCES+=ncurses/keybinding.c
 sngrep_SOURCES+=ncurses/scrollbar.c
 sngrep_SOURCES+=ncurses/manager.c
+sngrep_SOURCES+=ncurses/dialog.c
 sngrep_SOURCES+=ncurses/window.c
 sngrep_SOURCES+=ncurses/windows/stats_win.c
 sngrep_SOURCES+=ncurses/windows/filter_win.c

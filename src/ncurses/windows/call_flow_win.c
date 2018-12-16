@@ -20,27 +20,23 @@
  **
  ****************************************************************************/
 /**
- * @file call_flow.c
+ * @file call_flow_win.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in call_flow.h
+ * @brief Source of functions to handle Message arrows display window
  */
 
-#include "config.h"
 #include <glib.h>
-#include <stdlib.h>
-#include <string.h>
 #include <packet/dissectors/packet_sip.h>
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
-#include "call_flow_win.h"
-#include "call_raw_win.h"
-#include "msg_diff_win.h"
-#include "auth_validate_win.h"
-#include "save_win.h"
-#include "timeval.h"
+#include "ncurses/dialog.h"
+#include "ncurses/windows/call_flow_win.h"
+#include "ncurses/windows/call_raw_win.h"
+#include "ncurses/windows/msg_diff_win.h"
+#include "ncurses/windows/auth_validate_win.h"
+#include "ncurses/windows/save_win.h"
 #include "glib-extra.h"
-#include "setting.h"
 
 /***
  *

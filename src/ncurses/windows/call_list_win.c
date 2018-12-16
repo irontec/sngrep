@@ -20,35 +20,28 @@
  **
  ****************************************************************************/
 /**
- * @file ui_call_list.c
+ * @file call_list_win.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in ui_call_list.h
+ * @brief Functions to handle Call List window
  *
  */
 #include "config.h"
 #include <glib.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 #include "glib-extra.h"
 #include "setting.h"
 #include "filter.h"
-#include "capture/capture_pcap.h"
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif
 #include "ncurses/manager.h"
-#include "call_list_win.h"
-#include "call_flow_win.h"
-#include "call_raw_win.h"
-#include "stats_win.h"
-#include "filter_win.h"
-#include "save_win.h"
-#include "storage.h"
-#include "column_select_win.h"
+#include "ncurses/dialog.h"
+#include "ncurses/windows/call_list_win.h"
+#include "ncurses/windows/call_flow_win.h"
+#include "ncurses/windows/call_raw_win.h"
+#include "ncurses/windows/save_win.h"
+#include "ncurses/windows/column_select_win.h"
 
 /**
  * @brief Get custom information of given panel

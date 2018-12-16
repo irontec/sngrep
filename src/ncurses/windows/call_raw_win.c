@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file call_raw.c
+ * @file call_raw_win.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in call_raw.h
@@ -29,14 +29,13 @@
  * @todo Replace the panel refresh. Wclear sucks on high latency conections.
  *
  */
-#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include "ncurses/manager.h"
-#include "call_raw_win.h"
-#include "save_win.h"
-#include "capture/capture_pcap.h"
+#include "ncurses/dialog.h"
 #include "packet/dissectors/packet_sip.h"
+#include "ncurses/windows/save_win.h"
+#include "ncurses/windows/call_raw_win.h"
 
 /**
  * @brief Get custom information of given panel

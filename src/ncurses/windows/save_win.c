@@ -25,21 +25,16 @@
  *
  * @brief Source of functions defined in save_win.h
  */
-#include "config.h"
 #include <glib.h>
-#include <string.h>
-#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <errno.h>
 #include <form.h>
-#include <ctype.h>
 #include "glib-extra.h"
-#include "save_win.h"
 #include "setting.h"
-#include "capture/capture_pcap.h"
-#include "capture/capture_txt.h"
 #include "filter.h"
+#include "capture/capture_txt.h"
+#include "ncurses/dialog.h"
+#include "ncurses/windows/save_win.h"
 
 /**
  * @brief Get custom information of given panel

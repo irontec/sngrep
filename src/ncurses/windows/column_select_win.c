@@ -27,17 +27,14 @@
  * @brief Source of functions defined in ui_column_select.h
  *
  */
-#include "config.h"
 #include <glib.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <errno.h>
 #include <glib/gstdio.h>
 #include "glib-extra.h"
 #include "ncurses/manager.h"
-#include "call_list_win.h"
-#include "column_select_win.h"
+#include "ncurses/dialog.h"
+#include "ncurses/windows/call_list_win.h"
+#include "ncurses/windows/column_select_win.h"
 
 /**
  * @brief Get custom information of given panel

@@ -27,10 +27,9 @@
  */
 #include "config.h"
 #include <glib.h>
-#include <packet/dissectors/packet_sip.h>
-#include "glib-extra.h"
+#include "packet/dissectors/packet_sip.h"
+#include "ncurses/dialog.h"
 #include "auth_validate_win.h"
-#include "setting.h"
 
 /**
  * @brief Get custom information of given panel

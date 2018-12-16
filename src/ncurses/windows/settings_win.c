@@ -27,16 +27,10 @@
  */
 #include "config.h"
 #include <glib/gstdio.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include "ncurses/manager.h"
-#include "settings_win.h"
-#include "setting.h"
+#include "ncurses/dialog.h"
+#include "ncurses/windows/settings_win.h"
 
 SettingsWinCategory categories[] = {
     { CAT_SETTINGS_INTERFACE, "Interface" },
