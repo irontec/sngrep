@@ -26,6 +26,8 @@
  * @brief Source of functions defined in ui_msg_diff.h
  *
  */
+
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include "msg_diff_win.h"

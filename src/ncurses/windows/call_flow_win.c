@@ -26,6 +26,7 @@
  * @brief Source of functions to handle Message arrows display window
  */
 
+#include "config.h"
 #include <glib.h>
 #include <packet/dissectors/packet_sip.h>
 #include "capture/capture_pcap.h"

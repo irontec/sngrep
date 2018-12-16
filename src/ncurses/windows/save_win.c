@@ -25,6 +25,7 @@
  *
  * @brief Source of functions defined in save_win.h
  */
+#include "config.h"
 #include <glib.h>
 #include <fcntl.h>
 #include <unistd.h>

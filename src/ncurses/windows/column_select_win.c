@@ -27,6 +27,7 @@
  * @brief Source of functions defined in ui_column_select.h
  *
  */
+#include "config.h"
 #include <glib.h>
 #include <errno.h>
 #include <glib/gstdio.h>

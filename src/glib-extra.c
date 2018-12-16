@@ -26,6 +26,7 @@
  * @brief Helper function for glib containers
  *
  */
+#include "config.h"
 #include "glib-extra.h"
 
 gpointer

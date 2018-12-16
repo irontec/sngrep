@@ -29,6 +29,8 @@
  * @todo Replace the panel refresh. Wclear sucks on high latency conections.
  *
  */
+
+#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include "ncurses/manager.h"

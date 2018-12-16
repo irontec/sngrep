@@ -26,6 +26,8 @@
  * @brief Source of functions defined in ui_manager.h
  *
  */
+
+#include "config.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
