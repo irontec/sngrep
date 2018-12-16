@@ -208,7 +208,7 @@ static GByteArray *
 packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
     GMatchInfo *pmatch;
-    gint start, end;
+    gint start = 0, end = 0;
 
     // Only handle UTF-8 SIP payloads
     if (!g_utf8_validate((gchar *) data->data, data->len, NULL)) {
@@ -243,16 +243,16 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         g_match_info_fetch_pos(pmatch, 1, &start, &end);
 
         // The SDP body of the SIP message ends in another packet
-        if ((guint) (start + content_len) > data->len) {
+        if ((guint) (end + content_len) > data->len) {
             g_match_info_free(pmatch);
             // Not a SIP message or not complete
             return data;
         }
 
         // We got more than one SIP message in the same packet
-        if ((guint) (start + content_len) < data->len) {
+        if ((guint) (end + content_len) < data->len) {
             // Limit the size of the string to the end of the body
-            g_string_set_size(payload, start + content_len);
+            g_string_set_size(payload, end + content_len);
         }
 
         g_match_info_free(pmatch);
@@ -414,8 +414,8 @@ packet_sip_init(PacketParser *parser)
         cflags, mflags, NULL);
 
     sip->reg_body = g_regex_new(
-        "\r\n\r\n",
-        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
+        "(\r\n\r\n)",
+        cflags, mflags, NULL);
 
     sip->reg_reason = g_regex_new(
         "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"",

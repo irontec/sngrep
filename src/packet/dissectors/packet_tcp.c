@@ -177,8 +177,6 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     segment->packet = packet;
     segment->src = ipdata->saddr;
     segment->dst = ipdata->daddr;
-    segment->data = g_byte_array_sized_new(data->len);
-    g_byte_array_append(segment->data, data->data, data->len);
 
 #ifdef __FAVOR_BSD
     segment->off = (tcp->th_off * 4);
@@ -200,6 +198,10 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Remove TCP header length
     g_byte_array_remove_range(data, 0, segment->off);
+
+    // Set segment payload (without TCP header)
+    segment->data = g_byte_array_sized_new(data->len);
+    g_byte_array_append(segment->data, data->data, data->len);
 
     // Find segment stream in assembly hash
     stream = g_hash_table_lookup(priv->assembly, packet_tcp_segment_hashkey(segment));
