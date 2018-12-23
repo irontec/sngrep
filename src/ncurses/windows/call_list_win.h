@@ -85,11 +85,13 @@ struct _CallListWinInfo
     //! Displayed calls vector
     GPtrArray *dcalls;
     //! Selected call in the list
-    guint cur_idx;
+    gint cur_idx;
     //! Selected calls with space
     CallGroup *group;
     //! Displayed column list, make it configurable in the future
     GPtrArray *columns;
+    //! Columns subwindow
+    WINDOW *cols_win;
     //! List subwindow
     WINDOW *list_win;
     //! Form that contains the display filter
@@ -106,8 +108,10 @@ struct _CallListWinInfo
     gboolean menu_active;
     //! Move to last list entry if autoscroll is enabled
     gboolean autoscroll;
-    //! List scrollbar
-    Scrollbar scroll;
+    //! List vertical scrollbar
+    Scrollbar vscroll;
+    //! List horizontal scrollbar
+    Scrollbar hscroll;
 };
 
 /**

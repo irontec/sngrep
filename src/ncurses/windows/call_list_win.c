@@ -68,7 +68,7 @@ call_list_info(Window *window)
  * @param line Position to move the cursor
  */
 static void
-call_list_move(Window *window, guint line)
+call_list_move(Window *window, gint line)
 {
     CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
@@ -81,9 +81,16 @@ call_list_move(Window *window, guint line)
     gboolean move_down = (info->cur_idx < line);
 
     if (move_down) {
+        gint listh = getmaxy(info->list_win);
+        // Remove one line of header
+        listh--;
+
+        if (scrollbar_visible(info->hscroll))
+            listh--;
+
         while (info->cur_idx < line) {
             // Check if there is a call below us
-            if (info->cur_idx == g_ptr_array_len(info->dcalls) - 1)
+            if (info->cur_idx == (gint) g_ptr_array_len(info->dcalls) - 1)
                 break;
 
             // Increase current call position
@@ -91,8 +98,8 @@ call_list_move(Window *window, guint line)
 
             // If we are out of the bottom of the displayed list
             // refresh it starting in the next call
-            if ((gint) (info->cur_idx - info->scroll.pos) == getmaxy(info->list_win)) {
-                info->scroll.pos++;
+            if ((gint) (info->cur_idx - info->vscroll.pos) == listh) {
+                info->vscroll.pos++;
             }
         }
     } else {
@@ -103,8 +110,8 @@ call_list_move(Window *window, guint line)
 
             // If we are out of the top of the displayed list
             // refresh it starting in the previous (in fact current) call
-            if (info->cur_idx == info->scroll.pos) {
-                info->scroll.pos--;
+            if (info->cur_idx == info->vscroll.pos) {
+                info->vscroll.pos--;
             }
             // Move current call position
             info->cur_idx--;
@@ -128,6 +135,50 @@ call_list_move_up(Window *window, guint times)
     if (newpos < 0) newpos = 0;
 
     call_list_move(window, (guint) newpos);
+}
+
+/**
+ * @brief Move column position right N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move right
+ */
+static void
+call_list_move_right(Window *window, guint times)
+{
+    CallListWinInfo *info = call_list_info(window);
+    g_return_if_fail(info != NULL);
+
+    // Nothing to scroll
+    if (!scrollbar_visible(info->hscroll))
+        return;
+
+    gint listw = getmaxx(info->hscroll.win);
+
+    gint newpos = info->hscroll.pos + times;
+    if (newpos >= info->hscroll.max - listw)
+        newpos = info->hscroll.max - listw;
+
+    info->hscroll.pos = newpos;
+}
+
+/**
+ * @brief Move column position left N times
+ *
+ * @param window UI structure pointer
+ * @param times number of lines to move left
+ */
+static void
+call_list_move_left(Window *window, guint times)
+{
+    CallListWinInfo *info = call_list_info(window);
+    g_return_if_fail(info != NULL);
+
+    gint newpos = info->hscroll.pos - times;
+    if (newpos < 0)
+        newpos = 0;
+
+    info->hscroll.pos = (guint) newpos;
 }
 
 /**
@@ -210,7 +261,6 @@ static void
 call_list_draw_header(Window *window)
 {
     const char *infile;
-    int colpos;
     const char *countlb;
     const char *device, *filterbpf;
 
@@ -274,50 +324,6 @@ call_list_draw_header(Window *window)
     if (!has_colors())
         wattron(window->win, A_REVERSE);
 
-    // Get configured sorting options
-    StorageSortOpts sort = storage_sort_options();
-
-    // Draw columns titles
-    wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    window_clear_line(window, 4);
-
-    // Draw separator line
-    if (info->menu_active) {
-        colpos = 18;
-        mvwprintw(window->win, 4, 0, "Sort by");
-        wattron(window->win, A_BOLD | COLOR_PAIR(CP_CYAN_ON_BLACK));
-        mvwprintw(window->win, 4, 11, "%*s", 1, "");
-        wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    } else {
-        colpos = 6;
-    }
-
-    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
-        CallListColumn *column = g_ptr_array_index(info->columns, i);
-        // Get current column title
-        const gchar *coldesc = attr_title(column->id);
-
-        // Check if the column will fit in the remaining space of the screen
-        if (colpos + strlen(coldesc) >= (guint) window->width)
-            break;
-
-        // Print sort column indicator
-        if (column->id == sort.by) {
-            wattron(window->win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-            gchar sortind = (gchar) ((sort.asc) ? '^' : 'v');
-            mvwprintw(window->win, 4, colpos, "%c%.*s", sortind, column->width, coldesc);
-            wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        } else {
-            mvwprintw(window->win, 4, colpos, "%.*s", column->width, coldesc);
-        }
-        colpos += column->width + 1;
-    }
-
-    // Print Autoscroll indicator
-    if (info->autoscroll)
-        mvwprintw(window->win, 4, 0, "A");
-    wattroff(window->win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_CYAN));
-
     // Print Dialogs or Calls in label depending on calls filter
     if (setting_enabled(SETTING_SIP_CALLS)) {
         countlb = "Calls";
@@ -332,6 +338,13 @@ call_list_draw_header(Window *window)
         mvwprintw(window->win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
     } else {
         mvwprintw(window->win, 1, 45, "%s: %d", countlb, stats.total);
+    }
+
+    if (info->menu_active) {
+        // Draw separator line
+        wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        mvwprintw(window->win, 4, 0, "Sort by     ");
+        wattroff(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     }
 }
 
@@ -364,6 +377,34 @@ call_list_draw_footer(Window *window)
     window_draw_bindings(window, keybindings, 23);
 }
 
+static gint
+call_list_columns_width(Window *window, guint columns)
+{
+    // Get panel info
+    CallListWinInfo *info = call_list_info(window);
+    g_return_val_if_fail(info != NULL, 0);
+
+
+    // More requested columns that existing columns??
+    if (columns > g_ptr_array_len(info->columns)) {
+        columns = g_ptr_array_len(info->columns);
+    }
+
+    // If recquested column is 0, count all columns
+    guint columncnt = (columns == 0) ? g_ptr_array_len(info->columns) : columns;
+
+    // Add extra width for spaces between columns
+    gint width = 5 + columncnt;
+
+    // Sum all column widths
+    for (guint i = 0; i < columncnt; i++) {
+        CallListColumn *column = g_ptr_array_index(info->columns, i);
+        width += column->width;
+    }
+
+    return width;
+}
+
 /**
  * @brief Draw panel list contents
  *
@@ -376,9 +417,8 @@ call_list_draw_list(Window *window)
 {
     gint listh, listw, cline = 0;
     Call *call = NULL;
-    char coltext[ATTR_MAXLEN];
-    int colpos;
-    int color;
+    gchar coltext[ATTR_MAXLEN];
+    gint color;
 
     // Get panel info
     CallListWinInfo *info = call_list_info(window);
@@ -406,11 +446,42 @@ call_list_draw_list(Window *window)
         }
     }
 
-    // Clear call list before redrawing
-    werase(list_win);
+    // Create a new pad for configured columns
+    gint padw = call_list_columns_width(window, 0);
+    if (padw < listw) padw = listw;
+
+    WINDOW *pad = newpad(listh + 1, padw);
+
+    // Get configured sorting options
+    StorageSortOpts sort = storage_sort_options();
+
+    // Draw columns titles
+    wattron(pad, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    mvwprintw(pad, 0, 0, "%*s", padw, "");
+
+    // Draw columns
+    gint colpos = 6;
+    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
+        CallListColumn *column = g_ptr_array_index(info->columns, i);
+        // Get current column title
+        const gchar *coldesc = attr_title(column->id);
+
+        // Print sort column indicator
+        if (column->id == sort.by) {
+            wattron(pad, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
+            gchar sortind = (gchar) ((sort.asc) ? '^' : 'v');
+            mvwprintw(pad, 0, colpos, "%c%.*s", sortind, column->width, coldesc);
+            wattron(pad, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        } else {
+            mvwprintw(pad, 0, colpos, "%.*s", column->width, coldesc);
+        }
+        colpos += column->width + 1;
+    }
+    wattroff(pad, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
 
     // Fill the call list
-    for (guint i = info->scroll.pos; i < g_ptr_array_len(info->dcalls); i++) {
+    cline = 1;
+    for (guint i = (guint) info->vscroll.pos; i < g_ptr_array_len(info->dcalls); i++) {
         call = g_ptr_array_index(info->dcalls, i);
 
         // Stop if we have reached the bottom of the list
@@ -419,26 +490,22 @@ call_list_draw_list(Window *window)
 
         // Show bold selected rows
         if (call_group_exists(info->group, call))
-            wattron(list_win, A_BOLD | COLOR_PAIR(CP_DEFAULT));
+            wattron(pad, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (info->cur_idx == i) {
-            wattron(list_win, COLOR_PAIR(CP_WHITE_ON_BLUE));
+        if (info->cur_idx == (gint) i) {
+            wattron(pad, COLOR_PAIR(CP_WHITE_ON_BLUE));
         }
 
         // Set current line background
-        mvwprintw(list_win, cline, 0, "%*s", listw, "");
+        mvwprintw(pad, cline, 0, "%*s", padw, "");
         // Set current line selection box
-        mvwprintw(list_win, cline, 2, call_group_exists(info->group, call) ? "[*]" : "[ ]");
+        mvwprintw(pad, cline, 2, call_group_exists(info->group, call) ? "[*]" : "[ ]");
 
         // Print requested columns
         colpos = 6;
         for (guint j = 0; j < g_ptr_array_len(info->columns); j++) {
             CallListColumn *column = g_ptr_array_index(info->columns, j);
-
-            // Check if next column fits on window width
-            if (colpos + column->width >= listw)
-                break;
 
             // Initialize column text
             memset(coltext, 0, sizeof(coltext));
@@ -451,34 +518,65 @@ call_list_draw_list(Window *window)
 
             // Enable attribute color (if not current one)
             color = 0;
-            if (info->cur_idx != i) {
+            if (info->cur_idx != (gint) i) {
                 if ((color = attr_color(column->id, coltext)) > 0) {
-                    wattron(list_win, color);
+                    wattron(pad, color);
                 }
             }
 
             // Add the column text to the existing columns
-            mvwprintw(list_win, cline, colpos, "%.*s", column->width, coltext);
+            mvwprintw(pad, cline, colpos, "%.*s", column->width, coltext);
             colpos += column->width + 1;
 
             // Disable attribute color
             if (color > 0)
-                wattroff(list_win, color);
+                wattroff(pad, color);
         }
         cline++;
 
-        wattroff(list_win, COLOR_PAIR(CP_DEFAULT));
-        wattroff(list_win, COLOR_PAIR(CP_DEF_ON_BLUE));
-        wattroff(list_win, A_BOLD | A_REVERSE);
+        wattroff(pad, COLOR_PAIR(CP_DEFAULT));
+        wattroff(pad, COLOR_PAIR(CP_DEF_ON_BLUE));
+        wattroff(pad, A_BOLD | A_REVERSE);
     }
 
-    // Draw scrollbar to the right
-    info->scroll.max = g_ptr_array_len(info->dcalls) - 1;
-    scrollbar_draw(info->scroll);
+    // Copy the pad into list win
+    copywin(pad, info->list_win, 0, info->hscroll.pos, 0, 0,
+        listh - 1, listw - 1, 0);
+
+    // Copy fixed columns
+    copywin(pad, info->list_win, 0, 0, 0, 0,
+        listh - 1, call_list_columns_width(
+            window, (guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS)), 0);
+
+    // Setup horizontal scrollbar
+    info->hscroll.max = call_list_columns_width(window, 0);
+    info->hscroll.preoffset = 1;    // Leave first column for vscroll
+
+    // Setup vertical scrollbar
+    info->vscroll.max = g_ptr_array_len(info->dcalls) - 1;
+    info->vscroll.preoffset = 1;    // Leave first row for titles
+    if (scrollbar_visible(info->hscroll)) {
+        info->vscroll.postoffset = 1;
+    }   // Leave last row for hscroll
+
+    // Draw scrollbars if required
+    scrollbar_draw(info->hscroll);
+    scrollbar_draw(info->vscroll);
+
+    // Free the list pad
+    delwin(pad);
+
+    // Print Autoscroll indicator
+    if (info->autoscroll) {
+        wattron(info->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        mvwprintw(info->list_win, 0, 0, "A");
+        wattroff(info->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    }
 
     // Refresh the list
-    if (!info->menu_active)
+    if (!info->menu_active) {
         wnoutrefresh(info->list_win);
+    }
 }
 
 /**
@@ -613,16 +711,24 @@ call_list_select_sort_attribute(Window *window)
     CallListWinInfo *info = call_list_info(window);
     g_return_if_fail(info != NULL);
 
+    // Get current sort options
+    StorageSortOpts sort = storage_sort_options();
+
     // Activete sorting menu
     info->menu_active = 1;
 
-    wresize(info->list_win, window->height - 6, window->width - 12);
-    mvderwin(info->list_win, 5, 12);
+    // Move call list to the right
+    wresize(info->list_win, window->height - 5, window->width - 12);
+    mvderwin(info->list_win, 4, 12);
 
     // Create menu entries
+    ITEM *selected = NULL;
     for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
         CallListColumn *column = g_ptr_array_index(info->columns, i);
         info->items[i] = new_item(attr_name(column->id), 0);
+        if (column->id == sort.by) {
+            selected = info->items[i];
+        }
     }
 
     info->items[g_ptr_array_len(info->columns)] = NULL;
@@ -636,6 +742,7 @@ call_list_select_sort_attribute(Window *window)
     set_menu_format(info->menu, window->height, 1);
     set_menu_mark(info->menu, "");
     set_menu_fore(info->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
+    set_current_item(info->menu, selected);
     menu_opts_off(info->menu, O_ONEVALUE);
     post_menu(info->menu);
 }
@@ -799,9 +906,9 @@ call_list_handle_menu_key(Window *window, int key)
                 }
 
                 // Restore list position
-                mvderwin(info->list_win, 5, 0);
+                mvderwin(info->list_win, 4, 0);
                 // Restore list window size
-                wresize(info->list_win, window->height - 6, window->width);
+                wresize(info->list_win, window->height - 5, window->width);
                 break;
             default:
                 // Parse next action
@@ -849,6 +956,12 @@ call_list_handle_key(Window *window, int key)
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
+            case ACTION_RIGHT:
+                call_list_move_right(window, 3);
+                break;
+            case ACTION_LEFT:
+                call_list_move_left(window, 3);
+                break;
             case ACTION_DOWN:
                 call_list_move_down(window, 1);
                 break;
@@ -1118,7 +1231,7 @@ call_list_win_clear(Window *window)
     g_return_if_fail(info != NULL);
 
     // Initialize structures
-    info->scroll.pos = info->cur_idx = 0;
+    info->vscroll.pos = info->cur_idx = 0;
     call_group_remove_all(info->group);
 
     // Clear Displayed lines
@@ -1208,8 +1321,9 @@ call_list_win_new()
     info->menu_active = FALSE;
 
     // Calculate available printable area
-    info->list_win = subwin(window->win, window->height - 6, window->width, 5, 0);
-    info->scroll = window_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
+    info->list_win = subwin(window->win, window->height - 5, window->width, 4, 0);
+    info->vscroll = window_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
+    info->hscroll = window_set_scrollbar(info->list_win, SB_HORIZONTAL, SB_BOTTOM);
 
     // Group of selected calls
     info->group = call_group_new();

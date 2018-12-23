@@ -71,9 +71,13 @@ struct _Scrollbar
     //! Position
     enum ScrollbarDock dock;
     //! Current scrollbar position
-    guint pos;
+    gint pos;
     //! Max scrollbar positions
-    guint max;
+    gint max;
+    //! Offset to apply to the beggining of the scrollbar
+    gint preoffset;
+    //! Offset to apply to the ending of the scrollbar
+    gint postoffset;
 };
 
 
@@ -84,5 +88,8 @@ window_set_scrollbar(WINDOW *win, int alignment, int dock);
 // FIXME work with pointers
 void
 scrollbar_draw(Scrollbar scrollbar);
+
+gboolean
+scrollbar_visible(Scrollbar scrollbar);
 
 #endif /* __SNGREP_SCROLLBAR_H */

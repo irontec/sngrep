@@ -182,6 +182,7 @@ void
 storage_set_sort_options(StorageSortOpts sort)
 {
     storage.sort = sort;
+    g_ptr_array_sort(storage.calls, (GCompareFunc) storage_sorter);
 }
 
 StorageSortOpts

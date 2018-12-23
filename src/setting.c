@@ -431,6 +431,8 @@ settings_init(int no_config)
                     setting_string_new("cl.sortfield", attr_name(ATTR_CALLINDEX)));
     g_ptr_array_set(settings->values, SETTING_CL_SORTORDER,
                     setting_string_new("cl.sortorder", "asc"));
+    g_ptr_array_set(settings->values, SETTING_CL_FIXEDCOLS,
+                    setting_number_new("cl.fixedcols", "2"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_POS,
                     setting_number_new("cl.column.index.pos", "0"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_WIDTH,
@@ -490,7 +492,7 @@ settings_init(int no_config)
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_POS,
                     setting_number_new("cl.column.state.pos", "7"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_WIDTH,
-                    setting_number_new("cl.column.state.width", "10"));
+                    setting_number_new("cl.column.state.width", "12"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_POS,
                     setting_number_new("cl.column.convdur.pos", "-1"));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_WIDTH,
