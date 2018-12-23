@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file attribute.c.c
+ * @file attribute.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in attribute.h

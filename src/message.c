@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file sip_msg.c
+ * @file message.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage SIP call data

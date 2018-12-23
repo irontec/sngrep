@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file stats.h
+ * @file stats_win.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage ui window for capture stats display

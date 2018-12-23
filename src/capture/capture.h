@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file capture_manager.h
+ * @file capture.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage captures

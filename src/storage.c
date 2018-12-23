@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file sip.c
+ * @file storage.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in storage.h

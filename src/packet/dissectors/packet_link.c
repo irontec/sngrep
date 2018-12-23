@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file packet_rtcp.c
+ * @file packet_link.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in packet_link.h

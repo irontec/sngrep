@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file option.h
+ * @file keybinding.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage keybindings

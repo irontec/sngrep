@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file packet_parser.c
+ * @file dissector.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage captured packet dissectors

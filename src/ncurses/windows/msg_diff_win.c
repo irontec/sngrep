@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_msg_diff.c
+ * @file msg_diff_win.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in ui_msg_diff.h

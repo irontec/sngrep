@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file group.c
+ * @file keybinding.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source code of functions defined in keybinding.h

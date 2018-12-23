@@ -21,7 +21,7 @@
  **
  ****************************************************************************/
 /**
- * @file capture.c
+ * @file capture_hep.c
  *
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  * @author Alexandr Dubovikov <alexandr.dubovikov@gmail.com>

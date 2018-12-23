@@ -21,7 +21,7 @@
  ****************************************************************************/
 
 /**
- * @file ui_column_select.c
+ * @file column_select_win.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in ui_column_select.h

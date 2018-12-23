@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_manager.c
+ * @file manager.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in ui_manager.h

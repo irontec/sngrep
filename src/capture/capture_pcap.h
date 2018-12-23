@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file capture.h
+ * @file capture_pcap.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage pcap files

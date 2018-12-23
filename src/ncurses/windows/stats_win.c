@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file stats.c
+ * @file stats_win.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in stats.h

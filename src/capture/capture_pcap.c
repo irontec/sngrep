@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file capture.c
+ * @file capture_pcap.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in pcap.h

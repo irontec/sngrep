@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_panel.c
+ * @file window.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in ui_panel.h

@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file rtp.c
+ * @file stream.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage RTP captured packets
