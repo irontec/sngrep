@@ -399,9 +399,9 @@ settings_init(int no_config)
     g_ptr_array_set(settings->values, SETTING_CAPTURE_OUTFILE,
                     setting_string_new("capture.outfile", ""));
 #ifdef WITH_SSL
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_KEYFILE,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_KEYFILE,
             setting_string_new("capture.keyfile", ""));
-    g_ptr_array_set(storage->settings, SETTING_CAPTURE_TLSSERVER,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_TLSSERVER,
             setting_string_new("capture.tlsserver", ""));
 #endif
     g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
