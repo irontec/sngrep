@@ -324,7 +324,7 @@ setting_get_alias(const gchar *address)
         }
     }
 
-    return NULL;
+    return address;
 }
 
 gint

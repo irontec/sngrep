@@ -366,7 +366,7 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
 
         // In compressed mode, we search using alias instead of address
         if (setting_enabled(SETTING_CF_SPLITCALLID)) {
-            if (!strcmp(column->alias, alias)) {
+            if (g_strcmp0(column->alias, alias) == 0) {
                 return column;
             }
         } else {
@@ -387,6 +387,7 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
             }
         }
     }
+
     return candidate;
 }
 
@@ -440,7 +441,7 @@ call_flow_column_new(Address addr)
     // Create a new column
     CallFlowColumn *column = g_malloc0(sizeof(CallFlowColumn));
     column->addr = addr;
-    column->alias = setting_get_alias(addr.ip);
+    column->alias = setting_get_alias(column->addr.ip);
     return column;
 }
 
