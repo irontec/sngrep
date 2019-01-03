@@ -293,7 +293,6 @@ setting_column_width(enum AttributeId id)
 
     gint sett_id = setting_id(sett_text);
     g_free(sett_text);
-    g_return_val_if_fail(setting_name != NULL, -1);
 
     return setting_get_intvalue(sett_id);
 }

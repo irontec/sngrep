@@ -28,6 +28,7 @@
  */
 
 #include "config.h"
+#include <string.h>
 #include "ncurses/theme.h"
 #include "ncurses/keybinding.h"
 #include "ncurses/dialog.h"

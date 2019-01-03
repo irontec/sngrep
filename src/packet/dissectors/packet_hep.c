@@ -30,6 +30,7 @@
  */
 
 #include "config.h"
+#include <string.h>
 #include <netinet/udp.h>
 #include <arpa/inet.h>
 #include "glib-extra.h"
