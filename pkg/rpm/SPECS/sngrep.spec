@@ -2,16 +2,16 @@
 
 Summary:            SIP Messages flow viewer
 Name:               sngrep
-Version:            1.4.5
+Version:            2.0.0
 Release:            0%{?dist}
 License:            GPLv3
 Group:              Applications/Engineering
 BuildRoot:          %{_tmppath}/%{name}-%{version}-%{release}-root
 Source:             https://github.com/irontec/%{name}/archive/v%{version}.zip
 URL:                http://github.com/irontec/sngrep
-BuildRequires: ncurses-devel 
-BuildRequires: make 
-BuildRequires: libpcap-devel 
+BuildRequires: ncurses-devel
+BuildRequires: make
+BuildRequires: libpcap-devel
 BuildRequires: pcre-devel
 BuildRequires: autoconf
 BuildRequires: automake

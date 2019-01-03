@@ -1,3 +1,9 @@
+sngrep (2.0.0) experimental; urgency=low
+
+   * sngrep 2.0.0~alpha
+
+ -- Ivan Alonso <kaian@irontec.com>  Thu, 03 Jan 2019 13:29:49 +0100
+
 sngrep (1.4.5) experimental; urgency=low
 
    * sngrep 1.4.5 released
@@ -59,7 +65,7 @@ sngrep (1.1.0) experimental; urgency=low
  -- Ivan Alonso <kaian@irontec.com>  Tue, 27 Oct 2015 16:01:00 +0100
 
 sngrep (1.0.0) experimental; urgency=low
-  
+
   * sngrep 1.3.0 released
 
  -- Ivan Alonso <kaian@irontec.com>  Tue, 06 Oct 2015 19:13:00 +0100
@@ -115,18 +121,18 @@ sngrep (0.2.1) experimental; urgency=low
 sngrep (0.2.0) experimental; urgency=low
 
   * sngrep 0.2.0 released
-    
+
  -- Ivan Alonso <kaian@irontec.com>  Thu, 4 Dec 2014 20:39:04 +0100
 
 sngrep (0.1.0) experimental; urgency=low
 
   * sngrep 0.1.0 released
-    
+
  -- Ivan Alonso <kaian@irontec.com>  Sun, 21 Oct 2014 14:35:00 +0100
 
 sngrep (0.0.1) experimental; urgency=low
 
   * sngrep 0.0.1 released
-    
+
  -- Ivan Alonso <kaian@irontec.com>  Wed, 1 Oct 2014 20:39:04 +0100
 
