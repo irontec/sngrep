@@ -5,7 +5,7 @@ project(sngrep
 
 set(PROJECT_NAME sngrep)
 set(CMAKE_C_STANDARD 11)
-add_compile_options(-Wall -pedantic -Wextra -Werror)
+add_compile_options(-Wall -pedantic -Wextra)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/curses)
@@ -78,8 +78,8 @@ target_link_libraries(sngrep pcap)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CURSES REQUIRED ncursesw menuw panelw formw)
-include_directories(${CURSES_INCLUDE_DIR})
-target_link_libraries(sngrep ${CURSES_LIBRARIES} )
+include_directories(${CURSES_INCLUDE_DIRS})
+target_link_libraries(sngrep ${CURSES_LIBRARIES})
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB REQUIRED glib-2.0)
