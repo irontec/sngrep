@@ -133,7 +133,7 @@ GByteArray *
 packet_parser_next_dissector(PacketParser *parser, Packet *packet, GByteArray *data)
 {
     // No more dissection required
-    if (data == NULL || data->len == 0)
+    if (data == NULL)
         return NULL;
 
     // Get current dissector node

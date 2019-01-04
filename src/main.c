@@ -275,7 +275,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
     if (keyfile) {
         // Check if we have a keyfile and is valid
-        if (!tls_check_keyfile(keyfile, &error)) {
+        if (!packet_tls_privkey_check(keyfile, &error)) {
             g_printerr("error: %s\n", error->message);
             return 1;
         } else {

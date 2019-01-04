@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef __SNGREP_CAPTURE_TLS_
-#define __SNGREP_CAPTURE_TLS_
+#ifndef __SNGREP_CAPTURE_TLS_H
+#define __SNGREP_CAPTURE_TLS_H
 
 #include "config.h"
 #include <glib.h>
@@ -41,20 +41,21 @@
 #include "packet/dissector.h"
 
 //! Error reporting domain
-#define S_GNUTLS_ERROR s_gnutls_error_quark()
+#define TLS_ERROR packet_tls_error_quark()
 //! Cast two bytes into decimal (Big Endian)
 #define UINT16_INT(i) ((i.x[0] << 8) | i.x[1])
 //! Cast three bytes into decimal (Big Endian)
 #define UINT24_INT(i) ((i.x[0] << 16) | (i.x[1] << 8) | i.x[2])
 
-enum gnutls_errors
+enum tls_errors
 {
-    S_GNUTLS_ERROR_KEYFILE_EMTPY,
-    S_GNUTLS_ERROR_PRIVATE_INIT,
-    S_GNUTLS_ERROR_PRIVATE_LOAD
+    TLS_ERROR_KEYFILE_EMTPY,
+    TLS_ERROR_PRIVATE_INIT,
+    TLS_ERROR_PRIVATE_LOAD
 };
 
 typedef struct _DissectorTlsData DissectorTlsData;
+typedef struct _SSLConnection SSLConnection;
 
 //! Three bytes unsigned integer
 typedef struct uint16
@@ -100,6 +101,7 @@ enum SSLCIpherDigest
 //! SSL Decode mode
 enum SSLCipherMode
 {
+    MODE_UNKNOWN,
     MODE_CBC,
     MODE_GCM
 };
@@ -107,24 +109,10 @@ enum SSLCipherMode
 //! ContentType values as defined in RFC5246
 enum ContentType
 {
-    change_cipher_spec = 20,
-    alert = 21,
-    handshake = 22,
-    application_data = 23
-};
-
-//! HanshakeType values as defined in RFC5246
-enum HandshakeType
-{
-    hello_request = GNUTLS_HANDSHAKE_HELLO_REQUEST,
-    client_hello = GNUTLS_HANDSHAKE_CLIENT_HELLO,
-    server_hello = GNUTLS_HANDSHAKE_SERVER_HELLO,
-    certificate = GNUTLS_HANDSHAKE_CERTIFICATE_PKT,
-    certificate_request = GNUTLS_HANDSHAKE_CERTIFICATE_REQUEST,
-    server_hello_done = GNUTLS_HANDSHAKE_SERVER_HELLO_DONE,
-    certificate_verify = GNUTLS_HANDSHAKE_CERTIFICATE_VERIFY,
-    client_key_exchange = GNUTLS_HANDSHAKE_CLIENT_KEY_EXCHANGE,
-    finished = GNUTLS_HANDSHAKE_FINISHED
+    CHANGE_CIPHER_SPEC = 20,
+    ALERT = 21,
+    HANDSHAKE = 22,
+    APPLICATION_DATA = 23
 };
 
 //! ProtocolVersion header as defined in RFC5246
@@ -164,12 +152,12 @@ struct CipherSuite
 
 struct CipherData
 {
-    int num;
+    guint num;
     int enc;
     int ivblock;
     int bits;
     int digest;
-    int diglen;
+    guint diglen;
     int mode;
 };
 
@@ -232,7 +220,7 @@ struct ClientKeyExchange
  * connection. This is also used as linked list
  * node.
  */
-struct SSLConnection
+struct _SSLConnection
 {
     //! Connection status
     enum SSLConnectionState state;
@@ -243,14 +231,10 @@ struct SSLConnection
     //! TLS version
     int version;
 
-    //! Client IP address
-    struct in_addr client_addr;
-    //! Server IP address
-    struct in_addr server_addr;
-    //! Client port
-    guint16 client_port;
-    //! Server port
-    guint16 server_port;
+    //! Client IP address and port
+    Address client_addr;
+    //! Server IP address and port
+    Address server_addr;
 
     gnutls_session_t ssl;
     int ciph;
@@ -292,8 +276,7 @@ struct _DissectorTlsData
  * @return 1 if file contains RSA private info, 0 otherwise
  */
 gboolean
-tls_check_keyfile(const gchar *keyfile, GError **error);
-
+packet_tls_privkey_check(const gchar *keyfile, GError **error);
 
 PacketDissector *
 packet_tls_new();
