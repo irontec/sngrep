@@ -60,6 +60,9 @@
 #include "ncurses/scrollbar.h"
 #include "group.h"
 
+//! Configurable some day
+#define CF_COLUMN_WIDTH 30
+
 //! Sorter declaration of struct _CallFlowInfo
 typedef struct _CallFlowWinInfo CallFlowWinInfo;
 //! Sorter declaration of struct _CallFlowColumn
@@ -128,8 +131,12 @@ struct _CallFlowColumn
     Address addr;
     //! Alias for the given address
     const gchar *alias;
+    //! Twin column for externip setting
+    CallFlowColumn *twin;
     //! Call Ids
     GList *callids;
+    //! Column position on the screen
+    guint pos;
 };
 
 /**

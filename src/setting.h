@@ -52,6 +52,7 @@
 typedef struct _Setting Setting;
 typedef struct _SettingStorage SettingStorage;
 typedef struct _SettingAlias SettingAlias;
+typedef struct _SettingExtenIp SettingExtenIp;
 
 //! Other useful defines
 #define SETTING_ON  "on"
@@ -195,12 +196,26 @@ struct _SettingAlias
 
 };
 
+/**
+ * @brief Externip setting structure
+ */
+struct _SettingExtenIp
+{
+    //! Original address value
+    const gchar *address;
+    //! Twin address value
+    const gchar *externip;
+
+};
+
 struct _SettingStorage
 {
     //! Array of settings
     GPtrArray *values;
     //! List of configured IP address aliases
     GList *alias;
+    //! List of configure IP address extern
+    GList *externips;
 };
 
 Setting *
@@ -280,6 +295,24 @@ setting_column_width(enum AttributeId id);
  */
 const gchar *
 setting_get_alias(const gchar *address);
+
+/**
+ * @brief Get external ip  for a given address (string)
+ *
+ * @param address IP Address
+ * @return configured external ip or NULL
+ */
+const gchar *
+setting_get_externip(const gchar *address);
+
+/**
+ * @brief Get internal ip  for a given address (string)
+ *
+ * @param address IP Address
+ * @return configured internal ip or NULL
+ */
+const gchar *
+setting_get_interip(const gchar *address);
 
 /**
  * @brief Read optionuration directives from file

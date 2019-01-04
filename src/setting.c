@@ -327,6 +327,39 @@ setting_get_alias(const gchar *address)
     return address;
 }
 
+/**
+ * @brief Sets an externip for a given address
+ *
+ * @param address IP Address
+ * @param string representing the externip
+ */
+static void
+setting_add_externip(const gchar *address, const gchar *externip)
+{
+    SettingExtenIp *setting = g_malloc0(sizeof(SettingExtenIp));
+    setting->address = g_strdup(address);
+    setting->externip = g_strdup(externip);
+    settings->externips = g_list_append(settings->externips, setting);
+}
+
+const gchar *
+setting_get_externip(const gchar *address)
+{
+    g_return_val_if_fail(address != NULL, NULL);
+
+    for (GList *l = settings->externips; l != NULL; l = l->next) {
+        SettingExtenIp *externip = l->data;
+        if (g_strcmp0(externip->address, address) == 0) {
+            return externip->externip;
+        }
+        if (g_strcmp0(externip->externip, address) == 0) {
+            return externip->address;
+        }
+    }
+
+    return address;
+}
+
 gint
 setting_read_file(const gchar *fname)
 {
@@ -352,6 +385,8 @@ setting_read_file(const gchar *fname)
                 setting_set_value(id, value);
             } else if (!strcasecmp(type, "alias")) {
                 setting_add_alias(option, value);
+            } else if (!strcasecmp(type, "externip")) {
+                setting_add_externip(option, value);
             } else if (!strcasecmp(type, "bind")) {
                 key_bind_action(key_action_id(option), key_from_str(value));
             } else if (!strcasecmp(type, "unbind")) {

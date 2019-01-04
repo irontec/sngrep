@@ -124,6 +124,12 @@ address_from_str(const char *ipport)
     if (sscanf(scanipport, "%[^:]:%hu", address, &port) == 2) {
         strncpy(ret.ip, address, strlen(address));
         ret.port = port;
+        return ret;
+    }
+
+    if (sscanf(scanipport, "%[^:]", address) == 1) {
+        strncpy(ret.ip, address, strlen(address));
+        ret.port = 0;
     }
 
     return ret;

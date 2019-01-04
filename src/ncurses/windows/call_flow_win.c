@@ -391,6 +391,8 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
     return candidate;
 }
 
+
+
 /**
  * @brief Get a flow column data for a given call-id
  *
@@ -421,34 +423,52 @@ call_flow_column_get(Window *window, Address addr)
     return call_flow_column_get_starting(window, NULL, addr, 0);
 }
 
-/**
- * @brief Add a new column (if required)
- *
- * Check if the given callid and address has already a column.
- * If not, create a new call for that callid/address
- * Each column has one address and two callids (unless split mode
- * is disabled)
- *
- * @param window UI structure pointer
- * @param callid Call-Id header of SIP payload
- * @param addr Address:port string
- *
- * @return The created Column pointer
- */
-static CallFlowColumn *
-call_flow_column_new(Address addr)
-{
-    // Create a new column
-    CallFlowColumn *column = g_malloc0(sizeof(CallFlowColumn));
-    column->addr = addr;
-    column->alias = setting_get_alias(column->addr.ip);
-    return column;
-}
-
 static void
 call_flow_column_add_callid(CallFlowColumn *column, const gchar *callid)
 {
     column->callids = g_list_append(column->callids, (gpointer) callid);
+}
+
+static CallFlowColumn *
+call_flow_column_create(Window *window, Address addr)
+{
+    // Get Window info
+    CallFlowWinInfo *info = call_flow_win_info(window);
+    g_return_val_if_fail(info != NULL, NULL);
+
+    // Create a new column
+    CallFlowColumn *column = g_malloc0(sizeof(CallFlowColumn));
+    g_return_val_if_fail(column != NULL, NULL);
+
+    column->addr = addr;
+    column->alias = setting_get_alias(column->addr.ip);
+
+    // Check if column has externip
+    const gchar *twinip = setting_get_externip(column->addr.ip);
+    if (twinip != NULL) {
+        CallFlowColumn *twin = call_flow_column_get(window, address_from_str(twinip));
+        if (twin != NULL) {
+            // Set position based on twin column
+            twin->twin = column;
+            column->twin = twin;
+            column->pos = twin->pos + 1;
+        }
+    }
+
+    // Set position after last existing column
+    if (column->twin == NULL) {
+        if (g_ptr_array_len(info->columns)) {
+            CallFlowColumn *last = g_ptr_array_last(info->columns);
+            if (last != NULL) {
+                column->pos = last->pos + CF_COLUMN_WIDTH;
+            }
+        }
+    }
+
+    // Add to columns list
+    g_ptr_array_add(info->columns, column);
+
+    return column;
 }
 
 static void
@@ -469,8 +489,7 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow)
     // Find source column for this arrow
     arrow->scolumn = call_flow_column_get_callid(window, call->callid, msg_src_address(msg));
     if (arrow->scolumn == NULL) {
-        arrow->scolumn = call_flow_column_new(msg_src_address(msg));
-        g_ptr_array_add(info->columns, arrow->scolumn);
+        arrow->scolumn = call_flow_column_create(window, msg_src_address(msg));
     }
     call_flow_column_add_callid(arrow->scolumn, call->callid);
 
@@ -483,8 +502,7 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow)
     }
 
     if (arrow->dcolumn == NULL) {
-        arrow->dcolumn = call_flow_column_new(msg_dst_address(msg));
-        g_ptr_array_add(info->columns, arrow->dcolumn);
+        arrow->dcolumn = call_flow_column_create(window, msg_dst_address(msg));
     }
     call_flow_column_add_callid(arrow->dcolumn, call->callid);
 }
@@ -583,12 +601,12 @@ call_flow_draw_columns(Window *window)
                     addr = stream->src;
                     addr.port = 0;
                     if (call_flow_column_get(window, addr) == NULL) {
-                        g_ptr_array_add(info->columns, call_flow_column_new(addr));
+                        call_flow_column_create(window, addr);
                     }
                     addr = stream->dst;
                     addr.port = 0;
                     if (call_flow_column_get(window, addr) == NULL) {
-                        g_ptr_array_add(info->columns, call_flow_column_new(addr));
+                        call_flow_column_create(window, addr);
                     }
                 }
             }
@@ -599,9 +617,13 @@ call_flow_draw_columns(Window *window)
     for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
         CallFlowColumn *column = g_ptr_array_index(info->columns, i);
 
-        mvwvline(info->flow_win, 0, 20 + 30 * i, ACS_VLINE, window->height - 6);
-        mvwhline(window->win, 3, 10 + 30 * i, ACS_HLINE, 20);
-        mvwaddch(window->win, 3, 20 + 30 * i, ACS_TTEE);
+        mvwvline(info->flow_win, 0, 20 + column->pos, ACS_VLINE, window->height - 6);
+        mvwhline(window->win, 3, 10 + column->pos, ACS_HLINE, 20);
+        mvwaddch(window->win, 3, 20 + column->pos, ACS_TTEE);
+
+        if (column->twin && column->twin->pos < column->pos) {
+            mvwaddch(window->win, 3, 20 + column->twin->pos, ACS_TTEE);
+        }
 
         // Set bold to this address if it's local
         if (setting_enabled(SETTING_CF_LOCALHIGHLIGHT)) {
@@ -629,7 +651,13 @@ call_flow_draw_columns(Window *window)
             }
         }
 
-        mvwprintw(window->win, 2, 10 + 30 * i + (22 - strlen(coltext)) / 2, "%s", coltext);
+        if (column->twin == NULL) {
+            mvwprintw(window->win, 2, 10 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
+        } else if (column->pos < column->twin->pos) {
+            mvwprintw(window->win, 1, 5 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
+        } else {
+            mvwprintw(window->win, 2, 15 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
+        }
         wattroff(window->win, A_BOLD);
     }
 }
@@ -721,10 +749,6 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     // Draw message type or status and line
     msglen = (strlen(method) > 24) ? 24 : strlen(method);
 
-    // Get column positions
-    gint scolumn_idx = g_ptr_array_data_index(info->columns, arrow->scolumn);
-    gint dcolumn_idx = g_ptr_array_data_index(info->columns, arrow->dcolumn);
-
     // Determine start and end position of the arrow line
     int startpos, endpos;
     if (arrow->scolumn == arrow->dcolumn) {
@@ -732,21 +756,21 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         CallFlowArrow *prev_arrow = call_flow_arrow_find_prev_callid(window, arrow);
         if (prev_arrow != NULL && prev_arrow->dir == CF_ARROW_LEFT) {
             arrow->dir = CF_ARROW_SPIRAL_LEFT;
-            startpos = 21 + 30 * dcolumn_idx;
-            endpos = 17 + 30 * scolumn_idx;
+            startpos = 21 + arrow->dcolumn->pos;
+            endpos = 17 + arrow->scolumn->pos;
         } else {
             arrow->dir = CF_ARROW_SPIRAL_RIGHT;
-            startpos = 19 + 30 * dcolumn_idx;
-            endpos = 20 + 30 * scolumn_idx;
+            startpos = 19 + arrow->dcolumn->pos;
+            endpos = 20 + arrow->scolumn->pos;
         }
-    } else if (scolumn_idx < dcolumn_idx) {
+    } else if (arrow->scolumn->pos < arrow->dcolumn->pos) {
         arrow->dir = CF_ARROW_RIGHT;
-        startpos = 20 + 30 * scolumn_idx;
-        endpos = 20 + 30 * dcolumn_idx;
+        startpos = 20 + arrow->scolumn->pos;
+        endpos = 20 + arrow->dcolumn->pos;
     } else {
         arrow->dir = CF_ARROW_LEFT;
-        startpos = 20 + 30 * dcolumn_idx;
-        endpos = 20 + 30 * scolumn_idx;
+        startpos = 20 + arrow->dcolumn->pos;
+        endpos = 20 + arrow->scolumn->pos;
     }
     int distance = abs(endpos - startpos) - 3;
 
@@ -1011,20 +1035,16 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         arrow->scolumn = call_flow_column_get_callid(window, 0, addr);
     }
 
-    // Get column positions
-    gint scolumn_idx = g_ptr_array_data_index(info->columns, arrow->scolumn);
-    gint dcolumn_idx = g_ptr_array_data_index(info->columns, arrow->dcolumn);
-
     // Determine start and end position of the arrow line
     int startpos, endpos;
-    if (scolumn_idx < dcolumn_idx) {
+    if (arrow->scolumn->pos < arrow->dcolumn->pos) {
         arrow->dir = CF_ARROW_RIGHT;
-        startpos = 20 + 30 * scolumn_idx;
-        endpos = 20 + 30 * dcolumn_idx;
+        startpos = 20 + arrow->scolumn->pos;
+        endpos = 20 + arrow->dcolumn->pos;
     } else {
         arrow->dir = CF_ARROW_LEFT;
-        startpos = 20 + 30 * dcolumn_idx;
-        endpos = 20 + 30 * scolumn_idx;
+        startpos = 20 + arrow->dcolumn->pos;
+        endpos = 20 + arrow->scolumn->pos;
     }
     int distance = 0;
 
@@ -1203,7 +1223,7 @@ call_flow_draw_raw(Window *window, Message *msg)
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = window->width - (30 * g_ptr_array_len(info->columns)) - 2;
+    raw_width = window->width - (CF_COLUMN_WIDTH * g_ptr_array_len(info->columns)) - 2;
 
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
@@ -1277,7 +1297,7 @@ call_flow_draw_raw_rtcp(Window *window, G_GNUC_UNUSED RtpStream *stream)
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = window->width - (30 * g_ptr_array_len(info->columns)) - 2;
+    raw_width = window->width - (CF_COLUMN_WIDTH * g_ptr_array_len(info->columns)) - 2;
 
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
