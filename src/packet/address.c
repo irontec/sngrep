@@ -119,6 +119,9 @@ address_from_str(const char *ipport)
     if (!ipport || strlen(ipport) > ADDRESSLEN + 6)
         return ret;
 
+    memset(address, 0, sizeof(address));
+    memset(scanipport, 0, sizeof(scanipport));
+
     strncpy(scanipport, ipport, strlen(ipport));
 
     if (sscanf(scanipport, "%[^:]:%hu", address, &port) == 2) {

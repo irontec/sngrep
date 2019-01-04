@@ -956,7 +956,6 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     RtpStream *stream = arrow->item;
     Message *msg;
     CallFlowArrow *msgarrow;
-    Address addr;
 
     // Get panel information
     CallFlowWinInfo *info = call_flow_win_info(window);
@@ -979,67 +978,30 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Get arrow text
     sprintf(text, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
 
-    /**
-     * This logic will try to use the same columns for the stream representation
-     * that are used in the SIP messages that configured the streams in their SDP
-     * if they share the same IP addresses.
-     */
     // Message with Stream destination configured in SDP content
     msg = stream->msg;
 
-    // If message and stream share the same IP address
-    if (address_equals(msg_src_address(msg), stream->dst)) {
-        // Reuse the msg arrow columns as destination column
-        if ((msgarrow = call_flow_arrow_find(window, msg))) {
-            // Get origin and destination column
-            arrow->dcolumn = call_flow_column_get_callid(window, msg->call->callid, msg_src_address(msg));
-        }
+    // Reuse the msg arrow columns as destination column
+    if ((msgarrow = call_flow_arrow_find(window, msg))) {
+        if (address_equals(msgarrow->scolumn->addr, stream->src))
+            arrow->scolumn = msgarrow->scolumn;
+        if (address_equals(msgarrow->scolumn->addr, stream->dst))
+            arrow->dcolumn = msgarrow->scolumn;
+        if (address_equals(msgarrow->dcolumn->addr, stream->src))
+            arrow->scolumn = msgarrow->dcolumn;
+        if (address_equals(msgarrow->dcolumn->addr, stream->dst))
+            arrow->dcolumn = msgarrow->dcolumn;
     }
 
     // fallback: Just use any column that have the destination IP printed
-    if (!arrow->dcolumn) {
-        // FIXME figure a better way to find ignoring port :(
-        addr = stream->dst;
-        addr.port = 0;
-        arrow->dcolumn = call_flow_column_get_callid(window, 0, addr);
+    if (arrow->dcolumn == NULL) {
+        arrow->dcolumn =
+            call_flow_column_get_callid(window, 0, address_from_str(stream->dst.ip));
     }
 
-    /**
-     * For source address of the stream, first try to find a message that have
-     * the stream source configured in their SDP as destination and then apply
-     * the same previous logic address: if IP address matches, reuse message
-     * column, othwerise any column with the source IP will be used.
-     */
-    // Message with Stream source configured in SDP content
-    msg = stream->msg;
-
-    // Try to find a message with configured SDP matching the source of this stream
-    if (msg && address_equals(msg_src_address(msg), stream->src)) {
-        // Reuse the msg arrow columns as destination column
-        if ((msgarrow = call_flow_arrow_find(window, msg))) {
-            // Get origin and destination column
-            arrow->scolumn = call_flow_column_get_callid(window, msg->call->callid, msg_src_address(msg));
-        }
-    }
-
-    // Prefer message that configured this stream rather than any column
-    if (!arrow->scolumn) {
-        msg = stream->msg;
-        // If message and stream share the same IP address
-        if (address_equals(msg_dst_address(msg), stream->src)) {
-            // Reuse the msg arrow columns as destination column
-            if ((msgarrow = call_flow_arrow_find(window, msg))) {
-                arrow->scolumn = call_flow_column_get_callid(window, msg->call->callid, msg_dst_address(msg));
-            }
-        }
-    }
-
-    // fallback: Just use any column that have the soruce IP printed
-    if (!arrow->scolumn) {
-        // FIXME figure a better way to find ignoring port :(
-        addr = stream->src;
-        addr.port = 0;
-        arrow->scolumn = call_flow_column_get_callid(window, 0, addr);
+    if (arrow->scolumn == NULL) {
+        arrow->scolumn =
+            call_flow_column_get_callid(window, 0, address_from_str(stream->src.ip));
     }
 
     // Determine start and end position of the arrow line
