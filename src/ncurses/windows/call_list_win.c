@@ -325,7 +325,8 @@ call_list_draw_header(Window *window)
         wattron(window->win, A_REVERSE);
 
     // Print Dialogs or Calls in label depending on calls filter
-    if (setting_enabled(SETTING_SIP_CALLS)) {
+    StorageMatchOpts storageMatchOpts = storage_match_options();
+    if (storageMatchOpts.invite) {
         countlb = "Calls";
     } else {
         countlb = "Dialogs";
