@@ -402,7 +402,7 @@ packet_sip_init(PacketParser *parser)
         cflags, mflags, NULL);
 
     sip->reg_to = g_regex_new(
-        "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r])+@)?[^\r;>]+).*(;tag=(?P<totag>[^\r]+))?",
+        "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r])+@)?[^\r;>]+)[^;]+?(;tag=(?P<totag>[^\r]+))?",
         cflags, mflags, NULL);
 
     sip->reg_valid = g_regex_new(
