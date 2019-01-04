@@ -429,6 +429,12 @@ call_flow_column_add_callid(CallFlowColumn *column, const gchar *callid)
     column->callids = g_list_append(column->callids, (gpointer) callid);
 }
 
+static gint
+call_flow_column_sorter(CallFlowColumn **a, CallFlowColumn **b)
+{
+    return (*a)->pos - (*b)->pos;
+}
+
 static CallFlowColumn *
 call_flow_column_create(Window *window, Address addr)
 {
@@ -467,6 +473,7 @@ call_flow_column_create(Window *window, Address addr)
 
     // Add to columns list
     g_ptr_array_add(info->columns, column);
+    g_ptr_array_sort(info->columns, (GCompareFunc) call_flow_column_sorter);
 
     return column;
 }
@@ -1223,7 +1230,8 @@ call_flow_draw_raw(Window *window, Message *msg)
     fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
 
     // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = window->width - (CF_COLUMN_WIDTH * g_ptr_array_len(info->columns)) - 2;
+    CallFlowColumn *last = g_ptr_array_last(info->columns);
+    raw_width = window->width - last->pos - CF_COLUMN_WIDTH - 2;
 
     // We can define a mininum size for rawminwidth
     if (raw_width < min_raw_width) {
@@ -1859,7 +1867,7 @@ call_flow_redraw(Window *window)
 
     // Check if any of the group has changed
     // return call_group_changed(info->group);
-    return 0;
+    return TRUE;
 }
 
 void
