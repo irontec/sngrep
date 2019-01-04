@@ -40,7 +40,7 @@
 static gint
 packet_ip_sort_fragments(const PacketIpFragment **a, const PacketIpFragment **b)
 {
-    return (*b)->frag_off - (*a)->frag_off;
+    return (*a)->frag_off - (*b)->frag_off;
 }
 
 static GByteArray *
@@ -195,7 +195,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         return packet_parser_next_dissector(parser, packet, data);
     }
 
-    return data;
+    return NULL;
 }
 
 static void
