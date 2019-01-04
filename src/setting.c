@@ -357,7 +357,7 @@ setting_get_externip(const gchar *address)
         }
     }
 
-    return address;
+    return NULL;
 }
 
 gint

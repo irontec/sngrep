@@ -306,15 +306,6 @@ const gchar *
 setting_get_externip(const gchar *address);
 
 /**
- * @brief Get internal ip  for a given address (string)
- *
- * @param address IP Address
- * @return configured internal ip or NULL
- */
-const gchar *
-setting_get_interip(const gchar *address);
-
-/**
  * @brief Read optionuration directives from file
  *
  * This function will parse passed filenames searching for configuration
