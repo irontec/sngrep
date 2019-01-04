@@ -75,7 +75,7 @@ call_destroy(gpointer item)
     // Remove all call rtp packets
     g_sequence_free(call->rtp_packets);
     // Remove all xcalls
-    g_ptr_array_free(call->xcalls, FALSE);
+    g_ptr_array_free(call->xcalls, TRUE);
 
     // Deallocate call memory
     g_free(call->reasontxt);

@@ -53,6 +53,9 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     //! Source and Destination Address
     Address src, dst;
 
+    if (data->len < sizeof(CaptureHepGeneric))
+        return data;
+
     /* Copy initial bytes to HEP Generic header */
     struct _CaptureHepGeneric hg;
     memcpy(&hg, data->data, sizeof(CaptureHepGeneric));

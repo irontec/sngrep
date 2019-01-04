@@ -354,6 +354,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         // No end of packet found. Skipping
         return data;
     }
+    g_match_info_free(pmatch);
 
     // Remove SIP headers from data
     data = g_byte_array_remove_range(data, 0, end);
