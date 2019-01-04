@@ -1862,12 +1862,8 @@ call_flow_redraw(Window *window)
     // Calculate available printable area
     wresize(info->flow_win, maxy - 6, maxx);
 
-    // Force flow redraw
-    call_flow_draw(window);
-
     // Check if any of the group has changed
-    // return call_group_changed(info->group);
-    return TRUE;
+    return call_group_changed(info->group);
 }
 
 void
