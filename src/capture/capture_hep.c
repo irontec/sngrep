@@ -191,12 +191,13 @@ capture_input_hep_receive(CaptureInput *input)
     PacketParser *parser = input->parser;
 
     /* Receive HEP generic header */
-    if (recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len) == -1)
+    gssize received = recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len);
+    if ( received == -1)
         return;
 
     // Convert packet data
     GByteArray *data = g_byte_array_new();
-    g_byte_array_append(data, (const guint8 *) buffer, MAX_HEP_BUFSIZE);
+    g_byte_array_append(data, (const guint8 *) buffer, (guint) received);
 
     // Create a new packet for this data
     Packet *packet = packet_new();
