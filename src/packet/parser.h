@@ -54,6 +54,8 @@ struct _PacketParser
     //! Capture input owner of this parser
     CaptureInput *input;
     //! Protocol lists handled by this parser
+    GPtrArray *protos;
+    //! Protocol information
     GPtrArray *dissectors;
     //! Protocol dissection tree
     GNode *dissector_tree;

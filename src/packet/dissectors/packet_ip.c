@@ -219,6 +219,7 @@ packet_ip_deinit(PacketParser *parser)
 
     // Free used memory
     g_list_free(ipdata->assembly);
+    g_free(ipdata);
 }
 
 PacketDissector *

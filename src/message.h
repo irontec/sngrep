@@ -73,11 +73,11 @@ struct _Message
  * will only store the given information, but wont parse it until
  * needed.
  *
- * @param payload Raw payload content
+ * @param packet Packet containing SIP message data
  * @return a new allocated message
  */
 Message *
-msg_create();
+msg_new(Packet *packet);
 
 /**
  * @brief Destroy a SIP message and free its memory
@@ -86,10 +86,10 @@ msg_create();
  * This function will remove the message from the call and the
  * passed pointer will be NULL.
  *
- * @param nsg SIP message to be deleted
+ * @param msg SIP message to be free'd
  */
 void
-msg_destroy(gpointer item);
+msg_free(Message *msg);
 
 /**
  * @brief Return the call owner of this message

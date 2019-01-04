@@ -249,6 +249,7 @@ main(int argc, char *argv[])
             return 1;
         }
     }
+    g_list_free(files);
 
     // Handle capture device inputs
     for (guint i = 0; input_devices && i < g_strv_length(input_devices); i++) {
@@ -321,6 +322,7 @@ main(int argc, char *argv[])
                 g_printerr("error: %s\n", error->message);
                 return 1;
             }
+            g_string_free(bpf_filter, FALSE);
         }
 
         // Set the payload match expression
@@ -383,6 +385,7 @@ main(int argc, char *argv[])
     }
 
     // Capture deinit
+    capture_manager_stop(manager);
     capture_manager_free(manager);
 
     // Deinitialize interface

@@ -28,6 +28,8 @@
  */
 
 #include "config.h"
+#include <glib.h>
+#include "glib-extra.h"
 #include "dissector.h"
 #include "packet/dissectors/packet_link.h"
 #include "packet/dissectors/packet_ip.h"
@@ -51,7 +53,11 @@ packet_parser_new(CaptureInput *input)
     PacketParser *parser = g_malloc0(sizeof(PacketParser));
     parser->input = input;
 
-    // Created Dissectors array
+    // Created Protos array
+    parser->protos = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
+    g_ptr_array_set_size(parser->protos, PACKET_PROTO_COUNT);
+
+    // Created Dissectors information array
     parser->dissectors = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
     g_ptr_array_set_size(parser->dissectors, PACKET_PROTO_COUNT);
 
@@ -60,65 +66,86 @@ packet_parser_new(CaptureInput *input)
     return parser;
 }
 
+static void
+packet_parser_proto_deinit(PacketDissector *dissector, PacketParser *parser)
+{
+    if (dissector != NULL) {
+        if (dissector->deinit != NULL)
+            dissector->deinit(parser);
+        g_slist_free(dissector->subdissectors);
+        g_free(dissector);
+    }
+}
+
 void
 packet_parser_free(PacketParser *parser)
 {
-    g_ptr_array_free(parser->dissectors, FALSE);
+
+    g_ptr_array_foreach(parser->protos, (GFunc) packet_parser_proto_deinit, parser);
+    g_ptr_array_free(parser->protos, TRUE);
+    g_ptr_array_free(parser->dissectors, TRUE);
+    g_node_destroy(parser->dissector_tree);
+    g_free(parser);
 }
 
 PacketDissector *
 packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId id)
 {
-    PacketDissector *dissector;
+    PacketDissector *dissector = g_ptr_array_index(parser->protos, id);
 
-    switch (id) {
-        case PACKET_LINK:
-            dissector = packet_link_new();
-            break;
-        case PACKET_IP:
-            dissector = packet_ip_new();
-            break;
-        case PACKET_UDP:
-            dissector = packet_udp_new();
-            break;
-        case PACKET_TCP:
-            dissector = packet_tcp_new();
-            break;
-        case PACKET_SIP:
-            dissector = packet_sip_new();
-            break;
-        case PACKET_SDP:
-            dissector = packet_sdp_new();
-            break;
-        case PACKET_RTP:
-            dissector = packet_rtp_new();
-            break;
-        case PACKET_RTCP:
-            dissector = packet_rtcp_new();
-            break;
+    if (dissector == NULL) {
+        switch (id) {
+            case PACKET_LINK:
+                dissector = packet_link_new();
+                break;
+            case PACKET_IP:
+                dissector = packet_ip_new();
+                break;
+            case PACKET_UDP:
+                dissector = packet_udp_new();
+                break;
+            case PACKET_TCP:
+                dissector = packet_tcp_new();
+                break;
+            case PACKET_SIP:
+                dissector = packet_sip_new();
+                break;
+            case PACKET_SDP:
+                dissector = packet_sdp_new();
+                break;
+            case PACKET_RTP:
+                dissector = packet_rtp_new();
+                break;
+            case PACKET_RTCP:
+                dissector = packet_rtcp_new();
+                break;
 #ifdef USE_HEP
-        case PACKET_HEP:
-            dissector = packet_hep_new();
-            break;
+            case PACKET_HEP:
+                dissector = packet_hep_new();
+                break;
 #endif
 #ifdef WITH_SSL
-        case PACKET_TLS:
-            dissector = packet_tls_new();
-            break;
+            case PACKET_TLS:
+                dissector = packet_tls_new();
+                break;
 #endif
-        default:
-            // Unsuported protocol id
-            return NULL;
+            default:
+                // Unsuported protocol id
+                return NULL;
+        }
+
+        // Add to proto list
+        g_ptr_array_set(parser->protos, id, dissector);
+
+        // Initialize protocol data
+        if (dissector->init) {
+            dissector->init(parser);
+        }
     }
 
     // Append this disector to the tree
     GNode *node = g_node_new(dissector);
     g_node_append(parent, node);
-
-    if (dissector->init) {
-        dissector->init(parser);
-    }
-
 
     // Add children dissectors
     for (GSList *l = dissector->subdissectors; l != NULL; l = l->next) {
@@ -127,7 +154,6 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId 
 
     return dissector;
 }
-
 
 GByteArray *
 packet_parser_next_dissector(PacketParser *parser, Packet *packet, GByteArray *data)

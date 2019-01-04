@@ -260,8 +260,7 @@ storage_register_streams(Message *msg)
 static Message *
 storage_check_sip_packet(Packet *packet)
 {
-    Message *msg;
-    Call *call;
+    Call *call = NULL;
     gboolean newcall = FALSE;
 
     PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
@@ -301,9 +300,7 @@ storage_check_sip_packet(Packet *packet)
     }
 
     // At this point we know we're handling an interesting SIP Packet
-    // FIXME Create a new message from this data
-    msg = msg_create();
-    msg->packet = packet;
+    Message *msg = msg_new(packet);
 
     // Always dissect first call message
     if (call_msg_count(call) == 0) {

@@ -39,6 +39,12 @@ g_list_concat_deep(GList *dst, GList *src)
     return dst;
 }
 
+void
+g_list_item_free(gpointer item, G_GNUC_UNUSED gpointer user_data)
+{
+    g_free(item);
+}
+
 GPtrArray *
 g_ptr_array_copy(GPtrArray *origin)
 {

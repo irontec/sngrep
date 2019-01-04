@@ -102,6 +102,23 @@ setting_enum_new(const gchar *name, const gchar *value, const gchar *valuelist)
     return setting;
 }
 
+static void
+setting_free(Setting *setting)
+{
+    g_return_if_fail(setting != NULL);
+    switch (setting->fmt) {
+        case SETTING_FMT_NUMBER:
+        case SETTING_FMT_STRING:
+            break;
+        case SETTING_FMT_BOOLEAN:
+        case SETTING_FMT_ENUM:
+            g_strfreev(setting->valuelist);
+            break;
+        default:
+            break;
+    }
+    g_free(setting);
+}
 
 Setting *
 setting_by_id(enum SettingId id)
@@ -337,8 +354,8 @@ static void
 setting_add_externip(const gchar *address, const gchar *externip)
 {
     SettingExtenIp *setting = g_malloc0(sizeof(SettingExtenIp));
-    setting->address = g_strdup(address);
-    setting->externip = g_strdup(externip);
+    setting->address = address;
+    setting->externip = externip;
     settings->externips = g_list_append(settings->externips, setting);
 }
 
@@ -402,12 +419,12 @@ int
 settings_init(int no_config)
 {
     // Custom user conf file
-    GString *userconf = NULL;
-    char *rcfile;
+    const gchar *homedir = g_get_home_dir();
+    gchar *curdir = g_get_current_dir();
 
     // Allocate memory for settings storage
     settings = g_malloc0(sizeof(SettingStorage));
-    settings->values = g_ptr_array_new_with_free_func(g_free);
+    settings->values = g_ptr_array_new_with_free_func((GDestroyNotify) setting_free);
     g_ptr_array_set_size(settings->values, SETTING_COUNT);
 
     // Default settings values
@@ -420,10 +437,8 @@ settings_init(int no_config)
     g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
                     setting_bool_new("syntax.tag", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SYNTAX_BRANCH,
-                    setting_bool_new("syntax.tag", SETTING_OFF));
-    g_ptr_array_set(settings->values, SETTING_ALTKEY_HINT,
                     setting_bool_new("syntax.branch", SETTING_OFF));
-    g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
+    g_ptr_array_set(settings->values, SETTING_ALTKEY_HINT,
                     setting_bool_new("hintkeyalt", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_EXITPROMPT,
                     setting_bool_new("exitprompt", SETTING_OFF));
@@ -452,7 +467,7 @@ settings_init(int no_config)
     g_ptr_array_set(settings->values, SETTING_SIP_CALLS,
                     setting_bool_new("sip.calls", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SAVEPATH,
-                    setting_string_new("savepath", g_get_current_dir()));
+                    setting_string_new("savepath", curdir));
     g_ptr_array_set(settings->values, SETTING_DISPLAY_ALIAS,
                     setting_bool_new("displayalias", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CL_SCROLLSTEP,
@@ -602,23 +617,23 @@ settings_init(int no_config)
 #endif
 
     // Done if config file should not be read
-    if (no_config) {
-        return 0;
-    }
+    if (!no_config) {
 
-    // Read options from configuration files
-    setting_read_file("/etc/sngreprc");
-    setting_read_file("/usr/local/etc/sngreprc");
+        // Read options from configuration files
+        setting_read_file("/etc/sngreprc");
+        setting_read_file("/usr/local/etc/sngreprc");
 
-    // Get user configuration
-    if ((rcfile = getenv("SNGREPRC"))) {
-        setting_read_file(rcfile);
-    } else if ((rcfile = getenv("HOME"))) {
-        userconf = g_string_new(rcfile);
-        g_string_append(userconf, "/.sngreprc");
-        setting_read_file(userconf->str);
-        g_string_free(userconf, TRUE);
+        // Get user configuration
+        if (getenv("SNGREPRC") != NULL) {
+            setting_read_file(getenv("SNGREPRC"));
+        } else if (homedir != NULL) {
+            GString *userconf = g_string_new(homedir);
+            g_string_append(userconf, "/.sngreprc");
+            setting_read_file(userconf->str);
+            g_string_free(userconf, TRUE);
+        }
     }
+    g_free(curdir);
 
     return 0;
 }
@@ -626,8 +641,11 @@ settings_init(int no_config)
 void
 settings_deinit()
 {
-    g_ptr_array_free(settings->values, TRUE);
+    g_list_foreach(settings->alias, g_list_item_free, NULL);
     g_list_free(settings->alias);
+    g_list_foreach(settings->externips, g_list_item_free, NULL);
+    g_list_free(settings->externips);
+    g_ptr_array_free(settings->values, TRUE);
     g_free(settings);
 }
 

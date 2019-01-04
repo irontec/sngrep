@@ -277,12 +277,23 @@ packet_tcp_init(PacketParser *parser)
     g_ptr_array_set(parser->dissectors, PACKET_TCP, tcp_data);
 }
 
+static void
+packet_tcp_deinit(PacketParser *parser)
+{
+    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors, PACKET_TCP);
+    g_return_if_fail(priv != NULL);
+
+    g_hash_table_destroy(priv->assembly);
+    g_free(priv);
+}
+
 PacketDissector *
 packet_tcp_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_TCP;
     proto->init = packet_tcp_init;
+    proto->deinit = packet_tcp_deinit;
     proto->dissect = packet_tcp_parse;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TLS));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));

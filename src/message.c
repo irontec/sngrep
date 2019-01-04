@@ -37,20 +37,19 @@
 #include "storage.h"
 
 Message *
-msg_create()
+msg_new(Packet *packet)
 {
     Message *msg = g_malloc0(sizeof(Message));
+    msg->packet = packet;
     msg->medias = NULL;
     return msg;
 }
 
 void
-msg_destroy(gpointer item)
+msg_free(Message *msg)
 {
-    Message *msg = item;
-
     // Free message SDP media
-    if (!msg->retrans)
+    if (msg->retrans == NULL)
         g_list_free(msg->medias);
 
     // Free message packets

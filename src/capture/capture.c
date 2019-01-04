@@ -55,12 +55,7 @@ capture_manager_new()
 void
 capture_manager_free(CaptureManager *manager)
 {
-    if (capture_is_running(manager))
-        capture_manager_stop(manager);
-
-    if (manager->filter)
-        g_free(manager->filter);
-
+    g_free(manager->filter);
     g_slist_free(manager->inputs);
     g_slist_free(manager->outputs);
     g_rec_mutex_clear(&manager->lock);
@@ -95,6 +90,7 @@ capture_manager_stop(CaptureManager *manager)
             input->stop(input);
         }
         g_thread_join(input->thread);
+        g_free(input);
     }
 
     // Close all capture outputs

@@ -43,7 +43,7 @@ call_create(const gchar *callid, const gchar *xcallid)
     Call *call = g_malloc0(sizeof(Call));
 
     // Create a vector to store call messages
-    call->msgs = g_ptr_array_new_with_free_func(msg_destroy);
+    call->msgs = g_ptr_array_new_with_free_func((GDestroyNotify) msg_free);
 
     // Create an empty vector to store rtp packets
     call->rtp_packets = g_sequence_new((GDestroyNotify) packet_free);

@@ -1,0 +1,11 @@
+{
+   <g_option_context_parse>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   obj:/usr/lib64/libglib-2.0.so.0.5800.2
+   obj:/usr/lib64/libglib-2.0.so.0.5800.2
+   fun:g_option_context_parse
+   fun:main
+}

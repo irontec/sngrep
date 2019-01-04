@@ -202,6 +202,10 @@ capture_input_pcap_stop(CaptureInput *input)
         pcap_breakloop(pcap->handle);
     }
 
+    // Free input information
+    g_free(input->priv);
+    packet_parser_free(input->parser);
+
     // Mark as finished reading packets
     input->running = FALSE;
 }

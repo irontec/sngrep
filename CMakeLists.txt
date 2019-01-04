@@ -81,10 +81,13 @@ pkg_check_modules(CURSES REQUIRED ncursesw menuw panelw formw)
 include_directories(${CURSES_INCLUDE_DIRS})
 target_link_libraries(sngrep ${CURSES_LIBRARIES})
 
-find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
+
+pkg_check_modules(PCAP REQUIRED libpcap)
+include_directories(${PCAP_INCLUDE_DIRS})
+target_link_libraries(sngrep ${PCAP_LIBRARIES})
 
 if (WITH_SSL)
     find_package(PkgConfig REQUIRED)

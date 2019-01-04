@@ -49,6 +49,12 @@
 GList *
 g_list_concat_deep(GList *dst, GList *src);
 
+/**
+ * @brief Wrapper function for freeing list items using g_list_foreach
+ */
+void
+g_list_item_free(gpointer item, gpointer user_data);
+
 GPtrArray *
 g_ptr_array_copy(GPtrArray *origin);
 

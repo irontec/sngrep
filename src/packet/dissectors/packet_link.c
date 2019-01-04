@@ -165,8 +165,10 @@ packet_link_init(PacketParser *parser)
 static void
 packet_link_deinit(G_GNUC_UNUSED PacketParser *parser)
 {
-//    g_free(proto->priv);
-//    g_free(proto);
+    DissectorLinkData *priv = g_ptr_array_index(parser->dissectors, PACKET_LINK);
+    g_return_if_fail(priv != NULL);
+
+    g_free(priv);
 }
 
 PacketDissector *
