@@ -134,6 +134,14 @@ call_group_changed(CallGroup *group)
                 call_group_add_calls(group, call->xcalls);
             }
         }
+
+        // Check if any of the call streams is still active
+        for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
+            RtpStream *stream = g_ptr_array_index(call->streams, j);
+            if (stream_is_active(stream)) {
+                changed = TRUE;
+            }
+        }
     }
 
     // Return if any of the calls have changed
