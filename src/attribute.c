@@ -289,6 +289,13 @@ attribute_getter_msg_time(G_GNUC_UNUSED Attribute *attr, Message *msg)
     return g_strdup(timeval_to_time(msg_get_time(msg), value));
 }
 
+static gchar *
+attribute_getter_msg_transport(G_GNUC_UNUSED Attribute *attr, Message *msg)
+{
+    return g_strdup(packet_transport(msg->packet));
+}
+
+
 void
 attr_set_regex_pattern(Attribute *attr, gchar *pattern)
 {
@@ -374,6 +381,7 @@ attribute_init()
 
     //! SIP Transport (SIP over TCP, UDP, WS, ...)
     attribute = attr_new("transport", "Trans", "Transport");
+    attr_set_getter_func(attribute, attribute_getter_msg_transport);
     g_ptr_array_add(attributes, attribute);
 
     //! Owner call message count

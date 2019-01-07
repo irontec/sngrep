@@ -116,6 +116,9 @@ packet_src_address(const Packet *packet);
 Address
 packet_dst_address(const Packet *packet);
 
+const char *
+packet_transport(Packet *packet);
+
 /**
  * @brief Get The timestamp for a packet.
  */
