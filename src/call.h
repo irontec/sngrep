@@ -179,19 +179,6 @@ void
 call_update_state(Call *call, Message *msg);
 
 /**
- * @brief Return a call attribute value
- *
- * This function will be used to avoid accessing call structure
- * fields directly.
- *
- * @param call SIP call structure
- * @param id Attribute id
- * @return Attribute value or NULL if not found
- */
-const gchar *
-call_get_attribute(const Call *call, enum AttributeId id, char *value);
-
-/**
  * @brief Return the string represtation of a call state
  *
  */

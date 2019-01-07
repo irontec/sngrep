@@ -417,7 +417,6 @@ static void
 call_list_draw_list(Window *window)
 {
     gint listh, listw, cline = 0;
-    Call *call = NULL;
     gchar coltext[ATTR_MAXLEN];
     gint color;
 
@@ -479,7 +478,12 @@ call_list_draw_list(Window *window)
     // Fill the call list
     cline = 1;
     for (guint i = (guint) info->vscroll.pos; i < g_ptr_array_len(info->dcalls); i++) {
-        call = g_ptr_array_index(info->dcalls, i);
+        Call *call = g_ptr_array_index(info->dcalls, i);
+        g_return_if_fail(call != NULL);
+
+        // Get first call message attributes
+        Message *msg = g_ptr_array_first(call->msgs);
+        g_return_if_fail(msg != NULL);
 
         // Stop if we have reached the bottom of the list
         if (cline == listh)
@@ -508,7 +512,7 @@ call_list_draw_list(Window *window)
             memset(coltext, 0, sizeof(coltext));
 
             // Get call attribute for current column
-            if (!call_get_attribute(call, column->id, coltext)) {
+            if (msg_get_attribute(msg, column->id, coltext) == NULL) {
                 colpos += column->width + 1;
                 continue;
             }
@@ -664,6 +668,10 @@ call_list_win_line_text(Window *window, Call *call, char *text)
     CallListWinInfo *info = call_list_info(window);
     g_return_val_if_fail(info != NULL, text);
 
+    // Get first call message
+    Message *msg = g_ptr_array_first(call->msgs);
+    g_return_val_if_fail(msg != NULL, NULL);
+
     // Print requested columns
     for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
         CallListColumn *column = g_ptr_array_index(info->columns, i);
@@ -684,7 +692,7 @@ call_list_win_line_text(Window *window, Call *call, char *text)
         memset(call_attr, 0, sizeof(call_attr));
 
         // Get call attribute for current column
-        if (call_get_attribute(call, column->id, call_attr)) {
+        if (msg_get_attribute(msg, column->id, call_attr)) {
             sprintf(coltext, "%.*s", collen, call_attr);
         }
         // Add the column text to the existing columns

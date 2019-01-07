@@ -175,13 +175,6 @@ call_update_state(Call *call, Message *msg)
     }
 }
 
-const char *
-call_get_attribute(const Call *call, enum AttributeId id, char *value)
-{
-    g_return_val_if_fail(call != NULL, NULL);
-    return msg_get_attribute(g_ptr_array_first(call->msgs), id, value);
-}
-
 const gchar *
 call_state_to_str(enum CallState state)
 {
@@ -210,6 +203,8 @@ call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
     char onevalue[256], twovalue[256];
     int oneintvalue = 0, twointvalue = 0;
     int comparetype; /* TODO 0 = string compare, 1 = int comprare */
+    Message *msg_one = g_ptr_array_first(one->msgs);
+    Message *msg_two = g_ptr_array_first(two->msgs);
 
     switch (id) {
         case ATTR_CALLINDEX:
@@ -226,8 +221,8 @@ call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
             // Get attribute values
             memset(onevalue, 0, sizeof(onevalue));
             memset(twovalue, 0, sizeof(twovalue));
-            call_get_attribute(one, id, onevalue);
-            call_get_attribute(two, id, twovalue);
+            msg_get_attribute(msg_one, id, onevalue);
+            msg_get_attribute(msg_two, id, twovalue);
             comparetype = 0;
             break;
     }

@@ -84,6 +84,10 @@ filter_check_call(Call *call, G_GNUC_UNUSED gconstpointer user_data)
     // By default, call matches all filters
     call->filtered = 0;
 
+    // Filter attributes based on first call message
+    Message *msg = g_ptr_array_first(call->msgs);
+    g_return_val_if_fail(msg != NULL, FALSE);
+
     // Check all filter types
     for (guint filter_type = 0; filter_type < FILTER_COUNT; filter_type++) {
 
@@ -98,19 +102,19 @@ filter_check_call(Call *call, G_GNUC_UNUSED gconstpointer user_data)
         // Get filtered field
         switch (filter_type) {
             case FILTER_SIPFROM:
-                call_get_attribute(call, ATTR_SIPFROM, data);
+                msg_get_attribute(msg, ATTR_SIPFROM, data);
                 break;
             case FILTER_SIPTO:
-                call_get_attribute(call, ATTR_SIPTO, data);
+                msg_get_attribute(msg, ATTR_SIPTO, data);
                 break;
             case FILTER_SOURCE:
-                call_get_attribute(call, ATTR_SRC, data);
+                msg_get_attribute(msg, ATTR_SRC, data);
                 break;
             case FILTER_DESTINATION:
-                call_get_attribute(call, ATTR_DST, data);
+                msg_get_attribute(msg, ATTR_DST, data);
                 break;
             case FILTER_METHOD:
-                call_get_attribute(call, ATTR_METHOD, data);
+                msg_get_attribute(msg, ATTR_METHOD, data);
                 break;
             case FILTER_PAYLOAD:
                 break;
