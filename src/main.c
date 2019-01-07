@@ -148,6 +148,9 @@ main(int argc, char *argv[])
     }
 
     /***************************** Configuration *****************************/
+    // Initialize core attributes
+    attribute_init();
+
     // Initialize configuration options
     settings_init(no_config);
 

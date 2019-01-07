@@ -55,10 +55,12 @@ typedef struct _Call Call;
  */
 struct _Message
 {
-    //! SDP payload information (sdp_media_t *)
-    GList *medias;
     //! Captured packet for this message
     Packet *packet;
+    //! Attribute list for this message
+    GHashTable *attributes;
+    //! SDP payload information
+    GList *medias;
     //! Message owner
     Call *call;
     //! Message is a retransmission from other message
@@ -199,4 +201,15 @@ msg_get_header(Message *msg, gchar *out);
 const Message *
 msg_is_retrans(Message *msg);
 
+/**
+ * @brief Store a new attribute value in message attribute cache
+ */
+void
+msg_set_cached_attribute(Message *msg, Attribute *attr, gchar *value);
+
+/**
+ * @brief Retrieve attribute value from message attribute cache
+ */
+gchar *
+msg_get_cached_attribute(Message *msg, Attribute *attr);
 #endif /* __SNGREP_SIP_MSG_H */

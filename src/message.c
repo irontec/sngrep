@@ -41,6 +41,7 @@ msg_new(Packet *packet)
 {
     Message *msg = g_malloc0(sizeof(Message));
     msg->packet = packet;
+    msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     msg->medias = NULL;
     return msg;
 }
@@ -121,47 +122,14 @@ msg_get_time(const Message *msg)
 const gchar *
 msg_get_attribute(Message *msg, gint id, char *value)
 {
-    char *ar;
-
-    switch (id) {
-        case ATTR_SRC:
-            sprintf(value, "%s:%u", msg_src_address(msg).ip, msg_src_address(msg).port);
-            break;
-        case ATTR_DST:
-            sprintf(value, "%s:%u", msg_dst_address(msg).ip, msg_dst_address(msg).port);
-            break;
-        case ATTR_METHOD:
-            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_method_str(msg->packet));
-            break;
-        case ATTR_SIPFROM:
-            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
-            break;
-        case ATTR_SIPTO:
-            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
-            break;
-        case ATTR_SIPFROMUSER:
-            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_FROM));
-            if ((ar = strchr(value, '@')))
-                *ar = '\0';
-            break;
-        case ATTR_SIPTOUSER:
-            sprintf(value, "%.*s", ATTR_MAXLEN, packet_sip_header(msg->packet, SIP_HEADER_TO));
-            if ((ar = strchr(value, '@')))
-                *ar = '\0';
-            break;
-        case ATTR_DATE:
-            timeval_to_date(msg_get_time(msg), value);
-            break;
-        case ATTR_TIME:
-            timeval_to_time(msg_get_time(msg), value);
-            break;
-        default:
-            fprintf(stderr, "Unhandled attribute %s (%d)\n", attr_name(id), id);
-            break;
+    Attribute *attr = attr_header(id);
+    const gchar *ret = attr_get_value(attr->name, msg);
+    if (ret != NULL) {
+        sprintf(value, "%s", ret);
+        return value;
     }
 
-    return strlen(value) ? value : NULL;
-
+    return NULL;
 }
 
 const gchar *
@@ -212,4 +180,21 @@ msg_is_retrans(Message *msg)
     }
 
     return NULL;
+}
+
+void
+msg_set_cached_attribute(Message *msg, Attribute *attr, gchar *value)
+{
+    gchar *prev_value = g_hash_table_lookup(msg->attributes, attr->name);
+    if (prev_value != NULL && g_strcmp0(prev_value, value) != 0) {
+        g_free(prev_value);
+        g_hash_table_remove(msg->attributes, attr->name);
+        g_hash_table_insert(msg->attributes, g_strdup(attr->name), value);
+    }
+}
+
+gchar *
+msg_get_cached_attribute(Message *msg, Attribute *attr)
+{
+    return g_hash_table_lookup(msg->attributes, attr->name);
 }

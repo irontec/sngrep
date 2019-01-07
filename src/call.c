@@ -179,48 +179,7 @@ const char *
 call_get_attribute(const Call *call, enum AttributeId id, char *value)
 {
     g_return_val_if_fail(call != NULL, NULL);
-
-    Message *first = g_ptr_array_first(call->msgs);
-    Message *last = g_ptr_array_last(call->msgs);
-
-    switch (id) {
-        case ATTR_CALLINDEX:
-            sprintf(value, "%d", call->index);
-            break;
-        case ATTR_CALLID:
-            sprintf(value, "%s", call->callid);
-            break;
-        case ATTR_XCALLID:
-            sprintf(value, "%s", call->xcallid);
-            break;
-        case ATTR_MSGCNT:
-            sprintf(value, "%d", call_msg_count(call));
-            break;
-        case ATTR_CALLSTATE:
-            sprintf(value, "%s", call_state_to_str(call->state));
-            break;
-        case ATTR_TRANSPORT:
-//@todo            sprintf(value, "%s", sip_transport_str(first->packet->type));
-            break;
-        case ATTR_CONVDUR:
-            timeval_to_duration(msg_get_time(call->cstart_msg), msg_get_time(call->cend_msg), value);
-            break;
-        case ATTR_TOTALDUR:
-            timeval_to_duration(msg_get_time(first), msg_get_time(last), value);
-            break;
-        case ATTR_REASON_TXT:
-            if (call->reasontxt)
-                sprintf(value, "%s", call->reasontxt);
-            break;
-        case ATTR_WARNING:
-            if (call->warning)
-                sprintf(value, "%d", call->warning);
-            break;
-        default:
-            return msg_get_attribute(g_ptr_array_first(call->msgs), id, value);
-    }
-
-    return strlen(value) ? value : NULL;
+    return msg_get_attribute(g_ptr_array_first(call->msgs), id, value);
 }
 
 const gchar *

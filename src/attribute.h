@@ -34,10 +34,13 @@
 //! Max attribute length
 #define ATTR_MAXLEN 255
 
-//! Shorter declaration of sip_attr_hdr structure
-typedef struct _AttributeHeader AttributeHeader;
-//! Shorter declaration of sip_attr structure
+//! Attribute types
 typedef struct _Attribute Attribute;
+typedef struct _Message Message;
+
+typedef gint (*AttributeColorFunc)(const gchar *);
+
+typedef gchar * (*AttributeGetterFunc)(Attribute *, Message *);
 
 /**
  * @brief Available SIP Attributes
@@ -78,30 +81,28 @@ enum AttributeId
  * attributes pointer to its type.
  *
  */
-struct _AttributeHeader
-{
-    //! Attribute id
-    enum AttributeId id;
-    //! Attribute name
-    gchar *name;
-    //! Attribute column title
-    gchar *title;
-    //! Attribute description
-    gchar *desc;
-
-    //! This function determines the color of this attribute in CallList
-    int (*color)(const char *value);
-};
-
-/**
- * @brief Attribute storage struct
- */
 struct _Attribute
 {
     //! Attribute id
     enum AttributeId id;
-    //! Attribute value
-    gchar *value;
+    //! Name (Unique identifier)
+    gchar *name;
+    //! Column title (Displayed in Call List window)
+    gchar *title;
+    //! Description (Displayed in column selection list)
+    gchar *desc;
+    //! Determine if this attribute value changes over time
+    gboolean mutable;
+
+    //! Regular expression pattern
+    gchar *regexp_pattern;
+    //! Compiled regexp
+    GRegex *regex;
+
+    //! This function calculates attribute value
+    AttributeGetterFunc getterFunc;
+    //! This function determines the color of this attribute in CallList
+    AttributeColorFunc colorFunc;
 };
 
 /**
@@ -112,7 +113,7 @@ struct _Attribute
  * @param id Attribute id
  * @return Attribute header data structure pointer
  */
-AttributeHeader *
+Attribute *
 attr_header(enum AttributeId id);
 
 /**
@@ -163,6 +164,15 @@ gint
 attr_find_by_name(const gchar *name);
 
 /**
+ * @brief Return Attribute value for a given message
+ * @param name Name of the attribute
+ * @param msg Msg to get attribute from
+ * @return string representation of the attribute
+ */
+const gchar *
+attr_get_value(const gchar *name, Message *msg);
+
+/**
  * @brief Determine the color of the attribute in Call List
  *
  * Return the color pair to display an attribute in
@@ -188,5 +198,8 @@ attr_color_sip_method(const gchar *value);
  */
 gint
 attr_color_call_state(const gchar *value);
+
+void
+attribute_init();
 
 #endif /* __SNGREP_ATTRIBUTE_H */
