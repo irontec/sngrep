@@ -185,7 +185,7 @@ packet_sip_method_str(const Packet *packet)
     PacketSipData *sip = packet_sip_data(packet);
 
     // Check if code has non-standard text
-    if (sip->resp_str) {
+    if (sip->resp_str != NULL) {
         return sip->resp_str;
     } else {
         return sip_method_str(sip->reqresp);

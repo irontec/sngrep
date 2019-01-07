@@ -392,7 +392,6 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
 }
 
 
-
 /**
  * @brief Get a flow column data for a given call-id
  *
@@ -720,11 +719,11 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 
     // For extended, use xcallid nstead
     PacketSdpMedia *media = g_list_nth_data(msg->medias, 0);
-    msg_get_attribute(msg, ATTR_METHOD, msg_method);
     timeval_to_time(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
-    sprintf(method, "%s", msg_method);
+    sprintf(msg_method, "%s", packet_sip_method_str(msg->packet));
+    strcpy(method, msg_method);
 
     // If message has sdp information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
