@@ -320,13 +320,22 @@ setting_column_width(enum AttributeId id)
  * @param address IP Address
  * @param string representing the alias
  */
-static void
-setting_add_alias(const gchar *address, const gchar *alias)
+static SettingAlias *
+setting_alias_new(const gchar *address, const gchar *alias)
 {
     SettingAlias *setting = g_malloc0(sizeof(SettingAlias));
-    setting->address = address;
-    setting->alias = alias;
-    settings->alias = g_list_append(settings->alias, setting);
+    setting->address = g_strdup(address);
+    setting->alias = g_strdup(alias);
+    return setting;
+}
+
+static void
+setting_alias_free(SettingAlias *setting, G_GNUC_UNUSED gpointer user_data)
+{
+    g_return_if_fail(setting != NULL);
+    g_free(setting->alias);
+    g_free(setting->address);
+    g_free(setting);
 }
 
 const gchar *
@@ -350,13 +359,22 @@ setting_get_alias(const gchar *address)
  * @param address IP Address
  * @param string representing the externip
  */
-static void
-setting_add_externip(const gchar *address, const gchar *externip)
+static SettingExtenIp *
+setting_externip_new(const gchar *address, const gchar *externip)
 {
     SettingExtenIp *setting = g_malloc0(sizeof(SettingExtenIp));
-    setting->address = address;
-    setting->externip = externip;
-    settings->externips = g_list_append(settings->externips, setting);
+    setting->address = g_strdup(address);
+    setting->externip = g_strdup(externip);
+    return setting;
+}
+
+static void
+setting_externip_free(SettingExtenIp *setting, G_GNUC_UNUSED gpointer user_data)
+{
+    g_return_if_fail(setting != NULL);
+    g_free(setting->address);
+    g_free(setting->externip);
+    g_free(setting);
 }
 
 const gchar *
@@ -401,9 +419,9 @@ setting_read_file(const gchar *fname)
                 }
                 setting_set_value(id, value);
             } else if (!strcasecmp(type, "alias")) {
-                setting_add_alias(option, value);
+                settings->alias = g_list_append(settings->alias, setting_alias_new(option, value));
             } else if (!strcasecmp(type, "externip")) {
-                setting_add_externip(option, value);
+                settings->externips = g_list_append(settings->externips, setting_externip_new(option, value));
             } else if (!strcasecmp(type, "bind")) {
                 key_bind_action(key_action_id(option), key_from_str(value));
             } else if (!strcasecmp(type, "unbind")) {
@@ -641,9 +659,9 @@ settings_init(int no_config)
 void
 settings_deinit()
 {
-    g_list_foreach(settings->alias, g_list_item_free, NULL);
+    g_list_foreach(settings->alias, (GFunc) setting_alias_free, NULL);
     g_list_free(settings->alias);
-    g_list_foreach(settings->externips, g_list_item_free, NULL);
+    g_list_foreach(settings->externips, (GFunc) setting_externip_free, NULL);
     g_list_free(settings->externips);
     g_ptr_array_free(settings->values, TRUE);
     g_free(settings);
@@ -656,5 +674,21 @@ settings_dump()
         printf("SettingId: %d\t SettingName: %-30s Value: %s\n", i,
                setting_name(i),
                setting_get_value(i));
+    }
+
+    for (GList *l = settings->alias; l != NULL; l = l->next) {
+        SettingAlias *alias = l->data;
+        printf("Address: %s\t Alias: %s\n",
+                alias->address,
+                alias->alias
+        );
+    }
+
+    for (GList *l = settings->externips; l != NULL; l = l->next) {
+        SettingExtenIp *externip = l->data;
+        printf("Address: %s\t ExternIP: %s\n",
+               externip->address,
+               externip->externip
+        );
     }
 }

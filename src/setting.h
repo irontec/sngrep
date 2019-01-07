@@ -190,9 +190,9 @@ struct _Setting
 struct _SettingAlias
 {
     //! Original address value
-    const gchar *address;
+    gchar *address;
     //! Alias name
-    const gchar *alias;
+    gchar *alias;
 
 };
 
@@ -202,9 +202,9 @@ struct _SettingAlias
 struct _SettingExtenIp
 {
     //! Original address value
-    const gchar *address;
+    gchar *address;
     //! Twin address value
-    const gchar *externip;
+    gchar *externip;
 
 };
 
