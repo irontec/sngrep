@@ -99,7 +99,7 @@ msg_is_request(Message *msg)
 gboolean
 msg_is_initial_transaction(Message *msg)
 {
-    return packet_sip_to_tag(msg->packet) == NULL;
+    return packet_sip_initial_transaction(msg->packet);
 }
 
 const gchar *
@@ -120,16 +120,10 @@ msg_get_time(const Message *msg)
 }
 
 const gchar *
-msg_get_attribute(Message *msg, gint id, char *value)
+msg_get_attribute(Message *msg, gint id)
 {
     Attribute *attr = attr_header(id);
-    const gchar *ret = attr_get_value(attr->name, msg);
-    if (ret != NULL) {
-        sprintf(value, "%s", ret);
-        return value;
-    }
-
-    return NULL;
+    return attr_get_value(attr->name, msg);
 }
 
 const gchar *
@@ -147,16 +141,13 @@ msg_get_preferred_codec_alias(Message *msg)
 const gchar *
 msg_get_header(Message *msg, char *out)
 {
-    char from_addr[80], to_addr[80], time[80], date[80];
-
-    // Source and Destination address
-    msg_get_attribute(msg, ATTR_DATE, date);
-    msg_get_attribute(msg, ATTR_TIME, time);
-    msg_get_attribute(msg, ATTR_SRC, from_addr);
-    msg_get_attribute(msg, ATTR_DST, to_addr);
-
     // Get msg header
-    sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
+    sprintf(out, "%s %s %s -> %s",
+            msg_get_attribute(msg, ATTR_DATE),
+            msg_get_attribute(msg, ATTR_TIME),
+            msg_get_attribute(msg, ATTR_SRC),
+            msg_get_attribute(msg, ATTR_DST)
+    );
     return out;
 }
 

@@ -26,8 +26,8 @@
  * @brief Functions to manage sip messages
  *
  */
-#ifndef __SNGREP_SIP_MSG_H
-#define __SNGREP_SIP_MSG_H
+#ifndef __SNGREP_MESSAGE_H
+#define __SNGREP_MESSAGE_H
 
 #include <glib.h>
 #include <packet/dissectors/packet_sdp.h>
@@ -167,11 +167,10 @@ msg_get_time(const Message *msg);
  *
  * @param msg SIP message structure
  * @param id Attribute id
- * @param out Buffer to store attribute value
  * @return Attribute value or NULL if not found
  */
 const gchar *
-msg_get_attribute(Message *msg, gint id, char *value);
+msg_get_attribute(Message *msg, gint id);
 
 const gchar *
 msg_get_preferred_codec_alias(Message *msg);
@@ -212,4 +211,5 @@ msg_set_cached_attribute(Message *msg, Attribute *attr, gchar *value);
  */
 gchar *
 msg_get_cached_attribute(Message *msg, Attribute *attr);
-#endif /* __SNGREP_SIP_MSG_H */
+
+#endif /* __SNGREP_MESSAGE_H */

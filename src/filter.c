@@ -96,31 +96,30 @@ filter_check_call(Call *call, G_GNUC_UNUSED gconstpointer user_data)
             continue;
 
         // Initialize
-        gchar data[MAX_SIP_PAYLOAD];
-        memset(data, 0, sizeof(data));
+        const gchar *data = NULL;
 
         // Get filtered field
         switch (filter_type) {
             case FILTER_SIPFROM:
-                msg_get_attribute(msg, ATTR_SIPFROM, data);
+                data = msg_get_attribute(msg, ATTR_SIPFROM);
                 break;
             case FILTER_SIPTO:
-                msg_get_attribute(msg, ATTR_SIPTO, data);
+                data = msg_get_attribute(msg, ATTR_SIPTO);
                 break;
             case FILTER_SOURCE:
-                msg_get_attribute(msg, ATTR_SRC, data);
+                data = msg_get_attribute(msg, ATTR_SRC);
                 break;
             case FILTER_DESTINATION:
-                msg_get_attribute(msg, ATTR_DST, data);
+                data = msg_get_attribute(msg, ATTR_DST);
                 break;
             case FILTER_METHOD:
-                msg_get_attribute(msg, ATTR_METHOD, data);
+                data = msg_get_attribute(msg, ATTR_METHOD);
                 break;
             case FILTER_PAYLOAD:
                 break;
             case FILTER_CALL_LIST:
                 // FIXME Maybe call should know hot to calculate this line
-                call_list_win_line_text(ncurses_find_by_type(WINDOW_CALL_LIST), call, data);
+                data = call_list_win_line_text(ncurses_find_by_type(WINDOW_CALL_LIST), call);
                 break;
             default:
                 // Unknown filter id
@@ -133,11 +132,9 @@ filter_check_call(Call *call, G_GNUC_UNUSED gconstpointer user_data)
             call->filtered = 1;
             // Create an iterator for the call messages
             for (guint j = 0; j < g_ptr_array_len(call->msgs); j++) {
-                Message *msg = g_ptr_array_index(call->msgs, j);
-                // Copy message payload
-                strcpy(data, msg_get_payload(msg));
+                msg = g_ptr_array_index(call->msgs, j);
                 // Check if this payload matches the filter
-                if (filter_check_expr(filters[j], data) == 0) {
+                if (filter_check_expr(filters[j], msg_get_payload(msg)) == 0) {
                     call->filtered = 0;
                     break;
                 }
