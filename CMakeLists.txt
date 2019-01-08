@@ -5,6 +5,7 @@ project(sngrep
 
 set(PROJECT_NAME sngrep)
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -p -g")
 add_compile_options(-Wall -pedantic -Wextra)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
