@@ -273,12 +273,12 @@ storage_check_sip_packet(Packet *packet)
             return NULL;
 
         // User requested only INVITE starting dialogs
-        if (storage.match.invite && sip_data->reqresp != SIP_METHOD_INVITE)
+        if (storage.match.invite && sip_data->code.id != SIP_METHOD_INVITE)
             return NULL;
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (storage.match.complete && sip_data->reqresp > SIP_METHOD_MESSAGE)
+        if (storage.match.complete && sip_data->code.id > SIP_METHOD_MESSAGE)
             return NULL;
 
         // Rotate call list if limit has been reached
@@ -363,6 +363,7 @@ storage_check_rtp_packet(Packet *packet)
 
     // Get Call streams
     Call *call = msg_get_call(msg);
+    g_return_val_if_fail(call != NULL, NULL);
 
     // Find a matching stream in the call
     RtpStream *stream = NULL;

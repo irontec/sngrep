@@ -159,7 +159,7 @@ attr_get_value(const gchar *name, Message *msg)
 gint
 attr_color_sip_method(const gchar *value)
 {
-    switch (sip_method_from_str(value)) {
+    switch (packet_sip_method_from_str(value)) {
         case SIP_METHOD_INVITE:
             return COLOR_PAIR(CP_RED_ON_DEF) | A_BOLD;
         case SIP_METHOD_NOTIFY:

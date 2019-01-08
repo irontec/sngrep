@@ -79,7 +79,7 @@ struct _Call
     //! List of calls with with this call as X-Call-Id
     GPtrArray *xcalls;
     //! Cseq from invite startint the call
-    gint invitecseq;
+    guint64 invitecseq;
     //! Array of messages of this call (sip_msg_t*)
     GPtrArray *msgs;
     //! Message when conversation started and ended

@@ -30,15 +30,18 @@
 #define __SNGREP_PACKET_SIP_H
 
 #include <glib.h>
-#include "../packet.h"
-#include "packet_sdp.h"
+#include "packet/packet.h"
+#include "packet/dissectors/packet_sdp.h"
+
+#define SIP_VERSION "SIP/2.0"
+#define SIP_VERSION_LEN 7
+#define SIP_CRLF "\r\n"
 
 typedef struct _PacketSipData PacketSipData;
 typedef struct _PacketSipCode PacketSipCode;
-typedef struct _DissectorSipData DissectorSipData;
 
 //! SIP Methods
-enum sip_methods
+enum SipMethods
 {
     SIP_METHOD_REGISTER = 1,
     SIP_METHOD_INVITE,
@@ -56,84 +59,43 @@ enum sip_methods
     SIP_METHOD_BYE,
 };
 
-//! SIP Headers
-enum sip_headers
-{
-    SIP_HEADER_FROM = 0,
-    SIP_HEADER_TO,
-    SIP_HEADER_CALLID,
-    SIP_HEADER_XCALLID,
-    SIP_HEADER_CSEQ,
-    SIP_HEADER_REASON,
-    SIP_HEADER_WARNING,
-    SIP_HEADER_COUNT,
-};
-
 /**
  * @brief Different Request/Response codes in SIP Protocol
  */
 struct _PacketSipCode
 {
-    int id;
-    const char *text;
+    guint id;
+    const gchar *text;
 };
 
 struct _PacketSipData
 {
-    //! Request Method or Response Code @see sip_methods
-    guint reqresp;
-    //!  Response text if it doesn't matches an standard
-    char *resp_str;
+    //! Request Method or Response code data
+    PacketSipCode code;
+    //! Is this an initial request? (no to-tag)
+    gboolean initial;
     //! SIP payload (Headers + Body)
     gchar *payload;
-    //! Parsed headers
-    GPtrArray *headers;
-    //! SIP Call-Id Heder value
+    //! Content-Length header value
+    guint64 content_len;
+    //! SIP Call-Id Header value
     gchar *callid;
-    //! SIP X-Call-Id Heder value
+    //! SIP X-Call-Id Header value
     gchar *xcallid;
-
     //! Message Cseq
-    int cseq;
-
-    gchar *reasontxt;
-    int warning;
-    gchar *from_user;
-    gchar *from_tag;
-    gchar *to_user;
-    gchar *to_tag;
-    gchar *auth_hdr;
+    guint64 cseq;
+    //! SIP Authentication Header value
+    gchar *auth;
 };
 
-struct _DissectorSipData
-{
-    //! Regexp for payload matching
-    GRegex *reg_method;
-    GRegex *reg_callid;
-    GRegex *reg_xcallid;
-    GRegex *reg_response;
-    GRegex *reg_cseq;
-    GRegex *reg_from;
-    GRegex *reg_to;
-    GRegex *reg_valid;
-    GRegex *reg_cl;
-    GRegex *reg_body;
-    GRegex *reg_reason;
-    GRegex *reg_warning;
-    GRegex *reg_authorization;
-};
+guint
+packet_sip_method_from_str(const gchar *method);
 
-int
-sip_method_from_str(const char *method);
-
-const char *
-sip_method_str(int method);
+const gchar *
+sip_method_str(guint method);
 
 const gchar *
 packet_sip_payload(const Packet *packet);
-
-const gchar *
-packet_sip_header(const Packet *packet, enum sip_headers header);
 
 const gchar *
 packet_sip_method_str(const Packet *packet);
@@ -141,8 +103,14 @@ packet_sip_method_str(const Packet *packet);
 guint
 packet_sip_method(const Packet *packet);
 
+guint64
+packet_sip_cseq(const Packet *packet);
+
+gboolean
+packet_sip_initial_transaction(const Packet *packet);
+
 const gchar *
-packet_sip_to_tag(const Packet *packet);
+packet_sip_auth_data(const Packet *packet);
 
 PacketSipData *
 packet_sip_data(const Packet *packet);

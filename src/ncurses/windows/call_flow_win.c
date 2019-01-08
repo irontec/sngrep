@@ -689,7 +689,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     char method[ATTR_MAXLEN + 7];
     char delta[15] = { 0 };
     char mediastr[40];
-    int color = 0;
+    guint64 color = 0;
     int msglen;
 
     // Get panel information
@@ -803,7 +803,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         color = call_group_color(info->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        color = atoi(packet_sip_header(msg->packet, SIP_HEADER_CSEQ)) % 7 + 1;
+        color = packet_sip_cseq(msg->packet) % 7 + 1;
     }
 
     // Print arrow in the same line than message

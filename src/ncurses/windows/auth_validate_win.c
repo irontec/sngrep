@@ -237,7 +237,7 @@ auth_validate_set_group(Window *window, CallGroup *group)
         PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
         if (sip == NULL) continue;
 
-        if (sip->auth_hdr != NULL) {
+        if (packet_sip_auth_data(packet) != NULL) {
             auth_validate_set_msg(window, msg);
             break;
         }
@@ -258,17 +258,17 @@ auth_validate_set_msg(Window *window, Message *msg)
     // Get Authorization header data
     PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
     g_return_if_fail(sip != NULL);
-    if (sip->auth_hdr == NULL) {
+    if (packet_sip_auth_data(packet) == NULL) {
         return;
     }
 
-    info->method = sip_method_str(sip->reqresp);
+    info->method = sip->code.text;
 
     GRegex *auth_param = g_regex_new(
         "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
         G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
 
-    gchar **auth_data = g_strsplit(sip->auth_hdr, ",", -1);
+    gchar **auth_data = g_strsplit(packet_sip_auth_data(packet), ",", -1);
     for (guint i = 0; i < g_strv_length(auth_data); i++) {
         // Trim parameter string
         g_strstrip(auth_data[i]);

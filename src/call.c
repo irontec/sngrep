@@ -133,7 +133,7 @@ call_update_state(Call *call, Message *msg)
 
     // Get current message Method / Response Code
     guint msg_reqresp = packet_sip_method(msg->packet);
-    gint msg_cseq = atoi(packet_sip_header(msg->packet, SIP_HEADER_CSEQ));
+    guint64 msg_cseq = packet_sip_cseq(msg->packet);
 
     // If this message is actually a call, get its current state
     if (call->state) {
@@ -200,7 +200,7 @@ call_state_to_str(enum CallState state)
 gint
 call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
 {
-    char onevalue[256], twovalue[256];
+    const gchar *onevalue = NULL, *twovalue = NULL;
     int oneintvalue = 0, twointvalue = 0;
     int comparetype; /* TODO 0 = string compare, 1 = int comprare */
     Message *msg_one = g_ptr_array_first(one->msgs);
@@ -219,10 +219,8 @@ call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
             break;
         default:
             // Get attribute values
-            memset(onevalue, 0, sizeof(onevalue));
-            memset(twovalue, 0, sizeof(twovalue));
-            msg_get_attribute(msg_one, id, onevalue);
-            msg_get_attribute(msg_two, id, twovalue);
+            onevalue = msg_get_attribute(msg_one, id);
+            twovalue = msg_get_attribute(msg_two, id);
             comparetype = 0;
             break;
     }

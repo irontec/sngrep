@@ -417,7 +417,6 @@ static void
 call_list_draw_list(Window *window)
 {
     gint listh, listw, cline = 0;
-    gchar coltext[ATTR_MAXLEN];
     gint color;
 
     // Get panel info
@@ -508,11 +507,9 @@ call_list_draw_list(Window *window)
         for (guint j = 0; j < g_ptr_array_len(info->columns); j++) {
             CallListColumn *column = g_ptr_array_index(info->columns, j);
 
-            // Initialize column text
-            memset(coltext, 0, sizeof(coltext));
-
             // Get call attribute for current column
-            if (msg_get_attribute(msg, column->id, coltext) == NULL) {
+            const gchar *coltext = NULL;
+            if ((coltext = msg_get_attribute(msg, column->id)) == NULL) {
                 colpos += column->width + 1;
                 continue;
             }
@@ -659,47 +656,29 @@ call_list_form_activate(Window *window, gboolean active)
  * @return A pointer to text
  */
 const char *
-call_list_win_line_text(Window *window, Call *call, char *text)
+call_list_win_line_text(Window *window, Call *call)
 {
-    char call_attr[ATTR_MAXLEN];
-    char coltext[ATTR_MAXLEN];
-
     // Get panel info
     CallListWinInfo *info = call_list_info(window);
-    g_return_val_if_fail(info != NULL, text);
+    g_return_val_if_fail(info != NULL, NULL);
 
     // Get first call message
     Message *msg = g_ptr_array_first(call->msgs);
     g_return_val_if_fail(msg != NULL, NULL);
 
     // Print requested columns
+    GString *out = g_string_new(NULL);
     for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
         CallListColumn *column = g_ptr_array_index(info->columns, i);
 
-        // Get current column width
-        gint collen = column->width;
-
-        // Check if next column fits on window width
-        if ((gint) (strlen(text) + collen) >= window->width)
-            collen = (gint) (window->width - strlen(text));
-
-        // If no space left on the screen stop processing columns
-        if (collen <= 0)
-            break;
-
-        // Initialize column text
-        memset(coltext, 0, sizeof(coltext));
-        memset(call_attr, 0, sizeof(call_attr));
-
         // Get call attribute for current column
-        if (msg_get_attribute(msg, column->id, call_attr)) {
-            sprintf(coltext, "%.*s", collen, call_attr);
+        const gchar *call_attr = NULL;
+        if ((call_attr = msg_get_attribute(msg, column->id)) != NULL) {
+            g_string_append(out, call_attr);
         }
-        // Add the column text to the existing columns
-        sprintf(text + strlen(text), "%-*s ", collen, coltext);
     }
 
-    return text;
+    return out->str;
 }
 
 /**

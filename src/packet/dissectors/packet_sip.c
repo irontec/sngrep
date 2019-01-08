@@ -122,11 +122,11 @@ PacketSipCode sip_codes[] = {
     { 603,                  "603 Decline" },
     { 604,                  "604 Does Not Exist Anywhere" },
     { 606,                  "606 Not Acceptable" },
-    { -1, NULL },
+    { 0, NULL },
 };
 
-const char *
-sip_method_str(int method)
+const gchar *
+sip_method_str(guint method)
 {
     int i;
 
@@ -138,17 +138,15 @@ sip_method_str(int method)
     return NULL;
 }
 
-int
-sip_method_from_str(const char *method)
+guint
+packet_sip_method_from_str(const gchar *method)
 {
-    int i;
-
     // Standard method
-    for (i = 0; sip_codes[i].id > 0; i++) {
+    for (guint i = 0; sip_codes[i].id > 0; i++) {
         if (!g_strcmp0(method, sip_codes[i].text))
             return sip_codes[i].id;
     }
-    return atoi(method);
+    return (guint) g_ascii_strtoull(method, NULL, 10);
 }
 
 PacketSipData *
@@ -172,192 +170,145 @@ packet_sip_payload(const Packet *packet)
 }
 
 const gchar *
-packet_sip_header(const Packet *packet, enum sip_headers header)
-{
-    // Get Packet sip data
-    PacketSipData *sip = packet_sip_data(packet);
-    return g_ptr_array_index(sip->headers, header);
-}
-
-const gchar *
 packet_sip_method_str(const Packet *packet)
 {
     PacketSipData *sip = packet_sip_data(packet);
 
     // Check if code has non-standard text
-    if (sip->resp_str != NULL) {
-        return sip->resp_str;
+    if (sip->code.text != NULL) {
+        return sip->code.text;
     } else {
-        return sip_method_str(sip->reqresp);
+        return sip_method_str(sip->code.id);
     }
 }
 
 guint
 packet_sip_method(const Packet *packet)
 {
-    return packet_sip_data(packet)->reqresp;
+    return packet_sip_data(packet)->code.id;
+}
+
+guint64
+packet_sip_cseq(const Packet *packet)
+{
+    return packet_sip_data(packet)->cseq;
+}
+
+gboolean
+packet_sip_initial_transaction(const Packet *packet)
+{
+    return packet_sip_data(packet)->initial;
 }
 
 const gchar *
-packet_sip_to_tag(const Packet *packet)
+packet_sip_auth_data(const Packet *packet)
 {
-    return packet_sip_data(packet)->to_tag;
+    return packet_sip_data(packet)->auth;
 }
 
 static GByteArray *
 packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
-    GMatchInfo *pmatch;
-    gint start = 0, end = 0;
+    const gchar *method = NULL;
+    const gchar *resp_code = NULL;
 
-    // Only handle UTF-8 SIP payloads
-    if (!g_utf8_validate((gchar *) data->data, data->len, NULL)) {
+    // Ignore too small packets
+    if (data->len < SIP_VERSION_LEN + 1)
         return data;
-    }
-
-    DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
 
     // Convert payload to something we can parse with regular expressions
     GString *payload = g_string_new_len((const gchar *) data->data, data->len);
 
-    // If this comes from a TCP stream, check we have a whole packet
-    if (packet_has_type(packet, PACKET_TCP)) {
-        // Content-Lenght is mandatory for SIP TCP
-        g_regex_match(sip->reg_cl, payload->str, 0, &pmatch);
-        if (!g_match_info_matches(pmatch)) {
-            g_match_info_free(pmatch);
-            // Not a SIP message or not complete
-            return data;
-        }
-        gchar *cl_header = g_match_info_fetch_named(pmatch, "clen");
-        gint content_len = atoi(cl_header);
-        g_match_info_free(pmatch);
+    // Split SIP payload in lines separated by CRLF
+    gchar **payload_data = g_strsplit(payload->str, SIP_CRLF, 0);
+    if (g_strv_length(payload_data) == 0)
+        return data;
 
-        // Check if we have Body separator field
-        g_regex_match(sip->reg_body, payload->str, 0, &pmatch);
-        if (!g_match_info_matches(pmatch)) {
-            g_match_info_free(pmatch);
-            // Not a SIP message or not complete
-            return data;
-        }
-        g_match_info_fetch_pos(pmatch, 1, &start, &end);
+    gchar *first_line = payload_data[0];
+    gchar **first_line_data = g_strsplit(first_line, " ", 2);
+    if (g_strv_length(first_line_data) != 2)
+        return data;
 
-        // The SDP body of the SIP message ends in another packet
-        if ((guint) (end + content_len) > data->len) {
-            g_match_info_free(pmatch);
-            // Not a SIP message or not complete
-            return data;
-        }
-
-        // We got more than one SIP message in the same packet
-        if ((guint) (end + content_len) < data->len) {
-            // Limit the size of the string to the end of the body
-            g_string_set_size(payload, end + content_len);
-        }
-
-        g_match_info_free(pmatch);
+    if (g_strcmp0(first_line_data[0], SIP_VERSION) == 0) {
+        resp_code = first_line_data[1];
     }
+
+    if (resp_code == NULL) {
+        for (guint i = 0; sip_codes[i].id < 100; i++) {
+            if (g_strcmp0(first_line_data[0], sip_codes[i].text) == 0) {
+                method = first_line_data[0];
+                break;
+            }
+        }
+    }
+
+    // No SIP information in first line. Skip this packet.
+    if (method == NULL && resp_code == NULL)
+        return data;
 
     // Allocate packet sip data
     PacketSipData *sip_data = g_malloc0(sizeof(PacketSipData));
-    sip_data->payload = g_strdup(payload->str);
-    sip_data->headers = g_ptr_array_new();
-    g_ptr_array_set_size(sip_data->headers, SIP_HEADER_COUNT);
-
-    // Try to get Call-ID from payload
-    g_regex_match(sip->reg_callid, payload->str, 0, &pmatch);
-    if (g_match_info_matches(pmatch)) {
-        // Copy the matching part of payload
-        sip_data->callid = g_match_info_fetch_named(pmatch, "callid");
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_CALLID, g_match_info_fetch_named(pmatch, "callid"));
+    if (method != NULL) {
+        sip_data->code.id = packet_sip_method_from_str(method);
+        sip_data->code.text = method;
+    } else {
+        sip_data->code.id = packet_sip_method_from_str(resp_code);
     }
-    g_match_info_free(pmatch);
+    sip_data->payload = g_strdup(payload->str);
+
+    // Add SIP information to the packet
+    g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
+
+    guint sip_size = (guint) g_utf8_strlen(first_line, G_MAXUINT) + 2 /* CRLF */;
+    gchar **headers = g_strsplit(payload->str, SIP_CRLF, 0);
+    for (guint i = 1; i < g_strv_length(headers); i++) {
+        const gchar *line = headers[i];
+
+        // End of SIP payload
+        if (g_strcmp0(line, SIP_CRLF SIP_CRLF) == 0)
+            break;
+
+        // Sip Headers Size
+        sip_size += g_utf8_strlen(line, G_MAXUINT) + 2 /* CRLF */;
+
+        gchar **hdr_data = g_strsplit(line, ":", 2);
+        if (g_strv_length(hdr_data) != 2) {
+            break;
+        }
+
+        gchar *hdr_name = g_strstrip(hdr_data[0]);
+        gchar *hdr_value = g_strstrip(hdr_data[1]);
+
+
+        if (strcasecmp(hdr_name, "Call-ID") == 0 || strcasecmp(hdr_name, "i") == 0) {
+            sip_data->callid = hdr_value;
+        } else if (strcasecmp(hdr_name, "X-Call-ID") == 0) {
+            sip_data->xcallid = hdr_value;
+        } else if (strcasecmp(hdr_name, "To") == 0 || strcasecmp(hdr_name, "t") == 0) {
+            sip_data->initial = method != NULL && g_strstr_len(hdr_value, strlen(hdr_value), ";tag=") == NULL;
+        } else if (strcasecmp(hdr_name, "Content-Length") == 0 || strcasecmp(hdr_name, "l") == 0) {
+            sip_data->content_len = g_ascii_strtoull(hdr_value, NULL, 10);
+        } else if (strcasecmp(hdr_name, "CSeq") == 0) {
+            gchar **cseq_data = g_strsplit(hdr_value, " ", 2);
+            if (g_strv_length(cseq_data) != 2)
+                break;
+            sip_data->cseq = g_ascii_strtoull(cseq_data[1], NULL, 10);
+        }
+    }
 
     // Check we have a valid SIP packet
     if (sip_data->callid == NULL)
         return data;
 
-    // Method
-    if (g_regex_match(sip->reg_method, payload->str, 0, &pmatch)) {
-        sip_data->reqresp = sip_method_from_str(g_match_info_fetch_named(pmatch, "method"));
+    // If this comes from a TCP stream, check we have a whole packet
+    if (packet_has_type(packet, PACKET_TCP)) {
+        if (sip_data->content_len != data->len - sip_size) {
+            return data;
+        }
     }
-    g_match_info_free(pmatch);
-
-    g_regex_match(sip->reg_xcallid, payload->str, 0, &pmatch);
-    if (g_match_info_matches(pmatch)) {
-        sip_data->xcallid = g_match_info_fetch_named(pmatch, "xcallid");
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_XCALLID, g_match_info_fetch_named(pmatch, "xcallid"));
-    }
-    g_match_info_free(pmatch);
-
-    // From
-    if (g_regex_match(sip->reg_from, payload->str, 0, &pmatch)) {
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_FROM, g_match_info_fetch_named(pmatch, "from"));
-        sip_data->from_user = g_match_info_fetch_named(pmatch, "fromuser");
-        sip_data->from_tag = g_match_info_fetch_named(pmatch, "fromtag");
-    } else {
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_FROM, strdup("<malformed>"));
-    }
-    g_match_info_free(pmatch);
-
-    // To
-    if (g_regex_match(sip->reg_to, payload->str, 0, &pmatch)) {
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_TO, g_match_info_fetch_named(pmatch, "to"));
-        sip_data->to_user = g_match_info_fetch_named(pmatch, "touser");
-        sip_data->to_tag = g_match_info_fetch_named(pmatch, "totag");
-    } else {
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_TO, strdup("<malformed>"));
-    }
-    g_match_info_free(pmatch);
-
-    // Reason text
-    if (g_regex_match(sip->reg_reason, payload->str, 0, &pmatch)) {
-        sip_data->reasontxt = strdup(g_match_info_fetch(pmatch, 1));
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_REASON, strdup(g_match_info_fetch(pmatch, 1)));
-    }
-    g_match_info_free(pmatch);
-
-    // Warning code
-    if (g_regex_match(sip->reg_warning, payload->str, 0, &pmatch)) {
-        sip_data->warning = atoi(g_match_info_fetch_named(pmatch, "warning"));
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_WARNING, g_match_info_fetch_named(pmatch, "warning"));
-    }
-    g_match_info_free(pmatch);
-
-    // CSeq
-    if (g_regex_match(sip->reg_cseq, payload->str, 0, &pmatch)) {
-        sip_data->cseq = atoi(g_match_info_fetch_named(pmatch, "cseq"));
-        g_ptr_array_set(sip_data->headers, SIP_HEADER_CSEQ, g_match_info_fetch_named(pmatch, "cseq"));
-    }
-    g_match_info_free(pmatch);
-
-    // Response code
-    if (g_regex_match(sip->reg_response, payload->str, 0, &pmatch)) {
-        sip_data->resp_str = g_strdup(g_match_info_fetch_named(pmatch, "text"));
-        sip_data->reqresp = sip_method_from_str(g_match_info_fetch_named(pmatch, "code"));
-    }
-    g_match_info_free(pmatch);
-
-    // Authorization header
-    if (g_regex_match(sip->reg_authorization, payload->str, 0, &pmatch)) {
-        sip_data->auth_hdr = g_strdup(g_match_info_fetch_named(pmatch, "authparams"));
-    }
-    g_match_info_free(pmatch);
-
-    // Add SIP information to the packet
-    g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
-
-    // Check if we have Body separator field
-    if (g_regex_match(sip->reg_body, payload->str, 0, &pmatch)) {
-        g_match_info_fetch_pos(pmatch, 0, &start, &end);
-    } else {
-        // No end of packet found. Skipping
-        return data;
-    }
-    g_match_info_free(pmatch);
 
     // Remove SIP headers from data
-    data = g_byte_array_remove_range(data, 0, end);
+    data = g_byte_array_remove_range(data, 0, sip_size);
 
     // Pass data to subdissectors
     packet_parser_next_dissector(parser, packet, data);
@@ -368,105 +319,12 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     return NULL;
 }
 
-static void
-packet_sip_init(PacketParser *parser)
-{
-
-    DissectorSipData *sip = g_malloc0(sizeof(DissectorSipData));
-
-    // Initialize payload parsing regexp
-    GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
-    GRegexCompileFlags cflags = G_REGEX_OPTIMIZE | G_REGEX_CASELESS | G_REGEX_NEWLINE_CRLF | G_REGEX_MULTILINE;
-
-    sip->reg_method = g_regex_new(
-        "(?P<method>\\w+) [^:]+:\\S* SIP/2.0",
-        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
-
-    sip->reg_callid = g_regex_new(
-        "^(Call-ID|i):\\s*(?P<callid>.+)$",
-        cflags, mflags, NULL);
-
-    sip->reg_xcallid = g_regex_new(
-        "^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$",
-        cflags, mflags, NULL);
-
-    sip->reg_response = g_regex_new(
-        "SIP/2.0 (?P<text>(?P<code>\\d{3}) .*)",
-        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
-
-    sip->reg_cseq = g_regex_new(
-        "^CSeq:\\s*(?P<cseq>\\d{1,10})\\s+\\w+$",
-        cflags, mflags, NULL);
-
-    sip->reg_from = g_regex_new(
-        "^(From|f):[^:]+:(?P<from>((?P<fromuser>[^@;>\r]+)@)?[^;>\r]+)",
-        cflags, mflags, NULL);
-
-    sip->reg_to = g_regex_new(
-        "^(To|t):[^:]+:(?P<to>((?P<touser>[^@;>\r])+@)?[^\r;>]+)[^;]+?(;tag=(?P<totag>[^\r]+))?",
-        cflags, mflags, NULL);
-
-    sip->reg_valid = g_regex_new(
-        "^(\\w+ \\w+:|SIP/2.0 \\d{3})",
-        cflags & ~G_REGEX_MULTILINE, mflags, NULL);
-
-    sip->reg_cl = g_regex_new(
-        "^(Content-Length|l):\\s*(?P<clen>\\d+)$",
-        cflags, mflags, NULL);
-
-    sip->reg_body = g_regex_new(
-        "(\r\n\r\n)",
-        cflags, mflags, NULL);
-
-    sip->reg_reason = g_regex_new(
-        "Reason:[ ]*[^\r]*;text=\"([^\r]+)\"",
-        cflags, mflags, NULL);
-
-    sip->reg_warning = g_regex_new(
-        "^Warning:\\s*(?P<warning>\\d+)",
-        cflags, mflags, NULL);
-
-    sip->reg_authorization = g_regex_new(
-        "^Authorization:\\s*Digest\\s*(?P<authparams>[^\r]+)",
-        cflags, mflags, NULL);
-
-    g_ptr_array_set(parser->dissectors, PACKET_SIP, sip);
-
-}
-
-static void
-packet_sip_deinit(PacketParser *parser)
-{
-    DissectorSipData *sip = g_ptr_array_index(parser->dissectors, PACKET_SIP);
-    g_return_if_fail(sip != NULL);
-
-    // Deallocate regular expressions
-    g_regex_unref(sip->reg_method);
-    g_regex_unref(sip->reg_callid);
-    g_regex_unref(sip->reg_xcallid);
-    g_regex_unref(sip->reg_response);
-    g_regex_unref(sip->reg_cseq);
-    g_regex_unref(sip->reg_from);
-    g_regex_unref(sip->reg_to);
-    g_regex_unref(sip->reg_valid);
-    g_regex_unref(sip->reg_cl);
-    g_regex_unref(sip->reg_body);
-    g_regex_unref(sip->reg_reason);
-    g_regex_unref(sip->reg_warning);
-    g_regex_unref(sip->reg_authorization);
-
-    // Free dissector data
-    g_free(sip);
-}
-
 PacketDissector *
 packet_sip_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_SIP;
-    proto->init = packet_sip_init;
     proto->dissect = packet_sip_parse;
-    proto->deinit = packet_sip_deinit;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SDP));
     return proto;
 }

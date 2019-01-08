@@ -140,7 +140,7 @@ call_list_win_new();
  * @return A pointer to text
  */
 const char *
-call_list_win_line_text(Window *window, Call *call, char *text);
+call_list_win_line_text(Window *window, Call *call);
 
 /**
  * @brief Remove all calls from the list and calls storage

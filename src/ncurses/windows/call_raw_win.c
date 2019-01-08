@@ -144,7 +144,7 @@ call_raw_print_msg(Window *window, Message *msg)
         color = call_group_color(info->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        color = atoi(packet_sip_header(msg->packet, SIP_HEADER_CSEQ)) % 7 + 1;
+        color = packet_sip_cseq(msg->packet) % 7 + 1;
     }
 
     // Turn on the message color
