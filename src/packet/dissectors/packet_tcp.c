@@ -20,18 +20,19 @@
  **
  ****************************************************************************/
 /**
- * @file capture_tcp.c
+ * @file packet_tcp.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in capture_tcp.h
+ * @brief Source of functions defined in packet_tcp.h
  *
- * Support for TCP transport layer
+ * Support for TCP transport layer dissection
  *
  */
 
-#include <glib-extra.h>
-#include <glib/gprintf.h>
 #include "config.h"
+#include <glib.h>
+#include <glib/gprintf.h>
+#include "glib-extra.h"
 #include "packet/packet.h"
 #include "packet/dissectors/packet_ip.h"
 #include "packet_tcp.h"
@@ -44,18 +45,18 @@ packet_tcp_segment_free(PacketTcpSegment *segment)
 }
 
 static gint
-packet_tcp_sort_segments(const PacketTcpSegment **a, const PacketTcpSegment **b)
+packet_tcp_sort_segments(const PacketTcpData **a, const PacketTcpData **b)
 {
     return (*a)->seq - (*b)->seq;
 }
 
 static gchar *
-packet_tcp_segment_hashkey(PacketTcpSegment *segment)
+packet_tcp_assembly_hashkey(PacketTcpData *tcp_data)
 {
     static gchar hashkey[ADDRESSLEN + ADDRESSLEN + 12];
     g_sprintf(hashkey, "%s:%hu-%s:%hu",
-              segment->src.ip, segment->src.port,
-              segment->dst.ip, segment->dst.port
+              tcp_data->src.ip, tcp_data->src.port,
+              tcp_data->dst.ip, tcp_data->dst.port
     );
     return hashkey;
 }
@@ -64,8 +65,6 @@ static GByteArray *
 packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
     DissectorTcpData *priv = g_ptr_array_index(parser->dissectors, PACKET_TCP);
-    PacketTcpSegment *segment = NULL;
-    PacketTcpStream *stream = NULL;
 
     // Get Packet IP protocol information
     PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
@@ -79,47 +78,72 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     struct tcphdr *tcp = (struct tcphdr *) data->data;
 
     // TCP packet data
-    segment = g_malloc0(sizeof(PacketTcpSegment));
-    segment->packet = packet;
-    segment->src = ipdata->saddr;
-    segment->dst = ipdata->daddr;
+    PacketTcpData *tcp_data = g_malloc0(sizeof(PacketTcpData));
+    tcp_data->src = ipdata->saddr;
+    tcp_data->dst = ipdata->daddr;
 
 #ifdef __FAVOR_BSD
-    segment->off = (tcp->th_off * 4);
-    segment->seq = g_ntohl(tcp->th_seq);
-    segment->psh = (guint16) (tcp->th_flags & TH_PUSH);
-    segment->ack = (guint16) (tcp->th_flags & TH_ACK);
-    segment->syn = (guint16) (tcp->th_flags & TH_SYN);
-    segment->src.port = g_htons(tcp->th_sport);
-    segment->dst.port = g_htons(tcp->th_dport);
+    tcp_data->off = (tcp->th_off * 4);
+    tcp_data->seq = g_ntohl(tcp->th_seq);
+    tcp_data->psh = (guint16) (tcp->th_flags & TH_PUSH);
+    tcp_data->ack = (guint16) (tcp->th_flags & TH_ACK);
+    tcp_data->syn = (guint16) (tcp->th_flags & TH_SYN);
+    tcp_data->src.port = g_htons(tcp->th_sport);
+    tcp_data->dst.port = g_htons(tcp->th_dport);
 #else
-    segment->off = (guint16) (tcp->doff * 4);
-    segment->seq = g_ntohl(tcp->seq);
-    segment->psh = tcp->psh;
-    segment->ack = tcp->ack;
-    segment->syn = tcp->syn;
-    segment->src.port = g_htons(tcp->source);
-    segment->dst.port = g_htons(tcp->dest);
+    tcp_data->off = (guint16) (tcp->doff * 4);
+    tcp_data->seq = g_ntohl(tcp->seq);
+    tcp_data->psh = tcp->psh;
+    tcp_data->ack = tcp->ack;
+    tcp_data->syn = tcp->syn;
+    tcp_data->src.port = g_htons(tcp->source);
+    tcp_data->dst.port = g_htons(tcp->dest);
 #endif
 
-    // Remove TCP header length
-    g_byte_array_remove_range(data, 0, segment->off);
+    // Set packet protocol data
+    g_ptr_array_set(packet->proto, PACKET_TCP, tcp_data);
 
-    // Set segment payload (without TCP header)
-    segment->data = g_byte_array_sized_new(data->len);
-    g_byte_array_append(segment->data, data->data, data->len);
+    // Remove TCP header length
+    g_byte_array_remove_range(data, 0, tcp_data->off);
 
     // Find segment stream in assembly hash
-    stream = g_hash_table_lookup(priv->assembly, packet_tcp_segment_hashkey(segment));
+    PacketTcpStream *stream = g_hash_table_lookup(priv->assembly, packet_tcp_assembly_hashkey(tcp_data));
 
-    // New stream, store in the assembly list
+    // New stream, Check if this packet is interesting
     if (stream == NULL) {
-        stream = g_malloc0(sizeof(PacketTcpStream));
-        stream->src = segment->src;
-        stream->dst = segment->dst;
-        stream->segments = g_ptr_array_new_with_free_func((GDestroyNotify) packet_tcp_segment_free);
-        g_hash_table_insert(priv->assembly, g_strdup(packet_tcp_segment_hashkey(segment)), stream);
+        GByteArray *pending = packet_parser_next_dissector(parser, packet, data);
+        // Packet fully parsed, all done!
+        if (pending == NULL) {
+            return NULL;
+        }
+
+        // This packet is SIP but it's not yet complete, add to the assembly list
+        if (packet_has_type(packet, PACKET_SIP)) {
+            // Create first segment for this stream
+            PacketTcpSegment *segment = g_malloc(sizeof(PacketTcpSegment));
+            segment->packet = packet;
+            segment->data = data;
+
+            // Create a new stream
+            stream = g_malloc0(sizeof(PacketTcpStream));
+            stream->src = tcp_data->src;
+            stream->dst = tcp_data->dst;
+            stream->segments = g_ptr_array_new_with_free_func((GDestroyNotify) packet_tcp_segment_free);
+            g_ptr_array_add(stream->segments, segment);
+
+            // Add stream to assmebly list
+            g_hash_table_insert(priv->assembly, g_strdup(packet_tcp_assembly_hashkey(tcp_data)), stream);
+            return NULL;
+        }
+
+        // Not a SIP packet
+        return data;
     }
+
+    // Assembly of existing stream
+    PacketTcpSegment *segment = g_malloc(sizeof(PacketTcpSegment));
+    segment->packet = packet;
+    segment->data = data;
 
     // Add new segment
     g_ptr_array_add(stream->segments, segment);
@@ -127,7 +151,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Check if stream is too segmented
     if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {
-        g_hash_table_remove(priv->assembly, packet_tcp_segment_hashkey(segment));
+        g_hash_table_remove(priv->assembly, packet_tcp_assembly_hashkey(tcp_data));
         g_ptr_array_free(stream->segments, TRUE);
         g_free(stream);
         return data;
@@ -147,29 +171,16 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Set all frames on current packet
     packet->frames = frames;
 
-    // Set packet protocol data
-    PacketTcpData *tcp_data = g_malloc0(sizeof(PacketTcpData));
-    tcp_data->sport = segment->src.port;
-    tcp_data->dport = segment->dst.port;
-    tcp_data->ack = segment->ack;
-    tcp_data->syn = segment->syn;
-    g_ptr_array_set(packet->proto, PACKET_TCP, tcp_data);
-
     // Call next dissector
     GByteArray *pending = packet_parser_next_dissector(parser, packet, data);
-
-    // Check if the next dissectors left something
+    // Packet fully parsed, all done!
     if (pending == NULL) {
-        // Stream fully parsed!
-        g_hash_table_remove(priv->assembly, packet_tcp_segment_hashkey(segment));
-        g_free(segment);
+        g_hash_table_remove(priv->assembly, packet_tcp_assembly_hashkey(tcp_data));
+        g_ptr_array_free(stream->segments, TRUE);
         g_free(stream);
-    } else if (pending->len < data->len) {
-        // Partially parsed
-        return NULL;
     } else {
-        // @TODO multiples messages in multiples TCP packets
-        return NULL;
+        // Partially parsed, keep pending information in the stream
+        /* TODO */
     }
 
     return pending;
@@ -201,7 +212,7 @@ packet_tcp_new()
     proto->init = packet_tcp_init;
     proto->deinit = packet_tcp_deinit;
     proto->dissect = packet_tcp_parse;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TLS));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TLS));
     return proto;
 }

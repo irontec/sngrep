@@ -38,9 +38,9 @@
 //! Ignore too segmented TCP packets
 #define TCP_MAX_SEGMENTS    5
 
-typedef struct _PacketTcpData PacketTcpData;
 typedef struct _PacketTcpStream PacketTcpStream;
 typedef struct _PacketTcpSegment PacketTcpSegment;
+typedef struct _PacketTcpData PacketTcpData;
 typedef struct _DissectorTcpData DissectorTcpData;
 
 struct _PacketTcpStream
@@ -53,6 +53,12 @@ struct _PacketTcpStream
 
 struct _PacketTcpSegment
 {
+    GByteArray *data;
+    Packet *packet;
+};
+
+struct _PacketTcpData
+{
     Address src;
     Address dst;
     guint16 off;
@@ -60,20 +66,6 @@ struct _PacketTcpSegment
     guint16 ack;
     guint32 seq;
     guint16 psh;
-    GByteArray *data;
-    Packet *packet;
-};
-
-
-struct _PacketTcpData
-{
-    //! Source port
-    guint16 sport;
-    //! Destination port
-    guint16 dport;
-    //! TCP flags for other protocols
-    guint16 syn;
-    guint16 ack;
 };
 
 struct _DissectorTcpData
