@@ -30,7 +30,7 @@
 #ifndef __SNGREP_PACKET_UDP_H
 #define __SNGREP_PACKET_UDP_H
 
-#include "packet/dissector.h"
+#include "capture/dissector.h"
 
 typedef struct _PacketUdpData PacketUdpData;
 

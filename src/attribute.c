@@ -30,7 +30,7 @@
 #include <glib.h>
 #include "glib-extra.h"
 #include "attribute.h"
-#include "packet/dissectors/packet_sip.h"
+#include "capture/packet/packet_sip.h"
 #include "ncurses/manager.h"
 
 static GPtrArray *attributes = NULL;

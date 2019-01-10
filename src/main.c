@@ -35,7 +35,7 @@
 #include "capture/capture_hep.h"
 #endif
 #ifdef WITH_SSL
-#include "packet/dissectors/packet_tls.h"
+#include "capture/packet/packet_tls.h"
 #endif
 
 void

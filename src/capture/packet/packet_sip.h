@@ -30,8 +30,8 @@
 #define __SNGREP_PACKET_SIP_H
 
 #include <glib.h>
-#include "packet/packet.h"
-#include "packet/dissectors/packet_sdp.h"
+#include "capture/packet.h"
+#include "packet_sdp.h"
 
 #define SIP_VERSION "SIP/2.0"
 #define SIP_VERSION_LEN 7

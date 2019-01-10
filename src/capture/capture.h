@@ -30,7 +30,7 @@
 #define __SNGREP_CAPTURE_H
 
 #include <glib.h>
-#include "packet/parser.h"
+#include "parser.h"
 
 //! Capture modes
 enum capture_mode

@@ -30,10 +30,10 @@
 #include <glib.h>
 #include "glib-extra.h"
 #include "storage.h"
-#include "packet/dissector.h"
-#include "packet/packet.h"
-#include "packet/dissectors/packet_ip.h"
-#include "packet/dissectors/packet_udp.h"
+#include "capture/dissector.h"
+#include "capture/packet.h"
+#include "packet_ip.h"
+#include "packet_udp.h"
 #include "packet_rtp.h"
 
 /**

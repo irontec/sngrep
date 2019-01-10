@@ -35,9 +35,9 @@
 
 #include <glib.h>
 #include <netinet/ip.h>
-#include "packet/packet.h"
-#include "packet/address.h"
-#include "packet/dissector.h"
+#include "capture/packet.h"
+#include "capture/address.h"
+#include "capture/dissector.h"
 
 typedef struct _PacketIpData PacketIpData;
 typedef struct _PacketIpDatagram PacketIpDatagram;

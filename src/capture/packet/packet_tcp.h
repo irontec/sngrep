@@ -20,49 +20,65 @@
  **
  ****************************************************************************/
 /**
- * @file dissector.h
+ * @file packet_tcp.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage captured packet protocols handlers
+ * @brief Functions to manage TCP protocol
+ *
  *
  */
+#ifndef __SNGREP_PACKET_TCP_H
+#define __SNGREP_PACKET_TCP_H
 
-#ifndef __SNGREP_DISSECTOR_H
-#define __SNGREP_DISSECTOR_H
-
+#include <netinet/tcp.h>
 #include <glib.h>
-#include "parser.h"
-#include "packet.h"
+#include "capture/address.h"
+#include "capture/dissector.h"
 
-//! Dissector type
-typedef struct _PacketDissector PacketDissector;
+//! Ignore too segmented TCP packets
+#define TCP_MAX_SEGMENTS    5
 
-//! Dissector functions types
-typedef GByteArray *(*PacketDissectorDissectFunc)(PacketParser *, Packet *, GByteArray *);
+typedef struct _PacketTcpStream PacketTcpStream;
+typedef struct _PacketTcpSegment PacketTcpSegment;
+typedef struct _PacketTcpData PacketTcpData;
+typedef struct _DissectorTcpData DissectorTcpData;
 
-typedef void (*PacketDissectorInitFunc)(PacketParser *);
+struct _PacketTcpStream
+{
+    //! Packet IP addresses
+    Address src, dst;
+    //! TCP Segment list
+    GPtrArray *segments;
+};
 
-typedef void (*PacketDissectorDeinitFunc)(PacketParser *);
+struct _PacketTcpSegment
+{
+    GByteArray *data;
+    Packet *packet;
+};
+
+struct _PacketTcpData
+{
+    Address src;
+    Address dst;
+    guint16 off;
+    guint16 syn;
+    guint16 ack;
+    guint32 seq;
+    guint16 psh;
+};
+
+struct _DissectorTcpData
+{
+    GHashTable *assembly;
+};
 
 /**
- * @brief Packet dissector interface
+ * @brief Create a TCP parser
  *
- * A packet handler is able to check raw captured data from the wire
- * and convert it into Packets to be stored.
+ * @return a protocols' parsers pointer
  */
-struct _PacketDissector
-{
-    //! Protocol id
-    enum PacketProtoId id;
-    //! SubProtocol children dissectors
-    GSList *subdissectors;
-
-    //! Protocol initialization function
-    PacketDissectorInitFunc init;
-    //! Protocol packet dissector function
-    PacketDissectorDissectFunc dissect;
-    //! Protocol deinitialization function
-    PacketDissectorDeinitFunc deinit;
-};
+PacketDissector *
+packet_tcp_new();
 
 #endif

@@ -33,10 +33,10 @@
 #include <gnutls/gnutls.h>
 #include "glib-extra.h"
 #include "capture/capture.h"
-#include "packet/address.h"
-#include "packet/dissector.h"
-#include "packet/dissectors/packet_ip.h"
-#include "packet/dissectors/packet_tcp.h"
+#include "capture/address.h"
+#include "capture/dissector.h"
+#include "packet_ip.h"
+#include "packet_tcp.h"
 #include "packet_tls.h"
 
 struct CipherData ciphers[] = {

@@ -30,7 +30,7 @@
 #ifndef __SNGREP_PACKET_WS_H
 #define __SNGREP_PACKET_WS_H
 
-#include "packet/dissector.h"
+#include "capture/dissector.h"
 
 //! Define Websocket Transport codes
 #define WH_FIN      0x80

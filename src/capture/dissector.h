@@ -20,56 +20,19 @@
  **
  ****************************************************************************/
 /**
- * @file packet_link.h
+ * @file dissector.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to link layer packet contents
+ * @brief Functions to manage captured packet protocols handlers
+ *
  */
 
-#ifndef __SNGREP_PROTO_LINK_H_
-#define __SNGREP_PROTO_LINK_H_
+#ifndef __SNGREP_DISSECTOR_H
+#define __SNGREP_DISSECTOR_H
 
 #include <glib.h>
-#include <netinet/if_ether.h>
-#ifdef SLL_HDR_LEN
-#include <pcap/sll.h>
+#include "parser.h"
+#include "packet.h"
+
+
 #endif
-#include "packet/dissector.h"
-
-//! Define VLAN 802.1Q Ethernet type
-#ifndef ETHERTYPE_8021Q
-#define ETHERTYPE_8021Q 0x8100
-#endif
-
-//! NFLOG Support (for libpcap <1.6.0)
-#define DLT_NFLOG       239
-#define NFULA_PAYLOAD   9
-
-typedef struct _DissectorLinkData DissectorLinkData;
-typedef struct _LinkNflogHdr LinkNflogHdr;
-
-//! Private information structure for Link Protocol
-struct _DissectorLinkData
-{
-    gint link_type;
-    gint link_size;
-};
-
-struct _LinkNflogHdr
-{
-    guint16 tlv_length;
-    guint16 tlv_type;
-};
-
-/**
- * @brief Create a Link layer parser
- *
- * @return a protocols' parsers tree
- */
-PacketDissector *
-packet_link_new();
-
-guint8
-proto_link_size(int linktype);
-
-#endif /* __SNGREP_PROTO_LINK_H_ */

@@ -33,9 +33,9 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include "glib-extra.h"
-#include "packet/packet.h"
-#include "packet/parser.h"
-#include "packet/dissectors/packet_ip.h"
+#include "capture/packet.h"
+#include "capture/parser.h"
+#include "packet_ip.h"
 
 static gint
 packet_ip_sort_fragments(const PacketIpFragment **a, const PacketIpFragment **b)

@@ -33,9 +33,9 @@
 #include "config.h"
 #include <string.h>
 #include <stdlib.h>
+#include "capture/packet/packet_sip.h"
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"
-#include "packet/dissectors/packet_sip.h"
 #include "ncurses/windows/save_win.h"
 #include "ncurses/windows/call_raw_win.h"
 

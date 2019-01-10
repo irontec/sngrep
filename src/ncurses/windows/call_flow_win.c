@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include <packet/dissectors/packet_sip.h>
+#include "capture/packet/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"

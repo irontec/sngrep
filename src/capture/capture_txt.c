@@ -33,8 +33,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include "timeval.h"
-#include "packet/packet.h"
-#include "packet/dissectors/packet_sip.h"
+#include "packet.h"
+#include "capture/packet/packet_sip.h"
 #include "capture/capture_txt.h"
 
 GQuark

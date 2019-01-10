@@ -39,7 +39,7 @@
 #include <glib.h>
 #include <time.h>
 #include <sys/types.h>
-#include "packet/address.h"
+#include "address.h"
 
 /**
  * @brief Packet protocols

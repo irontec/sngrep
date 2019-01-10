@@ -20,65 +20,56 @@
  **
  ****************************************************************************/
 /**
- * @file packet_tcp.h
+ * @file packet_link.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage TCP protocol
- *
- *
+ * @brief Functions to link layer packet contents
  */
-#ifndef __SNGREP_PACKET_TCP_H
-#define __SNGREP_PACKET_TCP_H
 
-#include <netinet/tcp.h>
+#ifndef __SNGREP_PROTO_LINK_H_
+#define __SNGREP_PROTO_LINK_H_
+
 #include <glib.h>
-#include "packet/address.h"
-#include "packet/dissector.h"
+#include <netinet/if_ether.h>
+#ifdef SLL_HDR_LEN
+#include <pcap/sll.h>
+#endif
+#include "capture/dissector.h"
 
-//! Ignore too segmented TCP packets
-#define TCP_MAX_SEGMENTS    5
+//! Define VLAN 802.1Q Ethernet type
+#ifndef ETHERTYPE_8021Q
+#define ETHERTYPE_8021Q 0x8100
+#endif
 
-typedef struct _PacketTcpStream PacketTcpStream;
-typedef struct _PacketTcpSegment PacketTcpSegment;
-typedef struct _PacketTcpData PacketTcpData;
-typedef struct _DissectorTcpData DissectorTcpData;
+//! NFLOG Support (for libpcap <1.6.0)
+#define DLT_NFLOG       239
+#define NFULA_PAYLOAD   9
 
-struct _PacketTcpStream
+typedef struct _DissectorLinkData DissectorLinkData;
+typedef struct _LinkNflogHdr LinkNflogHdr;
+
+//! Private information structure for Link Protocol
+struct _DissectorLinkData
 {
-    //! Packet IP addresses
-    Address src, dst;
-    //! TCP Segment list
-    GPtrArray *segments;
+    gint link_type;
+    gint link_size;
 };
 
-struct _PacketTcpSegment
+struct _LinkNflogHdr
 {
-    GByteArray *data;
-    Packet *packet;
-};
-
-struct _PacketTcpData
-{
-    Address src;
-    Address dst;
-    guint16 off;
-    guint16 syn;
-    guint16 ack;
-    guint32 seq;
-    guint16 psh;
-};
-
-struct _DissectorTcpData
-{
-    GHashTable *assembly;
+    guint16 tlv_length;
+    guint16 tlv_type;
 };
 
 /**
- * @brief Create a TCP parser
+ * @brief Create a Link layer parser
  *
- * @return a protocols' parsers pointer
+ * @return a protocols' parsers tree
  */
 PacketDissector *
-packet_tcp_new();
+packet_link_new();
 
-#endif
+guint8
+proto_link_size(int linktype);
+
+#endif /* __SNGREP_PROTO_LINK_H_ */

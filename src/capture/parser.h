@@ -39,9 +39,15 @@ typedef struct _PacketParser PacketParser;
 struct _CaptureInput;
 typedef struct _CaptureInput CaptureInput;
 
-//! Forward declaration of packet parser structure
-struct _PacketDissector;
+//! Dissector type
 typedef struct _PacketDissector PacketDissector;
+
+//! Dissector functions types
+typedef GByteArray *(*PacketDissectorDissectFunc)(PacketParser *, Packet *, GByteArray *);
+
+typedef void (*PacketDissectorInitFunc)(PacketParser *);
+
+typedef void (*PacketDissectorDeinitFunc)(PacketParser *);
 
 /**
  * @brief Packet parser interface
@@ -62,6 +68,28 @@ struct _PacketParser
     //! Protocl node actually parsing
     GNode *current;
 };
+
+/**
+ * @brief Packet dissector interface
+ *
+ * A packet handler is able to check raw captured data from the wire
+ * and convert it into Packets to be stored.
+ */
+struct _PacketDissector
+{
+    //! Protocol id
+    enum PacketProtoId id;
+    //! SubProtocol children dissectors
+    GSList *subdissectors;
+
+    //! Protocol initialization function
+    PacketDissectorInitFunc init;
+    //! Protocol packet dissector function
+    PacketDissectorDissectFunc dissect;
+    //! Protocol deinitialization function
+    PacketDissectorDeinitFunc deinit;
+};
+
 
 
 /**

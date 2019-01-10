@@ -31,19 +31,19 @@
 #include <glib.h>
 #include "glib-extra.h"
 #include "dissector.h"
-#include "packet/dissectors/packet_link.h"
-#include "packet/dissectors/packet_ip.h"
-#include "packet/dissectors/packet_udp.h"
-#include "packet/dissectors/packet_tcp.h"
-#include "packet/dissectors/packet_sip.h"
-#include "packet/dissectors/packet_sdp.h"
-#include "packet/dissectors/packet_rtp.h"
-#include "packet/dissectors/packet_rtcp.h"
+#include "capture/packet/packet_link.h"
+#include "capture/packet/packet_ip.h"
+#include "capture/packet/packet_udp.h"
+#include "capture/packet/packet_tcp.h"
+#include "capture/packet/packet_sip.h"
+#include "capture/packet/packet_sdp.h"
+#include "capture/packet/packet_rtp.h"
+#include "capture/packet/packet_rtcp.h"
 #ifdef WITH_SSL
-#include "packet/dissectors/packet_tls.h"
+#include "capture/packet/packet_tls.h"
 #endif
 #ifdef USE_HEP
-#include "packet/dissectors/packet_hep.h"
+#include "capture/packet/packet_hep.h"
 #endif
 #include "parser.h"
 

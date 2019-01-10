@@ -33,8 +33,8 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include "glib-extra.h"
-#include "packet/packet.h"
-#include "packet/dissectors/packet_ip.h"
+#include "capture/packet.h"
+#include "packet_ip.h"
 #include "packet_tcp.h"
 
 static void

@@ -39,7 +39,7 @@
 #include "capture.h"
 #include "capture_hep.h"
 #include "capture_pcap.h"
-#include "packet/dissectors/packet_link.h"
+#include "capture/packet/packet_link.h"
 #include "storage.h"
 #include "stream.h"
 #include "setting.h"

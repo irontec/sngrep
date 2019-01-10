@@ -31,8 +31,8 @@
 
 #include "config.h"
 #include <glib.h>
-#include "packet/parser.h"
-#include "packet/dissectors/packet_ws.h"
+#include "capture/parser.h"
+#include "packet_ws.h"
 
 GByteArray *
 packet_ws_dissect(PacketParser *parser, Packet *packet, GByteArray *data)

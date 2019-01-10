@@ -50,11 +50,11 @@
 #include "timeval.h"
 #include "setting.h"
 #include "glib-extra.h"
-#include "packet/dissectors/packet_hep.h"
-#include "packet/dissectors/packet_ip.h"
-#include "packet/dissectors/packet_udp.h"
-#include "packet/dissectors/packet_sip.h"
-#include "packet/packet.h"
+#include "capture/packet/packet_hep.h"
+#include "capture/packet/packet_ip.h"
+#include "capture/packet/packet_udp.h"
+#include "capture/packet/packet_sip.h"
+#include "packet.h"
 #include "capture_hep.h"
 
 GQuark
