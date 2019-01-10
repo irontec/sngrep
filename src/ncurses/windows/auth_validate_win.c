@@ -68,7 +68,7 @@ auth_validate_draw(Window *window)
         return -1;
     }
 
-    if (info->algorithm == NULL || g_strcmp0(info->algorithm, "MD5")) {
+    if (info->algorithm == NULL || g_strcmp0(info->algorithm, "MD5") != 0) {
         dialog_run("Unsupported auth validation algorithm.");
         return -1;
     }

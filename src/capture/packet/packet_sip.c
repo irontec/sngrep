@@ -143,7 +143,7 @@ packet_sip_method_from_str(const gchar *method)
 {
     // Standard method
     for (guint i = 0; sip_codes[i].id > 0; i++) {
-        if (!g_strcmp0(method, sip_codes[i].text))
+        if (g_strcmp0(method, sip_codes[i].text) == 0)
             return sip_codes[i].id;
     }
     return (guint) g_ascii_strtoull(method, NULL, 10);
@@ -266,8 +266,10 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         const gchar *line = headers[i];
 
         // End of SIP payload
-        if (g_strcmp0(line, SIP_CRLF SIP_CRLF) == 0)
+        if (g_strcmp0(line, "") == 0) {
+            sip_size += 2 /* Final CRLF */;
             break;
+        }
 
         // Sip Headers Size
         sip_size += g_utf8_strlen(line, G_MAXUINT) + 2 /* CRLF */;

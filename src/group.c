@@ -130,7 +130,7 @@ call_group_changed(CallGroup *group)
             g_ptr_array_add_array(group->streams, call->streams);
 
             // If this group is based on a Call-Id, check there are no new call related
-            if (group->callid && !g_strcmp0(group->callid, call->callid)) {
+            if (group->callid && g_strcmp0(group->callid, call->callid) == 0) {
                 call_group_add_calls(group, call->xcalls);
             }
         }

@@ -137,8 +137,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     PacketIpDatagram *datagram = NULL;
     for (GList *l = priv->assembly; l != NULL; l = l->next) {
         datagram = l->data;
-        if (g_strcmp0(fragment->srcip, datagram->srcip)
-            && g_strcmp0(fragment->dstip, datagram->dstip)
+        if (g_strcmp0(fragment->srcip, datagram->srcip) == 0
+            && g_strcmp0(fragment->dstip, datagram->dstip) == 0
             && fragment->id == datagram->id) {
             break;
         }

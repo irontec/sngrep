@@ -111,7 +111,7 @@ attr_find_by_name(const gchar *name)
 {
     for (guint i = 0; i < g_ptr_array_len(attributes); i++) {
         Attribute *attr = g_ptr_array_index(attributes, i);
-        if (!g_strcmp0(name, attr->name)) {
+        if (g_strcmp0(name, attr->name) == 0) {
             return i;
         }
     }
