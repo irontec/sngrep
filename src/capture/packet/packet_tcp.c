@@ -51,12 +51,18 @@ packet_tcp_sort_segments(const PacketTcpData **a, const PacketTcpData **b)
 }
 
 static gchar *
-packet_tcp_assembly_hashkey(PacketTcpData *tcp_data)
+packet_tcp_assembly_hashkey(Packet *packet)
 {
     static gchar hashkey[ADDRESSLEN + ADDRESSLEN + 12];
+
+    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    g_return_val_if_fail(ipdata != NULL, NULL);
+    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
+    g_return_val_if_fail(tcpdata != NULL, NULL);
+
     g_sprintf(hashkey, "%s:%hu-%s:%hu",
-              tcp_data->src.ip, tcp_data->src.port,
-              tcp_data->dst.ip, tcp_data->dst.port
+              ipdata->srcip, tcpdata->sport,
+              ipdata->dstip, tcpdata->dport
     );
     return hashkey;
 }
@@ -79,25 +85,22 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // TCP packet data
     PacketTcpData *tcp_data = g_malloc0(sizeof(PacketTcpData));
-    tcp_data->src = ipdata->saddr;
-    tcp_data->dst = ipdata->daddr;
-
 #ifdef __FAVOR_BSD
     tcp_data->off = (tcp->th_off * 4);
     tcp_data->seq = g_ntohl(tcp->th_seq);
     tcp_data->psh = (guint16) (tcp->th_flags & TH_PUSH);
     tcp_data->ack = (guint16) (tcp->th_flags & TH_ACK);
     tcp_data->syn = (guint16) (tcp->th_flags & TH_SYN);
-    tcp_data->src.port = g_htons(tcp->th_sport);
-    tcp_data->dst.port = g_htons(tcp->th_dport);
+    tcp_data->sport = g_ntohs(tcp->th_sport);
+    tcp_data->dport = g_ntohs(tcp->th_dport);
 #else
     tcp_data->off = (guint16) (tcp->doff * 4);
     tcp_data->seq = g_ntohl(tcp->seq);
     tcp_data->psh = tcp->psh;
     tcp_data->ack = tcp->ack;
     tcp_data->syn = tcp->syn;
-    tcp_data->src.port = g_htons(tcp->source);
-    tcp_data->dst.port = g_htons(tcp->dest);
+    tcp_data->sport = g_ntohs(tcp->source);
+    tcp_data->dport = g_ntohs(tcp->dest);
 #endif
 
     // Set packet protocol data
@@ -106,8 +109,11 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Remove TCP header length
     g_byte_array_remove_range(data, 0, tcp_data->off);
 
+    // Get TCP stream assembly hash key
+    const gchar *assembly_hashkey = packet_tcp_assembly_hashkey(packet);
+
     // Find segment stream in assembly hash
-    PacketTcpStream *stream = g_hash_table_lookup(priv->assembly, packet_tcp_assembly_hashkey(tcp_data));
+    PacketTcpStream *stream = g_hash_table_lookup(priv->assembly, assembly_hashkey);
 
     // New stream, Check if this packet is interesting
     if (stream == NULL) {
@@ -126,13 +132,11 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
             // Create a new stream
             stream = g_malloc0(sizeof(PacketTcpStream));
-            stream->src = tcp_data->src;
-            stream->dst = tcp_data->dst;
             stream->segments = g_ptr_array_new_with_free_func((GDestroyNotify) packet_tcp_segment_free);
             g_ptr_array_add(stream->segments, segment);
 
             // Add stream to assmebly list
-            g_hash_table_insert(priv->assembly, g_strdup(packet_tcp_assembly_hashkey(tcp_data)), stream);
+            g_hash_table_insert(priv->assembly, g_strdup(assembly_hashkey), stream);
             return NULL;
         }
 
@@ -151,7 +155,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Check if stream is too segmented
     if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {
-        g_hash_table_remove(priv->assembly, packet_tcp_assembly_hashkey(tcp_data));
+        g_hash_table_remove(priv->assembly, assembly_hashkey);
         g_ptr_array_free(stream->segments, TRUE);
         g_free(stream);
         return data;
@@ -175,7 +179,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     GByteArray *pending = packet_parser_next_dissector(parser, packet, data);
     // Packet fully parsed, all done!
     if (pending == NULL) {
-        g_hash_table_remove(priv->assembly, packet_tcp_assembly_hashkey(tcp_data));
+        g_hash_table_remove(priv->assembly, assembly_hashkey);
         g_ptr_array_free(stream->segments, TRUE);
         g_free(stream);
     } else {

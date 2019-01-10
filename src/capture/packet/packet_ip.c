@@ -80,8 +80,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             fragment->more = (guint16) (fragment->off & IP_MF);
 
             // Get source and destination IP addresses
-            inet_ntop(AF_INET, &ip4->ip_src, fragment->src.ip, INET_ADDRSTRLEN);
-            inet_ntop(AF_INET, &ip4->ip_dst, fragment->dst.ip, INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, &ip4->ip_src, fragment->srcip, INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, &ip4->ip_dst, fragment->dstip, INET_ADDRSTRLEN);
             break;
 #ifdef USE_IPV6
         case 6:
@@ -96,8 +96,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             }
 
             // Get source and destination IP addresses
-            inet_ntop(AF_INET6, &ip6->ip6_src, fragment->src.ip, INET6_ADDRSTRLEN);
-            inet_ntop(AF_INET6, &ip6->ip6_dst, fragment->dst.ip, INET6_ADDRSTRLEN);
+            inet_ntop(AF_INET6, &ip6->ip6_src, fragment->srcip, INET6_ADDRSTRLEN);
+            inet_ntop(AF_INET6, &ip6->ip6_dst, fragment->dstip, INET6_ADDRSTRLEN);
             break;
 #endif
         default:
@@ -110,8 +110,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Save IP Addresses into packet
     PacketIpData *ipdata = g_malloc0(sizeof(PacketIpData));
-    ipdata->saddr = fragment->src;
-    ipdata->daddr = fragment->dst;
+    g_utf8_strncpy(ipdata->srcip, fragment->srcip, ADDRESSLEN);
+    g_utf8_strncpy(ipdata->dstip, fragment->dstip, ADDRESSLEN);
     ipdata->version = fragment->version;
     ipdata->protocol = fragment->proto;
     packet->proto->pdata[PACKET_IP] = ipdata;
@@ -137,8 +137,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     PacketIpDatagram *datagram = NULL;
     for (GList *l = priv->assembly; l != NULL; l = l->next) {
         datagram = l->data;
-        if (addressport_equals(fragment->src, datagram->src)
-            && addressport_equals(fragment->dst, datagram->dst)
+        if (g_strcmp0(fragment->srcip, datagram->srcip)
+            && g_strcmp0(fragment->dstip, datagram->dstip)
             && fragment->id == datagram->id) {
             break;
         }
@@ -150,8 +150,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         g_ptr_array_add(datagram->fragments, fragment);
     } else {
         datagram = g_malloc0(sizeof(PacketIpDatagram));
-        datagram->src = fragment->src;
-        datagram->dst = fragment->dst;
+        g_utf8_strncpy(datagram->srcip, fragment->srcip, ADDRESSLEN);
+        g_utf8_strncpy(datagram->dstip, fragment->dstip, ADDRESSLEN);
         datagram->id = fragment->id;
         datagram->fragments = g_ptr_array_new_with_free_func(g_free);
         g_ptr_array_add(datagram->fragments, fragment);

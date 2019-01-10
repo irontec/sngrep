@@ -68,7 +68,7 @@ packet_src_address(const Packet *packet)
     // Get IP address from IP parsed protocol
     PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
     g_return_val_if_fail(ip, address);
-    g_utf8_strncpy(address.ip, ip->saddr.ip, ADDRESSLEN);
+    g_utf8_strncpy(address.ip, ip->srcip, ADDRESSLEN);
 
     // Get Port from UDP or TCP parsed protocol
     if (packet_has_type(packet, PACKET_UDP)) {
@@ -76,7 +76,7 @@ packet_src_address(const Packet *packet)
         g_return_val_if_fail(udp, address);
         address.port = udp->sport;
     } else {
-        PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
+        PacketTcpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
         g_return_val_if_fail(tcp, address);
         address.port = tcp->sport;
     }
@@ -92,7 +92,7 @@ packet_dst_address(const Packet *packet)
     // Get IP address from IP parsed protocol
     PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
     g_return_val_if_fail(ip, address);
-    g_utf8_strncpy(address.ip, ip->daddr.ip, ADDRESSLEN);
+    g_utf8_strncpy(address.ip, ip->dstip, ADDRESSLEN);
 
     // Get Port from UDP or TCP parsed protocol
     if (packet_has_type(packet, PACKET_UDP)) {

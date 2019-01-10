@@ -144,8 +144,8 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Generate Packet IP data
     PacketIpData *ip = g_malloc0(sizeof(PacketIpData));
-    ip->saddr = src;
-    ip->daddr = dst;
+    g_utf8_strncpy(ip->srcip, src.ip, ADDRESSLEN);
+    g_utf8_strncpy(ip->dstip, dst.ip, ADDRESSLEN);
     ip->protocol = proto;
     ip->version = (family == AF_INET) ? 4 : 6;
     g_ptr_array_set(packet->proto, PACKET_IP, ip);

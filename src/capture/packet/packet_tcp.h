@@ -45,8 +45,6 @@ typedef struct _DissectorTcpData DissectorTcpData;
 
 struct _PacketTcpStream
 {
-    //! Packet IP addresses
-    Address src, dst;
     //! TCP Segment list
     GPtrArray *segments;
 };
@@ -59,8 +57,8 @@ struct _PacketTcpSegment
 
 struct _PacketTcpData
 {
-    Address src;
-    Address dst;
+    guint16 sport;
+    guint16 dport;
     guint16 off;
     guint16 syn;
     guint16 ack;

@@ -51,15 +51,17 @@ struct _PacketIpData
     //! IP Protocol
     guint8 protocol;
     //! Source Address
-    Address saddr;
+    gchar srcip[ADDRESSLEN];
     //! Destination Address
-    Address daddr;
+    gchar dstip[ADDRESSLEN];
 };
 
 struct _PacketIpDatagram
 {
-    //! Packet IP addresses
-    Address src, dst;
+    //! Source Address
+    gchar srcip[ADDRESSLEN];
+    //! Destination Address
+    gchar dstip[ADDRESSLEN];
     //! Fragmentation identifier
     guint32 id;
     //! Datagram length
@@ -73,8 +75,10 @@ struct _PacketIpDatagram
 //! @brief IP assembly data.
 struct _PacketIpFragment
 {
-    //! Packet IP addresses
-    Address src, dst;
+    //! Packet Source addresses
+    gchar srcip[ADDRESSLEN];
+    //! Packet Destination address
+    gchar dstip[ADDRESSLEN];
     // IP version
     guint32 version;
     // IP transport dissectors

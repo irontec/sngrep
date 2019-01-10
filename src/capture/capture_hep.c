@@ -395,13 +395,13 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
         src_ip4.chunk.vendor_id = htons(0x0000);
         src_ip4.chunk.type_id = htons(0x0003);
         src_ip4.chunk.length = htons(sizeof(src_ip4));
-        inet_pton(AF_INET, ip->saddr.ip, &src_ip4.data);
+        inet_pton(AF_INET, ip->srcip, &src_ip4.data);
 
         /* DST IP */
         dst_ip4.chunk.vendor_id = htons(0x0000);
         dst_ip4.chunk.type_id = htons(0x0004);
         dst_ip4.chunk.length = htons(sizeof(dst_ip4));
-        inet_pton(AF_INET, ip->daddr.ip, &dst_ip4.data);
+        inet_pton(AF_INET, ip->srcip, &dst_ip4.data);
 
         iplen = sizeof(dst_ip4) + sizeof(src_ip4);
     }
@@ -413,13 +413,13 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
         src_ip6.chunk.vendor_id = htons(0x0000);
         src_ip6.chunk.type_id = htons(0x0005);
         src_ip6.chunk.length = htons(sizeof(src_ip6));
-        inet_pton(AF_INET6, ip->saddr.ip, &src_ip6.data);
+        inet_pton(AF_INET6, ip->srcip, &src_ip6.data);
 
         /* DST IPv6 */
         dst_ip6.chunk.vendor_id = htons(0x0000);
         dst_ip6.chunk.type_id = htons(0x0006);
         dst_ip6.chunk.length = htons(sizeof(dst_ip6));
-        inet_pton(AF_INET6, ip->daddr.ip, &dst_ip6.data);
+        inet_pton(AF_INET6, ip->dstip, &dst_ip6.data);
 
         iplen = sizeof(dst_ip6) + sizeof(src_ip6);
     }
