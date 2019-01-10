@@ -310,6 +310,10 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         }
     }
 
+    // Handle bad terminated SIP messages
+    if (sip_size > data->len)
+        sip_size = data->len;
+
     // Remove SIP headers from data
     data = g_byte_array_remove_range(data, 0, sip_size);
 

@@ -146,6 +146,11 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
     // m=<media> <port> <proto> <fmt>
     gchar **media_data = g_strsplit(line, " ", 4);
 
+    // Media line without formats
+    if (g_strv_length(media_data) < 4) {
+        return NULL;
+    }
+
     // Create a new media container
     PacketSdpMedia *media = g_malloc0(sizeof(PacketSdpMedia));
     media->sconn = sdp->sconn;
@@ -184,6 +189,7 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
     // a=<attribute>
     // a=<attribute>:<value>
     gchar **rtpattr = g_strsplit_set(line, " :", -1);
+    if (g_strv_length(rtpattr) < 2) return;
 
     if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtpmap") == 0) {
         // Check if format code is standard
