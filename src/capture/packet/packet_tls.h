@@ -38,7 +38,7 @@
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gcrypt.h>
-#include "capture/dissector.h"
+#include "capture/parser.h"
 
 //! Error reporting domain
 #define TLS_ERROR packet_tls_error_quark()

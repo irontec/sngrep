@@ -34,7 +34,7 @@
 #ifdef SLL_HDR_LEN
 #include <pcap/sll.h>
 #endif
-#include "capture/dissector.h"
+#include "capture/parser.h"
 
 //! Define VLAN 802.1Q Ethernet type
 #ifndef ETHERTYPE_8021Q

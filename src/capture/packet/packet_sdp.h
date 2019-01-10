@@ -31,7 +31,7 @@
 
 #include <glib.h>
 #include "capture/packet.h"
-#include "capture/dissector.h"
+#include "capture/parser.h"
 
 
 //! Connection Data fields

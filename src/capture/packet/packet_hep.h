@@ -30,7 +30,7 @@
 #ifndef __SNGREP_PACKET_HEP_H
 #define __SNGREP_PACKET_HEP_H
 
-#include "capture/dissector.h"
+#include "capture/parser.h"
 
 typedef struct _PacketHepData PacketHepData;
 
