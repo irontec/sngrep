@@ -53,18 +53,16 @@ packet_tcp_sort_segments(const PacketTcpData **a, const PacketTcpData **b)
 static gchar *
 packet_tcp_assembly_hashkey(Packet *packet)
 {
-    static gchar hashkey[ADDRESSLEN + ADDRESSLEN + 12];
-
     PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
     g_return_val_if_fail(ipdata != NULL, NULL);
     PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
     g_return_val_if_fail(tcpdata != NULL, NULL);
 
-    g_sprintf(hashkey, "%s:%hu-%s:%hu",
-              ipdata->srcip, tcpdata->sport,
-              ipdata->dstip, tcpdata->dport
+    return g_strdup_printf(
+        "%s:%hu-%s:%hu",
+        ipdata->srcip, tcpdata->sport,
+        ipdata->dstip, tcpdata->dport
     );
-    return hashkey;
 }
 
 static GByteArray *
@@ -110,7 +108,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_byte_array_remove_range(data, 0, tcp_data->off);
 
     // Get TCP stream assembly hash key
-    const gchar *assembly_hashkey = packet_tcp_assembly_hashkey(packet);
+    gchar *assembly_hashkey = packet_tcp_assembly_hashkey(packet);
 
     // Find segment stream in assembly hash
     PacketTcpStream *stream = g_hash_table_lookup(priv->assembly, assembly_hashkey);
@@ -120,6 +118,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         GByteArray *pending = packet_parser_next_dissector(parser, packet, data);
         // Packet fully parsed, all done!
         if (pending == NULL) {
+            g_free(assembly_hashkey);
             return NULL;
         }
 
@@ -136,7 +135,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             g_ptr_array_add(stream->segments, segment);
 
             // Add stream to assmebly list
-            g_hash_table_insert(priv->assembly, g_strdup(assembly_hashkey), stream);
+            g_hash_table_insert(priv->assembly, assembly_hashkey, stream);
             return NULL;
         }
 
@@ -151,15 +150,18 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Add new segment
     g_ptr_array_add(stream->segments, segment);
-    g_ptr_array_sort(stream->segments, (GCompareFunc) packet_tcp_sort_segments);
 
     // Check if stream is too segmented
     if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {
         g_hash_table_remove(priv->assembly, assembly_hashkey);
+        g_free(assembly_hashkey);
         g_ptr_array_free(stream->segments, TRUE);
         g_free(stream);
         return data;
     }
+
+    // Sort TCP segments based on their sequence number
+    g_ptr_array_sort(stream->segments, (GCompareFunc) packet_tcp_sort_segments);
 
     // Assemble all sorted contents and frames on current packet
     GList *frames = NULL;
@@ -180,6 +182,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Packet fully parsed, all done!
     if (pending == NULL) {
         g_hash_table_remove(priv->assembly, assembly_hashkey);
+        g_free(assembly_hashkey);
         g_ptr_array_free(stream->segments, TRUE);
         g_free(stream);
     } else {
