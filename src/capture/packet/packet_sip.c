@@ -253,6 +253,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         sip_data->code.text = method;
     } else {
         sip_data->code.id = packet_sip_method_from_str(resp_code);
+        sip_data->code.text = resp_code;
     }
     sip_data->payload = g_strdup(payload->str);
 
