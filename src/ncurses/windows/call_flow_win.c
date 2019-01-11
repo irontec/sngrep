@@ -348,7 +348,7 @@ call_flow_arrow_find_prev_callid(Window *window, const CallFlowArrow *arrow)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, Address addr, guint start)
+call_flow_column_get_starting(Window *window, Address addr, guint start)
 {
     CallFlowColumn *candidate = NULL;
 
@@ -373,11 +373,7 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
             // Check if this column matches requested address
             if (match_port) {
                 if (addressport_equals(column->addr, addr)) {
-                    if (callid && g_list_index(column->callids, (void *) callid) >= 0) {
-                        return column;
-                    } else {
-                        candidate = column;
-                    }
+                    return column;
                 }
             } else {
                 // Dont check port
@@ -389,22 +385,6 @@ call_flow_column_get_starting(Window *window, G_GNUC_UNUSED const char *callid, 
     }
 
     return candidate;
-}
-
-
-/**
- * @brief Get a flow column data for a given call-id
- *
- * @param window UI structure pointer
- * @param callid Call-Id header of SIP payload
- * @param addr Address:port string
- *
- * @return column structure pointer or NULL if not found
- */
-static CallFlowColumn *
-call_flow_column_get_callid(Window *window, const char *callid, Address addr)
-{
-    return call_flow_column_get_starting(window, callid, addr, 0);
 }
 
 /**
@@ -419,13 +399,7 @@ call_flow_column_get_callid(Window *window, const char *callid, Address addr)
 static CallFlowColumn *
 call_flow_column_get(Window *window, Address addr)
 {
-    return call_flow_column_get_starting(window, NULL, addr, 0);
-}
-
-static void
-call_flow_column_add_callid(CallFlowColumn *column, const gchar *callid)
-{
-    column->callids = g_list_append(column->callids, (gpointer) callid);
+    return call_flow_column_get_starting(window, addr, 0);
 }
 
 static gint
@@ -490,27 +464,17 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow)
 
     // Get arrow information
     Message *msg = arrow->item;
-    Call *call = msg_get_call(msg);
 
-    // Find source column for this arrow
-    arrow->scolumn = call_flow_column_get_callid(window, call->callid, msg_src_address(msg));
+    // In normal mode, reuse columns whenever possible
+    arrow->scolumn = call_flow_column_get(window, msg_src_address(msg));
     if (arrow->scolumn == NULL) {
         arrow->scolumn = call_flow_column_create(window, msg_src_address(msg));
     }
-    call_flow_column_add_callid(arrow->scolumn, call->callid);
 
-    // Initial requests always goes from left to right (-->)
-    if (msg_is_request(msg) && msg_is_initial_transaction(msg) && setting_disabled(SETTING_CF_SPLITCALLID)) {
-        guint scolumn_idx = (guint) g_ptr_array_data_index(info->columns, arrow->scolumn);
-        arrow->dcolumn = call_flow_column_get_starting(window, call->callid, msg_dst_address(msg), scolumn_idx);
-    } else {
-        arrow->dcolumn = call_flow_column_get_callid(window, call->callid, msg_dst_address(msg));
-    }
-
+    arrow->dcolumn = call_flow_column_get(window, msg_dst_address(msg));
     if (arrow->dcolumn == NULL) {
         arrow->dcolumn = call_flow_column_create(window, msg_dst_address(msg));
     }
-    call_flow_column_add_callid(arrow->dcolumn, call->callid);
 }
 
 /**
@@ -553,7 +517,7 @@ call_flow_create_arrows(Window *window)
     // Create pending SIP arrows
     Message *msg = NULL;
     while ((msg = call_group_get_next_msg(info->group, msg))) {
-        if (!call_flow_arrow_find(window, msg)) {
+        if (call_flow_arrow_find(window, msg) == NULL) {
             CallFlowArrow *arrow = call_flow_arrow_create(window, msg, CF_ARROW_SIP);
             // Get origin and destination column
             call_flow_arrow_set_columns(window, arrow);
@@ -995,12 +959,12 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // fallback: Just use any column that have the destination IP printed
     if (arrow->dcolumn == NULL) {
         arrow->dcolumn =
-            call_flow_column_get_callid(window, 0, address_from_str(stream->dst.ip));
+            call_flow_column_get(window, address_from_str(stream->dst.ip));
     }
 
     if (arrow->scolumn == NULL) {
         arrow->scolumn =
-            call_flow_column_get_callid(window, 0, address_from_str(stream->src.ip));
+            call_flow_column_get(window, address_from_str(stream->src.ip));
     }
 
     // Determine start and end position of the arrow line

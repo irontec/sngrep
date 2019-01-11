@@ -133,8 +133,6 @@ struct _CallFlowColumn
     const gchar *alias;
     //! Twin column for externip setting
     CallFlowColumn *twin;
-    //! Call Ids
-    GList *callids;
     //! Column position on the screen
     guint pos;
 };
