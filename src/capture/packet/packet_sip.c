@@ -288,7 +288,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         } else if (strcasecmp(hdr_name, "X-Call-ID") == 0) {
             sip_data->xcallid = hdr_value;
         } else if (strcasecmp(hdr_name, "To") == 0 || strcasecmp(hdr_name, "t") == 0) {
-            sip_data->initial = method != NULL && g_strstr_len(hdr_value, strlen(hdr_value), ";tag=") == NULL;
+            sip_data->initial = g_strstr_len(hdr_value, strlen(hdr_value), ";tag=") == NULL;
         } else if (strcasecmp(hdr_name, "Content-Length") == 0 || strcasecmp(hdr_name, "l") == 0) {
             sip_data->content_len = g_ascii_strtoull(hdr_value, NULL, 10);
         } else if (strcasecmp(hdr_name, "CSeq") == 0) {
