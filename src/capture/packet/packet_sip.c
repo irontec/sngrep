@@ -260,7 +260,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Add SIP information to the packet
     g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
 
-    guint sip_size = (guint) g_utf8_strlen(first_line, G_MAXUINT) + 2 /* CRLF */;
+    guint sip_size = (guint) strlen(first_line) + 2 /* CRLF */;
     gchar **headers = g_strsplit(payload->str, SIP_CRLF, 0);
     for (guint i = 1; i < g_strv_length(headers); i++) {
         const gchar *line = headers[i];
@@ -272,7 +272,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         }
 
         // Sip Headers Size
-        sip_size += g_utf8_strlen(line, G_MAXUINT) + 2 /* CRLF */;
+        sip_size += strlen(line) + 2 /* CRLF */;
 
         gchar **hdr_data = g_strsplit(line, ":", 2);
         if (g_strv_length(hdr_data) != 2) {
