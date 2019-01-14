@@ -55,24 +55,24 @@ set(SOURCES
         src/message.c
         src/timeval.c
         src/glib-extra.c
-)
+        )
 
 ######################################################################
 # HEP  Support
-option (USE_HEP "Enable HEP Support" ON)
+option(USE_HEP "Enable HEP Support" ON)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
     set(SOURCES ${SOURCES} src/capture/packet/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support
-option (USE_IPV6 "Enable IPv6 Support" ON)
+option(USE_IPV6 "Enable IPv6 Support" ON)
 
 # GnuTLS Support
-option (WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
+option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
     set(SOURCES ${SOURCES} src/capture/packet/packet_tls.c)
-endif(WITH_SSL)
+endif (WITH_SSL)
 
 ######################################################################
 add_executable(sngrep ${SOURCES})
@@ -87,7 +87,13 @@ pkg_check_modules(GLIB REQUIRED glib-2.0)
 include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
 
-pkg_check_modules(PCAP REQUIRED libpcap)
+find_program(PCAP_CONFIG_EXECUTABLE NAMES pcap-config)
+if (PCAP_CONFIG_EXECUTABLE)
+    exec_program(${PCAP_CONFIG_EXECUTABLE} ARGS --cflags OUTPUT_VARIABLE PCAP_CFLAGS )
+    exec_program(${PCAP_CONFIG_EXECUTABLE} ARGS --libs   OUTPUT_VARIABLE PCAP_LIBRARIES )
+else (PCAP_CONFIG_EXECUTABLE)
+    pkg_check_modules(PCAP REQUIRED libpcap)
+endif (PCAP_CONFIG_EXECUTABLE)
 include_directories(${PCAP_INCLUDE_DIRS})
 target_link_libraries(sngrep ${PCAP_LIBRARIES})
 
@@ -96,7 +102,7 @@ if (WITH_SSL)
     pkg_check_modules(GNUTLS REQUIRED gnutls)
     include_directories(${GNUTLS_INCLUDE_DIRS})
     target_link_libraries(sngrep ${GNUTLS_LIBRARIES} gcrypt)
-endif(WITH_SSL)
+endif (WITH_SSL)
 
 configure_file(
         ${PROJECT_SOURCE_DIR}/src/config.h.cmake
