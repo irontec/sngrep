@@ -434,9 +434,9 @@ call_flow_column_get_last(Window *window, Address addr)
 }
 
 static gint
-call_flow_column_sorter(CallFlowColumn **a, CallFlowColumn **b)
+call_flow_column_sorter(CallFlowColumn *a, CallFlowColumn *b)
 {
-    return (*a)->pos - (*b)->pos;
+    return a->pos - b->pos;
 }
 
 static CallFlowColumn *
@@ -476,8 +476,7 @@ call_flow_column_create(Window *window, Address addr)
     }
 
     // Add to columns list
-    info->columns = g_list_append(info->columns, column);
-//    info->columns = g_list_sort(info->columns, (GCompareFunc) call_flow_column_sorter);
+    info->columns = g_list_insert_sorted(info->columns, column, (GCompareFunc) call_flow_column_sorter);
 
     return column;
 }
