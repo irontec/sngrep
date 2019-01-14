@@ -285,7 +285,7 @@ attribute_getter_msg_date(G_GNUC_UNUSED Attribute *attr, Message *msg)
 static gchar *
 attribute_getter_msg_time(G_GNUC_UNUSED Attribute *attr, Message *msg)
 {
-    gchar value[15];
+    gchar value[16];
     return g_strdup(timeval_to_time(msg_get_time(msg), value));
 }
 
