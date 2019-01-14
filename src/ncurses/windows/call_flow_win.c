@@ -482,6 +482,12 @@ call_flow_column_create(Window *window, Address addr)
     return column;
 }
 
+void
+call_flow_column_free(CallFlowColumn *column)
+{
+    g_free(column);
+}
+
 static void
 call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, enum CallFlowArrowDir dir)
 {
@@ -497,9 +503,40 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, enum CallFlowA
     Message *msg = arrow->item;
 
     if (dir == CF_ARROW_DIR_ANY) {
-        // In normal mode, reuse columns whenever possible
-        arrow->scolumn = call_flow_column_get_first(window, msg_src_address(msg));
-        arrow->dcolumn = call_flow_column_get_first(window, msg_dst_address(msg));
+        // Try to reuse current call columns if found
+        Call *call = msg_get_call(msg);
+        g_return_if_fail(call != NULL);
+
+        GPtrArray *msgs = call->msgs;
+        for (guint i = 0; i < g_ptr_array_len(msgs); i++) {
+            CallFlowArrow *msg_arrow =
+                call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
+
+            if (msg_arrow == NULL)
+                continue;
+
+            if (addressport_equals(msg_src_address(msg), msg_arrow->scolumn->addr)
+                && addressport_equals(msg_dst_address(msg), msg_arrow->dcolumn->addr)) {
+                arrow->scolumn = msg_arrow->scolumn;
+                arrow->dcolumn = msg_arrow->dcolumn;
+                break;
+            }
+
+            if (addressport_equals(msg_src_address(msg), msg_arrow->dcolumn->addr)
+                && addressport_equals(msg_dst_address(msg), msg_arrow->scolumn->addr)) {
+                arrow->scolumn = msg_arrow->dcolumn;
+                arrow->dcolumn = msg_arrow->scolumn;
+                break;
+            }
+        }
+
+        // Fallback use any available arrow
+        if (arrow->scolumn == NULL)
+            arrow->scolumn = call_flow_column_get_first(window, msg_src_address(msg));
+
+        if (arrow->dcolumn == NULL)
+            arrow->dcolumn = call_flow_column_get_first(window, msg_dst_address(msg));
+
     } else if (dir == CF_ARROW_DIR_RIGHT) {
         arrow->scolumn = call_flow_column_get_first(window, msg_src_address(msg));
 
@@ -523,9 +560,8 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, enum CallFlowA
         }
 
         // If we need to create destination arrow, use nearest source column to the end
-        if (arrow->dcolumn == NULL) {
+        if (arrow->dcolumn == NULL)
             arrow->scolumn = call_flow_column_get_last(window, msg_src_address(msg));
-        }
 
     } else if (dir == CF_ARROW_DIR_LEFT) {
         arrow->scolumn = call_flow_column_get_last(window, msg_src_address(msg));
@@ -550,18 +586,16 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, enum CallFlowA
         }
 
         // If we need to create destination arrow, use nearest source column to the end
-        if (arrow->scolumn == NULL) {
+        if (arrow->scolumn == NULL)
             arrow->dcolumn = call_flow_column_get_last(window, msg_dst_address(msg));
-        }
     }
 
     // Create any non-existant columns
-    if (arrow->scolumn == NULL) {
+    if (arrow->scolumn == NULL)
         arrow->scolumn = call_flow_column_create(window, msg_src_address(msg));
-    }
-    if (arrow->dcolumn == NULL) {
+
+    if (arrow->dcolumn == NULL)
         arrow->dcolumn = call_flow_column_create(window, msg_dst_address(msg));
-    }
 }
 
 /**
@@ -1766,7 +1800,8 @@ call_flow_win_set_group(Window *window, CallGroup *group)
     CallFlowWinInfo *info = call_flow_win_info(window);
     g_return_if_fail(info != NULL);
 
-    g_list_free(info->columns);
+    g_list_free_full(info->columns, (GDestroyNotify) call_flow_column_free);
+    info->columns = NULL;
     g_ptr_array_remove_all(info->arrows);
 
     info->group = group;
