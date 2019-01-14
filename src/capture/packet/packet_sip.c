@@ -295,7 +295,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             gchar **cseq_data = g_strsplit(hdr_value, " ", 2);
             if (g_strv_length(cseq_data) != 2)
                 break;
-            sip_data->cseq = g_ascii_strtoull(cseq_data[1], NULL, 10);
+            sip_data->cseq = g_ascii_strtoull(cseq_data[0], NULL, 10);
         }
     }
 

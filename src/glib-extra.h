@@ -38,6 +38,8 @@
 #define g_ptr_array_last(array)  g_ptr_array_index(array, array->len-1)
 #define g_ptr_array_set(array, index, item)  (array->pdata[index] = item)
 
+#define g_list_last_data(list) g_list_last(list)->data
+
 /**
  * @brief Make a deep concat from one Double-Linked list to another
  *

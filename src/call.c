@@ -302,3 +302,19 @@ call_find_stream_exact(Call *call, Address src, Address dst)
     // Nothing found
     return NULL;
 }
+
+Message *
+call_find_message_cseq(Call *call, guint64 cseq)
+{
+    // TODO CSeq is not enough, Direction must be checked
+
+    // Search for the fist message with requested CSeq in the same direction
+    for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
+        Message *msg = g_ptr_array_index(call->msgs, i);
+        if (msg_get_cseq(msg) == cseq) {
+            return msg;
+        }
+    }
+
+    return NULL;
+}

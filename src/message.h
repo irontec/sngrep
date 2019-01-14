@@ -145,6 +145,13 @@ gboolean
 msg_is_initial_transaction(Message *msg);
 
 /**
+ * @brief Get CSeq Number for given SIP Message
+ * @return CSeq numeric header value
+ */
+guint64
+msg_get_cseq(Message *msg);
+
+/**
  * @brief Get SIP Message payload
  */
 const gchar *

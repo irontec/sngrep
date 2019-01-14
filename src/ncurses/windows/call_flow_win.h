@@ -85,10 +85,11 @@ enum CallFlowArrowType
  */
 enum CallFlowArrowDir
 {
-    CF_ARROW_RIGHT = 0,
-    CF_ARROW_LEFT,
-    CF_ARROW_SPIRAL_RIGHT,
-    CF_ARROW_SPIRAL_LEFT
+    CF_ARROW_DIR_ANY = 0,
+    CF_ARROW_DIR_RIGHT,
+    CF_ARROW_DIR_LEFT,
+    CF_ARROW_DIR_SPIRAL_RIGHT,
+    CF_ARROW_DIR_SPIRAL_LEFT
 };
 
 /**
@@ -164,9 +165,7 @@ struct _CallFlowWinInfo
     //! Current line for scrolling
     Scrollbar scroll;
     //! List of columns in the panel
-    GPtrArray *columns;
-    //! Max callids per column
-    guint maxcallids;
+    GList *columns;
     //! Print timestamp next to the arrow
     gboolean arrowtime;
 };

@@ -99,8 +99,17 @@ msg_is_request(Message *msg)
 gboolean
 msg_is_initial_transaction(Message *msg)
 {
-    return packet_sip_initial_transaction(msg->packet);
+    Message *first = call_find_message_cseq(msg->call, msg_get_cseq(msg));
+    g_return_val_if_fail(first != NULL, FALSE);
+    return packet_sip_initial_transaction(first->packet);
 }
+
+guint64
+msg_get_cseq(Message *msg)
+{
+    return packet_sip_cseq(msg->packet);
+}
+
 
 const gchar *
 msg_get_payload(Message *msg)

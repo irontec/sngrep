@@ -213,4 +213,11 @@ call_find_stream(Call *call, Address src, Address dst);
 RtpStream *
 call_find_stream_exact(Call *call, Address src, Address dst);
 
+/**
+ * @brief Get the first message of transaction with given CSeq
+ * @return First message of transacion or NULL if none found
+ */
+Message *
+call_find_message_cseq(Call *call, guint64 cseq);
+
 #endif /* __SNGREP_CALL_H */

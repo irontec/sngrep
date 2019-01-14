@@ -286,7 +286,7 @@ storage_check_sip_packet(Packet *packet)
             storage_calls_rotate();
 
         // Create the call if not found
-        if (!(call = call_create(sip_data->callid, sip_data->xcallid)))
+        if ((call = call_create(sip_data->callid, sip_data->xcallid)) == NULL)
             return NULL;
 
         // Add this Call-Id to hash table
