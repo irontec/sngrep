@@ -233,4 +233,12 @@ storage_sort_options();
 void
 storage_set_sort_options(StorageSortOpts sort);
 
+/**
+ * @brief Return queued packets to be checked count
+ *
+ * @return Pending packets current length
+ */
+gint
+storage_pending_packets();
+
 #endif /* __SNGREP_STORAGE_H */

@@ -378,7 +378,7 @@ main(int argc, char *argv[])
         ncurses_wait_for_input();
     } else {
         setbuf(stdout, NULL);
-        while (capture_is_running(manager)) {
+        while (capture_is_running(manager) || storage_pending_packets() >= 0) {
             if (!quiet)
                 g_print("\rDialog count: %d", storage_calls_count());
             g_usleep(500 * 1000);

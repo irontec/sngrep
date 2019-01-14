@@ -92,6 +92,7 @@ storage_calls_count()
 GPtrArray *
 storage_calls()
 {
+    g_ptr_array_sort(storage.calls, (GCompareFunc) storage_sorter);
     return storage.calls;
 }
 
@@ -324,7 +325,6 @@ storage_check_sip_packet(Packet *packet)
     if (newcall) {
         // Append this call to the call list
         g_ptr_array_add(storage.calls, call);
-        g_ptr_array_sort(storage.calls, (GCompareFunc) storage_sorter);
     }
 
     // Mark the list as changed
@@ -513,6 +513,12 @@ storage_init(StorageCaptureOpts capture_options,
     storage.thread = g_thread_new(NULL, (GThreadFunc) storage_check_packet, NULL);
 
     return TRUE;
+}
+
+gint
+storage_pending_packets()
+{
+    return g_async_queue_length(storage.pkt_queue);
 }
 
 void
