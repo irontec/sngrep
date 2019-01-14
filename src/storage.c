@@ -105,7 +105,8 @@ storage_calls_stats()
 
     // Total number of calls after filtering
     for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
-        if (filter_check_call(g_ptr_array_index(storage.calls, i), NULL))
+        Call *call = g_ptr_array_index(storage.calls, i);
+        if (call->filtered != 1)
             stats.displayed++;
     }
 
