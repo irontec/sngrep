@@ -126,13 +126,13 @@ packet_transport(Packet *packet)
 GTimeVal
 packet_time(const Packet *packet)
 {
-    PacketFrame *first;
+    PacketFrame *last;
     GTimeVal ts = { 0 };
 
-    // Return first frame timestamp
-    if (packet && (first = g_list_nth_data(packet->frames, 0))) {
-        ts.tv_sec = first->ts.tv_sec;
-        ts.tv_usec = first->ts.tv_usec;
+    // Return last frame timestamp
+    if (packet && (last = g_list_last_data(packet->frames))) {
+        ts.tv_sec = last->ts.tv_sec;
+        ts.tv_usec = last->ts.tv_usec;
     }
 
     // Return packe timestamp
