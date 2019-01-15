@@ -474,6 +474,26 @@ settings_init(int no_config)
 #endif
     g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
                     setting_bool_new("capture.rtp", SETTING_OFF));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_IP,
+                    setting_bool_new("capture.packet.ip", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_UDP,
+                    setting_bool_new("capture.packet.udp", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TCP,
+                    setting_bool_new("capture.packet.tcp", SETTING_OFF));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TLS,
+                    setting_bool_new("capture.packet.tls", SETTING_OFF));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_HEP,
+                    setting_bool_new("capture.packet.hep", SETTING_OFF));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_WS,
+                    setting_bool_new("capture.packet.ws", SETTING_OFF));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SIP,
+                    setting_bool_new("capture.packet.sip", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SDP,
+                    setting_bool_new("capture.packet.sdp", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTP,
+                    setting_bool_new("capture.packet.rtp", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTCP,
+                    setting_bool_new("capture.packet.rtcp", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_STORAGE,
                     setting_enum_new("capture.storage", "memory", "none,memory"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_ROTATE,

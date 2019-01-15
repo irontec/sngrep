@@ -29,6 +29,7 @@
 
 #include "config.h"
 #include <glib.h>
+#include "setting.h"
 #include "glib-extra.h"
 #include "packet/packet_link.h"
 #include "packet/packet_ip.h"
@@ -98,40 +99,53 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId 
                 dissector = packet_link_new();
                 break;
             case PACKET_IP:
-                dissector = packet_ip_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_IP))
+                    dissector = packet_ip_new();
                 break;
             case PACKET_UDP:
-                dissector = packet_udp_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_UDP))
+                    dissector = packet_udp_new();
                 break;
             case PACKET_TCP:
-                dissector = packet_tcp_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_TCP))
+                    dissector = packet_tcp_new();
                 break;
             case PACKET_SIP:
-                dissector = packet_sip_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_SIP))
+                    dissector = packet_sip_new();
                 break;
             case PACKET_SDP:
-                dissector = packet_sdp_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_SDP))
+                    dissector = packet_sdp_new();
                 break;
             case PACKET_RTP:
-                dissector = packet_rtp_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_RTP))
+                    dissector = packet_rtp_new();
                 break;
             case PACKET_RTCP:
-                dissector = packet_rtcp_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_RTCP))
+                    dissector = packet_rtcp_new();
                 break;
 #ifdef USE_HEP
             case PACKET_HEP:
-                dissector = packet_hep_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_HEP))
+                    dissector = packet_hep_new();
                 break;
 #endif
 #ifdef WITH_SSL
             case PACKET_TLS:
-                dissector = packet_tls_new();
+                if (setting_enabled(SETTING_CAPTURE_PACKET_TLS))
+                    dissector = packet_tls_new();
                 break;
 #endif
             default:
                 // Unsuported protocol id
                 return NULL;
         }
+
+        // Ignore not enabled dissectors
+        if (dissector == NULL)
+            return NULL;
 
         // Add to proto list
         g_ptr_array_set(parser->protos, id, dissector);
