@@ -394,8 +394,8 @@ call_list_columns_width(Window *window, guint columns)
     // If recquested column is 0, count all columns
     guint columncnt = (columns == 0) ? g_ptr_array_len(info->columns) : columns;
 
-    // Add extra width for spaces between columns
-    gint width = 5 + columncnt;
+    // Add extra width for spaces between columns + selection box + extra at the end
+    gint width = 7 + columncnt;
 
     // Sum all column widths
     for (guint i = 0; i < columncnt; i++) {
