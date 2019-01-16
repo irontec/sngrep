@@ -154,9 +154,13 @@ window_init(Window *window, int height, int width)
     window->height = height;
     window->x = window->y = 0;
 
+    // Get current screen dimensions
+    gint maxx, maxy;
+    getmaxyx(stdscr, maxy, maxx);
+
     // If panel doesn't fill the screen center it
-    if (window->height != LINES) window->x = (LINES - height) / 2;
-    if (window->width != COLS) window->y = (COLS - width) / 2;
+    if (window->height != maxy) window->x = abs((maxy - height) / 2);
+    if (window->width != maxx) window->y = abs((maxx - width) / 2);
 
     window->win = newwin(height, width, window->x, window->y);
     window->panel = new_panel(window->win);

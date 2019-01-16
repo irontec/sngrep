@@ -66,7 +66,7 @@ scrollbar_vertical_draw(Scrollbar scrollbar)
     scrollypos = height * (scrollbar.pos * 1.0f / scrollbar.max);
 
     // Draw the N blocks of the scrollbar
-    for (cline = scrollbar.preoffset; cline < scrollen; cline++) {
+    for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
         mvwaddch(scrollbar.win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
     }
 }
@@ -94,7 +94,7 @@ scrollbar_horizontal_draw(Scrollbar scrollbar)
     scrollxpos = width * (scrollbar.pos * 1.0f / scrollbar.max);
 
     // Draw the N blocks of the scrollbar
-    for (cline = scrollbar.preoffset; cline < scrollen; cline++) {
+    for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
         mvwaddch(scrollbar.win, scrollypos, cline + scrollxpos, ACS_CKBOARD);
     }
 }

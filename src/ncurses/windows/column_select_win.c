@@ -152,7 +152,7 @@ column_select_update_menu(Window *ui)
 static void
 column_select_update_columns(Window *ui)
 {
-    int column, attr_id;
+    int attr_id;
 
     // Get panel information
     ColumnSelectWinInfo *info = column_select_info(ui);
@@ -162,13 +162,13 @@ column_select_update_columns(Window *ui)
     g_ptr_array_remove_all(info->selected);
 
     // Add all selected columns
-    for (column = 0; column < item_count(info->menu); column++) {
+    for (gint i = 0; i < item_count(info->menu); i++) {
         // If column is active
-        if (!strncmp(item_name(info->items[column]), "[ ]", 3))
+        if (!strncmp(item_name(info->items[i]), "[ ]", 3))
             continue;
 
         // Get column attribute
-        attr_id = attr_find_by_name(item_userptr(info->items[column]));
+        attr_id = attr_find_by_name(item_userptr(info->items[i]));
 
         // Add a new column to the list
         CallListColumn *column = g_malloc0(sizeof(CallListColumn));

@@ -82,13 +82,13 @@ struct _Window
     //! Window for the curses panel
     WINDOW *win;
     //! Height of the curses window
-    int height;
+    gint height;
     //! Width of the curses window
-    int width;
+    gint width;
     //! Vertical starting position of the window
-    int x;
+    gint x;
     //! Horizontal starting position of the window
-    int y;
+    gint y;
     //! Panel Type @see PanelTypes enum
     enum WindowTypes type;
     //! Flag this panel as redraw required
