@@ -122,7 +122,7 @@ storage_calls_clear()
     g_hash_table_remove_all(storage.streams);
 
     // Remove all items from vector
-    g_ptr_array_free(storage.calls, TRUE);
+    g_ptr_array_remove_all(storage.calls);
 }
 
 void
