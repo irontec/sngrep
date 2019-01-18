@@ -121,6 +121,9 @@ packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray 
         rtp->encoding->id = codec;
     }
 
+    // Store RTP payload data
+    rtp->payload = g_byte_array_remove_range(data, 0, 12 /* RTP Headers */);
+
     // Set packet RTP informaiton
     g_ptr_array_set(packet->proto, PACKET_RTP, rtp);
 

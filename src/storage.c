@@ -193,6 +193,12 @@ storage_sort_options()
     return storage.sort;
 }
 
+StorageCaptureOpts
+storage_capture_options()
+{
+    return storage.capture;
+}
+
 static void
 storage_register_stream(RtpStream *stream)
 {

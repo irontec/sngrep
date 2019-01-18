@@ -613,7 +613,7 @@ settings_init(int no_config)
     g_ptr_array_set(settings->values, SETTING_CF_SDP_INFO,
                     setting_enum_new("cf.sdpinfo", SETTING_OFF, "off,first,full,compressed"));
     g_ptr_array_set(settings->values, SETTING_CF_MEDIA,
-                    setting_bool_new("cf.media", SETTING_OFF));
+                    setting_bool_new("cf.media", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CF_ONLYMEDIA,
                     setting_bool_new("cf.onlymedia", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CF_DELTA,

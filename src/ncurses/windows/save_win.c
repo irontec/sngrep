@@ -30,6 +30,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <form.h>
+#ifdef  WITH_SND
+#include <sndfile.h>
+#endif
+#include "capture/codecs/codec_g711a.h"
 #include "glib-extra.h"
 #include "setting.h"
 #include "filter.h"
@@ -74,16 +78,23 @@ save_draw(Window *window)
     StorageStats stats = storage_calls_stats();
 
     mvwprintw(window->win, 7, 3, "( ) all dialogs ");
-    mvwprintw(window->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
-    mvwprintw(window->win, 9, 3, "( ) filtered dialogs [%d]", stats.displayed);
+    if (info->group != NULL) {
+        mvwprintw(window->win, 8, 3, "( ) selected dialogs [%d]", call_group_count(info->group));
+        mvwprintw(window->win, 9, 3, "( ) filtered dialogs [%d]", stats.displayed);
+    }
 
     // Print 'current SIP message' field label if required
     if (info->msg != NULL)
         mvwprintw(window->win, 10, 3, "( ) current SIP message");
 
-    mvwprintw(window->win, 7, 35, "( ) .pcap (SIP)");
-    mvwprintw(window->win, 8, 35, "( ) .pcap (SIP + RTP)");
-    mvwprintw(window->win, 9, 35, "( ) .txt");
+    if (info->stream != NULL) {
+        mvwprintw(window->win, 7, 3, "( ) current stream");
+        mvwprintw(window->win, 7, 35, "( ) .wav");
+    } else {
+        mvwprintw(window->win, 7, 35, "( ) .pcap (SIP)");
+        mvwprintw(window->win, 8, 35, "( ) .pcap (SIP + RTP)");
+        mvwprintw(window->win, 9, 35, "( ) .txt");
+    }
 
     // Get filename field value.
     memset(field_value, 0, sizeof(field_value));
@@ -98,6 +109,8 @@ save_draw(Window *window)
     } else {
         if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP)
             mvwprintw(window->win, 4, 60, ".pcap");
+        else if (info->saveformat == SAVE_WAV)
+            mvwprintw(window->win, 4, 60, ".wav");
         else
             mvwprintw(window->win, 4, 60, ".txt ");
     }
@@ -109,13 +122,17 @@ save_draw(Window *window)
                      (info->savemode == SAVE_DISPLAYED) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_MESSAGE], 0,
                      (info->savemode == SAVE_MESSAGE) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_STREAM], 0,
+                     (info->savemode == SAVE_STREAM) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_PCAP], 0, (info->saveformat == SAVE_PCAP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, (info->saveformat == SAVE_PCAP_RTP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_TXT], 0, (info->saveformat == SAVE_TXT) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_WAV], 0, (info->saveformat == SAVE_WAV) ? "*" : " ");
 
     // Show disabled options with makers
-    if (!setting_enabled(SETTING_CAPTURE_RTP))
+    if (info->group != NULL && setting_disabled(SETTING_CAPTURE_RTP)) {
         set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, "-");
+    }
 
     set_current_field(info->form, current_field(info->form));
     form_driver(info->form, REQ_VALIDATION);
@@ -131,6 +148,88 @@ save_packet_cb(Packet *packet, CaptureOutput *output)
 {
     output->write(output, packet);
 }
+
+#ifdef WITH_SND
+
+static gboolean
+save_stream_to_file(Window *window)
+{
+    // Get panel information
+    SaveWinInfo *info = save_info(window);
+    g_return_val_if_fail(info != NULL, false);
+
+    char savepath[SETTING_MAX_LEN];
+    char savefile[SETTING_MAX_LEN];
+    char fullfile[SETTING_MAX_LEN * 2];
+
+    // Get current path field value.
+    memset(savepath, 0, sizeof(savepath));
+    strcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0));
+    g_strstrip(savepath);
+    if (strlen(savepath))
+        strcat(savepath, "/");
+
+    // Get current file field value.
+    memset(savefile, 0, sizeof(savefile));
+    strcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    g_strstrip(savefile);
+
+    if (!strlen(savefile)) {
+        dialog_run("Please enter a valid filename");
+        return false;
+    }
+
+    if (!strstr(savefile, ".wav"))
+        strcat(savefile, ".wav");
+
+    // Absolute filename
+    sprintf(fullfile, "%s%s", savepath, savefile);
+
+    if (access(fullfile, R_OK) == 0) {
+        if (dialog_confirm("Overwrite confirmation",
+                           "Selected file already exits.\n Do you want to overwrite it?",
+                           "Yes,No") != 0)
+            return false;
+    }
+
+    SF_INFO file_info;
+    file_info.samplerate = 8000;
+    file_info.channels = 1;
+    file_info.format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
+
+    RtpStream *stream = info->stream;
+    GByteArray *rtp_payload = g_byte_array_new();
+
+    for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
+        Packet *packet = g_ptr_array_index(stream->packets, i);
+        PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
+        g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
+    }
+
+    gint16 *decoded = NULL;
+    switch (stream->fmtcode) {
+        case RTP_CODEC_G711A:
+            decoded = codec_g711a_decode(rtp_payload);
+            break;
+        default:
+            dialog_run("Unsupported RTP payload type %d", stream->fmtcode);
+            return false;
+    }
+
+    // Failed to decode data
+    if (decoded == NULL) {
+        dialog_run("error: Failed to decode RTP payload");
+        return false;
+    }
+
+    SNDFILE *file = sf_open(fullfile, SFM_WRITE, &file_info);
+    sf_write_short(file, decoded, rtp_payload->len);
+    sf_close(file);
+    dialog_run("%d RTP bytes decoded into %s", rtp_payload->len, fullfile);
+    return true;
+}
+
+#endif
 
 /**
  * @brief Save form data to options
@@ -386,6 +485,9 @@ save_handle_key(Window *window, int key)
                     case FLD_SAVE_TXT:
                         info->saveformat = SAVE_TXT;
                         break;
+                    case FLD_SAVE_WAV:
+                        info->saveformat = SAVE_WAV;
+                        break;
                     case FLD_SAVE_FILE:
                         form_driver(info->form, key);
                         break;
@@ -395,7 +497,13 @@ save_handle_key(Window *window, int key)
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_SAVE_CANCEL) {
-                    save_to_file(window);
+                    if (info->savemode == SAVE_STREAM) {
+#ifdef WITH_SND
+                        save_stream_to_file(window);
+#endif
+                    } else {
+                        save_to_file(window);
+                    }
                 }
                 return KEY_DESTROY;
             default:
@@ -438,6 +546,13 @@ save_set_group(Window *window, CallGroup *group)
     if (call_group_count(group)) {
         info->savemode = SAVE_SELECTED;
     }
+
+    field_opts_on(info->fields[FLD_SAVE_SELECTED], O_ACTIVE | O_VISIBLE);
+    field_opts_on(info->fields[FLD_SAVE_DISPLAYED], O_ACTIVE | O_VISIBLE);
+    field_opts_on(info->fields[FLD_SAVE_ALL], O_ACTIVE | O_VISIBLE);
+    field_opts_on(info->fields[FLD_SAVE_PCAP], O_ACTIVE | O_VISIBLE);
+    field_opts_on(info->fields[FLD_SAVE_TXT], O_ACTIVE | O_VISIBLE);
+    field_opts_on(info->fields[FLD_SAVE_PCAP_RTP], O_VISIBLE);
 }
 
 void
@@ -451,8 +566,27 @@ save_set_msg(Window *window, Message *msg)
     info->msg = msg;
 
     // make 'current SIP message' field visible
-    field_opts_on(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
+    field_opts_on(info->fields[FLD_SAVE_MESSAGE], O_ACTIVE | O_VISIBLE);
 }
+
+void
+save_set_stream(Window *window, RtpStream *stream)
+{
+    // Get panel information
+    SaveWinInfo *info = save_info(window);
+    g_return_if_fail(info != NULL);
+    g_return_if_fail(stream != NULL);
+
+    info->stream = stream;
+    info->savemode = SAVE_STREAM;
+    info->saveformat = SAVE_WAV;
+
+    // make 'current stream' field visible
+    field_opts_on(info->fields[FLD_SAVE_STREAM], O_ACTIVE | O_VISIBLE);
+    field_opts_on(info->fields[FLD_SAVE_WAV], O_ACTIVE | O_VISIBLE);
+    field_opts_off(info->fields[FLD_SAVE_ALL], O_ACTIVE | O_VISIBLE);
+}
+
 
 void
 save_win_free(Window *window)
@@ -508,9 +642,11 @@ save_win_new()
     info->fields[FLD_SAVE_SELECTED] = new_field(1, 1, 8, 4, 0, 0);
     info->fields[FLD_SAVE_DISPLAYED] = new_field(1, 1, 9, 4, 0, 0);
     info->fields[FLD_SAVE_MESSAGE] = new_field(1, 1, 10, 4, 0, 0);
+    info->fields[FLD_SAVE_STREAM] = new_field(1, 1, 7, 4, 0, 0);
     info->fields[FLD_SAVE_PCAP] = new_field(1, 1, 7, 36, 0, 0);
     info->fields[FLD_SAVE_PCAP_RTP] = new_field(1, 1, 8, 36, 0, 0);
     info->fields[FLD_SAVE_TXT] = new_field(1, 1, 9, 36, 0, 0);
+    info->fields[FLD_SAVE_WAV] = new_field(1, 1, 7, 36, 0, 0);
     info->fields[FLD_SAVE_SAVE] = new_field(1, 10, window->height - 2, 20, 0, 0);
     info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, window->height - 2, 40, 0, 0);
     info->fields[FLD_SAVE_COUNT] = NULL;
@@ -523,7 +659,14 @@ save_win_new()
     field_opts_off(info->fields[FLD_SAVE_ALL], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_SELECTED], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_AUTOSKIP);
-    field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
+    field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_SELECTED], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_STREAM], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_PCAP], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_PCAP_RTP], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_TXT], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_WAV], O_ACTIVE);
 
     // Limit max save path and file length
     set_max_field(info->fields[FLD_SAVE_PATH], SETTING_MAX_LEN);

@@ -37,5 +37,6 @@
 
 #cmakedefine WITH_SSL
 
+#cmakedefine WITH_SND
 
 #endif

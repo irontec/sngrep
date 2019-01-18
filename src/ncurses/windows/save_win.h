@@ -52,9 +52,11 @@ enum SaveWinField
     FLD_SAVE_SELECTED,
     FLD_SAVE_DISPLAYED,
     FLD_SAVE_MESSAGE,
+    FLD_SAVE_STREAM,
     FLD_SAVE_PCAP,
     FLD_SAVE_PCAP_RTP,
     FLD_SAVE_TXT,
+    FLD_SAVE_WAV,
     FLD_SAVE_SAVE,
     FLD_SAVE_CANCEL,
     FLD_SAVE_COUNT
@@ -68,7 +70,8 @@ enum SaveWinMode
     SAVE_ALL = 0,
     SAVE_SELECTED,
     SAVE_DISPLAYED,
-    SAVE_MESSAGE
+    SAVE_MESSAGE,
+    SAVE_STREAM
 };
 
 /**
@@ -78,7 +81,8 @@ enum SaveWinFormat
 {
     SAVE_PCAP = 0,
     SAVE_PCAP_RTP,
-    SAVE_TXT
+    SAVE_TXT,
+    SAVE_WAV
 };
 
 //! Sorter declaration of struct save_info
@@ -103,6 +107,8 @@ struct _SaveWinInfo
     CallGroup *group;
     //! Message to be saved
     Message *msg;
+    //! Stream to be saved
+    RtpStream *stream;
 };
 
 /**
@@ -151,5 +157,17 @@ save_set_group(Window *window, CallGroup *group);
  */
 void
 save_set_msg(Window *window, Message *msg);
+
+/**
+ * @brief Set the SIP message to be saved
+ *
+ * This function will access the panel information and will set the
+ * pointer to the selected SIP message
+ *
+ * @param window UI structure pointer
+ * @param stream Stream packets to be saved
+ */
+void
+save_set_stream(Window *window, RtpStream *stream);
 
 #endif

@@ -51,12 +51,16 @@
 // If stream does not receive a packet in this seconds, we consider it inactive
 #define STREAM_INACTIVE_SECS 3
 
+#define RTP_CODEC_G711A 8
+
+
 typedef struct _PacketRtpData PacketRtpData;
 typedef struct _PacketRtpEncoding PacketRtpEncoding;
 
 struct _PacketRtpData
 {
     PacketRtpEncoding *encoding;
+    GByteArray *payload;
 };
 
 struct _PacketRtpEncoding

@@ -74,6 +74,12 @@ if (WITH_SSL)
     set(SOURCES ${SOURCES} src/capture/packet/packet_tls.c)
 endif (WITH_SSL)
 
+# libsnd Support
+option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
+if (WITH_SND)
+    set(SOURCES ${SOURCES} src/capture/codecs/codec_g711a.c)
+endif (WITH_SND)
+
 ######################################################################
 add_executable(sngrep ${SOURCES})
 target_link_libraries(sngrep pcap)
@@ -104,6 +110,13 @@ if (WITH_SSL)
     target_link_libraries(sngrep ${GNUTLS_LIBRARIES} gcrypt)
 endif (WITH_SSL)
 
+if (WITH_SND)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SND REQUIRED sndfile)
+    include_directories(${SND_INCLUDE_DIRS})
+    target_link_libraries(sngrep ${SND_LIBRARIES})
+endif (WITH_SND)
+
 configure_file(
         ${PROJECT_SOURCE_DIR}/src/config.h.cmake
         ${PROJECT_SOURCE_DIR}/src/config.h
@@ -131,6 +144,7 @@ endif (DISPLAY_LOGO)
 message(" ")
 message("   sngrep configure finished                               ")
 message(" ======================================================    ")
+message(" SND Support                  : ${WITH_SND}                ")
 message(" SSL Support                  : ${WITH_SSL}	   	        ")
 message(" HEP Support                  : ${USE_HEP}                 ")
 message(" IPv6 Support                 : ${USE_IPV6}                ")

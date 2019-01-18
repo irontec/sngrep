@@ -226,6 +226,14 @@ StorageSortOpts
 storage_sort_options();
 
 /**
+ * @brief Get Storage Capture options
+ *
+ * @return Struct containing capture options
+ */
+StorageCaptureOpts
+storage_capture_options();
+
+/**
  * @brief Set Storage Sorting options
  *
  * @param sort Struct with sorting information

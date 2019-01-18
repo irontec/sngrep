@@ -80,7 +80,7 @@ call_flow_win_info(Window *window)
     return (CallFlowWinInfo *) panel_userptr(window->panel);
 }
 
-/*
+/**
  * @brief Return selected flow arrow
  *
  * User can select an arrow to compare times or payload with another
@@ -1564,6 +1564,7 @@ call_flow_handle_key(Window *window, int key)
     int raw_width;
     Window *next_window;
     Call *call = NULL;
+    CallFlowArrow *cur_arrow = NULL;
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CF_SCROLLSTEP);
 
     // Sanity check, this should not happen
@@ -1663,13 +1664,27 @@ call_flow_handle_key(Window *window, int key)
                 call_flow_win_set_group(window, info->group);
                 break;
             case ACTION_SAVE:
-                if (capture_sources_count(capture_manager()) > 1) {
-                    dialog_run("Saving is not possible when multiple input sources are specified.");
-                    break;
+                cur_arrow = g_ptr_array_index(info->darrows, info->cur_idx);
+                if (cur_arrow->type == CF_ARROW_SIP) {
+                    if (capture_sources_count(capture_manager()) > 1) {
+                        dialog_run("Saving is not possible when multiple input sources are specified.");
+                        break;
+                    }
+                    next_window = ncurses_create_window(WINDOW_SAVE);
+                    save_set_group(next_window, info->group);
+                    save_set_msg(next_window, call_flow_arrow_message(cur_arrow));
                 }
-                next_window = ncurses_create_window(WINDOW_SAVE);
-                save_set_group(next_window, info->group);
-                save_set_msg(next_window, call_flow_arrow_message(g_ptr_array_index(info->darrows, info->cur_idx)));
+#ifdef WITH_SND
+                if (cur_arrow->type == CF_ARROW_RTP) {
+                    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
+                    if (!storageCaptureOpts.rtp) {
+                        dialog_run("RTP is not being stored in memory, so saving RTP is disabled.");
+                        break;
+                    }
+                    next_window = ncurses_create_window(WINDOW_SAVE);
+                    save_set_stream(next_window, cur_arrow->item);
+                }
+#endif
                 break;
             case ACTION_AUTH_VALIDATE:
                 next_window = ncurses_create_window(WINDOW_AUTH_VALIDATE);
