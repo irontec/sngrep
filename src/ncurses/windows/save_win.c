@@ -30,8 +30,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <form.h>
+#include <pulse/simple.h>
 #ifdef  WITH_SND
 #include <sndfile.h>
+#endif
+#ifdef WITH_G729
+#include "capture/codecs/codec_g729.h"
 #endif
 #include "capture/codecs/codec_g711a.h"
 #include "glib-extra.h"
@@ -207,10 +211,16 @@ save_stream_to_file(Window *window)
     }
 
     gint16 *decoded = NULL;
+    gsize decoded_len = 0;
     switch (stream->fmtcode) {
         case RTP_CODEC_G711A:
-            decoded = codec_g711a_decode(rtp_payload);
+            decoded = codec_g711a_decode(rtp_payload, &decoded_len);
             break;
+#ifdef WITH_G729
+        case RTP_CODEC_G729:
+            decoded = codec_g729_decode(rtp_payload, &decoded_len);
+            break;
+#endif
         default:
             dialog_run("Unsupported RTP payload type %d", stream->fmtcode);
             return false;
@@ -223,7 +233,7 @@ save_stream_to_file(Window *window)
     }
 
     SNDFILE *file = sf_open(fullfile, SFM_WRITE, &file_info);
-    sf_write_short(file, decoded, rtp_payload->len);
+    sf_write_short(file, decoded, decoded_len);
     sf_close(file);
     dialog_run("%d RTP bytes decoded into %s", rtp_payload->len, fullfile);
     return true;

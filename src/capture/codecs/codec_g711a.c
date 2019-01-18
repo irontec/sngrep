@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file g711a.c
+ * @file codec_g711a.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to decode g711a (alaw) RTP packets
@@ -70,11 +70,13 @@ gint16 alaw_exp_table[256] = {
 // @formatter:on
 
 gint16 *
-codec_g711a_decode(GByteArray *input)
+codec_g711a_decode(GByteArray *input, gsize *decoded_len)
 {
     g_return_val_if_fail(input != NULL, 0);
 
-    gint16 *out = g_malloc(input->len * sizeof(gint16));
+    *decoded_len = input->len * sizeof(gint16);
+    gint16 *out = g_malloc(*decoded_len);
+
 
     for (guint i = 0; i < input->len; i++) {
         out[i] = alaw_exp_table[input->data[i]];

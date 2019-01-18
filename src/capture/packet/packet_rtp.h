@@ -52,6 +52,7 @@
 #define STREAM_INACTIVE_SECS 3
 
 #define RTP_CODEC_G711A 8
+#define RTP_CODEC_G729  18
 
 
 typedef struct _PacketRtpData PacketRtpData;

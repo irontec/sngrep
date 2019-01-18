@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file g711a.h
+ * @file codec_g711a.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to decode g711a (alaw) RTP packets
@@ -30,7 +30,9 @@
 #ifndef __SNGREP_G711A_H
 #define __SNGREP_G711A_H
 
+#include <glib.h>
+
 gint16 *
-codec_g711a_decode(GByteArray *input);
+codec_g711a_decode(GByteArray *input, gsize *decoded_len);
 
 #endif
