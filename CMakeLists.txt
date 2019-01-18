@@ -18,6 +18,7 @@ set(SOURCES
         src/capture/address.c
         src/capture/packet.c
         src/capture/parser.c
+        src/capture/codecs/codec_g711a.c
         src/capture/packet/packet_link.c
         src/capture/packet/packet_ip.c
         src/capture/packet/packet_tcp.c
@@ -59,7 +60,7 @@ set(SOURCES
 
 ######################################################################
 # HEP  Support
-option(USE_HEP "Enable HEP Support" ON)
+option(USE_HEP "Enable HEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
     set(SOURCES ${SOURCES} src/capture/packet/packet_hep.c)
@@ -76,9 +77,12 @@ endif (WITH_SSL)
 
 # libsnd Support
 option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
-if (WITH_SND)
-    set(SOURCES ${SOURCES} src/capture/codecs/codec_g711a.c)
-endif (WITH_SND)
+option(WITH_PULSEAUDIO "Enable pulseaudio support (for playing RTP streams)" OFF)
+
+option(WITH_G729 "Enable g729 RTP decoding" OFF)
+if (WITH_G729)
+    set(SOURCES ${SOURCES} src/capture/codecs/codec_g729.c)
+endif (WITH_G729)
 
 ######################################################################
 add_executable(sngrep ${SOURCES})
@@ -95,8 +99,8 @@ target_link_libraries(sngrep ${GLIB_LIBRARIES})
 
 find_program(PCAP_CONFIG_EXECUTABLE NAMES pcap-config)
 if (PCAP_CONFIG_EXECUTABLE)
-    exec_program(${PCAP_CONFIG_EXECUTABLE} ARGS --cflags OUTPUT_VARIABLE PCAP_CFLAGS )
-    exec_program(${PCAP_CONFIG_EXECUTABLE} ARGS --libs   OUTPUT_VARIABLE PCAP_LIBRARIES )
+    exec_program(${PCAP_CONFIG_EXECUTABLE} ARGS --cflags OUTPUT_VARIABLE PCAP_CFLAGS)
+    exec_program(${PCAP_CONFIG_EXECUTABLE} ARGS --libs OUTPUT_VARIABLE PCAP_LIBRARIES)
 else (PCAP_CONFIG_EXECUTABLE)
     pkg_check_modules(PCAP REQUIRED libpcap)
 endif (PCAP_CONFIG_EXECUTABLE)
@@ -104,18 +108,29 @@ include_directories(${PCAP_INCLUDE_DIRS})
 target_link_libraries(sngrep ${PCAP_LIBRARIES})
 
 if (WITH_SSL)
-    find_package(PkgConfig REQUIRED)
     pkg_check_modules(GNUTLS REQUIRED gnutls)
     include_directories(${GNUTLS_INCLUDE_DIRS})
     target_link_libraries(sngrep ${GNUTLS_LIBRARIES} gcrypt)
 endif (WITH_SSL)
 
 if (WITH_SND)
-    find_package(PkgConfig REQUIRED)
     pkg_check_modules(SND REQUIRED sndfile)
     include_directories(${SND_INCLUDE_DIRS})
     target_link_libraries(sngrep ${SND_LIBRARIES})
 endif (WITH_SND)
+
+if (WITH_PULSEAUDIO)
+    pkg_check_modules(PULSE REQUIRED libpulse-simple)
+    include_directories(${PULSE_INCLUDE_DIRS})
+    target_link_libraries(sngrep ${PULSE_LIBRARIES})
+endif (WITH_PULSEAUDIO)
+
+
+if (WITH_G729)
+    pkg_check_modules(BCG729 REQUIRED libbcg729)
+    include_directories(${BCG729_INCLUDE_DIRS})
+    target_link_libraries(sngrep ${BCG729_LIBRARIES})
+endif (WITH_G729)
 
 configure_file(
         ${PROJECT_SOURCE_DIR}/src/config.h.cmake
@@ -146,6 +161,8 @@ message("   sngrep configure finished                               ")
 message(" ======================================================    ")
 message(" SND Support                  : ${WITH_SND}                ")
 message(" SSL Support                  : ${WITH_SSL}	   	        ")
+message(" Pulseaudio Support           : ${WITH_PULSEAUDIO}         ")
+message(" g729 Support                 : ${WITH_G729}               ")
 message(" HEP Support                  : ${USE_HEP}                 ")
 message(" IPv6 Support                 : ${USE_IPV6}                ")
 message(" ======================================================    ")
