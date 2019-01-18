@@ -60,7 +60,7 @@ set(SOURCES
 
 ######################################################################
 # HEP  Support
-option(USE_HEP "Enable HEP Support" OFF)
+option(USE_HEP "Enable HEP/EEP Support" ON)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
     set(SOURCES ${SOURCES} src/capture/packet/packet_hep.c)
@@ -77,8 +77,14 @@ endif (WITH_SSL)
 
 # libsnd Support
 option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
-option(WITH_PULSEAUDIO "Enable pulseaudio support (for playing RTP streams)" OFF)
 
+# Pulseaudio Support
+option(WITH_PULSEAUDIO "Enable pulseaudio support (for playing RTP streams)" OFF)
+if (WITH_PULSEAUDIO)
+    set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
+endif(WITH_PULSEAUDIO)
+
+# G.729 decoding support
 option(WITH_G729 "Enable g729 RTP decoding" OFF)
 if (WITH_G729)
     set(SOURCES ${SOURCES} src/capture/codecs/codec_g729.c)
@@ -127,7 +133,7 @@ endif (WITH_PULSEAUDIO)
 
 
 if (WITH_G729)
-    pkg_check_modules(BCG729 REQUIRED libbcg729)
+    pkg_check_modules(BCG729 REQUIRED libbcg729>=1.0.0)
     include_directories(${BCG729_INCLUDE_DIRS})
     target_link_libraries(sngrep ${BCG729_LIBRARIES})
 endif (WITH_G729)

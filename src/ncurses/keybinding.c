@@ -70,6 +70,7 @@ Keybinding bindings[ACTION_SENTINEL] = {
     { ACTION_SHOW_COLUMNS,     "columns",         { KEY_F(10), 't', 'T' },                           3 },
     { ACTION_SHOW_SETTINGS,    "settings",        { KEY_F(8),  'o', 'O' },                           3 },
     { ACTION_SHOW_STATS,       "stats",           { 'i' },                                           1 },
+    { ACTION_SHOW_PLAYER,      "player",          { 'p', 'P' },                                      2 },
     { ACTION_COLUMN_MOVE_UP,   "columnup",        { '-' },                                           1 },
     { ACTION_COLUMN_MOVE_DOWN, "columndown",      { '+' },                                           1 },
     { ACTION_SDP_INFO,         "sdpinfo",         { KEY_F(2),  'd' },                                2 },

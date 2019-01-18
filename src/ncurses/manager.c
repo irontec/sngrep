@@ -49,6 +49,9 @@
 #include "ncurses/windows/stats_win.h"
 #include "ncurses/windows/save_win.h"
 #include "ncurses/windows/settings_win.h"
+#ifdef WITH_PULSEAUDIO
+#include "ncurses/windows/rtp_player_win.h"
+#endif
 
 /**
  * @brief Active windows list
@@ -236,6 +239,11 @@ ncurses_find_by_type(enum WindowTypes type)
         case WINDOW_AUTH_VALIDATE:
             window = auth_validate_win_new();
             break;
+#ifdef WITH_PULSEAUDIO
+        case WINDOW_RTP_PLAYER:
+            window = rtp_player_win_new();
+            break;
+#endif
         default:
             break;
     }

@@ -63,6 +63,7 @@ enum WindowTypes
     WINDOW_SETTINGS,         // Settings panel
     WINDOW_AUTH_VALIDATE,    // Authentication validator panel
     WINDOW_STATS,            // Stats panel
+    WINDOW_RTP_PLAYER,       // RTP Player panel
 };
 
 //! Shorter declaration of ui structure
