@@ -1689,6 +1689,7 @@ call_flow_handle_key(Window *window, int key)
                 }
 #endif
                 break;
+#ifdef WITH_PULSEAUDIO
             case ACTION_SHOW_PLAYER:
                 cur_arrow = g_ptr_array_index(info->darrows, info->cur_idx);
                 if (cur_arrow->type == CF_ARROW_RTP) {
@@ -1696,6 +1697,7 @@ call_flow_handle_key(Window *window, int key)
                     rtp_player_set_stream(next_window, cur_arrow->item);
                 }
                 break;
+#endif
             case ACTION_AUTH_VALIDATE:
                 next_window = ncurses_create_window(WINDOW_AUTH_VALIDATE);
                 auth_validate_set_group(next_window, info->group);
