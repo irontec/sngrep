@@ -1,16 +1,13 @@
 #!/usr/bin/make -f
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DUSE_IPV6=ON -DUSE_HEP=ON -DWITH_SSL=ON -DWITH_G729=ON -DWITH_PULSEAUDIO=ON -DWITH_SND=ON
-
-override_dh_strip:
-	dh_strip --dbg-package=sngrep-dbg
-
-override_dh_auto_install:
-	dh_auto_install --destdir=debian/sngrep
-
-override_dh_installdocs:
-	dh_installdocs --link-doc=sngrep
+	dh_auto_configure -- \
+        -DUSE_IPV6=ON \
+        -DUSE_HEP=ON \
+        -DWITH_SSL=ON \
+        -DWITH_G729=ON \
+        -DWITH_PULSEAUDIO=ON \
+        -DWITH_SND=ON
 
 %:
-	dh $@ --with autoreconf
+	dh $@ --buildsystem=cmake

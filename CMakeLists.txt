@@ -8,6 +8,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -p -g")
 add_compile_options(-Wall -pedantic -Wextra)
 
+include(GNUInstallDirs)
+
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/ncurses)
 include_directories(${CMAKE_SOURCE_DIR}/src/ncurses/windows)
@@ -92,7 +94,10 @@ endif (WITH_G729)
 
 ######################################################################
 add_executable(sngrep ${SOURCES})
-target_link_libraries(sngrep pcap)
+install(
+    TARGETS sngrep
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CURSES REQUIRED ncursesw menuw panelw formw)
@@ -120,20 +125,20 @@ if (WITH_SSL)
 endif (WITH_SSL)
 
 if (WITH_SND)
-    pkg_check_modules(SND REQUIRED sndfile)
+    pkg_check_modules(SND sndfile)
     include_directories(${SND_INCLUDE_DIRS})
     target_link_libraries(sngrep ${SND_LIBRARIES})
 endif (WITH_SND)
 
 if (WITH_PULSEAUDIO)
-    pkg_check_modules(PULSE REQUIRED libpulse-simple)
+    pkg_check_modules(PULSE REQUIRED libpulse)
     include_directories(${PULSE_INCLUDE_DIRS})
     target_link_libraries(sngrep ${PULSE_LIBRARIES})
 endif (WITH_PULSEAUDIO)
 
 
 if (WITH_G729)
-    pkg_check_modules(BCG729 REQUIRED libbcg729>=1.0.0)
+    pkg_check_modules(BCG729 REQUIRED libbcg729>=1.0.4)
     include_directories(${BCG729_INCLUDE_DIRS})
     target_link_libraries(sngrep ${BCG729_LIBRARIES})
 endif (WITH_G729)
@@ -146,6 +151,9 @@ configure_file(
 ######################################################################
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_XOPEN_SOURCE_EXTENDED)
+
+######################################################################
+install(TARGETS sngrep RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ######################################################################
 # Print Logo
