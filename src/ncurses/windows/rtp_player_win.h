@@ -56,6 +56,15 @@ struct _RtpPlayerInfo
     gsize decoded_len;
     //! Current player position
     gsize player_pos;
+    //! Player stream information
+    pa_sample_spec ss;
+    //! Player current latency
+    pa_usec_t latency;
+    //! Player buffer attributes
+    pa_buffer_attr bufattr;
+    //! Underflow counter
+    gint underflow;
+
 };
 
 void

@@ -133,7 +133,7 @@ rtp_player_handle_key(Window *window, int key)
 }
 
 static void
-rtp_player_write_cb(pa_stream *s, size_t length, void *userdata)
+rtp_player_write_cb(pa_stream *s, size_t length, gpointer userdata)
 {
     RtpPlayerInfo *info = rtp_player_win_info(userdata);
     g_return_if_fail(info != NULL);
@@ -150,6 +150,22 @@ rtp_player_write_cb(pa_stream *s, size_t length, void *userdata)
     pa_stream_write(s, info->decoded + info->player_pos, length, NULL, 0LL, PA_SEEK_RELATIVE);
     if (info->player_pos < info->decoded_len) {
         info->player_pos += length / 2;
+    }
+}
+
+void
+rtp_player_underflow_cb(pa_stream *s, gpointer userdata)
+{
+    RtpPlayerInfo *info = rtp_player_win_info(userdata);
+    g_return_if_fail(info != NULL);
+
+    info->underflow++;
+    if (info->underflow >= 6 && info->latency < 2000000) {
+        info->latency = (info->latency * 3) / 2;
+        info->bufattr.maxlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
+        info->bufattr.tlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
+        pa_stream_set_buffer_attr(s, &info->bufattr, NULL, NULL);
+        info->underflow = 0;
     }
 }
 
@@ -191,24 +207,23 @@ rtp_player_set_stream(Window *window, RtpStream *stream)
     }
 
     // Stream information
-    pa_sample_spec ss = {0};
-    ss.format = PA_SAMPLE_S16NE;
-    ss.channels = 1;
-    ss.rate = 8000;
+    info->ss.format = PA_SAMPLE_S16NE;
+    info->ss.channels = 1;
+    info->ss.rate = 8000;
 
     // Create a new stream with decoded data
-    info->playback = pa_stream_new(info->pa_ctx, "sngrep RTP stream", &ss, NULL);
+    info->playback = pa_stream_new(info->pa_ctx, "sngrep RTP stream", &info->ss, NULL);
     g_return_if_fail(info->playback != NULL);
     pa_stream_set_write_callback(info->playback, rtp_player_write_cb, window);
+    pa_stream_set_underflow_callback(info->playback, rtp_player_underflow_cb, NULL);
 
-    pa_buffer_attr bufattr;
-    pa_usec_t latency = 20000;
-    bufattr.fragsize = (uint32_t) -1;
-    bufattr.maxlength = (uint32_t) pa_usec_to_bytes(latency, &ss);
-    bufattr.minreq = (uint32_t) pa_usec_to_bytes(0, &ss);
-    bufattr.prebuf = (uint32_t) -1;
-    bufattr.tlength = (uint32_t) pa_usec_to_bytes(latency, &ss);
-    pa_stream_connect_playback(info->playback, NULL, &bufattr,
+    info->latency = 20000;
+    info->bufattr.fragsize = (guint32) -1;
+    info->bufattr.maxlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
+    info->bufattr.minreq = (guint32) pa_usec_to_bytes(0, &info->ss);
+    info->bufattr.prebuf = (guint32) -1;
+    info->bufattr.tlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
+    pa_stream_connect_playback(info->playback, NULL, &info->bufattr,
                                PA_STREAM_INTERPOLATE_TIMING
                                | PA_STREAM_ADJUST_LATENCY
                                | PA_STREAM_AUTO_TIMING_UPDATE, NULL, NULL);
@@ -292,20 +307,13 @@ rtp_player_win_new()
     info->pa_ctx = pa_context_new(info->pa_mlapi, "sngrep RTP Player");
     pa_context_connect(info->pa_ctx, NULL, 0, NULL);
 
-    // This function defines a callback so the server will tell us it's state.
-    // Our callback will wait for the state to be ready.  The callback will
-    // modify the variable to 1 so we know when we have a connection and it's
-    // ready.
-    // If there's an error, the callback will set pa_ready to 2
     gint pa_ready;
     pa_context_set_state_callback(info->pa_ctx, pa_state_cb, &pa_ready);
-
-    // We can't do anything until PA is ready, so just iterate the mainloop
-    // and continue
     while (pa_ready == 0) {
         pa_mainloop_iterate(info->pa_ml, 1, NULL);
     }
     if (pa_ready == 2) {
+        dialog_run("Failed to connect to PulseAudio server.");
         return NULL;
     }
 
