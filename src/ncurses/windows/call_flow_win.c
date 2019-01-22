@@ -123,7 +123,7 @@ call_flow_arrow_selected(Window *window)
 static GTimeVal
 call_flow_arrow_time(const CallFlowArrow *arrow)
 {
-    GTimeVal ts = { 0 };
+    GTimeVal ts = {0};
     Message *msg;
     RtpStream *stream;
 
@@ -206,8 +206,8 @@ call_flow_arrow_find(Window *window, const void *data)
 
     guint index;
     if (g_ptr_array_find_with_equal_func(
-        info->arrows, data,
-        (GEqualFunc) call_flow_arrow_find_item_cb, &index)) {
+            info->arrows, data,
+            (GEqualFunc) call_flow_arrow_find_item_cb, &index)) {
         return g_ptr_array_index(info->arrows, index);
     }
 
@@ -512,7 +512,7 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, enum CallFlowA
         GPtrArray *msgs = call->msgs;
         for (guint i = 0; i < g_ptr_array_len(msgs); i++) {
             CallFlowArrow *msg_arrow =
-                call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
+                    call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
 
             if (msg_arrow == NULL)
                 continue;
@@ -609,17 +609,17 @@ static void
 call_flow_draw_footer(Window *window)
 {
     const char *keybindings[] = {
-        key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
-        key_action_key_str(ACTION_CONFIRM), "Raw",
-        key_action_key_str(ACTION_SELECT), "Compare",
-        key_action_key_str(ACTION_SHOW_HELP), "Help",
-        key_action_key_str(ACTION_SDP_INFO), "SDP",
-        key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP",
-        key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
-        key_action_key_str(ACTION_COMPRESS), "Compressed",
-        key_action_key_str(ACTION_SHOW_RAW), "Raw",
-        key_action_key_str(ACTION_CYCLE_COLOR), "Colour by",
-        key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
+            key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
+            key_action_key_str(ACTION_CONFIRM), "Raw",
+            key_action_key_str(ACTION_SELECT), "Compare",
+            key_action_key_str(ACTION_SHOW_HELP), "Help",
+            key_action_key_str(ACTION_SDP_INFO), "SDP",
+            key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP",
+            key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
+            key_action_key_str(ACTION_COMPRESS), "Compressed",
+            key_action_key_str(ACTION_SHOW_RAW), "Raw",
+            key_action_key_str(ACTION_CYCLE_COLOR), "Colour by",
+            key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
     };
 
     window_draw_bindings(window, keybindings, 22);
@@ -641,20 +641,10 @@ call_flow_create_arrows(Window *window)
     Message *msg = NULL;
     while ((msg = call_group_get_next_msg(info->group, msg))) {
         if (call_flow_arrow_find(window, msg) == NULL) {
-            CallFlowArrow *arrow = call_flow_arrow_create(window, msg, CF_ARROW_SIP);
-            if (setting_disabled(SETTING_CF_SPLITCALLID)
-                && msg_is_initial_transaction(msg)) {
-                // Force Initial Transaction Arrows direction
-                call_flow_arrow_set_columns(
-                    window, arrow,
-                    msg_is_request(msg) ? CF_ARROW_DIR_RIGHT : CF_ARROW_DIR_LEFT);
-            } else {
-                // Get origin and destination column
-                call_flow_arrow_set_columns(
-                    window, arrow,
-                    CF_ARROW_DIR_ANY);
-            }
-            g_ptr_array_add(info->arrows, arrow);
+            g_ptr_array_add(
+                    info->arrows,
+                    call_flow_arrow_create(window, msg, CF_ARROW_SIP)
+            );
         }
     }
 
@@ -669,6 +659,29 @@ call_flow_create_arrows(Window *window)
 
     // Sort arrows by time
     g_ptr_array_sort(info->arrows, (GCompareFunc) call_flow_arrow_time_sorter);
+
+    // Set arrow columns after sorting arrows by time
+    for (guint i = 0; i < g_ptr_array_len(info->arrows); i++) {
+        CallFlowArrow *arrow = g_ptr_array_index(info->arrows, i);
+
+        if (arrow->type != CF_ARROW_SIP)
+            continue;
+
+        Message *msg = call_flow_arrow_message(arrow);
+
+        if (setting_disabled(SETTING_CF_SPLITCALLID)
+            && msg_is_initial_transaction(msg)) {
+            // Force Initial Transaction Arrows direction
+            call_flow_arrow_set_columns(
+                    window, arrow,
+                    msg_is_request(msg) ? CF_ARROW_DIR_RIGHT : CF_ARROW_DIR_LEFT);
+        } else {
+            // Get origin and destination column
+            call_flow_arrow_set_columns(
+                    window, arrow,
+                    CF_ARROW_DIR_ANY);
+        }
+    }
 }
 
 /**
@@ -777,7 +790,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     char msg_method[ATTR_MAXLEN];
     char msg_time[80];
     char method[ATTR_MAXLEN + 7];
-    char delta[15] = { 0 };
+    char delta[15] = {0};
     char mediastr[40];
     guint64 color = 0;
     int msglen;
@@ -1085,12 +1098,12 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // fallback: Just use any column that have the destination IP printed
     if (arrow->dcolumn == NULL) {
         arrow->dcolumn =
-            call_flow_column_get_first(window, address_from_str(stream->dst.ip));
+                call_flow_column_get_first(window, address_from_str(stream->dst.ip));
     }
 
     if (arrow->scolumn == NULL) {
         arrow->scolumn =
-            call_flow_column_get_first(window, address_from_str(stream->src.ip));
+                call_flow_column_get_first(window, address_from_str(stream->src.ip));
     }
 
     // Determine start and end position of the arrow line
@@ -1678,15 +1691,15 @@ call_flow_handle_key(Window *window, int key)
                     save_set_msg(next_window, call_flow_arrow_message(cur_arrow));
                 }
 #ifdef WITH_SND
-                if (cur_arrow->type == CF_ARROW_RTP) {
-                    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
-                    if (!storageCaptureOpts.rtp) {
-                        dialog_run("RTP is not being stored in memory, so saving RTP is disabled.");
-                        break;
-                    }
-                    next_window = ncurses_create_window(WINDOW_SAVE);
-                    save_set_stream(next_window, cur_arrow->item);
+            if (cur_arrow->type == CF_ARROW_RTP) {
+                StorageCaptureOpts storageCaptureOpts = storage_capture_options();
+                if (!storageCaptureOpts.rtp) {
+                    dialog_run("RTP is not being stored in memory, so saving RTP is disabled.");
+                    break;
                 }
+                next_window = ncurses_create_window(WINDOW_SAVE);
+                save_set_stream(next_window, cur_arrow->item);
+            }
 #endif
                 break;
 #ifdef WITH_PULSE
