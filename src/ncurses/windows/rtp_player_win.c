@@ -53,27 +53,21 @@ rtp_player_draw(Window *window)
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_val_if_fail(info != NULL, 1);
 
-
-    gint perc = ((float) (info->player_pos * 2) / info->decoded_len) * 100;
-
     gint width = getmaxx(window->win);
     mvwhline(window->win, 4, 4, '-', width - 19);
     mvwaddch(window->win, 4, 3, '[');
     mvwaddch(window->win, 4, width - 15, ']');
 
-    gint decoded_mins = (info->decoded_len / 8000 / 2) / 60;
-    gint decoded_secs = (info->decoded_len / 8000 / 2) % 60;
-    gint current_mins = (info->player_pos / 8000) / 60;
-    gint current_secs = (info->player_pos / 8000) % 60;
-
-
     mvwprintw(window->win, 4, width - 13, "%02d:%02d/%02d:%02d",
-              current_mins, current_secs,
-              decoded_mins, decoded_secs
+              (info->player_pos / 8000) / 60,      /* current minutes */
+              (info->player_pos / 8000) % 60,      /* current seconds */
+              (info->decoded_len / 8000 / 2) / 60, /* decoded minutes */
+              (info->decoded_len / 8000 / 2) % 60  /* decoded seconds */
     );
 
+    gint perc = ((float) (info->player_pos * 2) / info->decoded_len) * 100;
     if (perc > 0 && perc <= 100) {
-        mvwhline(window->win, 4, 4, ACS_CKBOARD, (width - 19) * ((float) perc / 100));
+        mvwhline(window->win, 4, 4, ACS_CKBOARD, ((width - 19) * ((float) perc / 100)));
     }
 
     return 0;
@@ -208,12 +202,12 @@ rtp_player_set_stream(Window *window, RtpStream *stream)
     pa_stream_set_write_callback(info->playback, rtp_player_write_cb, window);
 
     pa_buffer_attr bufattr;
-    gint latency = 20000;
+    pa_usec_t latency = 20000;
     bufattr.fragsize = (uint32_t) -1;
-    bufattr.maxlength = pa_usec_to_bytes(latency, &ss);
-    bufattr.minreq = pa_usec_to_bytes(0, &ss);
+    bufattr.maxlength = (uint32_t) pa_usec_to_bytes(latency, &ss);
+    bufattr.minreq = (uint32_t) pa_usec_to_bytes(0, &ss);
     bufattr.prebuf = (uint32_t) -1;
-    bufattr.tlength = pa_usec_to_bytes(latency, &ss);
+    bufattr.tlength = (uint32_t) pa_usec_to_bytes(latency, &ss);
     pa_stream_connect_playback(info->playback, NULL, &bufattr,
                                PA_STREAM_INTERPOLATE_TIMING
                                | PA_STREAM_ADJUST_LATENCY
@@ -230,7 +224,10 @@ rtp_player_free(Window *window)
     g_return_if_fail(info != NULL);
 
     pa_mainloop_quit(info->pa_ml, 0);
-
+    pa_stream_disconnect(info->playback);
+    pa_context_disconnect(info->pa_ctx);
+    pa_context_unref(info->pa_ctx);
+    pa_mainloop_free(info->pa_ml);
     g_free(window);
 }
 

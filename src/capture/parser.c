@@ -40,7 +40,7 @@
 #include "capture/dissectors/packet_rtp.h"
 #include "capture/dissectors/packet_rtcp.h"
 #ifdef WITH_SSL
-#include "packet/packet_tls.h"
+#include "capture/dissectors/packet_tls.h"
 #endif
 #ifdef USE_HEP
 #include "capture/dissectors/packet_hep.h"
