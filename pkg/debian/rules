@@ -9,5 +9,8 @@ override_dh_auto_configure:
         -DWITH_PULSE=ON \
         -DWITH_SND=ON
 
+override_dh_strip:
+	dh_strip --dbg-package=sngrep-dbg
+
 %:
 	dh $@ --buildsystem=cmake
