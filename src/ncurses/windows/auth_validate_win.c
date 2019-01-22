@@ -27,7 +27,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include "capture/packet/packet_sip.h"
+#include "capture/dissectors/packet_sip.h"
 #include "ncurses/dialog.h"
 #include "auth_validate_win.h"
 

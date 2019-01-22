@@ -52,7 +52,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include "glib-extra.h"
-#include "capture/packet/packet_sip.h"
+#include "capture/dissectors/packet_sip.h"
 #include "storage.h"
 #include "setting.h"
 #include "filter.h"

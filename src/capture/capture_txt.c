@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include "timeval.h"
 #include "packet.h"
-#include "capture/packet/packet_sip.h"
+#include "capture/dissectors/packet_sip.h"
 #include "capture/capture_txt.h"
 
 GQuark

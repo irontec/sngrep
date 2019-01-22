@@ -21,14 +21,14 @@ set(SOURCES
         src/capture/packet.c
         src/capture/parser.c
         src/capture/codecs/codec_g711a.c
-        src/capture/packet/packet_link.c
-        src/capture/packet/packet_ip.c
-        src/capture/packet/packet_tcp.c
-        src/capture/packet/packet_udp.c
-        src/capture/packet/packet_sip.c
-        src/capture/packet/packet_sdp.c
-        src/capture/packet/packet_rtp.c
-        src/capture/packet/packet_rtcp.c
+        src/capture/dissectors/packet_link.c
+        src/capture/dissectors/packet_ip.c
+        src/capture/dissectors/packet_tcp.c
+        src/capture/dissectors/packet_udp.c
+        src/capture/dissectors/packet_sip.c
+        src/capture/dissectors/packet_sdp.c
+        src/capture/dissectors/packet_rtp.c
+        src/capture/dissectors/packet_rtcp.c
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
@@ -65,7 +65,7 @@ set(SOURCES
 option(USE_HEP "Enable HEP/EEP Support" ON)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
-    set(SOURCES ${SOURCES} src/capture/packet/packet_hep.c)
+    set(SOURCES ${SOURCES} src/capture/dissectors/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support
@@ -74,7 +74,7 @@ option(USE_IPV6 "Enable IPv6 Support" ON)
 # GnuTLS Support
 option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
-    set(SOURCES ${SOURCES} src/capture/packet/packet_tls.c)
+    set(SOURCES ${SOURCES} src/capture/dissectors/packet_tls.c)
 endif (WITH_SSL)
 
 # libsnd Support

@@ -30,7 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <form.h>
-#include "capture/packet/packet_sip.h"
+#include "capture/dissectors/packet_sip.h"
 #include "ncurses/manager.h"
 #include "filter_win.h"
 #include "call_list_win.h"
