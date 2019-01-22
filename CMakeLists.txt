@@ -81,10 +81,10 @@ endif (WITH_SSL)
 option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
 
 # Pulseaudio Support
-option(WITH_PULSEAUDIO "Enable pulseaudio support (for playing RTP streams)" OFF)
-if (WITH_PULSEAUDIO)
+option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" OFF)
+if (WITH_PULSE)
     set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
-endif(WITH_PULSEAUDIO)
+endif(WITH_PULSE)
 
 # G.729 decoding support
 option(WITH_G729 "Enable g729 RTP decoding" OFF)
@@ -130,11 +130,11 @@ if (WITH_SND)
     target_link_libraries(sngrep ${SND_LIBRARIES})
 endif (WITH_SND)
 
-if (WITH_PULSEAUDIO)
+if (WITH_PULSE)
     pkg_check_modules(PULSE REQUIRED libpulse)
     include_directories(${PULSE_INCLUDE_DIRS})
     target_link_libraries(sngrep ${PULSE_LIBRARIES})
-endif (WITH_PULSEAUDIO)
+endif (WITH_PULSE)
 
 
 if (WITH_G729)
@@ -175,7 +175,7 @@ message("   sngrep configure finished                               ")
 message(" ======================================================    ")
 message(" SND Support                  : ${WITH_SND}                ")
 message(" SSL Support                  : ${WITH_SSL}	   	        ")
-message(" Pulseaudio Support           : ${WITH_PULSEAUDIO}         ")
+message(" Pulseaudio Support           : ${WITH_PULSE}         ")
 message(" g729 Support                 : ${WITH_G729}               ")
 message(" HEP Support                  : ${USE_HEP}                 ")
 message(" IPv6 Support                 : ${USE_IPV6}                ")

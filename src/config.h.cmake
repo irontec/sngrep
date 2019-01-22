@@ -39,7 +39,7 @@
 
 #cmakedefine WITH_SND
 
-#cmakedefine WITH_PULSEAUDIO
+#cmakedefine WITH_PULSE
 
 #cmakedefine WITH_G729
 

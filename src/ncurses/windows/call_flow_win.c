@@ -37,7 +37,7 @@
 #include "ncurses/windows/msg_diff_win.h"
 #include "ncurses/windows/auth_validate_win.h"
 #include "ncurses/windows/save_win.h"
-#ifdef WITH_PULSEAUDIO
+#ifdef WITH_PULSE
 #include "ncurses/windows/rtp_player_win.h"
 #endif
 #include "glib-extra.h"
@@ -1689,7 +1689,7 @@ call_flow_handle_key(Window *window, int key)
                 }
 #endif
                 break;
-#ifdef WITH_PULSEAUDIO
+#ifdef WITH_PULSE
             case ACTION_SHOW_PLAYER:
                 cur_arrow = g_ptr_array_index(info->darrows, info->cur_idx);
                 if (cur_arrow->type == CF_ARROW_RTP) {
