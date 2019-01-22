@@ -9,15 +9,5 @@ override_dh_auto_configure:
         -DWITH_PULSE=ON \
         -DWITH_SND=ON
 
-override_dh_strip:
-	dh_strip --dbg-package=sngrep-dbg
-
-override_dh_auto_install:
-	dh_auto_install --destdir=debian/sngrep
-
-override_dh_installdocs:
-	dh_installdocs --link-doc=sngrep
->>>>>>> 8558e88... build: replace WITH_PULSEADIO with WITH_PULSE option
-
 %:
 	dh $@ --buildsystem=cmake
