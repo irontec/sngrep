@@ -4,9 +4,16 @@ project(sngrep
         LANGUAGES C)
 
 set(PROJECT_NAME sngrep)
-set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -p -g")
 add_compile_options(-Wall -pedantic -Wextra)
+
+if (CMAKE_VERSION VERSION_LESS "3.1")
+    if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        set(CMAKE_C_FLAGS "-std=gnu11 ${CMAKE_C_FLAGS}")
+    endif ()
+else ()
+    set(CMAKE_C_STANDARD 11)
+endif ()
 
 include(GNUInstallDirs)
 
@@ -84,7 +91,7 @@ option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
 option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" OFF)
 if (WITH_PULSE)
     set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
-endif(WITH_PULSE)
+endif (WITH_PULSE)
 
 # G.729 decoding support
 option(WITH_G729 "Enable g729 RTP decoding" OFF)
@@ -95,8 +102,8 @@ endif (WITH_G729)
 ######################################################################
 add_executable(sngrep ${SOURCES})
 install(
-    TARGETS sngrep
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        TARGETS sngrep
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 find_package(PkgConfig REQUIRED)
