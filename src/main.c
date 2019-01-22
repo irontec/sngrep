@@ -56,6 +56,15 @@ print_version_info()
             #ifdef USE_HEP
             " * Compiled with HEPv3 support.\n"
             #endif
+            #ifdef WITH_G729
+            " * Compiled with G.729 support.\n"
+            #endif
+            #ifdef WITH_SND
+            " * Compiled with libsnd support (Save to .wav)\n"
+            #endif
+            #ifdef WITH_PULSE
+            " * Compiled with pulseaudio support\n"
+            #endif
             "\nWritten by Ivan Alonso [aka Kaian]\n",
             PACKAGE, VERSION);
 }
