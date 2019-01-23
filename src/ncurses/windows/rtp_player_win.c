@@ -45,24 +45,36 @@ rtp_player_draw(Window *window)
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_val_if_fail(info != NULL, 1);
 
-    if (info->pa_state == PA_CONTEXT_TERMINATED ||
-        info->pa_state == PA_CONTEXT_FAILED) {
-        mvwprintw(window->win, 4, 3, "Failed to connect to PulseAudio server.");
-        return 0;
+    mvwprintw(window->win, 6, 3, "Status: ");
+
+    switch (info->pa_state) {
+        case PA_CONTEXT_TERMINATED:
+        case PA_CONTEXT_FAILED:
+            wattron(window->win, COLOR_PAIR(CP_RED_ON_DEF));
+            mvwprintw(window->win, 6, 11, "Error     ");
+            wattroff(window->win, COLOR_PAIR(CP_RED_ON_DEF));
+            break;
+        case PA_CONTEXT_READY:
+            wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
+            mvwprintw(window->win, 6, 11, "Ready     ");
+            wattroff(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
+            break;
+        default:
+            mvwprintw(window->win, 6, 11, "Connecting");
+            break;
     }
 
-    if (info->pa_state != PA_CONTEXT_READY) {
-        mvwprintw(window->win, 4, 3, "Connecting to PulseAudio server...");
-        return 0;
-    }
-
-    if (!info->connected) {
+    if (info->pa_state == PA_CONTEXT_READY && !info->connected) {
         pa_stream_connect_playback(info->playback, NULL, &info->bufattr,
                                    PA_STREAM_INTERPOLATE_TIMING
                                    | PA_STREAM_ADJUST_LATENCY
                                    | PA_STREAM_AUTO_TIMING_UPDATE, NULL, NULL);
         info->connected = true;
     }
+
+    mvwprintw(window->win, 6, 22, "Latency: %d", info->latency);
+    mvwprintw(window->win, 6, 42, "Underflows: %d", info->underflow);
+
 
     gint width = getmaxx(window->win);
     mvwhline(window->win, 4, 4, '-', width - 19);
@@ -269,7 +281,7 @@ rtp_player_win_new()
     window->handle_key = rtp_player_handle_key;
 
     // Cerate a new indow for the panel and form
-    window_init(window, 9, 68);
+    window_init(window, 11, 68);
 
     // Initialize save panel specific data
     RtpPlayerInfo *info = g_malloc0(sizeof(RtpPlayerInfo));
@@ -284,7 +296,7 @@ rtp_player_win_new()
     mvwhline(window->win, window->height - 3, 1, ACS_HLINE, window->width - 1);
     mvwaddch(window->win, window->height - 3, 0, ACS_LTEE);
     mvwaddch(window->win, window->height - 3, window->width - 1, ACS_RTEE);
-    mvwprintw(window->win, 7, 12, "Use arrow keys to change playback position");
+    mvwprintw(window->win, window->height - 2, 12, "Use arrow keys to change playback position");
     wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     mvwprintw(window->win, 1, 27, "RTP Stream Player");
