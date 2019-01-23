@@ -45,9 +45,6 @@ call_create(const gchar *callid, const gchar *xcallid)
     // Create a vector to store call messages
     call->msgs = g_ptr_array_new_with_free_func((GDestroyNotify) msg_free);
 
-    // Create an empty vector to store rtp packets
-    call->rtp_packets = g_sequence_new((GDestroyNotify) packet_free);
-
     // Create an empty vector to strore stream data
     call->streams = g_ptr_array_new_with_free_func((GDestroyNotify) stream_free);
 
@@ -72,8 +69,6 @@ call_destroy(gpointer item)
     g_ptr_array_free(call->msgs, TRUE);
     // Remove all call streams
     g_ptr_array_free(call->streams, TRUE);
-    // Remove all call rtp packets
-    g_sequence_free(call->rtp_packets);
     // Remove all xcalls
     g_ptr_array_free(call->xcalls, TRUE);
 

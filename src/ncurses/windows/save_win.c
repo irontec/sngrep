@@ -80,6 +80,8 @@ save_draw(Window *window)
 
     // Get filter stats
     StorageStats stats = storage_calls_stats();
+    // Get Storage options
+    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
 
     mvwprintw(window->win, 7, 3, "( ) all dialogs ");
     if (info->group != NULL) {
@@ -107,7 +109,7 @@ save_draw(Window *window)
 
     mvwprintw(window->win, 4, 60, "     ");
     if (strstr(field_value, ".pcap")) {
-        info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP)) ? SAVE_PCAP_RTP : SAVE_PCAP;
+        info->saveformat = (storageCaptureOpts.rtp) ? SAVE_PCAP_RTP : SAVE_PCAP;
     } else if (strstr(field_value, ".txt")) {
         info->saveformat = SAVE_TXT;
     } else {
@@ -134,7 +136,7 @@ save_draw(Window *window)
     set_field_buffer(info->fields[FLD_SAVE_WAV], 0, (info->saveformat == SAVE_WAV) ? "*" : " ");
 
     // Show disabled options with makers
-    if (info->group != NULL && setting_disabled(SETTING_CAPTURE_RTP)) {
+    if (info->group != NULL && !storageCaptureOpts.rtp) {
         set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, "-");
     }
 
@@ -359,8 +361,12 @@ save_to_file(Window *window)
 
             total += call_msg_count(call);
 
-            if (info->saveformat == SAVE_PCAP_RTP)
-                total += g_sequence_get_length(call->rtp_packets);
+            if (info->saveformat == SAVE_PCAP_RTP) {
+                for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
+                    RtpStream *stream = g_ptr_array_index(call->streams, j);
+                    total += stream_get_count(stream);
+                }
+            }
         }
 
         progress = dialog_progress_run("Saving packets...");
@@ -383,11 +389,10 @@ save_to_file(Window *window)
 
             // Save RTP packets
             if (info->saveformat == SAVE_PCAP_RTP) {
-                GSequenceIter *rtps = g_sequence_get_begin_iter(call->rtp_packets);
-                for (; !g_sequence_iter_is_end(rtps); rtps = g_sequence_iter_next(rtps)) {
-                    // Update progress bar dialog
+                for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
+                    RtpStream *stream = g_ptr_array_index(call->streams, j);
                     dialog_progress_set_value(progress, (++cur * 100) / total);
-                    g_ptr_array_add(packets, g_sequence_get(rtps));
+                    g_ptr_array_add_array(packets, stream->packets);
                 }
             }
         }
@@ -687,8 +692,9 @@ save_win_new()
     set_field_back(info->fields[FLD_SAVE_FILE], A_UNDERLINE);
 
     // Disable Save RTP if RTP packets are not being captured
-    if (!setting_enabled(SETTING_CAPTURE_RTP))
-        field_opts_off(info->fields[FLD_SAVE_PCAP_RTP], O_ACTIVE);
+    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
+    if (storageCaptureOpts.rtp)
+        field_opts_on(info->fields[FLD_SAVE_PCAP_RTP], O_ACTIVE);
 
     // Create the form and post it
     info->form = new_form(info->fields);
@@ -755,7 +761,7 @@ save_win_new()
 
     // Set default save modes
     info->savemode = (stats.displayed == stats.total) ? SAVE_ALL : SAVE_DISPLAYED;
-    info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP)) ? SAVE_PCAP_RTP : SAVE_PCAP;
+    info->saveformat = (storageCaptureOpts.rtp) ? SAVE_PCAP_RTP : SAVE_PCAP;
 
     return window;
 }
