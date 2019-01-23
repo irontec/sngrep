@@ -68,6 +68,10 @@ typedef struct _Packet Packet;
 //! Shorter declaration of frame structure
 typedef struct _PacketFrame PacketFrame;
 
+// Forward declarations
+struct _PacketParser;
+typedef struct _PacketParser PacketParser;
+
 /**
  * @brief Packet capture data.
  *
@@ -77,6 +81,8 @@ typedef struct _PacketFrame PacketFrame;
  */
 struct _Packet
 {
+    //! Parser who processed this packet
+    PacketParser *parser;
     //! Each packet protocol information
     GPtrArray *proto;
     //! Packet frame list (frame_t)
@@ -102,7 +108,7 @@ struct _PacketFrame
 };
 
 Packet *
-packet_new();
+packet_new(PacketParser *parser);
 
 void
 packet_free(Packet *packet);

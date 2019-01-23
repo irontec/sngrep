@@ -56,6 +56,7 @@ msg_free(Message *msg)
     // Free message packets
     packet_free(msg->packet);
     // Free all memory
+    g_hash_table_destroy(msg->attributes);
     g_free(msg);
 }
 

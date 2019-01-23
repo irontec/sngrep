@@ -396,8 +396,13 @@ main(int argc, char *argv[])
             g_print("\rDialog count: %d\n", storage_calls_count());
     }
 
-    // Capture deinit
+    // Capture stop
     capture_manager_stop(manager);
+
+    // Deallocate sip stored messages
+    storage_deinit();
+
+    // Capture deinit
     capture_manager_free(manager);
 
     // Deinitialize interface
@@ -405,9 +410,6 @@ main(int argc, char *argv[])
 
     // Deinitialize configuration options
     settings_deinit();
-
-    // Deallocate sip stored messages
-    storage_deinit();
 
     // Leaving!
     return 0;

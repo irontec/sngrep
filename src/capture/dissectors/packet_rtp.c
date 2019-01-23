@@ -132,11 +132,23 @@ packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray 
     return NULL;
 }
 
+static void
+packet_rtp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+{
+    g_return_if_fail(packet != NULL);
+    PacketRtpData *rtp_data = g_ptr_array_index(packet->proto, PACKET_RTP);
+    g_return_if_fail(rtp_data != NULL);
+
+    g_byte_array_free(rtp_data->payload, TRUE);
+    g_free(rtp_data);
+}
+
 PacketDissector *
 packet_rtp_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_RTP;
     proto->dissect = packet_rtp_parse;
+    proto->free = packet_rtp_free;
     return proto;
 }

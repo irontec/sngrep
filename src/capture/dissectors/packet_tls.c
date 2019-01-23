@@ -438,7 +438,7 @@ packet_tls_connection_dir(SSLConnection *conn, Address addr)
 static SSLConnection *
 packet_tls_connection_find(PacketParser *parser, Address src, Address dst)
 {
-    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors, PACKET_TLS);
+    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
     g_return_val_if_fail(priv != NULL, NULL);
 
     for (GSList *l = priv->connections; l != NULL; l = l->next) {
@@ -845,7 +845,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     Address tlsserver = capture_tls_server(capture_manager());
 
-    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors, PACKET_TLS);
+    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
     g_return_val_if_fail(priv != NULL, NULL);
 
     // Get TCP/IP data from this packet
@@ -932,7 +932,7 @@ static void
 packet_tls_init(PacketParser *parser)
 {
     DissectorTlsData *tls_data = g_malloc0(sizeof(DissectorTlsData));
-    g_ptr_array_set(parser->dissectors, PACKET_TLS, tls_data);
+    g_ptr_array_set(parser->dissectors_priv, PACKET_TLS, tls_data);
 }
 
 PacketDissector *

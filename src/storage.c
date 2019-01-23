@@ -461,11 +461,17 @@ storage_check_packet()
         Packet *packet = g_async_queue_timeout_pop(storage.pkt_queue, 500000);
         if (packet) {
             if (packet_has_type(packet, PACKET_SIP)) {
-                storage_check_sip_packet(packet);
+                if (storage_check_sip_packet(packet) == NULL) {
+                    packet_free(packet);
+                }
             } else if (packet_has_type(packet, PACKET_RTP)) {
-                storage_check_rtp_packet(packet);
+                if (storage_check_rtp_packet(packet) == NULL) {
+                    packet_free(packet);
+                }
             } else if (packet_has_type(packet, PACKET_RTCP)) {
-                storage_check_rtcp_packet(packet);
+                if (storage_check_rtcp_packet(packet) == NULL) {
+                    packet_free(packet);
+                }
             }
 
         }

@@ -46,7 +46,7 @@ packet_ip_sort_fragments(const PacketIpFragment **a, const PacketIpFragment **b)
 static GByteArray *
 packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
-    DissectorIpData *priv = g_ptr_array_index(parser->dissectors, PACKET_IP);
+    DissectorIpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_IP);
     g_return_val_if_fail(priv != NULL, NULL);
 
     // Get IP header
@@ -101,12 +101,15 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             break;
 #endif
         default:
+            g_free(fragment);
             return NULL;
     }
 
     // IP packet without payload
-    if (fragment->len == 0)
+    if (fragment->len == 0) {
+        g_free(fragment);
         return NULL;
+    }
 
     // Save IP Addresses into packet
     PacketIpData *ipdata = g_malloc0(sizeof(PacketIpData));
@@ -199,6 +202,15 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 }
 
 static void
+packet_ip_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+{
+    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    g_return_if_fail(ipdata != NULL);
+
+    g_free(ipdata);
+}
+
+static void
 packet_ip_init(PacketParser *parser)
 {
     // Initialize parser private data
@@ -206,7 +218,7 @@ packet_ip_init(PacketParser *parser)
     g_return_if_fail(ipdata != NULL);
 
     // Store parser private information
-    g_ptr_array_set(parser->dissectors, PACKET_IP, ipdata);
+    g_ptr_array_set(parser->dissectors_priv, PACKET_IP, ipdata);
 
 }
 
@@ -214,7 +226,7 @@ static void
 packet_ip_deinit(PacketParser *parser)
 {
     // Get Dissector data for this parser
-    DissectorIpData *ipdata = g_ptr_array_index(parser->dissectors, PACKET_IP);
+    DissectorIpData *ipdata = g_ptr_array_index(parser->dissectors_priv, PACKET_IP);
     g_return_if_fail(ipdata != NULL);
 
     // Free used memory
@@ -229,8 +241,9 @@ packet_ip_new()
     proto->id = PACKET_IP;
     proto->init = packet_ip_init;
     proto->dissect = packet_ip_parse;
-    proto->deinit = packet_ip_deinit;
+    proto->free = packet_ip_free;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_UDP));
+    proto->deinit = packet_ip_deinit;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TCP));
     return proto;
 }

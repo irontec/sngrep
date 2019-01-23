@@ -175,7 +175,7 @@ capture_input_hep(const gchar *url, GError **error)
 
     // Ceate packet parser tree
     PacketParser *parser = packet_parser_new(input);
-    packet_parser_dissector_new(parser, parser->dissector_tree, PACKET_HEP);
+    packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_HEP);
     input->parser = parser;
 
     return input;
@@ -200,7 +200,7 @@ capture_input_hep_receive(CaptureInput *input)
     g_byte_array_append(data, (const guint8 *) buffer, (guint) received);
 
     // Create a new packet for this data
-    Packet *packet = packet_new();
+    Packet *packet = packet_new(parser);
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);

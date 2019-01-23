@@ -37,11 +37,12 @@
 #include "packet.h"
 
 Packet *
-packet_new()
+packet_new(PacketParser *parser)
 {
     // Create a new packet
     Packet *packet = g_malloc0(sizeof(Packet));
-    packet->proto = g_ptr_array_new_with_free_func(g_free);
+    packet->parser = parser;
+    packet->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
     g_ptr_array_set_size(packet->proto, PACKET_PROTO_COUNT);
     return packet;
 }
@@ -50,7 +51,22 @@ void
 packet_free(Packet *packet)
 {
     g_return_if_fail(packet != NULL);
+
+    // Free each protocol data
+    for (guint i = 0; i < g_ptr_array_len(packet->proto); i++) {
+        if (g_ptr_array_index(packet->proto, i) != NULL) {
+            packet_parser_dissector_free(packet->parser, packet, i);
+        }
+    }
     g_ptr_array_free(packet->proto, TRUE);
+
+    // Free each frame data
+    for (GList *l = packet->frames; l != NULL; l = l->next) {
+        PacketFrame *frame = l->data;
+        g_byte_array_free(frame->data, TRUE);
+    }
+    g_list_free_full(packet->frames, g_free);
+
     g_free(packet);
 }
 

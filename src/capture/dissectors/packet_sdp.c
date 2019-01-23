@@ -112,6 +112,8 @@ packet_sdp_dissect_connection(PacketSdpData *sdp, PacketSdpMedia *media, gchar *
         media->sconn = conn;
         g_utf8_strncpy(media->address.ip, conn->address, ADDRESSLEN);
     }
+
+    g_strfreev(conn_data);
 }
 
 static enum PacketSdpMediaType
@@ -179,6 +181,8 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
         // Add new format for this media
         media->formats = g_list_append(media->formats, format);
     }
+    g_strfreev(media_data);
+    g_strfreev(formats);
 
     return media;
 }
@@ -189,7 +193,10 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
     // a=<attribute>
     // a=<attribute>:<value>
     gchar **rtpattr = g_strsplit_set(line, " :", -1);
-    if (g_strv_length(rtpattr) < 2) return;
+    if (g_strv_length(rtpattr) < 2) {
+        g_strfreev(rtpattr);
+        return;
+    }
 
     if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtpmap") == 0) {
         // Check if format code is standard
@@ -200,7 +207,7 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
             for (guint i = 0; i < g_list_length(media->formats); i++) {
                 format = g_list_nth_data(media->formats, i);
                 if (format->id == code) {
-                    format->name = format->alias = rtpattr[3];
+                    format->name = format->alias = g_strdup(rtpattr[3]);
                     break;
                 }
             }
@@ -208,6 +215,8 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
     } else if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtcp") == 0) {
         media->rtcpport = (guint16) strtoul(rtpattr[SDP_ATTR_VALUE], NULL, 10);
     }
+
+    g_strfreev(rtpattr);
 }
 
 static GByteArray *
@@ -236,6 +245,8 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
                 break;
         }
     }
+    g_strfreev(lines);
+    g_string_free(payload, TRUE);
 
     // Set packet SDP data
     g_ptr_array_set(packet->proto, PACKET_SDP, sdp);
@@ -243,12 +254,32 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
     return data;
 }
 
+static void
+packet_sdp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+{
+    g_return_if_fail(packet != NULL);
+
+    PacketSdpData *sdp_data = g_ptr_array_index(packet->proto, PACKET_SDP);
+    g_return_if_fail(sdp_data);
+
+    for (GList *l = sdp_data->medias; l != NULL; l = l->next) {
+        PacketSdpMedia *media = l->data;
+        g_list_free(media->formats);
+        g_free(media->sconn);
+    }
+    g_list_free_full(sdp_data->medias, g_free);
+
+    g_free(sdp_data);
+}
+
+
 PacketDissector *
 packet_sdp_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_SDP;
     proto->dissect = packet_sdp_dissect;
+    proto->free = packet_sdp_free;
     return proto;
 }
 

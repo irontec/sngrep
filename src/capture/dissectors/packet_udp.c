@@ -75,13 +75,14 @@ packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 }
 
 static void
-packet_udp_init(PacketParser *parser)
+packet_udp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
 {
-    // Get capture input from this parser
-    CaptureInput *input = parser->input;
-    g_return_if_fail(input);
+    g_return_if_fail(packet != NULL);
 
+    PacketUdpData *udp_data = g_ptr_array_index(packet->proto, PACKET_UDP);
+    g_return_if_fail(udp_data);
 
+    g_free(udp_data);
 }
 
 PacketDissector *
@@ -89,8 +90,8 @@ packet_udp_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_UDP;
-    proto->init = packet_udp_init;
     proto->dissect = packet_udp_parse;
+    proto->free = packet_udp_free;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTP));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTCP));

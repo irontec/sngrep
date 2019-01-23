@@ -65,7 +65,7 @@ enum SipMethods
 struct _PacketSipCode
 {
     guint id;
-    const gchar *text;
+    gchar *text;
 };
 
 struct _PacketSipData

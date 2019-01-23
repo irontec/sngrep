@@ -57,6 +57,8 @@ typedef gpointer (*CaptureInputStartFunc)(CaptureInput *);
 
 typedef void (*CaptureInputStopFunc)(CaptureInput *);
 
+typedef void (*CaptureInputFreeFunc)(CaptureInput *);
+
 typedef int (*CaptureInputFilterFunc)(CaptureInput *, const char *, GError **);
 
 //! Capture Output function types
@@ -112,6 +114,8 @@ struct _CaptureInput
     CaptureInputStartFunc start;
     //! Stop capturing packets function
     CaptureInputStopFunc stop;
+    //! Free capture input memory
+    CaptureInputFreeFunc free;
     //! Capture filtering function
     CaptureInputFilterFunc filter;
 };

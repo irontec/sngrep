@@ -51,6 +51,15 @@ capture_pcap_error_quark()
     return g_quark_from_static_string("capture-pcap");
 }
 
+static void
+capture_input_pcap_free(CaptureInput *input)
+{
+    // Free input information
+    packet_parser_free(input->parser);
+    g_free(input->priv);
+    g_free(input);
+}
+
 CaptureInput *
 capture_input_pcap_online(const gchar *dev, GError **error)
 {
@@ -102,10 +111,11 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     input->start = capture_input_pcap_start;
     input->stop = capture_input_pcap_stop;
     input->filter = capture_input_pcap_filter;
+    input->free = capture_input_pcap_free;
 
     // Ceate packet parser tree
     PacketParser *parser = packet_parser_new(input);
-    packet_parser_dissector_new(parser, parser->dissector_tree, PACKET_LINK);
+    packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_LINK);
     input->parser = parser;
 
     return input;
@@ -162,7 +172,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
 
     // Ceate packet parser tree
     PacketParser *parser = packet_parser_new(input);
-    packet_parser_dissector_new(parser, parser->dissector_tree, PACKET_LINK);
+    packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_LINK);
     input->parser = parser;
 
     return input;
@@ -201,10 +211,6 @@ capture_input_pcap_stop(CaptureInput *input)
     } else {
         pcap_breakloop(pcap->handle);
     }
-
-    // Free input information
-    g_free(input->priv);
-    packet_parser_free(input->parser);
 
     // Mark as finished reading packets
     input->running = FALSE;
@@ -348,7 +354,7 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     g_byte_array_append(data, content, header->caplen);
 
     // Create a new packet for this data
-    Packet *packet = packet_new();
+    Packet *packet = packet_new(parser);
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
     frame->ts.tv_sec = header->ts.tv_sec;
     frame->ts.tv_usec = header->ts.tv_usec;
@@ -367,9 +373,7 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     // Free not parsed packet data
     if (data != NULL) {
         g_byte_array_free(data, TRUE);
-        g_free(frame);
-        g_list_free(packet->frames);
-        g_free(packet);
+        packet_free(packet);
     }
 }
 

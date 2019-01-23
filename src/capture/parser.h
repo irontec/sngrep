@@ -45,6 +45,8 @@ typedef struct _PacketDissector PacketDissector;
 //! Dissector functions types
 typedef GByteArray *(*PacketDissectorDissectFunc)(PacketParser *, Packet *, GByteArray *);
 
+typedef void (*PacketDissectorFreeFunc)(PacketParser *, Packet *);
+
 typedef void (*PacketDissectorInitFunc)(PacketParser *);
 
 typedef void (*PacketDissectorDeinitFunc)(PacketParser *);
@@ -60,9 +62,9 @@ struct _PacketParser
     //! Capture input owner of this parser
     CaptureInput *input;
     //! Protocol lists handled by this parser
-    GPtrArray *dissectors_data;
-    //! Protocol information
     GPtrArray *dissectors;
+    //! Protocol information
+    GPtrArray *dissectors_priv;
     //! Protocol dissection tree
     GNode *dissector_tree;
     //! Protocl node actually parsing
@@ -86,6 +88,8 @@ struct _PacketDissector
     PacketDissectorInitFunc init;
     //! Protocol packet dissector function
     PacketDissectorDissectFunc dissect;
+    //! Protocol packet free function
+    PacketDissectorFreeFunc free;
     //! Protocol deinitialization function
     PacketDissectorDeinitFunc deinit;
 };
@@ -120,7 +124,7 @@ packet_parser_free(PacketParser *parser);
  * @return
  */
 PacketDissector *
-packet_parser_dissector_new(PacketParser *parser, GNode *parent, enum PacketProtoId id);
+packet_parser_dissector_init(PacketParser *parser, GNode *parent, enum PacketProtoId id);
 
 /**
  * @brief Send packet data to current dissector children
@@ -133,5 +137,13 @@ packet_parser_dissector_new(PacketParser *parser, GNode *parent, enum PacketProt
 GByteArray *
 packet_parser_next_dissector(PacketParser *parser, Packet *packet, GByteArray *data);
 
+/**
+ * @brief Free all allocated memory by dissector in packet
+ * @param parser Parser owner of the dissector
+ * @param packet Packet to be free
+ * @param id Dissector id
+ */
+void
+packet_parser_dissector_free(PacketParser *parser, Packet *packet, enum PacketProtoId id);
 
 #endif

@@ -68,7 +68,7 @@ packet_tcp_assembly_hashkey(Packet *packet)
 static GByteArray *
 packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
-    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors, PACKET_TCP);
+    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
 
     // Get Packet IP protocol information
     PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
@@ -198,13 +198,13 @@ packet_tcp_init(PacketParser *parser)
 {
     DissectorTcpData *tcp_data = g_malloc0(sizeof(DissectorTcpData));
     tcp_data->assembly = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    g_ptr_array_set(parser->dissectors, PACKET_TCP, tcp_data);
+    g_ptr_array_set(parser->dissectors_priv, PACKET_TCP, tcp_data);
 }
 
 static void
 packet_tcp_deinit(PacketParser *parser)
 {
-    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors, PACKET_TCP);
+    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
     g_return_if_fail(priv != NULL);
 
     g_hash_table_destroy(priv->assembly);

@@ -209,8 +209,8 @@ packet_sip_auth_data(const Packet *packet)
 static GByteArray *
 packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
-    const gchar *method = NULL;
-    const gchar *resp_code = NULL;
+    gchar *method = NULL;
+    gchar *resp_code = NULL;
 
     // Ignore too small packets
     if (data->len < SIP_VERSION_LEN + 1)
@@ -221,30 +221,42 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Split SIP payload in lines separated by CRLF
     gchar **payload_data = g_strsplit(payload->str, SIP_CRLF, 0);
-    if (g_strv_length(payload_data) == 0)
+
+    if (g_strv_length(payload_data) == 0) {
+        g_string_free(payload, TRUE);
+        g_strfreev(payload_data);
         return data;
+    }
 
     gchar *first_line = payload_data[0];
     gchar **first_line_data = g_strsplit(first_line, " ", 2);
-    if (g_strv_length(first_line_data) != 2)
+    if (g_strv_length(first_line_data) != 2) {
+        g_string_free(payload, TRUE);
+        g_strfreev(payload_data);
+        g_strfreev(first_line_data);
         return data;
+    }
 
     if (g_strcmp0(first_line_data[0], SIP_VERSION) == 0) {
-        resp_code = first_line_data[1];
+        resp_code = g_strdup(first_line_data[1]);
     }
 
     if (resp_code == NULL) {
         for (guint i = 0; sip_codes[i].id < 100; i++) {
             if (g_strcmp0(first_line_data[0], sip_codes[i].text) == 0) {
-                method = first_line_data[0];
+                method = g_strdup(first_line_data[0]);
                 break;
             }
         }
     }
+    g_strfreev(first_line_data);
 
     // No SIP information in first line. Skip this packet.
-    if (method == NULL && resp_code == NULL)
+    if (method == NULL && resp_code == NULL) {
+        g_string_free(payload, TRUE);
+        g_strfreev(payload_data);
         return data;
+    }
 
     // Allocate packet sip data
     PacketSipData *sip_data = g_malloc0(sizeof(PacketSipData));
@@ -284,9 +296,9 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
 
         if (strcasecmp(hdr_name, "Call-ID") == 0 || strcasecmp(hdr_name, "i") == 0) {
-            sip_data->callid = hdr_value;
-        } else if (strcasecmp(hdr_name, "X-Call-ID") == 0  || strcasecmp(hdr_name, "X-CID") == 0) {
-            sip_data->xcallid = hdr_value;
+            sip_data->callid = g_strdup(hdr_value);
+        } else if (strcasecmp(hdr_name, "X-Call-ID") == 0 || strcasecmp(hdr_name, "X-CID") == 0) {
+            sip_data->xcallid = g_strdup(hdr_value);
         } else if (strcasecmp(hdr_name, "To") == 0 || strcasecmp(hdr_name, "t") == 0) {
             sip_data->initial = g_strstr_len(hdr_value, strlen(hdr_value), ";tag=") == NULL;
         } else if (strcasecmp(hdr_name, "Content-Length") == 0 || strcasecmp(hdr_name, "l") == 0) {
@@ -296,12 +308,18 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             if (g_strv_length(cseq_data) != 2)
                 break;
             sip_data->cseq = g_ascii_strtoull(cseq_data[0], NULL, 10);
+            g_strfreev(cseq_data);
         }
+        g_strfreev(hdr_data);
     }
+    g_strfreev(headers);
+    g_strfreev(payload_data);
+    g_string_free(payload, TRUE);
 
     // Check we have a valid SIP packet
-    if (sip_data->callid == NULL)
+    if (sip_data->callid == NULL) {
         return data;
+    }
 
     // If this comes from a TCP stream, check we have a whole packet
     if (packet_has_type(packet, PACKET_TCP)) {
@@ -326,12 +344,27 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     return NULL;
 }
 
+static void
+packet_sip_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+{
+    PacketSipData *sip_data = packet_sip_data(packet);
+    g_return_if_fail(sip_data != NULL);
+
+    g_free(sip_data->callid);
+    g_free(sip_data->xcallid);
+    g_free(sip_data->auth);
+    g_free(sip_data->payload);
+    g_free(sip_data->code.text);
+    g_free(sip_data);
+}
+
 PacketDissector *
 packet_sip_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_SIP;
     proto->dissect = packet_sip_parse;
+    proto->free = packet_sip_free;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SDP));
     return proto;
 }

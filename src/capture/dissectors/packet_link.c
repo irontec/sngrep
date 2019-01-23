@@ -42,7 +42,7 @@
 static GByteArray *
 packet_link_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 {
-    DissectorLinkData *priv = g_ptr_array_index(parser->dissectors, PACKET_LINK);
+    DissectorLinkData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_LINK);
     g_return_val_if_fail(priv, NULL);
 
     // Get Layer header size from link type
@@ -159,13 +159,13 @@ packet_link_init(PacketParser *parser)
     link_data->link_size = proto_link_size(pcap->link);
 
     // Store private data for this protocol
-    g_ptr_array_set(parser->dissectors, PACKET_LINK, link_data);
+    g_ptr_array_set(parser->dissectors_priv, PACKET_LINK, link_data);
 }
 
 static void
 packet_link_deinit(G_GNUC_UNUSED PacketParser *parser)
 {
-    DissectorLinkData *priv = g_ptr_array_index(parser->dissectors, PACKET_LINK);
+    DissectorLinkData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_LINK);
     g_return_if_fail(priv != NULL);
 
     g_free(priv);

@@ -90,6 +90,8 @@ capture_manager_stop(CaptureManager *manager)
             input->stop(input);
         }
         g_thread_join(input->thread);
+        if (input->free != NULL)
+            input->free(input);
         g_free(input);
     }
 
