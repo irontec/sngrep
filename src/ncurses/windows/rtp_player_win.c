@@ -72,7 +72,7 @@ rtp_player_draw(Window *window)
         info->connected = true;
     }
 
-    mvwprintw(window->win, 6, 22, "Latency: %d", info->latency);
+    mvwprintw(window->win, 6, 22, "Latency: %d ms", info->latency / 1000);
     mvwprintw(window->win, 6, 42, "Underflows: %d", info->underflow);
 
 
@@ -240,7 +240,7 @@ rtp_player_set_stream(Window *window, RtpStream *stream)
     pa_stream_set_write_callback(info->playback, rtp_player_write_cb, window);
     pa_stream_set_underflow_callback(info->playback, rtp_player_underflow_cb, window);
 
-    info->latency = 50000;
+    info->latency = 20000;
     info->bufattr.fragsize = (guint32) -1;
     info->bufattr.maxlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
     info->bufattr.minreq = (guint32) pa_usec_to_bytes(0, &info->ss);
