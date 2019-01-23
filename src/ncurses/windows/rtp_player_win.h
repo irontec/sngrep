@@ -47,6 +47,8 @@ struct _RtpPlayerInfo
     pa_mainloop_api *pa_mlapi;
     //! Pulseaudio Player information
     pa_stream *playback;
+    //! Pulseadio Player connected flag
+    gboolean connected;
 
     //! Decoded RTP data
     gint16 *decoded;

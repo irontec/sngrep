@@ -56,6 +56,14 @@ rtp_player_draw(Window *window)
         return 0;
     }
 
+    if (!info->connected) {
+        pa_stream_connect_playback(info->playback, NULL, &info->bufattr,
+                                   PA_STREAM_INTERPOLATE_TIMING
+                                   | PA_STREAM_ADJUST_LATENCY
+                                   | PA_STREAM_AUTO_TIMING_UPDATE, NULL, NULL);
+        info->connected = true;
+    }
+
     gint width = getmaxx(window->win);
     mvwhline(window->win, 4, 4, '-', width - 19);
     mvwaddch(window->win, 4, 3, '[');
@@ -226,10 +234,6 @@ rtp_player_set_stream(Window *window, RtpStream *stream)
     info->bufattr.minreq = (guint32) pa_usec_to_bytes(0, &info->ss);
     info->bufattr.prebuf = (guint32) -1;
     info->bufattr.tlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
-    pa_stream_connect_playback(info->playback, NULL, &info->bufattr,
-                               PA_STREAM_INTERPOLATE_TIMING
-                               | PA_STREAM_ADJUST_LATENCY
-                               | PA_STREAM_AUTO_TIMING_UPDATE, NULL, NULL);
 }
 
 static void
