@@ -54,8 +54,8 @@ packet_parser_new(CaptureInput *input)
     parser->input = input;
 
     // Created Protos array
-    parser->protos = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
-    g_ptr_array_set_size(parser->protos, PACKET_PROTO_COUNT);
+    parser->dissectors_data = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
+    g_ptr_array_set_size(parser->dissectors_data, PACKET_PROTO_COUNT);
 
     // Created Dissectors information array
     parser->dissectors = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
@@ -67,7 +67,7 @@ packet_parser_new(CaptureInput *input)
 }
 
 static void
-packet_parser_proto_deinit(PacketDissector *dissector, PacketParser *parser)
+packet_parser_dissector_free(PacketDissector *dissector, PacketParser *parser)
 {
     if (dissector != NULL) {
         if (dissector->deinit != NULL)
@@ -81,17 +81,17 @@ void
 packet_parser_free(PacketParser *parser)
 {
 
-    g_ptr_array_foreach(parser->protos, (GFunc) packet_parser_proto_deinit, parser);
-    g_ptr_array_free(parser->protos, TRUE);
+    g_ptr_array_foreach(parser->dissectors_data, (GFunc) packet_parser_dissector_free, parser);
+    g_ptr_array_free(parser->dissectors_data, TRUE);
     g_ptr_array_free(parser->dissectors, TRUE);
     g_node_destroy(parser->dissector_tree);
     g_free(parser);
 }
 
 PacketDissector *
-packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId id)
+packet_parser_dissector_new(PacketParser *parser, GNode *parent, enum PacketProtoId id)
 {
-    PacketDissector *dissector = g_ptr_array_index(parser->protos, id);
+    PacketDissector *dissector = g_ptr_array_index(parser->dissectors_data, id);
 
     if (dissector == NULL) {
         switch (id) {
@@ -148,7 +148,7 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId 
             return NULL;
 
         // Add to proto list
-        g_ptr_array_set(parser->protos, id, dissector);
+        g_ptr_array_set(parser->dissectors_data, id, dissector);
 
         // Initialize protocol data
         if (dissector->init) {
@@ -162,7 +162,7 @@ packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId 
 
     // Add children dissectors
     for (GSList *l = dissector->subdissectors; l != NULL; l = l->next) {
-        packet_parser_add_proto(parser, node, GPOINTER_TO_UINT(l->data));
+        packet_parser_dissector_new(parser, node, GPOINTER_TO_UINT(l->data));
     }
 
     return dissector;

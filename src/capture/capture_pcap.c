@@ -105,7 +105,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
 
     // Ceate packet parser tree
     PacketParser *parser = packet_parser_new(input);
-    packet_parser_add_proto(parser, parser->dissector_tree, PACKET_LINK);
+    packet_parser_dissector_new(parser, parser->dissector_tree, PACKET_LINK);
     input->parser = parser;
 
     return input;
@@ -162,7 +162,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
 
     // Ceate packet parser tree
     PacketParser *parser = packet_parser_new(input);
-    packet_parser_add_proto(parser, parser->dissector_tree, PACKET_LINK);
+    packet_parser_dissector_new(parser, parser->dissector_tree, PACKET_LINK);
     input->parser = parser;
 
     return input;

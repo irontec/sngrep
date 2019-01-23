@@ -60,7 +60,7 @@ struct _PacketParser
     //! Capture input owner of this parser
     CaptureInput *input;
     //! Protocol lists handled by this parser
-    GPtrArray *protos;
+    GPtrArray *dissectors_data;
     //! Protocol information
     GPtrArray *dissectors;
     //! Protocol dissection tree
@@ -120,7 +120,7 @@ packet_parser_free(PacketParser *parser);
  * @return
  */
 PacketDissector *
-packet_parser_add_proto(PacketParser *parser, GNode *parent, enum PacketProtoId id);
+packet_parser_dissector_new(PacketParser *parser, GNode *parent, enum PacketProtoId id);
 
 /**
  * @brief Send packet data to current dissector children

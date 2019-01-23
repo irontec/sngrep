@@ -48,3 +48,7 @@ TAGS
 # Vim swap files
 .*.swp
 .*.swo
+
+# Test files
+*.wav
+*.pcap

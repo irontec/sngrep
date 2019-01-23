@@ -23,7 +23,7 @@
  * @file codec_g729.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to decode g711a (alaw) RTP packets
+ * @brief Functions to decode G.729 RTP packets
  *
  */
 
