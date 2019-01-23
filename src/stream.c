@@ -84,13 +84,15 @@ stream_add_packet(RtpStream *stream, Packet *packet)
 {
     stream->lasttm = g_get_monotonic_time();
     stream->changed = TRUE;
-    g_ptr_array_add(stream->packets, packet);
+    stream->pkt_count++;
+    if (stream->pkt_count == 1)
+        stream->firsttv = packet_time(packet);
 }
 
 guint
 stream_get_count(RtpStream *stream)
 {
-    return stream->packets->len;
+    return stream->pkt_count;
 }
 
 const char *
@@ -120,7 +122,7 @@ stream_get_format(RtpStream *stream)
 GTimeVal
 stream_time(RtpStream *stream)
 {
-    return packet_time(g_ptr_array_index(stream->packets, 0));
+    return stream->firsttv;
 }
 
 gboolean

@@ -396,6 +396,14 @@ storage_check_rtp_packet(Packet *packet)
             // Add packet to existing matching stream
             if (addressport_equals(stream->src, src) && stream->fmtcode == rtp->encoding->id) {
                 stream_add_packet(stream, packet);
+                if (storage.capture.rtp) {
+                    // Add Packet info to stream packets array
+                    g_ptr_array_add(stream->packets, packet);
+                } else {
+                    // Do not store RTP packets information
+                    packet_free(packet);
+                }
+
                 break;
             }
         }

@@ -1694,7 +1694,7 @@ call_flow_handle_key(Window *window, int key)
             if (cur_arrow->type == CF_ARROW_RTP) {
                 StorageCaptureOpts storageCaptureOpts = storage_capture_options();
                 if (!storageCaptureOpts.rtp) {
-                    dialog_run("RTP is not being stored in memory, so saving RTP is disabled.");
+                    dialog_run("RTP packets are not being stored, run with --rtp flag.");
                     break;
                 }
                 next_window = ncurses_create_window(WINDOW_SAVE);
@@ -1706,6 +1706,12 @@ call_flow_handle_key(Window *window, int key)
             case ACTION_SHOW_PLAYER:
                 cur_arrow = g_ptr_array_index(info->darrows, info->cur_idx);
                 if (cur_arrow->type == CF_ARROW_RTP) {
+                    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
+                    if (!storageCaptureOpts.rtp) {
+                        dialog_run("RTP packets are not being stored, run with --rtp flag.");
+                        break;
+                    }
+
                     next_window = ncurses_create_window(WINDOW_RTP_PLAYER);
                     if (next_window != NULL) {
                         rtp_player_set_stream(next_window, cur_arrow->item);

@@ -51,7 +51,7 @@ dialog_run(const char *fmt, ...)
 
     // Determine dialog dimensions
     height = 6 + (strlen(textva) / 50);
-    width = strlen(textva);
+    width = strlen(textva) + 4;
 
     // Check we don't have a too big or small window
     if (width > DIALOG_MAX_WIDTH)

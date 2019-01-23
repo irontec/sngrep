@@ -60,12 +60,16 @@ struct _RtpStream
     PacketSdpMedia *media;
     //! SIP message that setup this stream
     Message *msg;
+    //! First received packet time
+    GTimeVal firsttv;
     //! Unix timestamp of last received packet
     gint64 lasttm;
     //! Changed since last checked flag
     gboolean changed;
     //! Format of first received packet of stre
     guint8 fmtcode;
+    //! Stream packets (not always stored in packets array)
+    guint pkt_count;
     //! List of stream packets
     GPtrArray *packets;
 };
