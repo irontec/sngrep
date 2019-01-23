@@ -27,6 +27,8 @@
 #ifdef WITH_G729
 #include "capture/codecs/codec_g729.h"
 #endif
+#include "ncurses/keybinding.h"
+#include "ncurses/theme.h"
 #include "ncurses/dialog.h"
 #include "glib-extra.h"
 #include "rtp_player_win.h"
@@ -37,21 +39,22 @@ rtp_player_win_info(Window *window)
     return (RtpPlayerInfo *) panel_userptr(window->panel);
 }
 
-static gpointer
-rtp_player_loop(gpointer window)
-{
-    RtpPlayerInfo *info = rtp_player_win_info(window);
-    g_return_val_if_fail(info != NULL, NULL);
-
-    pa_mainloop_run(info->pa_ml, NULL);
-    return NULL;
-}
-
-static int
+static gint
 rtp_player_draw(Window *window)
 {
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_val_if_fail(info != NULL, 1);
+
+    if (info->pa_state == PA_CONTEXT_TERMINATED ||
+        info->pa_state == PA_CONTEXT_FAILED) {
+        mvwprintw(window->win, 4, 3, "Failed to connect to PulseAudio server.");
+        return 0;
+    }
+
+    if (info->pa_state != PA_CONTEXT_READY) {
+        mvwprintw(window->win, 4, 3, "Connecting to PulseAudio server...");
+        return 0;
+    }
 
     gint width = getmaxx(window->win);
     mvwhline(window->win, 4, 4, '-', width - 19);
@@ -215,9 +218,9 @@ rtp_player_set_stream(Window *window, RtpStream *stream)
     info->playback = pa_stream_new(info->pa_ctx, "sngrep RTP stream", &info->ss, NULL);
     g_return_if_fail(info->playback != NULL);
     pa_stream_set_write_callback(info->playback, rtp_player_write_cb, window);
-    pa_stream_set_underflow_callback(info->playback, rtp_player_underflow_cb, NULL);
+    pa_stream_set_underflow_callback(info->playback, rtp_player_underflow_cb, window);
 
-    info->latency = 20000;
+    info->latency = 50000;
     info->bufattr.fragsize = (guint32) -1;
     info->bufattr.maxlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
     info->bufattr.minreq = (guint32) pa_usec_to_bytes(0, &info->ss);
@@ -227,9 +230,6 @@ rtp_player_set_stream(Window *window, RtpStream *stream)
                                PA_STREAM_INTERPOLATE_TIMING
                                | PA_STREAM_ADJUST_LATENCY
                                | PA_STREAM_AUTO_TIMING_UPDATE, NULL, NULL);
-
-
-    info->player_thread = g_thread_new("RtpPlayerThread", rtp_player_loop, window);
 }
 
 static void
@@ -238,37 +238,21 @@ rtp_player_free(Window *window)
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_if_fail(info != NULL);
 
-    pa_mainloop_quit(info->pa_ml, 0);
+    pa_threaded_mainloop_stop(info->pa_ml);
     pa_stream_disconnect(info->playback);
     pa_context_disconnect(info->pa_ctx);
     pa_context_unref(info->pa_ctx);
-    pa_mainloop_free(info->pa_ml);
+    pa_threaded_mainloop_free(info->pa_ml);
     g_free(window);
 }
 
-// This callback gets called when our context changes state.  We really only
-// care about when it's ready or if it has failed
-void pa_state_cb(pa_context *c, void *userdata)
+static void
+rtp_player_state_cb(pa_context *ctx, gpointer userdata)
 {
-    pa_context_state_t state;
-    int *pa_ready = userdata;
-    state = pa_context_get_state(c);
-    switch (state) {
-        // These are just here for reference
-        case PA_CONTEXT_UNCONNECTED:
-        case PA_CONTEXT_CONNECTING:
-        case PA_CONTEXT_AUTHORIZING:
-        case PA_CONTEXT_SETTING_NAME:
-        default:
-            break;
-        case PA_CONTEXT_FAILED:
-        case PA_CONTEXT_TERMINATED:
-            *pa_ready = 2;
-            break;
-        case PA_CONTEXT_READY:
-            *pa_ready = 1;
-            break;
-    }
+    RtpPlayerInfo *info = rtp_player_win_info(userdata);
+    g_return_if_fail(info != NULL);
+
+    info->pa_state = pa_context_get_state(ctx);
 }
 
 Window *
@@ -296,26 +280,18 @@ rtp_player_win_new()
     mvwhline(window->win, window->height - 3, 1, ACS_HLINE, window->width - 1);
     mvwaddch(window->win, window->height - 3, 0, ACS_LTEE);
     mvwaddch(window->win, window->height - 3, window->width - 1, ACS_RTEE);
-    mvwprintw(window->win, 7, 12, "Use arrow keys to change playback second");
+    mvwprintw(window->win, 7, 12, "Use arrow keys to change playback position");
     wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     mvwprintw(window->win, 1, 27, "RTP Stream Player");
 
     // Create Pulseadio Main loop
-    info->pa_ml = pa_mainloop_new();
-    info->pa_mlapi = pa_mainloop_get_api(info->pa_ml);
+    info->pa_ml = pa_threaded_mainloop_new();
+    info->pa_mlapi = pa_threaded_mainloop_get_api(info->pa_ml);
     info->pa_ctx = pa_context_new(info->pa_mlapi, "sngrep RTP Player");
     pa_context_connect(info->pa_ctx, NULL, 0, NULL);
-
-    gint pa_ready;
-    pa_context_set_state_callback(info->pa_ctx, pa_state_cb, &pa_ready);
-    while (pa_ready == 0) {
-        pa_mainloop_iterate(info->pa_ml, 1, NULL);
-    }
-    if (pa_ready == 2) {
-        dialog_run("Failed to connect to PulseAudio server.");
-        return NULL;
-    }
+    pa_context_set_state_callback(info->pa_ctx, rtp_player_state_cb, window);
+    pa_threaded_mainloop_start(info->pa_ml);
 
     return window;
 }

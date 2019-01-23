@@ -39,10 +39,8 @@ struct _RtpPlayerInfo
 {
     //! Stream to be played
     RtpStream *stream;
-    //! Background thread where loop runs
-    GThread *player_thread;
     //! Glib Pulseaudio Main loop
-    pa_mainloop *pa_ml;
+    pa_threaded_mainloop *pa_ml;
     //! Glib Pulseuadio Main loop Context
     pa_context *pa_ctx;
     //! Glib Pulseaudio Main loop api
@@ -56,6 +54,8 @@ struct _RtpPlayerInfo
     gsize decoded_len;
     //! Current player position
     gsize player_pos;
+    //! Player context status
+    pa_context_state_t pa_state;
     //! Player stream information
     pa_sample_spec ss;
     //! Player current latency
