@@ -83,6 +83,7 @@ void
 stream_add_packet(RtpStream *stream, Packet *packet)
 {
     stream->lasttm = g_get_monotonic_time();
+    stream->changed = TRUE;
     g_ptr_array_add(stream->packets, packet);
 }
 

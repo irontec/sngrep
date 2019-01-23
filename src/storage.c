@@ -368,8 +368,9 @@ storage_check_rtp_packet(Packet *packet)
     // No call has setup this stream
     if (msg == NULL) return NULL;
 
-    // Get Call streams
+    // Mark call as changed
     Call *call = msg_get_call(msg);
+    call->changed = TRUE;
     g_return_val_if_fail(call != NULL, NULL);
 
     // Find a matching stream in the call

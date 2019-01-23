@@ -62,6 +62,8 @@ struct _RtpStream
     Message *msg;
     //! Unix timestamp of last received packet
     gint64 lasttm;
+    //! Changed since last checked flag
+    gboolean changed;
     //! Format of first received packet of stre
     guint8 fmtcode;
     //! List of stream packets

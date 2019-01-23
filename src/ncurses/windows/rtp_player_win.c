@@ -39,6 +39,42 @@ rtp_player_win_info(Window *window)
     return (RtpPlayerInfo *) panel_userptr(window->panel);
 }
 
+static void
+rtp_player_decode_stream(Window *window, RtpStream *stream)
+{
+    RtpPlayerInfo *info = rtp_player_win_info(window);
+    g_return_if_fail(info != NULL);
+
+    GByteArray *rtp_payload = g_byte_array_new();
+
+    for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
+        Packet *packet = g_ptr_array_index(stream->packets, i);
+        PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
+        g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
+    }
+
+    switch (stream->fmtcode) {
+        case RTP_CODEC_G711A:
+            info->decoded = codec_g711a_decode(rtp_payload, &info->decoded_len);
+            break;
+#ifdef WITH_G729
+        case RTP_CODEC_G729:
+            info->decoded = codec_g729_decode(rtp_payload, &info->decoded_len);
+            break;
+#endif
+        default:
+            dialog_run("Unsupported RTP payload type %d", stream->fmtcode);
+            break;
+    }
+
+    // Failed to decode data
+    if (info->decoded == NULL) {
+        dialog_run("error: Failed to decode RTP payload");
+        return;
+    }
+
+}
+
 static gint
 rtp_player_draw(Window *window)
 {
@@ -74,6 +110,11 @@ rtp_player_draw(Window *window)
 
     mvwprintw(window->win, 6, 22, "Latency: %d ms", info->latency / 1000);
     mvwprintw(window->win, 6, 42, "Underflows: %d", info->underflow);
+
+    if (info->stream->changed) {
+        rtp_player_decode_stream(window, info->stream);
+        info->stream->changed = FALSE;
+    }
 
 
     gint width = getmaxx(window->win);
@@ -200,34 +241,7 @@ rtp_player_set_stream(Window *window, RtpStream *stream)
     g_return_if_fail(stream != NULL);
 
     info->stream = stream;
-
-    GByteArray *rtp_payload = g_byte_array_new();
-
-    for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
-        Packet *packet = g_ptr_array_index(stream->packets, i);
-        PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
-        g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
-    }
-
-    switch (stream->fmtcode) {
-        case RTP_CODEC_G711A:
-            info->decoded = codec_g711a_decode(rtp_payload, &info->decoded_len);
-            break;
-#ifdef WITH_G729
-        case RTP_CODEC_G729:
-            info->decoded = codec_g729_decode(rtp_payload, &info->decoded_len);
-            break;
-#endif
-        default:
-            dialog_run("Unsupported RTP payload type %d", stream->fmtcode);
-            return;
-    }
-
-    // Failed to decode data
-    if (info->decoded == NULL) {
-        dialog_run("error: Failed to decode RTP payload");
-        return;
-    }
+    rtp_player_decode_stream(window, stream);
 
     // Stream information
     info->ss.format = PA_SAMPLE_S16NE;
