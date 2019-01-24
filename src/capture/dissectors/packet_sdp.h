@@ -144,6 +144,14 @@ struct _PacketSdpData
     GList *medias;
 };
 
+/**
+ * @brief Get SDP protocol related data from the packet
+ * @param packet Packet pointer to retrieve information from
+ * @return PacketSdpData pointer | NULL
+ */
+PacketSdpData *
+packet_sdp_data(const Packet *packet);
+
 const gchar *
 packet_sdp_media_type_str(enum PacketSdpMediaType type);
 

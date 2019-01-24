@@ -225,7 +225,7 @@ storage_register_streams(Message *msg)
     Packet *packet = msg->packet;
     Address emptyaddr = { 0 };
 
-    PacketSdpData *sdp = g_ptr_array_index(packet->proto, PACKET_SDP);
+    PacketSdpData *sdp = packet_sdp_data(packet);
     if (sdp == NULL) {
         // Packet with SDP content
         return;

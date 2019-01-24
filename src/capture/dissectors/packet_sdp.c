@@ -82,6 +82,13 @@ const struct
     { "image",       SDP_MEDIA_IMAGE }
 };
 
+PacketSdpData *
+packet_sdp_data(const Packet *packet)
+{
+    g_return_val_if_fail(packet != NULL, NULL);
+    return g_ptr_array_index(packet->proto, PACKET_SDP);
+}
+
 const gchar *
 packet_sdp_media_type_str(enum PacketSdpMediaType type)
 {
@@ -255,20 +262,30 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
 }
 
 static void
+packet_sdp_format_free(PacketSdpFormat *format)
+{
+    if (packet_sdp_standard_format(format->id) == NULL) {
+        g_free(format);
+    }
+}
+
+static void
+packet_sdp_media_free(PacketSdpMedia *media)
+{
+    g_list_free_full(media->formats, (GDestroyNotify) packet_sdp_format_free);
+    g_free(media->sconn);
+    g_free(media);
+}
+
+static void
 packet_sdp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
 {
     g_return_if_fail(packet != NULL);
 
-    PacketSdpData *sdp_data = g_ptr_array_index(packet->proto, PACKET_SDP);
+    PacketSdpData *sdp_data = packet_sdp_data(packet);
     g_return_if_fail(sdp_data);
 
-    for (GList *l = sdp_data->medias; l != NULL; l = l->next) {
-        PacketSdpMedia *media = l->data;
-        g_list_free(media->formats);
-        g_free(media->sconn);
-    }
-    g_list_free_full(sdp_data->medias, g_free);
-
+    g_list_free_full(sdp_data->medias, (GDestroyNotify) packet_sdp_media_free);
     g_free(sdp_data);
 }
 
