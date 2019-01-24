@@ -7,10 +7,10 @@ Build-Depends: dh-autoreconf,
     libncursesw5-dev,
     gnutls-dev,
     libgcrypt-dev,
-    libglib2.0-dev,
+    libglib2.0-dev (>= 2.44),
     libpulse-dev,
     libsndfile1-dev,
-    libbcg729-dev,
+    libbcg729-dev (>= 1.0.4),
     pkg-config
 Priority: optional
 Standards-Version: 3.9.6

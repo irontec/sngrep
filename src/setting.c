@@ -459,7 +459,7 @@ settings_init(int no_config)
     g_ptr_array_set(settings->values, SETTING_ALTKEY_HINT,
                     setting_bool_new("hintkeyalt", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_EXITPROMPT,
-                    setting_bool_new("exitprompt", SETTING_OFF));
+                    setting_bool_new("exitprompt", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_LIMIT,
                     setting_number_new("capture.limit", "20000"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_DEVICE,
