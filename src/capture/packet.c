@@ -47,26 +47,25 @@ packet_new(PacketParser *parser)
     return packet;
 }
 
+static void
+packet_proto_free(gpointer proto_data, Packet *packet)
+{
+    gint proto_id = g_ptr_array_data_index(packet->proto, proto_data);
+    g_return_if_fail(proto_id >= 0);
+    packet_parser_dissector_free(packet->parser, packet, proto_id);
+}
+
 void
 packet_free(Packet *packet)
 {
     g_return_if_fail(packet != NULL);
 
     // Free each protocol data
-    for (guint i = 0; i < g_ptr_array_len(packet->proto); i++) {
-        if (g_ptr_array_index(packet->proto, i) != NULL) {
-            packet_parser_dissector_free(packet->parser, packet, i);
-        }
-    }
+    g_ptr_array_foreach(packet->proto, (GFunc) packet_proto_free, packet);
     g_ptr_array_free(packet->proto, TRUE);
 
     // Free each frame data
-    for (GList *l = packet->frames; l != NULL; l = l->next) {
-        PacketFrame *frame = l->data;
-        g_byte_array_free(frame->data, TRUE);
-    }
-    g_list_free_full(packet->frames, g_free);
-
+    g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
     g_free(packet);
 }
 
@@ -158,6 +157,7 @@ packet_time(const Packet *packet)
 void
 packet_frame_free(PacketFrame *frame)
 {
+    g_byte_array_free(frame->data, TRUE);
     g_free(frame);
 }
 

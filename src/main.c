@@ -176,8 +176,10 @@ main(int argc, char *argv[])
         storage_copts.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
 
 #ifdef WITH_SSL
-    if (!keyfile) {
+    if (keyfile == NULL) {
         keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
+    }
+    if (keyfile != NULL) {
         // Automatically enable TCP and TLS protocols when using private key
         setting_set_value(SETTING_CAPTURE_PACKET_TCP, SETTING_ON);
         setting_set_value(SETTING_CAPTURE_PACKET_TLS, SETTING_ON);
