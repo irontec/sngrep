@@ -289,6 +289,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         if (strcasecmp(hdr_name, "Call-ID") == 0 || strcasecmp(hdr_name, "i") == 0) {
             sip_data->callid = g_strdup(hdr_value);
         } else if (strcasecmp(hdr_name, "X-Call-ID") == 0 || strcasecmp(hdr_name, "X-CID") == 0) {
+            g_free(sip_data->xcallid);      // In case X-Call-Id is multiple times in the payload
             sip_data->xcallid = g_strdup(hdr_value);
         } else if (strcasecmp(hdr_name, "To") == 0 || strcasecmp(hdr_name, "t") == 0) {
             sip_data->initial = g_strstr_len(hdr_value, strlen(hdr_value), ";tag=") == NULL;
