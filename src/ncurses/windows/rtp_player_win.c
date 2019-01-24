@@ -81,22 +81,27 @@ rtp_player_draw(Window *window)
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_val_if_fail(info != NULL, 1);
 
-    mvwprintw(window->win, 6, 3, "Status: ");
+    if (getenv("PULSE_SERVER")) {
+        mvwprintw(window->win, 6, 3, "Server: %s", getenv("PULSE_SERVER"));
+    } else {
+        mvwprintw(window->win, 6, 3, "Server: Local");
+    }
 
+    mvwprintw(window->win, 6, 30, "Server: Local");
     switch (info->pa_state) {
         case PA_CONTEXT_TERMINATED:
         case PA_CONTEXT_FAILED:
             wattron(window->win, COLOR_PAIR(CP_RED_ON_DEF));
-            mvwprintw(window->win, 6, 11, "Error     ");
+            mvwprintw(window->win, 6, 38, "Error     ");
             wattroff(window->win, COLOR_PAIR(CP_RED_ON_DEF));
             break;
         case PA_CONTEXT_READY:
             wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
-            mvwprintw(window->win, 6, 11, "Ready     ");
+            mvwprintw(window->win, 6, 38, "Ready     ");
             wattroff(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
             break;
         default:
-            mvwprintw(window->win, 6, 11, "Connecting");
+            mvwprintw(window->win, 6, 38, "Connecting");
             break;
     }
 
@@ -108,8 +113,7 @@ rtp_player_draw(Window *window)
         info->connected = true;
     }
 
-    mvwprintw(window->win, 6, 22, "Latency: %d ms", info->latency / 1000);
-    mvwprintw(window->win, 6, 42, "Underflows: %d", info->underflow);
+    mvwprintw(window->win, 6, 50, "Latency: %d ms", info->latency / 1000);
 
     if (info->stream->changed) {
         rtp_player_decode_stream(window, info->stream);
@@ -314,6 +318,20 @@ rtp_player_win_new()
     wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     mvwprintw(window->win, 1, 27, "RTP Stream Player");
+
+    // Setup Pulseaudio server based on environment variables
+    if (getenv("PULSE_SERVER") == NULL) {
+        // Try to detect origin IP from SSH_CLIENT environment
+        gchar *ssh_client_str = getenv("SSH_CLIENT");
+        if (ssh_client_str != NULL) {
+            gchar **ssh_data = g_strsplit(ssh_client_str, " ", 2);
+
+            if (g_strv_length(ssh_data) > 0) {
+                setenv("PULSE_SERVER", ssh_data[0], FALSE);
+            }
+            g_strfreev(ssh_data);
+        }
+    }
 
     // Create Pulseadio Main loop
     info->pa_ml = pa_threaded_mainloop_new();
