@@ -66,6 +66,9 @@ typedef void (*CaptureOuptutWriteFunc)(CaptureOutput *, Packet *);
 
 typedef void (*CaptureOutputCloseFunc)(CaptureOutput *);
 
+typedef void (*CaptureOutputFreeFunc)(CaptureOutput *);
+
+
 /**
  * @brief Capture common configuration
  *
@@ -135,6 +138,8 @@ struct _CaptureOutput
     CaptureOuptutWriteFunc write;
     //! Close dump packet  function
     CaptureOutputCloseFunc close;
+    //! Free capture input memory
+    CaptureOutputFreeFunc free;
 };
 
 /**

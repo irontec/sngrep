@@ -102,7 +102,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
         default:
             g_free(fragment);
-            return NULL;
+            return data;
     }
 
     // IP packet without payload
@@ -178,13 +178,22 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         g_ptr_array_sort(datagram->fragments, (GCompareFunc) packet_ip_sort_fragments);
 
         // Join all fragment payload
-        GList *frames = NULL;
         data = g_byte_array_new();
-        for (guint i = 0; i < datagram->fragments->len; i++) {
+        for (guint i = 0; i < g_ptr_array_len(datagram->fragments); i++) {
             fragment = g_ptr_array_index(datagram->fragments, i);
             g_byte_array_append(data, fragment->data->data, fragment->data->len);
-            // Store all the fragments in current packet
-            frames = g_list_append(frames, fragment->packet->frames);
+
+            // Store all the fragments data in current packet
+            if (fragment->packet != packet) {
+                // Append other packet frames to current one
+                packet->frames = g_list_concat_deep(packet->frames, fragment->packet->frames);
+                // Disown other packet frames
+                g_list_free(fragment->packet->frames);
+                fragment->packet->frames = NULL;
+
+                // Free stored packet data
+                packet_free(fragment->packet);
+            }
             // Free fragment data
             g_byte_array_free(fragment->data, FALSE);
         }

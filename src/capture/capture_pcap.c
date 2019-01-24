@@ -169,6 +169,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     input->start = capture_input_pcap_start;
     input->stop = capture_input_pcap_stop;
     input->filter = capture_input_pcap_filter;
+    input->free = capture_input_pcap_free;
 
     // Ceate packet parser tree
     PacketParser *parser = packet_parser_new(input);

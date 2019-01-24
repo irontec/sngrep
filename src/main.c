@@ -334,8 +334,8 @@ main(int argc, char *argv[])
                 g_printerr("error: %s\n", error->message);
                 return 1;
             }
-            g_string_free(bpf_filter, FALSE);
         }
+        g_string_free(bpf_filter, FALSE);
 
         // Set the payload match expression
         storage_mopts.mexpr = match_expr;

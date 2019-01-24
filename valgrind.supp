@@ -9,3 +9,15 @@
    fun:g_option_context_parse
    fun:main
 }
+
+{
+   malloc
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:parse_arg.isra.11
+   fun:parse_short_option
+   fun:g_option_context_parse
+   fun:main
+}

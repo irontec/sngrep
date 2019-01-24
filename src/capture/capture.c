@@ -55,6 +55,21 @@ capture_manager_new()
 void
 capture_manager_free(CaptureManager *manager)
 {
+    // Stop all capture inputs
+    for (GSList *le = manager->inputs; le != NULL; le = le->next) {
+        CaptureInput *input = le->data;
+        if (input->free != NULL)
+            input->free(input);
+    }
+
+    // Close all capture outputs
+    for (GSList *le = manager->outputs; le != NULL; le = le->next) {
+        CaptureOutput *output = le->data;
+        if (output->free != NULL) {
+            output->free(output);
+        }
+    }
+
     g_free(manager->filter);
     g_slist_free(manager->inputs);
     g_slist_free(manager->outputs);
@@ -90,9 +105,6 @@ capture_manager_stop(CaptureManager *manager)
             input->stop(input);
         }
         g_thread_join(input->thread);
-        if (input->free != NULL)
-            input->free(input);
-        g_free(input);
     }
 
     // Close all capture outputs
