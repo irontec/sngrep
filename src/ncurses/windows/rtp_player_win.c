@@ -47,19 +47,27 @@ rtp_player_decode_stream(Window *window, RtpStream *stream)
 
     GByteArray *rtp_payload = g_byte_array_new();
 
-    for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
+    for (guint i = info->last_packet; i < g_ptr_array_len(stream->packets); i++) {
         Packet *packet = g_ptr_array_index(stream->packets, i);
         PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
         g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
     }
+    info->last_packet = g_ptr_array_len(stream->packets);
 
+    if (rtp_payload->len == 0) {
+        g_byte_array_free(rtp_payload, TRUE);
+        return;
+    }
+
+    gint16 *decoded = NULL;
+    gsize decoded_len = 0;
     switch (stream->fmtcode) {
         case RTP_CODEC_G711A:
-            info->decoded = codec_g711a_decode(rtp_payload, &info->decoded_len);
+            decoded = codec_g711a_decode(rtp_payload, &decoded_len);
             break;
 #ifdef WITH_G729
         case RTP_CODEC_G729:
-            info->decoded = codec_g729_decode(rtp_payload, &info->decoded_len);
+            decoded = codec_g729_decode(rtp_payload, &decoded_len);
             break;
 #endif
         default:
@@ -68,11 +76,12 @@ rtp_player_decode_stream(Window *window, RtpStream *stream)
     }
 
     // Failed to decode data
-    if (info->decoded == NULL) {
-        dialog_run("error: Failed to decode RTP payload");
+    if (decoded == NULL) {
         return;
     }
 
+    g_byte_array_append(info->decoded, (const guint8 *) decoded, (guint) decoded_len);
+    g_free(decoded);
 }
 
 static gint
@@ -120,6 +129,10 @@ rtp_player_draw(Window *window)
         info->stream->changed = FALSE;
     }
 
+    if (info->decoded->len == 0) {
+        dialog_run("Failed to decode RTP stream");
+        return 1;
+    }
 
     gint width = getmaxx(window->win);
     mvwhline(window->win, 4, 4, '-', width - 19);
@@ -129,11 +142,11 @@ rtp_player_draw(Window *window)
     mvwprintw(window->win, 4, width - 13, "%02d:%02d/%02d:%02d",
               (info->player_pos / 8000) / 60,      /* current minutes */
               (info->player_pos / 8000) % 60,      /* current seconds */
-              (info->decoded_len / 8000 / 2) / 60, /* decoded minutes */
-              (info->decoded_len / 8000 / 2) % 60  /* decoded seconds */
+              (info->decoded->len / 8000 / 2) / 60, /* decoded minutes */
+              (info->decoded->len / 8000 / 2) % 60  /* decoded seconds */
     );
 
-    gint perc = ((float) (info->player_pos * 2) / info->decoded_len) * 100;
+    gint perc = ((float) (info->player_pos * 2) / info->decoded->len) * 100;
     if (perc > 0 && perc <= 100) {
         mvwhline(window->win, 4, 4, ACS_CKBOARD, ((width - 19) * ((float) perc / 100)));
     }
@@ -154,8 +167,8 @@ rtp_player_handle_key(Window *window, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_RIGHT:
-                if (info->player_pos + 2 * 8000 > info->decoded_len / 2) {
-                    info->player_pos = info->decoded_len / 2;
+                if (info->player_pos + 2 * 8000 > info->decoded->len / 2) {
+                    info->player_pos = info->decoded->len / 2;
                 } else {
                     info->player_pos += 2 * 8000;
                 }
@@ -168,8 +181,8 @@ rtp_player_handle_key(Window *window, int key)
                 }
                 break;
             case ACTION_UP:
-                if (info->player_pos + 10 * 8000 > info->decoded_len / 2) {
-                    info->player_pos = info->decoded_len / 2;
+                if (info->player_pos + 10 * 8000 > info->decoded->len / 2) {
+                    info->player_pos = info->decoded->len / 2;
                 } else {
                     info->player_pos += 10 * 8000;
                 }
@@ -185,7 +198,7 @@ rtp_player_handle_key(Window *window, int key)
                 info->player_pos = 0;
                 break;
             case ACTION_END:
-                info->player_pos = info->decoded_len / 2;
+                info->player_pos = info->decoded->len / 2;
                 break;
             default:
                 // Parse next actionº
@@ -206,17 +219,17 @@ rtp_player_write_cb(pa_stream *s, size_t length, gpointer userdata)
     RtpPlayerInfo *info = rtp_player_win_info(userdata);
     g_return_if_fail(info != NULL);
 
-    if (info->player_pos * 2 + length > info->decoded_len) {
-        info->player_pos = info->decoded_len / 2;
+    if (info->player_pos * 2 + length > info->decoded->len) {
+        info->player_pos = info->decoded->len / 2;
         return;
     }
 
-    if (length > info->decoded_len) {
-        length = info->decoded_len;
+    if (length > info->decoded->len) {
+        length = info->decoded->len;
     }
 
-    pa_stream_write(s, info->decoded + info->player_pos, length, NULL, 0LL, PA_SEEK_RELATIVE);
-    if (info->player_pos < info->decoded_len) {
+    pa_stream_write(s, ((gint16*) info->decoded->data) + info->player_pos, length, NULL, 0LL, PA_SEEK_RELATIVE);
+    if (info->player_pos < info->decoded->len) {
         info->player_pos += length / 2;
     }
 }
@@ -277,6 +290,7 @@ rtp_player_free(Window *window)
     pa_context_disconnect(info->pa_ctx);
     pa_context_unref(info->pa_ctx);
     pa_threaded_mainloop_free(info->pa_ml);
+    g_byte_array_free(info->decoded, TRUE);
     g_free(window);
 }
 
@@ -332,6 +346,9 @@ rtp_player_win_new()
             g_strfreev(ssh_data);
         }
     }
+
+    // Create decoded data array
+    info->decoded = g_byte_array_new();
 
     // Create Pulseadio Main loop
     info->pa_ml = pa_threaded_mainloop_new();

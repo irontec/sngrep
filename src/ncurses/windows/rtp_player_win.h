@@ -50,10 +50,10 @@ struct _RtpPlayerInfo
     //! Pulseadio Player connected flag
     gboolean connected;
 
+    //! Last packet index parsed of the stream
+    guint last_packet;
     //! Decoded RTP data
-    gint16 *decoded;
-    //! Decoded RTP data length
-    gsize decoded_len;
+    GByteArray *decoded;
     //! Current player position
     gsize player_pos;
     //! Player context status
