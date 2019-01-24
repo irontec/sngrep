@@ -1159,7 +1159,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     }
 
     // Check if displayed stream is active
-    int active = stream_is_active(stream);
+    gboolean active = stream_is_active(stream);
 
     // Clear the line
     mvwprintw(win, cline, startpos + 2, "%*s", distance, "");

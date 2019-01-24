@@ -49,7 +49,7 @@
 #define RTCP_HDR_LENGTH 4
 
 // If stream does not receive a packet in this seconds, we consider it inactive
-#define STREAM_INACTIVE_SECS 3
+#define STREAM_INACTIVE_SECS 1000000
 
 #define RTP_CODEC_G711A 8
 #define RTP_CODEC_G729  18

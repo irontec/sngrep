@@ -62,7 +62,7 @@ struct _RtpStream
     Message *msg;
     //! First received packet time
     GTimeVal firsttv;
-    //! Unix timestamp of last received packet
+    //! Last time this stream was updated
     gint64 lasttm;
     //! Changed since last checked flag
     gboolean changed;
