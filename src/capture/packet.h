@@ -131,4 +131,19 @@ packet_transport(Packet *packet);
 GTimeVal
 packet_time(const Packet *packet);
 
+/**
+ * @brief Free allocated memory in Packet frame
+ * @param frame Frame pointer to be free'd
+ */
+void
+packet_frame_free(PacketFrame *frame);
+
+/**
+ * @brief Create a new packet frame to store captured data
+ * @return pointer to a new allocated frame structure | NULL
+ */
+PacketFrame *
+packet_frame_new();
+
+
 #endif /* __SNGREP_PACKET_H */

@@ -53,7 +53,7 @@ packet_tcp_sort_segments(const PacketTcpData **a, const PacketTcpData **b)
 static gchar *
 packet_tcp_assembly_hashkey(Packet *packet)
 {
-    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    PacketIpData *ipdata = packet_ip_data(packet);
     g_return_val_if_fail(ipdata != NULL, NULL);
     PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
     g_return_val_if_fail(tcpdata != NULL, NULL);
@@ -71,7 +71,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
 
     // Get Packet IP protocol information
-    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    PacketIpData *ipdata = packet_ip_data(packet);
     g_return_val_if_fail(ipdata != NULL, NULL);
 
     // Is this a IP/TCP packet?

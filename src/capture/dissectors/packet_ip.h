@@ -109,6 +109,14 @@ struct _DissectorIpData
 };
 
 /**
+ * @brief Retrieve packet IP protocol specific data
+ * @param packet Packet pointer to get data
+ * @return Pointer to PacketIPData | NULL
+ */
+PacketIpData *
+packet_ip_data(const Packet *packet);
+
+/**
  * @brief Create a IP parser
  *
  * @return a protocols' parsers pointer

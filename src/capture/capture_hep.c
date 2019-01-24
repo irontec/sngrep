@@ -359,7 +359,7 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     PacketFrame *frame = g_list_nth_data(packet->frames, 0);
 
     // Packet IP Data
-    PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
+    PacketIpData *ip = packet_ip_data(packet);
     g_return_if_fail(ip != NULL);
 
     // Packet UDP Data

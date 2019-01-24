@@ -139,6 +139,10 @@ packet_rtp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
     PacketRtpData *rtp_data = g_ptr_array_index(packet->proto, PACKET_RTP);
     g_return_if_fail(rtp_data != NULL);
 
+    if (packet_rtp_standard_codec(rtp_data->encoding->id) == NULL) {
+        g_free(rtp_data->encoding);
+    }
+
     g_byte_array_free(rtp_data->payload, TRUE);
     g_free(rtp_data);
 }

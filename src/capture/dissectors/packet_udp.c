@@ -43,7 +43,7 @@ packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     uint16_t udp_off = sizeof(struct udphdr);
 
     //! Is this a IP/TCP packet?
-    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    PacketIpData *ipdata = packet_ip_data(packet);
     if (ipdata->protocol != IPPROTO_UDP)
         return data;
 

@@ -355,14 +355,15 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     g_byte_array_append(data, content, header->caplen);
 
     // Create a new packet for this data
-    Packet *packet = packet_new(parser);
-    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
+    PacketFrame *frame = packet_frame_new();
     frame->ts.tv_sec = header->ts.tv_sec;
     frame->ts.tv_usec = header->ts.tv_usec;
     frame->caplen = header->caplen;
     frame->len = header->len;
     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);
+
+    Packet *packet = packet_new(parser);
     packet->frames = g_list_append(packet->frames, frame);
 
     // Initialize parser dissector to first one

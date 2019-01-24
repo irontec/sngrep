@@ -82,7 +82,7 @@ packet_src_address(const Packet *packet)
     Address address = { 0 };
 
     // Get IP address from IP parsed protocol
-    PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
+    PacketIpData *ip = packet_ip_data(packet);
     g_return_val_if_fail(ip, address);
     g_utf8_strncpy(address.ip, ip->srcip, ADDRESSLEN);
 
@@ -106,7 +106,7 @@ packet_dst_address(const Packet *packet)
     Address address = { 0 };
 
     // Get IP address from IP parsed protocol
-    PacketIpData *ip = g_ptr_array_index(packet->proto, PACKET_IP);
+    PacketIpData *ip = packet_ip_data(packet);
     g_return_val_if_fail(ip, address);
     g_utf8_strncpy(address.ip, ip->dstip, ADDRESSLEN);
 
@@ -153,4 +153,17 @@ packet_time(const Packet *packet)
 
     // Return packe timestamp
     return ts;
+}
+
+void
+packet_frame_free(PacketFrame *frame)
+{
+    g_free(frame);
+}
+
+PacketFrame *
+packet_frame_new()
+{
+    PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
+    return frame;
 }

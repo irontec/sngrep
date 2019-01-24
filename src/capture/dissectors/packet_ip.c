@@ -37,6 +37,13 @@
 #include "capture/parser.h"
 #include "packet_ip.h"
 
+PacketIpData *
+packet_ip_data(const Packet *packet)
+{
+    g_return_val_if_fail(packet != NULL, NULL);
+    return g_ptr_array_index(packet->proto, PACKET_IP);
+}
+
 static gint
 packet_ip_sort_fragments(const PacketIpFragment **a, const PacketIpFragment **b)
 {
@@ -108,7 +115,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // IP packet without payload
     if (fragment->len == 0) {
         g_free(fragment);
-        return NULL;
+        return data;
     }
 
     // Save IP Addresses into packet
@@ -191,11 +198,12 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                 g_list_free(fragment->packet->frames);
                 fragment->packet->frames = NULL;
 
-                // Free stored packet data
+                // Free all puckets of the datagram except current one
                 packet_free(fragment->packet);
             }
+
             // Free fragment data
-            g_byte_array_free(fragment->data, FALSE);
+            g_byte_array_free(fragment->data, TRUE);
         }
 
         // Remove the datagram information
@@ -207,13 +215,14 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         return packet_parser_next_dissector(parser, packet, data);
     }
 
+    // Packet handled and stored for IP assembly
     return NULL;
 }
 
 static void
 packet_ip_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
 {
-    PacketIpData *ipdata = g_ptr_array_index(packet->proto, PACKET_IP);
+    PacketIpData *ipdata = packet_ip_data(packet);
     g_return_if_fail(ipdata != NULL);
 
     g_free(ipdata);
