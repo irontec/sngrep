@@ -95,7 +95,7 @@ address_is_local(Address addr)
                     break;
 #endif
                 default:
-                    return FALSE;
+                    continue;
             }
 
             // Check if this address matches
