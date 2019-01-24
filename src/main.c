@@ -88,16 +88,14 @@ main(int argc, char *argv[])
     gboolean quiet = FALSE;
     gboolean version = FALSE;
     gboolean config_dump = FALSE;
-    gboolean no_config = FALSE;
-    gchar *output_file = NULL;
-    gchar *config_file = NULL;
 #ifdef WITH_SSL
     gchar *keyfile = NULL;
 #endif
     StorageSortOpts storage_sopts = { 0 };
     StorageMatchOpts storage_mopts = { 0 };
     StorageCaptureOpts storage_copts = { 0 };
-    CaptureManager *manager;
+    SettingOpts setting_opts = { 0 };
+    CaptureManager *capture;
     CaptureInput *input;
     CaptureOutput *output;
 
@@ -108,7 +106,7 @@ main(int argc, char *argv[])
           "Use this capture device instead of default", "DEVICE" },
         { "input", 'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &input_files,
           "Read captured data from pcap file", "FILE" },
-        { "output", 'O', 0, G_OPTION_ARG_FILENAME, &output_file,
+        { "output", 'O', 0, G_OPTION_ARG_FILENAME, &storage_copts.outfile,
           "Write captured data to pcap file", "FILE" },
         { "calls", 'c', 0, G_OPTION_ARG_NONE, &storage_mopts.invite,
           "Only display dialogs starting with INVITE", NULL },
@@ -128,13 +126,13 @@ main(int argc, char *argv[])
           "Invert <match expression>", NULL },
         { "dump-config", 'D', 0, G_OPTION_ARG_NONE, &config_dump,
           "Print active configuration settings and exit", NULL },
-        { "config", 'f', 0, G_OPTION_ARG_FILENAME, &config_file,
+        { "config", 'f', 0, G_OPTION_ARG_FILENAME, &setting_opts.file,
           "Read configuration from FILE", "FILE" },
-        { "no-config", 'F', 0, G_OPTION_ARG_NONE, &no_config,
+        { "no-config", 'F', 0, G_OPTION_ARG_NONE, &setting_opts.use_defaults,
           "Do not read configuration from default config file", NULL },
 #ifdef WITH_SSL
-    { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
-        "RSA private keyfile to decrypt captured packets", "KEYFILE" },
+        { "keyfile", 'k', 0, G_OPTION_ARG_FILENAME, &keyfile,
+          "RSA private keyfile to decrypt captured packets", "KEYFILE" },
 #endif
 #ifdef USE_HEP
         { "hep-listen", 'L', 0, G_OPTION_ARG_STRING, &hep_listen,
@@ -161,11 +159,7 @@ main(int argc, char *argv[])
     attribute_init();
 
     // Initialize configuration options
-    settings_init(no_config);
-
-    // Override default configuration options if requested
-    if (config_file)
-        setting_read_file(config_file);
+    settings_init(setting_opts);
 
     // Get initial values for configurable arguments
     if (!storage_mopts.invite)
@@ -173,7 +167,7 @@ main(int argc, char *argv[])
     if (!storage_mopts.complete)
         storage_mopts.complete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
     if (!storage_copts.limit)
-        storage_copts.limit = setting_get_intvalue(SETTING_CAPTURE_LIMIT);
+        storage_copts.limit = (guint) setting_get_intvalue(SETTING_CAPTURE_LIMIT);
     if (!storage_copts.rtp)
         storage_copts.rtp = setting_enabled(SETTING_CAPTURE_RTP);
     if (!storage_copts.rotate)
@@ -182,7 +176,12 @@ main(int argc, char *argv[])
         storage_copts.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
 
 #ifdef WITH_SSL
-    if (!keyfile) keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
+    if (!keyfile) {
+        keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
+        // Automatically enable TCP and TLS protocols when using private key
+        setting_set_value(SETTING_CAPTURE_PACKET_TCP, SETTING_ON);
+        setting_set_value(SETTING_CAPTURE_PACKET_TLS, SETTING_ON);
+    }
 #endif
 
     // Parse command line arguments that have high priority
@@ -197,10 +196,10 @@ main(int argc, char *argv[])
 
     /***************************** Capture Inputs *****************************/
     // Main packet capture manager
-    manager = capture_manager_new();
+    capture = capture_manager_new();
 
     // Handle capture input from files
-    GList *files = NULL;
+    g_autoptr(GList) files = NULL;
     for (guint i = 0; input_files && i < g_strv_length(input_files); i++) {
         if (g_file_test(input_files[i], G_FILE_TEST_EXISTS)) {
             // An actual file, just append to the list
@@ -255,18 +254,17 @@ main(int argc, char *argv[])
     // Handle capture file inputs
     for (GList *l = files; l != NULL; l = l->next) {
         if ((input = capture_input_pcap_offline(l->data, &error))) {
-            capture_manager_add_input(manager, input);
+            capture_manager_add_input(capture, input);
         } else {
             g_printerr("error: %s\n", error->message);
             return 1;
         }
     }
-    g_list_free(files);
 
     // Handle capture device inputs
     for (guint i = 0; input_devices && i < g_strv_length(input_devices); i++) {
         if ((input = capture_input_pcap_online(input_devices[i], &error))) {
-            capture_manager_add_input(manager, input);
+            capture_manager_add_input(capture, input);
         } else {
             g_printerr("error: %s\n", error->message);
             return 1;
@@ -277,7 +275,7 @@ main(int argc, char *argv[])
     // Hep settings
     if (hep_listen) {
         if ((input = capture_input_hep(hep_listen, &error))) {
-            capture_manager_add_input(manager, input);
+            capture_manager_add_input(capture, input);
         } else {
             g_printerr("error: %s\n", error->message);
             return 1;
@@ -293,16 +291,16 @@ main(int argc, char *argv[])
             return 1;
         } else {
             // Set capture decrypt key file
-            capture_manager_set_keyfile(manager, keyfile, &error);
+            capture_manager_set_keyfile(capture, keyfile, &error);
         }
     }
 #endif
 
     // If no capture file or device selected, use default capture device
-    if (g_slist_length(manager->inputs) == 0) {
+    if (g_slist_length(capture->inputs) == 0) {
         gchar *default_device = (gchar *) setting_get_value(SETTING_CAPTURE_DEVICE);
         if ((input = capture_input_pcap_online(default_device, &error))) {
-            capture_manager_add_input(manager, input);
+            capture_manager_add_input(capture, input);
         } else {
             g_printerr("error: %s\n", error->message);
             return 1;
@@ -317,25 +315,24 @@ main(int argc, char *argv[])
         gchar *match_expr = argv[argi++];
 
         // Try to build the bpf filter string with the rest
-        GString *bpf_filter = g_string_new(NULL);
+        g_autoptr(GString) bpf_filter = g_string_new(NULL);
         while (argv[argi]) {
             g_string_append_printf(bpf_filter, " %s", argv[argi]);
             argi++;
         }
 
         // Check if this BPF filter is valid
-        if (!capture_manager_set_filter(manager, bpf_filter->str, NULL)) {
+        if (!capture_manager_set_filter(capture, bpf_filter->str, NULL)) {
             // BPF Filter invalid, check including match_expr
             g_string_prepend(bpf_filter, match_expr);
             match_expr = NULL;
 
             // Check bpf filter is valid again
-            if (!capture_manager_set_filter(manager, bpf_filter->str, &error)) {
+            if (!capture_manager_set_filter(capture, bpf_filter->str, &error)) {
                 g_printerr("error: %s\n", error->message);
                 return 1;
             }
         }
-        g_string_free(bpf_filter, FALSE);
 
         // Set the payload match expression
         storage_mopts.mexpr = match_expr;
@@ -343,9 +340,9 @@ main(int argc, char *argv[])
 
     /***************************** Capture Outputs *****************************/
     // Handle capture file output
-    if (output_file != NULL) {
-        if ((output = capture_output_pcap(output_file, &error))) {
-            capture_manager_add_output(manager, output);
+    if (storage_copts.outfile != NULL) {
+        if ((output = capture_output_pcap(storage_copts.outfile, &error))) {
+            capture_manager_add_output(capture, output);
         } else {
             g_printerr("error: %s\n", error->message);
             return 1;
@@ -356,7 +353,7 @@ main(int argc, char *argv[])
     // Handle capture HEP output
     if (hep_send != NULL) {
         if ((output = capture_output_hep(hep_send, &error))) {
-            capture_manager_add_output(manager, output);
+            capture_manager_add_output(capture, output);
         } else {
             g_printerr("error: %s\n", error->message);
             return 1;
@@ -372,7 +369,7 @@ main(int argc, char *argv[])
     };
 
     // Start capture threads
-    capture_manager_start(manager);
+    capture_manager_start(capture);
 
     if (!no_interface) {
         // Initialize interface
@@ -387,7 +384,7 @@ main(int argc, char *argv[])
         ncurses_wait_for_input();
     } else {
         setbuf(stdout, NULL);
-        while (capture_is_running(manager) || storage_pending_packets() >= 0) {
+        while (capture_is_running(capture) || storage_pending_packets() >= 0) {
             if (!quiet)
                 g_print("\rDialog count: %d", storage_calls_count());
             g_usleep(500 * 1000);
@@ -397,13 +394,13 @@ main(int argc, char *argv[])
     }
 
     // Capture stop
-    capture_manager_stop(manager);
+    capture_manager_stop(capture);
 
     // Deallocate sip stored messages
     storage_deinit();
 
     // Capture deinit
-    capture_manager_free(manager);
+    capture_manager_free(capture);
 
     // Deinitialize interface
     ncurses_deinit();

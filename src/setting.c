@@ -434,7 +434,7 @@ setting_read_file(const gchar *fname)
 }
 
 int
-settings_init(int no_config)
+settings_init(SettingOpts options)
 {
     // Custom user conf file
     const gchar *homedir = g_get_home_dir();
@@ -655,7 +655,7 @@ settings_init(int no_config)
 #endif
 
     // Done if config file should not be read
-    if (!no_config) {
+    if (!options.use_defaults) {
 
         // Read options from configuration files
         setting_read_file("/etc/sngreprc");
@@ -672,6 +672,11 @@ settings_init(int no_config)
         }
     }
     g_free(curdir);
+
+    // Override settings if requested
+    if (options.file != NULL) {
+        setting_read_file(options.file);
+    }
 
     return 0;
 }

@@ -228,17 +228,17 @@ gboolean
 packet_tls_privkey_check(const gchar *keyfile, GError **error)
 {
     gnutls_x509_privkey_t key;
-    gnutls_datum_t keycontent = { NULL, 0 };
     int ret;
 
     gnutls_global_init();
 
-    if (!g_file_get_contents(keyfile, (gchar **) &keycontent.data, (gsize *) &keycontent.size, error)) {
+    g_autoptr(GByteArray) key_bytes = g_byte_array_new();
+    if (!g_file_get_contents(keyfile, (gchar **) &key_bytes->data, (gsize *) &key_bytes->len, error)) {
         return FALSE;
     }
 
     // Check we have read something from keyfile
-    if (keycontent.size == 0) {
+    if (key_bytes->len == 0) {
         g_set_error(error,
                     TLS_ERROR,
                     TLS_ERROR_KEYFILE_EMTPY,
@@ -258,6 +258,7 @@ packet_tls_privkey_check(const gchar *keyfile, GError **error)
     }
 
     // Import RSA keyfile
+    gnutls_datum_t keycontent = { key_bytes->data, key_bytes->len };
     ret = gnutls_x509_privkey_import(key, &keycontent, GNUTLS_X509_FMT_PEM);
     if (ret < GNUTLS_E_SUCCESS) {
         g_set_error(error,
@@ -267,6 +268,9 @@ packet_tls_privkey_check(const gchar *keyfile, GError **error)
                     gnutls_strerror(ret));
         return FALSE;
     }
+
+    // Deallocate private key data
+    gnutls_x509_privkey_deinit(key);
 
     return TRUE;
 }

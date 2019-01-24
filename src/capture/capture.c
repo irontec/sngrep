@@ -70,7 +70,6 @@ capture_manager_free(CaptureManager *manager)
         }
     }
 
-    g_free(manager->filter);
     g_slist_free(manager->inputs);
     g_slist_free(manager->outputs);
     g_rec_mutex_clear(&manager->lock);

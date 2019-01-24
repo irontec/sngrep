@@ -50,9 +50,10 @@
 
 //! Shorter declaration of settings structs
 typedef struct _Setting Setting;
-typedef struct _SettingStorage SettingStorage;
 typedef struct _SettingAlias SettingAlias;
 typedef struct _SettingExtenIp SettingExtenIp;
+typedef struct _SettingStorageOpts SettingOpts;
+typedef struct _SettingStorage SettingStorage;
 
 //! Other useful defines
 #define SETTING_ON  "on"
@@ -218,6 +219,14 @@ struct _SettingExtenIp
 
 };
 
+struct _SettingStorageOpts
+{
+    //! Use default settings values
+    gboolean use_defaults;
+    //! Also read settings from given file
+    const gchar *file;
+};
+
 struct _SettingStorage
 {
     //! Array of settings
@@ -339,7 +348,7 @@ setting_read_file(const gchar *fname);
  * @return 0 in all cases
  */
 gint
-settings_init(gint no_config);
+settings_init(SettingOpts options);
 
 /**
  * @brief Deallocate options memory

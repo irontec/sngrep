@@ -545,7 +545,6 @@ storage_deinit()
     // Stop storage thread
     storage.running = FALSE;
     g_thread_join(storage.thread);
-    g_thread_unref(storage.thread);
 
     // Remove all calls
     storage_calls_clear();
