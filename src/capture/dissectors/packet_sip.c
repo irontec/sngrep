@@ -217,23 +217,17 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         return data;
 
     // Convert payload to something we can parse with regular expressions
-    GString *payload = g_string_new_len((const gchar *) data->data, data->len);
+    g_autoptr(GString) payload = g_string_new_len((const gchar *) data->data, data->len);
 
     // Split SIP payload in lines separated by CRLF
-    gchar **payload_data = g_strsplit(payload->str, SIP_CRLF, 0);
+    g_auto(GStrv) payload_data = g_strsplit(payload->str, SIP_CRLF, 0);
 
     if (g_strv_length(payload_data) == 0) {
-        g_string_free(payload, TRUE);
-        g_strfreev(payload_data);
         return data;
     }
 
-    gchar *first_line = payload_data[0];
-    gchar **first_line_data = g_strsplit(first_line, " ", 2);
+    g_auto(GStrv) first_line_data = g_strsplit(payload_data[0], " ", 2);
     if (g_strv_length(first_line_data) != 2) {
-        g_string_free(payload, TRUE);
-        g_strfreev(payload_data);
-        g_strfreev(first_line_data);
         return data;
     }
 
@@ -249,12 +243,9 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             }
         }
     }
-    g_strfreev(first_line_data);
 
     // No SIP information in first line. Skip this packet.
     if (method == NULL && resp_code == NULL) {
-        g_string_free(payload, TRUE);
-        g_strfreev(payload_data);
         return data;
     }
 
@@ -272,8 +263,8 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Add SIP information to the packet
     g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
 
-    guint sip_size = (guint) strlen(first_line) + 2 /* CRLF */;
-    gchar **headers = g_strsplit(payload->str, SIP_CRLF, 0);
+    guint sip_size = (guint) strlen(payload_data[0]) + 2 /* CRLF */;
+    g_auto(GStrv) headers = g_strsplit(payload->str, SIP_CRLF, 0);
     for (guint i = 1; i < g_strv_length(headers); i++) {
         const gchar *line = headers[i];
 
@@ -286,7 +277,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         // Sip Headers Size
         sip_size += strlen(line) + 2 /* CRLF */;
 
-        gchar **hdr_data = g_strsplit(line, ":", 2);
+        g_auto(GStrv) hdr_data = g_strsplit(line, ":", 2);
         if (g_strv_length(hdr_data) != 2) {
             break;
         }
@@ -304,17 +295,12 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         } else if (strcasecmp(hdr_name, "Content-Length") == 0 || strcasecmp(hdr_name, "l") == 0) {
             sip_data->content_len = g_ascii_strtoull(hdr_value, NULL, 10);
         } else if (strcasecmp(hdr_name, "CSeq") == 0) {
-            gchar **cseq_data = g_strsplit(hdr_value, " ", 2);
+            g_auto(GStrv) cseq_data = g_strsplit(hdr_value, " ", 2);
             if (g_strv_length(cseq_data) != 2)
                 break;
             sip_data->cseq = g_ascii_strtoull(cseq_data[0], NULL, 10);
-            g_strfreev(cseq_data);
         }
-        g_strfreev(hdr_data);
     }
-    g_strfreev(headers);
-    g_strfreev(payload_data);
-    g_string_free(payload, TRUE);
 
     // Check we have a valid SIP packet
     if (sip_data->callid == NULL) {
