@@ -42,17 +42,12 @@ msg_new(Packet *packet)
     Message *msg = g_malloc0(sizeof(Message));
     msg->packet = packet;
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    msg->medias = NULL;
     return msg;
 }
 
 void
 msg_free(Message *msg)
 {
-    // Free message SDP media
-    if (msg->retrans == NULL)
-        g_list_free(msg->medias);
-
     // Free message packets
     packet_free(msg->packet);
     // Free all memory
@@ -69,13 +64,18 @@ msg_get_call(const Message *msg)
 guint
 msg_media_count(Message *msg)
 {
-    return g_list_length(msg->medias);
+    PacketSdpData *sdp = packet_sdp_data(msg->packet);
+    g_return_val_if_fail(sdp != NULL, 0);
+    return g_list_length(sdp->medias);
 }
 
 PacketSdpMedia *
 msg_media_for_addr(Message *msg, Address dst)
 {
-    for (GList *l = msg->medias; l != NULL; l = l->next) {
+    PacketSdpData *sdp = packet_sdp_data(msg->packet);
+    g_return_val_if_fail(sdp != NULL, NULL);
+
+    for (GList *l = sdp->medias; l != NULL; l = l->next) {
         PacketSdpMedia *media = l->data;
         if (addressport_equals(media->address, dst)) {
             return media;
@@ -139,7 +139,10 @@ msg_get_attribute(Message *msg, gint id)
 const gchar *
 msg_get_preferred_codec_alias(Message *msg)
 {
-    PacketSdpMedia *media = g_list_nth_data(msg->medias, 0);
+    PacketSdpData *sdp = packet_sdp_data(msg->packet);
+    g_return_val_if_fail(sdp != NULL, NULL);
+
+    PacketSdpMedia *media = g_list_nth_data(sdp->medias, 0);
     g_return_val_if_fail(media != NULL, NULL);
 
     PacketSdpFormat *format = g_list_nth_data(media->formats, 0);

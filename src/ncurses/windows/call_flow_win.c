@@ -820,8 +820,11 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     Call *call = msg_get_call(msg);
     g_return_val_if_fail(call != NULL, 0);
 
+    // Packet SDP data
+    PacketSdpData *sdp_data = packet_sdp_data(msg->packet);
+
     // For extended, use xcallid nstead
-    PacketSdpMedia *media = g_list_nth_data(msg->medias, 0);
+    PacketSdpMedia *media = g_list_nth_data(sdp_data->medias, 0);
     timeval_to_time(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
@@ -847,7 +850,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
         sprintf(method, "%.3s (%s:%u)",
                 msg_method,
-                media->sconn->address,
+                (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address,
                 media->rtpport);
     }
 
@@ -931,7 +934,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 
     // Draw media information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        for (GList *l = msg->medias; l != NULL; l = l->next) {
+        for (GList *l = sdp_data->medias; l != NULL; l = l->next) {
             aline++;
             cline++;
             PacketSdpMedia *media = l->data;

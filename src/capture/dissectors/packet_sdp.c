@@ -162,7 +162,6 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
 
     // Create a new media container
     PacketSdpMedia *media = g_malloc0(sizeof(PacketSdpMedia));
-    media->sconn = sdp->sconn;
     media->rtpport = (guint16) strtoul(media_data[SDP_MEDIA_PORT], NULL, 10);
     media->type = packet_sdp_media_type(media_data[SDP_MEDIA_MEDIA]);
 
@@ -279,6 +278,7 @@ packet_sdp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
     g_return_if_fail(sdp_data);
 
     g_list_free_full(sdp_data->medias, (GDestroyNotify) packet_sdp_media_free);
+    g_free(sdp_data->sconn);
     g_free(sdp_data);
 }
 

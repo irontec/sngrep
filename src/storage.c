@@ -234,9 +234,6 @@ storage_register_streams(Message *msg)
     for (guint i = 0; i < g_list_length(sdp->medias); i++) {
         PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
 
-        // Add to the message
-        msg->medias = g_list_append(msg->medias, media);
-
         // Create RTP stream for this media
         if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
             RtpStream *stream = stream_new(STREAM_RTP, msg, media);

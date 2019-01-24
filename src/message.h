@@ -59,8 +59,6 @@ struct _Message
     Packet *packet;
     //! Attribute list for this message
     GHashTable *attributes;
-    //! SDP payload information
-    GList *medias;
     //! Message owner
     Call *call;
     //! Message is a retransmission from other message
