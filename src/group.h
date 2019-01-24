@@ -224,7 +224,7 @@ call_group_get_prev_msg(CallGroup *group, Message *msg);
  * @param msg Actual stream structure from any call of the group
  * @return next chronological stream in the group or NULL
  */
-RtpStream *
-call_group_get_next_stream(CallGroup *group, RtpStream *stream);
+Stream *
+call_group_get_next_stream(CallGroup *group, Stream *stream);
 
 #endif /* __SNGREP_GROUP_H_ */

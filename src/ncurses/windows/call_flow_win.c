@@ -125,7 +125,7 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
 {
     GTimeVal ts = {0};
     Message *msg;
-    RtpStream *stream;
+    Stream *stream;
 
     if (!arrow)
         return ts;
@@ -134,7 +134,7 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
         msg = (Message *) arrow->item;
         ts = packet_time(msg->packet);
     } else if (arrow->type == CF_ARROW_RTP) {
-        stream = (RtpStream *) arrow->item;
+        stream = (Stream *) arrow->item;
         ts = stream_time(stream);
     }
     return ts;
@@ -301,7 +301,7 @@ call_flow_arrow_message(const CallFlowArrow *arrow)
     }
 
     if (arrow->type == CF_ARROW_RTP) {
-        RtpStream *stream = arrow->item;
+        Stream *stream = arrow->item;
         return stream->msg;
     }
 
@@ -649,7 +649,7 @@ call_flow_create_arrows(Window *window)
     }
 
     // Create pending RTP arrows
-    RtpStream *stream = NULL;
+    Stream *stream = NULL;
     while ((stream = call_group_get_next_stream(info->group, stream))) {
         if (!call_flow_arrow_find(window, stream)) {
             CallFlowArrow *arrow = call_flow_arrow_create(window, stream, CF_ARROW_RTP);
@@ -693,7 +693,7 @@ static void
 call_flow_draw_columns(Window *window)
 {
     Call *call = NULL;
-    RtpStream *stream;
+    Stream *stream;
     char coltext[SETTING_MAX_LEN];
     Address addr;
 
@@ -1058,7 +1058,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     WINDOW *win;
     char text[50], time[20];
     int height;
-    RtpStream *stream = arrow->item;
+    Stream *stream = arrow->item;
     Message *msg;
     CallFlowArrow *msgarrow;
 
@@ -1351,7 +1351,7 @@ call_flow_draw_raw(Window *window, Message *msg)
  * @return 0 in all cases
  */
 static int
-call_flow_draw_raw_rtcp(Window *window, G_GNUC_UNUSED RtpStream *stream)
+call_flow_draw_raw_rtcp(Window *window, G_GNUC_UNUSED Stream *stream)
 {
     /**
      * TODO This is too experimental to even display it

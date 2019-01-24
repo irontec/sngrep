@@ -24,6 +24,9 @@
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Source of functions defined in packet_rtp.h
+ *
+ * @note RTP_VERSION and RTP_PAYLOAD_TYPE macros has been taken from wireshark
+ *       source code: packet-rtp.c
  */
 
 #include "config.h"

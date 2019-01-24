@@ -200,7 +200,7 @@ storage_capture_options()
 }
 
 static void
-storage_register_stream(RtpStream *stream)
+storage_register_stream(Stream *stream)
 {
     gchar *key;
 
@@ -236,7 +236,7 @@ storage_register_streams(Message *msg)
 
         // Create RTP stream for this media
         if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
-            RtpStream *stream = stream_new(STREAM_RTP, msg, media);
+            Stream *stream = stream_new(STREAM_RTP, msg, media);
             stream_set_dst(stream, media->address);
             call_add_stream(msg->call, stream);
             storage_register_stream(stream);
@@ -244,7 +244,7 @@ storage_register_streams(Message *msg)
 
         // Create RTCP stream for this media
         if (call_find_stream(msg->call, emptyaddr, media->address) == NULL) {
-            RtpStream *stream = stream_new(STREAM_RTCP, msg, media);
+            Stream *stream = stream_new(STREAM_RTCP, msg, media);
             stream_set_dst(stream, media->address);
             stream->dst.port = (media->rtcpport) ? media->rtcpport : (guint16) (media->rtpport + 1);
             call_add_stream(msg->call, stream);
@@ -253,7 +253,7 @@ storage_register_streams(Message *msg)
 
         // Create RTP stream with source of message as destination address
         if (call_find_stream(msg->call, msg_src_address(msg), media->address) == NULL) {
-            RtpStream *stream = stream_new(STREAM_RTP, msg, media);
+            Stream *stream = stream_new(STREAM_RTP, msg, media);
             stream_set_dst(stream, msg_src_address(msg));
             stream->dst.port = media->rtpport;
             call_add_stream(msg->call, stream);
@@ -340,7 +340,7 @@ storage_check_sip_packet(Packet *packet)
     return msg;
 }
 
-static RtpStream *
+static Stream *
 storage_check_rtp_packet(Packet *packet)
 {
     PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
@@ -371,7 +371,7 @@ storage_check_rtp_packet(Packet *packet)
     g_return_val_if_fail(call != NULL, NULL);
 
     // Find a matching stream in the call
-    RtpStream *stream = NULL;
+    Stream *stream = NULL;
     for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
         stream = g_ptr_array_index(call->streams, i);
 
@@ -383,7 +383,7 @@ storage_check_rtp_packet(Packet *packet)
                 storage_register_stream(stream);
 
                 // Create an exact stream for the opposite direction
-                RtpStream *reverse = stream_new(STREAM_RTP, msg, stream->media);
+                Stream *reverse = stream_new(STREAM_RTP, msg, stream->media);
                 stream_set_data(reverse, dst, src);
                 stream_set_format(reverse, rtp->encoding->id);
                 call_add_stream(call, reverse);
@@ -422,7 +422,7 @@ storage_check_rtp_packet(Packet *packet)
     return stream;
 }
 
-static RtpStream *
+static Stream *
 storage_check_rtcp_packet(Packet *packet)
 {
     PacketRtcpData *rtcp = g_ptr_array_index(packet->proto, PACKET_RTP);
@@ -439,7 +439,7 @@ storage_check_rtcp_packet(Packet *packet)
 
     // Check if one of the destination has the configured format
     for (GList *l = streams; l != NULL; l = l->next) {
-        RtpStream *stream = l->data;
+        Stream *stream = l->data;
         // Add packet to stream
         stream_set_data(stream, src, dst);
         stream_add_packet(stream, packet);

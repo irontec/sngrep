@@ -34,10 +34,10 @@
 #include "stream.h"
 #include "storage.h"
 
-RtpStream *
-stream_new(enum RtpStreamType type, Message *msg, PacketSdpMedia *media)
+Stream *
+stream_new(enum StreamType type, Message *msg, PacketSdpMedia *media)
 {
-    RtpStream *stream = g_malloc0(sizeof(RtpStream));
+    Stream *stream = g_malloc0(sizeof(Stream));
 
     // Initialize all fields
     stream->type = type;
@@ -48,39 +48,39 @@ stream_new(enum RtpStreamType type, Message *msg, PacketSdpMedia *media)
 }
 
 void
-stream_free(RtpStream *stream)
+stream_free(Stream *stream)
 {
     g_ptr_array_free(stream->packets, TRUE);
     g_free(stream);
 }
 
 void
-stream_set_src(RtpStream *stream, Address src)
+stream_set_src(Stream *stream, Address src)
 {
     stream->src = src;
 }
 
 void
-stream_set_dst(RtpStream *stream, Address dst)
+stream_set_dst(Stream *stream, Address dst)
 {
     stream->dst = dst;
 }
 
 void
-stream_set_data(RtpStream *stream, Address src, Address dst)
+stream_set_data(Stream *stream, Address src, Address dst)
 {
     stream->src = src;
     stream->dst = dst;
 }
 
 void
-stream_set_format(RtpStream *stream, guint8 format)
+stream_set_format(Stream *stream, guint8 format)
 {
     stream->fmtcode = format;
 }
 
 void
-stream_add_packet(RtpStream *stream, Packet *packet)
+stream_add_packet(Stream *stream, Packet *packet)
 {
     stream->lasttm = g_get_monotonic_time();
     stream->changed = TRUE;
@@ -90,13 +90,13 @@ stream_add_packet(RtpStream *stream, Packet *packet)
 }
 
 guint
-stream_get_count(RtpStream *stream)
+stream_get_count(Stream *stream)
 {
     return stream->pkt_count;
 }
 
 const char *
-stream_get_format(RtpStream *stream)
+stream_get_format(Stream *stream)
 {
     // Get format for media payload
     if (!stream || !stream->media)
@@ -120,13 +120,13 @@ stream_get_format(RtpStream *stream)
 }
 
 GTimeVal
-stream_time(RtpStream *stream)
+stream_time(Stream *stream)
 {
     return stream->firsttv;
 }
 
 gboolean
-stream_is_active(RtpStream *stream)
+stream_is_active(Stream *stream)
 {
     return g_get_monotonic_time() - stream->lasttm <= STREAM_INACTIVE_SECS;
 }

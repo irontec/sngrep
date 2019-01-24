@@ -203,7 +203,7 @@ save_stream_to_file(Window *window)
     file_info.channels = 1;
     file_info.format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
 
-    RtpStream *stream = info->stream;
+    Stream *stream = info->stream;
     GByteArray *rtp_payload = g_byte_array_new();
 
     for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
@@ -363,7 +363,7 @@ save_to_file(Window *window)
 
             if (info->saveformat == SAVE_PCAP_RTP) {
                 for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
-                    RtpStream *stream = g_ptr_array_index(call->streams, j);
+                    Stream *stream = g_ptr_array_index(call->streams, j);
                     total += stream_get_count(stream);
                 }
             }
@@ -390,7 +390,7 @@ save_to_file(Window *window)
             // Save RTP packets
             if (info->saveformat == SAVE_PCAP_RTP) {
                 for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
-                    RtpStream *stream = g_ptr_array_index(call->streams, j);
+                    Stream *stream = g_ptr_array_index(call->streams, j);
                     dialog_progress_set_value(progress, (++cur * 100) / total);
                     g_ptr_array_add_array(packets, stream->packets);
                 }
@@ -585,7 +585,7 @@ save_set_msg(Window *window, Message *msg)
 }
 
 void
-save_set_stream(Window *window, RtpStream *stream)
+save_set_stream(Window *window, Stream *stream)
 {
     // Get panel information
     SaveWinInfo *info = save_info(window);

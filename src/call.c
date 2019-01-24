@@ -91,7 +91,7 @@ call_add_message(Call *call, Message *msg)
 }
 
 void
-call_add_stream(Call *call, RtpStream *stream)
+call_add_stream(Call *call, Stream *stream)
 {
     // Store stream
     g_ptr_array_add(call->streams, stream);
@@ -252,10 +252,10 @@ call_add_xcall(Call *call, Call *xcall)
     g_ptr_array_add(call->xcalls, xcall);
 }
 
-RtpStream *
+Stream *
 call_find_stream(Call *call, Address src, Address dst)
 {
-    RtpStream *stream;
+    Stream *stream;
 
     // Look for an incomplete stream with this destination
     for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
@@ -280,10 +280,10 @@ call_find_stream(Call *call, Address src, Address dst)
     return NULL;
 }
 
-RtpStream *
+Stream *
 call_find_stream_exact(Call *call, Address src, Address dst)
 {
-    RtpStream *stream;
+    Stream *stream;
 
     // Create an iterator for call streams
     for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {

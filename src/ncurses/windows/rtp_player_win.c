@@ -40,7 +40,7 @@ rtp_player_win_info(Window *window)
 }
 
 static void
-rtp_player_decode_stream(Window *window, RtpStream *stream)
+rtp_player_decode_stream(Window *window, Stream *stream)
 {
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_if_fail(info != NULL);
@@ -251,7 +251,7 @@ rtp_player_underflow_cb(pa_stream *s, gpointer userdata)
 }
 
 void
-rtp_player_set_stream(Window *window, RtpStream *stream)
+rtp_player_set_stream(Window *window, Stream *stream)
 {
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_if_fail(info != NULL);

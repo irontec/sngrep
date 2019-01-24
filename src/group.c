@@ -137,7 +137,7 @@ call_group_changed(CallGroup *group)
 
         // Check if any of the call streams is still active
         for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
-            RtpStream *stream = g_ptr_array_index(call->streams, j);
+            Stream *stream = g_ptr_array_index(call->streams, j);
             if (stream_is_active(stream)) {
                 changed = TRUE;
             }
@@ -223,10 +223,10 @@ call_group_get_prev_msg(CallGroup *group, Message *msg)
     return prev;
 }
 
-RtpStream *
-call_group_get_next_stream(CallGroup *group, RtpStream *stream)
+Stream *
+call_group_get_next_stream(CallGroup *group, Stream *stream)
 {
-    RtpStream *next = g_ptr_array_next(group->streams, stream);
+    Stream *next = g_ptr_array_next(group->streams, stream);
 
     if (next != NULL) {
         if (next->type != STREAM_RTP)

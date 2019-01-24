@@ -24,9 +24,6 @@
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage rtp streams
- *
- * @note RTP_VERSION and RTP_PAYLOAD_TYPE macros has been taken from wireshark
- *       source code: packet-rtp.c
  */
 
 #ifndef __SNGREP_STREAM_H
@@ -40,18 +37,18 @@
 #include "capture/dissectors/packet_rtcp.h"
 
 //! Shorter declaration of rtp_stream structure
-typedef struct _RtpStream RtpStream;
+typedef struct _Stream Stream;
 
-enum RtpStreamType
+enum StreamType
 {
     STREAM_RTP = 0,
     STREAM_RTCP
 };
 
-struct _RtpStream
+struct _Stream
 {
     //! Determine stream type
-    enum RtpStreamType type;
+    enum StreamType type;
     //! Source address
     Address src;
     //! Destination address
@@ -74,35 +71,35 @@ struct _RtpStream
     GPtrArray *packets;
 };
 
-RtpStream *
-stream_new(enum RtpStreamType type, Message *msg, PacketSdpMedia *media);
+Stream *
+stream_new(enum StreamType type, Message *msg, PacketSdpMedia *media);
 
 void
-stream_free(RtpStream *stream);
+stream_free(Stream *stream);
 
 void
-stream_set_src(RtpStream *stream, Address src);
+stream_set_src(Stream *stream, Address src);
 
 void
-stream_set_dst(RtpStream *stream, Address dst);
+stream_set_dst(Stream *stream, Address dst);
 
 void
-stream_set_data(RtpStream *stream, Address src, Address dst);
+stream_set_data(Stream *stream, Address src, Address dst);
 
 void
-stream_set_format(RtpStream *stream, guint8 format);
+stream_set_format(Stream *stream, guint8 format);
 
 void
-stream_add_packet(RtpStream *stream, Packet *packet);
+stream_add_packet(Stream *stream, Packet *packet);
 
 guint
-stream_get_count(RtpStream *stream);
+stream_get_count(Stream *stream);
 
 const char *
-stream_get_format(RtpStream *stream);
+stream_get_format(Stream *stream);
 
 GTimeVal
-stream_time(RtpStream *stream);
+stream_time(Stream *stream);
 
 /**
  * @brief Determine if a stream is still active
@@ -114,6 +111,6 @@ stream_time(RtpStream *stream);
  * @return 0 if stream is inactive
  */
 gboolean
-stream_is_active(RtpStream *stream);
+stream_is_active(Stream *stream);
 
 #endif /* __SNGREP_STREAM_H */

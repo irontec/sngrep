@@ -108,7 +108,7 @@ struct _SaveWinInfo
     //! Message to be saved
     Message *msg;
     //! Stream to be saved
-    RtpStream *stream;
+    Stream *stream;
 };
 
 /**
@@ -168,6 +168,6 @@ save_set_msg(Window *window, Message *msg);
  * @param stream Stream packets to be saved
  */
 void
-save_set_stream(Window *window, RtpStream *stream);
+save_set_stream(Window *window, Stream *stream);
 
 #endif

@@ -136,7 +136,7 @@ call_add_message(Call *call, Message *msg);
  * @param stream RTP stream data
  */
 void
-call_add_stream(Call *call, RtpStream *stream);
+call_add_stream(Call *call, Stream *stream);
 
 /**
  * @brief Getter for call messages linked list size
@@ -207,10 +207,10 @@ call_attr_compare(const Call *one, const Call *two, enum AttributeId id);
 void
 call_add_xcall(Call *call, Call *xcall);
 
-RtpStream *
+Stream *
 call_find_stream(Call *call, Address src, Address dst);
 
-RtpStream *
+Stream *
 call_find_stream_exact(Call *call, Address src, Address dst);
 
 /**

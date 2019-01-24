@@ -38,7 +38,7 @@ typedef struct _RtpPlayerInfo RtpPlayerInfo;
 struct _RtpPlayerInfo
 {
     //! Stream to be played
-    RtpStream *stream;
+    Stream *stream;
     //! Glib Pulseaudio Main loop
     pa_threaded_mainloop *pa_ml;
     //! Glib Pulseuadio Main loop Context
@@ -70,7 +70,7 @@ struct _RtpPlayerInfo
 };
 
 void
-rtp_player_set_stream(Window *window, RtpStream *stream);
+rtp_player_set_stream(Window *window, Stream *stream);
 
 Window *
 rtp_player_win_new();
