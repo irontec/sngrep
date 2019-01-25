@@ -27,6 +27,7 @@
  */
 #include "config.h"
 #include <glib.h>
+#include <glib/gstdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <form.h>
@@ -164,41 +165,36 @@ save_stream_to_file(Window *window)
     SaveWinInfo *info = save_info(window);
     g_return_val_if_fail(info != NULL, false);
 
-    char savepath[SETTING_MAX_LEN];
-    char savefile[SETTING_MAX_LEN];
-    char fullfile[SETTING_MAX_LEN * 2];
-
     // Get current path field value.
-    memset(savepath, 0, sizeof(savepath));
-    strcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0));
+    g_autofree gchar *savepath = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN);
     g_strstrip(savepath);
     if (strlen(savepath))
         strcat(savepath, "/");
 
     // Get current file field value.
-    memset(savefile, 0, sizeof(savefile));
-    strcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    g_autofree gchar *savefile = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN);
     g_strstrip(savefile);
 
     if (!strlen(savefile)) {
         dialog_run("Please enter a valid filename");
-        return false;
+        return FALSE;
     }
 
     if (!strstr(savefile, ".wav"))
         strcat(savefile, ".wav");
 
     // Absolute filename
-    sprintf(fullfile, "%s%s", savepath, savefile);
-
-    if (access(fullfile, R_OK) == 0) {
+    g_autofree gchar *fullfile = g_strdup_printf("%s%s", savepath, savefile);
+    if (g_access(fullfile, R_OK) == 0) {
         if (dialog_confirm("Overwrite confirmation",
                            "Selected file already exits.\n Do you want to overwrite it?",
                            "Yes,No") != 0)
             return false;
     }
 
-    SF_INFO file_info;
+    SF_INFO file_info = { 0 };
     file_info.samplerate = 8000;
     file_info.channels = 1;
     file_info.format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
@@ -212,7 +208,7 @@ save_stream_to_file(Window *window)
         g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
     }
 
-    gint16 *decoded = NULL;
+    g_autofree gint16 *decoded = NULL;
     gsize decoded_len = 0;
     switch (stream->fmtcode) {
         case RTP_CODEC_G711A:
@@ -225,20 +221,30 @@ save_stream_to_file(Window *window)
 #endif
         default:
             dialog_run("Unsupported RTP payload type %d", stream->fmtcode);
-            return false;
+            return FALSE;
     }
 
     // Failed to decode data
     if (decoded == NULL) {
         dialog_run("error: Failed to decode RTP payload");
-        return false;
+        return FALSE;
     }
 
+    // Create a new wav file in requested path
     SNDFILE *file = sf_open(fullfile, SFM_WRITE, &file_info);
-    sf_write_short(file, decoded, decoded_len);
+    if (file == NULL) {
+        dialog_run("error: %s", sf_strerror(file));
+        return FALSE;
+    }
+
+    // Save all decoded bytes
+    sf_write_short(file, decoded, decoded_len / 2);
+
+    // Close wav file and free decoded data
     sf_close(file);
-    dialog_run("%d RTP bytes decoded into %s", rtp_payload->len, fullfile);
-    return true;
+
+    dialog_run("%d bytes decoded into %s", decoded_len, fullfile);
+    return TRUE;
 }
 
 #endif
