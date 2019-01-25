@@ -169,8 +169,8 @@ save_stream_to_file(Window *window)
     g_autofree gchar *savepath = g_malloc0(SETTING_MAX_LEN);
     g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
     g_strstrip(savepath);
-    if (strlen(savepath))
-        strcat(savepath, "/");
+    if (strlen(savepath) != 0)
+        strcat(savepath, G_DIR_SEPARATOR_S);
 
     // Get current file field value.
     g_autofree gchar *savefile = g_malloc0(SETTING_MAX_LEN);
@@ -275,8 +275,8 @@ save_to_file(Window *window)
     g_autofree gchar *savepath = g_malloc0(SETTING_MAX_LEN);
     g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
     g_strstrip(savepath);
-    if (strlen(savepath))
-        strcat(savepath, "/");
+    if (strlen(savepath) != 0)
+        strcat(savepath, G_DIR_SEPARATOR_S);
 
     // Get current file field value.
     g_autofree gchar *savefile = g_malloc0(SETTING_MAX_LEN);
