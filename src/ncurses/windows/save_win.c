@@ -167,14 +167,14 @@ save_stream_to_file(Window *window)
 
     // Get current path field value.
     g_autofree gchar *savepath = g_malloc0(SETTING_MAX_LEN);
-    g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN);
+    g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
     g_strstrip(savepath);
     if (strlen(savepath))
         strcat(savepath, "/");
 
     // Get current file field value.
     g_autofree gchar *savefile = g_malloc0(SETTING_MAX_LEN);
-    g_strlcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN);
+    g_strlcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN - 10);
     g_strstrip(savefile);
 
     if (!strlen(savefile)) {
@@ -194,7 +194,7 @@ save_stream_to_file(Window *window)
             return false;
     }
 
-    SF_INFO file_info = { 0 };
+    SF_INFO file_info = {0};
     file_info.samplerate = 8000;
     file_info.channels = 1;
     file_info.format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
@@ -261,9 +261,6 @@ save_stream_to_file(Window *window)
 static int
 save_to_file(Window *window)
 {
-    char savepath[SETTING_MAX_LEN];
-    char savefile[SETTING_MAX_LEN];
-    char fullfile[SETTING_MAX_LEN * 2];
     CaptureOutput *output = NULL;
     int cur = 0, total = 0;
     WINDOW *progress;
@@ -275,15 +272,15 @@ save_to_file(Window *window)
     SaveWinInfo *info = save_info(window);
 
     // Get current path field value.
-    memset(savepath, 0, sizeof(savepath));
-    strcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0));
+    g_autofree gchar *savepath = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
     g_strstrip(savepath);
     if (strlen(savepath))
         strcat(savepath, "/");
 
     // Get current file field value.
-    memset(savefile, 0, sizeof(savefile));
-    strcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    g_autofree gchar *savefile = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN - 10);
     g_strstrip(savefile);
 
     if (!strlen(savefile)) {
@@ -300,8 +297,7 @@ save_to_file(Window *window)
     }
 
     // Absolute filename
-    sprintf(fullfile, "%s%s", savepath, savefile);
-
+    g_autofree gchar *fullfile = g_strdup_printf("%s%s", savepath, savefile);
     if (access(fullfile, R_OK) == 0) {
         if (dialog_confirm("Overwrite confirmation",
                            "Selected file already exits.\n Do you want to overwrite it?",
