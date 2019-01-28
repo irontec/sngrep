@@ -511,11 +511,10 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, enum CallFlowA
 
         GPtrArray *msgs = call->msgs;
         for (guint i = 0; i < g_ptr_array_len(msgs); i++) {
-            CallFlowArrow *msg_arrow =
-                    call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
-
-            if (msg_arrow == NULL)
-                continue;
+            CallFlowArrow *msg_arrow = call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
+            if (msg_arrow == NULL) continue;
+            if (msg_arrow == arrow) continue;
+            if (msg_arrow->type == CF_ARROW_SIP) continue;
 
             if (addressport_equals(msg_src_address(msg), msg_arrow->scolumn->addr)
                 && addressport_equals(msg_dst_address(msg), msg_arrow->dcolumn->addr)) {

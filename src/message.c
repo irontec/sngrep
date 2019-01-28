@@ -86,6 +86,41 @@ msg_media_for_addr(Message *msg, Address dst)
 }
 
 gboolean
+msg_is_initial_transaction(Message *msg)
+{
+    for (guint i = 0; i < g_ptr_array_len(msg->call->msgs); i++) {
+        Message *call_msg = g_ptr_array_index(msg->call->msgs, i);
+        if (!msg_is_request(call_msg)) continue;
+        if (call_msg == msg) break;
+
+        if (msg_get_cseq(msg) != msg_get_cseq(call_msg)) {
+            continue;
+        }
+
+        if (msg_is_request(msg)) {
+            if (!addressport_equals(
+                    packet_src_address(msg->packet),
+                    packet_src_address(call_msg->packet)
+            )) {
+                continue;
+            }
+
+        } else {
+            if (!addressport_equals(
+                    packet_src_address(msg->packet),
+                    packet_dst_address(call_msg->packet)
+            )) {
+                continue;
+            }
+        }
+
+        return packet_sip_initial_transaction(call_msg->packet);
+    }
+
+    return packet_sip_initial_transaction(msg->packet);
+}
+
+gboolean
 msg_has_sdp(void *item)
 {
     return msg_media_count(item) > 0;
@@ -97,20 +132,11 @@ msg_is_request(Message *msg)
     return packet_sip_method(msg->packet) < 100;
 }
 
-gboolean
-msg_is_initial_transaction(Message *msg)
-{
-    Message *first = call_find_message_cseq(msg->call, msg_get_cseq(msg));
-    g_return_val_if_fail(first != NULL, FALSE);
-    return packet_sip_initial_transaction(first->packet);
-}
-
 guint64
 msg_get_cseq(Message *msg)
 {
     return packet_sip_cseq(msg->packet);
 }
-
 
 const gchar *
 msg_get_payload(Message *msg)
@@ -121,7 +147,7 @@ msg_get_payload(Message *msg)
 GTimeVal
 msg_get_time(const Message *msg)
 {
-    GTimeVal t = { 0 };
+    GTimeVal t = {0};
     PacketFrame *frame;
 
     if (msg && (frame = g_list_nth_data(msg->packet->frames, 0)))
