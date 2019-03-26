@@ -132,6 +132,7 @@ ncurses_init(GError **error)
     init_pair(CP_DEF_ON_CYAN, fg, COLOR_CYAN);
     init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
     init_pair(CP_WHITE_ON_BLUE, COLOR_WHITE, COLOR_BLUE);
+    init_pair(CP_BLACK_ON_BLUE, COLOR_BLACK, COLOR_BLUE);
     init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
     init_pair(CP_WHITE_ON_CYAN, COLOR_WHITE, COLOR_CYAN);
     init_pair(CP_YELLOW_ON_CYAN, COLOR_YELLOW, COLOR_CYAN);

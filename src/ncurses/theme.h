@@ -45,6 +45,7 @@ enum sngrep_colors_pairs
     CP_DEF_ON_CYAN,
     CP_DEF_ON_BLUE,
     CP_WHITE_ON_BLUE,
+    CP_BLACK_ON_BLUE,
     CP_BLACK_ON_CYAN,
     CP_WHITE_ON_CYAN,
     CP_YELLOW_ON_CYAN,
