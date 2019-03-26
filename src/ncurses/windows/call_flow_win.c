@@ -854,7 +854,10 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     }
 
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        sprintf(method, "%.3s (%s)", msg_method, media->sconn->address);
+        sprintf(method, "%.3s (%s)",
+                msg_method,
+                (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address
+        );
     }
 
     // Draw message type or status and line
