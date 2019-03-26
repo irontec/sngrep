@@ -268,7 +268,12 @@ auth_validate_set_msg(Window *window, Message *msg)
         "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
         G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
 
-    gchar **auth_data = g_strsplit(packet_sip_auth_data(packet), ",", -1);
+    gchar *auth_value = g_strdup(packet_sip_auth_data(packet));
+    if (strncasecmp(auth_value, "Digest", 6) == 0) {
+        auth_value += 6;
+    }
+
+    gchar **auth_data = g_strsplit(auth_value, ",", -1);
     for (guint i = 0; i < g_strv_length(auth_data); i++) {
         // Trim parameter string
         g_strstrip(auth_data[i]);

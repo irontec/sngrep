@@ -300,6 +300,8 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             if (g_strv_length(cseq_data) != 2)
                 break;
             sip_data->cseq = g_ascii_strtoull(cseq_data[0], NULL, 10);
+        } else if (strcasecmp(hdr_name, "Authorization") == 0) {
+            sip_data->auth = g_strdup(hdr_value);
         }
     }
 
