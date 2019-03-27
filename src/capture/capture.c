@@ -74,6 +74,7 @@ capture_manager_free(CaptureManager *manager)
     g_slist_free(manager->outputs);
     g_rec_mutex_clear(&manager->lock);
     g_async_queue_unref(manager->queue);
+    g_free(manager->filter);
     g_free(manager);
 }
 
@@ -118,19 +119,19 @@ capture_manager_stop(CaptureManager *manager)
 gboolean
 capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **error)
 {
-    // Store capture filter
-    manager->filter = filter;
-
     // Apply fitler to all capture inputs
     for (GSList *le = manager->inputs; le != NULL; le = le->next) {
         CaptureInput *input = le->data;
         if (input->filter) {
             if (!input->filter(input, filter, error)) {
+                manager->filter = NULL;
                 return FALSE;
             }
         }
     }
 
+    // Store capture filter
+    manager->filter = g_strdup(filter);
     return TRUE;
 }
 
