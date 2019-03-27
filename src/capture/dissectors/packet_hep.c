@@ -117,7 +117,6 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         memcpy(&authkey_chunk, data->data, sizeof(authkey_chunk));
         data = g_byte_array_remove_range(data, 0, sizeof(CaptureHepChunk));
 
-
         gchar password[100];
         guint password_len = ntohs(authkey_chunk.length) - sizeof(authkey_chunk);
         memcpy(password, data->data, password_len);
@@ -131,11 +130,8 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     if (setting_enabled(SETTING_HEP_LISTEN_UUID)) {
         memcpy(&uuid_chunk, data->data, sizeof(uuid_chunk));
         data = g_byte_array_remove_range(data, 0, sizeof(CaptureHepChunk));
-
-
         guint16 uuid_len = ntohs(uuid_chunk.length) - sizeof(uuid_chunk);
         data = g_byte_array_remove_range(data, 0, uuid_len);
-
     }
 
     /* Payload */
