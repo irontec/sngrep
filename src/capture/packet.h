@@ -81,6 +81,8 @@ typedef struct _PacketParser PacketParser;
  */
 struct _Packet
 {
+    //! Pending data to be parsed
+    GByteArray *data;
     //! Parser who processed this packet
     PacketParser *parser;
     //! Each packet protocol information

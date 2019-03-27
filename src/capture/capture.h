@@ -76,6 +76,8 @@ typedef void (*CaptureOutputFreeFunc)(CaptureOutput *);
  */
 struct _CaptureManager
 {
+    //! Running flag
+    gboolean running;
     //! Key file for TLS decrypt
     const gchar *keyfile;
     //! capture filter expression text
@@ -92,6 +94,8 @@ struct _CaptureManager
     GAsyncQueue *queue;
     //! Capture Lock. Avoid parsing and handling data at the same time
     GRecMutex lock;
+    //! Packet parser thread
+    GThread *thread;
 };
 
 struct _CaptureInput

@@ -30,6 +30,7 @@
 #include "config.h"
 #include <glib.h>
 #include "setting.h"
+#include "storage.h"
 #include "capture.h"
 
 static CaptureManager *manager;
@@ -41,6 +42,7 @@ capture_manager_new()
 
     manager->queue = g_async_queue_new();
     manager->paused = FALSE;
+    manager->running = FALSE;
 
 #ifdef WITH_SSL
     // Parse TLS Server setting
@@ -84,9 +86,41 @@ capture_manager()
     return manager;
 }
 
+static gpointer
+capture_manager_parser_thread(CaptureManager *manager)
+{
+    while (manager->running) {
+        Packet *packet = g_async_queue_timeout_pop(manager->queue, 500000);
+        if (packet != NULL) {
+            // Initialize parser dissector to first one
+            PacketParser *parser = packet->parser;
+            parser->current = parser->dissector_tree;
+
+            // Request initial dissector parsing
+            GByteArray *data = packet->data;
+            data = packet_parser_next_dissector(parser, packet, data);
+
+            // Free not parsed packet data
+            if (data != NULL) {
+                g_byte_array_free(data, TRUE);
+                packet_free(packet);
+            } else {
+                // Add data to storage
+                storage_add_packet(packet);
+            }
+        }
+    }
+
+    return NULL;
+}
+
 void
 capture_manager_start(CaptureManager *manager)
 {
+    // Start Parser thread
+    manager->running = TRUE;
+    manager->thread = g_thread_new(NULL, (GThreadFunc) capture_manager_parser_thread, manager);
+
     // Start all captures threads
     for (GSList *le = manager->inputs; le != NULL; le = le->next) {
         CaptureInput *input = le->data;
@@ -114,6 +148,10 @@ capture_manager_stop(CaptureManager *manager)
             output->close(output);
         }
     }
+
+    // Stop parser thread
+    manager->running = FALSE;
+    g_thread_join(manager->thread);
 }
 
 gboolean

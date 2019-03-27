@@ -276,6 +276,10 @@ main(int argc, char *argv[])
 #ifdef USE_HEP
     // Hep settings
     if (hep_listen) {
+        // Enable HEP parser
+        setting_set_value(SETTING_CAPTURE_PACKET_HEP, SETTING_ON);
+
+        // Create a HEP server input
         if ((input = capture_input_hep(hep_listen, &error))) {
             capture_manager_add_input(capture, input);
         } else {

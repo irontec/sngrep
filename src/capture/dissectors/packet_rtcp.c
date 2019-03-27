@@ -151,8 +151,6 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
     // Set packet RTP informaiton
     g_ptr_array_set(packet->proto, PACKET_RTCP, rtcp);
 
-    /** @TODO Backwards compatibility during refactoring */
-    storage_add_packet(packet);
     return NULL;
 }
 

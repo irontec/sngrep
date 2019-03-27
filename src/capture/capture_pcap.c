@@ -365,18 +365,10 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
 
     Packet *packet = packet_new(parser);
     packet->frames = g_list_append(packet->frames, frame);
+    packet->data = data;
 
-    // Initialize parser dissector to first one
-    parser->current = parser->dissector_tree;
-
-    // Request initial dissector parsing
-    data = packet_parser_next_dissector(parser, packet, data);
-
-    // Free not parsed packet data
-    if (data != NULL) {
-        g_byte_array_free(data, TRUE);
-        packet_free(packet);
-    }
+    // Add data to parser queue
+    g_async_queue_push(manager->queue, packet);
 }
 
 gint

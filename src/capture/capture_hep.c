@@ -187,6 +187,7 @@ capture_input_hep_receive(CaptureInput *input)
     char buffer[MAX_HEP_BUFSIZE];
     struct sockaddr hep_client;
     socklen_t hep_client_len;
+    CaptureManager *manager = input->manager;
     CaptureHep *hep = input->priv;
     PacketParser *parser = input->parser;
 
@@ -205,22 +206,10 @@ capture_input_hep_receive(CaptureInput *input)
     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
+    packet->data = data;
 
-    // Initialize parser dissector to first one
-    parser->current = parser->dissector_tree;
-
-    // Request initial dissector parsing
-    data = packet_parser_next_dissector(parser, packet, data);
-
-    // Free not parsed packet data
-    if (data != NULL) {
-        g_byte_array_free(data, TRUE);
-        g_free(frame);
-
-        g_list_free(packet->frames);
-        g_free(packet);
-    }
-
+    // Add data to parser queue
+    g_async_queue_push(manager->queue, packet);
 }
 
 void *
@@ -230,10 +219,7 @@ capture_input_hep_start(CaptureInput *input)
 
     // Begin accepting connections
     while (hep->socket > 0) {
-        // Reset dissector for next packet
-        input->parser->current = input->parser->dissector_tree;
         capture_input_hep_receive(input);
-
     }
 
     // Leave the thread gracefully

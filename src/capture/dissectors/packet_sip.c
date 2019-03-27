@@ -330,9 +330,6 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Thanks for all the fish good data, you are now free
     g_byte_array_free(data, TRUE);
 
-    // Add data to storage
-    storage_add_packet(packet);
-
     return NULL;
 }
 
