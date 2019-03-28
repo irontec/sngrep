@@ -437,14 +437,15 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
             cur_line = payload + i + 1;
 
         // Move to the next line if line is filled or a we reach a line break
-        if (column > width || payload[i] == '\n') {
+        if (column >= width || payload[i] == '\n') {
             line++;
             column = 0;
-            continue;
         }
 
         // Put next character in position
-        if (isascii(payload[i])) {
+        if (payload[i] == '\n') {
+            continue;
+        } else if (isascii(payload[i])) {
             mvwaddch(win, line, column++, payload[i]);
         } else {
             mvwaddch(win, line, column++, *nonascii);
