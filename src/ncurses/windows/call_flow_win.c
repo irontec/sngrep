@@ -608,20 +608,19 @@ static void
 call_flow_draw_footer(Window *window)
 {
     const char *keybindings[] = {
-            key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
             key_action_key_str(ACTION_CONFIRM), "Raw",
             key_action_key_str(ACTION_SELECT), "Compare",
+            key_action_key_str(ACTION_SHOW_PLAYER), "RTP Player",
             key_action_key_str(ACTION_SHOW_HELP), "Help",
             key_action_key_str(ACTION_SDP_INFO), "SDP",
             key_action_key_str(ACTION_TOGGLE_MEDIA), "RTP",
-            key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
             key_action_key_str(ACTION_COMPRESS), "Compressed",
-            key_action_key_str(ACTION_SHOW_RAW), "Raw",
             key_action_key_str(ACTION_CYCLE_COLOR), "Colour by",
-            key_action_key_str(ACTION_INCREASE_RAW), "Increase Raw"
+            key_action_key_str(ACTION_TOGGLE_RAW), "Toggle Raw",
+            key_action_key_str(ACTION_AUTH_VALIDATE), "Auth Validate"
     };
 
-    window_draw_bindings(window, keybindings, 22);
+    window_draw_bindings(window, keybindings, 20);
 }
 
 static void

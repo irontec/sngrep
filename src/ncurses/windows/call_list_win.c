@@ -362,7 +362,6 @@ call_list_draw_footer(Window *window)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Quit",
-        key_action_key_str(ACTION_SHOW_FLOW), "Show",
         key_action_key_str(ACTION_SELECT), "Select",
         key_action_key_str(ACTION_SHOW_HELP), "Help",
         key_action_key_str(ACTION_SAVE), "Save",
@@ -371,11 +370,10 @@ call_list_draw_footer(Window *window)
         key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
         key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
         key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
-        key_action_key_str(ACTION_CLEAR_CALLS_SOFT), "Clear with Filter",
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    window_draw_bindings(window, keybindings, 23);
+    window_draw_bindings(window, keybindings, 20);
 }
 
 static gint
