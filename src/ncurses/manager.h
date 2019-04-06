@@ -63,7 +63,7 @@ enum ncurses_errors
  * @return TRUE on initialization success, FALSE otherwise
  */
 gboolean
-ncurses_init(GError **error);
+ncurses_init(GMainLoop *loop, GError **error);
 
 /**
  * @brief Stops ncurses mode
@@ -98,16 +98,6 @@ ncurses_find_by_panel(PANEL *panel);
  */
 Window *
 ncurses_find_by_type(enum WindowTypes type);
-
-/**
- * @brief Wait for user input in topmost panel
- *
- * This function manages all user input in all panel types and
- * redraws the panel using its own draw function
- *
- */
-int
-ncurses_wait_for_input();
 
 /**
  * @brief Default handler for keys

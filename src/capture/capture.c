@@ -29,11 +29,38 @@
 
 #include "config.h"
 #include <glib.h>
+#include "glib/gasyncqueuesource.h"
 #include "setting.h"
 #include "storage.h"
 #include "capture.h"
 
 static CaptureManager *manager;
+
+static gboolean
+capture_manager_parse_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
+{
+    // Initialize parser dissector to first one
+    PacketParser *parser = packet->parser;
+    parser->current = parser->dissector_tree;
+
+    // Request initial dissector parsing
+    GByteArray *data = packet->data;
+    data = packet_parser_next_dissector(parser, packet, data);
+
+    // Free not parsed packet data
+    if (data != NULL) {
+        g_byte_array_free(data, TRUE);
+        packet_free(packet);
+        return TRUE;
+    }
+
+    // Add data to storage
+    if (storage_check_packet(packet) == NULL) {
+        packet_free(packet);
+    }
+
+    return TRUE;
+}
 
 CaptureManager *
 capture_manager_new()
@@ -42,14 +69,20 @@ capture_manager_new()
 
     manager->queue = g_async_queue_new();
     manager->paused = FALSE;
-    manager->running = FALSE;
 
 #ifdef WITH_SSL
     // Parse TLS Server setting
     manager->tlsserver = address_from_str(setting_get_value(SETTING_CAPTURE_TLSSERVER));
 #endif
 
-    g_rec_mutex_init(&manager->lock);
+    manager->loop = g_main_loop_new(
+        g_main_context_new(),
+        FALSE
+    );
+
+    GSource * source = g_async_queue_source_new(manager->queue, NULL);
+    g_source_set_callback(source, (GSourceFunc) capture_manager_parse_packet, manager, NULL);
+    g_source_attach(source, NULL);
 
     return manager;
 }
@@ -74,7 +107,6 @@ capture_manager_free(CaptureManager *manager)
 
     g_slist_free(manager->inputs);
     g_slist_free(manager->outputs);
-    g_rec_mutex_clear(&manager->lock);
     g_async_queue_unref(manager->queue);
     g_free(manager->filter);
     g_free(manager);
@@ -87,60 +119,21 @@ capture_manager()
 }
 
 static gpointer
-capture_manager_parser_thread(CaptureManager *manager)
+capture_manager_thread(CaptureManager *manager)
 {
-    while (manager->running) {
-        Packet *packet = g_async_queue_timeout_pop(manager->queue, 500000);
-        if (packet != NULL) {
-            // Initialize parser dissector to first one
-            PacketParser *parser = packet->parser;
-            parser->current = parser->dissector_tree;
-
-            // Request initial dissector parsing
-            GByteArray *data = packet->data;
-            data = packet_parser_next_dissector(parser, packet, data);
-
-            // Free not parsed packet data
-            if (data != NULL) {
-                g_byte_array_free(data, TRUE);
-                packet_free(packet);
-            } else {
-                // Add data to storage
-                storage_add_packet(packet);
-            }
-        }
-    }
-
+    g_main_loop_run(manager->loop);
     return NULL;
 }
 
 void
 capture_manager_start(CaptureManager *manager)
 {
-    // Start Parser thread
-    manager->running = TRUE;
-    manager->thread = g_thread_new(NULL, (GThreadFunc) capture_manager_parser_thread, manager);
-
-    // Start all captures threads
-    for (GSList *le = manager->inputs; le != NULL; le = le->next) {
-        CaptureInput *input = le->data;
-        input->running = TRUE;
-        input->thread = g_thread_new(NULL, (GThreadFunc) input->start, input);
-    }
+    manager->thread = g_thread_new(NULL, (GThreadFunc) capture_manager_thread, manager);
 }
 
 void
 capture_manager_stop(CaptureManager *manager)
 {
-    // Stop all capture inputs
-    for (GSList *le = manager->inputs; le != NULL; le = le->next) {
-        CaptureInput *input = le->data;
-        if (input->stop) {
-            input->stop(input);
-        }
-        g_thread_join(input->thread);
-    }
-
     // Close all capture outputs
     for (GSList *le = manager->outputs; le != NULL; le = le->next) {
         CaptureOutput *output = le->data;
@@ -149,8 +142,8 @@ capture_manager_stop(CaptureManager *manager)
         }
     }
 
-    // Stop parser thread
-    manager->running = FALSE;
+    // Stop manager thread
+    g_main_loop_quit(manager->loop);
     g_thread_join(manager->thread);
 }
 
@@ -189,6 +182,7 @@ void
 capture_manager_add_input(CaptureManager *manager, CaptureInput *input)
 {
     input->manager = manager;
+    g_source_attach(input->source, g_main_loop_get_context(manager->loop));
     manager->inputs = g_slist_append(manager->inputs, input);
 }
 
@@ -197,20 +191,6 @@ capture_manager_add_output(CaptureManager *manager, CaptureOutput *output)
 {
     output->manager = manager;
     manager->outputs = g_slist_append(manager->outputs, output);
-}
-
-void
-capture_lock(CaptureManager *manager)
-{
-    // Avoid parsing more packet
-    g_rec_mutex_lock(&manager->lock);
-}
-
-void
-capture_unlock(CaptureManager *manager)
-{
-    // Allow parsing more packets
-    g_rec_mutex_unlock(&manager->lock);
 }
 
 void
@@ -224,19 +204,6 @@ capture_manager_output_packet(CaptureManager *manager, Packet *packet)
     }
 }
 
-gboolean
-capture_is_running(CaptureManager *manager)
-{
-    // Check if all capture inputs are running
-    for (GSList *l = manager->inputs; l != NULL; l = l->next) {
-        CaptureInput *input = l->data;
-        if (input->running == TRUE) {
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
 const gchar *
 capture_status_desc(CaptureManager *manager)
 {
@@ -247,7 +214,7 @@ capture_status_desc(CaptureManager *manager)
 
         if (input->mode == CAPTURE_MODE_OFFLINE) {
             offline++;
-            if (input->running) {
+            if (!g_source_is_destroyed(input->source)) {
                 loading++;
             }
         } else {

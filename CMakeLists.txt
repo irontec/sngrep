@@ -54,6 +54,7 @@ set(SOURCES
         src/ncurses/dialog.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c
+        src/glib/gasyncqueuesource.c
         src/filter.c
         src/group.c
         src/main.c
@@ -111,7 +112,7 @@ pkg_check_modules(CURSES REQUIRED ncursesw menuw panelw formw)
 include_directories(${CURSES_INCLUDE_DIRS})
 target_link_libraries(sngrep ${CURSES_LIBRARIES})
 
-pkg_check_modules(GLIB REQUIRED glib-2.0>=2.44)
+pkg_check_modules(GLIB REQUIRED glib-2.0>=2.44 gobject-2.0>=2.44)
 include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
 

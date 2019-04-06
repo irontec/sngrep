@@ -35,6 +35,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <pcap/sll.h>
+#include <glib-unix.h>
 #include "glib-extra.h"
 #include "capture.h"
 #include "capture_hep.h"
@@ -58,6 +59,25 @@ capture_input_pcap_free(CaptureInput *input)
     packet_parser_free(input->parser);
     g_free(input->priv);
     g_free(input);
+}
+
+static gboolean
+capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
+    G_GNUC_UNUSED GIOCondition condition, CaptureInput *input)
+{
+    // Capture pcap information
+    CapturePcap *pcap = input->priv;
+
+    // Get next packet from this input
+    struct pcap_pkthdr header;
+    const guchar *data = pcap_next(pcap->handle, &header);
+
+    if (data != NULL) {
+        // Parse received data
+        capture_pcap_parse_packet((guchar *) input, &header, data);
+    }
+
+    return data != NULL;
 }
 
 CaptureInput *
@@ -104,7 +124,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
 
     // Create a new structure to handle this capture source
     CaptureInput *input = g_malloc0(sizeof(CaptureInput));
-    input->source = dev;
+    input->sourcestr = dev;
     input->priv = pcap;
     input->tech = CAPTURE_TECH_PCAP;
     input->mode = CAPTURE_MODE_ONLINE;
@@ -117,6 +137,19 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     PacketParser *parser = packet_parser_new(input);
     packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_LINK);
     input->parser = parser;
+
+    // Create GSource for main loop
+    input->source = g_unix_fd_source_new(
+        pcap_fileno(pcap->handle),
+        G_IO_IN | G_IO_ERR | G_IO_HUP
+    );
+
+    g_source_set_callback(
+        input->source,
+        (GSourceFunc) capture_input_pcap_read_packet,
+        input,
+        (GDestroyNotify) capture_input_pcap_stop
+    );
 
     return input;
 }
@@ -162,7 +195,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
 
     // Create a new structure to handle this capture source
     CaptureInput *input = g_malloc0(sizeof(CaptureInput));
-    input->source = infile;
+    input->sourcestr = infile;
     input->priv = pcap;
     input->tech = CAPTURE_TECH_PCAP;
     input->mode = CAPTURE_MODE_OFFLINE;
@@ -176,6 +209,19 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_LINK);
     input->parser = parser;
 
+    // Create GSource for main loop
+    input->source = g_unix_fd_source_new(
+        pcap_get_selectable_fd(pcap->handle),
+        G_IO_IN | G_IO_ERR | G_IO_HUP
+    );
+
+    g_source_set_callback(
+        input->source,
+        (GSourceFunc) capture_input_pcap_read_packet,
+        input,
+        (GDestroyNotify) capture_input_pcap_stop
+    );
+
     return input;
 }
 
@@ -187,12 +233,6 @@ capture_input_pcap_start(CaptureInput *input)
 
     // Parse available packets
     pcap_loop(pcap->handle, -1, capture_pcap_parse_packet, (u_char *) input);
-
-    // Close input file in offline mode
-    if (input->mode == CAPTURE_MODE_OFFLINE) {
-        // Mark as finished reading packets
-        input->running = FALSE;
-    }
 
     return NULL;
 }
@@ -209,12 +249,7 @@ capture_input_pcap_stop(CaptureInput *input)
 
     if (input->mode == CAPTURE_MODE_OFFLINE) {
         pcap_close(pcap->handle);
-    } else {
-        pcap_breakloop(pcap->handle);
     }
-
-    // Mark as finished reading packets
-    input->running = FALSE;
 }
 
 gboolean
@@ -385,7 +420,7 @@ capture_input_pcap_file(CaptureManager *manager)
 
     CaptureInput *input = manager->inputs->data;
     if (input->tech == CAPTURE_TECH_PCAP && input->mode == CAPTURE_MODE_OFFLINE)
-        return input->source;
+        return input->sourcestr;
 
     return NULL;
 }
@@ -398,7 +433,7 @@ capture_input_pcap_device(CaptureManager *manager)
 
     CaptureInput *input = manager->inputs->data;
     if (input->tech == CAPTURE_TECH_PCAP && input->mode == CAPTURE_MODE_ONLINE)
-        return input->source;
+        return input->sourcestr;
 
     return NULL;
 }

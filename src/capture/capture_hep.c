@@ -166,7 +166,7 @@ capture_input_hep(const gchar *url, GError **error)
 
     // Create a new structure to handle this capture source
     input = g_malloc0(sizeof(CaptureInput));
-    input->source = g_strdup_printf("L:%s", hep->url.port);
+    input->sourcestr = g_strdup_printf("L:%s", hep->url.port);
     input->priv = hep;
     input->tech = CAPTURE_TECH_HEP;
     input->mode = CAPTURE_MODE_ONLINE;

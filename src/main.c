@@ -69,6 +69,18 @@ print_version_info()
             PACKAGE, VERSION);
 }
 
+static gboolean
+print_storage_count(GMainLoop *loop)
+{
+    setbuf(stdout, NULL);
+    g_print("\rDialog count: %d", storage_calls_count());
+    if (storage_pending_packets() == 0) {
+        g_print("\n");
+        g_main_loop_quit(loop);
+    }
+    return TRUE;
+}
+
 /**
  * @brief Main function logic
  *
@@ -368,6 +380,9 @@ main(int argc, char *argv[])
 #endif
 
     /*****************************  Main Logic  *****************************/
+    // Create main loop for default context
+    GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
+
     // Initialize SIP Messages Storage
     if (!storage_init(storage_copts, storage_mopts, storage_sopts, &error)) {
         g_printerr("Failed to initialize storage: %s\n", error->message);
@@ -379,25 +394,18 @@ main(int argc, char *argv[])
 
     if (!no_interface) {
         // Initialize interface
-        if (!ncurses_init(&error)) {
+        if (!ncurses_init(main_loop, &error)) {
             g_printerr("error: %s\n", error->message);
             return 1;
         }
-
-        // This is a blocking call.
-        // Create the first panel and wait for user input
-        ncurses_create_window(WINDOW_CALL_LIST);
-        ncurses_wait_for_input();
     } else {
-        setbuf(stdout, NULL);
-        while (capture_is_running(capture) || storage_pending_packets() >= 0) {
-            if (!quiet)
-                g_print("\rDialog count: %d", storage_calls_count());
-            g_usleep(500 * 1000);
+        if (!quiet) {
+            g_timeout_add(500, (GSourceFunc) print_storage_count, main_loop);
         }
-        if (!quiet)
-            g_print("\rDialog count: %d\n", storage_calls_count());
     }
+
+    /************************* Application Main Loop  *************************/
+    g_main_loop_run(main_loop);
 
     // Capture stop
     capture_manager_stop(capture);

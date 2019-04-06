@@ -37,9 +37,9 @@
  *        |    |                          |
  *        |    +--------------------------+
  *        |    +--------------------------+
- *        +--->|                          | <----------- You are here.
- *             |         Storage          |
- *        +--->|                          |----+
+ *        +--->|         Storage          | <----------- You are here.
+ *             |--------------------------|----+
+ *        +--->|         Parser           |    |
  * Packet |    +--------------------------+    | Capture
  * Queue  |    +--------------------------+    | Output
  *        |    |                          |    |
@@ -61,12 +61,6 @@
  * @brief Global Structure with all storage information
  */
 Storage storage = { 0 };
-
-void
-storage_add_packet(Packet *packet)
-{
-    g_async_queue_push(storage.pkt_queue, packet);
-}
 
 static gint
 storage_sorter(const Call **a, const Call **b)
@@ -450,31 +444,17 @@ storage_check_rtcp_packet(Packet *packet)
 }
 
 //! Start capturing packets function
-static gpointer
-storage_check_packet()
+gpointer
+storage_check_packet(Packet *packet)
 {
-    while (storage.running) {
-
-        Packet *packet = g_async_queue_timeout_pop(storage.pkt_queue, 500000);
-        if (packet) {
-            if (packet_has_type(packet, PACKET_SIP)) {
-                if (storage_check_sip_packet(packet) == NULL) {
-                    packet_free(packet);
-                }
-            } else if (packet_has_type(packet, PACKET_RTP)) {
-                if (storage_check_rtp_packet(packet) == NULL) {
-                    packet_free(packet);
-                }
-            } else if (packet_has_type(packet, PACKET_RTCP)) {
-                if (storage_check_rtcp_packet(packet) == NULL) {
-                    packet_free(packet);
-                }
-            }
-
-        }
+    if (packet_has_type(packet, PACKET_SIP)) {
+        return storage_check_sip_packet(packet);
+    } else if (packet_has_type(packet, PACKET_RTP)) {
+        return storage_check_rtp_packet(packet);
+    } else if (packet_has_type(packet, PACKET_RTCP)) {
+        return storage_check_rtcp_packet(packet);
     }
-
-    return NULL;
+    return packet;
 }
 
 gboolean
@@ -507,9 +487,6 @@ storage_init(StorageCaptureOpts capture_options,
         }
     }
 
-    // Initialize storage packet queue
-    storage.pkt_queue = g_async_queue_new();
-
     // Create a vector to store calls
     storage.calls = g_ptr_array_new_with_free_func(call_destroy);
 
@@ -527,25 +504,19 @@ storage_init(StorageCaptureOpts capture_options,
         storage.sort.asc = TRUE;
     }
 
-    storage.running = TRUE;
-    storage.thread = g_thread_new(NULL, (GThreadFunc) storage_check_packet, NULL);
-
     return TRUE;
 }
 
 gint
 storage_pending_packets()
 {
-    return g_async_queue_length(storage.pkt_queue);
+    CaptureManager *manager = capture_manager();
+    return g_async_queue_length(manager->queue);
 }
 
 void
 storage_deinit()
 {
-    // Stop storage thread
-    storage.running = FALSE;
-    g_thread_join(storage.thread);
-
     // Remove all calls
     storage_calls_clear();
     // Remove Call-id hash table

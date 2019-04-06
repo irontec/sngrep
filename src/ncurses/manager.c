@@ -34,6 +34,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <glib-unix.h>
 #include "glib-extra.h"
 #include "setting.h"
 #include "manager.h"
@@ -60,101 +61,6 @@
  * and pointer to their main functions.
  */
 static GPtrArray *windows;
-
-gboolean
-ncurses_init(GError **error)
-{
-    gshort bg, fg;
-    const gchar *term;
-
-    // Set Locale
-    setlocale(LC_CTYPE, "");
-
-    // Initialize curses
-    if (!initscr()) {
-        g_set_error(error,
-                    NCURSES_ERROR,
-                    NCURSES_ERROR_INIT,
-                    "Unable to initialize ncurses mode.");
-        return FALSE;
-    }
-
-    // Check if user wants a black background
-    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
-        assume_default_colors(COLOR_WHITE, COLOR_BLACK);
-    } else {
-        use_default_colors();
-    }
-    // Enable Colors
-    start_color();
-    cbreak();
-
-    // Dont write user input on screen
-    noecho();
-    // Hide the cursor
-    curs_set(0);
-    // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
-    ESCDELAY = 25;
-
-    // Redefine some keys
-    term = getenv("TERM");
-    if (term
-        && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
-        define_key("\033[H", KEY_HOME);
-        define_key("\033[F", KEY_END);
-        define_key("\033OP", KEY_F(1));
-        define_key("\033OQ", KEY_F(2));
-        define_key("\033OR", KEY_F(3));
-        define_key("\033OS", KEY_F(4));
-        define_key("\033[11~", KEY_F(1));
-        define_key("\033[12~", KEY_F(2));
-        define_key("\033[13~", KEY_F(3));
-        define_key("\033[14~", KEY_F(4));
-        define_key("\033[17;2~", KEY_F(18));
-    }
-
-    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
-        fg = COLOR_WHITE;
-        bg = COLOR_BLACK;
-    } else {
-        fg = COLOR_DEFAULT;
-        bg = COLOR_DEFAULT;
-    }
-
-    // Initialize colorpairs
-    init_pair(CP_CYAN_ON_DEF, COLOR_CYAN, bg);
-    init_pair(CP_YELLOW_ON_DEF, COLOR_YELLOW, bg);
-    init_pair(CP_MAGENTA_ON_DEF, COLOR_MAGENTA, bg);
-    init_pair(CP_GREEN_ON_DEF, COLOR_GREEN, bg);
-    init_pair(CP_RED_ON_DEF, COLOR_RED, bg);
-    init_pair(CP_BLUE_ON_DEF, COLOR_BLUE, bg);
-    init_pair(CP_WHITE_ON_DEF, COLOR_WHITE, bg);
-    init_pair(CP_DEF_ON_CYAN, fg, COLOR_CYAN);
-    init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
-    init_pair(CP_WHITE_ON_BLUE, COLOR_WHITE, COLOR_BLUE);
-    init_pair(CP_BLACK_ON_BLUE, COLOR_BLACK, COLOR_BLUE);
-    init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
-    init_pair(CP_WHITE_ON_CYAN, COLOR_WHITE, COLOR_CYAN);
-    init_pair(CP_YELLOW_ON_CYAN, COLOR_YELLOW, COLOR_CYAN);
-    init_pair(CP_BLUE_ON_CYAN, COLOR_BLUE, COLOR_CYAN);
-    init_pair(CP_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
-    init_pair(CP_CYAN_ON_WHITE, COLOR_CYAN, COLOR_WHITE);
-    init_pair(CP_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
-
-    // Initialize windows stack
-    windows = g_ptr_array_new();
-
-    return TRUE;
-}
-
-void
-ncurses_deinit()
-{
-    // Clear screen before leaving
-    refresh();
-    // End ncurses mode
-    endwin();
-}
 
 Window *
 ncurses_create_window(enum WindowTypes type)
@@ -256,80 +162,88 @@ ncurses_find_by_type(enum WindowTypes type)
     return window;
 }
 
-int
-ncurses_wait_for_input()
+static gboolean
+ncurses_refresh_screen(GMainLoop *loop)
 {
-    Window *ui;
-    WINDOW *win;
-    PANEL *panel;
+    PANEL *panel = panel_below(NULL);
 
     // While there are still panels
-    while ((panel = panel_below(NULL))) {
+    if (panel) {
 
         // Get panel interface structure
-        ui = ncurses_find_by_panel(panel);
+        Window *ui = ncurses_find_by_panel(panel);
 
-        // Set character input timeout 200 ms
-        halfdelay(REFRESHTHSECS);
-
-        // Avoid parsing any packet while UI is being drawn
-        capture_lock(capture_manager());
         // Query the interface if it needs to be redrawn
         if (window_redraw(ui)) {
             // Redraw this panel
             if (window_draw(ui) != 0) {
                 ncurses_destroy_window(ui);
-                capture_unlock(capture_manager());
-                continue;
+                return TRUE;
             }
         }
-        capture_unlock(capture_manager());
 
         // Update panel stack
         update_panels();
         doupdate();
-
-        // Get topmost panel
-        panel = panel_below(NULL);
-
-        // Enable key input on current panel
-        win = panel_window(panel);
-        keypad(win, TRUE);
-
-        // Get pressed key
-        int c = wgetch(win);
-
-        // Timeout, no key pressed
-        if (c == ERR)
-            continue;
-
-        capture_lock(capture_manager());
-        // Handle received key
-        int hld = KEY_NOT_HANDLED;
-        while (hld != KEY_HANDLED) {
-            // Check if current panel has custom bindings for that key
-            hld = window_handle_key(ui, c);
-
-            if (hld == KEY_HANDLED) {
-                // Panel handled this key
-                continue;
-            } else if (hld == KEY_PROPAGATED) {
-                // Destroy current panel
-                ncurses_destroy_window(ui);
-                // Try to handle this key with the previous panel
-                ui = ncurses_find_by_panel(panel_below(NULL));
-            } else if (hld == KEY_DESTROY) {
-                ncurses_destroy_window(ui);
-                break;
-            } else {
-                // Key not handled by UI nor propagated. Use default handler
-                hld = ncurses_default_keyhandler(ui, c);
-            }
-        }
-        capture_unlock(capture_manager());
+        return TRUE;
+    } else {
+        g_main_loop_quit(loop);
+        return FALSE;
     }
 
-    return 0;
+}
+
+static gboolean
+ncurses_read_input(G_GNUC_UNUSED gint fd, G_GNUC_UNUSED GIOCondition condition, GMainLoop *loop)
+{
+    PANEL *panel = panel_below(NULL);
+    g_return_val_if_fail(panel != NULL, FALSE);
+
+    // Get panel interface structure
+    Window *ui = ncurses_find_by_panel(panel);
+    g_return_val_if_fail(ui != NULL, FALSE);
+
+    // Enable key input on current panel
+    WINDOW *win = panel_window(panel);
+    g_return_val_if_fail(win != NULL, FALSE);
+
+    // Set window keyread in non-blocking mode
+    wtimeout(win, 0);
+    keypad(win, TRUE);
+
+    // Get pressed key
+    int c = wgetch(win);
+
+    // No key pressed
+    if (c == ERR)
+        return TRUE;
+
+    // Handle received key
+    int hld = KEY_NOT_HANDLED;
+    while (hld != KEY_HANDLED) {
+        // Check if current panel has custom bindings for that key
+        hld = window_handle_key(ui, c);
+
+        if (hld == KEY_HANDLED) {
+            // Panel handled this key
+            continue;
+        } else if (hld == KEY_PROPAGATED) {
+            // Destroy current panel
+            ncurses_destroy_window(ui);
+            // Try to handle this key with the previous panel
+            ui = ncurses_find_by_panel(panel_below(NULL));
+        } else if (hld == KEY_DESTROY) {
+            ncurses_destroy_window(ui);
+            break;
+        } else {
+            // Key not handled by UI nor propagated. Use default handler
+            hld = ncurses_default_keyhandler(ui, c);
+        }
+    }
+
+    // Force screen redraw with each keystroke
+    ncurses_refresh_screen(loop);
+    return TRUE;
 }
 
 int
@@ -549,4 +463,110 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
     wnoutrefresh(win);
 
     return line - starting;
+}
+
+gboolean
+ncurses_init(GMainLoop *loop, GError **error)
+{
+    gshort bg, fg;
+    const gchar *term;
+
+    // Set Locale
+    setlocale(LC_CTYPE, "");
+
+    // Initialize curses
+    if (!initscr()) {
+        g_set_error(error,
+                    NCURSES_ERROR,
+                    NCURSES_ERROR_INIT,
+                    "Unable to initialize ncurses mode.");
+        return FALSE;
+    }
+
+    // Check if user wants a black background
+    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
+        assume_default_colors(COLOR_WHITE, COLOR_BLACK);
+    } else {
+        use_default_colors();
+    }
+    // Enable Colors
+    start_color();
+    cbreak();
+
+    // Dont write user input on screen
+    noecho();
+    // Hide the cursor
+    curs_set(0);
+    // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
+    ESCDELAY = 25;
+
+    // Redefine some keys
+    term = getenv("TERM");
+    if (term
+        && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
+        define_key("\033[H", KEY_HOME);
+        define_key("\033[F", KEY_END);
+        define_key("\033OP", KEY_F(1));
+        define_key("\033OQ", KEY_F(2));
+        define_key("\033OR", KEY_F(3));
+        define_key("\033OS", KEY_F(4));
+        define_key("\033[11~", KEY_F(1));
+        define_key("\033[12~", KEY_F(2));
+        define_key("\033[13~", KEY_F(3));
+        define_key("\033[14~", KEY_F(4));
+        define_key("\033[17;2~", KEY_F(18));
+    }
+
+    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
+        fg = COLOR_WHITE;
+        bg = COLOR_BLACK;
+    } else {
+        fg = COLOR_DEFAULT;
+        bg = COLOR_DEFAULT;
+    }
+
+    // Initialize colorpairs
+    init_pair(CP_CYAN_ON_DEF, COLOR_CYAN, bg);
+    init_pair(CP_YELLOW_ON_DEF, COLOR_YELLOW, bg);
+    init_pair(CP_MAGENTA_ON_DEF, COLOR_MAGENTA, bg);
+    init_pair(CP_GREEN_ON_DEF, COLOR_GREEN, bg);
+    init_pair(CP_RED_ON_DEF, COLOR_RED, bg);
+    init_pair(CP_BLUE_ON_DEF, COLOR_BLUE, bg);
+    init_pair(CP_WHITE_ON_DEF, COLOR_WHITE, bg);
+    init_pair(CP_DEF_ON_CYAN, fg, COLOR_CYAN);
+    init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
+    init_pair(CP_WHITE_ON_BLUE, COLOR_WHITE, COLOR_BLUE);
+    init_pair(CP_BLACK_ON_BLUE, COLOR_BLACK, COLOR_BLUE);
+    init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
+    init_pair(CP_WHITE_ON_CYAN, COLOR_WHITE, COLOR_CYAN);
+    init_pair(CP_YELLOW_ON_CYAN, COLOR_YELLOW, COLOR_CYAN);
+    init_pair(CP_BLUE_ON_CYAN, COLOR_BLUE, COLOR_CYAN);
+    init_pair(CP_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
+    init_pair(CP_CYAN_ON_WHITE, COLOR_CYAN, COLOR_WHITE);
+    init_pair(CP_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
+
+    // Initialize windows stack
+    windows = g_ptr_array_new();
+
+    // Create the first displayed window
+    ncurses_create_window(WINDOW_CALL_LIST);
+
+    // Source for reading events from stdin
+    GSource *source = g_unix_fd_source_new(fileno(stdin), G_IO_IN | G_IO_ERR | G_IO_HUP);
+    g_source_set_callback(source, (GSourceFunc) ncurses_read_input, loop, NULL);
+    g_source_attach(source, NULL);
+
+    // Refresh screen every 200 ms
+    g_timeout_add(200, (GSourceFunc) ncurses_refresh_screen, loop);
+
+    return TRUE;
+}
+
+void
+ncurses_deinit()
+{
+    // Clear screen before leaving
+    refresh();
+    // End ncurses mode
+    endwin();
 }

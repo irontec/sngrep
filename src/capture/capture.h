@@ -76,8 +76,6 @@ typedef void (*CaptureOutputFreeFunc)(CaptureOutput *);
  */
 struct _CaptureManager
 {
-    //! Running flag
-    gboolean running;
     //! Key file for TLS decrypt
     const gchar *keyfile;
     //! capture filter expression text
@@ -92,10 +90,10 @@ struct _CaptureManager
     GSList *outputs;
     //! Packet waiting to be processed
     GAsyncQueue *queue;
-    //! Capture Lock. Avoid parsing and handling data at the same time
-    GRecMutex lock;
-    //! Packet parser thread
+    //! Packet main loop thread
     GThread *thread;
+    //! Capture Main loop
+    GMainLoop *loop;
 };
 
 struct _CaptureInput
@@ -107,13 +105,11 @@ struct _CaptureInput
     //! Are captured packets life
     enum capture_mode mode;
     //! Source string
-    const gchar *source;
-    //! Thread that runs capture callback
-    GThread *thread;
+    const gchar *sourcestr;
+    //! Source of events for this input
+    GSource *source;
     //! Private capture input data
-    void *priv;
-    //! Flag to check if capture is running
-    gboolean running;
+    gpointer priv;
     //! Each packet type private data
     PacketParser *parser;
 
@@ -136,7 +132,7 @@ struct _CaptureOutput
     //! Manager owner of this capture input
     CaptureManager *manager;
     //! Private capture output data
-    void *priv;
+    gpointer priv;
 
     //! Dump packet function
     CaptureOuptutWriteFunc write;
@@ -234,30 +230,10 @@ void
 capture_manager_add_output(CaptureManager *manager, CaptureOutput *output);
 
 /**
- * @brief Avoid parsing more packets
- */
-void
-capture_lock(CaptureManager *manager);
-
-/**
- * @brief Allow parsing more packets
- */
-void
-capture_unlock(CaptureManager *manager);
-
-/**
  * @brief Store the given packet in call outputs
  */
 void
 capture_manager_output_packet(CaptureManager *manager, Packet *packet);
-
-/**
- * @brief Determine if any of capture inputs is running
- *
- * @return TRUE if any capture input is running, FALSE if all are stopped
- */
-gboolean
-capture_is_running(CaptureManager *manager);
 
 /**
  * @brief Return a string representing current capture status

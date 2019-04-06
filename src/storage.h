@@ -115,13 +115,12 @@ struct _Storage
     GHashTable *callids;
     //! Streams hash table
     GHashTable *streams;
-    //! Pending packets to be parsed queue
-    GAsyncQueue *pkt_queue;
     //! Storage thread
-    GThread *thread;
-    //! Running thread flag
-    gboolean running;
+    guint source;
 };
+
+gpointer
+storage_check_packet(Packet *packet);
 
 /**
  * @brief Initialize SIP Storage structures
@@ -142,18 +141,6 @@ storage_init(StorageCaptureOpts capture_options,
  */
 void
 storage_deinit();
-
-/**
- * @brief Add a new packet to storage queue
- *
- * This function must be used to include a new packet into the storage from
- * capture threads. Storage will periodically check the internal queue for
- * new packets to be stored or discarded.
- *
- * @param packet Packet structure pointer with fully captured data
- */
-void
-storage_add_packet(Packet *packet);
 
 /**
  * @brief Return if the call list has changed

@@ -258,10 +258,10 @@ packet_ip_new()
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
     proto->id = PACKET_IP;
     proto->init = packet_ip_init;
+    proto->deinit = packet_ip_deinit;
     proto->dissect = packet_ip_parse;
     proto->free = packet_ip_free;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_UDP));
-    proto->deinit = packet_ip_deinit;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TCP));
     return proto;
 }
