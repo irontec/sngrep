@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "storage.h"
 #include "capture/parser.h"
 #include "capture/packet.h"

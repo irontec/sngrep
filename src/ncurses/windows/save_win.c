@@ -39,7 +39,7 @@
 #include "capture/codecs/codec_g729.h"
 #endif
 #include "capture/codecs/codec_g711a.h"
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "setting.h"
 #include "filter.h"
 #include "capture/capture_txt.h"

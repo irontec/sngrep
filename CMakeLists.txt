@@ -65,7 +65,7 @@ set(SOURCES
         src/call.c
         src/message.c
         src/timeval.c
-        src/glib-extra.c
+        src/glib/glib-extra.c
         )
 
 ######################################################################

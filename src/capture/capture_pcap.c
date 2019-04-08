@@ -36,7 +36,7 @@
 #include <string.h>
 #include <pcap/sll.h>
 #include <glib-unix.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "capture.h"
 #include "capture_hep.h"
 #include "capture_pcap.h"

@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include <stdlib.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "storage.h"
 #include "capture/packet.h"
 #include "packet_tcp.h"

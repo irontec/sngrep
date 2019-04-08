@@ -30,7 +30,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "stream.h"
 #include "storage.h"
 

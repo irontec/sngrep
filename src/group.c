@@ -29,7 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include <string.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "group.h"
 
 CallGroup *

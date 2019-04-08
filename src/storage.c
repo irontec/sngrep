@@ -51,7 +51,7 @@
 #include "config.h"
 #include <glib.h>
 #include <glib/gprintf.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "capture/dissectors/packet_sip.h"
 #include "storage.h"
 #include "setting.h"

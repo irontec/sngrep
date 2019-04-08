@@ -32,7 +32,7 @@
 #include "config.h"
 #include <netdb.h>
 #include <arpa/inet.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "capture/packet.h"
 #include "capture/parser.h"
 #include "packet_ip.h"

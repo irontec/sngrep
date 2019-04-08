@@ -30,7 +30,7 @@
 #include "ncurses/keybinding.h"
 #include "ncurses/theme.h"
 #include "ncurses/dialog.h"
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "rtp_player_win.h"
 
 static RtpPlayerInfo *

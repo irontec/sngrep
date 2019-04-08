@@ -29,7 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include <stdio.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "setting.h"
 #include "filter.h"
 #ifdef USE_HEP

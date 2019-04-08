@@ -33,7 +33,7 @@
 #include <string.h>
 #include <netinet/udp.h>
 #include <arpa/inet.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "packet_ip.h"
 #include "packet_udp.h"
 #include "capture/packet.h"

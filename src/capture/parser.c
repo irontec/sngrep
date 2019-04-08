@@ -30,7 +30,7 @@
 #include "config.h"
 #include <glib.h>
 #include "setting.h"
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "capture/dissectors/packet_link.h"
 #include "capture/dissectors/packet_ip.h"
 #include "capture/dissectors/packet_udp.h"

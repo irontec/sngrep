@@ -40,7 +40,7 @@
 #ifdef WITH_PULSE
 #include "ncurses/windows/rtp_player_win.h"
 #endif
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 
 /***
  *

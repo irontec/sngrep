@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <locale.h>
 #include <glib-unix.h>
-#include "glib-extra.h"
+#include "glib/glib-extra.h"
 #include "setting.h"
 #include "manager.h"
 #include "capture/capture.h"
