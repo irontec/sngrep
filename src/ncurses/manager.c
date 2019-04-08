@@ -552,8 +552,11 @@ ncurses_init(GMainLoop *loop, GError **error)
     // Create the first displayed window
     ncurses_create_window(WINDOW_CALL_LIST);
 
+    // Hack: First readed key before screen display causes ESC key to be read
+    ncurses_read_input(STDERR_FILENO, G_IO_IN, loop);
+
     // Source for reading events from stdin
-    GSource *source = g_unix_fd_source_new(fileno(stdin), G_IO_IN | G_IO_ERR | G_IO_HUP);
+    GSource *source = g_unix_fd_source_new(STDIN_FILENO, G_IO_IN | G_IO_ERR | G_IO_HUP);
     g_source_set_callback(source, (GSourceFunc) ncurses_read_input, loop, NULL);
     g_source_attach(source, NULL);
 

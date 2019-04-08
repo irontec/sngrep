@@ -32,7 +32,7 @@
 #define __SNGREP_WINDOW_H
 
 #include <glib.h>
-#include <ncursesw/ncurses.h>
+#include <ncurses.h>
 #include <panel.h>
 #include <form.h>
 
