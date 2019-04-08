@@ -86,16 +86,16 @@ if (WITH_SSL)
 endif (WITH_SSL)
 
 # libsnd Support
-option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
+option(WITH_SND "Enable libsnd files (for saving into WAV files)" ON)
 
 # Pulseaudio Support
-option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" OFF)
+option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" ON)
 if (WITH_PULSE)
     set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
 endif (WITH_PULSE)
 
 # G.729 decoding support
-option(WITH_G729 "Enable g729 RTP decoding" OFF)
+option(WITH_G729 "Enable g729 RTP decoding" ON)
 if (WITH_G729)
     set(SOURCES ${SOURCES} src/capture/codecs/codec_g729.c)
 endif (WITH_G729)
