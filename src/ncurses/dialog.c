@@ -83,6 +83,7 @@ dialog_run(const char *fmt, ...)
     cbreak();
 
     // Wait for input
+    keypad(win, TRUE);
     wgetch(win);
 
     delwin(win);

@@ -163,6 +163,9 @@ window_init(Window *window, int height, int width)
     if (window->width != maxx) window->y = abs((maxx - width) / 2);
 
     window->win = newwin(height, width, window->x, window->y);
+    wtimeout(window->win, 0);
+    keypad(window->win, TRUE);
+
     window->panel = new_panel(window->win);
 }
 

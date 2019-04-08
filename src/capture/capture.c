@@ -109,6 +109,7 @@ capture_manager_free(CaptureManager *manager)
     g_slist_free(manager->outputs);
     g_async_queue_unref(manager->queue);
     g_free(manager->filter);
+    g_main_loop_unref(manager->loop);
     g_free(manager);
 }
 

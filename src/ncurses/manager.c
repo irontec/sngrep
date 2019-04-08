@@ -194,7 +194,9 @@ ncurses_refresh_screen(GMainLoop *loop)
 }
 
 static gboolean
-ncurses_read_input(G_GNUC_UNUSED gint fd, G_GNUC_UNUSED GIOCondition condition, GMainLoop *loop)
+ncurses_read_input(G_GNUC_UNUSED gint fd,
+                   G_GNUC_UNUSED GIOCondition condition,
+                   GMainLoop *loop)
 {
     PANEL *panel = panel_below(NULL);
     g_return_val_if_fail(panel != NULL, FALSE);
@@ -207,12 +209,8 @@ ncurses_read_input(G_GNUC_UNUSED gint fd, G_GNUC_UNUSED GIOCondition condition, 
     WINDOW *win = panel_window(panel);
     g_return_val_if_fail(win != NULL, FALSE);
 
-    // Set window keyread in non-blocking mode
-    wtimeout(win, 0);
-    keypad(win, TRUE);
-
     // Get pressed key
-    int c = wgetch(win);
+    gint c = wgetch(win);
 
     // No key pressed
     if (c == ERR)
@@ -310,14 +308,11 @@ ncurses_resize_panels()
 void
 title_foot_box(PANEL *panel)
 {
-    int height, width;
     WINDOW *win = panel_window(panel);
-
-    // Sanity check
-    if (!win)
-        return;
+    g_return_if_fail(win != NULL);
 
     // Get window size
+    gint height, width;
     getmaxyx(win, height, width);
     box(win, 0, 0);
     mvwaddch(win, 2, 0, ACS_LTEE);
@@ -357,7 +352,7 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
     }
 
     // Get packet payload
-    cur_line = payload = (const char *) msg_get_payload(msg);
+    cur_line = payload = msg_get_payload(msg);
 
     // Print msg payload
     line = starting;
@@ -368,11 +363,11 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
             // First line highlight
             if (line == starting) {
                 // Request syntax
-                if (i == 0 && strncmp(cur_line, "SIP/2.0", 7))
+                if (i == 0 && strncmp(cur_line, "SIP/2.0", 7) != 0)
                     attrs = A_BOLD | COLOR_PAIR(CP_YELLOW_ON_DEF);
 
                 // Response syntax
-                if (i == 8 && !strncmp(cur_line, "SIP/2.0", 7))
+                if (i == 8 && strncmp(cur_line, "SIP/2.0", 7) == 0)
                     attrs = A_BOLD | COLOR_PAIR(CP_RED_ON_DEF);
 
                 // SIP URI syntax
@@ -446,9 +441,9 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
         if (payload[i] == '\n') {
             continue;
         } else if (isascii(payload[i])) {
-            mvwaddch(win, line, column++, payload[i]);
+            mvwaddch(win, line, column++, (const chtype) payload[i]);
         } else {
-            mvwaddch(win, line, column++, *nonascii);
+            mvwaddch(win, line, column++, (const chtype) *nonascii);
         }
 
         // Stop if we've reached the bottom of the window
@@ -469,9 +464,6 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
 gboolean
 ncurses_init(GMainLoop *loop, GError **error)
 {
-    gshort bg, fg;
-    const gchar *term;
-
     // Set Locale
     setlocale(LC_CTYPE, "");
 
@@ -490,6 +482,7 @@ ncurses_init(GMainLoop *loop, GError **error)
     } else {
         use_default_colors();
     }
+
     // Enable Colors
     start_color();
     cbreak();
@@ -502,9 +495,11 @@ ncurses_init(GMainLoop *loop, GError **error)
     ESCDELAY = 25;
 
     // Redefine some keys
-    term = getenv("TERM");
+    const gchar *term = getenv("TERM");
     if (term
-        && (!strcmp(term, "xterm") || !strcmp(term, "xterm-color") || !strcmp(term, "vt220"))) {
+        && (strncmp(term, "xterm", 5) == 0
+            || strncmp(term, "xterm-color", 11) == 0
+            || strncmp(term, "vt220", 5) == 0)) {
         define_key("\033[H", KEY_HOME);
         define_key("\033[F", KEY_END);
         define_key("\033OP", KEY_F(1));
@@ -518,12 +513,10 @@ ncurses_init(GMainLoop *loop, GError **error)
         define_key("\033[17;2~", KEY_F(18));
     }
 
+    gshort bg = COLOR_DEFAULT, fg = COLOR_DEFAULT;
     if (setting_has_value(SETTING_BACKGROUND, "dark")) {
         fg = COLOR_WHITE;
         bg = COLOR_BLACK;
-    } else {
-        fg = COLOR_DEFAULT;
-        bg = COLOR_DEFAULT;
     }
 
     // Initialize colorpairs
@@ -551,9 +544,6 @@ ncurses_init(GMainLoop *loop, GError **error)
 
     // Create the first displayed window
     ncurses_create_window(WINDOW_CALL_LIST);
-
-    // Hack: First readed key before screen display causes ESC key to be read
-    ncurses_read_input(STDERR_FILENO, G_IO_IN, loop);
 
     // Source for reading events from stdin
     GSource *source = g_unix_fd_source_new(STDIN_FILENO, G_IO_IN | G_IO_ERR | G_IO_HUP);
