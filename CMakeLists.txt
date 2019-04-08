@@ -5,7 +5,7 @@ project(sngrep
 
 set(PROJECT_NAME sngrep)
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -p -g")
-add_compile_options(-Wall -pedantic -Wextra)
+add_compile_options(-Wall -Wextra)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
