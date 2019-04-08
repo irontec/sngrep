@@ -194,7 +194,7 @@ save_stream_to_file(Window *window)
             return false;
     }
 
-    SF_INFO file_info = {0};
+    SF_INFO file_info = { 0 };
     file_info.samplerate = 8000;
     file_info.channels = 1;
     file_info.format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
@@ -570,6 +570,11 @@ save_set_group(Window *window, CallGroup *group)
     field_opts_on(info->fields[FLD_SAVE_PCAP], O_ACTIVE | O_VISIBLE);
     field_opts_on(info->fields[FLD_SAVE_TXT], O_ACTIVE | O_VISIBLE);
     field_opts_on(info->fields[FLD_SAVE_PCAP_RTP], O_VISIBLE);
+
+    // Enable RTP if RTP packets are being captured
+    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
+    if (storageCaptureOpts.rtp)
+        field_opts_on(info->fields[FLD_SAVE_PCAP_RTP], O_ACTIVE);
 }
 
 void
@@ -693,11 +698,6 @@ save_win_new()
     set_field_back(info->fields[FLD_SAVE_PATH], A_UNDERLINE);
     set_field_back(info->fields[FLD_SAVE_FILE], A_UNDERLINE);
 
-    // Disable Save RTP if RTP packets are not being captured
-    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
-    if (storageCaptureOpts.rtp)
-        field_opts_on(info->fields[FLD_SAVE_PCAP_RTP], O_ACTIVE);
-
     // Create the form and post it
     info->form = new_form(info->fields);
     set_form_sub(info->form, window->win);
@@ -762,6 +762,7 @@ save_win_new()
     StorageStats stats = storage_calls_stats();
 
     // Set default save modes
+    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
     info->savemode = (stats.displayed == stats.total) ? SAVE_ALL : SAVE_DISPLAYED;
     info->saveformat = (storageCaptureOpts.rtp) ? SAVE_PCAP_RTP : SAVE_PCAP;
 
