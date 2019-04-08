@@ -25,22 +25,17 @@
 #define PACKAGE "@PROJECT_NAME@"
 #define VERSION "@PROJECT_VERSION@"
 
-#cmakedefine PROJECT_NAME
-#cmakedefine PROJECT_VERSION
-#cmakedefine PROJECT_VERSION_MAJOR
-#cmakedefine PROJECT_VERSION_MINOR
-#cmakedefine PROJECT_VERSION_PATCH
-
+/** Defined if HEP support is enabled **/
 #cmakedefine USE_HEP
-
+/** Defined if IPv6 support is enabled **/
 #cmakedefine USE_IPV6
-
+/** Defined if TLS packet support is enabled **/
 #cmakedefine WITH_SSL
-
+/** Defined if Save to WAV support is enabled **/
 #cmakedefine WITH_SND
-
+/** Defined if RTP Playback support is enabled **/
 #cmakedefine WITH_PULSE
-
+/** Defined if G729A decode support is enabled **/
 #cmakedefine WITH_G729
 
 #endif
