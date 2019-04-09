@@ -40,7 +40,7 @@ Packet *
 packet_new(PacketParser *parser)
 {
     // Create a new packet
-    Packet *packet = g_malloc0(sizeof(Packet));
+    Packet *packet = g_rc_box_new0(Packet);
     packet->parser = parser;
     packet->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
     g_ptr_array_set_size(packet->proto, PACKET_PROTO_COUNT);
@@ -66,7 +66,18 @@ packet_free(Packet *packet)
 
     // Free each frame data
     g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
-    g_free(packet);
+}
+
+Packet *
+packet_ref(Packet *packet)
+{
+    return g_rc_box_acquire(packet);
+}
+
+void
+packet_unref(Packet *packet)
+{
+    g_rc_box_release_full(packet, (GDestroyNotify) packet_free);
 }
 
 gboolean

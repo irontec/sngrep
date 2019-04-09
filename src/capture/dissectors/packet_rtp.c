@@ -124,13 +124,19 @@ packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray 
         rtp->encoding->id = codec;
     }
 
+    // Remove RTP headers from payload
+    g_byte_array_remove_range(data, 0, 12);
+
     // Store RTP payload data
-    rtp->payload = g_byte_array_remove_range(data, 0, 12 /* RTP Headers */);
+    rtp->payload = g_byte_array_ref(data);
 
     // Set packet RTP informaiton
     g_ptr_array_set(packet->proto, PACKET_RTP, rtp);
 
-    return NULL;
+    // Add data to storage
+    storage_add_packet(packet);
+
+    return data;
 }
 
 static void
@@ -144,7 +150,7 @@ packet_rtp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
         g_free(rtp_data->encoding);
     }
 
-    g_byte_array_free(rtp_data->payload, TRUE);
+    g_byte_array_unref(rtp_data->payload);
     g_free(rtp_data);
 }
 

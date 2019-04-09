@@ -90,7 +90,7 @@ packet_link_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
 
     // Update pending data
-    data = g_byte_array_remove_range(data, 0, offset);
+    g_byte_array_remove_range(data, 0, offset);
 
     // Call next dissector
     return packet_parser_next_dissector(parser, packet, data);

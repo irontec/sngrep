@@ -67,7 +67,7 @@ packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_ptr_array_set(packet->proto, PACKET_UDP, udp_data);
 
     // Get pending payload
-    data = g_byte_array_remove_range(data, 0, udp_off);
+    g_byte_array_remove_range(data, 0, udp_off);
 
     // Call next dissector
     return packet_parser_next_dissector(parser, packet, data);

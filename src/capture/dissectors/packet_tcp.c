@@ -126,8 +126,8 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         if (packet_has_type(packet, PACKET_SIP)) {
             // Create first segment for this stream
             PacketTcpSegment *segment = g_malloc(sizeof(PacketTcpSegment));
-            segment->packet = packet;
-            segment->data = data;
+            segment->packet = packet_ref(packet);
+            segment->data = g_byte_array_ref(data);
 
             // Create a new stream
             stream = g_malloc0(sizeof(PacketTcpStream));
@@ -136,7 +136,6 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
             // Add stream to assmebly list
             g_hash_table_insert(priv->assembly, assembly_hashkey, stream);
-            return NULL;
         }
 
         // Not a SIP packet

@@ -20,10 +20,10 @@
  **
  ****************************************************************************/
 /**
- * @file storage.c
+ * @file storage->c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in storage.h
+ * @brief Source of functions defined in storage->h
  *
  *
  * Contains all stored calls, storage thread, pending packet queue and matching
@@ -37,13 +37,15 @@
  *        |    |                          |
  *        |    +--------------------------+
  *        |    +--------------------------+
+ *        |    |                          |
  *        +--->|         Storage          | <----------- You are here.
- *             |--------------------------|----+
- *        +--->|         Parser           |    |
- * Packet |    +--------------------------+    | Capture
- * Queue  |    +--------------------------+    | Output
- *        |    |                          |    |
- *        +--- |     Capture Manager      |<---+
+ *        +--->|                          |----+
+ * Packet |    +--------------------------+    |
+ * Queue  |    +--------------------------+    |
+ *        +----|         Parser           |    |
+ *             |--------------------------|    | Capture
+ *             |                          |    | Output
+ *             |     Capture Manager      |<---+
  *             |                          |
  *             +--------------------------+
  *
@@ -51,43 +53,44 @@
 #include "config.h"
 #include <glib.h>
 #include <glib/gprintf.h>
+#include <glib/gasyncqueuesource.h>
 #include "glib/glib-extra.h"
 #include "capture/dissectors/packet_sip.h"
-#include "storage.h"
 #include "setting.h"
 #include "filter.h"
+#include "storage.h"
 
 /**
  * @brief Global Structure with all storage information
  */
-Storage storage = { 0 };
+static Storage *storage;
 
 static gint
-storage_sorter(const Call **a, const Call **b)
+storage_call_attr_sorter(const Call **a, const Call **b)
 {
-    int cmp = call_attr_compare(*a, *b, storage.sort.by);
-    return (storage.sort.asc) ? cmp : cmp * -1;
+    int cmp = call_attr_compare(*a, *b, storage->sort.by);
+    return (storage->sort.asc) ? cmp : cmp * -1;
 }
 
 gboolean
 storage_calls_changed()
 {
-    gboolean changed = storage.changed;
-    storage.changed = TRUE;
+    gboolean changed = storage->changed;
+    storage->changed = TRUE;
     return changed;
 }
 
 guint
 storage_calls_count()
 {
-    return g_ptr_array_len(storage.calls);
+    return g_ptr_array_len(storage->calls);
 }
 
 GPtrArray *
 storage_calls()
 {
-    g_ptr_array_sort(storage.calls, (GCompareFunc) storage_sorter);
-    return storage.calls;
+    g_ptr_array_sort(storage->calls, (GCompareFunc) storage_call_attr_sorter);
+    return storage->calls;
 }
 
 StorageStats
@@ -96,11 +99,11 @@ storage_calls_stats()
     StorageStats stats = { 0 };
 
     // Total number of calls without filtering
-    stats.total = g_ptr_array_len(storage.calls);
+    stats.total = g_ptr_array_len(storage->calls);
 
     // Total number of calls after filtering
-    for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
-        Call *call = g_ptr_array_index(storage.calls, i);
+    for (guint i = 0; i < g_ptr_array_len(storage->calls); i++) {
+        Call *call = g_ptr_array_index(storage->calls, i);
         if (call->filtered != 1)
             stats.displayed++;
     }
@@ -112,26 +115,26 @@ void
 storage_calls_clear()
 {
     // Create again the callid hash table
-    g_hash_table_remove_all(storage.callids);
-    g_hash_table_remove_all(storage.streams);
+    g_hash_table_remove_all(storage->callids);
+    g_hash_table_remove_all(storage->streams);
 
     // Remove all items from vector
-    g_ptr_array_remove_all(storage.calls);
+    g_ptr_array_remove_all(storage->calls);
 }
 
 void
 storage_calls_clear_soft()
 {
     // Filter current call list
-    for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
-        Call *call = g_ptr_array_index(storage.calls, i);
+    for (guint i = 0; i < g_ptr_array_len(storage->calls); i++) {
+        Call *call = g_ptr_array_index(storage->calls, i);
 
         // Filtered call, remove from all lists
         if (filter_check_call(call, NULL)) {
             // Remove from Call-Id hash table
-            g_hash_table_remove(storage.callids, call->callid);
+            g_hash_table_remove(storage->callids, call->callid);
             // Remove from calls list
-            g_ptr_array_remove(storage.calls, call);
+            g_ptr_array_remove(storage->calls, call);
         }
     }
 }
@@ -139,14 +142,14 @@ storage_calls_clear_soft()
 static void
 storage_calls_rotate()
 {
-    for (guint i = 0; i < g_ptr_array_len(storage.calls); i++) {
-        Call *call = g_ptr_array_index(storage.calls, i);
+    for (guint i = 0; i < g_ptr_array_len(storage->calls); i++) {
+        Call *call = g_ptr_array_index(storage->calls, i);
 
         if (!call->locked) {
             // Remove from callids hash
-            g_hash_table_remove(storage.callids, call->callid);
+            g_hash_table_remove(storage->callids, call->callid);
             // Remove first call from active and call lists
-            g_ptr_array_remove(storage.calls, call);
+            g_ptr_array_remove(storage->calls, call);
             return;
         }
     }
@@ -156,14 +159,14 @@ static gboolean
 storage_check_match_expr(const char *payload)
 {
     // Everything matches when there is no match
-    if (storage.match.mexpr == NULL)
+    if (storage->match.mexpr == NULL)
         return 1;
 
     // Check if payload matches the given expresion
-    if (g_regex_match(storage.match.mregex, payload, 0, NULL)) {
-        return 0 == storage.match.minvert;
+    if (g_regex_match(storage->match.mregex, payload, 0, NULL)) {
+        return 0 == storage->match.minvert;
     } else {
-        return 1 == storage.match.minvert;
+        return 1 == storage->match.minvert;
     }
 
 }
@@ -171,26 +174,26 @@ storage_check_match_expr(const char *payload)
 StorageMatchOpts
 storage_match_options()
 {
-    return storage.match;
+    return storage->match;
 }
 
 void
 storage_set_sort_options(StorageSortOpts sort)
 {
-    storage.sort = sort;
-    g_ptr_array_sort(storage.calls, (GCompareFunc) storage_sorter);
+    storage->sort = sort;
+    g_ptr_array_sort(storage->calls, (GCompareFunc) storage_call_attr_sorter);
 }
 
 StorageSortOpts
 storage_sort_options()
 {
-    return storage.sort;
+    return storage->sort;
 }
 
 StorageCaptureOpts
 storage_capture_options()
 {
-    return storage.capture;
+    return storage->capture;
 }
 
 static void
@@ -202,7 +205,7 @@ storage_register_stream(Stream *stream)
                           stream->src.ip, stream->src.port,
                           stream->dst.ip, stream->dst.port);
 
-    g_hash_table_insert(storage.streams, key, stream->msg);
+    g_hash_table_insert(storage->streams, key, stream->msg);
 }
 
 /**
@@ -265,23 +268,23 @@ storage_check_sip_packet(Packet *packet)
     PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
 
     // Find the call for this msg
-    if (!(call = g_hash_table_lookup(storage.callids, sip_data->callid))) {
+    if (!(call = g_hash_table_lookup(storage->callids, sip_data->callid))) {
 
         // Check if payload matches expression
         if (!storage_check_match_expr(sip_data->payload))
             return NULL;
 
         // User requested only INVITE starting dialogs
-        if (storage.match.invite && sip_data->code.id != SIP_METHOD_INVITE)
+        if (storage->match.invite && sip_data->code.id != SIP_METHOD_INVITE)
             return NULL;
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (storage.match.complete && sip_data->code.id > SIP_METHOD_MESSAGE)
+        if (storage->match.complete && sip_data->code.id > SIP_METHOD_MESSAGE)
             return NULL;
 
         // Rotate call list if limit has been reached
-        if (storage.capture.limit == storage_calls_count())
+        if (storage->capture.limit == storage_calls_count())
             storage_calls_rotate();
 
         // Create the call if not found
@@ -289,10 +292,10 @@ storage_check_sip_packet(Packet *packet)
             return NULL;
 
         // Add this Call-Id to hash table
-        g_hash_table_insert(storage.callids, g_strdup(call->callid), call);
+        g_hash_table_insert(storage->callids, g_strdup(call->callid), call);
 
         // Set call index
-        call->index = ++storage.last_index;
+        call->index = ++storage->last_index;
 
         // Mark this as a new call
         newcall = TRUE;
@@ -305,7 +308,7 @@ storage_check_sip_packet(Packet *packet)
     if (call_msg_count(call) == 0) {
         // If this call has X-Call-Id, append it to the parent call
         if (call->xcallid) {
-            call_add_xcall(g_hash_table_lookup(storage.callids, call->xcallid), call);
+            call_add_xcall(g_hash_table_lookup(storage->callids, call->xcallid), call);
         }
     }
 
@@ -321,11 +324,11 @@ storage_check_sip_packet(Packet *packet)
 
     if (newcall) {
         // Append this call to the call list
-        g_ptr_array_add(storage.calls, call);
+        g_ptr_array_add(storage->calls, call);
     }
 
     // Mark the list as changed
-    storage.changed = TRUE;
+    storage->changed = TRUE;
 
     // Send this packet to all capture outputs
     capture_manager_output_packet(capture_manager(), packet);
@@ -346,13 +349,13 @@ storage_check_rtp_packet(Packet *packet)
 
     // Find the stream by destination
     gchar *hashkey = g_strdup_printf("%s:%hu-%s:%hu", src.ip, src.port, dst.ip, dst.port);
-    Message *msg = g_hash_table_lookup(storage.streams, hashkey);
+    Message *msg = g_hash_table_lookup(storage->streams, hashkey);
     g_free(hashkey);
 
     // If not found, check only with destination address
     if (msg == NULL) {
         hashkey = g_strdup_printf(":0-%s:%hu", dst.ip, dst.port);
-        msg = g_hash_table_lookup(storage.streams, hashkey);
+        msg = g_hash_table_lookup(storage->streams, hashkey);
         g_free(hashkey);
     }
 
@@ -387,12 +390,9 @@ storage_check_rtp_packet(Packet *packet)
             // Add packet to existing matching stream
             if (addressport_equals(stream->src, src) && stream->fmtcode == rtp->encoding->id) {
                 stream_add_packet(stream, packet);
-                if (storage.capture.rtp) {
+                if (storage->capture.rtp) {
                     // Add Packet info to stream packets array
-                    g_ptr_array_add(stream->packets, packet);
-                } else {
-                    // Do not store RTP packets information
-                    packet_free(packet);
+                    g_ptr_array_add(stream->packets, packet_ref(packet));
                 }
 
                 break;
@@ -428,7 +428,7 @@ storage_check_rtcp_packet(Packet *packet)
 
     // Find the stream by destination
     gchar *hashkey = g_strdup_printf("%s:%hu-%s:%hu", src.ip, src.port, dst.ip, dst.port);
-    GList *streams = g_hash_table_lookup(storage.streams, hashkey);
+    GList *streams = g_hash_table_lookup(storage->streams, hashkey);
     g_free(hashkey);
 
     // Check if one of the destination has the configured format
@@ -436,25 +436,52 @@ storage_check_rtcp_packet(Packet *packet)
         Stream *stream = l->data;
         // Add packet to stream
         stream_set_data(stream, src, dst);
-        stream_add_packet(stream, packet);
+        stream_add_packet(stream, packet_ref(packet));
         return stream;
     }
 
     return NULL;
 }
 
+void
+storage_add_packet(Packet *packet)
+{
+    // Add the packet to the queue
+    g_async_queue_push(storage->queue, (gpointer) packet_ref(packet));
+}
+
 //! Start capturing packets function
-gpointer
-storage_check_packet(Packet *packet)
+static gboolean
+storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 {
     if (packet_has_type(packet, PACKET_SIP)) {
-        return storage_check_sip_packet(packet);
+        storage_check_sip_packet(packet);
     } else if (packet_has_type(packet, PACKET_RTP)) {
-        return storage_check_rtp_packet(packet);
+        storage_check_rtp_packet(packet);
     } else if (packet_has_type(packet, PACKET_RTCP)) {
-        return storage_check_rtcp_packet(packet);
+        storage_check_rtcp_packet(packet);
     }
-    return packet;
+
+    // Remove packet reference after parsing
+    packet_unref(packet);
+    return TRUE;
+}
+
+gint
+storage_pending_packets()
+{
+    return g_async_queue_length(storage->queue);
+}
+
+void
+storage_deinit()
+{
+    // Remove all calls
+    storage_calls_clear();
+    // Remove storage pending packets queue
+    g_async_queue_unref(storage->queue);
+    // Remove Call-id hash table
+    g_hash_table_destroy(storage->callids);
 }
 
 gboolean
@@ -466,59 +493,50 @@ storage_init(StorageCaptureOpts capture_options,
     GRegexCompileFlags cflags = G_REGEX_EXTENDED;
     GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
 
-    storage.capture = capture_options;
-    storage.match = match_options;
-    storage.sort = sort_options;
+    storage = g_malloc0(sizeof(Storage));
+
+    storage->capture = capture_options;
+    storage->match = match_options;
+    storage->sort = sort_options;
 
     // Store capture limit
-    storage.last_index = 0;
+    storage->last_index = 0;
 
     // Validate match expression
-    if (storage.match.mexpr) {
+    if (storage->match.mexpr) {
         // Case insensitive requested
-        if (storage.match.micase) {
+        if (storage->match.micase) {
             cflags |= G_REGEX_CASELESS;
         }
 
         // Check the expresion is a compilable regexp
-        storage.match.mregex = g_regex_new(storage.match.mexpr, cflags, mflags, error);
-        if (storage.match.mregex == NULL) {
+        storage->match.mregex = g_regex_new(storage->match.mexpr, cflags, mflags, error);
+        if (storage->match.mregex == NULL) {
             return FALSE;
         }
     }
 
     // Create a vector to store calls
-    storage.calls = g_ptr_array_new_with_free_func(call_destroy);
+    storage->calls = g_ptr_array_new_with_free_func(call_destroy);
 
     // Create hash tables for fast call and stream search
-    storage.callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    storage.streams = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    storage->callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    storage->streams = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     // Set default sorting field
     if (attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
-        storage.sort.by = attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD));
-        storage.sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
+        storage->sort.by = attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD));
+        storage->sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
     } else {
         // Fallback to default sorting field
-        storage.sort.by = ATTR_CALLINDEX;
-        storage.sort.asc = TRUE;
+        storage->sort.by = ATTR_CALLINDEX;
+        storage->sort.asc = TRUE;
     }
 
+    storage->queue = g_async_queue_new();
+
+    GSource * source = g_async_queue_source_new(storage->queue, NULL);
+    g_source_set_callback(source, (GSourceFunc) storage_check_packet, NULL, NULL);
+    g_source_attach(source, NULL);
     return TRUE;
-}
-
-gint
-storage_pending_packets()
-{
-    CaptureManager *manager = capture_manager();
-    return g_async_queue_length(manager->queue);
-}
-
-void
-storage_deinit()
-{
-    // Remove all calls
-    storage_calls_clear();
-    // Remove Call-id hash table
-    g_hash_table_destroy(storage.callids);
 }

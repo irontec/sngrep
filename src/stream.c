@@ -43,7 +43,7 @@ stream_new(enum StreamType type, Message *msg, PacketSdpMedia *media)
     stream->type = type;
     stream->msg = msg;
     stream->media = media;
-    stream->packets = g_ptr_array_new_with_free_func((GDestroyNotify) packet_free);
+    stream->packets = g_ptr_array_new_with_free_func((GDestroyNotify) packet_unref);
     return stream;
 }
 

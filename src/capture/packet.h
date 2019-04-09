@@ -81,8 +81,6 @@ typedef struct _PacketParser PacketParser;
  */
 struct _Packet
 {
-    //! Pending data to be parsed
-    GByteArray *data;
     //! Parser who processed this packet
     PacketParser *parser;
     //! Each packet protocol information
@@ -114,6 +112,12 @@ packet_new(PacketParser *parser);
 
 void
 packet_free(Packet *packet);
+
+Packet *
+packet_ref(Packet *packet);
+
+void
+packet_unref(Packet *packet);
 
 gboolean
 packet_has_type(const Packet *packet, enum PacketProtoId type);

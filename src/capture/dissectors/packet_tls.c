@@ -929,7 +929,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         }
     }
 
-    return NULL;
+    return data;
 }
 
 static void

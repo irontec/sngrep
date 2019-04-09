@@ -88,8 +88,6 @@ struct _CaptureManager
     GSList *inputs;
     //! Packet capture outputs (CaptureOutput *)
     GSList *outputs;
-    //! Packet waiting to be processed
-    GAsyncQueue *queue;
     //! Packet main loop thread
     GThread *thread;
     //! Capture Main loop

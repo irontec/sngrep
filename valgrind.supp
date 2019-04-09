@@ -34,3 +34,129 @@
    fun:g_option_context_parse
    fun:main
 }
+
+{
+   Suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:g_malloc0
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:g_type_register_fundamental
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/lib64/ld-2.28.so
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   Suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:realloc
+   fun:g_realloc
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:g_type_register_static
+   fun:g_param_type_register_static
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/lib64/ld-2.28.so
+   obj:*
+   obj:*
+}
+
+{
+   Suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:g_malloc0
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:g_type_register_fundamental
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/lib64/ld-2.28.so
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   Suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:g_malloc0
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:g_type_register_fundamental
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/lib64/ld-2.28.so
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   Suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:g_malloc0
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:g_type_register_fundamental
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/lib64/ld-2.28.so
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   Suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:g_malloc0
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/lib64/ld-2.28.so
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   Suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:realloc
+   fun:g_realloc
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:g_type_register_fundamental
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/lib64/ld-2.28.so
+   obj:*
+   obj:*
+}

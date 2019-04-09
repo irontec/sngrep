@@ -187,7 +187,6 @@ capture_input_hep_receive(CaptureInput *input)
     char buffer[MAX_HEP_BUFSIZE];
     struct sockaddr hep_client;
     socklen_t hep_client_len;
-    CaptureManager *manager = input->manager;
     CaptureHep *hep = input->priv;
     PacketParser *parser = input->parser;
 
@@ -206,10 +205,13 @@ capture_input_hep_receive(CaptureInput *input)
     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
-    packet->data = data;
 
-    // Add data to parser queue
-    g_async_queue_push(manager->queue, packet);
+    // Pass packet to dissectors
+    packet_parser_next_dissector(parser, packet, data);
+
+    // Remove packet reference after parsing
+    packet_unref(packet);
+    g_byte_array_unref(data);
 }
 
 void *

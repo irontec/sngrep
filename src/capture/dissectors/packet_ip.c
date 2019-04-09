@@ -67,9 +67,6 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Reserve memory for storing fragment information
     PacketIpFragment *fragment = g_malloc0(sizeof(PacketIpFragment));
 
-    // Store packet information
-    fragment->packet = packet;
-
     // Set IP version
     fragment->version = ip4->ip_v;
 
@@ -140,8 +137,11 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         return packet_parser_next_dissector(parser, packet, data);
     }
 
+    // Store packet information
+    fragment->packet = packet_ref(packet);
+
     // Set fragment payload for future reassembly
-    fragment->data = data;
+    fragment->data = g_byte_array_ref(data);
 
     // Look for another packet with same id in IP reassembly vector
     PacketIpDatagram *datagram = NULL;
@@ -185,6 +185,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         g_ptr_array_sort(datagram->fragments, (GCompareFunc) packet_ip_sort_fragments);
 
         // Join all fragment payload
+        g_byte_array_unref(data);
         data = g_byte_array_new();
         for (guint i = 0; i < g_ptr_array_len(datagram->fragments); i++) {
             fragment = g_ptr_array_index(datagram->fragments, i);
@@ -199,11 +200,11 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                 fragment->packet->frames = NULL;
 
                 // Free all puckets of the datagram except current one
-                packet_free(fragment->packet);
+                packet_unref(fragment->packet);
             }
 
-            // Free fragment data
-            g_byte_array_free(fragment->data, TRUE);
+            // We dont longer need this data
+            g_byte_array_unref(fragment->data);
         }
 
         // Remove the datagram information
@@ -216,7 +217,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
 
     // Packet handled and stored for IP assembly
-    return NULL;
+    return data;
 }
 
 static void

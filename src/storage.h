@@ -115,12 +115,18 @@ struct _Storage
     GHashTable *callids;
     //! Streams hash table
     GHashTable *streams;
-    //! Storage thread
-    guint source;
+    //! Storage processing source
+    GSource *source;
+    //! Packet waiting to be processed
+    GAsyncQueue *queue;
 };
 
-gpointer
-storage_check_packet(Packet *packet);
+/**
+ * @brief Add a new packet to storage queue
+ * @param packet
+ */
+void
+storage_add_packet(Packet *packet);
 
 /**
  * @brief Initialize SIP Storage structures

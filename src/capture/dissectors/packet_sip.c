@@ -327,10 +327,10 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Pass data to subdissectors
     packet_parser_next_dissector(parser, packet, data);
 
-    // Thanks for all the fish good data, you are now free
-    g_byte_array_free(data, TRUE);
+    // Add data to storage
+    storage_add_packet(packet);
 
-    return NULL;
+    return data;
 }
 
 static void

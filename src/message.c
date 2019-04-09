@@ -40,7 +40,9 @@ Message *
 msg_new(Packet *packet)
 {
     Message *msg = g_malloc0(sizeof(Message));
-    msg->packet = packet;
+    // Set message packet
+    msg->packet = packet_ref(packet);
+    // Create message attribute hash table
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     return msg;
 }
@@ -49,8 +51,7 @@ void
 msg_free(Message *msg)
 {
     // Free message packets
-    packet_free(msg->packet);
-    // Free all memory
+    packet_unref(msg->packet);
     g_hash_table_destroy(msg->attributes);
     g_free(msg);
 }

@@ -36,38 +36,11 @@
 
 static CaptureManager *manager;
 
-static gboolean
-capture_manager_parse_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
-{
-    // Initialize parser dissector to first one
-    PacketParser *parser = packet->parser;
-    parser->current = parser->dissector_tree;
-
-    // Request initial dissector parsing
-    GByteArray *data = packet->data;
-    data = packet_parser_next_dissector(parser, packet, data);
-
-    // Free not parsed packet data
-    if (data != NULL) {
-        g_byte_array_free(data, TRUE);
-        packet_free(packet);
-        return TRUE;
-    }
-
-    // Add data to storage
-    if (storage_check_packet(packet) == NULL) {
-        packet_free(packet);
-    }
-
-    return TRUE;
-}
-
 CaptureManager *
 capture_manager_new()
 {
     manager = g_malloc0(sizeof(CaptureManager));
 
-    manager->queue = g_async_queue_new();
     manager->paused = FALSE;
 
 #ifdef WITH_SSL
@@ -79,10 +52,6 @@ capture_manager_new()
         g_main_context_new(),
         FALSE
     );
-
-    GSource * source = g_async_queue_source_new(manager->queue, NULL);
-    g_source_set_callback(source, (GSourceFunc) capture_manager_parse_packet, manager, NULL);
-    g_source_attach(source, NULL);
 
     return manager;
 }
@@ -107,7 +76,6 @@ capture_manager_free(CaptureManager *manager)
 
     g_slist_free(manager->inputs);
     g_slist_free(manager->outputs);
-    g_async_queue_unref(manager->queue);
     g_free(manager->filter);
     g_main_loop_unref(manager->loop);
     g_free(manager);

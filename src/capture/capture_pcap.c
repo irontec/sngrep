@@ -373,13 +373,13 @@ capture_output_pcap(const gchar *filename, GError **error)
 void
 capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const guchar *content)
 {
-
     // Capture Input info
     CaptureInput *input = (CaptureInput *) info;
     // Capture manager
     CaptureManager *manager = input->manager;
     // Packet dissectors parser
     PacketParser *parser = input->parser;
+    parser->current = parser->dissector_tree;
 
     // Ignore packets while capture is paused
     if (manager->paused)
@@ -398,12 +398,16 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);
 
+    // Create a new packet
     Packet *packet = packet_new(parser);
     packet->frames = g_list_append(packet->frames, frame);
-    packet->data = data;
 
-    // Add data to parser queue
-    g_async_queue_push(manager->queue, packet);
+    // Pass packet to dissectors
+    packet_parser_next_dissector(parser, packet, data);
+
+    // Remove packet reference (
+    packet_unref(packet);
+    g_byte_array_unref(data);
 }
 
 gint
