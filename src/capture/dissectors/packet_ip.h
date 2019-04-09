@@ -79,21 +79,21 @@ struct _PacketIpFragment
     gchar srcip[ADDRESSLEN];
     //! Packet Destination address
     gchar dstip[ADDRESSLEN];
-    // IP version
+    //! IP version
     guint32 version;
-    // IP transport dissectors
+    //! IP transport dissectors
     guint8 proto;
-    // IP header size
+    //! IP header size
     guint32 hl;
-    // Fragment offset
+    //! Fragment offset
     guint16 off;
-    // IP content len
+    //! IP content len
     guint32 len;
-    // Fragmentation flag
+    //! Fragmentation flag
     guint16 frag;
-    // Fragmentation identifier
+    //! Fragmentation identifier
     guint32 id;
-    // Fragmentation offset
+    //! Fragmentation offset
     guint16 frag_off;
     //! More fragments expected
     guint16 more;

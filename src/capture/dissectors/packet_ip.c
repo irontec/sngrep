@@ -44,10 +44,102 @@ packet_ip_data(const Packet *packet)
     return g_ptr_array_index(packet->proto, PACKET_IP);
 }
 
+static PacketIpFragment *
+packet_ip_fragment_new(Packet *packet, GByteArray *data)
+{
+    // Reserve memory for storing fragment information
+    PacketIpFragment *fragment = g_malloc0(sizeof(PacketIpFragment));
+    // Store packet information
+    fragment->packet = packet_ref(packet);
+    // Set fragment payload for future reassembly
+    fragment->data = g_byte_array_ref(data);
+    return fragment;
+}
+
+static void
+packet_ip_fragment_free(PacketIpFragment *fragment)
+{
+    // Remove no longer required data
+    g_byte_array_unref(fragment->data);
+    packet_unref(fragment->packet);
+    g_free(fragment);
+}
+
+static PacketIpDatagram *
+packet_ip_find_datagram(DissectorIpData *priv, PacketIpFragment *fragment)
+{
+    for (GList *l = priv->assembly; l != NULL; l = l->next) {
+        PacketIpDatagram *datagram = l->data;
+        if (g_strcmp0(fragment->srcip, datagram->srcip) == 0
+            && g_strcmp0(fragment->dstip, datagram->dstip) == 0
+            && fragment->id == datagram->id) {
+            return datagram;
+        }
+    }
+    return NULL;
+}
+
+static PacketIpDatagram *
+packet_ip_datagram_new(const PacketIpFragment *fragment)
+{
+    PacketIpDatagram *datagram = g_malloc0(sizeof(PacketIpDatagram));
+    datagram->fragments = g_ptr_array_new_with_free_func((GDestroyNotify) packet_ip_fragment_free);
+
+    // Copy fragment data
+    g_utf8_strncpy(datagram->srcip, fragment->srcip, ADDRESSLEN);
+    g_utf8_strncpy(datagram->dstip, fragment->dstip, ADDRESSLEN);
+    datagram->id = fragment->id;
+
+    return datagram;
+}
+
+static void
+packet_ip_datagram_free(PacketIpDatagram *datagram)
+{
+    // Free all datagram fragments
+    g_ptr_array_free(datagram->fragments, TRUE);
+    // Free datagram
+    g_free(datagram);
+}
+
 static gint
 packet_ip_sort_fragments(const PacketIpFragment **a, const PacketIpFragment **b)
 {
     return (*a)->frag_off - (*b)->frag_off;
+}
+
+static GByteArray *
+packet_ip_datagram_payload(PacketIpDatagram *datagram)
+{
+    // Join all fragment payload
+    GByteArray *data = g_byte_array_new();
+    for (guint i = 0; i < g_ptr_array_len(datagram->fragments); i++) {
+        PacketIpFragment *fragment = g_ptr_array_index(datagram->fragments, i);
+        g_byte_array_append(data, fragment->data->data, fragment->data->len);
+    }
+
+    return data;
+}
+
+static GList *
+packet_ip_datagram_take_frames(PacketIpDatagram *datagram)
+{
+    GList *frames = NULL;
+    for (guint i = 0; i < g_ptr_array_len(datagram->fragments); i++) {
+        PacketIpFragment *fragment = g_ptr_array_index(datagram->fragments, i);
+        g_return_val_if_fail(fragment != NULL, NULL);
+        Packet *packet = fragment->packet;
+        g_return_val_if_fail(packet != NULL, NULL);
+
+        // Append frames to datagram list
+        frames = g_list_concat_deep(frames, packet->frames);
+
+        // Remove fragment frames (but not free them!)
+        g_list_free(packet->frames);
+        packet->frames = NULL;
+    }
+
+    return frames;
 }
 
 static GByteArray *
@@ -64,8 +156,8 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     struct ip6_hdr *ip6 = (struct ip6_hdr *) data->data;
 #endif
 
-    // Reserve memory for storing fragment information
-    PacketIpFragment *fragment = g_malloc0(sizeof(PacketIpFragment));
+    // Create an IP fragment for current data
+    PacketIpFragment *fragment = packet_ip_fragment_new(packet, data);
 
     // Set IP version
     fragment->version = ip4->ip_v;
@@ -96,7 +188,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             if (fragment->proto == IPPROTO_FRAGMENT) {
                 struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + fragment->hl);
                 fragment->frag_off = g_ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
-                fragment->id = ntohl(ip6f->ip6f_ident);
+                fragment->id = g_ntohl(ip6f->ip6f_ident);
             }
 
             // Get source and destination IP addresses
@@ -111,7 +203,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // IP packet without payload
     if (fragment->len == 0) {
-        g_free(fragment);
+        packet_ip_fragment_free(fragment);
         return data;
     }
 
@@ -132,44 +224,22 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // If no fragmentation
     if (fragment->frag == 0) {
         // Single fragment packet
-        g_free(fragment);
+        packet_ip_fragment_free(fragment);
         // Call next dissector
         return packet_parser_next_dissector(parser, packet, data);
     }
 
-    // Store packet information
-    fragment->packet = packet_ref(packet);
+    // Look for another packet with same id in IP reassembly list
+    PacketIpDatagram *datagram = packet_ip_find_datagram(priv, fragment);
 
-    // Set fragment payload for future reassembly
-    fragment->data = g_byte_array_ref(data);
-
-    // Look for another packet with same id in IP reassembly vector
-    PacketIpDatagram *datagram = NULL;
-    for (GList *l = priv->assembly; l != NULL; l = l->next) {
-        datagram = l->data;
-        if (g_strcmp0(fragment->srcip, datagram->srcip) == 0
-            && g_strcmp0(fragment->dstip, datagram->dstip) == 0
-            && fragment->id == datagram->id) {
-            break;
-        }
-        datagram = NULL;
-    }
-
-    // If we already have this packet datagram, add a new fragment
-    if (datagram != NULL) {
-        g_ptr_array_add(datagram->fragments, fragment);
-    } else {
-        datagram = g_malloc0(sizeof(PacketIpDatagram));
-        g_utf8_strncpy(datagram->srcip, fragment->srcip, ADDRESSLEN);
-        g_utf8_strncpy(datagram->dstip, fragment->dstip, ADDRESSLEN);
-        datagram->id = fragment->id;
-        datagram->fragments = g_ptr_array_new_with_free_func(g_free);
-        g_ptr_array_add(datagram->fragments, fragment);
+    // Create a new datagram if none matches
+    if (datagram == NULL) {
+        datagram = packet_ip_datagram_new(fragment);
         priv->assembly = g_list_append(priv->assembly, datagram);
     }
 
-    // Add this IP content length to the total captured of the packet
-    datagram->seen += data->len;
+    // Add fragment to the datagram
+    g_ptr_array_add(datagram->fragments, fragment);
 
     // Calculate how much data we need to complete this packet
     // The total packet size can only be known using the last fragment of the packet
@@ -179,39 +249,20 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         datagram->len = fragment->frag_off + data->len;
     }
 
+    // Add this IP content length to the total captured of the packet
+    datagram->seen += data->len;
+
     // If we have the whole packet (captured length is expected length)
     if (datagram->seen == datagram->len) {
-        // Calculate assembled IP payload data
+        // Sort IP fragments
         g_ptr_array_sort(datagram->fragments, (GCompareFunc) packet_ip_sort_fragments);
-
-        // Join all fragment payload
-        g_byte_array_unref(data);
-        data = g_byte_array_new();
-        for (guint i = 0; i < g_ptr_array_len(datagram->fragments); i++) {
-            fragment = g_ptr_array_index(datagram->fragments, i);
-            g_byte_array_append(data, fragment->data->data, fragment->data->len);
-
-            // Store all the fragments data in current packet
-            if (fragment->packet != packet) {
-                // Append other packet frames to current one
-                packet->frames = g_list_concat_deep(packet->frames, fragment->packet->frames);
-                // Disown other packet frames
-                g_list_free(fragment->packet->frames);
-                fragment->packet->frames = NULL;
-
-                // Free all puckets of the datagram except current one
-                packet_unref(fragment->packet);
-            }
-
-            // We dont longer need this data
-            g_byte_array_unref(fragment->data);
-        }
-
+        // Sort and glue all fragments payload
+        data = packet_ip_datagram_payload(datagram);
+        // Sort and take packet frames
+        packet->frames = packet_ip_datagram_take_frames(datagram);
         // Remove the datagram information
         priv->assembly = g_list_remove(priv->assembly, datagram);
-        g_ptr_array_free(datagram->fragments, TRUE);
-        g_free(datagram);
-
+        packet_ip_datagram_free(datagram);
         // Call next dissector
         return packet_parser_next_dissector(parser, packet, data);
     }
