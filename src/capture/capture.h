@@ -186,9 +186,9 @@ capture_manager_stop(CaptureManager *manager);
  * @brief Set a bpf filter in open capture
  *
  * @param filter String containing the BPF filter text
- * @return 0 if valid, 1 otherwise
+ * @return TRUE if valid, FALSE otherwise
  */
-int
+gboolean
 capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **error);
 
 /**
