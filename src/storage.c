@@ -436,7 +436,7 @@ storage_check_rtcp_packet(Packet *packet)
         Stream *stream = l->data;
         // Add packet to stream
         stream_set_data(stream, src, dst);
-        stream_add_packet(stream, packet_ref(packet));
+        stream_add_packet(stream, packet);
         return stream;
     }
 
@@ -462,7 +462,7 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
         storage_check_rtcp_packet(packet);
     }
 
-    // Remove packet reference after parsing
+    // Remove packet reference after parsing (added in storage_add_packet)
     packet_unref(packet);
     return TRUE;
 }

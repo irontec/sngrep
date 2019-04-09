@@ -197,7 +197,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             break;
 #endif
         default:
-            g_free(fragment);
+            packet_ip_fragment_free(fragment);
             return data;
     }
 
@@ -284,11 +284,11 @@ static void
 packet_ip_init(PacketParser *parser)
 {
     // Initialize parser private data
-    DissectorIpData *ipdata = g_malloc0(sizeof(DissectorIpData));
-    g_return_if_fail(ipdata != NULL);
+    DissectorIpData *priv = g_malloc0(sizeof(DissectorIpData));
+    g_return_if_fail(priv != NULL);
 
     // Store parser private information
-    g_ptr_array_set(parser->dissectors_priv, PACKET_IP, ipdata);
+    g_ptr_array_set(parser->dissectors_priv, PACKET_IP, priv);
 
 }
 
@@ -296,12 +296,12 @@ static void
 packet_ip_deinit(PacketParser *parser)
 {
     // Get Dissector data for this parser
-    DissectorIpData *ipdata = g_ptr_array_index(parser->dissectors_priv, PACKET_IP);
-    g_return_if_fail(ipdata != NULL);
+    DissectorIpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_IP);
+    g_return_if_fail(priv != NULL);
 
     // Free used memory
-    g_list_free(ipdata->assembly);
-    g_free(ipdata);
+    g_list_free_full(priv->assembly, (GDestroyNotify) packet_ip_datagram_free);
+    g_free(priv);
 }
 
 PacketDissector *
