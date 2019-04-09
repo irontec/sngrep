@@ -2,7 +2,7 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013-2018 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2019 Ivan Alonso (Kaian)
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by

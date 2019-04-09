@@ -2,8 +2,8 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2013-2018 Ivan Alonso (Kaian)
- ** Copyright (C) 2013-2018 Irontec SL. All rights reserved.
+ ** Copyright (C) 2013-2019 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2019 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -42,22 +42,22 @@ void
 print_version_info()
 {
     g_print("%s - %s\n"
-            "Copyright (C) 2013-2018 Irontec S.L.\n"
+            "Copyright (C) 2013-2019 Irontec S.L.\n"
             "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
             "This is free software: you are free to change and redistribute it.\n"
             "There is NO WARRANTY, to the extent permitted by law.\n"
 
             #ifdef WITH_SSL
-            " * Compiled with GnuTLS support.\n"
+            " * Compiled with GnuTLS support\n"
             #endif
             #ifdef USE_IPV6
-            " * Compiled with IPv6 support.\n"
+            " * Compiled with IPv6 support\n"
             #endif
             #ifdef USE_HEP
-            " * Compiled with HEPv3 support.\n"
+            " * Compiled with HEPv3 support\n"
             #endif
             #ifdef WITH_G729
-            " * Compiled with G.729 support.\n"
+            " * Compiled with G.729 support\n"
             #endif
             #ifdef WITH_SND
             " * Compiled with libsnd support (Save to .wav)\n"
