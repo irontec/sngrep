@@ -68,8 +68,8 @@ static Storage *storage;
 static gint
 storage_call_attr_sorter(const Call **a, const Call **b)
 {
-    int cmp = call_attr_compare(*a, *b, storage->sort.by);
-    return (storage->sort.asc) ? cmp : cmp * -1;
+    int cmp = call_attr_compare(*a, *b, storage->options.sort.by);
+    return (storage->options.sort.asc) ? cmp : cmp * -1;
 }
 
 gboolean
@@ -159,14 +159,14 @@ static gboolean
 storage_check_match_expr(const char *payload)
 {
     // Everything matches when there is no match
-    if (storage->match.mexpr == NULL)
+    if (storage->options.match.mexpr == NULL)
         return 1;
 
     // Check if payload matches the given expresion
-    if (g_regex_match(storage->match.mregex, payload, 0, NULL)) {
-        return 0 == storage->match.minvert;
+    if (g_regex_match(storage->options.match.mregex, payload, 0, NULL)) {
+        return 0 == storage->options.match.minvert;
     } else {
-        return 1 == storage->match.minvert;
+        return 1 == storage->options.match.minvert;
     }
 
 }
@@ -174,26 +174,26 @@ storage_check_match_expr(const char *payload)
 StorageMatchOpts
 storage_match_options()
 {
-    return storage->match;
+    return storage->options.match;
 }
 
 void
 storage_set_sort_options(StorageSortOpts sort)
 {
-    storage->sort = sort;
+    storage->options.sort = sort;
     g_ptr_array_sort(storage->calls, (GCompareFunc) storage_call_attr_sorter);
 }
 
 StorageSortOpts
 storage_sort_options()
 {
-    return storage->sort;
+    return storage->options.sort;
 }
 
 StorageCaptureOpts
 storage_capture_options()
 {
-    return storage->capture;
+    return storage->options.capture;
 }
 
 static void
@@ -275,16 +275,16 @@ storage_check_sip_packet(Packet *packet)
             return NULL;
 
         // User requested only INVITE starting dialogs
-        if (storage->match.invite && sip_data->code.id != SIP_METHOD_INVITE)
+        if (storage->options.match.invite && sip_data->code.id != SIP_METHOD_INVITE)
             return NULL;
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (storage->match.complete && sip_data->code.id > SIP_METHOD_MESSAGE)
+        if (storage->options.match.complete && sip_data->code.id > SIP_METHOD_MESSAGE)
             return NULL;
 
         // Rotate call list if limit has been reached
-        if (storage->capture.limit == storage_calls_count())
+        if (storage->options.capture.limit == storage_calls_count())
             storage_calls_rotate();
 
         // Create the call if not found
@@ -390,7 +390,7 @@ storage_check_rtp_packet(Packet *packet)
             // Add packet to existing matching stream
             if (addressport_equals(stream->src, src) && stream->fmtcode == rtp->encoding->id) {
                 stream_add_packet(stream, packet);
-                if (storage->capture.rtp) {
+                if (storage->options.capture.rtp) {
                     // Add Packet info to stream packets array
                     g_ptr_array_add(stream->packets, packet_ref(packet));
                 }
@@ -474,7 +474,7 @@ storage_pending_packets()
 }
 
 void
-storage_deinit()
+storage_free(Storage *storage)
 {
     // Remove all calls
     storage_calls_clear();
@@ -484,34 +484,28 @@ storage_deinit()
     g_hash_table_destroy(storage->callids);
 }
 
-gboolean
-storage_init(StorageCaptureOpts capture_options,
-             StorageMatchOpts match_options,
-             StorageSortOpts sort_options,
-             GError **error)
+Storage *
+storage_new(StorageOpts options, GError **error)
 {
     GRegexCompileFlags cflags = G_REGEX_EXTENDED;
     GRegexMatchFlags mflags = G_REGEX_MATCH_NEWLINE_CRLF;
 
     storage = g_malloc0(sizeof(Storage));
-
-    storage->capture = capture_options;
-    storage->match = match_options;
-    storage->sort = sort_options;
+    storage->options = options;
 
     // Store capture limit
     storage->last_index = 0;
 
     // Validate match expression
-    if (storage->match.mexpr) {
+    if (storage->options.match.mexpr) {
         // Case insensitive requested
-        if (storage->match.micase) {
+        if (storage->options.match.micase) {
             cflags |= G_REGEX_CASELESS;
         }
 
         // Check the expresion is a compilable regexp
-        storage->match.mregex = g_regex_new(storage->match.mexpr, cflags, mflags, error);
-        if (storage->match.mregex == NULL) {
+        storage->options.match.mregex = g_regex_new(storage->options.match.mexpr, cflags, mflags, error);
+        if (storage->options.match.mregex == NULL) {
             return FALSE;
         }
     }
@@ -525,18 +519,21 @@ storage_init(StorageCaptureOpts capture_options,
 
     // Set default sorting field
     if (attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
-        storage->sort.by = attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD));
-        storage->sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
+        storage->options.sort.by = attr_find_by_name(setting_get_value(SETTING_CL_SORTFIELD));
+        storage->options.sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
     } else {
         // Fallback to default sorting field
-        storage->sort.by = ATTR_CALLINDEX;
-        storage->sort.asc = TRUE;
+        storage->options.sort.by = ATTR_CALLINDEX;
+        storage->options.sort.asc = TRUE;
     }
 
+    // Parsed packet to check
     storage->queue = g_async_queue_new();
 
+    // Storage check source
     GSource * source = g_async_queue_source_new(storage->queue, NULL);
     g_source_set_callback(source, (GSourceFunc) storage_check_packet, NULL, NULL);
     g_source_attach(source, NULL);
-    return TRUE;
+
+    return storage;
 }

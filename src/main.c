@@ -103,9 +103,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
     gchar *keyfile = NULL;
 #endif
-    StorageSortOpts storage_sopts = { 0 };
-    StorageMatchOpts storage_mopts = { 0 };
-    StorageCaptureOpts storage_copts = { 0 };
+    StorageOpts storage_opts = { 0 };
     SettingOpts setting_opts = { 0 };
     CaptureManager *capture;
     CaptureInput *input;
@@ -118,23 +116,23 @@ main(int argc, char *argv[])
           "Use this capture device instead of default", "DEVICE" },
         { "input", 'I', 0, G_OPTION_ARG_FILENAME_ARRAY, &input_files,
           "Read captured data from pcap file", "FILE" },
-        { "output", 'O', 0, G_OPTION_ARG_FILENAME, &storage_copts.outfile,
+        { "output", 'O', 0, G_OPTION_ARG_FILENAME, &storage_opts.capture.outfile,
           "Write captured data to pcap file", "FILE" },
-        { "calls", 'c', 0, G_OPTION_ARG_NONE, &storage_mopts.invite,
+        { "calls", 'c', 0, G_OPTION_ARG_NONE, &storage_opts.match.invite,
           "Only display dialogs starting with INVITE", NULL },
-        { "rtp", 'r', 0, G_OPTION_ARG_NONE, &storage_copts.rtp,
+        { "rtp", 'r', 0, G_OPTION_ARG_NONE, &storage_opts.capture.rtp,
           "Store captured RTP packets (enables saving RTP)", NULL },
-        { "limit", 'l', 0, G_OPTION_ARG_INT, &storage_copts.limit,
+        { "limit", 'l', 0, G_OPTION_ARG_INT, &storage_opts.capture.limit,
           "Set capture limit to N dialogs", "N" },
-        { "rotate", 'R', 0, G_OPTION_ARG_NONE, &storage_copts.rotate,
+        { "rotate", 'R', 0, G_OPTION_ARG_NONE, &storage_opts.capture.rotate,
           "Rotate calls when capture limit have been reached", NULL },
         { "no-interface", 'N', 0, G_OPTION_ARG_NONE, &no_interface,
           "Don't display sngrep interface, just capture", NULL },
         { "quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet,
           "Don't print captured dialogs in no interface mode", NULL },
-        { "icase", 'i', 0, G_OPTION_ARG_NONE, &storage_mopts.micase,
+        { "icase", 'i', 0, G_OPTION_ARG_NONE, &storage_opts.match.micase,
           "Make <match expression> case insensitive", NULL },
-        { "invert", 'v', 0, G_OPTION_ARG_NONE, &storage_mopts.minvert,
+        { "invert", 'v', 0, G_OPTION_ARG_NONE, &storage_opts.match.minvert,
           "Invert <match expression>", NULL },
         { "dump-config", 'D', 0, G_OPTION_ARG_NONE, &config_dump,
           "Print active configuration settings and exit", NULL },
@@ -174,18 +172,18 @@ main(int argc, char *argv[])
     settings_init(setting_opts);
 
     // Get initial values for configurable arguments
-    if (!storage_mopts.invite)
-        storage_mopts.invite = setting_enabled(SETTING_SIP_CALLS);
-    if (!storage_mopts.complete)
-        storage_mopts.complete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
-    if (!storage_copts.limit)
-        storage_copts.limit = (guint) setting_get_intvalue(SETTING_CAPTURE_LIMIT);
-    if (!storage_copts.rtp)
-        storage_copts.rtp = setting_enabled(SETTING_CAPTURE_RTP);
-    if (!storage_copts.rotate)
-        storage_copts.rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
-    if (!storage_copts.outfile)
-        storage_copts.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
+    if (!storage_opts.match.invite)
+        storage_opts.match.invite = setting_enabled(SETTING_SIP_CALLS);
+    if (!storage_opts.match.complete)
+        storage_opts.match.complete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
+    if (!storage_opts.capture.limit)
+        storage_opts.capture.limit = (guint) setting_get_intvalue(SETTING_CAPTURE_LIMIT);
+    if (!storage_opts.capture.rtp)
+        storage_opts.capture.rtp = setting_enabled(SETTING_CAPTURE_RTP);
+    if (!storage_opts.capture.rotate)
+        storage_opts.capture.rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
+    if (!storage_opts.capture.outfile)
+        storage_opts.capture.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
 
 #ifdef WITH_SSL
     if (keyfile == NULL) {
@@ -353,13 +351,13 @@ main(int argc, char *argv[])
         }
 
         // Set the payload match expression
-        storage_mopts.mexpr = match_expr;
+        storage_opts.match.mexpr = match_expr;
     }
 
     /***************************** Capture Outputs *****************************/
     // Handle capture file output
-    if (storage_copts.outfile != NULL) {
-        if ((output = capture_output_pcap(storage_copts.outfile, &error))) {
+    if (storage_opts.capture.outfile != NULL) {
+        if ((output = capture_output_pcap(storage_opts.capture.outfile, &error))) {
             capture_manager_add_output(capture, output);
         } else {
             g_printerr("error: %s\n", error->message);
@@ -384,7 +382,8 @@ main(int argc, char *argv[])
     GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
 
     // Initialize SIP Messages Storage
-    if (!storage_init(storage_copts, storage_mopts, storage_sopts, &error)) {
+    Storage *storage = storage_new(storage_opts, &error);
+    if (error != NULL) {
         g_printerr("Failed to initialize storage: %s\n", error->message);
         return 1;
     };
@@ -411,7 +410,7 @@ main(int argc, char *argv[])
     capture_manager_stop(capture);
 
     // Deallocate sip stored messages
-    storage_deinit();
+    storage_free(storage);
 
     // Capture deinit
     capture_manager_free(capture);

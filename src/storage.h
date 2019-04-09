@@ -41,6 +41,7 @@ typedef struct _Storage Storage;
 typedef struct _StorageStats StorageStats;
 
 //! Shorter declaration of structs
+typedef struct _StorageOpts StorageOpts;
 typedef struct _StorageSortOpts StorageSortOpts;
 typedef struct _StorageMatchOpts StorageMatchOpts;
 typedef struct _StorageCaptureOpts StorageCaptureOpts;
@@ -93,11 +94,9 @@ struct _StorageStats
 };
 
 /**
- * @brief call structures head list
- *
- * This structure acts as header of calls list
+ * @brief Storage options structure
  */
-struct _Storage
+struct _StorageOpts
 {
     //! Matching options
     StorageMatchOpts match;
@@ -105,6 +104,17 @@ struct _Storage
     StorageCaptureOpts capture;
     //! Sort call list following this options
     StorageSortOpts sort;
+};
+
+/**
+ * @brief call structures head list
+ *
+ * This structure acts as header of calls list
+ */
+struct _Storage
+{
+    //! Storage options
+    StorageOpts options;
     //! List of all captured calls
     GPtrArray *calls;
     //! Changed flag. For interface optimal updates
@@ -129,24 +139,16 @@ void
 storage_add_packet(Packet *packet);
 
 /**
- * @brief Initialize SIP Storage structures
- *
- * FIXME This function initializes storage structure and starts storage
- * thread.
+ * @brief Create a storage manager
  */
-gboolean
-storage_init(StorageCaptureOpts capture_options,
-             StorageMatchOpts match_options,
-             StorageSortOpts sort_options,
-             GError **error);
+Storage *
+storage_new(StorageOpts options, GError **error);
 
 /**
  * @brief Deallocate all memory used for SIP calls
- *
- * Stop storage thread and free its memory
  */
 void
-storage_deinit();
+storage_free(Storage *storage);
 
 /**
  * @brief Return if the call list has changed
