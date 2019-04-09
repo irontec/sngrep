@@ -192,14 +192,6 @@ gboolean
 capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **error);
 
 /**
- * @brief Get the configured BPF filter
- *
- * @return String containing the BPF filter text or NULL
- */
-const gchar *
-capture_manager_filter(CaptureManager *manager);
-
-/**
  * @brief Set Keyfile to decrypt TLS packets
  *
  * @param keyfile Full path to keyfile
