@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
+#include "glib/glib-extra.h"
 #include "setting.h"
 #include "capture/capture.h"
 #include "ncurses/manager.h"
@@ -103,8 +104,8 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
     gchar *keyfile = NULL;
 #endif
-    StorageOpts storage_opts = { 0 };
-    SettingOpts setting_opts = { 0 };
+    StorageOpts storage_opts;
+    SettingOpts setting_opts;
     CaptureManager *capture;
     CaptureInput *input;
     CaptureOutput *output;
@@ -150,7 +151,7 @@ main(int argc, char *argv[])
         { "hep-send", 'H', 0, G_OPTION_ARG_STRING, &hep_send,
           "Homer sipcapture URL", "udp:X.X.X.X:XXXX" },
 #endif
-        { NULL }
+        { G_OPTION_SENTINEL }
     };
 
     /************************** Command Line Parsing **************************/

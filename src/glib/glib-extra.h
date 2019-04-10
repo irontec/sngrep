@@ -32,6 +32,8 @@
 
 #include <glib.h>
 
+#define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
+
 #define g_ptr_array_len(array) (array->len)
 #define g_ptr_array_empty(array) (array->len == 0)
 #define g_ptr_array_first(array) g_ptr_array_index(array, 0)
