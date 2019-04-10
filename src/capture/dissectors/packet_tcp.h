@@ -47,6 +47,10 @@ struct _PacketTcpStream
 {
     //! TCP Segment list
     GPtrArray *segments;
+    //! TCP hashkey for storing streams
+    gchar *hashkey;
+    //! TCP assembled data
+    GByteArray *data;
 };
 
 struct _PacketTcpSegment
@@ -70,6 +74,14 @@ struct _DissectorTcpData
 {
     GHashTable *assembly;
 };
+
+/**
+ * @brief Retrieve packet TCP protocol specific data
+ * @param packet Packet pointer to get data
+ * @return Pointer to PacketTcpData | NULL
+ */
+PacketTcpData *
+packet_tcp_data(const Packet *packet);
 
 /**
  * @brief Create a TCP parser
