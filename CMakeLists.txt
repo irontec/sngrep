@@ -4,7 +4,7 @@ project(sngrep
         LANGUAGES C)
 
 set(PROJECT_NAME sngrep)
-set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -p -g")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -p -g -Werror -pedantic")
 add_compile_options(-Wall -Wextra)
 
 if (CMAKE_VERSION VERSION_LESS "3.1")

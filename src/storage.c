@@ -532,7 +532,7 @@ storage_new(StorageOpts options, GError **error)
 
     // Storage check source
     GSource * source = g_async_queue_source_new(storage->queue, NULL);
-    g_source_set_callback(source, (GSourceFunc) storage_check_packet, NULL, NULL);
+    g_source_set_callback(source, (GSourceFunc) G_CALLBACK(storage_check_packet), NULL, NULL);
     g_source_attach(source, NULL);
 
     return storage;

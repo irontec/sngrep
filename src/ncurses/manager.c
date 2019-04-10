@@ -547,7 +547,7 @@ ncurses_init(GMainLoop *loop, GError **error)
 
     // Source for reading events from stdin
     GSource *source = g_unix_fd_source_new(STDIN_FILENO, G_IO_IN | G_IO_ERR | G_IO_HUP);
-    g_source_set_callback(source, (GSourceFunc) ncurses_read_input, loop, NULL);
+    g_source_set_callback(source, (GSourceFunc) G_CALLBACK(ncurses_read_input), loop, NULL);
     g_source_attach(source, NULL);
 
     // Refresh screen every 200 ms

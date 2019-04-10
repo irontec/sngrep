@@ -44,7 +44,7 @@ g_async_queue_source_dispatch(GSource *source, GSourceFunc callback, gpointer us
 {
     GAsyncQueueSource *g_async_queue_source = (GAsyncQueueSource *) source;
     gpointer message;
-    GAsyncQueueSourceFunc func = (GAsyncQueueSourceFunc) callback;
+    GAsyncQueueSourceFunc func = (GAsyncQueueSourceFunc) G_CALLBACK(callback);
 
     /* Pop a message off the queue. */
     message = g_async_queue_try_pop(g_async_queue_source->queue);
@@ -104,7 +104,7 @@ static GSourceFuncs g_async_queue_source_funcs =
         NULL,  /* check */
         g_async_queue_source_dispatch,
         g_async_queue_source_finalize,
-        (GSourceFunc) g_async_queue_source_closure_callback,
+        (GSourceFunc) G_CALLBACK(g_async_queue_source_closure_callback),
         NULL,
     };
 

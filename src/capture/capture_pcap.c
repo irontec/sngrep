@@ -23,7 +23,7 @@
  * @file capture_pcap.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in pcap.h
+ * @brief Source of functions defined in capture_pcap.h
  *
  * sngrep can parse a pcap file to display call flows.
  * This file include the functions that uses libpcap to do so.
@@ -146,7 +146,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
 
     g_source_set_callback(
         input->source,
-        (GSourceFunc) capture_input_pcap_read_packet,
+        (GSourceFunc) G_CALLBACK(capture_input_pcap_read_packet),
         input,
         (GDestroyNotify) capture_input_pcap_stop
     );
@@ -217,7 +217,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
 
     g_source_set_callback(
         input->source,
-        (GSourceFunc) capture_input_pcap_read_packet,
+        (GSourceFunc) G_CALLBACK(capture_input_pcap_read_packet),
         input,
         (GDestroyNotify) capture_input_pcap_stop
     );
