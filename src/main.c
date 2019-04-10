@@ -106,7 +106,6 @@ main(int argc, char *argv[])
 #endif
     StorageOpts storage_opts;
     SettingOpts setting_opts;
-    CaptureManager *capture;
     CaptureInput *input;
     CaptureOutput *output;
 
@@ -214,7 +213,7 @@ main(int argc, char *argv[])
 
     /***************************** Capture Inputs *****************************/
     // Main packet capture manager
-    capture = capture_manager_new();
+    CaptureManager *capture = capture_manager_new();
 
     // Handle capture input from files
     g_autoptr(GList) files = NULL;

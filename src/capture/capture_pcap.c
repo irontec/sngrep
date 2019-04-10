@@ -77,7 +77,7 @@ capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
         capture_pcap_parse_packet((guchar *) input, &header, data);
     }
 
-    return data != NULL;
+    return TRUE;
 }
 
 CaptureInput *
