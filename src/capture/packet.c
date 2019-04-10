@@ -36,14 +36,33 @@
 #include "capture/capture_pcap.h"
 #include "packet.h"
 
+/**
+ * @brief Packet class definition
+ */
+G_DEFINE_TYPE(Packet, packet, G_TYPE_OBJECT)
+
+G_GNUC_UNUSED static void
+packet_init(Packet *self)
+{
+    self->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
+    g_ptr_array_set_size(self->proto, PACKET_PROTO_COUNT);
+}
+
+static void
+packet_dispose(GObject *gobject)
+{
+    // Free packet data
+    packet_free(SNGREP_PACKET(gobject));
+    // Chain Gobject dispose
+    G_OBJECT_CLASS (packet_parent_class)->dispose(gobject);
+}
+
 Packet *
 packet_new(PacketParser *parser)
 {
     // Create a new packet
-    Packet *packet = g_rc_box_new0(Packet);
+    Packet *packet = g_object_new(CAPTURE_TYPE_PACKET, NULL);
     packet->parser = parser;
-    packet->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
-    g_ptr_array_set_size(packet->proto, PACKET_PROTO_COUNT);
     return packet;
 }
 
@@ -71,13 +90,13 @@ packet_free(Packet *packet)
 Packet *
 packet_ref(Packet *packet)
 {
-    return g_rc_box_acquire(packet);
+    return g_object_ref(packet);
 }
 
 void
 packet_unref(Packet *packet)
 {
-    g_rc_box_release_full(packet, (GDestroyNotify) packet_free);
+    g_object_unref(packet);
 }
 
 gboolean
@@ -177,4 +196,14 @@ packet_frame_new()
 {
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
     return frame;
+}
+
+G_GNUC_UNUSED static void
+packet_class_init(G_GNUC_UNUSED PacketClass *klass)
+{
+    // Get the parent gobject class
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+
+    // Set finalize functions
+    object_class->dispose = packet_dispose;
 }

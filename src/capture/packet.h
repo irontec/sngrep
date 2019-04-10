@@ -37,9 +37,12 @@
 #define __SNGREP_PACKET_H
 
 #include <glib.h>
+#include <glib-object.h>
 #include <time.h>
 #include <sys/types.h>
 #include "address.h"
+
+G_BEGIN_DECLS
 
 /**
  * @brief Packet protocols
@@ -81,6 +84,8 @@ typedef struct _PacketParser PacketParser;
  */
 struct _Packet
 {
+    //! Parent class
+    GObject parent;
     //! Parser who processed this packet
     PacketParser *parser;
     //! Each packet protocol information
@@ -106,6 +111,9 @@ struct _PacketFrame
     //! PCAP Frame content
     GByteArray *data;
 };
+
+#define CAPTURE_TYPE_PACKET packet_get_type()
+G_DECLARE_FINAL_TYPE(Packet, packet, SNGREP, PACKET, GObject)
 
 Packet *
 packet_new(PacketParser *parser);
@@ -151,5 +159,6 @@ packet_frame_free(PacketFrame *frame);
 PacketFrame *
 packet_frame_new();
 
+G_END_DECLS
 
 #endif /* __SNGREP_PACKET_H */

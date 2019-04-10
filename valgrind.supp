@@ -160,3 +160,21 @@
    obj:*
    obj:*
 }
+
+{
+   packet_get_type_once
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:realloc
+   fun:g_realloc
+   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   fun:g_type_register_static
+   fun:g_type_register_static_simple
+   fun:packet_get_type_once
+   fun:packet_get_type
+   fun:packet_new
+   fun:capture_pcap_parse_packet
+   fun:capture_input_pcap_read_packet
+   fun:g_main_context_dispatch
+}
