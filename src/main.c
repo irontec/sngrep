@@ -110,6 +110,11 @@ main(int argc, char *argv[])
     CaptureInput *input;
     CaptureOutput *output;
 
+    /****************************** Initialization ****************************/
+    memset(&storage_opts, 0, sizeof(StorageOpts));
+    memset(&setting_opts, 0, sizeof(SettingOpts));
+
+    /************************ Command Line Arguments **************************/
     GOptionEntry main_entries[] = {
         { "version", 'V', 0, G_OPTION_ARG_NONE, &version,
           "Version information", NULL },
