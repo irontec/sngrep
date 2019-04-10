@@ -111,7 +111,7 @@ address_is_local(Address addr)
 Address
 address_from_str(const char *ipport)
 {
-    Address ret = { 0 };
+    Address ret = ADDRESS_ZERO;
     gchar scanipport[256];
     gchar address[256];
     guint16 port;

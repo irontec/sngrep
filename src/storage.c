@@ -220,7 +220,7 @@ static void
 storage_register_streams(Message *msg)
 {
     Packet *packet = msg->packet;
-    Address emptyaddr = { 0 };
+    Address emptyaddr = ADDRESS_ZERO;
 
     PacketSdpData *sdp = packet_sdp_data(packet);
     if (sdp == NULL) {

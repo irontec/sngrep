@@ -108,7 +108,7 @@ packet_has_type(const Packet *packet, enum PacketProtoId type)
 Address
 packet_src_address(const Packet *packet)
 {
-    Address address = { 0 };
+    Address address = ADDRESS_ZERO;
 
     // Get IP address from IP parsed protocol
     PacketIpData *ip = packet_ip_data(packet);
@@ -132,7 +132,7 @@ packet_src_address(const Packet *packet)
 Address
 packet_dst_address(const Packet *packet)
 {
-    Address address = { 0 };
+    Address address = ADDRESS_ZERO;
 
     // Get IP address from IP parsed protocol
     PacketIpData *ip = packet_ip_data(packet);
