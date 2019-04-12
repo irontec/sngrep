@@ -34,6 +34,7 @@
 #include <glib/gprintf.h>
 #include "glib/glib-extra.h"
 #include "capture/packet.h"
+#include "capture/capture.h"
 #include "packet_ip.h"
 #include "packet_tcp.h"
 
@@ -222,9 +223,48 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     return data;
 }
 
+/**
+ * @brief TCP Stream garbage collector
+ *
+ * This callback is invoked periodically to remove existing streams in
+ * assembly hash table that are greater than a number of frames.
+ *
+ * @param parser Parser information owner of dissector data
+ * @return TRUE always
+ */
+
+static gboolean
+packet_tcp_assembly_gc(PacketParser *parser)
+{
+    g_return_val_if_fail(parser != NULL, FALSE);
+    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
+    g_return_val_if_fail(priv != NULL, FALSE);
+
+    // Remove streams with more than TCP_MAX_SEGMENTS fragments
+    GHashTableIter iter;
+    gpointer hashkey;
+    PacketTcpStream *stream;
+
+    g_hash_table_iter_init(&iter, priv->assembly);
+    while (g_hash_table_iter_next(&iter, &hashkey, (gpointer) &stream)) {
+        if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {
+            g_hash_table_remove(priv->assembly, hashkey);
+        }
+    }
+
+    return TRUE;
+}
+
 static void
 packet_tcp_init(PacketParser *parser)
 {
+    CaptureManager *manager = capture_manager_get_instance();
+    g_return_if_fail(manager != NULL);
+
+    GSource *tcp_gc = g_timeout_source_new(10000);
+    g_source_set_callback(tcp_gc, (GSourceFunc) packet_tcp_assembly_gc, parser, NULL);
+    g_source_attach(tcp_gc, g_main_loop_get_context(manager->loop));
+
     DissectorTcpData *tcp_data = g_malloc0(sizeof(DissectorTcpData));
     tcp_data->assembly = g_hash_table_new_full(
         g_str_hash,
@@ -232,6 +272,7 @@ packet_tcp_init(PacketParser *parser)
         NULL,
         (GDestroyNotify) packet_tcp_stream_free
     );
+
     g_ptr_array_set(parser->dissectors_priv, PACKET_TCP, tcp_data);
 }
 

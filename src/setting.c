@@ -479,7 +479,7 @@ settings_init(SettingOpts options)
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_UDP,
                     setting_bool_new("capture.packet.udp", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TCP,
-                    setting_bool_new("capture.packet.tcp", SETTING_OFF));
+                    setting_bool_new("capture.packet.tcp", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TLS,
                     setting_bool_new("capture.packet.tls", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_HEP,
