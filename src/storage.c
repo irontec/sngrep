@@ -331,7 +331,7 @@ storage_check_sip_packet(Packet *packet)
     storage->changed = TRUE;
 
     // Send this packet to all capture outputs
-    capture_manager_output_packet(capture_manager(), packet);
+    capture_manager_output_packet(capture_manager_get_instance(), packet);
 
     // Return the loaded message
     return msg;

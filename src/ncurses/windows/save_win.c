@@ -632,7 +632,7 @@ save_win_free(Window *window)
     window_deinit(window);
 
     // Resume capture
-    capture_manager_set_pause(capture_manager(), FALSE);
+    capture_manager_set_pause(capture_manager_get_instance(), FALSE);
 
     // Disable cursor position
     curs_set(0);
@@ -651,7 +651,7 @@ save_win_new()
     window_init(window, 15, 68);
 
     // Pause the capture while saving
-    capture_manager_set_pause(capture_manager(), TRUE);
+    capture_manager_set_pause(capture_manager_get_instance(), TRUE);
 
     // Initialize save panel specific data
     SaveWinInfo *info = g_malloc0(sizeof(SaveWinInfo));

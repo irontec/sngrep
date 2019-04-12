@@ -325,7 +325,7 @@ capture_output_pcap(const gchar *filename, GError **error)
 
     // PCAP Output is only availble if capture has a single input
     // and thas input is from PCAP thech
-    CaptureManager *manager = capture_manager();
+    CaptureManager *manager = capture_manager_get_instance();
     g_return_val_if_fail(manager != NULL, NULL);
 
     if (g_slist_length(manager->inputs) != 1) {

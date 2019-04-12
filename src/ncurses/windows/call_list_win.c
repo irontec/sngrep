@@ -275,27 +275,27 @@ call_list_draw_header(Window *window)
     window_clear_line(window, 1);
 
     // Print Open filename in Offline mode
-    if (!capture_is_online(capture_manager()) && (infile = capture_input_pcap_file(capture_manager())))
+    if (!capture_is_online(capture_manager_get_instance()) && (infile = capture_input_pcap_file(capture_manager_get_instance())))
         mvwprintw(window->win, 1, 77, "Filename: %s", infile);
 
     mvwprintw(window->win, 1, 2, "Current Mode: ");
-    if (capture_is_online(capture_manager())) {
+    if (capture_is_online(capture_manager_get_instance())) {
         wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
     } else {
         wattron(window->win, COLOR_PAIR(CP_RED_ON_DEF));
     }
-    wprintw(window->win, "%s ", capture_status_desc(capture_manager()));
+    wprintw(window->win, "%s ", capture_status_desc(capture_manager_get_instance()));
 
     // Get online mode capture device
-    if ((device = capture_input_pcap_device(capture_manager())))
+    if ((device = capture_input_pcap_device(capture_manager_get_instance())))
         wprintw(window->win, "[%s]", device);
 
 #ifdef USE_HEP
     const char *eep_port;
-    if ((eep_port = capture_output_hep_port(capture_manager()))) {
+    if ((eep_port = capture_output_hep_port(capture_manager_get_instance()))) {
         wprintw(window->win, "[H:%s]", eep_port);
     }
-    if ((eep_port = capture_input_hep_port(capture_manager()))) {
+    if ((eep_port = capture_input_hep_port(capture_manager_get_instance()))) {
         wprintw(window->win, "[L:%s]", eep_port);
     }
 #endif
@@ -316,7 +316,7 @@ call_list_draw_header(Window *window)
 
     mvwprintw(window->win, 2, 45, "BPF Filter: ");
     wattron(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    if ((filterbpf = capture_manager_filter(capture_manager())))
+    if ((filterbpf = capture_manager_filter(capture_manager_get_instance())))
         wprintw(window->win, "%s", filterbpf);
     wattroff(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
 
@@ -1012,7 +1012,7 @@ call_list_handle_key(Window *window, int key)
                 ncurses_create_window(WINDOW_STATS);
                 break;
             case ACTION_SAVE:
-                if (capture_sources_count(capture_manager()) > 1) {
+                if (capture_sources_count(capture_manager_get_instance()) > 1) {
                     dialog_run("Saving is not possible when multiple input sources are specified.");
                     break;
                 }

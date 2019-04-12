@@ -164,7 +164,7 @@ capture_manager_free(CaptureManager *manager);
  * @return pointer to the global capture manager
  */
 CaptureManager *
-capture_manager();
+capture_manager_get_instance();
 
 /**
  * @brief Start all capture inputs in given manager

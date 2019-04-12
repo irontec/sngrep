@@ -34,7 +34,7 @@
 #include "storage.h"
 #include "capture.h"
 
-static CaptureManager *manager;
+static CaptureManager *manager = NULL;
 
 CaptureManager *
 capture_manager_new()
@@ -82,7 +82,7 @@ capture_manager_free(CaptureManager *manager)
 }
 
 CaptureManager *
-capture_manager()
+capture_manager_get_instance()
 {
     return manager;
 }

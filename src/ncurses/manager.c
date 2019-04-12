@@ -273,7 +273,7 @@ ncurses_default_keyhandler(Window *window, int key)
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
-                capture_manager()->paused = !capture_manager()->paused;
+                capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
                 break;
             case ACTION_SHOW_HELP:
                 window_help(window);

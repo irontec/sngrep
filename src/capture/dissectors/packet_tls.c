@@ -386,7 +386,7 @@ packet_tls_connection_create(Address caddr, Address saddr)
     if (gnutls_init(&conn->ssl, GNUTLS_SERVER) < GNUTLS_E_SUCCESS)
         return NULL;
 
-    if (!(keyfp = fopen(capture_keyfile(capture_manager()), "rb")))
+    if (!(keyfp = fopen(capture_keyfile(capture_manager_get_instance()), "rb")))
         return NULL;
 
     fseek(keyfp, 0, SEEK_END);
@@ -847,7 +847,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         return data;
     }
 
-    Address tlsserver = capture_tls_server(capture_manager());
+    Address tlsserver = capture_tls_server(capture_manager_get_instance());
 
     DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
     g_return_val_if_fail(priv != NULL, NULL);
