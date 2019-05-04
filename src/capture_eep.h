@@ -44,6 +44,29 @@
 #include <pthread.h>
 #include "capture.h"
 
+//! HEP chunk types
+enum
+{
+    CAPTURE_EEP_CHUNK_INVALID = 0,
+    CAPTURE_EEP_CHUNK_FAMILY,
+    CAPTURE_EEP_CHUNK_PROTO,
+    CAPTURE_EEP_CHUNK_SRC_IP4,
+    CAPTURE_EEP_CHUNK_DST_IP4,
+    CAPTURE_EEP_CHUNK_SRC_IP6,
+    CAPTURE_EEP_CHUNK_DST_IP6,
+    CAPTURE_EEP_CHUNK_SRC_PORT,
+    CAPTURE_EEP_CHUNK_DST_PORT,
+    CAPTURE_EEP_CHUNK_TS_SEC,
+    CAPTURE_EEP_CHUNK_TS_USEC,
+    CAPTURE_EEP_CHUNK_PROTO_TYPE,
+    CAPTURE_EEP_CHUNK_CAPT_ID,
+    CAPTURE_EEP_CHUNK_KEEP_TM,
+    CAPTURE_EEP_CHUNK_AUTH_KEY,
+    CAPTURE_EEP_CHUNK_PAYLOAD,
+    CAPTURE_EEP_CHUNK_CORRELATION_ID
+};
+
+
 //! Shorter declaration of capture_eep_config structure
 typedef struct capture_eep_config  capture_eep_config_t;
 
