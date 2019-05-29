@@ -1041,6 +1041,11 @@ call_list_handle_key(Window *window, int key)
                 ncurses_create_window(WINDOW_SETTINGS);
                 break;
             case ACTION_SELECT:
+                // Ignore on empty list
+                if (g_ptr_array_len(info->dcalls) == 0) {
+                    break;
+                }
+
                 call = g_ptr_array_index(info->dcalls, info->cur_idx);
                 if (call_group_exists(info->group, call)) {
                     call_group_remove(info->group, call);
