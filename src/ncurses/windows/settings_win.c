@@ -431,8 +431,7 @@ settings_handle_key(Window *ui, int key)
                     break;
                 case ACTION_CONFIRM:
                     settings_update_settings(ui);
-                    window_destroy(ui);
-                    return KEY_HANDLED;
+                    return KEY_DESTROY;
                 default:
                     // Parse next action
                     continue;
@@ -463,8 +462,7 @@ settings_handle_key(Window *ui, int key)
                     if (field_idx == BTN_SETTINGS_SAVE)
                         settings_save(ui);
                     settings_update_settings(ui);
-                    window_destroy(ui);
-                    return KEY_HANDLED;
+                    return KEY_DESTROY;
                 default:
                     continue;
             }

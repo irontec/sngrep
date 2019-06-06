@@ -280,12 +280,10 @@ filter_handle_key(Window *ui, int key)
                         }
                         break;
                     case FLD_FILTER_CANCEL:
-                        window_destroy(ui);
-                        return KEY_HANDLED;
+                        return KEY_DESTROY;
                     case FLD_FILTER_FILTER:
                         filter_save_options(ui);
-                        window_destroy(ui);
-                        return KEY_HANDLED;
+                        return KEY_DESTROY;
                     default:
                         break;
                 }
@@ -293,8 +291,7 @@ filter_handle_key(Window *ui, int key)
             case ACTION_CONFIRM:
                 if (field_idx != FLD_FILTER_CANCEL)
                     filter_save_options(ui);
-                window_destroy(ui);
-                return KEY_HANDLED;
+                return KEY_DESTROY;
             default:
                 // Parse next action
                 continue;

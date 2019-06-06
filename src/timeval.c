@@ -108,6 +108,6 @@ timeval_to_delta(GTimeVal start, GTimeVal end, gchar *out)
 
     gint sign = (diff >= 0) ? '+' : '-';
 
-    g_sprintf(out, "%c%d.%06lu", sign, abs(nsec), nusec);
+    g_sprintf(out, "%c%ld.%06lu", sign, labs(nsec), nusec);
     return out;
 }

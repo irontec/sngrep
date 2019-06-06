@@ -1067,10 +1067,10 @@ call_list_handle_key(Window *window, int key)
                 // Handle quit from this screen unless requested
                 if (setting_enabled(SETTING_EXITPROMPT)) {
                     if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
-                        window_destroy(window);
+                        return KEY_DESTROY;
                     }
                 } else {
-                    window_destroy(window);
+                    return KEY_DESTROY;
                 }
                 return KEY_HANDLED;
             default:
