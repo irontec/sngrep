@@ -32,13 +32,38 @@
 
 #include "capture/parser.h"
 
-typedef struct _PacketHepData PacketHepData;
+//! HEP chunk types
+enum
+{
+    CAPTURE_EEP_CHUNK_INVALID = 0,
+    CAPTURE_EEP_CHUNK_FAMILY,
+    CAPTURE_EEP_CHUNK_PROTO,
+    CAPTURE_EEP_CHUNK_SRC_IP4,
+    CAPTURE_EEP_CHUNK_DST_IP4,
+    CAPTURE_EEP_CHUNK_SRC_IP6,
+    CAPTURE_EEP_CHUNK_DST_IP6,
+    CAPTURE_EEP_CHUNK_SRC_PORT,
+    CAPTURE_EEP_CHUNK_DST_PORT,
+    CAPTURE_EEP_CHUNK_TS_SEC,
+    CAPTURE_EEP_CHUNK_TS_USEC,
+    CAPTURE_EEP_CHUNK_PROTO_TYPE,
+    CAPTURE_EEP_CHUNK_CAPT_ID,
+    CAPTURE_EEP_CHUNK_KEEP_TM,
+    CAPTURE_EEP_CHUNK_AUTH_KEY,
+    CAPTURE_EEP_CHUNK_PAYLOAD,
+    CAPTURE_EEP_CHUNK_CORRELATION_ID
+};
 
+typedef struct _PacketHepData PacketHepData;
 typedef struct _CaptureHepHdr CaptureHepHdr;
+typedef struct _CaptureHepCtrl CaptureHepCtrl;
 typedef struct _CaptureHepGeneric CaptureHepGeneric;
 typedef struct _CaptureHepChunk CaptureHepChunk;
 typedef struct _CaptureHepChunkIp4 CaptureHepChunkIp4;
 typedef struct _CaptureHepChunkIp6 CaptureHepChunkIp6;
+typedef struct _CaptureHepChunkUint8 CaptureHepChunkUint8;
+typedef struct _CaptureHepChunkUint16 CaptureHepChunkUint16;
+typedef struct _CaptureHepChunkUint32 CaptureHepChunkUint32;
 
 /* HEPv3 types */
 struct _CaptureHepChunk

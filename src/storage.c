@@ -20,10 +20,10 @@
  **
  ****************************************************************************/
 /**
- * @file storage->c
+ * @file storage.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in storage->h
+ * @brief Source of functions defined in storage.h
  *
  *
  * Contains all stored calls, storage thread, pending packet queue and matching

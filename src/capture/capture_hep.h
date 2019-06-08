@@ -81,7 +81,7 @@ struct _CaptureHepUrl
 struct _CaptureHep
 {
     //! Client/Server socket
-    int socket;
+    gint socket;
     //! Capture agent id
     guint16 id;
     //! Capture connection data
