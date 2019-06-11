@@ -242,7 +242,7 @@ call_list_resize(Window *window)
     window->height = maxy;
 
     // Calculate available printable area
-    wresize(info->list_win, maxy - 6, maxx); //-4
+    wresize(info->list_win, maxy - 6, maxx);
 
     // Force list redraw
     call_list_win_clear(window);
@@ -275,7 +275,8 @@ call_list_draw_header(Window *window)
     window_clear_line(window, 1);
 
     // Print Open filename in Offline mode
-    if (!capture_is_online(capture_manager_get_instance()) && (infile = capture_input_pcap_file(capture_manager_get_instance())))
+    if (!capture_is_online(capture_manager_get_instance()) &&
+        (infile = capture_input_pcap_file(capture_manager_get_instance())))
         mvwprintw(window->win, 1, 77, "Filename: %s", infile);
 
     mvwprintw(window->win, 1, 2, "Current Mode: ");
@@ -361,16 +362,16 @@ static void
 call_list_draw_footer(Window *window)
 {
     const char *keybindings[] = {
-        key_action_key_str(ACTION_PREV_SCREEN), "Quit",
-        key_action_key_str(ACTION_SELECT), "Select",
-        key_action_key_str(ACTION_SHOW_HELP), "Help",
-        key_action_key_str(ACTION_SAVE), "Save",
-        key_action_key_str(ACTION_DISP_FILTER), "Search",
-        key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
-        key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
-        key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
-        key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
-        key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
+            key_action_key_str(ACTION_PREV_SCREEN), "Quit",
+            key_action_key_str(ACTION_SELECT), "Select",
+            key_action_key_str(ACTION_SHOW_HELP), "Help",
+            key_action_key_str(ACTION_SAVE), "Save",
+            key_action_key_str(ACTION_DISP_FILTER), "Search",
+            key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
+            key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
+            key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
+            key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
+            key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
     window_draw_bindings(window, keybindings, 20);
@@ -392,8 +393,8 @@ call_list_columns_width(Window *window, guint columns)
     // If recquested column is 0, count all columns
     guint columncnt = (columns == 0) ? g_ptr_array_len(info->columns) : columns;
 
-    // Add extra width for spaces between columns + selection box + extra at the end
-    gint width = 7 + columncnt;
+    // Add extra width for spaces between columns + selection box
+    gint width = 5 + columncnt;
 
     // Sum all column widths
     for (guint i = 0; i < columncnt; i++) {
@@ -537,12 +538,11 @@ call_list_draw_list(Window *window)
 
     // Copy the pad into list win
     copywin(pad, info->list_win, 0, info->hscroll.pos, 0, 0,
-        listh - 1, listw - 1, 0);
+            listh - 1, listw - 1, 0);
 
     // Copy fixed columns
-    copywin(pad, info->list_win, 0, 0, 0, 0,
-        listh - 1, call_list_columns_width(
-            window, (guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS)), 0);
+    guint fixed_width = call_list_columns_width(window,(guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS));
+    copywin(pad, info->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
 
     // Setup horizontal scrollbar
     info->hscroll.max = call_list_columns_width(window, 0);
