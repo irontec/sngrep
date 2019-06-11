@@ -30,6 +30,7 @@
  */
 #include "config.h"
 #include <glib.h>
+#include <glib/gprintf.h>
 #include "glib/glib-extra.h"
 #include "stream.h"
 #include "storage.h"
@@ -99,24 +100,24 @@ const char *
 stream_get_format(Stream *stream)
 {
     // Get format for media payload
-    if (!stream || !stream->media)
-        return NULL;
+    g_return_val_if_fail(stream != NULL, NULL);
 
     // Try to get standard format form code
     PacketRtpEncoding *encoding = packet_rtp_standard_codec(stream->fmtcode);
     if (encoding != NULL)
-        return encoding->format;
+        return g_strdup(encoding->format);
 
     // Try to get format form SDP payload
+    g_return_val_if_fail(stream->media != NULL, NULL);
     for (guint i = 0; i < g_list_length(stream->media->formats); i++) {
         PacketSdpFormat *format = g_list_nth_data(stream->media->formats, i);
         if (format->id == stream->fmtcode) {
-            return format->alias;
+            return g_strdup(format->alias);
         }
     }
 
     // Not found format for this code
-    return NULL;
+    return g_strdup_printf("unknown-%d", stream->fmtcode);
 }
 
 GTimeVal

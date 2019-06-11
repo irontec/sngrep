@@ -1082,7 +1082,9 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         return 0;
 
     // Get arrow text
-    sprintf(text, "RTP (%s) %d", stream_get_format(stream), stream_get_count(stream));
+    g_autofree const gchar *stream_format = stream_get_format(stream);
+    guint stream_count = stream_get_count(stream);
+    sprintf(text, "RTP (%s) %d", stream_format, stream_count);
 
     // Message with Stream destination configured in SDP content
     msg = stream->msg;
