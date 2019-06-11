@@ -957,10 +957,10 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_SPIRAL_RIGHT) {
-        mvwaddch(flow_win, aline, startpos + 2, '<');
+        mvwaddwstr(flow_win, aline, startpos + 2, ncurses_acs_utf8('<'));
         if (msg->retrans) {
-            mvwaddch(flow_win, aline, startpos + 3, '<');
-            mvwaddch(flow_win, aline, startpos + 4, '<');
+            mvwaddwstr(flow_win, aline, startpos + 3, ncurses_acs_utf8('<'));
+            mvwaddwstr(flow_win, aline, startpos + 4, ncurses_acs_utf8('<'));
         }
         // If multiple lines are available, print a spiral icon
         if (aline != cline) {
@@ -969,10 +969,10 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
             mvwaddch(flow_win, aline - 1, startpos + 2, ACS_HLINE);
         }
     } else if (arrow->dir == CF_ARROW_DIR_SPIRAL_LEFT) {
-        mvwaddch(flow_win, aline, startpos - 2, '>');
+        mvwaddwstr(flow_win, aline, startpos - 2, ncurses_acs_utf8('>'));
         if (msg->retrans) {
-            mvwaddch(flow_win, aline, startpos - 3, '>');
-            mvwaddch(flow_win, aline, startpos - 4, '>');
+            mvwaddwstr(flow_win, aline, startpos - 3, ncurses_acs_utf8('>'));
+            mvwaddwstr(flow_win, aline, startpos - 4, ncurses_acs_utf8('>'));
         }
         // If multiple lines are available, print a spiral icon
         if (aline != cline) {
@@ -981,16 +981,16 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
             mvwaddch(flow_win, aline - 1, startpos - 2, ACS_HLINE);
         }
     } else if (arrow->dir == CF_ARROW_DIR_RIGHT) {
-        mvwaddch(flow_win, aline, endpos - 2, '>');
+        mvwaddwstr(flow_win, aline, endpos - 2, ncurses_acs_utf8('>'));
         if (msg->retrans) {
-            mvwaddch(flow_win, aline, endpos - 3, '>');
-            mvwaddch(flow_win, aline, endpos - 4, '>');
+            mvwaddwstr(flow_win, aline, endpos - 3, ncurses_acs_utf8('>'));
+            mvwaddwstr(flow_win, aline, endpos - 4, ncurses_acs_utf8('>'));
         }
     } else {
-        mvwaddch(flow_win, aline, startpos + 2, '<');
+        mvwaddwstr(flow_win, aline, startpos + 2, ncurses_acs_utf8('<'));
         if (msg->retrans) {
-            mvwaddch(flow_win, aline, startpos + 3, '<');
-            mvwaddch(flow_win, aline, startpos + 4, '<');
+            mvwaddwstr(flow_win, aline, startpos + 3, ncurses_acs_utf8('<'));
+            mvwaddwstr(flow_win, aline, startpos + 4, ncurses_acs_utf8('<'));
         }
     }
 
@@ -1182,22 +1182,22 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
             mvwprintw(win, cline, startpos - 4, "%d", stream->src.port);
             mvwprintw(win, cline, endpos, "%d", stream->dst.port);
         }
-        mvwaddch(win, cline, endpos - 2, '>');
+        mvwaddwstr(win, cline, endpos - 2, ncurses_acs_utf8('>'));
         if (active) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
-            mvwaddch(win, cline, startpos + arrow->rtp_ind_pos + 2, '>');
+            mvwaddwstr(win, cline, startpos + arrow->rtp_ind_pos + 2, ncurses_acs_utf8('>'));
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
             mvwprintw(win, cline, endpos, "%d", stream->src.port);
             mvwprintw(win, cline, startpos - 4, "%d", stream->dst.port);
         }
-        mvwaddch(win, cline, startpos + 2, '<');
+        mvwaddwstr(win, cline, startpos + 2, ncurses_acs_utf8('<'));
         if (active) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
-            mvwaddch(win, cline, endpos - arrow->rtp_ind_pos - 2, '<');
+            mvwaddwstr(win, cline, endpos - arrow->rtp_ind_pos - 2, ncurses_acs_utf8('<'));
         }
     }
 

@@ -157,4 +157,12 @@ draw_message(WINDOW *win, Message *msg);
 int
 draw_message_pos(WINDOW *win, Message *msg, int starting);
 
+/**
+ * @brief Return UTF-8 representation for a given character
+ * @param acs Ncurses ASC character
+ * @return a static pointer to a wchar string
+ */
+wchar_t *
+ncurses_acs_utf8(chtype acs);
+
 #endif    // __SNGREP_UI_MANAGER_H

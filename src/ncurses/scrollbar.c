@@ -27,6 +27,7 @@
  */
 
 #include "config.h"
+#include "manager.h"
 #include "scrollbar.h"
 
 Scrollbar
@@ -95,7 +96,7 @@ scrollbar_horizontal_draw(Scrollbar scrollbar)
 
     // Draw the N blocks of the scrollbar
     for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
-        mvwaddch(scrollbar.win, scrollypos, cline + scrollxpos, ACS_CKBOARD);
+        mvwaddwstr(scrollbar.win, scrollypos, cline + scrollxpos,  ncurses_acs_utf8(ACS_CKBOARD));
     }
 }
 

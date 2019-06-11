@@ -564,3 +564,23 @@ ncurses_deinit()
     // End ncurses mode
     endwin();
 }
+
+wchar_t *
+ncurses_acs_utf8(const chtype acs)
+{
+    static wchar_t utf8[2] = {0, 0};
+
+    if (acs == ACS_BOARD) {
+        utf8[0] = 0x2587;   // ▇
+    } else if (acs == ACS_CKBOARD) {
+        utf8[0] = 0x25FC;   // ◼
+    } else if (acs == '>') {
+        utf8[0] = 0x25B6;   // ▶
+    } else if (acs == '<') {
+        utf8[0] = 0x25C0;   // ◀
+    } else{
+        utf8[0] = acs;
+    }
+
+    return utf8;
+}
