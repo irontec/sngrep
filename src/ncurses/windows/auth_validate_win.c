@@ -105,26 +105,18 @@ auth_validate_calulate(Window *window)
     strcpy(password, field_buffer(info->fields[FLD_AUTH_PASS], 0));
     g_strchomp(password);
 
-    gchar *str1 = g_strdup_printf("%s:%s:%s", info->username, info->realm, password);
+    g_autofree gchar *str1 = g_strdup_printf("%s:%s:%s", info->username, info->realm, password);
     g_return_if_fail(str1 != NULL);
-    gchar *md51 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str1, (gsize) strlen(str1));
+    g_autofree gchar *md51 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str1, (gsize) strlen(str1));
     g_return_if_fail(md51 != NULL);
-    gchar *str2 = g_strdup_printf("%s:%s", info->method, info->uri);
+    g_autofree gchar *str2 = g_strdup_printf("%s:%s", info->method, info->uri);
     g_return_if_fail(str2 != NULL);
-    gchar *md52 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str2, (gsize) strlen(str2));
+    g_autofree gchar *md52 = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str2, (gsize) strlen(str2));
     g_return_if_fail(md52 != NULL);
-    gchar *str3 = g_strdup_printf("%s:%s:%s", md51, info->nonce, md52);
+    g_autofree gchar *str3 = g_strdup_printf("%s:%s:%s", md51, info->nonce, md52);
     g_return_if_fail(str3 != NULL);
 
     info->calculated = g_compute_checksum_for_data(G_CHECKSUM_MD5, (guchar *) str3, (gsize) strlen(str3));;
-
-    // Free all allocated data
-    g_free(str1);
-    g_free(str2);
-    g_free(str3);
-    g_free(md51);
-    g_free(md52);
-
 }
 
 /**
