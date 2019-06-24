@@ -29,7 +29,7 @@
 #include "config.h"
 #include <stdlib.h>
 #include "glib/glib-extra.h"
-#include "storage.h"
+#include "storage/storage.h"
 #include "capture/packet.h"
 #include "packet_tcp.h"
 #include "packet_sdp.h"

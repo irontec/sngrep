@@ -32,7 +32,7 @@
 #include "config.h"
 #include <glib.h>
 #include "glib/glib-extra.h"
-#include "storage.h"
+#include "storage/storage.h"
 #include "capture/parser.h"
 #include "capture/packet.h"
 #include "packet_ip.h"

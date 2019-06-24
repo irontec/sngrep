@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <pulse/pulseaudio.h>
 #include "ncurses/manager.h"
-#include "stream.h"
+#include "storage/stream.h"
 
 typedef struct _RtpPlayerInfo RtpPlayerInfo;
 

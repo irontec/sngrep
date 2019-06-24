@@ -40,8 +40,8 @@
 #include "ncurses/window.h"
 #include "ncurses/theme.h"
 #include "ncurses/keybinding.h"
-#include "storage.h"
-#include "group.h"
+#include "storage/storage.h"
+#include "storage/group.h"
 #include "setting.h"
 
 //! Refresh UI every 200 ms

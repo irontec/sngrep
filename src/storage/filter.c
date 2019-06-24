@@ -30,7 +30,7 @@
 #include <glib.h>
 #include <stdlib.h>
 #include "glib/glib-extra.h"
-#include "storage.h"
+#include "storage/storage.h"
 #include "ncurses/windows/call_list_win.h"
 #include "filter.h"
 

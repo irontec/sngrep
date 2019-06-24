@@ -34,7 +34,7 @@
 #include <form.h>
 #include "ncurses/manager.h"
 #include "ncurses/scrollbar.h"
-#include "attribute.h"
+#include "storage/attribute.h"
 
 /**
  * @brief Enum of available fields

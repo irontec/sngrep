@@ -31,7 +31,7 @@
 #include <glib.h>
 #include "glib/gasyncqueuesource.h"
 #include "setting.h"
-#include "storage.h"
+#include "storage/storage.h"
 #include "capture.h"
 
 static CaptureManager *manager = NULL;

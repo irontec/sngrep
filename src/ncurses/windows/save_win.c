@@ -41,7 +41,7 @@
 #include "capture/codecs/codec_g711a.h"
 #include "glib/glib-extra.h"
 #include "setting.h"
-#include "filter.h"
+#include "storage/filter.h"
 #include "capture/capture_txt.h"
 #include "ncurses/dialog.h"
 #include "ncurses/windows/save_win.h"

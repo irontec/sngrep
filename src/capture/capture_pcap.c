@@ -41,10 +41,10 @@
 #include "capture_hep.h"
 #include "capture_pcap.h"
 #include "capture/dissectors/packet_link.h"
-#include "storage.h"
-#include "stream.h"
+#include "storage/storage.h"
+#include "storage/stream.h"
 #include "setting.h"
-#include "timeval.h"
+#include "storage/timeval.h"
 
 GQuark
 capture_pcap_error_quark()

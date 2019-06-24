@@ -32,7 +32,7 @@
 #include <glib.h>
 #include "capture/dissectors/packet_sdp.h"
 #include "capture/packet.h"
-#include "attribute.h"
+#include "storage/attribute.h"
 #include "timeval.h"
 
 //! Get IP Address info from message's packet

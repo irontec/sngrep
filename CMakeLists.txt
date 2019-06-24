@@ -41,6 +41,8 @@ set(SOURCES
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
+        src/glib/gasyncqueuesource.c
+        src/glib/glib-extra.c
         src/ncurses/manager.c
         src/ncurses/windows/call_flow_win.c
         src/ncurses/windows/call_list_win.c
@@ -56,19 +58,17 @@ set(SOURCES
         src/ncurses/dialog.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c
-        src/glib/gasyncqueuesource.c
-        src/filter.c
-        src/group.c
-        src/main.c
-        src/stream.c
+        src/storage/filter.c
+        src/storage/group.c
+        src/storage/stream.c
+        src/storage/attribute.c
+        src/storage/storage.c
+        src/storage/call.c
+        src/storage/message.c
+        src/storage/timeval.c
         src/setting.c
-        src/attribute.c
-        src/storage.c
-        src/call.c
-        src/message.c
-        src/timeval.c
-        src/glib/glib-extra.c
-        )
+        src/main.c
+)
 
 ######################################################################
 # HEP  Support

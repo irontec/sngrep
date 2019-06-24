@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include "glib/glib-extra.h"
 #include "setting.h"
-#include "filter.h"
+#include "storage/filter.h"
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif

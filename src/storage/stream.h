@@ -30,7 +30,7 @@
 #define __SNGREP_STREAM_H
 
 #include "config.h"
-#include "message.h"
+#include "storage/message.h"
 #include "capture/capture_pcap.h"
 #include "capture/dissectors/packet_sdp.h"
 #include "capture/dissectors/packet_rtp.h"

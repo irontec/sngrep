@@ -33,8 +33,8 @@
 #define __SNGREP_CALL_RAW_WIN_H
 
 #include "config.h"
-#include "group.h"
-#include "message.h"
+#include "storage/group.h"
+#include "storage/message.h"
 #include "ncurses/manager.h"
 
 //! Sorter declaration of struct call_raw_info

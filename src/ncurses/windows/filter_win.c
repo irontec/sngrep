@@ -34,8 +34,8 @@
 #include "ncurses/manager.h"
 #include "filter_win.h"
 #include "call_list_win.h"
-#include "storage.h"
-#include "filter.h"
+#include "storage/storage.h"
+#include "storage/filter.h"
 #include "setting.h"
 
 /**

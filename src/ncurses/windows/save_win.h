@@ -35,7 +35,7 @@
 
 #include "config.h"
 #include <form.h>
-#include "group.h"
+#include "storage/group.h"
 #include "ncurses/manager.h"
 
 /**

@@ -43,7 +43,7 @@
 #define __SNGREP_SETTING_H
 
 #include <glib.h>
-#include "attribute.h"
+#include "storage/attribute.h"
 
 //! Max setting value
 #define SETTING_MAX_LEN   1024

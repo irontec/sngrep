@@ -34,7 +34,7 @@
 #include "message.h"
 #include "capture/dissectors/packet_sip.h"
 #include "capture/dissectors/packet_sdp.h"
-#include "storage.h"
+#include "storage/storage.h"
 
 Message *
 msg_new(Packet *packet)

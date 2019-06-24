@@ -32,7 +32,7 @@
 #include <glib.h>
 #include "stream.h"
 #include "message.h"
-#include "attribute.h"
+#include "storage/attribute.h"
 
 //! Shorter declaration of sip_call structure
 typedef struct _Call Call;

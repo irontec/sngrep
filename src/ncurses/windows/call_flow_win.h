@@ -58,7 +58,7 @@
 #include <glib.h>
 #include "ncurses/manager.h"
 #include "ncurses/scrollbar.h"
-#include "group.h"
+#include "storage/group.h"
 
 //! Configurable some day
 #define CF_COLUMN_WIDTH 30

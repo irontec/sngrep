@@ -33,7 +33,7 @@
 #include <glib/gprintf.h>
 #include "glib/glib-extra.h"
 #include "stream.h"
-#include "storage.h"
+#include "storage/storage.h"
 
 Stream *
 stream_new(enum StreamType type, Message *msg, PacketSdpMedia *media)
