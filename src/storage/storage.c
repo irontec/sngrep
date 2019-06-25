@@ -76,7 +76,7 @@ gboolean
 storage_calls_changed()
 {
     gboolean changed = storage->changed;
-    storage->changed = TRUE;
+    storage->changed = FALSE;
     return changed;
 }
 
@@ -413,6 +413,9 @@ storage_check_rtp_packet(Packet *packet)
         storage_register_stream(stream);
     }
 
+    // Mark the list as changed
+    storage->changed = TRUE;
+
     return stream;
 }
 
@@ -437,6 +440,8 @@ storage_check_rtcp_packet(Packet *packet)
         // Add packet to stream
         stream_set_data(stream, src, dst);
         stream_add_packet(stream, packet);
+        // Mark the list as changed
+        storage->changed = TRUE;
         return stream;
     }
 
