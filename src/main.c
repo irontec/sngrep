@@ -61,7 +61,7 @@ print_version_info()
             " * Compiled with G.729 support\n"
             #endif
             #ifdef WITH_SND
-            " * Compiled with libsnd support (Save to .wav)\n"
+            " * Compiled with libsnd support\n"
             #endif
             #ifdef WITH_PULSE
             " * Compiled with pulseaudio support\n"
@@ -391,7 +391,7 @@ main(int argc, char *argv[])
     if (error != NULL) {
         g_printerr("Failed to initialize storage: %s\n", error->message);
         return 1;
-    };
+    }
 
     // Start capture threads
     capture_manager_start(capture);
