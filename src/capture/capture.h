@@ -54,18 +54,13 @@ typedef struct _CaptureManager CaptureManager;
 //! Capture Input functions types
 
 typedef gpointer (*CaptureInputStartFunc)(CaptureInput *);
-
 typedef void (*CaptureInputStopFunc)(CaptureInput *);
-
 typedef void (*CaptureInputFreeFunc)(CaptureInput *);
-
-typedef int (*CaptureInputFilterFunc)(CaptureInput *, const char *, GError **);
+typedef gint (*CaptureInputFilterFunc)(CaptureInput *, const gchar *, GError **);
 
 //! Capture Output function types
 typedef void (*CaptureOuptutWriteFunc)(CaptureOutput *, Packet *);
-
 typedef void (*CaptureOutputCloseFunc)(CaptureOutput *);
-
 typedef void (*CaptureOutputFreeFunc)(CaptureOutput *);
 
 
@@ -123,12 +118,12 @@ struct _CaptureInput
 
 struct _CaptureOutput
 {
+    //! Manager owner of this capture input
+    CaptureManager *manager;
     //! Capture Output type
     enum capture_tech tech;
     //! Sink string
     const gchar *sink;
-    //! Manager owner of this capture input
-    CaptureManager *manager;
     //! Private capture output data
     gpointer priv;
 
@@ -197,7 +192,7 @@ capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **erro
  * @param keyfile Full path to keyfile
  */
 void
-capture_manager_set_keyfile(CaptureManager *manager, gchar *keyfile, GError **error);
+capture_manager_set_keyfile(CaptureManager *manager, const gchar *keyfile, GError **error);
 
 /**
  * @brief Get the Keyfile to decrypt TLS packets

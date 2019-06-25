@@ -142,7 +142,7 @@ capture_manager_filter(CaptureManager *manager)
 }
 
 void
-capture_manager_set_keyfile(CaptureManager *manager, gchar *keyfile, G_GNUC_UNUSED GError **error)
+capture_manager_set_keyfile(CaptureManager *manager, const gchar *keyfile, G_GNUC_UNUSED GError **error)
 {
     manager->keyfile = keyfile;
 }

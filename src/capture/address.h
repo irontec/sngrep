@@ -47,7 +47,7 @@
 #define ADDRESSLEN INET_ADDRSTRLEN
 #endif
 
-#define ADDRESS_ZERO { .ip = { 0 }, .port = 0};
+#define ADDRESS_ZERO { .ip = { 0 }, .port = 0}
 
 //! Shorter declaration of address structure
 typedef struct _Address Address;

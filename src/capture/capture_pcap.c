@@ -199,7 +199,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
 
     // Create a new structure to handle this capture source
     CaptureInput *input = g_malloc0(sizeof(CaptureInput));
-    input->sourcestr = infile;
+    input->sourcestr = g_path_get_basename(infile);
     input->priv = pcap;
     input->tech = CAPTURE_TECH_PCAP;
     input->mode = CAPTURE_MODE_OFFLINE;
@@ -245,6 +245,7 @@ void
 capture_input_pcap_stop(CaptureInput *input)
 {
     g_return_if_fail(input != NULL);
+
     CapturePcap *pcap = (CapturePcap *) input->priv;
     g_return_if_fail(pcap != NULL);
 

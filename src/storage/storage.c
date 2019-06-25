@@ -26,10 +26,12 @@
  * @brief Source of functions defined in storage.h
  *
  *
- * Contains all stored calls, storage thread, pending packet queue and matching
- * information. Capture threads send their packet information to storage, that provides the
- * data that will be printed in the screen.
+ * Storage is in charge of analyze and handle the captured packets.
  *
+ *  - Checks if packets match the non-capture filtering conditions
+ *  - Sorts and manage calls lists
+ *  - Sends interesting packets to capture outputs
+ *  - Manages how packets are stored
  *
  *             +--------------------------+
  *             |                          |
@@ -68,7 +70,7 @@ static Storage *storage;
 static gint
 storage_call_attr_sorter(const Call **a, const Call **b)
 {
-    int cmp = call_attr_compare(*a, *b, storage->options.sort.by);
+    gint cmp = call_attr_compare(*a, *b, storage->options.sort.by);
     return (storage->options.sort.asc) ? cmp : cmp * -1;
 }
 
@@ -89,7 +91,6 @@ storage_calls_count()
 GPtrArray *
 storage_calls()
 {
-    g_ptr_array_sort(storage->calls, (GCompareFunc) storage_call_attr_sorter);
     return storage->calls;
 }
 

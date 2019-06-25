@@ -152,7 +152,7 @@ gboolean
 capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **error);
 
 /**
- *
+ * @brief Set a capture input keyfile for TLS decrypt
  */
 void
 capture_input_pcap_set_keyfile(CaptureInput *input, const gchar *keyfile);
