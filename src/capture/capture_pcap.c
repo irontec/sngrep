@@ -69,12 +69,16 @@ capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
     CapturePcap *pcap = input->priv;
 
     // Get next packet from this input
-    struct pcap_pkthdr header;
-    const guchar *data = pcap_next(pcap->handle, &header);
+    struct pcap_pkthdr *header;
+    const guchar *data;
+    gint ret = pcap_next_ex(pcap->handle, &header, &data);
+
+    if (ret == PCAP_ERROR || ret == PCAP_ERROR_BREAK)
+        return FALSE;
 
     if (data != NULL) {
         // Parse received data
-        capture_pcap_parse_packet((guchar *) input, &header, data);
+        capture_pcap_parse_packet((guchar *) input, header, data);
     }
 
     return TRUE;
