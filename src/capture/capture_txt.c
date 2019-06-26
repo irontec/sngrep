@@ -47,7 +47,6 @@ static void
 capture_output_txt_write(CaptureOutput *output, Packet *packet)
 {
     gchar date[20], time[20];
-    Address src, dst;
 
     g_return_if_fail(packet != NULL);
 
@@ -62,11 +61,13 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     // Get packet data
     timeval_to_date(frame->ts, date);
     timeval_to_time(frame->ts, time);
-    src = packet_src_address(packet);
-    dst = packet_dst_address(packet);
+    Address *src = packet_src_address(packet);
+    g_return_if_fail(src != NULL);
+    Address *dst = packet_dst_address(packet);
+    g_return_if_fail(dst != NULL);
 
     fprintf(txt->file, "%s %s %s:%u -> %s:%u\n%s\n\n",
-            date, time, src.ip, src.port, dst.ip, dst.port,
+            date, time, src->ip, src->port, dst->ip, dst->port,
             packet_sip_payload(packet)
     );
 }

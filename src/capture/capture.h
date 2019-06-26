@@ -76,7 +76,7 @@ struct _CaptureManager
     //! capture filter expression text
     gchar *filter;
     //! TLS Server address
-    Address tlsserver;
+    Address *tlsserver;
     //! Flag to skip captured packets
     gboolean paused;
     //! Packet capture inputs (CaptureInput *)
@@ -246,7 +246,7 @@ capture_is_online(CaptureManager *manager);
  * @brief Get TLS Server address if configured
  * @return address scructure
  */
-Address
+Address *
 capture_tls_server(CaptureManager *manager);
 
 /**

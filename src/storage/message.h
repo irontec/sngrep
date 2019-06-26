@@ -116,7 +116,7 @@ msg_media_count(Message *msg);
  * @return Media info or NULL for not match
  */
 PacketSdpMedia *
-msg_media_for_addr(Message *msg, Address dst);
+msg_media_for_addr(Message *msg, Address *dst);
 
 /**
  * @brief Check if given message has spd content

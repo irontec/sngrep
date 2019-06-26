@@ -71,7 +71,7 @@ msg_media_count(Message *msg)
 }
 
 PacketSdpMedia *
-msg_media_for_addr(Message *msg, Address dst)
+msg_media_for_addr(Message *msg, Address *dst)
 {
     PacketSdpData *sdp = packet_sdp_data(msg->packet);
     g_return_val_if_fail(sdp != NULL, NULL);

@@ -351,16 +351,16 @@ call_flow_arrow_find_prev_callid(Window *window, const CallFlowArrow *arrow)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_first(Window *window, Address addr)
+call_flow_column_get_first(Window *window, Address *addr)
 {
     CallFlowWinInfo *info = call_flow_win_info(window);
     g_return_val_if_fail(info != NULL, NULL);
 
     // Look for address or address:port ?
-    gboolean match_port = addr.port != 0;
+    gboolean match_port = addr->port != 0;
 
     // Get alias value for given address
-    const gchar *alias = setting_get_alias(addr.ip);
+    const gchar *alias = setting_get_alias(addr->ip);
 
     for (GList *l = info->columns; l != NULL; l = l->next) {
         CallFlowColumn *column = l->data;
@@ -399,16 +399,16 @@ call_flow_column_get_first(Window *window, Address addr)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_last(Window *window, Address addr)
+call_flow_column_get_last(Window *window, Address *addr)
 {
     CallFlowWinInfo *info = call_flow_win_info(window);
     g_return_val_if_fail(info != NULL, NULL);
 
     // Look for address or address:port ?
-    gboolean match_port = addr.port != 0;
+    gboolean match_port = addr->port != 0;
 
     // Get alias value for given address
-    const gchar *alias = setting_get_alias(addr.ip);
+    const gchar *alias = setting_get_alias(addr->ip);
 
     for (GList *l = g_list_last(info->columns); l != NULL; l = l->prev) {
         CallFlowColumn *column = l->data;
@@ -443,7 +443,7 @@ call_flow_column_sorter(CallFlowColumn *a, CallFlowColumn *b)
 }
 
 static CallFlowColumn *
-call_flow_column_create(Window *window, Address addr)
+call_flow_column_create(Window *window, Address *addr)
 {
     // Get Window info
     CallFlowWinInfo *info = call_flow_win_info(window);
@@ -454,10 +454,10 @@ call_flow_column_create(Window *window, Address addr)
     g_return_val_if_fail(column != NULL, NULL);
 
     column->addr = addr;
-    column->alias = setting_get_alias(column->addr.ip);
+    column->alias = setting_get_alias(column->addr->ip);
 
     // Check if column has externip
-    const gchar *twinip = setting_get_externip(column->addr.ip);
+    const gchar *twinip = setting_get_externip(column->addr->ip);
     if (twinip != NULL) {
         CallFlowColumn *twin = call_flow_column_get_first(window, address_from_str(twinip));
         if (twin != NULL) {
@@ -705,15 +705,15 @@ call_flow_draw_columns(Window *window)
             for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
                 stream = g_ptr_array_index(call->streams, i);
                 if (stream->type == STREAM_RTP && stream_get_count(stream)) {
-                    addr = stream->src;
+                    addr.ip = stream->src->ip;
                     addr.port = 0;
-                    if (call_flow_column_get_first(window, addr) == NULL) {
-                        call_flow_column_create(window, addr);
+                    if (call_flow_column_get_first(window, &addr) == NULL) {
+                        call_flow_column_create(window, &addr);
                     }
-                    addr = stream->dst;
+                    addr.ip = stream->dst->ip;
                     addr.port = 0;
-                    if (call_flow_column_get_first(window, addr) == NULL) {
-                        call_flow_column_create(window, addr);
+                    if (call_flow_column_get_first(window, &addr) == NULL) {
+                        call_flow_column_create(window, &addr);
                     }
                 }
             }
@@ -738,23 +738,23 @@ call_flow_draw_columns(Window *window)
                 wattron(window->win, A_BOLD);
         }
 
-        if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr.port) {
-            snprintf(coltext, SETTING_MAX_LEN, "%s", column->addr.ip);
+        if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr->port) {
+            snprintf(coltext, SETTING_MAX_LEN, "%s", column->addr->ip);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-            if (strlen(column->addr.ip) > 15) {
+            if (strlen(column->addr->ip) > 15) {
                 snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr.port);
+                         SETTING_MAX_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr->port);
             } else {
                 snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->alias, column->addr.port);
+                         SETTING_MAX_LEN - 7, column->alias, column->addr->port);
             }
         } else {
-            if (strlen(column->addr.ip) > 15) {
+            if (strlen(column->addr->ip) > 15) {
                 snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->addr.ip + strlen(column->addr.ip) - 13, column->addr.port);
+                         SETTING_MAX_LEN - 7, column->addr->ip + strlen(column->addr->ip) - 13, column->addr->port);
             } else {
                 snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->addr.ip, column->addr.port);
+                         SETTING_MAX_LEN - 7, column->addr->ip, column->addr->port);
             }
         }
 
@@ -1104,12 +1104,12 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // fallback: Just use any column that have the destination IP printed
     if (arrow->dcolumn == NULL) {
         arrow->dcolumn =
-                call_flow_column_get_first(window, address_from_str(stream->dst.ip));
+                call_flow_column_get_first(window, address_from_str(stream->dst->ip));
     }
 
     if (arrow->scolumn == NULL) {
         arrow->scolumn =
-                call_flow_column_get_first(window, address_from_str(stream->src.ip));
+                call_flow_column_get_first(window, address_from_str(stream->src->ip));
     }
 
     // Determine start and end position of the arrow line
@@ -1140,7 +1140,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         distance = 1;
 
         // Fix arrow direction based on ports
-        if (stream->src.port < stream->dst.port) {
+        if (stream->src->port < stream->dst->port) {
             arrow->dir = CF_ARROW_DIR_RIGHT;
         } else {
             arrow->dir = CF_ARROW_DIR_LEFT;
@@ -1181,8 +1181,8 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_RIGHT) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, startpos - 4, "%d", stream->src.port);
-            mvwprintw(win, cline, endpos, "%d", stream->dst.port);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->src->port);
+            mvwprintw(win, cline, endpos, "%d", stream->dst->port);
         }
         mvwaddwstr(win, cline, endpos - 2, ncurses_acs_utf8('>'));
         if (active) {
@@ -1192,8 +1192,8 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, endpos, "%d", stream->src.port);
-            mvwprintw(win, cline, startpos - 4, "%d", stream->dst.port);
+            mvwprintw(win, cline, endpos, "%d", stream->src->port);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->dst->port);
         }
         mvwaddwstr(win, cline, startpos + 2, ncurses_acs_utf8('<'));
         if (active) {

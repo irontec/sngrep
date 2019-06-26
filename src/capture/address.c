@@ -36,31 +36,41 @@
 #include <arpa/inet.h>
 
 gboolean
-addressport_equals(Address addr1, Address addr2)
+addressport_equals(Address *addr1, Address *addr2)
 {
-    return addr1.port == addr2.port && !strcmp(addr1.ip, addr2.ip);
+    if (addr1 == NULL && addr2 == NULL) {
+        return TRUE;
+    }
+
+    if (addr1 == NULL || addr2 == NULL) {
+        return FALSE;
+    }
+
+    return addr1->port == addr2->port && g_strcmp0(addr1->ip, addr2->ip) == 0;
 }
 
 gboolean
-address_equals(Address addr1, Address addr2)
+address_equals(Address *addr1, Address *addr2)
 {
-    return !strcmp(addr1.ip, addr2.ip);
+    if (addr1 == NULL && addr2 == NULL) {
+        return TRUE;
+    }
+
+    if (addr1 == NULL || addr2 == NULL) {
+        return FALSE;
+    }
+
+    return g_strcmp0(addr1->ip, addr2->ip) == 0;
 }
 
 gboolean
-address_empty(Address addr)
-{
-    return addr.port == 0 && g_strcmp0(addr.ip, "") == 0;
-}
-
-gboolean
-address_is_local(Address addr)
+address_is_local(Address *addr)
 {
     //! Local devices pointer
     static pcap_if_t *devices = 0;
     pcap_if_t *dev;
     pcap_addr_t *da;
-    char errbuf[PCAP_ERRBUF_SIZE];
+    gchar errbuf[PCAP_ERRBUF_SIZE];
     struct sockaddr_in *ipaddr;
 #ifdef USE_IPV6
     struct sockaddr_in6 *ip6addr;
@@ -99,7 +109,7 @@ address_is_local(Address addr)
             }
 
             // Check if this address matches
-            if (!strcmp(addr.ip, ip)) {
+            if (g_strcmp0(addr->ip, ip) == 0) {
                 return TRUE;
             }
 
@@ -108,10 +118,10 @@ address_is_local(Address addr)
     return FALSE;
 }
 
-Address
-address_from_str(const char *ipport)
+Address *
+address_from_str(const gchar *ipport)
 {
-    Address ret = ADDRESS_ZERO;
+    Address *ret = NULL;
     gchar scanipport[256];
     gchar address[256];
     guint16 port;
@@ -125,15 +135,31 @@ address_from_str(const char *ipport)
     strncpy(scanipport, ipport, strlen(ipport));
 
     if (sscanf(scanipport, "%[^:]:%hu", address, &port) == 2) {
-        strncpy(ret.ip, address, strlen(address));
-        ret.port = port;
-        return ret;
+        return address_new(address, port);
     }
 
     if (sscanf(scanipport, "%[^:]", address) == 1) {
-        strncpy(ret.ip, address, strlen(address));
-        ret.port = 0;
+        return address_new(address, 0);
     }
 
-    return ret;
+    return NULL;
+}
+
+void
+address_free(Address *address)
+{
+    if (address == NULL)
+        return;
+
+    g_free(address->ip);
+    g_free(address);
+}
+
+Address *
+address_new(const gchar *ip, guint16 port)
+{
+    Address *address = g_malloc0(sizeof(Address));
+    address->ip = g_strdup(ip);
+    address->port = port;
+    return address;
 }

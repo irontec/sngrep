@@ -367,7 +367,7 @@ packet_tls_connection_load_cipher(SSLConnection *conn)
 }
 
 static SSLConnection *
-packet_tls_connection_create(Address caddr, Address saddr)
+packet_tls_connection_create(Address *caddr, Address *saddr)
 {
     SSLConnection *conn = NULL;
     gnutls_datum_t keycontent = { NULL, 0 };
@@ -430,7 +430,7 @@ packet_tls_connection_destroy(SSLConnection *conn)
 }
 
 static int
-packet_tls_connection_dir(SSLConnection *conn, Address addr)
+packet_tls_connection_dir(SSLConnection *conn, Address *addr)
 {
     if (addressport_equals(conn->client_addr, addr))
         return 0;
@@ -440,7 +440,7 @@ packet_tls_connection_dir(SSLConnection *conn, Address addr)
 }
 
 static SSLConnection *
-packet_tls_connection_find(PacketParser *parser, Address src, Address dst)
+packet_tls_connection_find(PacketParser *parser, Address *src, Address *dst)
 {
     DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
     g_return_val_if_fail(priv != NULL, NULL);
@@ -847,7 +847,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         return data;
     }
 
-    Address tlsserver = capture_tls_server(capture_manager_get_instance());
+    Address *tlsserver = capture_tls_server(capture_manager_get_instance());
 
     DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
     g_return_val_if_fail(priv != NULL, NULL);
@@ -857,8 +857,8 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_return_val_if_fail(tcpdata != NULL, NULL);
 
     // Get packet addresses
-    Address src = packet_src_address(packet);
-    Address dst = packet_dst_address(packet);
+    Address *src = packet_src_address(packet);
+    Address *dst = packet_dst_address(packet);
 
     // Try to find a session for this ip
     if ((conn = packet_tls_connection_find(parser, src, dst))) {
@@ -913,7 +913,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     } else {
         if (tcpdata->syn != 0 && tcpdata->ack == 0) {
             // Only create new connections whose destination is tlsserver
-            if (tlsserver.port) {
+            if (tlsserver && tlsserver->port) {
                 if (addressport_equals(tlsserver, dst)) {
                     // New connection, store it status and leave
                     priv->connections =

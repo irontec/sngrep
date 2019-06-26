@@ -58,7 +58,7 @@ typedef struct _Address Address;
 struct _Address
 {
     //! IP address
-    gchar ip[ADDRESSLEN];
+    gchar *ip;
     //! Port
     guint16 port;
 };
@@ -71,7 +71,7 @@ struct _Address
  * @return true if addresses contain the IP address, false otherwise
  */
 gboolean
-addressport_equals(Address addr1, Address addr2);
+addressport_equals(Address *addr1, Address *addr2);
 
 /**
  * @brief Check if two address are equal (ignoring port)
@@ -81,16 +81,7 @@ addressport_equals(Address addr1, Address addr2);
  * @return true if addresses contain the same data, false otherwise
  */
 gboolean
-address_equals(Address addr1, Address addr2);
-
-
-/**
- * @brief Check if Address structure is empty
- * @param addr Address structure
- * @return true if the address has its initial value
- */
-gboolean
-address_empty(Address addr);
+address_equals(Address *addr1, Address *addr2);
 
 /**
  * @brief Check if a given IP address belongs to a local device
@@ -99,15 +90,28 @@ address_empty(Address addr);
  * @return true if address is local, false otherwise
  */
 gboolean
-address_is_local(Address addr);
+address_is_local(Address *addr);
 
 /**
  * @brief Convert string IP:PORT to address structure
  *
  * @param string in format IP:PORT
- * @return address structure
+ * @return address structure pointer
  */
-Address
+Address *
 address_from_str(const gchar *ipport);
+
+/**
+ * @brief Free Address pointer
+ * @param address Adress structure pointer
+ */
+void
+address_free(Address *address);
+
+/**
+ * @brif Create a new Address pointer
+ */
+Address *
+address_new(const gchar *ip, guint16 port);
 
 #endif /* __SNGREP_ADDRESS_H */

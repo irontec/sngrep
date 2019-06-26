@@ -86,6 +86,10 @@ struct _Packet
 {
     //! Parent class
     GObject parent;
+    //! Packet Source Address
+    Address *src;
+    //! Packet Destination Adddress
+    Address *dst;
     //! Parser who processed this packet
     PacketParser *parser;
     //! Each packet protocol information
@@ -130,11 +134,11 @@ packet_unref(Packet *packet);
 gboolean
 packet_has_type(const Packet *packet, enum PacketProtoId type);
 
-Address
-packet_src_address(const Packet *packet);
+Address *
+packet_src_address(Packet *packet);
 
-Address
-packet_dst_address(const Packet *packet);
+Address *
+packet_dst_address(Packet *packet);
 
 const char *
 packet_transport(Packet *packet);

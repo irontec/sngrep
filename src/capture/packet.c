@@ -85,6 +85,10 @@ packet_free(Packet *packet)
 
     // Free each frame data
     g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
+
+    // Free packet data
+    address_free(packet->src);
+    address_free(packet->dst);
 }
 
 Packet *
@@ -105,52 +109,56 @@ packet_has_type(const Packet *packet, enum PacketProtoId type)
     return g_ptr_array_index(packet->proto, type) != NULL;
 }
 
-Address
-packet_src_address(const Packet *packet)
+/**
+ * @todo Fix address retro-compatibilities
+ */
+Address *
+packet_src_address(Packet *packet)
 {
-    Address address = ADDRESS_ZERO;
+    if (packet->src == NULL) {
+        // Get IP address from IP parsed protocol
+        PacketIpData *ip = packet_ip_data(packet);
+        g_return_val_if_fail(ip, NULL);
 
-    // Get IP address from IP parsed protocol
-    PacketIpData *ip = packet_ip_data(packet);
-    g_return_val_if_fail(ip, address);
-    g_utf8_strncpy(address.ip, ip->srcip, ADDRESSLEN);
-
-    // Get Port from UDP or TCP parsed protocol
-    if (packet_has_type(packet, PACKET_UDP)) {
-        PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
-        g_return_val_if_fail(udp, address);
-        address.port = udp->sport;
-    } else {
-        PacketTcpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
-        g_return_val_if_fail(tcp, address);
-        address.port = tcp->sport;
+        // Get Port from UDP or TCP parsed protocol
+        if (packet_has_type(packet, PACKET_UDP)) {
+            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+            g_return_val_if_fail(udp, NULL);
+            packet->src = address_new(ip->srcip, udp->sport);
+        } else {
+            PacketTcpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
+            g_return_val_if_fail(tcp, NULL);
+            packet->src = address_new(ip->srcip, tcp->sport);
+        }
     }
 
-    return address;
+    return packet->src;
 }
 
-Address
-packet_dst_address(const Packet *packet)
+/**
+ * @todo Fix address retro-compatibilities
+ */
+Address *
+packet_dst_address(Packet *packet)
 {
-    Address address = ADDRESS_ZERO;
+    if (packet->dst == NULL) {
+        // Get IP address from IP parsed protocol
+        PacketIpData *ip = packet_ip_data(packet);
+        g_return_val_if_fail(ip, NULL);
 
-    // Get IP address from IP parsed protocol
-    PacketIpData *ip = packet_ip_data(packet);
-    g_return_val_if_fail(ip, address);
-    g_utf8_strncpy(address.ip, ip->dstip, ADDRESSLEN);
-
-    // Get Port from UDP or TCP parsed protocol
-    if (packet_has_type(packet, PACKET_UDP)) {
-        PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
-        g_return_val_if_fail(udp, address);
-        address.port = udp->dport;
-    } else {
-        PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
-        g_return_val_if_fail(tcp, address);
-        address.port = tcp->dport;
+        // Get Port from UDP or TCP parsed protocol
+        if (packet_has_type(packet, PACKET_UDP)) {
+            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+            g_return_val_if_fail(udp, NULL);
+            packet->dst = address_new(ip->dstip, udp->dport);
+        } else {
+            PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
+            g_return_val_if_fail(tcp, NULL);
+            packet->dst = address_new(ip->dstip, tcp->dport);
+        }
     }
 
-    return address;
+    return packet->dst;
 }
 
 const char *

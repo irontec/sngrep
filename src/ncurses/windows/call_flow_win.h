@@ -129,7 +129,7 @@ struct _CallFlowArrow
 struct _CallFlowColumn
 {
     //! Address header for this column
-    Address addr;
+    Address *addr;
     //! Alias for the given address
     const gchar *alias;
     //! Twin column for externip setting

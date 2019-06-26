@@ -58,7 +58,8 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
     CaptureHepChunk payload_chunk;
     CaptureHepChunk authkey_chunk;
-    Address src, dst;
+    gchar srcip[ADDRESSLEN], dstip[ADDRESSLEN];
+    guint16 sport, dport;
     g_autofree gchar *password = NULL;
     GByteArray *payload = NULL;
 
@@ -111,29 +112,29 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                 break;
             case CAPTURE_EEP_CHUNK_SRC_IP4:
                 memcpy(&src_ip4, (gpointer) data->data, sizeof(CaptureHepChunkIp4));
-                inet_ntop(AF_INET, &src_ip4.data, src.ip, sizeof(src.ip));
+                inet_ntop(AF_INET, &src_ip4.data, srcip, sizeof(srcip));
                 break;
             case CAPTURE_EEP_CHUNK_DST_IP4:
                 memcpy(&dst_ip4, (gpointer) data->data, sizeof(CaptureHepChunkIp4));
-                inet_ntop(AF_INET, &dst_ip4.data, dst.ip, sizeof(src.ip));
+                inet_ntop(AF_INET, &dst_ip4.data, dstip, sizeof(srcip));
                 break;
 #ifdef USE_IPV6
             case CAPTURE_EEP_CHUNK_SRC_IP6:
                 memcpy(&src_ip6, (gpointer) data->data, sizeof(CaptureHepChunkIp6));
-                inet_ntop(AF_INET6, &src_ip6.data, src.ip, sizeof(src.ip));
+                inet_ntop(AF_INET6, &src_ip6.data, srcip, sizeof(srcip));
                 break;
             case CAPTURE_EEP_CHUNK_DST_IP6:
                 memcpy(&dst_ip6, (gpointer) data->data, sizeof(CaptureHepChunkIp6));
-                inet_ntop(AF_INET6, &dst_ip6.data, dst.ip, sizeof(dst.ip));
+                inet_ntop(AF_INET6, &dst_ip6.data, dstip, sizeof(dstip));
                 break;
 #endif
             case CAPTURE_EEP_CHUNK_SRC_PORT:
                 memcpy(&hg.src_port, (gpointer) data->data, sizeof(CaptureHepChunkUint16));
-                src.port = g_ntohs(hg.src_port.data);
+                sport = g_ntohs(hg.src_port.data);
                 break;
             case CAPTURE_EEP_CHUNK_DST_PORT:
                 memcpy(&hg.dst_port, (gpointer) data->data, sizeof(CaptureHepChunkUint16));
-                dst.port = g_ntohs(hg.dst_port.data);
+                dport = g_ntohs(hg.dst_port.data);
                 break;
             case CAPTURE_EEP_CHUNK_TS_SEC:
                 memcpy(&hg.time_sec, (gpointer) data->data, sizeof(CaptureHepChunkUint32));
@@ -191,16 +192,16 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Generate Packet IP data
     PacketIpData *ip = g_malloc0(sizeof(PacketIpData));
-    g_utf8_strncpy(ip->srcip, src.ip, ADDRESSLEN);
-    g_utf8_strncpy(ip->dstip, dst.ip, ADDRESSLEN);
+    g_utf8_strncpy(ip->srcip, srcip, ADDRESSLEN);
+    g_utf8_strncpy(ip->dstip, dstip, ADDRESSLEN);
     ip->protocol = hg.ip_proto.data;
     ip->version = (hg.ip_family.data == AF_INET) ? 4 : 6;
     g_ptr_array_set(packet->proto, PACKET_IP, ip);
 
     // Generate Packet UDP data
     PacketUdpData *udp = g_malloc0(sizeof(PacketHepData));
-    udp->sport = src.port;
-    udp->dport = dst.port;
+    udp->sport = sport;
+    udp->dport = dport;
     g_ptr_array_set(packet->proto, PACKET_UDP, udp);
 
     // Parse SIP payload

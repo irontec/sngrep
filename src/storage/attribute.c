@@ -264,15 +264,15 @@ attribute_getter_call_totaldur(G_GNUC_UNUSED Attribute *attr, Message *msg)
 static gchar *
 attribute_getter_msg_source(G_GNUC_UNUSED Attribute *attr, Message *msg)
 {
-    Address src = msg_src_address(msg);
-    return g_strdup_printf("%s:%u", src.ip, src.port);
+    Address *src = msg_src_address(msg);
+    return g_strdup_printf("%s:%u", src->ip, src->port);
 }
 
 static gchar *
 attribute_getter_msg_destination(G_GNUC_UNUSED Attribute *attr, Message *msg)
 {
-    Address dst = msg_dst_address(msg);
-    return g_strdup_printf("%s:%u", dst.ip, dst.port);
+    Address *dst = msg_dst_address(msg);
+    return g_strdup_printf("%s:%u", dst->ip, dst->port);
 }
 
 static gchar *

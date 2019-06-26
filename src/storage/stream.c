@@ -52,26 +52,34 @@ void
 stream_free(Stream *stream)
 {
     g_ptr_array_free(stream->packets, TRUE);
+    address_free(stream->src);
+    address_free(stream->dst);
     g_free(stream);
 }
 
 void
-stream_set_src(Stream *stream, Address src)
+stream_set_src(Stream *stream, Address *src)
 {
-    stream->src = src;
+    g_return_if_fail(stream != NULL);
+    g_return_if_fail(src != NULL);
+
+    stream->src = address_new(src->ip, src->port);
 }
 
 void
-stream_set_dst(Stream *stream, Address dst)
+stream_set_dst(Stream *stream, Address *dst)
 {
-    stream->dst = dst;
+    g_return_if_fail(stream != NULL);
+    g_return_if_fail(dst != NULL);
+
+    stream->dst = address_new(dst->ip, dst->port);
 }
 
 void
-stream_set_data(Stream *stream, Address src, Address dst)
+stream_set_data(Stream *stream, Address *src, Address *dst)
 {
-    stream->src = src;
-    stream->dst = dst;
+    stream_set_src(stream, src);
+    stream_set_dst(stream, dst);
 }
 
 void
