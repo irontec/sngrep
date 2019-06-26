@@ -72,32 +72,32 @@ set(SOURCES
 
 ######################################################################
 # HEP  Support
-option(USE_HEP "Enable HEP/EEP Support" ON)
+option(USE_HEP "Enable HEP/EEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
     set(SOURCES ${SOURCES} src/capture/dissectors/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support
-option(USE_IPV6 "Enable IPv6 Support" ON)
+option(USE_IPV6 "Enable IPv6 Support" OFF)
 
 # GnuTLS Support
-option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" ON)
+option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
     set(SOURCES ${SOURCES} src/capture/dissectors/packet_tls.c)
 endif (WITH_SSL)
 
 # libsnd Support
-option(WITH_SND "Enable libsnd files (for saving into WAV files)" ON)
+option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
 
 # Pulseaudio Support
-option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" ON)
+option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" OFF)
 if (WITH_PULSE)
     set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
 endif (WITH_PULSE)
 
 # G.729 decoding support
-option(WITH_G729 "Enable g729 RTP decoding" ON)
+option(WITH_G729 "Enable g729 RTP decoding" OFF)
 if (WITH_G729)
     set(SOURCES ${SOURCES} src/capture/codecs/codec_g729.c)
 endif (WITH_G729)
