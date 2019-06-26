@@ -21,12 +21,12 @@ as PCAP viewer.
 ### Building from sources
 Prerequisites
 
- - glib - core library
+ - glib2 - core library
  - libncursesw5 - for UI, windows, panels.
  - libpcap - for capturing packets.
  - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
- - libncursesw5 - (optional) for UI, windows, panels (wide-character support)
- - libpcre - (optional) for Perl Compatible regular expressions
+ - libsnd - (optional) for saving RTP streams to wav files
+ - pulseaudio - (optional) for RTP stream player
 
 #### Preparing source code
 
@@ -34,29 +34,24 @@ Use cmake to generate required makefiles to build the project
 
     cmake .
 
-Or, you can use traditional autotools generation scripts
+All compiler flags are disabled by default, you can enable extra feature siw following flags
 
-    ./bootstrap.sh
-	./configure
-
-You can pass following flags to ./configure to enable some features
-
-| configure flag | Feature |
+| cmake flag | Feature |
 | ------------- | ------------- |
-| `--with-ssl`    | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
-| `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
-| `--enable-ipv6`   | Enable IPv6 packet capture support. |
-| `--enable-hep`   | Enable EEP packet send/receive support. |
+| `-DWITH_SSL=ON`    | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
+| `-DWITH_PULSE=ON`   | Adds Pulseaudio support for RTP playback (req. libpulse) |
+| `-DWITH_SND=ON`   | Adds libsnd support for RTP saving to wav (req. libsnd) |
+| `-DWITH_G729=ON`   | Adds G.729 support for saving and play streams (req. libbcg729) |
+| `-DUSE_IPV6=ON`   | Enable IPv6 packet capture support. |
+| `-DUSE_HEP=ON`   | Enable HEPv3 packet send/receive support. |
 
 
 #### Building and installing
 
-	make
+	cmake .
 	make install (as root)
 
-
 You can find [detailed instructions for some distributions](https://github.com/irontec/sngrep/wiki/Building) on wiki.
-
 
 ## Usage
 
@@ -82,7 +77,7 @@ See FAQ on [Github Wiki](https://github.com/irontec/sngrep/wiki#frequent-asked-q
 
 ## License
     sngrep - SIP Messages flow viewer
-    Copyright (C) 2013-2018 Irontec S.L.
+    Copyright (C) 2013-2019 Irontec S.L.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
