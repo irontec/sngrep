@@ -67,11 +67,10 @@ packet_new(PacketParser *parser)
 }
 
 static void
-packet_proto_free(gpointer proto_data, Packet *packet)
+packet_proto_free(gpointer proto_id, Packet *packet)
 {
-    gint proto_id = g_ptr_array_data_index(packet->proto, proto_data);
-    g_return_if_fail(proto_id >= 0);
-    packet_parser_dissector_free(packet->parser, packet, proto_id);
+    if (packet_has_type(packet, GPOINTER_TO_INT(proto_id)))
+        packet_parser_dissector_free(packet->parser, packet, GPOINTER_TO_INT(proto_id));
 }
 
 void
@@ -80,7 +79,7 @@ packet_free(Packet *packet)
     g_return_if_fail(packet != NULL);
 
     // Free each protocol data
-    g_ptr_array_foreach(packet->proto, (GFunc) packet_proto_free, packet);
+    g_ptr_array_foreach_idx(packet->proto, (GFunc) packet_proto_free, packet);
     g_ptr_array_free(packet->proto, TRUE);
 
     // Free each frame data

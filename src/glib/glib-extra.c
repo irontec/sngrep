@@ -153,6 +153,15 @@ g_ptr_array_remove_all(GPtrArray *array)
     }
 }
 
+void
+g_ptr_array_foreach_idx(GPtrArray *array, GFunc func, gpointer user_data)
+{
+    g_return_if_fail (array);
+
+    for (guint i = 0; i < array->len; i++)
+        (*func) (GINT_TO_POINTER(i), user_data);
+}
+
 #if !GLIB_CHECK_VERSION(2, 54, 0)
 gboolean
 g_ptr_array_find(GPtrArray *haystack, gconstpointer needle, guint *index_)
