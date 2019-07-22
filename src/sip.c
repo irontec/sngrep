@@ -307,6 +307,11 @@ sip_validate_packet(packet_t *packet)
     }
 
     if (content_len < bodylen) {
+        // Check body ends with '\r\n'
+        if (payload[pmatch[1].rm_so + content_len - 1] != '\n')
+            return VALIDATE_NOT_SIP;
+        if (payload[pmatch[1].rm_so + content_len - 2] != '\r')
+            return VALIDATE_NOT_SIP;
         // We got more than one SIP message in the same packet
         packet_set_payload(packet, payload, pmatch[1].rm_so + content_len);
         return VALIDATE_MULTIPLE_SIP;
@@ -716,7 +721,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
         // Check if we have attribute format string
         if (!strncmp(line, "a=rtpmap:", 9)) {
-            if (media && sscanf(line, "a=rtpmap:%u %[^ ]", &media_fmt_code, media_format)) {
+            if (media && sscanf(line, "a=rtpmap:%u %30[^ ]", &media_fmt_code, media_format)) {
                 media_add_format(media, media_fmt_code, media_format);
             }
         }

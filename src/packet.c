@@ -144,6 +144,7 @@ packet_set_payload(packet_t *packet, u_char *payload, uint32_t payload_len)
         packet->payload = malloc(payload_len + 1);
         memset(packet->payload, 0, payload_len + 1);
         memcpy(packet->payload, payload, payload_len);
+        packet->payload[payload_len] = '\0';
         packet->payload_len = payload_len;
     }
 }
