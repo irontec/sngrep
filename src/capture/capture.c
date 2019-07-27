@@ -261,3 +261,16 @@ capture_manager_set_pause(CaptureManager *manager, gboolean paused)
 {
     manager->paused = paused;
 }
+
+gboolean
+capture_is_running()
+{
+    for (GSList *l = manager->inputs; l != NULL; l = l->next) {
+        CaptureInput *input = l->data;
+        if (g_source_is_destroyed(input->source) == FALSE) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}

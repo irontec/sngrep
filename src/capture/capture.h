@@ -262,4 +262,11 @@ capture_sources_count(CaptureManager *manager);
 void
 capture_manager_set_pause(CaptureManager *manager, gboolean paused);
 
+/**
+ * @brief Determine if any of the capture inputs is running
+ * @return TRUE if at least one Input is running
+ */
+gboolean
+capture_is_running();
+
 #endif

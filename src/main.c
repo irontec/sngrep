@@ -75,7 +75,8 @@ print_storage_count(GMainLoop *loop)
 {
     setbuf(stdout, NULL);
     g_print("\rDialog count: %d", storage_calls_count());
-    if (storage_pending_packets() == 0) {
+    if (capture_is_running() == FALSE &&
+        storage_pending_packets() == 0) {
         g_print("\n");
         g_main_loop_quit(loop);
     }
