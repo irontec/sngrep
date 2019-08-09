@@ -453,7 +453,7 @@ call_flow_column_create(Window *window, Address *addr)
     CallFlowColumn *column = g_malloc0(sizeof(CallFlowColumn));
     g_return_val_if_fail(column != NULL, NULL);
 
-    column->addr = addr;
+    column->addr = address_new(addr->ip, addr->port);
     column->alias = setting_get_alias(column->addr->ip);
 
     // Check if column has externip
