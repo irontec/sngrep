@@ -71,7 +71,7 @@ struct _Address
  * @return true if addresses contain the IP address, false otherwise
  */
 gboolean
-addressport_equals(Address *addr1, Address *addr2);
+addressport_equals(const Address *addr1, const Address *addr2);
 
 /**
  * @brief Check if two address are equal (ignoring port)
@@ -81,7 +81,7 @@ addressport_equals(Address *addr1, Address *addr2);
  * @return true if addresses contain the same data, false otherwise
  */
 gboolean
-address_equals(Address *addr1, Address *addr2);
+address_equals(const Address *addr1, const Address *addr2);
 
 /**
  * @brief Check if a given IP address belongs to a local device
@@ -90,7 +90,7 @@ address_equals(Address *addr1, Address *addr2);
  * @return true if address is local, false otherwise
  */
 gboolean
-address_is_local(Address *addr);
+address_is_local(const Address *addr);
 
 /**
  * @brief Convert string IP:PORT to address structure
@@ -100,6 +100,14 @@ address_is_local(Address *addr);
  */
 Address *
 address_from_str(const gchar *ipport);
+
+/**
+ * @brief Clone existing Address allocating new memory
+ * @param address Original address pointer to be cloned
+ * @return
+ */
+Address *
+address_clone(const Address *address);
 
 /**
  * @brief Free Address pointer

@@ -27,6 +27,7 @@
  */
 #include "config.h"
 #include <glib.h>
+#include <storage/message.h>
 #include "capture/dissectors/packet_sip.h"
 #include "ncurses/dialog.h"
 #include "auth_validate_win.h"
@@ -223,13 +224,10 @@ auth_validate_set_group(Window *window, CallGroup *group)
 
     Message *msg = NULL;
     while ((msg = call_group_get_next_msg(group, msg)) != NULL) {
-        Packet *packet = msg->packet;
-        if (packet == NULL) continue;
+        if (!msg_is_request(msg))
+            continue;
 
-        PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
-        if (sip == NULL) continue;
-
-        if (packet_sip_auth_data(packet) != NULL) {
+        if (msg->request.auth != NULL) {
             auth_validate_set_msg(window, msg);
             break;
         }
@@ -244,23 +242,17 @@ auth_validate_set_msg(Window *window, Message *msg)
     g_return_if_fail(info != NULL);
     g_return_if_fail(msg != NULL);
 
-    Packet *packet = msg->packet;
-    g_return_if_fail(packet != NULL);
-
-    // Get Authorization header data
-    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
-    g_return_if_fail(sip != NULL);
-    if (packet_sip_auth_data(packet) == NULL) {
+    // Authorization is only checked in request messages
+    if (!msg_is_request(msg))
         return;
-    }
 
-    info->method = sip->code.text;
+    info->method = msg->request.method;
 
     GRegex *auth_param = g_regex_new(
-        "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
-        G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
+            "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
+            G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
 
-    gchar *auth_value = g_strdup(packet_sip_auth_data(packet));
+    gchar *auth_value = g_strdup(msg->request.auth);
     if (strncasecmp(auth_value, "Digest", 6) == 0) {
         auth_value += 6;
     }

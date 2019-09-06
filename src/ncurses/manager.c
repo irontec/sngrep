@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <locale.h>
 #include <glib-unix.h>
+#include <storage/message.h>
 #include "glib/glib-extra.h"
 #include "setting.h"
 #include "manager.h"
@@ -348,7 +349,7 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
 
     // Get message method (if request)
     if (msg_is_request(msg)) {
-        method = packet_sip_method_str(msg->packet);
+        method = msg->request.method;
     }
 
     // Get packet payload

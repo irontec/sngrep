@@ -44,6 +44,23 @@ msg_new(Packet *packet)
     msg->packet = packet_ref(packet);
     // Create message attribute hash table
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    // Set SIP packet related data
+    msg->ts = packet_time(packet);
+    msg->src = address_clone(packet_src_address(packet));
+    msg->dst = address_clone(packet_dst_address(packet));
+    msg->is_request = packet_sip_method(packet) < 100;
+    msg->cseq = packet_sip_cseq(packet);
+
+    if (msg->is_request) {
+        msg->request.id = packet_sip_method(packet);
+        msg->request.method = g_strdup(packet_sip_method_str(packet));
+        msg->request.auth = g_strdup(packet_sip_auth_data(packet));
+        msg->request.is_initial = packet_sip_initial_transaction(packet);
+    } else {
+        msg->response.code = packet_sip_method(packet);
+        msg->response.reason = g_strdup(packet_sip_method_str(packet));
+    }
+
     return msg;
 }
 
@@ -91,34 +108,26 @@ msg_is_initial_transaction(Message *msg)
 {
     for (guint i = 0; i < g_ptr_array_len(msg->call->msgs); i++) {
         Message *call_msg = g_ptr_array_index(msg->call->msgs, i);
-        if (!msg_is_request(call_msg)) continue;
+        if (!call_msg->is_request) continue;
         if (call_msg == msg) break;
 
-        if (msg_get_cseq(msg) != msg_get_cseq(call_msg)) {
+        if (msg->cseq != call_msg->cseq) {
             continue;
         }
 
-        if (msg_is_request(msg)) {
-            if (!addressport_equals(
-                    packet_src_address(msg->packet),
-                    packet_src_address(call_msg->packet)
-            )) {
+        // FIXME This makes no sense, we have already checked above this is a request
+        if (msg->is_request) {
+            if (!addressport_equals(msg->src, call_msg->src))
                 continue;
-            }
-
         } else {
-            if (!addressport_equals(
-                    packet_src_address(msg->packet),
-                    packet_dst_address(call_msg->packet)
-            )) {
+            if (!addressport_equals(msg->src, call_msg->dst))
                 continue;
-            }
         }
 
-        return packet_sip_initial_transaction(call_msg->packet);
+        return call_msg->request.is_initial;
     }
 
-    return packet_sip_initial_transaction(msg->packet);
+    return msg->request.is_initial;
 }
 
 gboolean
@@ -127,16 +136,28 @@ msg_has_sdp(void *item)
     return msg_media_count(item) > 0;
 }
 
+const Address *
+msg_src_address(Message *msg)
+{
+    return msg->src;
+}
+
+const Address *
+msg_dst_address(Message *msg)
+{
+    return msg->dst;
+}
+
 gboolean
 msg_is_request(Message *msg)
 {
-    return packet_sip_method(msg->packet) < 100;
+    return msg->is_request;
 }
 
 guint64
 msg_get_cseq(Message *msg)
 {
-    return packet_sip_cseq(msg->packet);
+    return msg->cseq;
 }
 
 const gchar *

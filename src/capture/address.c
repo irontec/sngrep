@@ -36,7 +36,7 @@
 #include <arpa/inet.h>
 
 gboolean
-addressport_equals(Address *addr1, Address *addr2)
+addressport_equals(const Address *addr1, const Address *addr2)
 {
     if (addr1 == NULL && addr2 == NULL) {
         return TRUE;
@@ -50,7 +50,7 @@ addressport_equals(Address *addr1, Address *addr2)
 }
 
 gboolean
-address_equals(Address *addr1, Address *addr2)
+address_equals(const Address *addr1, const Address *addr2)
 {
     if (addr1 == NULL && addr2 == NULL) {
         return TRUE;
@@ -64,7 +64,7 @@ address_equals(Address *addr1, Address *addr2)
 }
 
 gboolean
-address_is_local(Address *addr)
+address_is_local(const Address *addr)
 {
     //! Local devices pointer
     static pcap_if_t *devices = 0;
@@ -143,6 +143,12 @@ address_from_str(const gchar *ipport)
     }
 
     return NULL;
+}
+
+Address *
+address_clone(const Address *address)
+{
+    return address_new(address->ip, address->port);
 }
 
 void

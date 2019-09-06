@@ -55,6 +55,7 @@
  */
 #include "config.h"
 #include <glib.h>
+#include <storage/message.h>
 #include "glib/glib-extra.h"
 #include "storage/storage.h"
 #include "capture/dissectors/packet_sip.h"
@@ -136,7 +137,7 @@ stats_win_new()
         // For each message in call
         for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
             Message *msg = g_ptr_array_index(call->msgs, i);
-            guint method = packet_sip_method(msg->packet);
+            guint method = msg->request.id;
 
             // Increase message counter
             stats.mtotal++;

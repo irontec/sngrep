@@ -35,6 +35,7 @@
 #include "capture/dissectors/packet_sip.h"
 #include "storage/storage.h"
 #include "setting.h"
+#include "message.h"
 
 Call *
 call_create(const gchar *callid, const gchar *xcallid)
@@ -117,7 +118,7 @@ call_is_invite(Call *call)
     Message *first = g_ptr_array_first(call->msgs);
     g_return_val_if_fail(first != NULL, 0);
 
-    return packet_sip_method(first->packet) == SIP_METHOD_INVITE;
+    return first->request.id == SIP_METHOD_INVITE;
 }
 
 void
@@ -127,8 +128,8 @@ call_update_state(Call *call, Message *msg)
         return;
 
     // Get current message Method / Response Code
-    guint msg_reqresp = packet_sip_method(msg->packet);
-    guint64 msg_cseq = packet_sip_cseq(msg->packet);
+    guint msg_reqresp = msg->request.id;
+    guint64 msg_cseq = msg->cseq;
 
     // If this message is actually a call, get its current state
     if (call->state) {
@@ -253,7 +254,7 @@ call_add_xcall(Call *call, Call *xcall)
 }
 
 Stream *
-call_find_stream(Call *call, Address *src, Address *dst)
+call_find_stream(Call *call, const Address *src, const Address *dst)
 {
     Stream *stream;
 
@@ -281,7 +282,7 @@ call_find_stream(Call *call, Address *src, Address *dst)
 }
 
 Stream *
-call_find_stream_exact(Call *call, Address *src, Address *dst)
+call_find_stream_exact(Call *call, const Address *src, const Address *dst)
 {
     Stream *stream;
 

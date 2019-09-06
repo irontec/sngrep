@@ -58,25 +58,25 @@ stream_free(Stream *stream)
 }
 
 void
-stream_set_src(Stream *stream, Address *src)
+stream_set_src(Stream *stream, const Address *src)
 {
     g_return_if_fail(stream != NULL);
     g_return_if_fail(src != NULL);
 
-    stream->src = address_new(src->ip, src->port);
+    stream->src = address_clone(src);
 }
 
 void
-stream_set_dst(Stream *stream, Address *dst)
+stream_set_dst(Stream *stream, const Address *dst)
 {
     g_return_if_fail(stream != NULL);
     g_return_if_fail(dst != NULL);
 
-    stream->dst = address_new(dst->ip, dst->port);
+    stream->dst = address_clone(dst);
 }
 
 void
-stream_set_data(Stream *stream, Address *src, Address *dst)
+stream_set_data(Stream *stream, const Address *src, const Address *dst)
 {
     stream_set_src(stream, src);
     stream_set_dst(stream, dst);

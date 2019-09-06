@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include <glib.h>
+#include <storage/message.h>
 #include "capture/dissectors/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
@@ -132,7 +133,7 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
 
     if (arrow->type == CF_ARROW_SIP) {
         msg = (Message *) arrow->item;
-        ts = packet_time(msg->packet);
+        ts = msg->ts;
     } else if (arrow->type == CF_ARROW_RTP) {
         stream = (Stream *) arrow->item;
         ts = stream_time(stream);
@@ -351,7 +352,7 @@ call_flow_arrow_find_prev_callid(Window *window, const CallFlowArrow *arrow)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_first(Window *window, Address *addr)
+call_flow_column_get_first(Window *window, const Address *addr)
 {
     CallFlowWinInfo *info = call_flow_win_info(window);
     g_return_val_if_fail(info != NULL, NULL);
@@ -399,7 +400,7 @@ call_flow_column_get_first(Window *window, Address *addr)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_last(Window *window, Address *addr)
+call_flow_column_get_last(Window *window, const Address *addr)
 {
     CallFlowWinInfo *info = call_flow_win_info(window);
     g_return_val_if_fail(info != NULL, NULL);
@@ -443,7 +444,7 @@ call_flow_column_sorter(CallFlowColumn *a, CallFlowColumn *b)
 }
 
 static CallFlowColumn *
-call_flow_column_create(Window *window, Address *addr)
+call_flow_column_create(Window *window, const Address *addr)
 {
     // Get Window info
     CallFlowWinInfo *info = call_flow_win_info(window);
@@ -826,7 +827,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     timeval_to_time(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
-    sprintf(msg_method, "%s", packet_sip_method_str(msg->packet));
+    sprintf(msg_method, "%s", msg->request.method);
     strcpy(method, msg_method);
 
     // If message has sdp information
@@ -910,7 +911,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         color = call_group_color(info->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        color = packet_sip_cseq(msg->packet) % 7 + 1;
+        color = msg->cseq % 7 + 1;
     }
 
     // Print arrow in the same line than message

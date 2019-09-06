@@ -208,10 +208,10 @@ void
 call_add_xcall(Call *call, Call *xcall);
 
 Stream *
-call_find_stream(Call *call, Address *src, Address *dst);
+call_find_stream(Call *call, const  Address *src, const Address *dst);
 
 Stream *
-call_find_stream_exact(Call *call, Address *src, Address *dst);
+call_find_stream_exact(Call *call, const Address *src, const Address *dst);
 
 /**
  * @brief Get the first message of transaction with given CSeq

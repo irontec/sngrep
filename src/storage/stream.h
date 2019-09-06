@@ -78,13 +78,13 @@ void
 stream_free(Stream *stream);
 
 void
-stream_set_src(Stream *stream, Address *src);
+stream_set_src(Stream *stream, const Address *src);
 
 void
-stream_set_dst(Stream *stream, Address *dst);
+stream_set_dst(Stream *stream, const Address *dst);
 
 void
-stream_set_data(Stream *stream, Address *src, Address *dst);
+stream_set_data(Stream *stream, const Address *src, const Address *dst);
 
 void
 stream_set_format(Stream *stream, guint8 format);

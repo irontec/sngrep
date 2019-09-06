@@ -35,11 +35,6 @@
 #include "storage/attribute.h"
 #include "timeval.h"
 
-//! Get IP Address info from message's packet
-#define msg_src_address(msg)   (packet_src_address(msg->packet))
-#define msg_dst_address(msg)   (packet_dst_address(msg->packet))
-
-
 //! Shorter declaration of sip_msg structure
 typedef struct _Message Message;
 //! Forward declarition of SipCall type
@@ -55,12 +50,46 @@ typedef struct _Call Call;
  */
 struct _Message
 {
+    //! Message owner
+    Call *call;
+    //! Capture timestamp
+    GTimeVal ts;
+    //! Source Address
+    Address *src;
+    //! Destination Adddress
+    Address *dst;
+    //! Is this SIP message a request or response
+    gboolean is_request;
+    //! Message CSeq number
+    guint64 cseq;
+    //! Request/Response specific information
+    union
+    {
+        //! Request specific information
+        struct
+        {
+            //! Method ID from SipMethods enum
+            guint id;
+            //! Method string from sip_codes
+            gchar *method;
+            //! Is this the first message of the dialog?
+            gboolean is_initial;
+            //! Message Authorization header
+            gchar *auth;
+        } request;
+        //! Response specific information
+        struct
+        {
+            //! Response code
+            guint code;
+            //! Response text from sip_codes
+            gchar *reason;
+        } response;
+    };
     //! Captured packet for this message
     Packet *packet;
     //! Attribute list for this message
     GHashTable *attributes;
-    //! Message owner
-    Call *call;
     //! Message is a retransmission from other message
     const Message *retrans;
 };
@@ -123,6 +152,22 @@ msg_media_for_addr(Message *msg, Address *dst);
  */
 gboolean
 msg_has_sdp(void *item);
+
+/**
+ * @brief Get Source address pointer for given SIP message
+ * @param msg
+ * @return
+ */
+const Address *
+msg_src_address(Message *msg);
+
+/**
+ * @brief Get Destination address pointer for given SIP message
+ * @param msg
+ * @return
+ */
+const Address *
+msg_dst_address(Message *msg);
 
 /**
  * @brief Check if a message is a Request or response
