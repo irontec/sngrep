@@ -72,7 +72,6 @@ enum capture_pcap_errors
     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
     CAPTURE_PCAP_ERROR_FILTER_COMPILE,
     CAPTURE_PCAP_ERROR_FILTER_APPLY,
-    CAPTURE_PCAP_ERROR_SAVE_MULTIPLE,
     CAPTURE_PCAP_ERROR_SAVE_NOT_PCAP,
     CAPTURE_PCAP_ERROR_DUMP_OPEN
 };
@@ -150,6 +149,12 @@ capture_input_pcap_stop(CaptureInput *input);
  */
 gboolean
 capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **error);
+
+/**
+ * @brief Return datalink type of this capture input
+ */
+gint
+capture_input_pcap_datalink(CaptureInput *input);
 
 /**
  * @brief Set a capture input keyfile for TLS decrypt

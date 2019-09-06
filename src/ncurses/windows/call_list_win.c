@@ -1015,10 +1015,6 @@ call_list_handle_key(Window *window, int key)
                 ncurses_create_window(WINDOW_STATS);
                 break;
             case ACTION_SAVE:
-                if (capture_sources_count(capture_manager_get_instance()) > 1) {
-                    dialog_run("Saving is not possible when multiple input sources are specified.");
-                    break;
-                }
                 save_set_group(ncurses_create_window(WINDOW_SAVE), info->group);
                 break;
             case ACTION_CLEAR:

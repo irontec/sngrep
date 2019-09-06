@@ -42,6 +42,8 @@
 
 #define g_list_last_data(list) g_list_last(list)->data
 
+#define g_slist_first_data(list) g_slist_nth_data(list, 0)
+
 /**
  * @brief Make a deep concat from one Double-Linked list to another
  *

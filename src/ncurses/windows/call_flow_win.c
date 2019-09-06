@@ -1692,10 +1692,6 @@ call_flow_handle_key(Window *window, int key)
             case ACTION_SAVE:
                 cur_arrow = g_ptr_array_index(info->darrows, info->cur_idx);
                 if (cur_arrow->type == CF_ARROW_SIP) {
-                    if (capture_sources_count(capture_manager_get_instance()) > 1) {
-                        dialog_run("Saving is not possible when multiple input sources are specified.");
-                        break;
-                    }
                     next_window = ncurses_create_window(WINDOW_SAVE);
                     save_set_group(next_window, info->group);
                     save_set_msg(next_window, call_flow_arrow_message(cur_arrow));

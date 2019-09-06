@@ -279,10 +279,6 @@ call_raw_handle_key(Window *window, int key)
                 call_raw_move_up(window, rnpag_steps);
                 break;
             case ACTION_SAVE:
-                if (capture_sources_count(capture_manager_get_instance()) > 1) {
-                    dialog_run("Saving is not possible when multiple input sources are specified.");
-                    break;
-                }
                 if (info->group) {
                     // Display save panel
                     save_set_group(ncurses_create_window(WINDOW_SAVE), info->group);

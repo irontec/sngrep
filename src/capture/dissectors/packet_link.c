@@ -155,7 +155,7 @@ packet_link_init(PacketParser *parser)
 
     // Initialize parser private data
     DissectorLinkData *link_data = g_malloc0(sizeof(DissectorLinkData));
-    link_data->link_type = pcap->link;
+    link_data->link_type = capture_input_pcap_datalink(input);
     link_data->link_size = proto_link_size(pcap->link);
 
     // Store private data for this protocol

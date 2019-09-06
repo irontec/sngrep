@@ -292,6 +292,16 @@ capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **err
     return TRUE;
 }
 
+gint
+capture_input_pcap_datalink(CaptureInput *input)
+{
+    // Capture PCAP private data
+    CapturePcap *pcap = (CapturePcap *) input->priv;
+    g_return_val_if_fail(pcap != NULL, -1);
+
+    return pcap->link;
+}
+
 static void
 capture_output_pcap_write(CaptureOutput *output, Packet *packet)
 {
@@ -300,16 +310,27 @@ capture_output_pcap_write(CaptureOutput *output, Packet *packet)
     g_return_if_fail(pcap != NULL);
     g_return_if_fail(pcap->dumper != NULL);
 
+    // FIXME
+    CaptureInput *input = packet->parser->input;
+
+    // Check if the input has the same datalink as the output
+    gint datalink = capture_input_pcap_datalink(input);
+    gint datalink_size = 0;
+    if (datalink != pcap->link) {
+        // Strip datalink header from all packets
+        datalink_size = proto_link_size(datalink);
+    }
+
     for (GList *l = packet->frames; l != NULL; l = l->next) {
         PacketFrame *frame = l->data;
         // PCAP Frame Header data
         struct pcap_pkthdr header;
-        header.caplen = frame->caplen;
-        header.len = frame->len;
+        header.caplen = frame->caplen - datalink_size;
+        header.len = frame->len - datalink_size;
         header.ts.tv_sec = frame->ts.tv_sec;
         header.ts.tv_usec = frame->ts.tv_usec;
         // Save this packet
-        pcap_dump((u_char *) pcap->dumper, &header, frame->data->data);
+        pcap_dump((u_char *) pcap->dumper, &header, frame->data->data + datalink_size);
     }
 }
 
@@ -333,15 +354,7 @@ capture_output_pcap(const gchar *filename, GError **error)
     CaptureManager *manager = capture_manager_get_instance();
     g_return_val_if_fail(manager != NULL, NULL);
 
-    if (g_slist_length(manager->inputs) != 1) {
-        g_set_error(error,
-                    CAPTURE_PCAP_ERROR,
-                    CAPTURE_PCAP_ERROR_SAVE_MULTIPLE,
-                    "Save is only supported with a single capture input.");
-        return NULL;
-    }
-
-    CaptureInput *input = g_slist_nth_data(manager->inputs, 0);
+    CaptureInput *input = g_slist_first_data(manager->inputs);
     g_return_val_if_fail(input != NULL, NULL);
 
     if (input->tech != CAPTURE_TECH_PCAP) {
@@ -352,18 +365,26 @@ capture_output_pcap(const gchar *filename, GError **error)
         return NULL;
     }
 
-    CapturePcap *input_pcap = input->priv;
-
     // Create a new structure to handle this capture source
     CapturePcap *pcap = g_malloc0(sizeof(CapturePcap));
 
-    pcap->dumper = pcap_dump_open(input_pcap->handle, filename);
+    pcap->link = capture_input_pcap_datalink(input);
+    if (g_slist_length(manager->inputs) > 1) {
+        for (GSList *l = manager->inputs; l != NULL; l = l->next) {
+            if (capture_input_pcap_datalink(l->data) != pcap->link) {
+                pcap->link = DLT_RAW;
+            }
+        }
+    }
+
+    pcap->handle = pcap_open_dead(pcap->link, MAXIMUM_SNAPLEN);
+    pcap->dumper = pcap_dump_open(pcap->handle, filename);
     if (pcap->dumper == NULL) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_DUMP_OPEN,
                     "Error while opening dump file: %s",
-                    pcap_geterr(input_pcap->handle));
+                    pcap_geterr(pcap->handle));
         return NULL;
     }
 
