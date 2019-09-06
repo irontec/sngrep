@@ -106,27 +106,6 @@ msg_media_for_addr(Message *msg, Address *dst)
 gboolean
 msg_is_initial_transaction(Message *msg)
 {
-    for (guint i = 0; i < g_ptr_array_len(msg->call->msgs); i++) {
-        Message *call_msg = g_ptr_array_index(msg->call->msgs, i);
-        if (!call_msg->is_request) continue;
-        if (call_msg == msg) break;
-
-        if (msg->cseq != call_msg->cseq) {
-            continue;
-        }
-
-        // FIXME This makes no sense, we have already checked above this is a request
-        if (msg->is_request) {
-            if (!addressport_equals(msg->src, call_msg->src))
-                continue;
-        } else {
-            if (!addressport_equals(msg->src, call_msg->dst))
-                continue;
-        }
-
-        return call_msg->request.is_initial;
-    }
-
     return msg->request.is_initial;
 }
 
