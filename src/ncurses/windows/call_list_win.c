@@ -440,6 +440,9 @@ call_list_draw_list(Window *window)
         }
     }
 
+    // Clear call list before redrawing
+    werase(list_win);
+
     // Create a new pad for configured columns
     gint padw = call_list_columns_width(window, 0);
     if (padw < listw) padw = listw;
