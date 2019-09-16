@@ -213,6 +213,20 @@ msg_is_retrans(Message *msg)
     return NULL;
 }
 
+gboolean
+msg_is_duplicate(const Message *msg)
+{
+    if (msg->retrans == NULL)
+        return FALSE;
+
+    GTimeVal orig_ts = msg_get_time(msg->retrans);
+    GTimeVal retrans_ts = msg_get_time(msg);
+
+    // Consider duplicate if difference with its original is 10ms or less
+    return orig_ts.tv_sec == retrans_ts.tv_sec
+           && orig_ts.tv_usec + 010000 > retrans_ts.tv_usec;
+}
+
 void
 msg_set_cached_attribute(Message *msg, Attribute *attr, gchar *value)
 {

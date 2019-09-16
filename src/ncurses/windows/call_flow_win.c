@@ -1672,6 +1672,10 @@ call_flow_handle_key(Window *window, int key)
             case ACTION_SDP_INFO:
                 setting_toggle(SETTING_CF_SDP_INFO);
                 break;
+            case ACTION_HIDE_DUPLICATE:
+                setting_toggle(SETTING_CF_HIDEDUPLICATE);
+                call_flow_win_set_group(window, info->group);
+                break;
             case ACTION_ONLY_MEDIA:
                 setting_toggle(SETTING_CF_ONLYMEDIA);
                 call_flow_win_set_group(window, info->group);

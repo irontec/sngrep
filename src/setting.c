@@ -618,6 +618,8 @@ settings_init(SettingOpts options)
                     setting_bool_new("cf.onlymedia", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CF_DELTA,
                     setting_bool_new("cf.deltatime", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_CF_HIDEDUPLICATE,
+                    setting_bool_new("cf.hideduplicate", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_CR_SCROLLSTEP,
                     setting_number_new("cr.scrollstep", "10"));
     g_ptr_array_set(settings->values, SETTING_CR_NON_ASCII,

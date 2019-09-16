@@ -251,6 +251,19 @@ const Message *
 msg_is_retrans(Message *msg);
 
 /**
+ * @brief Check if the given message is a capture duplicate
+ *
+ * Some iterfaces duplcates captured packets so, in order to detect a message as
+ * duplicated instead of retrans, the time difference with the original must be below
+ * the t1 timer.
+ *
+ * @param msg SIP Message
+ * @return return TRUE if message is considered duplicated, FALSE otherwise
+ */
+gboolean
+msg_is_duplicate(const Message *msg);
+
+/**
  * @brief Store a new attribute value in message attribute cache
  */
 void

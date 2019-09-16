@@ -31,6 +31,7 @@
 #include <string.h>
 #include "glib/glib-extra.h"
 #include "group.h"
+#include "setting.h"
 
 CallGroup *
 call_group_new()
@@ -195,9 +196,13 @@ call_group_get_next_msg(CallGroup *group, Message *msg)
     Message *next = g_ptr_array_next(group->msgs, msg);
 
     // If we have a next message
-    if (next != NULL) {
+        if (next != NULL) {
         // Group has no filter mode, any next message is valid
         if (group->sdp_only == 1 && !msg_has_sdp(next)) {
+            return call_group_get_next_msg(group, next);
+        }
+        // If duplicates are hidden, go to next message
+        if (setting_enabled(SETTING_CF_HIDEDUPLICATE) && msg_is_duplicate(next)) {
             return call_group_get_next_msg(group, next);
         }
     }
@@ -218,6 +223,11 @@ call_group_get_prev_msg(CallGroup *group, Message *msg)
         if (group->sdp_only == 1 && !msg_has_sdp(prev)) {
             return call_group_get_prev_msg(group, prev);
         }
+        // If duplicates are hidden, go to previous message
+        if (setting_enabled(SETTING_CF_HIDEDUPLICATE) && msg_is_duplicate(prev)) {
+            return call_group_get_next_msg(group, prev);
+        }
+
     }
 
     return prev;
