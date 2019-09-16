@@ -196,7 +196,7 @@ call_group_get_next_msg(CallGroup *group, Message *msg)
     Message *next = g_ptr_array_next(group->msgs, msg);
 
     // If we have a next message
-        if (next != NULL) {
+    if (next != NULL) {
         // Group has no filter mode, any next message is valid
         if (group->sdp_only == 1 && !msg_has_sdp(next)) {
             return call_group_get_next_msg(group, next);

@@ -228,7 +228,7 @@ rtp_player_write_cb(pa_stream *s, size_t length, gpointer userdata)
         length = info->decoded->len;
     }
 
-    pa_stream_write(s, ((gint16*) info->decoded->data) + info->player_pos, length, NULL, 0LL, PA_SEEK_RELATIVE);
+    pa_stream_write(s, ((gint16 *) info->decoded->data) + info->player_pos, length, NULL, 0LL, PA_SEEK_RELATIVE);
     if (info->player_pos < info->decoded->len) {
         info->player_pos += length / 2;
     }

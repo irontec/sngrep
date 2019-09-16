@@ -309,7 +309,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
             selected = optioncnt - 1;
     }
 
-done:
+    done:
     delwin(dialog_win);
     curs_set(curs);
     return selected;

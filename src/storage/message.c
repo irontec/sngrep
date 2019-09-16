@@ -148,7 +148,7 @@ msg_get_payload(Message *msg)
 GTimeVal
 msg_get_time(const Message *msg)
 {
-    GTimeVal t = {0};
+    GTimeVal t = { 0 };
     PacketFrame *frame;
 
     if (msg && (frame = g_list_nth_data(msg->packet->frames, 0)))

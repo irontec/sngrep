@@ -468,9 +468,9 @@ settings_init(SettingOpts options)
                     setting_string_new("capture.outfile", ""));
 #ifdef WITH_SSL
     g_ptr_array_set(settings->values, SETTING_CAPTURE_KEYFILE,
-            setting_string_new("capture.keyfile", ""));
+                    setting_string_new("capture.keyfile", ""));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_TLSSERVER,
-            setting_string_new("capture.tlsserver", ""));
+                    setting_string_new("capture.tlsserver", ""));
 #endif
     g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
                     setting_bool_new("capture.rtp", SETTING_OFF));
@@ -706,8 +706,8 @@ settings_dump()
     for (GList *l = settings->alias; l != NULL; l = l->next) {
         SettingAlias *alias = l->data;
         printf("Address: %s\t Alias: %s\n",
-                alias->address,
-                alias->alias
+               alias->address,
+               alias->alias
         );
     }
 

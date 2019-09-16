@@ -249,8 +249,8 @@ auth_validate_set_msg(Window *window, Message *msg)
     info->method = msg->request.method;
 
     GRegex *auth_param = g_regex_new(
-            "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
-            G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
+        "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
+        G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
 
     gchar *auth_value = g_strdup(msg->request.auth);
     if (strncasecmp(auth_value, "Digest", 6) == 0) {

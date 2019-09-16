@@ -569,7 +569,7 @@ ncurses_deinit()
 wchar_t *
 ncurses_acs_utf8(const chtype acs)
 {
-    static wchar_t utf8[2] = {0, 0};
+    static wchar_t utf8[2] = { 0, 0 };
 
     if (acs == ACS_BOARD) {
         utf8[0] = 0x2587;   // ▇
@@ -579,7 +579,7 @@ ncurses_acs_utf8(const chtype acs)
         utf8[0] = 0x25B6;   // ▶
     } else if (acs == '<') {
         utf8[0] = 0x25C0;   // ◀
-    } else{
+    } else {
         utf8[0] = acs;
     }
 

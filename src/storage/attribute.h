@@ -40,7 +40,7 @@ typedef struct _Message Message;
 
 typedef gint (*AttributeColorFunc)(const gchar *);
 
-typedef gchar * (*AttributeGetterFunc)(Attribute *, Message *);
+typedef gchar *(*AttributeGetterFunc)(Attribute *, Message *);
 
 /**
  * @brief Available SIP Attributes

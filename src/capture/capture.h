@@ -54,13 +54,18 @@ typedef struct _CaptureManager CaptureManager;
 //! Capture Input functions types
 
 typedef gpointer (*CaptureInputStartFunc)(CaptureInput *);
+
 typedef void (*CaptureInputStopFunc)(CaptureInput *);
+
 typedef void (*CaptureInputFreeFunc)(CaptureInput *);
+
 typedef gint (*CaptureInputFilterFunc)(CaptureInput *, const gchar *, GError **);
 
 //! Capture Output function types
 typedef void (*CaptureOuptutWriteFunc)(CaptureOutput *, Packet *);
+
 typedef void (*CaptureOutputCloseFunc)(CaptureOutput *);
+
 typedef void (*CaptureOutputFreeFunc)(CaptureOutput *);
 
 

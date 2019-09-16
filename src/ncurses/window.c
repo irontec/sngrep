@@ -223,7 +223,7 @@ window_draw_bindings(Window *window, const char **keybindings, int count)
         mvwprintw(window->win, window->height - 1, xpos, "%-*s",
                   strlen(keybindings[key]) + 1, keybindings[key]);
         xpos += strlen(keybindings[key]) + 1;
-        wattroff(window->win,A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
+        wattroff(window->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
         wattron(window->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         mvwprintw(window->win, window->height - 1, xpos, "%-*s",
                   strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);

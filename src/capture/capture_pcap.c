@@ -63,7 +63,7 @@ capture_input_pcap_free(CaptureInput *input)
 
 static gboolean
 capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
-    G_GNUC_UNUSED GIOCondition condition, CaptureInput *input)
+                               G_GNUC_UNUSED GIOCondition condition, CaptureInput *input)
 {
     // Capture pcap information
     CapturePcap *pcap = input->priv;

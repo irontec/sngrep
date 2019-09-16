@@ -67,7 +67,7 @@ PacketRtpEncoding encodings[] = {
     { 32, "MPV/90000",  "mpv" },
     { 33, "MP2T/90000", "mp2t" },
     { 34, "H263/90000", "h263" },
-    { 0, NULL, NULL }
+    { 0,  NULL,         NULL }
 };
 
 PacketRtpEncoding *

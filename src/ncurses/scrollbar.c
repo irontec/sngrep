@@ -96,7 +96,7 @@ scrollbar_horizontal_draw(Scrollbar scrollbar)
 
     // Draw the N blocks of the scrollbar
     for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
-        mvwaddwstr(scrollbar.win, scrollypos, cline + scrollxpos,  ncurses_acs_utf8(ACS_CKBOARD));
+        mvwaddwstr(scrollbar.win, scrollypos, cline + scrollxpos, ncurses_acs_utf8(ACS_CKBOARD));
     }
 }
 

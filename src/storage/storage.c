@@ -201,11 +201,11 @@ static gchar *
 storage_stream_key(Address *src, Address *dst)
 {
     return g_strdup_printf(
-            "%s:%u-%s:%u",
-            (src) ? src->ip : "",
-            (src) ? src->port : 0,
-            (dst) ? dst->ip : "",
-            (dst) ? dst->port : 0
+        "%s:%u-%s:%u",
+        (src) ? src->ip : "",
+        (src) ? src->port : 0,
+        (dst) ? dst->ip : "",
+        (dst) ? dst->port : 0
     );
 }
 
@@ -213,9 +213,9 @@ static void
 storage_register_stream(Stream *stream)
 {
     g_hash_table_insert(
-            storage->streams,
-            storage_stream_key(stream->src, stream->dst),
-            stream->msg
+        storage->streams,
+        storage_stream_key(stream->src, stream->dst),
+        stream->msg
     );
 }
 
@@ -546,7 +546,7 @@ storage_new(StorageOpts options, GError **error)
     storage->queue = g_async_queue_new();
 
     // Storage check source
-    GSource * source = g_async_queue_source_new(storage->queue, NULL);
+    GSource *source = g_async_queue_source_new(storage->queue, NULL);
     g_source_set_callback(source, (GSourceFunc) G_CALLBACK(storage_check_packet), NULL, NULL);
     g_source_attach(source, NULL);
 

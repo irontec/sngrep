@@ -362,16 +362,16 @@ static void
 call_list_draw_footer(Window *window)
 {
     const char *keybindings[] = {
-            key_action_key_str(ACTION_PREV_SCREEN), "Quit",
-            key_action_key_str(ACTION_SELECT), "Select",
-            key_action_key_str(ACTION_SHOW_HELP), "Help",
-            key_action_key_str(ACTION_SAVE), "Save",
-            key_action_key_str(ACTION_DISP_FILTER), "Search",
-            key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
-            key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
-            key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
-            key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
-            key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
+        key_action_key_str(ACTION_PREV_SCREEN), "Quit",
+        key_action_key_str(ACTION_SELECT), "Select",
+        key_action_key_str(ACTION_SHOW_HELP), "Help",
+        key_action_key_str(ACTION_SAVE), "Save",
+        key_action_key_str(ACTION_DISP_FILTER), "Search",
+        key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
+        key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
+        key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
+        key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
+        key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
     window_draw_bindings(window, keybindings, 20);
@@ -544,7 +544,7 @@ call_list_draw_list(Window *window)
             listh - 1, listw - 1, 0);
 
     // Copy fixed columns
-    guint fixed_width = call_list_columns_width(window,(guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS));
+    guint fixed_width = call_list_columns_width(window, (guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS));
     copywin(pad, info->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
 
     // Setup horizontal scrollbar

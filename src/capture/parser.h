@@ -95,7 +95,6 @@ struct _PacketDissector
 };
 
 
-
 /**
  * @brief Create a new packet parser for given Capture Input
  *

@@ -117,6 +117,7 @@ struct _PacketFrame
 };
 
 #define CAPTURE_TYPE_PACKET packet_get_type()
+
 G_DECLARE_FINAL_TYPE(Packet, packet, SNGREP, PACKET, GObject)
 
 Packet *
