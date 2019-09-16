@@ -201,6 +201,11 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
     }
 
     if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtpmap") == 0) {
+        // Ignore incomplete rtpmap
+        if (g_strv_length(rtpattr) < 3) {
+            return;
+        }
+
         // Check if format code is standard
         guint32 code = (guint32) strtoul(rtpattr[2], NULL, 10);
         PacketSdpFormat *format = packet_sdp_standard_format(code);
