@@ -224,6 +224,20 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 }
 
 /**
+ * @brief TCP Stream garbage collector remove callback
+ *
+ * Determine if a stream should be removed by garbage collector
+
+ * @return TRUE if stream must be removed
+ */
+static gboolean
+packet_tcp_assembly_remove_big(G_GNUC_UNUSED gpointer key, gpointer value, G_GNUC_UNUSED gpointer user_data)
+{
+    PacketTcpStream *stream = value;
+    return g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS;
+}
+
+/**
  * @brief TCP Stream garbage collector
  *
  * This callback is invoked periodically to remove existing streams in
@@ -232,7 +246,6 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
  * @param parser Parser information owner of dissector data
  * @return TRUE always
  */
-
 static gboolean
 packet_tcp_assembly_gc(PacketParser *parser)
 {
@@ -240,18 +253,8 @@ packet_tcp_assembly_gc(PacketParser *parser)
     DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
     g_return_val_if_fail(priv != NULL, FALSE);
 
-    // Remove streams with more than TCP_MAX_SEGMENTS fragments
-    GHashTableIter iter;
-    gpointer hashkey;
-    PacketTcpStream *stream;
-
-    g_hash_table_iter_init(&iter, priv->assembly);
-    while (g_hash_table_iter_next(&iter, &hashkey, (gpointer) &stream)) {
-        if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {
-            g_hash_table_remove(priv->assembly, hashkey);
-        }
-    }
-
+    // Remove big unassembled streams
+    g_hash_table_foreach_remove(priv->assembly, packet_tcp_assembly_remove_big, NULL);
     return TRUE;
 }
 
