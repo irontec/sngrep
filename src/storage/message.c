@@ -195,8 +195,15 @@ msg_get_header(Message *msg, char *out)
 const Message *
 msg_is_retrans(Message *msg)
 {
-    for (gint i = g_ptr_array_len(msg->call->msgs) - 1; i >= 0; i--) {
-        Message *prev = g_ptr_array_index(msg->call->msgs, i);
+    // Look in the 20 previous messages for a retrans of current message
+    guint length = g_ptr_array_len(msg->call->msgs);
+    for (guint i = 0; i < 20; i++) {
+        // Stop if we have checked all items
+        if (i >= length)
+            break;
+
+        // Get the Nth item from the tail
+        Message *prev = g_ptr_array_index(msg->call->msgs, length - 1 - i);
 
         // Skip yourself
         if (prev == msg) continue;
