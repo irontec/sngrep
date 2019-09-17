@@ -60,6 +60,8 @@ struct _Message
     Address *dst;
     //! Is this SIP message a request or response
     gboolean is_request;
+    //! SIP Payload
+    const gchar *payload;
     //! Message CSeq number
     guint64 cseq;
     //! Request/Response specific information

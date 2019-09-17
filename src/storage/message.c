@@ -45,6 +45,7 @@ msg_new(Packet *packet)
     // Create message attribute hash table
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     // Set SIP packet related data
+    msg->payload = packet_sip_payload(packet);
     msg->ts = packet_time(packet);
     msg->src = address_clone(packet_src_address(packet));
     msg->dst = address_clone(packet_dst_address(packet));
@@ -142,7 +143,7 @@ msg_get_cseq(Message *msg)
 const gchar *
 msg_get_payload(Message *msg)
 {
-    return packet_sip_payload(msg->packet);
+    return msg->payload;
 }
 
 GTimeVal
