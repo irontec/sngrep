@@ -200,6 +200,11 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Add segment to stream
     packet_tcp_stream_add_segment(stream, segment);
 
+    // Check max number of stream segments (let the garbate collector clean it)
+    if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {
+        return data;
+    }
+
     // Sort and take packet frames in the last packet
     packet->frames = packet_tcp_stream_take_frames(stream);
 
