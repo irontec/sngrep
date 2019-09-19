@@ -179,7 +179,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
 
     // Set packet protocol data
-    g_ptr_array_set(packet->proto, PACKET_TCP, tcp_data);
+    packet_add_type(packet, PACKET_TCP, tcp_data);
 
     // Remove TCP header length
     g_byte_array_remove_range(data, 0, tcp_data->off);

@@ -213,7 +213,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_utf8_strncpy(ipdata->dstip, fragment->dstip, ADDRESSLEN);
     ipdata->version = fragment->version;
     ipdata->protocol = fragment->proto;
-    g_ptr_array_set(packet->proto, PACKET_IP, ipdata);
+    packet_add_type(packet, PACKET_IP, ipdata);
 
     // Get pending payload
     g_byte_array_remove_range(data, 0, fragment->hl);

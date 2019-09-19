@@ -196,13 +196,13 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_utf8_strncpy(ip->dstip, dstip, ADDRESSLEN);
     ip->protocol = hg.ip_proto.data;
     ip->version = (hg.ip_family.data == AF_INET) ? 4 : 6;
-    g_ptr_array_set(packet->proto, PACKET_IP, ip);
+    packet_add_type(packet, PACKET_IP, ip);
 
     // Generate Packet UDP data
     PacketUdpData *udp = g_malloc0(sizeof(PacketHepData));
     udp->sport = sport;
     udp->dport = dport;
-    g_ptr_array_set(packet->proto, PACKET_UDP, udp);
+    packet_add_type(packet, PACKET_UDP, udp);
 
     // Parse SIP payload
     return packet_parser_next_dissector(parser, packet, payload);

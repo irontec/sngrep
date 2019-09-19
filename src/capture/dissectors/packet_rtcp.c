@@ -149,7 +149,7 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
     }
 
     // Set packet RTP informaiton
-    g_ptr_array_set(packet->proto, PACKET_RTCP, rtcp);
+    packet_add_type(packet, PACKET_RTCP, rtcp);
 
     // Add data to storage
     storage_add_packet(packet);

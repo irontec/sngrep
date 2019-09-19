@@ -69,8 +69,9 @@ packet_new(PacketParser *parser)
 static void
 packet_proto_free(gpointer proto_id, Packet *packet)
 {
-    if (packet_has_type(packet, GPOINTER_TO_INT(proto_id)))
+    if (packet_has_type(packet, GPOINTER_TO_INT(proto_id))) {
         packet_parser_dissector_free(packet->parser, packet, GPOINTER_TO_INT(proto_id));
+    }
 }
 
 void
@@ -100,12 +101,6 @@ void
 packet_unref(Packet *packet)
 {
     g_object_unref(packet);
-}
-
-gboolean
-packet_has_type(const Packet *packet, enum PacketProtoId type)
-{
-    return g_ptr_array_index(packet->proto, type) != NULL;
 }
 
 /**

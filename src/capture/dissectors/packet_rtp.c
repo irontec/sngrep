@@ -131,7 +131,7 @@ packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray 
     rtp->payload = g_byte_array_ref(data);
 
     // Set packet RTP informaiton
-    g_ptr_array_set(packet->proto, PACKET_RTP, rtp);
+    packet_add_type(packet, PACKET_RTP, rtp);
 
     // Add data to storage
     storage_add_packet(packet);

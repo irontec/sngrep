@@ -252,7 +252,7 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
     }
 
     // Set packet SDP data
-    g_ptr_array_set(packet->proto, PACKET_SDP, sdp);
+    packet_add_type(packet, PACKET_SDP, sdp);
 
     return data;
 }

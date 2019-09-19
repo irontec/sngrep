@@ -64,7 +64,7 @@ packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
 
     // Store udp data
-    g_ptr_array_set(packet->proto, PACKET_UDP, udp_data);
+    packet_add_type(packet, PACKET_UDP, udp_data);
 
     // Get pending payload
     g_byte_array_remove_range(data, 0, udp_off);

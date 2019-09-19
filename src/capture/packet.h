@@ -44,6 +44,11 @@
 
 G_BEGIN_DECLS
 
+//! Protocol type macros
+#define packet_add_type(packet, type, data) (g_ptr_array_set(packet->proto, type, data))
+#define packet_has_type(packet, type)       (g_ptr_array_index(packet->proto, type) != NULL)
+
+
 /**
  * @brief Packet protocols
  *
@@ -131,9 +136,6 @@ packet_ref(Packet *packet);
 
 void
 packet_unref(Packet *packet);
-
-gboolean
-packet_has_type(const Packet *packet, enum PacketProtoId type);
 
 Address *
 packet_src_address(Packet *packet);

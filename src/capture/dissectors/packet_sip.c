@@ -261,7 +261,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     sip_data->payload = g_strdup(payload->str);
 
     // Add SIP information to the packet
-    g_ptr_array_set(packet->proto, PACKET_SIP, sip_data);
+    packet_add_type(packet, PACKET_SIP, sip_data);
 
     guint sip_size = (guint) strlen(payload_data[0]) + 2 /* CRLF */;
     g_auto(GStrv) headers = g_strsplit(payload->str, SIP_CRLF, 0);
