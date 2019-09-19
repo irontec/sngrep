@@ -37,6 +37,8 @@
 
 //! Ignore too segmented TCP packets
 #define TCP_MAX_SEGMENTS    5
+//! Ignore too old TCP segments
+#define TCP_MAX_AGE         3
 
 typedef struct _PacketTcpStream PacketTcpStream;
 typedef struct _PacketTcpSegment PacketTcpSegment;
@@ -51,6 +53,8 @@ struct _PacketTcpStream
     gchar *hashkey;
     //! TCP assembled data
     GByteArray *data;
+    //! Age of this assembly stream
+    guint age;
 };
 
 struct _PacketTcpSegment

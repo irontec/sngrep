@@ -236,10 +236,17 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
  * @return TRUE if stream must be removed
  */
 static gboolean
-packet_tcp_assembly_remove_big(G_GNUC_UNUSED gpointer key, gpointer value, G_GNUC_UNUSED gpointer user_data)
+packet_tcp_assembly_remove(G_GNUC_UNUSED gpointer key, gpointer value, G_GNUC_UNUSED gpointer user_data)
 {
     PacketTcpStream *stream = value;
-    return g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS;
+
+    if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS)
+        return TRUE;
+
+    if (stream->age++ > TCP_MAX_AGE)
+        return TRUE;
+
+    return FALSE;
 }
 
 /**
@@ -259,7 +266,7 @@ packet_tcp_assembly_gc(PacketParser *parser)
     g_return_val_if_fail(priv != NULL, FALSE);
 
     // Remove big unassembled streams
-    g_hash_table_foreach_remove(priv->assembly, packet_tcp_assembly_remove_big, NULL);
+    g_hash_table_foreach_remove(priv->assembly, packet_tcp_assembly_remove, NULL);
     return TRUE;
 }
 
