@@ -39,19 +39,19 @@
  * @return -1 if t1 > t2, 1 if t1 < t2, 0 if t1 == t2
  */
 gint
-timeval_is_older(GTimeVal t1, GTimeVal t2);
+date_time_is_older(GDateTime *t1, GDateTime *t2);
 
 /**
  * @brief Convert timeval to yyyy/mm/dd format
  */
 const gchar *
-timeval_to_date(GTimeVal time, gchar *out);
+date_time_date_to_str(GDateTime *time, gchar *out);
 
 /**
  * @brief Convert timeval to HH:MM:SS.mmmmmm format
  */
 const gchar *
-timeval_to_time(GTimeVal time, gchar *out);
+date_time_time_to_str(GDateTime *time, gchar *out);
 
 /**
  * @brief Calculate the time difference between two timeval
@@ -59,13 +59,12 @@ timeval_to_time(GTimeVal time, gchar *out);
  * @return Human readable time difference in mm:ss format
  */
 const gchar *
-timeval_to_duration(GTimeVal start, GTimeVal end, gchar *out);
+date_time_to_duration(GDateTime *start, GDateTime *end, gchar *out);
 
 /**
  * @brief Convert timeval diference to +mm:ss.mmmmmm
  */
 const gchar *
-timeval_to_delta(GTimeVal start, GTimeVal end, gchar *out);
-
+date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out);
 
 #endif /* __SNGREP_TIMEVAL_H */

@@ -65,7 +65,7 @@ set(SOURCES
         src/storage/storage.c
         src/storage/call.c
         src/storage/message.c
-        src/storage/timeval.c
+        src/storage/datetime.c
         src/setting.c
         src/main.c
 )

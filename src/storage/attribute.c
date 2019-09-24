@@ -241,7 +241,7 @@ attribute_getter_call_convdur(G_GNUC_UNUSED Attribute *attr, Message *msg)
     gchar value[10];
     Call *call = msg_get_call(msg);
     return g_strdup(
-        timeval_to_duration(
+        date_time_to_duration(
             msg_get_time(call->cstart_msg),
             msg_get_time(call->cend_msg),
             value)
@@ -254,7 +254,7 @@ attribute_getter_call_totaldur(G_GNUC_UNUSED Attribute *attr, Message *msg)
     gchar value[10];
     Call *call = msg_get_call(msg);
     return g_strdup(
-        timeval_to_duration(
+        date_time_to_duration(
             msg_get_time(g_ptr_array_first(call->msgs)),
             msg_get_time(g_ptr_array_last(call->msgs)),
             value)
@@ -279,14 +279,14 @@ static gchar *
 attribute_getter_msg_date(G_GNUC_UNUSED Attribute *attr, Message *msg)
 {
     gchar value[11];
-    return g_strdup(timeval_to_date(msg_get_time(msg), value));
+    return g_strdup(date_time_date_to_str(msg_get_time(msg), value));
 }
 
 static gchar *
 attribute_getter_msg_time(G_GNUC_UNUSED Attribute *attr, Message *msg)
 {
     gchar value[16];
-    return g_strdup(timeval_to_time(msg_get_time(msg), value));
+    return g_strdup(date_time_time_to_str(msg_get_time(msg), value));
 }
 
 static gchar *

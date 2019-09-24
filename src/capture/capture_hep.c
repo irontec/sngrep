@@ -48,7 +48,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <glib-unix.h>
-#include "storage/timeval.h"
+#include "storage/datetime.h"
 #include "setting.h"
 #include "glib/glib-extra.h"
 #include "capture/dissectors/packet_hep.h"
@@ -436,13 +436,13 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     hg->time_sec.chunk.vendor_id = g_htons(0x0000);
     hg->time_sec.chunk.type_id = g_htons(0x0009);
     hg->time_sec.chunk.length = g_htons(sizeof(hg->time_sec));
-    hg->time_sec.data = g_htonl(frame->ts.tv_sec);
+    hg->time_sec.data = g_htonl(g_date_time_to_unix(frame->ts));
 
     // Timestamp usecs
     hg->time_usec.chunk.vendor_id = g_htons(0x0000);
     hg->time_usec.chunk.type_id = g_htons(0x000a);
     hg->time_usec.chunk.length = g_htons(sizeof(hg->time_usec));
-    hg->time_usec.data = g_htonl(frame->ts.tv_usec);
+    hg->time_usec.data = g_htonl(g_date_time_get_microsecond(frame->ts));
 
     // Protocol type
     hg->proto_t.chunk.vendor_id = g_htons(0x0000);

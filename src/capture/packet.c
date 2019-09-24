@@ -170,16 +170,15 @@ packet_transport(Packet *packet)
     return "???";
 }
 
-GTimeVal
+GDateTime *
 packet_time(const Packet *packet)
 {
     PacketFrame *last;
-    GTimeVal ts = { 0 };
+    GDateTime *ts = NULL;
 
     // Return last frame timestamp
     if (packet && (last = g_list_last_data(packet->frames))) {
-        ts.tv_sec = last->ts.tv_sec;
-        ts.tv_usec = last->ts.tv_usec;
+        ts = last->ts;
     }
 
     // Return packe timestamp
@@ -189,6 +188,7 @@ packet_time(const Packet *packet)
 void
 packet_frame_free(PacketFrame *frame)
 {
+    g_date_time_unref(frame->ts);
     g_byte_array_free(frame->data, TRUE);
     g_free(frame);
 }

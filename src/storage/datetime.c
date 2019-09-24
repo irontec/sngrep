@@ -30,62 +30,44 @@
 #include <stdlib.h>
 #include <glib.h>
 #include <glib/gprintf.h>
-#include "timeval.h"
+#include "datetime.h"
 
 gint
-timeval_is_older(GTimeVal t1, GTimeVal t2)
+date_time_is_older(GDateTime *t1, GDateTime *t2)
 {
-    if (t1.tv_sec > t2.tv_sec) {
-        return 1;
-    }
-
-    if (t1.tv_sec < t2.tv_sec) {
-        return -1;
-    }
-
-    if (t1.tv_usec == t2.tv_usec) {
-        return 0;
-    }
-
-    if (t1.tv_usec < t2.tv_usec) {
-        return -1;
-    }
-
-    return 1;
+    return g_date_time_compare(t1, t2);
 }
 
 const gchar *
-timeval_to_date(GTimeVal time, gchar *out)
+date_time_date_to_str(GDateTime *time, gchar *out)
 {
     GDate date;
-    g_date_set_time_val(&date, &time);
+    g_date_set_time_t(&date, g_date_time_to_unix(time));
     g_date_strftime(out, 11, "%Y/%m/%d", &date);
     return out;
 }
 
 
 const gchar *
-timeval_to_time(GTimeVal time, gchar *out)
+date_time_time_to_str(GDateTime *time, gchar *out)
 {
-    GDateTime *datetime = g_date_time_new_from_timeval_local(&time);
     g_sprintf(out, "%s.%06d",
-              g_date_time_format(datetime, "%H:%M:%S"),
-              (guint) time.tv_usec
+              g_date_time_format(time, "%H:%M:%S"),
+              g_date_time_get_microsecond(time)
     );
-    g_date_time_unref(datetime);
     return out;
 }
 
 const gchar *
-timeval_to_duration(GTimeVal start, GTimeVal end, gchar *out)
+date_time_to_duration(GDateTime *start, GDateTime *end, gchar *out)
 {
     g_return_val_if_fail(out != NULL, NULL);
 
-    if (start.tv_sec == 0 || end.tv_sec == 0)
+    if (start == NULL || end == NULL)
         return NULL;
 
     // Differnce in secons
-    glong seconds = end.tv_sec - start.tv_sec;
+    glong seconds = g_date_time_difference(end, start) / G_USEC_PER_SEC;
 
     // Set Human readable format
     g_sprintf(out, "%lu:%02lu", seconds / 60, seconds % 60);
@@ -93,18 +75,17 @@ timeval_to_duration(GTimeVal start, GTimeVal end, gchar *out)
 }
 
 const gchar *
-timeval_to_delta(GTimeVal start, GTimeVal end, gchar *out)
+date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out)
 {
     g_return_val_if_fail(out != NULL, NULL);
 
-    if (start.tv_sec == 0 || end.tv_sec == 0)
+    if (start == NULL|| end == NULL)
         return NULL;
 
-    glong diff = end.tv_sec * 1000000 + end.tv_usec;
-    diff -= start.tv_sec * 1000000 + start.tv_usec;
+    glong diff = g_date_time_difference(end, start);
 
-    glong nsec = diff / 1000000;
-    glong nusec = labs(diff - (nsec * 1000000));
+    glong nsec = diff / G_USEC_PER_SEC;
+    glong nusec = labs(diff - (nsec * G_USEC_PER_SEC));
 
     gint sign = (diff >= 0) ? '+' : '-';
 

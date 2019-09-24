@@ -138,11 +138,9 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                 break;
             case CAPTURE_EEP_CHUNK_TS_SEC:
                 memcpy(&hg.time_sec, (gpointer) data->data, sizeof(CaptureHepChunkUint32));
-                frame->ts.tv_sec = g_ntohl(hg.time_sec.data);
                 break;
             case CAPTURE_EEP_CHUNK_TS_USEC:
                 memcpy(&hg.time_usec, (gpointer) data->data, sizeof(CaptureHepChunkUint32));
-                frame->ts.tv_usec = g_ntohl(hg.time_usec.data);
                 break;
             case CAPTURE_EEP_CHUNK_PROTO_TYPE:
                 memcpy(&hg.proto_t, (gpointer) data->data, sizeof(CaptureHepChunkUint8));
@@ -203,6 +201,12 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     udp->sport = sport;
     udp->dport = dport;
     packet_add_type(packet, PACKET_UDP, udp);
+
+    // Generate Packet Timestamp
+    frame->ts = g_date_time_new_from_timeval(
+        g_ntohl(hg.time_sec.data),
+        g_ntohl(hg.time_usec.data)
+    );
 
     // Parse SIP payload
     return packet_parser_next_dissector(parser, packet, payload);

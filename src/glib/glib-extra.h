@@ -96,4 +96,7 @@ gboolean
 g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle, GEqualFunc equal_func, guint *index);
 #endif
 
+GDateTime *
+g_date_time_new_from_timeval(gint64 sec, gint64 usec);
+
 #endif //__SNGREP_GLIB_EXTRA_H

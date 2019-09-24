@@ -121,10 +121,10 @@ call_flow_arrow_selected(Window *window)
  * @param arrow Arrow structure pointer
  * @return timestamp for given arrow
  */
-static GTimeVal
+static GDateTime *
 call_flow_arrow_time(const CallFlowArrow *arrow)
 {
-    GTimeVal ts = { 0 };
+    GDateTime *ts = NULL;
     Message *msg;
     Stream *stream;
 
@@ -150,7 +150,7 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
 static gint
 call_flow_arrow_time_sorter(const CallFlowArrow **a, const CallFlowArrow **b)
 {
-    return timeval_is_older(call_flow_arrow_time(*a), call_flow_arrow_time(*b));
+    return date_time_is_older(call_flow_arrow_time(*a), call_flow_arrow_time(*b));
 }
 
 /**
@@ -827,7 +827,7 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 
     // For extended, use xcallid nstead
     PacketSdpMedia *media = g_list_nth_data(sdp_data->medias, 0);
-    timeval_to_time(msg_get_time(msg), msg_time);
+    date_time_time_to_str(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
     sprintf(msg_method, "%s", msg->request.method);
@@ -1025,14 +1025,14 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
             if (info->selected == -1) {
                 if (setting_enabled(SETTING_CF_DELTA)) {
-                    GTimeVal nextts = msg_get_time(call_group_get_next_msg(info->group, msg));
-                    GTimeVal curts = msg_get_time(msg);
-                    timeval_to_delta(curts, nextts, delta);
+                    GDateTime *nextts = msg_get_time(call_group_get_next_msg(info->group, msg));
+                    GDateTime *curts = msg_get_time(msg);
+                    date_time_to_delta(curts, nextts, delta);
                 }
             } else if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
-                GTimeVal selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window)));
-                GTimeVal curts = msg_get_time(msg);
-                timeval_to_delta(selts, curts, delta);
+                GDateTime *selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window)));
+                GDateTime *curts = msg_get_time(msg);
+                date_time_to_delta(selts, curts, delta);
             }
 
             if (strlen(delta)) {
@@ -1214,7 +1214,7 @@ call_flow_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 
     // Print timestamp
     if (info->arrowtime) {
-        timeval_to_time(stream_time(stream), time);
+        date_time_time_to_str(stream_time(stream), time);
         if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
             wattron(win, A_BOLD);
             mvwprintw(win, cline, 2, "%s", time);

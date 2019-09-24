@@ -34,7 +34,7 @@
 #include "ncurses/keybinding.h"
 #include "glib/glib-extra.h"
 #include "setting.h"
-#include "storage/timeval.h"
+#include "storage/datetime.h"
 
 /**
  * @brief Storage settings

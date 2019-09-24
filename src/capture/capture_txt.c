@@ -32,7 +32,7 @@
 #include <glib.h>
 #include <errno.h>
 #include <stdio.h>
-#include "storage/timeval.h"
+#include "storage/datetime.h"
 #include "packet.h"
 #include "capture/dissectors/packet_sip.h"
 #include "capture/capture_txt.h"
@@ -59,8 +59,8 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     g_return_if_fail(frame != NULL);
 
     // Get packet data
-    timeval_to_date(frame->ts, date);
-    timeval_to_time(frame->ts, time);
+    date_time_date_to_str(frame->ts, date);
+    date_time_time_to_str(frame->ts, time);
     Address *src = packet_src_address(packet);
     g_return_if_fail(src != NULL);
     Address *dst = packet_dst_address(packet);

@@ -33,7 +33,7 @@
 #include "capture/dissectors/packet_sdp.h"
 #include "capture/packet.h"
 #include "storage/attribute.h"
-#include "timeval.h"
+#include "datetime.h"
 
 //! Shorter declaration of sip_msg structure
 typedef struct _Message Message;
@@ -53,7 +53,7 @@ struct _Message
     //! Message owner
     Call *call;
     //! Capture timestamp
-    GTimeVal ts;
+    GDateTime *ts;
     //! Source Address
     Address *src;
     //! Destination Adddress
@@ -208,7 +208,7 @@ msg_get_payload(Message *msg);
  * @param msg SIP message
  * @return timeval structure with message first packet time
  */
-GTimeVal
+GDateTime *
 msg_get_time(const Message *msg);
 
 /**
