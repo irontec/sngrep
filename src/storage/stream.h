@@ -58,7 +58,7 @@ struct _Stream
     //! SIP message that setup this stream
     Message *msg;
     //! First received packet time
-    GTimeVal firsttv;
+    GDateTime *firsttv;
     //! Last time this stream was updated
     gint64 lasttm;
     //! Changed since last checked flag
@@ -98,7 +98,7 @@ stream_get_count(Stream *stream);
 const char *
 stream_get_format(Stream *stream);
 
-GTimeVal
+GDateTime *
 stream_time(Stream *stream);
 
 /**

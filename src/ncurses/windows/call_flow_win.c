@@ -121,10 +121,10 @@ call_flow_arrow_selected(Window *window)
  * @param arrow Arrow structure pointer
  * @return timestamp for given arrow
  */
-static GTimeVal
+static GDateTime *
 call_flow_arrow_time(const CallFlowArrow *arrow)
 {
-    GTimeVal ts = { 0 };
+    GDateTime *ts = NULL;
     Message *msg;
     Stream *stream;
 
@@ -1025,13 +1025,13 @@ call_flow_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
             if (info->selected == -1) {
                 if (setting_enabled(SETTING_CF_DELTA)) {
-                    GTimeVal nextts = msg_get_time(call_group_get_next_msg(info->group, msg));
-                    GTimeVal curts = msg_get_time(msg);
+                    GDateTime *nextts = msg_get_time(call_group_get_next_msg(info->group, msg));
+                    GDateTime *curts = msg_get_time(msg);
                     timeval_to_delta(curts, nextts, delta);
                 }
             } else if (arrow == g_ptr_array_index(info->darrows, info->cur_idx)) {
-                GTimeVal selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window)));
-                GTimeVal curts = msg_get_time(msg);
+                GDateTime *selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window)));
+                GDateTime *curts = msg_get_time(msg);
                 timeval_to_delta(selts, curts, delta);
             }
 

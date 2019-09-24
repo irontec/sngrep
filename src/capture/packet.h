@@ -112,7 +112,7 @@ struct _Packet
 struct _PacketFrame
 {
     //! Frace received time
-    GTimeVal ts;
+    GDateTime *ts;
     //! Capture lenght (effective)
     guint32 len;
     //! Capture lenght (from wire)
@@ -149,7 +149,7 @@ packet_transport(Packet *packet);
 /**
  * @brief Get The timestamp for a packet.
  */
-GTimeVal
+GDateTime *
 packet_time(const Packet *packet);
 
 /**

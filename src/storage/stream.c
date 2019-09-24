@@ -30,8 +30,6 @@
  */
 #include "config.h"
 #include <glib.h>
-#include <glib/gprintf.h>
-#include "glib/glib-extra.h"
 #include "stream.h"
 #include "storage/storage.h"
 
@@ -51,6 +49,9 @@ stream_new(enum StreamType type, Message *msg, PacketSdpMedia *media)
 void
 stream_free(Stream *stream)
 {
+    if (NULL != stream->firsttv) {
+        g_date_time_unref(stream->firsttv);
+    }
     g_ptr_array_free(stream->packets, TRUE);
     address_free(stream->src);
     address_free(stream->dst);
@@ -94,8 +95,11 @@ stream_add_packet(Stream *stream, Packet *packet)
     stream->lasttm = g_get_monotonic_time();
     stream->changed = TRUE;
     stream->pkt_count++;
-    if (stream->pkt_count == 1)
-        stream->firsttv = packet_time(packet);
+    if (stream->pkt_count == 1) {
+        if ((stream->firsttv = packet_time(packet))) {
+            g_date_time_ref(stream->firsttv);
+        }
+    }
 }
 
 guint
@@ -128,7 +132,7 @@ stream_get_format(Stream *stream)
     return g_strdup_printf("unknown-%d", stream->fmtcode);
 }
 
-GTimeVal
+GDateTime *
 stream_time(Stream *stream)
 {
     return stream->firsttv;

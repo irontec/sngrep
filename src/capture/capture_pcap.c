@@ -327,8 +327,8 @@ capture_output_pcap_write(CaptureOutput *output, Packet *packet)
         struct pcap_pkthdr header;
         header.caplen = frame->caplen - datalink_size;
         header.len = frame->len - datalink_size;
-        header.ts.tv_sec = frame->ts.tv_sec;
-        header.ts.tv_usec = frame->ts.tv_usec;
+        header.ts.tv_sec = g_date_time_to_unix(frame->ts);
+        header.ts.tv_usec = g_date_time_get_microsecond(frame->ts);
         // Save this packet
         pcap_dump((u_char *) pcap->dumper, &header, frame->data->data + datalink_size);
     }
@@ -417,8 +417,9 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
 
     // Create a new packet for this data
     PacketFrame *frame = packet_frame_new();
-    frame->ts.tv_sec = header->ts.tv_sec;
-    frame->ts.tv_usec = header->ts.tv_usec;
+    GDateTime *tmp_ts = g_date_time_new_from_unix_local(header->ts.tv_sec);
+    frame->ts = g_date_time_add(tmp_ts, header->ts.tv_usec);
+    g_date_time_unref(tmp_ts);
     frame->caplen = header->caplen;
     frame->len = header->len;
     frame->data = g_byte_array_new();

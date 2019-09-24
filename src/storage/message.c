@@ -37,8 +37,7 @@
 #include "storage/storage.h"
 
 Message *
-msg_new(Packet *packet)
-{
+msg_new(Packet *packet) {
     Message *msg = g_malloc0(sizeof(Message));
     // Set message packet
     msg->packet = packet_ref(packet);
@@ -46,7 +45,9 @@ msg_new(Packet *packet)
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     // Set SIP packet related data
     msg->payload = packet_sip_payload(packet);
-    msg->ts = packet_time(packet);
+    if ((msg->ts = packet_time(packet))) {
+        g_date_time_ref(msg->ts);
+    }
     msg->src = address_clone(packet_src_address(packet));
     msg->dst = address_clone(packet_dst_address(packet));
     msg->is_request = packet_sip_method(packet) < 100;
@@ -69,6 +70,9 @@ void
 msg_free(Message *msg)
 {
     // Free message packets
+    if (NULL != msg->ts) {
+        g_date_time_unref(msg->ts);
+    }
     packet_unref(msg->packet);
     g_hash_table_destroy(msg->attributes);
     g_free(msg);
@@ -146,10 +150,10 @@ msg_get_payload(Message *msg)
     return msg->payload;
 }
 
-GTimeVal
+GDateTime *
 msg_get_time(const Message *msg)
 {
-    GTimeVal t = { 0 };
+    GDateTime *t = NULL;
     PacketFrame *frame;
 
     if (msg && (frame = g_list_nth_data(msg->packet->frames, 0)))
@@ -227,12 +231,11 @@ msg_is_duplicate(const Message *msg)
     if (msg->retrans == NULL)
         return FALSE;
 
-    GTimeVal orig_ts = msg_get_time(msg->retrans);
-    GTimeVal retrans_ts = msg_get_time(msg);
+    GDateTime *orig_ts = msg_get_time(msg->retrans);
+    GDateTime *retrans_ts = msg_get_time(msg);
 
     // Consider duplicate if difference with its original is 10ms or less
-    return orig_ts.tv_sec == retrans_ts.tv_sec
-           && orig_ts.tv_usec + 010000 > retrans_ts.tv_usec;
+    return 10000 < g_date_time_difference(retrans_ts, orig_ts);
 }
 
 void
