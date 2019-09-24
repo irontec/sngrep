@@ -62,7 +62,7 @@ void
 g_list_item_free(gpointer item, gpointer user_data);
 
 GPtrArray *
-g_ptr_array_copy(GPtrArray *origin);
+g_ptr_array_real_copy(GPtrArray *origin);
 
 GPtrArray *
 g_ptr_array_copy_filtered(GPtrArray *origin, GEqualFunc filter_func, gpointer filter_data);
