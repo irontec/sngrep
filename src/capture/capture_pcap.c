@@ -412,6 +412,11 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     if (manager->paused)
         return;
 
+    // Ignore packets if storage limit has been reached
+    if (storage_limit_reached()) {
+        return;
+    }
+
     // Convert packet data
     GByteArray *data = g_byte_array_new();
     g_byte_array_append(data, content, header->caplen);
