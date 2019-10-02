@@ -103,7 +103,7 @@ struct _CaptureInput
     //! Are captured packets life
     enum capture_mode mode;
     //! Source string
-    const gchar *sourcestr;
+    gchar *sourcestr;
     //! Source of events for this input
     GSource *source;
     //! Private capture input data

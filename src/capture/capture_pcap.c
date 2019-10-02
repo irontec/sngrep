@@ -58,6 +58,7 @@ capture_input_pcap_free(CaptureInput *input)
     // Free input information
     packet_parser_free(input->parser);
     g_free(input->priv);
+    g_free(input->sourcestr);
     g_free(input);
 }
 
@@ -128,7 +129,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
 
     // Create a new structure to handle this capture source
     CaptureInput *input = g_malloc0(sizeof(CaptureInput));
-    input->sourcestr = dev;
+    input->sourcestr = g_strdup(dev);
     input->priv = pcap;
     input->tech = CAPTURE_TECH_PCAP;
     input->mode = CAPTURE_MODE_ONLINE;

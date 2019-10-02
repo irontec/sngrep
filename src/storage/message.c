@@ -71,6 +71,14 @@ msg_free(Message *msg)
     // Free message packets
     packet_unref(msg->packet);
     g_hash_table_destroy(msg->attributes);
+    address_free(msg->src);
+    address_free(msg->dst);
+    if (msg->is_request) {
+        g_free(msg->request.method);
+        g_free(msg->request.auth);
+    } else {
+        g_free(msg->response.reason);
+    }
     g_free(msg);
 }
 
