@@ -57,7 +57,7 @@
 #include <glib/gprintf.h>
 #include <glib/gasyncqueuesource.h>
 #include "glib/glib-extra.h"
-#include "capture/dissectors/packet_sip.h"
+#include "parser/dissectors/packet_sip.h"
 #include "setting.h"
 #include "filter.h"
 #include "storage.h"

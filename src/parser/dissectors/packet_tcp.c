@@ -33,7 +33,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include "glib/glib-extra.h"
-#include "capture/packet.h"
+#include "parser/packet.h"
 #include "capture/capture.h"
 #include "packet_ip.h"
 #include "packet_tcp.h"

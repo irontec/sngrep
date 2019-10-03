@@ -30,8 +30,8 @@
 #include <glib.h>
 #include "glib/glib-extra.h"
 #include "storage/storage.h"
-#include "capture/parser.h"
-#include "capture/packet.h"
+#include "parser/parser.h"
+#include "parser/packet.h"
 #include "packet_ip.h"
 #include "packet_udp.h"
 #include "packet_rtp.h"

@@ -23,9 +23,9 @@
 #include "config.h"
 #include <glib.h>
 #include <pulse/simple.h>
-#include "capture/codecs/codec_g711a.h"
+#include "codecs/codec_g711a.h"
 #ifdef WITH_G729
-#include "capture/codecs/codec_g729.h"
+#include "codecs/codec_g729.h"
 #endif
 #include "ncurses/keybinding.h"
 #include "ncurses/theme.h"

@@ -32,8 +32,8 @@
 
 #include <netinet/tcp.h>
 #include <glib.h>
-#include "capture/address.h"
-#include "capture/parser.h"
+#include "parser/address.h"
+#include "parser/parser.h"
 
 //! Ignore too segmented TCP packets
 #define TCP_MAX_SEGMENTS    5

@@ -32,7 +32,7 @@
 #include <glib.h>
 #include "glib/glib-extra.h"
 #include "call.h"
-#include "capture/dissectors/packet_sip.h"
+#include "parser/dissectors/packet_sip.h"
 #include "storage/storage.h"
 #include "setting.h"
 #include "message.h"

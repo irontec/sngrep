@@ -30,8 +30,8 @@
 #define __SNGREP_MESSAGE_H
 
 #include <glib.h>
-#include "capture/dissectors/packet_sdp.h"
-#include "capture/packet.h"
+#include "parser/dissectors/packet_sdp.h"
+#include "parser/packet.h"
 #include "storage/attribute.h"
 #include "datetime.h"
 

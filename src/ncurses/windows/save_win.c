@@ -36,9 +36,9 @@
 #include <sndfile.h>
 #endif
 #ifdef WITH_G729
-#include "capture/codecs/codec_g729.h"
+#include "codecs/codec_g729.h"
 #endif
-#include "capture/codecs/codec_g711a.h"
+#include "codecs/codec_g711a.h"
 #include "glib/glib-extra.h"
 #include "setting.h"
 #include "storage/filter.h"

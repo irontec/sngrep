@@ -29,10 +29,10 @@
 #include "config.h"
 #include <glib.h>
 #include "glib/glib-extra.h"
-#include "capture/dissectors/packet_ip.h"
-#include "capture/dissectors/packet_tcp.h"
-#include "capture/dissectors/packet_udp.h"
-#include "capture/dissectors/packet_sip.h"
+#include "parser/dissectors/packet_ip.h"
+#include "parser/dissectors/packet_tcp.h"
+#include "parser/dissectors/packet_udp.h"
+#include "parser/dissectors/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "packet.h"
 

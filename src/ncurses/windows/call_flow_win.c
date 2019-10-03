@@ -29,7 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include <storage/message.h>
-#include "capture/dissectors/packet_sip.h"
+#include "parser/dissectors/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"

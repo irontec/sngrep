@@ -26,18 +26,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/capture/dissectors)
 include_directories(${CMAKE_SOURCE_DIR}/src/capture/codecs)
 
 set(SOURCES
-        src/capture/address.c
-        src/capture/packet.c
-        src/capture/parser.c
-        src/capture/codecs/codec_g711a.c
-        src/capture/dissectors/packet_link.c
-        src/capture/dissectors/packet_ip.c
-        src/capture/dissectors/packet_tcp.c
-        src/capture/dissectors/packet_udp.c
-        src/capture/dissectors/packet_sip.c
-        src/capture/dissectors/packet_sdp.c
-        src/capture/dissectors/packet_rtp.c
-        src/capture/dissectors/packet_rtcp.c
+        src/codecs/codec_g711a.c
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
@@ -58,6 +47,17 @@ set(SOURCES
         src/ncurses/dialog.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c
+        src/parser/address.c
+        src/parser/packet.c
+        src/parser/parser.c
+        src/parser/dissectors/packet_link.c
+        src/parser/dissectors/packet_ip.c
+        src/parser/dissectors/packet_tcp.c
+        src/parser/dissectors/packet_udp.c
+        src/parser/dissectors/packet_sip.c
+        src/parser/dissectors/packet_sdp.c
+        src/parser/dissectors/packet_rtp.c
+        src/parser/dissectors/packet_rtcp.c
         src/storage/filter.c
         src/storage/group.c
         src/storage/stream.c
@@ -68,14 +68,14 @@ set(SOURCES
         src/storage/datetime.c
         src/setting.c
         src/main.c
-)
+        )
 
 ######################################################################
 # HEP  Support
 option(USE_HEP "Enable HEP/EEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
-    set(SOURCES ${SOURCES} src/capture/dissectors/packet_hep.c)
+    set(SOURCES ${SOURCES} src/parser/dissectors/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support
@@ -84,7 +84,7 @@ option(USE_IPV6 "Enable IPv6 Support" OFF)
 # GnuTLS Support
 option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
-    set(SOURCES ${SOURCES} src/capture/dissectors/packet_tls.c)
+    set(SOURCES ${SOURCES} src/parser/dissectors/packet_tls.c)
 endif (WITH_SSL)
 
 # libsnd Support
@@ -99,7 +99,7 @@ endif (WITH_PULSE)
 # G.729 decoding support
 option(WITH_G729 "Enable g729 RTP decoding" OFF)
 if (WITH_G729)
-    set(SOURCES ${SOURCES} src/capture/codecs/codec_g729.c)
+    set(SOURCES ${SOURCES} src/codecs/codec_g729.c)
 endif (WITH_G729)
 
 ######################################################################

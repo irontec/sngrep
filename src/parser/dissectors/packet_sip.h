@@ -30,7 +30,7 @@
 #define __SNGREP_PACKET_SIP_H
 
 #include <glib.h>
-#include "capture/packet.h"
+#include "parser/packet.h"
 #include "packet_sdp.h"
 
 #define SIP_VERSION "SIP/2.0"

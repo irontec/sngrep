@@ -20,34 +20,56 @@
  **
  ****************************************************************************/
 /**
- * @file packet_udp.h
+ * @file packet_link.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to manage UDP protocol
- *
- *
+ * @brief Functions to link layer packet contents
  */
-#ifndef __SNGREP_PACKET_UDP_H
-#define __SNGREP_PACKET_UDP_H
 
-#include "capture/parser.h"
+#ifndef __SNGREP_PROTO_LINK_H_
+#define __SNGREP_PROTO_LINK_H_
 
-typedef struct _PacketUdpData PacketUdpData;
+#include <glib.h>
+#include <netinet/if_ether.h>
+#ifdef SLL_HDR_LEN
+#include <pcap/sll.h>
+#endif
+#include "parser/parser.h"
 
-struct _PacketUdpData
+//! Define VLAN 802.1Q Ethernet type
+#ifndef ETHERTYPE_8021Q
+#define ETHERTYPE_8021Q 0x8100
+#endif
+
+//! NFLOG Support (for libpcap <1.6.0)
+#define DLT_NFLOG       239
+#define NFULA_PAYLOAD   9
+
+typedef struct _DissectorLinkData DissectorLinkData;
+typedef struct _LinkNflogHdr LinkNflogHdr;
+
+//! Private information structure for Link Protocol
+struct _DissectorLinkData
 {
-    //! Source Port
-    guint16 sport;
-    //! Destination Port
-    guint16 dport;
+    gint link_type;
+    gint link_size;
+};
+
+struct _LinkNflogHdr
+{
+    guint16 tlv_length;
+    guint16 tlv_type;
 };
 
 /**
- * @brief Create an UDP parser
+ * @brief Create a Link layer parser
  *
- * @return a protocols' parsers pointer
+ * @return a protocols' parsers tree
  */
 PacketDissector *
-packet_udp_new();
+packet_link_new();
 
-#endif
+guint8
+proto_link_size(int linktype);
+
+#endif /* __SNGREP_PROTO_LINK_H_ */

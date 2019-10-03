@@ -30,8 +30,8 @@
 #define PACKET_PACKET_SDP_H_
 
 #include <glib.h>
-#include "capture/packet.h"
-#include "capture/parser.h"
+#include "parser/packet.h"
+#include "parser/parser.h"
 
 
 //! Connection Data fields

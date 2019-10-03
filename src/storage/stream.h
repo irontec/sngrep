@@ -32,9 +32,9 @@
 #include "config.h"
 #include "storage/message.h"
 #include "capture/capture_pcap.h"
-#include "capture/dissectors/packet_sdp.h"
-#include "capture/dissectors/packet_rtp.h"
-#include "capture/dissectors/packet_rtcp.h"
+#include "parser/dissectors/packet_sdp.h"
+#include "parser/dissectors/packet_rtp.h"
+#include "parser/dissectors/packet_rtcp.h"
 
 //! Shorter declaration of rtp_stream structure
 typedef struct _Stream Stream;

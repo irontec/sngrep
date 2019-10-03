@@ -37,7 +37,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include "address.h"
+#include "parser/address.h"
 
 #ifndef __FAVOR_BSD
 #define __FAVOR_BSD
@@ -55,7 +55,7 @@
 #include <netinet/in_systm.h>
 #endif
 
-#include "packet.h"
+#include "parser/packet.h"
 #include "capture.h"
 
 //! Max allowed packet length (for libpcap)

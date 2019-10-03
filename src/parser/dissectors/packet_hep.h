@@ -30,7 +30,7 @@
 #ifndef __SNGREP_PACKET_HEP_H
 #define __SNGREP_PACKET_HEP_H
 
-#include "capture/parser.h"
+#include "parser/parser.h"
 
 //! HEP chunk types
 enum

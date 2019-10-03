@@ -33,8 +33,8 @@
 #include <gnutls/gnutls.h>
 #include "glib/glib-extra.h"
 #include "capture/capture.h"
-#include "capture/address.h"
-#include "capture/parser.h"
+#include "parser/address.h"
+#include "parser/parser.h"
 #include "packet_ip.h"
 #include "packet_tcp.h"
 #include "packet_tls.h"

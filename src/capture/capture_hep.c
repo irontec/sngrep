@@ -51,11 +51,11 @@
 #include "storage/datetime.h"
 #include "setting.h"
 #include "glib/glib-extra.h"
-#include "capture/dissectors/packet_hep.h"
-#include "capture/dissectors/packet_ip.h"
-#include "capture/dissectors/packet_udp.h"
-#include "capture/dissectors/packet_sip.h"
-#include "packet.h"
+#include "parser/dissectors/packet_hep.h"
+#include "parser/dissectors/packet_ip.h"
+#include "parser/dissectors/packet_udp.h"
+#include "parser/dissectors/packet_sip.h"
+#include "parser/packet.h"
 #include "capture_hep.h"
 
 GQuark

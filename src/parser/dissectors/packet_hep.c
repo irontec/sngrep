@@ -36,7 +36,7 @@
 #include "glib/glib-extra.h"
 #include "packet_ip.h"
 #include "packet_udp.h"
-#include "capture/packet.h"
+#include "parser/packet.h"
 #include "setting.h"
 #include "packet_hep.h"
 
