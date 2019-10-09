@@ -88,6 +88,12 @@ storage_calls_count()
     return g_ptr_array_len(storage->calls);
 }
 
+gboolean
+storage_limit_reached()
+{
+    return g_ptr_array_len(storage->calls) >= storage->options.capture.limit;
+}
+
 GPtrArray *
 storage_calls()
 {
