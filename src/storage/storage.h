@@ -171,6 +171,13 @@ guint
 storage_calls_count();
 
 /**
+ * @brief Return if storage has reach configured capture limit
+ * @return TRUE if limit value has been reached
+ */
+gboolean
+storage_limit_reached();
+
+/**
  * @brief Return the call list
  */
 GPtrArray *
