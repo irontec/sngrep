@@ -895,6 +895,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                         if (out == NULL) {
                             priv->connections = g_slist_remove(priv->connections, conn);
                             packet_tls_connection_destroy(conn);
+                            break;
                         }
                     }
                 }
