@@ -195,7 +195,7 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
 {
     // a=<attribute>
     // a=<attribute>:<value>
-    g_auto(GStrv) rtpattr = g_strsplit_set(line, " :", -1);
+    g_auto(GStrv) rtpattr = g_strsplit_set(line, " :/", -1);
     if (g_strv_length(rtpattr) < 2) {
         return;
     }
@@ -207,14 +207,14 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
         }
 
         // Check if format code is standard
-        guint32 code = (guint32) strtoul(rtpattr[2], NULL, 10);
+        guint32 code = (guint32) strtoul(rtpattr[SDP_RTPMAP_CODE], NULL, 10);
         PacketSdpFormat *format = packet_sdp_standard_format(code);
 
         if (format == NULL) {
             for (guint i = 0; i < g_list_length(media->formats); i++) {
                 format = g_list_nth_data(media->formats, i);
                 if (format->id == code) {
-                    format->name = format->alias = g_strdup(rtpattr[3]);
+                    format->name = format->alias = g_strdup(rtpattr[SDP_RTPMAP_NAME]);
                     break;
                 }
             }

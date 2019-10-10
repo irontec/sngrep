@@ -49,6 +49,9 @@
 #define SDP_ATTR_NAME       0
 #define SDP_ATTR_VALUE      1
 
+//! rtpmap attribute fields
+#define SDP_RTPMAP_CODE     1
+#define SDP_RTPMAP_NAME     2
 
 //! SDP handled media types
 enum PacketSdpMediaType

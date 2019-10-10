@@ -52,7 +52,7 @@ stream_free(Stream *stream)
     if (stream->firsttv != NULL) {
         g_date_time_unref(stream->firsttv);
     }
-    
+
     g_ptr_array_free(stream->packets, TRUE);
     address_free(stream->src);
     address_free(stream->dst);
