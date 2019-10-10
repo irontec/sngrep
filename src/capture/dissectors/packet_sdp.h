@@ -134,9 +134,9 @@ struct _PacketSdpFormat
     //! RTP payload
     guint32 id;
     //! RTP Encoding name from RFC3551 or SDP fmt attribute
-    const gchar *name;
+    gchar *name;
     //! Shorter encoding representation
-    const gchar *alias;
+    gchar *alias;
 };
 
 struct _PacketSdpData

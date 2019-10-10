@@ -261,6 +261,7 @@ static void
 packet_sdp_format_free(PacketSdpFormat *format)
 {
     if (packet_sdp_standard_format(format->id) == NULL) {
+        g_free(format->name);
         g_free(format);
     }
 }
