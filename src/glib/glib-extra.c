@@ -46,7 +46,7 @@ g_list_item_free(gpointer item, G_GNUC_UNUSED gpointer user_data)
 }
 
 GPtrArray *
-g_ptr_array_real_copy(GPtrArray *origin)
+g_ptr_array_deep_copy(GPtrArray *origin)
 {
     return g_ptr_array_copy_filtered(origin, NULL, NULL);
 }
