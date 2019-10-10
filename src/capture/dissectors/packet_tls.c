@@ -378,8 +378,8 @@ packet_tls_connection_create(Address *caddr, Address *saddr)
     // Allocate memory for this connection
     conn = g_malloc0(sizeof(SSLConnection));
 
-    conn->client_addr = caddr;
-    conn->server_addr = saddr;
+    conn->client_addr = address_clone(caddr);
+    conn->server_addr = address_clone(saddr);
 
     gnutls_global_init();
 
@@ -420,6 +420,8 @@ packet_tls_connection_destroy(SSLConnection *conn)
 {
     // Deallocate connection memory
     gnutls_deinit(conn->ssl);
+    address_free(conn->client_addr);
+    address_free(conn->server_addr);
     g_free(conn->key_material.client_write_MAC_key);
     g_free(conn->key_material.server_write_MAC_key);
     g_free(conn->key_material.client_write_IV);

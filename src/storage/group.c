@@ -156,9 +156,9 @@ call_group_clone(CallGroup *original)
 
     // Copy Calls and messages
     CallGroup *clone = g_malloc0(sizeof(CallGroup));
-    clone->calls = g_ptr_array_real_copy(original->calls);
-    clone->msgs = g_ptr_array_real_copy(original->msgs);
-    clone->streams = g_ptr_array_real_copy(original->streams);
+    clone->calls = g_ptr_array_deep_copy(original->calls);
+    clone->msgs = g_ptr_array_deep_copy(original->msgs);
+    clone->streams = g_ptr_array_deep_copy(original->streams);
     return clone;
 }
 
