@@ -304,6 +304,15 @@ capture_input_pcap_datalink(CaptureInput *input)
 }
 
 static void
+capture_output_pcap_free(CaptureOutput *output)
+{
+    CapturePcap *pcap = output->priv;
+    pcap_close(pcap->handle);
+    g_free(pcap);
+    g_free(output);
+}
+
+static void
 capture_output_pcap_write(CaptureOutput *output, Packet *packet)
 {
     CapturePcap *pcap = output->priv;
@@ -392,6 +401,7 @@ capture_output_pcap(const gchar *filename, GError **error)
     // Create a new structure to handle this capture dumper
     CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));
     output->priv = pcap;
+    output->free = capture_output_pcap_free;
     output->write = capture_output_pcap_write;
     output->close = capture_output_pcap_close;
     return output;
