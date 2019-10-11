@@ -943,6 +943,13 @@ packet_tls_init(PacketParser *parser)
     g_ptr_array_set(parser->dissectors_priv, PACKET_TLS, tls_data);
 }
 
+static void
+packet_tls_deinit(PacketParser *parser)
+{
+    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
+    g_free(priv);
+}
+
 PacketDissector *
 packet_tls_new()
 {
@@ -950,6 +957,7 @@ packet_tls_new()
     proto->id = PACKET_TLS;
     proto->init = packet_tls_init;
     proto->dissect = packet_tls_parse;
+    proto->deinit = packet_tls_deinit;
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_WS));
     proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
     return proto;
