@@ -265,7 +265,8 @@ storage_register_streams(Message *msg)
         }
 
         // Create RTP stream with source of message as destination address
-        if (call_find_stream(msg->call, msg_src_address(msg), media->address) == NULL) {
+        Address nat_address = { .ip = msg->src->ip, .port = 0 };
+        if (call_find_stream(msg->call, NULL, &nat_address) == NULL) {
             Stream *stream = stream_new(STREAM_RTP, msg, media);
             stream_set_dst(stream, msg_src_address(msg));
             stream->dst->port = media->rtpport;
