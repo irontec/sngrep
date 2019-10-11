@@ -801,7 +801,7 @@ packet_tls_process_record(SSLConnection *conn, GByteArray *data)
     // Process record fragment
     if (UINT16_INT(record.length) > 0) {
         // TLSPlaintext fragment pointer
-        GByteArray *fragment = g_byte_array_new();
+        g_autoptr(GByteArray) fragment = g_byte_array_new();
         g_byte_array_append(fragment, data->data, UINT16_INT(record.length));
         g_byte_array_remove_range(data, 0, UINT16_INT(record.length));
 
