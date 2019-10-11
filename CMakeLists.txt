@@ -50,14 +50,14 @@ set(SOURCES
         src/parser/address.c
         src/parser/packet.c
         src/parser/parser.c
-        src/parser/dissectors/packet_link.c
-        src/parser/dissectors/packet_ip.c
-        src/parser/dissectors/packet_tcp.c
-        src/parser/dissectors/packet_udp.c
-        src/parser/dissectors/packet_sip.c
-        src/parser/dissectors/packet_sdp.c
-        src/parser/dissectors/packet_rtp.c
-        src/parser/dissectors/packet_rtcp.c
+        src/parser/packet_link.c
+        src/parser/packet_ip.c
+        src/parser/packet_tcp.c
+        src/parser/packet_udp.c
+        src/parser/packet_sip.c
+        src/parser/packet_sdp.c
+        src/parser/packet_rtp.c
+        src/parser/packet_rtcp.c
         src/storage/filter.c
         src/storage/group.c
         src/storage/stream.c
@@ -75,7 +75,7 @@ set(SOURCES
 option(USE_HEP "Enable HEP/EEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
-    set(SOURCES ${SOURCES} src/parser/dissectors/packet_hep.c)
+    set(SOURCES ${SOURCES} src/parser/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support
@@ -84,7 +84,7 @@ option(USE_IPV6 "Enable IPv6 Support" OFF)
 # GnuTLS Support
 option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
-    set(SOURCES ${SOURCES} src/parser/dissectors/packet_tls.c)
+    set(SOURCES ${SOURCES} src/parser/packet_tls.c)
 endif (WITH_SSL)
 
 # libsnd Support

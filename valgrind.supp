@@ -322,3 +322,15 @@
    fun:capture_input_pcap_read_packet
    fun:g_main_context_dispatch
 }
+
+{
+   malloc
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:parse_arg.isra.0
+   fun:parse_short_option
+   fun:g_option_context_parse
+   fun:main
+}

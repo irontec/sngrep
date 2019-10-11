@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include "storage/datetime.h"
 #include "parser/packet.h"
-#include "parser/dissectors/packet_sip.h"
+#include "parser/packet_sip.h"
 #include "capture/capture_txt.h"
 
 GQuark

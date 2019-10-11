@@ -29,7 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include <storage/message.h>
-#include "parser/dissectors/packet_sip.h"
+#include "parser/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"
@@ -150,7 +150,7 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
 static gint
 call_flow_arrow_time_sorter(const CallFlowArrow **a, const CallFlowArrow **b)
 {
-    return date_time_is_older(call_flow_arrow_time(*a), call_flow_arrow_time(*b));
+    return g_date_time_compare(call_flow_arrow_time(*a), call_flow_arrow_time(*b));
 }
 
 /**

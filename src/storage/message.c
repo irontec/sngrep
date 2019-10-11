@@ -32,8 +32,8 @@
 #include <glib.h>
 #include "glib/glib-extra.h"
 #include "message.h"
-#include "parser/dissectors/packet_sip.h"
-#include "parser/dissectors/packet_sdp.h"
+#include "parser/packet_sip.h"
+#include "parser/packet_sdp.h"
 #include "storage/storage.h"
 
 Message *

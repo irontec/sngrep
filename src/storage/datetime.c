@@ -32,12 +32,6 @@
 #include <glib/gprintf.h>
 #include "datetime.h"
 
-gint
-date_time_is_older(GDateTime *t1, GDateTime *t2)
-{
-    return g_date_time_compare(t1, t2);
-}
-
 const gchar *
 date_time_date_to_str(GDateTime *time, gchar *out)
 {

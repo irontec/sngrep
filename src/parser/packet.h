@@ -153,6 +153,12 @@ GDateTime *
 packet_time(const Packet *packet);
 
 /**
+ * @brief Sorter by time for captured packets
+ */
+gint
+packet_time_sorter(const Packet **a, const Packet **b);
+
+/**
  * @brief Free allocated memory in Packet frame
  * @param frame Frame pointer to be free'd
  */

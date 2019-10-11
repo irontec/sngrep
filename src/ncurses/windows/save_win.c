@@ -399,7 +399,7 @@ save_to_file(Window *window)
             }
         }
 
-        g_ptr_array_sort(packets, (GCompareFunc) capture_packet_time_sorter);
+        g_ptr_array_sort(packets, (GCompareFunc) packet_time_sorter);
         g_ptr_array_foreach(packets, (GFunc) save_packet_cb, output);
 
         dialog_progress_destroy(progress);

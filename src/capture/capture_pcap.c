@@ -34,13 +34,11 @@
 #include <glib.h>
 #include <netdb.h>
 #include <string.h>
-#include <pcap/sll.h>
 #include <glib-unix.h>
 #include "glib/glib-extra.h"
 #include "capture.h"
-#include "capture_hep.h"
 #include "capture_pcap.h"
-#include "parser/dissectors/packet_link.h"
+#include "parser/packet_link.h"
 #include "storage/storage.h"
 #include "storage/stream.h"
 #include "setting.h"
@@ -449,12 +447,6 @@ capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const 
     // Remove packet reference (
     packet_unref(packet);
     g_byte_array_unref(data);
-}
-
-gint
-capture_packet_time_sorter(const Packet **a, const Packet **b)
-{
-    return date_time_is_older(packet_time(*a), packet_time(*b));
 }
 
 const gchar *

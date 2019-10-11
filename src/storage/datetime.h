@@ -32,16 +32,6 @@
 #include <glib.h>
 
 /**
- * @brief Compare two timeval structures
- *
- * @param time1 First timeval structure
- * @param t2 Second timval structure
- * @return -1 if t1 > t2, 1 if t1 < t2, 0 if t1 == t2
- */
-gint
-date_time_is_older(GDateTime *t1, GDateTime *t2);
-
-/**
  * @brief Convert timeval to yyyy/mm/dd format
  */
 const gchar *

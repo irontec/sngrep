@@ -29,10 +29,10 @@
 #include "config.h"
 #include <glib.h>
 #include "glib/glib-extra.h"
-#include "parser/dissectors/packet_ip.h"
-#include "parser/dissectors/packet_tcp.h"
-#include "parser/dissectors/packet_udp.h"
-#include "parser/dissectors/packet_sip.h"
+#include "packet_ip.h"
+#include "packet_tcp.h"
+#include "packet_udp.h"
+#include "packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "packet.h"
 
@@ -183,6 +183,12 @@ packet_time(const Packet *packet)
 
     // Return packe timestamp
     return ts;
+}
+
+gint
+packet_time_sorter(const Packet **a, const Packet **b)
+{
+    return g_date_time_compare(packet_time(*a), packet_time(*b));
 }
 
 void

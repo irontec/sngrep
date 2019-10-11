@@ -179,12 +179,6 @@ void
 capture_pcap_parse_packet(u_char *input, const struct pcap_pkthdr *header, const guchar *content);
 
 /**
- * @brief Sorter by time for captured packets
- */
-gint
-capture_packet_time_sorter(const Packet **a, const Packet **b);
-
-/**
  * @brief Get Input file from Offline mode
  *
  * @return Input file in Offline mode
