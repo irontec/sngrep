@@ -422,6 +422,7 @@ packet_tls_connection_destroy(SSLConnection *conn)
     gnutls_deinit(conn->ssl);
     address_free(conn->client_addr);
     address_free(conn->server_addr);
+    gnutls_x509_privkey_deinit(conn->server_private_key);
     g_free(conn->key_material.client_write_MAC_key);
     g_free(conn->key_material.server_write_MAC_key);
     g_free(conn->key_material.client_write_IV);
