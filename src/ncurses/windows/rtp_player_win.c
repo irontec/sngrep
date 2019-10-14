@@ -23,10 +23,7 @@
 #include "config.h"
 #include <glib.h>
 #include <pulse/simple.h>
-#include "codecs/codec_g711a.h"
-#ifdef WITH_G729
-#include "codecs/codec_g729.h"
-#endif
+#include "codecs/codec.h"
 #include "ncurses/keybinding.h"
 #include "ncurses/theme.h"
 #include "ncurses/dialog.h"
@@ -45,43 +42,13 @@ rtp_player_decode_stream(Window *window, Stream *stream)
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_if_fail(info != NULL);
 
-    GByteArray *rtp_payload = g_byte_array_new();
+    GError *error = NULL;
+    info->decoded = codec_stream_decode(stream, info->decoded, &error);
 
-    for (guint i = info->last_packet; i < g_ptr_array_len(stream->packets); i++) {
-        Packet *packet = g_ptr_array_index(stream->packets, i);
-        PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
-        g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
-    }
-    info->last_packet = g_ptr_array_len(stream->packets);
-
-    if (rtp_payload->len == 0) {
-        g_byte_array_free(rtp_payload, TRUE);
+    if (error != NULL) {
+        dialog_run("error: %s", error->message);
         return;
     }
-
-    gint16 *decoded = NULL;
-    gsize decoded_len = 0;
-    switch (stream->fmtcode) {
-        case RTP_CODEC_G711A:
-            decoded = codec_g711a_decode(rtp_payload, &decoded_len);
-            break;
-#ifdef WITH_G729
-        case RTP_CODEC_G729:
-            decoded = codec_g729_decode(rtp_payload, &decoded_len);
-            break;
-#endif
-        default:
-            dialog_run("Unsupported RTP payload type %d", stream->fmtcode);
-            break;
-    }
-
-    // Failed to decode data
-    if (decoded == NULL) {
-        return;
-    }
-
-    g_byte_array_append(info->decoded, (const guint8 *) decoded, (guint) decoded_len);
-    g_free(decoded);
 }
 
 static gint
@@ -130,7 +97,6 @@ rtp_player_draw(Window *window)
     }
 
     if (info->decoded->len == 0) {
-        dialog_run("Failed to decode RTP stream");
         return 1;
     }
 

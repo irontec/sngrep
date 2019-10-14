@@ -28,17 +28,12 @@
 #include "config.h"
 #include <glib.h>
 #include <glib/gstdio.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <form.h>
-#include <pulse/simple.h>
 #ifdef  WITH_SND
 #include <sndfile.h>
 #endif
-#ifdef WITH_G729
-#include "codecs/codec_g729.h"
-#endif
-#include "codecs/codec_g711a.h"
+#include "codecs/codec.h"
 #include "glib/glib-extra.h"
 #include "setting.h"
 #include "storage/filter.h"
@@ -199,34 +194,10 @@ save_stream_to_file(Window *window)
     file_info.channels = 1;
     file_info.format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
 
-    Stream *stream = info->stream;
-    GByteArray *rtp_payload = g_byte_array_new();
-
-    for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
-        Packet *packet = g_ptr_array_index(stream->packets, i);
-        PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
-        g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
-    }
-
-    g_autofree gint16 *decoded = NULL;
-    gsize decoded_len = 0;
-    switch (stream->fmtcode) {
-        case RTP_CODEC_G711A:
-            decoded = codec_g711a_decode(rtp_payload, &decoded_len);
-            break;
-#ifdef WITH_G729
-        case RTP_CODEC_G729:
-            decoded = codec_g729_decode(rtp_payload, &decoded_len);
-            break;
-#endif
-        default:
-            dialog_run("Unsupported RTP payload type %d", stream->fmtcode);
-            return FALSE;
-    }
-
-    // Failed to decode data
-    if (decoded == NULL) {
-        dialog_run("error: Failed to decode RTP payload");
+    GError *error = NULL;
+    g_autoptr(GByteArray) decoded = codec_stream_decode(info->stream, NULL, &error);
+    if (error != NULL) {
+        dialog_run("error: %s", error->message);
         return FALSE;
     }
 
@@ -238,12 +209,12 @@ save_stream_to_file(Window *window)
     }
 
     // Save all decoded bytes
-    sf_write_short(file, decoded, decoded_len / 2);
+    sf_write_short(file, (const gint16 *) decoded->data, decoded->len / 2);
 
     // Close wav file and free decoded data
     sf_close(file);
 
-    dialog_run("%d bytes decoded into %s", decoded_len, fullfile);
+    dialog_run("%d bytes decoded into %s", g_byte_array_len(decoded) / 2, fullfile);
     return TRUE;
 }
 
