@@ -204,25 +204,19 @@ storage_capture_options()
 }
 
 static gchar *
-storage_stream_key(Address *src, Address *dst)
+storage_stream_key(const gchar *dstip, guint16 dport)
 {
     return g_strdup_printf(
-        "%s:%u-%s:%u",
-        (src) ? src->ip : "",
-        (src) ? src->port : 0,
-        (dst) ? dst->ip : "",
-        (dst) ? dst->port : 0
+        "%s:%u",
+        (dstip) ? dstip : "", dport
     );
 }
 
 static void
-storage_register_stream(Stream *stream)
+storage_register_stream(gchar *hashkey, Message *msg)
 {
-    g_hash_table_insert(
-        storage->streams,
-        storage_stream_key(stream->src, stream->dst),
-        stream->msg
-    );
+    g_hash_table_remove(storage->streams, hashkey);
+    g_hash_table_insert(storage->streams, hashkey, msg);
 }
 
 /**
@@ -240,38 +234,34 @@ storage_register_streams(Message *msg)
 
     PacketSdpData *sdp = packet_sdp_data(packet);
     if (sdp == NULL) {
-        // Packet with SDP content
+        // Packet without SDP content
         return;
     }
 
     for (guint i = 0; i < g_list_length(sdp->medias); i++) {
         PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
 
+        if (media->address == NULL)
+            continue;
+
         // Create RTP stream for this media
-        if (call_find_stream(msg->call, NULL, media->address) == NULL) {
-            Stream *stream = stream_new(STREAM_RTP, msg, media);
-            stream_set_dst(stream, media->address);
-            call_add_stream(msg->call, stream);
-            storage_register_stream(stream);
-        }
+        storage_register_stream(
+            storage_stream_key(media->address->ip, media->address->port),
+            msg
+        );
 
         // Create RTCP stream for this media
-        if (call_find_stream(msg->call, NULL, media->address) == NULL) {
-            Stream *stream = stream_new(STREAM_RTCP, msg, media);
-            stream_set_dst(stream, media->address);
-            stream->dst->port = (media->rtcpport) ? media->rtcpport : (guint16) (media->rtpport + 1);
-            call_add_stream(msg->call, stream);
-            storage_register_stream(stream);
-        }
+        storage_register_stream(
+            storage_stream_key(media->address->ip, media->address->port + 1),
+            msg
+        );
 
         // Create RTP stream with source of message as destination address
-        Address nat_address = { .ip = msg->src->ip, .port = 0 };
-        if (call_find_stream(msg->call, NULL, &nat_address) == NULL) {
-            Stream *stream = stream_new(STREAM_RTP, msg, media);
-            stream_set_dst(stream, msg_src_address(msg));
-            stream->dst->port = media->rtpport;
-            call_add_stream(msg->call, stream);
-            storage_register_stream(stream);
+        if (!address_equals(media->address, msg->src)) {
+            storage_register_stream(
+                storage_stream_key(msg->src->ip, media->address->port),
+                msg
+            );
         }
     }
 }
@@ -332,9 +322,10 @@ storage_check_sip_packet(Packet *packet)
     // Add the message to the call
     call_add_message(call, msg);
 
+    // Parse media data
+    storage_register_streams(msg);
+
     if (call_is_invite(call)) {
-        // Parse media data
-        storage_register_streams(msg);
         // Update Call State
         call_update_state(call, msg);
     }
@@ -365,69 +356,33 @@ storage_check_rtp_packet(Packet *packet)
     Address *dst = packet_dst_address(packet);
 
     // Find the stream by destination
-    gchar *hashkey = storage_stream_key(src, dst);
+    g_autofree gchar *hashkey = storage_stream_key(dst->ip, dst->port);
     Message *msg = g_hash_table_lookup(storage->streams, hashkey);
-    g_free(hashkey);
-
-    // If not found, check only with destination address
-    if (msg == NULL) {
-        hashkey = storage_stream_key(NULL, dst);
-        msg = g_hash_table_lookup(storage->streams, hashkey);
-        g_free(hashkey);
-    }
 
     // No call has setup this stream
-    if (msg == NULL) return NULL;
+    if (msg == NULL)
+        return NULL;
 
     // Mark call as changed
     Call *call = msg_get_call(msg);
-    call->changed = TRUE;
-    g_return_val_if_fail(call != NULL, NULL);
 
     // Find a matching stream in the call
-    Stream *stream = NULL;
-    for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
-        stream = g_ptr_array_index(call->streams, i);
+    Stream *stream = call_find_stream(call, src, dst, rtp->encoding->id);
 
-        if (addressport_equals(stream->dst, dst)) {
-            // First packet of early setup stream from SDP
-            if (stream->src == NULL) {
-                stream_set_src(stream, src);
-                stream_set_format(stream, rtp->encoding->id);
-                storage_register_stream(stream);
-
-                // Create an exact stream for the opposite direction
-                Stream *reverse = stream_new(STREAM_RTP, msg, stream->media);
-                stream_set_data(reverse, dst, src);
-                stream_set_format(reverse, rtp->encoding->id);
-                call_add_stream(call, reverse);
-                storage_register_stream(reverse);
-            }
-
-            // Add packet to existing matching stream
-            if (addressport_equals(stream->src, src) && stream->fmtcode == rtp->encoding->id) {
-                stream_add_packet(stream, packet);
-                if (storage->options.capture.rtp) {
-                    // Add Packet info to stream packets array
-                    g_ptr_array_add(stream->packets, packet_ref(packet));
-                }
-
-                break;
-            }
-        }
-
-        // Try next stream
-        stream = NULL;
-    }
-
-    // If no stream matches this packet
+    // If no stream matches this packet, create a new stream for this source
     if (stream == NULL) {
-        // Create a new stream for this source
         stream = stream_new(STREAM_RTP, msg, msg_media_for_addr(msg, dst));
         stream_set_data(stream, src, dst);
         stream_set_format(stream, rtp->encoding->id);
         call_add_stream(call, stream);
-        storage_register_stream(stream);
+    }
+
+    // Add packet to existing stream
+    stream_add_packet(stream, packet);
+
+    // Store packet if rtp capture is enabled
+    if (storage->options.capture.rtp) {
+        g_ptr_array_add(stream->packets, packet_ref(packet));
     }
 
     // Mark the list as changed
@@ -447,7 +402,7 @@ storage_check_rtcp_packet(Packet *packet)
     Address *dst = packet_dst_address(packet);
 
     // Find the stream by destination
-    gchar *hashkey = storage_stream_key(src, dst);
+    gchar *hashkey = storage_stream_key(dst->ip, dst->port);
     GList *streams = g_hash_table_lookup(storage->streams, hashkey);
     g_free(hashkey);
 

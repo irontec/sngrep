@@ -254,43 +254,16 @@ call_add_xcall(Call *call, Call *xcall)
 }
 
 Stream *
-call_find_stream(Call *call, const Address *src, const Address *dst)
+call_find_stream(Call *call, const Address *src, const Address *dst, guint8 fmt)
 {
-    Stream *stream;
-
-    // Look for an incomplete stream with this destination
-    for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
-        stream = g_ptr_array_index(call->streams, i);
-        if (addressport_equals(dst, stream->dst)) {
-            if (src == NULL || src->port == 0) {
-                return stream;
-            } else {
-                if (!stream->packets->len) {
-                    return stream;
-                }
-            }
-        }
-    }
-
-    // Try to look for a complete stream with this destination
-    if (src && src->port != 0) {
-        return call_find_stream_exact(call, src, dst);
-    }
-
-    // Nothing found
-    return NULL;
-}
-
-Stream *
-call_find_stream_exact(Call *call, const Address *src, const Address *dst)
-{
-    Stream *stream;
+    Stream *stream = NULL;
 
     // Create an iterator for call streams
     for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
         stream = g_ptr_array_index(call->streams, i);
         if (addressport_equals(src, stream->src) &&
-            addressport_equals(dst, stream->dst)) {
+            addressport_equals(dst, stream->dst)
+            && fmt == stream->fmtcode) {
             return stream;
         }
     }
