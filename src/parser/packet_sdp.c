@@ -119,7 +119,9 @@ packet_sdp_dissect_connection(PacketSdpData *sdp, PacketSdpMedia *media, gchar *
         sdp->sconn = conn;
     } else {
         media->sconn = conn;
-        media->address = address_new(conn->address, 0);
+        // Free any existing media connection
+        address_free(media->address);
+        media->address = address_new(media->sconn->address, media->rtpport);
     }
 }
 
@@ -165,7 +167,7 @@ packet_sdp_dissect_media(PacketSdpData *sdp, gchar *line)
     media->rtpport = (guint16) strtoul(media_data[SDP_MEDIA_PORT], NULL, 10);
     media->type = packet_sdp_media_type(media_data[SDP_MEDIA_MEDIA]);
 
-    // @todo For backwards compatibility with stream searching
+    // If there is a global connection line, use it as destination address
     if (sdp->sconn) {
         media->address = address_new(sdp->sconn->address, media->rtpport);
     }
