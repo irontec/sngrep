@@ -210,11 +210,4 @@ call_add_xcall(Call *call, Call *xcall);
 Stream *
 call_find_stream(Call *call, const Address *src, const Address *dst, guint8 fmt);
 
-/**
- * @brief Get the first message of transaction with given CSeq
- * @return First message of transacion or NULL if none found
- */
-Message *
-call_find_message_cseq(Call *call, guint64 cseq);
-
 #endif /* __SNGREP_CALL_H */
