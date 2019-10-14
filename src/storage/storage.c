@@ -54,7 +54,6 @@
  */
 #include "config.h"
 #include <glib.h>
-#include <glib/gprintf.h>
 #include <glib/gasyncqueuesource.h>
 #include "glib/glib-extra.h"
 #include "parser/packet_sip.h"
@@ -402,22 +401,38 @@ storage_check_rtcp_packet(Packet *packet)
     Address *dst = packet_dst_address(packet);
 
     // Find the stream by destination
-    gchar *hashkey = storage_stream_key(dst->ip, dst->port);
-    GList *streams = g_hash_table_lookup(storage->streams, hashkey);
-    g_free(hashkey);
+    g_autofree gchar *hashkey = storage_stream_key(dst->ip, dst->port);
+    Message *msg = g_hash_table_lookup(storage->streams, hashkey);
 
-    // Check if one of the destination has the configured format
-    for (GList *l = streams; l != NULL; l = l->next) {
-        Stream *stream = l->data;
-        // Add packet to stream
+    // No call has setup this stream
+    if (msg == NULL)
+        return NULL;
+
+    // Mark call as changed
+    Call *call = msg_get_call(msg);
+
+    // Find a matching stream in the call
+    Stream *stream = call_find_stream(call, src, dst, 0);
+
+    // If no stream matches this packet, create a new stream for this source
+    if (stream == NULL) {
+        stream = stream_new(STREAM_RTCP, msg, msg_media_for_addr(msg, dst));
         stream_set_data(stream, src, dst);
-        stream_add_packet(stream, packet);
-        // Mark the list as changed
-        storage->changed = TRUE;
-        return stream;
+        call_add_stream(call, stream);
     }
 
-    return NULL;
+    // Add packet to existing stream
+    stream_add_packet(stream, packet);
+
+    // Store packet if rtp capture is enabled
+    if (storage->options.capture.rtp) {
+        g_ptr_array_add(stream->packets, packet_ref(packet));
+    }
+
+    // Mark the list as changed
+    storage->changed = TRUE;
+
+    return stream;
 }
 
 void
