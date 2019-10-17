@@ -32,6 +32,8 @@
 
 #include <glib.h>
 
+#define G_MSEC_PER_SEC 1000
+
 #define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
 
 #define g_ptr_array_len(array) (array->len)
