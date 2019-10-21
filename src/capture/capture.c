@@ -186,13 +186,6 @@ capture_status_desc(CaptureManager *manager)
         }
     }
 
-#ifdef USE_HEP
-    // HEP Listen mode is always considered online
-    if (FALSE /* @todo capture_hep_listen_port() */) {
-        online++;
-    }
-#endif
-
     if (manager->paused) {
         if (online > 0 && offline == 0) {
             return "Online (Paused)";
@@ -243,12 +236,6 @@ Address *
 capture_tls_server(CaptureManager *manager)
 {
     return manager->tls_server;
-}
-
-guint
-capture_sources_count(CaptureManager *manager)
-{
-    return g_slist_length(manager->inputs);
 }
 
 void

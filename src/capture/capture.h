@@ -197,13 +197,6 @@ Address *
 capture_tls_server(CaptureManager *manager);
 
 /**
- * @brief Return packet capture sources count
- * @return capture sources count
- */
-guint
-capture_sources_count(CaptureManager *manager);
-
-/**
  * @brief Set pause status in given capture manager
  */
 void
