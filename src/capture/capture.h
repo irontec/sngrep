@@ -32,42 +32,28 @@
 #include <glib.h>
 #include "parser/parser.h"
 
+G_BEGIN_DECLS
+
 //! Capture modes
-enum capture_mode
+typedef enum
 {
-    CAPTURE_MODE_ONLINE = 0,
+    CAPTURE_MODE_INVALID = 0,
+    CAPTURE_MODE_ONLINE,
     CAPTURE_MODE_OFFLINE,
-};
+} CaptureMode;
 
 //! Capture techs
-enum capture_tech
+typedef enum
 {
-    CAPTURE_TECH_PCAP = 0,
+    CAPTURE_TECH_INVALID = 0,
+    CAPTURE_TECH_PCAP,
     CAPTURE_TECH_HEP,
-};
+    CAPTURE_TECH_TXT,
+} CaptureTech;
 
 //! Capture function types
-typedef struct _CaptureInput CaptureInput;
 typedef struct _CaptureOutput CaptureOutput;
 typedef struct _CaptureManager CaptureManager;
-
-//! Capture Input functions types
-
-typedef gpointer (*CaptureInputStartFunc)(CaptureInput *);
-
-typedef void (*CaptureInputStopFunc)(CaptureInput *);
-
-typedef void (*CaptureInputFreeFunc)(CaptureInput *);
-
-typedef gint (*CaptureInputFilterFunc)(CaptureInput *, const gchar *, GError **);
-
-//! Capture Output function types
-typedef void (*CaptureOuptutWriteFunc)(CaptureOutput *, Packet *);
-
-typedef void (*CaptureOutputCloseFunc)(CaptureOutput *);
-
-typedef void (*CaptureOutputFreeFunc)(CaptureOutput *);
-
 
 /**
  * @brief Capture common configuration
@@ -94,51 +80,6 @@ struct _CaptureManager
     GMainLoop *loop;
 };
 
-struct _CaptureInput
-{
-    //! Manager owner of this capture input
-    CaptureManager *manager;
-    //! Capture Input type
-    enum capture_tech tech;
-    //! Are captured packets life
-    enum capture_mode mode;
-    //! Source string
-    gchar *sourcestr;
-    //! Source of events for this input
-    GSource *source;
-    //! Private capture input data
-    gpointer priv;
-    //! Each packet type private data
-    PacketParser *parser;
-
-    //! Start capturing packets function
-    CaptureInputStartFunc start;
-    //! Stop capturing packets function
-    CaptureInputStopFunc stop;
-    //! Free capture input memory
-    CaptureInputFreeFunc free;
-    //! Capture filtering function
-    CaptureInputFilterFunc filter;
-};
-
-struct _CaptureOutput
-{
-    //! Manager owner of this capture input
-    CaptureManager *manager;
-    //! Capture Output type
-    enum capture_tech tech;
-    //! Sink string
-    const gchar *sink;
-    //! Private capture output data
-    gpointer priv;
-
-    //! Dump packet function
-    CaptureOuptutWriteFunc write;
-    //! Close dump packet  function
-    CaptureOutputCloseFunc close;
-    //! Free capture input memory
-    CaptureOutputFreeFunc free;
-};
 
 /**
  * @brief Initialize main capture manager
@@ -273,5 +214,7 @@ capture_manager_set_pause(CaptureManager *manager, gboolean paused);
  */
 gboolean
 capture_is_running();
+
+G_END_DECLS
 
 #endif

@@ -93,7 +93,6 @@ packet_parser_dissector_free(PacketParser *parser, Packet *packet, enum PacketPr
 void
 packet_parser_free(PacketParser *parser)
 {
-
     g_ptr_array_foreach(parser->dissectors, (GFunc) packet_parser_dissector_deinit, parser);
     g_ptr_array_free(parser->dissectors, TRUE);
     g_ptr_array_free(parser->dissectors_priv, TRUE);
@@ -105,6 +104,10 @@ PacketDissector *
 packet_parser_dissector_init(PacketParser *parser, GNode *parent, enum PacketProtoId id)
 {
     PacketDissector *dissector = g_ptr_array_index(parser->dissectors, id);
+
+    if (parent == NULL) {
+        parent = parser->dissector_tree;
+    }
 
     if (dissector == NULL) {
         switch (id) {

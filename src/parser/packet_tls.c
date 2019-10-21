@@ -32,7 +32,7 @@
 #include <glib.h>
 #include <gnutls/gnutls.h>
 #include "glib/glib-extra.h"
-#include "capture/capture.h"
+#include "capture/capture_input.h"
 #include "parser/address.h"
 #include "parser/parser.h"
 #include "packet_ip.h"
@@ -845,7 +845,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_assert(input != NULL);
 
     // Get manager information
-    CaptureManager *manager = input->manager;
+    CaptureManager *manager = capture_input_manager(input);
     if (capture_keyfile(manager) == NULL) {
         return data;
     }

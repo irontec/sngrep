@@ -69,6 +69,8 @@ set(SOURCES
         src/storage/datetime.c
         src/setting.c
         src/main.c
+        src/capture/capture_input.c
+        src/capture/capture_output.c
         )
 
 ######################################################################

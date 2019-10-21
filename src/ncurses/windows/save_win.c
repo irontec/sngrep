@@ -148,7 +148,7 @@ save_draw(Window *window)
 static void
 save_packet_cb(Packet *packet, CaptureOutput *output)
 {
-    output->write(output, packet);
+    capture_output_write(output, packet);
 }
 
 #ifdef WITH_SND
@@ -313,7 +313,7 @@ save_to_file(Window *window)
 
     if (info->savemode == SAVE_MESSAGE) {
         // Save selected message packet to pcap
-        output->write(output, info->msg->packet);
+        capture_output_write(output, info->msg->packet);
     } else if (info->saveformat == SAVE_TXT) {
         // Save selected packets to file
         for (guint i = 0; i < g_ptr_array_len(calls); i++) {
@@ -321,7 +321,7 @@ save_to_file(Window *window)
             // Save SIP message content
             for (guint j = 0; j < g_ptr_array_len(call->msgs); j++) {
                 Message *msg = g_ptr_array_index(call->msgs, j);
-                output->write(output, msg->packet);
+                capture_output_write(output, msg->packet);
             }
         }
     } else {
@@ -377,7 +377,7 @@ save_to_file(Window *window)
     }
 
     // Close saved file
-    output->close(output);
+    capture_output_close(output);
 
     // Show success popup
     if (info->savemode == SAVE_MESSAGE) {

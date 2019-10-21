@@ -61,17 +61,12 @@ capture_manager_free(CaptureManager *manager)
 {
     // Stop all capture inputs
     for (GSList *le = manager->inputs; le != NULL; le = le->next) {
-        CaptureInput *input = le->data;
-        if (input->free != NULL)
-            input->free(input);
+        capture_input_unref(le->data);
     }
 
     // Close all capture outputs
     for (GSList *le = manager->outputs; le != NULL; le = le->next) {
-        CaptureOutput *output = le->data;
-        if (output->free != NULL) {
-            output->free(output);
-        }
+        capture_output_unref(le->data);
     }
 
     g_slist_free(manager->inputs);
@@ -103,12 +98,14 @@ capture_manager_start(CaptureManager *manager)
 void
 capture_manager_stop(CaptureManager *manager)
 {
+    // Close all capture inputs
+    for (GSList *le = manager->inputs; le != NULL; le = le->next) {
+        capture_input_stop(le->data);
+    }
+
     // Close all capture outputs
     for (GSList *le = manager->outputs; le != NULL; le = le->next) {
-        CaptureOutput *output = le->data;
-        if (output->close) {
-            output->close(output);
-        }
+        capture_output_close(le->data);
     }
 
     // Stop manager thread
@@ -121,12 +118,9 @@ capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **erro
 {
     // Apply fitler to all capture inputs
     for (GSList *le = manager->inputs; le != NULL; le = le->next) {
-        CaptureInput *input = le->data;
-        if (input->filter) {
-            if (!input->filter(input, filter, error)) {
-                manager->filter = NULL;
-                return FALSE;
-            }
+        if (capture_input_filter(le->data, filter, error) == 0) {
+            manager->filter = NULL;
+            return FALSE;
         }
     }
 
@@ -150,15 +144,20 @@ capture_manager_set_keyfile(CaptureManager *manager, const gchar *keyfile, G_GNU
 void
 capture_manager_add_input(CaptureManager *manager, CaptureInput *input)
 {
-    input->manager = manager;
-    g_source_attach(input->source, g_main_loop_get_context(manager->loop));
+    capture_input_set_manager(input, manager);
+
+    g_source_attach(
+        capture_input_source(input),
+        g_main_loop_get_context(manager->loop)
+    );
+
     manager->inputs = g_slist_append(manager->inputs, input);
 }
 
 void
 capture_manager_add_output(CaptureManager *manager, CaptureOutput *output)
 {
-    output->manager = manager;
+    capture_output_set_manager(output, manager);
     manager->outputs = g_slist_append(manager->outputs, output);
 }
 
@@ -166,10 +165,7 @@ void
 capture_manager_output_packet(CaptureManager *manager, Packet *packet)
 {
     for (GSList *l = manager->outputs; l != NULL; l = l->next) {
-        CaptureOutput *output = l->data;
-        if (output->write) {
-            output->write(output, packet);
-        }
+        capture_output_write(l->data, packet);
     }
 }
 
@@ -181,9 +177,9 @@ capture_status_desc(CaptureManager *manager)
     for (GSList *l = manager->inputs; l != NULL; l = l->next) {
         CaptureInput *input = l->data;
 
-        if (input->mode == CAPTURE_MODE_OFFLINE) {
+        if (capture_input_mode(input) == CAPTURE_MODE_OFFLINE) {
             offline++;
-            if (!g_source_is_destroyed(input->source)) {
+            if (!g_source_is_destroyed(capture_input_source(input))) {
                 loading++;
             }
         } else {
@@ -237,7 +233,7 @@ capture_is_online(CaptureManager *manager)
     for (GSList *l = manager->inputs; l != NULL; l = l->next) {
         CaptureInput *input = l->data;
 
-        if (input->mode == CAPTURE_MODE_OFFLINE)
+        if (capture_input_mode(input) == CAPTURE_MODE_OFFLINE)
             return FALSE;
     }
 
@@ -266,8 +262,7 @@ gboolean
 capture_is_running()
 {
     for (GSList *l = manager->inputs; l != NULL; l = l->next) {
-        CaptureInput *input = l->data;
-        if (g_source_is_destroyed(input->source) == FALSE) {
+        if (g_source_is_destroyed(capture_input_source(l->data)) == FALSE) {
             return TRUE;
         }
     }

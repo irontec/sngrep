@@ -318,7 +318,7 @@
    fun:packet_get_type_once
    fun:packet_get_type
    fun:packet_new
-   fun:capture_pcap_parse_packet
+   fun:capture_input_pcap_parse_packet
    fun:capture_input_pcap_read_packet
    fun:g_main_context_dispatch
 }

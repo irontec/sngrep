@@ -37,6 +37,8 @@
 #include "parser/packet_sip.h"
 #include "capture/capture_txt.h"
 
+G_DEFINE_TYPE(CaptureOutputTxt, capture_output_txt, CAPTURE_TYPE_OUTPUT)
+
 GQuark
 capture_txt_error_quark()
 {
@@ -50,7 +52,7 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
 
     g_return_if_fail(packet != NULL);
 
-    CaptureTxt *txt = output->priv;
+    CaptureOutputTxt *txt = CAPTURE_OUTPUT_TXT(output);
     g_return_if_fail(txt != NULL);
     g_return_if_fail(txt->file != NULL);
 
@@ -75,7 +77,7 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
 static void
 capture_output_txt_close(CaptureOutput *output)
 {
-    CaptureTxt *txt = output->priv;
+    CaptureOutputTxt *txt = CAPTURE_OUTPUT_TXT(output);
     g_return_if_fail(txt != NULL);
     g_return_if_fail(txt->file != NULL);
 
@@ -86,7 +88,7 @@ CaptureOutput *
 capture_output_txt(const gchar *filename, GError **error)
 {
     // Allocate private output data
-    CaptureTxt *txt = g_malloc0(sizeof(CaptureTxt));
+    CaptureOutputTxt *txt = g_object_new(CAPTURE_TYPE_OUTPUT_TXT, NULL);
 
     if (!(txt->file = fopen(filename, "w"))) {
         g_set_error(error,
@@ -97,10 +99,20 @@ capture_output_txt(const gchar *filename, GError **error)
         return NULL;
     }
 
-    // Create a new structure to handle this capture dumper
-    CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));
-    output->priv = txt;
-    output->write = capture_output_txt_write;
-    output->close = capture_output_txt_close;
-    return output;
+    return CAPTURE_OUTPUT(txt);
 }
+
+static void
+capture_output_txt_class_init(CaptureOutputTxtClass *klass)
+{
+    CaptureOutputClass *capture_output_class = CAPTURE_OUTPUT_CLASS(klass);
+    capture_output_class->write = capture_output_txt_write;
+    capture_output_class->close = capture_output_txt_close;
+}
+
+static void
+capture_output_txt_init(CaptureOutputTxt *self)
+{
+    capture_output_set_tech(CAPTURE_OUTPUT(self), CAPTURE_TECH_TXT);
+}
+

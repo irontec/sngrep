@@ -48,15 +48,16 @@
 #include <unistd.h>
 #include <string.h>
 #include <glib-unix.h>
-#include "storage/datetime.h"
 #include "setting.h"
-#include "glib/glib-extra.h"
 #include "parser/packet_hep.h"
 #include "parser/packet_ip.h"
 #include "parser/packet_udp.h"
 #include "parser/packet_sip.h"
 #include "parser/packet.h"
 #include "capture_hep.h"
+
+// CapturePcap class definition
+G_DEFINE_TYPE(CaptureInputHep, capture_input_hep, CAPTURE_TYPE_INPUT)
 
 GQuark
 capture_hep_error_quark()
@@ -106,8 +107,8 @@ capture_input_hep_receive(G_GNUC_UNUSED gint fd,
     char buffer[MAX_HEP_BUFSIZE];
     struct sockaddr hep_client;
     socklen_t hep_client_len;
-    CaptureHep *hep = input->priv;
-    PacketParser *parser = input->parser;
+    CaptureInputHep *hep = CAPTURE_INPUT_HEP(input);
+    PacketParser *parser = capture_input_parser(input);
 
     /* Receive HEP generic header */
     gssize received = recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len);
@@ -139,12 +140,10 @@ capture_input_hep_receive(G_GNUC_UNUSED gint fd,
 CaptureInput *
 capture_input_hep(const gchar *url, GError **error)
 {
-    CaptureInput *input;
-    CaptureHep *hep;
     struct addrinfo *ai, hints[1] = {{ 0 }};
 
     // Create a new structure to handle this capture source
-    hep = g_malloc(sizeof(CaptureHep));
+    CaptureInputHep *hep = g_object_new(CAPTURE_TYPE_INPUT_HEP, NULL);
 
     hep->version = setting_get_intvalue(SETTING_HEP_LISTEN_VER);
     hep->password = setting_get_value(SETTING_HEP_LISTEN_PASS);
@@ -204,48 +203,49 @@ capture_input_hep(const gchar *url, GError **error)
     }
 
     // Create a new structure to handle this capture source
-    input = g_malloc0(sizeof(CaptureInput));
-    input->sourcestr = g_strdup_printf("L:%s", hep->url.port);
-    input->priv = hep;
-    input->tech = CAPTURE_TECH_HEP;
-    input->mode = CAPTURE_MODE_ONLINE;
-    input->start = capture_input_hep_start;
-    input->stop = capture_input_hep_stop;
+    g_autofree gchar *source_str = g_strdup_printf("L:%s", hep->url.port);
+    capture_input_set_source_str(CAPTURE_INPUT(hep), source_str);
+    capture_input_set_mode(CAPTURE_INPUT(hep), CAPTURE_MODE_ONLINE);
 
-    // Ceate packet parser tree
-    PacketParser *parser = packet_parser_new(input);
-    packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_HEP);
-    input->parser = parser;
+    // Create packet parser tree
+    packet_parser_dissector_init(
+        capture_input_parser(CAPTURE_INPUT(hep)),
+        NULL,
+        PACKET_HEP
+    );
 
-    input->source = g_unix_fd_source_new(
-        hep->socket,
-        G_IO_IN | G_IO_ERR | G_IO_HUP
+    capture_input_set_source(
+        CAPTURE_INPUT(hep),
+        g_unix_fd_source_new(
+            hep->socket,
+            G_IO_IN | G_IO_ERR | G_IO_HUP
+        )
     );
 
     g_source_set_callback(
-        input->source,
+        capture_input_source(CAPTURE_INPUT(hep)),
         (GSourceFunc) G_CALLBACK(capture_input_hep_receive),
-        input,
+        CAPTURE_INPUT(hep),
         NULL
     );
 
-    return input;
+    return CAPTURE_INPUT(hep);
 }
 
 void *
 capture_input_hep_start(CaptureInput *input)
 {
-    g_source_attach(input->source, NULL);
+    g_source_attach(capture_input_source(input), NULL);
     return NULL;
 }
 
 void
 capture_input_hep_stop(CaptureInput *input)
 {
-    CaptureHep *priv = input->priv;
-    if (priv->socket > 0) {
-        close(priv->socket);
-        priv->socket = -1;
+    CaptureInputHep *hep = CAPTURE_INPUT_HEP(input);
+    if (hep->socket > 0) {
+        close(hep->socket);
+        hep->socket = -1;
     }
 }
 
@@ -254,8 +254,8 @@ capture_input_hep_port(CaptureManager *manager)
 {
     for (GSList *l = manager->inputs; l != NULL; l = l->next) {
         CaptureInput *input = l->data;
-        if (input->tech == CAPTURE_TECH_HEP) {
-            CaptureHep *hep = input->priv;
+        if (capture_input_tech(input) == CAPTURE_TECH_HEP) {
+            CaptureInputHep *hep = CAPTURE_INPUT_HEP(input);
             return hep->url.port;
         }
     }
@@ -263,13 +263,29 @@ capture_input_hep_port(CaptureManager *manager)
     return NULL;
 }
 
+static void
+capture_input_hep_class_init(CaptureInputHepClass *klass)
+{
+    CaptureInputClass *input_class = CAPTURE_INPUT_CLASS(klass);
+    input_class->start = capture_input_hep_start;
+    input_class->stop = capture_input_hep_stop;
+}
+
+static void
+capture_input_hep_init(CaptureInputHep *self)
+{
+    capture_input_set_tech(CAPTURE_INPUT(self), CAPTURE_TECH_HEP);
+}
+
+G_DEFINE_TYPE(CaptureOutputHep, capture_output_hep, CAPTURE_TYPE_OUTPUT)
+
 CaptureOutput *
 capture_output_hep(const gchar *url, GError **error)
 {
     struct addrinfo *ai, hints[1] = {{ 0 }};
 
     // Create a new structure to handle this capture sink
-    CaptureHep *hep = g_malloc(sizeof(CaptureHep));
+    CaptureOutputHep *hep = g_object_new(CAPTURE_TYPE_OUTPUT_HEP, NULL);
 
     // Fill configuration structure
     hep->version = setting_get_intvalue(SETTING_HEP_SEND_VER);
@@ -330,14 +346,10 @@ capture_output_hep(const gchar *url, GError **error)
         }
     }
 
-    CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));
-    output->tech = CAPTURE_TECH_PCAP;
-    output->sink = g_strdup_printf("H:%s", hep->url.port);
-    output->priv = hep;
-    output->write = capture_output_hep_write;
-    output->close = capture_output_hep_close;
+    g_autofree gchar *sink = g_strdup_printf("L:%s", hep->url.port);
+    capture_output_set_sink(CAPTURE_OUTPUT(hep), sink);
 
-    return output;
+    return CAPTURE_OUTPUT(hep);
 }
 
 void
@@ -367,7 +379,7 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     g_return_if_fail(sip != NULL);
 
     // Get HEP output data
-    CaptureHep *hep = output->priv;
+    CaptureOutputHep *hep = CAPTURE_OUTPUT_HEP(output);
 
     // Data to send on the wire
     g_autoptr(GByteArray) data = g_byte_array_sized_new(tlen);
@@ -500,8 +512,6 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     g_byte_array_append(data, (gpointer) &payload_chunk, sizeof(CaptureHepChunk));
     g_byte_array_append(data, (gpointer) sip->payload, strlen(sip->payload));
 
-    g_printerr("Sending HEP packet with %d bytes\n", data->len);
-
     // Send payload to HEPv3 Server
     if (send(hep->socket, data->data, data->len, 0) == -1) {
         return;
@@ -511,10 +521,10 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
 void
 capture_output_hep_close(CaptureOutput *output)
 {
-    CaptureHep *priv = output->priv;
-    if (priv->socket > 0) {
-        close(priv->socket);
-        priv->socket = -1;
+    CaptureOutputHep *hep = CAPTURE_OUTPUT_HEP(output);
+    if (hep->socket > 0) {
+        close(hep->socket);
+        hep->socket = -1;
     }
 }
 
@@ -523,11 +533,25 @@ capture_output_hep_port(CaptureManager *manager)
 {
     for (GSList *l = manager->outputs; l != NULL; l = l->next) {
         CaptureOutput *output = l->data;
-        if (output->tech == CAPTURE_TECH_HEP) {
-            CaptureHep *hep = output->priv;
+        if (capture_output_tech(output) == CAPTURE_TECH_HEP) {
+            CaptureOutputHep *hep = CAPTURE_OUTPUT_HEP(output);
             return hep->url.port;
         }
     }
 
     return NULL;
+}
+
+static void
+capture_output_hep_class_init(CaptureOutputHepClass *klass)
+{
+    CaptureOutputClass *output_class = CAPTURE_OUTPUT_CLASS(klass);
+    output_class->write = capture_output_hep_write;
+    output_class->close = capture_output_hep_close;
+}
+
+static void
+capture_output_hep_init(CaptureOutputHep *self)
+{
+    capture_output_set_tech(CAPTURE_OUTPUT(self), CAPTURE_TECH_HEP);
 }

@@ -29,14 +29,16 @@
  * This file include the functions that uses libpcap to do so.
  *
  */
-#ifndef __SNGREP_CAPTURE_PCAP_H
-#define __SNGREP_CAPTURE_PCAP_H
+#ifndef __SNGREP_CAPTURE_PCAP_H__
+#define __SNGREP_CAPTURE_PCAP_H__
 
 #include <glib.h>
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include "capture/capture_input.h"
+#include "capture/capture_output.h"
 #include "parser/address.h"
 
 #ifndef __FAVOR_BSD
@@ -58,13 +60,22 @@
 #include "parser/packet.h"
 #include "capture.h"
 
+G_BEGIN_DECLS
+
+#define CAPTURE_TYPE_INPUT_PCAP capture_input_pcap_get_type()
+#define CAPTURE_TYPE_OUTPUT_PCAP capture_output_pcap_get_type()
+
+G_DECLARE_FINAL_TYPE(CaptureInputPcap, capture_input_pcap, CAPTURE, INPUT_PCAP, CaptureInput)
+
+G_DECLARE_FINAL_TYPE(CaptureOutputPcap, capture_output_pcap, CAPTURE, OUTPUT_PCAP, CaptureOutput)
+
 //! Max allowed packet length (for libpcap)
 #define MAXIMUM_SNAPLEN 262144
 //! Error reporting
 #define CAPTURE_PCAP_ERROR (capture_pcap_error_quark())
 
 //! Error codes
-enum capture_pcap_errors
+typedef enum
 {
     CAPTURE_PCAP_ERROR_DEVICE_LOOKUP = 0,
     CAPTURE_PCAP_ERROR_DEVICE_OPEN,
@@ -74,18 +85,32 @@ enum capture_pcap_errors
     CAPTURE_PCAP_ERROR_FILTER_APPLY,
     CAPTURE_PCAP_ERROR_SAVE_NOT_PCAP,
     CAPTURE_PCAP_ERROR_DUMP_OPEN
-};
-
-//! Shorter declaration of capture_info structure
-typedef struct _CapturePcap CapturePcap;
+} CapturePcapErrors;
 
 /**
- * @brief store all information related with packet capture
- *
- * Store capture required data from one packet source
+ * @brief store all information related with input capture
  */
-struct _CapturePcap
+struct _CaptureInputPcap
 {
+    //! Parent object attributes
+    CaptureInput parent;
+    //! libpcap capture handler
+    pcap_t *handle;
+    //! Netmask of our sniffing device
+    bpf_u_int32 mask;
+    //! The IP of our sniffing device
+    bpf_u_int32 net;
+    //! libpcap link type
+    gint link;
+};
+
+/**
+ * @brief store all information related with output capture
+ */
+struct _CaptureOutputPcap
+{
+    //! Parent object attributes
+    CaptureOutput parent;
     //! libpcap capture handler
     pcap_t *handle;
     //! libpcap dumper for capture outputs
@@ -127,34 +152,12 @@ CaptureInput *
 capture_input_pcap_offline(const gchar *infile, GError **error);
 
 /**
- * @brief PCAP Capture Thread
- *
- * This function is used as worker thread for capturing filtered packets and
- * pass them to the UI layer.
- */
-gpointer
-capture_input_pcap_start(CaptureInput *input);
-
-/**
- * @brief Close pcap handler
- */
-void
-capture_input_pcap_stop(CaptureInput *input);
-
-/**
- * @brief Set a bpf filter in open capture
- *
- * @param filter String containing the BPF filter text
- * @return TRUE if valid, FALSE otherwise
- */
-gboolean
-capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **error);
-
-/**
  * @brief Return datalink type of this capture input
  */
 gint
 capture_input_pcap_datalink(CaptureInput *input);
+
+#ifdef WITH_SSL
 
 /**
  * @brief Set a capture input keyfile for TLS decrypt
@@ -162,21 +165,7 @@ capture_input_pcap_datalink(CaptureInput *input);
 void
 capture_input_pcap_set_keyfile(CaptureInput *input, const gchar *keyfile);
 
-/**
- * @brief Open a new dumper file for capture handler
- */
-CaptureOutput *
-capture_output_pcap(const gchar *filename, GError **error);
-
-/**
- * @brief Read the next package
- *
- * This function is shared between online and offline capture
- * methods using pcap. This will get the payload from a package and
- * add it to the packet manager.
- */
-void
-capture_pcap_parse_packet(u_char *input, const struct pcap_pkthdr *header, const guchar *content);
+#endif
 
 /**
  * @brief Get Input file from Offline mode
@@ -196,4 +185,10 @@ capture_input_pcap_file(CaptureManager *manager);
 const gchar *
 capture_input_pcap_device(CaptureManager *manager);
 
-#endif
+/**
+ * @brief Open a new dumper file for capture handler
+ */
+CaptureOutput *
+capture_output_pcap(const gchar *filename, GError **error);
+
+#endif /* __SNGREP_CAPTURE_PCAP_H__ */

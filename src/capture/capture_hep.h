@@ -39,10 +39,23 @@
  * sngrep packet structures has been made by Ivan Alonso (Kaian)
  *
  */
-#ifndef __SNGREP_CAPTURE_HEP_H
-#define __SNGREP_CAPTURE_HEP_H
+#ifndef __SNGREP_CAPTURE_HEP_H__
+#define __SNGREP_CAPTURE_HEP_H__
+
 #include <glib.h>
 #include "capture.h"
+#include "capture_input.h"
+#include "capture_output.h"
+
+G_BEGIN_DECLS
+
+#define CAPTURE_TYPE_INPUT_HEP capture_input_hep_get_type()
+#define CAPTURE_TYPE_OUTPUT_HEP capture_output_hep_get_type()
+
+G_DECLARE_FINAL_TYPE(CaptureInputHep, capture_input_hep, CAPTURE, INPUT_HEP, CaptureInput)
+
+G_DECLARE_FINAL_TYPE(CaptureOutputHep, capture_output_hep, CAPTURE, OUTPUT_HEP, CaptureOutput)
+
 
 //! Max allowed packet size
 #define MAX_HEP_BUFSIZE 20480
@@ -50,16 +63,15 @@
 #define CAPTURE_HEP_ERROR (capture_hep_error_quark())
 
 //! Error codes
-enum capture_hep_errors
+typedef enum
 {
     CAPTURE_HEP_ERROR_VERSION,
     CAPTURE_HEP_ERROR_URL_PARSE,
     CAPTURE_HEP_ERROR_SOCKET,
     CAPTURE_HEP_ERROR_BIND,
     CAPTURE_HEP_ERROR_CONNECT
-};
+} CaptureHepErrors;
 
-typedef struct _CaptureHep CaptureHep;
 typedef struct _CaptureHepUrl CaptureHepUrl;
 
 /**
@@ -76,10 +88,31 @@ struct _CaptureHepUrl
 };
 
 /**
- * @brief HEP Capture Input/Output private data
+ * @brief HEP Capture Input data
  */
-struct _CaptureHep
+struct _CaptureInputHep
 {
+    //! Parent object attributes
+    CaptureInput parent;
+    //! Client/Server socket
+    gint socket;
+    //! Capture agent id
+    guint16 id;
+    //! Capture connection data
+    struct _CaptureHepUrl url;
+    //! Hep Version for send/receive data (2 or 3)
+    gint version;
+    //! Password for authentication
+    const gchar *password;
+};
+
+/**
+ * @brief HEP Capture Output data
+ */
+struct _CaptureOutputHep
+{
+    //! Parent object attributes
+    CaptureOutput parent;
     //! Client/Server socket
     gint socket;
     //! Capture agent id
@@ -174,5 +207,6 @@ capture_output_hep_close(CaptureOutput *output);
 const gchar *
 capture_output_hep_port(CaptureManager *manager);
 
+G_END_DECLS
 
-#endif /* __SNGREP_CAPTURE_HEP_H */
+#endif /* __SNGREP_CAPTURE_HEP_H__ */

@@ -147,11 +147,9 @@ packet_link_init(PacketParser *parser)
     CaptureInput *input = parser->input;
     g_return_if_fail(input);
     // Packet Link parser only works with PCAP input
-    g_return_if_fail(input->tech == CAPTURE_TECH_PCAP);
-    // Check input has its private data initialized
-    g_return_if_fail(input->priv);
+    g_return_if_fail(capture_input_tech(input) == CAPTURE_TECH_PCAP);
 
-    CapturePcap *pcap = (CapturePcap *) input->priv;
+    CaptureInputPcap *pcap = CAPTURE_INPUT_PCAP(input);
 
     // Initialize parser private data
     DissectorLinkData *link_data = g_malloc0(sizeof(DissectorLinkData));

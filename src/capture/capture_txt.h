@@ -25,32 +25,37 @@
  * @brief Functions to manage saving packets to TXT files
  *
  */
-#ifndef __SNGREP_CAPTURE_TXT_H
-#define __SNGREP_CAPTURE_TXT_H
+#ifndef __SNGREP_CAPTURE_TXT_H__
+#define __SNGREP_CAPTURE_TXT_H__
 
 #include <glib.h>
-#include <stdio.h>
-#include "capture/capture.h"
+#include <glib-object.h>
+#include "capture/capture_output.h"
+
+G_BEGIN_DECLS
+
+#define CAPTURE_TYPE_OUTPUT_TXT capture_output_txt_get_type()
+
+G_DECLARE_FINAL_TYPE(CaptureOutputTxt, capture_output_txt, CAPTURE, OUTPUT_TXT, CaptureOutput)
 
 //! Error reporting
 #define CAPTURE_TXT_ERROR (capture_txt_error_quark())
 
-//! Shorter declaration of capture_info structure
-typedef struct _CaptureTxt CaptureTxt;
-
 //! Error codes
-enum capture_txt_errors
+typedef enum
 {
     CAPTURE_TXT_ERROR_OPEN = 0,
-};
+} CaptureTxtErrors;
 
 /**
  * @brief store all information related with packet capture
  *
  * Store capture required data from one packet source
  */
-struct _CaptureTxt
+struct _CaptureOutputTxt
 {
+    //! Parent object attributes
+    CaptureOutput parent;
     //! File where packets will be saved
     FILE *file;
 };
@@ -61,4 +66,6 @@ struct _CaptureTxt
 CaptureOutput *
 capture_output_txt(const gchar *filename, GError **error);
 
-#endif // __SNGREP_CAPTURE_TXT_H
+G_END_DECLS
+
+#endif /* __SNGREP_CAPTURE_TXT_H__ */

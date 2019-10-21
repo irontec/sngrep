@@ -40,9 +40,9 @@
 #include "capture_pcap.h"
 #include "parser/packet_link.h"
 #include "storage/storage.h"
-#include "storage/stream.h"
-#include "setting.h"
-#include "storage/datetime.h"
+
+// CapturePcap class definition
+G_DEFINE_TYPE(CaptureInputPcap, capture_input_pcap, CAPTURE_TYPE_INPUT)
 
 GQuark
 capture_pcap_error_quark()
@@ -51,22 +51,51 @@ capture_pcap_error_quark()
 }
 
 static void
-capture_input_pcap_free(CaptureInput *input)
+capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr *header, const guchar *content)
 {
-    // Free input information
-    packet_parser_free(input->parser);
-    g_free(input->priv);
-    g_free(input->sourcestr);
-    g_free(input);
+    // Capture manager
+    CaptureManager *manager = capture_input_manager(CAPTURE_INPUT(pcap));
+    // Packet dissectors parser
+    PacketParser *parser = capture_input_parser(CAPTURE_INPUT(pcap));
+    parser->current = parser->dissector_tree;
+
+    // Ignore packets while capture is paused
+    if (manager->paused)
+        return;
+
+    // Ignore packets if storage limit has been reached
+    if (storage_limit_reached()) {
+        return;
+    }
+
+    // Convert packet data
+    GByteArray *data = g_byte_array_new();
+    g_byte_array_append(data, content, header->caplen);
+
+    // Create a new packet for this data
+    PacketFrame *frame = packet_frame_new();
+    frame->ts = g_date_time_new_from_timeval(header->ts.tv_sec, header->ts.tv_usec);
+    frame->caplen = header->caplen;
+    frame->len = header->len;
+    frame->data = g_byte_array_new();
+    g_byte_array_append(frame->data, data->data, data->len);
+
+    // Create a new packet
+    Packet *packet = packet_new(parser);
+    packet->frames = g_list_append(packet->frames, frame);
+
+    // Pass packet to dissectors
+    packet_parser_next_dissector(parser, packet, data);
+
+    // Remove packet reference (
+    packet_unref(packet);
+    g_byte_array_unref(data);
 }
 
 static gboolean
 capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
-                               G_GNUC_UNUSED GIOCondition condition, CaptureInput *input)
+                               G_GNUC_UNUSED GIOCondition condition, CaptureInputPcap *pcap)
 {
-    // Capture pcap information
-    CapturePcap *pcap = input->priv;
-
     // Get next packet from this input
     struct pcap_pkthdr *header;
     const guchar *data;
@@ -77,10 +106,24 @@ capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
 
     if (data != NULL) {
         // Parse received data
-        capture_pcap_parse_packet((guchar *) input, header, data);
+        capture_input_pcap_parse_packet(pcap, header, data);
     }
 
     return TRUE;
+}
+
+static void
+capture_input_pcap_stop(CaptureInput *input)
+{
+    // Get private data
+    CaptureInputPcap *pcap = CAPTURE_INPUT_PCAP(input);
+
+    if (pcap->handle == NULL)
+        return;
+
+    if (capture_input_mode(input) == CAPTURE_MODE_OFFLINE) {
+        pcap_close(pcap->handle);
+    }
 }
 
 CaptureInput *
@@ -89,7 +132,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Create a new structure to handle this capture source
-    CapturePcap *pcap = g_malloc(sizeof(CapturePcap));
+    CaptureInputPcap *pcap = g_object_new(CAPTURE_TYPE_INPUT_PCAP, NULL);
 
     // Try to find capture device information
     if (pcap_lookupnet(dev, &pcap->net, &pcap->mask, errbuf) == -1) {
@@ -126,35 +169,32 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     }
 
     // Create a new structure to handle this capture source
-    CaptureInput *input = g_malloc0(sizeof(CaptureInput));
-    input->sourcestr = g_strdup(dev);
-    input->priv = pcap;
-    input->tech = CAPTURE_TECH_PCAP;
-    input->mode = CAPTURE_MODE_ONLINE;
-    input->start = capture_input_pcap_start;
-    input->stop = capture_input_pcap_stop;
-    input->filter = capture_input_pcap_filter;
-    input->free = capture_input_pcap_free;
+    capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_ONLINE);
+    capture_input_set_source_str(CAPTURE_INPUT(pcap), dev);
 
-    // Ceate packet parser tree
-    PacketParser *parser = packet_parser_new(input);
-    packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_LINK);
-    input->parser = parser;
+    packet_parser_dissector_init(
+        capture_input_parser(CAPTURE_INPUT(pcap)),
+        NULL,
+        PACKET_LINK
+    );
 
     // Create GSource for main loop
-    input->source = g_unix_fd_source_new(
-        pcap_fileno(pcap->handle),
-        G_IO_IN | G_IO_ERR | G_IO_HUP
+    capture_input_set_source(
+        CAPTURE_INPUT(pcap),
+        g_unix_fd_source_new(
+            pcap_fileno(pcap->handle),
+            G_IO_IN | G_IO_ERR | G_IO_HUP
+        )
     );
 
     g_source_set_callback(
-        input->source,
+        capture_input_source(CAPTURE_INPUT(pcap)),
         (GSourceFunc) G_CALLBACK(capture_input_pcap_read_packet),
-        input,
+        pcap,
         (GDestroyNotify) capture_input_pcap_stop
     );
 
-    return input;
+    return CAPTURE_INPUT(pcap);
 }
 
 CaptureInput *
@@ -169,17 +209,16 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     }
 
     // Create a new structure to handle this capture source
-    CapturePcap *pcap = g_malloc(sizeof(CapturePcap));
+    CaptureInputPcap *pcap = g_object_new(CAPTURE_TYPE_INPUT_PCAP, NULL);
 
     // Open PCAP file
     if ((pcap->handle = pcap_open_offline(infile, errbuf)) == NULL) {
-        gchar *filename = g_path_get_basename(infile);
+        g_autofree gchar *filename = g_path_get_basename(infile);
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_FILE_OPEN,
                     "Couldn't open pcap file %s: %s",
                     filename, errbuf);
-        g_free(filename);
         return NULL;
     }
 
@@ -197,73 +236,82 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     }
 
     // Create a new structure to handle this capture source
-    CaptureInput *input = g_malloc0(sizeof(CaptureInput));
-    input->sourcestr = g_path_get_basename(infile);
-    input->priv = pcap;
-    input->tech = CAPTURE_TECH_PCAP;
-    input->mode = CAPTURE_MODE_OFFLINE;
-    input->start = capture_input_pcap_start;
-    input->stop = capture_input_pcap_stop;
-    input->filter = capture_input_pcap_filter;
-    input->free = capture_input_pcap_free;
+    capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_OFFLINE);
+    g_autofree gchar *basename = g_path_get_basename(infile);
+    capture_input_set_source_str(CAPTURE_INPUT(pcap), basename);
 
-    // Ceate packet parser tree
-    PacketParser *parser = packet_parser_new(input);
-    packet_parser_dissector_init(parser, parser->dissector_tree, PACKET_LINK);
-    input->parser = parser;
+    packet_parser_dissector_init(
+        capture_input_parser(CAPTURE_INPUT(pcap)),
+        NULL,
+        PACKET_LINK
+    );
 
     // Create GSource for main loop
-    input->source = g_unix_fd_source_new(
-        pcap_get_selectable_fd(pcap->handle),
-        G_IO_IN | G_IO_ERR | G_IO_HUP
+    capture_input_set_source(
+        CAPTURE_INPUT(pcap),
+        g_unix_fd_source_new(
+            pcap_get_selectable_fd(pcap->handle),
+            G_IO_IN | G_IO_ERR | G_IO_HUP
+        )
     );
 
     g_source_set_callback(
-        input->source,
+        capture_input_source(CAPTURE_INPUT(pcap)),
         (GSourceFunc) G_CALLBACK(capture_input_pcap_read_packet),
-        input,
+        pcap,
         (GDestroyNotify) capture_input_pcap_stop
     );
 
-    return input;
+    return CAPTURE_INPUT(pcap);
 }
 
-gpointer
-capture_input_pcap_start(CaptureInput *input)
+gint
+capture_input_pcap_datalink(CaptureInput *input)
 {
-    // Get private data
-    CapturePcap *pcap = (CapturePcap *) input->priv;
+    // Capture PCAP private data
+    CaptureInputPcap *pcap = CAPTURE_INPUT_PCAP(input);
+    g_return_val_if_fail(pcap != NULL, -1);
 
-    // Parse available packets
-    pcap_loop(pcap->handle, -1, capture_pcap_parse_packet, (u_char *) input);
+    return pcap->link;
+}
+
+const gchar *
+capture_input_pcap_file(CaptureManager *manager)
+{
+    if (g_slist_length(manager->inputs) > 1)
+        return "Multiple files";
+
+    CaptureInput *input = manager->inputs->data;
+    if (capture_input_tech(input) == CAPTURE_TECH_PCAP
+        && capture_input_mode(input) == CAPTURE_MODE_OFFLINE) {
+        return capture_input_source_str(input);
+    }
 
     return NULL;
 }
 
-void
-capture_input_pcap_stop(CaptureInput *input)
+const gchar *
+capture_input_pcap_device(CaptureManager *manager)
 {
-    g_return_if_fail(input != NULL);
+    if (g_slist_length(manager->inputs) > 1)
+        return "multi";
 
-    CapturePcap *pcap = (CapturePcap *) input->priv;
-    g_return_if_fail(pcap != NULL);
-
-    if (pcap->handle == NULL)
-        return;
-
-    if (input->mode == CAPTURE_MODE_OFFLINE) {
-        pcap_close(pcap->handle);
+    CaptureInput *input = manager->inputs->data;
+    if (capture_input_tech(input) == CAPTURE_TECH_PCAP
+        && capture_input_mode(input) == CAPTURE_MODE_ONLINE) {
+        return capture_input_source_str(input);
     }
+    return NULL;
 }
 
-gboolean
+static gboolean
 capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **error)
 {
     // The compiled filter expression
     struct bpf_program bpf;
 
     // Capture PCAP private data
-    CapturePcap *pcap = (CapturePcap *) input->priv;
+    CaptureInputPcap *pcap = CAPTURE_INPUT_PCAP(input);
 
     //! Check if filter compiles
     if (pcap_compile(pcap->handle, &bpf, filter, 0, pcap->mask) == -1) {
@@ -291,29 +339,25 @@ capture_input_pcap_filter(CaptureInput *input, const gchar *filter, GError **err
     return TRUE;
 }
 
-gint
-capture_input_pcap_datalink(CaptureInput *input)
+static void
+capture_input_pcap_class_init(CaptureInputPcapClass *klass)
 {
-    // Capture PCAP private data
-    CapturePcap *pcap = (CapturePcap *) input->priv;
-    g_return_val_if_fail(pcap != NULL, -1);
-
-    return pcap->link;
+    CaptureInputClass *input_class = CAPTURE_INPUT_CLASS(klass);
+    input_class->filter = capture_input_pcap_filter;
 }
 
 static void
-capture_output_pcap_free(CaptureOutput *output)
+capture_input_pcap_init(CaptureInputPcap *self)
 {
-    CapturePcap *pcap = output->priv;
-    pcap_close(pcap->handle);
-    g_free(pcap);
-    g_free(output);
+    capture_input_set_tech(CAPTURE_INPUT(self), CAPTURE_TECH_PCAP);
 }
 
+G_DEFINE_TYPE(CaptureOutputPcap, capture_output_pcap, CAPTURE_TYPE_OUTPUT)
+
 static void
-capture_output_pcap_write(CaptureOutput *output, Packet *packet)
+capture_output_pcap_write(CaptureOutput *self, Packet *packet)
 {
-    CapturePcap *pcap = output->priv;
+    CaptureOutputPcap *pcap = CAPTURE_OUTPUT_PCAP(self);
 
     g_return_if_fail(pcap != NULL);
     g_return_if_fail(pcap->dumper != NULL);
@@ -343,20 +387,17 @@ capture_output_pcap_write(CaptureOutput *output, Packet *packet)
 }
 
 static void
-capture_output_pcap_close(CaptureOutput *output)
+capture_output_pcap_close(CaptureOutput *self)
 {
-    CapturePcap *pcap = output->priv;
-
+    CaptureOutputPcap *pcap = CAPTURE_OUTPUT_PCAP(self);
     g_return_if_fail(pcap != NULL);
     g_return_if_fail(pcap->dumper != NULL);
-
     pcap_dump_close(pcap->dumper);
 }
 
 CaptureOutput *
 capture_output_pcap(const gchar *filename, GError **error)
 {
-
     // PCAP Output is only availble if capture has a single input
     // and thas input is from PCAP thech
     CaptureManager *manager = capture_manager_get_instance();
@@ -365,7 +406,7 @@ capture_output_pcap(const gchar *filename, GError **error)
     CaptureInput *input = g_slist_first_data(manager->inputs);
     g_return_val_if_fail(input != NULL, NULL);
 
-    if (input->tech != CAPTURE_TECH_PCAP) {
+    if (capture_input_tech(input) != CAPTURE_TECH_PCAP) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_SAVE_NOT_PCAP,
@@ -374,7 +415,7 @@ capture_output_pcap(const gchar *filename, GError **error)
     }
 
     // Create a new structure to handle this capture source
-    CapturePcap *pcap = g_malloc0(sizeof(CapturePcap));
+    CaptureOutputPcap *pcap = g_object_new(CAPTURE_TYPE_OUTPUT_PCAP, NULL);
 
     pcap->link = capture_input_pcap_datalink(input);
     if (g_slist_length(manager->inputs) > 1) {
@@ -397,80 +438,30 @@ capture_output_pcap(const gchar *filename, GError **error)
     }
 
     // Create a new structure to handle this capture dumper
-    CaptureOutput *output = g_malloc0(sizeof(CaptureOutput));
-    output->priv = pcap;
-    output->free = capture_output_pcap_free;
-    output->write = capture_output_pcap_write;
-    output->close = capture_output_pcap_close;
-    return output;
+    return CAPTURE_OUTPUT(pcap);
 }
 
-void
-capture_pcap_parse_packet(u_char *info, const struct pcap_pkthdr *header, const guchar *content)
+static void
+capture_output_pcap_finalize(GObject *object)
 {
-    // Capture Input info
-    CaptureInput *input = (CaptureInput *) info;
-    // Capture manager
-    CaptureManager *manager = input->manager;
-    // Packet dissectors parser
-    PacketParser *parser = input->parser;
-    parser->current = parser->dissector_tree;
-
-    // Ignore packets while capture is paused
-    if (manager->paused)
-        return;
-
-    // Ignore packets if storage limit has been reached
-    if (storage_limit_reached()) {
-        return;
-    }
-
-    // Convert packet data
-    GByteArray *data = g_byte_array_new();
-    g_byte_array_append(data, content, header->caplen);
-
-    // Create a new packet for this data
-    PacketFrame *frame = packet_frame_new();
-    frame->ts = g_date_time_new_from_timeval(header->ts.tv_sec, header->ts.tv_usec);
-    frame->caplen = header->caplen;
-    frame->len = header->len;
-    frame->data = g_byte_array_new();
-    g_byte_array_append(frame->data, data->data, data->len);
-
-    // Create a new packet
-    Packet *packet = packet_new(parser);
-    packet->frames = g_list_append(packet->frames, frame);
-
-    // Pass packet to dissectors
-    packet_parser_next_dissector(parser, packet, data);
-
-    // Remove packet reference (
-    packet_unref(packet);
-    g_byte_array_unref(data);
+    CaptureOutputPcap *pcap = CAPTURE_OUTPUT_PCAP(object);
+    pcap_close(pcap->handle);
+    G_OBJECT_CLASS (capture_output_pcap_parent_class)->finalize(object);
 }
 
-const gchar *
-capture_input_pcap_file(CaptureManager *manager)
+static void
+capture_output_pcap_class_init(CaptureOutputPcapClass *klass)
 {
-    if (g_slist_length(manager->inputs) > 1)
-        return "Multiple files";
+    CaptureOutputClass *capture_output_class = CAPTURE_OUTPUT_CLASS(klass);
+    capture_output_class->write = capture_output_pcap_write;
+    capture_output_class->close = capture_output_pcap_close;
 
-    CaptureInput *input = manager->inputs->data;
-    if (input->tech == CAPTURE_TECH_PCAP && input->mode == CAPTURE_MODE_OFFLINE)
-        return input->sourcestr;
-
-    return NULL;
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = capture_output_pcap_finalize;
 }
 
-const gchar *
-capture_input_pcap_device(CaptureManager *manager)
+static void
+capture_output_pcap_init(CaptureOutputPcap *self)
 {
-    if (g_slist_length(manager->inputs) > 1)
-        return "multi";
-
-    CaptureInput *input = manager->inputs->data;
-    if (input->tech == CAPTURE_TECH_PCAP && input->mode == CAPTURE_MODE_ONLINE)
-        return input->sourcestr;
-
-    return NULL;
+    capture_output_set_tech(CAPTURE_OUTPUT(self), CAPTURE_TECH_PCAP);
 }
