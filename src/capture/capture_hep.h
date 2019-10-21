@@ -43,6 +43,7 @@
 #define __SNGREP_CAPTURE_HEP_H__
 
 #include <glib.h>
+#include <glib-object.h>
 #include "capture.h"
 #include "capture_input.h"
 #include "capture_output.h"
@@ -75,7 +76,7 @@ typedef enum
 typedef struct _CaptureHepUrl CaptureHepUrl;
 
 /**
- * @brief Hep URL Cliend/Server data
+ * @brief Hep URL Client/Server data
  */
 struct _CaptureHepUrl
 {

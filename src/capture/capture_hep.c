@@ -290,7 +290,7 @@ capture_output_hep(const gchar *url, GError **error)
     // Fill configuration structure
     hep->version = setting_get_intvalue(SETTING_HEP_SEND_VER);
     hep->password = setting_get_value(SETTING_HEP_SEND_PASS);
-    hep->id = setting_get_intvalue(SETTING_HEP_SEND_ID);
+    hep->id = (guint16) setting_get_intvalue(SETTING_HEP_SEND_ID);
     if (url != NULL) {
         if (!capture_hep_parse_url(url, &hep->url, error)) {
             return NULL;
@@ -355,7 +355,7 @@ capture_output_hep(const gchar *url, GError **error)
 void
 capture_output_hep_write(CaptureOutput *output, Packet *packet)
 {
-    guint32 iplen = 0, tlen = 0;
+    guint32 ip_len = 0, total_len = 0;
     CaptureHepChunkIp4 src_ip4, dst_ip4;
 #ifdef USE_IPV6
     CaptureHepChunkIp6 src_ip6, dst_ip6;
@@ -382,7 +382,7 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     CaptureOutputHep *hep = CAPTURE_OUTPUT_HEP(output);
 
     // Data to send on the wire
-    g_autoptr(GByteArray) data = g_byte_array_sized_new(tlen);
+    g_autoptr(GByteArray) data = g_byte_array_sized_new(total_len);
 
     // Set "HEP3" banner header
     g_autofree CaptureHepGeneric *hg = g_malloc0(sizeof(CaptureHepGeneric));
@@ -412,7 +412,7 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
         dst_ip4.chunk.length = g_htons(sizeof(dst_ip4));
         inet_pton(AF_INET, ip->dstip, &dst_ip4.data);
 
-        iplen = sizeof(dst_ip4) + sizeof(src_ip4);
+        ip_len = sizeof(dst_ip4) + sizeof(src_ip4);
     }
 
 #ifdef USE_IPV6
@@ -428,7 +428,7 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
         dst_ip6.chunk.length = g_htons(sizeof(dst_ip6));
         inet_pton(AF_INET6, ip->dstip, &dst_ip6.data);
 
-        iplen = sizeof(dst_ip6) + sizeof(src_ip6);
+        ip_len = sizeof(dst_ip6) + sizeof(src_ip6);
     }
 #endif
 
@@ -473,19 +473,19 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     payload_chunk.type_id = g_htons(0x000f);
     payload_chunk.length = g_htons(sizeof(payload_chunk) + strlen(sip->payload));
 
-    tlen = sizeof(CaptureHepGeneric) + strlen(sip->payload) + iplen + sizeof(CaptureHepChunk);
+    total_len = sizeof(CaptureHepGeneric) + strlen(sip->payload) + ip_len + sizeof(CaptureHepChunk);
 
     // Authorization key
     if (hep->password != NULL) {
-        tlen += sizeof(CaptureHepChunk);
+        total_len += sizeof(CaptureHepChunk);
         authkey_chunk.vendor_id = g_htons(0x0000);
         authkey_chunk.type_id = g_htons(0x000e);
         authkey_chunk.length = g_htons(sizeof(authkey_chunk) + strlen(hep->password));
-        tlen += strlen(hep->password);
+        total_len += strlen(hep->password);
     }
 
     // Total packet length
-    hg->header.length = g_htons(tlen);
+    hg->header.length = g_htons(total_len);
     g_byte_array_append(data, (gpointer) hg, sizeof(CaptureHepGeneric));
 
     // IPv4
@@ -505,12 +505,12 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     // Authorization key chunk
     if (hep->password != NULL) {
         g_byte_array_append(data, (gpointer) &authkey_chunk, sizeof(CaptureHepChunk));
-        g_byte_array_append(data, (gpointer) hep->password, strlen(hep->password));
+        g_byte_array_append(data, (gpointer) hep->password, (guint) strlen(hep->password));
     }
 
     // SIP Payload
     g_byte_array_append(data, (gpointer) &payload_chunk, sizeof(CaptureHepChunk));
-    g_byte_array_append(data, (gpointer) sip->payload, strlen(sip->payload));
+    g_byte_array_append(data, (gpointer) sip->payload, (guint) strlen(sip->payload));
 
     // Send payload to HEPv3 Server
     if (send(hep->socket, data->data, data->len, 0) == -1) {

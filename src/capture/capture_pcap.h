@@ -33,6 +33,7 @@
 #define __SNGREP_CAPTURE_PCAP_H__
 
 #include <glib.h>
+#include <glib-object.h>
 #include <pcap.h>
 #include <string.h>
 #include <stdlib.h>
@@ -141,7 +142,7 @@ CaptureInput *
 capture_input_pcap_online(const gchar *dev, GError **error);
 
 /**
- * @brief Read from pcap file and fill sngrep sctuctures
+ * @brief Read from pcap file and fill sngrep structures
  *
  * @param infile File to read packets from
  * @param error GError with failure description (optional)

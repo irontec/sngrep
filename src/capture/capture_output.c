@@ -101,11 +101,11 @@ capture_output_tech(CaptureOutput *self)
 }
 
 void
-capture_output_set_sink(CaptureOutput *self, const gchar *sourcestr)
+capture_output_set_sink(CaptureOutput *self, const gchar *source_str)
 {
     CaptureOutputPrivate *priv = capture_output_get_instance_private(self);
     g_return_if_fail(priv != NULL);
-    priv->sink = g_strdup(sourcestr);
+    priv->sink = g_strdup(source_str);
 }
 
 const gchar *

@@ -38,7 +38,7 @@ typedef struct
     //! Are captured packets life
     CaptureMode mode;
     //! Source string
-    gchar *sourcestr;
+    gchar *source_str;
     //! Source of events for this input
     GSource *source;
     //! Each packet type private data
@@ -165,11 +165,11 @@ capture_input_tech(CaptureInput *self)
 }
 
 void
-capture_input_set_source_str(CaptureInput *self, const gchar *sourcestr)
+capture_input_set_source_str(CaptureInput *self, const gchar *source_str)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
     g_return_if_fail(priv != NULL);
-    priv->sourcestr = g_strdup(sourcestr);
+    priv->source_str = g_strdup(source_str);
 }
 
 const gchar *
@@ -177,7 +177,7 @@ capture_input_source_str(CaptureInput *self)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
     g_return_val_if_fail(priv != NULL, NULL);
-    return priv->sourcestr;
+    return priv->source_str;
 }
 
 static void
@@ -192,7 +192,7 @@ static void
 capture_input_finalize(GObject *object)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(CAPTURE_INPUT(object));
-    g_free(priv->sourcestr);
+    g_free(priv->source_str);
     packet_parser_free(priv->parser);
     G_OBJECT_CLASS (capture_input_parent_class)->finalize(object);
 }

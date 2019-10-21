@@ -29,7 +29,6 @@
 
 #include "config.h"
 #include <glib.h>
-#include "glib/gasyncqueuesource.h"
 #include "setting.h"
 #include "storage/storage.h"
 #include "capture.h"
@@ -45,7 +44,7 @@ capture_manager_new()
 
 #ifdef WITH_SSL
     // Parse TLS Server setting
-    manager->tlsserver = address_from_str(setting_get_value(SETTING_CAPTURE_TLSSERVER));
+    manager->tls_server = address_from_str(setting_get_value(SETTING_CAPTURE_TLSSERVER));
 #endif
 
     manager->loop = g_main_loop_new(
@@ -116,7 +115,7 @@ capture_manager_stop(CaptureManager *manager)
 gboolean
 capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **error)
 {
-    // Apply fitler to all capture inputs
+    // Apply filter to all capture inputs
     for (GSList *le = manager->inputs; le != NULL; le = le->next) {
         if (capture_input_filter(le->data, filter, error) == 0) {
             manager->filter = NULL;
@@ -243,7 +242,7 @@ capture_is_online(CaptureManager *manager)
 Address *
 capture_tls_server(CaptureManager *manager)
 {
-    return manager->tlsserver;
+    return manager->tls_server;
 }
 
 guint

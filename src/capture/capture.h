@@ -30,6 +30,7 @@
 #define __SNGREP_CAPTURE_H
 
 #include <glib.h>
+#include <glib-object.h>
 #include "parser/parser.h"
 
 G_BEGIN_DECLS
@@ -67,7 +68,7 @@ struct _CaptureManager
     //! capture filter expression text
     gchar *filter;
     //! TLS Server address
-    Address *tlsserver;
+    Address *tls_server;
     //! Flag to skip captured packets
     gboolean paused;
     //! Packet capture inputs (CaptureInput *)
@@ -93,7 +94,7 @@ CaptureManager *
 capture_manager_new();
 
 /**
- * @brief Deinitialize capture data
+ * @brief De-initialize capture data
  */
 void
 capture_manager_free(CaptureManager *manager);
@@ -133,7 +134,7 @@ gboolean
 capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **error);
 
 /**
- * @brief Set Keyfile to decrypt TLS packets
+ * @brief Set keyfile to decrypt TLS packets
  *
  * @param keyfile Full path to keyfile
  */
@@ -190,13 +191,13 @@ capture_is_online(CaptureManager *manager);
 
 /**
  * @brief Get TLS Server address if configured
- * @return address scructure
+ * @return address structure pointer
  */
 Address *
 capture_tls_server(CaptureManager *manager);
 
 /**
- * @brief Return packet catprue sources count
+ * @brief Return packet capture sources count
  * @return capture sources count
  */
 guint

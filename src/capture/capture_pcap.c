@@ -158,7 +158,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     // Get datalink to dissect packets correctly
     pcap->link = pcap_datalink(pcap->handle);
 
-    // Check linktypes sngrep knowns before start parsing packets
+    // Check link types sngrep known before start parsing packets
     if (proto_link_size(pcap->link) == 0) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
@@ -225,7 +225,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     // Get datalink to dissect packets correctly
     pcap->link = pcap_datalink(pcap->handle);
 
-    // Check linktypes sngrep knowns before start parsing packets
+    // Check link types sngrep known before start parsing packets
     if (proto_link_size(pcap->link) == 0) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
@@ -398,8 +398,8 @@ capture_output_pcap_close(CaptureOutput *self)
 CaptureOutput *
 capture_output_pcap(const gchar *filename, GError **error)
 {
-    // PCAP Output is only availble if capture has a single input
-    // and thas input is from PCAP thech
+    // PCAP Output is only available if capture has a single input
+    // and that input is from PCAP tech
     CaptureManager *manager = capture_manager_get_instance();
     g_return_val_if_fail(manager != NULL, NULL);
 

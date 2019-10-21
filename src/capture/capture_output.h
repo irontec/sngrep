@@ -78,7 +78,7 @@ CaptureTech
 capture_output_tech(CaptureOutput *self);
 
 void
-capture_output_set_sink(CaptureOutput *self, const gchar *sink);
+capture_output_set_sink(CaptureOutput *self, const gchar *source_str);
 
 const gchar *
 capture_output_sink(CaptureOutput *self);

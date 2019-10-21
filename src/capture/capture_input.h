@@ -29,6 +29,7 @@
 #ifndef __SNGREP_CAPTURE_INPUT_H__
 #define __SNGREP_CAPTURE_INPUT_H__
 
+#include <glib.h>
 #include <glib-object.h>
 #include "capture/capture.h"
 
@@ -98,7 +99,7 @@ CaptureTech
 capture_input_tech(CaptureInput *self);
 
 void
-capture_input_set_source_str(CaptureInput *self, const gchar *sourcestr);
+capture_input_set_source_str(CaptureInput *self, const gchar *source_str);
 
 const gchar *
 capture_input_source_str(CaptureInput *self);
