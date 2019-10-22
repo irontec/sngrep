@@ -18,12 +18,6 @@ endif ()
 include(GNUInstallDirs)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/src/glib)
-include_directories(${CMAKE_SOURCE_DIR}/src/ncurses)
-include_directories(${CMAKE_SOURCE_DIR}/src/ncurses/windows)
-include_directories(${CMAKE_SOURCE_DIR}/src/capture/)
-include_directories(${CMAKE_SOURCE_DIR}/src/capture/dissectors)
-include_directories(${CMAKE_SOURCE_DIR}/src/capture/codecs)
 
 set(SOURCES
         src/codecs/codec.c
