@@ -177,7 +177,7 @@ gint
 setting_get_intvalue(enum SettingId id)
 {
     const Setting *sett = setting_by_id(id);
-    return (sett && strlen(sett->value)) ? atoi(sett->value) : -1;
+    return (sett && strlen(sett->value)) ? g_atoi(sett->value) : -1;
 }
 
 void

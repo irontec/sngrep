@@ -31,6 +31,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include "glib/glib-extra.h"
 #include "setting.h"
 #include "keybinding.h"
 #include "ncurses/manager.h"
@@ -151,7 +152,7 @@ key_from_str(const gchar *key)
 
     // Function keys
     if (*key == 'F')
-        return KEY_F(atoi(key + 1));
+        return KEY_F(g_atoi(key + 1));
 
     // Control Secuences
     if (*key == '^')

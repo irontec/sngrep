@@ -28,12 +28,13 @@
  */
 
 #include "config.h"
-#include "address.h"
 #include <string.h>
 #include <pcap.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "glib/glib-extra.h"
+#include "address.h"
 
 gboolean
 addressport_equals(const Address *addr1, const Address *addr2)
@@ -119,30 +120,20 @@ address_is_local(const Address *addr)
 }
 
 Address *
-address_from_str(const gchar *ipport)
+address_from_str(const gchar *address)
 {
-    Address *ret = NULL;
-    gchar scanipport[256];
-    gchar address[256];
-    guint16 port;
+    if (address == NULL)
+        return NULL;
 
-    if (!ipport || strlen(ipport) > ADDRESSLEN + 6)
-        return ret;
-
-    memset(address, 0, sizeof(address));
-    memset(scanipport, 0, sizeof(scanipport));
-
-    strncpy(scanipport, ipport, strlen(ipport));
-
-    if (sscanf(scanipport, "%[^:]:%hu", address, &port) == 2) {
-        return address_new(address, port);
+    g_auto(GStrv) ip_port_data = g_strsplit(address, ":", 2);
+    switch (g_strv_length(ip_port_data)) {
+        case 1:
+            return address_new(ip_port_data[0], 0);
+        case 2:
+            return address_new(ip_port_data[0], g_atoi(ip_port_data[1]));
+        default:
+            return NULL;
     }
-
-    if (sscanf(scanipport, "%[^:]", address) == 1) {
-        return address_new(address, 0);
-    }
-
-    return NULL;
 }
 
 Address *

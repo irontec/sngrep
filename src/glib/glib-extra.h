@@ -103,4 +103,7 @@ g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle, GEqu
 GDateTime *
 g_date_time_new_from_timeval(gint64 sec, gint64 usec);
 
+gint
+g_atoi(const gchar *number);
+
 #endif //__SNGREP_GLIB_EXTRA_H

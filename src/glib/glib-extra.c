@@ -198,3 +198,17 @@ g_date_time_new_from_timeval(gint64 sec, gint64 usec)
     g_autoptr(GDateTime) dt = g_date_time_new_from_unix_local(sec);
     return g_date_time_add(dt, usec);
 }
+
+gint
+g_atoi(const gchar *number)
+{
+    g_return_val_if_fail(number != NULL, 0);
+    gint64 number64 = g_ascii_strtoll(number, NULL, 10);
+    if (number64 > G_MAXINT) {
+        return G_MAXINT;
+    } else if (number64 < G_MININT) {
+        return G_MININT;
+    } else {
+        return  (gint) number64;
+    }
+}
