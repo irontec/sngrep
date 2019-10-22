@@ -393,7 +393,7 @@ packet_tls_connection_create(Address *caddr, Address *saddr)
     keycontent.size = ftell(keyfp);
     fseek(keyfp, 0, SEEK_SET);
     keycontent.data = g_malloc0(keycontent.size);
-    fread(keycontent.data, 1, keycontent.size, keyfp);
+    G_GNUC_UNUSED gsize rbytes = fread(keycontent.data, 1, keycontent.size, keyfp);
     fclose(keyfp);
 
     gnutls_x509_privkey_init(&spkey);
