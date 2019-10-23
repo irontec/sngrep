@@ -108,6 +108,9 @@ msg_media_for_addr(Message *msg, Address *dst)
         if (addressport_equals(media->address, dst)) {
             return media;
         }
+        if (address_equals(dst, msg->src) && dst->port == media->address->port) {
+            return media;
+        }
     }
 
     return NULL;
