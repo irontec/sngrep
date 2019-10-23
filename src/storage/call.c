@@ -254,7 +254,7 @@ call_add_xcall(Call *call, Call *xcall)
 }
 
 Stream *
-call_find_stream(Call *call, const Address *src, const Address *dst, guint8 fmt)
+call_find_stream(Call *call, const Address *src, const Address *dst, guint32 ssrc)
 {
     Stream *stream = NULL;
 
@@ -263,7 +263,7 @@ call_find_stream(Call *call, const Address *src, const Address *dst, guint8 fmt)
         stream = g_ptr_array_index(call->streams, i);
         if (addressport_equals(src, stream->src) &&
             addressport_equals(dst, stream->dst)
-            && fmt == stream->fmtcode) {
+            && ssrc == stream->ssrc) {
             return stream;
         }
     }

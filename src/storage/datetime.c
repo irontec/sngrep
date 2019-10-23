@@ -73,7 +73,7 @@ date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out)
 {
     g_return_val_if_fail(out != NULL, NULL);
 
-    if (start == NULL|| end == NULL)
+    if (start == NULL || end == NULL)
         return NULL;
 
     glong diff = g_date_time_difference(end, start);
@@ -85,4 +85,11 @@ date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out)
 
     g_sprintf(out, "%c%ld.%06lu", sign, labs(nsec), nusec);
     return out;
+}
+
+gdouble
+date_time_to_unix_ms(GDateTime *time)
+{
+    return g_date_time_to_unix(time) * G_MSEC_PER_SEC
+           + ((gdouble) g_date_time_get_microsecond(time) / G_MSEC_PER_SEC);
 }

@@ -34,33 +34,78 @@
 
 #include <glib.h>
 
-// Version is the first 2 bits of the first octet
-#define RTP_VERSION(octet) ((octet) >> 6)
-// Payload type is the last 7 bits
-#define RTP_PAYLOAD_TYPE(octet) (guint8)((octet) & 0x7F)
+/**
+ * From wireshark code rtp_pt.h file
+ * RTP Payload types
+ * Table B.2 / H.225.0
+ * Also RFC 3551, and
+ *
+ *  http://www.iana.org/assignments/rtp-parameters
+ */
+#define RTP_PT_PCMU           0
+#define RTP_PT_GSM            3
+#define RTP_PT_G723           4
+#define RTP_PT_DVI4_8000      5
+#define RTP_PT_DVI4_16000     6
+#define RTP_PT_LPC            7
+#define RTP_PT_PCMA           8
+#define RTP_PT_G722           9
+#define RTP_PT_L16_STEREO    10
+#define RTP_PT_L16_MONO      11
+#define RTP_PT_QCELP         12
+#define RTP_PT_CN            13
+#define RTP_PT_MPA           14
+#define RTP_PT_G728          15
+#define RTP_PT_DVI4_11025    16
+#define RTP_PT_DVI4_22050    17
+#define RTP_PT_G729          18
+#define RTP_PT_CELB          25
+#define RTP_PT_JPEG          26
+#define RTP_PT_NV            28
+#define RTP_PT_H261          31
+#define RTP_PT_MPV           32
+#define RTP_PT_MP2T          33
+#define RTP_PT_H263          34
 
-// Handled RTP versions
-#define RTP_VERSION_RFC1889 2
 
-// RTP header length
-#define RTP_HDR_LENGTH 12
-
-// RTCP common header length
-#define RTCP_HDR_LENGTH 4
-
-// If stream does not receive a packet in this seconds, we consider it inactive
-#define STREAM_INACTIVE_SECS 1000000
-
-#define RTP_CODEC_G711A 8
-#define RTP_CODEC_G729  18
-
-
+typedef struct _PacketRtpHdr PacketRtpHdr;
 typedef struct _PacketRtpData PacketRtpData;
 typedef struct _PacketRtpEncoding PacketRtpEncoding;
 
+struct _PacketRtpHdr
+{
+# if __BYTE_ORDER == __LITTLE_ENDIAN
+    guint8 cc:4;
+    guint8 ext:1;
+    guint8 pad:1;
+    guint8 version:2;
+    guint8 pt:7;
+    guint8 marker:1;
+# endif
+# if __BYTE_ORDER == __BIG_ENDIAN
+    guint8 version:2;
+    guint8 pad:1;
+    guint8 ext:1;
+    guint8 cc:4;
+    guint8 marker:1;
+    guint8 pt:7;
+# endif
+    guint16 seq;
+    guint32 ts;
+    guint32 ssrc;
+} __attribute__((packed));
+
 struct _PacketRtpData
 {
+    //! RTP encoding (@see encodings table)
     PacketRtpEncoding *encoding;
+    //! RTP Sequence number
+    guint16 seq;
+    //! RTP timestamp
+    guint32 ts;
+    //! RTP Syncronization Source Iden
+    guint32 ssrc;
+    //! RTP payload
     GByteArray *payload;
 };
 
@@ -69,10 +114,14 @@ struct _PacketRtpEncoding
     guint8 id;
     const gchar *name;
     const gchar *format;
+    gint clock;
 };
 
 PacketRtpEncoding *
 packet_rtp_standard_codec(guint8 code);
+
+PacketRtpData *
+packet_rtp_data(const Packet *packet);
 
 PacketDissector *
 packet_rtp_new();

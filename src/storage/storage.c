@@ -366,13 +366,14 @@ storage_check_rtp_packet(Packet *packet)
     Call *call = msg_get_call(msg);
 
     // Find a matching stream in the call
-    Stream *stream = call_find_stream(call, src, dst, rtp->encoding->id);
+    Stream *stream = call_find_stream(call, src, dst, rtp->ssrc);
 
     // If no stream matches this packet, create a new stream for this source
     if (stream == NULL) {
         stream = stream_new(STREAM_RTP, msg, msg_media_for_addr(msg, dst));
         stream_set_data(stream, src, dst);
         stream_set_format(stream, rtp->encoding->id);
+        stream_set_ssrc(stream, rtp->ssrc);
         call_add_stream(call, stream);
     }
 

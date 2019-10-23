@@ -36,19 +36,22 @@
 #include "parser/packet_rtp.h"
 #include "parser/packet_rtcp.h"
 
+// If stream does not receive a packet in this seconds, we consider it inactive
+#define STREAM_INACTIVE_SECS 1000000
+
 //! Shorter declaration of rtp_stream structure
 typedef struct _Stream Stream;
 
-enum StreamType
+typedef enum
 {
     STREAM_RTP = 0,
     STREAM_RTCP
-};
+} StreamType;
 
 struct _Stream
 {
     //! Determine stream type
-    enum StreamType type;
+    StreamType type;
     //! Source address
     Address *src;
     //! Destination address
@@ -65,14 +68,44 @@ struct _Stream
     gboolean changed;
     //! Format of first received packet of stre
     guint8 fmtcode;
+    //! Syncronization Source Identifier
+    guint32 ssrc;
     //! Stream packets (not always stored in packets array)
-    guint pkt_count;
+    guint packet_count;
+    //! Stream statistics
+    struct {
+        //! First sequence number received. This will be used to calculate the expected packet
+        //! count the stream should have receive (last_seq_num - first_seq_num)
+        guint16 first_seq_num;
+        //! Last sequence number received. Used to detect out of sequence packets
+        guint16 seq_num;
+        //! Out of sequence packets found
+        guint oos;
+        //! Already cycled sequence numbers
+        guint cycled;
+        //! Expected packet count
+        guint expected;
+        //! Lost packets
+        guint lost;
+        //! Last received packet time in ms. Used to calculate max_delta time
+        gdouble pkt_time;
+        //! First stream rtp time (from packet RTP headers)
+        guint32 ts;
+        //! Max delta between two stream packets
+        gdouble max_delta;
+        //! Last received jitter in ms. Used to calculate max_jitter time
+        gdouble jitter;
+        //! Max jitter found in the stream
+        gdouble max_jitter;
+        //! Mean jitter of the stream
+        gdouble mean_jitter;
+    } stats;
     //! List of stream packets
     GPtrArray *packets;
 };
 
 Stream *
-stream_new(enum StreamType type, Message *msg, PacketSdpMedia *media);
+stream_new(StreamType type, Message *msg, PacketSdpMedia *media);
 
 void
 stream_free(Stream *stream);
@@ -88,6 +121,9 @@ stream_set_data(Stream *stream, const Address *src, const Address *dst);
 
 void
 stream_set_format(Stream *stream, guint8 format);
+
+void
+stream_set_ssrc(Stream *stream, guint32 ssrc);
 
 void
 stream_add_packet(Stream *stream, Packet *packet);

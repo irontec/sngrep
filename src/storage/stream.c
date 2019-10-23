@@ -30,11 +30,12 @@
  */
 #include "config.h"
 #include <glib.h>
+#include "glib/glib-extra.h"
 #include "stream.h"
 #include "storage/storage.h"
 
 Stream *
-stream_new(enum StreamType type, Message *msg, PacketSdpMedia *media)
+stream_new(StreamType type, Message *msg, PacketSdpMedia *media)
 {
     Stream *stream = g_malloc0(sizeof(Stream));
 
@@ -91,20 +92,111 @@ stream_set_format(Stream *stream, guint8 format)
 }
 
 void
+stream_set_ssrc(Stream *stream, guint32 ssrc)
+{
+    stream->ssrc = ssrc;
+}
+
+static void
+stream_rtp_analyze(Stream *stream, Packet *packet)
+{
+    PacketRtpEncoding *encoding = packet_rtp_standard_codec(stream->fmtcode);
+    if (encoding == NULL) {
+        // Non standard codec, impossible to analyze
+        return;
+    }
+
+    PacketRtpData *rtp = packet_rtp_data(packet);
+
+    // Packet capture timestamp in ms
+    gdouble pkt_time = date_time_to_unix_ms(packet_time(packet));
+
+    // Store first packet information for later comparison
+    if (stream->packet_count == 1) {
+        stream->stats.pkt_time = pkt_time;
+        stream->stats.ts = rtp->ts;
+        stream->stats.seq_num = rtp->seq;
+        stream->stats.first_seq_num = rtp->seq;
+        return;
+    }
+
+    // current packet has correct sequence number
+    if (stream->stats.seq_num + 1 == rtp->seq) {
+        stream->stats.seq_num = rtp->seq;
+        // current packet wraps rtp sequence number
+    } else if (stream->stats.seq_num == 65535 && rtp->seq == 0) {
+        stream->stats.seq_num = 0;
+        stream->stats.cycled += 65536 - stream->stats.first_seq_num;
+        stream->stats.first_seq_num = 0;
+        // current packet is lower in sequence by a big amount, assume new cycle
+    } else if (stream->stats.seq_num - rtp->seq > 0x00F0) {
+        stream->stats.seq_num = rtp->seq;
+        stream->stats.cycled += 65536 - stream->stats.first_seq_num;
+        stream->stats.first_seq_num = 0;
+        // current packet is greater than sequence number: we've lost some packets
+    } else if (stream->stats.seq_num + 1 < rtp->seq) {
+        stream->stats.oos++;
+        stream->stats.seq_num = rtp->seq;
+        // current packet is from the past in the sequence: duplicate or late
+    } else if (stream->stats.seq_num + 1 > rtp->seq) {
+        stream->stats.oos++;
+        return;
+    }
+
+    // Check delta time from the previous message
+    gdouble delta = pkt_time - stream->stats.pkt_time;
+    if (delta > stream->stats.max_delta) {
+        stream->stats.max_delta = delta;
+    }
+
+    // Calculate jitter buffer in ms
+    // Formulas from wireshark wiki https://wiki.wireshark.org/RTP_statistics  based on RFC3350
+    //! D(i,j) = (Rj - Ri) - (Sj - Si) = (Rj - Sj) - (Ri - Si)
+    gdouble sample_rate = ((gdouble) 1 / encoding->clock) * G_MSEC_PER_SEC;
+    gdouble rj = pkt_time;
+    gdouble ri = stream->stats.pkt_time;
+    gdouble sj = ((gdouble) rtp->ts) * sample_rate;
+    gdouble si = ((gdouble) stream->stats.ts) * sample_rate;
+    gdouble dij = (rj - ri) - (sj - si);
+    //! J(i) = J(i-1) + (|D(i-1,i)| - J(i-1))/16
+    gdouble jitter = stream->stats.jitter + (ABS(dij) - stream->stats.jitter) / 16;
+
+    // Check if current packet increases max jitter value
+    if (jitter > stream->stats.max_jitter) {
+        stream->stats.max_jitter = jitter;
+    }
+
+    // Calculate mean jitter
+    stream->stats.mean_jitter =
+        (stream->stats.mean_jitter * stream->packet_count + jitter) /
+        (stream->packet_count + 1);
+
+    // Update stream stats for next parsed packet
+    stream->stats.pkt_time = pkt_time;
+    stream->stats.ts = rtp->ts;
+    stream->stats.jitter = jitter;
+    stream->stats.expected = stream->stats.cycled + (rtp->seq - stream->stats.first_seq_num + 1);
+    stream->stats.lost = stream->stats.expected - stream->packet_count;
+}
+
+void
 stream_add_packet(Stream *stream, Packet *packet)
 {
     stream->lasttm = g_get_monotonic_time();
     stream->changed = TRUE;
-    stream->pkt_count++;
+    stream->packet_count++;
     if (stream->firsttv == NULL) {
         stream->firsttv = g_date_time_ref(packet_time(packet));
     }
+
+    // Add received packet to stream stats
+    stream_rtp_analyze(stream, packet);
 }
 
 guint
 stream_get_count(Stream *stream)
 {
-    return stream->pkt_count;
+    return stream->packet_count;
 }
 
 const char *

@@ -34,8 +34,19 @@
 #include "parser/packet.h"
 #include "packet_ip.h"
 #include "packet_udp.h"
-#include "packet_rtp.h"
+#include "packet_rtcp.h"
 
+// Version is the first 2 bits of the first octet
+#define RTP_VERSION(octet) ((octet) >> 6)
+
+// Payload type is the last 7 bits
+#define RTP_PAYLOAD_TYPE(octet) (guint8)((octet) & 0x7F)
+
+// Handled RTP versions
+#define RTP_VERSION_RFC1889 2
+
+// RTCP common header length
+#define RTCP_HDR_LENGTH 4
 
 /**
  * @brief Check if the data is a RTCP packet

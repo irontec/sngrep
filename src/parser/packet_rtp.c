@@ -35,40 +35,60 @@
 #include "storage/storage.h"
 #include "parser/parser.h"
 #include "parser/packet.h"
-#include "packet_ip.h"
-#include "packet_udp.h"
 #include "packet_rtp.h"
+
+// Version is the first 2 bits of the first octet
+#define RTP_VERSION(octet) ((octet) >> 6)
+
+// Payload type is the last 7 bits
+#define RTP_PAYLOAD_TYPE(octet) (guint8)((octet) & 0x7F)
+
+// Handled RTP versions
+#define RTP_VERSION_RFC1889 2
 
 /**
  * @brief Known RTP encodings
+ * #encodings
  */
 PacketRtpEncoding encodings[] = {
-    { 0,  "PCMU/8000",  "g711u" },
-    { 3,  "GSM/8000",   "gsm" },
-    { 4,  "G723/8000",  "g723" },
-    { 5,  "DVI4/8000",  "dvi" },
-    { 6,  "DVI4/16000", "dvi" },
-    { 7,  "LPC/8000",   "lpc" },
-    { 8,  "PCMA/8000",  "g711a" },
-    { 9,  "G722/8000",  "g722" },
-    { 10, "L16/44100",  "l16" },
-    { 11, "L16/44100",  "l16" },
-    { 12, "QCELP/8000", "qcelp" },
-    { 13, "CN/8000",    "cn" },
-    { 14, "MPA/90000",  "mpa" },
-    { 15, "G728/8000",  "g728" },
-    { 16, "DVI4/11025", "dvi" },
-    { 17, "DVI4/22050", "dvi" },
-    { 18, "G729/8000",  "g729" },
-    { 25, "CelB/90000", "celb" },
-    { 26, "JPEG/90000", "jpeg" },
-    { 28, "nv/90000",   "nv" },
-    { 31, "H261/90000", "h261" },
-    { 32, "MPV/90000",  "mpv" },
-    { 33, "MP2T/90000", "mp2t" },
-    { 34, "H263/90000", "h263" },
-    { 0,  NULL,         NULL }
+    { RTP_PT_PCMU,       "PCMU/8000",  "g711u", 8000 },
+    { RTP_PT_GSM,        "GSM/8000",   "gsm",   8000 },
+    { RTP_PT_G723,       "G723/8000",  "g723",  8000 },
+    { RTP_PT_DVI4_8000,  "DVI4/8000",  "dvi",   8000 },
+    { RTP_PT_DVI4_16000, "DVI4/16000", "dvi",   16000 },
+    { RTP_PT_LPC,        "LPC/8000",   "lpc",   8000 },
+    { RTP_PT_PCMA,       "PCMA/8000",  "g711a", 8000 },
+    { RTP_PT_G722,       "G722/8000",  "g722",  8000 },
+    { RTP_PT_L16_STEREO, "L16/44100",  "l16",   44100 },
+    { RTP_PT_L16_MONO,   "L16/44100",  "l16",   44100 },
+    { RTP_PT_QCELP,      "QCELP/8000", "qcelp", 8000 },
+    { RTP_PT_CN,         "CN/8000",    "cn",    8000 },
+    { RTP_PT_MPA,        "MPA/90000",  "mpa",   8000 },
+    { RTP_PT_G728,       "G728/8000",  "g728",  8000 },
+    { RTP_PT_DVI4_11025, "DVI4/11025", "dvi",   11025 },
+    { RTP_PT_DVI4_22050, "DVI4/22050", "dvi",   22050 },
+    { RTP_PT_G729,       "G729/8000",  "g729",  8000 },
+    { RTP_PT_CELB,       "CelB/90000", "celb",  90000 },
+    { RTP_PT_JPEG,       "JPEG/90000", "jpeg",  90000 },
+    { RTP_PT_NV,         "nv/90000",   "nv",    90000 },
+    { RTP_PT_H261,       "H261/90000", "h261",  90000 },
+    { RTP_PT_MPV,        "MPV/90000",  "mpv",   90000 },
+    { RTP_PT_MP2T,       "MP2T/90000", "mp2t",  90000 },
+    { RTP_PT_H263,       "H263/90000", "h263",  90000 },
+    { 0, NULL, NULL,                            0 },
 };
+
+PacketRtpData *
+packet_rtp_data(const Packet *packet)
+{
+    g_return_val_if_fail(packet != NULL, NULL);
+
+    // Get Packet rtp data
+    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
+    g_return_val_if_fail(rtp != NULL, NULL);
+
+    return rtp;
+}
 
 PacketRtpEncoding *
 packet_rtp_standard_codec(guint8 code)
@@ -82,47 +102,35 @@ packet_rtp_standard_codec(guint8 code)
     return NULL;
 }
 
-/**
- * @brief Check if the data is a RTP packet
- * RFC 5761 Section 4.  Distinguishable RTP and RTCP Packets
- * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
- */
-static gboolean
-packet_rtp_valid(GByteArray *data)
-{
-    g_return_val_if_fail(data != NULL, FALSE);
-
-    guint8 pt = RTP_PAYLOAD_TYPE(data->data[1]);
-
-    if ((data->len >= RTP_HDR_LENGTH) &&
-        (RTP_VERSION(data->data[0]) == RTP_VERSION_RFC1889) &&
-        (data->data[0] > 127 && data->data[0] < 192) &&
-        (pt <= 64 || pt >= 96)) {
-        return TRUE;
-    }
-
-    // Not a RTP packet
-    return FALSE;
-}
-
 static GByteArray *
 packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray *data)
 {
-    // Not RTP
-    if (!packet_rtp_valid(data)) {
+    // Not enough data for a RTP packet
+    if (data->len < sizeof(PacketRtpHdr))
         return data;
-    }
 
-    guint8 codec = RTP_PAYLOAD_TYPE(data->data[1]);
+    PacketRtpHdr *hdr = (PacketRtpHdr *) data->data;
+    // Validate RTP version field
+    if (hdr->version != RTP_VERSION_RFC1889)
+        return data;
+
+    // Validate RTP payload type
+    if (!(hdr->pt <= 64 || hdr->pt >= 96))
+        return data;
 
     PacketRtpData *rtp = g_malloc0(sizeof(PacketRtpData));
-    rtp->encoding = packet_rtp_standard_codec(codec);
+    rtp->encoding = packet_rtp_standard_codec(hdr->pt);
 
-    // Not standard codec, just set the id and let storage search in SDP rtpmap
+    // Not standard payload_type, just set the id and let storage search in SDP rtpmap
     if (rtp->encoding == NULL) {
         rtp->encoding = g_malloc0(sizeof(PacketRtpEncoding));
-        rtp->encoding->id = codec;
+        rtp->encoding->id = hdr->pt;
     }
+
+    // Store RTP header information in host byte order
+    rtp->seq = g_ntohs(hdr->seq);
+    rtp->ts = g_ntohl(hdr->ts);
+    rtp->ssrc = g_ntohl(hdr->ssrc);
 
     // Remove RTP headers from payload
     g_byte_array_remove_range(data, 0, 12);

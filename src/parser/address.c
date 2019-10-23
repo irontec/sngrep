@@ -86,7 +86,7 @@ address_is_local(const Address *addr)
 
     for (dev = devices; dev; dev = dev->next) {
         for (da = dev->addresses; da; da = da->next) {
-            // Ingore empty addresses
+            // Ignore empty addresses
             if (!da->addr)
                 continue;
 

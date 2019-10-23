@@ -32,6 +32,9 @@
 
 #include "storage/stream.h"
 
+#define RTP_CODEC_G711A 8
+#define RTP_CODEC_G729  18
+
 //! Error reporting
 #define CODEC_ERROR (codec_error_quark())
 

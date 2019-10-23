@@ -31,6 +31,8 @@
 
 #include <glib.h>
 
+#define G_MSEC_PER_SEC 1000
+
 /**
  * @brief Convert timeval to yyyy/mm/dd format
  */
@@ -56,5 +58,11 @@ date_time_to_duration(GDateTime *start, GDateTime *end, gchar *out);
  */
 const gchar *
 date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out);
+
+/**
+ * @brief Convert datetime to microseconds unix timestamp
+ */
+gdouble
+date_time_to_unix_ms(GDateTime *time);
 
 #endif /* __SNGREP_TIMEVAL_H */

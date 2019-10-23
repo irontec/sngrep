@@ -29,6 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include <storage/message.h>
+#include <storage/stream.h>
 #include "parser/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
@@ -1360,11 +1361,6 @@ call_flow_draw_raw(Window *window, Message *msg)
 static int
 call_flow_draw_raw_rtcp(Window *window, G_GNUC_UNUSED Stream *stream)
 {
-    /**
-     * TODO This is too experimental to even display it
-     */
-    return 0;
-
     CallFlowWinInfo *info;
     WINDOW *raw_win;
     int raw_width, raw_height;
@@ -1414,6 +1410,26 @@ call_flow_draw_raw_rtcp(Window *window, G_GNUC_UNUSED Stream *stream)
     wattron(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
     mvwvline(window->win, 1, window->width - raw_width - 2, ACS_VLINE, window->height - 2);
     wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+
+    guint row = 1;
+    mvwprintw(raw_win, row++, 1, "RTP Stream Analysis");
+    mvwhline(raw_win, row++, 1, ACS_HLINE, raw_width);
+    mvwprintw(raw_win, row++, 1, "Source: %s:%hu", stream->src->ip, stream->src->port);
+    mvwprintw(raw_win, row++, 1, "Destination: %s:%hu", stream->dst->ip, stream->dst->port);
+    mvwprintw(raw_win, row++, 1, "SSRC: 0x%X", stream->ssrc);
+    mvwprintw(raw_win, row++, 1, "Packets: %d / %d", stream->packet_count, stream->stats.expected);
+    mvwprintw(raw_win, row++, 1, "Lost: %d (%.1f%%)", stream->stats.lost,
+              (gdouble) stream->stats.lost / stream->stats.expected * 100);
+    mvwprintw(raw_win, row++, 1, "Out of sequence: %d (%.1f%%)", stream->stats.oos,
+              (gdouble) stream->stats.oos / stream->packet_count * 100);
+    mvwprintw(raw_win, row++, 1, "Max Delta: %.2f ms", stream->stats.max_delta);
+    mvwprintw(raw_win, row++, 1, "Max Jitter: %.2f ms", stream->stats.max_jitter);
+    mvwprintw(raw_win, row++, 1, "Mean Jitter: %.2f ms", stream->stats.mean_jitter);
+    mvwprintw(raw_win, row++, 1, "Problems: %s", (stream->stats.lost) ? "Yes" : "No");
+    row++;
+
+    mvwprintw(raw_win, row++, 1, "RTCP VoIP Metrics Report");
+    mvwhline(raw_win, row++, 1, ACS_HLINE, raw_width);
 
     // Copy the raw_win contents into the panel
     copywin(raw_win, window->win, 0, 0, 1, window->width - raw_width - 1, raw_height, window->width - 2, 0);
