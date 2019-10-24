@@ -32,6 +32,7 @@
 #include <glib.h>
 #include <errno.h>
 #include <stdio.h>
+#include "glib/glib-extra.h"
 #include "storage/datetime.h"
 #include "parser/packet.h"
 #include "parser/packet_sip.h"
@@ -61,8 +62,12 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     g_return_if_fail(frame != NULL);
 
     // Get packet data
-    date_time_date_to_str(frame->ts, date);
-    date_time_time_to_str(frame->ts, time);
+    g_autoptr(GDateTime) frame_date = g_date_time_new_from_timeval(
+        packet_frame_seconds(frame),
+        packet_frame_microseconds(frame)
+    );
+    date_time_date_to_str(frame_date, date);
+    date_time_time_to_str(frame_date, time);
     Address *src = packet_src_address(packet);
     g_return_if_fail(src != NULL);
     Address *dst = packet_dst_address(packet);

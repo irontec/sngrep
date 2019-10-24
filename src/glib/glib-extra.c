@@ -193,10 +193,17 @@ g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle,
 #endif
 
 GDateTime *
-g_date_time_new_from_timeval(gint64 sec, gint64 usec)
+g_date_time_new_from_timeval(gint64 sec,  gint64 usec)
 {
     g_autoptr(GDateTime) dt = g_date_time_new_from_unix_local(sec);
     return g_date_time_add(dt, usec);
+}
+
+GDateTime *
+g_date_time_new_from_unix_usec(gint64 usec)
+{
+    GDateTime *dt = g_date_time_new_from_unix_local(usec / G_USEC_PER_SEC);
+    return g_date_time_add(dt, usec - (usec / G_USEC_PER_SEC * G_USEC_PER_SEC));
 }
 
 gint

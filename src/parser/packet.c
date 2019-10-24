@@ -170,31 +170,37 @@ packet_transport(Packet *packet)
     return "???";
 }
 
-GDateTime *
+guint64
 packet_time(const Packet *packet)
 {
-    PacketFrame *last;
-    GDateTime *ts = NULL;
-
-    // Return last frame timestamp
-    if (packet && (last = g_list_last_data(packet->frames))) {
-        ts = last->ts;
-    }
-
-    // Return packe timestamp
-    return ts;
+    PacketFrame *last = g_list_last_data(packet->frames);
+    g_return_val_if_fail(last != NULL, 0);
+    return last->ts;
 }
 
 gint
 packet_time_sorter(const Packet **a, const Packet **b)
 {
-    return g_date_time_compare(packet_time(*a), packet_time(*b));
+    return (gint) (packet_time(*a) - packet_time(*b));
+}
+
+guint64
+packet_frame_seconds(const PacketFrame *frame)
+{
+    g_return_val_if_fail(frame != NULL, 0);
+    return frame->ts / G_USEC_PER_SEC;
+}
+
+guint64
+packet_frame_microseconds(const PacketFrame *frame)
+{
+    g_return_val_if_fail(frame != NULL, 0);
+    return frame->ts - ((frame->ts / G_USEC_PER_SEC) * G_USEC_PER_SEC);
 }
 
 void
 packet_frame_free(PacketFrame *frame)
 {
-    g_date_time_unref(frame->ts);
     g_byte_array_free(frame->data, TRUE);
     g_free(frame);
 }

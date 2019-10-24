@@ -111,8 +111,8 @@ struct _Packet
  */
 struct _PacketFrame
 {
-    //! Frace received time
-    GDateTime *ts;
+    //! Frame received time (microseconds)
+    guint64 ts;
     //! Capture lenght (effective)
     guint32 len;
     //! Capture lenght (from wire)
@@ -149,7 +149,7 @@ packet_transport(Packet *packet);
 /**
  * @brief Get The timestamp for a packet.
  */
-GDateTime *
+guint64
 packet_time(const Packet *packet);
 
 /**
@@ -157,6 +157,18 @@ packet_time(const Packet *packet);
  */
 gint
 packet_time_sorter(const Packet **a, const Packet **b);
+
+/**
+ * @brief Return frame received unix timestamp seconds
+ */
+guint64
+packet_frame_seconds(const PacketFrame *frame);
+
+/**
+ * @brief Return frame received timestamp microseconds
+ */
+guint64
+packet_frame_microseconds(const PacketFrame *frame);
 
 /**
  * @brief Free allocated memory in Packet frame

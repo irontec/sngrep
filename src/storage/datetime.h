@@ -63,6 +63,6 @@ date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out);
  * @brief Convert datetime to microseconds unix timestamp
  */
 gdouble
-date_time_to_unix_ms(GDateTime *time);
+date_time_to_unix_ms(guint64 ts);
 
 #endif /* __SNGREP_TIMEVAL_H */

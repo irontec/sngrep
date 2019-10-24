@@ -101,6 +101,9 @@ g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle, GEqu
 GDateTime *
 g_date_time_new_from_timeval(gint64 sec, gint64 usec);
 
+GDateTime *
+g_date_time_new_from_unix_usec(gint64 usec);
+
 gint
 g_atoi(const gchar *number);
 

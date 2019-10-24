@@ -46,7 +46,7 @@ msg_new(Packet *packet)
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     // Set SIP packet related data
     msg->payload = packet_sip_payload(packet);
-    msg->ts = g_date_time_ref(packet_time(packet));
+    msg->ts = g_date_time_new_from_unix_usec(packet_time(packet));
     msg->src = address_clone(packet_src_address(packet));
     msg->dst = address_clone(packet_dst_address(packet));
     msg->is_request = packet_sip_method(packet) < 100;
@@ -161,12 +161,9 @@ msg_get_payload(Message *msg)
 GDateTime *
 msg_get_time(const Message *msg)
 {
-    GDateTime *t = NULL;
-    PacketFrame *frame;
-
-    if (msg && (frame = g_list_nth_data(msg->packet->frames, 0)))
-        return frame->ts;
-    return t;
+    if (msg == NULL)
+        return NULL;
+    return msg->ts;
 }
 
 const gchar *

@@ -88,8 +88,7 @@ date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out)
 }
 
 gdouble
-date_time_to_unix_ms(GDateTime *time)
+date_time_to_unix_ms(guint64 ts)
 {
-    return g_date_time_to_unix(time) * G_MSEC_PER_SEC
-           + ((gdouble) g_date_time_get_microsecond(time) / G_MSEC_PER_SEC);
+    return ((gdouble) ts / G_MSEC_PER_SEC);
 }

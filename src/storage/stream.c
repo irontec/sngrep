@@ -186,7 +186,7 @@ stream_add_packet(Stream *stream, Packet *packet)
     stream->changed = TRUE;
     stream->packet_count++;
     if (stream->firsttv == NULL) {
-        stream->firsttv = g_date_time_ref(packet_time(packet));
+        stream->firsttv = g_date_time_new_from_unix_usec(packet_time(packet));
     }
 
     // Add received packet to stream stats

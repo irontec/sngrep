@@ -203,10 +203,7 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     packet_add_type(packet, PACKET_UDP, udp);
 
     // Generate Packet Timestamp
-    frame->ts = g_date_time_new_from_timeval(
-        g_ntohl(hg.time_sec.data),
-        g_ntohl(hg.time_usec.data)
-    );
+    frame->ts = g_ntohl(hg.time_sec.data) * G_USEC_PER_SEC + g_ntohl(hg.time_usec.data);
 
     // Parse SIP payload
     return packet_parser_next_dissector(parser, packet, payload);
