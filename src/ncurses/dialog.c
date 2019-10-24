@@ -38,9 +38,7 @@ dialog_run(const char *fmt, ...)
 {
     char textva[2048];
     va_list ap;
-    int height, width;
     WINDOW *win;
-    char *word;
     int col = 2;
     int line = 2;
 
@@ -50,8 +48,22 @@ dialog_run(const char *fmt, ...)
     va_end(ap);
 
     // Determine dialog dimensions
-    height = 6 + (strlen(textva) / 50);
-    width = strlen(textva) + 4;
+    g_auto(GStrv) dialog_lines = g_strsplit(textva, "\n", 0);
+    if (g_strv_length(dialog_lines) == 0) {
+        return 1;
+    }
+
+    // Calculate height based on text lines and each line length
+    gint height = 4 + g_strv_length(dialog_lines);
+    gint width = 0;
+    for (guint i = 0; i < g_strv_length(dialog_lines); i++) {
+        gint line_length = strlen(dialog_lines[i]);
+        height += line_length / 50;
+        if (line_length > width)
+            width = line_length;
+    }
+    // Some extra space
+    width += 10;
 
     // Check we don't have a too big or small window
     if (width > DIALOG_MAX_WIDTH)
@@ -64,13 +76,19 @@ dialog_run(const char *fmt, ...)
     box(win, 0, 0);
 
     // Write the message into the screen
-    for (word = strtok(textva, " "); word; word = strtok(NULL, " ")) {
-        if ((gint) (col + strlen(word)) > width - 2) {
-            line++;
-            col = 2;
+    for (guint i = 0; i < g_strv_length(dialog_lines); i++) {
+        // Split each line, word by word
+        g_auto(GStrv) words = g_strsplit(dialog_lines[i], " ", 0);
+        for (guint j = 0; j < g_strv_length(words); j++) {
+            if ((gint) (col + strlen(words[j])) > width - 2) {
+                line++;
+                col = 2;
+            }
+            mvwprintw(win, line, col, "%s", words[j]);
+            col += strlen(words[j]) + 1;
         }
-        mvwprintw(win, line, col, "%s", word);
-        col += strlen(word) + 1;
+        line++;
+        col = 2;
     }
 
     // Write Accept button

@@ -70,6 +70,14 @@ rtp_player_draw(Window *window)
             wattron(window->win, COLOR_PAIR(CP_RED_ON_DEF));
             mvwprintw(window->win, 6, 38, "Error     ");
             wattroff(window->win, COLOR_PAIR(CP_RED_ON_DEF));
+            if (getenv("PULSE_SERVER")) {
+                dialog_run("Unable to connect to pulseaudio server at %s.\n"
+                           "Maybe you need to allow remote connections by running: \n\n"
+                           "pactl load-module module-esound-protocol-tcp auth-anonymous=1",
+                           getenv("PULSE_SERVER")
+                );
+                return 1;
+            }
             break;
         case PA_CONTEXT_READY:
             wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
