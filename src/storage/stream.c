@@ -232,5 +232,5 @@ stream_time(Stream *stream)
 gboolean
 stream_is_active(Stream *stream)
 {
-    return g_get_monotonic_time() - stream->lasttm <= STREAM_INACTIVE_SECS;
+    return g_get_monotonic_time() - stream->lasttm <= STREAM_INACTIVE_USECS;
 }

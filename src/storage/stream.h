@@ -37,7 +37,7 @@
 #include "parser/packet_rtcp.h"
 
 // If stream does not receive a packet in this seconds, we consider it inactive
-#define STREAM_INACTIVE_SECS 1000000
+#define STREAM_INACTIVE_USECS (1 * G_USEC_PER_SEC)
 
 //! Shorter declaration of rtp_stream structure
 typedef struct _Stream Stream;
