@@ -224,7 +224,7 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             } else if (reqresp > 400 && call->invitecseq == msg->cseq) {
                 // Bob is not in the mood
                 call->state = SIP_CALLSTATE_REJECTED;
-            } else if (reqresp > 300) {
+            } else if (reqresp == 181 || reqresp == 302 || reqresp == 301) {
                 // Bob has diversion
                 call->state = SIP_CALLSTATE_DIVERTED;
             }
