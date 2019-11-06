@@ -185,7 +185,16 @@ call_group_count(CallGroup *group)
 gint
 call_group_msg_count(CallGroup *group)
 {
-    return g_ptr_array_len(group->msgs);
+    if (group->sdp_only) {
+        gint count = 0;
+        Message *msg = NULL;
+        while (call_group_get_next_msg(group, msg) != NULL)
+            count++;
+        return count;
+    } else {
+        return g_ptr_array_len(group->msgs);
+    }
+
 }
 
 Message *
