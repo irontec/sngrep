@@ -28,13 +28,11 @@
  */
 #include "config.h"
 #include <string.h>
-#include <stdlib.h>
 #include <form.h>
 #include "parser/packet_sip.h"
 #include "ncurses/manager.h"
 #include "filter_win.h"
 #include "call_list_win.h"
-#include "storage/storage.h"
 #include "storage/filter.h"
 #include "setting.h"
 
@@ -127,8 +125,7 @@ filter_save_options(Window *ui)
 
     for (field_id = 0; field_id < FLD_FILTER_COUNT; field_id++) {
         // Get current field value.
-        // We trim spaces with sscanf because and empty field is stored as
-        // space characters
+        // We trim spaces with because an empty field is stored as space characters
         memset(field_value, 0, sizeof(field_value));
         strcpy(field_value, field_buffer(info->fields[field_id], 0));
         g_strstrip(field_value);
@@ -211,10 +208,9 @@ filter_handle_key(Window *ui, int key)
     field_idx = field_index(current_field(info->form));
 
     // Get current field value.
-    // We trim spaces with sscanf because and empty field is stored as
-    // space characters
     memset(field_value, 0, sizeof(field_value));
     strcpy(field_value, field_buffer(current_field(info->form), 0));
+    // We trim spaces because an empty field is stored as space characters
     g_strstrip(field_value);
 
     // Check actions for this key

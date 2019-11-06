@@ -134,7 +134,7 @@ filter_check_call(Call *call, G_GNUC_UNUSED gconstpointer user_data)
             for (guint j = 0; j < g_ptr_array_len(call->msgs); j++) {
                 msg = g_ptr_array_index(call->msgs, j);
                 // Check if this payload matches the filter
-                if (filter_check_expr(filters[j], msg_get_payload(msg)) == 0) {
+                if (filter_check_expr(filters[filter_type], msg_get_payload(msg)) == 0) {
                     call->filtered = 0;
                     break;
                 }
