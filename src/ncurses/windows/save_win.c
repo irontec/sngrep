@@ -166,28 +166,28 @@ save_stream_to_file(Window *window)
     g_return_val_if_fail(info != NULL, false);
 
     // Get current path field value.
-    g_autofree gchar *savepath = g_malloc0(SETTING_MAX_LEN);
-    g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
-    g_strstrip(savepath);
-    if (strlen(savepath) != 0)
-        strcat(savepath, G_DIR_SEPARATOR_S);
+    g_autofree gchar *save_path = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(save_path, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
+    g_strstrip(save_path);
+    if (strlen(save_path) != 0)
+        strcat(save_path, G_DIR_SEPARATOR_S);
 
     // Get current file field value.
-    g_autofree gchar *savefile = g_malloc0(SETTING_MAX_LEN);
-    g_strlcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN - 10);
-    g_strstrip(savefile);
+    g_autofree gchar *save_file = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(save_file, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN - 10);
+    g_strstrip(save_file);
 
-    if (!strlen(savefile)) {
+    if (!strlen(save_file)) {
         dialog_run("Please enter a valid filename");
         return FALSE;
     }
 
-    if (!strstr(savefile, ".wav"))
-        strcat(savefile, ".wav");
+    if (!strstr(save_file, ".wav"))
+        strcat(save_file, ".wav");
 
     // Absolute filename
-    g_autofree gchar *fullfile = g_strdup_printf("%s%s", savepath, savefile);
-    if (g_access(fullfile, R_OK) == 0) {
+    g_autofree gchar *full_file = g_strdup_printf("%s%s", save_path, save_file);
+    if (g_access(full_file, R_OK) == 0) {
         if (dialog_confirm("Overwrite confirmation",
                            "Selected file already exits.\n Do you want to overwrite it?",
                            "Yes,No") != 0)
@@ -207,7 +207,7 @@ save_stream_to_file(Window *window)
     }
 
     // Create a new wav file in requested path
-    SNDFILE *file = sf_open(fullfile, SFM_WRITE, &file_info);
+    SNDFILE *file = sf_open(full_file, SFM_WRITE, &file_info);
     if (file == NULL) {
         dialog_run("error: %s", sf_strerror(file));
         return FALSE;
@@ -219,7 +219,7 @@ save_stream_to_file(Window *window)
     // Close wav file and free decoded data
     sf_close(file);
 
-    dialog_run("%d bytes decoded into %s", g_byte_array_len(decoded) / 2, fullfile);
+    dialog_run("%d bytes decoded into %s", g_byte_array_len(decoded) / 2, full_file);
     return TRUE;
 }
 
@@ -248,33 +248,33 @@ save_to_file(Window *window)
     SaveWinInfo *info = save_info(window);
 
     // Get current path field value.
-    g_autofree gchar *savepath = g_malloc0(SETTING_MAX_LEN);
-    g_strlcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
-    g_strstrip(savepath);
-    if (strlen(savepath) != 0)
-        strcat(savepath, G_DIR_SEPARATOR_S);
+    g_autofree gchar *save_path = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(save_path, field_buffer(info->fields[FLD_SAVE_PATH], 0), SETTING_MAX_LEN - 10);
+    g_strstrip(save_path);
+    if (strlen(save_path) != 0)
+        strcat(save_path, G_DIR_SEPARATOR_S);
 
     // Get current file field value.
-    g_autofree gchar *savefile = g_malloc0(SETTING_MAX_LEN);
-    g_strlcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN - 10);
-    g_strstrip(savefile);
+    g_autofree gchar *save_file = g_malloc0(SETTING_MAX_LEN);
+    g_strlcpy(save_file, field_buffer(info->fields[FLD_SAVE_FILE], 0), SETTING_MAX_LEN - 10);
+    g_strstrip(save_file);
 
-    if (!strlen(savefile)) {
+    if (!strlen(save_file)) {
         dialog_run("Please enter a valid filename");
         return 1;
     }
 
     if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
-        if (!strstr(savefile, ".pcap"))
-            strcat(savefile, ".pcap");
+        if (!strstr(save_file, ".pcap"))
+            strcat(save_file, ".pcap");
     } else {
-        if (!strstr(savefile, ".txt"))
-            strcat(savefile, ".txt");
+        if (!strstr(save_file, ".txt"))
+            strcat(save_file, ".txt");
     }
 
     // Absolute filename
-    g_autofree gchar *fullfile = g_strdup_printf("%s%s", savepath, savefile);
-    if (access(fullfile, R_OK) == 0) {
+    g_autofree gchar *full_file = g_strdup_printf("%s%s", save_path, save_file);
+    if (access(full_file, R_OK) == 0) {
         if (dialog_confirm("Overwrite confirmation",
                            "Selected file already exits.\n Do you want to overwrite it?",
                            "Yes,No") != 0)
@@ -288,11 +288,11 @@ save_to_file(Window *window)
     }
 
     if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
-        // Open PCAP ouptut file
-        output = capture_output_pcap(fullfile, &error);
+        // Open PCAP output file
+        output = capture_output_pcap(full_file, &error);
     } else {
         // Open TXT output file
-        output = capture_output_txt(fullfile, &error);
+        output = capture_output_txt(full_file, &error);
     }
 
     // Output creation error checking
@@ -386,9 +386,9 @@ save_to_file(Window *window)
 
     // Show success popup
     if (info->savemode == SAVE_MESSAGE) {
-        dialog_run("Successfully saved selected SIP message to %s", savefile);
+        dialog_run("Successfully saved selected SIP message to %s", save_file);
     } else {
-        dialog_run("Successfully saved %d dialogs to %s", total, savefile);
+        dialog_run("Successfully saved %d dialogs to %s", total, save_file);
     }
 
     return 0;
@@ -623,7 +623,7 @@ save_win_new()
     window->draw = save_draw;
     window->handle_key = save_handle_key;
 
-    // Cerate a new indow for the panel and form
+    // Create a new window for the panel and form
     window_init(window, 15, 68);
 
     // Pause the capture while saving
@@ -683,10 +683,10 @@ save_win_new()
     form_opts_off(info->form, O_BS_OVERLOAD);
 
     // Set Default field values
-    char savepath[SETTING_MAX_LEN];
-    sprintf(savepath, "%s", setting_get_value(SETTING_SAVEPATH));
+    char save_path[SETTING_MAX_LEN];
+    sprintf(save_path, "%s", setting_get_value(SETTING_SAVEPATH));
 
-    set_field_buffer(info->fields[FLD_SAVE_PATH], 0, savepath);
+    set_field_buffer(info->fields[FLD_SAVE_PATH], 0, save_path);
     set_field_buffer(info->fields[FLD_SAVE_SAVE], 0, "[  Save  ]");
     set_field_buffer(info->fields[FLD_SAVE_CANCEL], 0, "[ Cancel ]");
 
