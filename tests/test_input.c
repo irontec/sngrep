@@ -28,8 +28,14 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <sys/wait.h>
+
+#ifndef TEST_BINARY
+#define TEST_BINARY "../sngrep"
+#endif
 
 #ifndef TEST_MAX_DURATION
 #define TEST_MAX_DURATION 60
@@ -49,13 +55,21 @@
 
 /* keys array needs to be of type "char" */
 const char keys[];
+int ppipe[2];
+int ret = 0;
+int child;
+
+void
+failure(int signal)
+{
+    fprintf(stderr, "Test failed.\n");
+    kill(child, SIGINT);
+    exit(signal);
+}
 
 int
 main()
 {
-    int ppipe[2];
-    int ret = 0;
-    int child;
     pipe(ppipe);
 
     // Max test duration
@@ -67,13 +81,15 @@ main()
     } else if (child == 0) {
         // Child process, run sngrep with test pcap
         dup2(ppipe[0], STDIN_FILENO);
-        char *argv[] = { "../src/sngrep", "-I", TEST_PCAP_INPUT, 0 };
-        execv(argv[0], argv);
+        char *argv[] = { TEST_BINARY, "-I", TEST_PCAP_INPUT, 0 };
+        if (execv(argv[0], argv) == -1) {
+            fprintf(stderr, "Failed to start sngrep: %s\n", strerror(errno));
+        }
     } else {
+        signal(SIGALRM, failure);
         // Parent process, send keys to child stdin
         usleep(TEST_INITIAL_WAIT);
-        int i;
-        for (i = 0; keys[i]; i++) {
+        for (int i = 0; keys[i]; i++) {
             write(ppipe[1], &keys[i], sizeof(char));
             usleep(TEST_KEY_DELAY);
         }

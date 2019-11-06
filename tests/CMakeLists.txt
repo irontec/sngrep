@@ -1,3 +1,5 @@
+file(COPY aaa.pcap DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 add_executable(test-001 test_001.c)
 add_test(NAME test-001 COMMAND test-001)
 
