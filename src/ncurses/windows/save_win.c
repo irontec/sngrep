@@ -117,7 +117,8 @@ save_draw(Window *window)
             mvwprintw(window->win, 4, 60, ".txt ");
     }
 
-    set_field_buffer(info->fields[FLD_SAVE_ALL], 0, (info->savemode == SAVE_ALL) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_ALL], 0,
+                     (info->savemode == SAVE_ALL) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_SELECTED], 0,
                      (info->savemode == SAVE_SELECTED) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_DISPLAYED], 0,
@@ -126,10 +127,14 @@ save_draw(Window *window)
                      (info->savemode == SAVE_MESSAGE) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_STREAM], 0,
                      (info->savemode == SAVE_STREAM) ? "*" : " ");
-    set_field_buffer(info->fields[FLD_SAVE_PCAP], 0, (info->saveformat == SAVE_PCAP) ? "*" : " ");
-    set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, (info->saveformat == SAVE_PCAP_RTP) ? "*" : " ");
-    set_field_buffer(info->fields[FLD_SAVE_TXT], 0, (info->saveformat == SAVE_TXT) ? "*" : " ");
-    set_field_buffer(info->fields[FLD_SAVE_WAV], 0, (info->saveformat == SAVE_WAV) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_PCAP], 0,
+                     (info->saveformat == SAVE_PCAP) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0,
+                     (info->saveformat == SAVE_PCAP_RTP) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_TXT], 0,
+                     (info->saveformat == SAVE_TXT) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_WAV], 0,
+                     (info->saveformat == SAVE_WAV) ? "*" : " ");
 
     // Show disabled options with makers
     if (info->group != NULL && !storageCaptureOpts.rtp) {
@@ -656,10 +661,12 @@ save_win_new()
     field_opts_off(info->fields[FLD_SAVE_SELECTED], O_ACTIVE);
     field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_ACTIVE);
     field_opts_off(info->fields[FLD_SAVE_STREAM], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_STREAM], O_VISIBLE);
     field_opts_off(info->fields[FLD_SAVE_PCAP], O_ACTIVE);
     field_opts_off(info->fields[FLD_SAVE_PCAP_RTP], O_ACTIVE);
     field_opts_off(info->fields[FLD_SAVE_TXT], O_ACTIVE);
     field_opts_off(info->fields[FLD_SAVE_WAV], O_ACTIVE);
+    field_opts_off(info->fields[FLD_SAVE_WAV], O_VISIBLE);
 
     // Limit max save path and file length
     set_max_field(info->fields[FLD_SAVE_PATH], SETTING_MAX_LEN);
