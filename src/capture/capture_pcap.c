@@ -101,6 +101,11 @@ capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
     const guchar *data;
     gint ret = pcap_next_ex(pcap->handle, &header, &data);
 
+    // pcap_next_ex() returns 1 if the packet was read without problems
+    if (ret == 0)
+        return TRUE;
+
+    //  PCAP_ERROR if an error occurred while reading the packet
     if (ret == PCAP_ERROR || ret == PCAP_ERROR_BREAK)
         return FALSE;
 
