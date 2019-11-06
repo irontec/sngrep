@@ -54,9 +54,9 @@ int
 main()
 {
     int ppipe[2];
-    int unused, ret = 0;
+    int ret = 0;
     int child;
-    unused = pipe(ppipe);
+    pipe(ppipe);
 
     // Max test duration
     alarm(TEST_MAX_DURATION);
@@ -74,10 +74,10 @@ main()
         usleep(TEST_INITIAL_WAIT);
         int i;
         for (i = 0; keys[i]; i++) {
-            unused = write(ppipe[1], &keys[i], sizeof(char));
+            write(ppipe[1], &keys[i], sizeof(char));
             usleep(TEST_KEY_DELAY);
         }
-        unused = wait(&ret);
+        wait(&ret);
     }
 
     return ret;

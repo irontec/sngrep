@@ -172,6 +172,11 @@ add_definitions(-D_XOPEN_SOURCE_EXTENDED)
 install(TARGETS sngrep RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 ######################################################################
+# Tests support
+enable_testing()
+add_subdirectory(tests)
+
+######################################################################
 # Print Logo
 option(DISPLAY_LOGO "Disable Irontec Logo from Summary menu" ON)
 
