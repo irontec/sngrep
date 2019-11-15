@@ -566,6 +566,12 @@ ncurses_deinit()
     endwin();
 }
 
+gboolean
+ncurses_is_enabled()
+{
+    return stdscr != NULL;
+}
+
 wchar_t *
 ncurses_acs_utf8(const chtype acs)
 {

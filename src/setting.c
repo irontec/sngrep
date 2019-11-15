@@ -34,7 +34,6 @@
 #include "ncurses/keybinding.h"
 #include "glib/glib-extra.h"
 #include "setting.h"
-#include "storage/datetime.h"
 
 /**
  * @brief Storage settings
@@ -460,6 +459,8 @@ settings_init(SettingOpts options)
                     setting_bool_new("hintkeyalt", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_EXITPROMPT,
                     setting_bool_new("exitprompt", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_MEMORY_LIMIT,
+                    setting_string_new("memory_limit", "250M"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_LIMIT,
                     setting_number_new("capture.limit", "20000"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_DEVICE,

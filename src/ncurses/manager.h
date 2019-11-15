@@ -76,6 +76,13 @@ void
 ncurses_deinit();
 
 /**
+ * @brief Determine if ncurses mode has been enabled
+ * @return TRUE if ncurses screens has been initialized, FALSE otherwise
+ */
+gboolean
+ncurses_is_enabled();
+
+/**
  * @brief Create a panel of a given type
  *
  * Create a ncurses panel of the given type.

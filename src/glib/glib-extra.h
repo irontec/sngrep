@@ -34,6 +34,10 @@
 
 #define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
 
+#define G_BYTES_PER_KILOBYTE    1024
+#define G_BYTES_PER_MEGABYTE    G_BYTES_PER_KILOBYTE * 1024
+#define G_BYTES_PER_GIGABYTE    G_BYTES_PER_MEGABYTE * 1024
+
 #define g_ptr_array_len(array) (array->len)
 #define g_ptr_array_empty(array) (array->len == 0)
 #define g_ptr_array_first(array) g_ptr_array_index(array, 0)
@@ -106,5 +110,8 @@ g_date_time_new_from_unix_usec(gint64 usec);
 
 gint
 g_atoi(const gchar *number);
+
+guint64
+g_format_size_to_bytes(const gchar *size);
 
 #endif //__SNGREP_GLIB_EXTRA_H

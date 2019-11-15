@@ -27,6 +27,7 @@
  *
  */
 #include "config.h"
+#include <sys/sysinfo.h>
 #include "glib-extra.h"
 
 GList *
@@ -217,5 +218,23 @@ g_atoi(const gchar *number)
         return G_MININT;
     } else {
         return  (gint) number64;
+    }
+}
+
+guint64
+g_format_size_to_bytes(const gchar *size)
+{
+    g_return_val_if_fail(size != NULL, 0);
+    if (g_str_has_suffix(size, "K")) {
+        return g_atoi(size) * G_BYTES_PER_KILOBYTE;
+    } else if (g_str_has_suffix(size, "M")) {
+        return g_atoi(size) * G_BYTES_PER_MEGABYTE;
+    } else if (g_str_has_suffix(size, "G")) {
+        return g_atoi(size) * G_BYTES_PER_GIGABYTE;
+    } else if (g_str_has_suffix(size, "%")) {
+        struct sysinfo info;
+        return sysinfo(&info) == 0 ? info.totalram * g_atoi(size) / 100 : 0;
+    } else {
+        return g_atoi(size);
     }
 }

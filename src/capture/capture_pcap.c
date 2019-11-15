@@ -120,15 +120,24 @@ capture_input_pcap_read_packet(G_GNUC_UNUSED gint fd,
 static void
 capture_input_pcap_stop(CaptureInput *input)
 {
+    // Check if input has already been stopped
+    if (g_source_is_destroyed(capture_input_source(input)))
+        return;
+
     // Get private data
     CaptureInputPcap *pcap = CAPTURE_INPUT_PCAP(input);
 
     if (pcap->handle == NULL)
         return;
 
+    pcap_breakloop(pcap->handle);
+
     if (capture_input_mode(input) == CAPTURE_MODE_OFFLINE) {
         pcap_close(pcap->handle);
     }
+
+    // Detach capture source from capture main loop
+    g_source_destroy(capture_input_source(input));
 }
 
 CaptureInput *
@@ -349,6 +358,7 @@ capture_input_pcap_class_init(CaptureInputPcapClass *klass)
 {
     CaptureInputClass *input_class = CAPTURE_INPUT_CLASS(klass);
     input_class->filter = capture_input_pcap_filter;
+    input_class->stop = capture_input_pcap_stop;
 }
 
 static void

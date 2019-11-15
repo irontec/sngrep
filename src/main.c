@@ -27,11 +27,13 @@
  */
 
 #include "config.h"
+#include <malloc.h>
 #include <glib.h>
 #include "glib/glib-extra.h"
 #include "setting.h"
 #include "capture/capture.h"
 #include "ncurses/manager.h"
+#include "ncurses/dialog.h"
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif
@@ -83,6 +85,53 @@ print_storage_count(GMainLoop *loop)
     return TRUE;
 }
 
+static gboolean
+check_memory(gpointer memory_limit)
+{
+    struct mallinfo info = mallinfo();
+
+    // Stop checking memory after capture has ended
+    if (!capture_is_running()) {
+        return FALSE;
+    }
+
+    // Check if memory has reached the limit
+    if (info.arena > GPOINTER_TO_INT(memory_limit)) {
+
+        // Stop capture manager
+        capture_manager_stop(
+            capture_manager_get_instance()
+        );
+
+        // Convert memory limit to a human readable format
+        g_autofree const gchar *limit = g_format_size_full(
+            GPOINTER_TO_INT(memory_limit),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+
+        if (ncurses_is_enabled()) {
+            // Show a dialog with current configured memory limit
+            dialog_run(
+                "Memory limit %s has been reached. \n\n%s\n%s",
+                limit,
+                "Capture has been stopped.",
+                "See capture.mem_limit setting and -m flag for further info."
+            );
+        } else {
+            fprintf(
+                stderr,
+                "Memory limit %s has been reached. \n\n%s\n%s\n",
+                limit,
+                "Capture has been stopped.",
+                "See capture.mem_limit setting and -m flag for further info."
+            );
+        }
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /**
  * @brief Main function logic
  *
@@ -102,6 +151,7 @@ main(int argc, char *argv[])
     gboolean quiet = FALSE;
     gboolean version = FALSE;
     gboolean config_dump = FALSE;
+    gchar *memory_limit = NULL;
 #ifdef WITH_SSL
     gchar *keyfile = NULL;
 #endif
@@ -128,6 +178,8 @@ main(int argc, char *argv[])
           "Only display dialogs starting with INVITE", NULL },
         { "rtp", 'r', 0, G_OPTION_ARG_NONE, &storage_opts.capture.rtp,
           "Store captured RTP packets (enables saving RTP)", NULL },
+        { "memory-limit", 'm', 0, G_OPTION_ARG_STRING, &memory_limit,
+          "Set memory limit in bytes (0 to disable)", "N" },
         { "limit", 'l', 0, G_OPTION_ARG_INT, &storage_opts.capture.limit,
           "Set capture limit to N dialogs", "N" },
         { "rotate", 'R', 0, G_OPTION_ARG_NONE, &storage_opts.capture.rotate,
@@ -190,6 +242,11 @@ main(int argc, char *argv[])
         storage_opts.capture.rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
     if (!storage_opts.capture.outfile)
         storage_opts.capture.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
+
+    // Parse memory limit size string
+    if (memory_limit == NULL) {
+        memory_limit = g_strdup(setting_get_value(SETTING_MEMORY_LIMIT));
+    }
 
 #ifdef WITH_SSL
     if (keyfile == NULL) {
@@ -396,6 +453,15 @@ main(int argc, char *argv[])
 
     // Start capture threads
     capture_manager_start(capture);
+
+    // Check allocated memory
+    if (memory_limit != NULL) {
+        g_timeout_add(
+            500,
+            (GSourceFunc) check_memory,
+            GINT_TO_POINTER(g_format_size_to_bytes(memory_limit))
+        );
+    }
 
     if (!no_interface) {
         // Initialize interface
