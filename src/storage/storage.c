@@ -41,22 +41,37 @@
  *        |    +--------------------------+
  *        |    |                          |
  *        +--->|         Storage          | <----------- You are here.
- *        +--->|                          |----+
- * Packet |    +--------------------------+    |
- * Queue  |    +--------------------------+    |
- *        +----|         Parser           |    |
- *             |--------------------------|    | Capture
- *             |                          |    | Output
+ *             |                          |----+
+ *             +-^- - -^- - - - -^- - -^- +    |
+ *        +--->|         Parser           |    |
+ * Packet |    +--------------------------+    | Capture
+ *  Queue |    +--------------------------+    | Output
+ *        +----|                          |    |
  *             |     Capture Manager      |<---+
  *             |                          |
  *             +--------------------------+
  *
  */
+
 #include "config.h"
 #include <glib.h>
 #include <glib/gasyncqueuesource.h>
 #include "glib/glib-extra.h"
-#include "parser/packet_sip.h"
+#include "packet/dissector.h"
+#include "storage/packet/packet_link.h"
+#include "storage/packet/packet_ip.h"
+#include "storage/packet/packet_udp.h"
+#include "storage/packet/packet_tcp.h"
+#include "storage/packet/packet_sip.h"
+#include "storage/packet/packet_sdp.h"
+#include "storage/packet/packet_rtp.h"
+#include "storage/packet/packet_rtcp.h"
+#ifdef USE_HEP
+#include "storage/packet/packet_hep.h"
+#endif
+#ifdef WITH_SSL
+#include "storage/packet/packet_tls.h"
+#endif
 #include "setting.h"
 #include "filter.h"
 #include "storage.h"
@@ -265,29 +280,29 @@ storage_register_streams(Message *msg)
     }
 }
 
-static Message *
+void
 storage_check_sip_packet(Packet *packet)
 {
     Call *call = NULL;
     gboolean newcall = FALSE;
 
-    PacketSipData *sip_data = g_ptr_array_index(packet->proto, PACKET_SIP);
+    PacketSipData *sip_data = packet_sip_data(packet);
 
     // Find the call for this msg
     if (!(call = g_hash_table_lookup(storage->callids, sip_data->callid))) {
 
         // Check if payload matches expression
         if (!storage_check_match_expr(sip_data->payload))
-            return NULL;
+            return;
 
         // User requested only INVITE starting dialogs
         if (storage->options.match.invite && sip_data->code.id != SIP_METHOD_INVITE)
-            return NULL;
+            return;
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
         if (storage->options.match.complete && sip_data->code.id > SIP_METHOD_MESSAGE)
-            return NULL;
+            return;
 
         // Rotate call list if limit has been reached
         if (storage->options.capture.limit == storage_calls_count())
@@ -295,7 +310,7 @@ storage_check_sip_packet(Packet *packet)
 
         // Create the call if not found
         if ((call = call_create(sip_data->callid, sip_data->xcallid)) == NULL)
-            return NULL;
+            return;
 
         // Add this Call-Id to hash table
         g_hash_table_insert(storage->callids, g_strdup(call->callid), call);
@@ -339,16 +354,13 @@ storage_check_sip_packet(Packet *packet)
 
     // Send this packet to all capture outputs
     capture_manager_output_packet(capture_manager_get_instance(), packet);
-
-    // Return the loaded message
-    return msg;
 }
 
-static Stream *
+void
 storage_check_rtp_packet(Packet *packet)
 {
-    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
-    g_return_val_if_fail(rtp != NULL, NULL);
+    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
+    g_return_if_fail(rtp != NULL);
 
     // Get Addresses from packet
     Address *src = packet_src_address(packet);
@@ -360,7 +372,7 @@ storage_check_rtp_packet(Packet *packet)
 
     // No call has setup this stream
     if (msg == NULL)
-        return NULL;
+        return;
 
     // Mark call as changed
     Call *call = msg_get_call(msg);
@@ -387,15 +399,13 @@ storage_check_rtp_packet(Packet *packet)
 
     // Mark the list as changed
     storage->changed = TRUE;
-
-    return stream;
 }
 
-static Stream *
+void
 storage_check_rtcp_packet(Packet *packet)
 {
-    PacketRtcpData *rtcp = g_ptr_array_index(packet->proto, PACKET_RTP);
-    g_return_val_if_fail(rtcp != NULL, NULL);
+    PacketRtcpData *rtcp = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
+    g_return_if_fail(rtcp != NULL);
 
     // Get Addresses from packet
     Address *src = packet_src_address(packet);
@@ -407,7 +417,7 @@ storage_check_rtcp_packet(Packet *packet)
 
     // No call has setup this stream
     if (msg == NULL)
-        return NULL;
+        return;
 
     // Mark call as changed
     Call *call = msg_get_call(msg);
@@ -432,8 +442,6 @@ storage_check_rtcp_packet(Packet *packet)
 
     // Mark the list as changed
     storage->changed = TRUE;
-
-    return stream;
 }
 
 void
@@ -447,11 +455,15 @@ storage_add_packet(Packet *packet)
 static gboolean
 storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 {
-    if (packet_has_type(packet, PACKET_SIP)) {
-        storage_check_sip_packet(packet);
-    } else if (packet_has_type(packet, PACKET_RTP)) {
+    PacketDissector *link = storage_find_dissector(PACKET_PROTO_LINK);
+    PacketFrame *frame = g_list_first(packet->frames)->data;
+    packet_dissector_dissect(link, packet, frame->data);
+
+    if (packet_has_type(packet, PACKET_PROTO_SIP)) {
+
+    } else if (packet_has_type(packet, PACKET_PROTO_RTP)) {
         storage_check_rtp_packet(packet);
-    } else if (packet_has_type(packet, PACKET_RTCP)) {
+    } else if (packet_has_type(packet, PACKET_PROTO_RTCP)) {
         storage_check_rtcp_packet(packet);
     }
 
@@ -523,10 +535,79 @@ storage_new(StorageOpts options, GError **error)
     // Parsed packet to check
     storage->queue = g_async_queue_new();
 
+    // Dissectors array
+    storage->dissectors = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
+    g_ptr_array_set_size(storage->dissectors, PACKET_PROTO_COUNT);
+
     // Storage check source
     GSource *source = g_async_queue_source_new(storage->queue, NULL);
     g_source_set_callback(source, (GSourceFunc) G_CALLBACK(storage_check_packet), NULL, NULL);
     g_source_attach(source, NULL);
 
     return storage;
+}
+
+PacketDissector *
+storage_find_dissector(PacketProtocol id)
+{
+    PacketDissector *dissector = g_ptr_array_index(storage->dissectors, id);
+    if (dissector == NULL) {
+        switch (id) {
+            case PACKET_PROTO_LINK:
+                dissector = packet_dissector_link_new();
+                break;
+            case PACKET_PROTO_IP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_IP))
+                    dissector = packet_dissector_ip_new();
+                break;
+            case PACKET_PROTO_UDP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_UDP))
+                    dissector = packet_dissector_udp_new();
+                break;
+            case PACKET_PROTO_TCP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_TCP))
+                    dissector = packet_dissector_tcp_new();
+                break;
+            case PACKET_PROTO_SIP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_SIP))
+                    dissector = packet_dissector_sip_new();
+                break;
+            case PACKET_PROTO_SDP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_SDP))
+                    dissector = packet_dissector_sdp_new();
+                break;
+            case PACKET_PROTO_RTP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_RTP))
+                    dissector = packet_dissector_rtp_new();
+                break;
+            case PACKET_PROTO_RTCP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_RTCP))
+                    dissector = packet_dissector_rtcp_new();
+                break;
+#ifdef USE_HEP
+            case PACKET_PROTO_HEP:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_HEP))
+                    dissector = packet_dissector_hep_new();
+                break;
+#endif
+#ifdef WITH_SSL
+            case PACKET_PROTO_TLS:
+                if (setting_enabled(SETTING_CAPTURE_PACKET_TLS))
+                    dissector = packet_dissector_tls_new();
+                break;
+#endif
+            default:
+                // Unsupported protocol id
+                return NULL;
+        }
+
+        // Ignore not enabled dissectors
+        if (dissector == NULL)
+            return NULL;
+
+        // Add to proto list
+        g_ptr_array_set(storage->dissectors, id, dissector);
+    }
+
+    return dissector;
 }

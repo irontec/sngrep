@@ -30,15 +30,19 @@
  *
  */
 
-#ifndef __SNGREP_CAPTURE_TLS_H
-#define __SNGREP_CAPTURE_TLS_H
+#ifndef __SNGREP_CAPTURE_TLS_H__
+#define __SNGREP_CAPTURE_TLS_H__
 
 #include "config.h"
 #include <glib.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gcrypt.h>
-#include "parser/parser.h"
+
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_TLS packet_dissector_tls_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorTls, packet_dissector_tls, PACKET_DISSECTOR, TLS, PacketDissector)
 
 //! Error reporting domain
 #define TLS_ERROR packet_tls_error_quark()
@@ -56,6 +60,14 @@ enum tls_errors
 
 typedef struct _DissectorTlsData DissectorTlsData;
 typedef struct _SSLConnection SSLConnection;
+
+struct _PacketDissectorTls
+{
+    //! Parent structure
+    PacketDissector parent;
+    //! List of known TLS connections
+    GSList *connections;
+};
 
 //! Three bytes unsigned integer
 typedef struct uint16
@@ -262,11 +274,6 @@ struct _SSLConnection
     struct SSLConnection *next;
 };
 
-struct _DissectorTlsData
-{
-    GSList *connections;
-};
-
 /**
  * @brief Check if given keyfile is valid
  *
@@ -279,6 +286,8 @@ gboolean
 packet_tls_privkey_check(const gchar *keyfile, GError **error);
 
 PacketDissector *
-packet_tls_new();
+packet_dissector_tls_new();
 
-#endif
+G_END_DECLS
+
+#endif  /* __SNGREP_CAPTURE_TLS_H__ */

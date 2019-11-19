@@ -33,9 +33,10 @@
 #include <glib.h>
 #include "glib/glib-extra.h"
 #include "storage/storage.h"
-#include "parser/parser.h"
-#include "parser/packet.h"
+#include "packet.h"
 #include "packet_rtp.h"
+
+G_DEFINE_TYPE(PacketDissectorRtp, packet_dissector_rtp, PACKET_TYPE_DISSECTOR)
 
 // Version is the first 2 bits of the first octet
 #define RTP_VERSION(octet) ((octet) >> 6)
@@ -84,7 +85,7 @@ packet_rtp_data(const Packet *packet)
     g_return_val_if_fail(packet != NULL, NULL);
 
     // Get Packet rtp data
-    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
+    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
     g_return_val_if_fail(rtp != NULL, NULL);
 
     return rtp;
@@ -103,7 +104,7 @@ packet_rtp_standard_codec(guint8 code)
 }
 
 static GByteArray *
-packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray *data)
+packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GByteArray *data)
 {
     // Not enough data for a RTP packet
     if (data->len < sizeof(PacketRtpHdr))
@@ -138,20 +139,20 @@ packet_rtp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray 
     // Store RTP payload data
     rtp->payload = g_byte_array_ref(data);
 
-    // Set packet RTP informaiton
-    packet_add_type(packet, PACKET_RTP, rtp);
+    // Set packet RTP information
+    packet_add_type(packet, PACKET_PROTO_RTP, rtp);
 
     // Add data to storage
-    storage_add_packet(packet);
+    storage_check_rtp_packet(packet);
 
     return data;
 }
 
 static void
-packet_rtp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+packet_dissector_rtp_free(Packet *packet)
 {
     g_return_if_fail(packet != NULL);
-    PacketRtpData *rtp_data = g_ptr_array_index(packet->proto, PACKET_RTP);
+    PacketRtpData *rtp_data = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
     g_return_if_fail(rtp_data != NULL);
 
     if (packet_rtp_standard_codec(rtp_data->encoding->id) == NULL) {
@@ -162,12 +163,23 @@ packet_rtp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
     g_free(rtp_data);
 }
 
-PacketDissector *
-packet_rtp_new()
+static void
+packet_dissector_rtp_class_init(PacketDissectorRtpClass *klass)
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_RTP;
-    proto->dissect = packet_rtp_parse;
-    proto->free = packet_rtp_free;
-    return proto;
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_rtp_dissect;
+    dissector_class->free_data = packet_dissector_rtp_free;
+}
+
+static void
+packet_dissector_rtp_init(PacketDissectorRtp *self)
+{
+    // UDP Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_RTP);
+}
+
+PacketDissector *
+packet_dissector_rtp_new()
+{
+    return g_object_new(PACKET_DISSECTOR_TYPE_RTP, NULL);
 }

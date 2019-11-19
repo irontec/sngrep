@@ -40,7 +40,7 @@
 #include <time.h>
 #include "capture/capture_input.h"
 #include "capture/capture_output.h"
-#include "parser/address.h"
+#include "storage/address.h"
 
 #ifndef __FAVOR_BSD
 #define __FAVOR_BSD
@@ -58,7 +58,7 @@
 #include <netinet/in_systm.h>
 #endif
 
-#include "parser/packet.h"
+#include "storage/packet/packet.h"
 #include "capture.h"
 
 G_BEGIN_DECLS

@@ -28,7 +28,6 @@
 #include "config.h"
 #include <glib.h>
 #include <storage/message.h>
-#include "parser/packet_sip.h"
 #include "ncurses/dialog.h"
 #include "auth_validate_win.h"
 

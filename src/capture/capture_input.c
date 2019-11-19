@@ -26,7 +26,8 @@
  * @brief Source of functions defined in capture_input.h
  *
  */
-
+#include "config.h"
+#include <glib.h>
 #include "capture_input.h"
 
 typedef struct
@@ -41,8 +42,6 @@ typedef struct
     gchar *source_str;
     //! Source of events for this input
     GSource *source;
-    //! Each packet type private data
-    PacketParser *parser;
 } CaptureInputPrivate;
 
 // CaptureInput class definition
@@ -106,14 +105,6 @@ capture_input_manager(CaptureInput *self)
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
     g_return_val_if_fail(priv != NULL, NULL);
     return priv->manager;
-}
-
-PacketParser *
-capture_input_parser(CaptureInput *self)
-{
-    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
-    g_return_val_if_fail(priv != NULL, NULL);
-    return priv->parser;
 }
 
 void
@@ -193,7 +184,6 @@ capture_input_finalize(GObject *object)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(CAPTURE_INPUT(object));
     g_free(priv->source_str);
-    packet_parser_free(priv->parser);
     G_OBJECT_CLASS (capture_input_parent_class)->finalize(object);
 }
 
@@ -207,8 +197,6 @@ capture_input_class_init(CaptureInputClass *klass)
 }
 
 static void
-capture_input_init(CaptureInput *self)
+capture_input_init(G_GNUC_UNUSED CaptureInput *self)
 {
-    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
-    priv->parser = packet_parser_new(self);
 }

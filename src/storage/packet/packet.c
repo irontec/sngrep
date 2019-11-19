@@ -32,8 +32,6 @@
 #include "packet_ip.h"
 #include "packet_tcp.h"
 #include "packet_udp.h"
-#include "packet_sip.h"
-#include "capture/capture_pcap.h"
 #include "packet.h"
 
 /**
@@ -58,11 +56,11 @@ packet_dispose(GObject *gobject)
 }
 
 Packet *
-packet_new(PacketParser *parser)
+packet_new(CaptureInput *input)
 {
     // Create a new packet
     Packet *packet = g_object_new(CAPTURE_TYPE_PACKET, NULL);
-    packet->parser = parser;
+    packet->input = input;
     return packet;
 }
 
@@ -70,7 +68,7 @@ static void
 packet_proto_free(gpointer proto_id, Packet *packet)
 {
     if (packet_has_type(packet, GPOINTER_TO_INT(proto_id))) {
-        packet_parser_dissector_free(packet->parser, packet, GPOINTER_TO_INT(proto_id));
+//        packet_dissector_free(packet, packet, GPOINTER_TO_INT(proto_id));
     }
 }
 
@@ -115,12 +113,12 @@ packet_src_address(Packet *packet)
         g_return_val_if_fail(ip, NULL);
 
         // Get Port from UDP or TCP parsed protocol
-        if (packet_has_type(packet, PACKET_UDP)) {
-            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+        if (packet_has_type(packet, PACKET_PROTO_UDP)) {
+            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
             g_return_val_if_fail(udp, NULL);
             packet->src = address_new(ip->srcip, udp->sport);
         } else {
-            PacketTcpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
+            PacketTcpData *tcp = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
             g_return_val_if_fail(tcp, NULL);
             packet->src = address_new(ip->srcip, tcp->sport);
         }
@@ -141,12 +139,12 @@ packet_dst_address(Packet *packet)
         g_return_val_if_fail(ip, NULL);
 
         // Get Port from UDP or TCP parsed protocol
-        if (packet_has_type(packet, PACKET_UDP)) {
-            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+        if (packet_has_type(packet, PACKET_PROTO_UDP)) {
+            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
             g_return_val_if_fail(udp, NULL);
             packet->dst = address_new(ip->dstip, udp->dport);
         } else {
-            PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_TCP);
+            PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
             g_return_val_if_fail(tcp, NULL);
             packet->dst = address_new(ip->dstip, tcp->dport);
         }
@@ -158,16 +156,22 @@ packet_dst_address(Packet *packet)
 const char *
 packet_transport(Packet *packet)
 {
-    if (packet_has_type(packet, PACKET_UDP))
+    if (packet_has_type(packet, PACKET_PROTO_UDP))
         return "UDP";
 
-    if (packet_has_type(packet, PACKET_TCP)) {
-        if (packet_has_type(packet, PACKET_WS)) {
-            return (packet_has_type(packet, PACKET_TLS)) ? "WSS" : "WS";
+    if (packet_has_type(packet, PACKET_PROTO_TCP)) {
+        if (packet_has_type(packet, PACKET_PROTO_WS)) {
+            return (packet_has_type(packet, PACKET_PROTO_TLS)) ? "WSS" : "WS";
         }
-        return packet_has_type(packet, PACKET_TLS) ? "TLS" : "TCP";
+        return packet_has_type(packet, PACKET_PROTO_TLS) ? "TLS" : "TCP";
     }
     return "???";
+}
+
+CaptureInput *
+packet_get_input(Packet *packet)
+{
+    return packet->input;
 }
 
 guint64

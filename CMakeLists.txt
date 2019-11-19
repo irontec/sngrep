@@ -42,17 +42,18 @@ set(SOURCES
         src/ncurses/dialog.c
         src/ncurses/keybinding.c
         src/ncurses/scrollbar.c
-        src/parser/address.c
-        src/parser/packet.c
-        src/parser/parser.c
-        src/parser/packet_link.c
-        src/parser/packet_ip.c
-        src/parser/packet_tcp.c
-        src/parser/packet_udp.c
-        src/parser/packet_sip.c
-        src/parser/packet_sdp.c
-        src/parser/packet_rtp.c
-        src/parser/packet_rtcp.c
+        src/storage/address.c
+        src/storage/packet/dissector.c
+        src/storage/packet/dissector.h
+        src/storage/packet/packet.c
+        src/storage/packet/packet_link.c
+        src/storage/packet/packet_ip.c
+        src/storage/packet/packet_tcp.c
+        src/storage/packet/packet_udp.c
+        src/storage/packet/packet_sip.c
+        src/storage/packet/packet_sdp.c
+        src/storage/packet/packet_rtp.c
+        src/storage/packet/packet_rtcp.c
         src/storage/filter.c
         src/storage/group.c
         src/storage/stream.c
@@ -72,7 +73,7 @@ set(SOURCES
 option(USE_HEP "Enable HEP/EEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
-    set(SOURCES ${SOURCES} src/parser/packet_hep.c)
+    set(SOURCES ${SOURCES} src/storage/packet/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support
@@ -81,7 +82,7 @@ option(USE_IPV6 "Enable IPv6 Support" OFF)
 # GnuTLS Support
 option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
-    set(SOURCES ${SOURCES} src/parser/packet_tls.c)
+    set(SOURCES ${SOURCES} src/storage/packet/packet_tls.c)
 endif (WITH_SSL)
 
 # libsnd Support

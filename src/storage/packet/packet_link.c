@@ -34,22 +34,32 @@
 #ifdef DLT_LINUX_SLL
 #include <pcap/sll.h>
 #endif
-#include "glib/glib-extra.h"
 #include "capture/capture_pcap.h"
 #include "packet_ip.h"
 #include "packet_link.h"
 
+G_DEFINE_TYPE(PacketDissectorLink, packet_link, PACKET_TYPE_DISSECTOR)
+
 static GByteArray *
-packet_link_parse(PacketParser *parser, Packet *packet, GByteArray *data)
+packet_link_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
 {
-    DissectorLinkData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_LINK);
-    g_return_val_if_fail(priv, NULL);
+    // Get capture input from this packet
+    CaptureInput *input = packet->input;
+    g_return_val_if_fail(input, NULL);
+
+    // Packet Link packet only works with PCAP input
+    g_return_val_if_fail(capture_input_tech(input) == CAPTURE_TECH_PCAP, NULL);
+
+    // Initialize packet private data
+    CaptureInputPcap *pcap = CAPTURE_INPUT_PCAP(input);
+    gint link_type = capture_input_pcap_datalink(input);
+    guint8 link_size = packet_link_size(pcap->link);
 
     // Get Layer header size from link type
-    guint offset = (guint) priv->link_size;
+    guint offset = (guint) link_size;
 
     // For ethernet, skip VLAN header if present
-    if (priv->link_type == DLT_EN10MB) {
+    if (link_type == DLT_EN10MB) {
         struct ether_header *eth = (struct ether_header *) data->data;
         if (g_ntohs(eth->ether_type) == ETHERTYPE_8021Q) {
             offset += 4;
@@ -57,7 +67,7 @@ packet_link_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
 
 #ifdef DLT_LINUX_SLL
-    if (priv->link_type == DLT_LINUX_SLL) {
+    if (link_type == DLT_LINUX_SLL) {
         struct sll_header *sll = (struct sll_header *) packet;
         if (g_ntohs(sll->sll_protocol) == ETHERTYPE_8021Q) {
             offset += 4;
@@ -66,7 +76,7 @@ packet_link_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
 
     // Skip NFLOG header if present
-    if (priv->link_type == DLT_NFLOG) {
+    if (link_type == DLT_NFLOG) {
         // Parse NFLOG TLV headers
         while (offset + 8 <= data->len) {
             LinkNflogHdr *tlv = (LinkNflogHdr *) (packet + offset);
@@ -93,15 +103,14 @@ packet_link_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_byte_array_remove_range(data, 0, offset);
 
     // Call next dissector
-    return packet_parser_next_dissector(parser, packet, data);
-
+    return packet_dissector_next(self, packet, data);
 }
 
 guint8
-proto_link_size(int linktype)
+packet_link_size(gint link_type)
 {
     // Datalink header size
-    switch (linktype) {
+    switch (link_type) {
         case DLT_EN10MB:
             return 14;
         case DLT_IEEE802:
@@ -135,48 +144,34 @@ proto_link_size(int linktype)
 #endif
         default:
             // Not handled datalink type
-            g_printerr("Unsupported datalink type: %d", linktype);
+            g_printerr("Unsupported datalink type: %d", link_type);
             return 0;
     }
 }
 
 static void
-packet_link_init(PacketParser *parser)
+packet_link_class_init(PacketDissectorLinkClass *klass)
 {
-    // Get capture input from this parser
-    CaptureInput *input = parser->input;
-    g_return_if_fail(input);
-    // Packet Link parser only works with PCAP input
-    g_return_if_fail(capture_input_tech(input) == CAPTURE_TECH_PCAP);
-
-    CaptureInputPcap *pcap = CAPTURE_INPUT_PCAP(input);
-
-    // Initialize parser private data
-    DissectorLinkData *link_data = g_malloc0(sizeof(DissectorLinkData));
-    link_data->link_type = capture_input_pcap_datalink(input);
-    link_data->link_size = proto_link_size(pcap->link);
-
-    // Store private data for this protocol
-    g_ptr_array_set(parser->dissectors_priv, PACKET_LINK, link_data);
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_link_dissect;
 }
 
 static void
-packet_link_deinit(G_GNUC_UNUSED PacketParser *parser)
+packet_link_init(PacketDissectorLink *self)
 {
-    DissectorLinkData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_LINK);
-    g_return_if_fail(priv != NULL);
+    packet_dissector_set_protocol(
+        PACKET_DISSECTOR(self),
+        PACKET_PROTO_LINK
+    );
 
-    g_free(priv);
+    packet_dissector_add_subdissector(
+        PACKET_DISSECTOR(self),
+        PACKET_PROTO_IP
+    );
 }
 
 PacketDissector *
-packet_link_new()
+packet_dissector_link_new()
 {
-    PacketDissector *dissector = g_malloc0(sizeof(PacketDissector));
-    dissector->id = PACKET_LINK;
-    dissector->init = packet_link_init;
-    dissector->dissect = packet_link_parse;
-    dissector->deinit = packet_link_deinit;
-    dissector->subdissectors = g_slist_append(dissector->subdissectors, GUINT_TO_POINTER(PACKET_IP));
-    return dissector;
+    return g_object_new(PACKET_DISSECTOR_TYPE_LINK, NULL);
 }

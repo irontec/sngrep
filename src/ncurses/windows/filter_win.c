@@ -29,7 +29,7 @@
 #include "config.h"
 #include <string.h>
 #include <form.h>
-#include "parser/packet_sip.h"
+#include "storage/packet/packet_sip.h"
 #include "ncurses/manager.h"
 #include "filter_win.h"
 #include "call_list_win.h"

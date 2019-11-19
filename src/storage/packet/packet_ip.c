@@ -26,22 +26,26 @@
  * @brief Source of functions defined in packet_ip.h
  *
  * Support for IPv4 and IPv6 packets
- *
  */
-
 #include "config.h"
-#include <netdb.h>
 #include <arpa/inet.h>
 #include "glib/glib-extra.h"
-#include "parser/packet.h"
-#include "parser/parser.h"
+#include "packet.h"
 #include "packet_ip.h"
+
+G_DEFINE_TYPE(PacketDissectorIp, packet_dissector_ip, PACKET_TYPE_DISSECTOR)
 
 PacketIpData *
 packet_ip_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
-    return g_ptr_array_index(packet->proto, PACKET_IP);
+    return g_ptr_array_index(packet->proto, PACKET_PROTO_IP);
+}
+
+static gint
+packet_ip_fragment_sort(const PacketIpFragment **a, const PacketIpFragment **b)
+{
+    return (*a)->frag_off - (*b)->frag_off;
 }
 
 static PacketIpFragment *
@@ -66,20 +70,6 @@ packet_ip_fragment_free(PacketIpFragment *fragment)
 }
 
 static PacketIpDatagram *
-packet_ip_find_datagram(DissectorIpData *priv, PacketIpFragment *fragment)
-{
-    for (GList *l = priv->assembly; l != NULL; l = l->next) {
-        PacketIpDatagram *datagram = l->data;
-        if (g_strcmp0(fragment->srcip, datagram->srcip) == 0
-            && g_strcmp0(fragment->dstip, datagram->dstip) == 0
-            && fragment->id == datagram->id) {
-            return datagram;
-        }
-    }
-    return NULL;
-}
-
-static PacketIpDatagram *
 packet_ip_datagram_new(const PacketIpFragment *fragment)
 {
     PacketIpDatagram *datagram = g_malloc0(sizeof(PacketIpDatagram));
@@ -100,12 +90,6 @@ packet_ip_datagram_free(PacketIpDatagram *datagram)
     g_ptr_array_free(datagram->fragments, TRUE);
     // Free datagram
     g_free(datagram);
-}
-
-static gint
-packet_ip_sort_fragments(const PacketIpFragment **a, const PacketIpFragment **b)
-{
-    return (*a)->frag_off - (*b)->frag_off;
 }
 
 static GByteArray *
@@ -142,11 +126,26 @@ packet_ip_datagram_take_frames(PacketIpDatagram *datagram)
     return frames;
 }
 
-static GByteArray *
-packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
+static PacketIpDatagram *
+packet_dissector_ip_find_datagram(PacketDissectorIp *dissector, PacketIpFragment *fragment)
 {
-    DissectorIpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_IP);
-    g_return_val_if_fail(priv != NULL, NULL);
+    for (GList *l = dissector->assembly; l != NULL; l = l->next) {
+        PacketIpDatagram *datagram = l->data;
+        if (g_strcmp0(fragment->srcip, datagram->srcip) == 0
+            && g_strcmp0(fragment->dstip, datagram->dstip) == 0
+            && fragment->id == datagram->id) {
+            return datagram;
+        }
+    }
+    return NULL;
+}
+
+static GByteArray *
+packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+{
+    // Get IP dissector information
+    g_return_val_if_fail(PACKET_DISSECTOR_IS_IP(self), NULL);
+    PacketDissectorIp *dissector = PACKET_DISSECTOR_IP(self);
 
     // Get IP header
     struct ip *ip4 = (struct ip *) data->data;
@@ -165,7 +164,7 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Get IP version
     switch (fragment->version) {
         case 4:
-            fragment->hl = ip4->ip_hl * 4;
+            fragment->hl = (guint32) ip4->ip_hl * 4;
             fragment->proto = ip4->ip_p;
             fragment->off = g_ntohs(ip4->ip_off);
             fragment->len = g_ntohs(ip4->ip_len);
@@ -208,12 +207,12 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
 
     // Save IP Addresses into packet
-    PacketIpData *ipdata = g_malloc0(sizeof(PacketIpData));
-    g_utf8_strncpy(ipdata->srcip, fragment->srcip, ADDRESSLEN);
-    g_utf8_strncpy(ipdata->dstip, fragment->dstip, ADDRESSLEN);
-    ipdata->version = fragment->version;
-    ipdata->protocol = fragment->proto;
-    packet_add_type(packet, PACKET_IP, ipdata);
+    PacketIpData *ip_data = g_malloc0(sizeof(PacketIpData));
+    g_utf8_strncpy(ip_data->srcip, fragment->srcip, ADDRESSLEN);
+    g_utf8_strncpy(ip_data->dstip, fragment->dstip, ADDRESSLEN);
+    ip_data->version = fragment->version;
+    ip_data->protocol = fragment->proto;
+    packet_add_type(packet, PACKET_PROTO_IP, ip_data);
 
     // Get pending payload
     g_byte_array_remove_range(data, 0, fragment->hl);
@@ -226,16 +225,16 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
         // Single fragment packet
         packet_ip_fragment_free(fragment);
         // Call next dissector
-        return packet_parser_next_dissector(parser, packet, data);
+        return packet_dissector_next(self, packet, data);
     }
 
     // Look for another packet with same id in IP reassembly list
-    PacketIpDatagram *datagram = packet_ip_find_datagram(priv, fragment);
+    PacketIpDatagram *datagram = packet_dissector_ip_find_datagram(dissector, fragment);
 
     // Create a new datagram if none matches
     if (datagram == NULL) {
         datagram = packet_ip_datagram_new(fragment);
-        priv->assembly = g_list_append(priv->assembly, datagram);
+        dissector->assembly = g_list_append(dissector->assembly, datagram);
     }
 
     // Add fragment to the datagram
@@ -255,16 +254,16 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // If we have the whole packet (captured length is expected length)
     if (datagram->seen == datagram->len) {
         // Sort IP fragments
-        g_ptr_array_sort(datagram->fragments, (GCompareFunc) packet_ip_sort_fragments);
+        g_ptr_array_sort(datagram->fragments, (GCompareFunc) packet_ip_fragment_sort);
         // Sort and glue all fragments payload
         data = packet_ip_datagram_payload(datagram);
         // Sort and take packet frames
         packet->frames = packet_ip_datagram_take_frames(datagram);
         // Remove the datagram information
-        priv->assembly = g_list_remove(priv->assembly, datagram);
+        dissector->assembly = g_list_remove(dissector->assembly, datagram);
         packet_ip_datagram_free(datagram);
         // Call next dissector
-        return packet_parser_next_dissector(parser, packet, data);
+        return packet_dissector_next(self, packet, data);
     }
 
     // Packet handled and stored for IP assembly
@@ -272,48 +271,36 @@ packet_ip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 }
 
 static void
-packet_ip_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+packet_dissector_ip_finalize(GObject *self)
 {
-    PacketIpData *ipdata = packet_ip_data(packet);
-    g_return_if_fail(ipdata != NULL);
-
-    g_free(ipdata);
-}
-
-static void
-packet_ip_init(PacketParser *parser)
-{
-    // Initialize parser private data
-    DissectorIpData *priv = g_malloc0(sizeof(DissectorIpData));
-    g_return_if_fail(priv != NULL);
-
-    // Store parser private information
-    g_ptr_array_set(parser->dissectors_priv, PACKET_IP, priv);
-
-}
-
-static void
-packet_ip_deinit(PacketParser *parser)
-{
-    // Get Dissector data for this parser
-    DissectorIpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_IP);
-    g_return_if_fail(priv != NULL);
+    // Get Dissector data for this packet
+    g_return_if_fail(PACKET_DISSECTOR_IS_IP(self));
+    PacketDissectorIp *dissector = PACKET_DISSECTOR_IP(self);
 
     // Free used memory
-    g_list_free_full(priv->assembly, (GDestroyNotify) packet_ip_datagram_free);
-    g_free(priv);
+    g_list_free_full(dissector->assembly, (GDestroyNotify) packet_ip_datagram_free);
+}
+
+G_GNUC_UNUSED static void
+packet_dissector_ip_class_init(PacketDissectorIpClass *klass)
+{
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_ip_dissect;
+
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = packet_dissector_ip_finalize;
+}
+
+static void
+packet_dissector_ip_init(PacketDissectorIp *self)
+{
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_IP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_UDP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_TCP);
 }
 
 PacketDissector *
-packet_ip_new()
+packet_dissector_ip_new()
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_IP;
-    proto->init = packet_ip_init;
-    proto->deinit = packet_ip_deinit;
-    proto->dissect = packet_ip_parse;
-    proto->free = packet_ip_free;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_UDP));
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TCP));
-    return proto;
+    return g_object_new(PACKET_DISSECTOR_TYPE_IP, NULL);
 }

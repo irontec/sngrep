@@ -27,13 +27,12 @@
  */
 
 #include "config.h"
-#include <stdlib.h>
 #include "glib/glib-extra.h"
-#include "storage/storage.h"
-#include "parser/packet.h"
-#include "packet_tcp.h"
-#include "packet_sdp.h"
+#include "packet.h"
 #include "packet_sip.h"
+#include "storage/storage.h"
+
+G_DEFINE_TYPE(PacketDissectorSip, packet_dissector_sip, PACKET_TYPE_DISSECTOR)
 
 /* @brief list of methods and responses */
 PacketSipCode sip_codes[] = {
@@ -155,7 +154,7 @@ packet_sip_data(const Packet *packet)
     g_return_val_if_fail(packet != NULL, NULL);
 
     // Get Packet sip data
-    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
+    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_PROTO_SIP);
     g_return_val_if_fail(sip != NULL, NULL);
 
     return sip;
@@ -207,7 +206,7 @@ packet_sip_auth_data(const Packet *packet)
 }
 
 static GByteArray *
-packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
+packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
 {
     gchar *method = NULL;
     gchar *resp_code = NULL;
@@ -261,7 +260,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     sip_data->payload = g_strdup(payload->str);
 
     // Add SIP information to the packet
-    packet_add_type(packet, PACKET_SIP, sip_data);
+    packet_add_type(packet, PACKET_PROTO_SIP, sip_data);
 
     guint sip_size = (guint) strlen(payload_data[0]) + 2 /* CRLF */;
     g_auto(GStrv) headers = g_strsplit(payload->str, SIP_CRLF, 0);
@@ -311,7 +310,7 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     }
 
     // If this comes from a TCP stream, check we have a whole packet
-    if (packet_has_type(packet, PACKET_TCP)) {
+    if (packet_has_type(packet, PACKET_PROTO_TCP)) {
         if (sip_data->content_len != data->len - sip_size) {
             return data;
         }
@@ -324,17 +323,17 @@ packet_sip_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     // Remove SIP headers from data
     data = g_byte_array_remove_range(data, 0, sip_size);
 
-    // Pass data to subdissectors
-    packet_parser_next_dissector(parser, packet, data);
+    // Pass data to sub-dissectors
+    packet_dissector_next(self, packet, data);
 
     // Add data to storage
-    storage_add_packet(packet);
+    storage_check_sip_packet(packet);
 
     return data;
 }
 
 static void
-packet_sip_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+packet_dissector_sip_free(Packet *packet)
 {
     PacketSipData *sip_data = packet_sip_data(packet);
     g_return_if_fail(sip_data != NULL);
@@ -347,13 +346,24 @@ packet_sip_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
     g_free(sip_data);
 }
 
-PacketDissector *
-packet_sip_new()
+static void
+packet_dissector_sip_class_init(PacketDissectorSipClass *klass)
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_SIP;
-    proto->dissect = packet_sip_parse;
-    proto->free = packet_sip_free;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SDP));
-    return proto;
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_sip_dissect;
+    dissector_class->free_data = packet_dissector_sip_free;
+}
+
+static void
+packet_dissector_sip_init(PacketDissectorSip *self)
+{
+    // UDP Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SDP);
+}
+
+PacketDissector *
+packet_dissector_sip_new()
+{
+    return g_object_new(PACKET_DISSECTOR_TYPE_SIP, NULL);
 }

@@ -31,7 +31,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include "parser/parser.h"
+#include "parser.h"
 #include "packet_ws.h"
 
 GByteArray *
@@ -131,8 +131,8 @@ PacketDissector *
 packet_ws_new()
 {
     PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_WS;
+    proto->id = PACKET_PROTO_WS;
     proto->dissect = packet_ws_dissect;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
+    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_PROTO_SIP));
     return proto;
 }

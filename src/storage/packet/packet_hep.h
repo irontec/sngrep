@@ -24,13 +24,17 @@
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage HEP protocol (on the wire)
- *
- *
  */
-#ifndef __SNGREP_PACKET_HEP_H
-#define __SNGREP_PACKET_HEP_H
 
-#include "parser/parser.h"
+#ifndef __SNGREP_PACKET_HEP_H__
+#define __SNGREP_PACKET_HEP_H__
+
+#include "dissector.h"
+
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_HEP packet_dissector_hep_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorHep, packet_dissector_hep, PACKET_DISSECTOR, HEP, PacketDissector)
 
 //! HEP chunk types
 enum
@@ -64,6 +68,12 @@ typedef struct _CaptureHepChunkIp6 CaptureHepChunkIp6;
 typedef struct _CaptureHepChunkUint8 CaptureHepChunkUint8;
 typedef struct _CaptureHepChunkUint16 CaptureHepChunkUint16;
 typedef struct _CaptureHepChunkUint32 CaptureHepChunkUint32;
+
+struct _PacketDissectorHep
+{
+    //! Parent structure
+    PacketDissector parent;
+};
 
 /* HEPv3 types */
 struct _CaptureHepChunk
@@ -168,6 +178,8 @@ struct _PacketHepData
  * @return a protocols' parsers pointer
  */
 PacketDissector *
-packet_hep_new();
+packet_dissector_hep_new();
 
-#endif
+G_END_DECLS
+
+#endif  /* __SNGREP_PACKET_HEP_H__ */

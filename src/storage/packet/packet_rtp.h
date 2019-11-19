@@ -29,10 +29,15 @@
  *       source code: packet-rtp.c
  */
 
-#ifndef __SNGREP_PACKET_RTP_H
-#define __SNGREP_PACKET_RTP_H
+#ifndef __SNGREP_PACKET_RTP_H__
+#define __SNGREP_PACKET_RTP_H__
 
 #include <glib.h>
+
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_RTP packet_dissector_rtp_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorRtp, packet_dissector_rtp, PACKET_DISSECTOR, RTP, PacketDissector)
 
 /**
  * From wireshark code rtp_pt.h file
@@ -67,10 +72,15 @@
 #define RTP_PT_MP2T          33
 #define RTP_PT_H263          34
 
-
 typedef struct _PacketRtpHdr PacketRtpHdr;
 typedef struct _PacketRtpData PacketRtpData;
 typedef struct _PacketRtpEncoding PacketRtpEncoding;
+
+struct _PacketDissectorRtp
+{
+    //! Parent structure
+    PacketDissector parent;
+};
 
 struct _PacketRtpHdr
 {
@@ -124,6 +134,8 @@ PacketRtpData *
 packet_rtp_data(const Packet *packet);
 
 PacketDissector *
-packet_rtp_new();
+packet_dissector_rtp_new();
 
-#endif /* __SNGREP_PACKET_RTP_H */
+G_END_DECLS
+
+#endif  /* __SNGREP_PACKET_RTP_H__ */

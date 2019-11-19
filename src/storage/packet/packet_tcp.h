@@ -32,8 +32,12 @@
 
 #include <netinet/tcp.h>
 #include <glib.h>
-#include "parser/address.h"
-#include "parser/parser.h"
+#include "storage/address.h"
+
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_TCP packet_dissector_tcp_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorTcp, packet_dissector_tcp, PACKET_DISSECTOR, TCP, PacketDissector)
 
 //! Ignore too segmented TCP packets
 #define TCP_MAX_SEGMENTS    5
@@ -43,7 +47,14 @@
 typedef struct _PacketTcpStream PacketTcpStream;
 typedef struct _PacketTcpSegment PacketTcpSegment;
 typedef struct _PacketTcpData PacketTcpData;
-typedef struct _DissectorTcpData DissectorTcpData;
+
+struct _PacketDissectorTcp
+{
+    //! Parent structure
+    PacketDissector parent;
+    //! Tcp Segment reassembly list
+    GHashTable *assembly;
+};
 
 struct _PacketTcpStream
 {
@@ -74,10 +85,6 @@ struct _PacketTcpData
     guint16 psh;
 };
 
-struct _DissectorTcpData
-{
-    GHashTable *assembly;
-};
 
 /**
  * @brief Retrieve packet TCP protocol specific data
@@ -93,6 +100,8 @@ packet_tcp_data(const Packet *packet);
  * @return a protocols' parsers pointer
  */
 PacketDissector *
-packet_tcp_new();
+packet_dissector_tcp_new();
+
+G_END_DECLS
 
 #endif

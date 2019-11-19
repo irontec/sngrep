@@ -26,25 +26,27 @@
  * @brief Source of functions defined in packet_udp.h
  *
  * Support for UDP transport layer
- *
  */
 
 #include "config.h"
+#include <glib.h>
 #include <netinet/udp.h>
 #include "glib/glib-extra.h"
 #include "packet_ip.h"
-#include "parser/packet.h"
+#include "packet.h"
 #include "packet_udp.h"
 
+G_DEFINE_TYPE(PacketDissectorUdp, packet_dissector_udp, PACKET_TYPE_DISSECTOR)
+
 static GByteArray *
-packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
+packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
 {
     struct udphdr *udp = (struct udphdr *) data->data;
     uint16_t udp_off = sizeof(struct udphdr);
 
     //! Is this a IP/TCP packet?
-    PacketIpData *ipdata = packet_ip_data(packet);
-    if (ipdata->protocol != IPPROTO_UDP)
+    PacketIpData *ip_data = packet_ip_data(packet);
+    if (ip_data->protocol != IPPROTO_UDP)
         return data;
 
     // Check payload can contain an UDP header
@@ -64,38 +66,35 @@ packet_udp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
 
     // Store udp data
-    packet_add_type(packet, PACKET_UDP, udp_data);
+    packet_add_type(packet, PACKET_PROTO_UDP, udp_data);
 
     // Get pending payload
     g_byte_array_remove_range(data, 0, udp_off);
 
     // Call next dissector
-    return packet_parser_next_dissector(parser, packet, data);
-
+    return packet_dissector_next(self, packet, data);
 }
 
 static void
-packet_udp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+packet_dissector_udp_class_init(PacketDissectorUdpClass *klass)
 {
-    g_return_if_fail(packet != NULL);
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_udp_dissect;
+}
 
-    PacketUdpData *udp_data = g_ptr_array_index(packet->proto, PACKET_UDP);
-    g_return_if_fail(udp_data);
-
-    g_free(udp_data);
+static void
+packet_dissector_udp_init(PacketDissectorUdp *self)
+{
+    // UDP Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_UDP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_RTP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_RTCP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_HEP);
 }
 
 PacketDissector *
-packet_udp_new()
+packet_dissector_udp_new()
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_UDP;
-    proto->dissect = packet_udp_parse;
-    proto->free = packet_udp_free;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTP));
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_RTCP));
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_HEP));
-
-    return proto;
+    return g_object_new(PACKET_DISSECTOR_TYPE_UDP, NULL);
 }

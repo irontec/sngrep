@@ -26,23 +26,78 @@
  * @brief Source of functions defined in packet_tcp.h
  *
  * Support for TCP transport layer dissection
- *
  */
-
 #include "config.h"
 #include <glib.h>
-#include <glib/gprintf.h>
 #include "glib/glib-extra.h"
-#include "parser/packet.h"
+#include "packet.h"
 #include "capture/capture.h"
 #include "packet_ip.h"
 #include "packet_tcp.h"
+
+G_DEFINE_TYPE(PacketDissectorTcp, packet_dissector_tcp, PACKET_TYPE_DISSECTOR)
 
 PacketTcpData *
 packet_tcp_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
-    return g_ptr_array_index(packet->proto, PACKET_TCP);
+    return g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
+}
+
+/**
+ * @brief TCP Stream garbage collector remove callback
+ *
+ * Determine if a stream should be removed by garbage collector
+
+ * @return TRUE if stream must be removed
+ */
+static gboolean
+packet_tcp_assembly_remove(G_GNUC_UNUSED gpointer key, gpointer value, G_GNUC_UNUSED gpointer user_data)
+{
+    PacketTcpStream *stream = value;
+
+    if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS)
+        return TRUE;
+
+    if (stream->age++ > TCP_MAX_AGE)
+        return TRUE;
+
+    return FALSE;
+}
+
+/**
+ * @brief TCP Stream garbage collector
+ *
+ * This callback is invoked periodically to remove existing streams in
+ * assembly hash table that are greater than a number of frames.
+ *
+ * @param parser Parser information owner of dissector data
+ * @return TRUE always
+ */
+static gboolean
+packet_tcp_assembly_gc(PacketDissectorTcp *dissector)
+{
+    g_return_val_if_fail(PACKET_DISSECTOR_IS_TCP(dissector), FALSE);
+    // Remove big un-assembled streams
+    g_hash_table_foreach_remove(dissector->assembly, packet_tcp_assembly_remove, NULL);
+    return TRUE;
+}
+
+static gchar *
+packet_tcp_assembly_hashkey(PacketTcpSegment *segment)
+{
+    Packet *packet = segment->packet;
+    g_return_val_if_fail(packet != NULL, NULL);
+    PacketIpData *ipdata = packet_ip_data(packet);
+    g_return_val_if_fail(ipdata != NULL, NULL);
+    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
+    g_return_val_if_fail(tcpdata != NULL, NULL);
+
+    return g_strdup_printf(
+        "%s:%hu-%s:%hu",
+        ipdata->srcip, tcpdata->sport,
+        ipdata->dstip, tcpdata->dport
+    );
 }
 
 static PacketTcpSegment *
@@ -63,33 +118,6 @@ packet_tcp_segment_free(PacketTcpSegment *segment)
     g_byte_array_unref(segment->data);
     packet_unref(segment->packet);
     g_free(segment);
-}
-
-static gchar *
-packet_tcp_assembly_hashkey(PacketTcpSegment *segment)
-{
-    Packet *packet = segment->packet;
-    g_return_val_if_fail(packet != NULL, NULL);
-    PacketIpData *ipdata = packet_ip_data(packet);
-    g_return_val_if_fail(ipdata != NULL, NULL);
-    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
-    g_return_val_if_fail(tcpdata != NULL, NULL);
-
-    return g_strdup_printf(
-        "%s:%hu-%s:%hu",
-        ipdata->srcip, tcpdata->sport,
-        ipdata->dstip, tcpdata->dport
-    );
-}
-
-static PacketTcpStream *
-packet_tcp_find_stream(DissectorTcpData *priv, PacketTcpSegment *segment)
-{
-    // Get TCP stream assembly hash key
-    g_autofree gchar *hashkey = packet_tcp_assembly_hashkey(segment);
-
-    // Find segment stream in assembly hash
-    return g_hash_table_lookup(priv->assembly, hashkey);
 }
 
 static PacketTcpStream *
@@ -142,10 +170,22 @@ packet_tcp_stream_add_segment(PacketTcpStream *stream, PacketTcpSegment *segment
     g_byte_array_append(stream->data, segment->data->data, segment->data->len);
 }
 
-static GByteArray *
-packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
+static PacketTcpStream *
+packet_dissector_tcp_find_stream(PacketDissectorTcp *priv, PacketTcpSegment *segment)
 {
-    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
+    // Get TCP stream assembly hash key
+    g_autofree gchar *hashkey = packet_tcp_assembly_hashkey(segment);
+
+    // Find segment stream in assembly hash
+    return g_hash_table_lookup(priv->assembly, hashkey);
+}
+
+static GByteArray *
+packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+{
+    // Get TCP dissector information
+    g_return_val_if_fail(PACKET_DISSECTOR_IS_TCP(self), NULL);
+    PacketDissectorTcp *dissector = PACKET_DISSECTOR_TCP(self);
 
     // Get Packet IP protocol information
     PacketIpData *ipdata = packet_ip_data(packet);
@@ -179,7 +219,7 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 #endif
 
     // Set packet protocol data
-    packet_add_type(packet, PACKET_TCP, tcp_data);
+    packet_add_type(packet, PACKET_PROTO_TCP, tcp_data);
 
     // Remove TCP header length
     g_byte_array_remove_range(data, 0, tcp_data->off);
@@ -188,13 +228,13 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     PacketTcpSegment *segment = packet_tcp_segment_new(packet, data);
 
     // Look for another packet with same ip/port data in reassembly list
-    PacketTcpStream *stream = packet_tcp_find_stream(priv, segment);
+    PacketTcpStream *stream = packet_dissector_tcp_find_stream(dissector, segment);
 
     // Create a new stream if none matches
     if (stream == NULL) {
         stream = packet_tcp_stream_new(segment);
         // Add stream to assmebly list
-        g_hash_table_insert(priv->assembly, stream->hashkey, stream);
+        g_hash_table_insert(dissector->assembly, stream->hashkey, stream);
     }
 
     // Add segment to stream
@@ -210,11 +250,11 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 
     // Check if this packet is interesting
     guint stream_len = stream->data->len;
-    packet_parser_next_dissector(parser, packet, stream->data);
+    packet_dissector_next(self, packet, stream->data);
 
     // Not interesting stream
-    if (!packet_has_type(packet, PACKET_SIP)) {
-        g_hash_table_remove(priv->assembly, stream->hashkey);
+    if (!packet_has_type(packet, PACKET_PROTO_SIP)) {
+        g_hash_table_remove(dissector->assembly, stream->hashkey);
         return data;
     }
 
@@ -228,97 +268,49 @@ packet_tcp_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     return data;
 }
 
-/**
- * @brief TCP Stream garbage collector remove callback
- *
- * Determine if a stream should be removed by garbage collector
-
- * @return TRUE if stream must be removed
- */
-static gboolean
-packet_tcp_assembly_remove(G_GNUC_UNUSED gpointer key, gpointer value, G_GNUC_UNUSED gpointer user_data)
-{
-    PacketTcpStream *stream = value;
-
-    if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS)
-        return TRUE;
-
-    if (stream->age++ > TCP_MAX_AGE)
-        return TRUE;
-
-    return FALSE;
-}
-
-/**
- * @brief TCP Stream garbage collector
- *
- * This callback is invoked periodically to remove existing streams in
- * assembly hash table that are greater than a number of frames.
- *
- * @param parser Parser information owner of dissector data
- * @return TRUE always
- */
-static gboolean
-packet_tcp_assembly_gc(PacketParser *parser)
-{
-    g_return_val_if_fail(parser != NULL, FALSE);
-    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
-    g_return_val_if_fail(priv != NULL, FALSE);
-
-    // Remove big unassembled streams
-    g_hash_table_foreach_remove(priv->assembly, packet_tcp_assembly_remove, NULL);
-    return TRUE;
-}
-
 static void
-packet_tcp_init(PacketParser *parser)
+packet_dissector_tcp_finalize(GObject *self)
 {
-    CaptureManager *manager = capture_manager_get_instance();
-    g_return_if_fail(manager != NULL);
+    // Get TCP dissector information
+    g_return_if_fail(PACKET_DISSECTOR_IS_TCP(self));
+    PacketDissectorTcp *dissector = PACKET_DISSECTOR_TCP(self);
+    g_hash_table_destroy(dissector->assembly);
+}
 
-    GSource *tcp_gc = g_timeout_source_new(10000);
-    g_source_set_callback(tcp_gc, (GSourceFunc) packet_tcp_assembly_gc, parser, NULL);
-    g_source_attach(tcp_gc, g_main_loop_get_context(manager->loop));
+G_GNUC_UNUSED static void
+packet_dissector_tcp_class_init(PacketDissectorTcpClass *klass)
+{
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_tcp_dissect;
 
-    DissectorTcpData *tcp_data = g_malloc0(sizeof(DissectorTcpData));
-    tcp_data->assembly = g_hash_table_new_full(
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = packet_dissector_tcp_finalize;
+}
+
+G_GNUC_UNUSED static void
+packet_dissector_tcp_init(PacketDissectorTcp *self)
+{
+    // TCP Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_TCP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_TLS);
+
+    // TCP assembly garbage collector
+    GSource *tcp_garbage_collector = g_timeout_source_new(10000);
+    g_source_set_callback(tcp_garbage_collector, (GSourceFunc) packet_tcp_assembly_gc, self, NULL);
+    g_source_attach(tcp_garbage_collector, NULL);
+
+    // TCP fragment assembly hash table
+    self->assembly = g_hash_table_new_full(
         g_str_hash,
         g_str_equal,
         NULL,
         (GDestroyNotify) packet_tcp_stream_free
     );
-
-    g_ptr_array_set(parser->dissectors_priv, PACKET_TCP, tcp_data);
-}
-
-static void
-packet_tcp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
-{
-    PacketTcpData *tcpdata = packet_tcp_data(packet);
-    g_return_if_fail(tcpdata != NULL);
-    g_free(tcpdata);
-}
-
-static void
-packet_tcp_deinit(PacketParser *parser)
-{
-    DissectorTcpData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TCP);
-    g_return_if_fail(priv != NULL);
-
-    g_hash_table_destroy(priv->assembly);
-    g_free(priv);
 }
 
 PacketDissector *
-packet_tcp_new()
+packet_dissector_tcp_new()
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_TCP;
-    proto->init = packet_tcp_init;
-    proto->deinit = packet_tcp_deinit;
-    proto->dissect = packet_tcp_parse;
-    proto->free = packet_tcp_free;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_TLS));
-    return proto;
+    return g_object_new(PACKET_DISSECTOR_TYPE_TCP, NULL);
 }

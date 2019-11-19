@@ -39,7 +39,6 @@ CaptureManager *
 capture_manager_new()
 {
     manager = g_malloc0(sizeof(CaptureManager));
-
     manager->paused = FALSE;
 
 #ifdef WITH_SSL
@@ -143,8 +142,6 @@ capture_manager_set_keyfile(CaptureManager *manager, const gchar *keyfile, G_GNU
 void
 capture_manager_add_input(CaptureManager *manager, CaptureInput *input)
 {
-    capture_input_set_manager(input, manager);
-
     g_source_attach(
         capture_input_source(input),
         g_main_loop_get_context(manager->loop)
@@ -254,4 +251,10 @@ capture_is_running()
     }
 
     return FALSE;
+}
+
+gboolean
+capture_is_paused()
+{
+    return manager->paused;
 }

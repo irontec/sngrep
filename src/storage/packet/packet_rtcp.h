@@ -27,13 +27,23 @@
  *
  */
 
-#ifndef __SNGREP_PACKET_RTCP_H
-#define __SNGREP_PACKET_RTCP_H
+#ifndef __SNGREP_PACKET_RTCP_H__
+#define __SNGREP_PACKET_RTCP_H__
 
 #include <glib.h>
 
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_RTCP packet_dissector_rtcp_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorRtcp, packet_dissector_rtcp, PACKET_DISSECTOR, RTCP, PacketDissector)
+
 typedef struct _PacketRtcpData PacketRtcpData;
 
+struct _PacketDissectorRtcp
+{
+    //! Parent structure
+    PacketDissector parent;
+};
 
 // RTCP header types
 //! http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml
@@ -223,6 +233,8 @@ struct _PacketRtcpData
 };
 
 PacketDissector *
-packet_rtcp_new();
+packet_dissector_rtcp_new();
 
-#endif /* __SNGREP_PACKET_RTCP_H */
+G_END_DECLS
+
+#endif  /* __SNGREP_PACKET_RTCP_H__ */

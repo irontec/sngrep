@@ -127,6 +127,8 @@ struct _Storage
     GHashTable *streams;
     //! Storage processing source
     GSource *source;
+    //! Available Dissectors array
+    GPtrArray *dissectors;
     //! Packet waiting to be processed
     GAsyncQueue *queue;
 };
@@ -137,6 +139,15 @@ struct _Storage
  */
 void
 storage_add_packet(Packet *packet);
+
+void
+storage_check_sip_packet(Packet *packet);
+
+void
+storage_check_rtp_packet(Packet *packet);
+
+void
+storage_check_rtcp_packet(Packet *packet);
 
 /**
  * @brief Create a storage manager
@@ -250,5 +261,11 @@ storage_set_sort_options(StorageSortOpts sort);
  */
 gint
 storage_pending_packets();
+
+/**
+ * @brief Return a packet dissector for a given type
+ */
+PacketDissector *
+storage_find_dissector(PacketProtocol id);
 
 #endif /* __SNGREP_STORAGE_H */

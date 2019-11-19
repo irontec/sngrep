@@ -30,9 +30,9 @@
 #define __SNGREP_MESSAGE_H
 
 #include <glib.h>
-#include "parser/packet_sdp.h"
-#include "parser/packet.h"
-#include "storage/attribute.h"
+#include "packet/packet_sdp.h"
+#include "address.h"
+#include "attribute.h"
 #include "datetime.h"
 
 //! Shorter declaration of sip_msg structure

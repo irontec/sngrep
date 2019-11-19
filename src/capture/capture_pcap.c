@@ -38,7 +38,7 @@
 #include "glib/glib-extra.h"
 #include "capture.h"
 #include "capture_pcap.h"
-#include "parser/packet_link.h"
+#include "storage/packet/packet_link.h"
 #include "storage/storage.h"
 
 // CapturePcap class definition
@@ -53,14 +53,8 @@ capture_pcap_error_quark()
 static void
 capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr *header, const guchar *content)
 {
-    // Capture manager
-    CaptureManager *manager = capture_input_manager(CAPTURE_INPUT(pcap));
-    // Packet dissectors parser
-    PacketParser *parser = capture_input_parser(CAPTURE_INPUT(pcap));
-    parser->current = parser->dissector_tree;
-
     // Ignore packets while capture is paused
-    if (manager->paused)
+    if (capture_is_paused())
         return;
 
     // Ignore packets if storage limit has been reached
@@ -81,11 +75,11 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
     g_byte_array_append(frame->data, data->data, data->len);
 
     // Create a new packet
-    Packet *packet = packet_new(parser);
+    Packet *packet = packet_new(CAPTURE_INPUT(pcap));
     packet->frames = g_list_append(packet->frames, frame);
 
     // Pass packet to dissectors
-    packet_parser_next_dissector(parser, packet, data);
+    storage_add_packet(packet);
 
     // Remove packet reference (
     packet_unref(packet);
@@ -173,7 +167,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     pcap->link = pcap_datalink(pcap->handle);
 
     // Check link types sngrep known before start parsing packets
-    if (proto_link_size(pcap->link) == 0) {
+    if (packet_link_size(pcap->link) == 0) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
@@ -185,12 +179,6 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     // Create a new structure to handle this capture source
     capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_ONLINE);
     capture_input_set_source_str(CAPTURE_INPUT(pcap), dev);
-
-    packet_parser_dissector_init(
-        capture_input_parser(CAPTURE_INPUT(pcap)),
-        NULL,
-        PACKET_LINK
-    );
 
     // Create GSource for main loop
     capture_input_set_source(
@@ -240,7 +228,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     pcap->link = pcap_datalink(pcap->handle);
 
     // Check link types sngrep known before start parsing packets
-    if (proto_link_size(pcap->link) == 0) {
+    if (packet_link_size(pcap->link) == 0) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_UNKNOWN_LINK,
@@ -253,12 +241,6 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_OFFLINE);
     g_autofree gchar *basename = g_path_get_basename(infile);
     capture_input_set_source_str(CAPTURE_INPUT(pcap), basename);
-
-    packet_parser_dissector_init(
-        capture_input_parser(CAPTURE_INPUT(pcap)),
-        NULL,
-        PACKET_LINK
-    );
 
     // Create GSource for main loop
     capture_input_set_source(
@@ -377,15 +359,12 @@ capture_output_pcap_write(CaptureOutput *self, Packet *packet)
     g_return_if_fail(pcap != NULL);
     g_return_if_fail(pcap->dumper != NULL);
 
-    // FIXME
-    CaptureInput *input = packet->parser->input;
-
     // Check if the input has the same datalink as the output
-    gint datalink = capture_input_pcap_datalink(input);
+    gint datalink = capture_input_pcap_datalink(packet_get_input(packet));
     gint datalink_size = 0;
     if (datalink != pcap->link) {
         // Strip datalink header from all packets
-        datalink_size = proto_link_size(datalink);
+        datalink_size = packet_link_size(datalink);
     }
 
     for (GList *l = packet->frames; l != NULL; l = l->next) {

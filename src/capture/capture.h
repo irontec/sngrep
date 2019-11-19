@@ -26,12 +26,12 @@
  * @brief Functions to manage captures
  *
  */
-#ifndef __SNGREP_CAPTURE_H
-#define __SNGREP_CAPTURE_H
+#ifndef __SNGREP_CAPTURE_H__
+#define __SNGREP_CAPTURE_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include "parser/parser.h"
+#include "storage/address.h"
 
 G_BEGIN_DECLS
 
@@ -53,8 +53,10 @@ typedef enum
 } CaptureTech;
 
 //! Capture function types
+typedef struct _CaptureInput CaptureInput;
 typedef struct _CaptureOutput CaptureOutput;
 typedef struct _CaptureManager CaptureManager;
+typedef struct _Packet Packet;
 
 /**
  * @brief Capture common configuration
@@ -209,6 +211,13 @@ capture_manager_set_pause(CaptureManager *manager, gboolean paused);
 gboolean
 capture_is_running();
 
+/**
+ * @brief Determine if any of the capture inputs is paused by user
+ * @return TRUE if user paused capture
+ */
+gboolean
+capture_is_paused();
+
 G_END_DECLS
 
-#endif
+#endif  /* __SNGREP_CAPTURE_H__ */

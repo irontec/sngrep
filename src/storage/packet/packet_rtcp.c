@@ -30,11 +30,12 @@
 #include <glib.h>
 #include "glib/glib-extra.h"
 #include "storage/storage.h"
-#include "parser/parser.h"
-#include "parser/packet.h"
+#include "packet.h"
 #include "packet_ip.h"
 #include "packet_udp.h"
 #include "packet_rtcp.h"
+
+G_DEFINE_TYPE(PacketDissectorRtcp, packet_dissector_rtcp, PACKET_TYPE_DISSECTOR)
 
 // Version is the first 2 bits of the first octet
 #define RTP_VERSION(octet) ((octet) >> 6)
@@ -71,7 +72,7 @@ packet_rtcp_valid(GByteArray *data)
 }
 
 static GByteArray *
-packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray *data)
+packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GByteArray *data)
 {
     struct rtcp_hdr_generic hdr;
     struct rtcp_hdr_sr hdr_sr;
@@ -160,20 +161,30 @@ packet_rtcp_parse(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray
     }
 
     // Set packet RTP informaiton
-    packet_add_type(packet, PACKET_RTCP, rtcp);
+    packet_add_type(packet, PACKET_PROTO_RTCP, rtcp);
 
     // Add data to storage
-    storage_add_packet(packet);
+    storage_check_rtcp_packet(packet);
 
     return data;
 }
 
-PacketDissector *
-packet_rtcp_new()
+static void
+packet_dissector_rtcp_class_init(PacketDissectorRtcpClass *klass)
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_RTCP;
-    proto->dissect = packet_rtcp_parse;
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_rtcp_parse;
+}
 
-    return proto;
+static void
+packet_dissector_rtcp_init(PacketDissectorRtcp *self)
+{
+    // UDP Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_RTCP);
+}
+
+PacketDissector *
+packet_dissector_rtcp_new()
+{
+    return g_object_new(PACKET_DISSECTOR_TYPE_RTCP, NULL);
 }

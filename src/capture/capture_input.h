@@ -31,7 +31,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include "capture/capture.h"
+#include "capture.h"
 
 G_BEGIN_DECLS
 
@@ -71,15 +71,6 @@ capture_input_filter(CaptureInput *self, const gchar *filter, GError **error);
 /*
  * Setters/Getters
  */
-void
-capture_input_set_manager(CaptureInput *self, CaptureManager *manager);
-
-CaptureManager *
-capture_input_manager(CaptureInput *self);
-
-PacketParser *
-capture_input_parser(CaptureInput *self);
-
 void
 capture_input_set_source(CaptureInput *self, GSource *source);
 

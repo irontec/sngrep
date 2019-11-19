@@ -31,6 +31,8 @@
 #include "glib/glib-extra.h"
 #include "packet_sdp.h"
 
+G_DEFINE_TYPE(PacketDissectorSdp, packet_dissector_sdp, PACKET_TYPE_DISSECTOR)
+
 /**
  * @brief Known RTP encodings
  *
@@ -86,7 +88,7 @@ PacketSdpData *
 packet_sdp_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
-    return g_ptr_array_index(packet->proto, PACKET_SDP);
+    return g_ptr_array_index(packet->proto, PACKET_PROTO_SDP);
 }
 
 const gchar *
@@ -227,7 +229,7 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
 }
 
 static GByteArray *
-packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArray *data)
+packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GByteArray *data)
 {
     g_autoptr(GString) payload = g_string_new_len((const gchar *) data->data, data->len);
 
@@ -254,7 +256,7 @@ packet_sdp_dissect(G_GNUC_UNUSED PacketParser *parser, Packet *packet, GByteArra
     }
 
     // Set packet SDP data
-    packet_add_type(packet, PACKET_SDP, sdp);
+    packet_add_type(packet, PACKET_PROTO_SDP, sdp);
 
     return data;
 }
@@ -278,7 +280,7 @@ packet_sdp_media_free(PacketSdpMedia *media)
 }
 
 static void
-packet_sdp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
+packet_dissector_sdp_free(Packet *packet)
 {
     g_return_if_fail(packet != NULL);
 
@@ -290,14 +292,24 @@ packet_sdp_free(G_GNUC_UNUSED PacketParser *parser, Packet *packet)
     g_free(sdp_data);
 }
 
+static void
+packet_dissector_sdp_class_init(PacketDissectorSdpClass *klass)
+{
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_sdp_dissect;
+    dissector_class->free_data = packet_dissector_sdp_free;
+}
+
+static void
+packet_dissector_sdp_init(PacketDissectorSdp *self)
+{
+    // UDP Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_SDP);
+}
 
 PacketDissector *
-packet_sdp_new()
+packet_dissector_sdp_new()
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_SDP;
-    proto->dissect = packet_sdp_dissect;
-    proto->free = packet_sdp_free;
-    return proto;
+    return g_object_new(PACKET_DISSECTOR_TYPE_SDP, NULL);
 }
 

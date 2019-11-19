@@ -58,7 +58,7 @@
 #include <storage/message.h>
 #include "glib/glib-extra.h"
 #include "storage/storage.h"
-#include "parser/packet_sip.h"
+#include "storage/packet/packet_sip.h"
 #include "stats_win.h"
 
 Window *

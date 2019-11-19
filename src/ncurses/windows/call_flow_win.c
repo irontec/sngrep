@@ -30,7 +30,7 @@
 #include <glib.h>
 #include <storage/message.h>
 #include <storage/stream.h>
-#include "parser/packet_sip.h"
+#include "storage/packet/packet_sip.h"
 #include "capture/capture_pcap.h"
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"

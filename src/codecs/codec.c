@@ -63,7 +63,7 @@ codec_stream_decode(Stream *stream, GByteArray *decoded, GError **error)
     gint ptime = 20;
     for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
         Packet *packet = g_ptr_array_index(stream->packets, i);
-        PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_RTP);
+        PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
         g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
         if (prev > 0) {
             gint diff = (packet_time(packet) - prev) / G_MSEC_PER_SEC;

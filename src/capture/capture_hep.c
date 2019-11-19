@@ -49,11 +49,12 @@
 #include <string.h>
 #include <glib-unix.h>
 #include "setting.h"
-#include "parser/packet_hep.h"
-#include "parser/packet_ip.h"
-#include "parser/packet_udp.h"
-#include "parser/packet_sip.h"
-#include "parser/packet.h"
+#include "storage/storage.h"
+#include "storage/packet/packet_hep.h"
+#include "storage/packet/packet_ip.h"
+#include "storage/packet/packet_udp.h"
+#include "storage/packet/packet_sip.h"
+#include "storage/packet/packet.h"
 #include "capture_hep.h"
 
 // CapturePcap class definition
@@ -108,7 +109,6 @@ capture_input_hep_receive(G_GNUC_UNUSED gint fd,
     struct sockaddr hep_client;
     socklen_t hep_client_len;
     CaptureInputHep *hep = CAPTURE_INPUT_HEP(input);
-    PacketParser *parser = capture_input_parser(input);
 
     /* Receive HEP generic header */
     gssize received = recvfrom(hep->socket, buffer, MAX_HEP_BUFSIZE, 0, &hep_client, &hep_client_len);
@@ -120,15 +120,14 @@ capture_input_hep_receive(G_GNUC_UNUSED gint fd,
     g_byte_array_append(data, (const guint8 *) buffer, (guint) received);
 
     // Create a new packet for this data
-    Packet *packet = packet_new(parser);
+    Packet *packet = packet_new(input);
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
     frame->data = g_byte_array_new();
     g_byte_array_append(frame->data, data->data, data->len);
     packet->frames = g_list_append(packet->frames, frame);
 
     // Pass packet to dissectors
-    parser->current = parser->dissector_tree;
-    packet_parser_next_dissector(parser, packet, data);
+    storage_add_packet(packet);
 
     // Remove packet reference after parsing
     packet_unref(packet);
@@ -206,13 +205,6 @@ capture_input_hep(const gchar *url, GError **error)
     g_autofree gchar *source_str = g_strdup_printf("L:%s", hep->url.port);
     capture_input_set_source_str(CAPTURE_INPUT(hep), source_str);
     capture_input_set_mode(CAPTURE_INPUT(hep), CAPTURE_MODE_ONLINE);
-
-    // Create packet parser tree
-    packet_parser_dissector_init(
-        capture_input_parser(CAPTURE_INPUT(hep)),
-        NULL,
-        PACKET_HEP
-    );
 
     capture_input_set_source(
         CAPTURE_INPUT(hep),
@@ -371,11 +363,11 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     g_return_if_fail(ip != NULL);
 
     // Packet UDP Data
-    PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_UDP);
+    PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
     g_return_if_fail(udp != NULL);
 
     // Packet SIP Data
-    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_SIP);
+    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_PROTO_SIP);
     g_return_if_fail(sip != NULL);
 
     // Get HEP output data

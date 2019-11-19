@@ -38,7 +38,7 @@
 #include "capture/capture_hep.h"
 #endif
 #ifdef WITH_SSL
-#include "parser/packet_tls.h"
+#include "storage/packet/packet_tls.h"
 #endif
 
 void
@@ -349,7 +349,7 @@ main(int argc, char *argv[])
 #ifdef USE_HEP
     // Hep settings
     if (hep_listen) {
-        // Enable HEP parser
+        // Enable HEP packet
         setting_set_value(SETTING_CAPTURE_PACKET_HEP, SETTING_ON);
 
         // Create a HEP server input

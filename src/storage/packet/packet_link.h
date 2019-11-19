@@ -26,15 +26,17 @@
  * @brief Functions to link layer packet contents
  */
 
-#ifndef __SNGREP_PROTO_LINK_H_
-#define __SNGREP_PROTO_LINK_H_
+#ifndef __SNGREP_PACKET_LINK_H__
+#define __SNGREP_PACKET_LINK_H__
 
 #include <glib.h>
 #include <netinet/if_ether.h>
 #ifdef SLL_HDR_LEN
 #include <pcap/sll.h>
 #endif
-#include "parser/parser.h"
+#include "dissector.h"
+
+G_BEGIN_DECLS
 
 //! Define VLAN 802.1Q Ethernet type
 #ifndef ETHERTYPE_8021Q
@@ -45,21 +47,27 @@
 #define DLT_NFLOG       239
 #define NFULA_PAYLOAD   9
 
-typedef struct _DissectorLinkData DissectorLinkData;
-typedef struct _LinkNflogHdr LinkNflogHdr;
+#define PACKET_DISSECTOR_TYPE_LINK packet_link_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorLink, packet_link, PACKET_DISSECTOR, LINK, PacketDissector)
 
-//! Private information structure for Link Protocol
-struct _DissectorLinkData
+struct _PacketDissectorLink
 {
-    gint link_type;
-    gint link_size;
+    PacketDissector parent;
 };
 
-struct _LinkNflogHdr
+typedef struct
 {
     guint16 tlv_length;
     guint16 tlv_type;
-};
+} LinkNflogHdr;
+
+/**
+ * @brief Return the number of bytes used by Link Layer Header
+ * @param link_type Datalink value provided by libpcap
+ * @return Size in bytes of Link header
+ */
+guint8
+packet_link_size(gint link_type);
 
 /**
  * @brief Create a Link layer parser
@@ -67,9 +75,8 @@ struct _LinkNflogHdr
  * @return a protocols' parsers tree
  */
 PacketDissector *
-packet_link_new();
+packet_dissector_link_new();
 
-guint8
-proto_link_size(int linktype);
+G_END_DECLS
 
-#endif /* __SNGREP_PROTO_LINK_H_ */
+#endif /* __SNGREP_PACKET_LINK_H__ */

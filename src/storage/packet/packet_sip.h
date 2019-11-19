@@ -26,12 +26,17 @@
  * @brief Functions to manage SIP packets
  *
  */
-#ifndef __SNGREP_PACKET_SIP_H
-#define __SNGREP_PACKET_SIP_H
+#ifndef __SNGREP_PACKET_SIP_H__
+#define __SNGREP_PACKET_SIP_H__
 
 #include <glib.h>
-#include "parser/packet.h"
+#include "packet.h"
 #include "packet_sdp.h"
+
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_SIP packet_dissector_sip_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorSip, packet_dissector_sip, PACKET_DISSECTOR, SIP, PacketDissector)
 
 #define SIP_VERSION "SIP/2.0"
 #define SIP_VERSION_LEN 7
@@ -39,6 +44,12 @@
 
 typedef struct _PacketSipData PacketSipData;
 typedef struct _PacketSipCode PacketSipCode;
+
+struct _PacketDissectorSip
+{
+    //! Parent structure
+    PacketDissector parent;
+};
 
 //! SIP Methods
 enum SipMethods
@@ -121,6 +132,8 @@ packet_sip_data(const Packet *packet);
  * @return a protocols' parsers pointer
  */
 PacketDissector *
-packet_sip_new();
+packet_dissector_sip_new();
 
-#endif /* __SNGREP_PACKET_SIP_H */
+G_END_DECLS
+
+#endif /* __SNGREP_PACKET_SIP_H__ */

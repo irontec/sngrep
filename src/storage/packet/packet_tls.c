@@ -33,8 +33,7 @@
 #include <gnutls/gnutls.h>
 #include "glib/glib-extra.h"
 #include "capture/capture_input.h"
-#include "parser/address.h"
-#include "parser/parser.h"
+#include "storage/address.h"
 #include "packet_ip.h"
 #include "packet_tcp.h"
 #include "packet_tls.h"
@@ -47,6 +46,7 @@ struct CipherData ciphers[] = {
     { 0,      0,          0,  0,   0,          0,  0 }
 };
 
+G_DEFINE_TYPE(PacketDissectorTls, packet_dissector_tls, PACKET_TYPE_DISSECTOR)
 
 GQuark
 packet_tls_error_quark()
@@ -443,12 +443,9 @@ packet_tls_connection_dir(SSLConnection *conn, Address *addr)
 }
 
 static SSLConnection *
-packet_tls_connection_find(PacketParser *parser, Address *src, Address *dst)
+packet_dissector_tls_connection_find(PacketDissectorTls *dissector, Address *src, Address *dst)
 {
-    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
-    g_return_val_if_fail(priv != NULL, NULL);
-
-    for (GSList *l = priv->connections; l != NULL; l = l->next) {
+    for (GSList *l = dissector->connections; l != NULL; l = l->next) {
         SSLConnection *conn = l->data;
 
         if (packet_tls_connection_dir(conn, src) == 0 &&
@@ -835,28 +832,25 @@ packet_tls_process_record(SSLConnection *conn, GByteArray *data)
 }
 
 static GByteArray *
-packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
+packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
 {
     SSLConnection *conn = NULL;
     GByteArray *out = NULL;
 
-    // Get capture input from this parser
-    CaptureInput *input = parser->input;
-    g_assert(input != NULL);
+    // Get TLS dissector information
+    g_return_val_if_fail(PACKET_DISSECTOR_IS_TLS(self), NULL);
+    PacketDissectorTls *dissector = PACKET_DISSECTOR_TLS(self);
 
     // Get manager information
-    CaptureManager *manager = capture_input_manager(input);
+    CaptureManager *manager = capture_manager_get_instance();
     if (capture_keyfile(manager) == NULL) {
         return data;
     }
 
-    Address *tlsserver = capture_tls_server(capture_manager_get_instance());
-
-    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
-    g_return_val_if_fail(priv != NULL, NULL);
+    Address *tlsserver = capture_tls_server(manager);
 
     // Get TCP/IP data from this packet
-    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_TCP);
+    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
     g_return_val_if_fail(tcpdata != NULL, NULL);
 
     // Get packet addresses
@@ -864,7 +858,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     Address *dst = packet_dst_address(packet);
 
     // Try to find a session for this ip
-    if ((conn = packet_tls_connection_find(parser, src, dst))) {
+    if ((conn = packet_dissector_tls_connection_find(dissector, src, dst))) {
         // Update last connection direction
         conn->direction = packet_tls_connection_dir(conn, src);
 
@@ -886,7 +880,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                 if (packet_tls_record_handshake_is_ssl2(conn, data)) {
                     out = packet_tls_process_record_ssl2(conn, data);
                     if (out == NULL) {
-                        priv->connections = g_slist_remove(priv->connections, conn);
+                        dissector->connections = g_slist_remove(dissector->connections, conn);
                         packet_tls_connection_destroy(conn);
                     }
                 } else {
@@ -894,7 +888,7 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                     while (data->len > 0) {
                         out = packet_tls_process_record(conn, data);
                         if (out == NULL) {
-                            priv->connections = g_slist_remove(priv->connections, conn);
+                            dissector->connections = g_slist_remove(dissector->connections, conn);
                             packet_tls_connection_destroy(conn);
                             break;
                         }
@@ -904,13 +898,13 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
                 // This seems a SIP TLS packet ;-)
                 if (out != NULL && out->len > 0) {
                     data = g_byte_array_new_take(out->data, out->len);
-                    return packet_parser_next_dissector(parser, packet, data);
+                    return packet_dissector_next(self, packet, data);
                 }
                 break;
             case TCP_STATE_FIN:
             case TCP_STATE_CLOSED:
                 // We can delete this connection
-                priv->connections = g_slist_remove(priv->connections, conn);
+                dissector->connections = g_slist_remove(dissector->connections, conn);
                 packet_tls_connection_destroy(conn);
                 break;
         }
@@ -920,13 +914,13 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
             if (tlsserver && tlsserver->port) {
                 if (addressport_equals(tlsserver, dst)) {
                     // New connection, store it status and leave
-                    priv->connections =
-                        g_slist_append(priv->connections, packet_tls_connection_create(src, dst));
+                    dissector->connections =
+                        g_slist_append(dissector->connections, packet_tls_connection_create(src, dst));
                 }
             } else {
                 // New connection, store it status and leave
-                priv->connections =
-                    g_slist_append(priv->connections, packet_tls_connection_create(src, dst));
+                dissector->connections =
+                    g_slist_append(dissector->connections, packet_tls_connection_create(src, dst));
             }
         } else {
             return data;
@@ -937,28 +931,23 @@ packet_tls_parse(PacketParser *parser, Packet *packet, GByteArray *data)
 }
 
 static void
-packet_tls_init(PacketParser *parser)
+packet_dissector_tls_class_init(PacketDissectorTlsClass *klass)
 {
-    DissectorTlsData *tls_data = g_malloc0(sizeof(DissectorTlsData));
-    g_ptr_array_set(parser->dissectors_priv, PACKET_TLS, tls_data);
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_tls_dissect;
 }
 
 static void
-packet_tls_deinit(PacketParser *parser)
+packet_dissector_tls_init(PacketDissectorTls *self)
 {
-    DissectorTlsData *priv = g_ptr_array_index(parser->dissectors_priv, PACKET_TLS);
-    g_free(priv);
+    // TLS Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_TLS);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_WS);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
 }
 
 PacketDissector *
-packet_tls_new()
+packet_dissector_tls_new()
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_TLS;
-    proto->init = packet_tls_init;
-    proto->dissect = packet_tls_parse;
-    proto->deinit = packet_tls_deinit;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_WS));
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
-    return proto;
+    return g_object_new(PACKET_DISSECTOR_TYPE_TLS, NULL);
 }

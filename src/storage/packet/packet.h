@@ -33,14 +33,15 @@
  *
  */
 
-#ifndef __SNGREP_PACKET_H
-#define __SNGREP_PACKET_H
+#ifndef __SNGREP_PACKET_H__
+#define __SNGREP_PACKET_H__
 
 #include <glib.h>
 #include <glib-object.h>
 #include <time.h>
 #include <sys/types.h>
-#include "address.h"
+#include "storage/address.h"
+#include "capture/capture_input.h"
 
 G_BEGIN_DECLS
 
@@ -48,28 +49,27 @@ G_BEGIN_DECLS
 #define packet_add_type(packet, type, data) (g_ptr_array_set(packet->proto, type, data))
 #define packet_has_type(packet, type)       (g_ptr_array_index(packet->proto, type) != NULL)
 
-
 /**
  * @brief Packet protocols
  *
  * Note that packet types are stored as flags and a packet have more than
  * one type.
  */
-enum PacketProtoId
+typedef enum
 {
-    PACKET_LINK = 0,
-    PACKET_IP = 1,
-    PACKET_UDP,
-    PACKET_TCP,
-    PACKET_TLS,
-    PACKET_WS,
-    PACKET_SIP,
-    PACKET_SDP,
-    PACKET_RTP,
-    PACKET_RTCP,
-    PACKET_HEP,
+    PACKET_PROTO_LINK = 0,
+    PACKET_PROTO_IP = 1,
+    PACKET_PROTO_UDP,
+    PACKET_PROTO_TCP,
+    PACKET_PROTO_TLS,
+    PACKET_PROTO_WS,
+    PACKET_PROTO_SIP,
+    PACKET_PROTO_SDP,
+    PACKET_PROTO_RTP,
+    PACKET_PROTO_RTCP,
+    PACKET_PROTO_HEP,
     PACKET_PROTO_COUNT
-};
+} PacketProtocol;
 
 //! Shorter declaration of packet structure
 typedef struct _Packet Packet;
@@ -91,12 +91,12 @@ struct _Packet
 {
     //! Parent class
     GObject parent;
+    //! Capture input that generated this packet
+    CaptureInput *input;
     //! Packet Source Address
     Address *src;
     //! Packet Destination Adddress
     Address *dst;
-    //! Parser who processed this packet
-    PacketParser *parser;
     //! Each packet protocol information
     GPtrArray *proto;
     //! Packet frame list (frame_t)
@@ -126,7 +126,7 @@ struct _PacketFrame
 G_DECLARE_FINAL_TYPE(Packet, packet, SNGREP, PACKET, GObject)
 
 Packet *
-packet_new(PacketParser *parser);
+packet_new(CaptureInput *input);
 
 void
 packet_free(Packet *packet);
@@ -145,6 +145,9 @@ packet_dst_address(Packet *packet);
 
 const char *
 packet_transport(Packet *packet);
+
+CaptureInput *
+packet_get_input(Packet *packet);
 
 /**
  * @brief Get The timestamp for a packet.
@@ -186,4 +189,4 @@ packet_frame_new();
 
 G_END_DECLS
 
-#endif /* __SNGREP_PACKET_H */
+#endif  /* __SNGREP_PACKET_H__ */

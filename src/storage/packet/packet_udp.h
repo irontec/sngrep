@@ -24,15 +24,25 @@
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage UDP protocol
- *
- *
  */
-#ifndef __SNGREP_PACKET_UDP_H
-#define __SNGREP_PACKET_UDP_H
 
-#include "parser/parser.h"
+#ifndef __SNGREP_PACKET_UDP_H__
+#define __SNGREP_PACKET_UDP_H__
+
+#include <glib.h>
+
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_UDP packet_dissector_udp_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorUdp, packet_dissector_udp, PACKET_DISSECTOR, UDP, PacketDissector)
 
 typedef struct _PacketUdpData PacketUdpData;
+
+struct _PacketDissectorUdp
+{
+    //! Parent structure
+    PacketDissector parent;
+};
 
 struct _PacketUdpData
 {
@@ -48,6 +58,8 @@ struct _PacketUdpData
  * @return a protocols' parsers pointer
  */
 PacketDissector *
-packet_udp_new();
+packet_dissector_udp_new();
 
-#endif
+G_END_DECLS
+
+#endif  /* __SNGREP_PACKET_UDP_H__ */

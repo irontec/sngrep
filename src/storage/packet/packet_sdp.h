@@ -26,13 +26,17 @@
  * @brief functions to manage SDP protocol
  */
 
-#ifndef PACKET_PACKET_SDP_H_
-#define PACKET_PACKET_SDP_H_
+#ifndef __SNGREP_PACKET_SDP_H__
+#define __SNGREP_PACKET_SDP_H__
 
 #include <glib.h>
-#include "parser/packet.h"
-#include "parser/parser.h"
+#include "dissector.h"
+#include "packet.h"
 
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_SDP packet_dissector_sdp_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorSdp, packet_dissector_sdp, PACKET_DISSECTOR, SDP, PacketDissector)
 
 //! Connection Data fields
 #define SDP_CONN_NETTYPE    0
@@ -70,6 +74,12 @@ typedef struct _PacketSdpConnection PacketSdpConnection;
 typedef struct _PacketSdpMedia PacketSdpMedia;
 typedef struct _PacketSdpFormat PacketSdpFormat;
 typedef struct _PacketSdpData PacketSdpData;
+
+struct _PacketDissectorSdp
+{
+    //! Parent structure
+    PacketDissector parent;
+};
 
 /**
  * @brief SDP ConnectionData (c=) information
@@ -159,6 +169,8 @@ const gchar *
 packet_sdp_media_type_str(enum PacketSdpMediaType type);
 
 PacketDissector *
-packet_sdp_new();
+packet_dissector_sdp_new();
 
-#endif /* PACKET_PACKET_SDP_H_ */
+G_END_DECLS
+
+#endif  /* __SNGREP_PACKET_SDP_H__ */

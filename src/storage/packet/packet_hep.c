@@ -36,9 +36,11 @@
 #include "glib/glib-extra.h"
 #include "packet_ip.h"
 #include "packet_udp.h"
-#include "parser/packet.h"
+#include "packet.h"
 #include "setting.h"
 #include "packet_hep.h"
+
+G_DEFINE_TYPE(PacketDissectorHep, packet_dissector_hep, PACKET_TYPE_DISSECTOR)
 
 /**
  * @brief Received a HEP3 packet
@@ -50,7 +52,7 @@
  * @return packet pointer
  */
 static GByteArray *
-packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
+packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
 {
     CaptureHepChunkIp4 src_ip4, dst_ip4;
 #ifdef USE_IPV6
@@ -194,27 +196,38 @@ packet_hep_parse(PacketParser *parser, Packet *packet, GByteArray *data)
     g_utf8_strncpy(ip->dstip, dstip, ADDRESSLEN);
     ip->protocol = hg.ip_proto.data;
     ip->version = (hg.ip_family.data == AF_INET) ? 4 : 6;
-    packet_add_type(packet, PACKET_IP, ip);
+    packet_add_type(packet, PACKET_PROTO_IP, ip);
 
     // Generate Packet UDP data
     PacketUdpData *udp = g_malloc0(sizeof(PacketHepData));
     udp->sport = sport;
     udp->dport = dport;
-    packet_add_type(packet, PACKET_UDP, udp);
+    packet_add_type(packet, PACKET_PROTO_UDP, udp);
 
     // Generate Packet Timestamp
     frame->ts = g_ntohl(hg.time_sec.data) * G_USEC_PER_SEC + g_ntohl(hg.time_usec.data);
 
     // Parse SIP payload
-    return packet_parser_next_dissector(parser, packet, payload);
+    return packet_dissector_next(self, packet, payload);
+}
+
+static void
+packet_dissector_hep_class_init(PacketDissectorHepClass *klass)
+{
+    PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
+    dissector_class->dissect = packet_dissector_hep_dissect;
+}
+
+static void
+packet_dissector_hep_init(PacketDissectorHep *self)
+{
+    // HEP Dissector base information
+    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_HEP);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
 }
 
 PacketDissector *
-packet_hep_new()
+packet_dissector_hep_new()
 {
-    PacketDissector *proto = g_malloc0(sizeof(PacketDissector));
-    proto->id = PACKET_HEP;
-    proto->dissect = packet_hep_parse;
-    proto->subdissectors = g_slist_append(proto->subdissectors, GUINT_TO_POINTER(PACKET_SIP));
-    return proto;
+    return g_object_new(PACKET_DISSECTOR_TYPE_HEP, NULL);
 }

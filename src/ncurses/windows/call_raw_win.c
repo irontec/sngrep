@@ -33,7 +33,7 @@
 #include "config.h"
 #include <string.h>
 #include <stdlib.h>
-#include "parser/packet_sip.h"
+#include "storage/packet/packet_sip.h"
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"
 #include "ncurses/windows/save_win.h"

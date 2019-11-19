@@ -29,20 +29,33 @@
 #ifndef __SNGREP_PACKET_IP_H
 #define __SNGREP_PACKET_IP_H
 
+#include "config.h"
 #ifdef USE_IPV6
 #include <netinet/ip6.h>
 #endif
-
 #include <glib.h>
 #include <netinet/ip.h>
-#include "parser/packet.h"
-#include "parser/address.h"
-#include "parser/parser.h"
+#include "dissector.h"
+#include "packet.h"
+#include "storage/address.h"
+
+G_BEGIN_DECLS
+
+#define PACKET_DISSECTOR_TYPE_IP packet_dissector_ip_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorIp, packet_dissector_ip, PACKET_DISSECTOR, IP, PacketDissector)
 
 typedef struct _PacketIpData PacketIpData;
 typedef struct _PacketIpDatagram PacketIpDatagram;
 typedef struct _PacketIpFragment PacketIpFragment;
-typedef struct _DissectorIpData DissectorIpData;
+
+
+struct _PacketDissectorIp
+{
+    //! Parent structure
+    PacketDissector parent;
+    //! IP datagram reassembly list
+    GList *assembly;
+};
 
 struct _PacketIpData
 {
@@ -103,11 +116,6 @@ struct _PacketIpFragment
     GByteArray *data;
 };
 
-struct _DissectorIpData
-{
-    GList *assembly;
-};
-
 /**
  * @brief Retrieve packet IP protocol specific data
  * @param packet Packet pointer to get data
@@ -117,11 +125,13 @@ PacketIpData *
 packet_ip_data(const Packet *packet);
 
 /**
- * @brief Create a IP parser
+ * @brief Create a IP dissector
  *
- * @return a protocols' parsers pointer
+ * @return a protocols' dissector pointer
  */
 PacketDissector *
-packet_ip_new();
+packet_dissector_ip_new();
+
+G_END_DECLS
 
 #endif
