@@ -38,6 +38,13 @@
 
 G_DEFINE_TYPE(PacketDissectorUdp, packet_dissector_udp, PACKET_TYPE_DISSECTOR)
 
+PacketUdpData *
+packet_udp_data(const Packet *packet)
+{
+    g_return_val_if_fail(packet != NULL, NULL);
+    return g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
+}
+
 static GByteArray *
 packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
 {
@@ -76,10 +83,19 @@ packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *
 }
 
 static void
+packet_dissector_udp_free_data(Packet *packet)
+{
+    PacketUdpData *udp_data = packet_udp_data(packet);
+    g_return_if_fail(udp_data != NULL);
+    g_free(udp_data);
+}
+
+static void
 packet_dissector_udp_class_init(PacketDissectorUdpClass *klass)
 {
     PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
     dissector_class->dissect = packet_dissector_udp_dissect;
+    dissector_class->free_data = packet_dissector_udp_free_data;
 }
 
 static void

@@ -58,13 +58,8 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
         return;
 
     // Ignore packets if storage limit has been reached
-    if (storage_limit_reached()) {
+    if (storage_limit_reached())
         return;
-    }
-
-    // Convert packet data
-    GByteArray *data = g_byte_array_new();
-    g_byte_array_append(data, content, header->caplen);
 
     // Create a new packet for this data
     PacketFrame *frame = packet_frame_new();
@@ -72,7 +67,7 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
     frame->caplen = header->caplen;
     frame->len = header->len;
     frame->data = g_byte_array_new();
-    g_byte_array_append(frame->data, data->data, data->len);
+    g_byte_array_append(frame->data, content, header->caplen);
 
     // Create a new packet
     Packet *packet = packet_new(CAPTURE_INPUT(pcap));
@@ -80,10 +75,6 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
 
     // Pass packet to dissectors
     storage_add_packet(packet);
-
-    // Remove packet reference (
-    packet_unref(packet);
-    g_byte_array_unref(data);
 }
 
 static gboolean
@@ -179,6 +170,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     // Create a new structure to handle this capture source
     capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_ONLINE);
     capture_input_set_source_str(CAPTURE_INPUT(pcap), dev);
+    capture_input_set_initial_protocol(CAPTURE_INPUT(pcap), PACKET_PROTO_LINK);
 
     // Create GSource for main loop
     capture_input_set_source(

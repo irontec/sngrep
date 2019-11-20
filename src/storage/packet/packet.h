@@ -41,7 +41,6 @@
 #include <time.h>
 #include <sys/types.h>
 #include "storage/address.h"
-#include "capture/capture_input.h"
 
 G_BEGIN_DECLS
 
@@ -75,6 +74,8 @@ typedef enum
 typedef struct _Packet Packet;
 //! Shorter declaration of frame structure
 typedef struct _PacketFrame PacketFrame;
+//! Forward declaration for CaptureInput
+typedef struct _CaptureInput CaptureInput;
 
 // Forward declarations
 struct _PacketParser;
@@ -160,6 +161,12 @@ packet_time(const Packet *packet);
  */
 gint
 packet_time_sorter(const Packet **a, const Packet **b);
+
+/**
+ * @brief Return first packet captured frame
+ */
+const PacketFrame *
+packet_first_frame(const Packet *packet);
 
 /**
  * @brief Return frame received unix timestamp seconds

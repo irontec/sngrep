@@ -281,11 +281,20 @@ packet_dissector_ip_finalize(GObject *self)
     g_list_free_full(dissector->assembly, (GDestroyNotify) packet_ip_datagram_free);
 }
 
-G_GNUC_UNUSED static void
+static void
+packet_dissector_ip_free_data(Packet *packet)
+{
+    PacketIpData *ip_data = packet_ip_data(packet);
+    g_return_if_fail(ip_data != NULL);
+    g_free(ip_data);
+}
+
+static void
 packet_dissector_ip_class_init(PacketDissectorIpClass *klass)
 {
     PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
     dissector_class->dissect = packet_dissector_ip_dissect;
+    dissector_class->free_data = packet_dissector_ip_free_data;
 
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->finalize = packet_dissector_ip_finalize;

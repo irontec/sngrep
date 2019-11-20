@@ -53,6 +53,14 @@ struct _PacketUdpData
 };
 
 /**
+ * @brief Retrieve packet UDP protocol specific data
+ * @param packet Packet pointer to get data
+ * @return Pointer to PacketUdpData | NULL
+ */
+PacketUdpData *
+packet_udp_data(const Packet *packet);
+
+/**
  * @brief Create an UDP parser
  *
  * @return a protocols' parsers pointer

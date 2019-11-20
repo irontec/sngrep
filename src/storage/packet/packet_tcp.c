@@ -277,17 +277,26 @@ packet_dissector_tcp_finalize(GObject *self)
     g_hash_table_destroy(dissector->assembly);
 }
 
-G_GNUC_UNUSED static void
+static void
+packet_dissector_tcp_free_data(Packet *packet)
+{
+    PacketTcpData *tcp_data = packet_tcp_data(packet);
+    g_return_if_fail(tcp_data != NULL);
+    g_free(tcp_data);
+}
+
+static void
 packet_dissector_tcp_class_init(PacketDissectorTcpClass *klass)
 {
     PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
     dissector_class->dissect = packet_dissector_tcp_dissect;
+    dissector_class->free_data = packet_dissector_tcp_free_data;
 
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->finalize = packet_dissector_tcp_finalize;
 }
 
-G_GNUC_UNUSED static void
+static void
 packet_dissector_tcp_init(PacketDissectorTcp *self)
 {
     // TCP Dissector base information

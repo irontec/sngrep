@@ -203,7 +203,7 @@ g_date_time_new_from_timeval(gint64 sec,  gint64 usec)
 GDateTime *
 g_date_time_new_from_unix_usec(gint64 usec)
 {
-    GDateTime *dt = g_date_time_new_from_unix_local(usec / G_USEC_PER_SEC);
+    g_autoptr(GDateTime) dt = g_date_time_new_from_unix_local(usec / G_USEC_PER_SEC);
     return g_date_time_add(dt, usec - (usec / G_USEC_PER_SEC * G_USEC_PER_SEC));
 }
 

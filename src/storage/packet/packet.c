@@ -33,6 +33,7 @@
 #include "packet_tcp.h"
 #include "packet_udp.h"
 #include "packet.h"
+#include "storage/storage.h"
 
 /**
  * @brief Packet class definition
@@ -51,8 +52,8 @@ packet_dispose(GObject *gobject)
 {
     // Free packet data
     packet_free(SNGREP_PACKET(gobject));
-    // Chain Gobject dispose
-    G_OBJECT_CLASS (packet_parent_class)->dispose(gobject);
+    // Chain GObject dispose
+    G_OBJECT_CLASS(packet_parent_class)->dispose(gobject);
 }
 
 Packet *
@@ -67,8 +68,11 @@ packet_new(CaptureInput *input)
 static void
 packet_proto_free(gpointer proto_id, Packet *packet)
 {
-    if (packet_has_type(packet, GPOINTER_TO_INT(proto_id))) {
-//        packet_dissector_free(packet, packet, GPOINTER_TO_INT(proto_id));
+    PacketProtocol id = GPOINTER_TO_INT(proto_id);
+
+    if (packet_has_type(packet, id)) {
+        PacketDissector *dissector = storage_find_dissector(id);
+        packet_dissector_free_data(dissector, packet);
     }
 }
 
@@ -186,6 +190,14 @@ gint
 packet_time_sorter(const Packet **a, const Packet **b)
 {
     return (gint) (packet_time(*a) - packet_time(*b));
+}
+
+const PacketFrame *
+packet_first_frame(const Packet *packet)
+{
+    g_return_val_if_fail(packet != NULL, NULL);
+    g_return_val_if_fail(packet->frames != NULL, NULL);
+    return g_list_first_data(packet->frames);
 }
 
 guint64

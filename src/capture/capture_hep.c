@@ -115,23 +115,15 @@ capture_input_hep_receive(G_GNUC_UNUSED gint fd,
     if (received == -1)
         return FALSE;
 
-    // Convert packet data
-    GByteArray *data = g_byte_array_new();
-    g_byte_array_append(data, (const guint8 *) buffer, (guint) received);
-
     // Create a new packet for this data
     Packet *packet = packet_new(input);
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
     frame->data = g_byte_array_new();
-    g_byte_array_append(frame->data, data->data, data->len);
+    g_byte_array_append(frame->data, (const guint8 *) buffer, (guint) received);
     packet->frames = g_list_append(packet->frames, frame);
 
     // Pass packet to dissectors
     storage_add_packet(packet);
-
-    // Remove packet reference after parsing
-    packet_unref(packet);
-    g_byte_array_unref(data);
 
     return TRUE;
 }
@@ -205,6 +197,7 @@ capture_input_hep(const gchar *url, GError **error)
     g_autofree gchar *source_str = g_strdup_printf("L:%s", hep->url.port);
     capture_input_set_source_str(CAPTURE_INPUT(hep), source_str);
     capture_input_set_mode(CAPTURE_INPUT(hep), CAPTURE_MODE_ONLINE);
+    capture_input_set_initial_protocol(CAPTURE_INPUT(hep), PACKET_PROTO_HEP);
 
     capture_input_set_source(
         CAPTURE_INPUT(hep),

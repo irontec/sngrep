@@ -42,6 +42,8 @@ typedef struct
     gchar *source_str;
     //! Source of events for this input
     GSource *source;
+    //! Initial dissector for this input packets
+    PacketProtocol initial;
 } CaptureInputPrivate;
 
 // CaptureInput class definition
@@ -169,6 +171,22 @@ capture_input_source_str(CaptureInput *self)
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
     g_return_val_if_fail(priv != NULL, NULL);
     return priv->source_str;
+}
+
+void
+capture_input_set_initial_protocol(CaptureInput *self, PacketProtocol id)
+{
+    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
+    g_return_if_fail(priv != NULL);
+    priv->initial = id;
+}
+
+PacketProtocol
+capture_input_initial_protocol(CaptureInput *self)
+{
+    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
+    g_return_val_if_fail(priv != NULL, -1);
+    return priv->initial;
 }
 
 static void

@@ -32,6 +32,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "capture.h"
+#include "storage/packet/packet.h"
 
 G_BEGIN_DECLS
 
@@ -94,6 +95,12 @@ capture_input_set_source_str(CaptureInput *self, const gchar *source_str);
 
 const gchar *
 capture_input_source_str(CaptureInput *self);
+
+void
+capture_input_set_initial_protocol(CaptureInput *self, PacketProtocol id);
+
+PacketProtocol
+capture_input_initial_protocol(CaptureInput *self);
 
 G_END_DECLS
 

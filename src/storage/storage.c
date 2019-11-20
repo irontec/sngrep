@@ -448,26 +448,29 @@ void
 storage_add_packet(Packet *packet)
 {
     // Add the packet to the queue
-    g_async_queue_push(storage->queue, (gpointer) packet_ref(packet));
+    g_async_queue_push(storage->queue, (gpointer) packet);
 }
 
 //! Start capturing packets function
 static gboolean
 storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 {
-    PacketDissector *link = storage_find_dissector(PACKET_PROTO_LINK);
-    PacketFrame *frame = g_list_first(packet->frames)->data;
-    packet_dissector_dissect(link, packet, frame->data);
+    PacketProtocol initial = capture_input_initial_protocol(packet->input);
+    PacketDissector *dissector = storage_find_dissector(initial);
+    g_return_val_if_fail(dissector != NULL, TRUE);
 
-    if (packet_has_type(packet, PACKET_PROTO_SIP)) {
+    const PacketFrame *frame = packet_first_frame(packet);
+    g_return_val_if_fail(frame != NULL, TRUE);
 
-    } else if (packet_has_type(packet, PACKET_PROTO_RTP)) {
-        storage_check_rtp_packet(packet);
-    } else if (packet_has_type(packet, PACKET_PROTO_RTCP)) {
-        storage_check_rtcp_packet(packet);
-    }
+    // Create a byte array to parse packet data
+    GByteArray *data = g_byte_array_new();
+    g_byte_array_append(data, frame->data->data, frame->data->len);
+
+    // Pass packet data to the first dissector
+    packet_dissector_dissect(dissector, packet, frame->data);
 
     // Remove packet reference after parsing (added in storage_add_packet)
+    g_byte_array_unref(data);
     packet_unref(packet);
     return TRUE;
 }
