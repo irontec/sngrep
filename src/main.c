@@ -455,7 +455,7 @@ main(int argc, char *argv[])
     capture_manager_start(capture);
 
     // Check allocated memory
-    if (memory_limit != NULL) {
+    if (g_strcmp0(memory_limit, "0") != 0) {
         g_timeout_add(
             500,
             (GSourceFunc) check_memory,
