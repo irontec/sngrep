@@ -9,6 +9,7 @@ Build-Depends: dh-autoreconf,
     libgcrypt-dev,
     libglib2.0-dev (>= 2.44),
     libpulse-dev,
+    libpulse-mainloop-glib0,
     libsndfile1-dev,
     libbcg729-dev (>= 1.0.4),
     pkg-config

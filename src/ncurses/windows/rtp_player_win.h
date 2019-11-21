@@ -24,6 +24,7 @@
 
 #include <glib.h>
 #include <pulse/pulseaudio.h>
+#include <pulse/glib-mainloop.h>
 #include "ncurses/manager.h"
 #include "storage/stream.h"
 
@@ -40,7 +41,7 @@ struct _RtpPlayerInfo
     //! Stream to be played
     Stream *stream;
     //! Glib Pulseaudio Main loop
-    pa_threaded_mainloop *pa_ml;
+    pa_glib_mainloop *pa_ml;
     //! Glib Pulseuadio Main loop Context
     pa_context *pa_ctx;
     //! Glib Pulseaudio Main loop api

@@ -148,7 +148,7 @@ if (WITH_SND)
 endif (WITH_SND)
 
 if (WITH_PULSE)
-    pkg_check_modules(PULSE REQUIRED libpulse)
+    pkg_check_modules(PULSE REQUIRED libpulse libpulse-mainloop-glib)
     include_directories(${PULSE_INCLUDE_DIRS})
     target_link_libraries(sngrep ${PULSE_LIBRARIES})
 endif (WITH_PULSE)

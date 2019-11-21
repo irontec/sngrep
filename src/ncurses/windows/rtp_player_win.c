@@ -27,7 +27,6 @@
 #include "ncurses/keybinding.h"
 #include "ncurses/theme.h"
 #include "ncurses/dialog.h"
-#include "glib/glib-extra.h"
 #include "rtp_player_win.h"
 
 static RtpPlayerInfo *
@@ -175,7 +174,7 @@ rtp_player_handle_key(Window *window, int key)
                 info->player_pos = info->decoded->len / 2;
                 break;
             default:
-                // Parse next actionº
+                // Parse next action
                 continue;
         }
 
@@ -259,11 +258,10 @@ rtp_player_free(Window *window)
     RtpPlayerInfo *info = rtp_player_win_info(window);
     g_return_if_fail(info != NULL);
 
-    pa_threaded_mainloop_stop(info->pa_ml);
     pa_stream_disconnect(info->playback);
     pa_context_disconnect(info->pa_ctx);
     pa_context_unref(info->pa_ctx);
-    pa_threaded_mainloop_free(info->pa_ml);
+    pa_glib_mainloop_free(info->pa_ml);
     g_byte_array_free(info->decoded, TRUE);
     g_free(window);
 }
@@ -286,7 +284,7 @@ rtp_player_win_new()
     window->draw = rtp_player_draw;
     window->handle_key = rtp_player_handle_key;
 
-    // Cerate a new indow for the panel and form
+    // Create a new window for the panel and form
     window_init(window, 11, 68);
 
     // Initialize save panel specific data
@@ -324,13 +322,12 @@ rtp_player_win_new()
     // Create decoded data array
     info->decoded = g_byte_array_new();
 
-    // Create Pulseadio Main loop
-    info->pa_ml = pa_threaded_mainloop_new();
-    info->pa_mlapi = pa_threaded_mainloop_get_api(info->pa_ml);
+    // Create Pulseaudio Main loop
+    info->pa_ml = pa_glib_mainloop_new(NULL);
+    info->pa_mlapi = pa_glib_mainloop_get_api(info->pa_ml);
     info->pa_ctx = pa_context_new(info->pa_mlapi, "sngrep RTP Player");
     pa_context_connect(info->pa_ctx, NULL, 0, NULL);
     pa_context_set_state_callback(info->pa_ctx, rtp_player_state_cb, window);
-    pa_threaded_mainloop_start(info->pa_ml);
 
     return window;
 }
