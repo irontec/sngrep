@@ -132,6 +132,7 @@ packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
     rtp->seq = g_ntohs(hdr->seq);
     rtp->ts = g_ntohl(hdr->ts);
     rtp->ssrc = g_ntohl(hdr->ssrc);
+    rtp->marker = (hdr->marker == 0x1);
 
     // Remove RTP headers from payload
     g_byte_array_remove_range(data, 0, 12);

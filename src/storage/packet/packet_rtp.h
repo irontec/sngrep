@@ -115,6 +115,8 @@ struct _PacketRtpData
     guint32 ts;
     //! RTP Syncronization Source Iden
     guint32 ssrc;
+    //! RTP Marker set
+    gboolean marker;
     //! RTP payload
     GByteArray *payload;
 };

@@ -145,7 +145,7 @@ stream_rtp_analyze(Stream *stream, Packet *packet)
 
     // Check delta time from the previous message
     gdouble delta = pkt_time - stream->stats.pkt_time;
-    if (delta > stream->stats.max_delta) {
+    if (!rtp->marker && delta > stream->stats.max_delta) {
         stream->stats.max_delta = delta;
     }
 
