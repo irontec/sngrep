@@ -279,6 +279,18 @@ call_list_draw_header(Window *window)
         (infile = capture_input_pcap_file(capture_manager_get_instance())))
         mvwprintw(window->win, 1, 77, "Filename: %s", infile);
 
+    if (storage_memory_limit() > 0) {
+        g_autofree const gchar *usage = g_format_size_full(
+            storage_memory_usage(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+        g_autofree const gchar *limit = g_format_size_full(
+            storage_memory_limit(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+        mvwprintw(window->win, 2, 77, "Memory: %s / %s", usage, limit);
+    }
+
     mvwprintw(window->win, 1, 2, "Current Mode: ");
     if (capture_is_online(capture_manager_get_instance())) {
         wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));

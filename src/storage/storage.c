@@ -54,6 +54,7 @@
  */
 
 #include "config.h"
+#include <malloc.h>
 #include <glib.h>
 #include <glib/gasyncqueuesource.h>
 #include "glib/glib-extra.h"
@@ -75,6 +76,8 @@
 #include "setting.h"
 #include "filter.h"
 #include "storage.h"
+#include "ncurses/manager.h"
+#include "ncurses/dialog.h"
 
 /**
  * @brief Global Structure with all storage information
@@ -481,6 +484,65 @@ storage_pending_packets()
     return g_async_queue_length(storage->queue);
 }
 
+gint
+storage_memory_usage()
+{
+    struct mallinfo info = mallinfo();
+    return info.arena;
+}
+
+gint
+storage_memory_limit()
+{
+    return storage->options.capture.memory_limit;
+}
+
+static gboolean
+storage_check_memory()
+{
+    // Stop checking memory after capture has ended
+    if (!capture_is_running()) {
+        return FALSE;
+    }
+
+    // Check if memory has reached the limit
+    if (storage_memory_usage() >= storage_memory_limit()) {
+
+        // Stop capture manager
+        capture_manager_stop(
+            capture_manager_get_instance()
+        );
+
+        // Convert memory limit to a human readable format
+        g_autofree const gchar *limit = g_format_size_full(
+            storage_memory_limit(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+
+        // TODO Replace this with a Signal
+        if (ncurses_is_enabled()) {
+            // Show a dialog with current configured memory limit
+            dialog_run(
+                "Memory limit %s has been reached. \n\n%s\n%s",
+                limit,
+                "Capture has been stopped.",
+                "See capture.mem_limit setting and -m flag for further info."
+            );
+        } else {
+            fprintf(
+                stderr,
+                "Memory limit %s has been reached. \n\n%s\n%s\n",
+                limit,
+                "Capture has been stopped.",
+                "See capture.mem_limit setting and -m flag for further info."
+            );
+        }
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 void
 storage_free(Storage *storage)
 {
@@ -541,6 +603,15 @@ storage_new(StorageOpts options, GError **error)
     // Dissectors array
     storage->dissectors = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
     g_ptr_array_set_size(storage->dissectors, PACKET_PROTO_COUNT);
+
+    // Memory limit checker
+    if (storage->options.capture.memory_limit > 0) {
+        g_timeout_add(
+            500,
+            (GSourceFunc) storage_check_memory,
+            GINT_TO_POINTER(storage->options.capture.memory_limit)
+        );
+    }
 
     // Storage check source
     GSource *source = g_async_queue_source_new(storage->queue, NULL);

@@ -80,6 +80,8 @@ struct _StorageCaptureOpts
     gboolean rtp;
     //! Save all stored packets in file
     gchar *outfile;
+    //! Memory limit (in bytes)
+    gint memory_limit;
 };
 
 /**
@@ -261,6 +263,19 @@ storage_set_sort_options(StorageSortOpts sort);
  */
 gint
 storage_pending_packets();
+
+/**
+ * @brief Get current allocated memory usage
+ * @return mallinfo arena memory value
+ */
+gint
+storage_memory_usage();
+
+/**
+ * @brief Get current configured memory limit
+ */
+gint
+storage_memory_limit();
 
 /**
  * @brief Return a packet dissector for a given type

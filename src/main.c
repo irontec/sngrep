@@ -85,53 +85,6 @@ print_storage_count(GMainLoop *loop)
     return TRUE;
 }
 
-static gboolean
-check_memory(gpointer memory_limit)
-{
-    struct mallinfo info = mallinfo();
-
-    // Stop checking memory after capture has ended
-    if (!capture_is_running()) {
-        return FALSE;
-    }
-
-    // Check if memory has reached the limit
-    if (info.arena > GPOINTER_TO_INT(memory_limit)) {
-
-        // Stop capture manager
-        capture_manager_stop(
-            capture_manager_get_instance()
-        );
-
-        // Convert memory limit to a human readable format
-        g_autofree const gchar *limit = g_format_size_full(
-            GPOINTER_TO_INT(memory_limit),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-
-        if (ncurses_is_enabled()) {
-            // Show a dialog with current configured memory limit
-            dialog_run(
-                "Memory limit %s has been reached. \n\n%s\n%s",
-                limit,
-                "Capture has been stopped.",
-                "See capture.mem_limit setting and -m flag for further info."
-            );
-        } else {
-            fprintf(
-                stderr,
-                "Memory limit %s has been reached. \n\n%s\n%s\n",
-                limit,
-                "Capture has been stopped.",
-                "See capture.mem_limit setting and -m flag for further info."
-            );
-        }
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
 /**
  * @brief Main function logic
  *
@@ -245,7 +198,9 @@ main(int argc, char *argv[])
 
     // Parse memory limit size string
     if (memory_limit == NULL) {
-        memory_limit = g_strdup(setting_get_value(SETTING_MEMORY_LIMIT));
+        storage_opts.capture.memory_limit = g_format_size_to_bytes(setting_get_value(SETTING_MEMORY_LIMIT));
+    } else {
+        storage_opts.capture.memory_limit = g_format_size_to_bytes(memory_limit);
     }
 
 #ifdef WITH_SSL
@@ -455,13 +410,7 @@ main(int argc, char *argv[])
     capture_manager_start(capture);
 
     // Check allocated memory
-    if (g_strcmp0(memory_limit, "0") != 0) {
-        g_timeout_add(
-            500,
-            (GSourceFunc) check_memory,
-            GINT_TO_POINTER(g_format_size_to_bytes(memory_limit))
-        );
-    }
+
 
     if (!no_interface) {
         // Initialize interface
