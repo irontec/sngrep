@@ -194,7 +194,7 @@ g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle,
 #endif
 
 GDateTime *
-g_date_time_new_from_timeval(gint64 sec,  gint64 usec)
+g_date_time_new_from_timeval(gint64 sec, gint64 usec)
 {
     g_autoptr(GDateTime) dt = g_date_time_new_from_unix_local(sec);
     return g_date_time_add(dt, usec);
@@ -217,19 +217,27 @@ g_atoi(const gchar *number)
     } else if (number64 < G_MININT) {
         return G_MININT;
     } else {
-        return  (gint) number64;
+        return (gint) number64;
     }
 }
 
-guint64
+gint
 g_format_size_to_bytes(const gchar *size)
 {
     g_return_val_if_fail(size != NULL, 0);
-    if (g_str_has_suffix(size, "K")) {
+    if (g_str_has_suffix(size, "K")
+        || g_str_has_suffix(size, "KB")
+        || g_str_has_suffix(size, "KiB")) {
         return g_atoi(size) * G_BYTES_PER_KILOBYTE;
-    } else if (g_str_has_suffix(size, "M")) {
+    } else if (
+        g_str_has_suffix(size, "M")
+        || g_str_has_suffix(size, "MB")
+        || g_str_has_suffix(size, "MiB")) {
         return g_atoi(size) * G_BYTES_PER_MEGABYTE;
-    } else if (g_str_has_suffix(size, "G")) {
+    } else if (
+        g_str_has_suffix(size, "G")
+        || g_str_has_suffix(size, "GB")
+        || g_str_has_suffix(size, "GiB")) {
         return g_atoi(size) * G_BYTES_PER_GIGABYTE;
     } else if (g_str_has_suffix(size, "%")) {
         struct sysinfo info;
