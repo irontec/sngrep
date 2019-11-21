@@ -274,23 +274,6 @@ call_list_draw_header(Window *window)
     // Draw a Panel header lines
     window_clear_line(window, 1);
 
-    // Print Open filename in Offline mode
-    if (!capture_is_online(capture_manager_get_instance()) &&
-        (infile = capture_input_pcap_file(capture_manager_get_instance())))
-        mvwprintw(window->win, 1, 77, "Filename: %s", infile);
-
-    if (storage_memory_limit() > 0) {
-        g_autofree const gchar *usage = g_format_size_full(
-            storage_memory_usage(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-        g_autofree const gchar *limit = g_format_size_full(
-            storage_memory_limit(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-        mvwprintw(window->win, 2, 77, "Memory: %s / %s", usage, limit);
-    }
-
     mvwprintw(window->win, 1, 2, "Current Mode: ");
     if (capture_is_online(capture_manager_get_instance())) {
         wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
@@ -319,19 +302,21 @@ call_list_draw_header(Window *window)
     // Label for Display filter
     mvwprintw(window->win, 3, 2, "Display Filter: ");
 
-    mvwprintw(window->win, 2, 2, "Match Expression: ");
-
+    mvwprintw(window->win, 2, 2, "BPF Filter: ");
     wattron(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    StorageMatchOpts match = storage_match_options();
-    if (match.mexpr)
-        wprintw(window->win, "%s", match.mexpr);
-    wattroff(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-
-    mvwprintw(window->win, 2, 45, "BPF Filter: ");
-    wattron(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    if ((filterbpf = capture_manager_filter(capture_manager_get_instance())))
+    if ((filterbpf = capture_manager_filter(capture_manager_get_instance()))) {
         wprintw(window->win, "%s", filterbpf);
+    }
     wattroff(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+
+    StorageMatchOpts match = storage_match_options();
+
+    if (match.mexpr) {
+        wprintw(window->win, "%s", "        Match Expression: ");
+        wattron(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+        wprintw(window->win, "%s", match.mexpr);
+        wattroff(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+    }
 
     // Reverse colors on monochrome terminals
     if (!has_colors())
@@ -352,6 +337,25 @@ call_list_draw_header(Window *window)
         mvwprintw(window->win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
     } else {
         mvwprintw(window->win, 1, 45, "%s: %d", countlb, stats.total);
+    }
+
+    if (storage_memory_limit() > 0) {
+        g_autofree const gchar *usage = g_format_size_full(
+            storage_memory_usage(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+        g_autofree const gchar *limit = g_format_size_full(
+            storage_memory_limit(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+
+        mvwprintw(window->win, 1, 65, "Memory: %s / %s", usage, limit);
+    }
+
+    // Print Open filename in Offline mode
+    if (!capture_is_online(capture_manager_get_instance()) &&
+        (infile = capture_input_pcap_file(capture_manager_get_instance()))) {
+        mvwprintw(window->win, 1, 98, "Filename: %s", infile);
     }
 
     if (info->menu_active) {
@@ -402,7 +406,7 @@ call_list_columns_width(Window *window, guint columns)
         columns = g_ptr_array_len(info->columns);
     }
 
-    // If recquested column is 0, count all columns
+    // If requested column is 0, count all columns
     guint columncnt = (columns == 0) ? g_ptr_array_len(info->columns) : columns;
 
     // Add extra width for spaces between columns + selection box

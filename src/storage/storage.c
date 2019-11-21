@@ -484,14 +484,14 @@ storage_pending_packets()
     return g_async_queue_length(storage->queue);
 }
 
-gint
+gsize
 storage_memory_usage()
 {
     struct mallinfo info = mallinfo();
     return info.arena;
 }
 
-gint
+gsize
 storage_memory_limit()
 {
     return storage->options.capture.memory_limit;

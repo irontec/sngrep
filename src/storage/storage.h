@@ -81,7 +81,7 @@ struct _StorageCaptureOpts
     //! Save all stored packets in file
     gchar *outfile;
     //! Memory limit (in bytes)
-    gint memory_limit;
+    gsize memory_limit;
 };
 
 /**
@@ -268,13 +268,13 @@ storage_pending_packets();
  * @brief Get current allocated memory usage
  * @return mallinfo arena memory value
  */
-gint
+gsize
 storage_memory_usage();
 
 /**
  * @brief Get current configured memory limit
  */
-gint
+gsize
 storage_memory_limit();
 
 /**

@@ -221,28 +221,31 @@ g_atoi(const gchar *number)
     }
 }
 
-gint
+gsize
 g_format_size_to_bytes(const gchar *size)
 {
     g_return_val_if_fail(size != NULL, 0);
-    if (g_str_has_suffix(size, "K")
-        || g_str_has_suffix(size, "KB")
-        || g_str_has_suffix(size, "KiB")) {
-        return g_atoi(size) * G_BYTES_PER_KILOBYTE;
+
+    gchar *units = NULL;
+    guint64 number = g_ascii_strtoll(size, &units, 10);
+    if (g_str_has_suffix(units, "K")
+        || g_str_has_suffix(units, "KB")
+        || g_str_has_suffix(units, "KiB")) {
+        return number * G_BYTES_PER_KILOBYTE;
     } else if (
-        g_str_has_suffix(size, "M")
-        || g_str_has_suffix(size, "MB")
-        || g_str_has_suffix(size, "MiB")) {
-        return g_atoi(size) * G_BYTES_PER_MEGABYTE;
+        g_str_has_suffix(units, "M")
+        || g_str_has_suffix(units, "MB")
+        || g_str_has_suffix(units, "MiB")) {
+        return number * G_BYTES_PER_MEGABYTE;
     } else if (
         g_str_has_suffix(size, "G")
         || g_str_has_suffix(size, "GB")
         || g_str_has_suffix(size, "GiB")) {
-        return g_atoi(size) * G_BYTES_PER_GIGABYTE;
+        return number * G_BYTES_PER_GIGABYTE;
     } else if (g_str_has_suffix(size, "%")) {
         struct sysinfo info;
-        return sysinfo(&info) == 0 ? info.totalram * g_atoi(size) / 100 : 0;
+        return sysinfo(&info) == 0 ? info.totalram * number / 100 : 0;
     } else {
-        return g_atoi(size);
+        return number;
     }
 }

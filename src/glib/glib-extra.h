@@ -112,7 +112,7 @@ g_date_time_new_from_unix_usec(gint64 usec);
 gint
 g_atoi(const gchar *number);
 
-gint
+gsize
 g_format_size_to_bytes(const gchar *size);
 
 #endif //__SNGREP_GLIB_EXTRA_H
