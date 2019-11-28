@@ -52,6 +52,7 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/rsa.h>
 #include "capture.h"
 
 //! Cast two bytes into decimal (Big Endian)

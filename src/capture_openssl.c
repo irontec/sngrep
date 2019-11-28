@@ -200,11 +200,15 @@ tls_connection_create(struct in_addr caddr, uint16_t cport, struct in_addr saddr
     memcpy(&conn->client_port, &cport, sizeof(uint16_t));
     memcpy(&conn->server_port, &sport, sizeof(uint16_t));
 
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
     SSL_library_init();
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
     if (!(conn->ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
+#else
+    if (!(conn->ssl_ctx = SSL_CTX_new(TLS_server_method())))
+#endif
         return NULL;
 
     SSL_CTX_use_PrivateKey_file(conn->ssl_ctx, capture_keyfile(),
@@ -261,15 +265,21 @@ tls_check_keyfile(const char *keyfile)
     SSL_CTX *ssl_ctx;
     char errbuf[1024];
 
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
     SSL_library_init();
     SSL_load_error_strings();
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
+#endif
 
     if (access(capture_keyfile(), R_OK) != 0)
         return 0;
 
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
     if (!(ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
+#else
+    if (!(ssl_ctx = SSL_CTX_new(TLS_server_method())))
+#endif
         return 0;
 
     if (!(SSL_CTX_use_PrivateKey_file(ssl_ctx, capture_keyfile(), SSL_FILETYPE_PEM))) {
@@ -682,12 +692,20 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 sng_free(seed);
 
                 // Create Client decoder
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
                 EVP_CIPHER_CTX_init(conn->client_cipher_ctx);
+#else
+                EVP_CIPHER_CTX_reset(conn->client_cipher_ctx);
+#endif
                 EVP_CipherInit(conn->client_cipher_ctx, conn->ciph,
                                conn->key_material.client_write_key, conn->key_material.client_write_IV,
                                0);
 
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
                 EVP_CIPHER_CTX_init(conn->server_cipher_ctx);
+#else
+                EVP_CIPHER_CTX_reset(conn->server_cipher_ctx);
+#endif
                 EVP_CipherInit(conn->server_cipher_ctx, conn->ciph,
                                conn->key_material.server_write_key, conn->key_material.server_write_IV,
                                0);
