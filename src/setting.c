@@ -58,6 +58,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_SIP_CALLS,          "sip.calls",          SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_SAVEPATH,           "savepath",           SETTING_FMT_STRING,  "",          NULL },
     { SETTING_DISPLAY_ALIAS,      "displayalias",       SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
+    { SETTING_ALIAS_PORT,         "aliasport",          SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_CL_SCROLLSTEP,      "cl.scrollstep",      SETTING_FMT_NUMBER,  "4",         NULL },
     { SETTING_CL_COLORATTR,       "cl.colorattr",       SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_CL_AUTOSCROLL,      "cl.autoscroll",      SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
