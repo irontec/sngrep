@@ -155,7 +155,6 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
             case CAPTURE_EEP_CHUNK_AUTH_KEY:
                 memcpy(&authkey_chunk, (gpointer) data->data, sizeof(CaptureHepChunk));
                 guint password_len = g_ntohs(authkey_chunk.length) - sizeof(CaptureHepChunk);
-                data = g_byte_array_remove_range(data, 0, sizeof(CaptureHepChunk));
                 password = g_strndup((gpointer) data->data, password_len);
                 break;
             case CAPTURE_EEP_CHUNK_PAYLOAD:
