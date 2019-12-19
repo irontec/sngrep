@@ -515,8 +515,12 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, enum CallFlowA
         for (guint i = 0; i < g_ptr_array_len(msgs); i++) {
             CallFlowArrow *msg_arrow = call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
 
-            if (msg_arrow == NULL || msg_arrow->type != CF_ARROW_SIP)
+            if (msg_arrow == NULL
+                || msg_arrow->type != CF_ARROW_SIP
+                || msg_arrow->scolumn == NULL
+                || msg_arrow->dcolumn == NULL) {
                 continue;
+            }
 
             if (msg_arrow == arrow)
                 break;
