@@ -470,7 +470,7 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
     g_byte_array_append(data, frame->data->data, frame->data->len);
 
     // Pass packet data to the first dissector
-    packet_dissector_dissect(dissector, packet, frame->data);
+    packet_dissector_dissect(dissector, packet, data);
 
     // Remove packet reference after parsing (added in storage_add_packet)
     g_byte_array_unref(data);
