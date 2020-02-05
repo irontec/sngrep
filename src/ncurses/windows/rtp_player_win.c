@@ -72,7 +72,7 @@ rtp_player_draw(Window *window)
             if (getenv("PULSE_SERVER")) {
                 dialog_run("Unable to connect to pulseaudio server at %s.\n"
                            "Maybe you need to allow remote connections by running: \n\n"
-                           "pactl load-module module-esound-protocol-tcp auth-anonymous=1",
+                           "pactl load-module module-native-protocol-tcp auth-anonymous=1",
                            getenv("PULSE_SERVER")
                 );
                 return 1;
