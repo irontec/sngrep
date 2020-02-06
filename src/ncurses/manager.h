@@ -37,6 +37,8 @@
 #define __SNGREP_UI_MANAGER_H
 
 #include "config.h"
+#include <ncurses.h>
+#include <panel.h>
 #include "ncurses/window.h"
 #include "ncurses/theme.h"
 #include "ncurses/keybinding.h"
@@ -92,7 +94,7 @@ ncurses_is_enabled();
  * @return the ui structure with the panel pointer created*
  */
 Window *
-ncurses_create_window(enum WindowTypes type);
+ncurses_create_window(WindowType type);
 
 /**
  * @brief Find a ui from its pannel pointer
@@ -104,7 +106,7 @@ ncurses_find_by_panel(PANEL *panel);
  * @brief Find a ui form its panel id
  */
 Window *
-ncurses_find_by_type(enum WindowTypes type);
+ncurses_find_by_type(WindowType type);
 
 /**
  * @brief Default handler for keys

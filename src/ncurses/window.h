@@ -28,30 +28,35 @@
  * This file contains common functions shared by all panels.
  */
 
-#ifndef __SNGREP_WINDOW_H
-#define __SNGREP_WINDOW_H
+#ifndef __SNGREP_WINDOW_H__
+#define __SNGREP_WINDOW_H__
 
 #include <glib.h>
+#include <glib-object.h>
 #include <ncurses.h>
 #include <panel.h>
-#include <form.h>
+
+G_BEGIN_DECLS
+
+#define NCURSES_TYPE_WINDOW window_get_type()
+G_DECLARE_DERIVABLE_TYPE(Window, window, NCURSES, WINDOW, GObject)
+
 
 //! Possible key handler results
-enum WindowKeyHandlerRet
+typedef enum
 {
     KEY_HANDLED = 0,        // Panel has handled the key, dont'use default key handler
     KEY_NOT_HANDLED = -1,   // Panel has not handled the key, try defualt key handler
     KEY_PROPAGATED = -2,    // Panel destroys and requests previous panel to handle key
-    KEY_DESTROY = -3        // Panel request destroy
-
-};
+    KEY_DESTROY = -3,       // Panel request destroy
+} WindowKeyHandlerRet;
 
 /**
  * @brief Enum for available panel types
  *
  * Mostly used for managing keybindings and offloop ui refresh
  */
-enum WindowTypes
+typedef enum
 {
     WINDOW_CALL_LIST = 0,    // Call List ui screen
     WINDOW_CALL_FLOW,        // Call-Flow ui screen
@@ -64,10 +69,7 @@ enum WindowTypes
     WINDOW_AUTH_VALIDATE,    // Authentication validator panel
     WINDOW_STATS,            // Stats panel
     WINDOW_RTP_PLAYER,       // RTP Player panel
-};
-
-//! Shorter declaration of ui structure
-typedef struct _Window Window;
+} WindowType;
 
 /**
  * @brief Panel information structure
@@ -75,58 +77,36 @@ typedef struct _Window Window;
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct _Window
+struct _WindowClass
 {
-    //! Curses panel pointer
-    PANEL *panel;
-    //! Window for the curses panel
-    WINDOW *win;
-    //! Height of the curses window
-    gint height;
-    //! Width of the curses window
-    gint width;
-    //! Vertical starting position of the window
-    gint x;
-    //! Horizontal starting position of the window
-    gint y;
-    //! Panel Type @see PanelTypes enum
-    enum WindowTypes type;
-    //! Flag this panel as redraw required
-    gboolean changed;
-
-    //! Constructor for this panel
-    void (*create)(Window *);
-
-    //! Destroy current panel
-    void (*destroy)(Window *);
-
+    //! Parent class
+    GObjectClass parent;
     //! Query the panel if redraw is required
-    gboolean (*redraw)(Window *);
-
+    gboolean (*redraw)(Window *self);
     //! Request the panel to redraw its data
-    int (*draw)(Window *);
-
+    gint (*draw)(Window *self);
     //! Notifies the panel the screen has changed
-    int (*resize)(Window *);
-
-    //! Handle a custom keybind on this panel
-    int (*handle_key)(Window *, int key);
-
+    gint (*resize)(Window *self);
+    //! Handle a custom keybinding on this panel
+    gint (*handle_key)(Window *self, gint key);
     //! Show help window for this panel (if any)
-    int (*help)(Window *);
+    gint (*help)(Window *self);
 };
 
 /**
- * @brief Create a panel structure
+ * @brief Create a ncurses panel for the given ui
  *
- * Create a ncurses panel associated to the given ui
- * This function is a small wrapper for panel create function
+ * Create a panel and associated window and store their
+ * porinters in ui structure.
+ * If height and widht doesn't match the screen dimensions
+ * the panel will be centered on the screen.
  *
- * @param window UI structure
- * @return the ui structure with the panel pointer created
+ * @param height panel window height
+ * @param width panel windo width
+ * @return window instance pointer
  */
 Window *
-window_create(Window *window);
+window_new(gint height, gint width);
 
 /**
  * @brief Destroy a panel structure
@@ -138,7 +118,7 @@ window_create(Window *window);
  * @param window UI structure
  */
 void
-window_destroy(Window *window);
+window_free(Window *window);
 
 /**
  * @brief Resize current ui
@@ -198,31 +178,8 @@ window_help(Window *window);
  * @param key keycode sequence of the pressed keys and mods
  * @return enum @key_handler_ret*
  */
-int
-window_handle_key(Window *window, int key);
-
-/**
- * @brief Create a ncurses panel for the given ui
- *
- * Create a panel and associated window and store their
- * porinters in ui structure.
- * If height and widht doesn't match the screen dimensions
- * the panel will be centered on the screen.
- *
- * @param window UI structure
- * @param height panel window height
- * @param width panel windo width
- */
-void
-window_init(Window *window, int height, int width);
-
-/**
- * @brief Deallocate ncurses panel and window
- *
- * @param ui UI structure
- */
-void
-window_deinit(Window *window);
+gint
+window_handle_key(Window *window, gint key);
 
 /**
  * @brief Draw title at the top of the panel UI
@@ -256,6 +213,30 @@ window_clear_line(Window *window, int line);
  *
  */
 void
-window_draw_bindings(Window *window, const char **keybindings, int count);
+window_draw_bindings(Window *window, const gchar **keybindings, gint count);
 
-#endif /* __SNGREP_WINDOW_H */
+PANEL *
+window_get_ncurses_panel(Window *window);
+
+WINDOW *
+window_get_ncurses_window(Window *window);
+
+guint
+window_get_window_type(Window *window);
+
+void
+window_set_width(Window *window, gint width);
+
+gint
+window_get_width(Window *window);
+
+void
+window_set_height(Window *window, gint height);
+
+gint
+window_get_height(Window *window);
+
+
+G_END_DECLS
+
+#endif /* __SNGREP_WINDOW_H__ */

@@ -64,10 +64,10 @@
 static GPtrArray *windows;
 
 Window *
-ncurses_create_window(enum WindowTypes type)
+ncurses_create_window(WindowType type)
 {
     // Find the panel of given type and create it
-    return window_create(ncurses_find_by_type(type));
+    return ncurses_find_by_type(type);
 }
 
 void
@@ -76,19 +76,19 @@ ncurses_destroy_window(Window *window)
     // Remove from the window list
     g_ptr_array_remove(windows, window);
     // Deallocate window memory
-    window_destroy(window);
+    window_free(window);
 }
 
 static gboolean
 ncurses_window_panel_cmp(Window *window, PANEL *panel)
 {
-    return window->panel == panel;
+    return window_get_ncurses_panel(window) == panel;
 }
 
 static gboolean
 ncurses_window_type_cmp(Window *window, gpointer type)
 {
-    return window->type == GPOINTER_TO_UINT(type);
+    return window_get_window_type(window) == GPOINTER_TO_UINT(type);
 }
 
 Window *
@@ -105,7 +105,7 @@ ncurses_find_by_panel(PANEL *panel)
 }
 
 Window *
-ncurses_find_by_type(enum WindowTypes type)
+ncurses_find_by_type(WindowType type)
 {
     guint index;
     if (g_ptr_array_find_with_equal_func(
@@ -120,6 +120,7 @@ ncurses_find_by_type(enum WindowTypes type)
         case WINDOW_CALL_LIST:
             window = call_list_win_new();
             break;
+#if 0
         case WINDOW_COLUMN_SELECT:
             window = column_select_win_new();
             break;
@@ -152,6 +153,8 @@ ncurses_find_by_type(enum WindowTypes type)
             window = rtp_player_win_new();
             break;
 #endif
+#endif
+
         default:
             break;
     }
