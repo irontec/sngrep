@@ -36,6 +36,7 @@
 #include "capture/capture_hep.h"
 #endif
 #include "ncurses/manager.h"
+#include "ncurses/window.h"
 #include "ncurses/dialog.h"
 #include "ncurses/windows/call_list_win.h"
 #include "ncurses/windows/call_flow_win.h"
@@ -43,20 +44,7 @@
 #include "ncurses/windows/save_win.h"
 #include "ncurses/windows/column_select_win.h"
 
-/**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param window UI structure pointer
- * @return a pointer to info structure of given panel
- */
-static CallListWinInfo *
-call_list_info(Window *window)
-{
-    return (CallListWinInfo *) panel_userptr(window->panel);
-}
+G_DEFINE_TYPE(CallListWindow, call_list, NCURSES_TYPE_WINDOW)
 
 /**
  * @brief Move selected cursor to given line
@@ -68,53 +56,50 @@ call_list_info(Window *window)
  * @param line Position to move the cursor
  */
 static void
-call_list_move(Window *window, gint line)
+call_list_move(CallListWindow *self, gint line)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
     // Already in this position?
-    if (info->cur_idx == line)
+    if (self->cur_idx == line)
         return;
 
     // Moving down or up?
-    gboolean move_down = (info->cur_idx < line);
+    gboolean move_down = (self->cur_idx < line);
 
     if (move_down) {
-        gint listh = getmaxy(info->list_win);
+        gint listh = getmaxy(self->list_win);
         // Remove one line of header
         listh--;
 
-        if (scrollbar_visible(info->hscroll))
+        if (scrollbar_visible(self->hscroll))
             listh--;
 
-        while (info->cur_idx < line) {
+        while (self->cur_idx < line) {
             // Check if there is a call below us
-            if (info->cur_idx == (gint) g_ptr_array_len(info->dcalls) - 1)
+            if (self->cur_idx == (gint) g_ptr_array_len(self->dcalls) - 1)
                 break;
 
             // Increase current call position
-            info->cur_idx++;
+            self->cur_idx++;
 
             // If we are out of the bottom of the displayed list
             // refresh it starting in the next call
-            if ((gint) (info->cur_idx - info->vscroll.pos) == listh) {
-                info->vscroll.pos++;
+            if ((gint) (self->cur_idx - self->vscroll.pos) == listh) {
+                self->vscroll.pos++;
             }
         }
     } else {
-        while (info->cur_idx > line) {
+        while (self->cur_idx > line) {
             // Check if there is a call above us
-            if (info->cur_idx == 0)
+            if (self->cur_idx == 0)
                 break;
 
             // If we are out of the top of the displayed list
             // refresh it starting in the previous (in fact current) call
-            if (info->cur_idx == info->vscroll.pos) {
-                info->vscroll.pos--;
+            if (self->cur_idx == self->vscroll.pos) {
+                self->vscroll.pos--;
             }
             // Move current call position
-            info->cur_idx--;
+            self->cur_idx--;
         }
     }
 }
@@ -126,15 +111,12 @@ call_list_move(Window *window, gint line)
  * @param times number of lines to move up
  */
 static void
-call_list_move_up(Window *window, guint times)
+call_list_move_up(CallListWindow *self, guint times)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
-    gint newpos = info->cur_idx - times;
+    gint newpos = self->cur_idx - times;
     if (newpos < 0) newpos = 0;
 
-    call_list_move(window, (guint) newpos);
+    call_list_move(self, (guint) newpos);
 }
 
 /**
@@ -144,22 +126,19 @@ call_list_move_up(Window *window, guint times)
  * @param times number of lines to move right
  */
 static void
-call_list_move_right(Window *window, guint times)
+call_list_move_right(CallListWindow *self, guint times)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
     // Nothing to scroll
-    if (!scrollbar_visible(info->hscroll))
+    if (!scrollbar_visible(self->hscroll))
         return;
 
-    gint listw = getmaxx(info->hscroll.win);
+    gint listw = getmaxx(self->hscroll.win);
 
-    gint newpos = info->hscroll.pos + times;
-    if (newpos >= info->hscroll.max - listw)
-        newpos = info->hscroll.max - listw;
+    gint newpos = self->hscroll.pos + times;
+    if (newpos >= self->hscroll.max - listw)
+        newpos = self->hscroll.max - listw;
 
-    info->hscroll.pos = newpos;
+    self->hscroll.pos = newpos;
 }
 
 /**
@@ -169,16 +148,13 @@ call_list_move_right(Window *window, guint times)
  * @param times number of lines to move left
  */
 static void
-call_list_move_left(Window *window, guint times)
+call_list_move_left(CallListWindow *self, guint times)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
-    gint newpos = info->hscroll.pos - times;
+    gint newpos = self->hscroll.pos - times;
     if (newpos < 0)
         newpos = 0;
 
-    info->hscroll.pos = (guint) newpos;
+    self->hscroll.pos = (guint) newpos;
 }
 
 /**
@@ -188,16 +164,13 @@ call_list_move_left(Window *window, guint times)
  * @param times number of lines to move down
  */
 static void
-call_list_move_down(Window *window, guint times)
+call_list_move_down(CallListWindow *self, guint times)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
+    guint newpos = self->cur_idx + times;
+    if (newpos >= g_ptr_array_len(self->dcalls))
+        newpos = g_ptr_array_len(self->dcalls) - 1;
 
-    guint newpos = info->cur_idx + times;
-    if (newpos >= g_ptr_array_len(info->dcalls))
-        newpos = g_ptr_array_len(info->dcalls) - 1;
-
-    call_list_move(window, newpos);
+    call_list_move(self, newpos);
 }
 
 /**
@@ -225,24 +198,21 @@ call_list_redraw(G_GNUC_UNUSED Window *window)
 static int
 call_list_resize(Window *window)
 {
-    int maxx, maxy;
-
-    // Get panel info
-    CallListWinInfo *info = call_list_info(window);
-    g_return_val_if_fail(info != NULL, -1);
+    CallListWindow *self = NCURSES_CALL_LIST(window);
 
     // Get current screen dimensions
+    gint maxx, maxy;
     getmaxyx(stdscr, maxy, maxx);
 
     // Change the main window size
-    wresize(window->win, maxy, maxx);
+    wresize(window_get_ncurses_window(window), maxy, maxx);
 
     // Store new size
-    window->width = maxx;
-    window->height = maxy;
+    window_set_width(window, maxx);
+    window_set_height(window, maxy);
 
     // Calculate available printable area
-    wresize(info->list_win, maxy - 6, maxx);
+    wresize(self->list_win, maxy - 6, maxx);
 
     // Force list redraw
     call_list_win_clear(window);
@@ -258,69 +228,67 @@ call_list_resize(Window *window)
  * @param window UI structure pointer
  */
 static void
-call_list_draw_header(Window *window)
+call_list_draw_header(CallListWindow *self)
 {
     const char *infile;
     const char *countlb;
     const char *device, *filterbpf;
 
-    // Get panel info
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
     // Draw panel title
-    window_set_title(window, "sngrep - SIP messages flow viewer");
+    window_set_title(NCURSES_WINDOW(self), "sngrep - SIP messages flow viewer");
 
     // Draw a Panel header lines
-    window_clear_line(window, 1);
+    window_clear_line(NCURSES_WINDOW(self), 1);
 
-    mvwprintw(window->win, 1, 2, "Current Mode: ");
+    WINDOW *win = window_get_ncurses_window(NCURSES_WINDOW(self));
+
+    mvwprintw(win, 1, 2, "Current Mode: ");
     if (capture_is_online(capture_manager_get_instance())) {
-        wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
+        wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
     } else {
-        wattron(window->win, COLOR_PAIR(CP_RED_ON_DEF));
+        wattron(win, COLOR_PAIR(CP_RED_ON_DEF));
     }
-    wprintw(window->win, "%s ", capture_status_desc(capture_manager_get_instance()));
+    wprintw(win, "%s ", capture_status_desc(capture_manager_get_instance()));
 
     // Get online mode capture device
     if ((device = capture_input_pcap_device(capture_manager_get_instance())))
-        wprintw(window->win, "[%s]", device);
+        wprintw(win, "[%s]", device);
 
 #ifdef USE_HEP
     const char *eep_port;
     if ((eep_port = capture_output_hep_port(capture_manager_get_instance()))) {
-        wprintw(window->win, "[H:%s]", eep_port);
+        wprintw(win, "[H:%s]", eep_port);
     }
     if ((eep_port = capture_input_hep_port(capture_manager_get_instance()))) {
-        wprintw(window->win, "[L:%s]", eep_port);
+        wprintw(win, "[L:%s]", eep_port);
     }
 #endif
 
-    wattroff(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
-    wattroff(window->win, COLOR_PAIR(CP_RED_ON_DEF));
+    wattroff(win, COLOR_PAIR(CP_GREEN_ON_DEF));
+    wattroff(win, COLOR_PAIR(CP_RED_ON_DEF));
 
     // Label for Display filter
-    mvwprintw(window->win, 3, 2, "Display Filter: ");
+    mvwprintw(win, 3, 2, "Display Filter: ");
 
-    mvwprintw(window->win, 2, 2, "BPF Filter: ");
-    wattron(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+    mvwprintw(win, 2, 2, "BPF Filter: ");
+    wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
     if ((filterbpf = capture_manager_filter(capture_manager_get_instance()))) {
-        wprintw(window->win, "%s", filterbpf);
+        wprintw(win, "%s", filterbpf);
     }
-    wattroff(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+    wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
 
     StorageMatchOpts match = storage_match_options();
 
     if (match.mexpr) {
-        wprintw(window->win, "%s", "        Match Expression: ");
-        wattron(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-        wprintw(window->win, "%s", match.mexpr);
-        wattroff(window->win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+        wprintw(win, "%s", "        Match Expression: ");
+        wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+        wprintw(win, "%s", match.mexpr);
+        wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
     }
 
     // Reverse colors on monochrome terminals
     if (!has_colors())
-        wattron(window->win, A_REVERSE);
+        wattron(win, A_REVERSE);
 
     // Print Dialogs or Calls in label depending on calls filter
     StorageMatchOpts storageMatchOpts = storage_match_options();
@@ -332,11 +300,11 @@ call_list_draw_header(Window *window)
 
     // Print calls count (also filtered)
     StorageStats stats = storage_calls_stats();
-    mvwprintw(window->win, 1, 45, "%*s", 30, "");
+    mvwprintw(win, 1, 45, "%*s", 30, "");
     if (stats.total != stats.displayed) {
-        mvwprintw(window->win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
+        mvwprintw(win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
     } else {
-        mvwprintw(window->win, 1, 45, "%s: %d", countlb, stats.total);
+        mvwprintw(win, 1, 45, "%s: %d", countlb, stats.total);
     }
 
     if (storage_memory_limit() > 0) {
@@ -349,20 +317,20 @@ call_list_draw_header(Window *window)
             G_FORMAT_SIZE_IEC_UNITS
         );
 
-        mvwprintw(window->win, 1, 65, "Memory: %s / %s", usage, limit);
+        mvwprintw(win, 1, 65, "Memory: %s / %s", usage, limit);
     }
 
     // Print Open filename in Offline mode
     if (!capture_is_online(capture_manager_get_instance()) &&
         (infile = capture_input_pcap_file(capture_manager_get_instance()))) {
-        mvwprintw(window->win, 1, 98, "Filename: %s", infile);
+        mvwprintw(win, 1, 98, "Filename: %s", infile);
     }
 
-    if (info->menu_active) {
+    if (self->menu_active) {
         // Draw separator line
-        wattron(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        mvwprintw(window->win, 4, 0, "Sort by     ");
-        wattroff(window->win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        mvwprintw(win, 4, 0, "Sort by     ");
+        wattroff(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     }
 }
 
@@ -375,7 +343,7 @@ call_list_draw_header(Window *window)
  * @param window UI structure pointer
  */
 static void
-call_list_draw_footer(Window *window)
+call_list_draw_footer(CallListWindow *self)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Quit",
@@ -390,31 +358,26 @@ call_list_draw_footer(Window *window)
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    window_draw_bindings(window, keybindings, 20);
+    window_draw_bindings(NCURSES_WINDOW(self), keybindings, 20);
 }
 
 static gint
-call_list_columns_width(Window *window, guint columns)
+call_list_columns_width(CallListWindow *self, guint columns)
 {
-    // Get panel info
-    CallListWinInfo *info = call_list_info(window);
-    g_return_val_if_fail(info != NULL, 0);
-
-
     // More requested columns that existing columns??
-    if (columns > g_ptr_array_len(info->columns)) {
-        columns = g_ptr_array_len(info->columns);
+    if (columns > g_ptr_array_len(self->columns)) {
+        columns = g_ptr_array_len(self->columns);
     }
 
     // If requested column is 0, count all columns
-    guint columncnt = (columns == 0) ? g_ptr_array_len(info->columns) : columns;
+    guint columncnt = (columns == 0) ? g_ptr_array_len(self->columns) : columns;
 
     // Add extra width for spaces between columns + selection box
     gint width = 5 + columncnt;
 
     // Sum all column widths
     for (guint i = 0; i < columncnt; i++) {
-        CallListColumn *column = g_ptr_array_index(info->columns, i);
+        CallListColumn *column = g_ptr_array_index(self->columns, i);
         width += column->width;
     }
 
@@ -429,30 +392,26 @@ call_list_columns_width(Window *window, guint columns)
  * @param window UI structure pointer
  */
 static void
-call_list_draw_list(Window *window)
+call_list_draw_list(CallListWindow *self)
 {
     gint listh, listw, cline = 0;
     gint color;
 
-    // Get panel info
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
     // Get window of call list panel
-    WINDOW *list_win = info->list_win;
+    WINDOW *list_win = self->list_win;
     getmaxyx(list_win, listh, listw);
 
     // Get the list of calls that are goint to be displayed
-    g_ptr_array_free(info->dcalls, FALSE);
-    info->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
+    g_ptr_array_free(self->dcalls, FALSE);
+    self->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
 
     // If autoscroll is enabled, select the last dialog
-    if (info->autoscroll) {
+    if (self->autoscroll) {
         StorageSortOpts sort = storage_sort_options();
         if (sort.asc) {
-            call_list_move(window, g_ptr_array_len(info->dcalls) - 1);
+            call_list_move(self, g_ptr_array_len(self->dcalls) - 1);
         } else {
-            call_list_move(window, 0);
+            call_list_move(self, 0);
         }
     }
 
@@ -460,7 +419,7 @@ call_list_draw_list(Window *window)
     werase(list_win);
 
     // Create a new pad for configured columns
-    gint padw = call_list_columns_width(window, 0);
+    gint padw = call_list_columns_width(self, 0);
     if (padw < listw) padw = listw;
 
     WINDOW *pad = newpad(listh + 1, padw);
@@ -474,8 +433,8 @@ call_list_draw_list(Window *window)
 
     // Draw columns
     gint colpos = 6;
-    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
-        CallListColumn *column = g_ptr_array_index(info->columns, i);
+    for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
+        CallListColumn *column = g_ptr_array_index(self->columns, i);
         // Get current column title
         const gchar *coldesc = attr_title(column->id);
 
@@ -494,8 +453,8 @@ call_list_draw_list(Window *window)
 
     // Fill the call list
     cline = 1;
-    for (guint i = (guint) info->vscroll.pos; i < g_ptr_array_len(info->dcalls); i++) {
-        Call *call = g_ptr_array_index(info->dcalls, i);
+    for (guint i = (guint) self->vscroll.pos; i < g_ptr_array_len(self->dcalls); i++) {
+        Call *call = g_ptr_array_index(self->dcalls, i);
         g_return_if_fail(call != NULL);
 
         // Get first call message attributes
@@ -507,23 +466,23 @@ call_list_draw_list(Window *window)
             break;
 
         // Show bold selected rows
-        if (call_group_exists(info->group, call))
+        if (call_group_exists(self->group, call))
             wattron(pad, A_BOLD | COLOR_PAIR(CP_DEFAULT));
 
         // Highlight active call
-        if (info->cur_idx == (gint) i) {
+        if (self->cur_idx == (gint) i) {
             wattron(pad, COLOR_PAIR(CP_WHITE_ON_BLUE));
         }
 
         // Set current line background
         mvwprintw(pad, cline, 0, "%*s", padw, "");
         // Set current line selection box
-        mvwprintw(pad, cline, 2, call_group_exists(info->group, call) ? "[*]" : "[ ]");
+        mvwprintw(pad, cline, 2, call_group_exists(self->group, call) ? "[*]" : "[ ]");
 
         // Print requested columns
         colpos = 6;
-        for (guint j = 0; j < g_ptr_array_len(info->columns); j++) {
-            CallListColumn *column = g_ptr_array_index(info->columns, j);
+        for (guint j = 0; j < g_ptr_array_len(self->columns); j++) {
+            CallListColumn *column = g_ptr_array_index(self->columns, j);
 
             // Get call attribute for current column
             const gchar *coltext = NULL;
@@ -534,7 +493,7 @@ call_list_draw_list(Window *window)
 
             // Enable attribute color (if not current one)
             color = 0;
-            if (info->cur_idx != (gint) i) {
+            if (self->cur_idx != (gint) i) {
                 if ((color = attr_color(column->id, coltext)) > 0) {
                     wattron(pad, color);
                 }
@@ -556,41 +515,41 @@ call_list_draw_list(Window *window)
     }
 
     // Copy the pad into list win
-    copywin(pad, info->list_win, 0, info->hscroll.pos, 0, 0,
+    copywin(pad, self->list_win, 0, self->hscroll.pos, 0, 0,
             listh - 1, listw - 1, 0);
 
     // Copy fixed columns
-    guint fixed_width = call_list_columns_width(window, (guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS));
-    copywin(pad, info->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
+    guint fixed_width = call_list_columns_width(self, (guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS));
+    copywin(pad, self->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
 
     // Setup horizontal scrollbar
-    info->hscroll.max = call_list_columns_width(window, 0);
-    info->hscroll.preoffset = 1;    // Leave first column for vscroll
+    self->hscroll.max = call_list_columns_width(self, 0);
+    self->hscroll.preoffset = 1;    // Leave first column for vscroll
 
     // Setup vertical scrollbar
-    info->vscroll.max = g_ptr_array_len(info->dcalls) - 1;
-    info->vscroll.preoffset = 1;    // Leave first row for titles
-    if (scrollbar_visible(info->hscroll)) {
-        info->vscroll.postoffset = 1;
+    self->vscroll.max = g_ptr_array_len(self->dcalls) - 1;
+    self->vscroll.preoffset = 1;    // Leave first row for titles
+    if (scrollbar_visible(self->hscroll)) {
+        self->vscroll.postoffset = 1;
     }   // Leave last row for hscroll
 
     // Draw scrollbars if required
-    scrollbar_draw(info->hscroll);
-    scrollbar_draw(info->vscroll);
+    scrollbar_draw(self->hscroll);
+    scrollbar_draw(self->vscroll);
 
     // Free the list pad
     delwin(pad);
 
     // Print Autoscroll indicator
-    if (info->autoscroll) {
-        wattron(info->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        mvwprintw(info->list_win, 0, 0, "A");
-        wattroff(info->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+    if (self->autoscroll) {
+        wattron(self->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+        mvwprintw(self->list_win, 0, 0, "A");
+        wattroff(self->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     }
 
     // Refresh the list
-    if (!info->menu_active) {
-        wnoutrefresh(info->list_win);
+    if (!self->menu_active) {
+        wnoutrefresh(self->list_win);
     }
 }
 
@@ -608,18 +567,20 @@ call_list_draw(Window *window)
 {
     int cury, curx;
 
+    CallListWindow *self = NCURSES_CALL_LIST(window);
+
     // Store cursor position
-    getyx(window->win, cury, curx);
+    getyx(window_get_ncurses_window(window), cury, curx);
 
     // Draw the header
-    call_list_draw_header(window);
+    call_list_draw_header(self);
     // Draw the footer
-    call_list_draw_footer(window);
+    call_list_draw_footer(self);
     // Draw the list content
-    call_list_draw_list(window);
+    call_list_draw_list(self);
 
     // Restore cursor position
-    wmove(window->win, cury, curx);
+    wmove(window_get_ncurses_window(window), cury, curx);
 
     return 0;
 }
@@ -636,29 +597,26 @@ call_list_draw(Window *window)
  * @param active Enable/Disable flag
  */
 static void
-call_list_form_activate(Window *window, gboolean active)
+call_list_form_activate(CallListWindow *self, gboolean active)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
     // Store form state
-    info->form_active = active;
+    self->form_active = active;
 
     if (active) {
-        set_current_field(info->form, info->fields[FLD_LIST_FILTER]);
+        set_current_field(self->form, self->fields[FLD_LIST_FILTER]);
         // Show cursor
         curs_set(1);
         // Change current field background
-        set_field_back(info->fields[FLD_LIST_FILTER], A_REVERSE);
+        set_field_back(self->fields[FLD_LIST_FILTER], A_REVERSE);
     } else {
-        set_current_field(info->form, NULL);
+        set_current_field(self->form, NULL);
         // Hide cursor
         curs_set(0);
         // Change current field background
-        set_field_back(info->fields[FLD_LIST_FILTER], A_NORMAL);
+        set_field_back(self->fields[FLD_LIST_FILTER], A_NORMAL);
     }
-    post_form(info->form);
-    form_driver(info->form, REQ_END_LINE);
+    post_form(self->form);
+    form_driver(self->form, REQ_END_LINE);
 }
 
 /**
@@ -675,9 +633,7 @@ call_list_form_activate(Window *window, gboolean active)
 const char *
 call_list_win_line_text(Window *window, Call *call)
 {
-    // Get panel info
-    CallListWinInfo *info = call_list_info(window);
-    g_return_val_if_fail(info != NULL, NULL);
+    CallListWindow *self = NCURSES_CALL_LIST(window);
 
     // Get first call message
     Message *msg = g_ptr_array_first(call->msgs);
@@ -685,8 +641,8 @@ call_list_win_line_text(Window *window, Call *call)
 
     // Print requested columns
     GString *out = g_string_new(NULL);
-    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
-        CallListColumn *column = g_ptr_array_index(info->columns, i);
+    for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
+        CallListColumn *column = g_ptr_array_index(self->columns, i);
 
         // Get call attribute for current column
         const gchar *call_attr = NULL;
@@ -707,45 +663,46 @@ call_list_win_line_text(Window *window, Call *call)
  * @param window UI structure pointer
  */
 static void
-call_list_select_sort_attribute(Window *window)
+call_list_select_sort_attribute(CallListWindow *self)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
     // Get current sort options
     StorageSortOpts sort = storage_sort_options();
 
-    // Activete sorting menu
-    info->menu_active = 1;
+    // Activate sorting menu
+    self->menu_active = 1;
 
     // Move call list to the right
-    wresize(info->list_win, window->height - 5, window->width - 12);
-    mvderwin(info->list_win, 4, 12);
+    gint height = window_get_height(NCURSES_WINDOW(self));
+    gint width = window_get_width(NCURSES_WINDOW(self));
+    WINDOW *win = window_get_ncurses_window(NCURSES_WINDOW(self));
+
+    wresize(self->list_win, height - 5, width - 12);
+    mvderwin(self->list_win, 4, 12);
 
     // Create menu entries
     ITEM *selected = NULL;
-    for (guint i = 0; i < g_ptr_array_len(info->columns); i++) {
-        CallListColumn *column = g_ptr_array_index(info->columns, i);
-        info->items[i] = new_item(attr_name(column->id), 0);
+    for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
+        CallListColumn *column = g_ptr_array_index(self->columns, i);
+        self->items[i] = new_item(attr_name(column->id), 0);
         if (column->id == sort.by) {
-            selected = info->items[i];
+            selected = self->items[i];
         }
     }
 
-    info->items[g_ptr_array_len(info->columns)] = NULL;
+    self->items[g_ptr_array_len(self->columns)] = NULL;
     // Create the columns menu and post it
-    info->menu = new_menu(info->items);
+    self->menu = new_menu(self->items);
 
     // Set main window and sub window
-    set_menu_win(info->menu, window->win);
-    set_menu_sub(info->menu, derwin(window->win, 20, 15, 5, 0));
-    werase(menu_win(info->menu));
-    set_menu_format(info->menu, window->height, 1);
-    set_menu_mark(info->menu, "");
-    set_menu_fore(info->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
-    set_current_item(info->menu, selected);
-    menu_opts_off(info->menu, O_ONEVALUE);
-    post_menu(info->menu);
+    set_menu_win(self->menu, win);
+    set_menu_sub(self->menu, derwin(win, 20, 15, 5, 0));
+    werase(menu_win(self->menu));
+    set_menu_format(self->menu, height, 1);
+    set_menu_mark(self->menu, "");
+    set_menu_fore(self->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
+    set_current_item(self->menu, selected);
+    menu_opts_off(self->menu, O_ONEVALUE);
+    post_menu(self->menu);
 }
 
 /**
@@ -758,12 +715,8 @@ call_list_select_sort_attribute(Window *window)
  * @return enum @key_handler_ret
  */
 static int
-call_list_handle_form_key(Window *window, int key)
+call_list_handle_form_key(CallListWindow *self, int key)
 {
-    // Get panel information
-    CallListWinInfo *info = call_list_info(window);
-    g_return_val_if_fail(info != NULL, -1);
-
     // Check actions for this key
     enum KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
@@ -771,7 +724,7 @@ call_list_handle_form_key(Window *window, int key)
         switch (action) {
             case ACTION_PRINTABLE:
                 // If this is a normal character on input field, print it
-                form_driver(info->form, key);
+                form_driver(self->form, key);
                 break;
             case ACTION_PREV_SCREEN:
             case ACTION_NEXT_FIELD:
@@ -780,29 +733,29 @@ call_list_handle_form_key(Window *window, int key)
             case ACTION_UP:
             case ACTION_DOWN:
                 // Activate list
-                call_list_form_activate(window, 0);
+                call_list_form_activate(self, 0);
                 break;
             case ACTION_RIGHT:
-                form_driver(info->form, REQ_RIGHT_CHAR);
+                form_driver(self->form, REQ_RIGHT_CHAR);
                 break;
             case ACTION_LEFT:
-                form_driver(info->form, REQ_LEFT_CHAR);
+                form_driver(self->form, REQ_LEFT_CHAR);
                 break;
             case ACTION_BEGIN:
-                form_driver(info->form, REQ_BEG_LINE);
+                form_driver(self->form, REQ_BEG_LINE);
                 break;
             case ACTION_END:
-                form_driver(info->form, REQ_END_LINE);
+                form_driver(self->form, REQ_END_LINE);
                 break;
             case ACTION_CLEAR:
-                form_driver(info->form, REQ_BEG_LINE);
-                form_driver(info->form, REQ_CLR_EOL);
+                form_driver(self->form, REQ_BEG_LINE);
+                form_driver(self->form, REQ_CLR_EOL);
                 break;
             case ACTION_DELETE:
-                form_driver(info->form, REQ_DEL_CHAR);
+                form_driver(self->form, REQ_DEL_CHAR);
                 break;
             case ACTION_BACKSPACE:
-                form_driver(info->form, REQ_DEL_PREV);
+                form_driver(self->form, REQ_DEL_PREV);
                 break;
             default:
                 // Parse next action
@@ -817,18 +770,18 @@ call_list_handle_form_key(Window *window, int key)
     if (action == ACTION_PRINTABLE || action == ACTION_BACKSPACE ||
         action == ACTION_DELETE || action == ACTION_CLEAR) {
         // Updated displayed results
-        call_list_win_clear(window);
+        call_list_win_clear(NCURSES_WINDOW(self));
         // Reset filters on each key stroke
         filter_reset_calls();
     }
 
     // Validate all input data
-    form_driver(info->form, REQ_VALIDATION);
+    form_driver(self->form, REQ_VALIDATION);
 
     // Store dfilter input
-    gsize field_len = strlen(field_buffer(info->fields[FLD_LIST_FILTER], 0));
+    gsize field_len = strlen(field_buffer(self->fields[FLD_LIST_FILTER], 0));
     gchar *dfilter = g_malloc0(field_len + 1);
-    strncpy(dfilter, field_buffer(info->fields[FLD_LIST_FILTER], 0), field_len);
+    strncpy(dfilter, field_buffer(self->fields[FLD_LIST_FILTER], 0), field_len);
     g_strstrip(dfilter);    // Trim any trailing spaces
 
     // Set display filter
@@ -849,18 +802,14 @@ call_list_handle_form_key(Window *window, int key)
  * @return enum @key_handler_ret
  */
 static int
-call_list_handle_menu_key(Window *window, int key)
+call_list_handle_menu_key(CallListWindow *self, int key)
 {
     MENU *menu;
     int i;
     StorageSortOpts sort;
     enum AttributeId id;
 
-    // Get panel information
-    CallListWinInfo *info = call_list_info(window);
-    g_return_val_if_fail(info != NULL, -1);
-
-    menu = info->menu;
+    menu = self->menu;
 
     // Check actions for this key
     enum KeybindingAction action = ACTION_UNKNOWN;
@@ -883,7 +832,7 @@ call_list_handle_menu_key(Window *window, int key)
             case ACTION_SELECT:
                 // Change sort attribute
                 sort = storage_sort_options();
-                id = attr_find_by_name(item_name(current_item(info->menu)));
+                id = attr_find_by_name(item_name(current_item(self->menu)));
                 if (sort.by == id) {
                     sort.asc = (sort.asc) ? FALSE : TRUE;
                 } else {
@@ -892,24 +841,27 @@ call_list_handle_menu_key(Window *window, int key)
                 storage_set_sort_options(sort);
                 /* fall-thru */
             case ACTION_PREV_SCREEN:
-                // Desactive sorting menu
-                info->menu_active = FALSE;
+                // Deactivate sorting menu
+                self->menu_active = FALSE;
 
                 // Remove menu
-                unpost_menu(info->menu);
-                free_menu(info->menu);
+                unpost_menu(self->menu);
+                free_menu(self->menu);
 
                 // Remove items
                 for (i = 0; i < ATTR_COUNT; i++) {
-                    if (!info->items[i])
+                    if (!self->items[i])
                         break;
-                    free_item(info->items[i]);
+                    free_item(self->items[i]);
                 }
 
                 // Restore list position
-                mvderwin(info->list_win, 4, 0);
+                mvderwin(self->list_win, 4, 0);
                 // Restore list window size
-                wresize(info->list_win, window->height - 5, window->width);
+                wresize(self->list_win,
+                        window_get_height(NCURSES_WINDOW(self)) - 5,
+                        window_get_width(NCURSES_WINDOW(self))
+                );
                 break;
             default:
                 // Parse next action
@@ -938,19 +890,18 @@ static int
 call_list_handle_key(Window *window, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
-    CallGroup *group;
+//    CallGroup *group;
     Call *call;
     StorageSortOpts sort;
 
-    CallListWinInfo *info = call_list_info(window);
-    g_return_val_if_fail(info != NULL, -1);
+    CallListWindow *self = NCURSES_CALL_LIST(window);
 
     // Handle form key
-    if (info->form_active)
-        return call_list_handle_form_key(window, key);
+    if (self->form_active)
+        return call_list_handle_form_key(self, key);
 
-    if (info->menu_active)
-        return call_list_handle_menu_key(window, key);
+    if (self->menu_active)
+        return call_list_handle_menu_key(self, key);
 
     // Check actions for this key
     enum KeybindingAction action = ACTION_UNKNOWN;
@@ -958,57 +909,58 @@ call_list_handle_key(Window *window, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_RIGHT:
-                call_list_move_right(window, 3);
+                call_list_move_right(self, 3);
                 break;
             case ACTION_LEFT:
-                call_list_move_left(window, 3);
+                call_list_move_left(self, 3);
                 break;
             case ACTION_DOWN:
-                call_list_move_down(window, 1);
+                call_list_move_down(self, 1);
                 break;
             case ACTION_UP:
-                call_list_move_up(window, 1);
+                call_list_move_up(self, 1);
                 break;
             case ACTION_HNPAGE:
-                call_list_move_down(window, rnpag_steps / 2);
+                call_list_move_down(self, rnpag_steps / 2);
                 break;
             case ACTION_NPAGE:
-                call_list_move_down(window, rnpag_steps);
+                call_list_move_down(self, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                call_list_move_up(window, rnpag_steps / 2);
+                call_list_move_up(self, rnpag_steps / 2);
                 break;
             case ACTION_PPAGE:
-                call_list_move_up(window, rnpag_steps);
+                call_list_move_up(self, rnpag_steps);
                 break;
             case ACTION_BEGIN:
                 // Move to first list entry
-                call_list_move(window, 0);
+                call_list_move(self, 0);
                 break;
             case ACTION_END:
-                call_list_move(window, g_ptr_array_len(info->dcalls) - 1);
+                call_list_move(self, g_ptr_array_len(self->dcalls) - 1);
                 break;
             case ACTION_DISP_FILTER:
                 // Activate Form
-                call_list_form_activate(window, 1);
+                call_list_form_activate(self, 1);
                 break;
+#if 0
             case ACTION_SHOW_FLOW:
             case ACTION_SHOW_FLOW_EX:
             case ACTION_SHOW_RAW:
                 // Check we have calls in the list
-                if (g_ptr_array_empty(info->dcalls))
+                if (g_ptr_array_empty(self->dcalls))
                     break;
 
                 // Create a new group of calls
-                group = call_group_clone(info->group);
+                group = call_group_clone(self->group);
 
                 // If not selected call, show current call flow
                 if (call_group_count(group) == 0)
-                    call_group_add(group, g_ptr_array_index(info->dcalls, info->cur_idx));
+                    call_group_add(group, g_ptr_array_index(self->dcalls, self->cur_idx));
 
                 // Add xcall to the group
                 if (action == ACTION_SHOW_FLOW_EX) {
-                    call = g_ptr_array_index(info->dcalls, info->cur_idx);
+                    call = g_ptr_array_index(self->dcalls, self->cur_idx);
                     call_group_add_calls(group, call->xcalls);
                     group->callid = call->callid;
                 }
@@ -1021,21 +973,24 @@ call_list_handle_key(Window *window, int key)
                     call_flow_win_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
                 }
                 break;
+#endif
             case ACTION_SHOW_FILTERS:
                 ncurses_create_window(WINDOW_FILTER);
                 break;
             case ACTION_SHOW_COLUMNS:
-                column_select_win_set_columns(ncurses_create_window(WINDOW_COLUMN_SELECT), info->columns);
+                column_select_win_set_columns(ncurses_create_window(WINDOW_COLUMN_SELECT), self->columns);
                 break;
             case ACTION_SHOW_STATS:
                 ncurses_create_window(WINDOW_STATS);
                 break;
+#if 0
             case ACTION_SAVE:
-                save_set_group(ncurses_create_window(WINDOW_SAVE), info->group);
+                save_set_group(ncurses_create_window(WINDOW_SAVE), self->group);
                 break;
+#endif
             case ACTION_CLEAR:
                 // Clear group calls
-                call_group_remove_all(info->group);
+                call_group_remove_all(self->group);
                 break;
             case ACTION_CLEAR_CALLS:
                 // Remove all stored calls
@@ -1050,22 +1005,22 @@ call_list_handle_key(Window *window, int key)
                 call_list_win_clear(window);
                 break;
             case ACTION_AUTOSCROLL:
-                info->autoscroll = (info->autoscroll) ? 0 : 1;
+                self->autoscroll = (self->autoscroll) ? 0 : 1;
                 break;
             case ACTION_SHOW_SETTINGS:
                 ncurses_create_window(WINDOW_SETTINGS);
                 break;
             case ACTION_SELECT:
                 // Ignore on empty list
-                if (g_ptr_array_len(info->dcalls) == 0) {
+                if (g_ptr_array_len(self->dcalls) == 0) {
                     break;
                 }
 
-                call = g_ptr_array_index(info->dcalls, info->cur_idx);
-                if (call_group_exists(info->group, call)) {
-                    call_group_remove(info->group, call);
+                call = g_ptr_array_index(self->dcalls, self->cur_idx);
+                if (call_group_exists(self->group, call)) {
+                    call_group_remove(self->group, call);
                 } else {
-                    call_group_add(info->group, call);
+                    call_group_add(self->group, call);
                 }
                 break;
             case ACTION_SORT_SWAP:
@@ -1076,7 +1031,7 @@ call_list_handle_key(Window *window, int key)
                 break;
             case ACTION_SORT_NEXT:
             case ACTION_SORT_PREV:
-                call_list_select_sort_attribute(window);
+                call_list_select_sort_attribute(self);
                 break;
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested
@@ -1108,7 +1063,7 @@ call_list_handle_key(Window *window, int key)
         case ACTION_BEGIN:
         case ACTION_END:
         case ACTION_DISP_FILTER:
-            info->autoscroll = 0;
+            self->autoscroll = 0;
             break;
         default:
             break;
@@ -1211,34 +1166,30 @@ call_list_column_sorter(const CallListColumn **a, const CallListColumn **b)
  * @return 0 if column has been successufly added to the list, -1 otherwise
  */
 static void
-call_list_add_column(Window *window, enum AttributeId id, const char *attr,
+call_list_add_column(CallListWindow *self, enum AttributeId id, const char *attr,
                      const char *title, gint position, int width)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
-
     CallListColumn *column = g_malloc0(sizeof(CallListColumn));
     column->id = id;
     column->attr = attr;
     column->title = title;
     column->position = position;
     column->width = width;
-    g_ptr_array_add(info->columns, column);
+    g_ptr_array_add(self->columns, column);
 }
 
 void
 call_list_win_clear(Window *window)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
+    CallListWindow *self = NCURSES_CALL_LIST(window);
 
     // Initialize structures
-    info->vscroll.pos = info->cur_idx = 0;
-    call_group_remove_all(info->group);
+    self->vscroll.pos = self->cur_idx = 0;
+    call_group_remove_all(self->group);
 
     // Clear Displayed lines
-    werase(info->list_win);
-    wnoutrefresh(info->list_win);
+    werase(self->list_win);
+    wnoutrefresh(self->list_win);
 }
 
 /**
@@ -1249,51 +1200,49 @@ call_list_win_clear(Window *window)
  * @param window UI structure pointer
  */
 static void
-call_list_free(Window *window)
+call_list_finalize(GObject *object)
 {
-    CallListWinInfo *info = call_list_info(window);
-    g_return_if_fail(info != NULL);
+    CallListWindow *self = NCURSES_CALL_LIST(object);
 
     // Deallocate forms data
-    if (info->form) {
-        unpost_form(info->form);
-        free_form(info->form);
-        free_field(info->fields[FLD_LIST_FILTER]);
+    if (self->form) {
+        unpost_form(self->form);
+        free_form(self->form);
+        free_field(self->fields[FLD_LIST_FILTER]);
     }
 
     // Deallocate window private data
-    call_group_free(info->group);
-    g_ptr_array_free(info->columns, TRUE);
-    g_ptr_array_free(info->dcalls, FALSE);
-    delwin(info->list_win);
-    g_free(info);
+    call_group_free(self->group);
+    g_ptr_array_free(self->columns, TRUE);
+    g_ptr_array_free(self->dcalls, FALSE);
+    delwin(self->list_win);
 
-    // Deallocate window
-    window_deinit(window);
-    g_free(window);
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(call_list_parent_class)->finalize(object);
 }
 
 Window *
 call_list_win_new()
 {
-    Window *window = g_malloc0(sizeof(Window));
-    window->type = WINDOW_CALL_LIST;
-    window->destroy = call_list_free;
-    window->redraw = call_list_redraw;
-    window->draw = call_list_draw;
-    window->resize = call_list_resize;
-    window->handle_key = call_list_handle_key;
-    window->help = call_list_help;
+    Window *window = g_object_new(
+        WINDOW_TYPE_CALL_LIST,
+        "height", getmaxy(stdscr),
+        "width", getmaxx(stdscr),
+        NULL
+    );
+    return window;
+}
 
-    // Create a new panel that fill all the screen
-    window_init(window, getmaxy(stdscr), getmaxx(stdscr));
+static void
+call_list_constructed(GObject *object)
+{
+    // Chain-up parent constructed
+    G_OBJECT_CLASS(call_list_parent_class)->constructed(object);
 
-    // Initialize Call List specific data
-    CallListWinInfo *info = g_malloc0(sizeof(CallListWinInfo));
-    set_panel_userptr(window->panel, (void *) info);
+    CallListWindow *self = NCURSES_CALL_LIST(object);
 
     // Add configured columns
-    info->columns = g_ptr_array_new_with_free_func(g_free);
+    self->columns = g_ptr_array_new_with_free_func(g_free);
     for (guint attr_id = 0; attr_id < ATTR_COUNT; attr_id++) {
         // Get column attribute name from options
         gint position = setting_column_pos(attr_id);
@@ -1306,39 +1255,61 @@ call_list_win_new()
         const gchar *field = attr_name(attr_id);
 
         // Add column to the list
-        call_list_add_column(window, attr_id, field, title, position, collen);
+        call_list_add_column(self, attr_id, field, title, position, collen);
     }
-    g_ptr_array_sort(info->columns, (GCompareFunc) call_list_column_sorter);
+    g_ptr_array_sort(self->columns, (GCompareFunc) call_list_column_sorter);
+
+    gint width = window_get_width(NCURSES_WINDOW(self));
+    gint height = window_get_height(NCURSES_WINDOW(self));
+    WINDOW *win = window_get_ncurses_window(NCURSES_WINDOW(self));
 
     // Initialize the fields
-    info->fields[FLD_LIST_FILTER] = new_field(1, window->width - 19, 3, 18, 0, 0);
-    info->fields[FLD_LIST_COUNT] = NULL;
+    self->fields[FLD_LIST_FILTER] = new_field(1, width - 19, 3, 18, 0, 0);
+    self->fields[FLD_LIST_COUNT] = NULL;
 
     // Create the form and post it
-    info->form = new_form(info->fields);
-    set_form_sub(info->form, window->win);
+    self->form = new_form(self->fields);
+    set_form_sub(self->form, win);
 
     // Form starts inactive
-    call_list_form_activate(window, 0);
-    info->menu_active = FALSE;
+    call_list_form_activate(self, 0);
+    self->menu_active = FALSE;
 
     // Calculate available printable area
-    info->list_win = subwin(window->win, window->height - 5, window->width, 4, 0);
-    info->vscroll = window_set_scrollbar(info->list_win, SB_VERTICAL, SB_LEFT);
-    info->hscroll = window_set_scrollbar(info->list_win, SB_HORIZONTAL, SB_BOTTOM);
-
-    // Group of selected calls
-    info->group = call_group_new();
-
-    // Get current call list
-    info->dcalls = g_ptr_array_new();
+    self->list_win = subwin(win, height - 5, width, 4, 0);
+    self->vscroll = window_set_scrollbar(self->list_win, SB_VERTICAL, SB_LEFT);
+    self->hscroll = window_set_scrollbar(self->list_win, SB_HORIZONTAL, SB_BOTTOM);
 
     // Set autoscroll default status
-    info->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
+    self->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
 
     // Apply initial configured filters
     filter_method_from_setting(setting_get_value(SETTING_FILTER_METHODS));
     filter_payload_from_setting(setting_get_value(SETTING_FILTER_PAYLOAD));
+}
 
-    return window;
+static void
+call_list_class_init(CallListWindowClass *klass)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->constructed = call_list_constructed;
+    object_class->finalize = call_list_finalize;
+
+    WindowClass *window_class = NCURSES_WINDOW_CLASS(klass);
+    window_class->redraw = call_list_redraw;
+    window_class->draw = call_list_draw;
+    window_class->resize = call_list_resize;
+    window_class->handle_key = call_list_handle_key;
+    window_class->help = call_list_help;
+}
+
+static void
+call_list_init(G_GNUC_UNUSED CallListWindow *self)
+{
+    // Set parent attributes
+    window_set_window_type(NCURSES_WINDOW(self), WINDOW_CALL_LIST);
+
+    // Initialize Call List attributes
+    self->group = call_group_new();
+    self->dcalls = g_ptr_array_new();
 }

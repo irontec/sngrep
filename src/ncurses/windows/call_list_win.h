@@ -29,29 +29,34 @@
  * screen.
  *
  */
-#ifndef __UI_CALL_LIST_WIN_H
-#define __UI_CALL_LIST_WIN_H
+#ifndef __SNGREP_CALL_LIST_WIN_H__
+#define __SNGREP_CALL_LIST_WIN_H__
 
 #include <menu.h>
+#include <form.h>
 #include <glib.h>
 #include "ncurses/manager.h"
+#include "ncurses/window.h"
 #include "ncurses/scrollbar.h"
+
+G_BEGIN_DECLS
+
+#define WINDOW_TYPE_CALL_LIST call_list_get_type()
+G_DECLARE_FINAL_TYPE(CallListWindow, call_list, NCURSES, CALL_LIST, Window)
+
 
 /**
  * @brief Enum of available fields
  *
  */
-enum CallListFieldList
+typedef enum
 {
     FLD_LIST_FILTER = 0,
-    //! Never remove this field id
-        FLD_LIST_COUNT
-};
+    FLD_LIST_COUNT,
+} CallListFieldList;
 
 //! Sorter declaration of column struct
 typedef struct _CallListColumn CallListColumn;
-//! Sorter declaration of info struct
-typedef struct _CallListWinInfo CallListWinInfo;
 
 /**
  * @brief Call List column information
@@ -65,9 +70,9 @@ struct _CallListColumn
     //! Attribute id of the column
     enum AttributeId id;
     //! Attribute name
-    const char *attr;
+    const gchar *attr;
     //! Column title
-    const char *title;
+    const gchar *title;
     //! Current column position
     gint position;
     //! Current width
@@ -80,8 +85,10 @@ struct _CallListColumn
  * This data stores the actual status of the panel. It's stored in the
  * panel pointer.
  */
-struct _CallListWinInfo
+struct _CallListWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Displayed calls vector
     GPtrArray *dcalls;
     //! Selected call in the list
@@ -151,4 +158,6 @@ call_list_win_line_text(Window *window, Call *call);
 void
 call_list_win_clear(Window *window);
 
-#endif
+G_END_DECLS
+
+#endif  /* __SNGREP_CALL_LIST_WIN_H__ */
