@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file ui_filter.h
+ * @file filter_win.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief Functions to manage ui window for filtering options
@@ -29,12 +29,15 @@
  * dialog, that can be used to filter the lines in call list window.
  */
 
-#ifndef __SNGREP_FILTER_WIN_H
-#define __SNGREP_FILTER_WIN_H
+#ifndef __SNGREP_FILTER_WIN_H__
+#define __SNGREP_FILTER_WIN_H__
 
-#include "config.h"
 #include <form.h>
+#include "ncurses/window.h"
 #include "ncurses/manager.h"
+
+#define WINDOW_TYPE_FILTER filter_get_type()
+G_DECLARE_FINAL_TYPE(FilterWindow, filter, NCURSES, FILTER, Window)
 
 /**
  * @brief Enum of available dialog fields
@@ -43,7 +46,7 @@
  * order this fields are stored in panel info structure.
  *
  */
-enum FilterWinFields
+typedef enum
 {
     FLD_FILTER_SIPFROM = 0,
     FLD_FILTER_SIPTO,
@@ -63,18 +66,17 @@ enum FilterWinFields
     FLD_FILTER_FILTER,
     FLD_FILTER_CANCEL,
     FLD_FILTER_COUNT
-};
-
-//! Sorter declaration of struct _FilterWinInfo
-typedef struct _FilterWinInfo FilterWinInfo;
+} FilterWinFields;
 
 /**
- * @brief Filter panel private information
+ * @brief Filter window information
  *
  * This structure contains the durable data of filter panel.
  */
-struct _FilterWinInfo
+struct _FilterWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Form that contains the filter fields
     FORM *form;
     //! An array of fields
@@ -101,4 +103,6 @@ filter_win_new();
 void
 filter_win_free(Window *ui);
 
-#endif /* __SNGREP_FILTER_WIN_H */
+G_END_DECLS
+
+#endif /* __SNGREP_FILTER_WIN_H__ */
