@@ -29,20 +29,16 @@
 #include "ncurses/dialog.h"
 #include "rtp_player_win.h"
 
-static RtpPlayerInfo *
-rtp_player_win_info(Window *window)
-{
-    return (RtpPlayerInfo *) panel_userptr(window->panel);
-}
+G_DEFINE_TYPE(RtpPlayerWindow, rtp_player_win, NCURSES_TYPE_WINDOW)
 
 static void
-rtp_player_decode_stream(Window *window, Stream *stream)
+rtp_player_win_decode_stream(Window *window, Stream *stream)
 {
-    RtpPlayerInfo *info = rtp_player_win_info(window);
-    g_return_if_fail(info != NULL);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(window);
+    g_return_if_fail(self != NULL);
 
     GError *error = NULL;
-    info->decoded = codec_stream_decode(stream, info->decoded, &error);
+    self->decoded = codec_stream_decode(stream, self->decoded, &error);
 
     if (error != NULL) {
         dialog_run("error: %s", error->message);
@@ -51,24 +47,25 @@ rtp_player_decode_stream(Window *window, Stream *stream)
 }
 
 static gint
-rtp_player_draw(Window *window)
+rtp_player_win_draw(Window *window)
 {
-    RtpPlayerInfo *info = rtp_player_win_info(window);
-    g_return_val_if_fail(info != NULL, 1);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(window);
+    g_return_val_if_fail(self != NULL, 1);
+    WINDOW *win = window_get_ncurses_window(window);
 
     if (getenv("PULSE_SERVER")) {
-        mvwprintw(window->win, 6, 3, "Server: %s", getenv("PULSE_SERVER"));
+        mvwprintw(win, 6, 3, "Server: %s", getenv("PULSE_SERVER"));
     } else {
-        mvwprintw(window->win, 6, 3, "Server: Local");
+        mvwprintw(win, 6, 3, "Server: Local");
     }
 
-    mvwprintw(window->win, 6, 30, "Server: Local");
-    switch (info->pa_state) {
+    mvwprintw(win, 6, 30, "Server: Local");
+    switch (self->pa_state) {
         case PA_CONTEXT_TERMINATED:
         case PA_CONTEXT_FAILED:
-            wattron(window->win, COLOR_PAIR(CP_RED_ON_DEF));
-            mvwprintw(window->win, 6, 38, "Error     ");
-            wattroff(window->win, COLOR_PAIR(CP_RED_ON_DEF));
+            wattron(win, COLOR_PAIR(CP_RED_ON_DEF));
+            mvwprintw(win, 6, 38, "Error     ");
+            wattroff(win, COLOR_PAIR(CP_RED_ON_DEF));
             if (getenv("PULSE_SERVER")) {
                 dialog_run("Unable to connect to pulseaudio server at %s.\n"
                            "Maybe you need to allow remote connections by running: \n\n"
@@ -79,60 +76,60 @@ rtp_player_draw(Window *window)
             }
             break;
         case PA_CONTEXT_READY:
-            wattron(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
-            mvwprintw(window->win, 6, 38, "Ready     ");
-            wattroff(window->win, COLOR_PAIR(CP_GREEN_ON_DEF));
+            wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
+            mvwprintw(win, 6, 38, "Ready     ");
+            wattroff(win, COLOR_PAIR(CP_GREEN_ON_DEF));
             break;
         default:
-            mvwprintw(window->win, 6, 38, "Connecting");
+            mvwprintw(win, 6, 38, "Connecting");
             break;
     }
 
-    if (info->pa_state == PA_CONTEXT_READY && !info->connected) {
-        pa_stream_connect_playback(info->playback, NULL, &info->bufattr,
+    if (self->pa_state == PA_CONTEXT_READY && !self->connected) {
+        pa_stream_connect_playback(self->playback, NULL, &self->bufattr,
                                    PA_STREAM_INTERPOLATE_TIMING
                                    | PA_STREAM_ADJUST_LATENCY
                                    | PA_STREAM_AUTO_TIMING_UPDATE, NULL, NULL);
-        info->connected = true;
+        self->connected = true;
     }
 
-    mvwprintw(window->win, 6, 50, "Latency: %d ms", info->latency / 1000);
+    mvwprintw(win, 6, 50, "Latency: %d ms", self->latency / 1000);
 
-    if (info->stream->changed) {
-        rtp_player_decode_stream(window, info->stream);
-        info->stream->changed = FALSE;
+    if (self->stream->changed) {
+        rtp_player_win_decode_stream(window, self->stream);
+        self->stream->changed = FALSE;
     }
 
-    if (info->decoded->len == 0) {
+    if (self->decoded->len == 0) {
         return 1;
     }
 
-    gint width = getmaxx(window->win);
-    mvwhline(window->win, 4, 4, '-', width - 19);
-    mvwaddch(window->win, 4, 3, '[');
-    mvwaddch(window->win, 4, width - 15, ']');
+    gint width = getmaxx(win);
+    mvwhline(win, 4, 4, '-', width - 19);
+    mvwaddch(win, 4, 3, '[');
+    mvwaddch(win, 4, width - 15, ']');
 
-    mvwprintw(window->win, 4, width - 13, "%02d:%02d/%02d:%02d",
-              (info->player_pos / 8000) / 60,      /* current minutes */
-              (info->player_pos / 8000) % 60,      /* current seconds */
-              (info->decoded->len / 8000 / 2) / 60, /* decoded minutes */
-              (info->decoded->len / 8000 / 2) % 60  /* decoded seconds */
+    mvwprintw(win, 4, width - 13, "%02d:%02d/%02d:%02d",
+              (self->player_pos / 8000) / 60,      /* current minutes */
+              (self->player_pos / 8000) % 60,      /* current seconds */
+              (self->decoded->len / 8000 / 2) / 60, /* decoded minutes */
+              (self->decoded->len / 8000 / 2) % 60  /* decoded seconds */
     );
 
-    gint perc = ((float) (info->player_pos * 2) / info->decoded->len) * 100;
+    gint perc = ((float) (self->player_pos * 2) / self->decoded->len) * 100;
     if (perc > 0 && perc <= 100) {
-        mvwhline(window->win, 4, 4, ACS_CKBOARD, ((width - 19) * ((float) perc / 100)));
+        mvwhline(win, 4, 4, ACS_CKBOARD, ((width - 19) * ((float) perc / 100)));
     }
 
     return 0;
 }
 
 static int
-rtp_player_handle_key(Window *window, int key)
+rtp_player_win_handle_key(Window *window, int key)
 {
     // Sanity check, this should not happen
-    RtpPlayerInfo *info = rtp_player_win_info(window);
-    g_return_val_if_fail(info != NULL, KEY_NOT_HANDLED);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(window);
+    g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
     enum KeybindingAction action = ACTION_UNKNOWN;
@@ -140,38 +137,38 @@ rtp_player_handle_key(Window *window, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_RIGHT:
-                if (info->player_pos + 2 * 8000 > info->decoded->len / 2) {
-                    info->player_pos = info->decoded->len / 2;
+                if (self->player_pos + 2 * 8000 > self->decoded->len / 2) {
+                    self->player_pos = self->decoded->len / 2;
                 } else {
-                    info->player_pos += 2 * 8000;
+                    self->player_pos += 2 * 8000;
                 }
                 break;
             case ACTION_LEFT:
-                if (info->player_pos < 2 * 8000) {
-                    info->player_pos = 0;
+                if (self->player_pos < 2 * 8000) {
+                    self->player_pos = 0;
                 } else {
-                    info->player_pos -= 2 * 8000;
+                    self->player_pos -= 2 * 8000;
                 }
                 break;
             case ACTION_UP:
-                if (info->player_pos + 10 * 8000 > info->decoded->len / 2) {
-                    info->player_pos = info->decoded->len / 2;
+                if (self->player_pos + 10 * 8000 > self->decoded->len / 2) {
+                    self->player_pos = self->decoded->len / 2;
                 } else {
-                    info->player_pos += 10 * 8000;
+                    self->player_pos += 10 * 8000;
                 }
                 break;
             case ACTION_DOWN:
-                if (info->player_pos < 10 * 8000) {
-                    info->player_pos = 0;
+                if (self->player_pos < 10 * 8000) {
+                    self->player_pos = 0;
                 } else {
-                    info->player_pos -= 10 * 8000;
+                    self->player_pos -= 10 * 8000;
                 }
                 break;
             case ACTION_BEGIN:
-                info->player_pos = 0;
+                self->player_pos = 0;
                 break;
             case ACTION_END:
-                info->player_pos = info->decoded->len / 2;
+                self->player_pos = self->decoded->len / 2;
                 break;
             default:
                 // Parse next action
@@ -187,123 +184,140 @@ rtp_player_handle_key(Window *window, int key)
 }
 
 static void
-rtp_player_write_cb(pa_stream *s, size_t length, gpointer userdata)
+rtp_player_win_write_cb(pa_stream *s, size_t length, gpointer userdata)
 {
-    RtpPlayerInfo *info = rtp_player_win_info(userdata);
-    g_return_if_fail(info != NULL);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(userdata);
+    g_return_if_fail(self != NULL);
 
-    if (info->player_pos * 2 + length > info->decoded->len) {
-        info->player_pos = info->decoded->len / 2;
+    if (self->player_pos * 2 + length > self->decoded->len) {
+        self->player_pos = self->decoded->len / 2;
         return;
     }
 
-    if (length > info->decoded->len) {
-        length = info->decoded->len;
+    if (length > self->decoded->len) {
+        length = self->decoded->len;
     }
 
-    pa_stream_write(s, ((gint16 *) info->decoded->data) + info->player_pos, length, NULL, 0LL, PA_SEEK_RELATIVE);
-    if (info->player_pos < info->decoded->len) {
-        info->player_pos += length / 2;
-    }
-}
-
-void
-rtp_player_underflow_cb(pa_stream *s, gpointer userdata)
-{
-    RtpPlayerInfo *info = rtp_player_win_info(userdata);
-    g_return_if_fail(info != NULL);
-
-    info->underflow++;
-    if (info->underflow >= 6 && info->latency < 2000000) {
-        info->latency = (info->latency * 3) / 2;
-        info->bufattr.maxlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
-        info->bufattr.tlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
-        pa_stream_set_buffer_attr(s, &info->bufattr, NULL, NULL);
-        info->underflow = 0;
+    pa_stream_write(s, ((gint16 *) self->decoded->data) + self->player_pos, length, NULL, 0LL, PA_SEEK_RELATIVE);
+    if (self->player_pos < self->decoded->len) {
+        self->player_pos += length / 2;
     }
 }
 
 void
-rtp_player_set_stream(Window *window, Stream *stream)
+rtp_player_win_underflow_cb(pa_stream *s, gpointer userdata)
 {
-    RtpPlayerInfo *info = rtp_player_win_info(window);
-    g_return_if_fail(info != NULL);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(userdata);
+    g_return_if_fail(self != NULL);
+
+    self->underflow++;
+    if (self->underflow >= 6 && self->latency < 2000000) {
+        self->latency = (self->latency * 3) / 2;
+        self->bufattr.maxlength = (guint32) pa_usec_to_bytes(self->latency, &self->ss);
+        self->bufattr.tlength = (guint32) pa_usec_to_bytes(self->latency, &self->ss);
+        pa_stream_set_buffer_attr(s, &self->bufattr, NULL, NULL);
+        self->underflow = 0;
+    }
+}
+
+void
+rtp_player_win_set_stream(Window *window, Stream *stream)
+{
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(window);
+    g_return_if_fail(self != NULL);
     g_return_if_fail(stream != NULL);
 
-    info->stream = stream;
-    rtp_player_decode_stream(window, stream);
+    self->stream = stream;
+    rtp_player_win_decode_stream(window, stream);
 
     // Stream information
-    info->ss.format = PA_SAMPLE_S16NE;
-    info->ss.channels = 1;
-    info->ss.rate = 8000;
+    self->ss.format = PA_SAMPLE_S16NE;
+    self->ss.channels = 1;
+    self->ss.rate = 8000;
 
     // Create a new stream with decoded data
-    info->playback = pa_stream_new(info->pa_ctx, "sngrep RTP stream", &info->ss, NULL);
-    g_return_if_fail(info->playback != NULL);
-    pa_stream_set_write_callback(info->playback, rtp_player_write_cb, window);
-    pa_stream_set_underflow_callback(info->playback, rtp_player_underflow_cb, window);
+    self->playback = pa_stream_new(self->pa_ctx, "sngrep RTP stream", &self->ss, NULL);
+    g_return_if_fail(self->playback != NULL);
+    pa_stream_set_write_callback(self->playback, rtp_player_win_write_cb, window);
+    pa_stream_set_underflow_callback(self->playback, rtp_player_win_underflow_cb, window);
 
-    info->latency = 20000;
-    info->bufattr.fragsize = (guint32) -1;
-    info->bufattr.maxlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
-    info->bufattr.minreq = (guint32) pa_usec_to_bytes(0, &info->ss);
-    info->bufattr.prebuf = (guint32) -1;
-    info->bufattr.tlength = (guint32) pa_usec_to_bytes(info->latency, &info->ss);
+    self->latency = 20000;
+    self->bufattr.fragsize = (guint32) -1;
+    self->bufattr.maxlength = (guint32) pa_usec_to_bytes(self->latency, &self->ss);
+    self->bufattr.minreq = (guint32) pa_usec_to_bytes(0, &self->ss);
+    self->bufattr.prebuf = (guint32) -1;
+    self->bufattr.tlength = (guint32) pa_usec_to_bytes(self->latency, &self->ss);
+}
+
+void
+rtp_player_win_free(Window *window)
+{
+    g_object_unref(window);
 }
 
 static void
-rtp_player_free(Window *window)
+rtp_player_win_finalize(GObject *object)
 {
-    RtpPlayerInfo *info = rtp_player_win_info(window);
-    g_return_if_fail(info != NULL);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(object);
+    g_return_if_fail(self != NULL);
 
-    pa_stream_disconnect(info->playback);
-    pa_context_disconnect(info->pa_ctx);
-    pa_context_unref(info->pa_ctx);
-    pa_glib_mainloop_free(info->pa_ml);
-    g_byte_array_free(info->decoded, TRUE);
-    g_free(window);
+    pa_stream_disconnect(self->playback);
+    pa_context_disconnect(self->pa_ctx);
+    pa_context_unref(self->pa_ctx);
+    pa_glib_mainloop_free(self->pa_ml);
+    g_byte_array_free(self->decoded, TRUE);
+
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(rtp_player_win_parent_class)->finalize(object);
 }
 
 static void
-rtp_player_state_cb(pa_context *ctx, gpointer userdata)
+rtp_player_win_state_cb(pa_context *ctx, gpointer userdata)
 {
-    RtpPlayerInfo *info = rtp_player_win_info(userdata);
-    g_return_if_fail(info != NULL);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(userdata);
+    g_return_if_fail(self != NULL);
 
-    info->pa_state = pa_context_get_state(ctx);
+    self->pa_state = pa_context_get_state(ctx);
 }
 
 Window *
 rtp_player_win_new()
 {
-    Window *window = g_malloc0(sizeof(Window));
-    window->type = WINDOW_RTP_PLAYER;
-    window->destroy = rtp_player_free;
-    window->draw = rtp_player_draw;
-    window->handle_key = rtp_player_handle_key;
+    return g_object_new(
+        WINDOW_TYPE_RTP_PLAYER,
+        "height", 11,
+        "width", 68,
+        NULL
+    );
+}
 
-    // Create a new window for the panel and form
-    window_init(window, 11, 68);
+static void
+rtp_player_win_constructed(GObject *object)
+{
+    // Chain-up parent constructed
+    G_OBJECT_CLASS(rtp_player_win_parent_class)->constructed(object);
 
-    // Initialize save panel specific data
-    RtpPlayerInfo *info = g_malloc0(sizeof(RtpPlayerInfo));
-    set_panel_userptr(window->panel, (void *) info);
+    RtpPlayerWindow *self = NCURSES_RTP_PLAYER(object);
+    Window *parent = NCURSES_WINDOW(self);
+    WINDOW *win = window_get_ncurses_window(parent);
+    PANEL *panel = window_get_ncurses_panel(parent);
+
+    gint height = window_get_height(parent);
+    gint width = window_get_width(parent);
 
     // Set window boxes
-    wattron(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     // Window border
-    title_foot_box(window->panel);
+    title_foot_box(panel);
 
     // Header and footer lines
-    mvwhline(window->win, window->height - 3, 1, ACS_HLINE, window->width - 1);
-    mvwaddch(window->win, window->height - 3, 0, ACS_LTEE);
-    mvwaddch(window->win, window->height - 3, window->width - 1, ACS_RTEE);
-    mvwprintw(window->win, window->height - 2, 12, "Use arrow keys to change playback position");
-    wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwhline(win, height - 3, 1, ACS_HLINE, width - 1);
+    mvwaddch(win, height - 3, 0, ACS_LTEE);
+    mvwaddch(win, height - 3, width - 1, ACS_RTEE);
+    mvwprintw(win, height - 2, 12, "Use arrow keys to change playback position");
+    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
-    mvwprintw(window->win, 1, 27, "RTP Stream Player");
+    mvwprintw(win, 1, 27, "RTP Stream Player");
 
     // Setup Pulseaudio server based on environment variables
     if (getenv("PULSE_SERVER") == NULL) {
@@ -320,14 +334,32 @@ rtp_player_win_new()
     }
 
     // Create decoded data array
-    info->decoded = g_byte_array_new();
+    self->decoded = g_byte_array_new();
 
     // Create Pulseaudio Main loop
-    info->pa_ml = pa_glib_mainloop_new(NULL);
-    info->pa_mlapi = pa_glib_mainloop_get_api(info->pa_ml);
-    info->pa_ctx = pa_context_new(info->pa_mlapi, "sngrep RTP Player");
-    pa_context_connect(info->pa_ctx, NULL, 0, NULL);
-    pa_context_set_state_callback(info->pa_ctx, rtp_player_state_cb, window);
+    self->pa_ml = pa_glib_mainloop_new(NULL);
+    self->pa_mlapi = pa_glib_mainloop_get_api(self->pa_ml);
+    self->pa_ctx = pa_context_new(self->pa_mlapi, "sngrep RTP Player");
+    pa_context_connect(self->pa_ctx, NULL, 0, NULL);
+    pa_context_set_state_callback(self->pa_ctx, rtp_player_win_state_cb, parent);
+}
 
-    return window;
+static void
+rtp_player_win_class_init(RtpPlayerWindowClass *klass)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->constructed = rtp_player_win_constructed;
+    object_class->finalize = rtp_player_win_finalize;
+
+    WindowClass *window_class = NCURSES_WINDOW_CLASS(klass);
+    window_class->draw = rtp_player_win_draw;
+    window_class->handle_key = rtp_player_win_handle_key;
+
+}
+
+static void
+rtp_player_win_init(RtpPlayerWindow *self)
+{
+    // Initialize attributes
+    window_set_window_type(NCURSES_WINDOW(self), WINDOW_RTP_PLAYER);
 }

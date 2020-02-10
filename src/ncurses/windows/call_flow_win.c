@@ -1747,21 +1747,21 @@ call_flow_win_handle_key(Window *window, gint key)
 #endif
                 break;
 #ifdef WITH_PULSE
-//            case ACTION_SHOW_PLAYER:
-//                cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
-//                if (cur_arrow->type == CF_ARROW_RTP) {
-//                    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
-//                    if (!storageCaptureOpts.rtp) {
-//                        dialog_run("RTP packets are not being stored, run with --rtp flag.");
-//                        break;
-//                    }
-//
-//                    next_window = ncurses_create_window(WINDOW_RTP_PLAYER);
-//                    if (next_window != NULL) {
-//                        rtp_player_set_stream(next_window, cur_arrow->item);
-//                    }
-//                }
-//                break;
+            case ACTION_SHOW_PLAYER:
+                cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
+                if (cur_arrow->type == CF_ARROW_RTP) {
+                    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
+                    if (!storageCaptureOpts.rtp) {
+                        dialog_run("RTP packets are not being stored, run with --rtp flag.");
+                        break;
+                    }
+
+                    next_window = ncurses_create_window(WINDOW_RTP_PLAYER);
+                    if (next_window != NULL) {
+                        rtp_player_win_set_stream(next_window, cur_arrow->item);
+                    }
+                }
+                break;
 #endif
             case ACTION_AUTH_VALIDATE:
                 next_window = ncurses_create_window(WINDOW_AUTH_VALIDATE);

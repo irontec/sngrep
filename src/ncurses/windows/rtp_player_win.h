@@ -19,8 +19,8 @@
  ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **
  ****************************************************************************/
-#ifndef __SNGREP_RTP_PLAYER_WIN_H
-#define __SNGREP_RTP_PLAYER_WIN_H
+#ifndef __SNGREP_RTP_PLAYER_WIN_H__
+#define __SNGREP_RTP_PLAYER_WIN_H__
 
 #include <glib.h>
 #include <pulse/pulseaudio.h>
@@ -28,7 +28,10 @@
 #include "ncurses/manager.h"
 #include "storage/stream.h"
 
-typedef struct _RtpPlayerInfo RtpPlayerInfo;
+G_BEGIN_DECLS
+
+#define WINDOW_TYPE_RTP_PLAYER rtp_player_win_get_type()
+G_DECLARE_FINAL_TYPE(RtpPlayerWindow, rtp_player_win, NCURSES, RTP_PLAYER, Window)
 
 /**
  * @brief Rtp Player Window information
@@ -36,8 +39,10 @@ typedef struct _RtpPlayerInfo RtpPlayerInfo;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _RtpPlayerInfo
+struct _RtpPlayerWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Stream to be played
     Stream *stream;
     //! Glib Pulseaudio Main loop
@@ -71,9 +76,12 @@ struct _RtpPlayerInfo
 };
 
 void
-rtp_player_set_stream(Window *window, Stream *stream);
+rtp_player_win_set_stream(Window *window, Stream *stream);
+
+void
+rtp_player_win_free(Window *window);
 
 Window *
 rtp_player_win_new();
 
-#endif // __SNGREP_RTP_PLAYER_WIN_H
+#endif /* __SNGREP_RTP_PLAYER_WIN_H__ */

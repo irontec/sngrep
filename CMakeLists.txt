@@ -91,7 +91,7 @@ option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
 # Pulseaudio Support
 option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" OFF)
 if (WITH_PULSE)
-#    set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
+    set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
 endif (WITH_PULSE)
 
 # G.729 decoding support

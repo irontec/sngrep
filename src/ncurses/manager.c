@@ -144,14 +144,11 @@ ncurses_find_by_type(WindowType type)
         case WINDOW_AUTH_VALIDATE:
             window = auth_validate_win_new();
             break;
-#if 0
 #ifdef WITH_PULSE
         case WINDOW_RTP_PLAYER:
             window = rtp_player_win_new();
             break;
 #endif
-#endif
-
         default:
             break;
     }
