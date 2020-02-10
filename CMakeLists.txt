@@ -30,7 +30,7 @@ set(SOURCES
         src/ncurses/manager.c
 #        src/ncurses/windows/call_flow_win.c
         src/ncurses/windows/call_list_win.c
-#        src/ncurses/windows/call_raw_win.c
+        src/ncurses/windows/call_raw_win.c
         src/ncurses/windows/column_select_win.c
         src/ncurses/windows/filter_win.c
 #        src/ncurses/windows/msg_diff_win.c

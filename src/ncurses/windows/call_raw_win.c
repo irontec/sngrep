@@ -39,20 +39,8 @@
 #include "ncurses/windows/save_win.h"
 #include "ncurses/windows/call_raw_win.h"
 
-/**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param panel Ncurses panel pointer
- * @return a pointer to info structure of given panel
- */
-static CallRawWinInfo *
-call_raw_info(Window *window)
-{
-    return (CallRawWinInfo *) panel_userptr(window->panel);
-}
+
+G_DEFINE_TYPE(CallRawWindow , call_raw_win, NCURSES_TYPE_WINDOW)
 
 /**
  * @brief Determine if the screen requires redrawn
@@ -63,15 +51,14 @@ call_raw_info(Window *window)
  * @return true if the panel requires redraw, false otherwise
  */
 static gboolean
-call_raw_redraw(Window *window)
+call_raw_win_redraw(Window *window)
 {
     // Get panel information
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_val_if_fail(info != NULL, FALSE);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
 
-    if (info->group) {
+    if (self->group) {
         // Check if any of the group has changed
-        return call_group_changed(info->group);
+        return call_group_changed(self->group);
     }
 
     return FALSE;
@@ -86,7 +73,7 @@ call_raw_redraw(Window *window)
  * @param msg New message to be printed
  */
 static void
-call_raw_print_msg(Window *window, Message *msg)
+call_raw_win_print_msg(Window *window, Message *msg)
 {
     int payload_lines, column, height, width;
     // Message ngrep style Header
@@ -95,11 +82,11 @@ call_raw_print_msg(Window *window, Message *msg)
     int color = 0;
 
     // Get panel information
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_if_fail(info != NULL);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
+    g_return_if_fail(self != NULL);
 
     // Get the pad window
-    WINDOW *pad = info->pad;
+    WINDOW *pad = self->pad;
 
     // Get current pad dimensions
     getmaxyx(pad, height, width);
@@ -120,15 +107,15 @@ call_raw_print_msg(Window *window, Message *msg)
     }
 
     // Check if we have enough space in our huge pad to store this message
-    if (info->padline + payload_lines > (guint) height) {
+    if (self->padline + payload_lines > (guint) height) {
         // Create a new pad with more lines!
         pad = newpad(height + 500, COLS);
         // And copy all previous information
-        overwrite(info->pad, pad);
+        overwrite(self->pad, pad);
         // Delete previous pad
-        delwin(info->pad);
+        delwin(self->pad);
         // And store the new pad
-        info->pad = pad;
+        self->pad = pad;
     }
 
     // Color the message {
@@ -139,9 +126,9 @@ call_raw_print_msg(Window *window, Message *msg)
         } else {
             color = CP_GREEN_ON_DEF;
         }
-    } else if (info->group && setting_has_value(SETTING_COLORMODE, "callid")) {
+    } else if (self->group && setting_has_value(SETTING_COLORMODE, "callid")) {
         // Color by call-id
-        color = call_group_color(info->group, msg->call);
+        color = call_group_color(self->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
         color = msg->cseq % 7 + 1;
@@ -152,16 +139,16 @@ call_raw_print_msg(Window *window, Message *msg)
 
     // Print msg header
     wattron(pad, A_BOLD);
-    mvwprintw(pad, info->padline++, 0, "%s", msg_get_header(msg, header));
+    mvwprintw(pad, self->padline++, 0, "%s", msg_get_header(msg, header));
     wattroff(pad, A_BOLD);
 
     // Print msg payload
-    info->padline += draw_message_pos(pad, msg, info->padline);
+    self->padline += draw_message_pos(pad, msg, self->padline);
     // Extra line between messages
-    info->padline++;
+    self->padline++;
 
     // Set this as the last printed message
-    info->last = msg;
+    self->last = msg;
 }
 
 /**
@@ -174,26 +161,29 @@ call_raw_print_msg(Window *window, Message *msg)
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static gint
-call_raw_draw(Window *window)
+call_raw_win_draw(Window *window)
 {
     Message *msg = NULL;
 
     // Get panel information
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_val_if_fail(info != NULL, -1);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
+    g_return_val_if_fail(self != NULL, -1);
+    WINDOW *win = window_get_ncurses_window(window);
+    gint height = window_get_height(window);
+    gint width = window_get_width(window);
 
-    if (info->group) {
+    if (self->group) {
         // Print the call group messages into the pad
-        while ((msg = call_group_get_next_msg(info->group, info->last))) {
-            call_raw_print_msg(window, msg);
+        while ((msg = call_group_get_next_msg(self->group, self->last))) {
+            call_raw_win_print_msg(window, msg);
         }
     } else {
-        call_raw_win_set_msg(window, info->msg);
+        call_raw_win_set_msg(window, self->msg);
     }
 
     // Copy the visible part of the pad into the panel window
-    copywin(info->pad, window->win, info->scroll, 0, 0, 0, window->height - 1, window->width - 1, 0);
-    touchwin(window->win);
+    copywin(self->pad, win, self->scroll, 0, 0, 0, height - 1, width - 1, 0);
+    touchwin(win);
     return 0;
 }
 
@@ -204,16 +194,16 @@ call_raw_draw(Window *window)
  * @param times number of lines to move up
  */
 static void
-call_raw_move_up(Window *window, guint times)
+call_raw_win_move_up(Window *window, guint times)
 {
     // Get panel information
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_if_fail(info != NULL);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
+    g_return_if_fail(self != NULL);
 
-    if (info->scroll < times) {
-        info->scroll = 0;
+    if (self->scroll < times) {
+        self->scroll = 0;
     } else {
-        info->scroll -= times;
+        self->scroll -= times;
     }
 }
 
@@ -225,16 +215,16 @@ call_raw_move_up(Window *window, guint times)
  * @param times number of lines to move up
  */
 static void
-call_raw_move_down(Window *window, guint times)
+call_raw_win_move_down(Window *window, guint times)
 {
     // Get panel information
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_if_fail(info != NULL);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
+    g_return_if_fail(self != NULL);
 
-    info->scroll += times;
+    self->scroll += times;
 
-    if (info->scroll > info->padline)
-        info->scroll = info->padline;
+    if (self->scroll > self->padline)
+        self->scroll = self->padline;
 }
 
 /**
@@ -247,13 +237,13 @@ call_raw_move_down(Window *window, guint times)
  * @param key Pressed keycode
  * @return enum @key_handler_ret
  */
-static int
-call_raw_handle_key(Window *window, int key)
+static gint
+call_raw_win_handle_key(Window *window, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CR_SCROLLSTEP);
 
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_val_if_fail(info != NULL, KEY_NOT_HANDLED);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
+    g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
     enum KeybindingAction action = ACTION_UNKNOWN;
@@ -261,27 +251,27 @@ call_raw_handle_key(Window *window, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
-                call_raw_move_down(window, 1);
+                call_raw_win_move_down(window, 1);
                 break;
             case ACTION_UP:
-                call_raw_move_up(window, 1);
+                call_raw_win_move_up(window, 1);
                 break;
             case ACTION_HNPAGE:
-                call_raw_move_down(window, rnpag_steps / 2);
+                call_raw_win_move_down(window, rnpag_steps / 2);
                 break;
             case ACTION_NPAGE:
-                call_raw_move_down(window, rnpag_steps);
+                call_raw_win_move_down(window, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                call_raw_move_up(window, rnpag_steps / 2);
+                call_raw_win_move_up(window, rnpag_steps / 2);
                 break;
             case ACTION_PPAGE:
-                call_raw_move_up(window, rnpag_steps);
+                call_raw_win_move_up(window, rnpag_steps);
                 break;
             case ACTION_SAVE:
-                if (info->group) {
+                if (self->group) {
                     // Display save panel
-                    save_set_group(ncurses_create_window(WINDOW_SAVE), info->group);
+                    save_set_group(ncurses_create_window(WINDOW_SAVE), self->group);
                 }
                 break;
             case ACTION_TOGGLE_SYNTAX:
@@ -289,14 +279,14 @@ call_raw_handle_key(Window *window, int key)
                 // Handle colors using default handler
                 ncurses_default_keyhandler(window, key);
                 // Create a new pad (forces messages draw)
-                delwin(info->pad);
-                info->pad = newpad(500, COLS);
-                info->last = NULL;
+                delwin(self->pad);
+                self->pad = newpad(500, COLS);
+                self->last = NULL;
                 // Force refresh panel
-                if (info->group) {
-                    call_raw_win_set_group(window, info->group);
+                if (self->group) {
+                    call_raw_win_set_group(window, self->group);
                 } else {
-                    call_raw_win_set_msg(window, info->msg);
+                    call_raw_win_set_msg(window, self->msg);
                 }
                 break;
             case ACTION_CLEAR_CALLS:
@@ -320,72 +310,86 @@ call_raw_handle_key(Window *window, int key)
 void
 call_raw_win_set_group(Window *window, CallGroup *group)
 {
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_if_fail(info != NULL);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
+    g_return_if_fail(self != NULL);
     g_return_if_fail(group != NULL);
 
     // Set call raw call group
-    info->group = group;
-    info->msg = NULL;
+    self->group = group;
+    self->msg = NULL;
 
     // Initialize internal pad
-    info->padline = 0;
-    wclear(info->pad);
+    self->padline = 0;
+    wclear(self->pad);
 }
 
 void
 call_raw_win_set_msg(Window *window, Message *msg)
 {
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_if_fail(info != NULL);
+    CallRawWindow *self = NCURSES_CALL_RAW(window);
+    g_return_if_fail(self != NULL);
     g_return_if_fail(msg != NULL);
 
     // Set call raw message
-    info->group = NULL;
-    info->msg = msg;
+    self->group = NULL;
+    self->msg = msg;
 
     // Initialize internal pad
-    info->padline = 0;
-    wclear(info->pad);
+    self->padline = 0;
+    wclear(self->pad);
 
     // Print the message in the pad
-    call_raw_print_msg(window, msg);
+    call_raw_win_print_msg(window, msg);
 }
 
 void
 call_raw_win_free(Window *window)
 {
-    CallRawWinInfo *info = call_raw_info(window);
-    g_return_if_fail(info != NULL);
-
-    // Delete panel windows
-    delwin(info->pad);
-    g_free(info);
-
-    window_deinit(window);
+    g_object_unref(window);
 }
 
 Window *
 call_raw_win_new()
 {
-    Window *window = g_malloc0(sizeof(Window));
-    window->type = WINDOW_CALL_RAW;
-    window->destroy = call_raw_win_free;
-    window->redraw = call_raw_redraw;
-    window->draw = call_raw_draw;
-    window->handle_key = call_raw_handle_key;
+    return g_object_new(
+        WINDOW_TYPE_CALL_RAW,
+        NULL
+    );
+}
 
-    // Create a new panel to fill all the screen
-    window_init(window, getmaxy(stdscr), getmaxx(stdscr));
+static void
+call_raw_win_finalize(GObject *object)
+{
+    CallRawWindow *self = NCURSES_CALL_RAW(object);
 
-    // Initialize Call Raw specific data
-    CallRawWinInfo *info = g_malloc0(sizeof(CallRawWinInfo));
-    set_panel_userptr(window->panel, (void *) info);
+    // Delete panel windows
+    delwin(self->pad);
+
+    // Chain-up parent finalize
+    G_OBJECT_CLASS(call_raw_win_parent_class)->finalize(object);
+}
+
+static void
+call_raw_win_class_init(CallRawWindowClass *klass)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = call_raw_win_finalize;
+
+    WindowClass *window_class = NCURSES_WINDOW_CLASS(klass);
+    window_class->redraw = call_raw_win_redraw;
+    window_class->draw = call_raw_win_draw;
+    window_class->handle_key = call_raw_win_handle_key;
+
+}
+
+static void
+call_raw_win_init(CallRawWindow *self)
+{
+    // Initialize attributes
+    window_set_window_type(NCURSES_WINDOW(self), WINDOW_CALL_RAW);
 
     // Create a initial pad of 1000 lines
-    info->pad = newpad(500, COLS);
-    info->padline = 0;
-    info->scroll = 0;
-
-    return window;
+    self->pad = newpad(500, COLS);
+    self->padline = 0;
+    self->scroll = 0;
 }

@@ -29,16 +29,19 @@
  * output screen.
  *
  */
-#ifndef __SNGREP_CALL_RAW_WIN_H
-#define __SNGREP_CALL_RAW_WIN_H
+#ifndef __SNGREP_CALL_RAW_WIN_H__
+#define __SNGREP_CALL_RAW_WIN_H__
 
 #include "config.h"
 #include "storage/group.h"
 #include "storage/message.h"
 #include "ncurses/manager.h"
+#include "ncurses/window.h"
 
-//! Sorter declaration of struct call_raw_info
-typedef struct _CallRawWinInfo CallRawWinInfo;
+G_BEGIN_DECLS
+
+#define WINDOW_TYPE_CALL_RAW call_raw_win_get_type()
+G_DECLARE_FINAL_TYPE(CallRawWindow, call_raw_win, NCURSES, CALL_RAW, Window)
 
 /**
  * @brief Call raw status information
@@ -46,8 +49,10 @@ typedef struct _CallRawWinInfo CallRawWinInfo;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _CallRawWinInfo
+struct _CallRawWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Group of calls displayed on the panel (Call raw display)
     CallGroup *group;
     //! Message to display on the panel (Single message raw display)
@@ -106,4 +111,6 @@ call_raw_win_set_group(Window *window, CallGroup *group);
 void
 call_raw_win_set_msg(Window *window, Message *msg);
 
-#endif /* __SNGREP_CALL_RAW_WIN_H */
+G_END_DECLS
+
+#endif /* __SNGREP_CALL_RAW_WIN_H__ */

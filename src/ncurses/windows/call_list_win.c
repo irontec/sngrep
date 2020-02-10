@@ -890,7 +890,7 @@ static int
 call_list_handle_key(Window *window, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
-//    CallGroup *group;
+    CallGroup *group;
     Call *call;
     StorageSortOpts sort;
 
@@ -943,7 +943,6 @@ call_list_handle_key(Window *window, int key)
                 // Activate Form
                 call_list_form_activate(self, 1);
                 break;
-#if 0
             case ACTION_SHOW_FLOW:
             case ACTION_SHOW_FLOW_EX:
             case ACTION_SHOW_RAW:
@@ -970,10 +969,9 @@ call_list_handle_key(Window *window, int key)
                     call_raw_win_set_group(ncurses_create_window(WINDOW_CALL_RAW), group);
                 } else {
                     // Display current call flow (normal or extended)
-                    call_flow_win_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
+//                    call_flow_win_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
                 }
                 break;
-#endif
             case ACTION_SHOW_FILTERS:
                 ncurses_create_window(WINDOW_FILTER);
                 break;

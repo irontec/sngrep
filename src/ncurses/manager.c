@@ -130,10 +130,10 @@ ncurses_find_by_type(WindowType type)
         case WINDOW_CALL_FLOW:
             window = call_flow_win_new();
             break;
+#endif
         case WINDOW_CALL_RAW:
             window = call_raw_win_new();
             break;
-#endif
         case WINDOW_FILTER:
             window = filter_win_new();
             break;
