@@ -1763,10 +1763,10 @@ call_flow_win_handle_key(Window *window, gint key)
 //                }
 //                break;
 #endif
-//            case ACTION_AUTH_VALIDATE:
-//                next_window = ncurses_create_window(WINDOW_AUTH_VALIDATE);
-//                auth_validate_set_group(next_window, self->group);
-//                break;
+            case ACTION_AUTH_VALIDATE:
+                next_window = ncurses_create_window(WINDOW_AUTH_VALIDATE);
+                auth_validate_win_set_group(next_window, self->group);
+                break;
             case ACTION_TOGGLE_TIME:
                 self->arrowtime = (self->arrowtime) ? FALSE : TRUE;
                 break;

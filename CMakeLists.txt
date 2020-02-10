@@ -37,7 +37,7 @@ set(SOURCES
         src/ncurses/windows/save_win.c
         src/ncurses/windows/settings_win.c
         src/ncurses/windows/stats_win.c
-#        src/ncurses/windows/auth_validate_win.c
+        src/ncurses/windows/auth_validate_win.c
         src/ncurses/window.c
         src/ncurses/dialog.c
         src/ncurses/keybinding.c

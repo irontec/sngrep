@@ -30,13 +30,18 @@
  *
  */
 
-#ifndef __SNGREP_AUTH_VALIDATE_WIN_H
-#define __SNGREP_AUTH_VALIDATE_WIN_H
+#ifndef __SNGREP_AUTH_VALIDATE_WIN_H__
+#define __SNGREP_AUTH_VALIDATE_WIN_H__
 
 #include "config.h"
 #include <form.h>
 #include "storage/group.h"
 #include "ncurses/manager.h"
+
+G_BEGIN_DECLS
+
+#define WINDOW_TYPE_AUTH_VALIDATE auth_validate_win_get_type()
+G_DECLARE_FINAL_TYPE(AuthValidateWindow, auth_validate_win, NCURSES, AUTH_VALIDATE, Window)
 
 /**
  * @brief Enum of available dialog fields
@@ -44,22 +49,22 @@
  * Dialog form has a field array. Following enum represents the
  * order this fields are stored in panel info structure.
  */
-enum AuthValidateWinField
+typedef enum
 {
     FLD_AUTH_PASS,
     FLD_AUTH_CLOSE,
     FLD_AUTH_COUNT
-};
-
-typedef struct _AuthValidateWinInfo AuthValidateWinInfo;
+} AuthValidateWindowField;
 
 /**
  * @brief Save panel private information
  *
  * This structure contains the durable data of auth validator panel.
  */
-struct _AuthValidateWinInfo
+struct _AuthValidateWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Form that contains the validator fields
     FORM *form;
     //! An array of fields
@@ -76,7 +81,7 @@ struct _AuthValidateWinInfo
     const gchar *uri;
     //! Authorization algorithm
     const gchar *algorithm;
-    //! Auhtorization nonce
+    //! Authorization nonce
     const gchar *nonce;
     //! Authorization domain
     const gchar *response;
@@ -117,8 +122,7 @@ auth_validate_win_free(Window *window);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-auth_validate_set_group(Window *window, CallGroup *group);
-
+auth_validate_win_set_group(Window *window, CallGroup *group);
 
 /**
  * @brief Set the SIP message to be validated
@@ -130,6 +134,8 @@ auth_validate_set_group(Window *window, CallGroup *group);
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-auth_validate_set_msg(Window *window, Message *msg);
+auth_validate_win_set_msg(Window *window, Message *msg);
 
-#endif
+G_END_DECLS
+
+#endif  /* __SNGREP_AUTH_VALIDATE_WIN_H__ */
