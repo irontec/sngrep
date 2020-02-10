@@ -28,7 +28,7 @@ set(SOURCES
         src/glib/gasyncqueuesource.c
         src/glib/glib-extra.c
         src/ncurses/manager.c
-#        src/ncurses/windows/call_flow_win.c
+        src/ncurses/windows/call_flow_win.c
         src/ncurses/windows/call_list_win.c
         src/ncurses/windows/call_raw_win.c
         src/ncurses/windows/column_select_win.c

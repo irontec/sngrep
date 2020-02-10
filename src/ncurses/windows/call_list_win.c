@@ -969,7 +969,7 @@ call_list_handle_key(Window *window, int key)
                     call_raw_win_set_group(ncurses_create_window(WINDOW_CALL_RAW), group);
                 } else {
                     // Display current call flow (normal or extended)
-//                    call_flow_win_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
+                    call_flow_win_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
                 }
                 break;
             case ACTION_SHOW_FILTERS:

@@ -52,8 +52,8 @@
  * +--------------------------------------------------------+
  *
  */
-#ifndef __SNGREP_CALL_FLOW_WIN_H
-#define __SNGREP_CALL_FLOW_WIN_H
+#ifndef __SNGREP_CALL_FLOW_WIN_H__
+#define __SNGREP_CALL_FLOW_WIN_H__
 
 #include <glib.h>
 #include "ncurses/manager.h"
@@ -63,59 +63,30 @@
 //! Configurable some day
 #define CF_COLUMN_WIDTH 30
 
-//! Sorter declaration of struct _CallFlowInfo
-typedef struct _CallFlowWinInfo CallFlowWinInfo;
-//! Sorter declaration of struct _CallFlowColumn
-typedef struct _CallFlowColumn CallFlowColumn;
-//! Sorter declaration of struct _CallFlowArrow
-typedef struct _CallFlowArrow CallFlowArrow;
+#define WINDOW_TYPE_CALL_FLOW call_flow_win_get_type()
+G_DECLARE_FINAL_TYPE(CallFlowWindow, call_flow_win, NCURSES, CALL_FLOW, Window)
 
 /**
  * @brief Call flow arrow types
  */
-enum CallFlowArrowType
+typedef enum
 {
     CF_ARROW_SIP,
     CF_ARROW_RTP,
     CF_ARROW_RTCP,
-};
+} CallFlowArrowType;
 
 /**
  * @brief Call flow arrow directions
  */
-enum CallFlowArrowDir
+typedef enum
 {
     CF_ARROW_DIR_ANY = 0,
     CF_ARROW_DIR_RIGHT,
     CF_ARROW_DIR_LEFT,
     CF_ARROW_DIR_SPIRAL_RIGHT,
     CF_ARROW_DIR_SPIRAL_LEFT
-};
-
-/**
- * @brief Call Flow arrow information
- */
-struct _CallFlowArrow
-{
-    //! Type of arrow
-    enum CallFlowArrowType type;
-    //! Item owner of this arrow
-    void *item;
-    //! Stream packet count for this arrow
-    int rtp_count;
-    //! Stream arrow position
-    int rtp_ind_pos;
-    //! Number of screen lines this arrow uses
-    int height;
-    //! Line of flow window this line starts
-    int line;
-    //! Arrow direction
-    enum CallFlowArrowDir dir;
-    //! Source column for this arrow
-    CallFlowColumn *scolumn;
-    //! Destination column for this arrow
-    CallFlowColumn *dcolumn;
-};
+} CallFlowArrowDir;
 
 /**
  * @brief Structure to hold one column information
@@ -126,6 +97,7 @@ struct _CallFlowArrow
  * different dialogs.
  *
  */
+typedef struct _CallFlowColumn CallFlowColumn;
 struct _CallFlowColumn
 {
     //! Address header for this column
@@ -139,13 +111,40 @@ struct _CallFlowColumn
 };
 
 /**
+ * @brief Call Flow arrow information
+ */
+typedef struct
+{
+    //! Type of arrow
+    CallFlowArrowType type;
+    //! Item owner of this arrow
+    void *item;
+    //! Stream packet count for this arrow
+    gint rtp_count;
+    //! Stream arrow position
+    gint rtp_ind_pos;
+    //! Number of screen lines this arrow uses
+    gint height;
+    //! Line of flow window this line starts
+    gint line;
+    //! Arrow direction
+    CallFlowArrowDir dir;
+    //! Source column for this arrow
+    CallFlowColumn *scolumn;
+    //! Destination column for this arrow
+    CallFlowColumn *dcolumn;
+} CallFlowArrow;
+
+/**
  * @brief Call flow Extended status information
  *
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _CallFlowWinInfo
+struct _CallFlowWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Window to display SIP payload
     WINDOW *raw_win;
     //! Window to diplay arrows
@@ -204,4 +203,6 @@ call_flow_win_free(Window *window);
 void
 call_flow_win_set_group(Window *window, CallGroup *group);
 
-#endif /* __SNGREP_CALL_FLOW_WIN_H */
+G_END_DECLS
+
+#endif /* __SNGREP_CALL_FLOW_WIN_H__ */
