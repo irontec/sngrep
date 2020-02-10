@@ -41,7 +41,6 @@ G_BEGIN_DECLS
 #define NCURSES_TYPE_WINDOW window_get_type()
 G_DECLARE_DERIVABLE_TYPE(Window, window, NCURSES, WINDOW, GObject)
 
-
 //! Possible key handler results
 typedef enum
 {
@@ -220,6 +219,9 @@ window_get_ncurses_panel(Window *window);
 
 WINDOW *
 window_get_ncurses_window(Window *window);
+
+void
+window_set_window_type(Window *window, WindowType type);
 
 guint
 window_get_window_type(Window *window);

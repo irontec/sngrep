@@ -26,38 +26,41 @@
  * @brief Functions to manage columns select panel
  */
 
-#ifndef __COLUMN_SELECT_WIN_H
-#define __COLUMN_SELECT_WIN_H
+#ifndef __SNGREP_COLUMN_SELECT_WIN_H__
+#define __SNGREP_COLUMN_SELECT_WIN_H__
 
-#include "config.h"
 #include <menu.h>
 #include <form.h>
+#include "ncurses/window.h"
 #include "ncurses/manager.h"
 #include "ncurses/scrollbar.h"
 #include "storage/attribute.h"
 
+G_BEGIN_DECLS
+
+#define WINDOW_TYPE_COLUMN_SELECT column_select_get_type()
+G_DECLARE_FINAL_TYPE(ColumnSelectWindow, column_select, NCURSES, COLUMN_SELECT, Window)
+
 /**
  * @brief Enum of available fields
  */
-enum ColumnSelectFields
+typedef enum
 {
     FLD_COLUMNS_ACCEPT = 0,
     FLD_COLUMNS_SAVE,
     FLD_COLUMNS_CANCEL,
     FLD_COLUMNS_COUNT
-};
-
-
-//! Sorter declaration of struct columns_select_info
-typedef struct _ColumnSelectWinInfo ColumnSelectWinInfo;
+} ColumnSelectFields;
 
 /**
  * @brief Column selector panel private information
  *
  * This structure contains the durable data of column selection panel.
  */
-struct _ColumnSelectWinInfo
+struct _ColumnSelectWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Section of panel where menu is being displayed
     WINDOW *menu_win;
     //! Columns menu
@@ -96,4 +99,6 @@ column_select_win_new();
 void
 column_select_win_set_columns(Window *window, GPtrArray *columns);
 
-#endif /* __COLUMN_SELECT_WIN_H */
+G_END_DECLS
+
+#endif /* __SNGREP_COLUMN_SELECT_WIN_H__ */

@@ -99,6 +99,13 @@ window_get_ncurses_window(Window *window)
     return priv->win;
 }
 
+void
+window_set_window_type(Window *window, WindowType type)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+    priv->type = type;
+}
+
 guint
 window_get_window_type(Window *window)
 {
@@ -139,7 +146,7 @@ window_redraw(Window *window)
 {
     g_return_val_if_fail(NCURSES_IS_WINDOW(window), FALSE);
 
-    WindowPrivate *priv = window_get_instance_private(NCURSES_WINDOW(window));
+    WindowPrivate *priv = window_get_instance_private(window);
     // If ui has changed, force redraw. Don't even ask.
     if (priv->changed) {
         priv->changed = FALSE;
@@ -162,9 +169,6 @@ window_draw(Window *window)
     WindowClass *klass = NCURSES_WINDOW_GET_CLASS(window);
     if (klass->draw != NULL) {
         return klass->draw(window);
-    } else {
-        WindowPrivate *priv = window_get_instance_private(NCURSES_WINDOW(window));
-        touchwin(priv->win);
     }
 
     return 0;
@@ -217,7 +221,7 @@ window_handle_key(Window *window, gint key)
 void
 window_set_title(Window *window, const gchar *title)
 {
-    WindowPrivate *priv = window_get_instance_private(NCURSES_WINDOW(window));
+    WindowPrivate *priv = window_get_instance_private(window);
 
     // FIXME Reverse colors on monochrome terminals
     if (!has_colors()) {
@@ -237,7 +241,7 @@ window_clear_line(Window *window, gint line)
     // We could do this with wcleartoel but we want to
     // preserve previous window attributes. That way we
     // can set the background of the line.
-    WindowPrivate *priv = window_get_instance_private(NCURSES_WINDOW(window));
+    WindowPrivate *priv = window_get_instance_private(window);
     mvwprintw(priv->win, line, 0, "%*s", priv->width, "");
 }
 
@@ -246,7 +250,7 @@ window_draw_bindings(Window *window, const char **keybindings, gint count)
 {
     int key, xpos = 0;
 
-    WindowPrivate *priv = window_get_instance_private(NCURSES_WINDOW(window));
+    WindowPrivate *priv = window_get_instance_private(window);
 
     // Reverse colors on monochrome terminals
     if (!has_colors()) {
@@ -273,6 +277,38 @@ window_draw_bindings(Window *window, const char **keybindings, gint count)
 
     // Disable reverse mode in all cases
     wattroff(priv->win, A_REVERSE | A_BOLD);
+}
+
+
+static gint
+window_base_draw(Window *window)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+    touchwin(priv->win);
+    return 0;
+}
+
+static void
+window_constructed(GObject *object)
+{
+    WindowPrivate *priv = window_get_instance_private(NCURSES_WINDOW(object));
+
+    // Get current screen dimensions
+    gint maxx, maxy;
+    getmaxyx(stdscr, maxy, maxx);
+
+    // If panel doesn't fill the screen center it
+    if (priv->height != maxy) priv->x = abs((maxy - priv->height) / 2);
+    if (priv->width != maxx) priv->y = abs((maxx - priv->width) / 2);
+
+    priv->win = newwin(priv->height, priv->width, priv->x, priv->y);
+    wtimeout(priv->win, 0);
+    keypad(priv->win, TRUE);
+
+    priv->panel = new_panel(priv->win);
+
+    /* update the object state depending on constructor properties */
+    G_OBJECT_CLASS (window_parent_class)->constructed(object);
 }
 
 static void
@@ -330,28 +366,31 @@ static void
 window_class_init(WindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->constructed = window_constructed;
     object_class->finalize = window_finalize;
     object_class->set_property = window_set_property;
     object_class->get_property = window_get_property;
 
+    klass->draw = window_base_draw;
+
     obj_properties[PROP_WINDOW_HEIGHT] =
-        g_param_spec_int("window-height",
+        g_param_spec_int("height",
                          "Window Height",
                          "Initial window height",
                          0,
                          getmaxy(stdscr),
                          getmaxy(stdscr),
-                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE
+                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
 
     obj_properties[PROP_WINDOW_WIDTH] =
-        g_param_spec_int("window-width",
+        g_param_spec_int("width",
                          "Window Width",
                          "Initial window Width",
                          0,
                          getmaxx(stdscr),
                          getmaxx(stdscr),
-                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE
+                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
 
     g_object_class_install_properties(
@@ -366,22 +405,5 @@ static void
 window_init(Window *self)
 {
     WindowPrivate *priv = window_get_instance_private(self);
-
-    priv->width = getmaxx(stdscr);
-    priv->height = getmaxy(stdscr);
     priv->x = priv->y = 0;
-
-    // Get current screen dimensions
-    gint maxx, maxy;
-    getmaxyx(stdscr, maxy, maxx);
-
-    // If panel doesn't fill the screen center it
-    if (priv->height != maxy) priv->x = abs((maxy - priv->height) / 2);
-    if (priv->width != maxx) priv->y = abs((maxx - priv->width) / 2);
-
-    priv->win = newwin(priv->height, priv->width, priv->x, priv->y);
-    wtimeout(priv->win, 0);
-    keypad(priv->win, TRUE);
-
-    priv->panel = new_panel(priv->win);
 }
