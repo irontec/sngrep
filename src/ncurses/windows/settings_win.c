@@ -28,11 +28,15 @@
 #include "config.h"
 #include <glib/gstdio.h>
 #include <errno.h>
+#include <ncurses.h>
+#include <form.h>
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"
 #include "ncurses/windows/settings_win.h"
 
-SettingsWinCategory categories[] = {
+G_DEFINE_TYPE(SettingsWindow, settings_win, NCURSES_TYPE_WINDOW)
+
+SettingsWindowCategory categories[] = {
     { CAT_SETTINGS_INTERFACE, "Interface" },
     { CAT_SETTINGS_CAPTURE, "Capture" },
     { CAT_SETTINGS_CALL_FLOW, "Call Flow" },
@@ -42,10 +46,11 @@ SettingsWinCategory categories[] = {
     { 0, NULL },
 };
 
-SettingsWinEntry entries[] = {
+SettingsWindowEntry entries[] = {
     { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_BACKGROUND, SETTING_BACKGROUND,
       "Background * .............................." },
-    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_SYNTAX, SETTING_SYNTAX, "SIP message syntax ........................" },
+    { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_SYNTAX, SETTING_SYNTAX,
+      "SIP message syntax ........................" },
     { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_SYNTAX_TAG, SETTING_SYNTAX_TAG,
       "SIP tag syntax ............................" },
     { CAT_SETTINGS_INTERFACE, FLD_SETTINGS_SYNTAX_BRANCH, SETTING_SYNTAX_BRANCH,
@@ -112,21 +117,6 @@ SettingsWinEntry entries[] = {
 };
 
 /**
- * @brief Get custom information of given panel
- *
- * Return ncurses users pointer of the given panel into panel's
- * information structure pointer.
- *
- * @param ui UI structure pointer
- * @return a pointer to info structure of given panel
- */
-static SettingsWinInfo *
-settings_info(Window *ui)
-{
-    return (SettingsWinInfo *) panel_userptr(ui->panel);
-}
-
-/**
  * @brief Draw the settings panel
  *
  * This function will drawn the panel into the screen with
@@ -135,55 +125,52 @@ settings_info(Window *ui)
  * @param ui UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-static int
-settings_draw(Window *ui)
+static gint
+settings_win_draw(Window *window)
 {
-    int i;
-    int cury, curx;
-
-
-    // Get panel information
-    SettingsWinInfo *info = settings_info(ui);
+    SettingsWindow *self = NCURSES_SETTINGS(window);
+    WINDOW *win = window_get_ncurses_window(window);
 
     // Store cursor position
-    getyx(ui->win, cury, curx);
+    gint cury, curx;
+    getyx(win, cury, curx);
 
     // Print category headers
-    int colpos = 2;
-    for (i = 0; categories[i].cat_id; i++) {
-        if (categories[i].cat_id == info->active_category) {
-            mvwprintw(ui->win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
+    gint colpos = 2;
+    for (gint i = 0; categories[i].cat_id; i++) {
+        if (categories[i].cat_id == self->active_category) {
+            mvwprintw(win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
         } else {
-            wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
-            mvwprintw(ui->win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
-            wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+            wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+            mvwprintw(win, 6, colpos, "%c %s %c", '[', categories[i].title, ']');
+            wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
         }
         colpos += strlen(categories[i].title) + 5;
     }
 
     // Reset all field background
-    for (i = 0; i < FLD_SETTINGS_COUNT; i++) {
-        set_field_fore(info->fields[i + 1], A_NORMAL);
-        if (!strncmp(field_buffer(info->fields[i], 0), "on", 2))
-            set_field_fore(info->fields[i], COLOR_PAIR(CP_GREEN_ON_DEF));
-        if (!strncmp(field_buffer(info->fields[i], 0), "off", 3))
-            set_field_fore(info->fields[i], COLOR_PAIR(CP_RED_ON_DEF));
+    for (gint i = 0; i < FLD_SETTINGS_COUNT; i++) {
+        set_field_fore(self->fields[i + 1], A_NORMAL);
+        if (!strncmp(field_buffer(self->fields[i], 0), "on", 2))
+            set_field_fore(self->fields[i], COLOR_PAIR(CP_GREEN_ON_DEF));
+        if (!strncmp(field_buffer(self->fields[i], 0), "off", 3))
+            set_field_fore(self->fields[i], COLOR_PAIR(CP_RED_ON_DEF));
     }
-    for (i = 0; i < BTN_SETTINGS_COUNT; i++) {
-        set_field_back(info->buttons[i], A_NORMAL);
+    for (gint i = 0; i < BTN_SETTINGS_COUNT; i++) {
+        set_field_back(self->buttons[i], A_NORMAL);
     }
 
     // Highlight current field
-    if (info->active_form == info->buttons_form) {
-        set_field_back(current_field(info->buttons_form), A_REVERSE);
+    if (self->active_form == self->buttons_form) {
+        set_field_back(current_field(self->buttons_form), A_REVERSE);
     } else {
-        set_field_fore(info->fields[field_index(current_field(info->form)) + 1], A_BOLD);
+        set_field_fore(self->fields[field_index(current_field(self->form)) + 1], A_BOLD);
     }
 
-    touchwin(ui->win);
+    touchwin(win);
 
     // Restore cursor position
-    wmove(ui->win, cury, curx);
+    wmove(win, cury, curx);
 
     return 0;
 }
@@ -197,10 +184,10 @@ settings_draw(Window *ui)
  * @param field Ncurses field pointer of screen
  * @return Setting information structure
  */
-static SettingsWinEntry *
+static SettingsWindowEntry *
 settings_is_entry(FIELD *field)
 {
-    return (SettingsWinEntry *) field_userptr(field);
+    return (SettingsWindowEntry *) field_userptr(field);
 }
 
 /**
@@ -213,21 +200,19 @@ settings_is_entry(FIELD *field)
  * @param ui UI structure pointer
  * @return 0 in all cases
  */
-static int
-settings_update_settings(Window *ui)
+static gint
+settings_update_settings(Window *window)
 {
-    int i;
-    char field_value[180];
-    SettingsWinEntry *entry;
+    SettingsWindow *self = NCURSES_SETTINGS(window);
 
-    // Get panel information
-    SettingsWinInfo *info = settings_info(ui);
+    gchar field_value[180];
 
-    for (i = 0; i < FLD_SETTINGS_COUNT; i++) {
-        if ((entry = settings_is_entry(info->fields[i]))) {
+    for (gint i = 0; i < FLD_SETTINGS_COUNT; i++) {
+        SettingsWindowEntry *entry = settings_is_entry(self->fields[i]);
+        if (entry) {
             // Get field value.
             memset(field_value, 0, sizeof(field_value));
-            strcpy(field_value, field_buffer(info->fields[i], 0));
+            strcpy(field_value, field_buffer(self->fields[i], 0));
             g_strstrip(field_value);
             // Change setting value
             setting_set_value(entry->setting_id, field_value);
@@ -246,10 +231,9 @@ settings_update_settings(Window *ui)
  * @param ui UI structure pointer
  */
 static void
-settings_save(Window *ui)
+settings_win_save(Window *window)
 {
-    // Get panel information
-    SettingsWinInfo *info = settings_info(ui);
+    SettingsWindow *self = NCURSES_SETTINGS(window);
 
     GString *userconf = g_string_new(NULL);
     GString *tmpfile = g_string_new(NULL);
@@ -315,10 +299,10 @@ settings_save(Window *ui)
     }
 
     for (guint i = 0; i < FLD_SETTINGS_COUNT; i++) {
-        SettingsWinEntry *entry = settings_is_entry(info->fields[i]);
+        SettingsWindowEntry *entry = settings_is_entry(self->fields[i]);
         if (entry != NULL) {
             // Change setting value
-            gchar *field_value = g_strchomp(g_strdup(field_buffer(info->fields[i], 0)));
+            gchar *field_value = g_strchomp(g_strdup(field_buffer(self->fields[i], 0)));
             g_fprintf(fo, "set %s %s\n", setting_name(entry->setting_id), field_value);
             g_free(field_value);
 
@@ -344,93 +328,93 @@ settings_save(Window *ui)
  * @param key   key code
  * @return enum @key_handler_ret
  */
-static int
-settings_handle_key(Window *ui, int key)
+static gint
+settings_win_handle_key(Window *window, gint key)
 {
     int field_idx;
-    SettingsWinEntry *entry;
+    SettingsWindowEntry *entry;
     enum SettingFormat sett_fmt = -1;
 
     // Get panel information
-    SettingsWinInfo *info = settings_info(ui);
+    SettingsWindow *self = NCURSES_SETTINGS(window);
 
     // Get current field id
-    field_idx = field_index(current_field(info->active_form));
+    field_idx = field_index(current_field(self->active_form));
 
     // Get current setting id;
-    if ((entry = settings_is_entry(current_field(info->active_form)))) {
+    if ((entry = settings_is_entry(current_field(self->active_form)))) {
         sett_fmt = setting_format(entry->setting_id);
     }
 
     // Check actions for this key
     enum KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
-        if (info->active_form == info->form) {
+        if (self->active_form == self->form) {
             // Check if we handle this action
             switch (action) {
                 case ACTION_PRINTABLE:
                     if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
-                        form_driver(info->form, key);
+                        form_driver(self->form, key);
                         break;
                     }
                     continue;
                 case ACTION_UP:
                 case ACTION_HPPAGE:
-                    form_driver(info->form, REQ_PREV_FIELD);
-                    form_driver(info->form, REQ_END_LINE);
+                    form_driver(self->form, REQ_PREV_FIELD);
+                    form_driver(self->form, REQ_END_LINE);
                     break;
                 case ACTION_DOWN:
                 case ACTION_HNPAGE:
-                    form_driver(info->form, REQ_NEXT_FIELD);
-                    form_driver(info->form, REQ_END_LINE);
+                    form_driver(self->form, REQ_NEXT_FIELD);
+                    form_driver(self->form, REQ_END_LINE);
                     break;
                 case ACTION_SELECT:
                 case ACTION_RIGHT:
-                    form_driver(info->form, REQ_NEXT_CHOICE);
-                    form_driver(info->form, REQ_RIGHT_CHAR);
+                    form_driver(self->form, REQ_NEXT_CHOICE);
+                    form_driver(self->form, REQ_RIGHT_CHAR);
                     break;
                 case ACTION_LEFT:
-                    form_driver(info->form, REQ_PREV_CHOICE);
-                    form_driver(info->form, REQ_LEFT_CHAR);
+                    form_driver(self->form, REQ_PREV_CHOICE);
+                    form_driver(self->form, REQ_LEFT_CHAR);
                     break;
                 case ACTION_NPAGE:
-                    form_driver(info->form, REQ_NEXT_PAGE);
-                    form_driver(info->form, REQ_END_LINE);
-                    info->active_category = form_page(info->form) + 1;
+                    form_driver(self->form, REQ_NEXT_PAGE);
+                    form_driver(self->form, REQ_END_LINE);
+                    self->active_category = form_page(self->form) + 1;
                     break;
                 case ACTION_PPAGE:
-                    form_driver(info->form, REQ_PREV_PAGE);
-                    form_driver(info->form, REQ_END_LINE);
-                    info->active_category = form_page(info->form) + 1;
+                    form_driver(self->form, REQ_PREV_PAGE);
+                    form_driver(self->form, REQ_END_LINE);
+                    self->active_category = form_page(self->form) + 1;
                     break;
                 case ACTION_BEGIN:
-                    form_driver(info->form, REQ_BEG_LINE);
+                    form_driver(self->form, REQ_BEG_LINE);
                     break;
                 case ACTION_END:
-                    form_driver(info->form, REQ_END_LINE);
+                    form_driver(self->form, REQ_END_LINE);
                     break;
                 case ACTION_NEXT_FIELD:
-                    info->active_form = info->buttons_form;
-                    set_current_field(info->active_form, info->buttons[BTN_SETTINGS_ACCEPT]);
+                    self->active_form = self->buttons_form;
+                    set_current_field(self->active_form, self->buttons[BTN_SETTINGS_ACCEPT]);
                     break;
                 case ACTION_CLEAR:
                     if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
-                        form_driver(info->form, REQ_BEG_LINE);
-                        form_driver(info->form, REQ_CLR_EOL);
+                        form_driver(self->form, REQ_BEG_LINE);
+                        form_driver(self->form, REQ_CLR_EOL);
                     }
                     break;
                 case ACTION_DELETE:
                     if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
-                        form_driver(info->form, REQ_DEL_CHAR);
+                        form_driver(self->form, REQ_DEL_CHAR);
                     }
                     break;
                 case ACTION_BACKSPACE:
                     if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
-                        form_driver(info->form, REQ_DEL_PREV);
+                        form_driver(self->form, REQ_DEL_PREV);
                     }
                     break;
                 case ACTION_CONFIRM:
-                    settings_update_settings(ui);
+                    settings_update_settings(window);
                     return KEY_DESTROY;
                 default:
                     // Parse next action
@@ -443,25 +427,25 @@ settings_handle_key(Window *ui, int key)
                 case ACTION_DOWN:
                 case ACTION_NEXT_FIELD:
                     if (field_idx == BTN_SETTINGS_CANCEL) {
-                        info->active_form = info->form;
+                        self->active_form = self->form;
                     } else {
-                        form_driver(info->buttons_form, REQ_NEXT_FIELD);
+                        form_driver(self->buttons_form, REQ_NEXT_FIELD);
                     }
                     break;
                 case ACTION_LEFT:
                 case ACTION_UP:
                 case ACTION_PREV_FIELD:
                     if (field_idx == BTN_SETTINGS_ACCEPT) {
-                        info->active_form = info->form;
+                        self->active_form = self->form;
                     } else {
-                        form_driver(info->buttons_form, REQ_PREV_FIELD);
+                        form_driver(self->buttons_form, REQ_PREV_FIELD);
                     }
                     break;
                 case ACTION_SELECT:
                 case ACTION_CONFIRM:
                     if (field_idx == BTN_SETTINGS_SAVE)
-                        settings_save(ui);
-                    settings_update_settings(ui);
+                        settings_win_save(window);
+                    settings_update_settings(window);
                     return KEY_DESTROY;
                 default:
                     continue;
@@ -473,12 +457,15 @@ settings_handle_key(Window *ui, int key)
     }
 
     // Validate all input data
-    form_driver(info->active_form, REQ_VALIDATION);
+    form_driver(self->active_form, REQ_VALIDATION);
 
     // Get current setting id
-    if ((entry = settings_is_entry(current_field(info->active_form)))) {
+    if ((entry = settings_is_entry(current_field(self->active_form)))) {
         // Enable cursor on string and number fields
-        curs_set(setting_format(entry->setting_id) != SETTING_FMT_ENUM);
+        curs_set(
+            setting_format(entry->setting_id) == SETTING_FMT_NUMBER
+            || setting_format(entry->setting_id) == SETTING_FMT_STRING
+        );
     } else {
         curs_set(0);
     }
@@ -490,54 +477,73 @@ settings_handle_key(Window *ui, int key)
 void
 settings_win_free(Window *window)
 {
-    curs_set(0);
-    window_deinit(window);
+    g_object_unref(window);
 }
 
 Window *
 settings_win_new()
 {
-    int i, j, line;
-    FIELD *entry, *label;
-    int field = 0;
+    return g_object_new(
+        WINDOW_TYPE_SETTINGS,
+        "height", 24,
+        "width", 70,
+        NULL
+    );
+}
 
-    Window *window = g_malloc0(sizeof(Window));
-    window->type = WINDOW_SETTINGS;
-    window->destroy = settings_win_free;
-    window->draw = settings_draw;
-    window->handle_key = settings_handle_key;
+static void
+settings_win_finalize(G_GNUC_UNUSED GObject *object)
+{
+    // Hide cursor
+    curs_set(0);
 
-    // Cerate a new window for the panel and form
-    window_init(window, 24, 70);
+    // Chain-up parent finalize
+    G_OBJECT_CLASS(settings_win_parent_class)->finalize(object);
+}
 
-    // Initialize Filter panel specific data
-    SettingsWinInfo *info = g_malloc0(sizeof(SettingsWinInfo));
-    set_panel_userptr(window->panel, (void *) info);
+static void
+settings_win_constructed(GObject *object)
+{
+    // Chain-up parent constructed
+    G_OBJECT_CLASS(settings_win_parent_class)->constructed(object);
+
+    gint line;
+    FIELD *entry = NULL, *label;
+    gint field = 0;
+
+    // Get parent window information
+    SettingsWindow *self = NCURSES_SETTINGS(object);
+    Window *parent = NCURSES_WINDOW(self);
+    WINDOW *win = window_get_ncurses_window(parent);
+    PANEL *panel = window_get_ncurses_panel(parent);
+
+    gint height = window_get_height(parent);
+    gint width = window_get_width(parent);
 
     // Create a scrollable subwindow for settings
-    info->form_win = derwin(window->win, window->height - 11, window->width - 2, 8, 1);
+    self->form_win = derwin(win, height - 11, width - 2, 8, 1);
 
     // Configure panel buttons
-    info->buttons[BTN_SETTINGS_ACCEPT] = new_field(1, 10, window->height - 2, 12, 0, 0);
-    info->buttons[BTN_SETTINGS_SAVE] = new_field(1, 10, window->height - 2, 29, 0, 0);
-    info->buttons[BTN_SETTINGS_CANCEL] = new_field(1, 10, window->height - 2, 46, 0, 0);
-    info->buttons[BTN_SETTINGS_COUNT] = NULL;
-    field_opts_off(info->buttons[BTN_SETTINGS_ACCEPT], O_EDIT);
-    field_opts_off(info->buttons[BTN_SETTINGS_SAVE], O_EDIT);
-    field_opts_off(info->buttons[BTN_SETTINGS_CANCEL], O_EDIT);
-    set_field_buffer(info->buttons[BTN_SETTINGS_ACCEPT], 0, "[ Accept ]");
-    set_field_buffer(info->buttons[BTN_SETTINGS_SAVE], 0, "[  Save  ]");
-    set_field_buffer(info->buttons[BTN_SETTINGS_CANCEL], 0, "[ Cancel ]");
-    info->buttons_form = new_form(info->buttons);
-    set_form_sub(info->buttons_form, window->win);
-    post_form(info->buttons_form);
+    self->buttons[BTN_SETTINGS_ACCEPT] = new_field(1, 10, height - 2, 12, 0, 0);
+    self->buttons[BTN_SETTINGS_SAVE] = new_field(1, 10, height - 2, 29, 0, 0);
+    self->buttons[BTN_SETTINGS_CANCEL] = new_field(1, 10, height - 2, 46, 0, 0);
+    self->buttons[BTN_SETTINGS_COUNT] = NULL;
+    field_opts_off(self->buttons[BTN_SETTINGS_ACCEPT], O_EDIT);
+    field_opts_off(self->buttons[BTN_SETTINGS_SAVE], O_EDIT);
+    field_opts_off(self->buttons[BTN_SETTINGS_CANCEL], O_EDIT);
+    set_field_buffer(self->buttons[BTN_SETTINGS_ACCEPT], 0, "[ Accept ]");
+    set_field_buffer(self->buttons[BTN_SETTINGS_SAVE], 0, "[  Save  ]");
+    set_field_buffer(self->buttons[BTN_SETTINGS_CANCEL], 0, "[ Cancel ]");
+    self->buttons_form = new_form(self->buttons);
+    set_form_sub(self->buttons_form, win);
+    post_form(self->buttons_form);
 
     // Initialize rest of settings fields
-    for (i = 0; categories[i].cat_id; i++) {
+    for (gint i = 0; categories[i].cat_id; i++) {
         // Each category section begins with fields in the first line
         line = 0;
 
-        for (j = 0; entries[j].cat_id; j++) {
+        for (gint j = 0; entries[j].cat_id; j++) {
             // Ignore entries of other categories
             if (entries[j].cat_id != categories[i].cat_id)
                 continue;
@@ -583,35 +589,53 @@ settings_win_new()
             }
 
             // Store field
-            info->fields[field++] = entry;
-            info->fields[field++] = label;
+            self->fields[field++] = entry;
+            self->fields[field++] = label;
 
             line++;
         }
     }
 
     // Create the form and post it
-    info->form = new_form(info->fields);
-    set_form_sub(info->form, info->form_win);
-    post_form(info->form);
+    self->form = new_form(self->fields);
+    set_form_sub(self->form, self->form_win);
+    post_form(self->form);
 
     // Set the window title and boxes
-    mvwprintw(window->win, 1, window->width / 2 - 5, "Settings");
-    wattron(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(window->panel);
-    mvwhline(window->win, 6, 1, ACS_HLINE, window->width - 1);
-    mvwaddch(window->win, 6, 0, ACS_LTEE);
-    mvwaddch(window->win, 6, window->width - 1, ACS_RTEE);
-    wattroff(window->win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    wattron(window->win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(window->win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move around settings.");
-    mvwprintw(window->win, 4, 1, " Settings with (*) requires restart.");
-    wattroff(window->win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(win, 1, width / 2 - 5, "Settings");
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    title_foot_box(panel);
+    mvwhline(win, 6, 1, ACS_HLINE, width - 1);
+    mvwaddch(win, 6, 0, ACS_LTEE);
+    mvwaddch(win, 6, width - 1, ACS_RTEE);
+    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    mvwprintw(win, 3, 1, " Use arrow keys, PgUp, PgDown and Tab to move around settings.");
+    mvwprintw(win, 4, 1, " Settings with (*) requires restart.");
+    wattroff(win, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     // Set default field
-    info->active_form = info->form;
-    set_current_field(info->form, *info->fields);
-    info->active_category = form_page(info->form) + 1;
+    self->active_form = self->form;
+    set_current_field(self->form, *self->fields);
+    self->active_category = form_page(self->form) + 1;
+}
 
-    return window;
+static void
+settings_win_class_init(SettingsWindowClass *klass)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->constructed = settings_win_constructed;
+    object_class->finalize = settings_win_finalize;
+
+    WindowClass *window_class = NCURSES_WINDOW_CLASS(klass);
+    window_class->draw = settings_win_draw;
+    window_class->handle_key = settings_win_handle_key;
+
+}
+
+static void
+settings_win_init(SettingsWindow *self)
+{
+    // Initialize attributes
+    window_set_window_type(NCURSES_WINDOW(self), WINDOW_SETTINGS);
 }

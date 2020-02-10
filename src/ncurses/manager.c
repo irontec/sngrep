@@ -145,10 +145,10 @@ ncurses_find_by_type(WindowType type)
         case WINDOW_SAVE:
             window = save_win_new();
             break;
-#if 0
         case WINDOW_SETTINGS:
             window = settings_win_new();
             break;
+#if 0
         case WINDOW_AUTH_VALIDATE:
             window = auth_validate_win_new();
             break;

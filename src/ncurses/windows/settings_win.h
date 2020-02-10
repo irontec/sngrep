@@ -30,27 +30,25 @@
  *
  */
 
-#ifndef __SNGREP_SETTINGS_WIN_H
-#define __SNGREP_SETTINGS_WIN_H
+#ifndef __SNGREP_SETTINGS_WIN_H__
+#define __SNGREP_SETTINGS_WIN_H__
 
 #include <glib.h>
 #include "ncurses/manager.h"
 
-//! Sorter declaration of struct option_info
-typedef struct _SettingsWinInfo SettingsWinInfo;
-//! Sorter declaration of struct settings_category
-typedef struct _SettingsWinCategory SettingsWinCategory;
-//! Sorter declaration of struct settings_entry
-typedef struct _SettingsWinEntry SettingsWinEntry;
+G_BEGIN_DECLS
 
-enum SettingWinCategory
+#define WINDOW_TYPE_SETTINGS settings_win_get_type()
+G_DECLARE_FINAL_TYPE(SettingsWindow, settings_win, NCURSES, SETTINGS, Window)
+
+typedef enum
 {
     CAT_SETTINGS_INTERFACE = 1,
     CAT_SETTINGS_CAPTURE,
     CAT_SETTINGS_CALL_FLOW,
     CAT_SETTINGS_HEP_HOMER,
     CAT_SETTINGS_COUNT,
-};
+} SettingsWindowCategoryId;
 
 /**
  * @brief Enum of available dialog fields
@@ -59,7 +57,7 @@ enum SettingWinCategory
  * order this fields are stored in panel info structure.
  *
  */
-enum SettingWinField
+typedef enum
 {
     FLD_SETTINGS_BACKGROUND = 0,
     FLD_SETTINGS_BACKGROUND_LB,
@@ -128,44 +126,46 @@ enum SettingWinField
     FLD_SETTINGS_HEP_LISTEN_UUID_LB,
 #endif
     FLD_SETTINGS_COUNT,
-};
+} SettingsWindowField;
 
-enum SettingsWinButton
+typedef enum
 {
     BTN_SETTINGS_ACCEPT = 0,
     BTN_SETTINGS_SAVE,
     BTN_SETTINGS_CANCEL,
     BTN_SETTINGS_COUNT,
-};
+} SettingsWindowButton;
 
 #define SETTINGS_ENTRY_COUNT (FLD_SETTINGS_COUNT - 3)
 
-struct _SettingsWinCategory
+typedef struct
 {
     // Category id
-    enum SettingWinCategory cat_id;
+    SettingsWindowCategoryId cat_id;
     // Category label
     const char *title;
-};
+} SettingsWindowCategory;
 
-struct _SettingsWinEntry
+typedef struct
 {
-    enum SettingWinCategory cat_id;
+    SettingsWindowCategoryId cat_id;
     //! Field id in settings_info array
-    enum SettingWinField field_id;
+    SettingsWindowField field_id;
     //! Setting id of current entry
     enum SettingId setting_id;
     //! Entry text
-    const char *label;
-};
+    const gchar *label;
+} SettingsWindowEntry;
 
 /**
  * @brief settings panel private information
  *
  * This structure contains the durable data of settings panel.
  */
-struct _SettingsWinInfo
+struct _SettingsWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! Window containing form data (and buttons)
     WINDOW *form_win;
     //! Form that contains the filter fields
@@ -179,7 +179,7 @@ struct _SettingsWinInfo
     //! Active form
     FORM *active_form;
     //! Active category
-    enum SettingWinCategory active_category;
+    SettingsWindowCategoryId active_category;
 };
 
 /**
@@ -203,4 +203,6 @@ settings_win_new();
 void
 settings_win_free(Window *window);
 
-#endif /* __SNGREP_SETTINGS_WIN_H */
+G_END_DECLS
+
+#endif /* __SNGREP_SETTINGS_WIN_H__ */

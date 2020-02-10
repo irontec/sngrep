@@ -35,7 +35,7 @@ set(SOURCES
         src/ncurses/windows/filter_win.c
 #        src/ncurses/windows/msg_diff_win.c
         src/ncurses/windows/save_win.c
-#        src/ncurses/windows/settings_win.c
+        src/ncurses/windows/settings_win.c
         src/ncurses/windows/stats_win.c
 #        src/ncurses/windows/auth_validate_win.c
         src/ncurses/window.c
