@@ -29,9 +29,7 @@
 
 #include "config.h"
 #include <ctype.h>
-#include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <stdlib.h>
 #include <locale.h>
 #include <glib-unix.h>
@@ -40,7 +38,6 @@
 #include "setting.h"
 #include "manager.h"
 #include "capture/capture.h"
-#include "storage/packet/packet_sip.h"
 #include "ncurses/windows/auth_validate_win.h"
 #include "ncurses/windows/call_list_win.h"
 #include "ncurses/windows/call_flow_win.h"
@@ -135,11 +132,9 @@ ncurses_find_by_type(WindowType type)
         case WINDOW_FILTER:
             window = filter_win_new();
             break;
-#if 0
         case WINDOW_MSG_DIFF:
             window = msg_diff_win_new();
             break;
-#endif
         case WINDOW_SAVE:
             window = save_win_new();
             break;

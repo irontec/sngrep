@@ -33,7 +33,7 @@ set(SOURCES
         src/ncurses/windows/call_raw_win.c
         src/ncurses/windows/column_select_win.c
         src/ncurses/windows/filter_win.c
-#        src/ncurses/windows/msg_diff_win.c
+        src/ncurses/windows/msg_diff_win.c
         src/ncurses/windows/save_win.c
         src/ncurses/windows/settings_win.c
         src/ncurses/windows/stats_win.c

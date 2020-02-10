@@ -1770,21 +1770,21 @@ call_flow_win_handle_key(Window *window, gint key)
             case ACTION_TOGGLE_TIME:
                 self->arrowtime = (self->arrowtime) ? FALSE : TRUE;
                 break;
-//            case ACTION_SELECT:
-//                if (self->selected == -1) {
-//                    self->selected = self->cur_idx;
-//                } else {
-//                    if (self->selected == (gint) self->cur_idx) {
-//                        self->selected = -1;
-//                    } else {
-//                        // Show diff panel
-//                        next_window = ncurses_create_window(WINDOW_MSG_DIFF);
-//                        msg_diff_win_set_msgs(next_window,
-//                                              call_flow_arrow_message(g_ptr_array_index(self->darrows, self->selected)),
-//                                              call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
-//                    }
-//                }
-//                break;
+            case ACTION_SELECT:
+                if (self->selected == -1) {
+                    self->selected = self->cur_idx;
+                } else {
+                    if (self->selected == (gint) self->cur_idx) {
+                        self->selected = -1;
+                    } else {
+                        // Show diff panel
+                        next_window = ncurses_create_window(WINDOW_MSG_DIFF);
+                        msg_diff_win_set_msgs(next_window,
+                                              call_flow_arrow_message(g_ptr_array_index(self->darrows, self->selected)),
+                                              call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
+                    }
+                }
+                break;
             case ACTION_CLEAR:
                 self->selected = -1;
                 break;

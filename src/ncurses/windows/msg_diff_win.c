@@ -28,10 +28,11 @@
  */
 
 #include "config.h"
-#include <stdlib.h>
 #include <string.h>
 #include "msg_diff_win.h"
 #include "setting.h"
+
+G_DEFINE_TYPE(MsgDiffWindow, msg_diff_win, NCURSES_TYPE_WINDOW)
 
 /***
  *
@@ -54,25 +55,8 @@
  *
  */
 
-/**
- * @brief Get panel information structure
- *
- * All required information of the panel is stored in the info pointer
- * of the panel.
- * This function will return the pointer to the info structure of the
- * panel.
- *
- * @param ui UI structure pointer
- * @return a pointer to the info structure or NULL if no structure exists
- */
-static MsgDiffWinInfo *
-msg_diff_info(Window *ui)
-{
-    return (MsgDiffWinInfo *) panel_userptr(ui->panel);
-}
-
 static int
-msg_diff_line_highlight(const char *payload1, const char *payload2, char *highlight)
+msg_diff_win_line_highlight(const char *payload1, const char *payload2, char *highlight)
 {
     char search[MAX_SIP_PAYLOAD];
     int len;
@@ -110,7 +94,7 @@ msg_diff_line_highlight(const char *payload1, const char *payload2, char *highli
  * @param window UI structure pointer
  */
 static void
-msg_diff_draw_footer(Window *window)
+msg_diff_win_draw_footer(Window *window)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls Flow",
@@ -128,7 +112,7 @@ msg_diff_draw_footer(Window *window)
  *
  */
 static int
-msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight)
+msg_diff_win_draw_message(WINDOW *win, Message *msg, char *highlight)
 {
     int height, width, line, column;
     char header[MAX_SIP_PAYLOAD];
@@ -186,26 +170,26 @@ msg_diff_draw_message(WINDOW *win, Message *msg, char *highlight)
  * @return 0 in all cases
  */
 static int
-msg_diff_draw(Window *window)
+msg_diff_win_draw(Window *window)
 {
     // Get panel information
-    MsgDiffWinInfo *info = msg_diff_info(window);
-    g_return_val_if_fail(info != NULL, -1);
+    MsgDiffWindow *self = NCURSES_MSG_DIFF(window);
+    g_return_val_if_fail(self != NULL, -1);
 
     char highlight[MAX_SIP_PAYLOAD];
 
     // Draw first message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_line_highlight(msg_get_payload(info->one), msg_get_payload(info->two), highlight);
-    msg_diff_draw_message(info->one_win, info->one, highlight);
+    msg_diff_win_line_highlight(msg_get_payload(self->one), msg_get_payload(self->two), highlight);
+    msg_diff_win_draw_message(self->one_win, self->one, highlight);
 
     // Draw second message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_line_highlight(msg_get_payload(info->two), msg_get_payload(info->one), highlight);
-    msg_diff_draw_message(info->two_win, info->two, highlight);
+    msg_diff_win_line_highlight(msg_get_payload(self->two), msg_get_payload(self->one), highlight);
+    msg_diff_win_draw_message(self->two_win, self->two, highlight);
 
     // Redraw footer
-    msg_diff_draw_footer(window);
+    msg_diff_win_draw_footer(window);
 
     return 0;
 }
@@ -214,55 +198,65 @@ msg_diff_draw(Window *window)
 void
 msg_diff_win_set_msgs(Window *window, Message *one, Message *two)
 {
-    MsgDiffWinInfo *info = msg_diff_info(window);
-    g_return_if_fail(info != NULL);
+    MsgDiffWindow *self = NCURSES_MSG_DIFF(window);
+    g_return_if_fail(self != NULL);
 
     g_return_if_fail(one != NULL);
     g_return_if_fail(two != NULL);
 
-    info->one = one;
-    info->two = two;
-}
-
-void
-msg_diff_win_free(Window *window)
-{
-    MsgDiffWinInfo *info = msg_diff_info(window);
-    g_return_if_fail(info != NULL);
-
-    g_free(info);
-    window_deinit(window);
+    self->one = one;
+    self->two = two;
 }
 
 Window *
 msg_diff_win_new()
 {
-    Window *window = g_malloc0(sizeof(Window));
-    window->type = WINDOW_MSG_DIFF;
-    window->destroy = msg_diff_win_free;
-    window->draw = msg_diff_draw;
+    return g_object_new(
+        WINDOW_TYPE_MSG_DIFF,
+        NULL
+    );
+}
 
-    // Create a new panel to fill all the screen
-    window_init(window, getmaxy(stdscr), getmaxx(stdscr));
+static void
+msg_diff_win_constructed(GObject *object)
+{
+    // Chain-up parent constructed
+    G_OBJECT_CLASS(msg_diff_win_parent_class)->constructed(object);
 
-    // Initialize panel specific data
-    MsgDiffWinInfo *info = g_malloc0(sizeof(MsgDiffWinInfo));
+    MsgDiffWindow *self = NCURSES_MSG_DIFF(object);
+    Window *parent = NCURSES_WINDOW(self);
+    WINDOW *win = window_get_ncurses_window(parent);
 
-    // Store it into panel userptr
-    set_panel_userptr(window->panel, (void *) info);
+    gint height = window_get_height(parent);
+    gint width = window_get_width(parent);
 
-    // Calculate subwindows width
-    gint hwidth = window->width / 2 - 1;
+    // Calculate sub-windows width
+    gint hwidth = width / 2 - 1;
 
-    // Create 2 subwindows, one for each message
-    info->one_win = subwin(window->win, window->height - 2, hwidth, 1, 0);
-    info->two_win = subwin(window->win, window->height - 2, hwidth, 1, hwidth + 1); // Header - Footer - Address
+    // Create 2 sub-windows, one for each message
+    self->one_win = subwin(win, height - 2, hwidth, 1, 0);
+    self->two_win = subwin(win, height - 2, hwidth, 1, hwidth + 1); // Header - Footer - Address
 
-    // Draw a vertical line to separe both subwindows
-    mvwvline(window->win, 0, hwidth, ACS_VLINE, window->height);
+    // Draw a vertical line to separate both sub-windows
+    mvwvline(win, 0, hwidth, ACS_VLINE, height);
 
     // Draw title
-    window_set_title(window, "sngrep - SIP messages flow viewer");
+    window_set_title(parent, "sngrep - SIP messages flow viewer");
+}
 
-    return window;
+static void
+msg_diff_win_class_init(MsgDiffWindowClass *klass)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->constructed = msg_diff_win_constructed;
+
+    WindowClass *window_class = NCURSES_WINDOW_CLASS(klass);
+    window_class->draw = msg_diff_win_draw;
+}
+
+static void
+msg_diff_win_init(MsgDiffWindow *self)
+{
+    // Initialize attributes
+    window_set_window_type(NCURSES_WINDOW(self), WINDOW_MSG_DIFF);
 }

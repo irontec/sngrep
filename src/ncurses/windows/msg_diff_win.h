@@ -26,14 +26,16 @@
  * @brief Functions to manage diff display
  *
  */
-#ifndef __SNGREP_MSG_DIFF_WIN_H
-#define __SNGREP_MSG_DIFF_WIN_H
+#ifndef __SNGREP_MSG_DIFF_WIN_H__
+#define __SNGREP_MSG_DIFF_WIN_H__
 
 #include "config.h"
 #include "ncurses/manager.h"
 
-//! Sorter declaration of struct msg_diff_info
-typedef struct _MsgDiffWinInfo MsgDiffWinInfo;
+G_BEGIN_DECLS
+
+#define WINDOW_TYPE_MSG_DIFF msg_diff_win_get_type()
+G_DECLARE_FINAL_TYPE(MsgDiffWindow, msg_diff_win, NCURSES, MSG_DIFF, Window)
 
 /**
  * @brief Call raw status information
@@ -41,8 +43,10 @@ typedef struct _MsgDiffWinInfo MsgDiffWinInfo;
  * This data stores the actual status of the panel. It's stored in the
  * PANEL user pointer.
  */
-struct _MsgDiffWinInfo
+struct _MsgDiffWindow
 {
+    //! Parent object attributes
+    Window parent;
     //! First message to compare
     Message *one;
     //! Second message to compare
@@ -90,4 +94,6 @@ msg_diff_win_free(Window *window);
 void
 msg_diff_win_set_msgs(Window *window, Message *one, Message *two);
 
-#endif
+G_END_DECLS
+
+#endif  /* __SNGREP_MSG_DIFF_WIN_H__ */
