@@ -983,11 +983,9 @@ call_list_handle_key(Window *window, int key)
             case ACTION_SHOW_STATS:
                 ncurses_create_window(WINDOW_STATS);
                 break;
-#if 0
             case ACTION_SAVE:
                 save_set_group(ncurses_create_window(WINDOW_SAVE), self->group);
                 break;
-#endif
             case ACTION_CLEAR:
                 // Clear group calls
                 call_group_remove_all(self->group);
