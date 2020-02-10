@@ -120,28 +120,32 @@ ncurses_find_by_type(WindowType type)
         case WINDOW_CALL_LIST:
             window = call_list_win_new();
             break;
-#if 0
         case WINDOW_COLUMN_SELECT:
             window = column_select_win_new();
             break;
         case WINDOW_STATS:
             window = stats_win_new();
             break;
+#if 0
         case WINDOW_CALL_FLOW:
             window = call_flow_win_new();
             break;
         case WINDOW_CALL_RAW:
             window = call_raw_win_new();
             break;
+#endif
         case WINDOW_FILTER:
             window = filter_win_new();
             break;
+#if 0
         case WINDOW_MSG_DIFF:
             window = msg_diff_win_new();
             break;
+#endif
         case WINDOW_SAVE:
             window = save_win_new();
             break;
+#if 0
         case WINDOW_SETTINGS:
             window = settings_win_new();
             break;

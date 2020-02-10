@@ -28,16 +28,16 @@ set(SOURCES
         src/glib/gasyncqueuesource.c
         src/glib/glib-extra.c
         src/ncurses/manager.c
-        src/ncurses/windows/call_flow_win.c
+#        src/ncurses/windows/call_flow_win.c
         src/ncurses/windows/call_list_win.c
-        src/ncurses/windows/call_raw_win.c
+#        src/ncurses/windows/call_raw_win.c
         src/ncurses/windows/column_select_win.c
         src/ncurses/windows/filter_win.c
-        src/ncurses/windows/msg_diff_win.c
+#        src/ncurses/windows/msg_diff_win.c
         src/ncurses/windows/save_win.c
-        src/ncurses/windows/settings_win.c
+#        src/ncurses/windows/settings_win.c
         src/ncurses/windows/stats_win.c
-        src/ncurses/windows/auth_validate_win.c
+#        src/ncurses/windows/auth_validate_win.c
         src/ncurses/window.c
         src/ncurses/dialog.c
         src/ncurses/keybinding.c
@@ -91,7 +91,7 @@ option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
 # Pulseaudio Support
 option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" OFF)
 if (WITH_PULSE)
-    set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
+#    set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
 endif (WITH_PULSE)
 
 # G.729 decoding support

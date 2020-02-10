@@ -25,10 +25,22 @@
  *
  * @brief Functions to manage ui window for capture stats display
  */
-#ifndef __SNGREP_STATS_WIN_H
-#define __SNGREP_STATS_WIN_H
+#ifndef __SNGREP_STATS_WIN_H__
+#define __SNGREP_STATS_WIN_H__
 
-#include "ncurses/manager.h"
+#include "ncurses/window.h"
+
+G_BEGIN_DECLS
+
+#define WINDOW_TYPE_STATS stats_get_type()
+G_DECLARE_FINAL_TYPE(StatsWindow, stats, NCURSES, STATS, Window)
+
+
+struct _StatsWindow
+{
+    //! Parent object attributes
+    Window parent;
+};
 
 /**
  * @brief Creates a new stats panel
@@ -42,4 +54,6 @@
 Window *
 stats_win_new();
 
-#endif /* __SNGREP_STATS_WIN_H */
+G_END_DECLS
+
+#endif /* __SNGREP_STATS_WIN_H__ */
