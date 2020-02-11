@@ -93,7 +93,10 @@ guint
 msg_media_count(Message *msg)
 {
     PacketSdpData *sdp = packet_sdp_data(msg->packet);
-    g_return_val_if_fail(sdp != NULL, 0);
+
+    if (sdp == NULL)
+        return 0;
+
     return g_list_length(sdp->medias);
 }
 

@@ -232,9 +232,12 @@ static GByteArray *
 packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GByteArray *data)
 {
     g_autoptr(GString) payload = g_string_new_len((const gchar *) data->data, data->len);
+    PacketSdpMedia *media = NULL;
+
+    if (data->len == 0)
+        return data;
 
     PacketSdpData *sdp = g_malloc0(sizeof(PacketSdpData));
-    PacketSdpMedia *media = NULL;
 
     g_auto(GStrv) lines = g_strsplit(payload->str, "\r\n", -1);
     for (guint i = 0; i < g_strv_length(lines); i++) {
@@ -257,6 +260,7 @@ packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
 
     // Set packet SDP data
     packet_add_type(packet, PACKET_PROTO_SDP, sdp);
+    data = g_byte_array_remove_range(data, 0, data->len);
 
     return data;
 }

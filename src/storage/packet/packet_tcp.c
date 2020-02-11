@@ -233,14 +233,14 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *
     // Create a new stream if none matches
     if (stream == NULL) {
         stream = packet_tcp_stream_new(segment);
-        // Add stream to assmebly list
+        // Add stream to assembly list
         g_hash_table_insert(dissector->assembly, stream->hashkey, stream);
     }
 
     // Add segment to stream
     packet_tcp_stream_add_segment(stream, segment);
 
-    // Check max number of stream segments (let the garbate collector clean it)
+    // Check max number of stream segments (let the garbage collector clean it)
     if (g_ptr_array_len(stream->segments) > TCP_MAX_SEGMENTS) {
         return data;
     }

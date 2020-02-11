@@ -820,9 +820,11 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 
     // Packet SDP data
     PacketSdpData *sdp_data = packet_sdp_data(msg->packet);
-
+    PacketSdpMedia *media = NULL;
+    if (sdp_data != NULL) {
+        media = g_list_nth_data(sdp_data->medias, 0);
+    }
     // For extended, use xcallid nstead
-    PacketSdpMedia *media = g_list_nth_data(sdp_data->medias, 0);
     date_time_time_to_str(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
@@ -845,14 +847,14 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         }
     }
 
-    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
+    if (media && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
         sprintf(method, "%.3s (%s:%u)",
                 msg_method,
                 (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address,
                 media->rtpport);
     }
 
-    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+    if (media && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
         sprintf(method, "%.3s (%s)",
                 msg_method,
                 (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address
