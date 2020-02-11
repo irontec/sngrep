@@ -405,5 +405,8 @@ static void
 window_init(Window *self)
 {
     WindowPrivate *priv = window_get_instance_private(self);
+    // Initialize window position
     priv->x = priv->y = 0;
+    // Force draw on new created windows
+    priv->changed = TRUE;
 }
