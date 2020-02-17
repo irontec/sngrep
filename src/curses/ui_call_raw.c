@@ -269,6 +269,19 @@ call_raw_handle_key(ui_t *ui, int key)
             case ACTION_CLEAR_CALLS_SOFT:
                 // Propagate the key to the previous panel
                 return KEY_PROPAGATED;
+            case ACTION_SHOW_ALIAS:
+                setting_toggle(SETTING_DISPLAY_ALIAS);
+                // Create a new pad (forces messages draw)
+                delwin(info->pad);
+                info->pad = newpad(500, COLS);
+                info->last = NULL;
+                // Force refresh panel
+                if (info->group) {
+                    call_raw_set_group(info->group);
+                } else {
+                    call_raw_set_msg(info->msg);
+                }
+                break;
             default:
                 // Parse next action
                 continue;

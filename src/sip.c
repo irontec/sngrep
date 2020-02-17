@@ -927,7 +927,11 @@ sip_get_msg_header(sip_msg_t *msg, char *out)
     msg_get_attribute(msg, SIP_ATTR_DST, to_addr);
 
     // Get msg header
-    sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
+    if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
+        sprintf(out, "%s %s %s -> %s", date, time, get_alias_value(from_addr), get_alias_value(to_addr));
+    } else {
+        sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
+    }
     return out;
 }
 
