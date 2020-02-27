@@ -501,6 +501,8 @@ settings_init(SettingOpts options)
                     setting_bool_new("capture.rotate", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SIP_NOINCOMPLETE,
                     setting_bool_new("sip.noincomplete", SETTING_ON));
+    g_ptr_array_set(settings->values, SETTING_STORAGE_MAX_QUEUE,
+                    setting_number_new("storage.max_queue_size", "1000"));
     g_ptr_array_set(settings->values, SETTING_SIP_HEADER_X_CID,
                     setting_string_new("sip.xcid", "X-Call-ID|X-CID"));
     g_ptr_array_set(settings->values, SETTING_SIP_CALLS,

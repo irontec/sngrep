@@ -451,6 +451,10 @@ void
 storage_add_packet(Packet *packet)
 {
     // Add the packet to the queue
+    while (capture_is_running()
+           && g_async_queue_length(storage->queue) > storage->options.capture.max_queue_size) {
+        g_usleep(10);
+    }
     g_async_queue_push(storage->queue, (gpointer) packet);
 }
 
@@ -599,6 +603,9 @@ storage_new(StorageOpts options, GError **error)
 
     // Parsed packet to check
     storage->queue = g_async_queue_new();
+
+    // Set queue max size (captures will wait until stored packets are parsed)
+    storage->options.capture.max_queue_size = setting_get_intvalue(SETTING_STORAGE_MAX_QUEUE);
 
     // Dissectors array
     storage->dissectors = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
