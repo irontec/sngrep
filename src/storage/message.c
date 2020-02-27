@@ -43,7 +43,7 @@ msg_new(Packet *packet)
     // Set message packet
     msg->packet = packet_ref(packet);
     // Create message attribute hash table
-    msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     // Set SIP packet related data
     msg->payload = packet_sip_payload(packet);
     msg->ts = g_date_time_new_from_unix_usec(packet_time(packet));
@@ -173,7 +173,27 @@ const gchar *
 msg_get_attribute(Message *msg, gint id)
 {
     Attribute *attr = attr_header(id);
-    return attr_get_value(attr->name, msg);
+    g_return_val_if_fail(attr != NULL, NULL);
+
+    //! Check if this attribute was already requested
+    gchar *cached_value = g_hash_table_lookup(msg->attributes, attr->name);
+    if (cached_value != NULL) {
+        if (!attr->mutable) {
+            //! Attribute value doesn't change, return cached value
+            return cached_value;
+        } else {
+            //! Attribute value changes, cached value is obsolete
+            g_hash_table_remove(msg->attributes, attr->name);
+        }
+    }
+
+    //! Get current attribute value
+    gchar *value = attr_get_value(attr, msg);
+
+    //! Store value in attribute cache for future requests
+    g_hash_table_insert(msg->attributes, g_strdup(attr->name), value);
+
+    return value;
 }
 
 const gchar *
@@ -250,6 +270,11 @@ void
 msg_set_cached_attribute(Message *msg, Attribute *attr, gchar *value)
 {
     gchar *prev_value = g_hash_table_lookup(msg->attributes, attr->name);
+
+    //! Skip update on non mutable attributes
+    if (prev_value != NULL && !attr->mutable)
+        return;
+
     if (prev_value != NULL && g_strcmp0(prev_value, value) != 0) {
         g_free(prev_value);
         g_hash_table_remove(msg->attributes, attr->name);

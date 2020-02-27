@@ -1,336 +1,36 @@
 {
-   <g_option_context_parse>
+   Suppression
    Memcheck:Leak
    match-leak-kinds: definite
-   fun:malloc
-   fun:g_malloc
-   obj:/usr/lib64/libglib-2.0.so.0.5800.2
-   obj:/usr/lib64/libglib-2.0.so.0.5800.2
+   ...
    fun:g_option_context_parse
    fun:main
 }
-
-{
-   malloc
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:g_malloc
-   fun:parse_arg.isra.11
-   fun:parse_short_option
-   fun:g_option_context_parse
-   fun:main
-}
-
-{
-   main
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:g_malloc
-   fun:g_strdup
-   obj:/usr/lib64/libglib-2.0.so.0.5800.2
-   obj:/usr/lib64/libglib-2.0.so.0.5800.2
-   fun:g_option_context_parse
-   fun:main
-}
-
 {
    Suppression
    Memcheck:Leak
    match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
+   ...
    fun:g_type_register_fundamental
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.28.so
-   obj:*
-   obj:*
-   obj:*
 }
-
 {
    Suppression
    Memcheck:Leak
    match-leak-kinds: possible
-   fun:realloc
-   fun:g_realloc
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:g_type_register_static
+   ...
    fun:g_param_type_register_static
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.28.so
-   obj:*
-   obj:*
 }
-
 {
    Suppression
    Memcheck:Leak
    match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:g_type_register_fundamental
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.28.so
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   Suppression
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:g_type_register_fundamental
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.28.so
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   Suppression
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:g_type_register_fundamental
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.28.so
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   Suppression
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.28.so
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   Suppression
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc
-   fun:realloc
-   fun:g_realloc
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:g_type_register_fundamental
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.28.so
-   obj:*
-   obj:*
-}
-
-{
-   packet_get_type_once
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc
-   fun:realloc
-   fun:g_realloc
-   obj:/usr/lib64/libgobject-2.0.so.0.5800.2
-   fun:g_type_register_static
-   fun:g_type_register_static_simple
-   fun:packet_get_type_once
-   fun:packet_get_type
-   fun:packet_new
-   fun:capture_pcap_parse_packet
-   fun:capture_input_pcap_read_packet
-   fun:g_main_context_dispatch
-}
-
-{
-   calloc
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   fun:type_add_flags_W
-   fun:g_type_register_fundamental
-   fun:_g_enum_types_init
-   fun:gobject_init_ctor
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.29.so
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   realloc
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:realloc
-   fun:g_realloc
-   fun:type_node_any_new_W
-   fun:g_type_register_static
-   fun:g_param_type_register_static
-   fun:_g_param_spec_types_init
-   fun:gobject_init_ctor
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.29.so
-   obj:*
-   obj:*
-}
-
-{
-   calloc
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   fun:type_data_make_W
-   fun:g_type_register_fundamental
-   fun:_g_enum_types_init
-   fun:gobject_init_ctor
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.29.so
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   calloc
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   fun:type_data_make_W
-   fun:g_type_register_fundamental
-   fun:_g_param_type_init
-   fun:gobject_init_ctor
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.29.so
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   calloc
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   fun:type_add_flags_W
-   fun:g_type_register_fundamental
-   fun:_g_enum_types_init
-   fun:gobject_init_ctor
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.29.so
-   obj:*
-   obj:*
-   obj:*
-}
-
-{
-   calloc
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:g_malloc0
-   fun:type_node_any_new_W
+   ...
    fun:type_node_fundamental_new_W
-   fun:gobject_init_ctor
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.29.so
-   obj:*
-   obj:*
-   obj:*
-   obj:*
 }
-
 {
-   malloc
+   Suppression
    Memcheck:Leak
    match-leak-kinds: possible
-   fun:malloc
-   fun:realloc
-   fun:g_realloc
-   fun:type_add_flags_W
-   fun:g_type_register_fundamental
-   fun:_g_enum_types_init
-   fun:gobject_init_ctor
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/lib64/ld-2.29.so
-   obj:*
-   obj:*
-}
-
-{
-   malloc
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc
-   fun:realloc
-   fun:g_realloc
-   fun:type_node_any_new_W
-   fun:g_type_register_static
-   fun:g_type_register_static_simple
-   fun:packet_get_type_once
-   fun:packet_get_type
-   fun:packet_new
-   fun:capture_input_pcap_parse_packet
-   fun:capture_input_pcap_read_packet
-   fun:g_main_context_dispatch
-}
-
-{
-   malloc
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:g_malloc
-   fun:parse_arg.isra.0
-   fun:parse_short_option
-   fun:g_option_context_parse
-   fun:main
+   ...
+   fun:g_param_spec_internal
 }

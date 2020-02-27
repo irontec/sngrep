@@ -265,16 +265,4 @@ msg_is_retrans(Message *msg);
 gboolean
 msg_is_duplicate(const Message *msg);
 
-/**
- * @brief Store a new attribute value in message attribute cache
- */
-void
-msg_set_cached_attribute(Message *msg, Attribute *attr, gchar *value);
-
-/**
- * @brief Retrieve attribute value from message attribute cache
- */
-gchar *
-msg_get_cached_attribute(Message *msg, Attribute *attr);
-
 #endif /* __SNGREP_MESSAGE_H */

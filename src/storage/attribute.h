@@ -169,8 +169,8 @@ attr_find_by_name(const gchar *name);
  * @param msg Msg to get attribute from
  * @return string representation of the attribute
  */
-const gchar *
-attr_get_value(const gchar *name, Message *msg);
+gchar *
+attr_get_value(Attribute *attr, Message *msg);
 
 /**
  * @brief Determine the color of the attribute in Call List

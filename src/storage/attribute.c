@@ -134,26 +134,17 @@ attr_color(enum AttributeId id, const gchar *value)
     return 0;
 }
 
-const gchar *
-attr_get_value(const gchar *name, Message *msg)
+gchar *
+attr_get_value(Attribute *attr, Message *msg)
 {
-    g_return_val_if_fail(name != NULL, NULL);
     g_return_val_if_fail(msg != NULL, NULL);
-
-    Attribute *attr = attr_header(attr_find_by_name(name));
     g_return_val_if_fail(attr != NULL, NULL);
 
-    gchar *value = NULL;
-    if (!attr->mutable) {
-        value = msg_get_cached_attribute(msg, attr);
+    if (attr->getterFunc) {
+        return attr->getterFunc(attr, msg);
     }
 
-    if (value == NULL && attr->getterFunc) {
-        value = attr->getterFunc(attr, msg);
-        msg_set_cached_attribute(msg, attr, value);
-    }
-
-    return value;
+    return NULL;
 }
 
 gint
