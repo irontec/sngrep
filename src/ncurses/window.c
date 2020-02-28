@@ -308,7 +308,7 @@ window_constructed(GObject *object)
     priv->panel = new_panel(priv->win);
 
     /* update the object state depending on constructor properties */
-    G_OBJECT_CLASS (window_parent_class)->constructed(object);
+    G_OBJECT_CLASS(window_parent_class)->constructed(object);
 }
 
 static void
@@ -319,8 +319,8 @@ window_finalize(GObject *self)
     hide_panel(priv->panel);
 
     // Deallocate ncurses pointers
-    delwin(priv->win);
     del_panel(priv->panel);
+    delwin(priv->win);
 
     // Chain-up parent finalize function
     G_OBJECT_CLASS(window_parent_class)->finalize(self);
