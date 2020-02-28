@@ -401,8 +401,8 @@ call_list_draw_list(CallListWindow *self)
     WINDOW *list_win = self->list_win;
     getmaxyx(list_win, listh, listw);
 
-    // Get the list of calls that are goint to be displayed
-    g_ptr_array_free(self->dcalls, FALSE);
+    // Get the list of calls that are going to be displayed
+    g_ptr_array_free(self->dcalls, TRUE);
     self->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
 
     // If autoscroll is enabled, select the last dialog
@@ -1210,7 +1210,7 @@ call_list_finalize(GObject *object)
     // Deallocate window private data
     call_group_free(self->group);
     g_ptr_array_free(self->columns, TRUE);
-    g_ptr_array_free(self->dcalls, FALSE);
+    g_ptr_array_free(self->dcalls, TRUE);
     delwin(self->list_win);
 
     // Chain-up parent finalize function
