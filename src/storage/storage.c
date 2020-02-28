@@ -308,8 +308,13 @@ storage_check_sip_packet(Packet *packet)
             return;
 
         // Rotate call list if limit has been reached
-        if (storage->options.capture.limit == storage_calls_count())
-            storage_calls_rotate();
+        if (storage->options.capture.limit == storage_calls_count()) {
+            if (storage->options.capture.rotate) {
+                storage_calls_rotate();
+            } else {
+                return;
+            }
+        }
 
         // Create the call if not found
         if ((call = call_create(sip_data->callid, sip_data->xcallid)) == NULL)
@@ -458,7 +463,6 @@ storage_add_packet(Packet *packet)
     g_async_queue_push(storage->queue, (gpointer) packet);
 }
 
-//! Start capturing packets function
 static gboolean
 storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 {
