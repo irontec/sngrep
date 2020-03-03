@@ -111,6 +111,20 @@ capture_manager_stop(CaptureManager *manager)
     g_thread_join(manager->thread);
 }
 
+guint
+capture_manager_load_progress(CaptureManager *manager)
+{
+    guint64 total = 0, loaded = 0;
+
+    // Close all capture inputs
+    for (GSList *le = manager->inputs; le != NULL; le = le->next) {
+        total += capture_input_total_size(le->data);
+        loaded += capture_input_loaded_size(le->data);
+    }
+
+    return (loaded * 100) / total;
+}
+
 gboolean
 capture_manager_set_filter(CaptureManager *manager, gchar *filter, GError **error)
 {

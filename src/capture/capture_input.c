@@ -42,6 +42,10 @@ typedef struct
     gchar *source_str;
     //! Source of events for this input
     GSource *source;
+    //! Input size for offline mode in bytes
+    guint64 size;
+    //! Input loaded bytes so far
+    guint64 loaded;
     //! Initial dissector for this input packets
     PacketProtocol initial;
 } CaptureInputPrivate;
@@ -174,6 +178,39 @@ capture_input_source_str(CaptureInput *self)
 }
 
 void
+capture_input_set_total_size(CaptureInput *self, guint64 size)
+{
+    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
+    g_return_if_fail(priv != NULL);
+    priv->size = size;
+}
+
+guint64
+capture_input_total_size(CaptureInput *self)
+{
+    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
+    g_return_val_if_fail(priv != NULL, 0);
+    return priv->size;
+}
+
+void
+capture_input_set_loaded_size(CaptureInput *self, guint64 loaded)
+{
+    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
+    g_return_if_fail(priv != NULL);
+    priv->loaded = loaded;
+}
+
+guint64
+capture_input_loaded_size(CaptureInput *self)
+{
+    CaptureInputPrivate *priv = capture_input_get_instance_private(self);
+    g_return_val_if_fail(priv != NULL, 0);
+    return priv->loaded;
+}
+
+
+void
 capture_input_set_initial_protocol(CaptureInput *self, PacketProtocol id)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
@@ -217,4 +254,7 @@ capture_input_class_init(CaptureInputClass *klass)
 static void
 capture_input_init(G_GNUC_UNUSED CaptureInput *self)
 {
+    CaptureInputPrivate *priv = capture_input_get_instance_private(CAPTURE_INPUT(self));
+    priv->size = 0;
+    priv->loaded = 0;
 }

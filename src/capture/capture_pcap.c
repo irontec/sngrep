@@ -31,6 +31,7 @@
  */
 
 #include "config.h"
+#include <sys/stat.h>
 #include <glib.h>
 #include <netdb.h>
 #include <string.h>
@@ -72,6 +73,12 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
     // Create a new packet
     Packet *packet = packet_new(CAPTURE_INPUT(pcap));
     packet->frames = g_list_append(packet->frames, frame);
+
+    // Increase Capture input parsed bytes
+    capture_input_set_loaded_size(
+        CAPTURE_INPUT(pcap),
+        capture_input_loaded_size(CAPTURE_INPUT(pcap)) + header->caplen
+    );
 
     // Pass packet to dissectors
     storage_add_packet(packet);
@@ -118,6 +125,9 @@ capture_input_pcap_stop(CaptureInput *input)
     }
 
     pcap->handle = NULL;
+
+    // Mark the input as full loaded
+    capture_input_set_loaded_size(input, capture_input_total_size(input));
 
     // Detach capture source from capture main loop
     if (!g_source_is_destroyed(capture_input_source(input))) {
@@ -233,6 +243,13 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_OFFLINE);
     g_autofree gchar *basename = g_path_get_basename(infile);
     capture_input_set_source_str(CAPTURE_INPUT(pcap), basename);
+
+    // Get File
+    if (g_file_test(infile, G_FILE_TEST_IS_REGULAR)) {
+        struct stat st = { 0 };
+        stat(infile, &st);
+        capture_input_set_total_size(CAPTURE_INPUT(pcap), st.st_size);
+    }
 
     // Create GSource for main loop
     capture_input_set_source(

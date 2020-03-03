@@ -97,6 +97,18 @@ const gchar *
 capture_input_source_str(CaptureInput *self);
 
 void
+capture_input_set_total_size(CaptureInput *self, guint64 size);
+
+guint64
+capture_input_total_size(CaptureInput *self);
+
+void
+capture_input_set_loaded_size(CaptureInput *self, guint64 loaded);
+
+guint64
+capture_input_loaded_size(CaptureInput *self);
+
+void
 capture_input_set_initial_protocol(CaptureInput *self, PacketProtocol id);
 
 PacketProtocol

@@ -76,10 +76,16 @@ static gboolean
 print_storage_count(GMainLoop *loop)
 {
     setbuf(stdout, NULL);
-    g_print("\rDialog count: %d", storage_calls_count());
+
+    g_print(
+        "\rProgress: %d%%\tDialog count: %d",
+        capture_manager_load_progress(capture_manager_get_instance()),
+        storage_calls_count()
+    );
+
     if (capture_is_running() == FALSE &&
         storage_pending_packets() == 0) {
-        g_print("\n");
+        g_print("\r\n");
         g_main_loop_quit(loop);
     }
     return TRUE;
@@ -253,7 +259,7 @@ main(int argc, char *argv[])
             return 1;
         }
 
-        // Check each file agains given pattern
+        // Check each file against given pattern
         const gchar *fname = NULL;
         GPatternSpec *match = g_pattern_spec_new(glob);
         while ((fname = g_dir_read_name(dir)) != NULL) {

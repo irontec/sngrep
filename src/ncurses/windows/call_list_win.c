@@ -250,6 +250,13 @@ call_list_draw_header(CallListWindow *self)
     }
     wprintw(win, "%s ", capture_status_desc(capture_manager_get_instance()));
 
+    if (!capture_is_online(capture_manager_get_instance())) {
+        guint progress = capture_manager_load_progress(capture_manager_get_instance());
+        if (progress > 0 && progress < 100) {
+            wprintw(win, "[%d%%]", progress);
+        }
+    }
+
     // Get online mode capture device
     if ((device = capture_input_pcap_device(capture_manager_get_instance())))
         wprintw(win, "[%s]", device);

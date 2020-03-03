@@ -127,6 +127,14 @@ void
 capture_manager_stop(CaptureManager *manager);
 
 /**
+ * @brief Get Current loaded percentage
+ * @param manager
+ * @return Loaded percentage
+ */
+guint
+capture_manager_load_progress(CaptureManager *manager);
+
+/**
  * @brief Set a bpf filter in open capture
  *
  * @param filter String containing the BPF filter text
