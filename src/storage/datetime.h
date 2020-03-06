@@ -37,13 +37,13 @@
  * @brief Convert timeval to yyyy/mm/dd format
  */
 const gchar *
-date_time_date_to_str(GDateTime *time, gchar *out);
+date_time_date_to_str(guint64 time, gchar *out);
 
 /**
  * @brief Convert timeval to HH:MM:SS.mmmmmm format
  */
 const gchar *
-date_time_time_to_str(GDateTime *time, gchar *out);
+date_time_time_to_str(guint64 time, gchar *out);
 
 /**
  * @brief Calculate the time difference between two timeval
@@ -51,13 +51,13 @@ date_time_time_to_str(GDateTime *time, gchar *out);
  * @return Human readable time difference in mm:ss format
  */
 const gchar *
-date_time_to_duration(GDateTime *start, GDateTime *end, gchar *out);
+date_time_to_duration(guint64 start, guint64 end, gchar *out);
 
 /**
  * @brief Convert timeval diference to +mm:ss.mmmmmm
  */
 const gchar *
-date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out);
+date_time_to_delta(guint64 start, guint64 end, gchar *out);
 
 /**
  * @brief Convert datetime to microseconds unix timestamp

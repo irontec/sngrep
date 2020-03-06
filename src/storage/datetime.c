@@ -30,38 +30,45 @@
 #include <stdlib.h>
 #include <glib.h>
 #include <glib/gprintf.h>
+#include "glib/glib-extra.h"
 #include "datetime.h"
 
 const gchar *
-date_time_date_to_str(GDateTime *time, gchar *out)
+date_time_date_to_str(guint64 time, gchar *out)
 {
     GDate date;
-    g_date_set_time_t(&date, g_date_time_to_unix(time));
+    g_date_set_time_t(&date, time);
     g_date_strftime(out, 11, "%Y/%m/%d", &date);
     return out;
 }
 
 
 const gchar *
-date_time_time_to_str(GDateTime *time, gchar *out)
+date_time_time_to_str(guint64 ts, gchar *out)
 {
+    g_autoptr(GDateTime) time = g_date_time_new_from_unix_usec(ts);
+
     g_sprintf(out, "%s.%06d",
               g_date_time_format(time, "%H:%M:%S"),
               g_date_time_get_microsecond(time)
     );
+
     return out;
 }
 
 const gchar *
-date_time_to_duration(GDateTime *start, GDateTime *end, gchar *out)
+date_time_to_duration(guint64 start, guint64 end, gchar *out)
 {
     g_return_val_if_fail(out != NULL, NULL);
 
-    if (start == NULL || end == NULL)
+    if (start == 0 || end == 0)
         return NULL;
 
-    // Differnce in secons
-    glong seconds = g_date_time_difference(end, start) / G_USEC_PER_SEC;
+    g_autoptr(GDateTime) start_time = g_date_time_new_from_unix_usec(start);
+    g_autoptr(GDateTime) end_time = g_date_time_new_from_unix_usec(end);
+
+    // Difference in seconds
+    glong seconds = g_date_time_difference(end_time, start_time) / G_USEC_PER_SEC;
 
     // Set Human readable format
     g_sprintf(out, "%lu:%02lu", seconds / 60, seconds % 60);
@@ -69,14 +76,17 @@ date_time_to_duration(GDateTime *start, GDateTime *end, gchar *out)
 }
 
 const gchar *
-date_time_to_delta(GDateTime *start, GDateTime *end, gchar *out)
+date_time_to_delta(guint64 start, guint64 end, gchar *out)
 {
     g_return_val_if_fail(out != NULL, NULL);
 
-    if (start == NULL || end == NULL)
+    if (start == 0 || end == 0)
         return NULL;
 
-    glong diff = g_date_time_difference(end, start);
+    g_autoptr(GDateTime) start_time = g_date_time_new_from_unix_usec(start);
+    g_autoptr(GDateTime) end_time = g_date_time_new_from_unix_usec(end);
+
+    glong diff = g_date_time_difference(end_time, start_time);
 
     glong nsec = diff / G_USEC_PER_SEC;
     glong nusec = labs(diff - (nsec * G_USEC_PER_SEC));

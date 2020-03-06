@@ -109,23 +109,21 @@ call_flow_arrow_selected(Window *window)
  * @param arrow Arrow structure pointer
  * @return timestamp for given arrow
  */
-static GDateTime *
+static guint64
 call_flow_arrow_time(const CallFlowArrow *arrow)
 {
-    GDateTime *ts = NULL;
-    Message *msg;
-    Stream *stream;
+    guint64 ts = 0;
 
-    if (!arrow)
-        return ts;
-
-    if (arrow->type == CF_ARROW_SIP) {
-        msg = (Message *) arrow->item;
-        ts = msg->ts;
-    } else if (arrow->type == CF_ARROW_RTP) {
-        stream = (Stream *) arrow->item;
-        ts = stream_time(stream);
+    if (arrow) {
+        if (arrow->type == CF_ARROW_SIP) {
+            Message *msg = (Message *) arrow->item;
+            ts = msg_get_time(msg);
+        } else if (arrow->type == CF_ARROW_RTP) {
+            Stream *stream = (Stream *) arrow->item;
+            ts = stream_time(stream);
+        }
     }
+
     return ts;
 }
 
@@ -138,7 +136,7 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
 static gint
 call_flow_arrow_time_sorter(const CallFlowArrow **a, const CallFlowArrow **b)
 {
-    return g_date_time_compare(call_flow_arrow_time(*a), call_flow_arrow_time(*b));
+    return call_flow_arrow_time(*a) > call_flow_arrow_time(*b);
 }
 
 /**
@@ -824,7 +822,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     if (sdp_data != NULL) {
         media = g_list_nth_data(sdp_data->medias, 0);
     }
-    // For extended, use xcallid nstead
+    // For extended, use xcallid instead
     date_time_time_to_str(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
@@ -1023,14 +1021,18 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
             if (self->selected == -1) {
                 if (setting_enabled(SETTING_CF_DELTA)) {
-                    GDateTime *nextts = msg_get_time(call_group_get_next_msg(self->group, msg));
-                    GDateTime *curts = msg_get_time(msg);
-                    date_time_to_delta(curts, nextts, delta);
+                    date_time_to_delta(
+                        msg_get_time(msg),
+                        msg_get_time(call_group_get_next_msg(self->group, msg)),
+                        delta
+                    );
                 }
             } else if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-                GDateTime *selts = msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window)));
-                GDateTime *curts = msg_get_time(msg);
-                date_time_to_delta(selts, curts, delta);
+                date_time_to_delta(
+                    msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window))),
+                    msg_get_time(msg),
+                    delta
+                );
             }
 
             if (strlen(delta)) {

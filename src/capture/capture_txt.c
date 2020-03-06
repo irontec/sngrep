@@ -61,13 +61,9 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     PacketFrame *frame = g_list_nth_data(packet->frames, 0);
     g_return_if_fail(frame != NULL);
 
-    // Get packet data
-    g_autoptr(GDateTime) frame_date = g_date_time_new_from_timeval(
-        packet_frame_seconds(frame),
-        packet_frame_microseconds(frame)
-    );
-    date_time_date_to_str(frame_date, date);
-    date_time_time_to_str(frame_date, time);
+    date_time_date_to_str(packet_frame_microseconds(frame), date);
+    date_time_time_to_str(packet_frame_microseconds(frame), time);
+
     Address *src = packet_src_address(packet);
     g_return_if_fail(src != NULL);
     Address *dst = packet_dst_address(packet);

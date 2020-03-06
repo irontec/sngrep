@@ -60,8 +60,8 @@ struct _Stream
     PacketSdpMedia *media;
     //! SIP message that setup this stream
     Message *msg;
-    //! First received packet time
-    GDateTime *firsttv;
+    //! First received packet unix timestamp microseconds
+    guint64 first_ts;
     //! Last time this stream was updated
     gint64 lasttm;
     //! Changed since last checked flag
@@ -134,7 +134,7 @@ stream_get_count(Stream *stream);
 const char *
 stream_get_format(Stream *stream);
 
-GDateTime *
+guint64
 stream_time(Stream *stream);
 
 /**

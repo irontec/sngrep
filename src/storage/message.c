@@ -46,7 +46,7 @@ msg_new(Packet *packet)
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     // Set SIP packet related data
     msg->payload = packet_sip_payload(packet);
-    msg->ts = g_date_time_new_from_unix_usec(packet_time(packet));
+    msg->ts = packet_time(packet);
     msg->src = address_clone(packet_src_address(packet));
     msg->dst = address_clone(packet_dst_address(packet));
     msg->is_request = packet_sip_method(packet) < 100;
@@ -69,7 +69,6 @@ void
 msg_free(Message *msg)
 {
     // Free message packets
-    g_date_time_unref(msg->ts);
     packet_unref(msg->packet);
     g_hash_table_destroy(msg->attributes);
     address_free(msg->src);
@@ -161,11 +160,11 @@ msg_get_payload(Message *msg)
     return msg->payload;
 }
 
-GDateTime *
+guint64
 msg_get_time(const Message *msg)
 {
     if (msg == NULL)
-        return NULL;
+        return 0;
     return msg->ts;
 }
 
@@ -259,8 +258,13 @@ msg_is_duplicate(const Message *msg)
     if (msg->retrans == NULL)
         return FALSE;
 
-    GDateTime *orig_ts = msg_get_time(msg->retrans);
-    GDateTime *retrans_ts = msg_get_time(msg);
+    g_autoptr(GDateTime) orig_ts = g_date_time_new_from_unix_usec(
+        msg_get_time(msg->retrans)
+    );
+
+    g_autoptr(GDateTime) retrans_ts = g_date_time_new_from_unix_usec(
+        msg_get_time(msg)
+    );
 
     // Consider duplicate if difference with its original is 10ms or less
     return g_date_time_difference(retrans_ts, orig_ts) > 10000;

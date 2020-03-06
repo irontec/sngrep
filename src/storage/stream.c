@@ -50,10 +50,6 @@ stream_new(StreamType type, Message *msg, PacketSdpMedia *media)
 void
 stream_free(Stream *stream)
 {
-    if (stream->firsttv != NULL) {
-        g_date_time_unref(stream->firsttv);
-    }
-
     g_ptr_array_free(stream->packets, TRUE);
     address_free(stream->src);
     address_free(stream->dst);
@@ -185,8 +181,8 @@ stream_add_packet(Stream *stream, Packet *packet)
     stream->lasttm = g_get_monotonic_time();
     stream->changed = TRUE;
     stream->packet_count++;
-    if (stream->firsttv == NULL) {
-        stream->firsttv = g_date_time_new_from_unix_usec(packet_time(packet));
+    if (stream->first_ts == 0) {
+        stream->first_ts = packet_time(packet);
     }
 
     // Add received packet to stream stats
@@ -223,10 +219,10 @@ stream_get_format(Stream *stream)
     return g_strdup_printf("unknown-%d", stream->fmtcode);
 }
 
-GDateTime *
+guint64
 stream_time(Stream *stream)
 {
-    return stream->firsttv;
+    return stream->first_ts;
 }
 
 gboolean

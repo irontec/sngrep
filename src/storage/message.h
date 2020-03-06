@@ -52,8 +52,8 @@ struct _Message
 {
     //! Message owner
     Call *call;
-    //! Capture timestamp
-    GDateTime *ts;
+    //! Capture timestamp microseconds
+    guint64 ts;
     //! Source Address
     Address *src;
     //! Destination Adddress
@@ -206,9 +206,9 @@ msg_get_payload(Message *msg);
  * @brief Get Time of message from packet header
  *
  * @param msg SIP message
- * @return timeval structure with message first packet time
+ * @return seconds in unix timestamp microseconds
  */
-GDateTime *
+guint64
 msg_get_time(const Message *msg);
 
 /**
