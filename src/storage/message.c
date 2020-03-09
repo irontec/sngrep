@@ -44,24 +44,6 @@ msg_new(Packet *packet)
     msg->packet = packet_ref(packet);
     // Create message attribute hash table
     msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-    // Set SIP packet related data
-    msg->payload = packet_sip_payload(packet);
-    msg->ts = packet_time(packet);
-    msg->src = address_clone(packet_src_address(packet));
-    msg->dst = address_clone(packet_dst_address(packet));
-    msg->is_request = packet_sip_method(packet) < 100;
-    msg->cseq = packet_sip_cseq(packet);
-
-    if (msg->is_request) {
-        msg->request.id = packet_sip_method(packet);
-        msg->request.method = g_strdup(packet_sip_method_str(packet));
-        msg->request.auth = g_strdup(packet_sip_auth_data(packet));
-        msg->request.is_initial = packet_sip_initial_transaction(packet);
-    } else {
-        msg->response.code = packet_sip_method(packet);
-        msg->response.reason = g_strdup(packet_sip_method_str(packet));
-    }
-
     return msg;
 }
 
@@ -71,14 +53,6 @@ msg_free(Message *msg)
     // Free message packets
     packet_unref(msg->packet);
     g_hash_table_destroy(msg->attributes);
-    address_free(msg->src);
-    address_free(msg->dst);
-    if (msg->is_request) {
-        g_free(msg->request.method);
-        g_free(msg->request.auth);
-    } else {
-        g_free(msg->response.reason);
-    }
     g_free(msg);
 }
 
@@ -110,7 +84,7 @@ msg_media_for_addr(Message *msg, Address *dst)
         if (addressport_equals(media->address, dst)) {
             return media;
         }
-        if (address_equals(dst, msg->src) && dst->port == media->address->port) {
+        if (address_equals(dst, msg_src_address(msg)) && dst->port == media->address->port) {
             return media;
         }
     }
@@ -121,7 +95,7 @@ msg_media_for_addr(Message *msg, Address *dst)
 gboolean
 msg_is_initial_transaction(Message *msg)
 {
-    return msg->request.is_initial;
+    return packet_sip_initial_transaction(msg->packet);
 }
 
 gboolean
@@ -133,39 +107,49 @@ msg_has_sdp(void *item)
 const Address *
 msg_src_address(Message *msg)
 {
-    return msg->src;
+    return packet_src_address(msg->packet);
 }
 
 const Address *
 msg_dst_address(Message *msg)
 {
-    return msg->dst;
+    return packet_dst_address(msg->packet);
 }
 
 gboolean
 msg_is_request(Message *msg)
 {
-    return msg->is_request;
+    return packet_sip_is_resquest(msg->packet);
+}
+
+guint
+msg_get_method(Message *msg)
+{
+    return packet_sip_method(msg->packet);
+}
+
+const gchar *
+msg_get_method_str(Message *msg)
+{
+    return packet_sip_method_str(msg->packet);
 }
 
 guint64
 msg_get_cseq(Message *msg)
 {
-    return msg->cseq;
+    return packet_sip_cseq(msg->packet);
 }
 
 const gchar *
 msg_get_payload(Message *msg)
 {
-    return msg->payload;
+    return packet_sip_payload(msg->packet);
 }
 
 guint64
 msg_get_time(const Message *msg)
 {
-    if (msg == NULL)
-        return 0;
-    return msg->ts;
+    return packet_time(msg->packet);
 }
 
 const gchar *
@@ -290,4 +274,10 @@ gchar *
 msg_get_cached_attribute(Message *msg, Attribute *attr)
 {
     return g_hash_table_lookup(msg->attributes, attr->name);
+}
+
+const gchar *
+msg_get_auth_hdr(const Message *msg)
+{
+    return packet_sip_auth_data(msg->packet);
 }

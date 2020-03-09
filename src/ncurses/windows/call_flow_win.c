@@ -826,7 +826,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     date_time_time_to_str(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
-    sprintf(msg_method, "%s", msg->request.method);
+    sprintf(msg_method, "%s", msg_get_method_str(msg));
     strcpy(method, msg_method);
 
     // If message has sdp information
@@ -910,7 +910,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         color = call_group_color(self->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        color = msg->cseq % 7 + 1;
+        color = msg_get_cseq(msg) % 7 + 1;
     }
 
     // Print arrow in the same line than message

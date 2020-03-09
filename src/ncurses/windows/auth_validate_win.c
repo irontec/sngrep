@@ -215,7 +215,7 @@ auth_validate_win_set_group(Window *window, CallGroup *group)
         if (!msg_is_request(msg))
             continue;
 
-        if (msg->request.auth != NULL) {
+        if (msg_get_auth_hdr(msg) != NULL) {
             auth_validate_win_set_msg(window, msg);
             break;
         }
@@ -235,13 +235,13 @@ auth_validate_win_set_msg(Window *window, Message *msg)
     if (!msg_is_request(msg))
         return;
 
-    self->method = msg->request.method;
+    self->method = msg_get_method_str(msg);
 
     GRegex *auth_param = g_regex_new(
         "^(?P<authhdrname>\\w+)=\"?(?P<authhdrvalue>[^\"]+)\"?",
         G_REGEX_OPTIMIZE | G_REGEX_CASELESS, G_REGEX_MATCH_NEWLINE_CR, NULL);
 
-    gchar *auth_value = g_strdup(msg->request.auth);
+    gchar *auth_value = g_strdup(msg_get_auth_hdr(msg));
     if (strncasecmp(auth_value, "Digest", 6) == 0) {
         auth_value += 6;
     }

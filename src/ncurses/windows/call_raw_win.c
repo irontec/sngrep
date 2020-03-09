@@ -131,7 +131,7 @@ call_raw_win_print_msg(Window *window, Message *msg)
         color = call_group_color(self->group, msg->call);
     } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
         // Color by CSeq within the same call
-        color = msg->cseq % 7 + 1;
+        color = msg_get_cseq(msg) % 7 + 1;
     }
 
     // Turn on the message color

@@ -273,9 +273,10 @@ storage_register_streams(Message *msg)
         );
 
         // Create RTP stream with source of message as destination address
-        if (!address_equals(media->address, msg->src)) {
+        const Address *msg_src = msg_src_address(msg);
+        if (!address_equals(media->address, msg_src)) {
             storage_register_stream(
-                storage_stream_key(msg->src->ip, media->address->port),
+                storage_stream_key(msg_src->ip, media->address->port),
                 msg
             );
         }

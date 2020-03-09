@@ -52,42 +52,6 @@ struct _Message
 {
     //! Message owner
     Call *call;
-    //! Capture timestamp microseconds
-    guint64 ts;
-    //! Source Address
-    Address *src;
-    //! Destination Adddress
-    Address *dst;
-    //! Is this SIP message a request or response
-    gboolean is_request;
-    //! SIP Payload
-    const gchar *payload;
-    //! Message CSeq number
-    guint64 cseq;
-    //! Request/Response specific information
-    union
-    {
-        //! Request specific information
-        struct
-        {
-            //! Method ID from SipMethods enum
-            guint id;
-            //! Method string from sip_codes
-            gchar *method;
-            //! Is this the first message of the dialog?
-            gboolean is_initial;
-            //! Message Authorization header
-            gchar *auth;
-        } request;
-        //! Response specific information
-        struct
-        {
-            //! Response code
-            guint code;
-            //! Response text from sip_codes
-            gchar *reason;
-        } response;
-    };
     //! Captured packet for this message
     Packet *packet;
     //! Attribute list for this message
@@ -181,6 +145,22 @@ gboolean
 msg_is_request(Message *msg);
 
 /**
+ * @brief Return Message method code
+ * @param msg SIP message pointer
+ * @return Method code if message is a request, Response code if message is a response
+ */
+guint
+msg_get_method(Message *msg);
+
+/**
+ * @brief Return Message method in string
+ * @param msg SIP message pointer
+ * @return Method string if message is a request, Response text if message is a response
+ */
+const gchar *
+msg_get_method_str(Message *msg);
+
+/**
  * @brief Determine if message is part of initial transaction
  *
  * @param msg SIP message that will be checked
@@ -264,5 +244,13 @@ msg_is_retrans(Message *msg);
  */
 gboolean
 msg_is_duplicate(const Message *msg);
+
+/**
+ * @brief Get Authoriztion-Header content
+ * @param msg SIP Message
+ * @return Authorization-Header content or NULL if message has no Auth header
+ */
+const gchar *
+msg_get_auth_hdr(const Message *msg);
 
 #endif /* __SNGREP_MESSAGE_H */

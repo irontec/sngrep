@@ -187,6 +187,12 @@ packet_sip_method(const Packet *packet)
     return packet_sip_data(packet)->code.id;
 }
 
+gboolean
+packet_sip_is_resquest(const Packet *packet)
+{
+    return packet_sip_data(packet)->code.id > 100;
+}
+
 guint64
 packet_sip_cseq(const Packet *packet)
 {

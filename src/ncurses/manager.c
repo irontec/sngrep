@@ -346,7 +346,7 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
 
     // Get message method (if request)
     if (msg_is_request(msg)) {
-        method = msg->request.method;
+        method = msg_get_method_str(msg);
     }
 
     // Get packet payload

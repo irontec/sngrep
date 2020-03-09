@@ -157,7 +157,7 @@ stats_constructed(GObject *object)
         // For each message in call
         for (guint i = 0; i < g_ptr_array_len(call->msgs); i++) {
             Message *msg = g_ptr_array_index(call->msgs, i);
-            guint method = msg->request.id;
+            guint method = msg_get_method(msg);
 
             // Increase message counter
             stats.mtotal++;

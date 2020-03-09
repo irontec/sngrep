@@ -117,7 +117,7 @@ call_is_invite(Call *call)
     Message *first = g_ptr_array_first(call->msgs);
     g_return_val_if_fail(first != NULL, 0);
 
-    return first->request.id == SIP_METHOD_INVITE;
+    return msg_get_method(first) == SIP_METHOD_INVITE;
 }
 
 void
@@ -127,8 +127,8 @@ call_update_state(Call *call, Message *msg)
         return;
 
     // Get current message Method / Response Code
-    guint msg_reqresp = msg->request.id;
-    guint64 msg_cseq = msg->cseq;
+    guint msg_reqresp = msg_get_method(msg);
+    guint64 msg_cseq = msg_get_cseq(msg);
 
     // If this message is actually a call, get its current state
     if (call->state) {

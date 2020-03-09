@@ -114,6 +114,9 @@ packet_sip_method_str(const Packet *packet);
 guint
 packet_sip_method(const Packet *packet);
 
+gboolean
+packet_sip_is_resquest(const Packet *packet);
+
 guint64
 packet_sip_cseq(const Packet *packet);
 
