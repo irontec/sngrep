@@ -42,7 +42,7 @@ PacketUdpData *
 packet_udp_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
-    return g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
+    return packet_get_protocol_data(packet, PACKET_PROTO_UDP);
 }
 
 static GByteArray *
@@ -53,6 +53,7 @@ packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     //! Is this a IP/TCP packet?
     PacketIpData *ip_data = packet_ip_data(packet);
+    g_return_val_if_fail(ip_data != NULL, data);
     if (ip_data->protocol != IPPROTO_UDP)
         return data;
 
@@ -73,7 +74,7 @@ packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *
 #endif
 
     // Store udp data
-    packet_add_type(packet, PACKET_PROTO_UDP, udp_data);
+    packet_set_protocol_data(packet, PACKET_PROTO_UDP, udp_data);
 
     // Get pending payload
     g_byte_array_remove_range(data, 0, udp_off);

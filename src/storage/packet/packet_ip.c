@@ -39,7 +39,7 @@ PacketIpData *
 packet_ip_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
-    return g_ptr_array_index(packet->proto, PACKET_PROTO_IP);
+    return packet_get_protocol_data(packet, PACKET_PROTO_IP);
 }
 
 static gint
@@ -212,7 +212,7 @@ packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GByteArray *d
     g_utf8_strncpy(ip_data->dstip, fragment->dstip, ADDRESSLEN);
     ip_data->version = fragment->version;
     ip_data->protocol = fragment->proto;
-    packet_add_type(packet, PACKET_PROTO_IP, ip_data);
+    packet_set_protocol_data(packet, PACKET_PROTO_IP, ip_data);
 
     // Get pending payload
     g_byte_array_remove_range(data, 0, fragment->hl);

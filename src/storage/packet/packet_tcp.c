@@ -41,7 +41,7 @@ PacketTcpData *
 packet_tcp_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
-    return g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
+    return packet_get_protocol_data(packet, PACKET_PROTO_TCP);
 }
 
 /**
@@ -90,7 +90,7 @@ packet_tcp_assembly_hashkey(PacketTcpSegment *segment)
     g_return_val_if_fail(packet != NULL, NULL);
     PacketIpData *ipdata = packet_ip_data(packet);
     g_return_val_if_fail(ipdata != NULL, NULL);
-    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
+    PacketTcpData *tcpdata = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
     g_return_val_if_fail(tcpdata != NULL, NULL);
 
     return g_strdup_printf(
@@ -219,7 +219,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *
 #endif
 
     // Set packet protocol data
-    packet_add_type(packet, PACKET_PROTO_TCP, tcp_data);
+    packet_set_protocol_data(packet, PACKET_PROTO_TCP, tcp_data);
 
     // Remove TCP header length
     g_byte_array_remove_range(data, 0, tcp_data->off);
@@ -253,7 +253,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *
     packet_dissector_next(self, packet, stream->data);
 
     // Not interesting stream
-    if (!packet_has_type(packet, PACKET_PROTO_SIP)) {
+    if (!packet_has_protocol(packet, PACKET_PROTO_SIP)) {
         g_hash_table_remove(dissector->assembly, stream->hashkey);
         return data;
     }

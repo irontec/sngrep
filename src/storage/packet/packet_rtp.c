@@ -85,7 +85,7 @@ packet_rtp_data(const Packet *packet)
     g_return_val_if_fail(packet != NULL, NULL);
 
     // Get Packet rtp data
-    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
+    PacketRtpData *rtp = packet_get_protocol_data(packet, PACKET_PROTO_RTP);
     g_return_val_if_fail(rtp != NULL, NULL);
 
     return rtp;
@@ -141,7 +141,7 @@ packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
     rtp->payload = g_byte_array_ref(data);
 
     // Set packet RTP information
-    packet_add_type(packet, PACKET_PROTO_RTP, rtp);
+    packet_set_protocol_data(packet, PACKET_PROTO_RTP, rtp);
 
     // Add data to storage
     storage_check_rtp_packet(packet);
@@ -153,7 +153,7 @@ static void
 packet_dissector_rtp_free(Packet *packet)
 {
     g_return_if_fail(packet != NULL);
-    PacketRtpData *rtp_data = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
+    PacketRtpData *rtp_data = packet_get_protocol_data(packet, PACKET_PROTO_RTP);
     g_return_if_fail(rtp_data != NULL);
 
     if (packet_rtp_standard_codec(rtp_data->encoding->id) == NULL) {

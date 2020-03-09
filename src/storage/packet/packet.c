@@ -48,7 +48,7 @@ packet_init(Packet *self)
 }
 
 static void
-packet_dispose(GObject *gobject)
+packet_finalize(GObject *gobject)
 {
     // Free packet data
     packet_free(SNGREP_PACKET(gobject));
@@ -70,7 +70,7 @@ packet_proto_free(gpointer proto_id, Packet *packet)
 {
     PacketProtocol id = GPOINTER_TO_INT(proto_id);
 
-    if (packet_has_type(packet, id)) {
+    if (packet_has_protocol(packet, id)) {
         PacketDissector *dissector = storage_find_dissector(id);
         packet_dissector_free_data(dissector, packet);
     }
@@ -105,6 +105,24 @@ packet_unref(Packet *packet)
     g_object_unref(packet);
 }
 
+void
+packet_set_protocol_data(Packet *packet, PacketProtocol proto, gpointer data)
+{
+    g_ptr_array_set(packet->proto, proto, data);
+}
+
+gpointer
+packet_get_protocol_data(const Packet *packet, PacketProtocol proto)
+{
+    return g_ptr_array_index(packet->proto, proto);
+}
+
+gboolean
+packet_has_protocol(const Packet *packet, PacketProtocol proto)
+{
+    return packet_get_protocol_data(packet, proto) != NULL;
+}
+
 /**
  * @todo Fix address retro-compatibilities
  */
@@ -117,12 +135,12 @@ packet_src_address(Packet *packet)
         g_return_val_if_fail(ip, NULL);
 
         // Get Port from UDP or TCP parsed protocol
-        if (packet_has_type(packet, PACKET_PROTO_UDP)) {
-            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
+        if (packet_has_protocol(packet, PACKET_PROTO_UDP)) {
+            PacketUdpData *udp = packet_get_protocol_data(packet, PACKET_PROTO_UDP);
             g_return_val_if_fail(udp, NULL);
             packet->src = address_new(ip->srcip, udp->sport);
         } else {
-            PacketTcpData *tcp = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
+            PacketTcpData *tcp = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
             g_return_val_if_fail(tcp, NULL);
             packet->src = address_new(ip->srcip, tcp->sport);
         }
@@ -143,12 +161,12 @@ packet_dst_address(Packet *packet)
         g_return_val_if_fail(ip, NULL);
 
         // Get Port from UDP or TCP parsed protocol
-        if (packet_has_type(packet, PACKET_PROTO_UDP)) {
-            PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
+        if (packet_has_protocol(packet, PACKET_PROTO_UDP)) {
+            PacketUdpData *udp = packet_get_protocol_data(packet, PACKET_PROTO_UDP);
             g_return_val_if_fail(udp, NULL);
             packet->dst = address_new(ip->dstip, udp->dport);
         } else {
-            PacketUdpData *tcp = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
+            PacketUdpData *tcp = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
             g_return_val_if_fail(tcp, NULL);
             packet->dst = address_new(ip->dstip, tcp->dport);
         }
@@ -160,14 +178,14 @@ packet_dst_address(Packet *packet)
 const char *
 packet_transport(Packet *packet)
 {
-    if (packet_has_type(packet, PACKET_PROTO_UDP))
+    if (packet_has_protocol(packet, PACKET_PROTO_UDP))
         return "UDP";
 
-    if (packet_has_type(packet, PACKET_PROTO_TCP)) {
-        if (packet_has_type(packet, PACKET_PROTO_WS)) {
-            return (packet_has_type(packet, PACKET_PROTO_TLS)) ? "WSS" : "WS";
+    if (packet_has_protocol(packet, PACKET_PROTO_TCP)) {
+        if (packet_has_protocol(packet, PACKET_PROTO_WS)) {
+            return (packet_has_protocol(packet, PACKET_PROTO_TLS)) ? "WSS" : "WS";
         }
-        return packet_has_type(packet, PACKET_PROTO_TLS) ? "TLS" : "TCP";
+        return packet_has_protocol(packet, PACKET_PROTO_TLS) ? "TLS" : "TCP";
     }
     return "???";
 }
@@ -235,5 +253,5 @@ packet_class_init(G_GNUC_UNUSED PacketClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
 
     // Set finalize functions
-    object_class->dispose = packet_dispose;
+    object_class->finalize = packet_finalize;
 }

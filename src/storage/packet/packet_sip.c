@@ -154,7 +154,7 @@ packet_sip_data(const Packet *packet)
     g_return_val_if_fail(packet != NULL, NULL);
 
     // Get Packet sip data
-    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_PROTO_SIP);
+    PacketSipData *sip = packet_get_protocol_data(packet, PACKET_PROTO_SIP);
     g_return_val_if_fail(sip != NULL, NULL);
 
     return sip;
@@ -266,7 +266,7 @@ packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GByteArray *
     sip_data->payload = g_strdup(payload->str);
 
     // Add SIP information to the packet
-    packet_add_type(packet, PACKET_PROTO_SIP, sip_data);
+    packet_set_protocol_data(packet, PACKET_PROTO_SIP, sip_data);
 
     guint sip_size = (guint) strlen(payload_data[0]) + 2 /* CRLF */;
     g_auto(GStrv) headers = g_strsplit(payload->str, SIP_CRLF, 0);
@@ -316,7 +316,7 @@ packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GByteArray *
     }
 
     // If this comes from a TCP stream, check we have a whole packet
-    if (packet_has_type(packet, PACKET_PROTO_TCP)) {
+    if (packet_has_protocol(packet, PACKET_PROTO_TCP)) {
         if (sip_data->content_len != data->len - sip_size) {
             return data;
         }

@@ -356,11 +356,11 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     g_return_if_fail(ip != NULL);
 
     // Packet UDP Data
-    PacketUdpData *udp = g_ptr_array_index(packet->proto, PACKET_PROTO_UDP);
+    PacketUdpData *udp = packet_get_protocol_data(packet, PACKET_PROTO_UDP);
     g_return_if_fail(udp != NULL);
 
     // Packet SIP Data
-    PacketSipData *sip = g_ptr_array_index(packet->proto, PACKET_PROTO_SIP);
+    PacketSipData *sip = packet_get_protocol_data(packet, PACKET_PROTO_SIP);
     g_return_if_fail(sip != NULL);
 
     // Get HEP output data

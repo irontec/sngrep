@@ -195,13 +195,13 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
     g_utf8_strncpy(ip->dstip, dstip, ADDRESSLEN);
     ip->protocol = hg.ip_proto.data;
     ip->version = (hg.ip_family.data == AF_INET) ? 4 : 6;
-    packet_add_type(packet, PACKET_PROTO_IP, ip);
+    packet_set_protocol_data(packet, PACKET_PROTO_IP, ip);
 
     // Generate Packet UDP data
     PacketUdpData *udp = g_malloc0(sizeof(PacketHepData));
     udp->sport = sport;
     udp->dport = dport;
-    packet_add_type(packet, PACKET_PROTO_UDP, udp);
+    packet_set_protocol_data(packet, PACKET_PROTO_UDP, udp);
 
     // Generate Packet Timestamp
     frame->ts = g_ntohl(hg.time_sec.data) * G_USEC_PER_SEC + g_ntohl(hg.time_usec.data);

@@ -367,7 +367,7 @@ storage_check_sip_packet(Packet *packet)
 void
 storage_check_rtp_packet(Packet *packet)
 {
-    PacketRtpData *rtp = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
+    PacketRtpData *rtp = packet_get_protocol_data(packet, PACKET_PROTO_RTP);
     g_return_if_fail(rtp != NULL);
 
     // Get Addresses from packet
@@ -412,7 +412,7 @@ storage_check_rtp_packet(Packet *packet)
 void
 storage_check_rtcp_packet(Packet *packet)
 {
-    PacketRtcpData *rtcp = g_ptr_array_index(packet->proto, PACKET_PROTO_RTP);
+    PacketRtcpData *rtcp = packet_get_protocol_data(packet, PACKET_PROTO_RTP);
     g_return_if_fail(rtcp != NULL);
 
     // Get Addresses from packet

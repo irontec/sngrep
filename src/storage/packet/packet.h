@@ -44,10 +44,6 @@
 
 G_BEGIN_DECLS
 
-//! Protocol type macros
-#define packet_add_type(packet, type, data) (g_ptr_array_set(packet->proto, type, data))
-#define packet_has_type(packet, type)       (g_ptr_array_index(packet->proto, type) != NULL)
-
 /**
  * @brief Packet protocols
  *
@@ -76,10 +72,6 @@ typedef struct _Packet Packet;
 typedef struct _PacketFrame PacketFrame;
 //! Forward declaration for CaptureInput
 typedef struct _CaptureInput CaptureInput;
-
-// Forward declarations
-struct _PacketParser;
-typedef struct _PacketParser PacketParser;
 
 /**
  * @brief Packet capture data.
@@ -137,6 +129,15 @@ packet_ref(Packet *packet);
 
 void
 packet_unref(Packet *packet);
+
+void
+packet_set_protocol_data(Packet *packet, PacketProtocol proto, gpointer data);
+
+gpointer
+packet_get_protocol_data(const Packet *packet, PacketProtocol proto);
+
+gboolean
+packet_has_protocol(const Packet *packet, PacketProtocol proto);
 
 Address *
 packet_src_address(Packet *packet);

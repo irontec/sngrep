@@ -850,7 +850,7 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GByteArray *
     Address *tlsserver = capture_tls_server(manager);
 
     // Get TCP/IP data from this packet
-    PacketTcpData *tcpdata = g_ptr_array_index(packet->proto, PACKET_PROTO_TCP);
+    PacketTcpData *tcpdata = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
     g_return_val_if_fail(tcpdata != NULL, NULL);
 
     // Get packet addresses

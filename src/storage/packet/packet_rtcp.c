@@ -161,7 +161,7 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
     }
 
     // Set packet RTP informaiton
-    packet_add_type(packet, PACKET_PROTO_RTCP, rtcp);
+    packet_set_protocol_data(packet, PACKET_PROTO_RTCP, rtcp);
 
     // Add data to storage
     storage_check_rtcp_packet(packet);

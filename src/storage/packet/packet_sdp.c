@@ -88,7 +88,7 @@ PacketSdpData *
 packet_sdp_data(const Packet *packet)
 {
     g_return_val_if_fail(packet != NULL, NULL);
-    return g_ptr_array_index(packet->proto, PACKET_PROTO_SDP);
+    return packet_get_protocol_data(packet, PACKET_PROTO_SDP);
 }
 
 const gchar *
@@ -259,7 +259,7 @@ packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
     }
 
     // Set packet SDP data
-    packet_add_type(packet, PACKET_PROTO_SDP, sdp);
+    packet_set_protocol_data(packet, PACKET_PROTO_SDP, sdp);
     data = g_byte_array_remove_range(data, 0, data->len);
 
     return data;
