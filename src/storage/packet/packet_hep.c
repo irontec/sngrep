@@ -191,8 +191,8 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // Generate Packet IP data
     PacketIpData *ip = g_malloc0(sizeof(PacketIpData));
-    g_utf8_strncpy(ip->srcip, srcip, ADDRESSLEN);
-    g_utf8_strncpy(ip->dstip, dstip, ADDRESSLEN);
+    ip->srcip = g_strdup(srcip);
+    ip->dstip = g_strdup(dstip);
     ip->protocol = hg.ip_proto.data;
     ip->version = (hg.ip_family.data == AF_INET) ? 4 : 6;
     packet_set_protocol_data(packet, PACKET_PROTO_IP, ip);

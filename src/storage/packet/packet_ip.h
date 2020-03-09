@@ -64,9 +64,9 @@ struct _PacketIpData
     //! IP Protocol
     guint8 protocol;
     //! Source Address
-    gchar srcip[ADDRESSLEN];
+    gchar *srcip;
     //! Destination Address
-    gchar dstip[ADDRESSLEN];
+    gchar *dstip;
 };
 
 struct _PacketIpDatagram
