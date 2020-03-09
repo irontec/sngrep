@@ -31,7 +31,7 @@
 #include "config.h"
 #include <glib.h>
 #include <gnutls/gnutls.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "capture/capture_input.h"
 #include "storage/address.h"
 #include "packet_ip.h"

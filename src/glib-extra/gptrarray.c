@@ -20,31 +20,15 @@
  **
  ****************************************************************************/
 /**
- * @file glib-extra.c
+ * @file gptrarray.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Helper function for glib containers
+ * @brief Helper function for GPtrArray containers
  *
  */
 #include "config.h"
 #include <sys/sysinfo.h>
-#include "glib-extra.h"
-
-GList *
-g_list_concat_deep(GList *dst, GList *src)
-{
-    for (GList *l = src; l != NULL; l = l->next) {
-        dst = g_list_append(dst, l->data);
-    }
-
-    return dst;
-}
-
-void
-g_list_item_free(gpointer item, G_GNUC_UNUSED gpointer user_data)
-{
-    g_free(item);
-}
+#include "glib.h"
 
 GPtrArray *
 g_ptr_array_deep_copy(GPtrArray *origin)
@@ -193,60 +177,3 @@ g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle,
     return FALSE;
 }
 #endif
-
-GDateTime *
-g_date_time_new_from_timeval(gint64 sec, gint64 usec)
-{
-    g_autoptr(GDateTime) dt = g_date_time_new_from_unix_local(sec);
-    return g_date_time_add(dt, usec);
-}
-
-GDateTime *
-g_date_time_new_from_unix_usec(gint64 usec)
-{
-    g_autoptr(GDateTime) dt = g_date_time_new_from_unix_local(usec / G_USEC_PER_SEC);
-    return g_date_time_add(dt, usec - (usec / G_USEC_PER_SEC * G_USEC_PER_SEC));
-}
-
-gint
-g_atoi(const gchar *number)
-{
-    g_return_val_if_fail(number != NULL, 0);
-    gint64 number64 = g_ascii_strtoll(number, NULL, 10);
-    if (number64 > G_MAXINT) {
-        return G_MAXINT;
-    } else if (number64 < G_MININT) {
-        return G_MININT;
-    } else {
-        return (gint) number64;
-    }
-}
-
-gsize
-g_format_size_to_bytes(const gchar *size)
-{
-    g_return_val_if_fail(size != NULL, 0);
-
-    gchar *units = NULL;
-    guint64 number = g_ascii_strtoll(size, &units, 10);
-    if (g_str_has_suffix(units, "K")
-        || g_str_has_suffix(units, "KB")
-        || g_str_has_suffix(units, "KiB")) {
-        return number * G_BYTES_PER_KILOBYTE;
-    } else if (
-        g_str_has_suffix(units, "M")
-        || g_str_has_suffix(units, "MB")
-        || g_str_has_suffix(units, "MiB")) {
-        return number * G_BYTES_PER_MEGABYTE;
-    } else if (
-        g_str_has_suffix(size, "G")
-        || g_str_has_suffix(size, "GB")
-        || g_str_has_suffix(size, "GiB")) {
-        return number * G_BYTES_PER_GIGABYTE;
-    } else if (g_str_has_suffix(size, "%")) {
-        struct sysinfo info;
-        return sysinfo(&info) == 0 ? info.totalram * number / 100 : 0;
-    } else {
-        return number;
-    }
-}

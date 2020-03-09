@@ -31,7 +31,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "storage/storage.h"
 #include "packet.h"
 #include "packet_rtp.h"

@@ -31,7 +31,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "setting.h"
 #include "keybinding.h"
 #include "ncurses/manager.h"

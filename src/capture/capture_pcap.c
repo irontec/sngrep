@@ -36,7 +36,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <glib-unix.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "capture.h"
 #include "capture_pcap.h"
 #include "storage/packet/packet_link.h"

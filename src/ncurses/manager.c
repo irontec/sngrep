@@ -34,7 +34,7 @@
 #include <locale.h>
 #include <glib-unix.h>
 #include <storage/message.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "setting.h"
 #include "manager.h"
 #include "capture/capture.h"

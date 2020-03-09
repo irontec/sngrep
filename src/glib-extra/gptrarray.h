@@ -20,53 +20,23 @@
  **
  ****************************************************************************/
 /**
- * @file glib-extra.h
+ * @file gptrarray.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Helper function for glib containers
+ * @brief Helper function for GPtrArray containers
  *
  */
 
-#ifndef __SNGREP_GLIB_EXTRA_H
-#define __SNGREP_GLIB_EXTRA_H
+#ifndef __SNGREP_GLIB_GPTRARRAY_H
+#define __SNGREP_GLIB_GPTRARRAY_H
 
 #include <glib.h>
-
-#define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
-
-#define G_BYTES_PER_KILOBYTE    1024
-#define G_BYTES_PER_MEGABYTE    G_BYTES_PER_KILOBYTE * 1024
-#define G_BYTES_PER_GIGABYTE    G_BYTES_PER_MEGABYTE * 1024
 
 #define g_ptr_array_len(array) (array->len)
 #define g_ptr_array_empty(array) (array->len == 0)
 #define g_ptr_array_first(array) g_ptr_array_index(array, 0)
 #define g_ptr_array_last(array)  g_ptr_array_index(array, array->len-1)
 #define g_ptr_array_set(array, index, item)  (array->pdata[index] = item)
-
-#define g_byte_array_len(array) (array->len)
-
-#define g_list_first_data(list) g_list_first(list)->data
-#define g_list_last_data(list) g_list_last(list)->data
-
-#define g_slist_first_data(list) g_slist_nth_data(list, 0)
-
-/**
- * @brief Make a deep concat from one Double-Linked list to another
- *
- * @param dst Destination list. May already have values or be NULL
- * @param src Source list. May be empty or be NULL
- *
- * @return Destination list with source nodes appended
- */
-GList *
-g_list_concat_deep(GList *dst, GList *src);
-
-/**
- * @brief Wrapper function for freeing list items using g_list_foreach
- */
-void
-g_list_item_free(gpointer item, gpointer user_data);
 
 GPtrArray *
 g_ptr_array_deep_copy(GPtrArray *origin);
@@ -103,16 +73,4 @@ gboolean
 g_ptr_array_find_with_equal_func(GPtrArray *haystack, gconstpointer needle, GEqualFunc equal_func, guint *index);
 #endif
 
-GDateTime *
-g_date_time_new_from_timeval(gint64 sec, gint64 usec);
-
-GDateTime *
-g_date_time_new_from_unix_usec(gint64 usec);
-
-gint
-g_atoi(const gchar *number);
-
-gsize
-g_format_size_to_bytes(const gchar *size);
-
-#endif //__SNGREP_GLIB_EXTRA_H
+#endif //__SNGREP_GLIB_GPTRARRAY_H

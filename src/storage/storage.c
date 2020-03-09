@@ -56,8 +56,7 @@
 #include "config.h"
 #include <malloc.h>
 #include <glib.h>
-#include <glib/gasyncqueuesource.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "packet/dissector.h"
 #include "storage/packet/packet_link.h"
 #include "storage/packet/packet_ip.h"

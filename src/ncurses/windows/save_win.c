@@ -34,7 +34,7 @@
 #include <sndfile.h>
 #endif
 #include "codecs/codec.h"
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "setting.h"
 #include "storage/filter.h"
 #include "capture/capture_txt.h"

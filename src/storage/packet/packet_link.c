@@ -37,6 +37,7 @@
 #include "capture/capture_pcap.h"
 #include "packet_ip.h"
 #include "packet_link.h"
+#include "glib-extra/glib.h"
 
 G_DEFINE_TYPE(PacketDissectorLink, packet_link, PACKET_TYPE_DISSECTOR)
 

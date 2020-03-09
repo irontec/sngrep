@@ -33,7 +33,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "address.h"
 
 gboolean

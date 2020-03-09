@@ -29,7 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include <stdlib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "storage/storage.h"
 #include "ncurses/windows/call_list_win.h"
 #include "filter.h"

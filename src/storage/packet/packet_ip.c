@@ -29,7 +29,7 @@
  */
 #include "config.h"
 #include <arpa/inet.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "packet.h"
 #include "packet_ip.h"
 

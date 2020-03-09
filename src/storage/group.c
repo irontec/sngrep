@@ -29,7 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include <string.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "group.h"
 #include "setting.h"
 

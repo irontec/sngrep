@@ -30,7 +30,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "call.h"
 #include "storage/packet/packet_sip.h"
 #include "setting.h"

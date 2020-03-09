@@ -28,7 +28,7 @@
 #include "config.h"
 #include <glib.h>
 #include <stdlib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "packet_sdp.h"
 
 G_DEFINE_TYPE(PacketDissectorSdp, packet_dissector_sdp, PACKET_TYPE_DISSECTOR)

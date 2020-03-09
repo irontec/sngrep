@@ -28,7 +28,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "attribute.h"
 #include "storage/packet/packet_sip.h"
 #include "ncurses/manager.h"

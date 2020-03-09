@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ncurses/keybinding.h"
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "setting.h"
 
 /**

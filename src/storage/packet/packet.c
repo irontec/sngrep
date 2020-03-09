@@ -28,7 +28,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "packet_ip.h"
 #include "packet_tcp.h"
 #include "packet_udp.h"

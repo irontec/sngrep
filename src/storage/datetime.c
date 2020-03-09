@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <glib.h>
 #include <glib/gprintf.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "datetime.h"
 
 const gchar *

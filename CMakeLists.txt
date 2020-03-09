@@ -25,8 +25,11 @@ set(SOURCES
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
-        src/glib/gasyncqueuesource.c
-        src/glib/glib-extra.c
+        src/glib-extra/gasyncqueuesource.c
+        src/glib-extra/gdatetime.c
+        src/glib-extra/glist.c
+        src/glib-extra/gptrarray.c
+        src/glib-extra/glib.c
         src/ncurses/manager.c
         src/ncurses/windows/call_flow_win.c
         src/ncurses/windows/call_list_win.c

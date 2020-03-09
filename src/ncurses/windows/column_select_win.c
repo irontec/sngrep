@@ -31,7 +31,7 @@
 #include <glib.h>
 #include <errno.h>
 #include <glib/gstdio.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "ncurses/manager.h"
 #include "ncurses/dialog.h"
 #include "ncurses/windows/call_list_win.h"

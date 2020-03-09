@@ -29,7 +29,7 @@
 #include "config.h"
 #include <malloc.h>
 #include <glib.h>
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "setting.h"
 #include "capture/capture.h"
 #include "ncurses/manager.h"

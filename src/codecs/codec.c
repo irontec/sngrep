@@ -32,7 +32,7 @@
 #ifdef WITH_G729
 #include "codecs/codec_g729.h"
 #endif
-#include "glib/glib-extra.h"
+#include "glib-extra/glib.h"
 #include "storage/stream.h"
 #include "codec.h"
 
