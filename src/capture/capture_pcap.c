@@ -67,8 +67,7 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
     frame->ts = header->ts.tv_sec * G_USEC_PER_SEC + header->ts.tv_usec;
     frame->caplen = header->caplen;
     frame->len = header->len;
-    frame->data = g_byte_array_new();
-    g_byte_array_append(frame->data, content, header->caplen);
+    frame->data = g_bytes_new(content, header->caplen);
 
     // Create a new packet
     Packet *packet = packet_new(CAPTURE_INPUT(pcap));
@@ -385,7 +384,12 @@ capture_output_pcap_write(CaptureOutput *self, Packet *packet)
         header.ts.tv_sec = packet_frame_seconds(frame);
         header.ts.tv_usec = packet_frame_microseconds(frame);
         // Save this packet
-        pcap_dump((u_char *) pcap->dumper, &header, frame->data->data + datalink_size);
+        g_autoptr(GBytes) data = g_bytes_new_from_bytes(
+            frame->data,
+            datalink_size,
+            g_bytes_get_size(frame->data) - datalink_size
+        );
+        pcap_dump((u_char *) pcap->dumper, &header, g_bytes_get_data(data, NULL));
     }
 }
 

@@ -118,8 +118,8 @@ capture_input_hep_receive(G_GNUC_UNUSED gint fd,
     // Create a new packet for this data
     Packet *packet = packet_new(input);
     PacketFrame *frame = g_malloc0(sizeof(PacketFrame));
-    frame->data = g_byte_array_new();
-    g_byte_array_append(frame->data, (const guint8 *) buffer, (guint) received);
+    frame->len = frame->caplen = received;
+    frame->data = g_bytes_new(buffer, received);
     packet->frames = g_list_append(packet->frames, frame);
 
     // Pass packet to dissectors

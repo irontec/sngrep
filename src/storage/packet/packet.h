@@ -126,7 +126,7 @@ struct _PacketFrame
     //! Capture length (from wire)
     guint32 caplen;
     //! PCAP Frame content
-    GByteArray *data;
+    GBytes *data;
 };
 
 Packet *

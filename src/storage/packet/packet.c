@@ -172,7 +172,7 @@ packet_frame_microseconds(const PacketFrame *frame)
 void
 packet_frame_free(PacketFrame *frame)
 {
-    g_byte_array_free(frame->data, TRUE);
+    g_bytes_unref(frame->data);
     g_free(frame);
 }
 

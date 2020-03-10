@@ -483,8 +483,12 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
     g_return_val_if_fail(frame != NULL, TRUE);
 
     // Create a byte array to parse packet data
-    GByteArray *data = g_byte_array_new();
-    g_byte_array_append(data, frame->data->data, frame->data->len);
+    GByteArray *data = g_byte_array_sized_new(g_bytes_get_size(frame->data));
+    g_byte_array_append(
+        data,
+        g_bytes_get_data(frame->data, NULL),
+        g_bytes_get_size(frame->data)
+    );
 
     // Pass packet data to the first dissector
     packet_dissector_dissect(dissector, packet, data);
