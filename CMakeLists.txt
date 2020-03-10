@@ -4,8 +4,7 @@ project(sngrep
         LANGUAGES C)
 
 set(PROJECT_NAME sngrep)
-set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -pg -Werror -Wall -Wextra -pedantic")
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Werror -Wall -Wextra -pedantic")
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
