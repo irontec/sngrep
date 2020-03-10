@@ -44,6 +44,10 @@
 
 G_BEGIN_DECLS
 
+#define CAPTURE_TYPE_PACKET packet_get_type()
+
+G_DECLARE_FINAL_TYPE(Packet, packet, SNGREP, PACKET, GObject)
+
 /**
  * @brief Packet protocols
  *
@@ -106,23 +110,16 @@ struct _PacketFrame
 {
     //! Frame received time (microseconds)
     guint64 ts;
-    //! Capture lenght (effective)
+    //! Capture length (effective)
     guint32 len;
-    //! Capture lenght (from wire)
+    //! Capture length (from wire)
     guint32 caplen;
     //! PCAP Frame content
     GByteArray *data;
 };
 
-#define CAPTURE_TYPE_PACKET packet_get_type()
-
-G_DECLARE_FINAL_TYPE(Packet, packet, SNGREP, PACKET, GObject)
-
 Packet *
 packet_new(CaptureInput *input);
-
-void
-packet_free(Packet *packet);
 
 Packet *
 packet_ref(Packet *packet);

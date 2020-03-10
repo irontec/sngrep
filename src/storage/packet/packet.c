@@ -40,71 +40,6 @@
  */
 G_DEFINE_TYPE(Packet, packet, G_TYPE_OBJECT)
 
-G_GNUC_UNUSED static void
-packet_init(Packet *self)
-{
-    self->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
-    g_ptr_array_set_size(self->proto, PACKET_PROTO_COUNT);
-}
-
-static void
-packet_finalize(GObject *gobject)
-{
-    // Free packet data
-    packet_free(SNGREP_PACKET(gobject));
-    // Chain GObject dispose
-    G_OBJECT_CLASS(packet_parent_class)->dispose(gobject);
-}
-
-Packet *
-packet_new(CaptureInput *input)
-{
-    // Create a new packet
-    Packet *packet = g_object_new(CAPTURE_TYPE_PACKET, NULL);
-    packet->input = input;
-    return packet;
-}
-
-static void
-packet_proto_free(gpointer proto_id, Packet *packet)
-{
-    PacketProtocol id = GPOINTER_TO_INT(proto_id);
-
-    if (packet_has_protocol(packet, id)) {
-        PacketDissector *dissector = storage_find_dissector(id);
-        packet_dissector_free_data(dissector, packet);
-    }
-}
-
-void
-packet_free(Packet *packet)
-{
-    g_return_if_fail(packet != NULL);
-
-    // Free each protocol data
-    g_ptr_array_foreach_idx(packet->proto, (GFunc) packet_proto_free, packet);
-    g_ptr_array_free(packet->proto, TRUE);
-
-    // Free each frame data
-    g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
-
-    // Free packet data
-    address_free(packet->src);
-    address_free(packet->dst);
-}
-
-Packet *
-packet_ref(Packet *packet)
-{
-    return g_object_ref(packet);
-}
-
-void
-packet_unref(Packet *packet)
-{
-    g_object_unref(packet);
-}
-
 void
 packet_set_protocol_data(Packet *packet, PacketProtocol proto, gpointer data)
 {
@@ -246,8 +181,67 @@ packet_frame_new()
     return frame;
 }
 
-G_GNUC_UNUSED static void
-packet_class_init(G_GNUC_UNUSED PacketClass *klass)
+static void
+packet_proto_free(gpointer proto_id, Packet *packet)
+{
+    PacketProtocol id = GPOINTER_TO_INT(proto_id);
+
+    if (packet_has_protocol(packet, id)) {
+        PacketDissector *dissector = storage_find_dissector(id);
+        packet_dissector_free_data(dissector, packet);
+    }
+}
+
+Packet *
+packet_ref(Packet *packet)
+{
+    return g_object_ref(packet);
+}
+
+void
+packet_unref(Packet *packet)
+{
+    g_object_unref(packet);
+}
+
+static void
+packet_finalize(GObject *self)
+{
+    Packet *packet = SNGREP_PACKET(self);
+
+    // Free each protocol data
+    g_ptr_array_foreach_idx(packet->proto, (GFunc) packet_proto_free, packet);
+    g_ptr_array_free(packet->proto, TRUE);
+
+    // Free each frame data
+    g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
+
+    // Free packet data
+    address_free(packet->src);
+    address_free(packet->dst);
+
+    // Chain GObject dispose
+    G_OBJECT_CLASS(packet_parent_class)->dispose(self);
+}
+
+Packet *
+packet_new(CaptureInput *input)
+{
+    // Create a new packet
+    Packet *packet = g_object_new(CAPTURE_TYPE_PACKET, NULL);
+    packet->input = input;
+    return packet;
+}
+
+static void
+packet_init(Packet *self)
+{
+    self->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
+    g_ptr_array_set_size(self->proto, PACKET_PROTO_COUNT);
+}
+
+static void
+packet_class_init(PacketClass *klass)
 {
     // Get the parent gobject class
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
