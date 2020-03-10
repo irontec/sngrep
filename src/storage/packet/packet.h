@@ -105,10 +105,6 @@ struct _Packet
     GObject parent;
     //! Capture input that generated this packet
     CaptureInput *input;
-    //! Packet Source Address
-    Address *src;
-    //! Packet Destination Adddress
-    Address *dst;
     //! Each packet protocol information
     GSList *proto;
     //! Packet frame list (frame_t)
@@ -151,10 +147,10 @@ packet_get_protocol_data(const Packet *packet, PacketProtocolId proto);
 gboolean
 packet_has_protocol(const Packet *packet, PacketProtocolId proto);
 
-Address *
+Address
 packet_src_address(Packet *packet);
 
-Address *
+Address
 packet_dst_address(Packet *packet);
 
 const char *

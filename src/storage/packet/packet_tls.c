@@ -367,7 +367,7 @@ packet_tls_connection_load_cipher(SSLConnection *conn)
 }
 
 static SSLConnection *
-packet_tls_connection_create(Address *caddr, Address *saddr)
+packet_tls_connection_create(Address caddr, Address saddr)
 {
     SSLConnection *conn = NULL;
     gnutls_datum_t keycontent = { NULL, 0 };
@@ -378,8 +378,8 @@ packet_tls_connection_create(Address *caddr, Address *saddr)
     // Allocate memory for this connection
     conn = g_malloc0(sizeof(SSLConnection));
 
-    conn->client_addr = address_clone(caddr);
-    conn->server_addr = address_clone(saddr);
+    conn->client_addr = address_new(address_get_ip(caddr), address_get_port(caddr));
+    conn->server_addr = address_new(address_get_ip(saddr), address_get_port(saddr));
 
     gnutls_global_init();
 
@@ -433,7 +433,7 @@ packet_tls_connection_destroy(SSLConnection *conn)
 }
 
 static int
-packet_tls_connection_dir(SSLConnection *conn, Address *addr)
+packet_tls_connection_dir(SSLConnection *conn, Address addr)
 {
     if (addressport_equals(conn->client_addr, addr))
         return 0;
@@ -443,7 +443,7 @@ packet_tls_connection_dir(SSLConnection *conn, Address *addr)
 }
 
 static SSLConnection *
-packet_dissector_tls_connection_find(PacketDissectorTls *dissector, Address *src, Address *dst)
+packet_dissector_tls_connection_find(PacketDissectorTls *dissector, Address src, Address dst)
 {
     for (GSList *l = dissector->connections; l != NULL; l = l->next) {
         SSLConnection *conn = l->data;
@@ -847,15 +847,15 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GByteArray *
         return data;
     }
 
-    Address *tlsserver = capture_tls_server(manager);
+    Address tlsserver = capture_tls_server(manager);
 
     // Get TCP/IP data from this packet
     PacketTcpData *tcpdata = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
     g_return_val_if_fail(tcpdata != NULL, NULL);
 
     // Get packet addresses
-    Address *src = packet_src_address(packet);
-    Address *dst = packet_dst_address(packet);
+    Address src = packet_src_address(packet);
+    Address dst = packet_dst_address(packet);
 
     // Try to find a session for this ip
     if ((conn = packet_dissector_tls_connection_find(dissector, src, dst))) {
@@ -911,7 +911,7 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GByteArray *
     } else {
         if (tcpdata->syn != 0 && tcpdata->ack == 0) {
             // Only create new connections whose destination is tlsserver
-            if (tlsserver && tlsserver->port) {
+            if (address_get_ip(tlsserver) && address_get_port(tlsserver)) {
                 if (addressport_equals(tlsserver, dst)) {
                     // New connection, store it status and leave
                     dissector->connections =

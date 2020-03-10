@@ -208,6 +208,6 @@ void
 call_add_xcall(Call *call, Call *xcall);
 
 Stream *
-call_find_stream(Call *call, const Address *src, const Address *dst, guint32 ssrc);
+call_find_stream(Call *call, const Address src, const Address dst, guint32 ssrc);
 
 #endif /* __SNGREP_CALL_H */

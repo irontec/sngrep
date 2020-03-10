@@ -243,7 +243,7 @@ capture_is_online(CaptureManager *manager)
     return TRUE;
 }
 
-Address *
+Address
 capture_tls_server(CaptureManager *manager)
 {
     return manager->tls_server;

@@ -244,9 +244,9 @@ struct _SSLConnection
     int version;
 
     //! Client IP address and port
-    Address *client_addr;
+    Address client_addr;
     //! Server IP address and port
-    Address *server_addr;
+    Address server_addr;
 
     gnutls_session_t ssl;
     int ciph;

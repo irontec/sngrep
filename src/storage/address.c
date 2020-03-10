@@ -37,35 +37,27 @@
 #include "address.h"
 
 gboolean
-addressport_equals(const Address *addr1, const Address *addr2)
+addressport_equals(const Address addr1, const Address addr2)
 {
-    if (addr1 == NULL && addr2 == NULL) {
+    if (addr1.ip == NULL && addr2.ip == NULL) {
         return TRUE;
     }
 
-    if (addr1 == NULL || addr2 == NULL) {
-        return FALSE;
-    }
-
-    return addr1->port == addr2->port && g_strcmp0(addr1->ip, addr2->ip) == 0;
+    return addr1.port == addr2.port && g_strcmp0(addr1.ip, addr2.ip) == 0;
 }
 
 gboolean
-address_equals(const Address *addr1, const Address *addr2)
+address_equals(const Address addr1, const Address addr2)
 {
-    if (addr1 == NULL && addr2 == NULL) {
+    if (addr1.ip == NULL && addr2.ip == NULL) {
         return TRUE;
     }
 
-    if (addr1 == NULL || addr2 == NULL) {
-        return FALSE;
-    }
-
-    return g_strcmp0(addr1->ip, addr2->ip) == 0;
+    return g_strcmp0(addr1.ip, addr2.ip) == 0;
 }
 
 gboolean
-address_is_local(const Address *addr)
+address_is_local(const Address addr)
 {
     //! Local devices pointer
     static pcap_if_t *devices = 0;
@@ -110,7 +102,7 @@ address_is_local(const Address *addr)
             }
 
             // Check if this address matches
-            if (g_strcmp0(addr->ip, ip) == 0) {
+            if (g_strcmp0(addr.ip, ip) == 0) {
                 return TRUE;
             }
 
@@ -119,44 +111,67 @@ address_is_local(const Address *addr)
     return FALSE;
 }
 
-Address *
+Address
 address_from_str(const gchar *address)
 {
-    if (address == NULL)
-        return NULL;
+    Address addr = ADDRESS_ZERO;
+    if(address == NULL) {
+        return addr;
+    }
 
     g_auto(GStrv) ip_port_data = g_strsplit(address, ":", 2);
     switch (g_strv_length(ip_port_data)) {
         case 1:
-            return address_new(ip_port_data[0], 0);
+            addr = address_new(ip_port_data[0], 0);
+            break;
         case 2:
-            return address_new(ip_port_data[0], g_atoi(ip_port_data[1]));
+            addr = address_new(ip_port_data[0], g_atoi(ip_port_data[1]));
+            break;
         default:
-            return NULL;
+            return addr;
     }
+
+    return addr;
 }
 
-Address *
-address_clone(const Address *address)
+const gchar *
+address_get_ip(Address address)
 {
-    return address_new(address->ip, address->port);
+    return address.ip;
+}
+
+guint16
+address_get_port(Address address)
+{
+    return address.port;
+}
+
+guint
+address_get_ip_len(Address address)
+{
+    if (address.ip == NULL)
+        return 0;
+    return strlen(address.ip);
+}
+
+Address
+address_strip_port(Address address)
+{
+    address.port = 0;
+    return address;
 }
 
 void
-address_free(Address *address)
+address_free(Address address)
 {
-    if (address == NULL)
-        return;
-
-    g_free(address->ip);
-    g_free(address);
+    g_free(address.ip);
 }
 
-Address *
+Address
 address_new(const gchar *ip, guint16 port)
 {
-    Address *address = g_malloc0(sizeof(Address));
-    address->ip = g_strdup(ip);
-    address->port = port;
+    Address address = ADDRESS_ZERO;
+    address.ip = g_strdup(ip);
+    address.port = port;
     return address;
 }

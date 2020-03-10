@@ -47,7 +47,9 @@
 #define ADDRESSLEN INET_ADDRSTRLEN
 #endif
 
-#define ADDRESS_ZERO { .ip = { 0 }, .port = 0}
+#define ADDRESS_ZERO { .ip = NULL, .port = 0}
+//#define address_get_ip(addr)  (addr.ip)
+//#define address_get_port(addr) (addr.port)
 
 //! Shorter declaration of address structure
 typedef struct _Address Address;
@@ -71,7 +73,7 @@ struct _Address
  * @return true if addresses contain the IP address, false otherwise
  */
 gboolean
-addressport_equals(const Address *addr1, const Address *addr2);
+addressport_equals(Address addr1, Address addr2);
 
 /**
  * @brief Check if two address are equal (ignoring port)
@@ -81,7 +83,7 @@ addressport_equals(const Address *addr1, const Address *addr2);
  * @return true if addresses contain the same data, false otherwise
  */
 gboolean
-address_equals(const Address *addr1, const Address *addr2);
+address_equals(Address addr1, Address addr2);
 
 /**
  * @brief Check if a given IP address belongs to a local device
@@ -90,36 +92,56 @@ address_equals(const Address *addr1, const Address *addr2);
  * @return true if address is local, false otherwise
  */
 gboolean
-address_is_local(const Address *addr);
+address_is_local(Address addr);
 
 /**
  * @brief Convert string IP:PORT to address structure
  *
+ * Allocated memory must be freed with address_free
+ *
  * @param string in format IP:PORT
  * @return address structure pointer
  */
-Address *
+Address
 address_from_str(const gchar *ipport);
 
+const gchar *
+address_get_ip(Address address);
+
+guint16
+address_get_port(Address address);
+
 /**
- * @brief Clone existing Address allocating new memory
- * @param address Original address pointer to be cloned
- * @return
+ * @brief Return the character length of the Address IP
+ * @param address
+ * @return 0 if Address IP is empty, length otherwise
  */
-Address *
-address_clone(const Address *address);
+guint
+address_get_ip_len(Address address);
+
+/**
+ * @brief Return Address structure with port set to 0
+ *
+ * This function reuses Address IP pointer, so return IP is valid as long as
+ * the packet ip data is valid
+ *
+ * @param address Address structure
+ * @return Address structure with same ip and port set to 0
+ */
+Address
+address_strip_port(Address address);
 
 /**
  * @brief Free Address pointer
  * @param address Adress structure pointer
  */
 void
-address_free(Address *address);
+address_free(Address address);
 
 /**
  * @brif Create a new Address pointer
  */
-Address *
+Address
 address_new(const gchar *ip, guint16 port);
 
 #endif /* __SNGREP_ADDRESS_H */

@@ -74,7 +74,7 @@ msg_media_count(Message *msg)
 }
 
 PacketSdpMedia *
-msg_media_for_addr(Message *msg, Address *dst)
+msg_media_for_addr(Message *msg, Address dst)
 {
     PacketSdpData *sdp = packet_sdp_data(msg->packet);
     g_return_val_if_fail(sdp != NULL, NULL);
@@ -84,7 +84,7 @@ msg_media_for_addr(Message *msg, Address *dst)
         if (addressport_equals(media->address, dst)) {
             return media;
         }
-        if (address_equals(dst, msg_src_address(msg)) && dst->port == media->address->port) {
+        if (address_equals(dst, msg_src_address(msg)) && address_get_port(dst) == address_get_port(media->address)) {
             return media;
         }
     }
@@ -104,13 +104,13 @@ msg_has_sdp(void *item)
     return msg_media_count(item) > 0;
 }
 
-const Address *
+Address
 msg_src_address(Message *msg)
 {
     return packet_src_address(msg->packet);
 }
 
-const Address *
+Address
 msg_dst_address(Message *msg)
 {
     return packet_dst_address(msg->packet);

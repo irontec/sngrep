@@ -338,16 +338,16 @@ call_flow_arrow_find_prev_callid(Window *window, const CallFlowArrow *arrow)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_first(Window *window, const Address *addr)
+call_flow_column_get_first(Window *window, const Address addr)
 {
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, NULL);
 
     // Look for address or address:port ?
-    gboolean match_port = addr->port != 0;
+    gboolean match_port = address_get_port(addr) != 0;
 
     // Get alias value for given address
-    const gchar *alias = setting_get_alias(addr->ip);
+    const gchar *alias = setting_get_alias(address_get_ip(addr));
 
     for (GList *l = self->columns; l != NULL; l = l->next) {
         CallFlowColumn *column = l->data;
@@ -386,16 +386,16 @@ call_flow_column_get_first(Window *window, const Address *addr)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_last(Window *window, const Address *addr)
+call_flow_column_get_last(Window *window, const Address addr)
 {
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, NULL);
 
     // Look for address or address:port ?
-    gboolean match_port = addr->port != 0;
+    gboolean match_port = address_get_port(addr) != 0;
 
     // Get alias value for given address
-    const gchar *alias = setting_get_alias(addr->ip);
+    const gchar *alias = setting_get_alias(address_get_ip(addr));
 
     for (GList *l = g_list_last(self->columns); l != NULL; l = l->prev) {
         CallFlowColumn *column = l->data;
@@ -430,7 +430,7 @@ call_flow_column_sorter(CallFlowColumn *a, CallFlowColumn *b)
 }
 
 static CallFlowColumn *
-call_flow_column_create(Window *window, const Address *addr)
+call_flow_column_create(Window *window, const Address addr)
 {
     // Get Window info
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
@@ -440,19 +440,21 @@ call_flow_column_create(Window *window, const Address *addr)
     CallFlowColumn *column = g_malloc0(sizeof(CallFlowColumn));
     g_return_val_if_fail(column != NULL, NULL);
 
-    column->addr = address_new(addr->ip, addr->port);
-    column->alias = setting_get_alias(column->addr->ip);
+    column->addr = addr;
+    column->alias = setting_get_alias(address_get_ip(column->addr));
 
     // Check if column has externip
-    const gchar *twinip = setting_get_externip(column->addr->ip);
-    if (twinip != NULL) {
-        CallFlowColumn *twin = call_flow_column_get_first(window, address_from_str(twinip));
+    const gchar *twin_ip = setting_get_externip(address_get_ip(column->addr));
+    if (twin_ip != NULL) {
+        Address twin_address = address_from_str(twin_ip);
+        CallFlowColumn *twin = call_flow_column_get_first(window, twin_address);
         if (twin != NULL) {
             // Set position based on twin column
             twin->twin = column;
             column->twin = twin;
             column->pos = twin->pos + 1;
         }
+        address_free(twin_address);
     }
 
     // Set position after last existing column
@@ -687,7 +689,6 @@ call_flow_win_draw_columns(Window *window)
     Call *call = NULL;
     Stream *stream;
     char coltext[SETTING_MAX_LEN];
-    Address addr;
 
     // Get panel information
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
@@ -703,15 +704,11 @@ call_flow_win_draw_columns(Window *window)
             for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
                 stream = g_ptr_array_index(call->streams, i);
                 if (stream->type == STREAM_RTP && stream_get_count(stream)) {
-                    addr.ip = stream->src->ip;
-                    addr.port = 0;
-                    if (call_flow_column_get_first(window, &addr) == NULL) {
-                        call_flow_column_create(window, &addr);
+                    if (call_flow_column_get_first(window, address_strip_port(stream->src)) == NULL) {
+                        call_flow_column_create(window, address_strip_port(stream->src));
                     }
-                    addr.ip = stream->dst->ip;
-                    addr.port = 0;
-                    if (call_flow_column_get_first(window, &addr) == NULL) {
-                        call_flow_column_create(window, &addr);
+                    if (call_flow_column_get_first(window, address_strip_port(stream->dst)) == NULL) {
+                        call_flow_column_create(window, address_strip_port(stream->dst));
                     }
                 }
             }
@@ -736,23 +733,35 @@ call_flow_win_draw_columns(Window *window)
                 wattron(win, A_BOLD);
         }
 
-        if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr->port) {
-            snprintf(coltext, SETTING_MAX_LEN, "%s", column->addr->ip);
+        if (setting_enabled(SETTING_CF_SPLITCALLID) || !address_get_port(column->addr)) {
+            snprintf(coltext, SETTING_MAX_LEN, "%s", address_get_ip(column->addr));
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-            if (strlen(column->addr->ip) > 15) {
+            if (strlen(address_get_ip(column->addr)) > 15) {
                 snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr->port);
+                         SETTING_MAX_LEN - 7,
+                         column->alias + strlen(column->alias) - 13,
+                         address_get_port(column->addr)
+                );
             } else {
                 snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->alias, column->addr->port);
+                         SETTING_MAX_LEN - 7,
+                         column->alias,
+                         address_get_port(column->addr)
+                );
             }
         } else {
-            if (strlen(column->addr->ip) > 15) {
+            if (strlen(address_get_ip(column->addr)) > 15) {
                 snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->addr->ip + strlen(column->addr->ip) - 13, column->addr->port);
+                         SETTING_MAX_LEN - 7,
+                         address_get_ip(column->addr) + strlen(address_get_ip(column->addr)) - 13,
+                         address_get_port(column->addr)
+                );
             } else {
                 snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
-                         SETTING_MAX_LEN - 7, column->addr->ip, column->addr->port);
+                         SETTING_MAX_LEN - 7,
+                         address_get_ip(column->addr),
+                         address_get_port(column->addr)
+                );
             }
         }
 
@@ -1108,12 +1117,12 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // fallback: Just use any column that have the destination IP printed
     if (arrow->dcolumn == NULL) {
         arrow->dcolumn =
-            call_flow_column_get_first(window, address_from_str(stream->dst->ip));
+            call_flow_column_get_first(window, address_strip_port(stream->dst));
     }
 
     if (arrow->scolumn == NULL) {
         arrow->scolumn =
-            call_flow_column_get_first(window, address_from_str(stream->src->ip));
+            call_flow_column_get_first(window, address_strip_port(stream->src));
     }
 
     // Determine start and end position of the arrow line
@@ -1144,7 +1153,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         distance = 1;
 
         // Fix arrow direction based on ports
-        if (stream->src->port < stream->dst->port) {
+        if (address_get_port(stream->src) < address_get_port(stream->dst)) {
             arrow->dir = CF_ARROW_DIR_RIGHT;
         } else {
             arrow->dir = CF_ARROW_DIR_LEFT;
@@ -1185,8 +1194,8 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_RIGHT) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, startpos - 4, "%d", stream->src->port);
-            mvwprintw(win, cline, endpos, "%d", stream->dst->port);
+            mvwprintw(win, cline, startpos - 4, "%d", address_get_port(stream->src));
+            mvwprintw(win, cline, endpos, "%d", address_get_port(stream->dst));
         }
         mvwaddwstr(win, cline, endpos - 2, ncurses_acs_utf8('>'));
         if (active) {
@@ -1196,8 +1205,8 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, endpos, "%d", stream->src->port);
-            mvwprintw(win, cline, startpos - 4, "%d", stream->dst->port);
+            mvwprintw(win, cline, endpos, "%d", address_get_port(stream->src));
+            mvwprintw(win, cline, startpos - 4, "%d", address_get_port(stream->dst));
         }
         mvwaddwstr(win, cline, startpos + 2, ncurses_acs_utf8('<'));
         if (active) {
@@ -1419,8 +1428,10 @@ call_flow_win_draw_raw_rtcp(Window *window, G_GNUC_UNUSED Stream *stream)
     guint row = 1;
     mvwprintw(raw_win, row++, 1, "RTP Stream Analysis");
     mvwhline(raw_win, row++, 1, ACS_HLINE, raw_width);
-    mvwprintw(raw_win, row++, 1, "Source: %s:%hu", stream->src->ip, stream->src->port);
-    mvwprintw(raw_win, row++, 1, "Destination: %s:%hu", stream->dst->ip, stream->dst->port);
+    mvwprintw(raw_win, row++, 1, "Source: %s:%hu",
+              address_get_ip(stream->src), address_get_port(stream->src));
+    mvwprintw(raw_win, row++, 1, "Destination: %s:%hu",
+              address_get_ip(stream->dst), address_get_port(stream->dst));
     mvwprintw(raw_win, row++, 1, "SSRC: 0x%X", stream->ssrc);
     mvwprintw(raw_win, row++, 1, "Packets: %d / %d", stream->packet_count, stream->stats.expected);
     mvwprintw(raw_win, row++, 1, "Lost: %d (%.1f%%)", stream->stats.lost,

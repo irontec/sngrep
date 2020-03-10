@@ -53,9 +53,9 @@ struct _Stream
     //! Determine stream type
     StreamType type;
     //! Source address
-    Address *src;
+    Address src;
     //! Destination address
-    Address *dst;
+    Address dst;
     //! SDP media that setup this stream
     PacketSdpMedia *media;
     //! SIP message that setup this stream
@@ -111,13 +111,7 @@ void
 stream_free(Stream *stream);
 
 void
-stream_set_src(Stream *stream, const Address *src);
-
-void
-stream_set_dst(Stream *stream, const Address *dst);
-
-void
-stream_set_data(Stream *stream, const Address *src, const Address *dst);
+stream_set_data(Stream *stream, Address src, Address dst);
 
 void
 stream_set_format(Stream *stream, guint8 format);

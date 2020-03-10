@@ -64,56 +64,52 @@ packet_has_protocol(const Packet *packet, PacketProtocolId proto)
     return packet_get_protocol_data(packet, proto) != NULL;
 }
 
-/**
- * @todo Fix address retro-compatibilities
- */
-Address *
+Address
 packet_src_address(Packet *packet)
 {
-    if (packet->src == NULL) {
-        // Get IP address from IP parsed protocol
-        PacketIpData *ip = packet_ip_data(packet);
-        g_return_val_if_fail(ip, NULL);
+    Address addr = { 0 };
 
-        // Get Port from UDP or TCP parsed protocol
-        if (packet_has_protocol(packet, PACKET_PROTO_UDP)) {
-            PacketUdpData *udp = packet_get_protocol_data(packet, PACKET_PROTO_UDP);
-            g_return_val_if_fail(udp, NULL);
-            packet->src = address_new(ip->srcip, udp->sport);
-        } else {
-            PacketTcpData *tcp = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
-            g_return_val_if_fail(tcp, NULL);
-            packet->src = address_new(ip->srcip, tcp->sport);
-        }
+    // Get IP address from IP parsed protocol
+    PacketIpData *ip = packet_get_protocol_data(packet, PACKET_PROTO_IP);
+    g_return_val_if_fail(ip, addr);
+    addr.ip = ip->srcip;
+
+    // Get Port from UDP or TCP parsed protocol
+    if (packet_has_protocol(packet, PACKET_PROTO_UDP)) {
+        PacketUdpData *udp = packet_get_protocol_data(packet, PACKET_PROTO_UDP);
+        g_return_val_if_fail(udp, addr);
+        addr.port = udp->sport;
+    } else {
+        PacketTcpData *tcp = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
+        g_return_val_if_fail(tcp, addr);
+        addr.port = tcp->sport;
     }
 
-    return packet->src;
+    return addr;
 }
 
-/**
- * @todo Fix address retro-compatibilities
- */
-Address *
+Address
 packet_dst_address(Packet *packet)
 {
-    if (packet->dst == NULL) {
-        // Get IP address from IP parsed protocol
-        PacketIpData *ip = packet_ip_data(packet);
-        g_return_val_if_fail(ip, NULL);
+    Address addr = ADDRESS_ZERO;
 
-        // Get Port from UDP or TCP parsed protocol
-        if (packet_has_protocol(packet, PACKET_PROTO_UDP)) {
-            PacketUdpData *udp = packet_get_protocol_data(packet, PACKET_PROTO_UDP);
-            g_return_val_if_fail(udp, NULL);
-            packet->dst = address_new(ip->dstip, udp->dport);
-        } else {
-            PacketUdpData *tcp = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
-            g_return_val_if_fail(tcp, NULL);
-            packet->dst = address_new(ip->dstip, tcp->dport);
-        }
+    // Get IP address from IP parsed protocol
+    PacketIpData *ip = packet_get_protocol_data(packet, PACKET_PROTO_IP);
+    g_return_val_if_fail(ip, addr);
+    addr.ip = ip->dstip;
+
+    // Get Port from UDP or TCP parsed protocol
+    if (packet_has_protocol(packet, PACKET_PROTO_UDP)) {
+        PacketUdpData *udp = packet_get_protocol_data(packet, PACKET_PROTO_UDP);
+        g_return_val_if_fail(udp, addr);
+        addr.port = udp->dport;
+    } else {
+        PacketTcpData *tcp = packet_get_protocol_data(packet, PACKET_PROTO_TCP);
+        g_return_val_if_fail(tcp, addr);
+        addr.port = tcp->dport;
     }
 
-    return packet->dst;
+    return addr;
 }
 
 const char *
@@ -224,10 +220,6 @@ packet_finalize(GObject *self)
 
     // Free each frame data
     g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
-
-    // Free packet data
-    address_free(packet->src);
-    address_free(packet->dst);
 
     // Chain GObject dispose
     G_OBJECT_CLASS(packet_parent_class)->dispose(self);

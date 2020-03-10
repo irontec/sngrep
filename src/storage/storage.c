@@ -257,26 +257,35 @@ storage_register_streams(Message *msg)
     for (guint i = 0; i < g_list_length(sdp->medias); i++) {
         PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
 
-        if (media->address == NULL)
+        if (address_get_ip(media->address) == NULL)
             continue;
 
         // Create RTP stream for this media
         storage_register_stream(
-            storage_stream_key(media->address->ip, media->address->port),
+            storage_stream_key(
+                address_get_ip(media->address),
+                address_get_port(media->address)
+            ),
             msg
         );
 
         // Create RTCP stream for this media
         storage_register_stream(
-            storage_stream_key(media->address->ip, media->address->port + 1),
+            storage_stream_key(
+                address_get_ip(media->address),
+                address_get_port(media->address) + 1
+            ),
             msg
         );
 
         // Create RTP stream with source of message as destination address
-        const Address *msg_src = msg_src_address(msg);
+        Address msg_src = msg_src_address(msg);
         if (!address_equals(media->address, msg_src)) {
             storage_register_stream(
-                storage_stream_key(msg_src->ip, media->address->port),
+                storage_stream_key(
+                    address_get_ip(msg_src),
+                    address_get_port(media->address)
+                ),
                 msg
             );
         }
@@ -371,11 +380,11 @@ storage_check_rtp_packet(Packet *packet)
     g_return_if_fail(rtp != NULL);
 
     // Get Addresses from packet
-    Address *src = packet_src_address(packet);
-    Address *dst = packet_dst_address(packet);
+    Address src = packet_src_address(packet);
+    Address dst = packet_dst_address(packet);
 
     // Find the stream by destination
-    g_autofree gchar *hashkey = storage_stream_key(dst->ip, dst->port);
+    g_autofree gchar *hashkey = storage_stream_key(address_get_ip(dst), address_get_port(dst));
     Message *msg = g_hash_table_lookup(storage->streams, hashkey);
 
     // No call has setup this stream
@@ -416,11 +425,11 @@ storage_check_rtcp_packet(Packet *packet)
     g_return_if_fail(rtcp != NULL);
 
     // Get Addresses from packet
-    Address *src = packet_src_address(packet);
-    Address *dst = packet_dst_address(packet);
+    Address src = packet_src_address(packet);
+    Address dst = packet_dst_address(packet);
 
     // Find the stream by destination
-    g_autofree gchar *hashkey = storage_stream_key(dst->ip, dst->port);
+    g_autofree gchar *hashkey = storage_stream_key(address_get_ip(dst), address_get_port(dst));
     Message *msg = g_hash_table_lookup(storage->streams, hashkey);
 
     // No call has setup this stream

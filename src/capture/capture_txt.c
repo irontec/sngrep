@@ -64,13 +64,15 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     date_time_date_to_str(packet_frame_microseconds(frame), date);
     date_time_time_to_str(packet_frame_microseconds(frame), time);
 
-    Address *src = packet_src_address(packet);
-    g_return_if_fail(src != NULL);
-    Address *dst = packet_dst_address(packet);
-    g_return_if_fail(dst != NULL);
+    Address src = packet_src_address(packet);
+    Address dst = packet_dst_address(packet);
 
     fprintf(txt->file, "%s %s %s:%u -> %s:%u\n%s\n\n",
-            date, time, src->ip, src->port, dst->ip, dst->port,
+            date, time,
+            address_get_ip(src),
+            address_get_port(src),
+            address_get_ip(dst),
+            address_get_port(dst),
             packet_sip_payload(packet)
     );
 }
