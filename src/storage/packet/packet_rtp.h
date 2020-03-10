@@ -107,6 +107,8 @@ struct _PacketRtpHdr
 
 struct _PacketRtpData
 {
+    //! Protocol information
+    PacketProtocol proto;
     //! RTP encoding (@see encodings table)
     PacketRtpEncoding *encoding;
     //! RTP Sequence number

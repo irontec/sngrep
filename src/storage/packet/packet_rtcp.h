@@ -220,6 +220,8 @@ struct rtcp_blk_xr_voip
 
 struct _PacketRtcpData
 {
+    //! Protocol information
+    PacketProtocol proto;
     //! Sender packet count
     guint32 spc;
     //! Fraction lost x/256

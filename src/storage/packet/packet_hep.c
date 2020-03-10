@@ -61,7 +61,7 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
     CaptureHepChunk payload_chunk;
     CaptureHepChunk authkey_chunk;
     gchar srcip[ADDRESSLEN], dstip[ADDRESSLEN];
-    guint16 sport, dport;
+    guint16 sport = 0, dport = 0;
     g_autofree gchar *password = NULL;
     GByteArray *payload = NULL;
 
@@ -191,6 +191,7 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // Generate Packet IP data
     PacketIpData *ip = g_malloc0(sizeof(PacketIpData));
+    ip->proto.id = PACKET_PROTO_IP;
     ip->srcip = g_strdup(srcip);
     ip->dstip = g_strdup(dstip);
     ip->protocol = hg.ip_proto.data;
@@ -199,6 +200,7 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // Generate Packet UDP data
     PacketUdpData *udp = g_malloc0(sizeof(PacketHepData));
+    udp->proto.id = PACKET_PROTO_UDP;
     udp->sport = sport;
     udp->dport = dport;
     packet_set_protocol_data(packet, PACKET_PROTO_UDP, udp);

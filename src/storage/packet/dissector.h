@@ -56,10 +56,10 @@ struct _PacketDissectorClass
 };
 
 void
-packet_dissector_set_protocol(PacketDissector *self, PacketProtocol id);
+packet_dissector_set_protocol(PacketDissector *self, PacketProtocolId id);
 
 void
-packet_dissector_add_subdissector(PacketDissector *self, PacketProtocol id);
+packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id);
 
 GByteArray *
 packet_dissector_dissect(PacketDissector *self, Packet *packet, GByteArray *data);
@@ -68,7 +68,7 @@ void
 packet_dissector_free_data(PacketDissector *self, Packet *packet);
 
 GByteArray *
-packet_dissector_next_proto(PacketProtocol id, Packet *packet, GByteArray *data);
+packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GByteArray *data);
 
 GByteArray *
 packet_dissector_next(PacketDissector *current, Packet *packet, GByteArray *data);

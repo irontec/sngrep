@@ -283,6 +283,6 @@ storage_memory_limit();
  * @brief Return a packet dissector for a given type
  */
 PacketDissector *
-storage_find_dissector(PacketProtocol id);
+storage_find_dissector(PacketProtocolId id);
 
 #endif /* __SNGREP_STORAGE_H */

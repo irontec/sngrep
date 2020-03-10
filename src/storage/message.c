@@ -149,6 +149,8 @@ msg_get_payload(Message *msg)
 guint64
 msg_get_time(const Message *msg)
 {
+    if (msg == NULL)
+        return 0;
     return packet_time(msg->packet);
 }
 

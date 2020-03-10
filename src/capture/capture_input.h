@@ -109,9 +109,9 @@ guint64
 capture_input_loaded_size(CaptureInput *self);
 
 void
-capture_input_set_initial_protocol(CaptureInput *self, PacketProtocol id);
+capture_input_set_initial_protocol(CaptureInput *self, PacketProtocolId id);
 
-PacketProtocol
+PacketProtocolId
 capture_input_initial_protocol(CaptureInput *self);
 
 G_END_DECLS

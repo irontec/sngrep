@@ -466,7 +466,7 @@ storage_add_packet(Packet *packet)
 static gboolean
 storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 {
-    PacketProtocol initial = capture_input_initial_protocol(packet->input);
+    PacketProtocolId initial = capture_input_initial_protocol(packet->input);
     PacketDissector *dissector = storage_find_dissector(initial);
     g_return_val_if_fail(dissector != NULL, TRUE);
 
@@ -633,7 +633,7 @@ storage_new(StorageOpts options, GError **error)
 }
 
 PacketDissector *
-storage_find_dissector(PacketProtocol id)
+storage_find_dissector(PacketProtocolId id)
 {
     PacketDissector *dissector = g_ptr_array_index(storage->dissectors, id);
     if (dissector == NULL) {

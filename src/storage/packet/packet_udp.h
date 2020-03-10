@@ -46,6 +46,8 @@ struct _PacketDissectorUdp
 
 struct _PacketUdpData
 {
+    //! Protocol information
+    PacketProtocol proto;
     //! Source Port
     guint16 sport;
     //! Destination Port

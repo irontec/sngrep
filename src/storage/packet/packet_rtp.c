@@ -120,6 +120,7 @@ packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
         return data;
 
     PacketRtpData *rtp = g_malloc0(sizeof(PacketRtpData));
+    rtp->proto.id = PACKET_PROTO_RTP;
     rtp->encoding = packet_rtp_standard_codec(hdr->pt);
 
     // Not standard payload_type, just set the id and let storage search in SDP rtpmap

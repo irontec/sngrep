@@ -151,6 +151,8 @@ struct _PacketSdpFormat
 
 struct _PacketSdpData
 {
+    //! Protocol information
+    PacketProtocol proto;
     //! Session connection address (optional)
     PacketSdpConnection *sconn;
     //! SDP Media description list (SDPMedia)

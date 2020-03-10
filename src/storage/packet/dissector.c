@@ -34,7 +34,7 @@
 typedef struct
 {
     //! Protocol id
-    PacketProtocol id;
+    PacketProtocolId id;
     //! SubProtocol children dissectors
     GSList *subdissectors;
 } PacketDissectorPrivate;
@@ -43,14 +43,14 @@ typedef struct
 G_DEFINE_TYPE_WITH_PRIVATE(PacketDissector, packet_dissector, G_TYPE_OBJECT)
 
 void
-packet_dissector_set_protocol(PacketDissector *self, PacketProtocol id)
+packet_dissector_set_protocol(PacketDissector *self, PacketProtocolId id)
 {
     PacketDissectorPrivate *priv = packet_dissector_get_instance_private(self);
     priv->id = id;
 }
 
 void
-packet_dissector_add_subdissector(PacketDissector *self, PacketProtocol id)
+packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id)
 {
     PacketDissectorPrivate *priv = packet_dissector_get_instance_private(self);
     priv->subdissectors = g_slist_append(priv->subdissectors, GINT_TO_POINTER(id));
@@ -79,7 +79,7 @@ packet_dissector_free_data(PacketDissector *self, Packet *packet)
 }
 
 GByteArray *
-packet_dissector_next_proto(PacketProtocol id, Packet *packet, GByteArray *data)
+packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GByteArray *data)
 {
     PacketDissector *dissector = storage_find_dissector(id);
     if (dissector != NULL) {

@@ -200,6 +200,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // TCP packet data
     PacketTcpData *tcp_data = g_malloc0(sizeof(PacketTcpData));
+    tcp_data->proto.id = PACKET_PROTO_TCP;
 #ifdef __FAVOR_BSD
     tcp_data->off = (tcp->th_off * 4);
     tcp_data->seq = g_ntohl(tcp->th_seq);

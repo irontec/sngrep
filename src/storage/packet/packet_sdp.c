@@ -238,6 +238,7 @@ packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
         return data;
 
     PacketSdpData *sdp = g_malloc0(sizeof(PacketSdpData));
+    sdp->proto.id = PACKET_PROTO_SDP;
 
     g_auto(GStrv) lines = g_strsplit(payload->str, "\r\n", -1);
     for (guint i = 0; i < g_strv_length(lines); i++) {

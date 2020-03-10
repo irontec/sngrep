@@ -87,6 +87,7 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
 
     // Allocate RTCP packet data
     PacketRtcpData *rtcp = g_malloc0(sizeof(PacketRtcpData));
+    rtcp->proto.id = PACKET_PROTO_RTCP;
 
     // Parse all packet payload headers
     while (data->len > 0) {

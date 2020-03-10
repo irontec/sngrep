@@ -127,10 +127,8 @@ PacketSipCode sip_codes[] = {
 const gchar *
 sip_method_str(guint method)
 {
-    int i;
-
     // Standard method
-    for (i = 0; sip_codes[i].id > 0; i++) {
+    for (guint i = 0; sip_codes[i].id > 0; i++) {
         if (method == sip_codes[i].id)
             return sip_codes[i].text;
     }
@@ -190,7 +188,7 @@ packet_sip_method(const Packet *packet)
 gboolean
 packet_sip_is_resquest(const Packet *packet)
 {
-    return packet_sip_data(packet)->code.id > 100;
+    return packet_sip_data(packet)->code.id < 100;
 }
 
 guint64
@@ -256,6 +254,7 @@ packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // Allocate packet sip data
     PacketSipData *sip_data = g_malloc0(sizeof(PacketSipData));
+    sip_data->proto.id = PACKET_PROTO_SIP;
     if (method != NULL) {
         sip_data->code.id = packet_sip_method_from_str(method);
         sip_data->code.text = method;

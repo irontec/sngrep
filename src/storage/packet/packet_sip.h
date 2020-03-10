@@ -81,6 +81,8 @@ struct _PacketSipCode
 
 struct _PacketSipData
 {
+    //! Protocol information
+    PacketProtocol proto;
     //! Request Method or Response code data
     PacketSipCode code;
     //! Is this an initial request? (no to-tag)

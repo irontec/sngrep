@@ -59,6 +59,8 @@ struct _PacketDissectorIp
 
 struct _PacketIpData
 {
+    //! Protocol information
+    PacketProtocol proto;
     //! Version (IPv4, IPv6)
     guint32 version;
     //! IP Protocol

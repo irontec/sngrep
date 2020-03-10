@@ -208,6 +208,7 @@ packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GByteArray *d
 
     // Save IP Addresses into packet
     PacketIpData *ip_data = g_malloc0(sizeof(PacketIpData));
+    ip_data->proto.id = PACKET_PROTO_IP;
     ip_data->srcip = g_strdup(fragment->srcip);
     ip_data->dstip = g_strdup(fragment->dstip);
     ip_data->version = fragment->version;

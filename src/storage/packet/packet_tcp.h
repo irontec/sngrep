@@ -76,6 +76,8 @@ struct _PacketTcpSegment
 
 struct _PacketTcpData
 {
+    //! Protocol information
+    PacketProtocol proto;
     guint16 sport;
     guint16 dport;
     guint16 off;

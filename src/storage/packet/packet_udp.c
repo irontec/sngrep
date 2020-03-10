@@ -63,6 +63,7 @@ packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // UDP packet data
     PacketUdpData *udp_data = g_malloc0(sizeof(PacketUdpData));
+    udp_data->proto.id = PACKET_PROTO_UDP;
 
     // Set packet ports
 #ifdef __FAVOR_BSD

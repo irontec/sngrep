@@ -41,19 +41,25 @@
 G_DEFINE_TYPE(Packet, packet, G_TYPE_OBJECT)
 
 void
-packet_set_protocol_data(Packet *packet, PacketProtocol proto, gpointer data)
+packet_set_protocol_data(Packet *packet, G_GNUC_UNUSED PacketProtocolId id, gpointer data)
 {
-    g_ptr_array_set(packet->proto, proto, data);
+    packet->proto = g_slist_append(packet->proto, data);
 }
 
 gpointer
-packet_get_protocol_data(const Packet *packet, PacketProtocol proto)
+packet_get_protocol_data(const Packet *packet, PacketProtocolId id)
 {
-    return g_ptr_array_index(packet->proto, proto);
+    for (GSList *l = packet->proto; l != NULL; l = l->next) {
+        PacketProtocol *proto = l->data;
+        if (proto->id == id) {
+            return l->data;
+        }
+    }
+    return NULL;
 }
 
 gboolean
-packet_has_protocol(const Packet *packet, PacketProtocol proto)
+packet_has_protocol(const Packet *packet, PacketProtocolId proto)
 {
     return packet_get_protocol_data(packet, proto) != NULL;
 }
@@ -184,7 +190,7 @@ packet_frame_new()
 static void
 packet_proto_free(gpointer proto_id, Packet *packet)
 {
-    PacketProtocol id = GPOINTER_TO_INT(proto_id);
+    PacketProtocolId id = GPOINTER_TO_INT(proto_id);
 
     if (packet_has_protocol(packet, id)) {
         PacketDissector *dissector = storage_find_dissector(id);
@@ -210,8 +216,8 @@ packet_finalize(GObject *self)
     Packet *packet = SNGREP_PACKET(self);
 
     // Free each protocol data
-    g_ptr_array_foreach_idx(packet->proto, (GFunc) packet_proto_free, packet);
-    g_ptr_array_free(packet->proto, TRUE);
+    g_slist_foreach(packet->proto, (GFunc) packet_proto_free, packet);
+    g_slist_free(packet->proto);
 
     // Free each frame data
     g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
@@ -236,8 +242,8 @@ packet_new(CaptureInput *input)
 static void
 packet_init(Packet *self)
 {
-    self->proto = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
-    g_ptr_array_set_size(self->proto, PACKET_PROTO_COUNT);
+    self->proto = NULL;
+    self->frames = NULL;
 }
 
 static void

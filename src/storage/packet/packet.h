@@ -68,14 +68,29 @@ typedef enum
     PACKET_PROTO_RTCP,
     PACKET_PROTO_HEP,
     PACKET_PROTO_COUNT
-} PacketProtocol;
+} PacketProtocolId;
 
 //! Shorter declaration of packet structure
 typedef struct _Packet Packet;
 //! Shorter declaration of frame structure
 typedef struct _PacketFrame PacketFrame;
+//! Shorter declaration of packet protocol structure
+typedef struct _PacketProtocol PacketProtocol;
 //! Forward declaration for CaptureInput
 typedef struct _CaptureInput CaptureInput;
+
+/**
+ * @brief Packet capture data.
+ *
+ * One packet can contain more than one frame after assembly. We assume than
+ * one SIP message has one packet (maybe in multiple frames) and that one
+ * packet can only contain one SIP message.
+ */
+struct _PacketProtocol
+{
+    //! Protocol identifier
+    PacketProtocolId id;
+};
 
 /**
  * @brief Packet capture data.
@@ -95,7 +110,7 @@ struct _Packet
     //! Packet Destination Adddress
     Address *dst;
     //! Each packet protocol information
-    GPtrArray *proto;
+    GSList *proto;
     //! Packet frame list (frame_t)
     GList *frames;
 };
@@ -128,13 +143,13 @@ void
 packet_unref(Packet *packet);
 
 void
-packet_set_protocol_data(Packet *packet, PacketProtocol proto, gpointer data);
+packet_set_protocol_data(Packet *packet, PacketProtocolId proto, gpointer data);
 
 gpointer
-packet_get_protocol_data(const Packet *packet, PacketProtocol proto);
+packet_get_protocol_data(const Packet *packet, PacketProtocolId proto);
 
 gboolean
-packet_has_protocol(const Packet *packet, PacketProtocol proto);
+packet_has_protocol(const Packet *packet, PacketProtocolId proto);
 
 Address *
 packet_src_address(Packet *packet);

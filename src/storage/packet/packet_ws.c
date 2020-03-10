@@ -31,7 +31,7 @@
 
 #include "config.h"
 #include <glib.h>
-#include "parser.h"
+#include "dissector.h"
 #include "packet_ws.h"
 
 GByteArray *
