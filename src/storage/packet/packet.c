@@ -188,14 +188,17 @@ packet_frame_new()
 }
 
 static void
-packet_proto_free(gpointer proto_id, Packet *packet)
+packet_proto_free(gpointer data, Packet *packet)
 {
-    PacketProtocolId id = GPOINTER_TO_INT(proto_id);
+    PacketProtocol *proto = data;
+    g_return_if_fail(proto != NULL);
 
-    if (packet_has_protocol(packet, id)) {
-        PacketDissector *dissector = storage_find_dissector(id);
-        packet_dissector_free_data(dissector, packet);
-    }
+    // Use dissector free function
+    PacketDissector *dissector = storage_find_dissector(proto->id);
+    packet_dissector_free_data(dissector, packet);
+
+    // Remove protocol information from the list
+    packet->proto = g_slist_remove(packet->proto, data);
 }
 
 Packet *
