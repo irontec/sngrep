@@ -55,7 +55,7 @@ struct _Message
     //! Captured packet for this message
     Packet *packet;
     //! Attribute list for this message
-    GHashTable *attributes;
+    GSList *attributes;
     //! Message is a retransmission from other message
     const Message *retrans;
 };

@@ -42,8 +42,8 @@ msg_new(Packet *packet)
     Message *msg = g_malloc0(sizeof(Message));
     // Set message packet
     msg->packet = packet_ref(packet);
-    // Create message attribute hash table
-    msg->attributes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    // Create message attribute list
+    msg->attributes = NULL;
     return msg;
 }
 
@@ -52,7 +52,7 @@ msg_free(Message *msg)
 {
     // Free message packets
     packet_unref(msg->packet);
-    g_hash_table_destroy(msg->attributes);
+    g_slist_free_full(msg->attributes, g_free);
     g_free(msg);
 }
 
@@ -160,25 +160,40 @@ msg_get_attribute(Message *msg, gint id)
     Attribute *attr = attr_header(id);
     g_return_val_if_fail(attr != NULL, NULL);
 
+    AttributeValue *cached_value = NULL;
+
     //! Check if this attribute was already requested
-    gchar *cached_value = g_hash_table_lookup(msg->attributes, attr->name);
-    if (cached_value != NULL) {
-        if (!attr->mutable) {
-            //! Attribute value doesn't change, return cached value
-            return cached_value;
-        } else {
-            //! Attribute value changes, cached value is obsolete
-            g_hash_table_remove(msg->attributes, attr->name);
+    for (GSList *l = msg->attributes; l != NULL; l = l->next) {
+        AttributeValue *value = l->data;
+        g_return_val_if_fail(value != NULL, NULL);
+        if (value->attr == attr) {
+            cached_value = value;
+            break;
         }
     }
 
+    if (cached_value != NULL) {
+        if (!attr->mutable) {
+            //! Attribute value doesn't change, return cached value
+            return cached_value->value;
+        } else {
+            //! Attribute value changes, cached value is obsolete
+            msg->attributes = g_slist_remove(msg->attributes, cached_value);
+            g_free(cached_value->value);
+            g_free(cached_value);
+        }
+    }
+
+    cached_value = g_malloc(sizeof(AttributeValue));
+    cached_value->attr = attr;
+
     //! Get current attribute value
-    gchar *value = attr_get_value(attr, msg);
+    cached_value->value = attr_get_value(attr, msg);
 
     //! Store value in attribute cache for future requests
-    g_hash_table_insert(msg->attributes, g_strdup(attr->name), value);
+    msg->attributes = g_slist_append(msg->attributes, cached_value);
 
-    return value;
+    return cached_value->value;
 }
 
 const gchar *
@@ -260,28 +275,6 @@ msg_is_duplicate(const Message *msg)
 
     // Consider duplicate if difference with its original is 10ms or less
     return g_date_time_difference(retrans_ts, orig_ts) > 10000;
-}
-
-void
-msg_set_cached_attribute(Message *msg, Attribute *attr, gchar *value)
-{
-    gchar *prev_value = g_hash_table_lookup(msg->attributes, attr->name);
-
-    //! Skip update on non mutable attributes
-    if (prev_value != NULL && !attr->mutable)
-        return;
-
-    if (prev_value != NULL && g_strcmp0(prev_value, value) != 0) {
-        g_free(prev_value);
-        g_hash_table_remove(msg->attributes, attr->name);
-        g_hash_table_insert(msg->attributes, g_strdup(attr->name), value);
-    }
-}
-
-gchar *
-msg_get_cached_attribute(Message *msg, Attribute *attr)
-{
-    return g_hash_table_lookup(msg->attributes, attr->name);
 }
 
 const gchar *

@@ -106,6 +106,17 @@ struct _Attribute
 };
 
 /**
+ * @brief Single Attribute value
+ */
+typedef struct
+{
+    //! Pointer to Attribute Header
+    Attribute *attr;
+    //! Actual attribute value
+    gchar *value;
+} AttributeValue;
+
+/**
  * @brief Get the header information of an Attribute
  *
  * Retrieve header data from attribute list

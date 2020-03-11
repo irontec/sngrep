@@ -417,6 +417,8 @@ storage_check_rtp_packet(Packet *packet)
 
     // Mark the list as changed
     storage->changed = TRUE;
+
+    capture_manager_output_packet(capture_manager_get_instance(), packet);
 }
 
 void
@@ -460,6 +462,8 @@ storage_check_rtcp_packet(Packet *packet)
 
     // Mark the list as changed
     storage->changed = TRUE;
+
+    capture_manager_output_packet(capture_manager_get_instance(), packet);
 }
 
 void
