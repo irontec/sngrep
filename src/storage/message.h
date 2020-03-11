@@ -57,7 +57,7 @@ struct _Message
     //! Attribute list for this message
     GSList *attributes;
     //! Message is a retransmission from other message
-    const Message *retrans;
+    gint retrans;
 };
 
 
@@ -229,10 +229,22 @@ msg_get_header(Message *msg, gchar *out);
  * to check if it one has the same content.
  *
  * @param msg SIP Message
+ * @return TRUE is message is a Retransmission, FALSE otherwise
+ */
+gboolean
+msg_is_retransmission(Message *msg);
+
+/**
+ * @brief Check if given message is a retransmission
+ *
+ * Compare message payload with the previous messages in the dialog,
+ * to check if it one has the same content.
+ *
+ * @param msg SIP Message
  * @return pointer to original message or NULL if message is not a retransmission
  */
 const Message *
-msg_is_retrans(Message *msg);
+msg_get_retransmission_original(Message *msg);
 
 /**
  * @brief Check if the given message is a capture duplicate
@@ -245,7 +257,7 @@ msg_is_retrans(Message *msg);
  * @return return TRUE if message is considered duplicated, FALSE otherwise
  */
 gboolean
-msg_is_duplicate(const Message *msg);
+msg_is_duplicate(Message *msg);
 
 /**
  * @brief Get Authoriztion-Header content

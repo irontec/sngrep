@@ -44,6 +44,8 @@ msg_new(Packet *packet)
     msg->packet = packet_ref(packet);
     // Create message attribute list
     msg->attributes = NULL;
+    // Mark retrans flag as not checked
+    msg->retrans = -1;
     return msg;
 }
 
@@ -224,8 +226,20 @@ msg_get_header(Message *msg, char *out)
     return out;
 }
 
+gboolean
+msg_is_retransmission(Message *msg)
+{
+    if (msg->retrans == -1) {
+        // Try to find the original message
+        const Message *original = msg_get_retransmission_original(msg);
+        msg->retrans = (original != NULL) ? 1 : 0;
+    }
+
+    return (msg->retrans == 0) ? TRUE : FALSE;
+}
+
 const Message *
-msg_is_retrans(Message *msg)
+msg_get_retransmission_original(Message *msg)
 {
     // Look in the 20 previous messages for a retrans of current message
     guint length = g_ptr_array_len(msg->call->msgs);
@@ -260,13 +274,13 @@ msg_is_retrans(Message *msg)
 }
 
 gboolean
-msg_is_duplicate(const Message *msg)
+msg_is_duplicate(Message *msg)
 {
-    if (msg->retrans == NULL)
+    if (!msg_is_retransmission(msg))
         return FALSE;
 
     g_autoptr(GDateTime) orig_ts = g_date_time_new_from_unix_usec(
-        msg_get_time(msg->retrans)
+        msg_get_time(msg_get_retransmission_original(msg))
     );
 
     g_autoptr(GDateTime) retrans_ts = g_date_time_new_from_unix_usec(

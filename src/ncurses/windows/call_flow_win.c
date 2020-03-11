@@ -318,7 +318,7 @@ call_flow_arrow_find_prev_callid(Window *window, const CallFlowArrow *arrow)
 
         if (msg_get_call(msg) == msg_get_call(prev_msg)
             && msg_is_request(msg) == msg_is_request(prev_msg)
-            && !msg_is_retrans(prev_msg)) {
+            && !msg_is_retransmission(prev_msg)) {
 
             return prev;
         }
@@ -967,7 +967,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_SPIRAL_RIGHT) {
         mvwaddwstr(flow_win, aline, startpos + 2, ncurses_acs_utf8('<'));
-        if (msg->retrans) {
+        if (msg_is_retransmission(msg)) {
             mvwaddwstr(flow_win, aline, startpos + 3, ncurses_acs_utf8('<'));
             mvwaddwstr(flow_win, aline, startpos + 4, ncurses_acs_utf8('<'));
         }
@@ -979,7 +979,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         }
     } else if (arrow->dir == CF_ARROW_DIR_SPIRAL_LEFT) {
         mvwaddwstr(flow_win, aline, startpos - 2, ncurses_acs_utf8('>'));
-        if (msg->retrans) {
+        if (msg_is_retransmission(msg)) {
             mvwaddwstr(flow_win, aline, startpos - 3, ncurses_acs_utf8('>'));
             mvwaddwstr(flow_win, aline, startpos - 4, ncurses_acs_utf8('>'));
         }
@@ -991,13 +991,13 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
         }
     } else if (arrow->dir == CF_ARROW_DIR_RIGHT) {
         mvwaddwstr(flow_win, aline, endpos - 2, ncurses_acs_utf8('>'));
-        if (msg->retrans) {
+        if (msg_is_retransmission(msg)) {
             mvwaddwstr(flow_win, aline, endpos - 3, ncurses_acs_utf8('>'));
             mvwaddwstr(flow_win, aline, endpos - 4, ncurses_acs_utf8('>'));
         }
     } else {
         mvwaddwstr(flow_win, aline, startpos + 2, ncurses_acs_utf8('<'));
-        if (msg->retrans) {
+        if (msg_is_retransmission(msg)) {
             mvwaddwstr(flow_win, aline, startpos + 3, ncurses_acs_utf8('<'));
             mvwaddwstr(flow_win, aline, startpos + 4, ncurses_acs_utf8('<'));
         }

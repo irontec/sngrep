@@ -86,8 +86,6 @@ call_add_message(Call *call, Message *msg)
     g_ptr_array_add(call->msgs, msg);
     // Flag this call as changed
     call->changed = TRUE;
-    // Check if message is a retransmission
-    msg->retrans = msg_is_retrans(msg);
 }
 
 void
