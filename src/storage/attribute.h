@@ -210,6 +210,18 @@ attr_color_sip_method(const gchar *value);
 gint
 attr_color_call_state(const gchar *value);
 
+/**
+ * @brief Allocate memory to store a cached attribute value
+ */
+AttributeValue *
+attr_value_new(Attribute *attr, gchar *value);
+
+/**
+ * @brief Free allocated memory for an attribute value
+ */
+void
+attr_value_free(AttributeValue *attr_value);
+
 void
 attribute_init();
 

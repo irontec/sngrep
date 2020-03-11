@@ -54,7 +54,7 @@ msg_free(Message *msg)
 {
     // Free message packets
     packet_unref(msg->packet);
-    g_slist_free_full(msg->attributes, g_free);
+    g_slist_free_full(msg->attributes, (GDestroyNotify) attr_value_free);
     g_free(msg);
 }
 
@@ -181,16 +181,15 @@ msg_get_attribute(Message *msg, gint id)
         } else {
             //! Attribute value changes, cached value is obsolete
             msg->attributes = g_slist_remove(msg->attributes, cached_value);
-            g_free(cached_value->value);
-            g_free(cached_value);
+            attr_value_free(cached_value);
         }
     }
 
-    cached_value = g_malloc(sizeof(AttributeValue));
-    cached_value->attr = attr;
-
     //! Get current attribute value
-    cached_value->value = attr_get_value(attr, msg);
+    cached_value = attr_value_new(
+        attr,
+        attr_get_value(attr, msg)
+    );
 
     //! Store value in attribute cache for future requests
     msg->attributes = g_slist_append(msg->attributes, cached_value);

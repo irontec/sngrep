@@ -311,6 +311,22 @@ attr_set_regex_pattern(Attribute *attr, gchar *pattern)
     attr->getterFunc = attr_regex_value_getter;
 }
 
+AttributeValue *
+attr_value_new(Attribute *attr, gchar *value)
+{
+    AttributeValue *attr_value = g_malloc0(sizeof(AttributeValue));
+    attr_value->attr = attr;
+    attr_value->value = value;
+    return attr_value;
+}
+
+void
+attr_value_free(AttributeValue *attr_value)
+{
+    g_free(attr_value->value);
+    g_free(attr_value);
+}
+
 void
 attribute_init()
 {
