@@ -493,6 +493,12 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 
     // Remove packet reference after parsing (added in storage_add_packet)
     g_bytes_unref(pending);
+
+    if (storage->options.capture.mode == STORAGE_MODE_NONE) {
+        g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
+        packet->frames = NULL;
+    }
+
     packet_unref(packet);
     return TRUE;
 }

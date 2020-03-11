@@ -276,6 +276,9 @@ setting_get_value(enum SettingId id);
 gint
 setting_get_intvalue(enum SettingId id);
 
+gint
+setting_get_enum(enum SettingId id);
+
 void
 setting_set_value(enum SettingId id, const gchar *value);
 

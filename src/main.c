@@ -201,12 +201,20 @@ main(int argc, char *argv[])
         storage_opts.capture.rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
     if (!storage_opts.capture.outfile)
         storage_opts.capture.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
+    if (!storage_opts.capture.mode) {
+        storage_opts.capture.mode = setting_get_enum(SETTING_CAPTURE_STORAGE);
+    }
 
     // Parse memory limit size string
     if (memory_limit == NULL) {
         storage_opts.capture.memory_limit = g_format_size_to_bytes(setting_get_value(SETTING_MEMORY_LIMIT));
     } else {
         storage_opts.capture.memory_limit = g_format_size_to_bytes(memory_limit);
+    }
+
+    // Disable frame storage if no interface is displayed
+    if (no_interface) {
+        storage_opts.capture.mode = STORAGE_MODE_NONE;
     }
 
 #ifdef WITH_SSL

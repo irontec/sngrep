@@ -35,6 +35,13 @@
 
 #define MAX_SIP_PAYLOAD 10240
 
+typedef enum
+{
+    STORAGE_MODE_NONE = 0,
+    STORAGE_MODE_MEMORY,
+    STORAGE_MODE_DISK,
+} StorageMode;
+
 //! Shorter declaration of sip_call_list structure
 typedef struct _Storage Storage;
 //! Shorter declaration of sip stats
@@ -72,6 +79,8 @@ struct _StorageMatchOpts
 
 struct _StorageCaptureOpts
 {
+    //! Storage mode
+    StorageMode mode;
     //! Max number of calls in the list
     guint limit;
     //! Rotate first call when the limit is reached

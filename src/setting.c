@@ -179,6 +179,22 @@ setting_get_intvalue(enum SettingId id)
     return (sett && strlen(sett->value)) ? g_atoi(sett->value) : -1;
 }
 
+gint
+setting_get_enum(enum SettingId id)
+{
+    const Setting *sett = setting_by_id(id);
+    const gchar *value = setting_get_value(id);
+
+    // Iterate through valid values
+    for (gint i = 0; sett->valuelist[i]; i++) {
+        // If current value matches
+        if (g_strcmp0(sett->valuelist[i], value) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void
 setting_set_value(enum SettingId id, const gchar *value)
 {
@@ -496,7 +512,7 @@ settings_init(SettingOpts options)
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTCP,
                     setting_bool_new("capture.packet.rtcp", SETTING_ON));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_STORAGE,
-                    setting_enum_new("capture.storage", "memory", "none,memory"));
+                    setting_enum_new("capture.storage", "memory", "none,memory,disk"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_ROTATE,
                     setting_bool_new("capture.rotate", SETTING_OFF));
     g_ptr_array_set(settings->values, SETTING_SIP_NOINCOMPLETE,
