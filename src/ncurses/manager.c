@@ -575,9 +575,9 @@ ncurses_acs_utf8(const chtype acs)
     static wchar_t utf8[2] = { 0, 0 };
 
     if (acs == ACS_BOARD) {
-        utf8[0] = 0x2587;   // ▇
+        utf8[0] = 0x2503;   // ┃
     } else if (acs == ACS_CKBOARD) {
-        utf8[0] = 0x25FC;   // ◼
+        utf8[0] = 0x2501;   // ━
     } else if (acs == '>') {
         utf8[0] = 0x25B6;   // ▶
     } else if (acs == '<') {

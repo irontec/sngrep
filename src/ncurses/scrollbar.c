@@ -68,7 +68,12 @@ scrollbar_vertical_draw(Scrollbar scrollbar)
 
     // Draw the N blocks of the scrollbar
     for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
-        mvwaddch(scrollbar.win, cline + scrollypos, scrollxpos, ACS_CKBOARD);
+        mvwaddwstr(
+            scrollbar.win,
+            cline + scrollypos,
+            scrollxpos,
+            ncurses_acs_utf8(ACS_BOARD)
+        );
     }
 }
 
@@ -88,15 +93,19 @@ scrollbar_horizontal_draw(Scrollbar scrollbar)
     mvwhline(scrollbar.win, scrollypos, scrollbar.preoffset, ACS_HLINE, width);
 
     // How long the scroll will be
-    if (!(scrollen = (width * 1.0f / scrollbar.max * width) + 0.5))
-        scrollen = 1;
+    scrollen = width * 1.0f / scrollbar.max * width + 1;
 
     // Where will the scroll start
     scrollxpos = width * (scrollbar.pos * 1.0f / scrollbar.max);
 
     // Draw the N blocks of the scrollbar
     for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
-        mvwaddwstr(scrollbar.win, scrollypos, cline + scrollxpos, ncurses_acs_utf8(ACS_CKBOARD));
+        mvwaddwstr(
+            scrollbar.win,
+            scrollypos,
+            cline + scrollxpos,
+            ncurses_acs_utf8(ACS_CKBOARD)
+        );
     }
 }
 
