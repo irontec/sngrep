@@ -59,12 +59,16 @@ codec_stream_decode(Stream *stream, GByteArray *decoded, GError **error)
     }
 
     g_autoptr(GByteArray) rtp_payload = g_byte_array_new();
-    guint64  prev = 0;
+    guint64 prev = 0;
     gint ptime = 20;
     for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
         Packet *packet = g_ptr_array_index(stream->packets, i);
         PacketRtpData *rtp = packet_get_protocol_data(packet, PACKET_PROTO_RTP);
-        g_byte_array_append(rtp_payload, rtp->payload->data, rtp->payload->len);
+        g_byte_array_append(
+            rtp_payload,
+            g_bytes_get_data(rtp->payload, NULL),
+            g_bytes_get_size(rtp->payload)
+        );
         if (prev > 0) {
             gint diff = (packet_time(packet) - prev) / G_MSEC_PER_SEC;
             if (diff > ptime * 2) {

@@ -45,10 +45,10 @@ packet_udp_data(const Packet *packet)
     return packet_get_protocol_data(packet, PACKET_PROTO_UDP);
 }
 
-static GByteArray *
-packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
-    struct udphdr *udp = (struct udphdr *) data->data;
+    struct udphdr *udp = (struct udphdr *) g_bytes_get_data(data, NULL);
     uint16_t udp_off = sizeof(struct udphdr);
 
     //! Is this a IP/TCP packet?
@@ -58,7 +58,7 @@ packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *
         return data;
 
     // Check payload can contain an UDP header
-    if (data->len < udp_off)
+    if (g_bytes_get_size(data) < udp_off)
         return NULL;
 
     // UDP packet data
@@ -78,7 +78,7 @@ packet_dissector_udp_dissect(PacketDissector *self, Packet *packet, GByteArray *
     packet_set_protocol_data(packet, PACKET_PROTO_UDP, udp_data);
 
     // Get pending payload
-    g_byte_array_remove_range(data, 0, udp_off);
+    data = g_bytes_offset(data, udp_off);
 
     // Call next dissector
     return packet_dissector_next(self, packet, data);

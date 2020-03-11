@@ -193,7 +193,7 @@ attr_regex_value_getter(Attribute *attr, Message *msg)
 
     g_return_val_if_fail(msg != NULL, NULL);
 
-    const gchar *payload = msg_get_payload(msg);
+    g_autofree gchar *payload = msg_get_payload(msg);
     g_return_val_if_fail(payload != NULL, NULL);
 
     // Response code

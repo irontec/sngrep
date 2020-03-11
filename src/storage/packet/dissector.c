@@ -56,8 +56,8 @@ packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id)
     priv->subdissectors = g_slist_append(priv->subdissectors, GINT_TO_POINTER(id));
 }
 
-GByteArray *
-packet_dissector_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+GBytes *
+packet_dissector_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     g_return_val_if_fail (PACKET_IS_DISSECTOR(self), NULL);
 
@@ -78,8 +78,8 @@ packet_dissector_free_data(PacketDissector *self, Packet *packet)
     }
 }
 
-GByteArray *
-packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GByteArray *data)
+GBytes *
+packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GBytes *data)
 {
     PacketDissector *dissector = storage_find_dissector(id);
     if (dissector != NULL) {
@@ -89,8 +89,8 @@ packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GByteArray *dat
     }
 }
 
-GByteArray *
-packet_dissector_next(PacketDissector *current, Packet *packet, GByteArray *data)
+GBytes *
+packet_dissector_next(PacketDissector *current, Packet *packet, GBytes *data)
 {
     // No more dissection required
     if (data == NULL)

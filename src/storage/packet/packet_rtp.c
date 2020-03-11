@@ -103,14 +103,14 @@ packet_rtp_standard_codec(guint8 code)
     return NULL;
 }
 
-static GByteArray *
-packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GBytes *data)
 {
     // Not enough data for a RTP packet
-    if (data->len < sizeof(PacketRtpHdr))
+    if (g_bytes_get_size(data) < sizeof(PacketRtpHdr))
         return data;
 
-    PacketRtpHdr *hdr = (PacketRtpHdr *) data->data;
+    PacketRtpHdr *hdr = (PacketRtpHdr *) g_bytes_get_data(data, NULL);
     // Validate RTP version field
     if (hdr->version != RTP_VERSION_RFC1889)
         return data;
@@ -136,10 +136,10 @@ packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
     rtp->marker = (hdr->marker == 0x1);
 
     // Remove RTP headers from payload
-    g_byte_array_remove_range(data, 0, 12);
+    data = g_bytes_offset(data, 12);
 
     // Store RTP payload data
-    rtp->payload = g_byte_array_ref(data);
+    rtp->payload = data;
 
     // Set packet RTP information
     packet_set_protocol_data(packet, PACKET_PROTO_RTP, rtp);
@@ -147,7 +147,7 @@ packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
     // Add data to storage
     storage_check_rtp_packet(packet);
 
-    return data;
+    return NULL;
 }
 
 static void
@@ -161,7 +161,7 @@ packet_dissector_rtp_free(Packet *packet)
         g_free(rtp_data->encoding);
     }
 
-    g_byte_array_unref(rtp_data->payload);
+    g_bytes_unref(rtp_data->payload);
     g_free(rtp_data);
 }
 

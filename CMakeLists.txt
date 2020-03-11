@@ -25,6 +25,7 @@ set(SOURCES
         src/capture/capture_pcap.c
         src/capture/capture_txt.c
         src/glib-extra/gasyncqueuesource.c
+        src/glib-extra/gbytes.c
         src/glib-extra/gdatetime.c
         src/glib-extra/glist.c
         src/glib-extra/gptrarray.c

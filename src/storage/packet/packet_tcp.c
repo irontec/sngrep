@@ -101,21 +101,21 @@ packet_tcp_assembly_hashkey(PacketTcpSegment *segment)
 }
 
 static PacketTcpSegment *
-packet_tcp_segment_new(Packet *packet, GByteArray *data)
+packet_tcp_segment_new(Packet *packet, GBytes *data)
 {
     // Reserve memory for storing segment information
     PacketTcpSegment *segment = g_malloc(sizeof(PacketTcpSegment));
     // Store packet information
     segment->packet = packet_ref(packet);
     // Set segment payload for future reassembly
-    segment->data = g_byte_array_ref(data);
+    segment->data = g_bytes_ref(data);
     return segment;
 }
 
 static void
 packet_tcp_segment_free(PacketTcpSegment *segment)
 {
-    g_byte_array_unref(segment->data);
+    g_bytes_unref(segment->data);
     packet_unref(segment->packet);
     g_free(segment);
 }
@@ -167,7 +167,11 @@ packet_tcp_stream_add_segment(PacketTcpStream *stream, PacketTcpSegment *segment
     // Add segment to stream
     g_ptr_array_add(stream->segments, segment);
     // Add payload to stream
-    g_byte_array_append(stream->data, segment->data->data, segment->data->len);
+    g_byte_array_append(
+        stream->data,
+        g_bytes_get_data(segment->data, NULL),
+        g_bytes_get_size(segment->data)
+    );
 }
 
 static PacketTcpStream *
@@ -180,8 +184,8 @@ packet_dissector_tcp_find_stream(PacketDissectorTcp *priv, PacketTcpSegment *seg
     return g_hash_table_lookup(priv->assembly, hashkey);
 }
 
-static GByteArray *
-packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     // Get TCP dissector information
     g_return_val_if_fail(PACKET_DISSECTOR_IS_TCP(self), NULL);
@@ -196,7 +200,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *
         return data;
 
     // Get TCP Header content
-    struct tcphdr *tcp = (struct tcphdr *) data->data;
+    struct tcphdr *tcp = (struct tcphdr *) g_bytes_get_data(data, NULL);
 
     // TCP packet data
     PacketTcpData *tcp_data = g_malloc0(sizeof(PacketTcpData));
@@ -223,7 +227,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *
     packet_set_protocol_data(packet, PACKET_PROTO_TCP, tcp_data);
 
     // Remove TCP header length
-    g_byte_array_remove_range(data, 0, tcp_data->off);
+    data = g_bytes_offset(data, tcp_data->off);
 
     // Create new segment for this stream
     PacketTcpSegment *segment = packet_tcp_segment_new(packet, data);
@@ -251,7 +255,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // Check if this packet is interesting
     guint stream_len = stream->data->len;
-    packet_dissector_next(self, packet, stream->data);
+    packet_dissector_next(self, packet, g_byte_array_free_to_bytes(stream->data));
 
     // Not interesting stream
     if (!packet_has_protocol(packet, PACKET_PROTO_SIP)) {

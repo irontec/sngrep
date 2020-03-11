@@ -55,14 +55,15 @@ G_DEFINE_TYPE(PacketDissectorRtcp, packet_dissector_rtcp, PACKET_TYPE_DISSECTOR)
  * RFC 5764 Section 5.1.2.  Reception (packet demultiplexing)
  */
 static gboolean
-packet_rtcp_valid(GByteArray *data)
+packet_rtcp_valid(GBytes *data)
 {
     g_return_val_if_fail(data != NULL, FALSE);
-    struct rtcp_hdr_generic *hdr = (struct rtcp_hdr_generic *) data;
+    struct rtcp_hdr_generic *hdr = (struct rtcp_hdr_generic *) g_bytes_get_data(data, NULL);
+    guint8 *content = (guint8*) g_bytes_get_data(data, NULL);
 
-    if ((data->len >= RTCP_HDR_LENGTH) &&
-        (RTP_VERSION(data->data[0]) == RTP_VERSION_RFC1889) &&
-        (data->data[0] > 127 && data->data[0] < 192) &&
+    if ((g_bytes_get_size(data) >= RTCP_HDR_LENGTH) &&
+        (RTP_VERSION(content[0]) == RTP_VERSION_RFC1889) &&
+        (content[0] > 127 && content[0] < 192) &&
         (hdr->type >= 192 && hdr->type <= 223)) {
         return 0;
     }
@@ -71,8 +72,8 @@ packet_rtcp_valid(GByteArray *data)
     return FALSE;
 }
 
-static GByteArray *
-packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GBytes *data)
 {
     struct rtcp_hdr_generic hdr;
     struct rtcp_hdr_sr hdr_sr;
@@ -90,14 +91,14 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
     rtcp->proto.id = PACKET_PROTO_RTCP;
 
     // Parse all packet payload headers
-    while (data->len > 0) {
+    while (g_bytes_get_size(data) > 0) {
 
         // Check we have at least rtcp generic info
-        if (data->len < sizeof(struct rtcp_hdr_generic))
+        if (g_bytes_get_size(data) < sizeof(struct rtcp_hdr_generic))
             break;
 
         // Copy into RTCP generic header
-        memcpy(&hdr, data->data, sizeof(hdr));
+        memcpy(&hdr, g_bytes_get_data(data, NULL), sizeof(hdr));
 
         // Check RTP version
         if (RTP_VERSION(hdr.version) != RTP_VERSION_RFC1889)
@@ -107,14 +108,14 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
         guint hlen = (guint) g_ntohs(hdr.len) * 4 + 4;
 
         // No enough data for this RTCP header
-        if (hlen > data->len)
+        if (hlen > g_bytes_get_size(data))
             break;
 
         // Check RTCP packet header type
         switch (hdr.type) {
             case RTCP_HDR_SR:
                 // Get Sender Report header
-                memcpy(&hdr_sr, data->data, sizeof(hdr_sr));
+                memcpy(&hdr_sr, g_bytes_get_data(data, NULL), sizeof(hdr_sr));
                 rtcp->spc = ntohl(hdr_sr.spc);
                 break;
             case RTCP_HDR_RR:
@@ -126,17 +127,18 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
                 break;
             case RTCP_XR:
                 // Get Sender Report Extended header
-                memcpy(&hdr_xr, data->data, sizeof(hdr_xr));
+                memcpy(&hdr_xr, g_bytes_get_data(data, NULL), sizeof(hdr_xr));
                 gsize bsize = sizeof(hdr_xr);
 
                 // Read all report blocks
                 while (bsize < (guint) ntohs(hdr_xr.len) * 4 + 4) {
                     // Read block header
-                    memcpy(&blk_xr, data->data + bsize, sizeof(blk_xr));
+                    guint8 *content = (guint8 *) g_bytes_get_data(data, NULL);
+                    memcpy(&blk_xr, content + bsize, sizeof(blk_xr));
                     // Check block type
                     switch (blk_xr.type) {
                         case RTCP_XR_VOIP_METRCS:
-                            memcpy(&blk_xr_voip, data->data + sizeof(hdr_xr), sizeof(blk_xr_voip));
+                            memcpy(&blk_xr_voip, content + sizeof(hdr_xr), sizeof(blk_xr_voip));
                             rtcp->fdiscard = blk_xr_voip.drate;
                             rtcp->flost = blk_xr_voip.lrate;
                             rtcp->mosl = blk_xr_voip.moslq;
@@ -153,12 +155,12 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
             case RTCP_TOKEN:
             default:
                 // Not handled headers. Skip the rest of this packet
-                g_byte_array_set_size(data, 0);
+                data = g_bytes_offset(data, g_bytes_get_size(data));
                 break;
         }
 
         // Remove this header data
-        g_byte_array_remove_range(data, 0, hlen);
+        data = g_bytes_offset(data, hlen);
     }
 
     // Set packet RTP informaiton
@@ -167,7 +169,7 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
     // Add data to storage
     storage_check_rtcp_packet(packet);
 
-    return data;
+    return NULL;
 }
 
 static void

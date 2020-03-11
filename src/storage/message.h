@@ -178,8 +178,10 @@ msg_get_cseq(Message *msg);
 
 /**
  * @brief Get SIP Message payload
+ *
+ * Payload data must be freed when not longer required
  */
-const gchar *
+gchar *
 msg_get_payload(Message *msg);
 
 /**

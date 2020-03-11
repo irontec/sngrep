@@ -116,7 +116,7 @@ msg_diff_win_draw_message(WINDOW *win, Message *msg, char *highlight)
 {
     int height, width, line, column;
     char header[MAX_SIP_PAYLOAD];
-    const char *payload = msg_get_payload(msg);
+    g_autofree gchar *payload = msg_get_payload(msg);
 
     // Clear the window
     werase(win);
@@ -180,12 +180,15 @@ msg_diff_win_draw(Window *window)
 
     // Draw first message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_win_line_highlight(msg_get_payload(self->one), msg_get_payload(self->two), highlight);
+    g_autofree gchar *payload_one = msg_get_payload(self->one);
+    g_autofree gchar *payload_two = msg_get_payload(self->two);
+
+    msg_diff_win_line_highlight(payload_one, payload_two, highlight);
     msg_diff_win_draw_message(self->one_win, self->one, highlight);
 
     // Draw second message
     memset(highlight, 0, sizeof(highlight));
-    msg_diff_win_line_highlight(msg_get_payload(self->two), msg_get_payload(self->one), highlight);
+    msg_diff_win_line_highlight(payload_two, payload_one, highlight);
     msg_diff_win_draw_message(self->two_win, self->two, highlight);
 
     // Redraw footer

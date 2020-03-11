@@ -51,8 +51,8 @@ G_DEFINE_TYPE(PacketDissectorHep, packet_dissector_hep, PACKET_TYPE_DISSECTOR)
  *
  * @return packet pointer
  */
-static GByteArray *
-packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     CaptureHepChunkIp4 src_ip4, dst_ip4;
 #ifdef USE_IPV6
@@ -63,31 +63,31 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
     gchar srcip[ADDRESSLEN], dstip[ADDRESSLEN];
     guint16 sport = 0, dport = 0;
     g_autofree gchar *password = NULL;
-    GByteArray *payload = NULL;
+    GBytes *payload = NULL;
 
-    if (data->len < sizeof(CaptureHepGeneric))
+    if (g_bytes_get_size(data) < sizeof(CaptureHepGeneric))
         return data;
 
     // Copy initial bytes to HEP Generic header
     CaptureHepGeneric hg;
-    memcpy(&hg.header, data->data, sizeof(CaptureHepGeneric));
+    memcpy(&hg.header, g_bytes_get_data(data, NULL), sizeof(CaptureHepGeneric));
 
     // header HEP3 check
     if (memcmp(hg.header.id, "\x48\x45\x50\x33", 4) != 0)
-        return NULL;
+        return data;
 
     // Packet frame to store timestamps
     PacketFrame *frame = g_list_nth_data(packet->frames, 0);
 
     // Limit the data to given length
-    g_byte_array_set_size(data, g_ntohs(hg.header.length));
+    data = g_bytes_new_from_bytes(data, 0, g_ntohs(hg.header.length));
 
     // Remove already parsed ctrl header
-    data = g_byte_array_remove_range(data, 0, sizeof(CaptureHepCtrl));
+    data = g_bytes_offset(data, sizeof(CaptureHepCtrl));
 
-    while (data->len > 0) {
+    while (g_bytes_get_size(data) > 0) {
 
-        CaptureHepChunk *chunk = (CaptureHepChunk *) data->data;
+        CaptureHepChunk *chunk = (CaptureHepChunk *) g_bytes_get_data(data, NULL);
         guint chunk_vendor = g_ntohs(chunk->vendor_id);
         guint chunk_type = g_ntohs(chunk->type_id);
         guint chunk_len = g_ntohs(chunk->length);
@@ -99,7 +99,7 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
         /* Skip not general chunks */
         if (chunk_vendor != 0) {
-            data = g_byte_array_remove_range(data, 0, chunk_len);
+            data = g_bytes_offset(data, chunk_len);
             continue;
         }
 
@@ -107,75 +107,73 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GByteArray *
             case CAPTURE_EEP_CHUNK_INVALID:
                 return NULL;
             case CAPTURE_EEP_CHUNK_FAMILY:
-                memcpy(&hg.ip_family, (gpointer) data->data, sizeof(CaptureHepChunkUint8));
+                memcpy(&hg.ip_family, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint8));
                 break;
             case CAPTURE_EEP_CHUNK_PROTO:
-                memcpy(&hg.ip_proto, (gpointer) data->data, sizeof(CaptureHepChunkUint8));
+                memcpy(&hg.ip_proto, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint8));
                 break;
             case CAPTURE_EEP_CHUNK_SRC_IP4:
-                memcpy(&src_ip4, (gpointer) data->data, sizeof(CaptureHepChunkIp4));
+                memcpy(&src_ip4, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkIp4));
                 inet_ntop(AF_INET, &src_ip4.data, srcip, sizeof(srcip));
                 break;
             case CAPTURE_EEP_CHUNK_DST_IP4:
-                memcpy(&dst_ip4, (gpointer) data->data, sizeof(CaptureHepChunkIp4));
+                memcpy(&dst_ip4, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkIp4));
                 inet_ntop(AF_INET, &dst_ip4.data, dstip, sizeof(srcip));
                 break;
 #ifdef USE_IPV6
             case CAPTURE_EEP_CHUNK_SRC_IP6:
-                memcpy(&src_ip6, (gpointer) data->data, sizeof(CaptureHepChunkIp6));
+                memcpy(&src_ip6, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkIp6));
                 inet_ntop(AF_INET6, &src_ip6.data, srcip, sizeof(srcip));
                 break;
             case CAPTURE_EEP_CHUNK_DST_IP6:
-                memcpy(&dst_ip6, (gpointer) data->data, sizeof(CaptureHepChunkIp6));
+                memcpy(&dst_ip6, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkIp6));
                 inet_ntop(AF_INET6, &dst_ip6.data, dstip, sizeof(dstip));
                 break;
 #endif
             case CAPTURE_EEP_CHUNK_SRC_PORT:
-                memcpy(&hg.src_port, (gpointer) data->data, sizeof(CaptureHepChunkUint16));
+                memcpy(&hg.src_port, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint16));
                 sport = g_ntohs(hg.src_port.data);
                 break;
             case CAPTURE_EEP_CHUNK_DST_PORT:
-                memcpy(&hg.dst_port, (gpointer) data->data, sizeof(CaptureHepChunkUint16));
+                memcpy(&hg.dst_port, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint16));
                 dport = g_ntohs(hg.dst_port.data);
                 break;
             case CAPTURE_EEP_CHUNK_TS_SEC:
-                memcpy(&hg.time_sec, (gpointer) data->data, sizeof(CaptureHepChunkUint32));
+                memcpy(&hg.time_sec, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint32));
                 break;
             case CAPTURE_EEP_CHUNK_TS_USEC:
-                memcpy(&hg.time_usec, (gpointer) data->data, sizeof(CaptureHepChunkUint32));
+                memcpy(&hg.time_usec, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint32));
                 break;
             case CAPTURE_EEP_CHUNK_PROTO_TYPE:
-                memcpy(&hg.proto_t, (gpointer) data->data, sizeof(CaptureHepChunkUint8));
+                memcpy(&hg.proto_t, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint8));
                 break;
             case CAPTURE_EEP_CHUNK_CAPT_ID:
-                memcpy(&hg.capt_id, (gpointer) data->data, sizeof(CaptureHepChunkUint32));
+                memcpy(&hg.capt_id, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunkUint32));
                 break;
             case CAPTURE_EEP_CHUNK_KEEP_TM:
                 break;
             case CAPTURE_EEP_CHUNK_AUTH_KEY:
-                memcpy(&authkey_chunk, (gpointer) data->data, sizeof(CaptureHepChunk));
+                memcpy(&authkey_chunk, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunk));
                 guint password_len = g_ntohs(authkey_chunk.length) - sizeof(CaptureHepChunk);
-                password = g_strndup((gpointer) data->data, password_len);
+                password = g_strndup(g_bytes_get_data(data, NULL), password_len);
                 break;
             case CAPTURE_EEP_CHUNK_PAYLOAD:
-                memcpy(&payload_chunk, (gpointer) data->data, sizeof(CaptureHepChunk));
+                memcpy(&payload_chunk, g_bytes_get_data(data, NULL), sizeof(CaptureHepChunk));
                 frame->len = frame->caplen = chunk_len - sizeof(CaptureHepChunk);
-                data = g_byte_array_remove_range(data, 0, sizeof(CaptureHepChunk));
-                payload = g_byte_array_sized_new(frame->len);
-                g_byte_array_append(payload, data->data, frame->len);
+                data = g_bytes_offset(data, sizeof(CaptureHepChunk));
+                payload = g_bytes_new(g_bytes_get_data(data, NULL), frame->len);
                 break;
             case CAPTURE_EEP_CHUNK_CORRELATION_ID:
-                break;
             default:
                 break;
         }
 
         // Fixup wrong chunk lengths
-        if (chunk_len > data->len)
-            chunk_len = data->len;
+        if (chunk_len > g_bytes_get_size(data))
+            chunk_len = g_bytes_get_size(data);
 
         // Parse next chunk
-        data = g_byte_array_remove_range(data, 0, chunk_len);
+        data = g_bytes_offset(data, chunk_len);
     }
 
     // Validate password

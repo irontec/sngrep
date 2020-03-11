@@ -120,7 +120,7 @@ struct _PacketRtpData
     //! RTP Marker set
     gboolean marker;
     //! RTP payload
-    GByteArray *payload;
+    GBytes *payload;
 };
 
 struct _PacketRtpEncoding

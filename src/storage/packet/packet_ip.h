@@ -115,7 +115,7 @@ struct _PacketIpFragment
     //! Packets with this frame data
     Packet *packet;
     //! Fragment contents
-    GByteArray *data;
+    GBytes *data;
 };
 
 /**

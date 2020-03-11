@@ -20,29 +20,43 @@
  **
  ****************************************************************************/
 /**
- * @file glib-extra.h
+ * @file gptrarray.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Helper function for glib containers
+ * @brief Helper function for GPtrArray containers
  *
  */
+#include "config.h"
+#include "gbytes.h"
 
-#ifndef __SNGREP_GLIB_EXTRA_H
-#define __SNGREP_GLIB_EXTRA_H
+GByteArray *
+g_byte_array_offset(GByteArray *array, guint offset)
+{
+    g_return_val_if_fail(array->len >= offset, NULL);
+    array->data += offset;
+    array->len -= offset;
+    return array;
+}
 
-#include <glib.h>
-#include "glib-extra/gbytes.h"
-#include "glib-extra/glist.h"
-#include "glib-extra/gptrarray.h"
-#include "glib-extra/gasyncqueuesource.h"
-#include "glib-extra/gdatetime.h"
+GBytes *
+g_bytes_offset(GBytes *bytes, gsize offset)
+{
+    g_return_val_if_fail(bytes != NULL, bytes);
+    g_return_val_if_fail(offset <= g_bytes_get_size(bytes), bytes);
 
-#define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
+    gsize len = g_bytes_get_size(bytes);
+    GBytes *ret = g_bytes_new_from_bytes(bytes, offset, len - offset);
+    g_bytes_unref(bytes);
+    return ret;
+}
 
-gint
-g_atoi(const gchar *number);
+GBytes *
+g_bytes_set_size(GBytes *bytes, gsize count)
+{
+    g_return_val_if_fail(bytes != NULL, bytes);
+    g_return_val_if_fail(count <= g_bytes_get_size(bytes), bytes);
 
-gsize
-g_format_size_to_bytes(const gchar *size);
-
-#endif //__SNGREP_GLIB_EXTRA_H
+    GBytes *ret = g_bytes_new_from_bytes(bytes, 0, count);
+    g_bytes_unref(bytes);
+    return ret;
+}

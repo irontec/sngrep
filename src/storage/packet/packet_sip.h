@@ -88,7 +88,7 @@ struct _PacketSipData
     //! Is this an initial request? (no to-tag)
     gboolean initial;
     //! SIP payload (Headers + Body)
-    gchar *payload;
+    GBytes *payload;
     //! Content-Length header value
     guint64 content_len;
     //! SIP Call-Id Header value
@@ -107,8 +107,8 @@ packet_sip_method_from_str(const gchar *method);
 const gchar *
 sip_method_str(guint method);
 
-const gchar *
-packet_sip_payload(const Packet *packet);
+gchar *
+packet_sip_payload_str(const Packet *packet);
 
 const gchar *
 packet_sip_method_str(const Packet *packet);

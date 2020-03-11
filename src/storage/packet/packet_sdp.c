@@ -228,14 +228,19 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
     }
 }
 
-static GByteArray *
-packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet, GBytes *data)
 {
-    g_autoptr(GString) payload = g_string_new_len((const gchar *) data->data, data->len);
     PacketSdpMedia *media = NULL;
 
-    if (data->len == 0)
+    if (g_bytes_get_size(data) == 0)
         return data;
+
+    g_autoptr(GString) payload = g_string_new_len(
+        (const gchar *) g_bytes_get_data(data, NULL),
+        g_bytes_get_size(data)
+    );
+
 
     PacketSdpData *sdp = g_malloc0(sizeof(PacketSdpData));
     sdp->proto.id = PACKET_PROTO_SDP;
@@ -261,9 +266,7 @@ packet_dissector_sdp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
 
     // Set packet SDP data
     packet_set_protocol_data(packet, PACKET_PROTO_SDP, sdp);
-    data = g_byte_array_remove_range(data, 0, data->len);
-
-    return data;
+    return NULL;
 }
 
 static void

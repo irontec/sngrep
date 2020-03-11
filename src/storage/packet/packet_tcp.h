@@ -70,7 +70,7 @@ struct _PacketTcpStream
 
 struct _PacketTcpSegment
 {
-    GByteArray *data;
+    GBytes *data;
     Packet *packet;
 };
 

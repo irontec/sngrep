@@ -58,7 +58,7 @@ packet_tls_error_quark()
 
 #if TLS_DEBUG == 1
 static void
-packet_tls_debug_print_hex(gchar *desc, gpointer ptr, gint len)
+packet_tls_debug_print_hex(gchar *desc, gconstpointer ptr, gint len)
 {
     gint i;
     guchar buff[17];
@@ -89,7 +89,7 @@ packet_tls_debug_print_hex(gchar *desc, gpointer ptr, gint len)
 
 static void
 packet_tls_debug_print_hex(G_GNUC_UNUSED gchar *desc,
-                           G_GNUC_UNUSED gpointer ptr,
+                           G_GNUC_UNUSED gconstpointer ptr,
                            G_GNUC_UNUSED gint len)
 {
 }
@@ -461,30 +461,13 @@ packet_dissector_tls_connection_find(PacketDissectorTls *dissector, Address src,
 }
 
 
-static gboolean
-packet_tls_record_handshake_is_ssl2(G_GNUC_UNUSED SSLConnection *conn,
-                                    const GByteArray *data)
-{
-    g_return_val_if_fail(data != NULL, FALSE);
-
-    // This magic belongs to wireshark people <3
-    if (data->len < 3) return 0;
-    // v2 client hello should start this way
-    if (data->data[0] != 0x80) return 0;
-    // v2 client hello msg type
-    if (data->data[2] != 0x01) return 0;
-    // Seems SSLv2
-    return 1;
-}
-
-
-static GByteArray *
-packet_tls_process_record_decode(SSLConnection *conn, GByteArray *data)
+static GBytes *
+packet_tls_process_record_decode(SSLConnection *conn, GBytes *data)
 {
     gcry_cipher_hd_t *evp;
     guint8 nonce[16] = { 0 };
 
-    packet_tls_debug_print_hex("Ciphertext", data->data, data->len);
+    packet_tls_debug_print_hex("Ciphertext", g_bytes_get_data(data, NULL), g_bytes_get_size(data));
 
     if (conn->direction == 0) {
         evp = &conn->client_cipher_ctx;
@@ -494,29 +477,29 @@ packet_tls_process_record_decode(SSLConnection *conn, GByteArray *data)
 
     if (conn->cipher_data.mode == MODE_CBC) {
         // TLS 1.1 and later extract explicit IV
-        if (conn->version >= 2 && data->len > 16) {
-            gcry_cipher_setiv(*evp, data->data, 16);
-            g_byte_array_remove_range(data, 0, 16);
+        if (conn->version >= 2 && g_bytes_get_size(data) > 16) {
+            gcry_cipher_setiv(*evp, g_bytes_get_data(data, NULL), 16);
+            data = g_bytes_offset(data, 16);
         }
     }
 
     if (conn->cipher_data.mode == MODE_GCM) {
         if (conn->direction == 0) {
             memcpy(nonce, conn->key_material.client_write_IV, conn->cipher_data.ivblock);
-            memcpy(nonce + conn->cipher_data.ivblock, data->data, 8);
+            memcpy(nonce + conn->cipher_data.ivblock, g_bytes_get_data(data, NULL), 8);
             nonce[15] = 2;
         } else {
             memcpy(nonce, conn->key_material.server_write_IV, conn->cipher_data.ivblock);
-            memcpy(nonce + conn->cipher_data.ivblock, data->data, 8);
+            memcpy(nonce + conn->cipher_data.ivblock, g_bytes_get_data(data, NULL), 8);
             nonce[15] = 2;
         }
         gcry_cipher_setctr(*evp, nonce, sizeof(nonce));
-        g_byte_array_remove_range(data, 0, 8);
+        data = g_bytes_offset(data, 8);
     }
 
-    GByteArray *out = g_byte_array_sized_new(data->len);
-    g_byte_array_set_size(out, data->len);
-    gcry_cipher_decrypt(*evp, out->data, out->len, data->data, data->len);
+    GByteArray *out = g_byte_array_sized_new(g_bytes_get_size(data));
+    g_byte_array_set_size(out, g_bytes_get_size(data));
+    gcry_cipher_decrypt(*evp, out->data, out->len, g_bytes_get_data(data, NULL), g_bytes_get_size(data));
     packet_tls_debug_print_hex("Plaintext", out->data, out->len);
 
     // Strip mac from the decoded data
@@ -537,11 +520,29 @@ packet_tls_process_record_decode(SSLConnection *conn, GByteArray *data)
     }
 
     // Return decoded data
-    return out;
+    return g_byte_array_free_to_bytes(out);
 }
 
-static GByteArray *
-packet_tls_process_record_ssl2(SSLConnection *conn, GByteArray *data)
+
+static gboolean
+packet_tls_record_handshake_is_ssl2(G_GNUC_UNUSED SSLConnection *conn, GBytes *data)
+{
+    g_return_val_if_fail(data != NULL, FALSE);
+
+    const guint8 *content = g_bytes_get_data(data, NULL);
+
+    // This magic belongs to wireshark people <3
+    if (g_bytes_get_size(data) < 3) return 0;
+    // v2 client hello should start this way
+    if (content[0] != 0x80) return 0;
+    // v2 client hello msg type
+    if (content[2] != 0x01) return 0;
+    // Seems SSLv2
+    return 1;
+}
+
+static GBytes *
+packet_tls_process_record_ssl2(SSLConnection *conn, GBytes *data)
 {
     int record_len_len;
     uint32_t record_len;
@@ -550,25 +551,26 @@ packet_tls_process_record_ssl2(SSLConnection *conn, GByteArray *data)
     int flen;
 
     // No record data here!
-    if (data->len == 0)
+    if (g_bytes_get_size(data) == 0)
         return NULL;
 
     // Record header length
-    record_len_len = (data->data[0] & 0x80) ? 2 : 3;
+    const guint8 *content = g_bytes_get_data(data, NULL);
+    record_len_len = (content[0] & 0x80) ? 2 : 3;
 
     // Two bytes SSLv2 record length field
     if (record_len_len == 2) {
-        record_len = (data->data[0] & 0x7f) << 8;
-        record_len += (data->data[1]);
-        record_type = data->data[2];
-        fragment = data->data + 3;
+        record_len = (content[0] & 0x7f) << 8;
+        record_len += (content[1]);
+        record_type = content[2];
+        fragment = content + 3;
         flen = record_len - 1 /* record type */;
     } else {
-        record_len = (data->data[0] & 0x3f) << 8;
-        record_len += data->data[1];
-        record_len += data->data[2];
-        record_type = data->data[3];
-        fragment = data->data + 4;
+        record_len = (content[0] & 0x3f) << 8;
+        record_len += content[1];
+        record_len += content[2];
+        record_type = content[3];
+        fragment = content + 4;
         flen = record_len - 1 /* record type */;
     }
 
@@ -593,11 +595,11 @@ packet_tls_process_record_ssl2(SSLConnection *conn, GByteArray *data)
 }
 
 static gboolean
-packet_tls_process_record_client_hello(SSLConnection *conn, GByteArray *data)
+packet_tls_process_record_client_hello(SSLConnection *conn, GBytes *data)
 {
     // Store client random
     struct ClientHello clienthello;
-    memcpy(&clienthello, data->data, sizeof(struct ClientHello));
+    memcpy(&clienthello, g_bytes_get_data(data, NULL), sizeof(struct ClientHello));
 
     // Store client random
     memcpy(&conn->client_random, &clienthello.random, sizeof(struct Random));
@@ -614,17 +616,18 @@ packet_tls_process_record_client_hello(SSLConnection *conn, GByteArray *data)
 }
 
 static gboolean
-packet_tls_process_record_server_hello(SSLConnection *conn, GByteArray *data)
+packet_tls_process_record_server_hello(SSLConnection *conn, GBytes *data)
 {
     // Store server random
     struct ServerHello serverhello;
-    memcpy(&serverhello, data->data, sizeof(struct ServerHello));
+    memcpy(&serverhello, g_bytes_get_data(data, NULL), sizeof(struct ServerHello));
 
     memcpy(&conn->server_random, &serverhello.random, sizeof(struct Random));
 
     // Get the selected cipher
+    const guint8 *content = g_bytes_get_data(data, NULL);
     memcpy(&conn->cipher_suite,
-           data->data + sizeof(struct ServerHello) + serverhello.session_id_length,
+           content + sizeof(struct ServerHello) + serverhello.session_id_length,
            sizeof(guint16));
 
     // Check if we have a handled cipher
@@ -632,11 +635,11 @@ packet_tls_process_record_server_hello(SSLConnection *conn, GByteArray *data)
 }
 
 static gboolean
-packet_tls_process_record_key_exchange(SSLConnection *conn, GByteArray *data)
+packet_tls_process_record_key_exchange(SSLConnection *conn, GBytes *data)
 {
     // Decrypt PreMasterKey
     struct ClientKeyExchange clientkeyex;
-    memcpy(&clientkeyex, data->data, sizeof(struct ClientKeyExchange));
+    memcpy(&clientkeyex, g_bytes_get_data(data, NULL), sizeof(struct ClientKeyExchange));
 
     gnutls_datum_t exkeys, pms;
     exkeys.size = UINT16_INT(clientkeyex.length);
@@ -749,12 +752,12 @@ packet_tls_process_record_key_exchange(SSLConnection *conn, GByteArray *data)
 }
 
 static gboolean
-packet_tls_process_record_handshake(SSLConnection *conn, GByteArray *data)
+packet_tls_process_record_handshake(SSLConnection *conn, GBytes *data)
 {
     // Get Handshake data
     struct Handshake handshake;
-    memcpy(&handshake, data->data, sizeof(struct Handshake));
-    g_byte_array_remove_range(data, 0, sizeof(struct Handshake));
+    memcpy(&handshake, g_bytes_get_data(data, NULL), sizeof(struct Handshake));
+    data = g_bytes_offset(data, sizeof(struct Handshake));
 
     if (UINT24_INT(handshake.length) < 0) {
         return FALSE;
@@ -783,24 +786,23 @@ packet_tls_process_record_handshake(SSLConnection *conn, GByteArray *data)
     return TRUE;
 }
 
-static GByteArray *
-packet_tls_process_record(SSLConnection *conn, GByteArray *data)
+static GBytes *
+packet_tls_process_record(SSLConnection *conn, GBytes *data)
 {
     // No record data here!
-    if (data->len == 0)
+    if (g_bytes_get_size(data) == 0)
         return data;
 
     // Get Record data
     struct TLSPlaintext record;
-    memcpy(&record, data->data, sizeof(struct TLSPlaintext));
-    g_byte_array_remove_range(data, 0, sizeof(struct TLSPlaintext));
+    memcpy(&record, g_bytes_get_data(data, NULL), sizeof(struct TLSPlaintext));
+    data = g_bytes_offset(data, sizeof(struct TLSPlaintext));
 
     // Process record fragment
     if (UINT16_INT(record.length) > 0) {
         // TLSPlaintext fragment pointer
-        g_autoptr(GByteArray) fragment = g_byte_array_new();
-        g_byte_array_append(fragment, data->data, UINT16_INT(record.length));
-        g_byte_array_remove_range(data, 0, UINT16_INT(record.length));
+        g_autoptr(GBytes) fragment = g_bytes_new(g_bytes_get_data(data, NULL), g_bytes_get_size(data));
+        data = g_bytes_offset(data, UINT16_INT(record.length));
 
         switch (record.type) {
             case HANDSHAKE:
@@ -831,11 +833,11 @@ packet_tls_process_record(SSLConnection *conn, GByteArray *data)
     return data;
 }
 
-static GByteArray *
-packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     SSLConnection *conn = NULL;
-    GByteArray *out = NULL;
+    GBytes *out = NULL;
 
     // Get TLS dissector information
     g_return_val_if_fail(PACKET_DISSECTOR_IS_TLS(self), NULL);
@@ -885,7 +887,7 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GByteArray *
                     }
                 } else {
                     // Process data segment!
-                    while (data->len > 0) {
+                    while (g_bytes_get_size(data) > 0) {
                         out = packet_tls_process_record(conn, data);
                         if (out == NULL) {
                             dissector->connections = g_slist_remove(dissector->connections, conn);
@@ -896,9 +898,8 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GByteArray *
                 }
 
                 // This seems a SIP TLS packet ;-)
-                if (out != NULL && out->len > 0) {
-                    data = g_byte_array_new_take(out->data, out->len);
-                    return packet_dissector_next(self, packet, data);
+                if (out != NULL && g_bytes_get_size(data) > 0) {
+                    return packet_dissector_next(self, packet, out);
                 }
                 break;
             case TCP_STATE_FIN:

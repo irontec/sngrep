@@ -50,7 +50,7 @@ struct _PacketDissectorClass
     //! Parent class
     GObjectClass parent;
     //! Protocol packet dissector function
-    GByteArray *(*dissect)(PacketDissector *self, Packet *packet, GByteArray *data);
+    GBytes *(*dissect)(PacketDissector *self, Packet *packet, GBytes *data);
     //! Packet data free function
     void (*free_data)(Packet *package);
 };
@@ -61,17 +61,17 @@ packet_dissector_set_protocol(PacketDissector *self, PacketProtocolId id);
 void
 packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id);
 
-GByteArray *
-packet_dissector_dissect(PacketDissector *self, Packet *packet, GByteArray *data);
+GBytes *
+packet_dissector_dissect(PacketDissector *self, Packet *packet, GBytes *data);
 
 void
 packet_dissector_free_data(PacketDissector *self, Packet *packet);
 
-GByteArray *
-packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GByteArray *data);
+GBytes *
+packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GBytes *data);
 
-GByteArray *
-packet_dissector_next(PacketDissector *current, Packet *packet, GByteArray *data);
+GBytes *
+packet_dissector_next(PacketDissector *current, Packet *packet, GBytes *data);
 
 G_END_DECLS
 

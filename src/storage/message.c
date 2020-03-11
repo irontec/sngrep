@@ -140,10 +140,10 @@ msg_get_cseq(Message *msg)
     return packet_sip_cseq(msg->packet);
 }
 
-const gchar *
+gchar *
 msg_get_payload(Message *msg)
 {
-    return packet_sip_payload(msg->packet);
+    return packet_sip_payload_str(msg->packet);
 }
 
 guint64
@@ -229,9 +229,15 @@ msg_is_retrans(Message *msg)
         if (addressport_equals(msg_src_address(prev), msg_src_address(msg)) &&
             addressport_equals(msg_dst_address(prev), msg_dst_address(msg))) {
             // Check they have the same payload
-            if (!strcasecmp(msg_get_payload(msg), msg_get_payload(prev))) {
+            gchar *payload_msg = msg_get_payload(msg);
+            gchar *payload_prev = msg_get_payload(prev);
+            if (!strcasecmp(payload_msg, payload_prev)) {
+                g_free(payload_msg);
+                g_free(payload_prev);
                 return prev;
             }
+            g_free(payload_msg);
+            g_free(payload_prev);
         }
     }
 

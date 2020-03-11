@@ -67,13 +67,15 @@ capture_output_txt_write(CaptureOutput *output, Packet *packet)
     Address src = packet_src_address(packet);
     Address dst = packet_dst_address(packet);
 
+    g_autofree const gchar *payload = packet_sip_payload_str(packet);
+
     fprintf(txt->file, "%s %s %s:%u -> %s:%u\n%s\n\n",
             date, time,
             address_get_ip(src),
             address_get_port(src),
             address_get_ip(dst),
             address_get_port(dst),
-            packet_sip_payload(packet)
+            payload
     );
 }
 

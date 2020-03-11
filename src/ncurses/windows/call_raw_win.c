@@ -78,7 +78,6 @@ call_raw_win_print_msg(Window *window, Message *msg)
     int payload_lines, column, height, width;
     // Message ngrep style Header
     char header[256];
-    char payload[MAX_SIP_PAYLOAD];
     int color = 0;
 
     // Get panel information
@@ -92,7 +91,7 @@ call_raw_win_print_msg(Window *window, Message *msg)
     getmaxyx(pad, height, width);
 
     // Get message payload
-    strcpy(payload, msg_get_payload(msg));
+    g_autofree gchar *payload = msg_get_payload(msg);
 
     // Check how many lines we well need to draw this message
     payload_lines = 0;

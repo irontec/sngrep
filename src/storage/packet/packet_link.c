@@ -41,8 +41,8 @@
 
 G_DEFINE_TYPE(PacketDissectorLink, packet_link, PACKET_TYPE_DISSECTOR)
 
-static GByteArray *
-packet_link_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_link_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     // Get capture input from this packet
     CaptureInput *input = packet->input;
@@ -61,7 +61,7 @@ packet_link_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
 
     // For ethernet, skip VLAN header if present
     if (link_type == DLT_EN10MB) {
-        struct ether_header *eth = (struct ether_header *) data->data;
+        struct ether_header *eth = (struct ether_header *) g_bytes_get_data(data, NULL);
         if (g_ntohs(eth->ether_type) == ETHERTYPE_8021Q) {
             offset += 4;
         }
@@ -79,8 +79,9 @@ packet_link_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
     // Skip NFLOG header if present
     if (link_type == DLT_NFLOG) {
         // Parse NFLOG TLV headers
-        while (offset + 8 <= data->len) {
-            LinkNflogHdr *tlv = (LinkNflogHdr *) (packet + offset);
+        while (offset + 8 <= g_bytes_get_size(data)) {
+            data = g_bytes_offset(data, offset);
+            LinkNflogHdr *tlv = (LinkNflogHdr *) g_bytes_get_data(data, NULL);
 
             if (!tlv) break;
 
@@ -96,12 +97,12 @@ packet_link_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
     }
 
     // Not enough data
-    if (data->len <= offset) {
+    if (g_bytes_get_size(data) <= offset) {
         return NULL;
     }
 
     // Update pending data
-    g_byte_array_remove_range(data, 0, offset);
+    data = g_bytes_offset(data, offset);
 
     // Call next dissector
     return packet_dissector_next(self, packet, data);

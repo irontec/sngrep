@@ -49,14 +49,14 @@ packet_ip_fragment_sort(const PacketIpFragment **a, const PacketIpFragment **b)
 }
 
 static PacketIpFragment *
-packet_ip_fragment_new(Packet *packet, GByteArray *data)
+packet_ip_fragment_new(Packet *packet, GBytes *data)
 {
     // Reserve memory for storing fragment information
     PacketIpFragment *fragment = g_malloc0(sizeof(PacketIpFragment));
     // Store packet information
     fragment->packet = packet_ref(packet);
     // Set fragment payload for future reassembly
-    fragment->data = g_byte_array_ref(data);
+    fragment->data = g_bytes_ref(data);
     return fragment;
 }
 
@@ -64,7 +64,7 @@ static void
 packet_ip_fragment_free(PacketIpFragment *fragment)
 {
     // Remove no longer required data
-    g_byte_array_unref(fragment->data);
+    g_bytes_unref(fragment->data);
     packet_unref(fragment->packet);
     g_free(fragment);
 }
@@ -92,17 +92,21 @@ packet_ip_datagram_free(PacketIpDatagram *datagram)
     g_free(datagram);
 }
 
-static GByteArray *
+static GBytes *
 packet_ip_datagram_payload(PacketIpDatagram *datagram)
 {
     // Join all fragment payload
     GByteArray *data = g_byte_array_new();
     for (guint i = 0; i < g_ptr_array_len(datagram->fragments); i++) {
         PacketIpFragment *fragment = g_ptr_array_index(datagram->fragments, i);
-        g_byte_array_append(data, fragment->data->data, fragment->data->len);
+        g_byte_array_append(
+            data,
+            g_bytes_get_data(fragment->data, NULL),
+            g_bytes_get_size(fragment->data)
+        );
     }
 
-    return data;
+    return g_byte_array_free_to_bytes(data);
 }
 
 static GList *
@@ -140,19 +144,19 @@ packet_dissector_ip_find_datagram(PacketDissectorIp *dissector, PacketIpFragment
     return NULL;
 }
 
-static GByteArray *
-packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     // Get IP dissector information
     g_return_val_if_fail(PACKET_DISSECTOR_IS_IP(self), NULL);
     PacketDissectorIp *dissector = PACKET_DISSECTOR_IP(self);
 
     // Get IP header
-    struct ip *ip4 = (struct ip *) data->data;
+    struct ip *ip4 = (struct ip *) g_bytes_get_data(data, NULL);
 
 #ifdef USE_IPV6
     // Get IPv6 header
-    struct ip6_hdr *ip6 = (struct ip6_hdr *) data->data;
+    struct ip6_hdr *ip6 = (struct ip6_hdr *) g_bytes_get_data(data, NULL);
 #endif
 
     // Create an IP fragment for current data
@@ -216,10 +220,10 @@ packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GByteArray *d
     packet_set_protocol_data(packet, PACKET_PROTO_IP, ip_data);
 
     // Get pending payload
-    g_byte_array_remove_range(data, 0, fragment->hl);
+    data = g_bytes_offset(data, fragment->hl);
 
     // Remove any payload trailer (trust IP len content field)
-    g_byte_array_set_size(data, fragment->len - fragment->hl);
+    data = g_bytes_set_size(data, fragment->len - fragment->hl);
 
     // If no fragmentation
     if (fragment->frag == 0) {
@@ -246,11 +250,11 @@ packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GByteArray *d
     // where 'No more fragments is enabled' and it's calculated based on the
     // last fragment offset
     if (fragment->more == 0) {
-        datagram->len = fragment->frag_off + data->len;
+        datagram->len = fragment->frag_off + g_bytes_get_size(data);
     }
 
     // Add this IP content length to the total captured of the packet
-    datagram->seen += data->len;
+    datagram->seen += g_bytes_get_size(data);
 
     // If we have the whole packet (captured length is expected length)
     if (datagram->seen == datagram->len) {

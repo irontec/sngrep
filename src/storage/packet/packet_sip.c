@@ -158,12 +158,15 @@ packet_sip_data(const Packet *packet)
     return sip;
 }
 
-const gchar *
-packet_sip_payload(const Packet *packet)
+gchar *
+packet_sip_payload_str(const Packet *packet)
 {
     // Get Packet sip data
     PacketSipData *sip = packet_sip_data(packet);
-    return sip->payload;
+    return g_strndup(
+        g_bytes_get_data(sip->payload, NULL),
+        g_bytes_get_size(sip->payload)
+    );
 }
 
 const gchar *
@@ -209,18 +212,21 @@ packet_sip_auth_data(const Packet *packet)
     return packet_sip_data(packet)->auth;
 }
 
-static GByteArray *
-packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GByteArray *data)
+static GBytes *
+packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     gchar *method = NULL;
     gchar *resp_code = NULL;
 
     // Ignore too small packets
-    if (data->len < SIP_VERSION_LEN + 1)
+    if (g_bytes_get_size(data) < SIP_VERSION_LEN + 1)
         return data;
 
     // Convert payload to something we can parse with regular expressions
-    g_autoptr(GString) payload = g_string_new_len((const gchar *) data->data, data->len);
+    g_autoptr(GString) payload = g_string_new_len(
+        (const gchar *) g_bytes_get_data(data, NULL),
+        g_bytes_get_size(data)
+    );
 
     // Split SIP payload in lines separated by CRLF
     g_auto(GStrv) payload_data = g_strsplit(payload->str, SIP_CRLF, 0);
@@ -262,7 +268,8 @@ packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GByteArray *
         sip_data->code.id = packet_sip_method_from_str(resp_code);
         sip_data->code.text = resp_code;
     }
-    sip_data->payload = g_strdup(payload->str);
+
+    sip_data->payload = g_bytes_ref(data);
 
     // Add SIP information to the packet
     packet_set_protocol_data(packet, PACKET_PROTO_SIP, sip_data);
@@ -316,17 +323,17 @@ packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GByteArray *
 
     // If this comes from a TCP stream, check we have a whole packet
     if (packet_has_protocol(packet, PACKET_PROTO_TCP)) {
-        if (sip_data->content_len != data->len - sip_size) {
+        if (sip_data->content_len != g_bytes_get_size(data) - sip_size) {
             return data;
         }
     }
 
     // Handle bad terminated SIP messages
-    if (sip_size > data->len)
-        sip_size = data->len;
+    if (sip_size > g_bytes_get_size(data))
+        sip_size = g_bytes_get_size(data);
 
     // Remove SIP headers from data
-    data = g_byte_array_remove_range(data, 0, sip_size);
+    data = g_bytes_offset(data, sip_size);
 
     // Pass data to sub-dissectors
     packet_dissector_next(self, packet, data);
@@ -343,10 +350,10 @@ packet_dissector_sip_free(Packet *packet)
     PacketSipData *sip_data = packet_sip_data(packet);
     g_return_if_fail(sip_data != NULL);
 
+    g_bytes_unref(sip_data->payload);
     g_free(sip_data->callid);
     g_free(sip_data->xcallid);
     g_free(sip_data->auth);
-    g_free(sip_data->payload);
     g_free(sip_data->code.text);
     g_free(sip_data);
 }

@@ -20,29 +20,35 @@
  **
  ****************************************************************************/
 /**
- * @file glib-extra.h
+ * @file gptrarray.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Helper function for glib containers
+ * @brief Helper function for GBytes and GByteArray containers
  *
  */
 
-#ifndef __SNGREP_GLIB_EXTRA_H
-#define __SNGREP_GLIB_EXTRA_H
+#ifndef __SNGREP_GLIB_GBYTES_H
+#define __SNGREP_GLIB_GBYTES_H
 
 #include <glib.h>
-#include "glib-extra/gbytes.h"
-#include "glib-extra/glist.h"
-#include "glib-extra/gptrarray.h"
-#include "glib-extra/gasyncqueuesource.h"
-#include "glib-extra/gdatetime.h"
 
-#define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
+G_BEGIN_DECLS
 
-gint
-g_atoi(const gchar *number);
+#define G_BYTES_PER_KILOBYTE    1024
+#define G_BYTES_PER_MEGABYTE    G_BYTES_PER_KILOBYTE * 1024
+#define G_BYTES_PER_GIGABYTE    G_BYTES_PER_MEGABYTE * 1024
 
-gsize
-g_format_size_to_bytes(const gchar *size);
+#define g_byte_array_len(array) (array->len)
 
-#endif //__SNGREP_GLIB_EXTRA_H
+GByteArray *
+g_byte_array_offset(GByteArray *array, guint offset);
+
+GBytes *
+g_bytes_offset(GBytes *bytes, gsize offset);
+
+GBytes *
+g_bytes_set_size(GBytes *bytes, gsize count);
+
+G_END_DECLS
+
+#endif//__SNGREP_GLIB_GBYTES_H

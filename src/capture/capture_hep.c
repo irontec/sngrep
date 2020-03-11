@@ -456,9 +456,9 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
     // Payload
     payload_chunk.vendor_id = g_htons(0x0000);
     payload_chunk.type_id = g_htons(0x000f);
-    payload_chunk.length = g_htons(sizeof(payload_chunk) + strlen(sip->payload));
+    payload_chunk.length = g_htons(sizeof(payload_chunk) + g_bytes_get_size(sip->payload));
 
-    total_len = sizeof(CaptureHepGeneric) + strlen(sip->payload) + ip_len + sizeof(CaptureHepChunk);
+    total_len = sizeof(CaptureHepGeneric) + g_bytes_get_size(sip->payload) + ip_len + sizeof(CaptureHepChunk);
 
     // Authorization key
     if (hep->password != NULL) {
@@ -495,7 +495,7 @@ capture_output_hep_write(CaptureOutput *output, Packet *packet)
 
     // SIP Payload
     g_byte_array_append(data, (gpointer) &payload_chunk, sizeof(CaptureHepChunk));
-    g_byte_array_append(data, (gpointer) sip->payload, (guint) strlen(sip->payload));
+    g_byte_array_append(data, (gpointer) sip->payload, (guint) g_bytes_get_size(sip->payload));
 
     // Send payload to HEPv3 Server
     if (send(hep->socket, data->data, data->len, 0) == -1) {

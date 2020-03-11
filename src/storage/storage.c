@@ -304,7 +304,8 @@ storage_check_sip_packet(Packet *packet)
     if (!(call = g_hash_table_lookup(storage->callids, sip_data->callid))) {
 
         // Check if payload matches expression
-        if (!storage_check_match_expr(sip_data->payload))
+        g_autofree const gchar *payload = packet_sip_payload_str(packet);
+        if (!storage_check_match_expr(payload))
             return;
 
         // User requested only INVITE starting dialogs
@@ -482,19 +483,16 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
     const PacketFrame *frame = packet_first_frame(packet);
     g_return_val_if_fail(frame != NULL, TRUE);
 
-    // Create a byte array to parse packet data
-    GByteArray *data = g_byte_array_sized_new(g_bytes_get_size(frame->data));
-    g_byte_array_append(
-        data,
+    GBytes *data = g_bytes_new_static(
         g_bytes_get_data(frame->data, NULL),
         g_bytes_get_size(frame->data)
     );
 
     // Pass packet data to the first dissector
-    packet_dissector_dissect(dissector, packet, data);
+    GBytes *pending = packet_dissector_dissect(dissector, packet, data);
 
     // Remove packet reference after parsing (added in storage_add_packet)
-    g_byte_array_unref(data);
+    g_bytes_unref(pending);
     packet_unref(packet);
     return TRUE;
 }

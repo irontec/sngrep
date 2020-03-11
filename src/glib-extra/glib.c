@@ -73,11 +73,3 @@ g_format_size_to_bytes(const gchar *size)
     }
 }
 
-GByteArray *
-g_byte_array_offset(GByteArray *array, guint offset)
-{
-    g_return_val_if_fail(array->len >= offset, NULL);
-    array->data += offset;
-    array->len -= offset;
-    return array;
-}
