@@ -179,7 +179,7 @@ void
 call_update_state(Call *call, Message *msg);
 
 /**
- * @brief Return the string represtation of a call state
+ * @brief Return the string representation of a call state
  *
  */
 const gchar *

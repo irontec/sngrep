@@ -57,7 +57,7 @@ struct _StorageSortOpts
 {
     //! Sort call list by this attribute
     enum AttributeId by;
-    //! Sory by attribute ascending
+    //! Sort by attribute ascending
     gboolean asc;
 };
 

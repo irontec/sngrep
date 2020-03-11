@@ -95,14 +95,14 @@ enum SSLConnectionState
     TCP_STATE_CLOSED          //! Connection closed
 };
 
-//! SSL Encoders algo
+//! SSL Encoders algorithm
 enum SSLCipherEncoders
 {
     ENC_AES = 1,
     ENC_AES256 = 2
 };
 
-//! SSL Digests algo
+//! SSL Digests algorithm
 enum SSLCIpherDigest
 {
     DIG_SHA1 = 1,

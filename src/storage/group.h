@@ -61,7 +61,7 @@ struct _SipCallGroup
 };
 
 /**
- * @brief Create a new groupt to hold Calls in it
+ * @brief Create a new group to hold Calls in it
  *
  * Allocate memory to create a new calls group
  *
@@ -84,7 +84,7 @@ call_group_free(CallGroup *group);
  * This checks all the group flags to check if any of the call has
  * changed.
  *
- * @param ggroup Call group structure pointer
+ * @param group Call group structure pointer
  * @return true if any of the calls of the group has changed, false otherwise
  */
 gboolean

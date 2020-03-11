@@ -26,7 +26,7 @@
  * @brief Functions to manage application settings
  *
  * This file contains the functions to manage application settings and
- * optionuration resource files. Configuration will be parsed in this order,
+ * options resource files. Configuration will be parsed in this order,
  * from less to more priority, so the later will overwrite the previous.
  *
  *  - Initialization
@@ -34,7 +34,7 @@
  *  - $HOME/.sngreprc
  *  - $SNGREPRC
  *
- * This is a basic approach to configuration, but at least a minimun is required
+ * This is a basic approach to configuration, but at least a minimum is required
  * for those who can not see all the list columns or want to disable colours in
  * every sngrep execution.
  */
@@ -347,7 +347,7 @@ setting_read_file(const gchar *fname);
  * @brief Initialize all program options
  *
  * This function will give all available settings an initial value.
- * This values can be overriden using resources files, either from system dir
+ * This values can be overridden using resources files, either from system dir
  * or user home dir.
  *
  * @param no_config Do not load config file if set to 1

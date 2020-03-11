@@ -41,7 +41,7 @@ G_DEFINE_TYPE(PacketDissectorSdp, packet_dissector_sdp, PACKET_TYPE_DISSECTOR)
  * https://tools.ietf.org/html/rfc3551#section-6
  *
  * Alias names for each RTP encoding name are sngrep developers personal
- * preferrence and may or may not match reality.
+ * preference and may or may not match reality.
  *
  */
 PacketSdpFormat formats[] = {

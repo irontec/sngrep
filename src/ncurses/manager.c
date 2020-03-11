@@ -382,7 +382,7 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
                 if (!strncasecmp(cur_line, "Call-ID:", 8) && column > 8)
                     attrs = A_BOLD | COLOR_PAIR(CP_MAGENTA_ON_DEF);
 
-                // CSeq Heaedr syntax
+                // CSeq Header syntax
                 if (!strncasecmp(cur_line, "CSeq:", 5) && column > 5 && !isdigit(payload[i]))
                     attrs = A_NORMAL | COLOR_PAIR(CP_YELLOW_ON_DEF);
 
@@ -417,7 +417,7 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
                 attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
             }
 
-            // Syntax hightlight text!
+            // Syntax highlight text!
             wattron(win, attrs);
         }
 

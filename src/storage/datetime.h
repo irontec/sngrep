@@ -54,7 +54,7 @@ const gchar *
 date_time_to_duration(guint64 start, guint64 end, gchar *out);
 
 /**
- * @brief Convert timeval diference to +mm:ss.mmmmmm
+ * @brief Convert timeval difference to +mm:ss.mmmmmm
  */
 const gchar *
 date_time_to_delta(guint64 start, guint64 end, gchar *out);

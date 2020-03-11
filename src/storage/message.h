@@ -37,7 +37,7 @@
 
 //! Shorter declaration of sip_msg structure
 typedef struct _Message Message;
-//! Forward declarition of SipCall type
+//! Forward declaration of SipCall type
 typedef struct _Call Call;
 
 /**
@@ -249,7 +249,7 @@ msg_get_retransmission_original(Message *msg);
 /**
  * @brief Check if the given message is a capture duplicate
  *
- * Some iterfaces duplcates captured packets so, in order to detect a message as
+ * Some interfaces duplicates captured packets so, in order to detect a message as
  * duplicated instead of retrans, the time difference with the original must be below
  * the t1 timer.
  *
@@ -260,7 +260,7 @@ gboolean
 msg_is_duplicate(Message *msg);
 
 /**
- * @brief Get Authoriztion-Header content
+ * @brief Get Authorization-Header content
  * @param msg SIP Message
  * @return Authorization-Header content or NULL if message has no Auth header
  */

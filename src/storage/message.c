@@ -44,7 +44,7 @@ msg_new(Packet *packet)
     msg->packet = packet_ref(packet);
     // Create message attribute list
     msg->attributes = NULL;
-    // Mark retrans flag as not checked
+    // Mark retransmission flag as not checked
     msg->retrans = -1;
     return msg;
 }
@@ -121,7 +121,7 @@ msg_dst_address(Message *msg)
 gboolean
 msg_is_request(Message *msg)
 {
-    return packet_sip_is_resquest(msg->packet);
+    return packet_sip_is_request(msg->packet);
 }
 
 guint

@@ -154,7 +154,7 @@ key_from_str(const gchar *key)
     if (*key == 'F')
         return KEY_F(g_atoi(key + 1));
 
-    // Control Secuences
+    // Control Sequences
     if (*key == '^')
         return KEY_CTRL(toupper(*(key + 1)));
     if (!strncasecmp(key, "Ctrl-", 5))

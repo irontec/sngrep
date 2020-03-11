@@ -189,7 +189,7 @@ packet_sip_method(const Packet *packet)
 }
 
 gboolean
-packet_sip_is_resquest(const Packet *packet)
+packet_sip_is_request(const Packet *packet)
 {
     return packet_sip_data(packet)->code.id < 100;
 }

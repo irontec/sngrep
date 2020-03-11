@@ -31,7 +31,7 @@ const char keys[] =
          32, 107, 107, 107, 32, 107,
          /* Show Raw panel */
          'r',
-         /* Cicle options */
+         /* Cycle options */
          'c', 'c', 'c', 'c', 'c', 'c',
          'a', 'a', 'a', 'a', 'a', 'a',
          'l', 'l', 'l', 'C', 'C', 'C',

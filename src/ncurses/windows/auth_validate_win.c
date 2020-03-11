@@ -83,7 +83,7 @@ auth_validate_win_draw(Window *window)
 }
 
 static void
-auth_validate_win_calulate(Window *window)
+auth_validate_win_calculate(Window *window)
 {
     // Get panel information
     AuthValidateWindow *self = NCURSES_AUTH_VALIDATE(window);
@@ -195,7 +195,7 @@ auth_validate_win_handle_key(Window *window, gint key)
 
     // Calculate hash based on current password
     if (field_idx == FLD_AUTH_PASS) {
-        auth_validate_win_calulate(window);
+        auth_validate_win_calculate(window);
     }
 
     // Return if this panel has handled or not the key

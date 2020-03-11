@@ -45,7 +45,7 @@ call_create(const gchar *callid, const gchar *xcallid)
     // Create a vector to store call messages
     call->msgs = g_ptr_array_new_with_free_func((GDestroyNotify) msg_free);
 
-    // Create an empty vector to strore stream data
+    // Create an empty vector to store stream data
     call->streams = g_ptr_array_new_with_free_func((GDestroyNotify) stream_free);
 
     // Create an empty vector to store x-calls
@@ -195,7 +195,7 @@ call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
 {
     const gchar *onevalue = NULL, *twovalue = NULL;
     int oneintvalue = 0, twointvalue = 0;
-    int comparetype; /* TODO 0 = string compare, 1 = int comprare */
+    int comparetype; /* TODO 0 = string compare, 1 = int compare */
     Message *msg_one = g_ptr_array_first(one->msgs);
     Message *msg_two = g_ptr_array_first(two->msgs);
 

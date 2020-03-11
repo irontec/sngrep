@@ -94,7 +94,7 @@ column_select_win_new();
 
 /**
  * @brief Set Column array to be updated
- * @param columns Array of currect active columns
+ * @param columns Array of current active columns
  */
 void
 column_select_win_set_columns(Window *window, GPtrArray *columns);

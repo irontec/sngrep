@@ -30,11 +30,11 @@ const char keys[] =
         {
           /* show sort menu */
           60,
-          /* move arround menu */
+          /* move around menu */
           107, 107, 106, 106, 106, 107,
           /* select sort field */
           10,
-          /* move arround call list */
+          /* move around call list */
           107, 107, 106, 106, 106, 107,
           /* change sort order */
           106, 106, 60, 10,

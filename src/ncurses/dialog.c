@@ -23,7 +23,7 @@
  * @file dialog.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Function for handing moodal dialogs
+ * @brief Function for handing modal dialogs
  *
  */
 
@@ -207,7 +207,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
     if (optioncnt > 4)
         return -1;
 
-    // Calculate proper width taking into acount longest data
+    // Calculate proper width taking into account longest data
     width = strlen(options) + 6 * optioncnt;
     if ((gint) strlen(title) + 4 > width)
         width = strlen(title) + 4;

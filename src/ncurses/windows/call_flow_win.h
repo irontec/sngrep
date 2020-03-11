@@ -93,7 +93,7 @@ typedef enum
  *
  * One column has one address:port for packets source or destination matching
  * and a couple of Call-Ids. Limiting the number of Call-Ids each column have
- * we avoid having one column with lots of begining or ending arrows of
+ * we avoid having one column with lots of beginning or ending arrows of
  * different dialogs.
  *
  */
@@ -147,7 +147,7 @@ struct _CallFlowWindow
     Window parent;
     //! Window to display SIP payload
     WINDOW *raw_win;
-    //! Window to diplay arrows
+    //! Window to display arrows
     WINDOW *flow_win;
     //! Group of calls displayed on the panel
     CallGroup *group;

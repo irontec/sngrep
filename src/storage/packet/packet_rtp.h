@@ -115,7 +115,7 @@ struct _PacketRtpData
     guint16 seq;
     //! RTP timestamp
     guint32 ts;
-    //! RTP Syncronization Source Iden
+    //! RTP Synchronization Source Iden
     guint32 ssrc;
     //! RTP Marker set
     gboolean marker;

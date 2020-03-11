@@ -74,7 +74,7 @@ struct _Scrollbar
     gint pos;
     //! Max scrollbar positions
     gint max;
-    //! Offset to apply to the beggining of the scrollbar
+    //! Offset to apply to the beginning of the scrollbar
     gint preoffset;
     //! Offset to apply to the ending of the scrollbar
     gint postoffset;

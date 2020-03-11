@@ -110,7 +110,7 @@ column_select_update_menu(ColumnSelectWindow *self)
     unpost_menu(self->menu);
     // Set menu items
     set_menu_items(self->menu, self->items);
-    // Put the menu agin into its subwindow
+    // Put the menu again into its subwindow
     post_menu(self->menu);
 
     // Move until the current position is set
@@ -554,7 +554,7 @@ column_select_constructed(GObject *object)
     mvwaddch(win, 6, width - 1, ACS_RTEE);
     wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
-    // Some brief explanation abotu what window shows
+    // Some brief explanation about what window shows
     wattron(win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(win, 3, 2, "This windows show the list of columns displayed on Call");
     mvwprintw(win, 4, 2, "List. You can enable/disable using Space Bar and reorder");

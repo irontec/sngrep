@@ -1116,7 +1116,7 @@ call_list_help(G_GNUC_UNUSED Window *window)
     // Set the window footer (nice blue?)
     mvwprintw(help_win, height - 2, 20, "Press any key to continue");
 
-    // Some brief explanation abotu what window shows
+    // Some brief explanation about what window shows
     wattron(help_win, COLOR_PAIR(CP_CYAN_ON_DEF));
     mvwprintw(help_win, 3, 2, "This windows show the list of parsed calls from a pcap file ");
     mvwprintw(help_win, 4, 2, "(Offline) or a live capture with libpcap functions (Online).");
@@ -1166,7 +1166,7 @@ call_list_column_sorter(const CallListColumn **a, const CallListColumn **b)
  * @param attr SIP call attribute name
  * @param title SIP call attribute description
  * @param width Column Width
- * @return 0 if column has been successufly added to the list, -1 otherwise
+ * @return 0 if column has been successfully added to the list, -1 otherwise
  */
 static void
 call_list_add_column(CallListWindow *self, enum AttributeId id, const char *attr,

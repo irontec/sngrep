@@ -29,7 +29,7 @@
  * used to invoke custom functions for creating, destroying, drawing, etc
  * the screens.
  *
- * This sctructure also manages concurrents updates and access to ncurses
+ * This structure also manages concurrent updates and access to ncurses
  * panel pointers.
  *
  */
@@ -70,7 +70,7 @@ ncurses_init(GMainLoop *loop, GError **error);
 /**
  * @brief Stops ncurses mode
  *
- * This functions will deinitialize ncurse mode
+ * This functions will deinitialize ncurses mode
  *
  * @returns 0 on ncurses initialization success, 1 otherwise
  */
@@ -97,7 +97,7 @@ Window *
 ncurses_create_window(WindowType type);
 
 /**
- * @brief Find a ui from its pannel pointer
+ * @brief Find a ui from its panel pointer
  */
 Window *
 ncurses_find_by_panel(PANEL *panel);
@@ -144,7 +144,7 @@ title_foot_box(PANEL *panel);
  * @brief Draw a message payload in a window
  *
  * Generic drawing function for payload. This function will start
- * writting at 0,0 and return the number of lines written.
+ * writing at 0,0 and return the number of lines written.
  *
  * @param win Ncurses window to draw payload
  * @param msg Msg to be drawn
@@ -156,12 +156,12 @@ draw_message(WINDOW *win, Message *msg);
  * @brief Draw a message payload in a window starting at a given line
  *
  * Generic drawing function for payload. This function will start
- * writting at line starting and first column and return the number
+ * writing at line starting and first column and return the number
  * of lines written.
  *
  * @param win Ncurses window to draw payload
  * @param msg Msg to be drawn
- * @param starting Number of win line to start writting payload
+ * @param starting Number of win line to start writing payload
  */
 int
 draw_message_pos(WINDOW *win, Message *msg, int starting);

@@ -50,7 +50,7 @@ G_DEFINE_TYPE(MsgDiffWindow, msg_diff_win, NCURSES_TYPE_WINDOW)
  * |                          |                             |
  * |                          |                             |
  * |                          |                             |
- * | Usefull hotkeys                                        |
+ * | Useful hotkeys                                         |
  * +--------------------------------------------------------+
  *
  */

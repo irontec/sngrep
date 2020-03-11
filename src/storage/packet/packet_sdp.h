@@ -86,7 +86,7 @@ struct _PacketDissectorSdp
  *
  * c=<nettype> <addrtype> <connection-address>
  *
- * Note that sngrep only supports Nettype IN (Internat) and Address types
+ * Note that sngrep only supports Nettype IN (Internet) and Address types
  * IP4 or IP6.
  *
  * RFC4566: A session description MUST contain either at least one "c="

@@ -32,7 +32,7 @@
 #include "codec_g711a.h"
 
 // @formatter:off
-/** Expansion table, taken from wireshak G711atable.h */
+/** Expansion table, taken from wireshark G711atable.h */
 gint16 alaw_exp_table[256] = {
         -5504, -5248, -6016, -5760, -4480, -4224, -4992, -4736,
         -7552, -7296, -8064, -7808, -6528, -6272, -7040, -6784,

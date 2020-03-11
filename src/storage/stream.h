@@ -68,7 +68,7 @@ struct _Stream
     gboolean changed;
     //! Format of first received packet of stre
     guint8 fmtcode;
-    //! Syncronization Source Identifier
+    //! Synchronization Source Identifier
     guint32 ssrc;
     //! Stream packets (not always stored in packets array)
     guint packet_count;

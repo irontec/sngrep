@@ -168,7 +168,7 @@ attr_name(enum AttributeId id);
  *
  * Retrieve attribute id of the given attribute name.
  *
- * @param name Attribut name
+ * @param name Attribute name
  * @return Attribute id or -1 if not found
  */
 gint

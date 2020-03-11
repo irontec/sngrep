@@ -133,7 +133,7 @@ address_strip_port(Address address);
 
 /**
  * @brief Free Address pointer
- * @param address Adress structure pointer
+ * @param address Address structure pointer
  */
 void
 address_free(Address address);

@@ -45,7 +45,7 @@ G_DECLARE_DERIVABLE_TYPE(Window, window, NCURSES, WINDOW, GObject)
 typedef enum
 {
     KEY_HANDLED = 0,        // Panel has handled the key, dont'use default key handler
-    KEY_NOT_HANDLED = -1,   // Panel has not handled the key, try defualt key handler
+    KEY_NOT_HANDLED = -1,   // Panel has not handled the key, try default key handler
     KEY_PROPAGATED = -2,    // Panel destroys and requests previous panel to handle key
     KEY_DESTROY = -3,       // Panel request destroy
 } WindowKeyHandlerRet;
@@ -62,7 +62,7 @@ typedef enum
     WINDOW_CALL_RAW,         // Raw SIP messages ui screen
     WINDOW_FILTER,           // Filters panel
     WINDOW_SAVE,             // Save to pcap panel
-    WINDOW_MSG_DIFF,         // Message comprare
+    WINDOW_MSG_DIFF,         // Message compare
     WINDOW_COLUMN_SELECT,    // Column selector panel
     WINDOW_SETTINGS,         // Settings panel
     WINDOW_AUTH_VALIDATE,    // Authentication validator panel
@@ -96,8 +96,8 @@ struct _WindowClass
  * @brief Create a ncurses panel for the given ui
  *
  * Create a panel and associated window and store their
- * porinters in ui structure.
- * If height and widht doesn't match the screen dimensions
+ * pointers in ui structure.
+ * If height and width doesn't match the screen dimensions
  * the panel will be centered on the screen.
  *
  * @param height panel window height
@@ -110,7 +110,7 @@ window_new(gint height, gint width);
 /**
  * @brief Destroy a panel structure
  *
- * Removes the panel associatet to the given ui and free
+ * Removes the panel associated to the given ui and free
  * its memory. Most part of this task is done in the custom
  * destroy function of the panel.
  *

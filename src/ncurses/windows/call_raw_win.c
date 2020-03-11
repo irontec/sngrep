@@ -26,7 +26,7 @@
  * @brief Source of functions defined in call_raw.h
  *
  * @todo Code help screen. Please.
- * @todo Replace the panel refresh. Wclear sucks on high latency conections.
+ * @todo Replace the panel refresh. Wclear sucks on high latency connections.
  *
  */
 
