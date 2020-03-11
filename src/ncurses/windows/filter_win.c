@@ -323,8 +323,6 @@ filter_constructed(GObject *object)
 
     gint height = window_get_height(parent);
 
-    const char *method, *payload;
-
     // Initialize the fields
     self->fields[FLD_FILTER_SIPFROM] = new_field(1, 28, 3, 18, 0, 0);
     self->fields[FLD_FILTER_SIPTO] = new_field(1, 28, 4, 18, 0, 0);
@@ -394,12 +392,13 @@ filter_constructed(GObject *object)
     mvwprintw(win, 13, 25, "UPDATE     [ ]");
 
     // Get Method filter
-    if (!(method = filter_get(FILTER_METHOD)))
+    const gchar *method = filter_get(FILTER_METHOD);
+    if (method == NULL) {
         method = setting_get_value(SETTING_FILTER_METHODS);
-
-    // Get Payload filter
-    if (!(payload = filter_get(FILTER_PAYLOAD)))
-        payload = setting_get_value(SETTING_FILTER_PAYLOAD);
+    }
+    if (method == NULL) {
+        method = "";
+    }
 
     // Set Default field values
     set_field_buffer(self->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));
@@ -408,25 +407,25 @@ filter_constructed(GObject *object)
     set_field_buffer(self->fields[FLD_FILTER_DST], 0, filter_get(FILTER_DESTINATION));
     set_field_buffer(self->fields[FLD_FILTER_PAYLOAD], 0, filter_get(FILTER_PAYLOAD));
     set_field_buffer(self->fields[FLD_FILTER_REGISTER], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_REGISTER)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_REGISTER)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_INVITE], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_INVITE)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_INVITE)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_SUBSCRIBE], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_SUBSCRIBE)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_SUBSCRIBE)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_NOTIFY], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_NOTIFY)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_NOTIFY)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_INFO], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_INFO)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_INFO)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_OPTIONS], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_OPTIONS)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_OPTIONS)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_PUBLISH], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_PUBLISH)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_PUBLISH)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_MESSAGE], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_MESSAGE)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_MESSAGE)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_REFER], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_REFER)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_REFER)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_UPDATE], 0,
-                     strcasestr(method, sip_method_str(SIP_METHOD_UPDATE)) ? "*" : "");
+                     g_strrstr(method, sip_method_str(SIP_METHOD_UPDATE)) ? "*" : "");
     set_field_buffer(self->fields[FLD_FILTER_FILTER], 0, "[ Filter ]");
     set_field_buffer(self->fields[FLD_FILTER_CANCEL], 0, "[ Cancel ]");
 

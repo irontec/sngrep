@@ -58,7 +58,7 @@ filter_set(enum FilterType type, const gchar *expr)
     }
 
     // Set new expresion values
-    filters[type].expr = (expr) ? g_strdup(expr) : NULL;
+    filters[type].expr = (expr && strlen(expr)) ? g_strdup(expr) : NULL;
     filters[type].regex = regex;
 
     return FALSE;
@@ -193,7 +193,7 @@ filter_method_from_setting(const gchar *value)
         // Free me
         g_free(methods);
     } else {
-        filter_set(FILTER_METHOD, " ");
+        filter_set(FILTER_METHOD, "");
     }
 }
 

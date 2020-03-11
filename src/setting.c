@@ -646,8 +646,7 @@ settings_init(SettingOpts options)
     g_ptr_array_set(settings->values, SETTING_FILTER_PAYLOAD,
                     setting_string_new("filter.payload", ""));
     g_ptr_array_set(settings->values, SETTING_FILTER_METHODS,
-                    setting_string_new("filter.methods",
-                                       "REGISTER,INVITE,SUBSCRIBE,NOTIFY,OPTIONS,PUBLISH,MESSAGE,INFO,REFER,UPDATE"));
+                    setting_string_new("filter.methods", ""));
 #ifdef USE_HEP
     g_ptr_array_set(settings->values, SETTING_HEP_SEND,
                     setting_bool_new("eep.send", SETTING_OFF));

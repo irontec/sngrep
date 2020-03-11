@@ -289,6 +289,12 @@ attribute_getter_msg_time(G_GNUC_UNUSED Attribute *attr, Message *msg)
 }
 
 static gchar *
+attribute_getter_msg_method(G_GNUC_UNUSED Attribute *attr, Message *msg)
+{
+    return g_strdup(msg_get_method_str(msg));
+}
+
+static gchar *
 attribute_getter_msg_transport(G_GNUC_UNUSED Attribute *attr, Message *msg)
 {
     return g_strdup(packet_transport(msg->packet));
@@ -390,7 +396,7 @@ attribute_init()
 
     //! SIP Method
     attribute = attr_new("method", NULL, "Method");
-    attr_set_regex_pattern(attribute, "(?P<value>\\w+) [^:]+:\\S* SIP/2.0");
+    attr_set_getter_func(attribute, attribute_getter_msg_method);
     attr_set_color_func(attribute, attr_color_sip_method);
     g_ptr_array_add(attributes, attribute);
 
