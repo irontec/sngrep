@@ -254,8 +254,16 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GBytes *data
     packet->frames = packet_tcp_stream_take_frames(stream);
 
     // Check if this packet is interesting
-    guint stream_len = stream->data->len;
-    packet_dissector_next(self, packet, g_byte_array_free_to_bytes(stream->data));
+    guint stream_len = g_byte_array_len(stream->data);
+    GBytes *pending = packet_dissector_next(
+        self,
+        packet,
+        g_byte_array_free_to_bytes(stream->data)
+    );
+
+    if (pending != NULL) {
+        stream->data = g_bytes_unref_to_array(pending);
+    }
 
     // Not interesting stream
     if (!packet_has_protocol(packet, PACKET_PROTO_SIP)) {
@@ -264,7 +272,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GBytes *data
     }
 
     // Stream has been parsed, but still has interesting data
-    if (stream->data->len < stream_len) {
+    if (g_byte_array_len(stream->data) < stream_len) {
         // Remove current segments, keep pending data
         g_ptr_array_remove_all(stream->segments);
     }
