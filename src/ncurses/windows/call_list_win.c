@@ -242,7 +242,7 @@ call_list_draw_header(CallListWindow *self)
 
     WINDOW *win = window_get_ncurses_window(NCURSES_WINDOW(self));
 
-    mvwprintw(win, 1, 2, "Current Mode: ");
+    mvwprintw(win, 1, 2, "Mode: ");
     if (capture_is_online(capture_manager_get_instance())) {
         wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
     } else {
@@ -274,6 +274,45 @@ call_list_draw_header(CallListWindow *self)
     wattroff(win, COLOR_PAIR(CP_GREEN_ON_DEF));
     wattroff(win, COLOR_PAIR(CP_RED_ON_DEF));
 
+    // Reverse colors on monochrome terminals
+    if (!has_colors())
+        wattron(win, A_REVERSE);
+
+    // Print Dialogs or Calls in label depending on calls filter
+    StorageMatchOpts storageMatchOpts = storage_match_options();
+    if (storageMatchOpts.invite) {
+        countlb = "Calls";
+    } else {
+        countlb = "Dialogs";
+    }
+
+    // Print calls count (also filtered)
+    StorageStats stats = storage_calls_stats();
+    if (stats.total != stats.displayed) {
+        mvwprintw(win, 1, 33, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
+    } else {
+        mvwprintw(win, 1, 33, "%s: %d", countlb, stats.total);
+    }
+
+    if (storage_memory_limit() > 0) {
+        g_autofree const gchar *usage = g_format_size_full(
+            storage_memory_usage(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+        g_autofree const gchar *limit = g_format_size_full(
+            storage_memory_limit(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+
+        wprintw(win, "     Mem: %s / %s", usage, limit);
+    }
+
+    // Print Open filename in Offline mode
+    if (!capture_is_online(capture_manager_get_instance()) &&
+        (infile = capture_input_pcap_file(capture_manager_get_instance()))) {
+        wprintw(win, "     Filename: %s", infile);
+    }
+
     // Label for Display filter
     mvwprintw(win, 3, 2, "Display Filter: ");
 
@@ -291,46 +330,6 @@ call_list_draw_header(CallListWindow *self)
         wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
         wprintw(win, "%s", match.mexpr);
         wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    }
-
-    // Reverse colors on monochrome terminals
-    if (!has_colors())
-        wattron(win, A_REVERSE);
-
-    // Print Dialogs or Calls in label depending on calls filter
-    StorageMatchOpts storageMatchOpts = storage_match_options();
-    if (storageMatchOpts.invite) {
-        countlb = "Calls";
-    } else {
-        countlb = "Dialogs";
-    }
-
-    // Print calls count (also filtered)
-    StorageStats stats = storage_calls_stats();
-    mvwprintw(win, 1, 45, "%*s", 30, "");
-    if (stats.total != stats.displayed) {
-        mvwprintw(win, 1, 45, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
-    } else {
-        mvwprintw(win, 1, 45, "%s: %d", countlb, stats.total);
-    }
-
-    if (storage_memory_limit() > 0) {
-        g_autofree const gchar *usage = g_format_size_full(
-            storage_memory_usage(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-        g_autofree const gchar *limit = g_format_size_full(
-            storage_memory_limit(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-
-        mvwprintw(win, 1, 65, "Memory: %s / %s", usage, limit);
-    }
-
-    // Print Open filename in Offline mode
-    if (!capture_is_online(capture_manager_get_instance()) &&
-        (infile = capture_input_pcap_file(capture_manager_get_instance()))) {
-        mvwprintw(win, 1, 98, "Filename: %s", infile);
     }
 
     if (self->menu_active) {
