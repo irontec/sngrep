@@ -70,7 +70,7 @@ struct _Scrollbar
     enum ScrollbarAlignment alignment;
     //! Position
     enum ScrollbarDock dock;
-    //! Current scrollbar position
+    //! Current scrollbar position, starting at 0
     gint pos;
     //! Max scrollbar positions
     gint max;

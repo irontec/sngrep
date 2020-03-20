@@ -47,31 +47,43 @@ window_set_scrollbar(WINDOW *win, int alignment, int dock)
 static void
 scrollbar_vertical_draw(Scrollbar scrollbar)
 {
-    int height, width, cline, scrollen, scrollypos, scrollxpos;
-
     // Get window available space
+    gint height, width;
     getmaxyx(scrollbar.win, height, width);
-    height -= scrollbar.preoffset + scrollbar.postoffset;
+    gint scroll_height = height - (scrollbar.preoffset + scrollbar.postoffset);
 
     // Display the scrollbar left or right
-    scrollxpos = (scrollbar.dock == SB_LEFT) ? 0 : width - 1;
+    gint scroll_xpos = (scrollbar.dock == SB_LEFT) ? 0 : width - 1;
 
     // Initialize scrollbar line
-    mvwvline(scrollbar.win, scrollbar.preoffset, scrollxpos, ACS_VLINE, height);
+    mvwvline(scrollbar.win, scrollbar.preoffset, scroll_xpos, ACS_VLINE, scroll_height);
+
+    // Positions start at 0, so total items are one value above max
+    gint total_items = scrollbar.max + 1;
 
     // How long the scroll will be
-    if (!(scrollen = (height * 1.0f / scrollbar.max * height) + 0.5))
-        scrollen = 1;
+    gint scroll_len = CLAMP(
+        ((scroll_height * 1.0f) / total_items) * scroll_height,
+        1,
+        scroll_height
+    );
 
     // Where will the scroll start
-    scrollypos = height * (scrollbar.pos * 1.0f / scrollbar.max);
+    gint scroll_ypos;
+    if (scrollbar.pos == 0) {
+        scroll_ypos = 0;
+    } else if (scrollbar.pos + scroll_height >= scrollbar.max) {
+        scroll_ypos = scroll_height - scroll_len;
+    } else {
+        scroll_ypos = (scroll_height - 1.0f) * (scrollbar.pos * 1.0f / scrollbar.max);
+    }
 
     // Draw the N blocks of the scrollbar
-    for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
+    for (gint line = scrollbar.preoffset; line <= scroll_len; line++) {
         mvwaddwstr(
             scrollbar.win,
-            cline + scrollypos,
-            scrollxpos,
+            line + scroll_ypos,
+            scroll_xpos,
             ncurses_acs_utf8(ACS_BOARD)
         );
     }
@@ -80,30 +92,43 @@ scrollbar_vertical_draw(Scrollbar scrollbar)
 static void
 scrollbar_horizontal_draw(Scrollbar scrollbar)
 {
-    int height, width, cline, scrollen, scrollypos, scrollxpos;
-
     // Get window available space
+    gint height, width;
     getmaxyx(scrollbar.win, height, width);
-    width -= scrollbar.preoffset + scrollbar.postoffset;
+    gint scroll_width = width - (scrollbar.preoffset + scrollbar.postoffset);
 
     // Display the scrollbar top or bottom
-    scrollypos = (scrollbar.dock == SB_TOP) ? 0 : height - 1;
+    gint scroll_ypos = (scrollbar.dock == SB_TOP) ? 0 : height - 1;
 
     // Initialize scrollbar line
-    mvwhline(scrollbar.win, scrollypos, scrollbar.preoffset, ACS_HLINE, width);
+    mvwhline(scrollbar.win, scroll_ypos, scrollbar.preoffset, ACS_HLINE, scroll_width);
+
+    // Positions start at 0, so total items are one value above max
+    gint total_items = scrollbar.max + 1;
 
     // How long the scroll will be
-    scrollen = width * 1.0f / scrollbar.max * width + 1;
+    gint scroll_len = CLAMP(
+        ((scroll_width * 1.0f) / total_items) * scroll_width,
+        1,
+        scroll_width
+    );
 
     // Where will the scroll start
-    scrollxpos = width * (scrollbar.pos * 1.0f / scrollbar.max);
+    gint scroll_xpos;
+    if (scrollbar.pos == 0) {
+        scroll_xpos = 0;
+    } else if (scrollbar.pos + scroll_width >= scrollbar.max) {
+        scroll_xpos = scroll_width - scroll_len;
+    } else {
+        scroll_xpos = (scroll_width - 1.0f) * (scrollbar.pos * 1.0f / scrollbar.max);
+    }
 
     // Draw the N blocks of the scrollbar
-    for (cline = scrollbar.preoffset; cline <= scrollen; cline++) {
+    for (gint line = scrollbar.preoffset; line <= scroll_len; line++) {
         mvwaddwstr(
             scrollbar.win,
-            scrollypos,
-            cline + scrollxpos,
+            scroll_ypos,
+            line + scroll_xpos,
             ncurses_acs_utf8(ACS_CKBOARD)
         );
     }

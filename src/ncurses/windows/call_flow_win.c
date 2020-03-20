@@ -233,7 +233,7 @@ call_flow_arrow_create(Window *window, void *item, CallFlowArrowType type)
 /**
  * @brief Get how many lines of screen an arrow will use
  *
- * Depending on the arrow tipe and panel display mode lines can
+ * Depending on the arrow type and panel display mode lines can
  * take more than two lines. This function will calculate how many
  * lines the arrow will use.
  *
@@ -587,12 +587,36 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, CallFlowArrowD
             arrow->dcolumn = call_flow_column_get_last(window, msg_dst_address(msg));
     }
 
-    // Create any non-existant columns
+    // Create any non-existent columns
     if (arrow->scolumn == NULL)
         arrow->scolumn = call_flow_column_create(window, msg_src_address(msg));
 
     if (arrow->dcolumn == NULL)
         arrow->dcolumn = call_flow_column_create(window, msg_dst_address(msg));
+}
+
+static gint
+call_flow_win_columns_width(Window *window)
+{
+    CallFlowWindow *self = NCURSES_CALL_FLOW(window);
+    g_return_val_if_fail(self != NULL, 0);
+
+    return g_list_length(self->columns) * CF_COLUMN_WIDTH + 3;
+}
+
+static gint
+call_flow_win_arrows_height(Window *window)
+{
+    CallFlowWindow *self = NCURSES_CALL_FLOW(window);
+    g_return_val_if_fail(self != NULL, 0);
+
+    gint height = 0;
+    for (guint i = 0; i < g_ptr_array_len(self->darrows); i++) {
+        CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
+        height += call_flow_arrow_height(window, arrow);
+    }
+
+    return height;
 }
 
 /**
@@ -627,8 +651,6 @@ call_flow_win_create_arrows(Window *window)
     g_return_if_fail(self != NULL);
 
     // Copy displayed arrows
-    // vector_destroy(self->darrows);
-    //self->darrows = vector_copy_if(self->arrows, call_flow_arrow_filter);
     self->darrows = self->arrows;
 
     // Create pending SIP arrows
@@ -692,11 +714,9 @@ call_flow_win_draw_columns(Window *window)
 
     // Get panel information
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
-    WINDOW *win = window_get_ncurses_window(window);
-
-    gint height = window_get_height(window);
-
     g_return_if_fail(self != NULL);
+
+    WINDOW *win = window_get_ncurses_window(window);
 
     // Add RTP columns FIXME Really
     if (!setting_disabled(SETTING_CF_MEDIA)) {
@@ -719,18 +739,21 @@ call_flow_win_draw_columns(Window *window)
     for (GList *l = self->columns; l != NULL; l = l->next) {
         CallFlowColumn *column = l->data;
 
-        mvwvline(self->flow_win, 0, 20 + column->pos, ACS_VLINE, height - 6);
-        mvwhline(win, 3, 10 + column->pos, ACS_HLINE, 20);
-        mvwaddch(win, 3, 20 + column->pos, ACS_TTEE);
+        // Draw horizontal line below column address
+        mvwhline(self->columns_pad, 2, 10 + column->pos, ACS_HLINE, 21);
+        mvwaddch(self->columns_pad, 2, 20 + column->pos, ACS_TTEE);
 
         if (column->twin && column->twin->pos < column->pos) {
-            mvwaddch(win, 3, 20 + column->twin->pos, ACS_TTEE);
+            mvwaddch(self->columns_pad, 2, 20 + column->twin->pos, ACS_TTEE);
         }
+
+        // Draw vertical line below column (in arrows pad)
+        mvwvline(self->arrows_pad, 0, 20 + column->pos, ACS_VLINE, getmaxy(self->arrows_pad));
 
         // Set bold to this address if it's local
         if (setting_enabled(SETTING_CF_LOCALHIGHLIGHT)) {
             if (address_is_local(column->addr))
-                wattron(win, A_BOLD);
+                wattron(self->columns_pad, A_BOLD);
         }
 
         if (setting_enabled(SETTING_CF_SPLITCALLID) || !address_get_port(column->addr)) {
@@ -766,14 +789,25 @@ call_flow_win_draw_columns(Window *window)
         }
 
         if (column->twin == NULL) {
-            mvwprintw(win, 2, 10 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
+            mvwprintw(self->columns_pad, 1, 10 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
         } else if (column->pos < column->twin->pos) {
-            mvwprintw(win, 1, 5 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
+            mvwprintw(self->columns_pad, 0, 5 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
         } else {
-            mvwprintw(win, 2, 15 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
+            mvwprintw(self->columns_pad, 1, 15 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
         }
-        wattroff(win, A_BOLD);
+        wattroff(self->columns_pad, A_BOLD);
     }
+
+    // Copy columns to column subwindow
+    copywin(
+        self->columns_pad,
+        self->colunms_win,
+        0, self->hscroll.pos, 0, 0,
+        getmaxy(self->colunms_win) - 1,
+        getmaxx(self->colunms_win) - 1,
+        FALSE
+    );
+    touchwin(win);
 }
 
 /**
@@ -789,8 +823,8 @@ call_flow_win_draw_columns(Window *window)
  * @param cline Window line to draw the message
  * @return the number of screen lines this arrow uses on screen
  */
-static int
-call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
+static gint
+call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
 {
     char msg_method[ATTR_MAXLEN];
     char msg_time[80];
@@ -804,20 +838,11 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, 0);
 
-    // Get the messages window
-    WINDOW *flow_win = self->flow_win;
-
     // Store arrow start line
-    arrow->line = cline;
-    // Actual arrow position (dashes with < or >)
-    guint aline = cline + 1;
+    arrow->line = cline + 1;
 
     // Calculate how many lines this message requires
     arrow->height = call_flow_arrow_height(window, arrow);
-
-    // Check this message fits on the panel
-    if (cline > (guint) (getmaxy(flow_win) + arrow->height))
-        return 0;
 
     Message *msg = arrow->item;
     g_return_val_if_fail(msg != NULL, 0);
@@ -899,14 +924,14 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
     // Highlight current message
     if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
-            wattron(flow_win, A_REVERSE);
+            wattron(self->arrows_pad, A_REVERSE);
         }
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
-            wattron(flow_win, A_BOLD);
+            wattron(self->arrows_pad, A_BOLD);
         }
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
-            wattron(flow_win, A_REVERSE);
-            wattron(flow_win, A_BOLD);
+            wattron(self->arrows_pad, A_REVERSE);
+            wattron(self->arrows_pad, A_BOLD);
         }
     }
 
@@ -924,106 +949,106 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 
     // Print arrow in the same line than message
     if (setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-        aline = cline;
+        arrow->line = cline;
     }
 
     // Turn on the message color
-    wattron(flow_win, COLOR_PAIR(color));
+    wattron(self->arrows_pad, COLOR_PAIR(color));
 
     // Clear the line
-    mvwprintw(flow_win, cline, startpos + 2, "%*s", distance, "");
+    mvwprintw(self->arrows_pad, cline, startpos + 2, "%*s", distance, "");
 
     // Draw method
     if (arrow->dir == CF_ARROW_DIR_SPIRAL_RIGHT) {
-        mvwprintw(flow_win, cline, startpos + 5, "%.26s", method);
+        mvwprintw(self->arrows_pad, cline, startpos + 5, "%.26s", method);
     } else if (arrow->dir == CF_ARROW_DIR_SPIRAL_LEFT) {
-        mvwprintw(flow_win, cline, startpos - msglen - 4, "%.26s", method);
+        mvwprintw(self->arrows_pad, cline, startpos - msglen - 4, "%.26s", method);
     } else {
-        mvwprintw(flow_win, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
+        mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
     }
 
     // Draw media information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+        arrow->line += g_list_length(sdp_data->medias);
         for (GList *l = sdp_data->medias; l != NULL; l = l->next) {
-            aline++;
             cline++;
             PacketSdpMedia *media = l->data;
             sprintf(mediastr, "%s %d (%s)",
                     packet_sdp_media_type_str(media->type),
                     media->rtpport,
                     msg_get_preferred_codec_alias(msg));
-            mvwprintw(flow_win, cline, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
+            mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
         }
     }
 
     if (arrow->dir != CF_ARROW_DIR_SPIRAL_RIGHT && arrow->dir != CF_ARROW_DIR_SPIRAL_LEFT) {
         if (arrow == call_flow_arrow_selected(window)) {
-            mvwhline(flow_win, aline, startpos + 2, '=', distance);
+            mvwhline(self->arrows_pad, arrow->line, startpos + 2, '=', distance);
         } else {
-            mvwhline(flow_win, aline, startpos + 2, ACS_HLINE, distance);
+            mvwhline(self->arrows_pad, arrow->line, startpos + 2, ACS_HLINE, distance);
         }
     }
 
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_SPIRAL_RIGHT) {
-        mvwaddwstr(flow_win, aline, startpos + 2, ncurses_acs_utf8('<'));
+        mvwaddwstr(self->arrows_pad, arrow->line, startpos + 2, ncurses_acs_utf8('<'));
         if (msg_is_retransmission(msg)) {
-            mvwaddwstr(flow_win, aline, startpos + 3, ncurses_acs_utf8('<'));
-            mvwaddwstr(flow_win, aline, startpos + 4, ncurses_acs_utf8('<'));
+            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 3, ncurses_acs_utf8('<'));
+            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 4, ncurses_acs_utf8('<'));
         }
         // If multiple lines are available, print a spiral icon
-        if (aline != cline) {
-            mvwaddch(flow_win, aline, startpos + 3, ACS_LRCORNER);
-            mvwaddch(flow_win, aline - 1, startpos + 3, ACS_URCORNER);
-            mvwaddch(flow_win, aline - 1, startpos + 2, ACS_HLINE);
+        if (arrow->line != cline) {
+            mvwaddch(self->arrows_pad, arrow->line, startpos + 3, ACS_LRCORNER);
+            mvwaddch(self->arrows_pad, arrow->line - 1, startpos + 3, ACS_URCORNER);
+            mvwaddch(self->arrows_pad, arrow->line - 1, startpos + 2, ACS_HLINE);
         }
     } else if (arrow->dir == CF_ARROW_DIR_SPIRAL_LEFT) {
-        mvwaddwstr(flow_win, aline, startpos - 2, ncurses_acs_utf8('>'));
+        mvwaddwstr(self->arrows_pad, arrow->line, startpos - 2, ncurses_acs_utf8('>'));
         if (msg_is_retransmission(msg)) {
-            mvwaddwstr(flow_win, aline, startpos - 3, ncurses_acs_utf8('>'));
-            mvwaddwstr(flow_win, aline, startpos - 4, ncurses_acs_utf8('>'));
+            mvwaddwstr(self->arrows_pad, arrow->line, startpos - 3, ncurses_acs_utf8('>'));
+            mvwaddwstr(self->arrows_pad, arrow->line, startpos - 4, ncurses_acs_utf8('>'));
         }
         // If multiple lines are available, print a spiral icon
-        if (aline != cline) {
-            mvwaddch(flow_win, aline, startpos - 3, ACS_LLCORNER);
-            mvwaddch(flow_win, aline - 1, startpos - 3, ACS_ULCORNER);
-            mvwaddch(flow_win, aline - 1, startpos - 2, ACS_HLINE);
+        if (arrow->line != cline) {
+            mvwaddch(self->arrows_pad, arrow->line, startpos - 3, ACS_LLCORNER);
+            mvwaddch(self->arrows_pad, arrow->line - 1, startpos - 3, ACS_ULCORNER);
+            mvwaddch(self->arrows_pad, arrow->line - 1, startpos - 2, ACS_HLINE);
         }
     } else if (arrow->dir == CF_ARROW_DIR_RIGHT) {
-        mvwaddwstr(flow_win, aline, endpos - 2, ncurses_acs_utf8('>'));
+        mvwaddwstr(self->arrows_pad, arrow->line, endpos - 2, ncurses_acs_utf8('>'));
         if (msg_is_retransmission(msg)) {
-            mvwaddwstr(flow_win, aline, endpos - 3, ncurses_acs_utf8('>'));
-            mvwaddwstr(flow_win, aline, endpos - 4, ncurses_acs_utf8('>'));
+            mvwaddwstr(self->arrows_pad, arrow->line, endpos - 3, ncurses_acs_utf8('>'));
+            mvwaddwstr(self->arrows_pad, arrow->line, endpos - 4, ncurses_acs_utf8('>'));
         }
     } else {
-        mvwaddwstr(flow_win, aline, startpos + 2, ncurses_acs_utf8('<'));
+        mvwaddwstr(self->arrows_pad, arrow->line, startpos + 2, ncurses_acs_utf8('<'));
         if (msg_is_retransmission(msg)) {
-            mvwaddwstr(flow_win, aline, startpos + 3, ncurses_acs_utf8('<'));
-            mvwaddwstr(flow_win, aline, startpos + 4, ncurses_acs_utf8('<'));
+            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 3, ncurses_acs_utf8('<'));
+            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 4, ncurses_acs_utf8('<'));
         }
     }
 
     if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
-        mvwprintw(flow_win, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
+        mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
 
     // Turn off colors
-    wattroff(flow_win, COLOR_PAIR(CP_RED_ON_DEF));
-    wattroff(flow_win, COLOR_PAIR(CP_GREEN_ON_DEF));
-    wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-    wattroff(flow_win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    wattroff(flow_win, A_BOLD | A_REVERSE);
+    wattroff(self->arrows_pad, COLOR_PAIR(CP_RED_ON_DEF));
+    wattroff(self->arrows_pad, COLOR_PAIR(CP_GREEN_ON_DEF));
+    wattroff(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
+    wattroff(self->arrows_pad, COLOR_PAIR(CP_YELLOW_ON_DEF));
+    wattroff(self->arrows_pad, A_BOLD | A_REVERSE);
 
     // Print timestamp
     if (self->arrowtime) {
         if (arrow == call_flow_arrow_selected(window))
-            wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+            wattron(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
 
         if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-            wattron(flow_win, A_BOLD);
-            mvwprintw(flow_win, cline, 2, "%s", msg_time);
-            wattroff(flow_win, A_BOLD);
+            wattron(self->arrows_pad, A_BOLD);
+            mvwprintw(self->arrows_pad, cline, 2, "%s", msg_time);
+            wattroff(self->arrows_pad, A_BOLD);
         } else {
-            mvwprintw(flow_win, cline, 2, "%s", msg_time);
+            mvwprintw(self->arrows_pad, cline, 2, "%s", msg_time);
         }
 
         // Print delta from selected message
@@ -1045,13 +1070,13 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
             }
 
             if (strlen(delta)) {
-                wattron(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
-                mvwprintw(flow_win, cline + 1, 2, "%15s", delta);
+                wattron(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
+                mvwprintw(self->arrows_pad, cline + 1, 2, "%15s", delta);
             }
-            wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+            wattroff(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
         }
     }
-    wattroff(flow_win, COLOR_PAIR(CP_CYAN_ON_DEF));
+    wattroff(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
 
     return arrow->height;
 }
@@ -1069,7 +1094,6 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, guint cline)
 static int
 call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 {
-    WINDOW *win;
     char text[50], time[20];
     int height;
     Stream *stream = arrow->item;
@@ -1081,18 +1105,13 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     g_return_val_if_fail(self != NULL, 0);
 
     // Get the messages window
-    win = self->flow_win;
-    height = getmaxy(win);
+    height = getmaxy(self->arrows_win);
 
     // Store arrow start line
-    arrow->line = cline;
+    arrow->line = cline + 1;
 
     // Calculate how many lines this message requires
     arrow->height = call_flow_arrow_height(window, arrow);
-
-    // Check this media fits on the panel
-    if (cline > height + arrow->height)
-        return 0;
 
     // Get arrow text
     g_autofree const gchar *stream_format = stream_get_format(stream);
@@ -1163,14 +1182,14 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Highlight current message
     if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
-            wattron(win, A_REVERSE);
+            wattron(self->arrows_pad, A_REVERSE);
         }
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
-            wattron(win, A_BOLD);
+            wattron(self->arrows_pad, A_BOLD);
         }
         if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
-            wattron(win, A_REVERSE);
-            wattron(win, A_BOLD);
+            wattron(self->arrows_pad, A_REVERSE);
+            wattron(self->arrows_pad, A_BOLD);
         }
     }
 
@@ -1178,58 +1197,58 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     gboolean active = stream_is_active(stream);
 
     // Clear the line
-    mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
+    mvwprintw(self->arrows_pad, cline, startpos + 2, "%*s", distance, "");
     // Draw RTP arrow text
-    mvwprintw(win, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
+    mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
 
     if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
         cline++;
 
     // Draw line between columns
     if (active)
-        mvwhline(win, cline, startpos + 2, '-', distance);
+        mvwhline(self->arrows_pad, cline, startpos + 2, '-', distance);
     else
-        mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
+        mvwhline(self->arrows_pad, cline, startpos + 2, ACS_HLINE, distance);
 
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_RIGHT) {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, startpos - 4, "%d", address_get_port(stream->src));
-            mvwprintw(win, cline, endpos, "%d", address_get_port(stream->dst));
+            mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->src));
+            mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->dst));
         }
-        mvwaddwstr(win, cline, endpos - 2, ncurses_acs_utf8('>'));
+        mvwaddwstr(self->arrows_pad, cline, endpos - 2, ncurses_acs_utf8('>'));
         if (active) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
-            mvwaddwstr(win, cline, startpos + arrow->rtp_ind_pos + 2, ncurses_acs_utf8('>'));
+            mvwaddwstr(self->arrows_pad, cline, startpos + arrow->rtp_ind_pos + 2, ncurses_acs_utf8('>'));
         }
     } else {
         if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
-            mvwprintw(win, cline, endpos, "%d", address_get_port(stream->src));
-            mvwprintw(win, cline, startpos - 4, "%d", address_get_port(stream->dst));
+            mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->src));
+            mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->dst));
         }
-        mvwaddwstr(win, cline, startpos + 2, ncurses_acs_utf8('<'));
+        mvwaddwstr(self->arrows_pad, cline, startpos + 2, ncurses_acs_utf8('<'));
         if (active) {
             arrow->rtp_count = stream_get_count(stream);
             arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
-            mvwaddwstr(win, cline, endpos - arrow->rtp_ind_pos - 2, ncurses_acs_utf8('<'));
+            mvwaddwstr(self->arrows_pad, cline, endpos - arrow->rtp_ind_pos - 2, ncurses_acs_utf8('<'));
         }
     }
 
     if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
-        mvwprintw(win, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
+        mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
 
-    wattroff(win, A_BOLD | A_REVERSE);
+    wattroff(self->arrows_pad, A_BOLD | A_REVERSE);
 
     // Print timestamp
     if (self->arrowtime) {
         date_time_time_to_str(stream_time(stream), time);
         if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-            wattron(win, A_BOLD);
-            mvwprintw(win, cline, 2, "%s", time);
-            wattroff(win, A_BOLD);
+            wattron(self->arrows_pad, A_BOLD);
+            mvwprintw(self->arrows_pad, cline - 1, 2, "%s", time);
+            wattroff(self->arrows_pad, A_BOLD);
         } else {
-            mvwprintw(win, cline, 2, "%s", time);
+            mvwprintw(self->arrows_pad, cline - 1, 2, "%s", time);
         }
 
     }
@@ -1274,18 +1293,38 @@ call_flow_win_draw_arrows(Window *window)
     g_return_if_fail(self != NULL);
 
     // Draw arrows
-    for (guint i = self->first_idx; i < g_ptr_array_len(self->darrows); i++) {
+    for (guint i = 0; i < g_ptr_array_len(self->darrows); i++) {
         CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
 
         if (!call_flow_arrow_filter(arrow))
             continue;
 
-        // Stop if we have reached the bottom of the screen
-        if (cline >= getmaxy(self->flow_win))
-            break;
-
         // Draw arrow
         cline += call_flow_win_draw_arrow(window, arrow, cline);
+    }
+
+    // Copy Arrows to arrow subwindow
+    copywin(
+        self->arrows_pad,
+        self->arrows_win,
+        self->vscroll.pos, self->hscroll.pos,
+        0, 0,
+        getmaxy(self->arrows_win) - 1,
+        getmaxx(self->arrows_win) - 1,
+        FALSE
+    );
+
+    // Copy Arrow Times to arrow subwindow
+    if (self->arrowtime) {
+        copywin(
+            self->arrows_pad,
+            self->arrows_win,
+            self->vscroll.pos, 0,
+            0, 0,
+            getmaxy(self->arrows_win) - 1,
+            19,
+            FALSE
+        );
     }
 }
 
@@ -1300,65 +1339,14 @@ call_flow_win_draw_arrows(Window *window)
 static void
 call_flow_win_draw_raw(Window *window, Message *msg)
 {
-    WINDOW *raw_win;
-    int raw_width, raw_height;
-    int min_raw_width, fixed_raw_width;
-
     // Get panel information
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
     g_return_if_fail(self != NULL);
     WINDOW *win = window_get_ncurses_window(window);
 
-    gint height = window_get_height(window);
-    gint width = window_get_width(window);
-
-    // Get min raw width
-    min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
-    fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
-
-    // Calculate the raw data width (width - used columns for flow - vertical lines)
-    CallFlowColumn *last = g_list_last_data(self->columns);
-    raw_width = width - last->pos - CF_COLUMN_WIDTH - 2;
-
-    // We can define a mininum size for rawminwidth
-    if (raw_width < min_raw_width) {
-        raw_width = min_raw_width;
-    }
-    // We can configure an exact raw size
-    if (fixed_raw_width > 0) {
-        raw_width = fixed_raw_width;
-    }
-
-    // Height of raw window is always available size minus 6 lines for header/footer
-    raw_height = height - 3;
-
-    // If we already have a raw window
-    raw_win = self->raw_win;
-    if (raw_win) {
-        // Check it has the correct size
-        if (getmaxx(raw_win) != raw_width) {
-            // We need a new raw window
-            delwin(raw_win);
-            self->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
-        } else {
-            // We have a valid raw win, clear its content
-            werase(raw_win);
-        }
-    } else {
-        // Create the raw window of required size
-        self->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
-    }
-
-    // Draw raw box li
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    mvwvline(win, 1, width - raw_width - 2, ACS_VLINE, height - 2);
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-
     // Print msg payload
     draw_message(self->raw_win, msg);
-
-    // Copy the raw_win contents into the panel
-    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);
+    touchwin(win);
 }
 
 /**
@@ -1373,82 +1361,30 @@ call_flow_win_draw_raw(Window *window, Message *msg)
 static int
 call_flow_win_draw_raw_rtcp(Window *window, G_GNUC_UNUSED Stream *stream)
 {
-    WINDOW *raw_win;
-    int raw_width, raw_height;
-    int min_raw_width, fixed_raw_width;
-
     // Get panel information
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
-    WINDOW *win = window_get_ncurses_window(window);
-
-    gint height = window_get_height(window);
-    gint width = window_get_width(window);
-
-    // Get min raw width
-    min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
-    fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
-
-    // Calculate the raw data width (width - used columns for flow - vertical lines)
-    raw_width = width - (CF_COLUMN_WIDTH * g_list_length(self->columns)) - 2;
-
-    // We can define a mininum size for rawminwidth
-    if (raw_width < min_raw_width) {
-        raw_width = min_raw_width;
-    }
-    // We can configure an exact raw size
-    if (fixed_raw_width > 0) {
-        raw_width = fixed_raw_width;
-    }
-
-    // Height of raw window is always available size minus 6 lines for header/footer
-    raw_height = height - 3;
-
-    // If we already have a raw window
-    raw_win = self->raw_win;
-    if (raw_win) {
-        // Check it has the correct size
-        if (getmaxx(raw_win) != raw_width) {
-            // We need a new raw window
-            delwin(raw_win);
-            self->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
-        } else {
-            // We have a valid raw win, clear its content
-            werase(raw_win);
-        }
-    } else {
-        // Create the raw window of required size
-        self->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
-    }
-
-    // Draw raw box lines
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    mvwvline(win, 1, width - raw_width - 2, ACS_VLINE, height - 2);
-    wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     guint row = 1;
-    mvwprintw(raw_win, row++, 1, "RTP Stream Analysis");
-    mvwhline(raw_win, row++, 1, ACS_HLINE, raw_width);
-    mvwprintw(raw_win, row++, 1, "Source: %s:%hu",
+    mvwprintw(self->raw_win, row++, 1, "RTP Stream Analysis");
+    mvwhline(self->raw_win, row++, 1, ACS_HLINE, getmaxx(self->raw_win) - 1);
+    mvwprintw(self->raw_win, row++, 1, "Source: %s:%hu",
               address_get_ip(stream->src), address_get_port(stream->src));
-    mvwprintw(raw_win, row++, 1, "Destination: %s:%hu",
+    mvwprintw(self->raw_win, row++, 1, "Destination: %s:%hu",
               address_get_ip(stream->dst), address_get_port(stream->dst));
-    mvwprintw(raw_win, row++, 1, "SSRC: 0x%X", stream->ssrc);
-    mvwprintw(raw_win, row++, 1, "Packets: %d / %d", stream->packet_count, stream->stats.expected);
-    mvwprintw(raw_win, row++, 1, "Lost: %d (%.1f%%)", stream->stats.lost,
+    mvwprintw(self->raw_win, row++, 1, "SSRC: 0x%X", stream->ssrc);
+    mvwprintw(self->raw_win, row++, 1, "Packets: %d / %d", stream->packet_count, stream->stats.expected);
+    mvwprintw(self->raw_win, row++, 1, "Lost: %d (%.1f%%)", stream->stats.lost,
               (gdouble) stream->stats.lost / stream->stats.expected * 100);
-    mvwprintw(raw_win, row++, 1, "Out of sequence: %d (%.1f%%)", stream->stats.oos,
+    mvwprintw(self->raw_win, row++, 1, "Out of sequence: %d (%.1f%%)", stream->stats.oos,
               (gdouble) stream->stats.oos / stream->packet_count * 100);
-    mvwprintw(raw_win, row++, 1, "Max Delta: %.2f ms", stream->stats.max_delta);
-    mvwprintw(raw_win, row++, 1, "Max Jitter: %.2f ms", stream->stats.max_jitter);
-    mvwprintw(raw_win, row++, 1, "Mean Jitter: %.2f ms", stream->stats.mean_jitter);
-    mvwprintw(raw_win, row++, 1, "Problems: %s", (stream->stats.lost) ? "Yes" : "No");
+    mvwprintw(self->raw_win, row++, 1, "Max Delta: %.2f ms", stream->stats.max_delta);
+    mvwprintw(self->raw_win, row++, 1, "Max Jitter: %.2f ms", stream->stats.max_jitter);
+    mvwprintw(self->raw_win, row++, 1, "Mean Jitter: %.2f ms", stream->stats.mean_jitter);
+    mvwprintw(self->raw_win, row++, 1, "Problems: %s", (stream->stats.lost) ? "Yes" : "No");
     row++;
 
-    mvwprintw(raw_win, row++, 1, "RTCP VoIP Metrics Report");
-    mvwhline(raw_win, row++, 1, ACS_HLINE, raw_width);
-
-    // Copy the raw_win contents into the panel
-    copywin(raw_win, win, 0, 0, 1, width - raw_width - 1, raw_height, width - 2, 0);
+    mvwprintw(self->raw_win, row++, 1, "RTCP VoIP Metrics Report");
+    mvwhline(self->raw_win, row++, 1, ACS_HLINE, getmaxx(self->raw_win));
 
     return 0;
 }
@@ -1484,90 +1420,39 @@ call_flow_win_draw_preview(Window *window)
 }
 
 /**
- * @brief Move selected cursor to given arrow
- *
- * This function will move the cursor to given arrow, taking into account
- * selected line and scrolling position.
+ * @brief Move selection cursor up N times
  *
  * @param window UI structure pointer
- * @param idx Position to move the cursor
+ * @param times number of lines to move up
  */
 static void
-call_flow_win_move(Window *window, guint idx)
+call_flow_win_move_vertical(Window *window, gint times)
 {
-    int curh = 0;
-
-    // Get panel info
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
     g_return_if_fail(self != NULL);
 
-    // Already in this position?
-    if (self->cur_idx == idx)
-        return;
+    // Set the new current selected index
+    self->cur_idx = CLAMP(
+        (gint) self->cur_idx + times,
+        0,
+        (gint) g_ptr_array_len(self->darrows) - 1
+    );
 
-    // Get flow subwindow height (for scrolling)
-    gint flowh = getmaxy(self->flow_win);
+    CallFlowArrow *cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
+    g_return_if_fail(cur_arrow != NULL);
 
-    // Moving down or up?
-    gboolean move_down = (self->cur_idx < idx);
+    // Move the first index if required (moving up)
+    self->vscroll.pos = MIN(self->vscroll.pos, cur_arrow->line - cur_arrow->height + 1);
 
-    if (move_down) {
-        for (guint i = self->cur_idx + 1; i < g_ptr_array_len(self->darrows); i++) {
-            CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
-
-            if (!call_flow_arrow_filter(arrow))
-                continue;
-
-            // Get next selected arrow
-            self->cur_idx = i;
-
-            // We have reached our destination
-            if (self->cur_idx >= idx) {
-                break;
-            }
-        }
-    } else {
-        for (gint i = self->cur_idx - 1; i >= 0; i--) {
-            CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
-
-            if (!call_flow_arrow_filter(arrow))
-                continue;
-
-            // Get previous selected arrow
-            self->cur_idx = (guint) i;
-
-            // We have reached our destination
-            if (self->cur_idx <= idx) {
-                break;
-            }
-        }
+    gint arrow_win_height = getmaxy(self->arrows_win);
+    if (scrollbar_visible(self->hscroll)) {
+        arrow_win_height -= 1;
     }
 
-    // Update the first displayed arrow
-    if (self->cur_idx <= self->first_idx) {
-        self->first_idx = self->cur_idx;
-    } else {
-        // Draw the scrollbar
-        for (guint i = self->first_idx; i < g_ptr_array_len(self->darrows); i++) {
-            CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
-
-            // Increase current arrow height position
-            curh += call_flow_arrow_height(window, arrow);
-            // If we have reached current arrow
-            if (i == self->cur_idx) {
-                if (curh > flowh) {
-                    // Go to the next first arrow and check if current arrow
-                    // is still out of bottom bounds
-                    i = self->first_idx;
-                    self->first_idx++;
-                    curh = 0;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
+    // Move the first index if required (moving down)
+    self->vscroll.pos = MAX(self->vscroll.pos, cur_arrow->line - arrow_win_height);
 }
+
 
 /**
  * @brief Move selection cursor up N times
@@ -1576,36 +1461,17 @@ call_flow_win_move(Window *window, guint idx)
  * @param times number of lines to move up
  */
 static void
-call_flow_win_move_up(Window *window, guint times)
+call_flow_win_move_horizontal(Window *window, gint times)
 {
     CallFlowWindow *self = NCURSES_CALL_FLOW(window);
     g_return_if_fail(self != NULL);
 
-    gint newpos = self->cur_idx - times;
-    if (newpos < 0) newpos = 0;
-
-    call_flow_win_move(window, (guint) newpos);
+    // Move the first index if required (moving left)
+    self->hscroll.pos = CLAMP(self->hscroll.pos + times,
+                              0,
+                              getmaxx(self->columns_pad) - getmaxx(self->colunms_win)
+    );
 }
-
-/**
- * @brief Move selection cursor down N times
- *
- * @param window UI structure pointer
- * @param times number of lines to move down
- */
-static void
-call_flow_win_move_down(Window *window, guint times)
-{
-    CallFlowWindow *self = NCURSES_CALL_FLOW(window);
-    g_return_if_fail(self != NULL);
-
-    guint newpos = self->cur_idx + times;
-    if (newpos >= g_ptr_array_len(self->darrows))
-        newpos = g_ptr_array_len(self->darrows) - 1;
-
-    call_flow_win_move(window, newpos);
-}
-
 
 void
 call_flow_win_set_group(Window *window, CallGroup *group)
@@ -1618,7 +1484,7 @@ call_flow_win_set_group(Window *window, CallGroup *group)
     g_ptr_array_remove_all(self->arrows);
 
     self->group = group;
-    self->cur_idx = self->first_idx = 0;
+    self->cur_idx = 0;
     self->selected = -1;
 }
 
@@ -1652,28 +1518,34 @@ call_flow_win_handle_key(Window *window, gint key)
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
-                call_flow_win_move_down(window, 1);
+                call_flow_win_move_vertical(window, 1);
                 break;
             case ACTION_UP:
-                call_flow_win_move_up(window, 1);
+                call_flow_win_move_vertical(window, -1);
+                break;
+            case ACTION_RIGHT:
+                call_flow_win_move_horizontal(window, 15);
+                break;
+            case ACTION_LEFT:
+                call_flow_win_move_horizontal(window, -15);
                 break;
             case ACTION_HNPAGE:
-                call_flow_win_move_down(window, rnpag_steps / 2);;
+                call_flow_win_move_vertical(window, rnpag_steps / 2);;
                 break;
             case ACTION_NPAGE:
-                call_flow_win_move_down(window, rnpag_steps);
+                call_flow_win_move_vertical(window, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                call_flow_win_move_up(window, rnpag_steps / 2);;
+                call_flow_win_move_vertical(window, -1 * rnpag_steps / 2);;
                 break;
             case ACTION_PPAGE:
-                call_flow_win_move_up(window, rnpag_steps);
+                call_flow_win_move_vertical(window, -1 * rnpag_steps);
                 break;
             case ACTION_BEGIN:
-                call_flow_win_move(window, 0);
+                call_flow_win_move_vertical(window, -1 * g_ptr_array_len(self->darrows));
                 break;
             case ACTION_END:
-                call_flow_win_move(window, g_ptr_array_len(self->darrows));
+                call_flow_win_move_vertical(window, g_ptr_array_len(self->darrows));
                 break;
             case ACTION_SHOW_FLOW_EX:
                 werase(win);
@@ -1701,10 +1573,8 @@ call_flow_win_handle_key(Window *window, gint key)
                 }
                 break;
             case ACTION_INCREASE_RAW:
-                raw_width = getmaxx(self->raw_win);
-                if (raw_width + 2 < COLS - 1) {
-                    setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, raw_width + 2);
-                }
+                raw_width = MIN(getmaxx(self->raw_win) + 2, window_get_width(window) - 1);
+                setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, raw_width);
                 break;
             case ACTION_RESET_RAW:
                 setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, -1);
@@ -1900,6 +1770,68 @@ call_flow_win_help(G_GNUC_UNUSED Window *window)
     return 0;
 }
 
+static void
+call_flow_win_create_subwindows(Window *window)
+{
+    // Get panel information
+    CallFlowWindow *self = NCURSES_CALL_FLOW(window);
+    WINDOW *win = window_get_ncurses_window(window);
+    gint win_height = window_get_height(window);
+    gint win_width = window_get_width(window);
+
+    // Create pad to store all arrows
+    if (self->arrows_pad) delwin(self->arrows_pad);
+    gint pad_height = MAX(call_flow_win_arrows_height(window) + 1, win_height - 4);
+    gint pad_width = MAX(call_flow_win_columns_width(window), win_width);
+    self->arrows_pad = newpad(pad_height, pad_width);
+
+    // Create pad to store all columns
+    if (self->columns_pad) delwin(self->columns_pad);
+    self->columns_pad = newpad(3 /* column height */, pad_width);
+
+    gint raw_width = 0;
+    // Check if not displaying raw has been requested
+    if (setting_enabled(SETTING_CF_FORCERAW)) {
+        // Get min raw width
+        gint min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
+        gint fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
+
+        // We can configure an exact raw size
+        if (fixed_raw_width > 0) {
+            raw_width = fixed_raw_width;
+        } else {
+            raw_width = MAX(win_width - call_flow_win_columns_width(window), min_raw_width);
+        }
+
+        // Height of raw window is always available size minus 6 lines for header/footer
+        gint raw_height = win_height - 2;
+
+        // If we already have a raw window
+        if (self->raw_win) delwin(self->raw_win);
+        self->raw_win = subwin(win, raw_height, raw_width, 1, win_width - raw_width - 1);
+
+        // Draw raw Separator line
+        wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+        mvwvline(win, 1, win_width - raw_width - 2, ACS_VLINE, win_height - 2);
+        wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    }
+
+    // Call Flow arrows subwindow
+    if (self->arrows_win) delwin(self->arrows_win);
+    gint flow_height = win_height - 5;
+    gint flow_width = (raw_width) ? win_width - raw_width - 2 : win_width;
+    self->arrows_win = subwin(win, flow_height, flow_width, 4, 0);
+    self->colunms_win = subwin(win, 3, flow_width, 1, 0);
+
+    // Configure vertical scrollbar
+    self->vscroll.max = getmaxy(self->arrows_pad) - 1;
+    self->vscroll.win = self->arrows_win;
+
+    // Configure horizontal scrollbar
+    self->hscroll.max = getmaxx(self->arrows_pad) - 1;
+    self->hscroll.win = self->arrows_win;
+}
+
 /**
  * @brief Draw the Call flow extended panel
  *
@@ -1949,6 +1881,9 @@ call_flow_win_draw(Window *window)
     // Create pending arrows for SIP and RTP
     call_flow_win_create_arrows(window);
 
+    // Create subwindows for all components
+    call_flow_win_create_subwindows(window);
+
     // Redraw columns
     call_flow_win_draw_columns(window);
 
@@ -1958,21 +1893,10 @@ call_flow_win_draw(Window *window)
     // Redraw preview
     call_flow_win_draw_preview(window);
 
-    // Draw the scrollbar
-    self->scroll.max = self->scroll.pos = 0;
-    for (guint i = 0; i < g_ptr_array_len(self->darrows); i++) {
-        CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
+    // Draw scrollbars
+    scrollbar_draw(self->vscroll);
+    scrollbar_draw(self->hscroll);
 
-        // Store current position arrow
-        if (i == self->first_idx) {
-            self->scroll.pos = self->scroll.max;
-        }
-        self->scroll.max += call_flow_arrow_height(window, arrow);
-    }
-    scrollbar_draw(self->scroll);
-
-    // Redraw flow win
-    wnoutrefresh(self->flow_win);
     return 0;
 }
 
@@ -2003,7 +1927,7 @@ call_flow_win_redraw(Window *window)
     window_set_height(window, maxy);
 
     // Calculate available printable area
-    wresize(self->flow_win, maxy - 6, maxx);
+    wresize(self->arrows_win, maxy - 6, maxx);
 
     // Check if any of the group has changed
     return call_group_changed(self->group);
@@ -2035,7 +1959,9 @@ call_flow_win_finalized(GObject *object)
     g_ptr_array_free(self->arrows, TRUE);
 
     // Delete panel windows
-    delwin(self->flow_win);
+    delwin(self->arrows_pad);
+    delwin(self->colunms_win);
+    delwin(self->arrows_win);
     delwin(self->raw_win);
 
     // Delete displayed call group
@@ -2053,15 +1979,10 @@ call_flow_win_constructed(GObject *object)
 
     // Get parent window information
     CallFlowWindow *self = NCURSES_CALL_FLOW(object);
-    Window *parent = NCURSES_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
 
     // Calculate available printable area for messages
-    self->flow_win = subwin(win, height - 6, width - 2, 4, 0);
-    self->scroll = window_set_scrollbar(self->flow_win, SB_VERTICAL, SB_LEFT);
+    self->vscroll = window_set_scrollbar(self->arrows_win, SB_VERTICAL, SB_LEFT);
+    self->hscroll = window_set_scrollbar(self->arrows_win, SB_HORIZONTAL, SB_BOTTOM);
 }
 
 static void

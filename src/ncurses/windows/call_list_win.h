@@ -93,6 +93,8 @@ struct _CallListWindow
     GPtrArray *dcalls;
     //! Selected call in the list
     gint cur_idx;
+    //! First displayed call in the list
+    gint first_idx;
     //! Selected calls with space
     CallGroup *group;
     //! Displayed column list, make it configurable in the future

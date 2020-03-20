@@ -148,21 +148,27 @@ struct _CallFlowWindow
     //! Window to display SIP payload
     WINDOW *raw_win;
     //! Window to display arrows
-    WINDOW *flow_win;
+    WINDOW *colunms_win;
+    //! Window to display arrows
+    WINDOW *arrows_win;
+    //! Window pad to store all arrow
+    WINDOW *arrows_pad;
+    //! Window pad to store all columns
+    WINDOW *columns_pad;
     //! Group of calls displayed on the panel
     CallGroup *group;
     //! List of arrows (call_flow_arrow_t *)
     GPtrArray *arrows;
     //! List of displayed arrows
     GPtrArray *darrows;
-    //! First displayed arrow in the list
-    guint first_idx;
     //! Current arrow index where the cursor is
-    guint cur_idx;
+    gint cur_idx;
     //! Selected arrow to compare
     gint selected;
-    //! Current line for scrolling
-    Scrollbar scroll;
+    //! Vertical Flow window scrollbar
+    Scrollbar vscroll;
+    //! Vertical Flow window scrollbar
+    Scrollbar hscroll;
     //! List of columns in the panel
     GList *columns;
     //! Print timestamp next to the arrow

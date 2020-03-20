@@ -47,130 +47,54 @@
 G_DEFINE_TYPE(CallListWindow, call_list, NCURSES_TYPE_WINDOW)
 
 /**
- * @brief Move selected cursor to given line
+ * @brief Move selection cursor N times vertically
  *
- * This function will move the cursor to given line, taking into account
- * selected line and scrolling position.
- *
- * @param window UI structure pointer
- * @param line Position to move the cursor
+ * @param self CallListWindow pointer
+ * @param times number of lines, positive for down, negative for up
  */
 static void
-call_list_move(CallListWindow *self, gint line)
+call_list_move_vertical(CallListWindow *self, gint times)
 {
-    // Already in this position?
-    if (self->cur_idx == line)
-        return;
+    // Set the new current selected index
+    self->cur_idx = CLAMP(
+        self->cur_idx + times,
+        0,
+        (gint) g_ptr_array_len(self->dcalls) - 1
+    );
 
-    // Moving down or up?
-    gboolean move_down = (self->cur_idx < line);
+    // Move the first index if required (moving up)
+    self->first_idx = MIN(self->first_idx, self->cur_idx);
 
-    if (move_down) {
-        gint listh = getmaxy(self->list_win);
-        // Remove one line of header
-        listh--;
+    // Calculate Call List height
+    gint height = getmaxy(self->list_win);
+    height -= 1;                                        // Remove header line
+    height -= scrollbar_visible(self->hscroll) ? 1 : 0; // Remove Horizontal scrollbar
 
-        if (scrollbar_visible(self->hscroll))
-            listh--;
+    // Move the first index if required (moving down)
+    self->first_idx = MAX(
+        self->first_idx,
+        self->cur_idx - height + 1
+    );
 
-        while (self->cur_idx < line) {
-            // Check if there is a call below us
-            if (self->cur_idx == (gint) g_ptr_array_len(self->dcalls) - 1)
-                break;
-
-            // Increase current call position
-            self->cur_idx++;
-
-            // If we are out of the bottom of the displayed list
-            // refresh it starting in the next call
-            if ((gint) (self->cur_idx - self->vscroll.pos) == listh) {
-                self->vscroll.pos++;
-            }
-        }
-    } else {
-        while (self->cur_idx > line) {
-            // Check if there is a call above us
-            if (self->cur_idx == 0)
-                break;
-
-            // If we are out of the top of the displayed list
-            // refresh it starting in the previous (in fact current) call
-            if (self->cur_idx == self->vscroll.pos) {
-                self->vscroll.pos--;
-            }
-            // Move current call position
-            self->cur_idx--;
-        }
-    }
+    // Update vertical scrollbar position
+    self->vscroll.pos = self->first_idx;
 }
 
 /**
- * @brief Move selection cursor up N times
+ * @brief Move selection cursor N times horizontal
  *
- * @param window UI structure pointer
- * @param times number of lines to move up
+ * @param self CallListWindow pointer
+ * @param times number of lines, positive for right, negative for left
  */
 static void
-call_list_move_up(CallListWindow *self, guint times)
+call_list_move_horizontal(CallListWindow *self, gint times)
 {
-    gint newpos = self->cur_idx - times;
-    if (newpos < 0) newpos = 0;
-
-    call_list_move(self, (guint) newpos);
-}
-
-/**
- * @brief Move column position right N times
- *
- * @param window UI structure pointer
- * @param times number of lines to move right
- */
-static void
-call_list_move_right(CallListWindow *self, guint times)
-{
-    // Nothing to scroll
-    if (!scrollbar_visible(self->hscroll))
-        return;
-
-    gint listw = getmaxx(self->hscroll.win);
-
-    gint newpos = self->hscroll.pos + times;
-    if (newpos >= self->hscroll.max - listw)
-        newpos = self->hscroll.max - listw;
-
-    self->hscroll.pos = newpos;
-}
-
-/**
- * @brief Move column position left N times
- *
- * @param window UI structure pointer
- * @param times number of lines to move left
- */
-static void
-call_list_move_left(CallListWindow *self, guint times)
-{
-    gint newpos = self->hscroll.pos - times;
-    if (newpos < 0)
-        newpos = 0;
-
-    self->hscroll.pos = (guint) newpos;
-}
-
-/**
- * @brief Move selection cursor down N times
- *
- * @param window UI structure pointer
- * @param times number of lines to move down
- */
-static void
-call_list_move_down(CallListWindow *self, guint times)
-{
-    guint newpos = self->cur_idx + times;
-    if (newpos >= g_ptr_array_len(self->dcalls))
-        newpos = g_ptr_array_len(self->dcalls) - 1;
-
-    call_list_move(self, newpos);
+    // Move horizontal scroll N times
+    self->hscroll.pos = CLAMP(
+        self->hscroll.pos + times,
+        0,
+        self->hscroll.max - getmaxx(self->hscroll.win)
+    );
 }
 
 /**
@@ -415,9 +339,9 @@ call_list_draw_list(CallListWindow *self)
     if (self->autoscroll) {
         StorageSortOpts sort = storage_sort_options();
         if (sort.asc) {
-            call_list_move(self, g_ptr_array_len(self->dcalls) - 1);
+            call_list_move_vertical(self, g_ptr_array_len(self->dcalls));
         } else {
-            call_list_move(self, 0);
+            call_list_move_vertical(self, g_ptr_array_len(self->dcalls) * -1);
         }
     }
 
@@ -915,35 +839,34 @@ call_list_handle_key(Window *window, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_RIGHT:
-                call_list_move_right(self, 3);
+                call_list_move_horizontal(self, 3);
                 break;
             case ACTION_LEFT:
-                call_list_move_left(self, 3);
+                call_list_move_horizontal(self, -3);
                 break;
             case ACTION_DOWN:
-                call_list_move_down(self, 1);
+                call_list_move_vertical(self, 1);
                 break;
             case ACTION_UP:
-                call_list_move_up(self, 1);
+                call_list_move_vertical(self, -1);
                 break;
             case ACTION_HNPAGE:
-                call_list_move_down(self, rnpag_steps / 2);
+                call_list_move_vertical(self, rnpag_steps / 2);
                 break;
             case ACTION_NPAGE:
-                call_list_move_down(self, rnpag_steps);
+                call_list_move_vertical(self, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                call_list_move_up(self, rnpag_steps / 2);
+                call_list_move_vertical(self, -1 * rnpag_steps / 2);
                 break;
             case ACTION_PPAGE:
-                call_list_move_up(self, rnpag_steps);
+                call_list_move_vertical(self, -1 * rnpag_steps);
                 break;
             case ACTION_BEGIN:
-                // Move to first list entry
-                call_list_move(self, 0);
+                call_list_move_vertical(self, g_ptr_array_len(self->dcalls) * -1);
                 break;
             case ACTION_END:
-                call_list_move(self, g_ptr_array_len(self->dcalls) - 1);
+                call_list_move_vertical(self, g_ptr_array_len(self->dcalls));
                 break;
             case ACTION_DISP_FILTER:
                 // Activate Form
