@@ -23,14 +23,6 @@ capture:
         even unlimited captures if specified by the user at own risk.
 
 rtp:
-    * Improve RTP stream creation
-        We create new streams from SDP information every time we parse a
-        SIP message with SDP content and the information doesn't match the
-        last call stream. This should be improved to also consider the stream
-        direction, so we compare with the last call stream with the same
-        direction. This way, we would avoid drawing RTP arrows that have
-        the same information
-
     * Improve RTCP parsing
         Right now only RTCP extended report is parsed and the information
         provided in flow panel doesn't seem to be useful. Determine what
@@ -42,12 +34,6 @@ rtp:
         in the matching RTP arrow.
 
 pcap:
-    * Sorting saved pakets
-        Before creating a pcap, we sort packets by timestamp. When a lot of packets
-        are handled (especially when RTP is captured) this can take A LOT of time.
-        We should improve the sorting, allowing the save process to be canceled or
-        allowing not to sort at all.
-
     * Allow saving HEP/EEP captured packets
         To create a full packet from HEP received packets its required to create
         the required Ethernet/TCP/UDP headers before dumping to pcap.
@@ -55,30 +41,11 @@ pcap:
         addresses) must be filled with dummy information.
 
 interface:
-     * Change panels initialization
-        Right now, all panels are initializated at the same, because
-        each panel can only be invoked once (it is not possible to have
-        two call details panel right now)
-
-    * Add horizontal scrolling
-        It should be nice to be able to scroll horizontaly (with unused
-        right and left keys) in Call List and Call flow.
-
-    * Interface resize
-        When the terminal size changes, the ui is not properly redraw.
-        It would be nice to handle KEY_RESIZE event and change all displayed
-        panels.
-
     * Improve colors for white background terminals
         The best approach for colors should be use terminal defaults.
         Right now, white background terminals must set background dark option
         in order to see colors properly. This could be fixed implementing
         color themes.
-
-    * Improve compatibility with IPv6
-        IPv6 packets are captured but IPv6 addresses can be 45 chars
-        long, so current UI is not ready to display that kind of
-        addresses
 
     * Improve Unicode support
         Even when compiling with libncruses wide-character support, we don't
@@ -88,9 +55,4 @@ interface:
     * Update keybinding display in help screen
         Most of the panels have a help window that display keybindings, but they
         are updated with the last keybiding mapping changes.
-
-    * Create a loading dialog or include a Loading percentage in Call List
-        Add the readed % of bytes from the pcap file next to the (Loading) label in
-        Call List, or create a new Dialog when opening big pcaps that can be hidden
-        to continue loading in background.
 
