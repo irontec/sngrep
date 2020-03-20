@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include "ncurses/keybinding.h"
 #include "glib-extra/glib.h"
+#include "glib-extra/glib_enum_types.h"
 #include "setting.h"
 
 /**
@@ -47,16 +48,72 @@
  */
 static SettingStorage *settings = NULL;
 
+static const gchar *
+g_value_get_enum_nick(const GValue *value)
+{
+    GType enum_type = G_VALUE_TYPE(value);
+    GEnumClass *enum_class = g_type_class_ref(enum_type);
+    g_return_val_if_fail(enum_class != NULL, NULL);
+    GEnumValue *enum_value = g_enum_get_value(enum_class, g_value_get_enum(value));
+    g_return_val_if_fail(enum_value != NULL, NULL);
+    const gchar *nick = enum_value->value_nick;
+    g_type_class_unref(enum_class);
+    return nick;
+}
+
+/**
+ * @brief Convert Enum to String
+ * @param src_value Enum type GValue
+ * @param dst_value String type GValue
+ */
+static void
+setting_enum_to_string(const GValue *src_value, GValue *dst_value)
+{
+    g_value_set_static_string(dst_value, g_value_get_enum_nick(src_value));
+}
+
+/**
+ * @brief Convert Boolean to String
+ * @param src_value Boolean type GValue
+ * @param dst_value String type GValue
+ */
+static void
+setting_bool_to_string(const GValue *src_value, GValue *dst_value)
+{
+    g_value_set_static_string(
+        dst_value,
+        g_value_get_boolean(src_value) ? "on" : "off"
+    );
+}
+
+/**
+ * @brief Convert String to Boolean
+ * @param src_value String type GValue
+ * @param dst_value Boolean type GValue
+ */
+static void
+setting_string_to_bool(const GValue *src_value, GValue *dst_value)
+{
+    const gchar *str_value = g_value_get_string(src_value);
+    g_return_if_fail(str_value != NULL);
+    g_value_set_boolean(
+        dst_value,
+        g_strcmp0(str_value, "yes") == 0 || g_strcmp0(str_value, "YES") == 0
+        || g_strcmp0(str_value, "true") == 0 || g_strcmp0(str_value, "TRUE") == 0
+        || g_strcmp0(str_value, "on") == 0 || g_strcmp0(str_value, "ON") == 0
+    );
+}
+
 /**
  * @brief Create a new number type setting
  */
 static Setting *
-setting_number_new(const gchar *name, const gchar *value)
+setting_number_new(const gchar *name, gint value)
 {
     Setting *setting = g_malloc0(sizeof(Setting));
     setting->name = name;
-    setting->fmt = SETTING_FMT_NUMBER;
-    strncpy(setting->value, value, SETTING_MAX_LEN);
+    g_value_init(&setting->value, G_TYPE_INT);
+    g_value_set_int(&setting->value, value);
     return setting;
 }
 
@@ -68,8 +125,8 @@ setting_string_new(const gchar *name, const gchar *value)
 {
     Setting *setting = g_malloc0(sizeof(Setting));
     setting->name = name;
-    setting->fmt = SETTING_FMT_STRING;
-    strncpy(setting->value, value, SETTING_MAX_LEN);
+    g_value_init(&setting->value, G_TYPE_STRING);
+    g_value_set_static_string(&setting->value, value);
     return setting;
 }
 
@@ -77,13 +134,12 @@ setting_string_new(const gchar *name, const gchar *value)
  * @brief Create a new boolean type setting
  */
 static Setting *
-setting_bool_new(const gchar *name, const gchar *value)
+setting_bool_new(const gchar *name, gboolean value)
 {
     Setting *setting = g_malloc0(sizeof(Setting));
     setting->name = name;
-    setting->fmt = SETTING_FMT_BOOLEAN;
-    strncpy(setting->value, value, SETTING_MAX_LEN);
-    setting->valuelist = g_strsplit("on,off", ",", -1);
+    g_value_init(&setting->value, G_TYPE_BOOLEAN);
+    g_value_set_boolean(&setting->value, value);
     return setting;
 }
 
@@ -91,13 +147,12 @@ setting_bool_new(const gchar *name, const gchar *value)
  * @brief Create a new enum type setting
  */
 static Setting *
-setting_enum_new(const gchar *name, const gchar *value, const gchar *valuelist)
+setting_enum_new(const gchar *name, gint value, GType enum_type)
 {
     Setting *setting = g_malloc0(sizeof(Setting));
     setting->name = name;
-    setting->fmt = SETTING_FMT_ENUM;
-    strncpy(setting->value, value, SETTING_MAX_LEN);
-    setting->valuelist = g_strsplit(valuelist, ",", -1);
+    g_value_init(&setting->value, enum_type);
+    g_value_set_enum(&setting->value, value);
     return setting;
 }
 
@@ -105,22 +160,11 @@ static void
 setting_free(Setting *setting)
 {
     g_return_if_fail(setting != NULL);
-    switch (setting->fmt) {
-        case SETTING_FMT_NUMBER:
-        case SETTING_FMT_STRING:
-            break;
-        case SETTING_FMT_BOOLEAN:
-        case SETTING_FMT_ENUM:
-            g_strfreev(setting->valuelist);
-            break;
-        default:
-            break;
-    }
     g_free(setting);
 }
 
 Setting *
-setting_by_id(enum SettingId id)
+setting_by_id(SettingId id)
 {
     return g_ptr_array_index(settings->values, id);
 }
@@ -137,7 +181,7 @@ setting_by_name(const gchar *name)
     return NULL;
 }
 
-enum SettingId
+SettingId
 setting_id(const gchar *name)
 {
     const Setting *sett = setting_by_name(name);
@@ -145,74 +189,82 @@ setting_id(const gchar *name)
 }
 
 const gchar *
-setting_name(enum SettingId id)
+setting_name(SettingId id)
 {
-    const Setting *sett = setting_by_id(id);
-    return (sett) ? sett->name : NULL;
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, NULL);
+    return setting->name;
 }
 
-gint
-setting_format(enum SettingId id)
+GType
+setting_get_type(SettingId id)
 {
-    const Setting *sett = setting_by_id(id);
-    return (sett) ? (int) sett->fmt : -1;
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, G_TYPE_INVALID);
+
+    if (G_TYPE_IS_ENUM(G_VALUE_TYPE(&setting->value))) {
+        return G_TYPE_ENUM;
+    }
+    return G_VALUE_TYPE(&setting->value);
 }
 
 const gchar **
-setting_valid_values(enum SettingId id)
+setting_valid_values(SettingId id)
 {
-    const Setting *sett = setting_by_id(id);
-    return (const gchar **) ((sett) ? sett->valuelist : NULL);
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, NULL);
+    GType enum_type = G_VALUE_TYPE(&setting->value);
+    GEnumClass *enum_class = g_type_class_ref(enum_type);
+    g_return_val_if_fail(enum_class != NULL, NULL);
+    const gchar **values = g_malloc0(sizeof(gpointer) * (enum_class->n_values + 1));
+    for (guint i = 0; i < enum_class->n_values; i++) {
+        values[i] = enum_class->values[i].value_nick;
+    }
+    values[enum_class->n_values] = NULL;
+    return values;
 }
 
 const gchar *
-setting_get_value(enum SettingId id)
+setting_get_value(SettingId id)
 {
-    const Setting *sett = setting_by_id(id);
-    return (sett && strlen(sett->value)) ? sett->value : NULL;
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, NULL);
+    GValue string_value = G_VALUE_INIT;
+    g_value_init(&string_value, G_TYPE_STRING);
+    g_value_transform(&setting->value, &string_value);
+    return g_value_get_string(&string_value);
 }
 
 gint
-setting_get_intvalue(enum SettingId id)
+setting_get_intvalue(SettingId id)
 {
-    const Setting *sett = setting_by_id(id);
-    return (sett && strlen(sett->value)) ? g_atoi(sett->value) : -1;
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, -1);
+    return g_value_get_int(&setting->value);
 }
 
 gint
-setting_get_enum(enum SettingId id)
+setting_get_enum(SettingId id)
 {
-    const Setting *sett = setting_by_id(id);
-    const gchar *value = setting_get_value(id);
-
-    // Iterate through valid values
-    for (gint i = 0; sett->valuelist[i]; i++) {
-        // If current value matches
-        if (g_strcmp0(sett->valuelist[i], value) == 0) {
-            return i;
-        }
-    }
-    return -1;
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, -1);
+    return g_value_get_enum(&setting->value);
 }
 
 void
-setting_set_value(enum SettingId id, const gchar *value)
+setting_set_value(SettingId id, const gchar *value)
 {
-    Setting *sett = setting_by_id(id);
-    g_return_if_fail(sett != NULL);
-    memset(sett->value, 0, sizeof(sett->value));
-    if (value) {
-        if (strlen(value) < SETTING_MAX_LEN) {
-            strcpy(sett->value, value);
-        } else {
-            fprintf(stderr, "Setting value %s for %s is too long\n", sett->value, sett->name);
-            exit(1);
-        }
-    }
+    Setting *setting = setting_by_id(id);
+    g_return_if_fail(setting != NULL);
+
+    GValue new_value = G_VALUE_INIT;
+    g_value_init(&new_value, G_TYPE_STRING);
+    g_value_set_string(&new_value, value);
+    g_value_transform(&new_value, &setting->value);
 }
 
 void
-setting_set_intvalue(enum SettingId id, gint value)
+setting_set_intvalue(SettingId id, gint value)
 {
     char strvalue[80];
     sprintf(strvalue, "%d", value);
@@ -220,82 +272,53 @@ setting_set_intvalue(enum SettingId id, gint value)
 }
 
 gint
-setting_enabled(enum SettingId id)
+setting_enabled(SettingId id)
 {
-    return setting_has_value(id, "on") ||
-           setting_has_value(id, "yes");
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, -1);
+    return g_value_get_boolean(&setting->value);
 }
 
 gint
-setting_disabled(enum SettingId id)
+setting_disabled(SettingId id)
 {
-    return setting_has_value(id, "off") ||
-           setting_has_value(id, "no");
-}
-
-gint
-setting_has_value(enum SettingId id, const gchar *value)
-{
-    Setting *sett = setting_by_id(id);
-    if (sett) {
-        return !strcmp(sett->value, value);
-    }
-
-    return 0;
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, -1);
+    return !g_value_get_boolean(&setting->value);
 }
 
 void
-setting_toggle(enum SettingId id)
+setting_toggle(SettingId id)
 {
-    Setting *sett = setting_by_id(id);
+    Setting *setting = setting_by_id(id);
+    g_return_if_fail(setting != NULL);
 
-    if (sett) {
-        switch (sett->fmt) {
-            case SETTING_FMT_BOOLEAN:
-                (setting_enabled(id)) ? setting_set_value(id, SETTING_OFF) : setting_set_value(id, SETTING_ON);
-                break;
-            case SETTING_FMT_ENUM:
-                setting_set_value(id, setting_enum_next(id, sett->value));
-            case SETTING_FMT_STRING:
-                break;
-            case SETTING_FMT_NUMBER:
-                break;
-            default:
-                break;
-        }
+    switch (setting_get_type(id)) {
+        case G_TYPE_BOOLEAN:
+            g_value_set_boolean(&setting->value, !g_value_get_boolean(&setting->value));
+            break;
+        case G_TYPE_ENUM:
+            g_value_set_enum(&setting->value, setting_enum_next(id));
+            break;
+        default:
+            break;
     }
 }
 
-const gchar *
-setting_enum_next(enum SettingId id, const gchar *value)
+gint
+setting_enum_next(SettingId id)
 {
-    int i;
-    const char *vnext;
-    Setting *sett;
+    const Setting *setting = setting_by_id(id);
+    g_return_val_if_fail(setting != NULL, -1);
+    GType enum_type = G_VALUE_TYPE(&setting->value);
+    GEnumClass *enum_class = g_type_class_ref(enum_type);
+    g_return_val_if_fail(enum_class != NULL, -1);
 
-    if (!(sett = setting_by_id(id)))
-        return NULL;
+    gint next_value = g_value_get_enum(&setting->value) + 1;
+    if (next_value > enum_class->maximum)
+        next_value = enum_class->minimum;
 
-    if (sett->fmt != SETTING_FMT_ENUM)
-        return NULL;
-
-    if (!sett->valuelist)
-        return NULL;
-
-    // If setting has no value, set the first one
-    if (!value)
-        return *sett->valuelist;
-
-    // Iterate through valid values
-    for (i = 0; sett->valuelist[i]; i++) {
-        vnext = sett->valuelist[i + 1];
-        // If current value matches
-        if (!strcmp(sett->valuelist[i], value)) {
-            return (vnext) ? vnext : setting_enum_next(id, NULL);
-        }
-    }
-
-    return NULL;
+    return next_value;
 }
 
 gint
@@ -427,7 +450,7 @@ setting_read_file(const gchar *fname)
         // Get configuration option from setting line
         if (sscanf(line, "%s %s %[^\t\n]", type, option, value) == 3) {
             if (!strcasecmp(type, "set")) {
-                enum SettingId id = setting_id(option);
+                SettingId id = setting_id(option);
                 if (id == SETTING_UNKNOWN) {
                     g_printerr("error: Unknown setting: %s\n", option);
                     continue;
@@ -455,6 +478,11 @@ settings_init(SettingOpts options)
     const gchar *homedir = g_get_home_dir();
     gchar *curdir = g_get_current_dir();
 
+    // Custom transform functions
+    g_value_register_transform_func(G_TYPE_ENUM, G_TYPE_STRING, setting_enum_to_string);
+    g_value_register_transform_func(G_TYPE_BOOLEAN, G_TYPE_STRING, setting_bool_to_string);
+    g_value_register_transform_func(G_TYPE_STRING, G_TYPE_BOOLEAN, setting_string_to_bool);
+
     // Allocate memory for settings storage
     settings = g_malloc0(sizeof(SettingStorage));
     settings->values = g_ptr_array_new_with_free_func((GDestroyNotify) setting_free);
@@ -462,216 +490,216 @@ settings_init(SettingOpts options)
 
     // Default settings values
     g_ptr_array_set(settings->values, SETTING_BACKGROUND,
-                    setting_enum_new("background", "dark", "dark,default"));
+                    setting_enum_new("background", SETTING_BACKGROUND_DARK, SETTING_TYPE_BACKGROUND));
     g_ptr_array_set(settings->values, SETTING_COLORMODE,
-                    setting_enum_new("colormode", "request", "request,cseq,callid"));
+                    setting_enum_new("colormode", SETTING_COLORMODE_REQUEST, SETTING_TYPE_COLOR_MODE));
     g_ptr_array_set(settings->values, SETTING_SYNTAX,
-                    setting_bool_new("syntax", SETTING_ON));
+                    setting_bool_new("syntax", TRUE));
     g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
-                    setting_bool_new("syntax.tag", SETTING_OFF));
+                    setting_bool_new("syntax.tag", FALSE));
     g_ptr_array_set(settings->values, SETTING_SYNTAX_BRANCH,
-                    setting_bool_new("syntax.branch", SETTING_OFF));
+                    setting_bool_new("syntax.branch", FALSE));
     g_ptr_array_set(settings->values, SETTING_ALTKEY_HINT,
-                    setting_bool_new("hintkeyalt", SETTING_OFF));
+                    setting_bool_new("hintkeyalt", FALSE));
     g_ptr_array_set(settings->values, SETTING_EXITPROMPT,
-                    setting_bool_new("exitprompt", SETTING_ON));
+                    setting_bool_new("exitprompt", TRUE));
     g_ptr_array_set(settings->values, SETTING_MEMORY_LIMIT,
                     setting_string_new("memory_limit", "250M"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_LIMIT,
-                    setting_number_new("capture.limit", "20000"));
+                    setting_number_new("capture.limit", 20000));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_DEVICE,
                     setting_string_new("capture.device", "any"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_OUTFILE,
-                    setting_string_new("capture.outfile", ""));
+                    setting_string_new("capture.outfile", NULL));
 #ifdef WITH_SSL
     g_ptr_array_set(settings->values, SETTING_CAPTURE_KEYFILE,
-                    setting_string_new("capture.keyfile", ""));
+                    setting_string_new("capture.keyfile", NULL));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_TLSSERVER,
-                    setting_string_new("capture.tlsserver", ""));
+                    setting_string_new("capture.tlsserver", NULL));
 #endif
     g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
-                    setting_bool_new("capture.rtp", SETTING_OFF));
+                    setting_bool_new("capture.rtp", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_IP,
-                    setting_bool_new("capture.packet.ip", SETTING_ON));
+                    setting_bool_new("capture.packet.ip", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_UDP,
-                    setting_bool_new("capture.packet.udp", SETTING_ON));
+                    setting_bool_new("capture.packet.udp", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TCP,
-                    setting_bool_new("capture.packet.tcp", SETTING_ON));
+                    setting_bool_new("capture.packet.tcp", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TLS,
-                    setting_bool_new("capture.packet.tls", SETTING_OFF));
+                    setting_bool_new("capture.packet.tls", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_HEP,
-                    setting_bool_new("capture.packet.hep", SETTING_OFF));
+                    setting_bool_new("capture.packet.hep", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_WS,
-                    setting_bool_new("capture.packet.ws", SETTING_OFF));
+                    setting_bool_new("capture.packet.ws", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SIP,
-                    setting_bool_new("capture.packet.sip", SETTING_ON));
+                    setting_bool_new("capture.packet.sip", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SDP,
-                    setting_bool_new("capture.packet.sdp", SETTING_ON));
+                    setting_bool_new("capture.packet.sdp", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTP,
-                    setting_bool_new("capture.packet.rtp", SETTING_ON));
+                    setting_bool_new("capture.packet.rtp", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTCP,
-                    setting_bool_new("capture.packet.rtcp", SETTING_ON));
+                    setting_bool_new("capture.packet.rtcp", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_STORAGE,
-                    setting_enum_new("capture.storage", "memory", "none,memory,disk"));
+                    setting_enum_new("capture.storage", SETTING_STORAGE_MODE_MEMORY, SETTING_TYPE_STORAGE_MODE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_ROTATE,
-                    setting_bool_new("capture.rotate", SETTING_OFF));
+                    setting_bool_new("capture.rotate", FALSE));
     g_ptr_array_set(settings->values, SETTING_SIP_NOINCOMPLETE,
-                    setting_bool_new("sip.noincomplete", SETTING_ON));
+                    setting_bool_new("sip.noincomplete", TRUE));
     g_ptr_array_set(settings->values, SETTING_STORAGE_MAX_QUEUE,
-                    setting_number_new("storage.max_queue_size", "1000"));
+                    setting_number_new("storage.max_queue_size", 1000));
     g_ptr_array_set(settings->values, SETTING_SIP_HEADER_X_CID,
                     setting_string_new("sip.xcid", "X-Call-ID|X-CID"));
     g_ptr_array_set(settings->values, SETTING_SIP_CALLS,
-                    setting_bool_new("sip.calls", SETTING_OFF));
+                    setting_bool_new("sip.calls", FALSE));
     g_ptr_array_set(settings->values, SETTING_SAVEPATH,
                     setting_string_new("savepath", curdir));
     g_ptr_array_set(settings->values, SETTING_DISPLAY_ALIAS,
-                    setting_bool_new("displayalias", SETTING_OFF));
+                    setting_bool_new("displayalias", FALSE));
     g_ptr_array_set(settings->values, SETTING_CL_SCROLLSTEP,
-                    setting_number_new("cl.scrollstep", "4"));
+                    setting_number_new("cl.scrollstep", 4));
     g_ptr_array_set(settings->values, SETTING_CL_COLORATTR,
-                    setting_bool_new("cl.colorattr", SETTING_ON));
+                    setting_bool_new("cl.colorattr", TRUE));
     g_ptr_array_set(settings->values, SETTING_CL_AUTOSCROLL,
-                    setting_bool_new("cl.autoscroll", SETTING_OFF));
+                    setting_bool_new("cl.autoscroll", FALSE));
     g_ptr_array_set(settings->values, SETTING_CL_SORTFIELD,
                     setting_string_new("cl.sortfield", attr_name(ATTR_CALLINDEX)));
     g_ptr_array_set(settings->values, SETTING_CL_SORTORDER,
                     setting_string_new("cl.sortorder", "asc"));
     g_ptr_array_set(settings->values, SETTING_CL_FIXEDCOLS,
-                    setting_number_new("cl.fixedcols", "2"));
+                    setting_number_new("cl.fixedcols", 2));
     g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_POS,
-                    setting_number_new("cl.column.index.pos", "0"));
+                    setting_number_new("cl.column.index.pos", 0));
     g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_WIDTH,
-                    setting_number_new("cl.column.index.width", "4"));
+                    setting_number_new("cl.column.index.width", 4));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_POS,
-                    setting_number_new("cl.column.sipfrom.pos", "2"));
+                    setting_number_new("cl.column.sipfrom.pos", 2));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_WIDTH,
-                    setting_number_new("cl.column.sipfrom.width", "25"));
+                    setting_number_new("cl.column.sipfrom.width", 25));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_POS,
-                    setting_number_new("cl.column.sipfromuser.pos", "-1"));
+                    setting_number_new("cl.column.sipfromuser.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_WIDTH,
-                    setting_number_new("cl.column.sipfromuser.width", "20"));
+                    setting_number_new("cl.column.sipfromuser.width", 20));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_POS,
-                    setting_number_new("cl.column.sipto.pos", "3"));
+                    setting_number_new("cl.column.sipto.pos", 3));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_WIDTH,
-                    setting_number_new("cl.column.sipto.width", "25"));
+                    setting_number_new("cl.column.sipto.width", 25));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_POS,
-                    setting_number_new("cl.column.siptouser.pos", "-1"));
+                    setting_number_new("cl.column.siptouser.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_WIDTH,
-                    setting_number_new("cl.column.siptouser.width", "20"));
+                    setting_number_new("cl.column.siptouser.width", 20));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_POS,
-                    setting_number_new("cl.column.src.pos", "5"));
+                    setting_number_new("cl.column.src.pos", 5));
     g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_WIDTH,
-                    setting_number_new("cl.column.src.width", "22"));
+                    setting_number_new("cl.column.src.width", 22));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DST_POS,
-                    setting_number_new("cl.column.dst.pos", "6"));
+                    setting_number_new("cl.column.dst.pos", 6));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DST_WIDTH,
-                    setting_number_new("cl.column.dst.width", "22"));
+                    setting_number_new("cl.column.dst.width", 22));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_POS,
-                    setting_number_new("cl.column.callid.pos", "-1"));
+                    setting_number_new("cl.column.callid.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_WIDTH,
-                    setting_number_new("cl.column.callid.width", "50"));
+                    setting_number_new("cl.column.callid.width", 50));
     g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_POS,
-                    setting_number_new("cl.column.xcallid.pos", "-1"));
+                    setting_number_new("cl.column.xcallid.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_WIDTH,
-                    setting_number_new("cl.column.xcallid.width", "50"));
+                    setting_number_new("cl.column.xcallid.width", 50));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_POS,
-                    setting_number_new("cl.column.date.pos", "-1"));
+                    setting_number_new("cl.column.date.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_WIDTH,
-                    setting_number_new("cl.column.date.width", "10"));
+                    setting_number_new("cl.column.date.width", 10));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_POS,
-                    setting_number_new("cl.column.time.pos", "-1"));
+                    setting_number_new("cl.column.time.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_WIDTH,
-                    setting_number_new("cl.column.time.width", "8"));
+                    setting_number_new("cl.column.time.width", 8));
     g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_POS,
-                    setting_number_new("cl.column.method.pos", "1"));
+                    setting_number_new("cl.column.method.pos", 1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_WIDTH,
-                    setting_number_new("cl.column.method.width", "10"));
+                    setting_number_new("cl.column.method.width", 10));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_POS,
-                    setting_number_new("cl.column.transport.pos", "-1"));
+                    setting_number_new("cl.column.transport.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_WIDTH,
-                    setting_number_new("cl.column.transport.width", "3"));
+                    setting_number_new("cl.column.transport.width", 3));
     g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_POS,
-                    setting_number_new("cl.column.msgcnt.pos", "4"));
+                    setting_number_new("cl.column.msgcnt.pos", 4));
     g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_WIDTH,
-                    setting_number_new("cl.column.msgcnt.width", "5"));
+                    setting_number_new("cl.column.msgcnt.width", 5));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_POS,
-                    setting_number_new("cl.column.state.pos", "7"));
+                    setting_number_new("cl.column.state.pos", 7));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_WIDTH,
-                    setting_number_new("cl.column.state.width", "12"));
+                    setting_number_new("cl.column.state.width", 12));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_POS,
-                    setting_number_new("cl.column.convdur.pos", "-1"));
+                    setting_number_new("cl.column.convdur.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_WIDTH,
-                    setting_number_new("cl.column.convdur.width", "7"));
+                    setting_number_new("cl.column.convdur.width", 7));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_POS,
-                    setting_number_new("cl.column.totaldur.pos", "-1"));
+                    setting_number_new("cl.column.totaldur.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_WIDTH,
-                    setting_number_new("cl.column.totaldur.width", "8"));
+                    setting_number_new("cl.column.totaldur.width", 8));
     g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_POS,
-                    setting_number_new("cl.column.reason.pos", "-1"));
+                    setting_number_new("cl.column.reason.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_WIDTH,
-                    setting_number_new("cl.column.reason.width", "25"));
+                    setting_number_new("cl.column.reason.width", 25));
     g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_POS,
-                    setting_number_new("cl.column.warning.pos", "-1"));
+                    setting_number_new("cl.column.warning.pos", -1));
     g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_WIDTH,
-                    setting_number_new("cl.column.warning.width", "4"));
+                    setting_number_new("cl.column.warning.width", 4));
     g_ptr_array_set(settings->values, SETTING_CF_FORCERAW,
-                    setting_bool_new("cf.forceraw", SETTING_ON));
+                    setting_bool_new("cf.forceraw", TRUE));
     g_ptr_array_set(settings->values, SETTING_CF_RAWMINWIDTH,
-                    setting_number_new("cf.rawminwidth", "40"));
+                    setting_number_new("cf.rawminwidth", 40));
     g_ptr_array_set(settings->values, SETTING_CF_RAWFIXEDWIDTH,
-                    setting_number_new("cf.rawfixedwidth", ""));
+                    setting_number_new("cf.rawfixedwidth", 0));
     g_ptr_array_set(settings->values, SETTING_CF_SPLITCALLID,
-                    setting_bool_new("cf.splitcallid", SETTING_OFF));
+                    setting_bool_new("cf.splitcallid", FALSE));
     g_ptr_array_set(settings->values, SETTING_CF_HIGHTLIGHT,
-                    setting_enum_new("cf.highlight", "bold", "bold,reverse,reversebold"));
+                    setting_enum_new("cf.highlight", SETTING_ARROW_HIGHLIGH_BOLD, SETTING_TYPE_ARROW_HIGHLIGHT));
     g_ptr_array_set(settings->values, SETTING_CF_SCROLLSTEP,
-                    setting_number_new("cf.scrollstep", "4"));
+                    setting_number_new("cf.scrollstep", 4));
     g_ptr_array_set(settings->values, SETTING_CF_LOCALHIGHLIGHT,
-                    setting_bool_new("cf.localhighlight", SETTING_ON));
+                    setting_bool_new("cf.localhighlight", TRUE));
     g_ptr_array_set(settings->values, SETTING_CF_SDP_INFO,
-                    setting_enum_new("cf.sdpinfo", SETTING_OFF, "off,first,full,compressed"));
+                    setting_enum_new("cf.sdpinfo", SETTING_SDP_OFF, SETTING_TYPE_SDP_MODE));
     g_ptr_array_set(settings->values, SETTING_CF_MEDIA,
-                    setting_bool_new("cf.media", SETTING_ON));
+                    setting_bool_new("cf.media", TRUE));
     g_ptr_array_set(settings->values, SETTING_CF_ONLYMEDIA,
-                    setting_bool_new("cf.onlymedia", SETTING_OFF));
+                    setting_bool_new("cf.onlymedia", FALSE));
     g_ptr_array_set(settings->values, SETTING_CF_DELTA,
-                    setting_bool_new("cf.deltatime", SETTING_ON));
+                    setting_bool_new("cf.deltatime", TRUE));
     g_ptr_array_set(settings->values, SETTING_CF_HIDEDUPLICATE,
-                    setting_bool_new("cf.hideduplicate", SETTING_OFF));
+                    setting_bool_new("cf.hideduplicate", FALSE));
     g_ptr_array_set(settings->values, SETTING_CR_SCROLLSTEP,
-                    setting_number_new("cr.scrollstep", "10"));
+                    setting_number_new("cr.scrollstep", 10));
     g_ptr_array_set(settings->values, SETTING_CR_NON_ASCII,
                     setting_string_new("cr.nonascii", "."));
     g_ptr_array_set(settings->values, SETTING_FILTER_PAYLOAD,
-                    setting_string_new("filter.payload", ""));
+                    setting_string_new("filter.payload", NULL));
     g_ptr_array_set(settings->values, SETTING_FILTER_METHODS,
-                    setting_string_new("filter.methods", ""));
+                    setting_string_new("filter.methods", NULL));
 #ifdef USE_HEP
     g_ptr_array_set(settings->values, SETTING_HEP_SEND,
-                    setting_bool_new("eep.send", SETTING_OFF));
+                    setting_bool_new("eep.send", FALSE));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_VER,
-                    setting_number_new("eep.send.version", "3"));
+                    setting_number_new("eep.send.version", 3));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_ADDR,
                     setting_string_new("eep.send.address", "127.0.0.1"));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_PORT,
-                    setting_number_new("eep.send.port", "9060"));
+                    setting_number_new("eep.send.port", 9060));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_PASS,
                     setting_string_new("eep.send.pass", ""));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_ID,
-                    setting_number_new("eep.send.id", "2000"));
+                    setting_number_new("eep.send.id", 2000));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN,
-                    setting_bool_new("eep.listen", SETTING_OFF));
+                    setting_bool_new("eep.listen", FALSE));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_VER,
                     setting_string_new("eep.listen.version", "3"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_ADDR,
                     setting_string_new("eep.listen.address", "0.0.0.0"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PORT,
-                    setting_number_new("eep.listen.port", "9060"));
+                    setting_number_new("eep.listen.port", 9060));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PASS,
                     setting_string_new("eep.listen.pass", ""));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_UUID,
-                    setting_bool_new("eep.listen.uuid", SETTING_OFF));
+                    setting_bool_new("eep.listen.uuid", FALSE));
 #endif
 
     // Done if config file should not be read

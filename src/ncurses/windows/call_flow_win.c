@@ -148,17 +148,13 @@ call_flow_arrow_filter(void *item)
     CallFlowArrow *arrow = (CallFlowArrow *) item;
 
     // SIP arrows are never filtered
-    if (arrow->type == CF_ARROW_SIP && setting_disabled(SETTING_CF_ONLYMEDIA))
+    if (arrow->type == CF_ARROW_SIP && setting_disabled(SETTING_CF_ONLYMEDIA)) {
         return 1;
+    }
 
     // RTP arrows are only displayed when requested
-    if (arrow->type == CF_ARROW_RTP) {
-        // Display all streams
-        if (setting_enabled(SETTING_CF_MEDIA))
-            return 1;
-        // Otherwise only show active streams
-        if (setting_has_value(SETTING_CF_MEDIA, "active"))
-            return stream_is_active(arrow->item);
+    if (arrow->type == CF_ARROW_RTP && setting_enabled(SETTING_CF_MEDIA)) {
+        return 1;
     }
 
     // Rest of the arrows are never displayed
@@ -247,18 +243,18 @@ call_flow_arrow_height(G_GNUC_UNUSED Window *window, const CallFlowArrow *arrow)
     if (arrow->type == CF_ARROW_SIP) {
         if (setting_enabled(SETTING_CF_ONLYMEDIA))
             return 0;
-        if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
             return 1;
         if (!msg_has_sdp(arrow->item))
             return 2;
-        if (setting_has_value(SETTING_CF_SDP_INFO, "off"))
+        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_OFF)
             return 2;
-        if (setting_has_value(SETTING_CF_SDP_INFO, "first"))
+        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FIRST)
             return 2;
-        if (setting_has_value(SETTING_CF_SDP_INFO, "full"))
+        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FULL)
             return msg_media_count(arrow->item) + 2;
     } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP) {
-        if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
             return 1;
         if (setting_disabled(SETTING_CF_MEDIA))
             return 0;
@@ -864,13 +860,13 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
     strcpy(method, msg_method);
 
     // If message has sdp information
-    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
+    if (msg_has_sdp(msg) && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_OFF) {
         // Show sdp tag in title
         sprintf(method, "%s (SDP)", msg_method);
     }
 
     // If message has sdp information
-    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
         // Show sdp tag in title
         if (msg_has_sdp(msg)) {
             sprintf(method, "%.*s (SDP)", 12, msg_method);
@@ -879,14 +875,14 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
         }
     }
 
-    if (media && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
+    if (media && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FIRST) {
         sprintf(method, "%.3s (%s:%u)",
                 msg_method,
                 (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address,
                 media->rtpport);
     }
 
-    if (media && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+    if (media && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FULL) {
         sprintf(method, "%.3s (%s)",
                 msg_method,
                 (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address
@@ -923,32 +919,38 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
 
     // Highlight current message
     if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
-            wattron(self->arrows_pad, A_REVERSE);
-        }
-        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
-            wattron(self->arrows_pad, A_BOLD);
-        }
-        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
-            wattron(self->arrows_pad, A_REVERSE);
-            wattron(self->arrows_pad, A_BOLD);
+        switch (setting_get_enum(SETTING_CF_HIGHTLIGHT)) {
+            case SETTING_ARROW_HIGHLIGH_BOLD:
+                wattron(self->arrows_pad, A_BOLD);
+                break;
+            case SETTING_ARROW_HIGHLIGH_REVERSE:
+                wattron(self->arrows_pad, A_REVERSE);
+                break;
+            case SETTING_ARROW_HIGHLIGH_REVERSEBOLD:
+                wattron(self->arrows_pad, A_REVERSE);
+                wattron(self->arrows_pad, A_BOLD);
+                break;
         }
     }
 
     // Color the message {
-    if (setting_has_value(SETTING_COLORMODE, "request")) {
-        // Color by request / response
-        color = (msg_is_request(msg)) ? CP_RED_ON_DEF : CP_GREEN_ON_DEF;
-    } else if (setting_has_value(SETTING_COLORMODE, "callid")) {
-        // Color by call-id
-        color = call_group_color(self->group, msg->call);
-    } else if (setting_has_value(SETTING_COLORMODE, "cseq")) {
-        // Color by CSeq within the same call
-        color = msg_get_cseq(msg) % 7 + 1;
+    switch (setting_get_enum(SETTING_COLORMODE)) {
+        case SETTING_COLORMODE_REQUEST:
+            // Color by request / response
+            color = (msg_is_request(msg)) ? CP_RED_ON_DEF : CP_GREEN_ON_DEF;
+            break;
+        case SETTING_COLORMODE_CALLID:
+            // Color by call-id
+            color = call_group_color(self->group, msg->call);
+            break;
+        case SETTING_COLORMODE_CSEQ:
+            // Color by CSeq within the same call
+            color = msg_get_cseq(msg) % 7 + 1;
+            break;
     }
 
     // Print arrow in the same line than message
-    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
         arrow->line = cline;
     }
 
@@ -968,7 +970,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
     }
 
     // Draw media information
-    if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
+    if (msg_has_sdp(msg) && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FULL) {
         arrow->line += g_list_length(sdp_data->medias);
         for (GList *l = sdp_data->medias; l != NULL; l = l->next) {
             cline++;
@@ -1028,7 +1030,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
         }
     }
 
-    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
         mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
 
     // Turn off colors
@@ -1052,7 +1054,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
         }
 
         // Print delta from selected message
-        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             if (self->selected == -1) {
                 if (setting_enabled(SETTING_CF_DELTA)) {
                     date_time_to_delta(
@@ -1160,7 +1162,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     if (startpos != endpos) {
         // In compressed mode, we display the src and dst port inside the arrow
         // so fixup the stard and end position
-        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             startpos += 5;
             endpos -= 5;
         }
@@ -1181,15 +1183,17 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 
     // Highlight current message
     if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
-            wattron(self->arrows_pad, A_REVERSE);
-        }
-        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
-            wattron(self->arrows_pad, A_BOLD);
-        }
-        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
-            wattron(self->arrows_pad, A_REVERSE);
-            wattron(self->arrows_pad, A_BOLD);
+        switch (setting_get_enum(SETTING_CF_HIGHTLIGHT)) {
+            case SETTING_ARROW_HIGHLIGH_BOLD:
+                wattron(self->arrows_pad, A_BOLD);
+                break;
+            case SETTING_ARROW_HIGHLIGH_REVERSE:
+                wattron(self->arrows_pad, A_REVERSE);
+                break;
+            case SETTING_ARROW_HIGHLIGH_REVERSEBOLD:
+                wattron(self->arrows_pad, A_REVERSE);
+                wattron(self->arrows_pad, A_BOLD);
+                break;
         }
     }
 
@@ -1201,7 +1205,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Draw RTP arrow text
     mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
 
-    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+    if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED)
         cline++;
 
     // Draw line between columns
@@ -1212,7 +1216,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_RIGHT) {
-        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->src));
             mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->dst));
         }
@@ -1223,7 +1227,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
             mvwaddwstr(self->arrows_pad, cline, startpos + arrow->rtp_ind_pos + 2, ncurses_acs_utf8('>'));
         }
     } else {
-        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->src));
             mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->dst));
         }
@@ -1235,7 +1239,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         }
     }
 
-    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
         mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
 
     wattroff(self->arrows_pad, A_BOLD | A_REVERSE);
@@ -1865,12 +1869,17 @@ call_flow_win_draw(Window *window)
     }
 
     // Print color mode in title
-    if (setting_has_value(SETTING_COLORMODE, "request"))
-        strcat(title, " (Color by Request/Response)");
-    if (setting_has_value(SETTING_COLORMODE, "callid"))
-        strcat(title, " (Color by Call-Id)");
-    if (setting_has_value(SETTING_COLORMODE, "cseq"))
-        strcat(title, " (Color by CSeq)");
+    switch (setting_get_enum(SETTING_COLORMODE)) {
+        case SETTING_COLORMODE_REQUEST:
+            strcat(title, " (Color by Request/Response)");
+            break;
+        case SETTING_COLORMODE_CALLID:
+            strcat(title, " (Color by Call-Id)");
+            break;
+        case SETTING_COLORMODE_CSEQ:
+            strcat(title, " (Color by CSeq)");
+            break;
+    }
 
     // Draw panel title
     window_set_title(window, title);

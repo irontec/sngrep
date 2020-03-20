@@ -18,6 +18,8 @@ tests/test-???
 src/config.h
 src/config.h.in*
 src/stamp-h1
+src/glib-extra/glib_enum_types.c
+src/glib-extra/glib_enum_types.h
 
 .autotools
 Makefile

@@ -152,7 +152,7 @@ typedef struct
     //! Field id in settings_info array
     SettingsWindowField field_id;
     //! Setting id of current entry
-    enum SettingId setting_id;
+    SettingId setting_id;
     //! Entry text
     const gchar *label;
 } SettingsWindowEntry;

@@ -43,6 +43,7 @@
 #define __SNGREP_SETTING_H
 
 #include <glib.h>
+#include <glib-object.h>
 #include "storage/attribute.h"
 
 //! Max setting value
@@ -60,7 +61,7 @@ typedef struct _SettingStorage SettingStorage;
 #define SETTING_OFF "off"
 
 //! Available setting Options
-enum SettingId
+typedef enum
 {
     SETTING_UNKNOWN = -1,
     SETTING_BACKGROUND = 0,
@@ -172,16 +173,42 @@ enum SettingId
     SETTING_HEP_LISTEN_UUID,
 #endif
     SETTING_COUNT
-};
+} SettingId;
 
-//! Available setting formats
-enum SettingFormat
+typedef enum
 {
-    SETTING_FMT_STRING = 0,
-    SETTING_FMT_BOOLEAN,
-    SETTING_FMT_NUMBER,
-    SETTING_FMT_ENUM,
-};
+    SETTING_BACKGROUND_DARK,
+    SETTING_BACKGROUND_DEFAULT,
+} SettingBackground;
+
+typedef enum
+{
+    SETTING_COLORMODE_REQUEST,
+    SETTING_COLORMODE_CSEQ,
+    SETTING_COLORMODE_CALLID,
+} SettingColorMode;
+
+typedef enum
+{
+    SETTING_STORAGE_MODE_NONE,
+    SETTING_STORAGE_MODE_MEMORY,
+    SETTING_STORAGE_MODE_DISK,
+} SettingStorageMode;
+
+typedef enum
+{
+    SETTING_ARROW_HIGHLIGH_BOLD,
+    SETTING_ARROW_HIGHLIGH_REVERSE,
+    SETTING_ARROW_HIGHLIGH_REVERSEBOLD,
+} SettingArrowHighlight;
+
+typedef enum
+{
+    SETTING_SDP_OFF,
+    SETTING_SDP_FIRST,
+    SETTING_SDP_FULL,
+    SETTING_SDP_COMPRESSED,
+} SettingSdpMode;
 
 /**
  * @brief Configurable Setting structure
@@ -190,12 +217,8 @@ struct _Setting
 {
     //! Setting name
     const gchar *name;
-    //! Setting format
-    enum SettingFormat fmt;
     //! Value of the setting
-    char value[SETTING_MAX_LEN];
-    //! Comma separated valid values
-    gchar **valuelist;
+    GValue value;
 };
 
 /**
@@ -241,7 +264,7 @@ struct _SettingStorage
 };
 
 Setting *
-setting_by_id(enum SettingId id);
+setting_by_id(SettingId id);
 
 Setting *
 setting_by_name(const gchar *name);
@@ -252,7 +275,7 @@ setting_by_name(const gchar *name);
  * @param name String representing configurable setting
  * @return setting id or -1 if setting is not found
  */
-enum SettingId
+SettingId
 setting_id(const gchar *name);
 
 /**
@@ -262,43 +285,41 @@ setting_id(const gchar *name);
  * @return string representation of setting or NULL
  */
 const gchar *
-setting_name(enum SettingId id);
+setting_name(SettingId id);
 
-gint
-setting_format(enum SettingId id);
+GType
+setting_get_type(SettingId id);
 
 const gchar **
-setting_valid_values(enum SettingId id);
+setting_valid_values(SettingId id);
 
 const gchar *
-setting_get_value(enum SettingId id);
+setting_get_value(SettingId id);
 
 gint
-setting_get_intvalue(enum SettingId id);
+setting_get_intvalue(SettingId id);
 
 gint
-setting_get_enum(enum SettingId id);
+setting_get_enum(SettingId id);
 
 void
-setting_set_value(enum SettingId id, const gchar *value);
+setting_set_value(SettingId id, const gchar *value);
 
 void
-setting_set_intvalue(enum SettingId id, gint value);
+setting_set_intvalue(SettingId id, gint value);
 
-gint
-setting_enabled(enum SettingId id);
+gboolean
+setting_enabled(SettingId id);
 
-gint
-setting_disabled(enum SettingId id);
+gboolean
+setting_disabled(SettingId id);
 
-gint
-setting_has_value(enum SettingId id, const gchar *value);
 
 void
-setting_toggle(enum SettingId id);
+setting_toggle(SettingId id);
 
-const char *
-setting_enum_next(enum SettingId id, const gchar *value);
+gint
+setting_enum_next(SettingId id);
 
 gint
 setting_column_pos(enum AttributeId id);

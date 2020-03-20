@@ -333,7 +333,7 @@ settings_win_handle_key(Window *window, gint key)
 {
     int field_idx;
     SettingsWindowEntry *entry;
-    enum SettingFormat sett_fmt = -1;
+    GType setting_type = -1;
 
     // Get panel information
     SettingsWindow *self = NCURSES_SETTINGS(window);
@@ -343,7 +343,7 @@ settings_win_handle_key(Window *window, gint key)
 
     // Get current setting id;
     if ((entry = settings_is_entry(current_field(self->active_form)))) {
-        sett_fmt = setting_format(entry->setting_id);
+        setting_type = setting_get_type(entry->setting_id);
     }
 
     // Check actions for this key
@@ -353,7 +353,7 @@ settings_win_handle_key(Window *window, gint key)
             // Check if we handle this action
             switch (action) {
                 case ACTION_PRINTABLE:
-                    if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
+                    if (setting_type == G_TYPE_INT || setting_type == G_TYPE_STRING) {
                         form_driver(self->form, key);
                         break;
                     }
@@ -398,18 +398,18 @@ settings_win_handle_key(Window *window, gint key)
                     set_current_field(self->active_form, self->buttons[BTN_SETTINGS_ACCEPT]);
                     break;
                 case ACTION_CLEAR:
-                    if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
+                    if (setting_type == G_TYPE_INT || setting_type == G_TYPE_STRING) {
                         form_driver(self->form, REQ_BEG_LINE);
                         form_driver(self->form, REQ_CLR_EOL);
                     }
                     break;
                 case ACTION_DELETE:
-                    if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
+                    if (setting_type == G_TYPE_INT || setting_type == G_TYPE_STRING) {
                         form_driver(self->form, REQ_DEL_CHAR);
                     }
                     break;
                 case ACTION_BACKSPACE:
-                    if (sett_fmt == SETTING_FMT_NUMBER || sett_fmt == SETTING_FMT_STRING) {
+                    if (setting_type == G_TYPE_INT || setting_type == G_TYPE_STRING) {
                         form_driver(self->form, REQ_DEL_PREV);
                     }
                     break;
@@ -463,8 +463,8 @@ settings_win_handle_key(Window *window, gint key)
     if ((entry = settings_is_entry(current_field(self->active_form)))) {
         // Enable cursor on string and number fields
         curs_set(
-            setting_format(entry->setting_id) == SETTING_FMT_NUMBER
-            || setting_format(entry->setting_id) == SETTING_FMT_STRING
+            setting_get_type(entry->setting_id) == G_TYPE_INT
+            || setting_get_type(entry->setting_id) == G_TYPE_STRING
         );
     } else {
         curs_set(0);
@@ -554,28 +554,29 @@ settings_win_constructed(GObject *object)
             field_opts_off(label, O_ACTIVE);
 
             // Change field properties according to field type
-            switch (setting_format(entries[j].setting_id)) {
-                case SETTING_FMT_NUMBER:
+            switch (setting_get_type(entries[j].setting_id)) {
+                case G_TYPE_INT:
                     entry = new_field(1, 18, line, 48, 0, 0);
                     set_field_back(entry, A_UNDERLINE);
                     set_field_type(entry, TYPE_REGEXP, "[0-9]+");
                     break;
-                case SETTING_FMT_STRING:
+                case G_TYPE_STRING:
                     entry = new_field(1, 18, line, 48, 0, 0);
                     field_opts_off(entry, O_STATIC);
                     set_field_back(entry, A_UNDERLINE);
                     break;
-                case SETTING_FMT_BOOLEAN:
+                case G_TYPE_BOOLEAN:
                     entry = new_field(1, 12, line, 48, 0, 0);
                     field_opts_off(entry, O_EDIT);
-                    set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
+                    set_field_type(entry, TYPE_ENUM, g_strsplit("on,off", ",", 0), 0, 0);
                     break;
-                case SETTING_FMT_ENUM:
+                case G_TYPE_ENUM:
                     entry = new_field(1, 12, line, 48, 0, 0);
                     field_opts_off(entry, O_EDIT);
                     set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
                     break;
                 default:
+                    g_warning("Unknown setting type for setting id %d\n", entries[j].setting_id);
                     break;
             }
 

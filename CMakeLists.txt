@@ -30,6 +30,8 @@ set(SOURCES
         src/glib-extra/glist.c
         src/glib-extra/gptrarray.c
         src/glib-extra/glib.c
+        src/glib-extra/glib_enum_types.h
+        src/glib-extra/glib_enum_types.c
         src/ncurses/manager.c
         src/ncurses/windows/call_flow_win.c
         src/ncurses/windows/call_list_win.c
@@ -118,6 +120,11 @@ target_link_libraries(sngrep ${CURSES_LIBRARIES})
 pkg_check_modules(GLIB REQUIRED glib-2.0>=2.44 gobject-2.0>=2.44)
 include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
+find_program(GLIB_MKENUMS glib-mkenums HINTS ${glib_mkenums})
+set(GLIB_MKENUMS_CMD)
+if(NOT GLIB_MKENUMS)
+    message(FATAL_ERROR "Cannot find glib-mkenums, which is required to build ${PROJECT_NAME}")
+endif(NOT GLIB_MKENUMS)
 
 find_program(PCAP_CONFIG_EXECUTABLE NAMES pcap-config)
 if (PCAP_CONFIG_EXECUTABLE)
@@ -166,6 +173,35 @@ endif (WITH_G729)
 configure_file(
         ${PROJECT_SOURCE_DIR}/src/config.h.cmake
         ${PROJECT_SOURCE_DIR}/src/config.h
+)
+
+######################################################################
+set(ENUM_HEADERS
+        src/setting.h
+        )
+
+add_custom_command(
+        OUTPUT ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
+        COMMAND ${GLIB_MKENUMS}
+        ARGS
+            --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h.tmpl
+            "${ENUM_HEADERS}" > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS
+            ${ENUM_HEADERS}
+            ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h.tmpl
+)
+
+add_custom_command(
+        OUTPUT ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
+        COMMAND ${GLIB_MKENUMS}
+        ARGS
+        --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
+        "${ENUM_HEADERS}" > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS
+        ${ENUM_HEADERS}
+        ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
 )
 
 ######################################################################

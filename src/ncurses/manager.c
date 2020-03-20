@@ -475,7 +475,7 @@ ncurses_init(GMainLoop *loop, GError **error)
     }
 
     // Check if user wants a black background
-    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
+    if (setting_get_enum(SETTING_BACKGROUND) == SETTING_BACKGROUND_DARK) {
         assume_default_colors(COLOR_WHITE, COLOR_BLACK);
     } else {
         use_default_colors();
@@ -512,7 +512,7 @@ ncurses_init(GMainLoop *loop, GError **error)
     }
 
     gshort bg = COLOR_DEFAULT, fg = COLOR_DEFAULT;
-    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
+    if (setting_get_enum(SETTING_BACKGROUND) == SETTING_BACKGROUND_DARK) {
         fg = COLOR_WHITE;
         bg = COLOR_BLACK;
     }
