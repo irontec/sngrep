@@ -34,11 +34,10 @@
 #include "datetime.h"
 
 const gchar *
-date_time_date_to_str(guint64 time, gchar *out)
+date_time_date_to_str(guint64 ts, gchar *out)
 {
-    GDate date;
-    g_date_set_time_t(&date, time);
-    g_date_strftime(out, 11, "%Y/%m/%d", &date);
+    g_autoptr(GDateTime) time = g_date_time_new_from_unix_usec(ts);
+    g_sprintf(out, "%s", g_date_time_format(time, "%Y/%m/%d"));
     return out;
 }
 

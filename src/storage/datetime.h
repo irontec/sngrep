@@ -37,13 +37,13 @@
  * @brief Convert timeval to yyyy/mm/dd format
  */
 const gchar *
-date_time_date_to_str(guint64 time, gchar *out);
+date_time_date_to_str(guint64 ts, gchar *out);
 
 /**
  * @brief Convert timeval to HH:MM:SS.mmmmmm format
  */
 const gchar *
-date_time_time_to_str(guint64 time, gchar *out);
+date_time_time_to_str(guint64 ts, gchar *out);
 
 /**
  * @brief Calculate the time difference between two timeval
