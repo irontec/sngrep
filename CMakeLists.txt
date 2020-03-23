@@ -30,6 +30,7 @@ set(SOURCES
         src/glib-extra/glist.c
         src/glib-extra/gptrarray.c
         src/glib-extra/glib.c
+        src/glib-extra/gvalue.c
         src/glib-extra/glib_enum_types.c
         src/ncurses/manager.c
         src/ncurses/windows/call_flow_win.c
@@ -199,12 +200,12 @@ add_custom_command(
         OUTPUT ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
         COMMAND ${GLIB_MKENUMS}
         ARGS
-        --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
-        ${ENUM_HEADERS} > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
+            --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
+            ${ENUM_HEADERS} > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS
-        ${ENUM_HEADERS} ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
-        ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
+            ${ENUM_HEADERS} ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
+            ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
 )
 
 ######################################################################

@@ -48,19 +48,6 @@
  */
 static SettingStorage *settings = NULL;
 
-static const gchar *
-g_value_get_enum_nick(const GValue *value)
-{
-    GType enum_type = G_VALUE_TYPE(value);
-    GEnumClass *enum_class = g_type_class_ref(enum_type);
-    g_return_val_if_fail(enum_class != NULL, NULL);
-    GEnumValue *enum_value = g_enum_get_value(enum_class, g_value_get_enum(value));
-    g_return_val_if_fail(enum_value != NULL, NULL);
-    const gchar *nick = enum_value->value_nick;
-    g_type_class_unref(enum_class);
-    return nick;
-}
-
 /**
  * @brief Convert Enum to String
  * @param src_value Enum type GValue

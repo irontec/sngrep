@@ -20,30 +20,19 @@
  **
  ****************************************************************************/
 /**
- * @file glib-extra.h
+ * @file gvalue.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Helper function for glib containers
- *
+ * @brief Helper functions for GValue
  */
 
-#ifndef __SNGREP_GLIB_EXTRA_H
-#define __SNGREP_GLIB_EXTRA_H
+#ifndef __SNGREP_GLIB_GVALUE_H
+#define __SNGREP_GLIB_GVALUE_H
 
 #include <glib.h>
-#include "glib-extra/gbytes.h"
-#include "glib-extra/glist.h"
-#include "glib-extra/gptrarray.h"
-#include "glib-extra/gasyncqueuesource.h"
-#include "glib-extra/gdatetime.h"
-#include "glib-extra/gvalue.h"
+#include <glib-object.h>
 
-#define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
+const gchar *
+g_value_get_enum_nick(const GValue *value);
 
-gint
-g_atoi(const gchar *number);
-
-gsize
-g_format_size_to_bytes(const gchar *size);
-
-#endif //__SNGREP_GLIB_EXTRA_H
+#endif //__SNGREP_GLIB_GVALUE_H
