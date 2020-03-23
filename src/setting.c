@@ -731,25 +731,32 @@ settings_deinit()
 void
 settings_dump()
 {
+    g_print("\nSettings List\n===============\n");
     for (guint i = 1; i < SETTING_COUNT; i++) {
-        printf("SettingId: %d\t SettingName: %-30s Value: %s\n", i,
+        g_print("SettingId: %d\t SettingName: %-30s Value: %s\n", i,
                setting_name(i),
                setting_get_value(i));
     }
 
-    for (GList *l = settings->alias; l != NULL; l = l->next) {
-        SettingAlias *alias = l->data;
-        printf("Address: %s\t Alias: %s\n",
-               alias->address,
-               alias->alias
-        );
+    if (settings->alias) {
+        g_print("\nAddress Alias\n===============\n");
+        for (GList *l = settings->alias; l != NULL; l = l->next) {
+            SettingAlias *alias = l->data;
+            g_print("Address: %s\t Alias: %s\n",
+                    alias->address,
+                    alias->alias
+            );
+        }
     }
 
-    for (GList *l = settings->externips; l != NULL; l = l->next) {
-        SettingExtenIp *externip = l->data;
-        printf("Address: %s\t ExternIP: %s\n",
-               externip->address,
-               externip->externip
-        );
+    if (settings->externips) {
+        g_print("\nAddress ExternIP\n===============\n");
+        for (GList *l = settings->externips; l != NULL; l = l->next) {
+            SettingExtenIp *externip = l->data;
+            g_print("Address: %s\t ExternIP: %s\n",
+                   externip->address,
+                   externip->externip
+            );
+        }
     }
 }

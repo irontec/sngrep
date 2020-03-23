@@ -268,9 +268,10 @@ key_action_key_str(enum KeybindingAction action)
 void
 key_bindings_dump()
 {
+    g_print("\nKeybindings List\n==================\n");
     for (guint i = 1; i < ACTION_SENTINEL; i++) {
         for (guint j = 0; j < bindings[i].bindcnt; j++) {
-            printf("ActionID: %d\t ActionName: %-21s Key: %d (%s)\n",
+            g_print("ActionID: %d\t ActionName: %-21s Key: %d (%s)\n",
                    bindings[i].id,
                    bindings[i].name,
                    bindings[i].keys[j],

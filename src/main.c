@@ -233,8 +233,9 @@ main(int argc, char *argv[])
         print_version_info();
         return 0;
     } else if (config_dump) {
-        key_bindings_dump();
         settings_dump();
+        attribute_dump();
+        key_bindings_dump();
         return 0;
     }
 

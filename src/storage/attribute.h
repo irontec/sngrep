@@ -225,4 +225,7 @@ attr_value_free(AttributeValue *attr_value);
 void
 attribute_init();
 
+void
+attribute_dump();
+
 #endif /* __SNGREP_ATTRIBUTE_H */

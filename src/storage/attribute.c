@@ -439,3 +439,17 @@ attribute_init()
     attr_set_regex_pattern(attribute, "^Warning:\\s*(?P<value>\\d+)");
     g_ptr_array_add(attributes, attribute);
 }
+
+void
+attribute_dump()
+{
+    g_print("\nAttribute List\n===============\n");
+    for (guint i = 0; i < g_ptr_array_len(attributes); i++) {
+        Attribute *attr = g_ptr_array_index(attributes, i);
+        g_print("Attribute: %-15s Description: %-25s Getter: %s\n",
+                attr->name,
+                attr->desc,
+                (attr->regex) ? g_strescape(attr->regexp_pattern, NULL) : "internal"
+        );
+    }
+}
