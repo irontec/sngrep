@@ -36,8 +36,8 @@
 #include "ncurses/window.h"
 #include "ncurses/manager.h"
 
-#define WINDOW_TYPE_FILTER filter_get_type()
-G_DECLARE_FINAL_TYPE(FilterWindow, filter, NCURSES, FILTER, Window)
+#define WINDOW_TYPE_FILTER filter_win_get_type()
+G_DECLARE_FINAL_TYPE(FilterWindow, filter_win, NCURSES, FILTER, Window)
 
 /**
  * @brief Enum of available dialog fields
@@ -93,15 +93,6 @@ struct _FilterWindow
  */
 Window *
 filter_win_new();
-
-/**
- * @brief Destroy filter panel
- *
- * This function do the final cleanups for this panel
- * @param ui UI structure pointer
- */
-void
-filter_win_free(Window *ui);
 
 G_END_DECLS
 

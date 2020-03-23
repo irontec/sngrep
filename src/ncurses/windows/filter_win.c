@@ -37,7 +37,7 @@
 #include "storage/filter.h"
 #include "setting.h"
 
-G_DEFINE_TYPE(FilterWindow , filter, NCURSES_TYPE_WINDOW)
+G_DEFINE_TYPE(FilterWindow , filter_win, NCURSES_TYPE_WINDOW)
 
 /**
  * @brief Return String value for a filter field
@@ -45,7 +45,7 @@ G_DEFINE_TYPE(FilterWindow , filter, NCURSES_TYPE_WINDOW)
  * @return method name
  */
 static const char *
-filter_field_method(int field_id)
+filter_win_field_method(int field_id)
 {
     int method;
 
@@ -97,7 +97,7 @@ filter_field_method(int field_id)
  * @param ui UI structure pointer
  */
 static void
-filter_save_options(FilterWindow *self)
+filter_win_save_options(FilterWindow *self)
 {
     char field_value[SETTING_MAX_LEN];
     char *expr;
@@ -145,9 +145,9 @@ filter_save_options(FilterWindow *self)
             case FLD_FILTER_UPDATE:
                 if (!strcmp(field_value, "*")) {
                     if (strlen(method_expr)) {
-                        sprintf(method_expr + strlen(method_expr), ",%s", filter_field_method(field_id));
+                        sprintf(method_expr + strlen(method_expr), ",%s", filter_win_field_method(field_id));
                     } else {
-                        strcpy(method_expr, filter_field_method(field_id));
+                        strcpy(method_expr, filter_win_field_method(field_id));
                     }
                 }
                 break;
@@ -179,7 +179,7 @@ filter_save_options(FilterWindow *self)
  * @return enum @key_handler_ret
  */
 static int
-filter_handle_key(Window *window, gint key)
+filter_win_handle_key(Window *window, gint key)
 {
     int field_idx;
     char field_value[SETTING_MAX_LEN];
@@ -261,7 +261,7 @@ filter_handle_key(Window *window, gint key)
                     case FLD_FILTER_CANCEL:
                         return KEY_DESTROY;
                     case FLD_FILTER_FILTER:
-                        filter_save_options(self);
+                        filter_win_save_options(self);
                         return KEY_DESTROY;
                     default:
                         break;
@@ -269,7 +269,7 @@ filter_handle_key(Window *window, gint key)
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_FILTER_CANCEL)
-                    filter_save_options(self);
+                    filter_win_save_options(self);
                 return KEY_DESTROY;
             default:
                 // Parse next action
@@ -311,10 +311,10 @@ filter_win_new()
 }
 
 static void
-filter_constructed(GObject *object)
+filter_win_constructed(GObject *object)
 {
     // Chain-up parent constructed
-    G_OBJECT_CLASS(filter_parent_class)->constructed(object);
+    G_OBJECT_CLASS(filter_win_parent_class)->constructed(object);
 
     FilterWindow *self = NCURSES_FILTER(object);
     Window *parent = NCURSES_WINDOW(self);
@@ -445,18 +445,28 @@ filter_constructed(GObject *object)
 }
 
 static void
-filter_class_init(FilterWindowClass *klass)
+filter_win_finalized(GObject *self)
+{
+    // Disable cursor
+    curs_set(0);
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(filter_win_parent_class)->finalize(self);
+}
+
+static void
+filter_win_class_init(FilterWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = filter_constructed;
+    object_class->constructed = filter_win_constructed;
+    object_class->finalize = filter_win_finalized;
 
     WindowClass *window_class = NCURSES_WINDOW_CLASS(klass);
-    window_class->handle_key = filter_handle_key;
+    window_class->handle_key = filter_win_handle_key;
 
 }
 
 static void
-filter_init(FilterWindow *self)
+filter_win_init(FilterWindow *self)
 {
     // Initialize attributes
     window_set_window_type(NCURSES_WINDOW(self), WINDOW_FILTER);
