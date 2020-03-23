@@ -222,6 +222,7 @@ protocol_select_win_handle_key_menu(ProtocolSelectWindow *self, gint key)
             case ACTION_PPAGE:
                 menu_driver(self->menu, REQ_SCR_UPAGE);
                 break;
+            case ACTION_CONFIRM:
             case ACTION_SELECT:
                 protocol_select_win_toggle_item(self, current);
                 protocol_select_win_update_menu(self);
@@ -232,8 +233,6 @@ protocol_select_win_handle_key_menu(ProtocolSelectWindow *self, gint key)
                 set_field_back(self->fields[FLD_PROTOCOLS_SAVE], A_REVERSE);
                 form_driver(self->form, REQ_VALIDATION);
                 break;
-            case ACTION_CONFIRM:
-                return KEY_DESTROY;
             default:
                 // Parse next action
                 continue;
