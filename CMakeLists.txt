@@ -177,7 +177,9 @@ configure_file(
 
 ######################################################################
 set(ENUM_HEADERS
-        src/setting.h
+        src/ncurses/manager.h
+        src/ncurses/windows/call_flow_win.h
+        src/storage/storage.h
         src/storage/packet/packet.h
         )
 

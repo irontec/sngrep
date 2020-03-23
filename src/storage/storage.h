@@ -42,6 +42,13 @@ typedef enum
     STORAGE_MODE_DISK,
 } StorageMode;
 
+typedef enum
+{
+    SETTING_STORAGE_MODE_NONE,
+    SETTING_STORAGE_MODE_MEMORY,
+    SETTING_STORAGE_MODE_DISK,
+} SettingStorageMode;
+
 //! Shorter declaration of sip_call_list structure
 typedef struct _Storage Storage;
 //! Shorter declaration of sip stats

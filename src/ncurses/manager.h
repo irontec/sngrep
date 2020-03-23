@@ -58,6 +58,19 @@ enum ncurses_errors
     NCURSES_ERROR_INIT = 0,
 };
 
+typedef enum
+{
+    SETTING_BACKGROUND_DARK,
+    SETTING_BACKGROUND_DEFAULT,
+} SettingBackground;
+
+typedef enum
+{
+    SETTING_COLORMODE_REQUEST,
+    SETTING_COLORMODE_CSEQ,
+    SETTING_COLORMODE_CALLID,
+} SettingColorMode;
+
 /**
  * @brief Initialize ncurses mode
  *

@@ -45,6 +45,9 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "storage/attribute.h"
+#include "storage/storage.h"
+#include "ncurses/manager.h"
+#include "ncurses/windows/call_flow_win.h"
 
 //! Max setting value
 #define SETTING_MAX_LEN   1024
@@ -174,41 +177,6 @@ typedef enum
 #endif
     SETTING_COUNT
 } SettingId;
-
-typedef enum
-{
-    SETTING_BACKGROUND_DARK,
-    SETTING_BACKGROUND_DEFAULT,
-} SettingBackground;
-
-typedef enum
-{
-    SETTING_COLORMODE_REQUEST,
-    SETTING_COLORMODE_CSEQ,
-    SETTING_COLORMODE_CALLID,
-} SettingColorMode;
-
-typedef enum
-{
-    SETTING_STORAGE_MODE_NONE,
-    SETTING_STORAGE_MODE_MEMORY,
-    SETTING_STORAGE_MODE_DISK,
-} SettingStorageMode;
-
-typedef enum
-{
-    SETTING_ARROW_HIGHLIGH_BOLD,
-    SETTING_ARROW_HIGHLIGH_REVERSE,
-    SETTING_ARROW_HIGHLIGH_REVERSEBOLD,
-} SettingArrowHighlight;
-
-typedef enum
-{
-    SETTING_SDP_OFF,
-    SETTING_SDP_FIRST,
-    SETTING_SDP_FULL,
-    SETTING_SDP_COMPRESSED,
-} SettingSdpMode;
 
 /**
  * @brief Configurable Setting structure

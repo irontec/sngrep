@@ -88,6 +88,21 @@ typedef enum
     CF_ARROW_DIR_SPIRAL_LEFT
 } CallFlowArrowDir;
 
+typedef enum
+{
+    SETTING_ARROW_HIGHLIGH_BOLD,
+    SETTING_ARROW_HIGHLIGH_REVERSE,
+    SETTING_ARROW_HIGHLIGH_REVERSEBOLD,
+} SettingArrowHighlight;
+
+typedef enum
+{
+    SETTING_SDP_OFF,
+    SETTING_SDP_FIRST,
+    SETTING_SDP_FULL,
+    SETTING_SDP_COMPRESSED,
+} SettingSdpMode;
+
 /**
  * @brief Structure to hold one column information
  *
