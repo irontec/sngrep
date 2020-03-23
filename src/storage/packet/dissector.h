@@ -55,6 +55,9 @@ struct _PacketDissectorClass
     void (*free_data)(Packet *package);
 };
 
+gboolean
+packet_dissector_enabled(PacketProtocolId id);
+
 void
 packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id);
 

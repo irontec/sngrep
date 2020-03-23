@@ -663,43 +663,34 @@ storage_find_dissector(PacketProtocolId id)
                 dissector = packet_dissector_link_new();
                 break;
             case PACKET_PROTO_IP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_IP))
-                    dissector = packet_dissector_ip_new();
+                dissector = packet_dissector_ip_new();
                 break;
             case PACKET_PROTO_UDP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_UDP))
-                    dissector = packet_dissector_udp_new();
+                dissector = packet_dissector_udp_new();
                 break;
             case PACKET_PROTO_TCP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_TCP))
-                    dissector = packet_dissector_tcp_new();
+                dissector = packet_dissector_tcp_new();
                 break;
             case PACKET_PROTO_SIP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_SIP))
-                    dissector = packet_dissector_sip_new();
+                dissector = packet_dissector_sip_new();
                 break;
             case PACKET_PROTO_SDP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_SDP))
-                    dissector = packet_dissector_sdp_new();
+                dissector = packet_dissector_sdp_new();
                 break;
             case PACKET_PROTO_RTP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_RTP))
-                    dissector = packet_dissector_rtp_new();
+                dissector = packet_dissector_rtp_new();
                 break;
             case PACKET_PROTO_RTCP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_RTCP))
-                    dissector = packet_dissector_rtcp_new();
+                dissector = packet_dissector_rtcp_new();
                 break;
 #ifdef USE_HEP
             case PACKET_PROTO_HEP:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_HEP))
-                    dissector = packet_dissector_hep_new();
+                dissector = packet_dissector_hep_new();
                 break;
 #endif
 #ifdef WITH_SSL
             case PACKET_PROTO_TLS:
-                if (setting_enabled(SETTING_CAPTURE_PACKET_TLS))
-                    dissector = packet_dissector_tls_new();
+                dissector = packet_dissector_tls_new();
                 break;
 #endif
             default:

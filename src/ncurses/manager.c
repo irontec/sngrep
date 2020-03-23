@@ -48,6 +48,7 @@
 #include "ncurses/windows/stats_win.h"
 #include "ncurses/windows/save_win.h"
 #include "ncurses/windows/settings_win.h"
+#include "ncurses/windows/protocol_select_win.h"
 #ifdef WITH_PULSE
 #include "ncurses/windows/rtp_player_win.h"
 #endif
@@ -143,6 +144,9 @@ ncurses_find_by_type(WindowType type)
             break;
         case WINDOW_AUTH_VALIDATE:
             window = auth_validate_win_new();
+            break;
+        case WINDOW_PROTOCOL_SELECT:
+            window = protocol_select_win_new();
             break;
 #ifdef WITH_PULSE
         case WINDOW_RTP_PLAYER:

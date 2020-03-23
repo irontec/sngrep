@@ -423,9 +423,7 @@ main(int argc, char *argv[])
     // Start capture threads
     capture_manager_start(capture);
 
-    // Check allocated memory
-
-
+    // Check interface mode
     if (!no_interface) {
         // Initialize interface
         if (!ncurses_init(main_loop, &error)) {

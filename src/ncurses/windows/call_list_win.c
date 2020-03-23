@@ -901,6 +901,9 @@ call_list_handle_key(Window *window, int key)
                     call_flow_win_set_group(ncurses_create_window(WINDOW_CALL_FLOW), group);
                 }
                 break;
+            case ACTION_SHOW_PROTOCOLS:
+                ncurses_create_window(WINDOW_PROTOCOL_SELECT);
+                break;
             case ACTION_SHOW_FILTERS:
                 ncurses_create_window(WINDOW_FILTER);
                 break;

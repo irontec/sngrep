@@ -30,6 +30,7 @@
 #include <glib.h>
 #include "glib-extra/glib_enum_types.h"
 #include "storage/storage.h"
+#include "setting.h"
 #include "dissector.h"
 
 enum
@@ -54,11 +55,45 @@ typedef struct
 // PacketDissector class definition
 G_DEFINE_TYPE_WITH_PRIVATE(PacketDissector, packet_dissector, G_TYPE_OBJECT)
 
+
+gboolean
+packet_dissector_enabled(PacketProtocolId id)
+{
+    switch (id) {
+        case PACKET_PROTO_IP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_IP);
+        case PACKET_PROTO_UDP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_UDP);
+        case PACKET_PROTO_TCP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_TCP);
+        case PACKET_PROTO_SIP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_SIP);
+        case PACKET_PROTO_SDP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_SDP);
+        case PACKET_PROTO_RTP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_RTP);
+        case PACKET_PROTO_RTCP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_RTCP);
+#ifdef USE_HEP
+        case PACKET_PROTO_HEP:
+            return setting_enabled(SETTING_CAPTURE_PACKET_HEP);
+#endif
+#ifdef WITH_SSL
+        case PACKET_PROTO_TLS:
+            return setting_enabled(SETTING_CAPTURE_PACKET_TLS);
+#endif
+        default:
+            return TRUE;
+    }
+}
+
 void
 packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id)
 {
     PacketDissectorPrivate *priv = packet_dissector_get_instance_private(self);
-    priv->subdissectors = g_slist_append(priv->subdissectors, GINT_TO_POINTER(id));
+    if (packet_dissector_enabled(id)) {
+        priv->subdissectors = g_slist_append(priv->subdissectors, GINT_TO_POINTER(id));
+    }
 }
 
 GBytes *
@@ -119,7 +154,7 @@ packet_dissector_next(PacketDissector *current, Packet *packet, GBytes *data)
 const gchar *
 packet_dissector_get_name(PacketDissector *self)
 {
-    PacketDissectorPrivate *priv = packet_dissector_get_instance_private(PACKET_DISSECTOR(self));
+    PacketDissectorPrivate *priv = packet_dissector_get_instance_private(self);
     g_return_val_if_fail(priv != NULL, NULL);
     return priv->name;
 }
@@ -142,7 +177,7 @@ packet_dissector_set_property(GObject *self, guint property_id, const GValue *va
             priv->id = g_value_get_enum(value);
             break;
         case PROP_DISSECTOR_NAME:
-            priv->name = g_value_get_string(value);
+            priv->name = g_value_dup_string(value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);

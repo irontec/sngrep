@@ -68,6 +68,7 @@ typedef enum
     WINDOW_AUTH_VALIDATE,    // Authentication validator panel
     WINDOW_STATS,            // Stats panel
     WINDOW_RTP_PLAYER,       // RTP Player panel
+    WINDOW_PROTOCOL_SELECT,  // RTP Player panel
 } WindowType;
 
 /**
