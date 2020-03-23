@@ -30,6 +30,15 @@
 #include "gbytes.h"
 
 GByteArray *
+g_byte_array_copy(GByteArray *array)
+{
+    g_return_val_if_fail(array != NULL, NULL);
+    GByteArray *copy = g_byte_array_sized_new(g_byte_array_len(array));
+    g_byte_array_append(copy, array->data, array->len);
+    return copy;
+}
+
+GByteArray *
 g_byte_array_offset(GByteArray *array, guint offset)
 {
     g_return_val_if_fail(array->len >= offset, NULL);

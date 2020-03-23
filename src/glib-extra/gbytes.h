@@ -41,6 +41,9 @@ G_BEGIN_DECLS
 #define g_byte_array_len(array) (array->len)
 
 GByteArray *
+g_byte_array_copy(GByteArray *array);
+
+GByteArray *
 g_byte_array_offset(GByteArray *array, guint offset);
 
 GBytes *
