@@ -32,22 +32,22 @@ set(SOURCES
         src/glib-extra/glib.c
         src/glib-extra/gvalue.c
         src/glib-extra/glib_enum_types.c
-        src/ncurses/manager.c
-        src/ncurses/windows/call_flow_win.c
-        src/ncurses/windows/call_list_win.c
-        src/ncurses/windows/call_raw_win.c
-        src/ncurses/windows/column_select_win.c
-        src/ncurses/windows/filter_win.c
-        src/ncurses/windows/msg_diff_win.c
-        src/ncurses/windows/save_win.c
-        src/ncurses/windows/settings_win.c
-        src/ncurses/windows/stats_win.c
-        src/ncurses/windows/auth_validate_win.c
-        src/ncurses/windows/protocol_select_win.c
-        src/ncurses/window.c
-        src/ncurses/dialog.c
-        src/ncurses/keybinding.c
-        src/ncurses/scrollbar.c
+        src/tui/tui.c
+        src/tui/windows/call_flow_win.c
+        src/tui/windows/call_list_win.c
+        src/tui/windows/call_raw_win.c
+        src/tui/windows/column_select_win.c
+        src/tui/windows/filter_win.c
+        src/tui/windows/msg_diff_win.c
+        src/tui/windows/save_win.c
+        src/tui/windows/settings_win.c
+        src/tui/windows/stats_win.c
+        src/tui/windows/auth_validate_win.c
+        src/tui/windows/protocol_select_win.c
+        src/tui/window.c
+        src/tui/dialog.c
+        src/tui/keybinding.c
+        src/tui/scrollbar.c
         src/storage/address.c
         src/storage/packet/dissector.c
         src/storage/packet/dissector.h
@@ -97,7 +97,7 @@ option(WITH_SND "Enable libsnd files (for saving into WAV files)" OFF)
 # Pulseaudio Support
 option(WITH_PULSE "Enable pulseaudio support (for playing RTP streams)" OFF)
 if (WITH_PULSE)
-    set(SOURCES ${SOURCES} src/ncurses/windows/rtp_player_win.c)
+    set(SOURCES ${SOURCES} src/tui/windows/rtp_player_win.c)
 endif (WITH_PULSE)
 
 # G.729 decoding support
@@ -178,8 +178,8 @@ configure_file(
 
 ######################################################################
 set(ENUM_HEADERS
-        src/ncurses/manager.h
-        src/ncurses/windows/call_flow_win.h
+        src/tui/tui.h
+        src/tui/windows/call_flow_win.h
         src/storage/storage.h
         src/storage/packet/packet.h
         )

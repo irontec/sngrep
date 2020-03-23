@@ -46,8 +46,8 @@
 #include <glib-object.h>
 #include "storage/attribute.h"
 #include "storage/storage.h"
-#include "ncurses/manager.h"
-#include "ncurses/windows/call_flow_win.h"
+#include "tui/tui.h"
+#include "tui/windows/call_flow_win.h"
 
 //! Max setting value
 #define SETTING_MAX_LEN   1024

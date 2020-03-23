@@ -32,8 +32,8 @@
 #include "glib-extra/glib.h"
 #include "setting.h"
 #include "capture/capture.h"
-#include "ncurses/manager.h"
-#include "ncurses/dialog.h"
+#include "tui/tui.h"
+#include "tui/dialog.h"
 #ifdef USE_HEP
 #include "capture/capture_hep.h"
 #endif
@@ -426,7 +426,7 @@ main(int argc, char *argv[])
     // Check interface mode
     if (!no_interface) {
         // Initialize interface
-        if (!ncurses_init(main_loop, &error)) {
+        if (!tui_init(main_loop, &error)) {
             g_printerr("error: %s\n", error->message);
             return 1;
         }
@@ -449,7 +449,7 @@ main(int argc, char *argv[])
     capture_manager_free(capture);
 
     // Deinitialize interface
-    ncurses_deinit();
+    tui_deinit();
 
     // Deinitialize configuration options
     settings_deinit();

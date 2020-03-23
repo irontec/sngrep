@@ -31,7 +31,7 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "ncurses/keybinding.h"
+#include "tui/keybinding.h"
 #include "glib-extra/glib.h"
 #include "glib-extra/glib_enum_types.h"
 #include "setting.h"

@@ -75,8 +75,8 @@
 #include "setting.h"
 #include "filter.h"
 #include "storage.h"
-#include "ncurses/manager.h"
-#include "ncurses/dialog.h"
+#include "tui/tui.h"
+#include "tui/dialog.h"
 
 /**
  * @brief Global Structure with all storage information
@@ -549,7 +549,7 @@ storage_check_memory()
         );
 
         // TODO Replace this with a Signal
-        if (ncurses_is_enabled()) {
+        if (tui_is_enabled()) {
             // Show a dialog with current configured memory limit
             dialog_run(
                 "Memory limit %s has been reached. \n\n%s\n%s",
