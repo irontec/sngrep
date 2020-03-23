@@ -160,6 +160,7 @@ static void
 setting_free(Setting *setting)
 {
     g_return_if_fail(setting != NULL);
+    g_value_unset(&setting->value);
     g_free(setting);
 }
 
@@ -259,7 +260,7 @@ setting_set_value(SettingId id, const gchar *value)
 
     GValue new_value = G_VALUE_INIT;
     g_value_init(&new_value, G_TYPE_STRING);
-    g_value_set_string(&new_value, value);
+    g_value_set_static_string(&new_value, value);
     g_value_transform(&new_value, &setting->value);
 }
 
