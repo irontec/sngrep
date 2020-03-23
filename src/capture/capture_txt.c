@@ -34,8 +34,8 @@
 #include <stdio.h>
 #include "glib-extra/glib.h"
 #include "storage/datetime.h"
-#include "storage/packet/packet.h"
-#include "storage/packet/packet_sip.h"
+#include "packet/packet.h"
+#include "packet/packet_sip.h"
 #include "capture/capture_txt.h"
 
 G_DEFINE_TYPE(CaptureOutputTxt, capture_output_txt, CAPTURE_TYPE_OUTPUT)

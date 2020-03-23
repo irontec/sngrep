@@ -30,7 +30,7 @@
 #include <glib.h>
 #include "glib-extra/glib.h"
 #include "attribute.h"
-#include "storage/packet/packet_sip.h"
+#include "packet/packet_sip.h"
 #include "tui/tui.h"
 
 static GPtrArray *attributes = NULL;

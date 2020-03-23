@@ -50,11 +50,11 @@
 #include <glib-unix.h>
 #include "setting.h"
 #include "storage/storage.h"
-#include "storage/packet/packet_hep.h"
-#include "storage/packet/packet_ip.h"
-#include "storage/packet/packet_udp.h"
-#include "storage/packet/packet_sip.h"
-#include "storage/packet/packet.h"
+#include "packet/packet_hep.h"
+#include "packet/packet_ip.h"
+#include "packet/packet_udp.h"
+#include "packet/packet_sip.h"
+#include "packet/packet.h"
 #include "capture_hep.h"
 
 // CapturePcap class definition

@@ -58,7 +58,7 @@
 #include <storage/message.h>
 #include "glib-extra/glib.h"
 #include "storage/storage.h"
-#include "storage/packet/packet_sip.h"
+#include "packet/packet_sip.h"
 #include "tui/tui.h"
 #include "stats_win.h"
 

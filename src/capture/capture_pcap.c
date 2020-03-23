@@ -39,7 +39,7 @@
 #include "glib-extra/glib.h"
 #include "capture.h"
 #include "capture_pcap.h"
-#include "storage/packet/packet_link.h"
+#include "packet/packet_link.h"
 #include "storage/storage.h"
 
 // CapturePcap class definition

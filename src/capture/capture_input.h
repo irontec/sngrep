@@ -32,7 +32,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "capture.h"
-#include "storage/packet/packet.h"
+#include "packet/packet.h"
 
 G_BEGIN_DECLS
 

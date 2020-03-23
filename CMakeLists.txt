@@ -49,17 +49,17 @@ set(SOURCES
         src/tui/keybinding.c
         src/tui/scrollbar.c
         src/storage/address.c
-        src/storage/packet/dissector.c
-        src/storage/packet/dissector.h
-        src/storage/packet/packet.c
-        src/storage/packet/packet_link.c
-        src/storage/packet/packet_ip.c
-        src/storage/packet/packet_tcp.c
-        src/storage/packet/packet_udp.c
-        src/storage/packet/packet_sip.c
-        src/storage/packet/packet_sdp.c
-        src/storage/packet/packet_rtp.c
-        src/storage/packet/packet_rtcp.c
+        src/packet/dissector.c
+        src/packet/dissector.h
+        src/packet/packet.c
+        src/packet/packet_link.c
+        src/packet/packet_ip.c
+        src/packet/packet_tcp.c
+        src/packet/packet_udp.c
+        src/packet/packet_sip.c
+        src/packet/packet_sdp.c
+        src/packet/packet_rtp.c
+        src/packet/packet_rtcp.c
         src/storage/filter.c
         src/storage/group.c
         src/storage/stream.c
@@ -79,7 +79,7 @@ set(SOURCES
 option(USE_HEP "Enable HEP/EEP Support" OFF)
 if (USE_HEP)
     set(SOURCES ${SOURCES} src/capture/capture_hep.c)
-    set(SOURCES ${SOURCES} src/storage/packet/packet_hep.c)
+    set(SOURCES ${SOURCES} src/packet/packet_hep.c)
 endif (USE_HEP)
 
 # IPv6 Support
@@ -88,7 +88,7 @@ option(USE_IPV6 "Enable IPv6 Support" OFF)
 # GnuTLS Support
 option(WITH_SSL "Enable SSL Support (TLS SIP Transport)" OFF)
 if (WITH_SSL)
-    set(SOURCES ${SOURCES} src/storage/packet/packet_tls.c)
+    set(SOURCES ${SOURCES} src/packet/packet_tls.c)
 endif (WITH_SSL)
 
 # libsnd Support
@@ -181,7 +181,7 @@ set(ENUM_HEADERS
         src/tui/tui.h
         src/tui/windows/call_flow_win.h
         src/storage/storage.h
-        src/storage/packet/packet.h
+        src/packet/packet.h
         )
 
 add_custom_command(

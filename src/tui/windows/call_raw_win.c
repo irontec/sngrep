@@ -33,7 +33,7 @@
 #include "config.h"
 #include <string.h>
 #include <stdlib.h>
-#include "storage/packet/packet_sip.h"
+#include "packet/packet_sip.h"
 #include "tui/tui.h"
 #include "tui/dialog.h"
 #include "tui/windows/save_win.h"

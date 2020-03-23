@@ -58,19 +58,19 @@
 #include <glib.h>
 #include "glib-extra/glib.h"
 #include "packet/dissector.h"
-#include "storage/packet/packet_link.h"
-#include "storage/packet/packet_ip.h"
-#include "storage/packet/packet_udp.h"
-#include "storage/packet/packet_tcp.h"
-#include "storage/packet/packet_sip.h"
-#include "storage/packet/packet_sdp.h"
-#include "storage/packet/packet_rtp.h"
-#include "storage/packet/packet_rtcp.h"
+#include "packet/packet_link.h"
+#include "packet/packet_ip.h"
+#include "packet/packet_udp.h"
+#include "packet/packet_tcp.h"
+#include "packet/packet_sip.h"
+#include "packet/packet_sdp.h"
+#include "packet/packet_rtp.h"
+#include "packet/packet_rtcp.h"
 #ifdef USE_HEP
-#include "storage/packet/packet_hep.h"
+#include "packet/packet_hep.h"
 #endif
 #ifdef WITH_SSL
-#include "storage/packet/packet_tls.h"
+#include "packet/packet_tls.h"
 #endif
 #include "setting.h"
 #include "filter.h"

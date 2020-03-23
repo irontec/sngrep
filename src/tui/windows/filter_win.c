@@ -30,7 +30,7 @@
 #include <glib.h>
 #include <string.h>
 #include <form.h>
-#include "storage/packet/packet_sip.h"
+#include "packet/packet_sip.h"
 #include "tui/tui.h"
 #include "filter_win.h"
 #include "call_list_win.h"

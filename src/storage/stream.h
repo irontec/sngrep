@@ -32,9 +32,9 @@
 #include "config.h"
 #include "storage/message.h"
 #include "capture/capture_pcap.h"
-#include "storage/packet/packet_sdp.h"
-#include "storage/packet/packet_rtp.h"
-#include "storage/packet/packet_rtcp.h"
+#include "packet/packet_sdp.h"
+#include "packet/packet_rtp.h"
+#include "packet/packet_rtcp.h"
 
 // If stream does not receive a packet in this seconds, we consider it inactive
 #define STREAM_INACTIVE_USECS (1 * G_USEC_PER_SEC)

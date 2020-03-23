@@ -58,7 +58,7 @@
 #include <netinet/in_systm.h>
 #endif
 
-#include "storage/packet/packet.h"
+#include "packet/packet.h"
 #include "capture.h"
 
 G_BEGIN_DECLS
