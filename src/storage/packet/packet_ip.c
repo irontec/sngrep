@@ -310,7 +310,6 @@ packet_dissector_ip_class_init(PacketDissectorIpClass *klass)
 static void
 packet_dissector_ip_init(PacketDissectorIp *self)
 {
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_IP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_UDP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_TCP);
 }
@@ -318,5 +317,10 @@ packet_dissector_ip_init(PacketDissectorIp *self)
 PacketDissector *
 packet_dissector_ip_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_IP, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_IP,
+        "id", PACKET_PROTO_IP,
+        "name", "IP",
+        NULL
+    );
 }

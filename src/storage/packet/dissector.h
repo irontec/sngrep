@@ -56,9 +56,6 @@ struct _PacketDissectorClass
 };
 
 void
-packet_dissector_set_protocol(PacketDissector *self, PacketProtocolId id);
-
-void
 packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id);
 
 GBytes *
@@ -72,6 +69,9 @@ packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GBytes *data);
 
 GBytes *
 packet_dissector_next(PacketDissector *current, Packet *packet, GBytes *data);
+
+const gchar *
+packet_dissector_get_name(PacketDissector *self);
 
 G_END_DECLS
 

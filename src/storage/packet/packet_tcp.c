@@ -313,7 +313,6 @@ static void
 packet_dissector_tcp_init(PacketDissectorTcp *self)
 {
     // TCP Dissector base information
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_TCP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_TLS);
 
@@ -334,5 +333,10 @@ packet_dissector_tcp_init(PacketDissectorTcp *self)
 PacketDissector *
 packet_dissector_tcp_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_TCP, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_TCP,
+        "id", PACKET_PROTO_TCP,
+        "name", "TCP",
+        NULL
+    );
 }

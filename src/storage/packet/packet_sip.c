@@ -370,12 +370,16 @@ static void
 packet_dissector_sip_init(PacketDissectorSip *self)
 {
     // UDP Dissector base information
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SDP);
 }
 
 PacketDissector *
 packet_dissector_sip_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_SIP, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_SIP,
+        "id", PACKET_PROTO_SIP,
+        "name", "SIP",
+        NULL
+    );
 }

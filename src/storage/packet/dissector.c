@@ -26,28 +26,33 @@
  * @brief Source of functions defined in dissector.h
  *
  */
-
+#include "config.h"
 #include <glib.h>
+#include "glib-extra/glib_enum_types.h"
 #include "storage/storage.h"
 #include "dissector.h"
+
+enum
+{
+    PROP_PROTOCOL_ID = 1,
+    PROP_DISSECTOR_NAME,
+    N_PROPERTIES
+};
+
+static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 typedef struct
 {
     //! Protocol id
     PacketProtocolId id;
+    //! Packet dissector name
+    const gchar *name;
     //! SubProtocol children dissectors
     GSList *subdissectors;
 } PacketDissectorPrivate;
 
 // PacketDissector class definition
 G_DEFINE_TYPE_WITH_PRIVATE(PacketDissector, packet_dissector, G_TYPE_OBJECT)
-
-void
-packet_dissector_set_protocol(PacketDissector *self, PacketProtocolId id)
-{
-    PacketDissectorPrivate *priv = packet_dissector_get_instance_private(self);
-    priv->id = id;
-}
 
 void
 packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id)
@@ -111,7 +116,15 @@ packet_dissector_next(PacketDissector *current, Packet *packet, GBytes *data)
     return data;
 }
 
-void
+const gchar *
+packet_dissector_get_name(PacketDissector *self)
+{
+    PacketDissectorPrivate *priv = packet_dissector_get_instance_private(PACKET_DISSECTOR(self));
+    g_return_val_if_fail(priv != NULL, NULL);
+    return priv->name;
+}
+
+static void
 packet_dissector_finalize(GObject *self)
 {
     PacketDissectorPrivate *priv = packet_dissector_get_instance_private(PACKET_DISSECTOR(self));
@@ -120,10 +133,71 @@ packet_dissector_finalize(GObject *self)
 }
 
 static void
+packet_dissector_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+    PacketDissectorPrivate *priv = packet_dissector_get_instance_private(PACKET_DISSECTOR(self));
+
+    switch (property_id) {
+        case PROP_PROTOCOL_ID:
+            priv->id = g_value_get_enum(value);
+            break;
+        case PROP_DISSECTOR_NAME:
+            priv->name = g_value_get_string(value);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
+            break;
+    }
+}
+
+static void
+packet_dissector_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
+{
+    PacketDissectorPrivate *priv = packet_dissector_get_instance_private(PACKET_DISSECTOR(self));
+
+    switch (property_id) {
+        case PROP_PROTOCOL_ID:
+            g_value_set_enum(value, priv->id);
+            break;
+        case PROP_DISSECTOR_NAME:
+            g_value_set_static_string(value, priv->name);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
+            break;
+    }
+}
+
+static void
 packet_dissector_class_init(PacketDissectorClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->finalize = packet_dissector_finalize;
+    object_class->set_property = packet_dissector_set_property;
+    object_class->get_property = packet_dissector_get_property;
+
+    obj_properties[PROP_PROTOCOL_ID] =
+        g_param_spec_enum("id",
+                          "ProtocolId",
+                          "Protocol Identifier from PacketProtocolId enum",
+                          PACKET_TYPE_PROTOCOL_ID,
+                          0,
+                          G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+
+    obj_properties[PROP_DISSECTOR_NAME] =
+        g_param_spec_string("name",
+                            "DissectorName",
+                            "Dissector name",
+                            NULL,
+                            G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+
+    g_object_class_install_properties(
+        object_class,
+        N_PROPERTIES,
+        obj_properties
+    );
 }
 
 static void

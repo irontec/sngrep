@@ -161,11 +161,6 @@ packet_link_class_init(PacketDissectorLinkClass *klass)
 static void
 packet_link_init(PacketDissectorLink *self)
 {
-    packet_dissector_set_protocol(
-        PACKET_DISSECTOR(self),
-        PACKET_PROTO_LINK
-    );
-
     packet_dissector_add_subdissector(
         PACKET_DISSECTOR(self),
         PACKET_PROTO_IP
@@ -175,5 +170,10 @@ packet_link_init(PacketDissectorLink *self)
 PacketDissector *
 packet_dissector_link_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_LINK, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_LINK,
+        "id", PACKET_PROTO_LINK,
+        "name", "LINK",
+        NULL
+    );
 }

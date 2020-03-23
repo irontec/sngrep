@@ -942,7 +942,6 @@ static void
 packet_dissector_tls_init(PacketDissectorTls *self)
 {
     // TLS Dissector base information
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_TLS);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_WS);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
 }
@@ -950,5 +949,10 @@ packet_dissector_tls_init(PacketDissectorTls *self)
 PacketDissector *
 packet_dissector_tls_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_TLS, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_TLS,
+        "id", PACKET_PROTO_TLS,
+        "name", "TLS",
+        NULL
+    );
 }

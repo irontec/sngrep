@@ -221,12 +221,16 @@ static void
 packet_dissector_hep_init(PacketDissectorHep *self)
 {
     // HEP Dissector base information
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_HEP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
 }
 
 PacketDissector *
 packet_dissector_hep_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_HEP, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_HEP,
+        "id", PACKET_PROTO_HEP,
+        "name", "HEP",
+        NULL
+    );
 }

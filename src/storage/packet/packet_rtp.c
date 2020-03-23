@@ -174,14 +174,17 @@ packet_dissector_rtp_class_init(PacketDissectorRtpClass *klass)
 }
 
 static void
-packet_dissector_rtp_init(PacketDissectorRtp *self)
+packet_dissector_rtp_init(G_GNUC_UNUSED PacketDissectorRtp *self)
 {
-    // UDP Dissector base information
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_RTP);
 }
 
 PacketDissector *
 packet_dissector_rtp_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_RTP, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_RTP,
+        "id", PACKET_PROTO_RTP,
+        "name", "RTP",
+        NULL
+    );
 }

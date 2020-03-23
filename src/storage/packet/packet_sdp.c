@@ -309,15 +309,18 @@ packet_dissector_sdp_class_init(PacketDissectorSdpClass *klass)
 }
 
 static void
-packet_dissector_sdp_init(PacketDissectorSdp *self)
+packet_dissector_sdp_init(G_GNUC_UNUSED PacketDissectorSdp *self)
 {
-    // UDP Dissector base information
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_SDP);
 }
 
 PacketDissector *
 packet_dissector_sdp_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_SDP, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_SDP,
+        "id", PACKET_PROTO_SDP,
+        "name", "SDP",
+        NULL
+    );
 }
 

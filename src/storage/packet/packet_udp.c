@@ -104,7 +104,6 @@ static void
 packet_dissector_udp_init(PacketDissectorUdp *self)
 {
     // UDP Dissector base information
-    packet_dissector_set_protocol(PACKET_DISSECTOR(self), PACKET_PROTO_UDP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_RTP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_RTCP);
@@ -114,5 +113,10 @@ packet_dissector_udp_init(PacketDissectorUdp *self)
 PacketDissector *
 packet_dissector_udp_new()
 {
-    return g_object_new(PACKET_DISSECTOR_TYPE_UDP, NULL);
+    return g_object_new(
+        PACKET_DISSECTOR_TYPE_UDP,
+        "id", PACKET_PROTO_UDP,
+        "name", "UDP",
+        NULL
+    );
 }
