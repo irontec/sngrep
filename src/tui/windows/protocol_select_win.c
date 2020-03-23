@@ -158,7 +158,7 @@ protocol_select_win_save_protocols(ProtocolSelectWindow *self)
 
         // Put exiting config in the new file
         for (guint i = 0; i < g_strv_length(contents); i++) {
-            if (g_ascii_strncasecmp(contents[i], "set capture.packet.", 13) != 0) {
+            if (g_ascii_strncasecmp(contents[i], "set packet.", 13) != 0) {
                 g_fprintf(fo, "%s\n", contents[i]);
             }
         }
@@ -174,7 +174,7 @@ protocol_select_win_save_protocols(ProtocolSelectWindow *self)
             item_userptr(self->items[i]),
             strlen(item_userptr(self->items[i]))
         );
-        g_fprintf(fo, "set capture.packet.%s %s\n",
+        g_fprintf(fo, "set packet.%s.enabled %s\n",
                   proto_name,
                   (strncmp(item_name(self->items[i]), "[*]", 3) == 0) ? "on" : "off"
         );

@@ -508,25 +508,25 @@ settings_init(SettingOpts options)
     g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
                     setting_bool_new("capture.rtp", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_IP,
-                    setting_bool_new("capture.packet.ip", TRUE));
+                    setting_bool_new("packet.ip.enabled", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_UDP,
-                    setting_bool_new("capture.packet.udp", TRUE));
+                    setting_bool_new("packet.udp.enabled", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TCP,
-                    setting_bool_new("capture.packet.tcp", TRUE));
+                    setting_bool_new("packet.tcp.enabled", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TLS,
-                    setting_bool_new("capture.packet.tls", FALSE));
+                    setting_bool_new("packet.tls.enabled", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_HEP,
-                    setting_bool_new("capture.packet.hep", FALSE));
+                    setting_bool_new("packet.hep.enabled", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_WS,
-                    setting_bool_new("capture.packet.ws", FALSE));
+                    setting_bool_new("packet.ws.enabled", FALSE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SIP,
-                    setting_bool_new("capture.packet.sip", TRUE));
+                    setting_bool_new("packet.sip.enabled", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SDP,
-                    setting_bool_new("capture.packet.sdp", TRUE));
+                    setting_bool_new("packet.sdp.enabled", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTP,
-                    setting_bool_new("capture.packet.rtp", TRUE));
+                    setting_bool_new("packet.rtp.enabled", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTCP,
-                    setting_bool_new("capture.packet.rtcp", TRUE));
+                    setting_bool_new("packet.rtcp.enabled", TRUE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_STORAGE,
                     setting_enum_new("capture.storage", SETTING_STORAGE_MODE_MEMORY, SETTING_TYPE_STORAGE_MODE));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_ROTATE,
@@ -665,29 +665,29 @@ settings_init(SettingOpts options)
                     setting_string_new("filter.methods", NULL));
 #ifdef USE_HEP
     g_ptr_array_set(settings->values, SETTING_HEP_SEND,
-                    setting_bool_new("eep.send", FALSE));
+                    setting_bool_new("hep.send", FALSE));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_VER,
-                    setting_number_new("eep.send.version", 3));
+                    setting_number_new("hep.send.version", 3));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_ADDR,
-                    setting_string_new("eep.send.address", "127.0.0.1"));
+                    setting_string_new("hep.send.address", "127.0.0.1"));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_PORT,
-                    setting_number_new("eep.send.port", 9060));
+                    setting_number_new("hep.send.port", 9060));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_PASS,
-                    setting_string_new("eep.send.pass", ""));
+                    setting_string_new("hep.send.pass", ""));
     g_ptr_array_set(settings->values, SETTING_HEP_SEND_ID,
-                    setting_number_new("eep.send.id", 2000));
+                    setting_number_new("hep.send.id", 2000));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN,
-                    setting_bool_new("eep.listen", FALSE));
+                    setting_bool_new("hep.listen", FALSE));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_VER,
-                    setting_string_new("eep.listen.version", "3"));
+                    setting_string_new("hep.listen.version", "3"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_ADDR,
-                    setting_string_new("eep.listen.address", "0.0.0.0"));
+                    setting_string_new("hep.listen.address", "0.0.0.0"));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PORT,
-                    setting_number_new("eep.listen.port", 9060));
+                    setting_number_new("hep.listen.port", 9060));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PASS,
-                    setting_string_new("eep.listen.pass", ""));
+                    setting_string_new("hep.listen.pass", ""));
     g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_UUID,
-                    setting_bool_new("eep.listen.uuid", FALSE));
+                    setting_bool_new("hep.listen.uuid", FALSE));
 #endif
 
     // Done if config file should not be read
