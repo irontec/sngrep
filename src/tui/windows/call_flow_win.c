@@ -597,7 +597,7 @@ call_flow_win_columns_width(Window *window)
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, 0);
 
-    return g_list_length(self->columns) * CF_COLUMN_WIDTH + 3;
+    return g_list_length(self->columns) * CF_COLUMN_WIDTH + 2;
 }
 
 static gint
@@ -1812,28 +1812,27 @@ call_flow_win_create_subwindows(Window *window)
 
         // If we already have a raw window
         if (self->raw_win) delwin(self->raw_win);
-        self->raw_win = subwin(win, raw_height, raw_width, 1, win_width - raw_width - 1);
+        self->raw_win = subwin(win, raw_height, raw_width, 1, win_width - raw_width);
 
         // Draw raw Separator line
         wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-        mvwvline(win, 1, win_width - raw_width - 2, ACS_VLINE, win_height - 2);
+        mvwvline(win, 1, win_width - raw_width - 1, ACS_VLINE, win_height - 2);
         wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     }
 
     // Call Flow arrows subwindow
     if (self->arrows_win) delwin(self->arrows_win);
     gint flow_height = win_height - 5;
-    gint flow_width = (raw_width) ? win_width - raw_width - 2 : win_width;
+    gint flow_width = (raw_width) ? win_width - raw_width - 1 : win_width;
     self->arrows_win = subwin(win, flow_height, flow_width, 4, 0);
     self->colunms_win = subwin(win, 3, flow_width, 1, 0);
 
-    // Configure vertical scrollbar
-    self->vscroll.max = getmaxy(self->arrows_pad) - 1;
-    self->vscroll.win = self->arrows_win;
-
-    // Configure horizontal scrollbar
-    self->hscroll.max = getmaxx(self->arrows_pad) - 1;
-    self->hscroll.win = self->arrows_win;
+    // Configure scrollbars
+    self->vscroll.win = self->hscroll.win = self->arrows_win;
+    self->vscroll.max = call_flow_win_arrows_height(window) - 1;
+    self->hscroll.max = call_flow_win_columns_width(window) - 1;
+    self->vscroll.postoffset = (scrollbar_visible(self->hscroll) ? 1 : 0);
+    self->hscroll.preoffset = (scrollbar_visible(self->vscroll) ? 1 : 0);
 }
 
 /**

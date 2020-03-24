@@ -58,12 +58,9 @@ scrollbar_vertical_draw(Scrollbar scrollbar)
     // Initialize scrollbar line
     mvwvline(scrollbar.win, scrollbar.preoffset, scroll_xpos, ACS_VLINE, scroll_height);
 
-    // Positions start at 0, so total items are one value above max
-    gint total_items = scrollbar.max + 1;
-
     // How long the scroll will be
     gint scroll_len = CLAMP(
-        ((scroll_height * 1.0f) / total_items) * scroll_height,
+        ((scroll_height * 1.0f) / scrollbar.max) * scroll_height,
         1,
         scroll_height
     );
@@ -73,7 +70,7 @@ scrollbar_vertical_draw(Scrollbar scrollbar)
     if (scrollbar.pos == 0) {
         scroll_ypos = 0;
     } else if (scrollbar.pos + scroll_height >= scrollbar.max) {
-        scroll_ypos = scroll_height - scroll_len;
+        scroll_ypos = scroll_height - scroll_len - scrollbar.postoffset;
     } else {
         scroll_ypos = (scroll_height - 1.0f) * (scrollbar.pos * 1.0f / scrollbar.max);
     }
@@ -103,12 +100,9 @@ scrollbar_horizontal_draw(Scrollbar scrollbar)
     // Initialize scrollbar line
     mvwhline(scrollbar.win, scroll_ypos, scrollbar.preoffset, ACS_HLINE, scroll_width);
 
-    // Positions start at 0, so total items are one value above max
-    gint total_items = scrollbar.max + 1;
-
     // How long the scroll will be
     gint scroll_len = CLAMP(
-        ((scroll_width * 1.0f) / total_items) * scroll_width,
+        ((scroll_width * 1.0f) / scrollbar.max) * scroll_width,
         1,
         scroll_width
     );
@@ -152,10 +146,10 @@ scrollbar_visible(Scrollbar scrollbar)
 {
 
     if (scrollbar.alignment == SB_VERTICAL) {
-        return scrollbar.max + 1 > getmaxy(scrollbar.win)
-                                   - scrollbar.preoffset - scrollbar.postoffset;
+        return scrollbar.max > getmaxy(scrollbar.win)
+                               - scrollbar.preoffset - scrollbar.postoffset;
     } else {
-        return scrollbar.max + 1 > getmaxx(scrollbar.win)
-                                   - scrollbar.preoffset - scrollbar.postoffset;
+        return scrollbar.max > getmaxx(scrollbar.win)
+                               - scrollbar.preoffset - scrollbar.postoffset;
     }
 }

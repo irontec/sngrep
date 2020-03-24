@@ -460,8 +460,8 @@ call_list_draw_list(CallListWindow *self)
     self->vscroll.max = g_ptr_array_len(self->dcalls) - 1;
     self->vscroll.preoffset = 1;    // Leave first row for titles
     if (scrollbar_visible(self->hscroll)) {
-        self->vscroll.postoffset = 1;
-    }   // Leave last row for hscroll
+        self->vscroll.postoffset = 1; // Leave last row for hscroll
+    }
 
     // Draw scrollbars if required
     scrollbar_draw(self->hscroll);
