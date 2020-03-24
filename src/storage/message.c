@@ -231,7 +231,7 @@ msg_is_retransmission(Message *msg)
         msg->retrans = (original != NULL) ? 1 : 0;
     }
 
-    return (msg->retrans == 0) ? TRUE : FALSE;
+    return (msg->retrans == 0) ? FALSE : TRUE;
 }
 
 const Message *
