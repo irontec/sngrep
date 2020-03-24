@@ -252,10 +252,10 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GBytes *data
 
     // Sort and take packet frames in the last packet
     packet->frames = packet_tcp_stream_take_frames(stream);
-    GByteArray *stream_data = g_byte_array_copy(stream->data);
 
     // Check if this packet is interesting
-    guint stream_len = g_byte_array_len(stream->data);
+    GByteArray *stream_data = g_byte_array_copy(stream->data);
+    guint stream_len = g_byte_array_len(stream_data);
     GBytes *pending = packet_dissector_next(
         self,
         packet,
@@ -263,6 +263,7 @@ packet_dissector_tcp_dissect(PacketDissector *self, Packet *packet, GBytes *data
     );
 
     if (pending != NULL) {
+        g_byte_array_free(stream->data, TRUE);
         stream->data = g_bytes_unref_to_array(pending);
     }
 
