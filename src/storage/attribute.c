@@ -352,7 +352,7 @@ attribute_from_setting(const gchar *setting, const gchar *value)
 
     Attribute *attribute = attribute_find_by_name(attr_data[0]);
     if (attribute == NULL) {
-        attribute = attribute_new(attr_data[0], "Untitled", "Attr W/O Description", 20);
+        attribute = attribute_new(attr_data[0], attr_data[0], attr_data[0], 20);
         g_ptr_array_add(attributes, attribute);
     }
 
@@ -455,6 +455,7 @@ attribute_init()
     attribute = attribute_new("state", NULL, "Call-State", 12);
     attribute_set_getter_func(attribute, attribute_getter_call_state);
     attribute_set_color_func(attribute, attribute_color_call_state);
+    attribute_set_mutable(attribute, TRUE);
     g_ptr_array_add(attributes, attribute);
 
     //! Conversation duration (from first 200 OK)
