@@ -132,8 +132,6 @@ column_select_update_menu(ColumnSelectWindow *self)
 static void
 column_select_update_columns(ColumnSelectWindow *self)
 {
-    int attr_id;
-
     // Reset column count
     g_ptr_array_remove_all(self->selected);
 
@@ -144,14 +142,14 @@ column_select_update_columns(ColumnSelectWindow *self)
             continue;
 
         // Get column attribute
-        attr_id = attr_find_by_name(item_userptr(self->items[i]));
+        Attribute *attr = attribute_find_by_name(item_userptr(self->items[i]));
 
         // Add a new column to the list
         CallListColumn *column = g_malloc0(sizeof(CallListColumn));
-        column->id = attr_id;
-        column->attr = attr_name(attr_id);
-        column->title = attr_title(attr_id);
-        column->width = setting_column_width(attr_id);
+        column->attr = attr;
+        column->name = attribute_get_name(attr);
+        column->title = attribute_get_title(attr);
+        column->width = attribute_get_length(attr);
         g_ptr_array_add(self->selected, column);
     }
 }
@@ -167,10 +165,20 @@ column_select_update_columns(ColumnSelectWindow *self)
 static void
 column_select_save_columns(ColumnSelectWindow *self)
 {
-    GString *userconf = g_string_new(NULL);
-    GString *tmpfile = g_string_new(NULL);
+    // Calculate Columns setting string
+    g_autoptr(GString) columns = g_string_new(NULL);
+    for (gint i = 0; i < item_count(self->menu); i++) {
+        if (g_ascii_strncasecmp(item_name(self->items[i]), "[*]", 3) == 0) {
+            if (columns->len) {
+                g_string_append_printf(columns, ",%s", (const gchar *) item_userptr(self->items[i]));
+            } else {
+                g_string_append(columns, (const gchar *) item_userptr(self->items[i]));
+            }
+        }
+    }
 
     // Use $SNGREPRC/.sngreprc file
+    g_autoptr(GString) userconf = g_string_new(NULL);
     const gchar *rcfile = g_getenv("SNGREPRC");
     if (rcfile != NULL) {
         g_string_append(userconf, rcfile);
@@ -186,6 +194,7 @@ column_select_save_columns(ColumnSelectWindow *self)
     if (userconf->len == 0) return;
 
     // Path for backup file
+    g_autoptr(GString) tmpfile = g_string_new(NULL);
     g_string_append_printf(tmpfile, "%s.old", userconf->str);
 
     // Remove old config file
@@ -200,49 +209,30 @@ column_select_save_columns(ColumnSelectWindow *self)
     FILE *fo = g_fopen(userconf->str, "w");
     if (fo == NULL) {
         dialog_run("Unable to open %s: %s", userconf->str, g_strerror(errno));
-        g_string_free(userconf, TRUE);
-        g_string_free(tmpfile, TRUE);
         return;
     }
 
     // Check if there was configuration already
     if (g_file_test(tmpfile->str, G_FILE_TEST_IS_REGULAR)) {
         // Get old configuration contents
-        gchar *usercontents = NULL;
+        g_autofree gchar *usercontents = NULL;
         g_file_get_contents(tmpfile->str, &usercontents, NULL, NULL);
 
         // Separate configuration in lines
-        gchar **contents = g_strsplit(usercontents, "\n", -1);
+        g_auto(GStrv) contents = g_strsplit(usercontents, "\n", -1);
 
         // Put exiting config in the new file
         for (guint i = 0; i < g_strv_length(contents); i++) {
-            if (g_ascii_strncasecmp(contents[i], "set cl.column", 13) != 0) {
+            if (g_ascii_strncasecmp(contents[i], "set cl.columns", 14) != 0) {
                 g_fprintf(fo, "%s\n", contents[i]);
             }
         }
-
-        g_strfreev(contents);
-        g_free(usercontents);
+        g_fprintf(fo, "set %s %s\n", "cl.columns", columns->str);
     }
-
-    // Add all selected columns
-    for (gint i = 0; i < item_count(self->menu); i++) {
-        // If column is active
-        if (!strncmp(item_name(self->items[i]), "[ ]", 3)) {
-            g_fprintf(fo, "set cl.column.%s.pos -1\n", (const gchar *) item_userptr(self->items[i]));
-        } else {
-            // Add the columns settings
-            g_fprintf(fo, "set cl.column.%s.pos %d\n", (const gchar *) item_userptr(self->items[i]), i);
-        }
-    }
-
     fclose(fo);
 
     // Show a information dialog
     dialog_run("Column layout successfully saved to %s", userconf->str);
-
-    g_string_free(userconf, TRUE);
-    g_string_free(tmpfile, TRUE);
 }
 
 /**
@@ -443,7 +433,7 @@ column_select_win_set_columns(Window *window, GPtrArray *columns)
         CallListColumn *column = g_ptr_array_index(self->selected, i);
 
         for (guint attr_id = 0; attr_id < (guint) item_count(self->menu); attr_id++) {
-            if (!strcmp(item_userptr(self->items[attr_id]), column->attr)) {
+            if (!strcmp(item_userptr(self->items[attr_id]), column->name)) {
                 column_select_toggle_item(self, self->items[attr_id]);
                 column_select_update_menu(self);
                 column_select_move_item(self, self->items[attr_id], i);
@@ -459,10 +449,12 @@ column_select_finalize(GObject *object)
 {
     ColumnSelectWindow *self = TUI_COLUMN_SELECT(object);
 
+    guint menu_item_count = item_count(self->menu);
+
     // Remove menu and items
     unpost_menu(self->menu);
     free_menu(self->menu);
-    for (guint i = 0; i < ATTR_COUNT; i++)
+    for (guint i = 0; i < menu_item_count; i++)
         free_item(self->items[i]);
 
     // Remove form and fields
@@ -520,13 +512,19 @@ column_select_constructed(GObject *object)
     // Create a subwin for the menu area
     self->menu_win = derwin(win, 10, width - 2, 7, 0);
 
+    // Allocate memory for items
+    GPtrArray *attributes = attribute_get_internal_array();
+    guint attr_count = g_ptr_array_len(attributes);
+    self->items = g_malloc0_n(attr_count + 1, sizeof(ITEM *));
+
     // Initialize one field for each attribute
-    for (guint attr_id = 0; attr_id < ATTR_COUNT; attr_id++) {
+    for (guint i = 0; i < attr_count; i++) {
+        Attribute *attr = g_ptr_array_index(attributes, i);
         // Create a new field for this column
-        self->items[attr_id] = new_item("[ ]", attr_description(attr_id));
-        set_item_userptr(self->items[attr_id], (void *) attr_name(attr_id));
+        self->items[i] = new_item("[ ]", attribute_get_description(attr));
+        set_item_userptr(self->items[i], (void *) attribute_get_name(attr));
     }
-    self->items[ATTR_COUNT] = NULL;
+    self->items[attr_count] = NULL;
 
     // Create the columns menu and post it
     self->menu = new_menu(self->items);

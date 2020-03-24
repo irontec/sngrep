@@ -191,7 +191,7 @@ call_state_to_str(enum CallState state)
 }
 
 gint
-call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
+call_attr_compare(const Call *one, const Call *two, Attribute *attr)
 {
     const gchar *onevalue = NULL, *twovalue = NULL;
     int oneintvalue = 0, twointvalue = 0;
@@ -199,32 +199,28 @@ call_attr_compare(const Call *one, const Call *two, enum AttributeId id)
     Message *msg_one = g_ptr_array_first(one->msgs);
     Message *msg_two = g_ptr_array_first(two->msgs);
 
-    switch (id) {
-        case ATTR_CALLINDEX:
-            oneintvalue = one->index;
-            twointvalue = two->index;
-            comparetype = 1;
-            break;
-        case ATTR_MSGCNT:
-            oneintvalue = call_msg_count(one);
-            twointvalue = call_msg_count(two);
-            comparetype = 1;
-            break;
-        default:
-            // Get attribute values
-            onevalue = msg_get_attribute(msg_one, id);
-            twovalue = msg_get_attribute(msg_two, id);
-            comparetype = 0;
-            break;
+    if (g_strcmp0(attr->name, ATTR_CALLINDEX) == 0) {
+        oneintvalue = one->index;
+        twointvalue = two->index;
+        comparetype = 1;
+    } else if (g_strcmp0(attr->name, ATTR_MSGCNT) == 0) {
+        oneintvalue = call_msg_count(one);
+        twointvalue = call_msg_count(two);
+        comparetype = 1;
+    } else {
+        // Get attribute values
+        onevalue = msg_get_attribute(msg_one, attr);
+        twovalue = msg_get_attribute(msg_two, attr);
+        comparetype = 0;
     }
 
     switch (comparetype) {
         case 0:
-            if (strlen(twovalue) == 0 && strlen(onevalue) == 0)
+            if (twovalue == NULL && onevalue == NULL)
                 return 0;
-            if (strlen(twovalue) == 0)
+            if (twovalue == NULL)
                 return 1;
-            if (strlen(onevalue) == 0)
+            if (onevalue == NULL)
                 return -1;
             return strcmp(onevalue, twovalue);
         case 1:

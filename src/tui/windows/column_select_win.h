@@ -66,7 +66,7 @@ struct _ColumnSelectWindow
     //! Columns menu
     MENU *menu;
     // Columns Items
-    ITEM *items[ATTR_COUNT + 1];
+    ITEM **items;
     //! Current selected columns
     GPtrArray *selected;
     //! Form that contains the save fields

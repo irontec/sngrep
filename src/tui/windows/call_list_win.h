@@ -68,9 +68,9 @@ typedef struct _CallListColumn CallListColumn;
 struct _CallListColumn
 {
     //! Attribute id of the column
-    enum AttributeId id;
+    Attribute *attr;
     //! Attribute name
-    const gchar *attr;
+    const gchar *name;
     //! Column title
     const gchar *title;
     //! Current column position
@@ -112,7 +112,7 @@ struct _CallListWindow
     // Columns sort menu
     MENU *menu;
     // Columns sort menu items
-    ITEM *items[ATTR_COUNT + 1];
+    ITEM **items;
     //! We're selecting sorting field
     gboolean menu_active;
     //! Move to last list entry if autoscroll is enabled

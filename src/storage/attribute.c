@@ -36,106 +36,108 @@
 static GPtrArray *attributes = NULL;
 
 Attribute *
-attr_new(gchar *name, gchar *title, gchar *desc)
+attribute_new(gchar *name, gchar *title, gchar *desc, gint length)
 {
     Attribute *attr = g_malloc0(sizeof(Attribute));
     attr->name = name;
-    attr->title = title;
+    attr->title = (title != NULL) ? title : desc;
     attr->desc = desc;
     attr->mutable = FALSE;
+    attr->length = length;
     return attr;
 }
 
 void
-attr_set_color_func(Attribute *attr, AttributeColorFunc func)
+attribute_set_color_func(Attribute *attr, AttributeColorFunc func)
 {
     g_return_if_fail(attr != NULL);
     attr->colorFunc = func;
 }
 
 void
-attr_set_getter_func(Attribute *attr, AttributeGetterFunc func)
+attribute_set_getter_func(Attribute *attr, AttributeGetterFunc func)
 {
     g_return_if_fail(attr != NULL);
     attr->getterFunc = func;
 }
 
 void
-attr_set_mutable(Attribute *attr, gboolean mutable)
+attribute_set_mutable(Attribute *attr, gboolean mutable)
 {
     g_return_if_fail(attr != NULL);
     attr->mutable = mutable;
 }
 
-Attribute *
-attr_header(enum AttributeId id)
+const gchar *
+attribute_get_description(Attribute *attribute)
 {
-    //! FIXME Do not use id as index
-    return g_ptr_array_index(attributes, id);
+    return attribute->desc;
+}
+
+void
+attribute_set_description(Attribute *attr, const gchar *desc)
+{
+    attr->desc = (gchar *) desc;
 }
 
 const gchar *
-attr_description(enum AttributeId id)
+attribute_get_title(Attribute *attr)
 {
-    Attribute *header;
-    if ((header = attr_header(id))) {
-        return header->desc;
-    }
-    return NULL;
+    return attr->title;
+}
+
+void
+attribute_set_title(Attribute *attr, const gchar *title)
+{
+    attr->title = (gchar *) title;
 }
 
 const gchar *
-attr_title(enum AttributeId id)
+attribute_get_name(Attribute *attr)
 {
-    Attribute *header;
-    if ((header = attr_header(id))) {
-        if (header->title)
-            return header->title;
-        return header->desc;
-    }
-    return NULL;
-}
-
-const gchar *
-attr_name(enum AttributeId id)
-{
-    Attribute *header;
-    if ((header = attr_header(id))) {
-        return header->name;
-    }
-    return NULL;
+    return attr->name;
 }
 
 gint
-attr_find_by_name(const gchar *name)
+attribute_get_length(Attribute *attr)
+{
+    return attr->length;
+}
+
+void
+attribute_set_length(Attribute *attr, gint length)
+{
+    attr->length = length;
+}
+
+Attribute *
+attribute_find_by_name(const gchar *name)
 {
     for (guint i = 0; i < g_ptr_array_len(attributes); i++) {
         Attribute *attr = g_ptr_array_index(attributes, i);
         if (g_strcmp0(name, attr->name) == 0) {
-            return i;
+            return attr;
         }
     }
-    return -1;
+    return NULL;
 }
 
 gint
-attr_color(enum AttributeId id, const gchar *value)
+attribute_get_color(Attribute *attr, const gchar *value)
 {
-    Attribute *header;
 
     if (!setting_enabled(SETTING_CL_COLORATTR))
         return 0;
 
-    if ((header = attr_header(id))) {
-        if (header->colorFunc) {
-            return header->colorFunc(value);
-        }
+    if (attr->colorFunc) {
+        return attr->colorFunc(value);
     }
+
     return 0;
 }
 
 gchar *
-attr_get_value(Attribute *attr, Message *msg)
+attribute_get_value(Attribute *attr, Message *msg)
 {
     g_return_val_if_fail(msg != NULL, NULL);
     g_return_val_if_fail(attr != NULL, NULL);
@@ -148,7 +150,7 @@ attr_get_value(Attribute *attr, Message *msg)
 }
 
 gint
-attr_color_sip_method(const gchar *value)
+attribute_color_sip_method(const gchar *value)
 {
     switch (packet_sip_method_from_str(value)) {
         case SIP_METHOD_INVITE:
@@ -167,7 +169,7 @@ attr_color_sip_method(const gchar *value)
 }
 
 gint
-attr_color_call_state(const gchar *value)
+attribute_color_call_state(const gchar *value)
 {
     if (!strcmp(value, call_state_to_str(CALL_STATE_CALLSETUP)))
         return COLOR_PAIR(CP_YELLOW_ON_DEF);
@@ -187,7 +189,7 @@ attr_color_call_state(const gchar *value)
 }
 
 static gchar *
-attr_regex_value_getter(Attribute *attr, Message *msg)
+attribute_regex_value_getter(Attribute *attr, Message *msg)
 {
     gchar *ret = NULL;
 
@@ -302,7 +304,7 @@ attribute_getter_msg_transport(G_GNUC_UNUSED Attribute *attr, Message *msg)
 
 
 void
-attr_set_regex_pattern(Attribute *attr, gchar *pattern)
+attribute_set_regex_pattern(Attribute *attr, const gchar *pattern)
 {
     g_return_if_fail(attr != NULL);
     attr->regexp_pattern = pattern;
@@ -314,11 +316,11 @@ attr_set_regex_pattern(Attribute *attr, gchar *pattern)
         NULL
     );
 
-    attr->getterFunc = attr_regex_value_getter;
+    attr->getterFunc = attribute_regex_value_getter;
 }
 
 AttributeValue *
-attr_value_new(Attribute *attr, gchar *value)
+attribute_value_new(Attribute *attr, gchar *value)
 {
     AttributeValue *attr_value = g_malloc0(sizeof(AttributeValue));
     attr_value->attr = attr;
@@ -327,10 +329,48 @@ attr_value_new(Attribute *attr, gchar *value)
 }
 
 void
-attr_value_free(AttributeValue *attr_value)
+attribute_value_free(AttributeValue *attr_value)
 {
     g_free(attr_value->value);
     g_free(attr_value);
+}
+
+GPtrArray *
+attribute_get_internal_array()
+{
+    return attributes;
+}
+
+void
+attribute_from_setting(const gchar *setting, const gchar *value)
+{
+    GStrv attr_data = g_strsplit(setting, ".", 2);
+    if (g_strv_length(attr_data) < 2) {
+        g_printerr("Invalid attribute setting %s\n", setting);
+        return;
+    }
+
+    Attribute *attribute = attribute_find_by_name(attr_data[0]);
+    if (attribute == NULL) {
+        attribute = attribute_new(attr_data[0], "Untitled", "Attr W/O Description", 20);
+        g_ptr_array_add(attributes, attribute);
+    }
+
+    if (g_strcmp0(attr_data[1], "title") == 0) {
+        attribute_set_title(attribute, value);
+    }
+
+    if (g_strcmp0(attr_data[1], "desc") == 0) {
+        attribute_set_description(attribute, value);
+    }
+
+    if (g_strcmp0(attr_data[1], "regexp") == 0) {
+        attribute_set_regex_pattern(attribute, value);
+    }
+
+    if (g_strcmp0(attr_data[1], "length") == 0) {
+        attribute_set_length(attribute, g_atoi(value));
+    }
 }
 
 void
@@ -340,103 +380,103 @@ attribute_init()
     attributes = g_ptr_array_new();
 
     //! Call Index
-    attribute = attr_new("index", "Idx", "Call Index");
-    attr_set_getter_func(attribute, attribute_getter_call_index);
+    attribute = attribute_new("index", "Idx", "Call Index", 4);
+    attribute_set_getter_func(attribute, attribute_getter_call_index);
     g_ptr_array_add(attributes, attribute);
 
     //! From SIP header
-    attribute = attr_new("sipfrom", NULL, "SIP From");
-    attr_set_regex_pattern(attribute, "^(From|f):[^:]+:(?P<value>([^@;>\r]+@)?[^;>\r]+)");
+    attribute = attribute_new("sipfrom", NULL, "SIP From", 25);
+    attribute_set_regex_pattern(attribute, "^(From|f):[^:]+:(?P<value>([^@;>\r]+@)?[^;>\r]+)");
     g_ptr_array_add(attributes, attribute);
 
     //! From SIP header (URI user part)
-    attribute = attr_new("sipfromuser", NULL, "SIP From User");
-    attr_set_regex_pattern(attribute, "^(From|f):[^:]+:(?P<value>[^@;>\r]+)");
+    attribute = attribute_new("sipfromuser", NULL, "SIP From User", 20);
+    attribute_set_regex_pattern(attribute, "^(From|f):[^:]+:(?P<value>[^@;>\r]+)");
     g_ptr_array_add(attributes, attribute);
 
     //! To SIP header
-    attribute = attr_new("sipto", NULL, "SIP To");
-    attr_set_regex_pattern(attribute, "^(To|t):[^:]+:(?P<value>([^@;>\r]+@)?[^\r;>]+)");
+    attribute = attribute_new("sipto", NULL, "SIP To", 25);
+    attribute_set_regex_pattern(attribute, "^(To|t):[^:]+:(?P<value>([^@;>\r]+@)?[^\r;>]+)");
     g_ptr_array_add(attributes, attribute);
 
     //! To SIP header (URI user part )
-    attribute = attr_new("siptouser", NULL, "SIP To User");
-    attr_set_regex_pattern(attribute, "^(To|t):[^:]+:(?P<value>[^@;>\r]+)");
+    attribute = attribute_new("siptouser", NULL, "SIP To User", 20);
+    attribute_set_regex_pattern(attribute, "^(To|t):[^:]+:(?P<value>[^@;>\r]+)");
     g_ptr_array_add(attributes, attribute);
 
     //! Source ip:port address
-    attribute = attr_new("src", NULL, "Source");
-    attr_set_getter_func(attribute, attribute_getter_msg_source);
+    attribute = attribute_new("src", NULL, "Source", 22);
+    attribute_set_getter_func(attribute, attribute_getter_msg_source);
     g_ptr_array_add(attributes, attribute);
 
     //! Destination ip:port address
-    attribute = attr_new("dst", NULL, "Destination");
-    attr_set_getter_func(attribute, attribute_getter_msg_destination);
+    attribute = attribute_new("dst", NULL, "Destination", 22);
+    attribute_set_getter_func(attribute, attribute_getter_msg_destination);
     g_ptr_array_add(attributes, attribute);
 
     //! Call-Id SIP header
-    attribute = attr_new("callid", NULL, "Call-ID");
-    attr_set_regex_pattern(attribute, "^(Call-ID|i):\\s*(?P<value>.+)$");
+    attribute = attribute_new("callid", NULL, "Call-ID", 50);
+    attribute_set_regex_pattern(attribute, "^(Call-ID|i):\\s*(?P<value>.+)$");
     g_ptr_array_add(attributes, attribute);
 
     //! X-Call-Id SIP header
-    attribute = attr_new("xcallid", NULL, "X-Call-ID");
-    attr_set_regex_pattern(attribute, "^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$");
+    attribute = attribute_new("xcallid", NULL, "X-Call-ID", 50);
+    attribute_set_regex_pattern(attribute, "^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$");
     g_ptr_array_add(attributes, attribute);
 
     //! Packet captured date
-    attribute = attr_new("date", NULL, "Date");
-    attr_set_getter_func(attribute, attribute_getter_msg_date);
+    attribute = attribute_new("date", NULL, "Date", 10);
+    attribute_set_getter_func(attribute, attribute_getter_msg_date);
     g_ptr_array_add(attributes, attribute);
 
     //! Packet captured time
-    attribute = attr_new("time", NULL, "Time");
-    attr_set_getter_func(attribute, attribute_getter_msg_time);
+    attribute = attribute_new("time", NULL, "Time", 8);
+    attribute_set_getter_func(attribute, attribute_getter_msg_time);
     g_ptr_array_add(attributes, attribute);
 
     //! SIP Method
-    attribute = attr_new("method", NULL, "Method");
-    attr_set_getter_func(attribute, attribute_getter_msg_method);
-    attr_set_color_func(attribute, attr_color_sip_method);
+    attribute = attribute_new("method", NULL, "Method", 8);
+    attribute_set_getter_func(attribute, attribute_getter_msg_method);
+    attribute_set_color_func(attribute, attribute_color_sip_method);
     g_ptr_array_add(attributes, attribute);
 
     //! SIP Transport (SIP over TCP, UDP, WS, ...)
-    attribute = attr_new("transport", "Trans", "Transport");
-    attr_set_getter_func(attribute, attribute_getter_msg_transport);
+    attribute = attribute_new("transport", "Trans", "Transport", 3);
+    attribute_set_getter_func(attribute, attribute_getter_msg_transport);
     g_ptr_array_add(attributes, attribute);
 
     //! Owner call message count
-    attribute = attr_new("msgcnt", "Msgs", "Message Count");
-    attr_set_getter_func(attribute, attribute_getter_call_msgcnt);
-    attr_set_mutable(attribute, TRUE);
+    attribute = attribute_new("msgcnt", "Msgs", "Message Count", 4);
+    attribute_set_getter_func(attribute, attribute_getter_call_msgcnt);
+    attribute_set_mutable(attribute, TRUE);
     g_ptr_array_add(attributes, attribute);
 
     //! Owner call state
-    attribute = attr_new("state", NULL, "Call-State");
-    attr_set_getter_func(attribute, attribute_getter_call_state);
-    attr_set_color_func(attribute, attr_color_call_state);
+    attribute = attribute_new("state", NULL, "Call-State", 12);
+    attribute_set_getter_func(attribute, attribute_getter_call_state);
+    attribute_set_color_func(attribute, attribute_color_call_state);
     g_ptr_array_add(attributes, attribute);
 
     //! Conversation duration (from first 200 OK)
-    attribute = attr_new("convdur", "ConvDur", "Conversation Duration");
-    attr_set_getter_func(attribute, attribute_getter_call_convdur);
-    attr_set_mutable(attribute, TRUE);
+    attribute = attribute_new("convdur", "ConvDur", "Conversation Duration", 7);
+    attribute_set_getter_func(attribute, attribute_getter_call_convdur);
+    attribute_set_mutable(attribute, TRUE);
     g_ptr_array_add(attributes, attribute);
 
     //! Total duration (from first to last message in dialog)
-    attribute = attr_new("totaldur", "TotalDur", "Total Duration");
-    attr_set_getter_func(attribute, attribute_getter_call_totaldur);
-    attr_set_mutable(attribute, TRUE);
+    attribute = attribute_new("totaldur", "TotalDur", "Total Duration", 8);
+    attribute_set_getter_func(attribute, attribute_getter_call_totaldur);
+    attribute_set_mutable(attribute, TRUE);
     g_ptr_array_add(attributes, attribute);
 
     //! Reason SIP header
-    attribute = attr_new("reason", "Reason", "Reason Text");
-    attr_set_regex_pattern(attribute, "Reason:[ ]*[^\r]*;text=\"(?<value>[^\r]+)\"");
+    attribute = attribute_new("reason", "Reason", "Reason Text", 25);
+    attribute_set_regex_pattern(attribute, "Reason:[ ]*[^\r]*;text=\"(?<value>[^\r]+)\"");
     g_ptr_array_add(attributes, attribute);
 
     //! Warning SIP header
-    attribute = attr_new("warning", "Warning", "Warning Code");
-    attr_set_regex_pattern(attribute, "^Warning:\\s*(?P<value>\\d+)");
+    attribute = attribute_new("warning", "Warning", "Warning Code", 4);
+    attribute_set_regex_pattern(attribute, "^Warning:\\s*(?P<value>\\d+)");
     g_ptr_array_add(attributes, attribute);
 }
 
@@ -449,7 +489,7 @@ attribute_dump()
         g_print("Attribute: %-15s Description: %-25s Getter: %s\n",
                 attr->name,
                 attr->desc,
-                (attr->regex) ? g_strescape(attr->regexp_pattern, NULL) : "internal"
+                (attr->regex) ? g_strescape(attr->regexp_pattern, "\\") : "internal"
         );
     }
 }

@@ -366,10 +366,10 @@ call_list_draw_list(CallListWindow *self)
     for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
         CallListColumn *column = g_ptr_array_index(self->columns, i);
         // Get current column title
-        const gchar *coldesc = attr_title(column->id);
+        const gchar *coldesc = attribute_get_title(column->attr);
 
         // Print sort column indicator
-        if (column->id == sort.by) {
+        if (column->attr == sort.by) {
             wattron(pad, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
             gchar sortind = (gchar) ((sort.asc) ? '^' : 'v');
             mvwprintw(pad, 0, colpos, "%c%.*s", sortind, column->width, coldesc);
@@ -416,7 +416,7 @@ call_list_draw_list(CallListWindow *self)
 
             // Get call attribute for current column
             const gchar *coltext = NULL;
-            if ((coltext = msg_get_attribute(msg, column->id)) == NULL) {
+            if ((coltext = msg_get_attribute(msg, column->attr)) == NULL) {
                 colpos += column->width + 1;
                 continue;
             }
@@ -424,7 +424,7 @@ call_list_draw_list(CallListWindow *self)
             // Enable attribute color (if not current one)
             color = 0;
             if (self->cur_idx != (gint) i) {
-                if ((color = attr_color(column->id, coltext)) > 0) {
+                if ((color = attribute_get_color(column->attr, coltext)) > 0) {
                     wattron(pad, color);
                 }
             }
@@ -576,7 +576,7 @@ call_list_win_line_text(Window *window, Call *call)
 
         // Get call attribute for current column
         const gchar *call_attr = NULL;
-        if ((call_attr = msg_get_attribute(msg, column->id)) != NULL) {
+        if ((call_attr = msg_get_attribute(msg, column->attr)) != NULL) {
             g_string_append(out, call_attr);
         }
     }
@@ -609,12 +609,15 @@ call_list_select_sort_attribute(CallListWindow *self)
     wresize(self->list_win, height - 5, width - 12);
     mvderwin(self->list_win, 4, 12);
 
+    // Allocate memory for all items
+    self->items = g_malloc0_n(g_ptr_array_len(self->columns) + 1, sizeof(ITEM *));
+
     // Create menu entries
     ITEM *selected = NULL;
     for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
         CallListColumn *column = g_ptr_array_index(self->columns, i);
-        self->items[i] = new_item(attr_name(column->id), 0);
-        if (column->id == sort.by) {
+        self->items[i] = new_item(attribute_get_name(column->attr), 0);
+        if (column->attr == sort.by) {
             selected = self->items[i];
         }
     }
@@ -737,9 +740,10 @@ call_list_handle_menu_key(CallListWindow *self, int key)
     MENU *menu;
     int i;
     StorageSortOpts sort;
-    enum AttributeId id;
+    Attribute *attr;
 
     menu = self->menu;
+    gint item_cnt = item_count(menu);
 
     // Check actions for this key
     enum KeybindingAction action = ACTION_UNKNOWN;
@@ -762,11 +766,11 @@ call_list_handle_menu_key(CallListWindow *self, int key)
             case ACTION_SELECT:
                 // Change sort attribute
                 sort = storage_sort_options();
-                id = attr_find_by_name(item_name(current_item(self->menu)));
-                if (sort.by == id) {
+                attr = attribute_find_by_name(item_name(current_item(self->menu)));
+                if (sort.by == attr) {
                     sort.asc = (sort.asc) ? FALSE : TRUE;
                 } else {
-                    sort.by = id;
+                    sort.by = attr;
                 }
                 storage_set_sort_options(sort);
                 /* fall-thru */
@@ -779,7 +783,7 @@ call_list_handle_menu_key(CallListWindow *self, int key)
                 free_menu(self->menu);
 
                 // Remove items
-                for (i = 0; i < ATTR_COUNT; i++) {
+                for (i = 0; i < item_cnt; i++) {
                     if (!self->items[i])
                         break;
                     free_item(self->items[i]);
@@ -1094,12 +1098,12 @@ call_list_column_sorter(const CallListColumn **a, const CallListColumn **b)
  * @return 0 if column has been successfully added to the list, -1 otherwise
  */
 static void
-call_list_add_column(CallListWindow *self, enum AttributeId id, const char *attr,
+call_list_add_column(CallListWindow *self, Attribute *attr, const char *name,
                      const char *title, gint position, int width)
 {
     CallListColumn *column = g_malloc0(sizeof(CallListColumn));
-    column->id = id;
     column->attr = attr;
+    column->name = name;
     column->title = title;
     column->position = position;
     column->width = width;
@@ -1171,19 +1175,21 @@ call_list_constructed(GObject *object)
 
     // Add configured columns
     self->columns = g_ptr_array_new_with_free_func(g_free);
-    for (guint attr_id = 0; attr_id < ATTR_COUNT; attr_id++) {
+    GPtrArray *attributes = attribute_get_internal_array();
+    for (guint i = 0; i < g_ptr_array_len(attributes); i++) {
+        Attribute *attr = g_ptr_array_index(attributes, i);
         // Get column attribute name from options
-        gint position = setting_column_pos(attr_id);
+        gint position = setting_column_pos(attr);
         // Check column is visible
         if (position == -1) continue;
 
         // Get column information
-        gint collen = setting_column_width(attr_id);
-        const gchar *title = attr_title(attr_id);
-        const gchar *field = attr_name(attr_id);
+        gint collen = attribute_get_length(attr);
+        const gchar *title = attribute_get_title(attr);
+        const gchar *field = attribute_get_name(attr);
 
         // Add column to the list
-        call_list_add_column(self, attr_id, field, title, position, collen);
+        call_list_add_column(self, attr, field, title, position, collen);
     }
     g_ptr_array_sort(self->columns, (GCompareFunc) call_list_column_sorter);
 

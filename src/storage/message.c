@@ -54,7 +54,7 @@ msg_free(Message *msg)
 {
     // Free message packets
     packet_unref(msg->packet);
-    g_slist_free_full(msg->attributes, (GDestroyNotify) attr_value_free);
+    g_slist_free_full(msg->attributes, (GDestroyNotify) attribute_value_free);
     g_free(msg);
 }
 
@@ -157,11 +157,8 @@ msg_get_time(const Message *msg)
 }
 
 const gchar *
-msg_get_attribute(Message *msg, gint id)
+msg_get_attribute(Message *msg, Attribute *attr)
 {
-    Attribute *attr = attr_header(id);
-    g_return_val_if_fail(attr != NULL, NULL);
-
     AttributeValue *cached_value = NULL;
 
     //! Check if this attribute was already requested
@@ -181,14 +178,14 @@ msg_get_attribute(Message *msg, gint id)
         } else {
             //! Attribute value changes, cached value is obsolete
             msg->attributes = g_slist_remove(msg->attributes, cached_value);
-            attr_value_free(cached_value);
+            attribute_value_free(cached_value);
         }
     }
 
     //! Get current attribute value
-    cached_value = attr_value_new(
+    cached_value = attribute_value_new(
         attr,
-        attr_get_value(attr, msg)
+        attribute_get_value(attr, msg)
     );
 
     //! Store value in attribute cache for future requests
@@ -217,10 +214,10 @@ msg_get_header(Message *msg, char *out)
 {
     // Get msg header
     sprintf(out, "%s %s %s -> %s",
-            msg_get_attribute(msg, ATTR_DATE),
-            msg_get_attribute(msg, ATTR_TIME),
-            msg_get_attribute(msg, ATTR_SRC),
-            msg_get_attribute(msg, ATTR_DST)
+            msg_get_attribute(msg, attribute_find_by_name(ATTR_DATE)),
+            msg_get_attribute(msg, attribute_find_by_name(ATTR_TIME)),
+            msg_get_attribute(msg, attribute_find_by_name(ATTR_SRC)),
+            msg_get_attribute(msg, attribute_find_by_name(ATTR_DST))
     );
     return out;
 }

@@ -310,34 +310,15 @@ setting_enum_next(SettingId id)
 }
 
 gint
-setting_column_pos(enum AttributeId id)
+setting_column_pos(Attribute *attr)
 {
-    const gchar *sett_name = attr_name(id);
-    g_return_val_if_fail(sett_name != NULL, -1);
-
-    gchar *sett_text = g_strdup_printf("cl.column.%s.pos", sett_name);
-    g_return_val_if_fail(sett_text != NULL, -1);
-
-    gint sett_id = setting_id(sett_text);
-    g_free(sett_text);
-    g_return_val_if_fail(sett_id != SETTING_UNKNOWN, -1);
-
-    return setting_get_intvalue(sett_id);
-}
-
-gint
-setting_column_width(enum AttributeId id)
-{
-    const gchar *sett_name = attr_name(id);
-    g_return_val_if_fail(sett_name != NULL, -1);
-
-    gchar *sett_text = g_strdup_printf("cl.column.%s.width", sett_name);
-    g_return_val_if_fail(sett_text != NULL, -1);
-
-    gint sett_id = setting_id(sett_text);
-    g_free(sett_text);
-
-    return setting_get_intvalue(sett_id);
+    g_auto(GStrv) columns = g_strsplit(setting_get_value(SETTING_CL_COLUMNS), ",", 0);
+    for (gint i = 0; i < (gint) g_strv_length(columns); i++) {
+        if (g_strcmp0(columns[i], attr->name) == 0) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 /**
@@ -452,6 +433,8 @@ setting_read_file(const gchar *fname)
                 key_bind_action(key_action_id(option), key_from_str(value));
             } else if (!strcasecmp(type, "unbind")) {
                 key_unbind_action(key_action_id(option), key_from_str(value));
+            } else if (!strcasecmp(type, "attr")) {
+                attribute_from_setting(option, g_strdup(value));
             }
         }
     }
@@ -535,14 +518,14 @@ settings_init(SettingOpts options)
                     setting_bool_new("sip.noincomplete", TRUE));
     g_ptr_array_set(settings->values, SETTING_STORAGE_MAX_QUEUE,
                     setting_number_new("storage.max_queue_size", 1000));
-    g_ptr_array_set(settings->values, SETTING_SIP_HEADER_X_CID,
-                    setting_string_new("sip.xcid", "X-Call-ID|X-CID"));
     g_ptr_array_set(settings->values, SETTING_SIP_CALLS,
                     setting_bool_new("sip.calls", FALSE));
     g_ptr_array_set(settings->values, SETTING_SAVEPATH,
                     setting_string_new("savepath", curdir));
     g_ptr_array_set(settings->values, SETTING_DISPLAY_ALIAS,
                     setting_bool_new("displayalias", FALSE));
+    g_ptr_array_set(settings->values, SETTING_CL_COLUMNS,
+                    setting_string_new("cl.columns", "index,method,sipfrom,sipto,msgcnt,src,dst,state"));
     g_ptr_array_set(settings->values, SETTING_CL_SCROLLSTEP,
                     setting_number_new("cl.scrollstep", 4));
     g_ptr_array_set(settings->values, SETTING_CL_COLORATTR,
@@ -550,87 +533,11 @@ settings_init(SettingOpts options)
     g_ptr_array_set(settings->values, SETTING_CL_AUTOSCROLL,
                     setting_bool_new("cl.autoscroll", FALSE));
     g_ptr_array_set(settings->values, SETTING_CL_SORTFIELD,
-                    setting_string_new("cl.sortfield", attr_name(ATTR_CALLINDEX)));
+                    setting_string_new("cl.sortfield", ATTR_CALLINDEX));
     g_ptr_array_set(settings->values, SETTING_CL_SORTORDER,
                     setting_string_new("cl.sortorder", "asc"));
     g_ptr_array_set(settings->values, SETTING_CL_FIXEDCOLS,
                     setting_number_new("cl.fixedcols", 2));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_POS,
-                    setting_number_new("cl.column.index.pos", 0));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_INDEX_WIDTH,
-                    setting_number_new("cl.column.index.width", 4));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_POS,
-                    setting_number_new("cl.column.sipfrom.pos", 2));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROM_WIDTH,
-                    setting_number_new("cl.column.sipfrom.width", 25));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_POS,
-                    setting_number_new("cl.column.sipfromuser.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPFROMUSER_WIDTH,
-                    setting_number_new("cl.column.sipfromuser.width", 20));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_POS,
-                    setting_number_new("cl.column.sipto.pos", 3));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTO_WIDTH,
-                    setting_number_new("cl.column.sipto.width", 25));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_POS,
-                    setting_number_new("cl.column.siptouser.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SIPTOUSER_WIDTH,
-                    setting_number_new("cl.column.siptouser.width", 20));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_POS,
-                    setting_number_new("cl.column.src.pos", 5));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_SRC_WIDTH,
-                    setting_number_new("cl.column.src.width", 22));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_DST_POS,
-                    setting_number_new("cl.column.dst.pos", 6));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_DST_WIDTH,
-                    setting_number_new("cl.column.dst.width", 22));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_POS,
-                    setting_number_new("cl.column.callid.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLID_WIDTH,
-                    setting_number_new("cl.column.callid.width", 50));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_POS,
-                    setting_number_new("cl.column.xcallid.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_XCALLID_WIDTH,
-                    setting_number_new("cl.column.xcallid.width", 50));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_POS,
-                    setting_number_new("cl.column.date.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_DATE_WIDTH,
-                    setting_number_new("cl.column.date.width", 10));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_POS,
-                    setting_number_new("cl.column.time.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_TIME_WIDTH,
-                    setting_number_new("cl.column.time.width", 8));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_POS,
-                    setting_number_new("cl.column.method.pos", 1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_METHOD_WIDTH,
-                    setting_number_new("cl.column.method.width", 10));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_POS,
-                    setting_number_new("cl.column.transport.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_TRANSPORT_WIDTH,
-                    setting_number_new("cl.column.transport.width", 3));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_POS,
-                    setting_number_new("cl.column.msgcnt.pos", 4));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_MSGCNT_WIDTH,
-                    setting_number_new("cl.column.msgcnt.width", 5));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_POS,
-                    setting_number_new("cl.column.state.pos", 7));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_CALLSTATE_WIDTH,
-                    setting_number_new("cl.column.state.width", 12));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_POS,
-                    setting_number_new("cl.column.convdur.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_CONVDUR_WIDTH,
-                    setting_number_new("cl.column.convdur.width", 7));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_POS,
-                    setting_number_new("cl.column.totaldur.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_TOTALDUR_WIDTH,
-                    setting_number_new("cl.column.totaldur.width", 8));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_POS,
-                    setting_number_new("cl.column.reason.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_REASON_TXT_WIDTH,
-                    setting_number_new("cl.column.reason.width", 25));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_POS,
-                    setting_number_new("cl.column.warning.pos", -1));
-    g_ptr_array_set(settings->values, SETTING_CL_COL_WARNING_WIDTH,
-                    setting_number_new("cl.column.warning.width", 4));
     g_ptr_array_set(settings->values, SETTING_CF_FORCERAW,
                     setting_bool_new("cf.forceraw", TRUE));
     g_ptr_array_set(settings->values, SETTING_CF_RAWMINWIDTH,
@@ -734,8 +641,8 @@ settings_dump()
     g_print("\nSettings List\n===============\n");
     for (guint i = 1; i < SETTING_COUNT; i++) {
         g_print("SettingId: %d\t SettingName: %-30s Value: %s\n", i,
-               setting_name(i),
-               setting_get_value(i));
+                setting_name(i),
+                setting_get_value(i));
     }
 
     if (settings->alias) {
@@ -754,8 +661,8 @@ settings_dump()
         for (GList *l = settings->externips; l != NULL; l = l->next) {
             SettingExtenIp *externip = l->data;
             g_print("Address: %s\t ExternIP: %s\n",
-                   externip->address,
-                   externip->externip
+                    externip->address,
+                    externip->externip
             );
         }
     }

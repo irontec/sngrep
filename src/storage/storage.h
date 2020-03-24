@@ -63,7 +63,7 @@ typedef struct _StorageCaptureOpts StorageCaptureOpts;
 struct _StorageSortOpts
 {
     //! Sort call list by this attribute
-    enum AttributeId by;
+    Attribute *by;
     //! Sort by attribute ascending
     gboolean asc;
 };

@@ -200,11 +200,11 @@ msg_get_time(const Message *msg);
  * fields directly.
  *
  * @param msg SIP message structure
- * @param id Attribute id
+ * @param attr Attribute pointer
  * @return Attribute value or NULL if not found
  */
 const gchar *
-msg_get_attribute(Message *msg, gint id);
+msg_get_attribute(Message *msg, Attribute *attr);
 
 const gchar *
 msg_get_preferred_codec_alias(Message *msg);

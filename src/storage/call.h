@@ -193,7 +193,7 @@ call_state_to_str(enum CallState state);
  * @return -1 if first call is lesser
  */
 gint
-call_attr_compare(const Call *one, const Call *two, enum AttributeId id);
+call_attr_compare(const Call *one, const Call *two, Attribute *attr);
 
 /**
  * @brief Relate this two calls
