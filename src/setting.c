@@ -60,6 +60,22 @@ setting_enum_to_string(const GValue *src_value, GValue *dst_value)
 }
 
 /**
+ * @brief Convert String to Enum
+ * @param src_value String type GValue
+ * @param dst_value Enum type GValue
+ */
+static void
+setting_string_to_enum(const GValue *src_value, GValue *dst_value)
+{
+    GType enum_type = G_VALUE_TYPE(dst_value);
+    GEnumClass *enum_class = g_type_class_ref(enum_type);
+    g_return_if_fail(enum_class != NULL);
+    GEnumValue *enum_value = g_enum_get_value_by_nick(enum_class, g_value_get_string(src_value));
+    g_return_if_fail(enum_value != NULL);
+    g_value_set_enum(dst_value, enum_value->value);
+}
+
+/**
  * @brief Convert Boolean to String
  * @param src_value Boolean type GValue
  * @param dst_value String type GValue
@@ -450,6 +466,7 @@ settings_init(SettingOpts options)
 
     // Custom transform functions
     g_value_register_transform_func(G_TYPE_ENUM, G_TYPE_STRING, setting_enum_to_string);
+    g_value_register_transform_func(G_TYPE_STRING, G_TYPE_ENUM, setting_string_to_enum);
     g_value_register_transform_func(G_TYPE_BOOLEAN, G_TYPE_STRING, setting_bool_to_string);
     g_value_register_transform_func(G_TYPE_STRING, G_TYPE_BOOLEAN, setting_string_to_bool);
 
@@ -637,7 +654,7 @@ void
 settings_dump()
 {
     g_print("\nSettings List\n===============\n");
-    for (guint i = 1; i < SETTING_COUNT; i++) {
+    for (guint i = 0; i < SETTING_COUNT; i++) {
         g_print("SettingId: %d\t SettingName: %-30s Value: %s\n", i,
                 setting_name(i),
                 setting_get_value(i));
