@@ -190,7 +190,7 @@ packet_proto_free(gpointer data, Packet *packet)
     g_return_if_fail(proto != NULL);
 
     // Use dissector free function
-    PacketDissector *dissector = storage_find_dissector(proto->id);
+    PacketDissector *dissector = packet_dissector_find_by_id(proto->id);
     packet_dissector_free_data(dissector, packet);
 
     // Remove protocol information from the list

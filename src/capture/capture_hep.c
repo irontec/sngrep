@@ -195,9 +195,10 @@ capture_input_hep(const gchar *url, GError **error)
 
     // Create a new structure to handle this capture source
     g_autofree gchar *source_str = g_strdup_printf("L:%s", hep->url.port);
-    capture_input_set_source_str(CAPTURE_INPUT(hep), source_str);
-    capture_input_set_mode(CAPTURE_INPUT(hep), CAPTURE_MODE_ONLINE);
-    capture_input_set_initial_protocol(CAPTURE_INPUT(hep), PACKET_PROTO_HEP);
+    CaptureInput *input = CAPTURE_INPUT(hep);
+    capture_input_set_source_str(input, source_str);
+    capture_input_set_mode(input, CAPTURE_MODE_ONLINE);
+    capture_input_set_initial_protocol(input, packet_dissector_find_by_id(PACKET_PROTO_HEP));
 
     capture_input_set_source(
         CAPTURE_INPUT(hep),

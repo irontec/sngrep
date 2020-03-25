@@ -1097,7 +1097,6 @@ static int
 call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 {
     char text[50], time[20];
-    int height;
     Stream *stream = arrow->item;
     Message *msg;
     CallFlowArrow *msgarrow;
@@ -1105,9 +1104,6 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Get panel information
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, 0);
-
-    // Get the messages window
-    height = getmaxy(self->arrows_win);
 
     // Store arrow start line
     arrow->line = cline + 1;

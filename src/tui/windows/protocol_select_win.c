@@ -426,7 +426,7 @@ protocol_select_win_constructed(GObject *object)
     gint field_cnt = 0;
     for (guint proto_id = 1; proto_id < PACKET_PROTO_COUNT; proto_id++) {
         // Create a new field for this protocol
-        PacketDissector *dissector = storage_find_dissector(proto_id);
+        PacketDissector *dissector = packet_dissector_find_by_id(proto_id);
         if (dissector == NULL)
             continue;
 

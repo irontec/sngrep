@@ -74,13 +74,25 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
     packet->frames = g_list_append(packet->frames, frame);
 
     // Increase Capture input parsed bytes
+    CaptureInput *input = CAPTURE_INPUT(pcap);
     capture_input_set_loaded_size(
-        CAPTURE_INPUT(pcap),
-        capture_input_loaded_size(CAPTURE_INPUT(pcap)) + header->caplen
+        input,
+        capture_input_loaded_size(input) + header->caplen
     );
 
     // Pass packet to dissectors
-    storage_add_packet(packet);
+    GBytes *data = g_bytes_new_static(
+        g_bytes_get_data(frame->data, NULL),
+        g_bytes_get_size(frame->data)
+    );
+
+
+    // Pass packet data to the first dissector
+    PacketDissector *dissector = capture_input_initial_protocol(packet->input);
+    GBytes *pending = packet_dissector_dissect(dissector, packet, data);
+
+    // Remove packet reference after parsing (added in storage_add_packet)
+    g_bytes_unref(pending);
 }
 
 static gboolean
@@ -177,13 +189,14 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     }
 
     // Create a new structure to handle this capture source
-    capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_ONLINE);
-    capture_input_set_source_str(CAPTURE_INPUT(pcap), dev);
-    capture_input_set_initial_protocol(CAPTURE_INPUT(pcap), PACKET_PROTO_LINK);
+    CaptureInput *input = CAPTURE_INPUT(pcap);
+    capture_input_set_mode(input, CAPTURE_MODE_ONLINE);
+    capture_input_set_source_str(input, dev);
+    capture_input_set_initial_protocol(input, packet_dissector_find_by_id(PACKET_PROTO_LINK));
 
     // Create GSource for main loop
     capture_input_set_source(
-        CAPTURE_INPUT(pcap),
+        input,
         g_unix_fd_source_new(
             pcap_fileno(pcap->handle),
             G_IO_IN | G_IO_ERR | G_IO_HUP
@@ -191,13 +204,13 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     );
 
     g_source_set_callback(
-        capture_input_source(CAPTURE_INPUT(pcap)),
+        capture_input_source(input),
         (GSourceFunc) G_CALLBACK(capture_input_pcap_read_packet),
         pcap,
         (GDestroyNotify) capture_input_pcap_stop
     );
 
-    return CAPTURE_INPUT(pcap);
+    return input;
 }
 
 CaptureInput *
@@ -239,20 +252,22 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     }
 
     // Create a new structure to handle this capture source
-    capture_input_set_mode(CAPTURE_INPUT(pcap), CAPTURE_MODE_OFFLINE);
     g_autofree gchar *basename = g_path_get_basename(infile);
-    capture_input_set_source_str(CAPTURE_INPUT(pcap), basename);
+    CaptureInput *input = CAPTURE_INPUT(pcap);
+    capture_input_set_mode(input, CAPTURE_MODE_OFFLINE);
+    capture_input_set_source_str(input, basename);
+    capture_input_set_initial_protocol(input, packet_dissector_find_by_id(PACKET_PROTO_LINK));
 
     // Get File
     if (g_file_test(infile, G_FILE_TEST_IS_REGULAR)) {
         struct stat st = { 0 };
         stat(infile, &st);
-        capture_input_set_total_size(CAPTURE_INPUT(pcap), st.st_size);
+        capture_input_set_total_size(input, st.st_size);
     }
 
     // Create GSource for main loop
     capture_input_set_source(
-        CAPTURE_INPUT(pcap),
+        input,
         g_unix_fd_source_new(
             pcap_get_selectable_fd(pcap->handle),
             G_IO_IN | G_IO_ERR | G_IO_HUP
@@ -266,7 +281,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
         (GDestroyNotify) capture_input_pcap_stop
     );
 
-    return CAPTURE_INPUT(pcap);
+    return input;
 }
 
 gint

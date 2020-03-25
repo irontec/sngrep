@@ -39,10 +39,10 @@
 #include "packet_link.h"
 #include "glib-extra/glib.h"
 
-G_DEFINE_TYPE(PacketDissectorLink, packet_link, PACKET_TYPE_DISSECTOR)
+G_DEFINE_TYPE(PacketDissectorLink, packet_dissector_link, PACKET_TYPE_DISSECTOR)
 
 static GBytes *
-packet_link_dissect(PacketDissector *self, Packet *packet, GBytes *data)
+packet_dissector_link_dissect(PacketDissector *self, Packet *packet, GBytes *data)
 {
     // Get capture input from this packet
     CaptureInput *input = packet->input;
@@ -152,14 +152,14 @@ packet_link_size(gint link_type)
 }
 
 static void
-packet_link_class_init(PacketDissectorLinkClass *klass)
+packet_dissector_link_class_init(PacketDissectorLinkClass *klass)
 {
     PacketDissectorClass *dissector_class = PACKET_DISSECTOR_CLASS(klass);
-    dissector_class->dissect = packet_link_dissect;
+    dissector_class->dissect = packet_dissector_link_dissect;
 }
 
 static void
-packet_link_init(PacketDissectorLink *self)
+packet_dissector_link_init(PacketDissectorLink *self)
 {
     packet_dissector_add_subdissector(
         PACKET_DISSECTOR(self),

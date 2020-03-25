@@ -58,20 +58,7 @@
 #include <glib.h>
 #include "glib-extra/glib.h"
 #include "packet/dissector.h"
-#include "packet/packet_link.h"
-#include "packet/packet_ip.h"
-#include "packet/packet_udp.h"
-#include "packet/packet_tcp.h"
 #include "packet/packet_sip.h"
-#include "packet/packet_sdp.h"
-#include "packet/packet_rtp.h"
-#include "packet/packet_rtcp.h"
-#ifdef USE_HEP
-#include "packet/packet_hep.h"
-#endif
-#ifdef WITH_SSL
-#include "packet/packet_tls.h"
-#endif
 #include "setting.h"
 #include "filter.h"
 #include "storage.h"
@@ -466,37 +453,16 @@ storage_check_rtcp_packet(Packet *packet)
     capture_manager_output_packet(capture_manager_get_instance(), packet);
 }
 
-void
-storage_add_packet(Packet *packet)
-{
-    // Add the packet to the queue
-    while (capture_is_running()
-           && g_async_queue_length(storage->queue) > storage->options.capture.max_queue_size) {
-        g_usleep(10);
-    }
-    g_async_queue_push(storage->queue, (gpointer) packet);
-}
-
 static gboolean
 storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 {
-    PacketProtocolId initial = capture_input_initial_protocol(packet->input);
-    PacketDissector *dissector = storage_find_dissector(initial);
-    g_return_val_if_fail(dissector != NULL, TRUE);
-
-    const PacketFrame *frame = packet_first_frame(packet);
-    g_return_val_if_fail(frame != NULL, TRUE);
-
-    GBytes *data = g_bytes_new_static(
-        g_bytes_get_data(frame->data, NULL),
-        g_bytes_get_size(frame->data)
-    );
-
-    // Pass packet data to the first dissector
-    GBytes *pending = packet_dissector_dissect(dissector, packet, data);
-
-    // Remove packet reference after parsing (added in storage_add_packet)
-    g_bytes_unref(pending);
+    if (packet_has_protocol(packet, PACKET_PROTO_SIP)) {
+        storage_check_sip_packet(packet);
+    } else if (packet_has_protocol(packet, PACKET_PROTO_RTP)) {
+        storage_check_rtp_packet(packet);
+    } else if (packet_has_protocol(packet, PACKET_PROTO_RTCP)) {
+        storage_check_rtcp_packet(packet);
+    }
 
     if (storage->options.capture.mode == STORAGE_MODE_NONE) {
         g_list_free_full(packet->frames, (GDestroyNotify) packet_frame_free);
@@ -505,6 +471,12 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 
     packet_unref(packet);
     return TRUE;
+}
+
+void
+storage_add_packet(Packet *packet)
+{
+    g_async_queue_push(storage->queue, (gpointer) packet);
 }
 
 gint
@@ -537,9 +509,10 @@ storage_check_memory()
     // Check if memory has reached the limit
     if (storage_memory_usage() >= storage_memory_limit()) {
 
-        // Stop capture manager
-        capture_manager_stop(
-            capture_manager_get_instance()
+        // Pause capture manager
+        capture_manager_set_pause(
+            capture_manager_get_instance(),
+            TRUE
         );
 
         // Convert memory limit to a human readable format
@@ -560,7 +533,7 @@ storage_check_memory()
         } else {
             fprintf(
                 stderr,
-                "Memory limit %s has been reached. \n\n%s\n%s\n",
+                "\rMemory limit %s has been reached. %s %s\n",
                 limit,
                 "Capture has been stopped.",
                 "See capture.mem_limit setting and -m flag for further info."
@@ -632,10 +605,6 @@ storage_new(StorageOpts options, GError **error)
     // Set queue max size (captures will wait until stored packets are parsed)
     storage->options.capture.max_queue_size = setting_get_intvalue(SETTING_STORAGE_MAX_QUEUE);
 
-    // Dissectors array
-    storage->dissectors = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
-    g_ptr_array_set_size(storage->dissectors, PACKET_PROTO_COUNT);
-
     // Memory limit checker
     if (storage->options.capture.memory_limit > 0) {
         g_timeout_add(
@@ -651,60 +620,4 @@ storage_new(StorageOpts options, GError **error)
     g_source_attach(source, NULL);
 
     return storage;
-}
-
-PacketDissector *
-storage_find_dissector(PacketProtocolId id)
-{
-    PacketDissector *dissector = g_ptr_array_index(storage->dissectors, id);
-    if (dissector == NULL) {
-        switch (id) {
-            case PACKET_PROTO_LINK:
-                dissector = packet_dissector_link_new();
-                break;
-            case PACKET_PROTO_IP:
-                dissector = packet_dissector_ip_new();
-                break;
-            case PACKET_PROTO_UDP:
-                dissector = packet_dissector_udp_new();
-                break;
-            case PACKET_PROTO_TCP:
-                dissector = packet_dissector_tcp_new();
-                break;
-            case PACKET_PROTO_SIP:
-                dissector = packet_dissector_sip_new();
-                break;
-            case PACKET_PROTO_SDP:
-                dissector = packet_dissector_sdp_new();
-                break;
-            case PACKET_PROTO_RTP:
-                dissector = packet_dissector_rtp_new();
-                break;
-            case PACKET_PROTO_RTCP:
-                dissector = packet_dissector_rtcp_new();
-                break;
-#ifdef USE_HEP
-            case PACKET_PROTO_HEP:
-                dissector = packet_dissector_hep_new();
-                break;
-#endif
-#ifdef WITH_SSL
-            case PACKET_PROTO_TLS:
-                dissector = packet_dissector_tls_new();
-                break;
-#endif
-            default:
-                // Unsupported protocol id
-                return NULL;
-        }
-
-        // Ignore not enabled dissectors
-        if (dissector == NULL)
-            return NULL;
-
-        // Add to proto list
-        g_ptr_array_set(storage->dissectors, id, dissector);
-    }
-
-    return dissector;
 }

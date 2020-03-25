@@ -47,8 +47,8 @@ G_BEGIN_DECLS
 #define DLT_NFLOG       239
 #define NFULA_PAYLOAD   9
 
-#define PACKET_DISSECTOR_TYPE_LINK packet_link_get_type()
-G_DECLARE_FINAL_TYPE(PacketDissectorLink, packet_link, PACKET_DISSECTOR, LINK, PacketDissector)
+#define PACKET_DISSECTOR_TYPE_LINK packet_dissector_link_get_type()
+G_DECLARE_FINAL_TYPE(PacketDissectorLink, packet_dissector_link, PACKET_DISSECTOR, LINK, PacketDissector)
 
 struct _PacketDissectorLink
 {

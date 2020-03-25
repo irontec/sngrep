@@ -145,7 +145,7 @@ packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
     packet_set_protocol_data(packet, PACKET_PROTO_RTP, rtp);
 
     // Add data to storage
-    storage_check_rtp_packet(packet);
+    storage_add_packet(packet);
 
     return NULL;
 }

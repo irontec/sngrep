@@ -147,8 +147,6 @@ struct _Storage
     GHashTable *streams;
     //! Storage processing source
     GSource *source;
-    //! Available Dissectors array
-    GPtrArray *dissectors;
     //! Packet waiting to be processed
     GAsyncQueue *queue;
 };
@@ -295,10 +293,5 @@ storage_memory_usage();
 gsize
 storage_memory_limit();
 
-/**
- * @brief Return a packet dissector for a given type
- */
-PacketDissector *
-storage_find_dissector(PacketProtocolId id);
 
 #endif /* __SNGREP_STORAGE_H */

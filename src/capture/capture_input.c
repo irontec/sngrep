@@ -28,6 +28,7 @@
  */
 #include "config.h"
 #include <glib.h>
+#include <packet/dissector.h>
 #include "capture_input.h"
 
 typedef struct
@@ -47,7 +48,7 @@ typedef struct
     //! Input loaded bytes so far
     guint64 loaded;
     //! Initial dissector for this input packets
-    PacketProtocolId initial;
+    PacketDissector *initial;
 } CaptureInputPrivate;
 
 // CaptureInput class definition
@@ -211,18 +212,18 @@ capture_input_loaded_size(CaptureInput *self)
 
 
 void
-capture_input_set_initial_protocol(CaptureInput *self, PacketProtocolId id)
+capture_input_set_initial_protocol(CaptureInput *self, PacketDissector *dissector)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
     g_return_if_fail(priv != NULL);
-    priv->initial = id;
+    priv->initial = dissector;
 }
 
-PacketProtocolId
+PacketDissector *
 capture_input_initial_protocol(CaptureInput *self)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
-    g_return_val_if_fail(priv != NULL, -1);
+    g_return_val_if_fail(priv != NULL, NULL);
     return priv->initial;
 }
 

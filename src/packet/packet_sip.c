@@ -339,7 +339,7 @@ packet_dissector_sip_dissect(PacketDissector *self, Packet *packet, GBytes *data
     packet_dissector_next(self, packet, data);
 
     // Add data to storage
-    storage_check_sip_packet(packet);
+    storage_add_packet(packet);
 
     return data;
 }

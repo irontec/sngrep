@@ -32,6 +32,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "capture.h"
+#include "packet/dissector.h"
 #include "packet/packet.h"
 
 G_BEGIN_DECLS
@@ -109,9 +110,9 @@ guint64
 capture_input_loaded_size(CaptureInput *self);
 
 void
-capture_input_set_initial_protocol(CaptureInput *self, PacketProtocolId id);
+capture_input_set_initial_protocol(CaptureInput *self, PacketDissector *dissector);
 
-PacketProtocolId
+PacketDissector *
 capture_input_initial_protocol(CaptureInput *self);
 
 G_END_DECLS

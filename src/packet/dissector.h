@@ -55,6 +55,12 @@ struct _PacketDissectorClass
     void (*free_data)(Packet *package);
 };
 
+/**
+ * @brief Return a packet dissector for a given type
+ */
+PacketDissector *
+packet_dissector_find_by_id(PacketProtocolId id);
+
 gboolean
 packet_dissector_enabled(PacketProtocolId id);
 

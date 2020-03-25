@@ -29,8 +29,23 @@
 #include "config.h"
 #include <glib.h>
 #include "glib-extra/glib_enum_types.h"
+#include "glib-extra/glib.h"
 #include "storage/storage.h"
 #include "setting.h"
+#include "packet/packet_link.h"
+#include "packet/packet_ip.h"
+#include "packet/packet_udp.h"
+#include "packet/packet_tcp.h"
+#include "packet/packet_sip.h"
+#include "packet/packet_sdp.h"
+#include "packet/packet_rtp.h"
+#include "packet/packet_rtcp.h"
+#ifdef USE_HEP
+#include "packet/packet_hep.h"
+#endif
+#ifdef WITH_SSL
+#include "packet/packet_tls.h"
+#endif
 #include "dissector.h"
 
 enum
@@ -41,6 +56,9 @@ enum
 };
 
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
+
+//! Available Dissectors array
+GPtrArray *dissectors = NULL;
 
 typedef struct
 {
@@ -55,6 +73,68 @@ typedef struct
 // PacketDissector class definition
 G_DEFINE_TYPE_WITH_PRIVATE(PacketDissector, packet_dissector, G_TYPE_OBJECT)
 
+
+PacketDissector *
+packet_dissector_find_by_id(PacketProtocolId id)
+{
+    // Initialize dissectors cache
+    if (dissectors == NULL) {
+        dissectors = g_ptr_array_sized_new(PACKET_PROTO_COUNT);
+        g_ptr_array_set_size(dissectors, PACKET_PROTO_COUNT);
+    }
+
+    PacketDissector *dissector = g_ptr_array_index(dissectors, id);
+    if (dissector == NULL) {
+        switch (id) {
+            case PACKET_PROTO_LINK:
+                dissector = packet_dissector_link_new();
+                break;
+            case PACKET_PROTO_IP:
+                dissector = packet_dissector_ip_new();
+                break;
+            case PACKET_PROTO_UDP:
+                dissector = packet_dissector_udp_new();
+                break;
+            case PACKET_PROTO_TCP:
+                dissector = packet_dissector_tcp_new();
+                break;
+            case PACKET_PROTO_SIP:
+                dissector = packet_dissector_sip_new();
+                break;
+            case PACKET_PROTO_SDP:
+                dissector = packet_dissector_sdp_new();
+                break;
+            case PACKET_PROTO_RTP:
+                dissector = packet_dissector_rtp_new();
+                break;
+            case PACKET_PROTO_RTCP:
+                dissector = packet_dissector_rtcp_new();
+                break;
+#ifdef USE_HEP
+            case PACKET_PROTO_HEP:
+                dissector = packet_dissector_hep_new();
+                break;
+#endif
+#ifdef WITH_SSL
+            case PACKET_PROTO_TLS:
+                dissector = packet_dissector_tls_new();
+                break;
+#endif
+            default:
+                // Unsupported protocol id
+                return NULL;
+        }
+
+        // Ignore not enabled dissectors
+        if (dissector == NULL)
+            return NULL;
+
+        // Add to proto list
+        g_ptr_array_set(dissectors, id, dissector);
+    }
+
+    return dissector;
+}
 
 gboolean
 packet_dissector_enabled(PacketProtocolId id)
@@ -92,7 +172,10 @@ packet_dissector_add_subdissector(PacketDissector *self, PacketProtocolId id)
 {
     PacketDissectorPrivate *priv = packet_dissector_get_instance_private(self);
     if (packet_dissector_enabled(id)) {
-        priv->subdissectors = g_slist_append(priv->subdissectors, GINT_TO_POINTER(id));
+        priv->subdissectors = g_slist_append(
+            priv->subdissectors,
+            packet_dissector_find_by_id(id)
+        );
     }
 }
 
@@ -121,7 +204,7 @@ packet_dissector_free_data(PacketDissector *self, Packet *packet)
 GBytes *
 packet_dissector_next_proto(PacketProtocolId id, Packet *packet, GBytes *data)
 {
-    PacketDissector *dissector = storage_find_dissector(id);
+    PacketDissector *dissector = packet_dissector_find_by_id(id);
     if (dissector != NULL) {
         return packet_dissector_dissect(dissector, packet, data);
     } else {
@@ -139,9 +222,7 @@ packet_dissector_next(PacketDissector *current, Packet *packet, GBytes *data)
     PacketDissectorPrivate *priv = packet_dissector_get_instance_private(current);
     // Call each sub-dissectors until data is parsed (and it returns NULL)
     for (GSList *l = priv->subdissectors; l != NULL; l = l->next) {
-
-        data = packet_dissector_next_proto(GPOINTER_TO_INT(l->data), packet, data);
-
+        data = packet_dissector_dissect(l->data, packet, data);
         // All data dissected, we're done
         if (data == NULL) {
             break;
