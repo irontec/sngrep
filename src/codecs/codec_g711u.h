@@ -20,45 +20,19 @@
  **
  ****************************************************************************/
 /**
- * @file codec_g711a.h
+ * @file codec_g711u.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Functions to decode g711a (alaw) RTP packets
+ * @brief Functions to decode g711u (ulaw) RTP packets
  *
  */
 
-#ifndef __SNGREP_CODEC_H
-#define __SNGREP_CODEC_H
+#ifndef __SNGREP_G711U_H
+#define __SNGREP_G711U_H
 
-#include "storage/stream.h"
+#include <glib.h>
 
-#define RTP_CODEC_G711U 0
-#define RTP_CODEC_G711A 8
-#define RTP_CODEC_G729  18
+gint16 *
+codec_g711u_decode(GByteArray *input, gsize *decoded_len);
 
-//! Error reporting
-#define CODEC_ERROR (codec_error_quark())
-
-//! Error codes
-enum codec_errors
-{
-    CODEC_ERROR_INVALID_FORMAT = 0,
-};
-
-/**
- * @brief Codec domain struct for GError
- */
-GQuark
-codec_error_quark();
-
-/**
- * Decode stream rtp packets payload into raw byte array
- * @param stream Streams to decode payload
- * @param decoded Already decoded data from a previous call
- * @param error GError with failure description (optional)
- * @return a byte array of decoded rtp payload
- */
-GByteArray *
-codec_stream_decode(Stream *stream, GByteArray *decoded, GError **error);
-
-#endif      // __SNGREP_CODEC_H
+#endif

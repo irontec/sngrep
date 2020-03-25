@@ -21,6 +21,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 set(SOURCES
         src/codecs/codec.c
         src/codecs/codec_g711a.c
+        src/codecs/codec_g711u.c
         src/capture/capture.c
         src/capture/capture_pcap.c
         src/capture/capture_txt.c

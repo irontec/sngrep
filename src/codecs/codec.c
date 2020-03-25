@@ -29,6 +29,7 @@
 #include "config.h"
 #include <glib.h>
 #include "codecs/codec_g711a.h"
+#include "codecs/codec_g711u.h"
 #ifdef WITH_G729
 #include "codecs/codec_g729.h"
 #endif
@@ -91,6 +92,9 @@ codec_stream_decode(Stream *stream, GByteArray *decoded, GError **error)
     switch (stream->fmtcode) {
         case RTP_CODEC_G711A:
             dbytes = codec_g711a_decode(rtp_payload, &dlen);
+            break;
+        case RTP_CODEC_G711U:
+            dbytes = codec_g711u_decode(rtp_payload, &dlen);
             break;
 #ifdef WITH_G729
         case RTP_CODEC_G729:
