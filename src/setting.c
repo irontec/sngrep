@@ -447,7 +447,6 @@ settings_init(SettingOpts options)
 {
     // Custom user conf file
     const gchar *homedir = g_get_home_dir();
-    gchar *curdir = g_get_current_dir();
 
     // Custom transform functions
     g_value_register_transform_func(G_TYPE_ENUM, G_TYPE_STRING, setting_enum_to_string);
@@ -521,7 +520,7 @@ settings_init(SettingOpts options)
     g_ptr_array_set(settings->values, SETTING_SIP_CALLS,
                     setting_bool_new("sip.calls", FALSE));
     g_ptr_array_set(settings->values, SETTING_SAVEPATH,
-                    setting_string_new("savepath", curdir));
+                    setting_string_new("savepath", g_get_current_dir()));
     g_ptr_array_set(settings->values, SETTING_DISPLAY_ALIAS,
                     setting_bool_new("displayalias", FALSE));
     g_ptr_array_set(settings->values, SETTING_CL_COLUMNS,
@@ -614,7 +613,6 @@ settings_init(SettingOpts options)
             g_string_free(userconf, TRUE);
         }
     }
-    g_free(curdir);
 
     // Override settings if requested
     if (options.file != NULL) {
