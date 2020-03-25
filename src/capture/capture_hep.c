@@ -122,8 +122,13 @@ capture_input_hep_receive(G_GNUC_UNUSED gint fd,
     frame->data = g_bytes_new(buffer, received);
     packet->frames = g_list_append(packet->frames, frame);
 
-    // Pass packet to dissectors
-    storage_add_packet(packet);
+    // Pass packet data to the first dissector
+    PacketDissector *dissector = capture_input_initial_dissector(packet->input);
+    GBytes *rest = packet_dissector_dissect(dissector, packet, g_bytes_ref(frame->data));
+
+    // Free packet if not added to storage
+    if (rest != NULL) g_bytes_unref(rest);
+    packet_unref(packet);
 
     return TRUE;
 }
@@ -198,7 +203,7 @@ capture_input_hep(const gchar *url, GError **error)
     CaptureInput *input = CAPTURE_INPUT(hep);
     capture_input_set_source_str(input, source_str);
     capture_input_set_mode(input, CAPTURE_MODE_ONLINE);
-    capture_input_set_initial_protocol(input, packet_dissector_find_by_id(PACKET_PROTO_HEP));
+    capture_input_set_initial_dissector(input, packet_dissector_find_by_id(PACKET_PROTO_HEP));
 
     capture_input_set_source(
         CAPTURE_INPUT(hep),

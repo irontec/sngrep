@@ -167,7 +167,7 @@ packet_dissector_rtcp_parse(G_GNUC_UNUSED PacketDissector *self, Packet *packet,
     packet_set_protocol_data(packet, PACKET_PROTO_RTCP, rtcp);
 
     // Add data to storage
-    storage_check_rtcp_packet(packet);
+    storage_add_packet(packet);
 
     return NULL;
 }

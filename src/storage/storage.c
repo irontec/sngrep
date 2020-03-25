@@ -476,7 +476,7 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 void
 storage_add_packet(Packet *packet)
 {
-    g_async_queue_push(storage->queue, (gpointer) packet);
+    g_async_queue_push(storage->queue, (gpointer) packet_ref(packet));
 }
 
 gint

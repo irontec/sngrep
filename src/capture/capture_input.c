@@ -212,7 +212,7 @@ capture_input_loaded_size(CaptureInput *self)
 
 
 void
-capture_input_set_initial_protocol(CaptureInput *self, PacketDissector *dissector)
+capture_input_set_initial_dissector(CaptureInput *self, PacketDissector *dissector)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
     g_return_if_fail(priv != NULL);
@@ -220,7 +220,7 @@ capture_input_set_initial_protocol(CaptureInput *self, PacketDissector *dissecto
 }
 
 PacketDissector *
-capture_input_initial_protocol(CaptureInput *self)
+capture_input_initial_dissector(CaptureInput *self)
 {
     CaptureInputPrivate *priv = capture_input_get_instance_private(self);
     g_return_val_if_fail(priv != NULL, NULL);

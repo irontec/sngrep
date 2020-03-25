@@ -80,19 +80,13 @@ capture_input_pcap_parse_packet(CaptureInputPcap *pcap, const struct pcap_pkthdr
         capture_input_loaded_size(input) + header->caplen
     );
 
-    // Pass packet to dissectors
-    GBytes *data = g_bytes_new_static(
-        g_bytes_get_data(frame->data, NULL),
-        g_bytes_get_size(frame->data)
-    );
-
-
     // Pass packet data to the first dissector
-    PacketDissector *dissector = capture_input_initial_protocol(packet->input);
-    GBytes *pending = packet_dissector_dissect(dissector, packet, data);
+    PacketDissector *dissector = capture_input_initial_dissector(packet->input);
+    GBytes *rest = packet_dissector_dissect(dissector, packet, g_bytes_ref(frame->data));
 
-    // Remove packet reference after parsing (added in storage_add_packet)
-    g_bytes_unref(pending);
+    // Free packet if not added to storage
+    if (rest != NULL) g_bytes_unref(rest);
+    packet_unref(packet);
 }
 
 static gboolean
@@ -192,7 +186,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     CaptureInput *input = CAPTURE_INPUT(pcap);
     capture_input_set_mode(input, CAPTURE_MODE_ONLINE);
     capture_input_set_source_str(input, dev);
-    capture_input_set_initial_protocol(input, packet_dissector_find_by_id(PACKET_PROTO_LINK));
+    capture_input_set_initial_dissector(input, packet_dissector_find_by_id(PACKET_PROTO_LINK));
 
     // Create GSource for main loop
     capture_input_set_source(
@@ -256,7 +250,7 @@ capture_input_pcap_offline(const gchar *infile, GError **error)
     CaptureInput *input = CAPTURE_INPUT(pcap);
     capture_input_set_mode(input, CAPTURE_MODE_OFFLINE);
     capture_input_set_source_str(input, basename);
-    capture_input_set_initial_protocol(input, packet_dissector_find_by_id(PACKET_PROTO_LINK));
+    capture_input_set_initial_dissector(input, packet_dissector_find_by_id(PACKET_PROTO_LINK));
 
     // Get File
     if (g_file_test(infile, G_FILE_TEST_IS_REGULAR)) {
