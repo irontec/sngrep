@@ -159,13 +159,53 @@ capture_input_pcap_online(const gchar *dev, GError **error)
     }
 
     // Open capture device
-    pcap->handle = pcap_open_live(dev, MAXIMUM_SNAPLEN, 1, 1000, errbuf);
+    pcap->handle = pcap_create(dev, errbuf);
     if (pcap->handle == NULL) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
-                    CAPTURE_PCAP_ERROR_DEVICE_OPEN,
+                    CAPTURE_PCAP_ERROR_DEVICE_CREATE,
                     "Couldn't open device %s: %s",
                     dev, errbuf);
+        return NULL;
+    }
+
+    gint status = pcap_set_promisc(pcap->handle, 1);
+    if (status != 0) {
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_PROMISC,
+                    "Error setting promiscuous mode on %s: %s\n",
+                    dev, pcap_statustostr(status));
+        return NULL;
+    }
+
+    status = pcap_set_timeout(pcap->handle, 1000);
+    if (status != 0) {
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_TIMEOUT,
+                    "Error setting capture timeout on %s: %s\n",
+                    dev, pcap_statustostr(status));
+        return NULL;
+    }
+
+    status = pcap_set_snaplen(pcap->handle, MAXIMUM_SNAPLEN);
+    if (status != 0) {
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_SNAPLEN,
+                    "Error setting snaplen on %s: %s\n",
+                    dev, pcap_statustostr(status));
+        return NULL;
+    }
+
+    status = pcap_set_buffer_size(pcap->handle, 10 * G_BYTES_PER_MEGABYTE);
+    if (status != 0) {
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_BUFFER_SIZE,
+                    "Error setting buffer size on %s: %s\n",
+                    dev, pcap_statustostr(status));
         return NULL;
     }
 
