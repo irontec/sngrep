@@ -219,11 +219,13 @@ packet_dissector_ip_dissect(PacketDissector *self, Packet *packet, GBytes *data)
     ip_data->protocol = fragment->proto;
     packet_set_protocol_data(packet, PACKET_PROTO_IP, ip_data);
 
+    // Remove any payload trailer (trust IP len content field)
+    if (fragment->len < g_bytes_get_size(data)) {
+        data = g_bytes_set_size(data, fragment->len);
+    }
+
     // Get pending payload
     data = g_bytes_offset(data, fragment->hl);
-
-    // Remove any payload trailer (trust IP len content field)
-    data = g_bytes_set_size(data, fragment->len - fragment->hl);
 
     // If no fragmentation
     if (fragment->frag == 0) {
