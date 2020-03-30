@@ -72,6 +72,12 @@ typedef enum
 } SettingColorMode;
 
 /**
+ * @brief Get TUI omain struct for GError
+ */
+GQuark
+tui_error_quark();
+
+/**
  * @brief Initialize ncurses mode
  *
  * @param error GError with failure description (optional)

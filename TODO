@@ -2,12 +2,6 @@ ToDo List
 =========
 
 capture:
-    * Improve Packet fragmentation
-        Right now capture process only handle packet IP fragmentation and
-        TCP segmentation when all parts come ordered. Also, packets being
-        reassembled are stored in memory until fully assembled (which may
-        never occur).
-
     * Improve TCP assembly
         We assume a packet is complete when PSH flag is set. In some cases
         this is not true and we have multiples SIP messages into what we

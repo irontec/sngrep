@@ -173,7 +173,7 @@ key_from_str(const gchar *key)
 }
 
 static Keybinding *
-key_binding_data(enum KeybindingAction action)
+key_binding_data(KeybindingAction action)
 {
     int i;
     for (i = 1; i < ACTION_SENTINEL; i++) {
@@ -185,7 +185,7 @@ key_binding_data(enum KeybindingAction action)
 }
 
 void
-key_bind_action(enum KeybindingAction action, gint key)
+key_bind_action(KeybindingAction action, gint key)
 {
     Keybinding *bind;
 
@@ -199,7 +199,7 @@ key_bind_action(enum KeybindingAction action, gint key)
 }
 
 void
-key_unbind_action(enum KeybindingAction action, gint key)
+key_unbind_action(KeybindingAction action, gint key)
 {
     Keybinding tmp, *bind;
 
@@ -221,8 +221,8 @@ key_unbind_action(enum KeybindingAction action, gint key)
     }
 }
 
-enum KeybindingAction
-key_find_action(gint key, enum KeybindingAction start)
+KeybindingAction
+key_find_action(gint key, KeybindingAction start)
 {
     for (guint i = start + 1; i < ACTION_SENTINEL; i++) {
 
@@ -236,7 +236,7 @@ key_find_action(gint key, enum KeybindingAction start)
     return ACTION_UNKNOWN;
 }
 
-enum KeybindingAction
+KeybindingAction
 key_action_id(const gchar *action)
 {
     for (guint i = 1; i < ACTION_SENTINEL; i++) {
@@ -248,7 +248,7 @@ key_action_id(const gchar *action)
 }
 
 const gchar *
-key_action_key_str(enum KeybindingAction action)
+key_action_key_str(KeybindingAction action)
 {
     Keybinding *bind;
 

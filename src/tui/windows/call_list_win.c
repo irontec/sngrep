@@ -651,7 +651,7 @@ static int
 call_list_handle_form_key(CallListWindow *self, int key)
 {
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
@@ -746,7 +746,7 @@ call_list_handle_menu_key(CallListWindow *self, int key)
     gint item_cnt = item_count(menu);
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
@@ -838,7 +838,7 @@ call_list_handle_key(Window *window, int key)
         return call_list_handle_menu_key(self, key);
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {

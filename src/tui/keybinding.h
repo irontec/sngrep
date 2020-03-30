@@ -57,7 +57,7 @@
 /**
  * @brief Available Key actions
  */
-enum KeybindingAction
+typedef enum
 {
     ACTION_UNKNOWN = -1,
     ACTION_PRINTABLE = 0,
@@ -119,7 +119,7 @@ enum KeybindingAction
     ACTION_SORT_SWAP,
     ACTION_TOGGLE_TIME,
     ACTION_SENTINEL
-};
+}  KeybindingAction;
 
 //! Shorter declaration of key_binding structure
 typedef struct _Keybinding Keybinding;
@@ -130,7 +130,7 @@ typedef struct _Keybinding Keybinding;
 struct _Keybinding
 {
     //! Keybinding action id
-    enum KeybindingAction id;
+    KeybindingAction id;
     //! Keybinding action name
     const gchar *name;
     //! keybindings for this action
@@ -152,7 +152,7 @@ key_bindings_dump();
  * @param key Keycode returned by getch
  */
 void
-key_bind_action(enum KeybindingAction action, gint key);
+key_bind_action(KeybindingAction action, gint key);
 
 /**
  * @brief Unbind a key to an action
@@ -161,7 +161,7 @@ key_bind_action(enum KeybindingAction action, gint key);
  * @param key Keycode returned by getch
  */
 void
-key_unbind_action(enum KeybindingAction action, gint key);
+key_unbind_action(KeybindingAction action, gint key);
 
 /**
  * @brief Find the next action for a given key
@@ -171,8 +171,8 @@ key_unbind_action(enum KeybindingAction action, gint key);
  *
  * @param key Keycode returned by getch
  */
-enum KeybindingAction
-key_find_action(gint key, enum KeybindingAction start);
+KeybindingAction
+key_find_action(gint key, KeybindingAction start);
 
 /**
  * @brief Return the action id associate to an action str
@@ -183,7 +183,7 @@ key_find_action(gint key, enum KeybindingAction start);
  * @param action Configuration string for an action
  * @return action id from @KeybindingAction (may be ACTION_UNKNOWN)
  */
-enum KeybindingAction
+KeybindingAction
 key_action_id(const gchar *action);
 
 /**
@@ -209,6 +209,6 @@ key_from_str(const gchar *key);
  * @return Main/Alt keybinding for the given action
  */
 const gchar *
-key_action_key_str(enum KeybindingAction action);
+key_action_key_str(KeybindingAction action);
 
 #endif /* __SNGREP_KEYBINDING_H_ */

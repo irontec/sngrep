@@ -347,7 +347,7 @@ settings_win_handle_key(Window *window, gint key)
     }
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         if (self->active_form == self->form) {
             // Check if we handle this action

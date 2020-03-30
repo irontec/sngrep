@@ -253,7 +253,7 @@ column_select_handle_key_menu(ColumnSelectWindow *self, gint key)
     gint current_idx = item_index(current);
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
@@ -335,7 +335,7 @@ column_select_handle_key_form(ColumnSelectWindow *self, int key)
     g_strstrip(field_value);
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {

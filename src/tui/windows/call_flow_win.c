@@ -1513,7 +1513,7 @@ call_flow_win_handle_key(Window *window, gint key)
     WINDOW *win = window_get_ncurses_window(window);
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {

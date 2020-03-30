@@ -295,7 +295,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
         key = wgetch(dialog_win);
 
         // Check actions for this key
-        enum KeybindingAction action = ACTION_UNKNOWN;
+        KeybindingAction action = ACTION_UNKNOWN;
         while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
             // Check if we handle this action
             switch (action) {

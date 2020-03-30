@@ -61,6 +61,12 @@
  */
 static GPtrArray *windows;
 
+GQuark
+tui_error_quark()
+{
+    return g_quark_from_static_string("tui");
+}
+
 Window *
 tui_create_window(WindowType type)
 {
@@ -249,7 +255,7 @@ tui_read_input(G_GNUC_UNUSED gint fd,
 int
 tui_default_keyhandler(Window *window, int key)
 {
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {

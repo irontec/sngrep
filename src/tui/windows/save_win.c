@@ -403,7 +403,7 @@ save_handle_key(Window *window, int key)
     gint field_idx = field_index(current_field(self->form));
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {

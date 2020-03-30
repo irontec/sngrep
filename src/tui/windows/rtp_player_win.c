@@ -132,7 +132,7 @@ rtp_player_win_handle_key(Window *window, int key)
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
-    enum KeybindingAction action = ACTION_UNKNOWN;
+    KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
