@@ -477,7 +477,8 @@ settings_init(SettingOpts options)
     settings_add_setting(SETTING_PACKET_RTCP, setting_bool_new(TRUE));
     settings_add_setting(SETTING_STORAGE_MEMORY_LIMIT, setting_string_new("250M"));
     settings_add_setting(SETTING_STORAGE_RTP, setting_bool_new(FALSE));
-    settings_add_setting(SETTING_STORAGE_MODE, setting_enum_new(SETTING_STORAGE_MODE_MEMORY, SETTING_TYPE_STORAGE_MODE));
+    settings_add_setting(SETTING_STORAGE_MODE,
+                         setting_enum_new(SETTING_STORAGE_MODE_MEMORY, SETTING_TYPE_STORAGE_MODE));
     settings_add_setting(SETTING_STORAGE_ROTATE, setting_bool_new(FALSE));
     settings_add_setting(SETTING_STORAGE_INCOMPLETE_DLG, setting_bool_new(FALSE));
     settings_add_setting(SETTING_STORAGE_CALLS, setting_bool_new(FALSE));
@@ -503,7 +504,8 @@ settings_init(SettingOpts options)
     settings_add_setting(SETTING_TUI_CF_RAWMINWIDTH, setting_number_new(40));
     settings_add_setting(SETTING_TUI_CF_RAWFIXEDWIDTH, setting_number_new(0));
     settings_add_setting(SETTING_TUI_CF_SPLITCALLID, setting_bool_new(FALSE));
-    settings_add_setting(SETTING_TUI_CF_HIGHTLIGHT, setting_enum_new(SETTING_ARROW_HIGHLIGH_BOLD, SETTING_TYPE_ARROW_HIGHLIGHT));
+    settings_add_setting(SETTING_TUI_CF_HIGHTLIGHT,
+                         setting_enum_new(SETTING_ARROW_HIGHLIGH_BOLD, SETTING_TYPE_ARROW_HIGHLIGHT));
     settings_add_setting(SETTING_TUI_CF_SCROLLSTEP, setting_number_new(4));
     settings_add_setting(SETTING_TUI_CF_LOCALHIGHLIGHT, setting_bool_new(TRUE));
     settings_add_setting(SETTING_TUI_CF_SDP_INFO, setting_enum_new(SETTING_SDP_OFF, SETTING_TYPE_SDP_MODE));
@@ -561,6 +563,18 @@ settings_dump_setting(GQuark key_id, G_GNUC_UNUSED gpointer data, G_GNUC_UNUSED 
 }
 
 void
+settings_dump_alias(SettingAlias *alias, G_GNUC_UNUSED gpointer user_data)
+{
+    g_print("Address: %s\t Alias: %s\n", alias->address, alias->alias);
+}
+
+void
+settings_dump_externip(SettingExtenIp *externip, G_GNUC_UNUSED gpointer user_data)
+{
+    g_print("Address: %s\t ExternIP: %s\n", externip->address, externip->externip);
+}
+
+void
 settings_dump()
 {
     g_print("\nSettings List\n===============\n");
@@ -568,23 +582,11 @@ settings_dump()
 
     if (settings->alias) {
         g_print("\nAddress Alias\n===============\n");
-        for (GList *l = settings->alias; l != NULL; l = l->next) {
-            SettingAlias *alias = l->data;
-            g_print("Address: %s\t Alias: %s\n",
-                    alias->address,
-                    alias->alias
-            );
-        }
+        g_list_foreach(settings->alias, (GFunc) settings_dump_alias, NULL);
     }
 
     if (settings->externips) {
         g_print("\nAddress ExternIP\n===============\n");
-        for (GList *l = settings->externips; l != NULL; l = l->next) {
-            SettingExtenIp *externip = l->data;
-            g_print("Address: %s\t ExternIP: %s\n",
-                    externip->address,
-                    externip->externip
-            );
-        }
+        g_list_foreach(settings->externips, (GFunc) settings_dump_externip, NULL);
     }
 }
