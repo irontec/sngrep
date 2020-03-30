@@ -444,12 +444,9 @@ settings_init(SettingOpts options)
 
     // Default settings values
     settings_add_setting(SETTING_CAPTURE_LIMIT, setting_number_new(20000));
-    settings_add_setting(SETTING_CAPTURE_DEVICE, setting_string_new("any"));
-    settings_add_setting(SETTING_CAPTURE_OUTFILE, setting_string_new(NULL));
-#ifdef WITH_SSL
-    settings_add_setting(SETTING_CAPTURE_KEYFILE, setting_string_new(NULL));
-    settings_add_setting(SETTING_CAPTURE_TLSSERVER, setting_string_new(NULL));
-#endif
+    settings_add_setting(SETTING_CAPTURE_PCAP_DEVICE, setting_string_new("any"));
+    settings_add_setting(SETTING_CAPTURE_PCAP_OUTFILE, setting_string_new(NULL));
+    settings_add_setting(SETTING_CAPTURE_PCAP_BUFSIZE, setting_number_new(10 * G_BYTES_PER_MEGABYTE));
 #ifdef USE_HEP
     settings_add_setting(SETTING_CAPTURE_HEP_SEND, setting_bool_new(FALSE));
     settings_add_setting(SETTING_CAPTURE_HEP_SEND_VER, setting_number_new(3));
@@ -468,6 +465,10 @@ settings_init(SettingOpts options)
     settings_add_setting(SETTING_PACKET_UDP, setting_bool_new(TRUE));
     settings_add_setting(SETTING_PACKET_TCP, setting_bool_new(TRUE));
     settings_add_setting(SETTING_PACKET_TLS, setting_bool_new(FALSE));
+#ifdef WITH_SSL
+    settings_add_setting(SETTING_PACKET_TLS_KEYFILE, setting_string_new(NULL));
+    settings_add_setting(SETTING_PACKET_TLS_SERVER, setting_string_new(NULL));
+#endif
     settings_add_setting(SETTING_PACKET_HEP, setting_bool_new(FALSE));
     settings_add_setting(SETTING_PACKET_WS, setting_bool_new(FALSE));
     settings_add_setting(SETTING_PACKET_SIP, setting_bool_new(TRUE));

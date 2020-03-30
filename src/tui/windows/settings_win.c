@@ -65,7 +65,7 @@ SettingsWindowEntry entries[] = {
       "Replace addresses with alias .............." },
     { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_CAPTURE_LIMIT, SETTING_CAPTURE_LIMIT,
       "Max dialogs * ............................." },
-    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_CAPTURE_DEVICE, SETTING_CAPTURE_DEVICE,
+    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_CAPTURE_DEVICE, SETTING_CAPTURE_PCAP_DEVICE,
       "Capture device * .........................." },
     { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_SIP_NOINCOMPLETE, SETTING_STORAGE_INCOMPLETE_DLG,
       "Capture full transactions ................." },

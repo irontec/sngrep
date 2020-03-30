@@ -200,7 +200,7 @@ main(int argc, char *argv[])
     if (!storage_opts.capture.rotate)
         storage_opts.capture.rotate = setting_enabled(SETTING_STORAGE_ROTATE);
     if (!storage_opts.capture.outfile)
-        storage_opts.capture.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
+        storage_opts.capture.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_PCAP_OUTFILE));
     if (!storage_opts.capture.mode) {
         storage_opts.capture.mode = setting_get_enum(SETTING_STORAGE_MODE);
     }
@@ -219,7 +219,7 @@ main(int argc, char *argv[])
 
 #ifdef WITH_SSL
     if (keyfile == NULL) {
-        keyfile = g_strdup(setting_get_value(SETTING_CAPTURE_KEYFILE));
+        keyfile = g_strdup(setting_get_value(SETTING_PACKET_TLS_KEYFILE));
     }
     if (keyfile != NULL) {
         // Automatically enable TCP and TLS protocols when using private key
@@ -347,7 +347,7 @@ main(int argc, char *argv[])
 
     // If no capture file or device selected, use default capture device
     if (g_slist_length(capture->inputs) == 0) {
-        gchar *default_device = (gchar *) setting_get_value(SETTING_CAPTURE_DEVICE);
+        gchar *default_device = (gchar *) setting_get_value(SETTING_CAPTURE_PCAP_DEVICE);
         if ((input = capture_input_pcap_online(default_device, &error))) {
             capture_manager_add_input(capture, input);
         } else {

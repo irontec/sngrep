@@ -65,12 +65,9 @@ typedef struct _SettingStorage SettingStorage;
 
 //! Available setting Options
 #define SETTING_CAPTURE_LIMIT           "capture.limit"
-#define SETTING_CAPTURE_DEVICE          "capture.device"
-#define SETTING_CAPTURE_OUTFILE         "capture.outfile"
-#ifdef WITH_SSL
-#define SETTING_CAPTURE_KEYFILE         "capture.keyfile"
-#define SETTING_CAPTURE_TLSSERVER       "capture.tlsserver"
-#endif
+#define SETTING_CAPTURE_PCAP_DEVICE     "capture.pcap.device"
+#define SETTING_CAPTURE_PCAP_OUTFILE    "capture.pcap.outfile"
+#define SETTING_CAPTURE_PCAP_BUFSIZE    "capture.pcap.bufsize"
 #ifdef USE_HEP
 #define SETTING_CAPTURE_HEP_SEND        "capture.hep.send"
 #define SETTING_CAPTURE_HEP_SEND_VER    "capture.hep.send.version"
@@ -89,6 +86,10 @@ typedef struct _SettingStorage SettingStorage;
 #define SETTING_PACKET_UDP              "packet.udp.enabled"
 #define SETTING_PACKET_TCP              "packet.tcp.enabled"
 #define SETTING_PACKET_TLS              "packet.tls.enabled"
+#ifdef WITH_SSL
+#define SETTING_PACKET_TLS_KEYFILE      "packet.tls.keyfile"
+#define SETTING_PACKET_TLS_SERVER       "packet.tls.server"
+#endif
 #define SETTING_PACKET_HEP              "packet.hep.enabled"
 #define SETTING_PACKET_WS               "packet.ws.enabled"
 #define SETTING_PACKET_SIP              "packet.sip.enabled"

@@ -43,7 +43,7 @@ capture_manager_new()
 
 #ifdef WITH_SSL
     // Parse TLS Server setting
-    manager->tls_server = address_from_str(setting_get_value(SETTING_CAPTURE_TLSSERVER));
+    manager->tls_server = address_from_str(setting_get_value(SETTING_PACKET_TLS_SERVER));
 #endif
 
     manager->loop = g_main_loop_new(

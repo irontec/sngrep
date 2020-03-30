@@ -39,6 +39,7 @@
 #include "glib-extra/glib.h"
 #include "capture.h"
 #include "capture_pcap.h"
+#include "setting.h"
 #include "packet/packet_link.h"
 #include "storage/storage.h"
 
@@ -199,7 +200,7 @@ capture_input_pcap_online(const gchar *dev, GError **error)
         return NULL;
     }
 
-    status = pcap_set_buffer_size(pcap->handle, 10 * G_BYTES_PER_MEGABYTE);
+    status = pcap_set_buffer_size(pcap->handle, setting_get_intvalue(SETTING_CAPTURE_PCAP_BUFSIZE));
     if (status != 0) {
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
