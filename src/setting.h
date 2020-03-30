@@ -64,88 +64,81 @@ typedef struct _SettingStorage SettingStorage;
 #define SETTING_OFF "off"
 
 //! Available setting Options
-typedef enum
-{
-    SETTING_UNKNOWN = -1,
-    SETTING_CAPTURE_LIMIT,
-    SETTING_CAPTURE_DEVICE,
-    SETTING_CAPTURE_OUTFILE,
+#define SETTING_CAPTURE_LIMIT           "capture.limit"
+#define SETTING_CAPTURE_DEVICE          "capture.device"
+#define SETTING_CAPTURE_OUTFILE         "capture.outfile"
 #ifdef WITH_SSL
-    SETTING_CAPTURE_KEYFILE,
-    SETTING_CAPTURE_TLSSERVER,
+#define SETTING_CAPTURE_KEYFILE         "capture.keyfile"
+#define SETTING_CAPTURE_TLSSERVER       "capture.tlsserver"
 #endif
 #ifdef USE_HEP
-    SETTING_CAPTURE_HEP_SEND,
-    SETTING_CAPTURE_HEP_SEND_VER,
-    SETTING_CAPTURE_HEP_SEND_ADDR,
-    SETTING_CAPTURE_HEP_SEND_PORT,
-    SETTING_CAPTURE_HEP_SEND_PASS,
-    SETTING_CAPTURE_HEP_SEND_ID,
-    SETTING_CAPTURE_HEP_LISTEN,
-    SETTING_CAPTURE_HEP_LISTEN_VER,
-    SETTING_CAPTURE_HEP_LISTEN_ADDR,
-    SETTING_CAPTURE_HEP_LISTEN_PORT,
-    SETTING_CAPTURE_HEP_LISTEN_PASS,
-    SETTING_CAPTURE_HEP_LISTEN_UUID,
+#define SETTING_CAPTURE_HEP_SEND        "capture.hep.send"
+#define SETTING_CAPTURE_HEP_SEND_VER    "capture.hep.send.version"
+#define SETTING_CAPTURE_HEP_SEND_ADDR   "capture.hep.send.address"
+#define SETTING_CAPTURE_HEP_SEND_PORT   "capture.hep.send.port"
+#define SETTING_CAPTURE_HEP_SEND_PASS   "capture.hep.send.pass"
+#define SETTING_CAPTURE_HEP_SEND_ID     "capture.hep.send.id"
+#define SETTING_CAPTURE_HEP_LISTEN      "capture.hep.listen"
+#define SETTING_CAPTURE_HEP_LISTEN_VER  "capture.hep.listen.version"
+#define SETTING_CAPTURE_HEP_LISTEN_ADDR "capture.hep.listen.address"
+#define SETTING_CAPTURE_HEP_LISTEN_PORT "capture.hep.listen.port"
+#define SETTING_CAPTURE_HEP_LISTEN_PASS "capture.hep.listen.pass"
+#define SETTING_CAPTURE_HEP_LISTEN_UUID "capture.hep.listen.uuid"
 #endif
-    SETTING_PACKET_IP,
-    SETTING_PACKET_UDP,
-    SETTING_PACKET_TCP,
-    SETTING_PACKET_TLS,
-    SETTING_PACKET_HEP,
-    SETTING_PACKET_WS,
-    SETTING_PACKET_SIP,
-    SETTING_PACKET_SDP,
-    SETTING_PACKET_RTP,
-    SETTING_PACKET_RTCP,
-    SETTING_STORAGE_RTP,
-    SETTING_STORAGE_MODE,
-    SETTING_STORAGE_MEMORY_LIMIT,
-    SETTING_STORAGE_ROTATE,
-    SETTING_STORAGE_INCOMPLETE_DLG,
-    SETTING_STORAGE_CALLS,
-    SETTING_STORAGE_SAVEPATH,
-    SETTING_STORAGE_FILTER_PAYLOAD,
-    SETTING_STORAGE_FILTER_METHODS,
-    SETTING_TUI_DISPLAY_ALIAS,
-    SETTING_TUI_BACKGROUND = 0,
-    SETTING_TUI_COLORMODE,
-    SETTING_TUI_SYNTAX,
-    SETTING_TUI_SYNTAX_TAG,
-    SETTING_TUI_SYNTAX_BRANCH,
-    SETTING_TUI_ALTKEY_HINT,
-    SETTING_TUI_EXITPROMPT,
-    SETTING_TUI_CL_SCROLLSTEP,
-    SETTING_TUI_CL_COLORATTR,
-    SETTING_TUI_CL_AUTOSCROLL,
-    SETTING_TUI_CL_SORTFIELD,
-    SETTING_TUI_CL_SORTORDER,
-    SETTING_TUI_CL_FIXEDCOLS,
-    SETTING_TUI_CL_COLUMNS,
-    SETTING_TUI_CF_FORCERAW,
-    SETTING_TUI_CF_RAWMINWIDTH,
-    SETTING_TUI_CF_RAWFIXEDWIDTH,
-    SETTING_TUI_CF_SPLITCALLID,
-    SETTING_TUI_CF_HIGHTLIGHT,
-    SETTING_TUI_CF_SCROLLSTEP,
-    SETTING_TUI_CF_LOCALHIGHLIGHT,
-    SETTING_TUI_CF_SDP_INFO,
-    SETTING_TUI_CF_MEDIA,
-    SETTING_TUI_CF_ONLYMEDIA,
-    SETTING_TUI_CF_DELTA,
-    SETTING_TUI_CF_HIDEDUPLICATE,
-    SETTING_TUI_CR_SCROLLSTEP,
-    SETTING_TUI_CR_NON_ASCII,
-    SETTING_COUNT
-} SettingId;
+#define SETTING_PACKET_IP               "packet.ip.enabled"
+#define SETTING_PACKET_UDP              "packet.udp.enabled"
+#define SETTING_PACKET_TCP              "packet.tcp.enabled"
+#define SETTING_PACKET_TLS              "packet.tls.enabled"
+#define SETTING_PACKET_HEP              "packet.hep.enabled"
+#define SETTING_PACKET_WS               "packet.ws.enabled"
+#define SETTING_PACKET_SIP              "packet.sip.enabled"
+#define SETTING_PACKET_SDP              "packet.sdp.enabled"
+#define SETTING_PACKET_RTP              "packet.rtp.enabled"
+#define SETTING_PACKET_RTCP             "packet.rtcp.enabled"
+#define SETTING_STORAGE_RTP             "storage.rtp"
+#define SETTING_STORAGE_MODE            "storage.mode"
+#define SETTING_STORAGE_MEMORY_LIMIT    "storage.memory_limit"
+#define SETTING_STORAGE_ROTATE          "storage.rotate"
+#define SETTING_STORAGE_INCOMPLETE_DLG  "storage.incomplete"
+#define SETTING_STORAGE_CALLS           "storage.calls"
+#define SETTING_STORAGE_SAVEPATH        "storage.savepath"
+#define SETTING_STORAGE_FILTER_PAYLOAD  "storage.filter.payload"
+#define SETTING_STORAGE_FILTER_METHODS  "sotrage.filter.methods"
+#define SETTING_TUI_DISPLAY_ALIAS       "tui.alias"
+#define SETTING_TUI_BACKGROUND          "tui.background"
+#define SETTING_TUI_COLORMODE           "tui.colormode"
+#define SETTING_TUI_SYNTAX              "tui.syntax"
+#define SETTING_TUI_SYNTAX_TAG          "tui.syntax.tag"
+#define SETTING_TUI_SYNTAX_BRANCH       "tui.syntax.branch"
+#define SETTING_TUI_ALTKEY_HINT         "tui.hints.altkey"
+#define SETTING_TUI_EXITPROMPT          "tui.exitpromt"
+#define SETTING_TUI_CL_SCROLLSTEP       "tui.cl.scrollstep"
+#define SETTING_TUI_CL_COLORATTR        "tui.cl.colorattr"
+#define SETTING_TUI_CL_AUTOSCROLL       "tui.cl.autoscroll"
+#define SETTING_TUI_CL_SORTFIELD        "tui.cl.sortfield"
+#define SETTING_TUI_CL_SORTORDER        "tui.cl.sortorder"
+#define SETTING_TUI_CL_FIXEDCOLS        "tui.cl.fixedcols"
+#define SETTING_TUI_CL_COLUMNS          "tui.cl.columns"
+#define SETTING_TUI_CF_FORCERAW         "tui.cf.raw.force"
+#define SETTING_TUI_CF_RAWMINWIDTH      "tui.cf.raw.minwidth"
+#define SETTING_TUI_CF_RAWFIXEDWIDTH    "tui.cf.raw.fixedwidth"
+#define SETTING_TUI_CF_SPLITCALLID      "tui.cf.splitcallid"
+#define SETTING_TUI_CF_HIGHTLIGHT       "tui.cf.highlight"
+#define SETTING_TUI_CF_SCROLLSTEP       "tui.cf.scrollstep"
+#define SETTING_TUI_CF_LOCALHIGHLIGHT   "tui.cf.localhighlight"
+#define SETTING_TUI_CF_SDP_INFO         "tui.cf.sdpinfo"
+#define SETTING_TUI_CF_MEDIA            "tui.cf.media"
+#define SETTING_TUI_CF_ONLYMEDIA        "tui.cf.onlymedia"
+#define SETTING_TUI_CF_DELTA            "tui.cf.delta"
+#define SETTING_TUI_CF_HIDEDUPLICATE    "tui.cf.hideduplicate"
+#define SETTING_TUI_CR_SCROLLSTEP       "tui.cr.scrollstep"
+#define SETTING_TUI_CR_NON_ASCII        "tui.cr.noascii"
 
 /**
  * @brief Configurable Setting structure
  */
 struct _Setting
 {
-    //! Setting name
-    const gchar *name;
     //! Value of the setting
     GValue value;
 };
@@ -185,7 +178,7 @@ struct _SettingStorageOpts
 struct _SettingStorage
 {
     //! Array of settings
-    GPtrArray *values;
+    GData *values;
     //! List of configured IP address aliases
     GList *alias;
     //! List of configure IP address extern
@@ -193,19 +186,7 @@ struct _SettingStorage
 };
 
 Setting *
-setting_by_id(SettingId id);
-
-Setting *
 setting_by_name(const gchar *name);
-
-/**
- * @brief Return the setting id of a given string
- *
- * @param name String representing configurable setting
- * @return setting id or -1 if setting is not found
- */
-SettingId
-setting_id(const gchar *name);
 
 /**
  * @brief Return string representing given setting id
@@ -214,41 +195,41 @@ setting_id(const gchar *name);
  * @return string representation of setting or NULL
  */
 const gchar *
-setting_name(SettingId id);
+setting_name(const gchar *id);
 
 GType
-setting_get_type(SettingId id);
+setting_get_type(const gchar *id);
 
 const gchar **
-setting_valid_values(SettingId id);
+setting_valid_values(const gchar *id);
 
 const gchar *
-setting_get_value(SettingId id);
+setting_get_value(const gchar *id);
 
 gint
-setting_get_intvalue(SettingId id);
+setting_get_intvalue(const gchar *id);
 
 gint
-setting_get_enum(SettingId id);
+setting_get_enum(const gchar *id);
 
 void
-setting_set_value(SettingId id, const gchar *value);
+setting_set_value(const gchar *id, const gchar *value);
 
 void
-setting_set_intvalue(SettingId id, gint value);
+setting_set_intvalue(const gchar *id, gint value);
 
 gboolean
-setting_enabled(SettingId id);
+setting_enabled(const gchar *id);
 
 gboolean
-setting_disabled(SettingId id);
+setting_disabled(const gchar *id);
 
 
 void
-setting_toggle(SettingId id);
+setting_toggle(const gchar *id);
 
 gint
-setting_enum_next(SettingId id);
+setting_enum_next(const gchar *id);
 
 gint
 setting_column_pos(Attribute *attr);

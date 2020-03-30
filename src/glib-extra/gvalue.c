@@ -28,6 +28,21 @@
 #include "config.h"
 #include "gvalue.h"
 
+GValue *
+g_value_new(GType type)
+{
+    GValue *value = g_slice_new0(GValue);
+    g_value_init(value, type);
+    return value;
+}
+
+void
+g_value_free(GValue *value)
+{
+    g_value_unset(value);
+    g_slice_free(GValue, value);
+}
+
 const gchar *
 g_value_get_enum_nick(const GValue *value)
 {

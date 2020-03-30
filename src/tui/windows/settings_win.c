@@ -303,7 +303,7 @@ settings_win_save(Window *window)
         if (entry != NULL) {
             // Change setting value
             gchar *field_value = g_strchomp(g_strdup(field_buffer(self->fields[i], 0)));
-            g_fprintf(fo, "set %s %s\n", setting_name(entry->setting_id), field_value);
+            g_fprintf(fo, "set %s %s\n", entry->setting_id, field_value);
             g_free(field_value);
 
         }
@@ -576,7 +576,7 @@ settings_win_constructed(GObject *object)
                     set_field_type(entry, TYPE_ENUM, setting_valid_values(entries[j].setting_id), 0, 0);
                     break;
                 default:
-                    g_warning("Unknown setting type for setting id %d\n", entries[j].setting_id);
+                    g_warning("Unknown setting type for setting %s\n", entries[j].setting_id);
                     break;
             }
 

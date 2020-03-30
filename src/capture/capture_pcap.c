@@ -209,6 +209,9 @@ capture_input_pcap_online(const gchar *dev, GError **error)
         return NULL;
     }
 
+    // Start capturing packets
+    pcap_activate(pcap->handle);
+
     // Get datalink to dissect packets correctly
     pcap->link = pcap_datalink(pcap->handle);
 

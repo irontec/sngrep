@@ -32,6 +32,12 @@
 #include <glib.h>
 #include <glib-object.h>
 
+GValue *
+g_value_new(GType type);
+
+void
+g_value_free(GValue *value);
+
 const gchar *
 g_value_get_enum_nick(const GValue *value);
 
