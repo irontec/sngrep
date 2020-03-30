@@ -146,7 +146,6 @@ packet_link_size(gint link_type)
 #endif
         default:
             // Not handled datalink type
-            g_printerr("Unsupported datalink type: %d", link_type);
             return 0;
     }
 }

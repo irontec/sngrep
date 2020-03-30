@@ -204,13 +204,21 @@ capture_input_pcap_online(const gchar *dev, GError **error)
         g_set_error(error,
                     CAPTURE_PCAP_ERROR,
                     CAPTURE_PCAP_ERROR_BUFFER_SIZE,
-                    "Error setting buffer size on %s: %s\n",
+                    "Error setting buffer size on %s: %s",
                     dev, pcap_statustostr(status));
         return NULL;
     }
 
     // Start capturing packets
-    pcap_activate(pcap->handle);
+    status = pcap_activate(pcap->handle);
+    if (status != 0) {
+        g_set_error(error,
+                    CAPTURE_PCAP_ERROR,
+                    CAPTURE_PCAP_ERROR_ACTIVATE,
+                    "Error activating pcap: %s",
+                    pcap_statustostr(status));
+        return NULL;
+    }
 
     // Get datalink to dissect packets correctly
     pcap->link = pcap_datalink(pcap->handle);
