@@ -421,7 +421,7 @@ attribute_init()
 
     //! X-Call-Id SIP header
     attribute = attribute_new("xcallid", NULL, "X-Call-ID", 50);
-    attribute_set_regex_pattern(attribute, "^(X-Call-ID|X-CID):\\s*(?P<xcallid>.+)$");
+    attribute_set_regex_pattern(attribute, "^(X-Call-ID|X-CID):\\s*(?P<value>.+)$");
     g_ptr_array_add(attributes, attribute);
 
     //! Packet captured date
