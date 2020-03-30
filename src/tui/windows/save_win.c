@@ -375,7 +375,7 @@ save_to_file(Window *window)
     if (self->savemode == SAVE_MESSAGE) {
         dialog_run("Successfully saved selected SIP message to %s", save_file);
     } else {
-        dialog_run("Successfully saved %d dialogs to %s", total, save_file);
+        dialog_run("Successfully saved %d packets to %s", total, save_file);
     }
 
     return 0;
