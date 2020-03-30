@@ -590,9 +590,9 @@ storage_new(StorageOpts options, GError **error)
     storage->streams = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     // Set default sorting field
-    if (attribute_find_by_name(setting_get_value(SETTING_CL_SORTFIELD)) != NULL) {
-        storage->options.sort.by = attribute_find_by_name(setting_get_value(SETTING_CL_SORTFIELD));
-        storage->options.sort.asc = (!strcmp(setting_get_value(SETTING_CL_SORTORDER), "asc"));
+    if (attribute_find_by_name(setting_get_value(SETTING_TUI_CL_SORTFIELD)) != NULL) {
+        storage->options.sort.by = attribute_find_by_name(setting_get_value(SETTING_TUI_CL_SORTFIELD));
+        storage->options.sort.asc = (!strcmp(setting_get_value(SETTING_TUI_CL_SORTORDER), "asc"));
     } else {
         // Fallback to default sorting field
         storage->options.sort.by = attribute_find_by_name(ATTR_CALLINDEX);
@@ -601,9 +601,6 @@ storage_new(StorageOpts options, GError **error)
 
     // Parsed packet to check
     storage->queue = g_async_queue_new();
-
-    // Set queue max size (captures will wait until stored packets are parsed)
-    storage->options.capture.max_queue_size = setting_get_intvalue(SETTING_STORAGE_MAX_QUEUE);
 
     // Memory limit checker
     if (storage->options.capture.memory_limit > 0) {

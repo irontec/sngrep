@@ -449,7 +449,7 @@ call_list_draw_list(CallListWindow *self)
             listh - 1, listw - 1, 0);
 
     // Copy fixed columns
-    guint fixed_width = call_list_columns_width(self, (guint) setting_get_intvalue(SETTING_CL_FIXEDCOLS));
+    guint fixed_width = call_list_columns_width(self, (guint) setting_get_intvalue(SETTING_TUI_CL_FIXEDCOLS));
     copywin(pad, self->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
 
     // Setup horizontal scrollbar
@@ -823,7 +823,7 @@ call_list_handle_menu_key(CallListWindow *self, int key)
 static int
 call_list_handle_key(Window *window, int key)
 {
-    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CL_SCROLLSTEP);
+    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
     CallGroup *group;
     Call *call;
     StorageSortOpts sort;
@@ -967,7 +967,7 @@ call_list_handle_key(Window *window, int key)
                 break;
             case ACTION_PREV_SCREEN:
                 // Handle quit from this screen unless requested
-                if (setting_enabled(SETTING_EXITPROMPT)) {
+                if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
                     if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
                         return KEY_DESTROY;
                     }
@@ -1215,11 +1215,11 @@ call_list_constructed(GObject *object)
     self->hscroll = window_set_scrollbar(self->list_win, SB_HORIZONTAL, SB_BOTTOM);
 
     // Set autoscroll default status
-    self->autoscroll = setting_enabled(SETTING_CL_AUTOSCROLL);
+    self->autoscroll = setting_enabled(SETTING_TUI_CL_AUTOSCROLL);
 
     // Apply initial configured filters
-    filter_method_from_setting(setting_get_value(SETTING_FILTER_METHODS));
-    filter_payload_from_setting(setting_get_value(SETTING_FILTER_PAYLOAD));
+    filter_method_from_setting(setting_get_value(SETTING_STORAGE_FILTER_METHODS));
+    filter_payload_from_setting(setting_get_value(SETTING_STORAGE_FILTER_PAYLOAD));
 }
 
 static void

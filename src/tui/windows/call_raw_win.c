@@ -118,17 +118,17 @@ call_raw_win_print_msg(Window *window, Message *msg)
     }
 
     // Color the message {
-    if (setting_get_enum(SETTING_COLORMODE) == SETTING_COLORMODE_REQUEST) {
+    if (setting_get_enum(SETTING_TUI_COLORMODE) == SETTING_COLORMODE_REQUEST) {
         // Determine arrow color
         if (msg_is_request(msg)) {
             color = CP_RED_ON_DEF;
         } else {
             color = CP_GREEN_ON_DEF;
         }
-    } else if (self->group && setting_get_enum(SETTING_COLORMODE) == SETTING_COLORMODE_CALLID) {
+    } else if (self->group && setting_get_enum(SETTING_TUI_COLORMODE) == SETTING_COLORMODE_CALLID) {
         // Color by call-id
         color = call_group_color(self->group, msg->call);
-    } else if (setting_get_enum(SETTING_COLORMODE) == SETTING_COLORMODE_CSEQ) {
+    } else if (setting_get_enum(SETTING_TUI_COLORMODE) == SETTING_COLORMODE_CSEQ) {
         // Color by CSeq within the same call
         color = msg_get_cseq(msg) % 7 + 1;
     }
@@ -239,7 +239,7 @@ call_raw_win_move_down(Window *window, guint times)
 static gint
 call_raw_win_handle_key(Window *window, int key)
 {
-    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CR_SCROLLSTEP);
+    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CR_SCROLLSTEP);
 
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);

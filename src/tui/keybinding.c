@@ -255,7 +255,7 @@ key_action_key_str(enum KeybindingAction action)
     if (!(bind = key_binding_data(action)))
         return NULL;
 
-    if (setting_enabled(SETTING_ALTKEY_HINT) && bind->bindcnt > 1) {
+    if (setting_enabled(SETTING_TUI_ALTKEY_HINT) && bind->bindcnt > 1) {
         // First alt keybinding
         return key_to_str(bind->keys[1]);
     } else {

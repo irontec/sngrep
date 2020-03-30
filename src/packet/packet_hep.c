@@ -177,7 +177,7 @@ packet_dissector_hep_dissect(PacketDissector *self, Packet *packet, GBytes *data
     }
 
     // Validate password
-    const gchar *hep_pass = setting_get_value(SETTING_HEP_LISTEN_PASS);
+    const gchar *hep_pass = setting_get_value(SETTING_CAPTURE_HEP_LISTEN_PASS);
     if (hep_pass != NULL) {
         // No password in packet
         if (strlen(password) == 0)

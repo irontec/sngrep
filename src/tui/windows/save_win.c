@@ -680,7 +680,7 @@ save_constructed(GObject *object)
 
     // Set Default field values
     char save_path[SETTING_MAX_LEN];
-    sprintf(save_path, "%s", setting_get_value(SETTING_SAVEPATH));
+    sprintf(save_path, "%s", setting_get_value(SETTING_STORAGE_SAVEPATH));
 
     set_field_buffer(self->fields[FLD_SAVE_PATH], 0, save_path);
     set_field_buffer(self->fields[FLD_SAVE_SAVE], 0, "[  Save  ]");

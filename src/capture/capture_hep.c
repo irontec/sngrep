@@ -141,16 +141,16 @@ capture_input_hep(const gchar *url, GError **error)
     // Create a new structure to handle this capture source
     CaptureInputHep *hep = g_object_new(CAPTURE_TYPE_INPUT_HEP, NULL);
 
-    hep->version = setting_get_intvalue(SETTING_HEP_LISTEN_VER);
-    hep->password = setting_get_value(SETTING_HEP_LISTEN_PASS);
+    hep->version = setting_get_intvalue(SETTING_CAPTURE_HEP_LISTEN_VER);
+    hep->password = setting_get_value(SETTING_CAPTURE_HEP_LISTEN_PASS);
     if (url != NULL) {
         if (!capture_hep_parse_url(url, &hep->url, error)) {
             return NULL;
         }
     } else {
         hep->url.proto = "udp";
-        hep->url.host = setting_get_value(SETTING_HEP_LISTEN_ADDR);
-        hep->url.port = setting_get_value(SETTING_HEP_LISTEN_PORT);
+        hep->url.host = setting_get_value(SETTING_CAPTURE_HEP_LISTEN_ADDR);
+        hep->url.port = setting_get_value(SETTING_CAPTURE_HEP_LISTEN_PORT);
     }
 
     // Check protocol version is support
@@ -279,17 +279,17 @@ capture_output_hep(const gchar *url, GError **error)
     CaptureOutputHep *hep = g_object_new(CAPTURE_TYPE_OUTPUT_HEP, NULL);
 
     // Fill configuration structure
-    hep->version = setting_get_intvalue(SETTING_HEP_SEND_VER);
-    hep->password = setting_get_value(SETTING_HEP_SEND_PASS);
-    hep->id = (guint16) setting_get_intvalue(SETTING_HEP_SEND_ID);
+    hep->version = setting_get_intvalue(SETTING_CAPTURE_HEP_SEND_VER);
+    hep->password = setting_get_value(SETTING_CAPTURE_HEP_SEND_PASS);
+    hep->id = (guint16) setting_get_intvalue(SETTING_CAPTURE_HEP_SEND_ID);
     if (url != NULL) {
         if (!capture_hep_parse_url(url, &hep->url, error)) {
             return NULL;
         }
     } else {
         hep->url.proto = "udp";
-        hep->url.host = setting_get_value(SETTING_HEP_SEND_ADDR);
-        hep->url.port = setting_get_value(SETTING_HEP_SEND_PORT);
+        hep->url.host = setting_get_value(SETTING_CAPTURE_HEP_SEND_ADDR);
+        hep->url.port = setting_get_value(SETTING_CAPTURE_HEP_SEND_PORT);
     }
 
     // Check protocol version is support

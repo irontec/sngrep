@@ -394,7 +394,7 @@ filter_win_constructed(GObject *object)
     // Get Method filter
     const gchar *method = filter_get(FILTER_METHOD);
     if (method == NULL) {
-        method = setting_get_value(SETTING_FILTER_METHODS);
+        method = setting_get_value(SETTING_STORAGE_FILTER_METHODS);
     }
     if (method == NULL) {
         method = "";

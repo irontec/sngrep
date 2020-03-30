@@ -148,12 +148,12 @@ call_flow_arrow_filter(void *item)
     CallFlowArrow *arrow = (CallFlowArrow *) item;
 
     // SIP arrows are never filtered
-    if (arrow->type == CF_ARROW_SIP && setting_disabled(SETTING_CF_ONLYMEDIA)) {
+    if (arrow->type == CF_ARROW_SIP && setting_disabled(SETTING_TUI_CF_ONLYMEDIA)) {
         return 1;
     }
 
     // RTP arrows are only displayed when requested
-    if (arrow->type == CF_ARROW_RTP && setting_enabled(SETTING_CF_MEDIA)) {
+    if (arrow->type == CF_ARROW_RTP && setting_enabled(SETTING_TUI_CF_MEDIA)) {
         return 1;
     }
 
@@ -241,22 +241,22 @@ static int
 call_flow_arrow_height(G_GNUC_UNUSED Window *window, const CallFlowArrow *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
-        if (setting_enabled(SETTING_CF_ONLYMEDIA))
+        if (setting_enabled(SETTING_TUI_CF_ONLYMEDIA))
             return 0;
-        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
             return 1;
         if (!msg_has_sdp(arrow->item))
             return 2;
-        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_OFF)
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_OFF)
             return 2;
-        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FIRST)
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FIRST)
             return 2;
-        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FULL)
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FULL)
             return msg_media_count(arrow->item) + 2;
     } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP) {
-        if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
             return 1;
-        if (setting_disabled(SETTING_CF_MEDIA))
+        if (setting_disabled(SETTING_TUI_CF_MEDIA))
             return 0;
         return 2;
     }
@@ -349,7 +349,7 @@ call_flow_column_get_first(Window *window, const Address addr)
         CallFlowColumn *column = l->data;
 
         // In compressed mode, we search using alias instead of address
-        if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+        if (setting_enabled(SETTING_TUI_CF_SPLITCALLID)) {
             if (g_strcmp0(column->alias, alias) == 0) {
                 return column;
             }
@@ -397,7 +397,7 @@ call_flow_column_get_last(Window *window, const Address addr)
         CallFlowColumn *column = l->data;
 
         // In compressed mode, we search using alias instead of address
-        if (setting_enabled(SETTING_CF_SPLITCALLID)) {
+        if (setting_enabled(SETTING_TUI_CF_SPLITCALLID)) {
             if (g_strcmp0(column->alias, alias) == 0) {
                 return column;
             }
@@ -681,7 +681,7 @@ call_flow_win_create_arrows(Window *window)
 
         Message *msg = call_flow_arrow_message(arrow);
 
-        if (setting_disabled(SETTING_CF_SPLITCALLID)
+        if (setting_disabled(SETTING_TUI_CF_SPLITCALLID)
             && msg_is_initial_transaction(msg)) {
             // Force Initial Transaction Arrows direction
             call_flow_arrow_set_columns(
@@ -715,7 +715,7 @@ call_flow_win_draw_columns(Window *window)
     WINDOW *win = window_get_ncurses_window(window);
 
     // Add RTP columns FIXME Really
-    if (!setting_disabled(SETTING_CF_MEDIA)) {
+    if (!setting_disabled(SETTING_TUI_CF_MEDIA)) {
         while ((call = call_group_get_next(self->group, call))) {
             for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
                 stream = g_ptr_array_index(call->streams, i);
@@ -747,14 +747,14 @@ call_flow_win_draw_columns(Window *window)
         mvwvline(self->arrows_pad, 0, 20 + column->pos, ACS_VLINE, getmaxy(self->arrows_pad));
 
         // Set bold to this address if it's local
-        if (setting_enabled(SETTING_CF_LOCALHIGHLIGHT)) {
+        if (setting_enabled(SETTING_TUI_CF_LOCALHIGHLIGHT)) {
             if (address_is_local(column->addr))
                 wattron(self->columns_pad, A_BOLD);
         }
 
-        if (setting_enabled(SETTING_CF_SPLITCALLID) || !address_get_port(column->addr)) {
+        if (setting_enabled(SETTING_TUI_CF_SPLITCALLID) || !address_get_port(column->addr)) {
             snprintf(coltext, SETTING_MAX_LEN, "%s", address_get_ip(column->addr));
-        } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
+        } else if (setting_enabled(SETTING_TUI_DISPLAY_ALIAS)) {
             if (strlen(address_get_ip(column->addr)) > 15) {
                 snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
                          SETTING_MAX_LEN - 7,
@@ -860,13 +860,13 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
     strcpy(method, msg_method);
 
     // If message has sdp information
-    if (msg_has_sdp(msg) && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_OFF) {
+    if (msg_has_sdp(msg) && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_OFF) {
         // Show sdp tag in title
         sprintf(method, "%s (SDP)", msg_method);
     }
 
     // If message has sdp information
-    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
+    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
         // Show sdp tag in title
         if (msg_has_sdp(msg)) {
             sprintf(method, "%.*s (SDP)", 12, msg_method);
@@ -875,14 +875,14 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
         }
     }
 
-    if (media && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FIRST) {
+    if (media && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FIRST) {
         sprintf(method, "%.3s (%s:%u)",
                 msg_method,
                 (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address,
                 media->rtpport);
     }
 
-    if (media && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FULL) {
+    if (media && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FULL) {
         sprintf(method, "%.3s (%s)",
                 msg_method,
                 (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address
@@ -919,7 +919,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
 
     // Highlight current message
     if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-        switch (setting_get_enum(SETTING_CF_HIGHTLIGHT)) {
+        switch (setting_get_enum(SETTING_TUI_CF_HIGHTLIGHT)) {
             case SETTING_ARROW_HIGHLIGH_BOLD:
                 wattron(self->arrows_pad, A_BOLD);
                 break;
@@ -934,7 +934,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
     }
 
     // Color the message {
-    switch (setting_get_enum(SETTING_COLORMODE)) {
+    switch (setting_get_enum(SETTING_TUI_COLORMODE)) {
         case SETTING_COLORMODE_REQUEST:
             // Color by request / response
             color = (msg_is_request(msg)) ? CP_RED_ON_DEF : CP_GREEN_ON_DEF;
@@ -950,7 +950,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
     }
 
     // Print arrow in the same line than message
-    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
+    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
         arrow->line = cline;
     }
 
@@ -970,7 +970,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
     }
 
     // Draw media information
-    if (msg_has_sdp(msg) && setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_FULL) {
+    if (msg_has_sdp(msg) && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FULL) {
         arrow->line += g_list_length(sdp_data->medias);
         for (GList *l = sdp_data->medias; l != NULL; l = l->next) {
             cline++;
@@ -1030,7 +1030,7 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
         }
     }
 
-    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
+    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
         mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
 
     // Turn off colors
@@ -1054,9 +1054,9 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
         }
 
         // Print delta from selected message
-        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             if (self->selected == -1) {
-                if (setting_enabled(SETTING_CF_DELTA)) {
+                if (setting_enabled(SETTING_TUI_CF_DELTA)) {
                     date_time_to_delta(
                         msg_get_time(msg),
                         msg_get_time(call_group_get_next_msg(self->group, msg)),
@@ -1158,7 +1158,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     if (startpos != endpos) {
         // In compressed mode, we display the src and dst port inside the arrow
         // so fixup the stard and end position
-        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             startpos += 5;
             endpos -= 5;
         }
@@ -1179,7 +1179,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 
     // Highlight current message
     if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-        switch (setting_get_enum(SETTING_CF_HIGHTLIGHT)) {
+        switch (setting_get_enum(SETTING_TUI_CF_HIGHTLIGHT)) {
             case SETTING_ARROW_HIGHLIGH_BOLD:
                 wattron(self->arrows_pad, A_BOLD);
                 break;
@@ -1201,7 +1201,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
     // Draw RTP arrow text
     mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
 
-    if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED)
+    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED)
         cline++;
 
     // Draw line between columns
@@ -1212,7 +1212,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 
     // Write the arrow at the end of the message (two arrows if this is a retrans)
     if (arrow->dir == CF_ARROW_DIR_RIGHT) {
-        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->src));
             mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->dst));
         }
@@ -1223,7 +1223,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
             mvwaddwstr(self->arrows_pad, cline, startpos + arrow->rtp_ind_pos + 2, tui_acs_utf8('>'));
         }
     } else {
-        if (setting_get_enum(SETTING_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->src));
             mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->dst));
         }
@@ -1235,7 +1235,7 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
         }
     }
 
-    if (setting_get_enum(SETTING_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
+    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
         mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
 
     wattroff(self->arrows_pad, A_BOLD | A_REVERSE);
@@ -1402,7 +1402,7 @@ call_flow_win_draw_preview(Window *window)
     CallFlowArrow *arrow = NULL;
 
     // Check if not displaying raw has been requested
-    if (setting_disabled(SETTING_CF_FORCERAW))
+    if (setting_disabled(SETTING_TUI_CF_FORCERAW))
         return;
 
     // Get panel information
@@ -1505,7 +1505,7 @@ call_flow_win_handle_key(Window *window, gint key)
     Window *next_window;
     Call *call = NULL;
     CallFlowArrow *cur_arrow = NULL;
-    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_CF_SCROLLSTEP);
+    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CF_SCROLLSTEP);
 
     // Sanity check, this should not happen
     CallFlowWindow *self = TUI_CALL_FLOW(window);
@@ -1569,15 +1569,15 @@ call_flow_win_handle_key(Window *window, gint key)
             case ACTION_DECREASE_RAW:
                 raw_width = getmaxx(self->raw_win);
                 if (raw_width - 2 > 1) {
-                    setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, raw_width - 2);
+                    setting_set_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH, raw_width - 2);
                 }
                 break;
             case ACTION_INCREASE_RAW:
                 raw_width = MIN(getmaxx(self->raw_win) + 2, window_get_width(window) - 1);
-                setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, raw_width);
+                setting_set_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH, raw_width);
                 break;
             case ACTION_RESET_RAW:
-                setting_set_intvalue(SETTING_CF_RAWFIXEDWIDTH, -1);
+                setting_set_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH, -1);
                 break;
             case ACTION_ONLY_SDP:
                 // Toggle SDP mode
@@ -1589,26 +1589,26 @@ call_flow_win_handle_key(Window *window, gint key)
                 call_flow_win_set_group(window, self->group);
                 break;
             case ACTION_SDP_INFO:
-                setting_toggle(SETTING_CF_SDP_INFO);
+                setting_toggle(SETTING_TUI_CF_SDP_INFO);
                 break;
             case ACTION_HIDE_DUPLICATE:
-                setting_toggle(SETTING_CF_HIDEDUPLICATE);
+                setting_toggle(SETTING_TUI_CF_HIDEDUPLICATE);
                 call_flow_win_set_group(window, self->group);
                 break;
             case ACTION_ONLY_MEDIA:
-                setting_toggle(SETTING_CF_ONLYMEDIA);
+                setting_toggle(SETTING_TUI_CF_ONLYMEDIA);
                 call_flow_win_set_group(window, self->group);
                 break;
             case ACTION_TOGGLE_MEDIA:
-                setting_toggle(SETTING_CF_MEDIA);
+                setting_toggle(SETTING_TUI_CF_MEDIA);
                 // Force reload arrows
                 call_flow_win_set_group(window, self->group);
                 break;
             case ACTION_TOGGLE_RAW:
-                setting_toggle(SETTING_CF_FORCERAW);
+                setting_toggle(SETTING_TUI_CF_FORCERAW);
                 break;
             case ACTION_COMPRESS:
-                setting_toggle(SETTING_CF_SPLITCALLID);
+                setting_toggle(SETTING_TUI_CF_SPLITCALLID);
                 // Force columns reload
                 call_flow_win_set_group(window, self->group);
                 break;
@@ -1791,10 +1791,10 @@ call_flow_win_create_subwindows(Window *window)
 
     gint raw_width = 0;
     // Check if not displaying raw has been requested
-    if (setting_enabled(SETTING_CF_FORCERAW)) {
+    if (setting_enabled(SETTING_TUI_CF_FORCERAW)) {
         // Get min raw width
-        gint min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
-        gint fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
+        gint min_raw_width = setting_get_intvalue(SETTING_TUI_CF_RAWMINWIDTH);
+        gint fixed_raw_width = setting_get_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH);
 
         // We can configure an exact raw size
         if (fixed_raw_width > 0) {
@@ -1864,7 +1864,7 @@ call_flow_win_draw(Window *window)
     }
 
     // Print color mode in title
-    switch (setting_get_enum(SETTING_COLORMODE)) {
+    switch (setting_get_enum(SETTING_TUI_COLORMODE)) {
         case SETTING_COLORMODE_REQUEST:
             strcat(title, " (Color by Request/Response)");
             break;

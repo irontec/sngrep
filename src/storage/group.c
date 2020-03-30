@@ -211,7 +211,7 @@ call_group_get_next_msg(CallGroup *group, Message *msg)
             return call_group_get_next_msg(group, next);
         }
         // If duplicates are hidden, go to next message
-        if (setting_enabled(SETTING_CF_HIDEDUPLICATE) && msg_is_duplicate(next)) {
+        if (setting_enabled(SETTING_TUI_CF_HIDEDUPLICATE) && msg_is_duplicate(next)) {
             return call_group_get_next_msg(group, next);
         }
     }
@@ -233,7 +233,7 @@ call_group_get_prev_msg(CallGroup *group, Message *msg)
             return call_group_get_prev_msg(group, prev);
         }
         // If duplicates are hidden, go to previous message
-        if (setting_enabled(SETTING_CF_HIDEDUPLICATE) && msg_is_duplicate(prev)) {
+        if (setting_enabled(SETTING_TUI_CF_HIDEDUPLICATE) && msg_is_duplicate(prev)) {
             return call_group_get_next_msg(group, prev);
         }
 

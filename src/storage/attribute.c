@@ -126,7 +126,7 @@ gint
 attribute_get_color(Attribute *attr, const gchar *value)
 {
 
-    if (!setting_enabled(SETTING_CL_COLORATTR))
+    if (!setting_enabled(SETTING_TUI_CL_COLORATTR))
         return 0;
 
     if (attr->colorFunc) {

@@ -190,24 +190,24 @@ main(int argc, char *argv[])
 
     // Get initial values for configurable arguments
     if (!storage_opts.match.invite)
-        storage_opts.match.invite = setting_enabled(SETTING_SIP_CALLS);
+        storage_opts.match.invite = setting_enabled(SETTING_STORAGE_CALLS);
     if (!storage_opts.match.complete)
-        storage_opts.match.complete = setting_enabled(SETTING_SIP_NOINCOMPLETE);
+        storage_opts.match.complete = setting_enabled(SETTING_STORAGE_INCOMPLETE_DLG);
     if (!storage_opts.capture.limit)
         storage_opts.capture.limit = (guint) setting_get_intvalue(SETTING_CAPTURE_LIMIT);
     if (!storage_opts.capture.rtp)
-        storage_opts.capture.rtp = setting_enabled(SETTING_CAPTURE_RTP);
+        storage_opts.capture.rtp = setting_enabled(SETTING_STORAGE_RTP);
     if (!storage_opts.capture.rotate)
-        storage_opts.capture.rotate = setting_enabled(SETTING_CAPTURE_ROTATE);
+        storage_opts.capture.rotate = setting_enabled(SETTING_STORAGE_ROTATE);
     if (!storage_opts.capture.outfile)
         storage_opts.capture.outfile = g_strdup(setting_get_value(SETTING_CAPTURE_OUTFILE));
     if (!storage_opts.capture.mode) {
-        storage_opts.capture.mode = setting_get_enum(SETTING_CAPTURE_STORAGE);
+        storage_opts.capture.mode = setting_get_enum(SETTING_STORAGE_MODE);
     }
 
     // Parse memory limit size string
     if (memory_limit == NULL) {
-        storage_opts.capture.memory_limit = g_format_size_to_bytes(setting_get_value(SETTING_MEMORY_LIMIT));
+        storage_opts.capture.memory_limit = g_format_size_to_bytes(setting_get_value(SETTING_STORAGE_MEMORY_LIMIT));
     } else {
         storage_opts.capture.memory_limit = g_format_size_to_bytes(memory_limit);
     }
@@ -223,8 +223,8 @@ main(int argc, char *argv[])
     }
     if (keyfile != NULL) {
         // Automatically enable TCP and TLS protocols when using private key
-        setting_set_value(SETTING_CAPTURE_PACKET_TCP, SETTING_ON);
-        setting_set_value(SETTING_CAPTURE_PACKET_TLS, SETTING_ON);
+        setting_set_value(SETTING_PACKET_TCP, SETTING_ON);
+        setting_set_value(SETTING_PACKET_TLS, SETTING_ON);
     }
 #endif
 
@@ -320,7 +320,7 @@ main(int argc, char *argv[])
     // Hep settings
     if (hep_listen) {
         // Enable HEP packet
-        setting_set_value(SETTING_CAPTURE_PACKET_HEP, SETTING_ON);
+        setting_set_value(SETTING_PACKET_HEP, SETTING_ON);
 
         // Create a HEP server input
         if ((input = capture_input_hep(hep_listen, &error))) {

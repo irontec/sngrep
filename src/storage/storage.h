@@ -98,8 +98,6 @@ struct _StorageCaptureOpts
     gchar *outfile;
     //! Memory limit (in bytes)
     gsize memory_limit;
-    //! Max pending packets queue size
-    gint max_queue_size;
 };
 
 /**

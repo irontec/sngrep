@@ -259,16 +259,16 @@ tui_default_keyhandler(Window *window, int key)
                 tui_resize_panels();
                 break;
             case ACTION_TOGGLE_SYNTAX:
-                setting_toggle(SETTING_SYNTAX);
+                setting_toggle(SETTING_TUI_SYNTAX);
                 break;
             case ACTION_TOGGLE_HINT:
-                setting_toggle(SETTING_ALTKEY_HINT);
+                setting_toggle(SETTING_TUI_ALTKEY_HINT);
                 break;
             case ACTION_CYCLE_COLOR:
-                setting_toggle(SETTING_COLORMODE);
+                setting_toggle(SETTING_TUI_COLORMODE);
                 break;
             case ACTION_SHOW_ALIAS:
-                setting_toggle(SETTING_DISPLAY_ALIAS);
+                setting_toggle(SETTING_TUI_DISPLAY_ALIAS);
                 break;
             case ACTION_SHOW_SETTINGS:
                 tui_create_window(WINDOW_SETTINGS);
@@ -337,8 +337,8 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
 {
     int height, width, line, column;
     const char *cur_line, *payload, *method = NULL;
-    int syntax = setting_enabled(SETTING_SYNTAX);
-    const char *nonascii = setting_get_value(SETTING_CR_NON_ASCII);
+    int syntax = setting_enabled(SETTING_TUI_SYNTAX);
+    const char *nonascii = setting_get_value(SETTING_TUI_CR_NON_ASCII);
 
     // Default text format
     int attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
@@ -393,13 +393,13 @@ draw_message_pos(WINDOW *win, Message *msg, int starting)
                 // tag and branch syntax
                 if (i > 0 && payload[i - 1] == ';') {
                     // Highlight branch if requested
-                    if (setting_enabled(SETTING_SYNTAX_BRANCH)) {
+                    if (setting_enabled(SETTING_TUI_SYNTAX_BRANCH)) {
                         if (!strncasecmp(payload + i, "branch", 6)) {
                             attrs = A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF);
                         }
                     }
                     // Highlight tag if requested
-                    if (setting_enabled(SETTING_SYNTAX_TAG)) {
+                    if (setting_enabled(SETTING_TUI_SYNTAX_TAG)) {
                         if (!strncasecmp(payload + i, "tag", 3)) {
                             if (!strncasecmp(cur_line, "From:", 5)) {
                                 attrs = A_BOLD | COLOR_PAIR(CP_DEFAULT);
@@ -479,7 +479,7 @@ tui_init(GMainLoop *loop, GError **error)
     }
 
     // Check if user wants a black background
-    if (setting_get_enum(SETTING_BACKGROUND) == SETTING_BACKGROUND_DARK) {
+    if (setting_get_enum(SETTING_TUI_BACKGROUND) == SETTING_BACKGROUND_DARK) {
         assume_default_colors(COLOR_WHITE, COLOR_BLACK);
     } else {
         use_default_colors();
@@ -516,7 +516,7 @@ tui_init(GMainLoop *loop, GError **error)
     }
 
     gshort bg = COLOR_DEFAULT, fg = COLOR_DEFAULT;
-    if (setting_get_enum(SETTING_BACKGROUND) == SETTING_BACKGROUND_DARK) {
+    if (setting_get_enum(SETTING_TUI_BACKGROUND) == SETTING_BACKGROUND_DARK) {
         fg = COLOR_WHITE;
         bg = COLOR_BLACK;
     }

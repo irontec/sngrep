@@ -328,7 +328,7 @@ setting_enum_next(SettingId id)
 gint
 setting_column_pos(Attribute *attr)
 {
-    g_auto(GStrv) columns = g_strsplit(setting_get_value(SETTING_CL_COLUMNS), ",", 0);
+    g_auto(GStrv) columns = g_strsplit(setting_get_value(SETTING_TUI_CL_COLUMNS), ",", 0);
     for (gint i = 0; i < (gint) g_strv_length(columns); i++) {
         if (g_strcmp0(columns[i], attr->name) == 0) {
             return i;
@@ -476,21 +476,21 @@ settings_init(SettingOpts options)
     g_ptr_array_set_size(settings->values, SETTING_COUNT);
 
     // Default settings values
-    g_ptr_array_set(settings->values, SETTING_BACKGROUND,
+    g_ptr_array_set(settings->values, SETTING_TUI_BACKGROUND,
                     setting_enum_new("background", SETTING_BACKGROUND_DARK, SETTING_TYPE_BACKGROUND));
-    g_ptr_array_set(settings->values, SETTING_COLORMODE,
+    g_ptr_array_set(settings->values, SETTING_TUI_COLORMODE,
                     setting_enum_new("colormode", SETTING_COLORMODE_REQUEST, SETTING_TYPE_COLOR_MODE));
-    g_ptr_array_set(settings->values, SETTING_SYNTAX,
+    g_ptr_array_set(settings->values, SETTING_TUI_SYNTAX,
                     setting_bool_new("syntax", TRUE));
-    g_ptr_array_set(settings->values, SETTING_SYNTAX_TAG,
+    g_ptr_array_set(settings->values, SETTING_TUI_SYNTAX_TAG,
                     setting_bool_new("syntax.tag", FALSE));
-    g_ptr_array_set(settings->values, SETTING_SYNTAX_BRANCH,
+    g_ptr_array_set(settings->values, SETTING_TUI_SYNTAX_BRANCH,
                     setting_bool_new("syntax.branch", FALSE));
-    g_ptr_array_set(settings->values, SETTING_ALTKEY_HINT,
+    g_ptr_array_set(settings->values, SETTING_TUI_ALTKEY_HINT,
                     setting_bool_new("hintkeyalt", FALSE));
-    g_ptr_array_set(settings->values, SETTING_EXITPROMPT,
+    g_ptr_array_set(settings->values, SETTING_TUI_EXITPROMPT,
                     setting_bool_new("exitprompt", TRUE));
-    g_ptr_array_set(settings->values, SETTING_MEMORY_LIMIT,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_MEMORY_LIMIT,
                     setting_string_new("memory_limit", "250M"));
     g_ptr_array_set(settings->values, SETTING_CAPTURE_LIMIT,
                     setting_number_new("capture.limit", 20000));
@@ -504,112 +504,110 @@ settings_init(SettingOpts options)
     g_ptr_array_set(settings->values, SETTING_CAPTURE_TLSSERVER,
                     setting_string_new("capture.tlsserver", NULL));
 #endif
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_RTP,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_RTP,
                     setting_bool_new("capture.rtp", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_IP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_IP,
                     setting_bool_new("packet.ip.enabled", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_UDP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_UDP,
                     setting_bool_new("packet.udp.enabled", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TCP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_TCP,
                     setting_bool_new("packet.tcp.enabled", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_TLS,
+    g_ptr_array_set(settings->values, SETTING_PACKET_TLS,
                     setting_bool_new("packet.tls.enabled", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_HEP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_HEP,
                     setting_bool_new("packet.hep.enabled", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_WS,
+    g_ptr_array_set(settings->values, SETTING_PACKET_WS,
                     setting_bool_new("packet.ws.enabled", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SIP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_SIP,
                     setting_bool_new("packet.sip.enabled", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_SDP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_SDP,
                     setting_bool_new("packet.sdp.enabled", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_RTP,
                     setting_bool_new("packet.rtp.enabled", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_PACKET_RTCP,
+    g_ptr_array_set(settings->values, SETTING_PACKET_RTCP,
                     setting_bool_new("packet.rtcp.enabled", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_STORAGE,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_MODE,
                     setting_enum_new("capture.storage", SETTING_STORAGE_MODE_MEMORY, SETTING_TYPE_STORAGE_MODE));
-    g_ptr_array_set(settings->values, SETTING_CAPTURE_ROTATE,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_ROTATE,
                     setting_bool_new("capture.rotate", FALSE));
-    g_ptr_array_set(settings->values, SETTING_SIP_NOINCOMPLETE,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_INCOMPLETE_DLG,
                     setting_bool_new("sip.noincomplete", TRUE));
-    g_ptr_array_set(settings->values, SETTING_STORAGE_MAX_QUEUE,
-                    setting_number_new("storage.max_queue_size", 1000));
-    g_ptr_array_set(settings->values, SETTING_SIP_CALLS,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_CALLS,
                     setting_bool_new("sip.calls", FALSE));
-    g_ptr_array_set(settings->values, SETTING_SAVEPATH,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_SAVEPATH,
                     setting_string_new("savepath", g_get_current_dir()));
-    g_ptr_array_set(settings->values, SETTING_DISPLAY_ALIAS,
+    g_ptr_array_set(settings->values, SETTING_TUI_DISPLAY_ALIAS,
                     setting_bool_new("displayalias", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CL_COLUMNS,
+    g_ptr_array_set(settings->values, SETTING_TUI_CL_COLUMNS,
                     setting_string_new("cl.columns", "index,method,sipfrom,sipto,msgcnt,src,dst,state"));
-    g_ptr_array_set(settings->values, SETTING_CL_SCROLLSTEP,
+    g_ptr_array_set(settings->values, SETTING_TUI_CL_SCROLLSTEP,
                     setting_number_new("cl.scrollstep", 4));
-    g_ptr_array_set(settings->values, SETTING_CL_COLORATTR,
+    g_ptr_array_set(settings->values, SETTING_TUI_CL_COLORATTR,
                     setting_bool_new("cl.colorattr", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CL_AUTOSCROLL,
+    g_ptr_array_set(settings->values, SETTING_TUI_CL_AUTOSCROLL,
                     setting_bool_new("cl.autoscroll", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CL_SORTFIELD,
+    g_ptr_array_set(settings->values, SETTING_TUI_CL_SORTFIELD,
                     setting_string_new("cl.sortfield", ATTR_CALLINDEX));
-    g_ptr_array_set(settings->values, SETTING_CL_SORTORDER,
+    g_ptr_array_set(settings->values, SETTING_TUI_CL_SORTORDER,
                     setting_string_new("cl.sortorder", "asc"));
-    g_ptr_array_set(settings->values, SETTING_CL_FIXEDCOLS,
+    g_ptr_array_set(settings->values, SETTING_TUI_CL_FIXEDCOLS,
                     setting_number_new("cl.fixedcols", 2));
-    g_ptr_array_set(settings->values, SETTING_CF_FORCERAW,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_FORCERAW,
                     setting_bool_new("cf.forceraw", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CF_RAWMINWIDTH,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_RAWMINWIDTH,
                     setting_number_new("cf.rawminwidth", 40));
-    g_ptr_array_set(settings->values, SETTING_CF_RAWFIXEDWIDTH,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_RAWFIXEDWIDTH,
                     setting_number_new("cf.rawfixedwidth", 0));
-    g_ptr_array_set(settings->values, SETTING_CF_SPLITCALLID,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_SPLITCALLID,
                     setting_bool_new("cf.splitcallid", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CF_HIGHTLIGHT,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_HIGHTLIGHT,
                     setting_enum_new("cf.highlight", SETTING_ARROW_HIGHLIGH_BOLD, SETTING_TYPE_ARROW_HIGHLIGHT));
-    g_ptr_array_set(settings->values, SETTING_CF_SCROLLSTEP,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_SCROLLSTEP,
                     setting_number_new("cf.scrollstep", 4));
-    g_ptr_array_set(settings->values, SETTING_CF_LOCALHIGHLIGHT,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_LOCALHIGHLIGHT,
                     setting_bool_new("cf.localhighlight", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CF_SDP_INFO,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_SDP_INFO,
                     setting_enum_new("cf.sdpinfo", SETTING_SDP_OFF, SETTING_TYPE_SDP_MODE));
-    g_ptr_array_set(settings->values, SETTING_CF_MEDIA,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_MEDIA,
                     setting_bool_new("cf.media", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CF_ONLYMEDIA,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_ONLYMEDIA,
                     setting_bool_new("cf.onlymedia", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CF_DELTA,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_DELTA,
                     setting_bool_new("cf.deltatime", TRUE));
-    g_ptr_array_set(settings->values, SETTING_CF_HIDEDUPLICATE,
+    g_ptr_array_set(settings->values, SETTING_TUI_CF_HIDEDUPLICATE,
                     setting_bool_new("cf.hideduplicate", FALSE));
-    g_ptr_array_set(settings->values, SETTING_CR_SCROLLSTEP,
+    g_ptr_array_set(settings->values, SETTING_TUI_CR_SCROLLSTEP,
                     setting_number_new("cr.scrollstep", 10));
-    g_ptr_array_set(settings->values, SETTING_CR_NON_ASCII,
+    g_ptr_array_set(settings->values, SETTING_TUI_CR_NON_ASCII,
                     setting_string_new("cr.nonascii", "."));
-    g_ptr_array_set(settings->values, SETTING_FILTER_PAYLOAD,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_FILTER_PAYLOAD,
                     setting_string_new("filter.payload", NULL));
-    g_ptr_array_set(settings->values, SETTING_FILTER_METHODS,
+    g_ptr_array_set(settings->values, SETTING_STORAGE_FILTER_METHODS,
                     setting_string_new("filter.methods", NULL));
 #ifdef USE_HEP
-    g_ptr_array_set(settings->values, SETTING_HEP_SEND,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_SEND,
                     setting_bool_new("hep.send", FALSE));
-    g_ptr_array_set(settings->values, SETTING_HEP_SEND_VER,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_SEND_VER,
                     setting_number_new("hep.send.version", 3));
-    g_ptr_array_set(settings->values, SETTING_HEP_SEND_ADDR,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_SEND_ADDR,
                     setting_string_new("hep.send.address", "127.0.0.1"));
-    g_ptr_array_set(settings->values, SETTING_HEP_SEND_PORT,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_SEND_PORT,
                     setting_number_new("hep.send.port", 9060));
-    g_ptr_array_set(settings->values, SETTING_HEP_SEND_PASS,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_SEND_PASS,
                     setting_string_new("hep.send.pass", ""));
-    g_ptr_array_set(settings->values, SETTING_HEP_SEND_ID,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_SEND_ID,
                     setting_number_new("hep.send.id", 2000));
-    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_LISTEN,
                     setting_bool_new("hep.listen", FALSE));
-    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_VER,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_LISTEN_VER,
                     setting_string_new("hep.listen.version", "3"));
-    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_ADDR,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_LISTEN_ADDR,
                     setting_string_new("hep.listen.address", "0.0.0.0"));
-    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PORT,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_LISTEN_PORT,
                     setting_number_new("hep.listen.port", 9060));
-    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_PASS,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_LISTEN_PASS,
                     setting_string_new("hep.listen.pass", ""));
-    g_ptr_array_set(settings->values, SETTING_HEP_LISTEN_UUID,
+    g_ptr_array_set(settings->values, SETTING_CAPTURE_HEP_LISTEN_UUID,
                     setting_bool_new("hep.listen.uuid", FALSE));
 #endif
 

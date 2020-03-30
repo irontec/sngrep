@@ -356,7 +356,7 @@ auth_validate_win_constructed(GObject *object)
 
     // Set Default field values
     char savepath[SETTING_MAX_LEN];
-    sprintf(savepath, "%s", setting_get_value(SETTING_SAVEPATH));
+    sprintf(savepath, "%s", setting_get_value(SETTING_STORAGE_SAVEPATH));
 
     set_field_buffer(self->fields[FLD_AUTH_CLOSE], 0, "[ Close ]");
 

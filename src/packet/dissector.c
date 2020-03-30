@@ -141,26 +141,26 @@ packet_dissector_enabled(PacketProtocolId id)
 {
     switch (id) {
         case PACKET_PROTO_IP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_IP);
+            return setting_enabled(SETTING_PACKET_IP);
         case PACKET_PROTO_UDP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_UDP);
+            return setting_enabled(SETTING_PACKET_UDP);
         case PACKET_PROTO_TCP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_TCP);
+            return setting_enabled(SETTING_PACKET_TCP);
         case PACKET_PROTO_SIP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_SIP);
+            return setting_enabled(SETTING_PACKET_SIP);
         case PACKET_PROTO_SDP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_SDP);
+            return setting_enabled(SETTING_PACKET_SDP);
         case PACKET_PROTO_RTP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_RTP);
+            return setting_enabled(SETTING_PACKET_RTP);
         case PACKET_PROTO_RTCP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_RTCP);
+            return setting_enabled(SETTING_PACKET_RTCP);
 #ifdef USE_HEP
         case PACKET_PROTO_HEP:
-            return setting_enabled(SETTING_CAPTURE_PACKET_HEP);
+            return setting_enabled(SETTING_PACKET_HEP);
 #endif
 #ifdef WITH_SSL
         case PACKET_PROTO_TLS:
-            return setting_enabled(SETTING_CAPTURE_PACKET_TLS);
+            return setting_enabled(SETTING_PACKET_TLS);
 #endif
         default:
             return TRUE;
