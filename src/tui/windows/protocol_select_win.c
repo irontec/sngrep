@@ -346,10 +346,10 @@ protocol_select_win_handle_key_form(ProtocolSelectWindow *self, int key)
  * @return enum @key_handler_ret
  */
 static gint
-protocol_select_win_handle_key(Window *window, gint key)
+protocol_select_win_handle_key(Widget *widget, gint key)
 {
     // Get panel information
-    ProtocolSelectWindow *self = TUI_PROTOCOL_SELECT(window);
+    ProtocolSelectWindow *self = TUI_PROTOCOL_SELECT(widget);
 
     if (self->form_active) {
         return protocol_select_win_handle_key_form(self, key);
@@ -482,8 +482,8 @@ protocol_select_win_class_init(ProtocolSelectWindowClass *klass)
     object_class->constructed = protocol_select_win_constructed;
     object_class->finalize = protocol_select_win_finalize;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->handle_key = protocol_select_win_handle_key;
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->key_pressed = protocol_select_win_handle_key;
 
 }
 

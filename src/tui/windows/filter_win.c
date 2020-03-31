@@ -179,13 +179,13 @@ filter_win_save_options(FilterWindow *self)
  * @return enum @key_handler_ret
  */
 static int
-filter_win_handle_key(Window *window, gint key)
+filter_win_handle_key(Widget *widget, gint key)
 {
     int field_idx;
     char field_value[SETTING_MAX_LEN];
 
     // Get panel information
-    FilterWindow *self = TUI_FILTER(window);
+    FilterWindow *self = TUI_FILTER(widget);
 
     // Get current field id
     field_idx = field_index(current_field(self->form));
@@ -460,8 +460,8 @@ filter_win_class_init(FilterWindowClass *klass)
     object_class->constructed = filter_win_constructed;
     object_class->finalize = filter_win_finalized;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->handle_key = filter_win_handle_key;
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->key_pressed = filter_win_handle_key;
 
 }
 

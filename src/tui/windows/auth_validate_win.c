@@ -43,9 +43,10 @@ G_DEFINE_TYPE(AuthValidateWindow, auth_validate_win, TUI_TYPE_WINDOW)
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static gint
-auth_validate_win_draw(Window *window)
+auth_validate_win_draw(Widget *widget)
 {
     // Get panel information
+    Window *window = TUI_WINDOW(widget);
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(window);
     g_return_val_if_fail(self != NULL, -1);
 
@@ -120,9 +121,10 @@ auth_validate_win_calculate(Window *window)
  * @return enum @key_handler_ret
  */
 static gint
-auth_validate_win_handle_key(Window *window, gint key)
+auth_validate_win_handle_key(Widget *widget, gint key)
 {
     // Get panel information
+    Window *window = TUI_WINDOW(widget);
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
@@ -398,9 +400,9 @@ auth_validate_win_class_init(AuthValidateWindowClass *klass)
     object_class->constructed = auth_validate_win_constructed;
     object_class->finalize = auth_validate_win_finalize;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->draw = auth_validate_win_draw;
-    window_class->handle_key = auth_validate_win_handle_key;
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->draw = auth_validate_win_draw;
+    widget_class->key_pressed = auth_validate_win_handle_key;
 
 }
 

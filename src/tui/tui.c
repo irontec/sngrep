@@ -203,8 +203,8 @@ tui_refresh_screen(GMainLoop *loop)
 
 static gboolean
 tui_read_input(G_GNUC_UNUSED gint fd,
-                   G_GNUC_UNUSED GIOCondition condition,
-                   GMainLoop *loop)
+               G_GNUC_UNUSED GIOCondition condition,
+               GMainLoop *loop)
 {
     PANEL *panel = panel_below(NULL);
     g_return_val_if_fail(panel != NULL, FALSE);

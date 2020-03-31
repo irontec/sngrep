@@ -47,8 +47,9 @@ rtp_player_win_decode_stream(Window *window, Stream *stream)
 }
 
 static gint
-rtp_player_win_draw(Window *window)
+rtp_player_win_draw(Widget *widget)
 {
+    Window *window = TUI_WINDOW(widget);
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_val_if_fail(self != NULL, 1);
     WINDOW *win = window_get_ncurses_window(window);
@@ -125,9 +126,10 @@ rtp_player_win_draw(Window *window)
 }
 
 static int
-rtp_player_win_handle_key(Window *window, int key)
+rtp_player_win_handle_key(Widget *widget, int key)
 {
     // Sanity check, this should not happen
+    Window *window = TUI_WINDOW(widget);
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
@@ -351,9 +353,9 @@ rtp_player_win_class_init(RtpPlayerWindowClass *klass)
     object_class->constructed = rtp_player_win_constructed;
     object_class->finalize = rtp_player_win_finalize;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->draw = rtp_player_win_draw;
-    window_class->handle_key = rtp_player_win_handle_key;
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->draw = rtp_player_win_draw;
+    widget_class->key_pressed = rtp_player_win_handle_key;
 
 }
 

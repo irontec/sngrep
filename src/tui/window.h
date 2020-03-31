@@ -35,20 +35,12 @@
 #include <glib-object.h>
 #include <ncurses.h>
 #include <panel.h>
+#include "tui/widget.h"
 
 G_BEGIN_DECLS
 
 #define TUI_TYPE_WINDOW window_get_type()
-G_DECLARE_DERIVABLE_TYPE(Window, window, TUI, WINDOW, GObject)
-
-//! Possible key handler results
-typedef enum
-{
-    KEY_HANDLED = 0,        // Panel has handled the key, dont'use default key handler
-    KEY_NOT_HANDLED = -1,   // Panel has not handled the key, try default key handler
-    KEY_PROPAGATED = -2,    // Panel destroys and requests previous panel to handle key
-    KEY_DESTROY = -3,       // Panel request destroy
-} WindowKeyHandlerRet;
+G_DECLARE_DERIVABLE_TYPE(Window, window, TUI, WINDOW, Widget)
 
 /**
  * @brief Enum for available panel types
@@ -80,15 +72,11 @@ typedef enum
 struct _WindowClass
 {
     //! Parent class
-    GObjectClass parent;
+    WidgetClass parent;
     //! Query the panel if redraw is required
     gboolean (*redraw)(Window *self);
-    //! Request the panel to redraw its data
-    gint (*draw)(Window *self);
     //! Notifies the panel the screen has changed
     gint (*resize)(Window *self);
-    //! Handle a custom keybinding on this panel
-    gint (*handle_key)(Window *self, gint key);
     //! Show help window for this panel (if any)
     gint (*help)(Window *self);
 };

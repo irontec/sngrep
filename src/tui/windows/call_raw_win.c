@@ -160,11 +160,12 @@ call_raw_win_print_msg(Window *window, Message *msg)
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static gint
-call_raw_win_draw(Window *window)
+call_raw_win_draw(Widget *widget)
 {
     Message *msg = NULL;
 
     // Get panel information
+    Window *window = TUI_WINDOW(widget);
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_val_if_fail(self != NULL, -1);
     WINDOW *win = window_get_ncurses_window(window);
@@ -237,10 +238,11 @@ call_raw_win_move_down(Window *window, guint times)
  * @return enum @key_handler_ret
  */
 static gint
-call_raw_win_handle_key(Window *window, int key)
+call_raw_win_handle_key(Widget *widget, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CR_SCROLLSTEP);
 
+    Window *window = TUI_WINDOW(widget);
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
@@ -376,8 +378,10 @@ call_raw_win_class_init(CallRawWindowClass *klass)
 
     WindowClass *window_class = TUI_WINDOW_CLASS(klass);
     window_class->redraw = call_raw_win_redraw;
-    window_class->draw = call_raw_win_draw;
-    window_class->handle_key = call_raw_win_handle_key;
+
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->draw = call_raw_win_draw;
+    widget_class->key_pressed = call_raw_win_handle_key;
 
 }
 

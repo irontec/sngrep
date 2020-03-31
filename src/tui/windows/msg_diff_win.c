@@ -170,9 +170,10 @@ msg_diff_win_draw_message(WINDOW *win, Message *msg, char *highlight)
  * @return 0 in all cases
  */
 static int
-msg_diff_win_draw(Window *window)
+msg_diff_win_draw(Widget *widget)
 {
     // Get panel information
+    Window *window = TUI_WINDOW(widget);
     MsgDiffWindow *self = TUI_MSG_DIFF(window);
     g_return_val_if_fail(self != NULL, -1);
 
@@ -253,8 +254,8 @@ msg_diff_win_class_init(MsgDiffWindowClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = msg_diff_win_constructed;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->draw = msg_diff_win_draw;
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->draw = msg_diff_win_draw;
 }
 
 static void

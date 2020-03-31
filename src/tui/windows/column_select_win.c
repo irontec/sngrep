@@ -408,10 +408,10 @@ column_select_handle_key_form(ColumnSelectWindow *self, int key)
  * @return enum @key_handler_ret
  */
 static gint
-column_select_handle_key(Window *window, gint key)
+column_select_handle_key(Widget *widget, gint key)
 {
     // Get panel information
-    ColumnSelectWindow *self = TUI_COLUMN_SELECT(window);
+    ColumnSelectWindow *self = TUI_COLUMN_SELECT(widget);
 
     if (self->form_active) {
         return column_select_handle_key_form(self, key);
@@ -567,8 +567,8 @@ column_select_class_init(ColumnSelectWindowClass *klass)
     object_class->constructed = column_select_constructed;
     object_class->finalize = column_select_finalize;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->handle_key = column_select_handle_key;
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->key_pressed = column_select_handle_key;
 
 }
 

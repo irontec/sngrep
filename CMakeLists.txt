@@ -45,6 +45,7 @@ set(SOURCES
         src/tui/windows/stats_win.c
         src/tui/windows/auth_validate_win.c
         src/tui/windows/protocol_select_win.c
+        src/tui/widget.c
         src/tui/window.c
         src/tui/dialog.c
         src/tui/keybinding.c

@@ -126,8 +126,9 @@ SettingsWindowEntry entries[] = {
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static gint
-settings_win_draw(Window *window)
+settings_win_draw(Widget *widget)
 {
+    Window *window = TUI_WINDOW(widget);
     SettingsWindow *self = TUI_SETTINGS(window);
     WINDOW *win = window_get_ncurses_window(window);
 
@@ -329,13 +330,14 @@ settings_win_save(Window *window)
  * @return enum @key_handler_ret
  */
 static gint
-settings_win_handle_key(Window *window, gint key)
+settings_win_handle_key(Widget *widget, gint key)
 {
     int field_idx;
     SettingsWindowEntry *entry;
     GType setting_type = -1;
 
     // Get panel information
+    Window *window = TUI_WINDOW(widget);
     SettingsWindow *self = TUI_SETTINGS(window);
 
     // Get current field id
@@ -628,9 +630,9 @@ settings_win_class_init(SettingsWindowClass *klass)
     object_class->constructed = settings_win_constructed;
     object_class->finalize = settings_win_finalize;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->draw = settings_win_draw;
-    window_class->handle_key = settings_win_handle_key;
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->draw = settings_win_draw;
+    widget_class->key_pressed = settings_win_handle_key;
 
 }
 

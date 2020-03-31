@@ -493,10 +493,11 @@ call_list_draw_list(CallListWindow *self)
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static int
-call_list_draw(Window *window)
+call_list_draw(Widget *widget)
 {
     int cury, curx;
 
+    Window *window = TUI_WINDOW(widget);
     CallListWindow *self = TUI_CALL_LIST(window);
 
     // Store cursor position
@@ -821,13 +822,14 @@ call_list_handle_menu_key(CallListWindow *self, int key)
  * @return enum @key_handler_ret
  */
 static int
-call_list_handle_key(Window *window, int key)
+call_list_handle_key(Widget *widget, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
     CallGroup *group;
     Call *call;
     StorageSortOpts sort;
 
+    Window *window = TUI_WINDOW(widget);
     CallListWindow *self = TUI_CALL_LIST(window);
 
     // Handle form key
@@ -1231,10 +1233,12 @@ call_list_class_init(CallListWindowClass *klass)
 
     WindowClass *window_class = TUI_WINDOW_CLASS(klass);
     window_class->redraw = call_list_redraw;
-    window_class->draw = call_list_draw;
     window_class->resize = call_list_resize;
-    window_class->handle_key = call_list_handle_key;
     window_class->help = call_list_help;
+
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->draw = call_list_draw;
+    widget_class->key_pressed = call_list_handle_key;
 }
 
 static void
