@@ -36,8 +36,8 @@
 #include <form.h>
 #include <glib.h>
 #include "tui/tui.h"
-#include "tui/window.h"
-#include "tui/scrollbar.h"
+#include "tui/widgets/window.h"
+#include "tui/widgets/scrollbar.h"
 
 G_BEGIN_DECLS
 

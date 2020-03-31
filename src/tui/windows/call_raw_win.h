@@ -36,7 +36,7 @@
 #include "storage/group.h"
 #include "storage/message.h"
 #include "tui/tui.h"
-#include "tui/window.h"
+#include "tui/widgets/window.h"
 
 G_BEGIN_DECLS
 

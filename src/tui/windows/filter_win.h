@@ -33,7 +33,7 @@
 #define __SNGREP_FILTER_WIN_H__
 
 #include <form.h>
-#include "tui/window.h"
+#include "tui/widgets/window.h"
 #include "tui/tui.h"
 
 #define WINDOW_TYPE_FILTER filter_win_get_type()

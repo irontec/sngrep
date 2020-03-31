@@ -27,7 +27,7 @@
  */
 
 #include "config.h"
-#include "tui.h"
+#include "tui/tui.h"
 #include "scrollbar.h"
 
 Scrollbar

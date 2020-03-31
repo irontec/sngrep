@@ -28,7 +28,7 @@
 #ifndef __SNGREP_STATS_WIN_H__
 #define __SNGREP_STATS_WIN_H__
 
-#include "tui/window.h"
+#include "tui/widgets/window.h"
 
 G_BEGIN_DECLS
 

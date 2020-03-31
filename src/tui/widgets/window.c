@@ -31,7 +31,7 @@
 #include <string.h>
 #include <ncurses.h>
 #include <panel.h>
-#include "tui/window.h"
+#include "window.h"
 #include "tui/theme.h"
 
 typedef struct

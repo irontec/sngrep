@@ -39,7 +39,7 @@
 #include "config.h"
 #include <ncurses.h>
 #include <panel.h>
-#include "tui/window.h"
+#include "tui/widgets/window.h"
 #include "tui/theme.h"
 #include "tui/keybinding.h"
 #include "storage/storage.h"

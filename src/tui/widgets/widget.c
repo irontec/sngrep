@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include <ncurses.h>
-#include "tui/widget.h"
+#include "widget.h"
 
 enum
 {

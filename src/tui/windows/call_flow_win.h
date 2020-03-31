@@ -57,7 +57,7 @@
 
 #include <glib.h>
 #include "tui/tui.h"
-#include "tui/scrollbar.h"
+#include "tui/widgets/scrollbar.h"
 #include "storage/group.h"
 
 //! Configurable some day

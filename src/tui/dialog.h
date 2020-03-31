@@ -31,7 +31,7 @@
 #define __SNGREP_DIALOG_H
 
 #include <glib.h>
-#include "tui/window.h"
+#include "tui/widgets/window.h"
 
 //! Default dialog dimensions
 #define DIALOG_MAX_WIDTH 100

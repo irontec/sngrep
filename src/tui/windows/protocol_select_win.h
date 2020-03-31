@@ -31,9 +31,9 @@
 
 #include <menu.h>
 #include <form.h>
-#include "tui/window.h"
+#include "tui/widgets/window.h"
 #include "tui/tui.h"
-#include "tui/scrollbar.h"
+#include "tui/widgets/scrollbar.h"
 #include "storage/attribute.h"
 
 G_BEGIN_DECLS

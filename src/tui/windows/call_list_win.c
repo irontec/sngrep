@@ -36,7 +36,7 @@
 #include "capture/capture_hep.h"
 #endif
 #include "tui/tui.h"
-#include "tui/window.h"
+#include "tui/widgets/window.h"
 #include "tui/dialog.h"
 #include "tui/windows/call_list_win.h"
 #include "tui/windows/call_flow_win.h"

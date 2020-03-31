@@ -35,7 +35,7 @@
 #include <glib-object.h>
 #include <ncurses.h>
 #include <panel.h>
-#include "tui/widget.h"
+#include "widget.h"
 
 G_BEGIN_DECLS
 
