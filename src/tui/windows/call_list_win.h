@@ -38,6 +38,7 @@
 #include "tui/tui.h"
 #include "tui/widgets/window.h"
 #include "tui/widgets/scrollbar.h"
+#include "tui/widgets/menu_bar.h"
 
 G_BEGIN_DECLS
 
@@ -121,6 +122,8 @@ struct _CallListWindow
     Scrollbar vscroll;
     //! List horizontal scrollbar
     Scrollbar hscroll;
+    //! Window menu bar
+    Widget *menu_bar;
 };
 
 /**

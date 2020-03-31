@@ -32,38 +32,139 @@
 
 enum
 {
+    SIG_DESTROY,
+    SIGS
+};
+
+
+enum
+{
     PROP_WIDGET_HEIGHT = 1,
     PROP_WIDGET_WIDTH,
+    PROP_WIDGET_PARENT,
     N_PROPERTIES
 };
+
+static guint signals[SIGS] = { 0 };
 
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 typedef struct
 {
+    //! Position to search
+    gint x, y;
+    //! Widget pointer if found, NULL if not found
+    Widget *found;
+} WidgetFindData;
+
+typedef struct
+{
     //! Parent widget
     Widget *parent;
+    //! List of Widget children
+    GNode *children;
     //! Window for drawing this widget
     WINDOW *win;
     //! Dimensions of this widget
     gint height, width;
     //! Position of this widget in screen
     gint x, y;
+    //! Determine if this widget is displayed on the screen
+    gboolean visible;
 } WidgetPrivate;
 
 // Widget class definition
 G_DEFINE_TYPE_WITH_PRIVATE(Widget, widget, G_TYPE_OBJECT)
 
 Widget *
-widget_new()
+widget_new(const Widget *parent)
 {
-    return g_object_new(TUI_TYPE_WIDGET, NULL);
+    return g_object_new(
+        TUI_TYPE_WIDGET,
+        "parent", parent,
+        NULL
+    );
 }
 
 void
-widget_free(Widget *widget)
+widget_destroy(Widget *widget)
 {
     g_object_unref(widget);
+}
+
+void
+widget_show(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->visible = TRUE;
+}
+
+void
+widget_hide(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->visible = FALSE;
+}
+
+gboolean
+widget_is_visible(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->visible;
+}
+
+static void
+widget_add_child(Widget *widget, Widget *child)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    g_node_append(priv->children, widget_get_children(child));
+}
+
+Widget *
+widget_get_toplevel(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    GNode *root = g_node_get_root(priv->children);
+    return root->data;
+}
+
+Widget *
+widget_get_parent(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->parent;
+}
+
+GNode *
+widget_get_children(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->children;
+}
+
+gint
+widget_get_children_count(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return g_node_n_children(priv->children);
+}
+
+Widget *
+widget_get_child(Widget *widget, gint index)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    GNode *node = g_node_nth_child(priv->children, index);
+    g_return_val_if_fail(node != NULL, NULL);
+    return node->data;
+}
+
+void
+widget_set_ncurses_window(Widget *widget, WINDOW *win)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    if (priv->win)
+        delwin(priv->win);
+    priv->win = win;
 }
 
 WINDOW *
@@ -123,15 +224,80 @@ widget_get_ypos(Widget *widget)
     return priv->y;
 }
 
+static gboolean
+widget_check_node_position(GNode *node, gpointer data)
+{
+    Widget *widget = TUI_WIDGET(node->data);
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    if (priv->visible == FALSE) {
+        return FALSE;
+    }
+
+    WidgetFindData *find_data = data;
+    if (find_data->x >= priv->x
+        && find_data->x < priv->x + priv->width
+        && find_data->y >= priv->y
+        && find_data->y < priv->y + priv->height) {
+        find_data->found = widget;
+    }
+
+    return find_data->found != NULL;
+}
+
+Widget *
+widget_find_by_position(Widget *widget, gint x, gint y)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    WidgetFindData find_data = {
+        .x = x,
+        .y = y,
+        .found = NULL,
+    };
+
+    g_node_traverse(priv->children,
+                    G_IN_ORDER,
+                    G_TRAVERSE_ALL,
+                    -1,
+                    widget_check_node_position,
+                    &find_data
+    );
+
+    return find_data.found;
+}
+
 gint
 widget_draw(Widget *widget)
 {
+    // Only for visible widgets
+    if (!widget_is_visible(widget)) {
+        return 0;
+    }
+
     WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
     if (klass->draw != NULL) {
         return klass->draw(widget);
     }
 
     return 0;
+}
+
+gboolean
+widget_focus_gain(Widget *widget)
+{
+    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    if (klass->focus_gained != NULL) {
+        return klass->focus_gained(widget);
+    }
+    return TRUE;
+}
+
+void
+widget_focus_lost(Widget *widget)
+{
+    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    if (klass->focus_lost != NULL) {
+        klass->focus_lost(widget);
+    }
 }
 
 gint
@@ -160,12 +326,45 @@ widget_key_pressed(Widget *widget, gint key)
     return hld;
 }
 
+static void
+widget_draw_child(GNode *node, G_GNUC_UNUSED gpointer data)
+{
+    widget_draw(node->data);
+}
+
 static gint
 widget_base_draw(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
+    g_node_children_foreach(
+        priv->children,
+        G_TRAVERSE_ALL,
+        widget_draw_child,
+        NULL
+    );
+
     touchwin(priv->win);
+
     return 0;
+}
+
+static void
+widget_constructed(GObject *object)
+{
+    WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(object));
+    // Create widget window with requested dimensions
+    if (priv->win == NULL) {
+        priv->win = newwin(priv->height, priv->width, priv->y, priv->x);
+    }
+}
+
+static void
+widget_dispose(GObject *self)
+{
+    // Notify everyone we're being destroyed
+    g_signal_emit(self, signals[SIG_DESTROY], 0);
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(widget_parent_class)->dispose(self);
 }
 
 static void
@@ -190,6 +389,12 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
         case PROP_WIDGET_WIDTH:
             priv->width = g_value_get_int(value);
             break;
+        case PROP_WIDGET_PARENT:
+            priv->parent = g_value_get_object(value);
+            if (priv->parent != NULL) {
+                widget_add_child(priv->parent, TUI_WIDGET(self));
+            }
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
             break;
@@ -208,6 +413,8 @@ widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec 
         case PROP_WIDGET_WIDTH:
             g_value_set_int(value, priv->width);
             break;
+        case PROP_WIDGET_PARENT:
+            g_value_set_object(value, priv->parent);
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
             break;
@@ -218,6 +425,8 @@ static void
 widget_class_init(WidgetClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->constructed = widget_constructed;
+    object_class->dispose = widget_dispose;
     object_class->finalize = widget_finalize;
     object_class->set_property = widget_set_property;
     object_class->get_property = widget_get_property;
@@ -230,7 +439,7 @@ widget_class_init(WidgetClass *klass)
                          "Initial window height",
                          0,
                          getmaxy(stdscr),
-                         getmaxy(stdscr),
+                         0,
                          G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
 
@@ -240,8 +449,16 @@ widget_class_init(WidgetClass *klass)
                          "Initial window Width",
                          0,
                          getmaxx(stdscr),
-                         getmaxx(stdscr),
+                         0,
                          G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+
+    obj_properties[PROP_WIDGET_PARENT] =
+        g_param_spec_object("parent",
+                            "Parent Widget",
+                            "Parent Widget",
+                            TUI_TYPE_WIDGET,
+                            G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
 
     g_object_class_install_properties(
@@ -249,6 +466,16 @@ widget_class_init(WidgetClass *klass)
         N_PROPERTIES,
         obj_properties
     );
+
+    signals[SIG_DESTROY] =
+        g_signal_newv("destroy",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
 
 }
 
@@ -258,4 +485,6 @@ widget_init(Widget *self)
     WidgetPrivate *priv = widget_get_instance_private(self);
     // Initialize window position
     priv->x = priv->y = 0;
+    // Add widget as root for children tree
+    priv->children = g_node_new(self);
 }

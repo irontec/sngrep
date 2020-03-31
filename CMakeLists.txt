@@ -47,6 +47,9 @@ set(SOURCES
         src/tui/windows/protocol_select_win.c
         src/tui/widgets/widget.c
         src/tui/widgets/window.c
+        src/tui/widgets/menu_bar.c
+        src/tui/widgets/menu_item.c
+        src/tui/widgets/menu.c
         src/tui/dialog.c
         src/tui/keybinding.c
         src/tui/widgets/scrollbar.c

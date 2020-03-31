@@ -135,10 +135,8 @@ capture_input_pcap_stop(CaptureInput *input)
     // Mark the input as full loaded
     capture_input_set_loaded_size(input, capture_input_total_size(input));
 
-    // Detach capture source from capture main loop
-    if (!g_source_is_destroyed(capture_input_source(input))) {
-        g_source_destroy(capture_input_source(input));
-    }
+    // Remove input from capture loop
+    g_source_destroy(capture_input_source(input));
 }
 
 CaptureInput *

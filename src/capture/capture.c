@@ -98,7 +98,7 @@ capture_manager_stop(CaptureManager *manager)
 {
     // Close all capture inputs
     for (GSList *le = manager->inputs; le != NULL; le = le->next) {
-        capture_input_stop(le->data);
+        g_source_destroy(capture_input_source(le->data));
     }
 
     // Close all capture outputs

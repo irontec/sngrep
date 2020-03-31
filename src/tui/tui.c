@@ -80,7 +80,7 @@ tui_destroy_window(Window *window)
     // Remove from the window list
     g_ptr_array_remove(windows, window);
     // Deallocate window memory
-    window_free(window);
+    widget_destroy(TUI_WIDGET(window));
 }
 
 static gboolean
@@ -171,12 +171,12 @@ tui_find_by_type(WindowType type)
 }
 
 static gboolean
-tui_refresh_screen(GMainLoop *loop)
+tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
 {
-    PANEL *panel = panel_below(NULL);
+    PANEL *panel = NULL;
 
     // While there are still panels
-    if (panel) {
+    while ((panel = panel_below(panel))) {
 
         // Get panel interface structure
         Window *ui = tui_find_by_panel(panel);
@@ -186,19 +186,16 @@ tui_refresh_screen(GMainLoop *loop)
             // Redraw this panel
             if (window_draw(ui) != 0) {
                 tui_destroy_window(ui);
-                return TRUE;
             }
         }
-
         // Update panel stack
         update_panels();
-        doupdate();
-        return TRUE;
-    } else {
-        g_main_loop_quit(loop);
-        return FALSE;
     }
 
+    // Update ncurses standard screen with panel info
+    doupdate();
+
+    return panel_above(NULL) != NULL;
 }
 
 static gboolean
@@ -223,6 +220,16 @@ tui_read_input(G_GNUC_UNUSED gint fd,
     // No key pressed
     if (c == ERR)
         return TRUE;
+
+    if (c == KEY_MOUSE) {
+        MEVENT event;
+        if (getmouse(&event) == OK) {
+            window_handle_mouse(ui, event);
+        }
+        // Force screen redraw with each mouse event
+        tui_refresh_screen(loop);
+        return TRUE;
+    }
 
     // Handle received key
     int hld = KEY_NOT_HANDLED;
@@ -551,7 +558,8 @@ tui_init(GMainLoop *loop, GError **error)
     windows = g_ptr_array_new();
 
     // Create the first displayed window
-    tui_create_window(WINDOW_CALL_LIST);
+    Window *window = tui_create_window(WINDOW_CALL_LIST);
+    g_signal_connect_swapped(window, "destroy", G_CALLBACK(g_main_loop_quit), loop);
 
     // Source for reading events from stdin
     GSource *source = g_unix_fd_source_new(STDIN_FILENO, G_IO_IN | G_IO_ERR | G_IO_HUP);

@@ -97,18 +97,6 @@ Window *
 window_new(gint height, gint width);
 
 /**
- * @brief Destroy a panel structure
- *
- * Removes the panel associated to the given ui and free
- * its memory. Most part of this task is done in the custom
- * destroy function of the panel.
- *
- * @param window UI structure
- */
-void
-window_free(Window *window);
-
-/**
  * @brief Resize current ui
  *
  * This function acts as wrapper to custom ui draw functions
@@ -155,6 +143,17 @@ window_draw(Window *window);
  */
 void
 window_help(Window *window);
+
+/**
+ * @brief Handle moves events on given window
+ *
+ * This function will pass the mouse event
+ * to the given window function.
+ *
+ * @return enum @key_handler_ret*
+ */
+gint
+window_handle_mouse(Window *window, MEVENT mevent);
 
 /**
  * @brief Handle key inputs on given UI
@@ -227,6 +226,11 @@ window_set_height(Window *window, gint height);
 gint
 window_get_height(Window *window);
 
+Widget *
+window_focused_widget(Window *window);
+
+void
+window_set_focused_widget(Window *window, Widget *widget);
 
 G_END_DECLS
 

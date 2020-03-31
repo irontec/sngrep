@@ -354,6 +354,8 @@ call_raw_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_CALL_RAW,
+        "height", getmaxy(stdscr),
+        "width", getmaxx(stdscr),
         NULL
     );
 }

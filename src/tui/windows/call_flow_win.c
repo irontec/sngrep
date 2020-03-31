@@ -1950,6 +1950,8 @@ call_flow_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_CALL_FLOW,
+        "height", getmaxy(stdscr),
+        "width", getmaxx(stdscr),
         NULL
     );
 }

@@ -37,6 +37,7 @@
 #endif
 #include "tui/tui.h"
 #include "tui/widgets/window.h"
+#include "tui/widgets/menu_bar.h"
 #include "tui/dialog.h"
 #include "tui/windows/call_list_win.h"
 #include "tui/windows/call_flow_win.h"
@@ -163,6 +164,8 @@ call_list_draw_header(CallListWindow *self)
 
     // Draw a Panel header lines
     window_clear_line(TUI_WINDOW(self), 1);
+    window_clear_line(TUI_WINDOW(self), 2);
+    window_clear_line(TUI_WINDOW(self), 3);
 
     WINDOW *win = window_get_ncurses_window(TUI_WINDOW(self));
 
@@ -476,11 +479,6 @@ call_list_draw_list(CallListWindow *self)
         mvwprintw(self->list_win, 0, 0, "A");
         wattroff(self->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
     }
-
-    // Refresh the list
-    if (!self->menu_active) {
-        wnoutrefresh(self->list_win);
-    }
 }
 
 /**
@@ -512,6 +510,8 @@ call_list_draw(Widget *widget)
 
     // Restore cursor position
     wmove(window_get_ncurses_window(window), cury, curx);
+
+    TUI_WIDGET_CLASS(call_list_parent_class)->draw(widget);
 
     return 0;
 }
@@ -971,10 +971,10 @@ call_list_handle_key(Widget *widget, int key)
                 // Handle quit from this screen unless requested
                 if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
                     if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
-                        return KEY_DESTROY;
+                        widget_destroy(TUI_WIDGET(self));
                     }
                 } else {
-                    return KEY_DESTROY;
+                    widget_destroy(TUI_WIDGET(self));
                 }
                 return KEY_HANDLED;
             default:
@@ -1168,6 +1168,83 @@ call_list_win_new()
 }
 
 static void
+call_list_win_handle_action(Widget *sender, KeybindingAction action)
+{
+    CallListWindow *self = TUI_CALL_LIST(widget_get_toplevel(sender));
+    CallGroup *group = NULL;
+    Call *call = NULL;
+
+    // Check if we handle this action
+    switch (action) {
+        case ACTION_SHOW_FLOW:
+        case ACTION_SHOW_FLOW_EX:
+        case ACTION_SHOW_RAW:
+            // Check we have calls in the list
+            if (g_ptr_array_empty(self->dcalls))
+                break;
+
+            // Create a new group of calls
+            group = call_group_clone(self->group);
+
+            // If not selected call, show current call flow
+            if (call_group_count(group) == 0)
+                call_group_add(group, g_ptr_array_index(self->dcalls, self->cur_idx));
+
+            // Add xcall to the group
+            if (action == ACTION_SHOW_FLOW_EX) {
+                call = g_ptr_array_index(self->dcalls, self->cur_idx);
+                call_group_add_calls(group, call->xcalls);
+                group->callid = call->callid;
+            }
+
+            if (action == ACTION_SHOW_RAW) {
+                // Create a Call raw panel
+                call_raw_win_set_group(tui_create_window(WINDOW_CALL_RAW), group);
+            } else {
+                // Display current call flow (normal or extended)
+                call_flow_win_set_group(tui_create_window(WINDOW_CALL_FLOW), group);
+            }
+            break;
+        case ACTION_SHOW_PROTOCOLS:
+            tui_create_window(WINDOW_PROTOCOL_SELECT);
+            break;
+        case ACTION_SHOW_FILTERS:
+            tui_create_window(WINDOW_FILTER);
+            break;
+        case ACTION_SHOW_COLUMNS:
+            column_select_win_set_columns(tui_create_window(WINDOW_COLUMN_SELECT), self->columns);
+            break;
+        case ACTION_SHOW_STATS:
+            tui_create_window(WINDOW_STATS);
+            break;
+        case ACTION_SAVE:
+            save_set_group(tui_create_window(WINDOW_SAVE), self->group);
+            break;
+        case ACTION_SHOW_SETTINGS:
+            tui_create_window(WINDOW_SETTINGS);
+            break;
+        case ACTION_TOGGLE_PAUSE:
+            // Pause/Resume capture
+            capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
+            break;
+        case ACTION_SHOW_HELP:
+            window_help(TUI_WINDOW(self));
+            break;
+        case ACTION_PREV_SCREEN:
+            // Handle quit from this screen unless requested
+            if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
+                if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
+                    widget_destroy(widget_get_toplevel(sender));
+                }
+            } else {
+                widget_destroy(widget_get_toplevel(sender));
+            }
+        default:
+            break;
+    }
+}
+
+static void
 call_list_constructed(GObject *object)
 {
     // Chain-up parent constructed
@@ -1222,6 +1299,86 @@ call_list_constructed(GObject *object)
     // Apply initial configured filters
     filter_method_from_setting(setting_get_value(SETTING_STORAGE_FILTER_METHODS));
     filter_payload_from_setting(setting_get_value(SETTING_STORAGE_FILTER_PAYLOAD));
+
+    // Create menu bar entries
+    self->menu_bar = menu_bar_new(TUI_WIDGET(self));
+    // File Menu
+    Widget *menu_file = menu_new(self->menu_bar, "File");
+    Widget *menu_file_preferences = menu_item_new(menu_file, "Settings");
+    menu_item_set_action(TUI_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
+    g_signal_connect(menu_file_preferences, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_SETTINGS));
+
+    Widget *menu_file_save = menu_item_new(menu_file, "Save as ...");
+    menu_item_set_action(TUI_MENU_ITEM(menu_file_save), ACTION_SAVE);
+    g_signal_connect(menu_file_save, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SAVE));
+
+    menu_item_new(menu_file, NULL);
+    Widget *menu_file_exit = menu_item_new(menu_file, "Exit");
+    menu_item_set_action(TUI_MENU_ITEM(menu_file_exit), ACTION_PREV_SCREEN);
+    g_signal_connect(menu_file_exit, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_PREV_SCREEN));
+
+    // View Menu
+    Widget *menu_view = menu_new(self->menu_bar, "View");
+    Widget *menu_view_filters = menu_item_new(menu_view, "Filters");
+    menu_item_set_action(TUI_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
+    g_signal_connect(menu_view_filters, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_FILTERS));
+
+    Widget *menu_view_protocols = menu_item_new(menu_view, "Protocols");
+    menu_item_set_action(TUI_MENU_ITEM(menu_view_protocols), ACTION_SHOW_PROTOCOLS);
+    g_signal_connect(menu_view_protocols, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_PROTOCOLS));
+
+    // Call List menu
+    Widget *menu_list = menu_new(self->menu_bar, "Call List");
+    Widget *menu_list_columns = menu_item_new(menu_list, "Configure Columns");
+    menu_item_set_action(TUI_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
+    g_signal_connect(menu_list_columns, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_COLUMNS));
+
+    menu_item_new(menu_list, NULL);
+    Widget *menu_list_clear = menu_item_new(menu_list, "Clear List");
+    menu_item_set_action(TUI_MENU_ITEM(menu_list_clear), ACTION_CLEAR_CALLS);
+    g_signal_connect(menu_list_clear, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_CLEAR_CALLS));
+
+    Widget *menu_list_clear_soft = menu_item_new(menu_list, "Clear filtered calls");
+    menu_item_set_action(TUI_MENU_ITEM(menu_list_clear_soft), ACTION_CLEAR_CALLS_SOFT);
+    g_signal_connect(menu_list_clear_soft, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_CLEAR_CALLS_SOFT));
+
+    menu_item_new(menu_list, NULL);
+    Widget *menu_list_flow = menu_item_new(menu_list, "Show Call Flow");
+    menu_item_set_action(TUI_MENU_ITEM(menu_list_flow), ACTION_SHOW_FLOW);
+    g_signal_connect(menu_list_flow, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_FLOW));
+
+    Widget *menu_list_flow_ex = menu_item_new(menu_list, "Show Call Flow Extended");
+    menu_item_set_action(TUI_MENU_ITEM(menu_list_flow_ex), ACTION_SHOW_FLOW_EX);
+    g_signal_connect(menu_list_flow, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_FLOW_EX));
+
+    // Help Menu
+    Widget *menu_help = menu_new(self->menu_bar, "Help");
+    Widget *menu_help_about = menu_item_new(menu_help, "About");
+    menu_item_set_action(TUI_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
+    g_signal_connect(menu_help_about, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_HELP));
+
 }
 
 static void
@@ -1242,7 +1399,7 @@ call_list_class_init(CallListWindowClass *klass)
 }
 
 static void
-call_list_init(G_GNUC_UNUSED CallListWindow *self)
+call_list_init(CallListWindow *self)
 {
     // Set parent attributes
     window_set_window_type(TUI_WINDOW(self), WINDOW_CALL_LIST);
@@ -1250,4 +1407,6 @@ call_list_init(G_GNUC_UNUSED CallListWindow *self)
     // Initialize Call List attributes
     self->group = call_group_new();
     self->dcalls = g_ptr_array_new();
+
+    mousemask(BUTTON1_CLICKED, NULL);
 }

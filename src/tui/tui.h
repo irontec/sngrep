@@ -46,9 +46,6 @@
 #include "storage/group.h"
 #include "setting.h"
 
-//! Refresh UI every 200 ms
-#define REFRESHTHSECS   2
-
 //! Error reporting
 #define TUI_ERROR (capture_pcap_error_quark())
 

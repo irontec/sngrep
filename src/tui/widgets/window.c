@@ -27,7 +27,6 @@
  */
 
 #include "config.h"
-#include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
 #include <panel.h>
@@ -42,6 +41,8 @@ typedef struct
     WindowType type;
     //! Flag this panel as redraw required
     gboolean changed;
+    //! Current focused widget
+    Widget *focus;
 } WindowPrivate;
 
 // Window class definition
@@ -58,12 +59,6 @@ window_new(gint height, gint width)
     );
 
     return window;
-}
-
-void
-window_free(Window *window)
-{
-    g_object_unref(window);
 }
 
 PANEL *
@@ -115,6 +110,32 @@ gint
 window_get_height(Window *window)
 {
     return widget_get_height(TUI_WIDGET(window));
+}
+
+Widget *
+window_focused_widget(Window *window)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+    return priv->focus;
+}
+
+void
+window_set_focused_widget(Window *window, Widget *widget)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+
+    // Widget already has the focus
+    if (priv->focus == widget) {
+        return;
+    }
+
+    // Check if the widget wants to be focused
+    if (widget_focus_gain(widget)) {
+        // Remove focus from previous focused widget
+        widget_focus_lost(priv->focus);
+        // Set the new focus
+        priv->focus = widget;
+    }
 }
 
 gboolean
@@ -175,11 +196,16 @@ window_help(Window *window)
 }
 
 gint
-window_handle_mouse(Window *window, MEVENT event)
+window_handle_mouse(Window *window, MEVENT mevent)
 {
     WindowPrivate *priv = window_get_instance_private(window);
     priv->changed = TRUE;
-    return widget_clicked(TUI_WIDGET(window), event);
+    Widget *clicked_widget = widget_find_by_position(TUI_WIDGET(window), mevent.x, mevent.y);
+    if (clicked_widget != NULL) {
+        window_set_focused_widget(window, clicked_widget);
+        return widget_clicked(clicked_widget, mevent);
+    }
+    return KEY_HANDLED;
 }
 
 gint
@@ -187,7 +213,7 @@ window_handle_key(Window *window, gint key)
 {
     WindowPrivate *priv = window_get_instance_private(window);
     priv->changed = TRUE;
-    return widget_key_pressed(TUI_WIDGET(window), key);
+    return widget_key_pressed(priv->focus, key);
 }
 
 void
@@ -264,10 +290,10 @@ window_constructed(GObject *object)
 
     // If panel doesn't fill the screen center it
     if (height != maxy) {
-        xpos = abs((maxy - height) / 2);
+        xpos = ABS((maxy - height) / 2);
     }
     if (width != maxx) {
-        ypos = abs((maxx - width) / 2);
+        ypos = ABS((maxx - width) / 2);
     }
     widget_set_position(widget, xpos, ypos);
 
@@ -275,8 +301,13 @@ window_constructed(GObject *object)
     wtimeout(win, 0);
     keypad(win, TRUE);
 
+    // Make window widgets visible by default
+    widget_set_ncurses_window(widget, win);
+    widget_show(widget);
+
     WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(object));
     priv->panel = new_panel(win);
+    top_panel(priv->panel);
 
     /* update the object state depending on constructor properties */
     G_OBJECT_CLASS(window_parent_class)->constructed(object);
@@ -286,10 +317,8 @@ static void
 window_finalize(GObject *self)
 {
     WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(self));
-    // Hide the window
-    hide_panel(priv->panel);
-
     // Deallocate ncurses pointers
+    hide_panel(priv->panel);
     del_panel(priv->panel);
 
     // Chain-up parent finalize function
@@ -310,4 +339,6 @@ window_init(Window *self)
     WindowPrivate *priv = window_get_instance_private(self);
     // Force draw on new created windows
     priv->changed = TRUE;
+    // Set window as default focused Widget
+    priv->focus = TUI_WIDGET(self);
 }

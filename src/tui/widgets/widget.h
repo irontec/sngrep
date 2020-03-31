@@ -60,9 +60,9 @@ struct _WidgetClass
     //! Request the panel to redraw its data
     gint (*draw)(Widget *widget);
     //! Callback for focused event
-    gint (*focus_gained)(Widget *widget);
+    gboolean (*focus_gained)(Widget *widget);
     //! Callback for focused event
-    gint (*focus_lost)(Widget *widget);
+    void (*focus_lost)(Widget *widget);
     //! Handle a custom keybinding on this panel
     gint (*key_pressed)(Widget *widget, gint key);
     //! Handle a mouse event on this panel
@@ -82,7 +82,7 @@ struct _WidgetClass
  * @return widget instance pointer
  */
 Widget *
-widget_new(gint height, gint width);
+widget_new(const Widget *parent);
 
 /**
  * @brief Destroy a panel structure
@@ -94,7 +94,31 @@ widget_new(gint height, gint width);
  * @param widget UI structure
  */
 void
-widget_free(Widget *widget);
+widget_destroy(Widget *widget);
+
+void
+widget_show(Widget *widget);
+
+void
+widget_hide(Widget *widget);
+
+gboolean
+widget_is_visible(Widget *widget);
+
+Widget *
+widget_get_toplevel(Widget *widget);
+
+Widget *
+widget_get_parent(Widget *widget);
+
+GNode *
+widget_get_children(Widget *widget);
+
+gint
+widget_get_children_count(Widget *widget);
+
+Widget *
+widget_get_child(Widget *widget, gint index);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -107,6 +131,21 @@ widget_free(Widget *widget);
  */
 gint
 widget_draw(Widget *widget);
+
+/**
+ * @brief Callback when widget receives window focus
+ * @param widget Widget to be focused
+ * @return TRUE if the widget can be focused, FALSE otherwise
+ */
+gboolean
+widget_focus_gain(Widget *widget);
+
+/**
+ * @brief Callback when widget loses window focus
+ * @param widget Widget to remove focus from
+ */
+void
+widget_focus_lost(Widget *widget);
 
 /**
  * @brief Handle moves events on given widget
@@ -132,6 +171,9 @@ widget_clicked(Widget *widget, MEVENT event);
 gint
 widget_key_pressed(Widget *widget, gint key);
 
+void
+widget_set_ncurses_window(Widget *widget, WINDOW *win);
+
 WINDOW *
 widget_get_ncurses_window(Widget *widget);
 
@@ -155,6 +197,9 @@ widget_get_xpos(Widget *widget);
 
 gint
 widget_get_ypos(Widget *widget);
+
+Widget *
+widget_find_by_position(Widget *widget, gint x, gint y);
 
 G_END_DECLS
 

@@ -182,6 +182,9 @@ main(int argc, char *argv[])
     }
 
     /***************************** Configuration *****************************/
+#if GLIB_CHECK_VERSION(2, 50, 0)
+    g_log_set_writer_func(g_log_writer_journald, NULL, NULL);
+#endif
     // Initialize core attributes
     attribute_init();
 
