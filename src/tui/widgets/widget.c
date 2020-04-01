@@ -57,7 +57,7 @@ G_DEFINE_TYPE_WITH_PRIVATE(Widget, widget, G_TYPE_OBJECT)
 Widget *
 widget_new()
 {
-    return g_object_new( TUI_TYPE_WIDGET, NULL );
+    return g_object_new(TUI_TYPE_WIDGET, NULL);
 }
 
 void
@@ -99,6 +99,28 @@ widget_get_height(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->height;
+}
+
+void
+widget_set_position(Widget *widget, gint xpos, gint ypos)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->x = xpos;
+    priv->y = ypos;
+}
+
+gint
+widget_get_xpos(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->x;
+}
+
+gint
+widget_get_ypos(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->y;
 }
 
 gint
@@ -144,27 +166,6 @@ widget_base_draw(Widget *widget)
     WidgetPrivate *priv = widget_get_instance_private(widget);
     touchwin(priv->win);
     return 0;
-}
-
-static void
-widget_constructed(GObject *object)
-{
-    WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(object));
-
-    // Get current screen dimensions
-    gint maxx, maxy;
-    getmaxyx(stdscr, maxy, maxx);
-
-    // If panel doesn't fill the screen center it
-    if (priv->height != maxy) priv->x = abs((maxy - priv->height) / 2);
-    if (priv->width != maxx) priv->y = abs((maxx - priv->width) / 2);
-
-    priv->win = newwin(priv->height, priv->width, priv->x, priv->y);
-    wtimeout(priv->win, 0);
-    keypad(priv->win, TRUE);
-
-    /* update the object state depending on constructor properties */
-    G_OBJECT_CLASS(widget_parent_class)->constructed(object);
 }
 
 static void
@@ -217,7 +218,6 @@ static void
 widget_class_init(WidgetClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = widget_constructed;
     object_class->finalize = widget_finalize;
     object_class->set_property = widget_set_property;
     object_class->get_property = widget_get_property;

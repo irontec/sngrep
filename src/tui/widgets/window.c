@@ -254,11 +254,32 @@ window_draw_bindings(Window *window, const char **keybindings, gint count)
 static void
 window_constructed(GObject *object)
 {
-    // Initialize widget properties
-    G_OBJECT_CLASS(window_parent_class)->constructed(object);
+    // Get current screen dimensions
+    gint maxx, maxy, xpos = 0, ypos = 0;
+    getmaxyx(stdscr, maxy, maxx);
+
+    Widget *widget = TUI_WIDGET(object);
+    gint height = widget_get_height(widget);
+    gint width = widget_get_width(widget);
+
+    // If panel doesn't fill the screen center it
+    if (height != maxy) {
+        xpos = abs((maxy - height) / 2);
+    }
+    if (width != maxx) {
+        ypos = abs((maxx - width) / 2);
+    }
+    widget_set_position(widget, xpos, ypos);
+
+    WINDOW *win = newwin(height, width, xpos, ypos);
+    wtimeout(win, 0);
+    keypad(win, TRUE);
 
     WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(object));
-    priv->panel = new_panel(widget_get_ncurses_window(TUI_WIDGET(object)));
+    priv->panel = new_panel(win);
+
+    /* update the object state depending on constructor properties */
+    G_OBJECT_CLASS(window_parent_class)->constructed(object);
 }
 
 static void

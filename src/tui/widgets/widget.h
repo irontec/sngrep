@@ -147,7 +147,15 @@ widget_set_height(Widget *widget, gint height);
 gint
 widget_get_height(Widget *widget);
 
+void
+widget_set_position(Widget *widget, gint xpos, gint ypos);
+
+gint
+widget_get_xpos(Widget *widget);
+
+gint
+widget_get_ypos(Widget *widget);
 
 G_END_DECLS
 
-#endif /* __SNGREP_MENU_H__ */
+#endif /* __SNGREP_WIDGET_H__ */
