@@ -28,11 +28,11 @@
  */
 #include "config.h"
 #include "tui/widgets/container.h"
+#include "glib-extra/gnode.h"
 
 typedef struct
 {
-    //! List of Widget children
-    GNode *children;
+    gboolean dummy;
 } ContainerPrivate;
 
 typedef struct
@@ -49,40 +49,35 @@ G_DEFINE_TYPE_WITH_PRIVATE(Container, container, TUI_TYPE_WIDGET)
 void
 container_add_child(Container *container, Widget *child)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
-    priv->children = g_list_append(priv->children, (gpointer) child);
-    widget_set_parent(child, TUI_WIDGET(container));
+    g_node_append(
+        widget_get_node(TUI_WIDGET(container)),
+        widget_get_node(child)
+    );
 }
 
-GList *
+GNode *
 container_get_children(Container *container)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
-    return priv->children;
+    return widget_get_node(TUI_WIDGET(container));
 }
 
 Widget *
 container_get_child(Container *container, gint index)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
-    return g_list_nth_data(priv->children, index);
+    return g_node_nth_child_data(
+        widget_get_node(TUI_WIDGET(container)),
+        index
+    );
 }
 
-static void
-container_check_child_position(Widget *widget, gpointer data)
+static gboolean
+container_check_child_position(GNode *node, gpointer data)
 {
     ContainerFindData *find_data = data;
+    Widget *widget = node->data;
 
     if (widget_is_visible(widget) == FALSE) {
-        return;
-    }
-
-    if (TUI_IS_CONTAINER(widget)) {
-        find_data->found = container_find_by_position(
-            TUI_CONTAINER(widget),
-            find_data->x,
-            find_data->y
-        );
+        return FALSE;
     }
 
     if (find_data->found == NULL) {
@@ -93,51 +88,53 @@ container_check_child_position(Widget *widget, gpointer data)
             find_data->found = widget;
         }
     }
+
+    return find_data->found != NULL;
 }
 
 Widget *
 container_find_by_position(Container *container, gint x, gint y)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
     ContainerFindData find_data = {
         .x = x,
         .y = y,
         .found = NULL,
     };
 
-    g_list_foreach(priv->children,
-                   (GFunc) container_check_child_position,
-                   &find_data
+    g_node_traverse(
+        widget_get_node(TUI_WIDGET(container)),
+        G_IN_ORDER,
+        G_TRAVERSE_ALL,
+        -1,
+        container_check_child_position,
+        &find_data
     );
 
     return find_data.found;
 }
 
 static void
-container_draw_child(Widget *widget, G_GNUC_UNUSED gpointer data)
+container_draw_child(GNode *node, G_GNUC_UNUSED gpointer data)
 {
-    widget_draw(widget);
+    widget_draw(node->data);
 }
 
 static gint
 container_draw(Widget *widget)
 {
-    ContainerPrivate *priv = container_get_instance_private(TUI_CONTAINER(widget));
-    g_list_foreach(
-        priv->children,
-        (GFunc) container_draw_child,
+    g_node_children_foreach(
+        widget_get_node(widget),
+        G_TRAVERSE_ALL,
+        container_draw_child,
         NULL
     );
 
-    return 0;
+    return TUI_WIDGET_CLASS(container_parent_class)->draw(widget);
 }
 
 static void
 container_finalize(GObject *object)
 {
-    ContainerPrivate *priv = container_get_instance_private(TUI_CONTAINER(object));
-    g_list_free(priv->children);
-
     // Chain-up parent finalize function
     G_OBJECT_CLASS(container_parent_class)->finalize(object);
 }
@@ -153,8 +150,6 @@ container_class_init(ContainerClass *klass)
 }
 
 static void
-container_init(Container *container)
+container_init(G_GNUC_UNUSED Container *container)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
-    priv->children = NULL;
 }

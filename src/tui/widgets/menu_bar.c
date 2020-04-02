@@ -39,10 +39,10 @@ static gint
 menu_bar_clicked(Widget *widget, MEVENT mevent)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
-    GList *menus = container_get_children(TUI_CONTAINER(widget));
+    GNode *menus = container_get_children(TUI_CONTAINER(widget));
 
     gint index = mevent.x / MENU_WIDTH;
-    if (index < (gint) g_list_length(menus)) {
+    if (index < (gint) g_node_n_children(menus)) {
 
         menu_bar->selected = index;
 
@@ -76,9 +76,9 @@ menu_bar_draw(Widget *widget)
     // Horizontal position for each menu
     gint xpos = 0;
 
-    GList *menus = container_get_children(TUI_CONTAINER(widget));
-    for (GList *l = menus; l != NULL; l = l->next) {
-        Widget *menu = l->data;
+    GNode *children = container_get_children(TUI_CONTAINER(widget));
+    for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
+        Widget *menu = g_node_nth_child_data(children, i);
         widget_set_position(menu, xpos, 1);
         xpos += MENU_WIDTH;
 
@@ -101,7 +101,7 @@ static gint
 menu_bar_key_pressed(Widget *widget, gint key)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
-    GList *menus = container_get_children(TUI_CONTAINER(widget));
+    GNode *children = container_get_children(TUI_CONTAINER(widget));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -112,14 +112,14 @@ menu_bar_key_pressed(Widget *widget, gint key)
                 menu_bar->selected = CLAMP(
                     menu_bar->selected + 1,
                     0,
-                    (gint) g_list_length(menus) - 1
+                    (gint) g_node_n_children(children) - 1
                 );
                 break;
             case ACTION_LEFT:
                 menu_bar->selected = CLAMP(
                     menu_bar->selected - 1,
                     0,
-                    (gint) g_list_length(menus) - 1
+                    (gint) g_node_n_children(children) - 1
                 );
                 break;
             default:

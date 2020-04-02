@@ -71,12 +71,12 @@ static gint
 menu_draw(Widget *widget)
 {
     Menu *menu = TUI_MENU(widget);
-    GList *items = container_get_children(TUI_CONTAINER(widget));
+    GNode *children = container_get_children(TUI_CONTAINER(widget));
 
-    gint height = g_list_length(items) + 2;
+    gint height = g_node_n_children(children) + 2;
     gint width = MENU_WIDTH + 2 + 6 + 2;
-    for (GList *l = items; l != NULL; l = l->next) {
-        MenuItem *item = TUI_MENU_ITEM(l->data);
+    for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
+        MenuItem *item = TUI_MENU_ITEM(g_node_nth_child_data(children, i));
         if (item->text != NULL) {
             width = MAX(width, (gint) strlen(item->text) + 2 + 6 + 2);
         }
@@ -89,15 +89,14 @@ menu_draw(Widget *widget)
     widget_set_size(widget, width, height);
     widget_set_ncurses_window(widget, win);
 
-    gint i = 0;
-    for (GList *l = items; l != NULL; l = l->next, i++) {
-        MenuItem *item = TUI_MENU_ITEM(l->data);
+    for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
+        MenuItem *item = TUI_MENU_ITEM(g_node_nth_child_data(children, i));
 
         if (item->text != NULL) {
             if (menu->selected == i) {
                 wattron(win, COLOR_PAIR(CP_WHITE_ON_DEF));
             }
-            mvwprintw(win, (gint) i + 1, 1,
+            mvwprintw(win, i + 1, 1,
                       "%-*s %-6s",
                       width - 6 - 2 - 1,
                       item->text,
@@ -129,7 +128,7 @@ static gint
 menu_key_pressed(Widget *widget, gint key)
 {
     Menu *menu = TUI_MENU(widget);
-    GList *items = container_get_children(TUI_CONTAINER(widget));
+    GNode *children = container_get_children(TUI_CONTAINER(widget));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -140,21 +139,21 @@ menu_key_pressed(Widget *widget, gint key)
                 menu->selected = CLAMP(
                     menu->selected + 1,
                     0,
-                    (gint) g_list_length(items) - 1
+                    (gint) g_node_n_children(children) - 1
                 );
                 break;
             case ACTION_UP:
                 menu->selected = CLAMP(
                     menu->selected - 1,
                     0,
-                    (gint) g_list_length(items) - 1
+                    (gint) g_node_n_children(children) - 1
                 );
                 break;
             case ACTION_BEGIN:
                 menu->selected = 0;
                 break;
             case ACTION_END:
-                menu->selected = g_list_length(items) - 1;
+                menu->selected = g_node_n_children(children) - 1;
                 break;
             case ACTION_RIGHT:
             case ACTION_LEFT:
@@ -178,12 +177,12 @@ static gint
 menu_clicked(Widget *widget, MEVENT mevent)
 {
     Menu *menu = TUI_MENU(widget);
-    GList *items = container_get_children(TUI_CONTAINER(widget));
+    GNode *children = container_get_children(TUI_CONTAINER(widget));
 
     menu->selected = CLAMP(
         mevent.y - widget_get_ypos(widget) - 1,
         0,
-        (gint) g_list_length(items) - 1
+        (gint) g_node_n_children(children) - 1
     );
 
     MenuItem *item = TUI_MENU_ITEM(container_get_child(TUI_CONTAINER(widget), menu->selected));

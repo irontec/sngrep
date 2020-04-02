@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include <ncurses.h>
+#include "glib-extra/glib.h"
 #include "widget.h"
 
 enum
@@ -52,7 +53,7 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 typedef struct
 {
     //! Parent widget
-    Widget *parent;
+    GNode *node;
     //! Window for drawing this widget
     WINDOW *win;
     //! Dimensions of this widget
@@ -107,26 +108,22 @@ Widget *
 widget_get_toplevel(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
-    Widget *parent = widget;
-    while (priv->parent) {
-        parent = priv->parent;
-        priv = widget_get_instance_private(parent);
-    }
-    return parent;
-}
-
-void
-widget_set_parent(Widget *widget, Widget *parent)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    priv->parent = parent;
+    GNode *root = g_node_get_root(priv->node);
+    return (root != NULL) ? root->data : NULL;
 }
 
 Widget *
 widget_get_parent(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
-    return priv->parent;
+    return g_node_parent_data(priv->node);
+}
+
+GNode *
+widget_get_node(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->node;
 }
 
 void
@@ -313,9 +310,6 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
         case PROP_WIDGET_WIDTH:
             priv->width = g_value_get_int(value);
             break;
-        case PROP_WIDGET_PARENT:
-            priv->parent = g_value_get_object(value);
-            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
             break;
@@ -334,8 +328,6 @@ widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec 
         case PROP_WIDGET_WIDTH:
             g_value_set_int(value, priv->width);
             break;
-        case PROP_WIDGET_PARENT:
-            g_value_set_object(value, priv->parent);
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
             break;
@@ -406,4 +398,6 @@ widget_init(Widget *self)
     WidgetPrivate *priv = widget_get_instance_private(self);
     // Initialize window position
     priv->x = priv->y = 0;
+    // Set our node for widget hierarchy
+    priv->node = g_node_new(self);
 }

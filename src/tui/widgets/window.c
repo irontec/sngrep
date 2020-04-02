@@ -160,9 +160,6 @@ window_redraw(Window *window)
 int
 window_draw(Window *window)
 {
-    g_return_val_if_fail(TUI_IS_WINDOW(window), FALSE);
-    WindowPrivate *priv = window_get_instance_private(window);
-    priv->changed = TRUE;
     return widget_draw(TUI_WIDGET(window));
 }
 

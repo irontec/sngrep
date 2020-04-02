@@ -47,7 +47,7 @@ struct _ContainerClass
 void
 container_add_child(Container *container, Widget *child);
 
-GList *
+GNode *
 container_get_children(Container *container);
 
 Widget *

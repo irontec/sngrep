@@ -20,31 +20,27 @@
  **
  ****************************************************************************/
 /**
- * @file glib-extra.h
+ * @file gnode.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Helper function for glib containers
- *
+ * @brief Helper functions for GList and GSList containers
  */
+#include "config.h"
+#include "gnode.h"
 
-#ifndef __SNGREP_GLIB_EXTRA_H
-#define __SNGREP_GLIB_EXTRA_H
+gpointer
+g_node_parent_data(GNode *node)
+{
+    return (node->parent)
+           ? node->parent->data
+           : NULL;
+}
 
-#include <glib.h>
-#include "glib-extra/gasyncqueuesource.h"
-#include "glib-extra/gbytes.h"
-#include "glib-extra/gdatetime.h"
-#include "glib-extra/glist.h"
-#include "glib-extra/gnode.h"
-#include "glib-extra/gptrarray.h"
-#include "glib-extra/gvalue.h"
-
-#define G_OPTION_SENTINEL NULL, 0, 0, 0, NULL, NULL, NULL
-
-gint
-g_atoi(const gchar *number);
-
-gsize
-g_format_size_to_bytes(const gchar *size);
-
-#endif //__SNGREP_GLIB_EXTRA_H
+gpointer
+g_node_nth_child_data(GNode *node, guint index)
+{
+    GNode *child = g_node_nth_child(node, index);
+    return (child != NULL)
+           ? child->data
+           : NULL;
+}

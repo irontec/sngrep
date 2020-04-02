@@ -31,6 +31,7 @@ set(SOURCES
         src/glib-extra/glist.c
         src/glib-extra/gptrarray.c
         src/glib-extra/glib.c
+        src/glib-extra/gnode.c
         src/glib-extra/gvalue.c
         src/glib-extra/glib_enum_types.c
         src/tui/tui.c
