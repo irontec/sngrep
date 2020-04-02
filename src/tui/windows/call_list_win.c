@@ -1302,82 +1302,102 @@ call_list_constructed(GObject *object)
 
     // Create menu bar entries
     self->menu_bar = menu_bar_new(TUI_WIDGET(self));
+
     // File Menu
-    Widget *menu_file = menu_new(self->menu_bar, "File");
-    Widget *menu_file_preferences = menu_item_new(menu_file, "Settings");
+    Widget *menu_file = menu_new("File");
+    Widget *menu_file_preferences = menu_item_new("Settings");
     menu_item_set_action(TUI_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
     g_signal_connect(menu_file_preferences, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_SETTINGS));
 
-    Widget *menu_file_save = menu_item_new(menu_file, "Save as ...");
+    Widget *menu_file_save = menu_item_new("Save as ...");
     menu_item_set_action(TUI_MENU_ITEM(menu_file_save), ACTION_SAVE);
     g_signal_connect(menu_file_save, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SAVE));
 
-    menu_item_new(menu_file, NULL);
-    Widget *menu_file_exit = menu_item_new(menu_file, "Exit");
+    Widget *menu_file_exit = menu_item_new("Exit");
     menu_item_set_action(TUI_MENU_ITEM(menu_file_exit), ACTION_PREV_SCREEN);
     g_signal_connect(menu_file_exit, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_PREV_SCREEN));
 
     // View Menu
-    Widget *menu_view = menu_new(self->menu_bar, "View");
-    Widget *menu_view_filters = menu_item_new(menu_view, "Filters");
+    Widget *menu_view = menu_new("View");
+    Widget *menu_view_filters = menu_item_new("Filters");
     menu_item_set_action(TUI_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
     g_signal_connect(menu_view_filters, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FILTERS));
 
-    Widget *menu_view_protocols = menu_item_new(menu_view, "Protocols");
+    Widget *menu_view_protocols = menu_item_new("Protocols");
     menu_item_set_action(TUI_MENU_ITEM(menu_view_protocols), ACTION_SHOW_PROTOCOLS);
     g_signal_connect(menu_view_protocols, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_PROTOCOLS));
 
     // Call List menu
-    Widget *menu_list = menu_new(self->menu_bar, "Call List");
-    Widget *menu_list_columns = menu_item_new(menu_list, "Configure Columns");
+    Widget *menu_list = menu_new("Call List");
+    Widget *menu_list_columns = menu_item_new("Configure Columns");
     menu_item_set_action(TUI_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
     g_signal_connect(menu_list_columns, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_COLUMNS));
 
-    menu_item_new(menu_list, NULL);
-    Widget *menu_list_clear = menu_item_new(menu_list, "Clear List");
+    Widget *menu_list_clear = menu_item_new("Clear List");
     menu_item_set_action(TUI_MENU_ITEM(menu_list_clear), ACTION_CLEAR_CALLS);
     g_signal_connect(menu_list_clear, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_CLEAR_CALLS));
 
-    Widget *menu_list_clear_soft = menu_item_new(menu_list, "Clear filtered calls");
+    Widget *menu_list_clear_soft = menu_item_new("Clear filtered calls");
     menu_item_set_action(TUI_MENU_ITEM(menu_list_clear_soft), ACTION_CLEAR_CALLS_SOFT);
     g_signal_connect(menu_list_clear_soft, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_CLEAR_CALLS_SOFT));
 
-    menu_item_new(menu_list, NULL);
-    Widget *menu_list_flow = menu_item_new(menu_list, "Show Call Flow");
+    Widget *menu_list_flow = menu_item_new("Show Call Flow");
     menu_item_set_action(TUI_MENU_ITEM(menu_list_flow), ACTION_SHOW_FLOW);
     g_signal_connect(menu_list_flow, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
-    Widget *menu_list_flow_ex = menu_item_new(menu_list, "Show Call Flow Extended");
+    Widget *menu_list_flow_ex = menu_item_new("Show Call Flow Extended");
     menu_item_set_action(TUI_MENU_ITEM(menu_list_flow_ex), ACTION_SHOW_FLOW_EX);
     g_signal_connect(menu_list_flow, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW_EX));
 
     // Help Menu
-    Widget *menu_help = menu_new(self->menu_bar, "Help");
-    Widget *menu_help_about = menu_item_new(menu_help, "About");
+    Widget *menu_help = menu_new("Help");
+    Widget *menu_help_about = menu_item_new("About");
     menu_item_set_action(TUI_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
     g_signal_connect(menu_help_about, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_HELP));
+
+
+    container_add_child(TUI_CONTAINER(self), self->menu_bar);
+    container_add_child(TUI_CONTAINER(self->menu_bar), menu_file);
+    container_add_child(TUI_CONTAINER(menu_file), menu_file_preferences);
+    container_add_child(TUI_CONTAINER(menu_file), menu_file_save);
+    container_add_child(TUI_CONTAINER(menu_file), menu_item_new(NULL));
+    container_add_child(TUI_CONTAINER(menu_file), menu_file_exit);
+    container_add_child(TUI_CONTAINER(self->menu_bar), menu_view);
+    container_add_child(TUI_CONTAINER(menu_view), menu_view_filters);
+    container_add_child(TUI_CONTAINER(menu_view), menu_view_protocols);
+    container_add_child(TUI_CONTAINER(self->menu_bar), menu_list);
+    container_add_child(TUI_CONTAINER(menu_list), menu_list_columns);
+    container_add_child(TUI_CONTAINER(menu_list), menu_item_new(NULL));
+    container_add_child(TUI_CONTAINER(menu_list), menu_list_clear);
+    container_add_child(TUI_CONTAINER(menu_list), menu_list_clear_soft);
+    container_add_child(TUI_CONTAINER(menu_list), menu_item_new(NULL));
+    container_add_child(TUI_CONTAINER(menu_list), menu_list_flow);
+    container_add_child(TUI_CONTAINER(menu_list), menu_list_flow_ex);
+    container_add_child(TUI_CONTAINER(self->menu_bar), menu_help);
+    container_add_child(TUI_CONTAINER(menu_help), menu_help_about);
+
 
 }
 

@@ -77,7 +77,7 @@ set(SOURCES
         src/main.c
         src/capture/capture_input.c
         src/capture/capture_output.c
-        )
+        src/tui/widgets/container.c src/tui/widgets/container.h)
 
 ######################################################################
 # HEP  Support

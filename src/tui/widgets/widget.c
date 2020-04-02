@@ -51,18 +51,8 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 typedef struct
 {
-    //! Position to search
-    gint x, y;
-    //! Widget pointer if found, NULL if not found
-    Widget *found;
-} WidgetFindData;
-
-typedef struct
-{
     //! Parent widget
     Widget *parent;
-    //! List of Widget children
-    GNode *children;
     //! Window for drawing this widget
     WINDOW *win;
     //! Dimensions of this widget
@@ -113,19 +103,23 @@ widget_is_visible(Widget *widget)
     return priv->visible;
 }
 
-static void
-widget_add_child(Widget *widget, Widget *child)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    g_node_append(priv->children, widget_get_children(child));
-}
-
 Widget *
 widget_get_toplevel(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
-    GNode *root = g_node_get_root(priv->children);
-    return root->data;
+    Widget *parent = widget;
+    while (priv->parent) {
+        parent = priv->parent;
+        priv = widget_get_instance_private(parent);
+    }
+    return parent;
+}
+
+void
+widget_set_parent(Widget *widget, Widget *parent)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->parent = parent;
 }
 
 Widget *
@@ -133,29 +127,6 @@ widget_get_parent(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->parent;
-}
-
-GNode *
-widget_get_children(Widget *widget)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    return priv->children;
-}
-
-gint
-widget_get_children_count(Widget *widget)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    return g_node_n_children(priv->children);
-}
-
-Widget *
-widget_get_child(Widget *widget, gint index)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    GNode *node = g_node_nth_child(priv->children, index);
-    g_return_val_if_fail(node != NULL, NULL);
-    return node->data;
 }
 
 void
@@ -172,6 +143,14 @@ widget_get_ncurses_window(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->win;
+}
+
+void
+widget_set_size(Widget *widget, gint width, gint height)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->width = width;
+    priv->height = height;
 }
 
 void
@@ -222,47 +201,6 @@ widget_get_ypos(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->y;
-}
-
-static gboolean
-widget_check_node_position(GNode *node, gpointer data)
-{
-    Widget *widget = TUI_WIDGET(node->data);
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    if (priv->visible == FALSE) {
-        return FALSE;
-    }
-
-    WidgetFindData *find_data = data;
-    if (find_data->x >= priv->x
-        && find_data->x < priv->x + priv->width
-        && find_data->y >= priv->y
-        && find_data->y < priv->y + priv->height) {
-        find_data->found = widget;
-    }
-
-    return find_data->found != NULL;
-}
-
-Widget *
-widget_find_by_position(Widget *widget, gint x, gint y)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    WidgetFindData find_data = {
-        .x = x,
-        .y = y,
-        .found = NULL,
-    };
-
-    g_node_traverse(priv->children,
-                    G_IN_ORDER,
-                    G_TRAVERSE_ALL,
-                    -1,
-                    widget_check_node_position,
-                    &find_data
-    );
-
-    return find_data.found;
 }
 
 gint
@@ -326,25 +264,11 @@ widget_key_pressed(Widget *widget, gint key)
     return hld;
 }
 
-static void
-widget_draw_child(GNode *node, G_GNUC_UNUSED gpointer data)
-{
-    widget_draw(node->data);
-}
-
 static gint
 widget_base_draw(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
-    g_node_children_foreach(
-        priv->children,
-        G_TRAVERSE_ALL,
-        widget_draw_child,
-        NULL
-    );
-
     touchwin(priv->win);
-
     return 0;
 }
 
@@ -391,9 +315,6 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
             break;
         case PROP_WIDGET_PARENT:
             priv->parent = g_value_get_object(value);
-            if (priv->parent != NULL) {
-                widget_add_child(priv->parent, TUI_WIDGET(self));
-            }
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
@@ -458,7 +379,7 @@ widget_class_init(WidgetClass *klass)
                             "Parent Widget",
                             "Parent Widget",
                             TUI_TYPE_WIDGET,
-                            G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+                            G_PARAM_READWRITE
         );
 
     g_object_class_install_properties(
@@ -485,6 +406,4 @@ widget_init(Widget *self)
     WidgetPrivate *priv = widget_get_instance_private(self);
     // Initialize window position
     priv->x = priv->y = 0;
-    // Add widget as root for children tree
-    priv->children = g_node_new(self);
 }

@@ -37,20 +37,19 @@
 #include "tui/widgets/window.h"
 #include "tui/widgets/menu_bar.h"
 #include "tui/widgets/menu_item.h"
+#include "tui/widgets/container.h"
 #include "tui/keybinding.h"
 
 G_BEGIN_DECLS
 
 // Menu class declaration
 #define TUI_TYPE_MENU menu_get_type()
-G_DECLARE_FINAL_TYPE(Menu, menu, TUI, MENU, Widget)
+G_DECLARE_FINAL_TYPE(Menu, menu, TUI, MENU, Container)
 
 struct _Menu
 {
     //! Parent object attributes
-    Widget parent;
-    //! Index of the menu in the bar
-    gint index;
+    Container parent;
     //! Menu title displayed in bar
     const gchar *title;
     //! Selected item index
@@ -58,10 +57,13 @@ struct _Menu
 };
 
 Widget *
-menu_new(Widget *parent, const gchar *title);
+menu_new(const gchar *title);
 
 void
 menu_free(Menu *menu);
+
+const gchar *
+menu_get_title(Menu *menu);
 
 G_END_DECLS
 

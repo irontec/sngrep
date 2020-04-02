@@ -20,53 +20,41 @@
  **
  ****************************************************************************/
 /**
- * @file menu_item.h
+ * @file container.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Common process for Window menu and menu items
- *
- * This file contains common functions shared by all panels.
+ * @brief Widget that contains other widgets
  */
-
-#ifndef __SNGREP_MENU_ITEM_H__
-#define __SNGREP_MENU_ITEM_H__
+#ifndef __SNGREP_CONTAINER_H__
+#define __SNGREP_CONTAINER_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include <ncurses.h>
-#include "tui/widgets/window.h"
-#include "tui/keybinding.h"
+#include "tui/widgets/widget.h"
 
 G_BEGIN_DECLS
 
-// MenuItem class declaration
-#define TUI_TYPE_MENU_ITEM menu_item_get_type()
-G_DECLARE_FINAL_TYPE(MenuItem, menu_item, TUI, MENU_ITEM, Widget)
+// Class declaration
+#define TUI_TYPE_CONTAINER container_get_type()
+G_DECLARE_DERIVABLE_TYPE(Container, container, TUI, CONTAINER, Widget)
 
-struct _MenuItem
+struct _ContainerClass
 {
-    //! Parent object attributes
-    Widget parent;
-    //! Item text
-    const gchar *text;
-    //! Mark this entry as enabled
-    gboolean checked;
-    //! Keybinding Action
-    KeybindingAction action;
+    //! Parent class
+    WidgetClass parent;
 };
 
 void
-menu_item_set_action(MenuItem *item, KeybindingAction action);
+container_add_child(Container *container, Widget *child);
 
-void
-menu_item_activate(MenuItem *item);
+GList *
+container_get_children(Container *container);
 
 Widget *
-menu_item_new(const gchar *text);
+container_get_child(Container *container, gint index);
 
-void
-menu_item_free(MenuItem *item);
+Widget *
+container_find_by_position(Container *container, gint x, gint y);
 
-G_END_DECLS
 
-#endif /* __SNGREP_MENU_ITEM_H__ */
+#endif    /* __SNGREP_CONTAINER_H__ */

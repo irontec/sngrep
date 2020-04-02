@@ -33,7 +33,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/widget.h"
+#include "tui/widgets/container.h"
 #include "tui/widgets/menu.h"
 
 G_BEGIN_DECLS
@@ -41,18 +41,18 @@ G_BEGIN_DECLS
 #define MENU_WIDTH  20
 
 #define TUI_TYPE_MENU_BAR menu_bar_get_type()
-G_DECLARE_FINAL_TYPE(MenuBar, menu_bar, TUI, MENU_BAR, Widget)
+G_DECLARE_FINAL_TYPE(MenuBar, menu_bar, TUI, MENU_BAR, Container)
 
 struct _MenuBar
 {
     //! Parent object attributes
-    Widget parent;
+    Container parent;
     //! Selected menu (-1 for none)
     gint selected;
 };
 
 Widget *
-menu_bar_new(Widget *widget);
+menu_bar_new();
 
 void
 menu_bar_free(MenuBar *menu);

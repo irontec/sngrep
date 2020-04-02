@@ -108,17 +108,11 @@ widget_is_visible(Widget *widget);
 Widget *
 widget_get_toplevel(Widget *widget);
 
+void
+widget_set_parent(Widget *widget, Widget *parent);
+
 Widget *
 widget_get_parent(Widget *widget);
-
-GNode *
-widget_get_children(Widget *widget);
-
-gint
-widget_get_children_count(Widget *widget);
-
-Widget *
-widget_get_child(Widget *widget, gint index);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -178,6 +172,9 @@ WINDOW *
 widget_get_ncurses_window(Widget *widget);
 
 void
+widget_set_size(Widget *widget, gint width, gint height);
+
+void
 widget_set_width(Widget *widget, gint width);
 
 gint
@@ -197,9 +194,6 @@ widget_get_xpos(Widget *widget);
 
 gint
 widget_get_ypos(Widget *widget);
-
-Widget *
-widget_find_by_position(Widget *widget, gint x, gint y);
 
 G_END_DECLS
 

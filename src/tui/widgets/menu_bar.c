@@ -33,19 +33,23 @@
 #include "tui/widgets/menu_bar.h"
 
 // Menu class definition
-G_DEFINE_TYPE(MenuBar, menu_bar, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE(MenuBar, menu_bar, TUI_TYPE_CONTAINER)
 
 static gint
 menu_bar_clicked(Widget *widget, MEVENT mevent)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
+    GList *menus = container_get_children(TUI_CONTAINER(widget));
 
     gint index = mevent.x / MENU_WIDTH;
-    if (index < (gint) widget_get_children_count(widget)) {
+    if (index < (gint) g_list_length(menus)) {
 
         menu_bar->selected = index;
 
-        Widget *menu = widget_get_child(widget, menu_bar->selected);
+        Widget *menu = container_get_child(
+            TUI_CONTAINER(widget),
+            menu_bar->selected
+        );
         widget_show(menu);
 
         window_set_focused_widget(
@@ -65,18 +69,27 @@ menu_bar_draw(Widget *widget)
     WINDOW *win = widget_get_ncurses_window(widget_get_parent(widget));
     wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     window_clear_line(TUI_WINDOW(widget_get_parent(widget)), 0);
-    for (gint i = 0; i < (gint) widget_get_children_count(widget); i++) {
-        Widget *child = widget_get_child(widget, i);
-        Menu *menu = TUI_MENU(child);
 
-        if (widget_is_visible(child)) {
+    // MenuBar is always one line height
+    widget_set_size(widget, widget_get_width(widget_get_parent(widget)), 1);
+
+    // Horizontal position for each menu
+    gint xpos = 0;
+
+    GList *menus = container_get_children(TUI_CONTAINER(widget));
+    for (GList *l = menus; l != NULL; l = l->next) {
+        Widget *menu = l->data;
+        widget_set_position(menu, xpos, 1);
+        xpos += MENU_WIDTH;
+
+        if (widget_is_visible(menu)) {
             wattron(win, COLOR_PAIR(CP_WHITE_ON_DEF));
         } else {
             wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         }
-        mvwprintw(win, 0, MENU_WIDTH * i, " %-*s", MENU_WIDTH, menu->title);
+        mvwprintw(win, 0, widget_get_xpos(menu), " %-*s", MENU_WIDTH, menu_get_title(TUI_MENU(menu)));
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        mvwaddwstr(win, 0, (MENU_WIDTH * i) - 1, tui_acs_utf8(ACS_BOARD));
+        mvwaddwstr(win, 0, widget_get_xpos(menu) - 1, tui_acs_utf8(ACS_BOARD));
     }
 
     // Chain up parent draw
@@ -88,6 +101,7 @@ static gint
 menu_bar_key_pressed(Widget *widget, gint key)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
+    GList *menus = container_get_children(TUI_CONTAINER(widget));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -98,14 +112,14 @@ menu_bar_key_pressed(Widget *widget, gint key)
                 menu_bar->selected = CLAMP(
                     menu_bar->selected + 1,
                     0,
-                    widget_get_children_count(widget) - 1
+                    (gint) g_list_length(menus) - 1
                 );
                 break;
             case ACTION_LEFT:
                 menu_bar->selected = CLAMP(
                     menu_bar->selected - 1,
                     0,
-                    widget_get_children_count(widget) - 1
+                    (gint) g_list_length(menus) - 1
                 );
                 break;
             default:
@@ -114,7 +128,7 @@ menu_bar_key_pressed(Widget *widget, gint key)
         break;
     }
 
-    Widget *menu = widget_get_child(widget, menu_bar->selected);
+    Widget *menu = container_get_child(TUI_CONTAINER(widget), menu_bar->selected);
     widget_show(menu);
 
     window_set_focused_widget(
@@ -126,11 +140,10 @@ menu_bar_key_pressed(Widget *widget, gint key)
 }
 
 Widget *
-menu_bar_new(Widget *parent)
+menu_bar_new()
 {
     return g_object_new(
         TUI_TYPE_MENU_BAR,
-        "parent", parent,
         NULL
     );
 }
@@ -148,10 +161,6 @@ menu_bar_constructed(GObject *object)
 
     // MenuBar is always displayed in the topmost part of the screen
     widget_set_position(widget, 0, 0);
-    // MenuBar is always one line height
-    widget_set_height(widget, 1);
-    // MenuBar always fills the window width
-    widget_set_width(widget, widget_get_width(widget_get_parent(widget)));
     // MenuBar is always visible
     widget_show(widget);
 

@@ -33,25 +33,25 @@
 #include "tui/widgets/window.h"
 #include "tui/widgets/menu.h"
 
+enum
+{
+    PROP_TITLE = 1,
+    N_PROPERTIES
+};
+
+static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
+
 // Menu class definition
-G_DEFINE_TYPE(Menu, menu, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE(Menu, menu, TUI_TYPE_CONTAINER)
 
 Widget *
-menu_new(Widget *parent, const gchar *title)
+menu_new(const gchar *title)
 {
     Widget *widget = g_object_new(
         TUI_TYPE_MENU,
-        "parent", parent,
+        "title", title,
         NULL
     );
-
-    // TODO
-    Menu *menu = TUI_MENU(widget);
-    menu->title = title;
-    // Set position of the menu in the bar
-    menu->index = widget_get_children_count(parent) - 1;
-    // TODO
-
     return widget;
 }
 
@@ -61,14 +61,22 @@ menu_free(Menu *menu)
     g_object_unref(menu);
 }
 
+const gchar *
+menu_get_title(Menu *menu)
+{
+    return menu->title;
+}
+
 static gint
 menu_draw(Widget *widget)
 {
     Menu *menu = TUI_MENU(widget);
-    gint height = widget_get_children_count(widget) + 2;
+    GList *items = container_get_children(TUI_CONTAINER(widget));
+
+    gint height = g_list_length(items) + 2;
     gint width = MENU_WIDTH + 2 + 6 + 2;
-    for (gint i = 0; i < widget_get_children_count(widget); i++) {
-        MenuItem *item = TUI_MENU_ITEM(widget_get_child(widget, i));
+    for (GList *l = items; l != NULL; l = l->next) {
+        MenuItem *item = TUI_MENU_ITEM(l->data);
         if (item->text != NULL) {
             width = MAX(width, (gint) strlen(item->text) + 2 + 6 + 2);
         }
@@ -78,13 +86,13 @@ menu_draw(Widget *widget)
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     box(win, 0, 0);
 
-    widget_set_position(widget, MENU_WIDTH * menu->index, 1);
-    widget_set_height(widget, height);
-    widget_set_width(widget, width);
+    widget_set_size(widget, width, height);
     widget_set_ncurses_window(widget, win);
 
-    for (gint i = 0; i < widget_get_children_count(widget); i++) {
-        MenuItem *item = TUI_MENU_ITEM(widget_get_child(widget, i));
+    gint i = 0;
+    for (GList *l = items; l != NULL; l = l->next, i++) {
+        MenuItem *item = TUI_MENU_ITEM(l->data);
+
         if (item->text != NULL) {
             if (menu->selected == i) {
                 wattron(win, COLOR_PAIR(CP_WHITE_ON_DEF));
@@ -103,15 +111,14 @@ menu_draw(Widget *widget)
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     }
 
-    Widget *bar = widget_get_parent(widget);
     copywin(
         widget_get_ncurses_window(widget),
-        widget_get_ncurses_window(widget_get_parent(bar)),
+        widget_get_ncurses_window(widget_get_toplevel(widget)),
         0, 0,
         widget_get_ypos(widget),
         widget_get_xpos(widget),
         getmaxy(win),
-        getmaxx(win) + MENU_WIDTH * menu->index - 1,
+        widget_get_xpos(widget) + getmaxx(win) - 1,
         FALSE
     );
 
@@ -122,6 +129,7 @@ static gint
 menu_key_pressed(Widget *widget, gint key)
 {
     Menu *menu = TUI_MENU(widget);
+    GList *items = container_get_children(TUI_CONTAINER(widget));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -132,21 +140,21 @@ menu_key_pressed(Widget *widget, gint key)
                 menu->selected = CLAMP(
                     menu->selected + 1,
                     0,
-                    widget_get_children_count(widget) - 1
+                    (gint) g_list_length(items) - 1
                 );
                 break;
             case ACTION_UP:
                 menu->selected = CLAMP(
                     menu->selected - 1,
                     0,
-                    widget_get_children_count(widget) - 1
+                    (gint) g_list_length(items) - 1
                 );
                 break;
             case ACTION_BEGIN:
                 menu->selected = 0;
                 break;
             case ACTION_END:
-                menu->selected = widget_get_children_count(widget) - 1;
+                menu->selected = g_list_length(items) - 1;
                 break;
             case ACTION_RIGHT:
             case ACTION_LEFT:
@@ -158,7 +166,7 @@ menu_key_pressed(Widget *widget, gint key)
         break;
     }
 
-    MenuItem *item = TUI_MENU_ITEM(widget_get_child(widget, menu->selected));
+    MenuItem *item = TUI_MENU_ITEM(container_get_child(TUI_CONTAINER(widget), menu->selected));
     if (item->text == NULL) {
         menu_key_pressed(widget, key);
     }
@@ -167,17 +175,18 @@ menu_key_pressed(Widget *widget, gint key)
 }
 
 static gint
-menu_clicked(Widget *widget, G_GNUC_UNUSED MEVENT mevent)
+menu_clicked(Widget *widget, MEVENT mevent)
 {
     Menu *menu = TUI_MENU(widget);
+    GList *items = container_get_children(TUI_CONTAINER(widget));
 
     menu->selected = CLAMP(
         mevent.y - widget_get_ypos(widget) - 1,
         0,
-        widget_get_children_count(widget) - 1
+        (gint) g_list_length(items) - 1
     );
 
-    MenuItem *item = TUI_MENU_ITEM(widget_get_child(widget, menu->selected));
+    MenuItem *item = TUI_MENU_ITEM(container_get_child(TUI_CONTAINER(widget), menu->selected));
     menu_item_activate(item);
     widget_hide(widget);
     return 0;
@@ -190,16 +199,65 @@ menu_focus_lost(Widget *widget)
 }
 
 static void
-menu_init(G_GNUC_UNUSED Menu *self)
+menu_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
 {
+    Menu *menu = TUI_MENU(self);
+
+    switch (property_id) {
+        case PROP_TITLE:
+            menu->title = g_strdup(g_value_get_string(value));
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
+            break;
+    }
 }
+
+static void
+menu_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
+{
+    Menu *menu = TUI_MENU(self);
+    switch (property_id) {
+        case PROP_TITLE:
+            g_value_set_string(value, menu->title);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
+            break;
+    }
+}
+
 
 static void
 menu_class_init(MenuClass *klass)
 {
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->set_property = menu_set_property;
+    object_class->get_property = menu_get_property;
+
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
     widget_class->draw = menu_draw;
     widget_class->key_pressed = menu_key_pressed;
     widget_class->clicked = menu_clicked;
     widget_class->focus_lost = menu_focus_lost;
+
+
+    obj_properties[PROP_TITLE] =
+        g_param_spec_string("title",
+                            "Menu title",
+                            "Menu title",
+                            "Untitled menu",
+                            G_PARAM_READWRITE
+        );
+
+    g_object_class_install_properties(
+        object_class,
+        N_PROPERTIES,
+        obj_properties
+    );
+}
+
+static void
+menu_init(G_GNUC_UNUSED Menu *self)
+{
 }

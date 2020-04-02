@@ -28,7 +28,6 @@
 
 #include "config.h"
 #include <string.h>
-#include <ncurses.h>
 #include <panel.h>
 #include "window.h"
 #include "tui/theme.h"
@@ -46,7 +45,7 @@ typedef struct
 } WindowPrivate;
 
 // Window class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Window, window, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE_WITH_PRIVATE(Window, window, TUI_TYPE_CONTAINER)
 
 Window *
 window_new(gint height, gint width)
@@ -200,7 +199,7 @@ window_handle_mouse(Window *window, MEVENT mevent)
 {
     WindowPrivate *priv = window_get_instance_private(window);
     priv->changed = TRUE;
-    Widget *clicked_widget = widget_find_by_position(TUI_WIDGET(window), mevent.x, mevent.y);
+    Widget *clicked_widget = container_find_by_position(TUI_CONTAINER(window), mevent.x, mevent.y);
     if (clicked_widget != NULL) {
         window_set_focused_widget(window, clicked_widget);
         return widget_clicked(clicked_widget, mevent);
