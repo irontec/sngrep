@@ -46,14 +46,16 @@ set(SOURCES
         src/tui/windows/stats_win.c
         src/tui/windows/auth_validate_win.c
         src/tui/windows/protocol_select_win.c
-        src/tui/widgets/widget.c
-        src/tui/widgets/window.c
+        src/tui/widgets/box.c
+        src/tui/widgets/container.c
         src/tui/widgets/menu_bar.c
         src/tui/widgets/menu_item.c
         src/tui/widgets/menu.c
+        src/tui/widgets/scrollbar.c
+        src/tui/widgets/widget.c
+        src/tui/widgets/window.c
         src/tui/dialog.c
         src/tui/keybinding.c
-        src/tui/widgets/scrollbar.c
         src/storage/address.c
         src/packet/dissector.c
         src/packet/dissector.h
@@ -78,7 +80,7 @@ set(SOURCES
         src/main.c
         src/capture/capture_input.c
         src/capture/capture_output.c
-        src/tui/widgets/container.c src/tui/widgets/container.h)
+        )
 
 ######################################################################
 # HEP  Support
@@ -129,9 +131,9 @@ include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
 find_program(GLIB_MKENUMS glib-mkenums HINTS ${glib_mkenums})
 set(GLIB_MKENUMS_CMD)
-if(NOT GLIB_MKENUMS)
+if (NOT GLIB_MKENUMS)
     message(FATAL_ERROR "Cannot find glib-mkenums, which is required to build ${PROJECT_NAME}")
-endif(NOT GLIB_MKENUMS)
+endif (NOT GLIB_MKENUMS)
 
 find_program(PCAP_CONFIG_EXECUTABLE NAMES pcap-config)
 if (PCAP_CONFIG_EXECUTABLE)
@@ -188,30 +190,31 @@ set(ENUM_HEADERS
         src/tui/windows/call_flow_win.h
         src/storage/storage.h
         src/packet/packet.h
+        src/tui/widgets/box.h
         )
 
 add_custom_command(
         OUTPUT ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
         COMMAND ${GLIB_MKENUMS}
         ARGS
-            --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h.tmpl
-            ${ENUM_HEADERS} > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
+        --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h.tmpl
+        ${ENUM_HEADERS} > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS
-            ${ENUM_HEADERS}
-            ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h.tmpl
+        ${ENUM_HEADERS}
+        ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h.tmpl
 )
 
 add_custom_command(
         OUTPUT ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
         COMMAND ${GLIB_MKENUMS}
         ARGS
-            --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
-            ${ENUM_HEADERS} > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
+        --template ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
+        ${ENUM_HEADERS} > ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS
-            ${ENUM_HEADERS} ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
-            ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
+        ${ENUM_HEADERS} ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.h
+        ${PROJECT_SOURCE_DIR}/src/glib-extra/glib_enum_types.c.tmpl
 )
 
 ######################################################################

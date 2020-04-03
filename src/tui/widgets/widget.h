@@ -195,6 +195,18 @@ widget_get_xpos(Widget *widget);
 gint
 widget_get_ypos(Widget *widget);
 
+void
+widget_set_vexpand(Widget *widget, gboolean expand);
+
+gboolean
+widget_get_vexpand(Widget *widget);
+
+void
+widget_set_hexpand(Widget *widget, gboolean expand);
+
+gboolean
+widget_get_hexpand(Widget *widget);
+
 G_END_DECLS
 
 #endif /* __SNGREP_WIDGET_H__ */

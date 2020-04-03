@@ -70,9 +70,6 @@ menu_bar_draw(Widget *widget)
     wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     window_clear_line(TUI_WINDOW(widget_get_parent(widget)), 0);
 
-    // MenuBar is always one line height
-    widget_set_size(widget, widget_get_width(widget_get_parent(widget)), 1);
-
     // Horizontal position for each menu
     gint xpos = 0;
 
@@ -144,6 +141,8 @@ menu_bar_new()
 {
     return g_object_new(
         TUI_TYPE_MENU_BAR,
+        "height", 1,
+        "hexpand", TRUE,
         NULL
     );
 }
@@ -158,12 +157,8 @@ static void
 menu_bar_constructed(GObject *object)
 {
     Widget *widget = TUI_WIDGET(object);
-
-    // MenuBar is always displayed in the topmost part of the screen
-    widget_set_position(widget, 0, 0);
     // MenuBar is always visible
     widget_show(widget);
-
     // update the object state depending on constructor properties
     G_OBJECT_CLASS(menu_bar_parent_class)->constructed(object);
 }

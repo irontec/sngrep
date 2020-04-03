@@ -40,9 +40,10 @@ enum
 
 enum
 {
-    PROP_WIDGET_HEIGHT = 1,
-    PROP_WIDGET_WIDTH,
-    PROP_WIDGET_PARENT,
+    PROP_HEIGHT = 1,
+    PROP_WIDTH,
+    PROP_VEXPAND,
+    PROP_HEXPAND,
     N_PROPERTIES
 };
 
@@ -62,6 +63,8 @@ typedef struct
     gint x, y;
     //! Determine if this widget is displayed on the screen
     gboolean visible;
+    //! Determine the fill mode in layouts
+    gboolean vexpand, hexpand;
 } WidgetPrivate;
 
 // Widget class definition
@@ -200,6 +203,34 @@ widget_get_ypos(Widget *widget)
     return priv->y;
 }
 
+void
+widget_set_vexpand(Widget *widget, gboolean expand)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->vexpand = expand;
+}
+
+gboolean
+widget_get_vexpand(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->vexpand;
+}
+
+void
+widget_set_hexpand(Widget *widget, gboolean expand)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->hexpand = expand;
+}
+
+gboolean
+widget_get_hexpand(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->hexpand;
+}
+
 gint
 widget_draw(Widget *widget)
 {
@@ -304,11 +335,17 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
     WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(self));
 
     switch (property_id) {
-        case PROP_WIDGET_HEIGHT:
+        case PROP_HEIGHT:
             priv->height = g_value_get_int(value);
             break;
-        case PROP_WIDGET_WIDTH:
+        case PROP_WIDTH:
             priv->width = g_value_get_int(value);
+            break;
+        case PROP_VEXPAND:
+            priv->vexpand = g_value_get_boolean(value);
+            break;
+        case PROP_HEXPAND:
+            priv->hexpand = g_value_get_boolean(value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
@@ -322,11 +359,17 @@ widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec 
     WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(self));
 
     switch (property_id) {
-        case PROP_WIDGET_HEIGHT:
+        case PROP_HEIGHT:
             g_value_set_int(value, priv->height);
             break;
-        case PROP_WIDGET_WIDTH:
+        case PROP_WIDTH:
             g_value_set_int(value, priv->width);
+            break;
+        case PROP_VEXPAND:
+            g_value_set_boolean(value, priv->vexpand);
+            break;
+        case PROP_HEXPAND:
+            g_value_set_boolean(value, priv->hexpand);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
@@ -346,7 +389,7 @@ widget_class_init(WidgetClass *klass)
 
     klass->draw = widget_base_draw;
 
-    obj_properties[PROP_WIDGET_HEIGHT] =
+    obj_properties[PROP_HEIGHT] =
         g_param_spec_int("height",
                          "Widget Height",
                          "Initial window height",
@@ -356,7 +399,7 @@ widget_class_init(WidgetClass *klass)
                          G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
 
-    obj_properties[PROP_WIDGET_WIDTH] =
+    obj_properties[PROP_WIDTH] =
         g_param_spec_int("width",
                          "Widget Width",
                          "Initial window Width",
@@ -366,12 +409,20 @@ widget_class_init(WidgetClass *klass)
                          G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
 
-    obj_properties[PROP_WIDGET_PARENT] =
-        g_param_spec_object("parent",
-                            "Parent Widget",
-                            "Parent Widget",
-                            TUI_TYPE_WIDGET,
+    obj_properties[PROP_VEXPAND] =
+        g_param_spec_boolean("vexpand",
+                            "Vertical Expansion",
+                             "Vertical Expansion",
+                            FALSE,
                             G_PARAM_READWRITE
+        );
+
+    obj_properties[PROP_HEXPAND] =
+        g_param_spec_boolean("hexpand",
+                             "Horizontal Expansion",
+                             "Horizontal Expansion",
+                             FALSE,
+                             G_PARAM_READWRITE
         );
 
     g_object_class_install_properties(

@@ -47,12 +47,11 @@ G_DEFINE_TYPE(Menu, menu, TUI_TYPE_CONTAINER)
 Widget *
 menu_new(const gchar *title)
 {
-    Widget *widget = g_object_new(
+    return g_object_new(
         TUI_TYPE_MENU,
         "title", title,
         NULL
     );
-    return widget;
 }
 
 void

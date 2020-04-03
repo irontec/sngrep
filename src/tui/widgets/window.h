@@ -35,12 +35,12 @@
 #include <glib-object.h>
 #include <ncurses.h>
 #include <panel.h>
-#include "tui/widgets/container.h"
+#include "tui/widgets/box.h"
 
 G_BEGIN_DECLS
 
 #define TUI_TYPE_WINDOW window_get_type()
-G_DECLARE_DERIVABLE_TYPE(Window, window, TUI, WINDOW, Container)
+G_DECLARE_DERIVABLE_TYPE(Window, window, TUI, WINDOW, Box)
 
 /**
  * @brief Enum for available panel types
@@ -72,7 +72,7 @@ typedef enum
 struct _WindowClass
 {
     //! Parent class
-    ContainerClass parent;
+    BoxClass parent;
     //! Query the panel if redraw is required
     gboolean (*redraw)(Window *self);
     //! Notifies the panel the screen has changed

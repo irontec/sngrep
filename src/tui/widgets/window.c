@@ -29,8 +29,9 @@
 #include "config.h"
 #include <string.h>
 #include <panel.h>
-#include "window.h"
 #include "tui/theme.h"
+#include "tui/widgets/box.h"
+#include "tui/widgets/window.h"
 
 typedef struct
 {
@@ -45,7 +46,7 @@ typedef struct
 } WindowPrivate;
 
 // Window class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Window, window, TUI_TYPE_CONTAINER)
+G_DEFINE_TYPE_WITH_PRIVATE(Window, window, TUI_TYPE_BOX)
 
 Window *
 window_new(gint height, gint width)

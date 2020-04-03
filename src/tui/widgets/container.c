@@ -20,11 +20,8 @@
  **
  ****************************************************************************/
 /**
- * @file {file}
+ * @file container.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
- *
- * @brief
- *
  */
 #include "config.h"
 #include "tui/widgets/container.h"
