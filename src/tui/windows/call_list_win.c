@@ -43,7 +43,7 @@
 #include "tui/windows/save_win.h"
 #include "tui/windows/column_select_win.h"
 
-G_DEFINE_TYPE(CallListWindow, call_list, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(CallListWindow, call_list_win, TUI_TYPE_WINDOW)
 
 /**
  * @brief Move selection cursor N times vertically
@@ -105,7 +105,7 @@ call_list_move_horizontal(CallListWindow *self, gint times)
  * @return true if the panel requires redraw, false otherwise
  */
 static gboolean
-call_list_redraw(G_GNUC_UNUSED Window *window)
+call_list_win_redraw(G_GNUC_UNUSED Window *window)
 {
     return storage_calls_changed();
 }
@@ -119,9 +119,9 @@ call_list_redraw(G_GNUC_UNUSED Window *window)
  * @return 0 if the panel has been resized, -1 otherwise
  */
 static int
-call_list_resize(Window *window)
+call_list_win_resize(Window *window)
 {
-    CallListWindow *self = TUI_CALL_LIST(window);
+    CallListWindow *self = TUI_CALL_LIST_WIN(window);
 
     // Get current screen dimensions
     gint maxx, maxy;
@@ -151,7 +151,7 @@ call_list_resize(Window *window)
  * @param window UI structure pointer
  */
 static void
-call_list_draw_header(CallListWindow *self)
+call_list_win_draw_header(CallListWindow *self)
 {
     const gchar *infile;
     const gchar *device;
@@ -241,7 +241,7 @@ call_list_draw_header(CallListWindow *self)
  * @param window UI structure pointer
  */
 static void
-call_list_draw_footer(CallListWindow *self)
+call_list_win_draw_footer(CallListWindow *self)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Quit",
@@ -290,7 +290,7 @@ call_list_columns_width(CallListWindow *self, guint columns)
  * @param window UI structure pointer
  */
 static void
-call_list_draw_list(CallListWindow *self)
+call_list_win_draw_list(CallListWindow *self)
 {
     gint listh, listw, cline = 0;
     gint color;
@@ -456,19 +456,19 @@ call_list_draw_list(CallListWindow *self)
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static int
-call_list_draw(Widget *widget)
+call_list_win_draw(Widget *widget)
 {
     Window *window = TUI_WINDOW(widget);
-    CallListWindow *self = TUI_CALL_LIST(window);
+    CallListWindow *self = TUI_CALL_LIST_WIN(window);
 
     // Draw the header
-    call_list_draw_header(self);
+    call_list_win_draw_header(self);
     // Draw the footer
-    call_list_draw_footer(self);
+    call_list_win_draw_footer(self);
     // Draw the list content
-    call_list_draw_list(self);
+    call_list_win_draw_list(self);
 
-    return TUI_WIDGET_CLASS(call_list_parent_class)->draw(widget);
+    return TUI_WIDGET_CLASS(call_list_win_parent_class)->draw(widget);
 }
 
 /**
@@ -485,7 +485,7 @@ call_list_draw(Widget *widget)
 const char *
 call_list_win_line_text(Window *window, Call *call)
 {
-    CallListWindow *self = TUI_CALL_LIST(window);
+    CallListWindow *self = TUI_CALL_LIST_WIN(window);
 
     // Get first call message
     Message *msg = g_ptr_array_first(call->msgs);
@@ -656,7 +656,7 @@ call_list_handle_menu_key(CallListWindow *self, int key)
  * @return enum @key_handler_ret
  */
 static int
-call_list_handle_key(Widget *widget, int key)
+call_list_win_handle_key(Widget *widget, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
     CallGroup *group;
@@ -664,7 +664,7 @@ call_list_handle_key(Widget *widget, int key)
     StorageSortOpts sort;
 
     Window *window = TUI_WINDOW(widget);
-    CallListWindow *self = TUI_CALL_LIST(window);
+    CallListWindow *self = TUI_CALL_LIST_WIN(window);
 
     if (self->menu_active)
         return call_list_handle_menu_key(self, key);
@@ -844,7 +844,7 @@ call_list_handle_key(Widget *widget, int key)
  * @return 0 if the screen has help, -1 otherwise
  */
 static int
-call_list_help(G_GNUC_UNUSED Window *window)
+call_list_win_help(G_GNUC_UNUSED Window *window)
 {
     WINDOW *help_win;
     int height, width;
@@ -941,7 +941,7 @@ call_list_add_column(CallListWindow *self, Attribute *attr, const char *name,
 void
 call_list_win_clear(Window *window)
 {
-    CallListWindow *self = TUI_CALL_LIST(window);
+    CallListWindow *self = TUI_CALL_LIST_WIN(window);
 
     // Initialize structures
     self->vscroll.pos = self->cur_idx = 0;
@@ -960,9 +960,9 @@ call_list_win_clear(Window *window)
  * @param window UI structure pointer
  */
 static void
-call_list_finalize(GObject *object)
+call_list_win_finalize(GObject *object)
 {
-    CallListWindow *self = TUI_CALL_LIST(object);
+    CallListWindow *self = TUI_CALL_LIST_WIN(object);
 
     // Deallocate window private data
     call_group_free(self->group);
@@ -971,14 +971,14 @@ call_list_finalize(GObject *object)
     delwin(self->list_win);
 
     // Chain-up parent finalize function
-    G_OBJECT_CLASS(call_list_parent_class)->finalize(object);
+    G_OBJECT_CLASS(call_list_win_parent_class)->finalize(object);
 }
 
 Window *
 call_list_win_new()
 {
     Window *window = g_object_new(
-        WINDOW_TYPE_CALL_LIST,
+        TUI_TYPE_CALL_LIST_WIN,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
         NULL
@@ -989,7 +989,7 @@ call_list_win_new()
 static void
 call_list_win_handle_action(Widget *sender, KeybindingAction action)
 {
-    CallListWindow *self = TUI_CALL_LIST(widget_get_toplevel(sender));
+    CallListWindow *self = TUI_CALL_LIST_WIN(widget_get_toplevel(sender));
     CallGroup *group = NULL;
     Call *call = NULL;
 
@@ -1064,12 +1064,12 @@ call_list_win_handle_action(Widget *sender, KeybindingAction action)
 }
 
 static void
-call_list_constructed(GObject *object)
+call_list_win_constructed(GObject *object)
 {
     // Chain-up parent constructed
-    G_OBJECT_CLASS(call_list_parent_class)->constructed(object);
+    G_OBJECT_CLASS(call_list_win_parent_class)->constructed(object);
 
-    CallListWindow *self = TUI_CALL_LIST(object);
+    CallListWindow *self = TUI_CALL_LIST_WIN(object);
     CaptureManager *capture = capture_manager_get_instance();
 
     // Add configured columns
@@ -1253,24 +1253,24 @@ call_list_constructed(GObject *object)
 }
 
 static void
-call_list_class_init(CallListWindowClass *klass)
+call_list_win_class_init(CallListWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = call_list_constructed;
-    object_class->finalize = call_list_finalize;
+    object_class->constructed = call_list_win_constructed;
+    object_class->finalize = call_list_win_finalize;
 
     WindowClass *window_class = TUI_WINDOW_CLASS(klass);
-    window_class->redraw = call_list_redraw;
-    window_class->resize = call_list_resize;
-    window_class->help = call_list_help;
+    window_class->redraw = call_list_win_redraw;
+    window_class->resize = call_list_win_resize;
+    window_class->help = call_list_win_help;
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
-    widget_class->draw = call_list_draw;
-    widget_class->key_pressed = call_list_handle_key;
+    widget_class->draw = call_list_win_draw;
+    widget_class->key_pressed = call_list_win_handle_key;
 }
 
 static void
-call_list_init(CallListWindow *self)
+call_list_win_init(CallListWindow *self)
 {
     // Set parent attributes
     window_set_window_type(TUI_WINDOW(self), WINDOW_CALL_LIST);

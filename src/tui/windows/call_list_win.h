@@ -42,8 +42,8 @@
 
 G_BEGIN_DECLS
 
-#define WINDOW_TYPE_CALL_LIST call_list_get_type()
-G_DECLARE_FINAL_TYPE(CallListWindow, call_list, TUI, CALL_LIST, Window)
+#define TUI_TYPE_CALL_LIST_WIN call_list_win_get_type()
+G_DECLARE_FINAL_TYPE(CallListWindow, call_list_win, TUI, CALL_LIST_WIN, Window)
 
 
 /**
