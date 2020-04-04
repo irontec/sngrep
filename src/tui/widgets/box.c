@@ -34,6 +34,8 @@
 enum
 {
     PROP_ORIENTATION = 1,
+    PROP_SPACING,
+    PROP_PADDING,
     N_PROPERTIES
 };
 
@@ -41,7 +43,12 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 typedef struct
 {
+    // Vertical or Horizontal box
     BoxOrientation orientation;
+    // Space between children widgets
+    gint spacing;
+    // Padding at the beginning and end of box
+    gint padding;
 } BoxPrivate;
 
 // Class definition
@@ -50,9 +57,17 @@ G_DEFINE_TYPE_WITH_PRIVATE(Box, box, TUI_TYPE_CONTAINER)
 Widget *
 box_new(BoxOrientation orientation)
 {
+    return box_new_full(orientation, 0, 0);
+}
+
+Widget *
+box_new_full(BoxOrientation orientation, gint spacing, gint padding)
+{
     return g_object_new(
         TUI_TYPE_BOX,
         "orientation", orientation,
+        "spacing", spacing,
+        "padding", padding,
         "vexpand", TRUE,
         "hexpand", TRUE,
         NULL
@@ -67,6 +82,12 @@ box_set_property(GObject *object, guint property_id, const GValue *value, GParam
         case PROP_ORIENTATION:
             priv->orientation = g_value_get_enum(value);
             break;
+        case PROP_SPACING:
+            priv->spacing = g_value_get_int(value);
+            break;
+        case PROP_PADDING:
+            priv->padding = g_value_get_int(value);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
             break;
@@ -80,6 +101,12 @@ box_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *
     switch (property_id) {
         case PROP_ORIENTATION:
             g_value_set_enum(value, priv->orientation);
+            break;
+        case PROP_SPACING:
+            g_value_set_int(value, priv->spacing);
+            break;
+        case PROP_PADDING:
+            g_value_set_int(value, priv->padding);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -96,7 +123,10 @@ box_draw(Widget *widget)
 
     // Set Children width based on expand flag
     if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
-        gint space = widget_get_height(widget);
+        gint space = widget_get_height(widget)
+                     - priv->padding * 2
+                     - priv->spacing * g_node_n_children(children);
+
         gint exp_widget_cnt = 0;
         // Remove fixed space from non expanded widgets
         for (guint i = 0; i < g_node_n_children(children); i++) {
@@ -109,7 +139,7 @@ box_draw(Widget *widget)
         }
 
         // Calculate expanded children height and positions
-        gint ypos = 0;
+        gint ypos = priv->padding;
         for (guint i = 0; i < g_node_n_children(children); i++) {
             Widget *child = g_node_nth_child_data(children, i);
             if (widget_get_vexpand(child)) {
@@ -119,10 +149,13 @@ box_draw(Widget *widget)
                 widget_set_size(child, widget_get_width(widget), widget_get_height(child));
             }
             widget_set_position(child, widget_get_xpos(widget), ypos);
-            ypos += widget_get_height(child);
+            ypos += widget_get_height(child) + priv->spacing;
         }
     } else {
-        gint space = widget_get_width(widget);
+        gint space = widget_get_width(widget)
+                     - priv->padding * 2
+                     - priv->spacing * g_node_n_children(children);
+
         gint exp_widget_cnt = 0;
         // Remove fixed space from non expanded widgets
         for (guint i = 0; i < g_node_n_children(children); i++) {
@@ -135,7 +168,7 @@ box_draw(Widget *widget)
         }
 
         // Calculate expanded children width and positions
-        gint xpos = 0;
+        gint xpos = priv->padding;
         for (guint i = 0; i < g_node_n_children(children); i++) {
             Widget *child = g_node_nth_child_data(children, i);
             if (widget_get_hexpand(child)) {
@@ -145,7 +178,7 @@ box_draw(Widget *widget)
                 widget_set_size(child, widget_get_width(child), widget_get_height(widget));
             }
             widget_set_position(child, xpos, widget_get_ypos(widget));
-            xpos += widget_get_width(child);
+            xpos += widget_get_width(child) + priv->spacing;
         }
     }
 
@@ -171,6 +204,26 @@ box_class_init(BoxClass *klass)
                           BOX_TYPE_ORIENTATION,
                           BOX_ORIENTATION_VERTICAL,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT
+        );
+
+    obj_properties[PROP_SPACING] =
+        g_param_spec_int("spacing",
+                         "Box Spacing",
+                         "Space between children widgets",
+                         0,
+                         G_MAXINT,
+                         0,
+                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+
+    obj_properties[PROP_PADDING] =
+        g_param_spec_int("padding",
+                         "Box Padding",
+                         "Padding at the beginning and end of box",
+                         0,
+                         G_MAXINT,
+                         0,
+                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
 
     g_object_class_install_properties(

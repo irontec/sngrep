@@ -1387,7 +1387,7 @@ call_list_constructed(GObject *object)
 
 
     // Create First header line
-    Widget *header_first = box_new(BOX_ORIENTATION_HORIZONTAL);
+    Widget *header_first = box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
     self->lb_mode = label_new(NULL);
     self->lb_dialog_cnt = label_new(NULL);
     self->lb_memory = label_new(NULL);
@@ -1398,11 +1398,6 @@ call_list_constructed(GObject *object)
     container_add_child(TUI_CONTAINER(header_first), self->lb_memory);
     container_add_child(TUI_CONTAINER(header_first), self->lb_filename);
     container_show_all(TUI_CONTAINER(header_first));
-
-    // FIXME
-    widget_set_vexpand(header_first, FALSE);
-    widget_set_size(header_first, 200, 1);
-
 }
 
 static void
