@@ -100,16 +100,8 @@ struct _CallListWindow
     CallGroup *group;
     //! Displayed column list, make it configurable in the future
     GPtrArray *columns;
-    //! Columns subwindow
-    WINDOW *cols_win;
     //! List subwindow
     WINDOW *list_win;
-    //! Form that contains the display filter
-    FORM *form;
-    //! An array of window form fields
-    FIELD *fields[FLD_LIST_COUNT + 1];
-    //! We're entering keys on form
-    gboolean form_active;
     // Columns sort menu
     MENU *menu;
     // Columns sort menu items
@@ -127,6 +119,8 @@ struct _CallListWindow
     Widget *lb_dialog_cnt;
     Widget *lb_memory;
     Widget *lb_filename;
+    //! Display filter entry
+    Widget *en_dfilter;
     //! Window menu bar
     Widget *menu_bar;
 };

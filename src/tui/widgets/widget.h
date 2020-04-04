@@ -107,6 +107,9 @@ widget_hide(Widget *widget);
 gboolean
 widget_is_visible(Widget *widget);
 
+gboolean
+widget_has_focus(Widget *widget);
+
 Widget *
 widget_get_toplevel(Widget *widget);
 

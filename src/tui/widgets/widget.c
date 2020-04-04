@@ -64,6 +64,8 @@ typedef struct
     gint x, y;
     //! Determine if this widget is displayed on the screen
     gboolean visible;
+    //! Determine if this widget has window focus
+    gboolean focused;
     //! Determine the fill mode in layouts
     gboolean vexpand, hexpand;
     //! Determine if the widget must be drawn on topmost layer
@@ -108,6 +110,13 @@ widget_is_visible(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->visible;
+}
+
+gboolean
+widget_has_focus(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->focused;
 }
 
 Widget *
@@ -368,6 +377,21 @@ widget_base_draw(Widget *widget)
     return 0;
 }
 
+static gboolean
+widget_base_focus_gained(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->focused = TRUE;
+    return priv->focused;
+}
+
+static void
+widget_base_focus_lost(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->focused = FALSE;
+}
+
 static void
 widget_constructed(G_GNUC_UNUSED GObject *object)
 {
@@ -458,6 +482,8 @@ widget_class_init(WidgetClass *klass)
 
     klass->map = widget_base_map;
     klass->draw = widget_base_draw;
+    klass->focus_gained = widget_base_focus_gained;
+    klass->focus_lost = widget_base_focus_lost;
 
     obj_properties[PROP_HEIGHT] =
         g_param_spec_int("height",

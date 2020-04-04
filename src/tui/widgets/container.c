@@ -62,17 +62,24 @@ container_get_child(Container *container, gint index)
     );
 }
 
-static gboolean
+static void
 container_check_child_position(GNode *node, gpointer data)
 {
     ContainerFindData *find_data = data;
     Widget *widget = node->data;
 
     if (widget_is_visible(widget) == FALSE) {
-        return FALSE;
+        return;
     }
-
+    // Containers check their children first
+    if (TUI_IS_CONTAINER(widget)) {
+        if (find_data->found == NULL) {
+            find_data->found = container_find_by_position(TUI_CONTAINER(widget), find_data->x, find_data->y);
+        }
+    }
     if (find_data->found == NULL) {
+
+        // Then check if container has been clicked
         if (find_data->x >= widget_get_xpos(widget)
             && find_data->x < widget_get_xpos(widget) + widget_get_width(widget)
             && find_data->y >= widget_get_ypos(widget)
@@ -80,8 +87,6 @@ container_check_child_position(GNode *node, gpointer data)
             find_data->found = widget;
         }
     }
-
-    return find_data->found != NULL;
 }
 
 Widget *
@@ -93,11 +98,9 @@ container_find_by_position(Container *container, gint x, gint y)
         .found = NULL,
     };
 
-    g_node_traverse(
+    g_node_children_foreach(
         widget_get_node(TUI_WIDGET(container)),
-        G_IN_ORDER,
         G_TRAVERSE_ALL,
-        -1,
         container_check_child_position,
         &find_data
     );

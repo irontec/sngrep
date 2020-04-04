@@ -92,6 +92,10 @@ label_draw(Widget *widget)
             wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
             continue;
         }
+        if (g_strcmp0(tokens[i], "yellow") == 0) {
+            wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+            continue;
+        }
         wprintw(win, tokens[i]);
     }
 

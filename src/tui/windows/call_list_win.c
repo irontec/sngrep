@@ -153,14 +153,14 @@ call_list_resize(Window *window)
 static void
 call_list_draw_header(CallListWindow *self)
 {
-    const char *infile;
-    const char *device, *filterbpf;
+    const gchar *infile;
+    const gchar *device;
 
     WINDOW *win = window_get_ncurses_window(TUI_WINDOW(self));
     CaptureManager *capture = capture_manager_get_instance();
     gboolean online = capture_is_online(capture);
 
-    g_autoptr(GString) mode = g_string_new("  Mode: ");
+    g_autoptr(GString) mode = g_string_new("Mode: ");
     g_string_append(mode, online ? "<green>" : "<red>");
     g_string_append(mode, capture_status_desc(capture));
 
@@ -192,7 +192,7 @@ call_list_draw_header(CallListWindow *self)
     g_autoptr(GString) count = g_string_new(NULL);
     // Print Dialogs or Calls in label depending on calls filter
     StorageMatchOpts storageMatchOpts = storage_match_options();
-    g_string_append(count, storageMatchOpts.invite ? "Calls :" : "Dialogs :");
+    g_string_append(count, storageMatchOpts.invite ? "Calls: " : "Dialogs: ");
     // Print calls count (also filtered)
     StorageStats stats = storage_calls_stats();
     if (stats.total != stats.displayed) {
@@ -222,25 +222,6 @@ call_list_draw_header(CallListWindow *self)
         g_autoptr(GString) file = g_string_new(NULL);
         g_string_append_printf(file, "Filename: %s", infile);
         label_set_text(TUI_LABEL(self->lb_filename), file->str);
-    }
-
-    // Label for Display filter
-    mvwprintw(win, 3, 2, "Display Filter: ");
-
-    mvwprintw(win, 2, 2, "BPF Filter: ");
-    wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    if ((filterbpf = capture_manager_filter(capture_manager_get_instance()))) {
-        wprintw(win, "%s", filterbpf);
-    }
-    wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-
-    StorageMatchOpts match = storage_match_options();
-
-    if (match.mexpr) {
-        wprintw(win, "%s", "        Match Expression: ");
-        wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
-        wprintw(win, "%s", match.mexpr);
-        wattroff(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
     }
 
     if (self->menu_active) {
@@ -477,13 +458,8 @@ call_list_draw_list(CallListWindow *self)
 static int
 call_list_draw(Widget *widget)
 {
-    int cury, curx;
-
     Window *window = TUI_WINDOW(widget);
     CallListWindow *self = TUI_CALL_LIST(window);
-
-    // Store cursor position
-    getyx(window_get_ncurses_window(window), cury, curx);
 
     // Draw the header
     call_list_draw_header(self);
@@ -492,46 +468,7 @@ call_list_draw(Widget *widget)
     // Draw the list content
     call_list_draw_list(self);
 
-    // Restore cursor position
-    wmove(window_get_ncurses_window(window), cury, curx);
-
-    TUI_WIDGET_CLASS(call_list_parent_class)->draw(widget);
-
-    return 0;
-}
-
-/**
- * @brief Enable/Disable Panel form focus
- *
- * Enable or disable form fields focus so the next input will be
- * handled by call_list_handle_key or call_list_handle_form_key
- * This will also set properties in fields to show them as focused
- * and show/hide the cursor
- *
- * @param window UI structure pointer
- * @param active Enable/Disable flag
- */
-static void
-call_list_form_activate(CallListWindow *self, gboolean active)
-{
-    // Store form state
-    self->form_active = active;
-
-    if (active) {
-        set_current_field(self->form, self->fields[FLD_LIST_FILTER]);
-        // Show cursor
-        curs_set(1);
-        // Change current field background
-        set_field_back(self->fields[FLD_LIST_FILTER], A_REVERSE);
-    } else {
-        set_current_field(self->form, NULL);
-        // Hide cursor
-        curs_set(0);
-        // Change current field background
-        set_field_back(self->fields[FLD_LIST_FILTER], A_NORMAL);
-    }
-    post_form(self->form);
-    form_driver(self->form, REQ_END_LINE);
+    return TUI_WIDGET_CLASS(call_list_parent_class)->draw(widget);
 }
 
 /**
@@ -621,93 +558,6 @@ call_list_select_sort_attribute(CallListWindow *self)
     set_current_item(self->menu, selected);
     menu_opts_off(self->menu, O_ONEVALUE);
     post_menu(self->menu);
-}
-
-/**
- * @brief Handle Forms entries key strokes
- *
- * This function will manage the custom keybindings of the panel form.
- *
- * @param window UI structure pointer
- * @param key Pressed keycode
- * @return enum @key_handler_ret
- */
-static int
-call_list_handle_form_key(CallListWindow *self, int key)
-{
-    // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
-        // Check if we handle this action
-        switch (action) {
-            case ACTION_PRINTABLE:
-                // If this is a normal character on input field, print it
-                form_driver(self->form, key);
-                break;
-            case ACTION_PREV_SCREEN:
-            case ACTION_NEXT_FIELD:
-            case ACTION_CONFIRM:
-            case ACTION_SELECT:
-            case ACTION_UP:
-            case ACTION_DOWN:
-                // Activate list
-                call_list_form_activate(self, 0);
-                break;
-            case ACTION_RIGHT:
-                form_driver(self->form, REQ_RIGHT_CHAR);
-                break;
-            case ACTION_LEFT:
-                form_driver(self->form, REQ_LEFT_CHAR);
-                break;
-            case ACTION_BEGIN:
-                form_driver(self->form, REQ_BEG_LINE);
-                break;
-            case ACTION_END:
-                form_driver(self->form, REQ_END_LINE);
-                break;
-            case ACTION_CLEAR:
-                form_driver(self->form, REQ_BEG_LINE);
-                form_driver(self->form, REQ_CLR_EOL);
-                break;
-            case ACTION_DELETE:
-                form_driver(self->form, REQ_DEL_CHAR);
-                break;
-            case ACTION_BACKSPACE:
-                form_driver(self->form, REQ_DEL_PREV);
-                break;
-            default:
-                // Parse next action
-                continue;
-        }
-
-        // We've handled this key, stop checking actions
-        break;
-    }
-
-    // Filter has changed, re-apply filter to displayed calls
-    if (action == ACTION_PRINTABLE || action == ACTION_BACKSPACE ||
-        action == ACTION_DELETE || action == ACTION_CLEAR) {
-        // Updated displayed results
-        call_list_win_clear(TUI_WINDOW(self));
-        // Reset filters on each key stroke
-        filter_reset_calls();
-    }
-
-    // Validate all input data
-    form_driver(self->form, REQ_VALIDATION);
-
-    // Store dfilter input
-    gsize field_len = strlen(field_buffer(self->fields[FLD_LIST_FILTER], 0));
-    gchar *dfilter = g_malloc0(field_len + 1);
-    strncpy(dfilter, field_buffer(self->fields[FLD_LIST_FILTER], 0), field_len);
-    g_strstrip(dfilter);    // Trim any trailing spaces
-
-    // Set display filter
-    filter_set(FILTER_CALL_LIST, strlen(dfilter) ? dfilter : NULL);
-    g_free(dfilter);
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 /**
@@ -816,10 +666,6 @@ call_list_handle_key(Widget *widget, int key)
     Window *window = TUI_WINDOW(widget);
     CallListWindow *self = TUI_CALL_LIST(window);
 
-    // Handle form key
-    if (self->form_active)
-        return call_list_handle_form_key(self, key);
-
     if (self->menu_active)
         return call_list_handle_menu_key(self, key);
 
@@ -857,10 +703,6 @@ call_list_handle_key(Widget *widget, int key)
                 break;
             case ACTION_END:
                 call_list_move_vertical(self, g_ptr_array_len(self->dcalls));
-                break;
-            case ACTION_DISP_FILTER:
-                // Activate Form
-                call_list_form_activate(self, 1);
                 break;
             case ACTION_SHOW_FLOW:
             case ACTION_SHOW_FLOW_EX:
@@ -1122,13 +964,6 @@ call_list_finalize(GObject *object)
 {
     CallListWindow *self = TUI_CALL_LIST(object);
 
-    // Deallocate forms data
-    if (self->form) {
-        unpost_form(self->form);
-        free_form(self->form);
-        free_field(self->fields[FLD_LIST_FILTER]);
-    }
-
     // Deallocate window private data
     call_group_free(self->group);
     g_ptr_array_free(self->columns, TRUE);
@@ -1235,6 +1070,7 @@ call_list_constructed(GObject *object)
     G_OBJECT_CLASS(call_list_parent_class)->constructed(object);
 
     CallListWindow *self = TUI_CALL_LIST(object);
+    CaptureManager *capture = capture_manager_get_instance();
 
     // Add configured columns
     self->columns = g_ptr_array_new_with_free_func(g_free);
@@ -1261,15 +1097,6 @@ call_list_constructed(GObject *object)
     WINDOW *win = window_get_ncurses_window(TUI_WINDOW(self));
 
     // Initialize the fields
-    self->fields[FLD_LIST_FILTER] = new_field(1, width - 19, 3, 18, 0, 0);
-    self->fields[FLD_LIST_COUNT] = NULL;
-
-    // Create the form and post it
-    self->form = new_form(self->fields);
-    set_form_sub(self->form, win);
-
-    // Form starts inactive
-    call_list_form_activate(self, 0);
     self->menu_active = FALSE;
 
     // Calculate available printable area
@@ -1287,7 +1114,7 @@ call_list_constructed(GObject *object)
 
 
     // Create menu bar entries
-    self->menu_bar = menu_bar_new(TUI_WIDGET(self));
+    self->menu_bar = menu_bar_new();
 
     // File Menu
     Widget *menu_file = menu_new("File");
@@ -1386,7 +1213,7 @@ call_list_constructed(GObject *object)
     container_add_child(TUI_CONTAINER(menu_help), menu_help_about);
 
 
-    // Create First header line
+    // First header line
     Widget *header_first = box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
     self->lb_mode = label_new(NULL);
     self->lb_dialog_cnt = label_new(NULL);
@@ -1398,6 +1225,31 @@ call_list_constructed(GObject *object)
     container_add_child(TUI_CONTAINER(header_first), self->lb_memory);
     container_add_child(TUI_CONTAINER(header_first), self->lb_filename);
     container_show_all(TUI_CONTAINER(header_first));
+
+    // Second header line
+    Widget *header_second = box_new_full(BOX_ORIENTATION_HORIZONTAL, 5, 1);
+    if (capture_manager_filter(capture)) {
+        g_autoptr(GString) filter = g_string_new("BPF Filter: ");
+        g_string_append_printf(filter, "<yellow>%s", capture_manager_filter(capture));
+        container_add_child(TUI_CONTAINER(header_second), label_new(filter->str));
+    }
+
+    StorageMatchOpts match = storage_match_options();
+    if (match.mexpr != NULL) {
+        g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
+        g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
+        container_add_child(TUI_CONTAINER(header_second), label_new(match_expression->str));
+    }
+    container_add_child(TUI_CONTAINER(self), header_second);
+    container_show_all(TUI_CONTAINER(header_second));
+
+    Widget *header_third = box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
+    container_add_child(TUI_CONTAINER(self), header_third);
+    container_add_child(TUI_CONTAINER(header_third), label_new("Display Filter:"));
+    self->en_dfilter = entry_new(NULL);
+    container_add_child(TUI_CONTAINER(header_third), self->en_dfilter);
+    container_show_all(TUI_CONTAINER(header_third));
+
 }
 
 static void

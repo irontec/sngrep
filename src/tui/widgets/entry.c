@@ -1,0 +1,273 @@
+/**************************************************************************
+ **
+ ** sngrep - SIP Messages flow viewer
+ **
+ ** Copyright (C) 2013-2019 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2019 Irontec SL. All rights reserved.
+ **
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
+ **
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
+ **
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **
+ ****************************************************************************/
+/**
+ * @file entry.c
+ * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ *
+ * @brief
+ *
+ */
+#include "config.h"
+#include "tui/theme.h"
+#include "tui/keybinding.h"
+#include "tui/widgets/entry.h"
+
+enum
+{
+    SIG_ACTIVATE,
+    SIGS
+};
+
+enum
+{
+    PROP_TEXT = 1,
+    N_PROPERTIES
+};
+
+static guint signals[SIGS] = { 0 };
+
+static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
+
+// Menu entry class definition
+G_DEFINE_TYPE(Entry, entry, TUI_TYPE_WIDGET)
+
+Widget *
+entry_new(const gchar *text)
+{
+    return g_object_new(
+        TUI_TYPE_ENTRY,
+        "text", text,
+        "height", 1,
+        "hexpand", TRUE,
+        NULL
+    );
+}
+
+void
+entry_free(Entry *entry)
+{
+    g_object_unref(entry);
+}
+
+void
+entry_set_text(Entry *entry, const gchar *text)
+{
+    if (entry->text != NULL) {
+        g_string_free(entry->text, TRUE);
+    }
+    entry->text = g_string_new(text);
+}
+
+const gchar *
+entry_get_text(Entry *entry)
+{
+    return entry->text->str;
+}
+
+static void
+entry_activate(Entry *entry)
+{
+    g_signal_emit(TUI_WIDGET(entry), signals[SIG_ACTIVATE], 0);
+}
+
+static gint
+entry_draw(Widget *widget)
+{
+    Entry *entry = TUI_ENTRY(widget);
+    g_return_val_if_fail(entry->text != NULL, 0);
+
+    if (entry->form == NULL) {
+        WINDOW *win = newpad(widget_get_height(widget), widget_get_width(widget));
+        widget_set_ncurses_window(widget, win);
+
+        entry->fields = g_malloc0_n(sizeof(FIELD *), 2);
+        entry->fields[0] = new_field(
+            widget_get_height(widget),
+            widget_get_width(widget),
+            0, 0,
+            0, 0
+        );
+
+        entry->form = new_form(entry->fields);
+        set_form_sub(entry->form, win);
+        set_current_field(entry->form, entry->fields[0]);
+    }
+    post_form(entry->form);
+
+    return TUI_WIDGET_CLASS(entry_parent_class)->draw(widget);
+}
+
+static gboolean
+entry_focus_gained(Widget *widget)
+{
+    Entry *entry = TUI_ENTRY(widget);
+    // Enable cursor
+    curs_set(1);
+    // Change field background
+    set_field_back(entry->fields[0], A_REVERSE);
+    // Move to the last character
+    form_driver(entry->form, REQ_END_LINE);
+    // Update field form
+    post_form(entry->form);
+    // Chain up parent focus gained
+    return TUI_WIDGET_CLASS(entry_parent_class)->focus_gained(widget);
+}
+
+static void
+entry_focus_lost(Widget *widget)
+{
+    Entry *entry = TUI_ENTRY(widget);
+    // Disable cursor
+    curs_set(0);
+    // Change field background
+    set_field_back(entry->fields[0], A_NORMAL);
+    // Chain up parent focus lost
+    TUI_WIDGET_CLASS(entry_parent_class)->focus_lost(widget);
+}
+
+static gint
+entry_key_pressed(Widget *widget, gint key)
+{
+    Entry *entry = TUI_ENTRY(widget);
+
+    // Check actions for this key
+    KeybindingAction action = ACTION_UNKNOWN;
+    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+        // Check if we handle this action
+        switch (action) {
+            case ACTION_PRINTABLE:
+                // If this is a normal character on input field, print it
+                form_driver(entry->form, key);
+                break;
+            case ACTION_RIGHT:
+                form_driver(entry->form, REQ_RIGHT_CHAR);
+                break;
+            case ACTION_LEFT:
+                form_driver(entry->form, REQ_LEFT_CHAR);
+                break;
+            case ACTION_BEGIN:
+                form_driver(entry->form, REQ_BEG_LINE);
+                break;
+            case ACTION_END:
+                form_driver(entry->form, REQ_END_LINE);
+                break;
+            case ACTION_CLEAR:
+                form_driver(entry->form, REQ_BEG_LINE);
+                form_driver(entry->form, REQ_CLR_EOL);
+                break;
+            case ACTION_DELETE:
+                form_driver(entry->form, REQ_DEL_CHAR);
+                break;
+            case ACTION_BACKSPACE:
+                form_driver(entry->form, REQ_DEL_PREV);
+                break;
+            case ACTION_CONFIRM:
+                widget_focus_lost(widget);
+                entry_activate(entry);
+                break;
+            default:
+                // Parse next action
+                continue;
+        }
+
+        // We've handled this key, stop checking actions
+        break;
+    }
+
+    // Validate all input data
+    form_driver(entry->form, REQ_VALIDATION);
+
+    // Return if this panel has handled or not the key
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
+}
+
+static void
+entry_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+    Entry *entry = TUI_ENTRY(self);
+
+    switch (property_id) {
+        case PROP_TEXT:
+            entry->text = g_string_new(g_strdup(g_value_get_string(value)));
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
+            break;
+    }
+}
+
+static void
+entry_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
+{
+    Entry *entry = TUI_ENTRY(self);
+    switch (property_id) {
+        case PROP_TEXT:
+            g_value_set_string(value, entry->text->str);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
+            break;
+    }
+}
+
+static void
+entry_init(G_GNUC_UNUSED Entry *self)
+{
+}
+
+static void
+entry_class_init(EntryClass *klass)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->set_property = entry_set_property;
+    object_class->get_property = entry_get_property;
+
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->draw = entry_draw;
+    widget_class->focus_gained = entry_focus_gained;
+    widget_class->focus_lost = entry_focus_lost;
+    widget_class->key_pressed = entry_key_pressed;
+
+    obj_properties[PROP_TEXT] =
+        g_param_spec_string("text",
+                            "Menu entry text",
+                            "Menu entry text",
+                            "Untitled menu entry",
+                            G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+
+    g_object_class_install_properties(
+        object_class,
+        N_PROPERTIES,
+        obj_properties
+    );
+
+    signals[SIG_ACTIVATE] =
+        g_signal_newv("activate",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+}
