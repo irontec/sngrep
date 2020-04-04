@@ -29,11 +29,6 @@
 
 typedef struct
 {
-    gboolean dummy;
-} ContainerPrivate;
-
-typedef struct
-{
     //! Position to search
     gint x, y;
     //! Widget pointer if found, NULL if not found
@@ -41,7 +36,7 @@ typedef struct
 } ContainerFindData;
 
 // Class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Container, container, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE(Container, container, TUI_TYPE_WIDGET)
 
 void
 container_add_child(Container *container, Widget *child)
@@ -111,6 +106,30 @@ container_find_by_position(Container *container, gint x, gint y)
 }
 
 static void
+container_show_child(GNode *child, G_GNUC_UNUSED gpointer data)
+{
+    widget_show(child->data);
+}
+
+void
+container_show_all(Container *container)
+{
+    // TODO maybe it's more logical if this function shows
+    // TODO all children instead of the first level one
+
+    // Show all container children
+    g_node_children_foreach(
+        widget_get_node(TUI_WIDGET(container)),
+        G_TRAVERSE_ALL,
+        container_show_child,
+        NULL
+    );
+
+    // Show container itself
+    widget_show(TUI_WIDGET(container));
+}
+
+static void
 container_draw_child(GNode *node, G_GNUC_UNUSED gpointer data)
 {
     widget_draw(node->data);
@@ -119,6 +138,7 @@ container_draw_child(GNode *node, G_GNUC_UNUSED gpointer data)
 static gint
 container_draw(Widget *widget)
 {
+    // Draw each of the container children
     g_node_children_foreach(
         widget_get_node(widget),
         G_TRAVERSE_ALL,
@@ -127,6 +147,28 @@ container_draw(Widget *widget)
     );
 
     return TUI_WIDGET_CLASS(container_parent_class)->draw(widget);
+}
+
+static void
+container_map_child(GNode *node, G_GNUC_UNUSED gpointer data)
+{
+    if (!widget_get_floating(node->data)) {
+        widget_map(node->data);
+    }
+}
+
+static void
+container_map(Widget *widget)
+{
+    // Draw each of the container children
+    g_node_children_foreach(
+        widget_get_node(widget),
+        G_TRAVERSE_ALL,
+        container_map_child,
+        NULL
+    );
+
+    TUI_WIDGET_CLASS(container_parent_class)->map(widget);
 }
 
 static void
@@ -144,6 +186,7 @@ container_class_init(ContainerClass *klass)
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
     widget_class->draw = container_draw;
+    widget_class->map = container_map;
 }
 
 static void

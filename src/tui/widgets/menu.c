@@ -50,6 +50,7 @@ menu_new(const gchar *title)
     return g_object_new(
         TUI_TYPE_MENU,
         "title", title,
+        "floating", TRUE,
         NULL
     );
 }
@@ -108,17 +109,6 @@ menu_draw(Widget *widget)
         }
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     }
-
-    copywin(
-        widget_get_ncurses_window(widget),
-        widget_get_ncurses_window(widget_get_toplevel(widget)),
-        0, 0,
-        widget_get_ypos(widget),
-        widget_get_xpos(widget),
-        getmaxy(win),
-        widget_get_xpos(widget) + getmaxx(win) - 1,
-        FALSE
-    );
 
     return 0;
 }

@@ -57,7 +57,9 @@ struct _WidgetClass
 {
     //! Parent class
     GObjectClass parent;
-    //! Request the panel to redraw its data
+    //! Map the widget into the screen
+    void (*map)(Widget *widget);
+    //! Request widget to draw its data in their internal window
     gint (*draw)(Widget *widget);
     //! Callback for focused event
     gboolean (*focus_gained)(Widget *widget);
@@ -125,6 +127,9 @@ widget_get_node(Widget *widget);
  */
 gint
 widget_draw(Widget *widget);
+
+void
+widget_map(Widget *widget);
 
 /**
  * @brief Callback when widget receives window focus
@@ -206,6 +211,12 @@ widget_set_hexpand(Widget *widget, gboolean expand);
 
 gboolean
 widget_get_hexpand(Widget *widget);
+
+void
+widget_set_floating(Widget *widget, gboolean floating);
+
+gboolean
+widget_get_floating(Widget *widget);
 
 G_END_DECLS
 

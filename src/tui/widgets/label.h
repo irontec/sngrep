@@ -20,13 +20,14 @@
  **
  ****************************************************************************/
 /**
- * @file container.h
+ * @file label.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Widget that contains other widgets
+ * @brief
+ *
  */
-#ifndef __SNGREP_CONTAINER_H__
-#define __SNGREP_CONTAINER_H__
+#ifndef __SNGREP_LABEL_H__
+#define __SNGREP_LABEL_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -35,29 +36,26 @@
 G_BEGIN_DECLS
 
 // Class declaration
-#define TUI_TYPE_CONTAINER container_get_type()
-G_DECLARE_DERIVABLE_TYPE(Container, container, TUI, CONTAINER, Widget)
+#define TUI_TYPE_LABEL label_get_type()
+G_DECLARE_FINAL_TYPE(Label, label, TUI, LABEL, Widget)
 
-struct _ContainerClass
+struct _Label
 {
-    //! Parent class
-    WidgetClass parent;
+    //! Parent object attributes
+    Widget parent;
+    //! Item text
+    gchar *text;
 };
 
-void
-container_add_child(Container *container, Widget *child);
-
-GNode *
-container_get_children(Container *container);
-
 Widget *
-container_get_child(Container *container, gint index);
-
-Widget *
-container_find_by_position(Container *container, gint x, gint y);
+label_new(const gchar *text);
 
 void
-container_show_all(Container *container);
+label_set_text(Label *label, const gchar *text);
 
+const gchar *
+label_get_text(Label *label);
 
-#endif    /* __SNGREP_CONTAINER_H__ */
+G_END_DECLS
+
+#endif    /* __SNGREP_LABEL_H__ */

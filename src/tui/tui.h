@@ -39,11 +39,19 @@
 #include "config.h"
 #include <ncurses.h>
 #include <panel.h>
-#include "tui/widgets/window.h"
 #include "tui/theme.h"
 #include "tui/keybinding.h"
 #include "storage/storage.h"
 #include "storage/group.h"
+#include "tui/widgets/box.h"
+#include "tui/widgets/container.h"
+#include "tui/widgets/label.h"
+#include "tui/widgets/menu.h"
+#include "tui/widgets/menu_bar.h"
+#include "tui/widgets/menu_item.h"
+#include "tui/widgets/scrollbar.h"
+#include "tui/widgets/widget.h"
+#include "tui/widgets/window.h"
 #include "setting.h"
 
 //! Error reporting

@@ -36,8 +36,6 @@
 #include "capture/capture_hep.h"
 #endif
 #include "tui/tui.h"
-#include "tui/widgets/window.h"
-#include "tui/widgets/menu_bar.h"
 #include "tui/dialog.h"
 #include "tui/windows/call_list_win.h"
 #include "tui/windows/call_flow_win.h"
@@ -156,71 +154,56 @@ static void
 call_list_draw_header(CallListWindow *self)
 {
     const char *infile;
-    const char *countlb;
     const char *device, *filterbpf;
 
-    // Draw panel title
-    window_set_title(TUI_WINDOW(self), "sngrep - SIP messages flow viewer");
-
-    // Draw a Panel header lines
-    window_clear_line(TUI_WINDOW(self), 1);
-    window_clear_line(TUI_WINDOW(self), 2);
-    window_clear_line(TUI_WINDOW(self), 3);
-
     WINDOW *win = window_get_ncurses_window(TUI_WINDOW(self));
+    CaptureManager *capture = capture_manager_get_instance();
+    gboolean online = capture_is_online(capture);
 
-    mvwprintw(win, 1, 2, "Mode: ");
-    if (capture_is_online(capture_manager_get_instance())) {
-        wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
-    } else {
-        wattron(win, COLOR_PAIR(CP_RED_ON_DEF));
-    }
-    wprintw(win, "%s ", capture_status_desc(capture_manager_get_instance()));
+    g_autoptr(GString) mode = g_string_new("  Mode: ");
+    g_string_append(mode, online ? "<green>" : "<red>");
+    g_string_append(mode, capture_status_desc(capture));
 
-    if (!capture_is_online(capture_manager_get_instance())) {
+    if (!online) {
         guint progress = capture_manager_load_progress(capture_manager_get_instance());
         if (progress > 0 && progress < 100) {
-            wprintw(win, "[%d%%]", progress);
+            g_string_append_printf(mode, "[%d%%]", progress);
         }
     }
 
     // Get online mode capture device
-    if ((device = capture_input_pcap_device(capture_manager_get_instance())))
-        wprintw(win, "[%s]", device);
+    if ((device = capture_input_pcap_device(capture)))
+        g_string_append_printf(mode, "[%s]", device);
 
 #ifdef USE_HEP
     const char *eep_port;
     if ((eep_port = capture_output_hep_port(capture_manager_get_instance()))) {
-        wprintw(win, "[H:%s]", eep_port);
+        g_string_append_printf(mode, "[H:%s]", eep_port);
     }
     if ((eep_port = capture_input_hep_port(capture_manager_get_instance()))) {
-        wprintw(win, "[L:%s]", eep_port);
+        g_string_append_printf(mode, "[L:%s]", eep_port);
     }
 #endif
 
-    wattroff(win, COLOR_PAIR(CP_GREEN_ON_DEF));
-    wattroff(win, COLOR_PAIR(CP_RED_ON_DEF));
+    // Set Mode label text
+    label_set_text(TUI_LABEL(self->lb_mode), mode->str);
 
-    // Reverse colors on monochrome terminals
-    if (!has_colors())
-        wattron(win, A_REVERSE);
 
+    g_autoptr(GString) count = g_string_new(NULL);
     // Print Dialogs or Calls in label depending on calls filter
     StorageMatchOpts storageMatchOpts = storage_match_options();
-    if (storageMatchOpts.invite) {
-        countlb = "Calls";
-    } else {
-        countlb = "Dialogs";
-    }
-
+    g_string_append(count, storageMatchOpts.invite ? "Calls :" : "Dialogs :");
     // Print calls count (also filtered)
     StorageStats stats = storage_calls_stats();
     if (stats.total != stats.displayed) {
-        mvwprintw(win, 1, 33, "%s: %d (%d displayed)", countlb, stats.total, stats.displayed);
+        g_string_append_printf(count, "%d / %d", stats.displayed, stats.total);
     } else {
-        mvwprintw(win, 1, 33, "%s: %d", countlb, stats.total);
+        g_string_append_printf(count, "%d", stats.total);
     }
+    // Set Count label text
+    label_set_text(TUI_LABEL(self->lb_dialog_cnt), count->str);
 
+    g_autoptr(GString) memory = g_string_new(NULL);
     if (storage_memory_limit() > 0) {
         g_autofree const gchar *usage = g_format_size_full(
             storage_memory_usage(),
@@ -230,14 +213,15 @@ call_list_draw_header(CallListWindow *self)
             storage_memory_limit(),
             G_FORMAT_SIZE_IEC_UNITS
         );
-
-        wprintw(win, "     Mem: %s / %s", usage, limit);
+        g_string_append_printf(memory, "Mem: %s / %s", usage, limit);
+        label_set_text(TUI_LABEL(self->lb_memory), memory->str);
     }
 
     // Print Open filename in Offline mode
-    if (!capture_is_online(capture_manager_get_instance()) &&
-        (infile = capture_input_pcap_file(capture_manager_get_instance()))) {
-        wprintw(win, "     Filename: %s", infile);
+    if ((infile = capture_input_pcap_file(capture))) {
+        g_autoptr(GString) file = g_string_new(NULL);
+        g_string_append_printf(file, "Filename: %s", infile);
+        label_set_text(TUI_LABEL(self->lb_filename), file->str);
     }
 
     // Label for Display filter
@@ -1300,6 +1284,8 @@ call_list_constructed(GObject *object)
     filter_method_from_setting(setting_get_value(SETTING_STORAGE_FILTER_METHODS));
     filter_payload_from_setting(setting_get_value(SETTING_STORAGE_FILTER_PAYLOAD));
 
+
+
     // Create menu bar entries
     self->menu_bar = menu_bar_new(TUI_WIDGET(self));
 
@@ -1378,6 +1364,7 @@ call_list_constructed(GObject *object)
                      GINT_TO_POINTER(ACTION_SHOW_HELP));
 
 
+    // Add menubar menus and items
     container_add_child(TUI_CONTAINER(self), self->menu_bar);
     container_add_child(TUI_CONTAINER(self->menu_bar), menu_file);
     container_add_child(TUI_CONTAINER(menu_file), menu_file_preferences);
@@ -1398,6 +1385,23 @@ call_list_constructed(GObject *object)
     container_add_child(TUI_CONTAINER(self->menu_bar), menu_help);
     container_add_child(TUI_CONTAINER(menu_help), menu_help_about);
 
+
+    // Create First header line
+    Widget *header_first = box_new(BOX_ORIENTATION_HORIZONTAL);
+    self->lb_mode = label_new(NULL);
+    self->lb_dialog_cnt = label_new(NULL);
+    self->lb_memory = label_new(NULL);
+    self->lb_filename = label_new(NULL);
+    container_add_child(TUI_CONTAINER(self), header_first);
+    container_add_child(TUI_CONTAINER(header_first), self->lb_mode);
+    container_add_child(TUI_CONTAINER(header_first), self->lb_dialog_cnt);
+    container_add_child(TUI_CONTAINER(header_first), self->lb_memory);
+    container_add_child(TUI_CONTAINER(header_first), self->lb_filename);
+    container_show_all(TUI_CONTAINER(header_first));
+
+    // FIXME
+    widget_set_vexpand(header_first, FALSE);
+    widget_set_size(header_first, 200, 1);
 
 }
 

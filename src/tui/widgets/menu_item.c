@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include "glib-extra/glib.h"
-#include "menu_item.h"
+#include "tui/widgets/menu_item.h"
 
 enum
 {

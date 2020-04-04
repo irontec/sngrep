@@ -53,4 +53,6 @@ struct _BoxClass
 Widget *
 box_new(BoxOrientation orientation);
 
+G_END_DECLS
+
 #endif    /* __SNGREP_BOX_H__ */

@@ -28,6 +28,7 @@
 #include <glib-object.h>
 #include "glib-extra/glib_enum_types.h"
 #include "glib-extra/gnode.h"
+#include "tui/theme.h"
 #include "tui/widgets/box.h"
 
 enum
@@ -52,6 +53,8 @@ box_new(BoxOrientation orientation)
     return g_object_new(
         TUI_TYPE_BOX,
         "orientation", orientation,
+        "vexpand", TRUE,
+        "hexpand", TRUE,
         NULL
     );
 }
@@ -147,6 +150,7 @@ box_draw(Widget *widget)
     }
 
     TUI_WIDGET_CLASS(box_parent_class)->draw(widget);
+    werase(widget_get_ncurses_window(widget));
     return 0;
 }
 

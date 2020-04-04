@@ -122,6 +122,11 @@ struct _CallListWindow
     Scrollbar vscroll;
     //! List horizontal scrollbar
     Scrollbar hscroll;
+    //! First header line widgets
+    Widget *lb_mode;
+    Widget *lb_dialog_cnt;
+    Widget *lb_memory;
+    Widget *lb_filename;
     //! Window menu bar
     Widget *menu_bar;
 };

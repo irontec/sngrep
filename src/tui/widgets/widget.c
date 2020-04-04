@@ -44,6 +44,7 @@ enum
     PROP_WIDTH,
     PROP_VEXPAND,
     PROP_HEXPAND,
+    PROP_FLOATING,
     N_PROPERTIES
 };
 
@@ -65,6 +66,8 @@ typedef struct
     gboolean visible;
     //! Determine the fill mode in layouts
     gboolean vexpand, hexpand;
+    //! Determine if the widget must be drawn on topmost layer
+    gboolean floating;
 } WidgetPrivate;
 
 // Widget class definition
@@ -231,6 +234,20 @@ widget_get_hexpand(Widget *widget)
     return priv->hexpand;
 }
 
+void
+widget_set_floating(Widget *widget, gboolean floating)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->floating = floating;
+}
+
+gboolean
+widget_get_floating(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->floating;
+}
+
 gint
 widget_draw(Widget *widget)
 {
@@ -245,6 +262,20 @@ widget_draw(Widget *widget)
     }
 
     return 0;
+}
+
+void
+widget_map(Widget *widget)
+{
+    // Only for visible widgets
+    if (!widget_is_visible(widget)) {
+        return;
+    }
+
+    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    if (klass->map != NULL) {
+        klass->map(widget);
+    }
 }
 
 gboolean
@@ -292,22 +323,54 @@ widget_key_pressed(Widget *widget, gint key)
     return hld;
 }
 
+static void
+widget_base_map(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    Widget *parent = widget_get_parent(widget);
+    if (priv->floating) {
+        parent = widget_get_toplevel(widget);
+    }
+
+    // Topmost widget, just refresh its window
+    if (parent == NULL) {
+        touchwin(priv->win);
+        return;
+    }
+
+    // Set copywin parameters
+    WINDOW *srcwin = priv->win;
+    WINDOW *dstwin = widget_get_ncurses_window(parent);
+    gint sminrow = 0, smincol = 0;
+    gint dminrow = priv->y - widget_get_ypos(parent);
+    gint dmincol = priv->x - widget_get_xpos(parent);
+    gint dmaxrow = dminrow + priv->height - 1;
+    gint dmaxcol = dmincol + priv->width - 1;
+
+    // Copy the widget in its parent widget ncurses window
+    copywin(
+        srcwin, dstwin,
+        sminrow, smincol,
+        dminrow, dmincol, dmaxrow, dmaxcol,
+        FALSE
+    );
+}
+
 static gint
 widget_base_draw(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
-    touchwin(priv->win);
+
+    // Create widget window with requested dimensions
+    if (priv->win == NULL) {
+        priv->win = newpad(priv->height, priv->width);
+    }
     return 0;
 }
 
 static void
-widget_constructed(GObject *object)
+widget_constructed(G_GNUC_UNUSED GObject *object)
 {
-    WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(object));
-    // Create widget window with requested dimensions
-    if (priv->win == NULL) {
-        priv->win = newwin(priv->height, priv->width, priv->y, priv->x);
-    }
 }
 
 static void
@@ -347,6 +410,9 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
         case PROP_HEXPAND:
             priv->hexpand = g_value_get_boolean(value);
             break;
+        case PROP_FLOATING:
+            priv->floating = g_value_get_boolean(value);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
             break;
@@ -371,6 +437,9 @@ widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec 
         case PROP_HEXPAND:
             g_value_set_boolean(value, priv->hexpand);
             break;
+        case PROP_FLOATING:
+            g_value_set_boolean(value, priv->floating);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
             break;
@@ -387,6 +456,7 @@ widget_class_init(WidgetClass *klass)
     object_class->set_property = widget_set_property;
     object_class->get_property = widget_get_property;
 
+    klass->map = widget_base_map;
     klass->draw = widget_base_draw;
 
     obj_properties[PROP_HEIGHT] =
@@ -411,16 +481,24 @@ widget_class_init(WidgetClass *klass)
 
     obj_properties[PROP_VEXPAND] =
         g_param_spec_boolean("vexpand",
-                            "Vertical Expansion",
                              "Vertical Expansion",
-                            FALSE,
-                            G_PARAM_READWRITE
+                             "Vertical Expansion",
+                             FALSE,
+                             G_PARAM_READWRITE
         );
 
     obj_properties[PROP_HEXPAND] =
         g_param_spec_boolean("hexpand",
                              "Horizontal Expansion",
                              "Horizontal Expansion",
+                             FALSE,
+                             G_PARAM_READWRITE
+        );
+
+    obj_properties[PROP_FLOATING] =
+        g_param_spec_boolean("floating",
+                             "Floating Widget flag",
+                             "Floating Widget flag",
                              FALSE,
                              G_PARAM_READWRITE
         );

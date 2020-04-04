@@ -158,10 +158,40 @@ window_redraw(Window *window)
     return TRUE;
 }
 
+static gboolean
+window_map_floating_child(GNode *node, G_GNUC_UNUSED gpointer data)
+{
+    if (widget_get_floating(node->data)) {
+        widget_map(node->data);
+    }
+    return FALSE;
+}
+
+static void
+window_map_floating(Window *window)
+{
+    // Draw floating children at the end
+    g_node_traverse(
+        widget_get_node(TUI_WIDGET(window)),
+        G_IN_ORDER,
+        G_TRAVERSE_ALL,
+        -1,
+        window_map_floating_child,
+        NULL
+    );
+}
+
 int
 window_draw(Window *window)
 {
-    return widget_draw(TUI_WIDGET(window));
+    Widget *widget = TUI_WIDGET(window);
+    // Draw all widgets of the window
+    widget_draw(widget);
+    // Map all widgets to their screen positions
+    widget_map(widget);
+    // Map all floating widgets
+    window_map_floating(window);
+    return 0;
 }
 
 int

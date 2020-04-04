@@ -66,32 +66,29 @@ menu_bar_clicked(Widget *widget, MEVENT mevent)
 static gint
 menu_bar_draw(Widget *widget)
 {
-    WINDOW *win = widget_get_ncurses_window(widget_get_parent(widget));
+    // Create a window to draw the menu bar
+    WINDOW *win = newpad(widget_get_height(widget), widget_get_width(widget));
+    widget_set_ncurses_window(widget, win);
+    wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-    window_clear_line(TUI_WINDOW(widget_get_parent(widget)), 0);
-
-    // Horizontal position for each menu
-    gint xpos = 0;
 
     GNode *children = container_get_children(TUI_CONTAINER(widget));
     for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
         Widget *menu = g_node_nth_child_data(children, i);
-        widget_set_position(menu, xpos, 1);
-        xpos += MENU_WIDTH;
+        widget_set_position(menu, getcurx(win), 1);
 
         if (widget_is_visible(menu)) {
             wattron(win, COLOR_PAIR(CP_WHITE_ON_DEF));
         } else {
             wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         }
-        mvwprintw(win, 0, widget_get_xpos(menu), " %-*s", MENU_WIDTH, menu_get_title(TUI_MENU(menu)));
+        wprintw(win, " %-*s", MENU_WIDTH, menu_get_title(TUI_MENU(menu)));
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        mvwaddwstr(win, 0, widget_get_xpos(menu) - 1, tui_acs_utf8(ACS_BOARD));
+        waddwstr(win, tui_acs_utf8(ACS_BOARD));
     }
 
     // Chain up parent draw
-    TUI_WIDGET_CLASS(menu_bar_parent_class)->draw(widget);
-    return 0;
+    return TUI_WIDGET_CLASS(menu_bar_parent_class)->draw(widget);
 }
 
 static gint
