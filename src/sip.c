@@ -824,7 +824,7 @@ sip_set_match_expression(const char *expr, int insensitive, int invert)
 #ifdef WITH_PCRE
     const char *re_err = NULL;
     int32_t err_offset;
-    int32_t pflags = PCRE_UNGREEDY;
+    int32_t pflags = PCRE_UNGREEDY | PCRE_DOTALL;
 
     if (insensitive)
         pflags |= PCRE_CASELESS;
