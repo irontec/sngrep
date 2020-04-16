@@ -39,9 +39,9 @@ enum
 static guint signals[SIGS] = { 0 };
 
 // Menu entry class definition
-G_DEFINE_TYPE(Entry, entry, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE(Entry, entry, SNG_TYPE_WIDGET)
 
-Widget *
+SngWidget *
 entry_new()
 {
     return g_object_new(
@@ -74,58 +74,58 @@ entry_get_text(Entry *entry)
 static void
 entry_activate(Entry *entry)
 {
-    g_signal_emit(TUI_WIDGET(entry), signals[SIG_ACTIVATE], 0);
+    g_signal_emit(SNG_WIDGET(entry), signals[SIG_ACTIVATE], 0);
 }
 
 static void
-entry_realize(Widget *widget)
+entry_realize(SngWidget *widget)
 {
     Entry *entry = TUI_ENTRY(widget);
 
     // Chain up parent realize
-    TUI_WIDGET_CLASS(entry_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(entry_parent_class)->realize(widget);
 
     // Create entry field
     if (entry->form == NULL) {
         entry->fields = g_malloc0_n(sizeof(FIELD *), 2);
         entry->fields[0] = new_field(
-            widget_get_height(widget),
-            widget_get_width(widget),
+            sng_widget_get_height(widget),
+            sng_widget_get_width(widget),
             0, 0,
             0, 0
         );
         set_field_back(entry->fields[0], A_UNDERLINE);
 
         entry->form = new_form(entry->fields);
-        set_form_sub(entry->form, widget_get_ncurses_window(widget));
+        set_form_sub(entry->form, sng_widget_get_ncurses_window(widget));
         set_current_field(entry->form, entry->fields[0]);
     }
 }
 
 static gint
-entry_draw(Widget *widget)
+entry_draw(SngWidget *widget)
 {
     Entry *entry = TUI_ENTRY(widget);
     post_form(entry->form);
 
     // Move the cursor in main screen
-    if (widget_has_focus(widget)) {
+    if (sng_widget_has_focus(widget)) {
         gint x, y;
         // Get subwindow current cursor position
-        getyx(widget_get_ncurses_window(widget), y, x);
+        getyx(sng_widget_get_ncurses_window(widget), y, x);
         // Position cursor in toplevel window
         wmove(
-            widget_get_ncurses_window(widget_get_toplevel(widget)),
-            y + widget_get_ypos(widget),
-            x + widget_get_xpos(widget)
+            sng_widget_get_ncurses_window(sng_widget_get_toplevel(widget)),
+            y + sng_widget_get_ypos(widget),
+            x + sng_widget_get_xpos(widget)
         );
     }
 
-    return TUI_WIDGET_CLASS(entry_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(entry_parent_class)->draw(widget);
 }
 
 static gboolean
-entry_focus_gained(Widget *widget)
+entry_focus_gained(SngWidget *widget)
 {
     Entry *entry = TUI_ENTRY(widget);
     // Enable cursor
@@ -137,11 +137,11 @@ entry_focus_gained(Widget *widget)
     // Update field form
     post_form(entry->form);
     // Chain up parent focus gained
-    return TUI_WIDGET_CLASS(entry_parent_class)->focus_gained(widget);
+    return SNG_WIDGET_CLASS(entry_parent_class)->focus_gained(widget);
 }
 
 static void
-entry_focus_lost(Widget *widget)
+entry_focus_lost(SngWidget *widget)
 {
     Entry *entry = TUI_ENTRY(widget);
     // Disable cursor
@@ -149,11 +149,11 @@ entry_focus_lost(Widget *widget)
     // Change field background
     set_field_back(entry->fields[0], A_NORMAL);
     // Chain up parent focus lost
-    TUI_WIDGET_CLASS(entry_parent_class)->focus_lost(widget);
+    SNG_WIDGET_CLASS(entry_parent_class)->focus_lost(widget);
 }
 
 static gint
-entry_key_pressed(Widget *widget, gint key)
+entry_key_pressed(SngWidget *widget, gint key)
 {
     Entry *entry = TUI_ENTRY(widget);
 
@@ -190,10 +190,10 @@ entry_key_pressed(Widget *widget, gint key)
                 break;
             case ACTION_CONFIRM:
                 entry_activate(entry);
-                widget_lose_focus(widget);
+                sng_widget_lose_focus(widget);
                 break;
             case ACTION_CANCEL:
-                widget_lose_focus(widget);
+                sng_widget_lose_focus(widget);
                 break;
             default:
                 // Parse next action
@@ -219,7 +219,7 @@ entry_init(G_GNUC_UNUSED Entry *self)
 static void
 entry_class_init(EntryClass *klass)
 {
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = entry_realize;
     widget_class->draw = entry_draw;
     widget_class->focus_gained = entry_focus_gained;

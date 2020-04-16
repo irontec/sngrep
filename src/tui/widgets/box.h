@@ -50,10 +50,10 @@ struct _BoxClass
     ContainerClass parent;
 };
 
-Widget *
+SngWidget *
 box_new(BoxOrientation orientation);
 
-Widget *
+SngWidget *
 box_new_full(BoxOrientation orientation, gint spacing, gint padding);
 
 G_END_DECLS

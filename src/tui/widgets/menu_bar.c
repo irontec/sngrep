@@ -36,7 +36,7 @@
 G_DEFINE_TYPE(MenuBar, menu_bar, TUI_TYPE_CONTAINER)
 
 static gint
-menu_bar_clicked(Widget *widget, MEVENT mevent)
+menu_bar_clicked(SngWidget *widget, MEVENT mevent)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
     GList *menus = container_get_children(TUI_CONTAINER(widget));
@@ -46,12 +46,12 @@ menu_bar_clicked(Widget *widget, MEVENT mevent)
 
         menu_bar->selected = index;
 
-        Widget *menu = container_get_child(
+        SngWidget *menu = container_get_child(
             TUI_CONTAINER(widget),
             menu_bar->selected
         );
-        widget_show(menu);
-        widget_grab_focus(menu);
+        sng_widget_show(menu);
+        sng_widget_grab_focus(menu);
     } else {
         menu_bar->selected = -1;
     }
@@ -60,33 +60,33 @@ menu_bar_clicked(Widget *widget, MEVENT mevent)
 }
 
 static void
-menu_bar_realize(Widget *widget)
+menu_bar_realize(SngWidget *widget)
 {
-    if (!widget_is_realized(widget)) {
+    if (!sng_widget_is_realized(widget)) {
         WINDOW *win = newpad(
-            widget_get_height(widget),
-            widget_get_width(widget)
+            sng_widget_get_height(widget),
+            sng_widget_get_width(widget)
         );
-        widget_set_ncurses_window(widget, win);
+        sng_widget_set_ncurses_window(widget, win);
 
     }
-    TUI_WIDGET_CLASS(menu_bar_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(menu_bar_parent_class)->realize(widget);
 }
 
 static gint
-menu_bar_draw(Widget *widget)
+menu_bar_draw(SngWidget *widget)
 {
     // Create a window to draw the menu bar
-    WINDOW *win = widget_get_ncurses_window(widget);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     werase(win);
 
     GList *children = container_get_children(TUI_CONTAINER(widget));
     for (GList *l = children; l != NULL; l = l->next) {
-        Widget *menu = l->data;
-        widget_set_position(menu, getcurx(win), 1);
+        SngWidget *menu = l->data;
+        sng_widget_set_position(menu, getcurx(win), 1);
 
-        if (widget_is_visible(menu)) {
+        if (sng_widget_is_visible(menu)) {
             wattron(win, COLOR_PAIR(CP_WHITE_ON_DEF));
         } else {
             wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
@@ -97,11 +97,11 @@ menu_bar_draw(Widget *widget)
     }
 
     // Chain up parent draw
-    return TUI_WIDGET_CLASS(menu_bar_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(menu_bar_parent_class)->draw(widget);
 }
 
 static gint
-menu_bar_key_pressed(Widget *widget, gint key)
+menu_bar_key_pressed(SngWidget *widget, gint key)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
     GList *children = container_get_children(TUI_CONTAINER(widget));
@@ -126,7 +126,7 @@ menu_bar_key_pressed(Widget *widget, gint key)
                 );
                 break;
             case ACTION_CANCEL:
-                widget_lose_focus(widget);
+                sng_widget_lose_focus(widget);
                 break;
             default:
                 continue;
@@ -134,31 +134,31 @@ menu_bar_key_pressed(Widget *widget, gint key)
         break;
     }
 
-    Widget *menu = container_get_child(TUI_CONTAINER(widget), menu_bar->selected);
-    widget_show(menu);
-    widget_grab_focus(menu);
+    SngWidget *menu = container_get_child(TUI_CONTAINER(widget), menu_bar->selected);
+    sng_widget_show(menu);
+    sng_widget_grab_focus(menu);
 
     return KEY_HANDLED;
 }
 
 static gboolean
-menu_bar_focus_gained(Widget *widget)
+menu_bar_focus_gained(SngWidget *widget)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
 
     menu_bar->selected = 0;
 
-    Widget *menu = container_get_child(
+    SngWidget *menu = container_get_child(
         TUI_CONTAINER(widget),
         menu_bar->selected
     );
-    widget_show(menu);
-    widget_grab_focus(menu);
+    sng_widget_show(menu);
+    sng_widget_grab_focus(menu);
 
     return TRUE;
 }
 
-Widget *
+SngWidget *
 menu_bar_new()
 {
     return g_object_new(
@@ -178,9 +178,9 @@ menu_bar_free(MenuBar *bar)
 static void
 menu_bar_constructed(GObject *object)
 {
-    Widget *widget = TUI_WIDGET(object);
+    SngWidget *widget = SNG_WIDGET(object);
     // MenuBar is always visible
-    widget_show(widget);
+    sng_widget_show(widget);
     // update the object state depending on constructor properties
     G_OBJECT_CLASS(menu_bar_parent_class)->constructed(object);
 }
@@ -198,7 +198,7 @@ menu_bar_class_init(MenuBarClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = menu_bar_constructed;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = menu_bar_realize;
     widget_class->draw = menu_bar_draw;
     widget_class->key_pressed = menu_bar_key_pressed;

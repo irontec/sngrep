@@ -23,7 +23,7 @@
  * @file widget.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Basic Widget interface component
+ * @brief Basic SngWidget interface component
  */
 
 #ifndef __SNGREP_WIDGET_H__
@@ -35,8 +35,8 @@
 
 G_BEGIN_DECLS
 
-#define TUI_TYPE_WIDGET widget_get_type()
-G_DECLARE_DERIVABLE_TYPE(Widget, widget, TUI, WIDGET, GObject)
+#define SNG_TYPE_WIDGET sng_widget_get_type()
+G_DECLARE_DERIVABLE_TYPE(SngWidget, sng_widget, SNG, WIDGET, GObject)
 
 //! Possible key handler results
 typedef enum
@@ -45,7 +45,7 @@ typedef enum
     KEY_NOT_HANDLED = -1,   // Panel has not handled the key, try default key handler
     KEY_PROPAGATED = -2,    // Panel destroys and requests previous panel to handle key
     KEY_DESTROY = -3,       // Panel request destroy
-} WidgetKeyHandlerRet;
+} SngWidgetKeyHandlerRet;
 
 /**
  * @brief Panel information structure
@@ -53,24 +53,24 @@ typedef enum
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct _WidgetClass
+struct _SngWidgetClass
 {
     //! Parent class
     GObjectClass parent;
     //! Create Ncurses components for the widget
-    void (*realize)(Widget *widget);
+    void (*realize)(SngWidget *widget);
     //! Map the widget into the screen
-    void (*map)(Widget *widget);
+    void (*map)(SngWidget *widget);
     //! Request widget to draw its data in their internal window
-    gint (*draw)(Widget *widget);
+    gint (*draw)(SngWidget *widget);
     //! Callback for focused event
-    gboolean (*focus_gained)(Widget *widget);
+    gboolean (*focus_gained)(SngWidget *widget);
     //! Callback for focused event
-    void (*focus_lost)(Widget *widget);
+    void (*focus_lost)(SngWidget *widget);
     //! Handle a custom keybinding on this panel
-    gint (*key_pressed)(Widget *widget, gint key);
+    gint (*key_pressed)(SngWidget *widget, gint key);
     //! Handle a mouse event on this panel
-    gint (*clicked)(Widget *widget, MEVENT event);
+    gint (*clicked)(SngWidget *widget, MEVENT event);
 };
 
 /**
@@ -85,8 +85,8 @@ struct _WidgetClass
  * @param width panel windo width
  * @return widget instance pointer
  */
-Widget *
-widget_new(const Widget *parent);
+SngWidget *
+sng_widget_new(const SngWidget *parent);
 
 /**
  * @brief Destroy a panel structure
@@ -98,31 +98,31 @@ widget_new(const Widget *parent);
  * @param widget UI structure
  */
 void
-widget_destroy(Widget *widget);
+sng_widget_destroy(SngWidget *widget);
 
 void
-widget_set_parent(Widget *widget, Widget *parent);
+sng_widget_set_parent(SngWidget *widget, SngWidget *parent);
 
-Widget *
-widget_get_parent(Widget *widget);
-
-void
-widget_show(Widget *widget);
+SngWidget *
+sng_widget_get_parent(SngWidget *widget);
 
 void
-widget_hide(Widget *widget);
+sng_widget_show(SngWidget *widget);
+
+void
+sng_widget_hide(SngWidget *widget);
 
 gboolean
-widget_is_visible(Widget *widget);
+sng_widget_is_visible(SngWidget *widget);
 
 gboolean
-widget_is_realized(Widget *widget);
+sng_widget_is_realized(SngWidget *widget);
 
 gboolean
-widget_has_focus(Widget *widget);
+sng_widget_has_focus(SngWidget *widget);
 
-Widget *
-widget_get_toplevel(Widget *widget);
+SngWidget *
+sng_widget_get_toplevel(SngWidget *widget);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -134,34 +134,34 @@ widget_get_toplevel(Widget *widget);
  * @return 0 if ui has been resize, -1 otherwise
  */
 gint
-widget_draw(Widget *widget);
+sng_widget_draw(SngWidget *widget);
 
 void
-widget_realize(Widget *widget);
+sng_widget_realize(SngWidget *widget);
 
 void
-widget_map(Widget *widget);
+sng_widget_map(SngWidget *widget);
 
 /**
  * @brief Callback when widget receives window focus
- * @param widget Widget to be focused
+ * @param widget SngWidget to be focused
  * @return TRUE if the widget can be focused, FALSE otherwise
  */
 gboolean
-widget_focus_gain(Widget *widget);
+sng_widget_focus_gain(SngWidget *widget);
 
 /**
  * @brief Callback when widget loses window focus
- * @param widget Widget to remove focus from
+ * @param widget SngWidget to remove focus from
  */
 void
-widget_focus_lost(Widget *widget);
+sng_widget_focus_lost(SngWidget *widget);
 
 void
-widget_lose_focus(Widget *widget);
+sng_widget_lose_focus(SngWidget *widget);
 
 void
-widget_grab_focus(Widget *widget);
+sng_widget_grab_focus(SngWidget *widget);
 
 /**
  * @brief Handle moves events on given widget
@@ -172,7 +172,7 @@ widget_grab_focus(Widget *widget);
  * @return enum @key_handler_ret*
  */
 gint
-widget_clicked(Widget *widget, MEVENT event);
+sng_widget_clicked(SngWidget *widget, MEVENT event);
 
 /**
  * @brief Handle key inputs on given UI
@@ -185,73 +185,73 @@ widget_clicked(Widget *widget, MEVENT event);
  * @return enum @key_handler_ret*
  */
 gint
-widget_key_pressed(Widget *widget, gint key);
+sng_widget_key_pressed(SngWidget *widget, gint key);
 
 void
-widget_set_ncurses_window(Widget *widget, WINDOW *win);
+sng_widget_set_ncurses_window(SngWidget *widget, WINDOW *win);
 
 WINDOW *
-widget_get_ncurses_window(Widget *widget);
+sng_widget_get_ncurses_window(SngWidget *widget);
 
 void
-widget_set_size(Widget *widget, gint width, gint height);
+sng_widget_set_size(SngWidget *widget, gint width, gint height);
 
 void
-widget_set_width(Widget *widget, gint width);
+sng_widget_set_width(SngWidget *widget, gint width);
 
 gint
-widget_get_width(Widget *widget);
+sng_widget_get_width(SngWidget *widget);
 
 void
-widget_set_height(Widget *widget, gint height);
+sng_widget_set_height(SngWidget *widget, gint height);
 
 gint
-widget_get_height(Widget *widget);
+sng_widget_get_height(SngWidget *widget);
 
 void
-widget_set_min_size(Widget *widget, gint width, gint height);
+sng_widget_set_min_size(SngWidget *widget, gint width, gint height);
 
 void
-widget_set_min_width(Widget *widget, gint width);
+sng_widget_set_min_width(SngWidget *widget, gint width);
 
 gint
-widget_get_min_width(Widget *widget);
+sng_widget_get_min_width(SngWidget *widget);
 
 void
-widget_set_min_height(Widget *widget, gint height);
+sng_widget_set_min_height(SngWidget *widget, gint height);
 
 gint
-widget_get_min_height(Widget *widget);
+sng_widget_get_min_height(SngWidget *widget);
 
 void
-widget_set_position(Widget *widget, gint xpos, gint ypos);
+sng_widget_set_position(SngWidget *widget, gint xpos, gint ypos);
 
 gint
-widget_get_xpos(Widget *widget);
+sng_widget_get_xpos(SngWidget *widget);
 
 gint
-widget_get_ypos(Widget *widget);
+sng_widget_get_ypos(SngWidget *widget);
 
 void
-widget_set_vexpand(Widget *widget, gboolean expand);
+sng_widget_set_vexpand(SngWidget *widget, gboolean expand);
 
 gboolean
-widget_get_vexpand(Widget *widget);
+sng_widget_get_vexpand(SngWidget *widget);
 
 void
-widget_set_hexpand(Widget *widget, gboolean expand);
+sng_widget_set_hexpand(SngWidget *widget, gboolean expand);
 
 gboolean
-widget_get_hexpand(Widget *widget);
+sng_widget_get_hexpand(SngWidget *widget);
 
 void
-widget_set_floating(Widget *widget, gboolean floating);
+sng_widget_set_floating(SngWidget *widget, gboolean floating);
 
 gboolean
-widget_is_floating(Widget *widget);
+sng_widget_is_floating(SngWidget *widget);
 
 gboolean
-widget_can_focus(Widget *widget);
+sng_widget_can_focus(SngWidget *widget);
 
 
 G_END_DECLS

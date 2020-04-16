@@ -66,7 +66,7 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 typedef struct
 {
     //! Parent widget
-    Widget *parent;
+    SngWidget *parent;
     //! Window for drawing this widget
     WINDOW *win;
     //! Dimensions of this widget
@@ -85,249 +85,249 @@ typedef struct
     gboolean vexpand, hexpand;
     //! Determine if the widget must be drawn on topmost layer
     gboolean floating;
-} WidgetPrivate;
+} SngWidgetPrivate;
 
-// Widget class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Widget, widget, G_TYPE_OBJECT)
+// SngWidget class definition
+G_DEFINE_TYPE_WITH_PRIVATE(SngWidget, sng_widget, G_TYPE_OBJECT)
 
-Widget *
-widget_new(const Widget *parent)
+SngWidget *
+sng_widget_new(const SngWidget *parent)
 {
     return g_object_new(
-        TUI_TYPE_WIDGET,
+        SNG_TYPE_WIDGET,
         "parent", parent,
         NULL
     );
 }
 
 void
-widget_destroy(Widget *widget)
+sng_widget_destroy(SngWidget *widget)
 {
     g_object_unref(widget);
 }
 
 void
-widget_set_parent(Widget *widget, Widget *parent)
+sng_widget_set_parent(SngWidget *widget, SngWidget *parent)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->parent = parent;
 }
 
-Widget *
-widget_get_parent(Widget *widget)
+SngWidget *
+sng_widget_get_parent(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->parent;
 }
 
-Widget *
-widget_get_toplevel(Widget *widget)
+SngWidget *
+sng_widget_get_toplevel(SngWidget *widget)
 {
-    while (widget_get_parent(widget) != NULL) {
-        widget = widget_get_parent(widget);
+    while (sng_widget_get_parent(widget) != NULL) {
+        widget = sng_widget_get_parent(widget);
     }
     return widget;
 }
 
 void
-widget_show(Widget *widget)
+sng_widget_show(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->visible = TRUE;
 }
 
 void
-widget_hide(Widget *widget)
+sng_widget_hide(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->visible = FALSE;
 }
 
 gboolean
-widget_is_visible(Widget *widget)
+sng_widget_is_visible(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->visible;
 }
 
 gboolean
-widget_is_realized(Widget *widget)
+sng_widget_is_realized(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->win != NULL;
 }
 
 gboolean
-widget_can_focus(Widget *widget)
+sng_widget_can_focus(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->can_focus;
 }
 
 gboolean
-widget_has_focus(Widget *widget)
+sng_widget_has_focus(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->focused;
 }
 
 void
-widget_set_ncurses_window(Widget *widget, WINDOW *win)
+sng_widget_set_ncurses_window(SngWidget *widget, WINDOW *win)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     if (priv->win)
         delwin(priv->win);
     priv->win = win;
 }
 
 WINDOW *
-widget_get_ncurses_window(Widget *widget)
+sng_widget_get_ncurses_window(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->win;
 }
 
 void
-widget_set_size(Widget *widget, gint width, gint height)
+sng_widget_set_size(SngWidget *widget, gint width, gint height)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->width = width;
     priv->height = height;
 }
 
 void
-widget_set_width(Widget *widget, gint width)
+sng_widget_set_width(SngWidget *widget, gint width)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->width = width;
 }
 
 gint
-widget_get_width(Widget *widget)
+sng_widget_get_width(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->width;
 }
 
 void
-widget_set_height(Widget *widget, gint height)
+sng_widget_set_height(SngWidget *widget, gint height)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->height = height;
 }
 
 gint
-widget_get_height(Widget *widget)
+sng_widget_get_height(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->height;
 }
 
 void
-widget_set_min_size(Widget *widget, gint width, gint height)
+sng_widget_set_min_size(SngWidget *widget, gint width, gint height)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->min_width = width;
     priv->min_height = height;
 }
 
 void
-widget_set_min_width(Widget *widget, gint width)
+sng_widget_set_min_width(SngWidget *widget, gint width)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->min_width = width;
 }
 
 gint
-widget_get_min_width(Widget *widget)
+sng_widget_get_min_width(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->min_width;
 }
 
 void
-widget_set_min_height(Widget *widget, gint height)
+sng_widget_set_min_height(SngWidget *widget, gint height)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->min_height = height;
 }
 
 gint
-widget_get_min_height(Widget *widget)
+sng_widget_get_min_height(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->min_height;
 }
 
 
 void
-widget_set_position(Widget *widget, gint xpos, gint ypos)
+sng_widget_set_position(SngWidget *widget, gint xpos, gint ypos)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->x = xpos;
     priv->y = ypos;
 }
 
 gint
-widget_get_xpos(Widget *widget)
+sng_widget_get_xpos(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->x;
 }
 
 gint
-widget_get_ypos(Widget *widget)
+sng_widget_get_ypos(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->y;
 }
 
 void
-widget_set_vexpand(Widget *widget, gboolean expand)
+sng_widget_set_vexpand(SngWidget *widget, gboolean expand)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->vexpand = expand;
 }
 
 gboolean
-widget_get_vexpand(Widget *widget)
+sng_widget_get_vexpand(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->vexpand;
 }
 
 void
-widget_set_hexpand(Widget *widget, gboolean expand)
+sng_widget_set_hexpand(SngWidget *widget, gboolean expand)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->hexpand = expand;
 }
 
 gboolean
-widget_get_hexpand(Widget *widget)
+sng_widget_get_hexpand(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->hexpand;
 }
 
 void
-widget_set_floating(Widget *widget, gboolean floating)
+sng_widget_set_floating(SngWidget *widget, gboolean floating)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->floating = floating;
 }
 
 gboolean
-widget_is_floating(Widget *widget)
+sng_widget_is_floating(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->floating;
 }
 
 void
-widget_realize(Widget *widget)
+sng_widget_realize(SngWidget *widget)
 {
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
 
     if (klass->realize != NULL) {
         klass->realize(widget);
@@ -338,22 +338,22 @@ widget_realize(Widget *widget)
 }
 
 gint
-widget_draw(Widget *widget)
+sng_widget_draw(SngWidget *widget)
 {
     // Only for visible widgets
-    if (!widget_is_visible(widget)) {
+    if (!sng_widget_is_visible(widget)) {
         return 0;
     }
 
     // Realize widget before drawing
-    if (!widget_is_realized(widget)) {
-        widget_realize(widget);
+    if (!sng_widget_is_realized(widget)) {
+        sng_widget_realize(widget);
     }
 
     // Notify everyone we're being drawn
     g_signal_emit(widget, signals[SIG_DRAW], 0);
 
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->draw != NULL) {
         return klass->draw(widget);
     }
@@ -362,17 +362,17 @@ widget_draw(Widget *widget)
 }
 
 void
-widget_map(Widget *widget)
+sng_widget_map(SngWidget *widget)
 {
     // Only for visible widgets
-    if (!widget_is_visible(widget)) {
+    if (!sng_widget_is_visible(widget)) {
         return;
     }
 
     // Notify everyone we're being mapped
     g_signal_emit(widget, signals[SIG_MAP], 0);
 
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->map != NULL) {
         klass->map(widget);
     }
@@ -380,9 +380,9 @@ widget_map(Widget *widget)
 
 
 gboolean
-widget_focus_gain(Widget *widget)
+sng_widget_focus_gain(SngWidget *widget)
 {
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->focus_gained != NULL) {
         return klass->focus_gained(widget);
     }
@@ -390,32 +390,32 @@ widget_focus_gain(Widget *widget)
 }
 
 void
-widget_focus_lost(Widget *widget)
+sng_widget_focus_lost(SngWidget *widget)
 {
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->focus_lost != NULL) {
         klass->focus_lost(widget);
     }
 }
 
 void
-widget_lose_focus(Widget *widget)
+sng_widget_lose_focus(SngWidget *widget)
 {
     g_signal_emit(widget, signals[SIG_LOSE_FOCUS], 0);
 }
 
 void
-widget_grab_focus(Widget *widget)
+sng_widget_grab_focus(SngWidget *widget)
 {
     g_signal_emit(widget, signals[SIG_GRAB_FOCUS], 0);
 }
 
 gint
-widget_clicked(Widget *widget, MEVENT event)
+sng_widget_clicked(SngWidget *widget, MEVENT event)
 {
     gint hld = KEY_NOT_HANDLED;
 
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->clicked != NULL) {
         hld = klass->clicked(widget, event);
     }
@@ -427,11 +427,11 @@ widget_clicked(Widget *widget, MEVENT event)
 }
 
 gint
-widget_key_pressed(Widget *widget, gint key)
+sng_widget_key_pressed(SngWidget *widget, gint key)
 {
     gint hld = KEY_NOT_HANDLED;
 
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->key_pressed != NULL) {
         hld = klass->key_pressed(widget, key);
     }
@@ -443,9 +443,9 @@ widget_key_pressed(Widget *widget, gint key)
 }
 
 static void
-widget_base_realize(Widget *widget)
+sng_widget_base_realize(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
 
     // Create widget window with requested dimensions
     if (priv->win == NULL) {
@@ -456,18 +456,18 @@ widget_base_realize(Widget *widget)
 }
 
 static int
-widget_base_draw(G_GNUC_UNUSED Widget *widget)
+sng_widget_base_draw(G_GNUC_UNUSED SngWidget *widget)
 {
     return 0;
 }
 
 static void
-widget_base_map(Widget *widget)
+sng_widget_base_map(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    Widget *parent = widget_get_parent(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
+    SngWidget *parent = sng_widget_get_parent(widget);
     if (priv->floating) {
-        parent = widget_get_toplevel(widget);
+        parent = sng_widget_get_toplevel(widget);
     }
 
     // Topmost widget, just refresh its window
@@ -478,10 +478,10 @@ widget_base_map(Widget *widget)
 
     // Set copywin parameters
     WINDOW *srcwin = priv->win;
-    WINDOW *dstwin = widget_get_ncurses_window(parent);
+    WINDOW *dstwin = sng_widget_get_ncurses_window(parent);
     gint sminrow = 0, smincol = 0;
-    gint dminrow = priv->y - widget_get_ypos(parent);
-    gint dmincol = priv->x - widget_get_xpos(parent);
+    gint dminrow = priv->y - sng_widget_get_ypos(parent);
+    gint dmincol = priv->x - sng_widget_get_xpos(parent);
     gint dmaxrow = dminrow + priv->height - 1;
     gint dmaxcol = dmincol + priv->width - 1;
 
@@ -495,27 +495,27 @@ widget_base_map(Widget *widget)
 }
 
 static gboolean
-widget_base_focus_gained(Widget *widget)
+sng_widget_base_focus_gained(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->focused = TRUE;
     return priv->focused;
 }
 
 static void
-widget_base_focus_lost(Widget *widget)
+sng_widget_base_focus_lost(SngWidget *widget)
 {
-    WidgetPrivate *priv = widget_get_instance_private(widget);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->focused = FALSE;
 }
 
 static gint
-widget_base_key_pressed(Widget *widget, gint key)
+sng_widget_base_key_pressed(SngWidget *widget, gint key)
 {
     // Pass key to parent widget
-    Widget *parent = widget_get_parent(widget);
+    SngWidget *parent = sng_widget_get_parent(widget);
     if (parent != NULL) {
-        return widget_key_pressed(parent, key);
+        return sng_widget_key_pressed(parent, key);
     }
 
     // No widget handled this key
@@ -523,33 +523,33 @@ widget_base_key_pressed(Widget *widget, gint key)
 }
 
 static void
-widget_constructed(G_GNUC_UNUSED GObject *object)
+sng_widget_constructed(G_GNUC_UNUSED GObject *object)
 {
 }
 
 static void
-widget_dispose(GObject *self)
+sng_widget_dispose(GObject *self)
 {
     // Notify everyone we're being destroyed
     g_signal_emit(self, signals[SIG_DESTROY], 0);
     // Chain-up parent finalize function
-    G_OBJECT_CLASS(widget_parent_class)->dispose(self);
+    G_OBJECT_CLASS(sng_widget_parent_class)->dispose(self);
 }
 
 static void
-widget_finalize(GObject *self)
+sng_widget_finalize(GObject *self)
 {
-    WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(self));
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(SNG_WIDGET(self));
     // Deallocate ncurses pointers
     delwin(priv->win);
     // Chain-up parent finalize function
-    G_OBJECT_CLASS(widget_parent_class)->finalize(self);
+    G_OBJECT_CLASS(sng_widget_parent_class)->finalize(self);
 }
 
 static void
-widget_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
+sng_widget_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
 {
-    WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(self));
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(SNG_WIDGET(self));
 
     switch (property_id) {
         case PROP_HEIGHT:
@@ -586,9 +586,9 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
 }
 
 static void
-widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
+sng_widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
 {
-    WidgetPrivate *priv = widget_get_instance_private(TUI_WIDGET(self));
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(SNG_WIDGET(self));
 
     switch (property_id) {
         case PROP_HEIGHT:
@@ -625,26 +625,26 @@ widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec 
 }
 
 static void
-widget_class_init(WidgetClass *klass)
+sng_widget_class_init(SngWidgetClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = widget_constructed;
-    object_class->dispose = widget_dispose;
-    object_class->finalize = widget_finalize;
-    object_class->set_property = widget_set_property;
-    object_class->get_property = widget_get_property;
+    object_class->constructed = sng_widget_constructed;
+    object_class->dispose = sng_widget_dispose;
+    object_class->finalize = sng_widget_finalize;
+    object_class->set_property = sng_widget_set_property;
+    object_class->get_property = sng_widget_get_property;
 
-    klass->realize = widget_base_realize;
-    klass->map = widget_base_map;
-    klass->draw = widget_base_draw;
-    klass->focus_gained = widget_base_focus_gained;
-    klass->focus_lost = widget_base_focus_lost;
-    klass->key_pressed = widget_base_key_pressed;
+    klass->realize = sng_widget_base_realize;
+    klass->map = sng_widget_base_map;
+    klass->draw = sng_widget_base_draw;
+    klass->focus_gained = sng_widget_base_focus_gained;
+    klass->focus_lost = sng_widget_base_focus_lost;
+    klass->key_pressed = sng_widget_base_key_pressed;
 
     obj_properties[PROP_HEIGHT] =
         g_param_spec_int("height",
-                         "Widget Height",
-                         "Widget height",
+                         "SngWidget Height",
+                         "SngWidget height",
                          0,
                          getmaxy(stdscr),
                          0,
@@ -653,8 +653,8 @@ widget_class_init(WidgetClass *klass)
 
     obj_properties[PROP_WIDTH] =
         g_param_spec_int("width",
-                         "Widget Width",
-                         "Widget Width",
+                         "SngWidget Width",
+                         "SngWidget Width",
                          0,
                          getmaxx(stdscr),
                          0,
@@ -662,8 +662,8 @@ widget_class_init(WidgetClass *klass)
         );
     obj_properties[PROP_MIN_HEIGHT] =
         g_param_spec_int("min-height",
-                         "Widget Min Height",
-                         "Widget Min height",
+                         "SngWidget Min Height",
+                         "SngWidget Min height",
                          0,
                          getmaxy(stdscr),
                          0,
@@ -672,8 +672,8 @@ widget_class_init(WidgetClass *klass)
 
     obj_properties[PROP_MIN_WIDTH] =
         g_param_spec_int("min-width",
-                         "Widget Min Width",
-                         "Widget Min Width",
+                         "SngWidget Min Width",
+                         "SngWidget Min Width",
                          0,
                          getmaxx(stdscr),
                          0,
@@ -698,24 +698,24 @@ widget_class_init(WidgetClass *klass)
 
     obj_properties[PROP_FLOATING] =
         g_param_spec_boolean("floating",
-                             "Floating Widget flag",
-                             "Floating Widget flag",
+                             "Floating SngWidget flag",
+                             "Floating SngWidget flag",
                              FALSE,
                              G_PARAM_READWRITE
         );
 
     obj_properties[PROP_VISIBLE] =
         g_param_spec_boolean("visible",
-                             "Visible Widget flag",
-                             "Visible Widget flag",
+                             "Visible SngWidget flag",
+                             "Visible SngWidget flag",
                              FALSE,
                              G_PARAM_READWRITE
         );
 
     obj_properties[PROP_CAN_FOCUS] =
         g_param_spec_boolean("can-focus",
-                             "Can Focus Widget flag",
-                             "Can Focus Widget flag",
+                             "Can Focus SngWidget flag",
+                             "Can Focus SngWidget flag",
                              TRUE,
                              G_PARAM_CONSTRUCT | G_PARAM_READWRITE
         );
@@ -808,9 +808,9 @@ widget_class_init(WidgetClass *klass)
 }
 
 static void
-widget_init(Widget *self)
+sng_widget_init(SngWidget *self)
 {
-    WidgetPrivate *priv = widget_get_instance_private(self);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(self);
     // Initialize window position
     priv->x = priv->y = 0;
 }

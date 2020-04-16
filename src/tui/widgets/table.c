@@ -43,7 +43,7 @@ enum
 static guint signals[SIGS] = { 0 };
 
 // Menu table class definition
-G_DEFINE_TYPE(Table, table, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE(Table, table, SNG_TYPE_WIDGET)
 
 /**
  * @brief Move selection cursor N times vertically
@@ -65,7 +65,7 @@ table_move_vertical(Table *table, gint times)
     table->first_idx = MIN(table->first_idx, table->cur_idx);
 
     // Calculate Call List height
-    gint height = widget_get_height(TUI_WIDGET(table));
+    gint height = sng_widget_get_height(SNG_WIDGET(table));
     height -= 1;                                        // Remove header line
     height -= scrollbar_visible(table->hscroll) ? 1 : 0; // Remove Horizontal scrollbar
 
@@ -175,34 +175,34 @@ table_clear(Table *table)
     call_group_remove_all(table->group);
 
     // Clear Displayed lines
-    werase(widget_get_ncurses_window(TUI_WIDGET(table)));
+    werase(sng_widget_get_ncurses_window(SNG_WIDGET(table)));
 }
 
 static void
 table_activate(Table *table)
 {
-    g_signal_emit(TUI_WIDGET(table), signals[SIG_ACTIVATE], 0);
+    g_signal_emit(SNG_WIDGET(table), signals[SIG_ACTIVATE], 0);
 }
 
 static void
-table_realize(Widget *widget)
+table_realize(SngWidget *widget)
 {
     Table *table = TUI_TABLE(widget);
 
-    if (!widget_is_realized(widget)) {
+    if (!sng_widget_is_realized(widget)) {
         // Create a new pad for configured columns
-        TUI_WIDGET_CLASS(table_parent_class)->realize(widget);
-        WINDOW *win = widget_get_ncurses_window(widget);
+        SNG_WIDGET_CLASS(table_parent_class)->realize(widget);
+        WINDOW *win = sng_widget_get_ncurses_window(widget);
         // Set window srollbars
         table->vscroll = window_set_scrollbar(win, SB_VERTICAL, SB_LEFT);
         table->hscroll = window_set_scrollbar(win, SB_HORIZONTAL, SB_BOTTOM);
     }
 
-    TUI_WIDGET_CLASS(table_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(table_parent_class)->realize(widget);
 }
 
 static gint
-table_draw(Widget *widget)
+table_draw(SngWidget *widget)
 {
     Table *table = TUI_TABLE(widget);
 
@@ -220,7 +220,7 @@ table_draw(Widget *widget)
         }
     }
 
-    WINDOW *win = widget_get_ncurses_window(widget);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
     werase(win);
 
     // Get configured sorting options
@@ -280,7 +280,7 @@ table_draw(Widget *widget)
         // Highlight active call
         if (table->cur_idx == (gint) i) {
             wattron(win, COLOR_PAIR(CP_WHITE_ON_BLUE));
-            if (!widget_has_focus(widget)) {
+            if (!sng_widget_has_focus(widget)) {
                 wattron(win, A_DIM);
             }
         }
@@ -354,25 +354,25 @@ table_draw(Widget *widget)
         mvwprintw(win, 0, 0, "A");
     }
 
-    return TUI_WIDGET_CLASS(table_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(table_parent_class)->draw(widget);
 }
 
 static gboolean
-table_focus_gained(Widget *widget)
+table_focus_gained(SngWidget *widget)
 {
     // Chain up parent focus gained
-    return TUI_WIDGET_CLASS(table_parent_class)->focus_gained(widget);
+    return SNG_WIDGET_CLASS(table_parent_class)->focus_gained(widget);
 }
 
 static void
-table_focus_lost(Widget *widget)
+table_focus_lost(SngWidget *widget)
 {
     // Chain up parent focus lost
-    TUI_WIDGET_CLASS(table_parent_class)->focus_lost(widget);
+    SNG_WIDGET_CLASS(table_parent_class)->focus_lost(widget);
 }
 
 static gint
-table_key_pressed(Widget *widget, gint key)
+table_key_pressed(SngWidget *widget, gint key)
 {
 
     Table *table = TUI_TABLE(widget);
@@ -483,24 +483,24 @@ table_key_pressed(Widget *widget, gint key)
     }
 
     if (action == ACTION_UNKNOWN) {
-        return TUI_WIDGET_CLASS(table_parent_class)->key_pressed(widget, key);
+        return SNG_WIDGET_CLASS(table_parent_class)->key_pressed(widget, key);
     }
 
     return KEY_HANDLED;
 }
 
 static gint
-table_clicked(Widget *widget, MEVENT mevent)
+table_clicked(SngWidget *widget, MEVENT mevent)
 {
     Table *table = TUI_TABLE(widget);
 
     // Check if the header line was clicked
-    if (mevent.y == widget_get_ypos(widget)) {
+    if (mevent.y == sng_widget_get_ypos(widget)) {
         return 0;
     }
 
     // Select the clicked line
-    table->cur_idx = table->first_idx + (mevent.y - widget_get_ypos(widget) - 1);
+    table->cur_idx = table->first_idx + (mevent.y - sng_widget_get_ypos(widget) - 1);
 
     // Check if the checkbox was selected
     if (mevent.x >= 1 && mevent.x <= 3) {
@@ -526,7 +526,7 @@ table_finalize(GObject *object)
 }
 
 
-Widget *
+SngWidget *
 table_new()
 {
     return g_object_new(
@@ -556,7 +556,7 @@ table_class_init(TableClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->finalize = table_finalize;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = table_realize;
     widget_class->draw = table_draw;
     widget_class->focus_gained = table_focus_gained;

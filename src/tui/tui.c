@@ -80,7 +80,7 @@ tui_destroy_window(Window *window)
     // Remove from the window list
     g_ptr_array_remove(windows, window);
     // Deallocate window memory
-    widget_destroy(TUI_WIDGET(window));
+    sng_widget_destroy(SNG_WIDGET(window));
 }
 
 static gboolean

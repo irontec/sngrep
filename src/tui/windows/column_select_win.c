@@ -408,7 +408,7 @@ column_select_handle_key_form(ColumnSelectWindow *self, int key)
  * @return enum @key_handler_ret
  */
 static gint
-column_select_handle_key(Widget *widget, gint key)
+column_select_handle_key(SngWidget *widget, gint key)
 {
     // Get panel information
     ColumnSelectWindow *self = TUI_COLUMN_SELECT(widget);
@@ -567,7 +567,7 @@ column_select_class_init(ColumnSelectWindowClass *klass)
     object_class->constructed = column_select_constructed;
     object_class->finalize = column_select_finalize;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->key_pressed = column_select_handle_key;
 
 }

@@ -1499,7 +1499,7 @@ call_flow_win_set_group(Window *window, CallGroup *group)
  * @return enum @key_handler_ret
  */
 static gint
-call_flow_win_handle_key(Widget *widget, gint key)
+call_flow_win_handle_key(SngWidget *widget, gint key)
 {
     int raw_width;
     Window *next_window;
@@ -1842,7 +1842,7 @@ call_flow_win_create_subwindows(Window *window)
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static gint
-call_flow_win_draw(Widget *widget)
+call_flow_win_draw(SngWidget *widget)
 {
     char title[256];
 
@@ -2004,7 +2004,7 @@ call_flow_win_class_init(CallFlowWindowClass *klass)
     window_class->redraw = call_flow_win_redraw;
     window_class->help = call_flow_win_help;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->draw = call_flow_win_draw;
     widget_class->key_pressed = call_flow_win_handle_key;
 

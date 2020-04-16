@@ -31,8 +31,8 @@ typedef struct
 {
     //! Position to search
     gint x, y;
-    //! Widget pointer if found, NULL if not found
-    Widget *found;
+    //! SngWidget pointer if found, NULL if not found
+    SngWidget *found;
 } ContainerFindData;
 
 typedef struct
@@ -41,10 +41,10 @@ typedef struct
 } ContainerPrivate;
 
 // Class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Container, container, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE_WITH_PRIVATE(Container, container, SNG_TYPE_WIDGET)
 
 void
-container_add(Container *container, Widget *child)
+container_add(Container *container, SngWidget *child)
 {
     ContainerClass *klass = TUI_CONTAINER_GET_CLASS(container);
     if (klass->add != NULL) {
@@ -53,7 +53,7 @@ container_add(Container *container, Widget *child)
 }
 
 void
-container_remove(Container *container, Widget *child)
+container_remove(Container *container, SngWidget *child)
 {
     ContainerClass *klass = TUI_CONTAINER_GET_CLASS(container);
     if (klass->remove != NULL) {
@@ -81,7 +81,7 @@ container_get_children(Container *container)
     return priv->children;
 }
 
-Widget *
+SngWidget *
 container_get_child(Container *container, gint index)
 {
     ContainerPrivate *priv = container_get_instance_private(container);
@@ -89,11 +89,11 @@ container_get_child(Container *container, gint index)
 }
 
 static gint
-container_check_child_position(Widget *widget, gpointer data)
+container_check_child_position(SngWidget *widget, gpointer data)
 {
     ContainerFindData *find_data = data;
 
-    if (widget_is_visible(widget) == FALSE) {
+    if (sng_widget_is_visible(widget) == FALSE) {
         return TRUE;
     }
     // Containers check their children first
@@ -104,12 +104,12 @@ container_check_child_position(Widget *widget, gpointer data)
     }
 
     // Only check focusable widget position
-    if (find_data->found == NULL && widget_can_focus(widget)) {
+    if (find_data->found == NULL && sng_widget_can_focus(widget)) {
         // Then check if widget has been clicked
-        if (find_data->x >= widget_get_xpos(widget)
-            && find_data->x < widget_get_xpos(widget) + widget_get_width(widget)
-            && find_data->y >= widget_get_ypos(widget)
-            && find_data->y < widget_get_ypos(widget) + widget_get_height(widget)) {
+        if (find_data->x >= sng_widget_get_xpos(widget)
+            && find_data->x < sng_widget_get_xpos(widget) + sng_widget_get_width(widget)
+            && find_data->y >= sng_widget_get_ypos(widget)
+            && find_data->y < sng_widget_get_ypos(widget) + sng_widget_get_height(widget)) {
             find_data->found = widget;
         }
     }
@@ -117,7 +117,7 @@ container_check_child_position(Widget *widget, gpointer data)
     return find_data->found == NULL;
 }
 
-Widget *
+SngWidget *
 container_find_by_position(Container *container, gint x, gint y)
 {
     ContainerFindData find_data = {
@@ -140,52 +140,52 @@ void
 container_show_all(Container *container)
 {
     // Show all children
-    container_foreach(container, (GFunc) widget_show, NULL);
+    container_foreach(container, (GFunc) sng_widget_show, NULL);
     // Show container itself
-    widget_show(TUI_WIDGET(container));
+    sng_widget_show(SNG_WIDGET(container));
 }
 
 static void
-container_base_realize(Widget *widget)
+container_base_realize(SngWidget *widget)
 {
     // Realize all children
-    container_foreach(TUI_CONTAINER(widget), (GFunc) widget_realize, NULL);
+    container_foreach(TUI_CONTAINER(widget), (GFunc) sng_widget_realize, NULL);
     // Chain up parent class realize
-    TUI_WIDGET_CLASS(container_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(container_parent_class)->realize(widget);
 }
 
 static gint
-container_base_draw(Widget *widget)
+container_base_draw(SngWidget *widget)
 {
     // Draw each of the container children
-    container_foreach(TUI_CONTAINER(widget), (GFunc) widget_draw, NULL);
+    container_foreach(TUI_CONTAINER(widget), (GFunc) sng_widget_draw, NULL);
     //  Chain up parent class draw
-    return TUI_WIDGET_CLASS(container_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(container_parent_class)->draw(widget);
 }
 
 static void
-container_base_map(Widget *widget)
+container_base_map(SngWidget *widget)
 {
     // Map each of the container children
-    container_foreach(TUI_CONTAINER(widget), (GFunc) widget_map, NULL);
+    container_foreach(TUI_CONTAINER(widget), (GFunc) sng_widget_map, NULL);
     //  Chain up parent class map
-    TUI_WIDGET_CLASS(container_parent_class)->map(widget);
+    SNG_WIDGET_CLASS(container_parent_class)->map(widget);
 }
 
 static void
-container_base_add(Container *container, Widget *widget)
+container_base_add(Container *container, SngWidget *widget)
 {
     ContainerPrivate *priv = container_get_instance_private(container);
     priv->children = g_list_append(priv->children, widget);
-    widget_set_parent(widget, TUI_WIDGET(container));
+    sng_widget_set_parent(widget, SNG_WIDGET(container));
 }
 
 static void
-container_base_remove(G_GNUC_UNUSED Container *container, Widget *widget)
+container_base_remove(G_GNUC_UNUSED Container *container, SngWidget *widget)
 {
     ContainerPrivate *priv = container_get_instance_private(container);
     priv->children = g_list_remove(priv->children, widget);
-    widget_set_parent(widget, NULL);
+    sng_widget_set_parent(widget, NULL);
 }
 
 
@@ -202,7 +202,7 @@ container_class_init(ContainerClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->finalize = container_finalize;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = container_base_realize;
     widget_class->draw = container_base_draw;
     widget_class->map = container_base_map;

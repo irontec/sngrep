@@ -47,7 +47,7 @@ static guint signals[SIGS] = { 0 };
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu item class definition
-G_DEFINE_TYPE(MenuItem, menu_item, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE(MenuItem, menu_item, SNG_TYPE_WIDGET)
 
 void
 menu_item_set_action(MenuItem *item, KeybindingAction action)
@@ -58,10 +58,10 @@ menu_item_set_action(MenuItem *item, KeybindingAction action)
 void
 menu_item_activate(MenuItem *item)
 {
-    g_signal_emit(TUI_WIDGET(item), signals[SIG_ACTIVATE], 0);
+    g_signal_emit(SNG_WIDGET(item), signals[SIG_ACTIVATE], 0);
 }
 
-Widget *
+SngWidget *
 menu_item_new(const gchar *text)
 {
     return g_object_new(

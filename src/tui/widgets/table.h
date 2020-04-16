@@ -39,12 +39,12 @@ G_BEGIN_DECLS
 
 // Class declaration
 #define TUI_TYPE_TABLE table_get_type()
-G_DECLARE_FINAL_TYPE(Table, table, TUI, TABLE, Widget)
+G_DECLARE_FINAL_TYPE(Table, table, TUI, TABLE, SngWidget)
 
 struct _Table
 {
     //! Parent object attributes
-    Widget parent;
+    SngWidget parent;
     //! Table Columns (Pointers to Attributes)
     GPtrArray *columns;
     //! Table displayed rows
@@ -63,7 +63,7 @@ struct _Table
     Scrollbar hscroll;
 };
 
-Widget *
+SngWidget *
 table_new();
 
 void

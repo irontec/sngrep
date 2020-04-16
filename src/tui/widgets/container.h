@@ -23,7 +23,7 @@
  * @file container.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Widget that contains other widgets
+ * @brief SngWidget that contains other widgets
  */
 #ifndef __SNGREP_CONTAINER_H__
 #define __SNGREP_CONTAINER_H__
@@ -36,22 +36,22 @@ G_BEGIN_DECLS
 
 // Class declaration
 #define TUI_TYPE_CONTAINER container_get_type()
-G_DECLARE_DERIVABLE_TYPE(Container, container, TUI, CONTAINER, Widget)
+G_DECLARE_DERIVABLE_TYPE(Container, container, TUI, CONTAINER, SngWidget)
 
 struct _ContainerClass
 {
     //! Parent class
-    WidgetClass parent;
+    SngWidgetClass parent;
     //! Container class functions
-    void (*add) (Container *container, Widget *widget);
-    void (*remove)(Container *container, Widget *widget);
+    void (*add) (Container *container, SngWidget *widget);
+    void (*remove)(Container *container, SngWidget *widget);
 };
 
 void
-container_add(Container *container, Widget *widget);
+container_add(Container *container, SngWidget *widget);
 
 void
-container_remove(Container *container, Widget *widget);
+container_remove(Container *container, SngWidget *widget);
 
 void
 container_foreach(Container *container, GFunc callback, gpointer user_data);
@@ -59,10 +59,10 @@ container_foreach(Container *container, GFunc callback, gpointer user_data);
 GList *
 container_get_children(Container *container);
 
-Widget *
+SngWidget *
 container_get_child(Container *container, gint index);
 
-Widget *
+SngWidget *
 container_find_by_position(Container *container, gint x, gint y);
 
 void

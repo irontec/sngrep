@@ -56,7 +56,7 @@ struct _Menu
     gint selected;
 };
 
-Widget *
+SngWidget *
 menu_new(const gchar *title);
 
 void

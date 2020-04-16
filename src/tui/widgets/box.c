@@ -54,13 +54,13 @@ typedef struct
 // Class definition
 G_DEFINE_TYPE_WITH_PRIVATE(Box, box, TUI_TYPE_CONTAINER)
 
-Widget *
+SngWidget *
 box_new(BoxOrientation orientation)
 {
     return box_new_full(orientation, 0, 0);
 }
 
-Widget *
+SngWidget *
 box_new_full(BoxOrientation orientation, gint spacing, gint padding)
 {
     return g_object_new(
@@ -116,22 +116,22 @@ box_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *
 }
 
 static void
-box_realize_horizontal(Widget *widget)
+box_realize_horizontal(SngWidget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
     GList *children = container_get_children(TUI_CONTAINER(widget));
 
-    gint space = widget_get_width(widget)
+    gint space = sng_widget_get_width(widget)
                  - priv->padding * 2
                  - priv->spacing * g_list_length(children);
 
     gint exp_widget_cnt = 0;
     // Remove fixed space from non expanded widgets
     for (GList *l = children; l != NULL; l = l->next) {
-        Widget *child = l->data;
-        if (!widget_get_hexpand(child)) {
-            space -= widget_get_width(child);
+        SngWidget *child = l->data;
+        if (!sng_widget_get_hexpand(child)) {
+            space -= sng_widget_get_width(child);
         } else {
             exp_widget_cnt++;
         }
@@ -140,36 +140,36 @@ box_realize_horizontal(Widget *widget)
     // Calculate expanded children width and positions
     gint xpos = priv->padding;
     for (GList *l = children; l != NULL; l = l->next) {
-        Widget *child = l->data;
-        if (widget_get_hexpand(child)) {
-            widget_set_size(child, space / exp_widget_cnt, widget_get_height(child));
+        SngWidget *child = l->data;
+        if (sng_widget_get_hexpand(child)) {
+            sng_widget_set_size(child, space / exp_widget_cnt, sng_widget_get_height(child));
         }
-        if (widget_get_vexpand(child)) {
-            widget_set_size(child, widget_get_width(child), widget_get_height(widget));
+        if (sng_widget_get_vexpand(child)) {
+            sng_widget_set_size(child, sng_widget_get_width(child), sng_widget_get_height(widget));
         }
-        widget_set_position(child, xpos, widget_get_ypos(widget));
-        xpos += widget_get_width(child) + priv->spacing;
+        sng_widget_set_position(child, xpos, sng_widget_get_ypos(widget));
+        xpos += sng_widget_get_width(child) + priv->spacing;
     }
 }
 
 static void
-box_realize_vertical(Widget *widget)
+box_realize_vertical(SngWidget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
     GList *children = container_get_children(TUI_CONTAINER(widget));
 
     // Set Children width based on expand flag
-    gint space = widget_get_height(widget)
+    gint space = sng_widget_get_height(widget)
                  - priv->padding * 2
                  - priv->spacing * g_list_length(children);
 
     gint exp_widget_cnt = 0;
     // Remove fixed space from non expanded widgets
     for (GList *l = children; l != NULL; l = l->next) {
-        Widget *child = l->data;
-        if (!widget_get_vexpand(child)) {
-            space -= widget_get_height(child);
+        SngWidget *child = l->data;
+        if (!sng_widget_get_vexpand(child)) {
+            space -= sng_widget_get_height(child);
         } else {
             exp_widget_cnt++;
         }
@@ -178,20 +178,20 @@ box_realize_vertical(Widget *widget)
     // Calculate expanded children height and positions
     gint ypos = priv->padding;
     for (GList *l = children; l != NULL; l = l->next) {
-        Widget *child = l->data;
-        if (widget_get_vexpand(child)) {
-            widget_set_size(child, widget_get_width(child), space / exp_widget_cnt);
+        SngWidget *child = l->data;
+        if (sng_widget_get_vexpand(child)) {
+            sng_widget_set_size(child, sng_widget_get_width(child), space / exp_widget_cnt);
         }
-        if (widget_get_hexpand(child)) {
-            widget_set_size(child, widget_get_width(widget), widget_get_height(child));
+        if (sng_widget_get_hexpand(child)) {
+            sng_widget_set_size(child, sng_widget_get_width(widget), sng_widget_get_height(child));
         }
-        widget_set_position(child, widget_get_xpos(widget), ypos);
-        ypos += widget_get_height(child) + priv->spacing;
+        sng_widget_set_position(child, sng_widget_get_xpos(widget), ypos);
+        ypos += sng_widget_get_height(child) + priv->spacing;
     }
 }
 
 static void
-box_realize(Widget *widget)
+box_realize(SngWidget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
@@ -202,16 +202,16 @@ box_realize(Widget *widget)
         box_realize_horizontal(widget);
     }
 
-    TUI_WIDGET_CLASS(box_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(box_parent_class)->realize(widget);
 }
 
 static gint
-box_draw(Widget *widget)
+box_draw(SngWidget *widget)
 {
     // Clear the window to draw children widgets
-    WINDOW *win = widget_get_ncurses_window(widget);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
     werase(win);
-    return TUI_WIDGET_CLASS(box_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(box_parent_class)->draw(widget);
 }
 
 static void
@@ -221,7 +221,7 @@ box_class_init(BoxClass *klass)
     object_class->set_property = box_set_property;
     object_class->get_property = box_get_property;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = box_realize;
     widget_class->draw = box_draw;
 

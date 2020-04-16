@@ -39,9 +39,9 @@ enum
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu label class definition
-G_DEFINE_TYPE(Label, label, TUI_TYPE_WIDGET)
+G_DEFINE_TYPE(Label, label, SNG_TYPE_WIDGET)
 
-Widget *
+SngWidget *
 label_new(const gchar *text)
 {
     gint width = 0;
@@ -83,17 +83,17 @@ label_get_text(Label *label)
 }
 
 static gint
-label_draw(Widget *widget)
+label_draw(SngWidget *widget)
 {
     // Chain up parent draw
-    TUI_WIDGET_CLASS(label_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(label_parent_class)->draw(widget);
 
     Label *label = TUI_LABEL(widget);
     if (label->text == NULL) {
         return 0;
     }
 
-    WINDOW *win = widget_get_ncurses_window(widget);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
     wattron(win, COLOR_PAIR(CP_DEFAULT));
     werase(win);
 
@@ -161,7 +161,7 @@ label_class_init(LabelClass *klass)
     object_class->set_property = label_set_property;
     object_class->get_property = label_get_property;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->draw = label_draw;
 
     obj_properties[PROP_TEXT] =

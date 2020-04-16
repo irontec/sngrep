@@ -51,7 +51,7 @@ struct _MenuBar
     gint selected;
 };
 
-Widget *
+SngWidget *
 menu_bar_new();
 
 void

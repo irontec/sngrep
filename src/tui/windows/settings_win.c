@@ -126,7 +126,7 @@ SettingsWindowEntry entries[] = {
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static gint
-settings_win_draw(Widget *widget)
+settings_win_draw(SngWidget *widget)
 {
     Window *window = TUI_WINDOW(widget);
     SettingsWindow *self = TUI_SETTINGS(window);
@@ -330,7 +330,7 @@ settings_win_save(Window *window)
  * @return enum @key_handler_ret
  */
 static gint
-settings_win_handle_key(Widget *widget, gint key)
+settings_win_handle_key(SngWidget *widget, gint key)
 {
     int field_idx;
     SettingsWindowEntry *entry;
@@ -630,7 +630,7 @@ settings_win_class_init(SettingsWindowClass *klass)
     object_class->constructed = settings_win_constructed;
     object_class->finalize = settings_win_finalize;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->draw = settings_win_draw;
     widget_class->key_pressed = settings_win_handle_key;
 

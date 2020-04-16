@@ -44,7 +44,7 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 // Menu class definition
 G_DEFINE_TYPE(Menu, menu, TUI_TYPE_CONTAINER)
 
-Widget *
+SngWidget *
 menu_new(const gchar *title)
 {
     return g_object_new(
@@ -68,7 +68,7 @@ menu_get_title(Menu *menu)
 }
 
 static void
-menu_realize(Widget *widget)
+menu_realize(SngWidget *widget)
 {
     GList *children = container_get_children(TUI_CONTAINER(widget));
     gint height = g_list_length(children) + 2;
@@ -81,22 +81,22 @@ menu_realize(Widget *widget)
     }
 
     WINDOW *win = newpad(height, width);
-    widget_set_size(widget, width, height);
-    widget_set_ncurses_window(widget, win);
+    sng_widget_set_size(widget, width, height);
+    sng_widget_set_ncurses_window(widget, win);
 }
 
 static gint
-menu_draw(Widget *widget)
+menu_draw(SngWidget *widget)
 {
     Menu *menu = TUI_MENU(widget);
 
     // Set menu background color
-    WINDOW *win = widget_get_ncurses_window(widget);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     box(win, 0, 0);
 
     // Get menu popup width
-    gint width = widget_get_width(widget);
+    gint width = sng_widget_get_width(widget);
 
     GList *children = container_get_children(TUI_CONTAINER(widget));
     for (gint i = 0; i < (gint) g_list_length(children); i++) {
@@ -124,7 +124,7 @@ menu_draw(Widget *widget)
 }
 
 static gint
-menu_key_pressed(Widget *widget, gint key)
+menu_key_pressed(SngWidget *widget, gint key)
 {
     Menu *menu = TUI_MENU(widget);
     GList *children = container_get_children(TUI_CONTAINER(widget));
@@ -156,14 +156,14 @@ menu_key_pressed(Widget *widget, gint key)
                 break;
             case ACTION_RIGHT:
             case ACTION_LEFT:
-                widget_key_pressed(widget_get_parent(widget), key);
+                sng_widget_key_pressed(sng_widget_get_parent(widget), key);
                 break;
             case ACTION_CONFIRM:
                 menu_item_activate(g_list_nth_data(children, menu->selected));
-                widget_lose_focus(widget);
+                sng_widget_lose_focus(widget);
                 break;
             case ACTION_CANCEL:
-                widget_lose_focus(widget);
+                sng_widget_lose_focus(widget);
                 break;
             default:
                 continue;
@@ -180,27 +180,27 @@ menu_key_pressed(Widget *widget, gint key)
 }
 
 static gint
-menu_clicked(Widget *widget, MEVENT mevent)
+menu_clicked(SngWidget *widget, MEVENT mevent)
 {
     Menu *menu = TUI_MENU(widget);
     GList *children = container_get_children(TUI_CONTAINER(widget));
 
     menu->selected = CLAMP(
-        mevent.y - widget_get_ypos(widget) - 1,
+        mevent.y - sng_widget_get_ypos(widget) - 1,
         0,
         (gint) g_list_length(children) - 1
     );
 
     MenuItem *item = TUI_MENU_ITEM(container_get_child(TUI_CONTAINER(widget), menu->selected));
     menu_item_activate(item);
-    widget_lose_focus(widget);
+    sng_widget_lose_focus(widget);
     return 0;
 }
 
 static void
-menu_focus_lost(Widget *widget)
+menu_focus_lost(SngWidget *widget)
 {
-    widget_hide(widget);
+    sng_widget_hide(widget);
 }
 
 static void
@@ -240,7 +240,7 @@ menu_class_init(MenuClass *klass)
     object_class->set_property = menu_set_property;
     object_class->get_property = menu_get_property;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = menu_realize;
     widget_class->draw = menu_draw;
     widget_class->key_pressed = menu_key_pressed;

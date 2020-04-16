@@ -37,17 +37,17 @@ G_BEGIN_DECLS
 
 // Class declaration
 #define TUI_TYPE_LABEL label_get_type()
-G_DECLARE_FINAL_TYPE(Label, label, TUI, LABEL, Widget)
+G_DECLARE_FINAL_TYPE(Label, label, TUI, LABEL, SngWidget)
 
 struct _Label
 {
     //! Parent object attributes
-    Widget parent;
+    SngWidget parent;
     //! Item text
     gchar *text;
 };
 
-Widget *
+SngWidget *
 label_new(const gchar *text);
 
 void

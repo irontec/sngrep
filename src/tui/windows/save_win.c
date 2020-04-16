@@ -53,7 +53,7 @@ G_DEFINE_TYPE(SaveWindow, save, TUI_TYPE_WINDOW)
  * @return 0 if the panel has been drawn, -1 otherwise
  */
 static int
-save_draw(Widget *widget)
+save_draw(SngWidget *widget)
 {
     char field_value[SETTING_MAX_LEN];
 
@@ -394,7 +394,7 @@ save_to_file(Window *window)
  * @return enum @key_handler_ret
  */
 static int
-save_handle_key(Widget *widget, int key)
+save_handle_key(SngWidget *widget, int key)
 {
     // Get panel information
     Window *window = TUI_WINDOW(widget);
@@ -750,7 +750,7 @@ save_class_init(SaveWindowClass *klass)
     object_class->constructed = save_constructed;
     object_class->finalize = save_finalize;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->draw = save_draw;
     widget_class->key_pressed = save_handle_key;
 

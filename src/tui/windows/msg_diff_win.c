@@ -170,7 +170,7 @@ msg_diff_win_draw_message(WINDOW *win, Message *msg, char *highlight)
  * @return 0 in all cases
  */
 static int
-msg_diff_win_draw(Widget *widget)
+msg_diff_win_draw(SngWidget *widget)
 {
     // Get panel information
     Window *window = TUI_WINDOW(widget);
@@ -254,7 +254,7 @@ msg_diff_win_class_init(MsgDiffWindowClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = msg_diff_win_constructed;
 
-    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->draw = msg_diff_win_draw;
 }
 

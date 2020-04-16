@@ -38,19 +38,19 @@ G_BEGIN_DECLS
 
 // Class declaration
 #define TUI_TYPE_ENTRY entry_get_type()
-G_DECLARE_FINAL_TYPE(Entry, entry, TUI, ENTRY, Widget)
+G_DECLARE_FINAL_TYPE(Entry, entry, TUI, ENTRY, SngWidget)
 
 struct _Entry
 {
     //! Parent object attributes
-    Widget parent;
+    SngWidget parent;
     //! Ncurses input form
     FORM *form;
     //! Ncurses input field
     FIELD **fields;
 };
 
-Widget *
+SngWidget *
 entry_new();
 
 void

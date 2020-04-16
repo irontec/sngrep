@@ -90,11 +90,11 @@ struct _CallListWindow
     //! Parent object attributes
     Window parent;
     //! Window menu bar
-    Widget *menu_bar;
+    SngWidget *menu_bar;
     //! Display filter entry
-    Widget *en_dfilter;
+    SngWidget *en_dfilter;
     //! Call List table
-    Widget *tb_calls;
+    SngWidget *tb_calls;
 };
 
 /**

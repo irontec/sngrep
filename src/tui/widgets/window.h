@@ -227,9 +227,9 @@ gint
 window_get_height(Window *window);
 
 void
-window_set_default_focus(Window *window, Widget *widget);
+window_set_default_focus(Window *window, SngWidget *widget);
 
-Widget *
+SngWidget *
 window_focused_widget(Window *window);
 
 void
@@ -239,7 +239,7 @@ void
 window_focus_prev(Window *window);
 
 void
-window_set_focused_widget(Window *window, Widget *widget);
+window_set_focused_widget(Window *window, SngWidget *widget);
 
 G_END_DECLS
 
