@@ -44,27 +44,27 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 typedef struct
 {
     // Vertical or Horizontal box
-    BoxOrientation orientation;
+    SngBoxOrientation orientation;
     // Space between children widgets
     gint spacing;
     // Padding at the beginning and end of box
     gint padding;
-} BoxPrivate;
+} SngBoxPrivate;
 
 // Class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Box, box, SNG_TYPE_CONTAINER)
+G_DEFINE_TYPE_WITH_PRIVATE(SngBox, sng_box, SNG_TYPE_CONTAINER)
 
 SngWidget *
-box_new(BoxOrientation orientation)
+sng_box_new(SngBoxOrientation orientation)
 {
-    return box_new_full(orientation, 0, 0);
+    return sng_box_new_full(orientation, 0, 0);
 }
 
 SngWidget *
-box_new_full(BoxOrientation orientation, gint spacing, gint padding)
+sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding)
 {
     return g_object_new(
-        TUI_TYPE_BOX,
+        SNG_TYPE_BOX,
         "orientation", orientation,
         "spacing", spacing,
         "padding", padding,
@@ -76,9 +76,9 @@ box_new_full(BoxOrientation orientation, gint spacing, gint padding)
 }
 
 static void
-box_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+sng_box_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
 {
-    BoxPrivate *priv = box_get_instance_private(TUI_BOX(object));
+    SngBoxPrivate *priv = sng_box_get_instance_private(SNG_BOX(object));
     switch (property_id) {
         case PROP_ORIENTATION:
             priv->orientation = g_value_get_enum(value);
@@ -96,9 +96,9 @@ box_set_property(GObject *object, guint property_id, const GValue *value, GParam
 }
 
 static void
-box_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+sng_box_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
 {
-    BoxPrivate *priv = box_get_instance_private(TUI_BOX(object));
+    SngBoxPrivate *priv = sng_box_get_instance_private(SNG_BOX(object));
     switch (property_id) {
         case PROP_ORIENTATION:
             g_value_set_enum(value, priv->orientation);
@@ -116,10 +116,10 @@ box_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *
 }
 
 static void
-box_realize_horizontal(SngWidget *widget)
+sng_box_realize_horizontal(SngWidget *widget)
 {
-    Box *box = TUI_BOX(widget);
-    BoxPrivate *priv = box_get_instance_private(box);
+    SngBox *box = SNG_BOX(widget);
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     gint space = sng_widget_get_width(widget)
@@ -153,10 +153,10 @@ box_realize_horizontal(SngWidget *widget)
 }
 
 static void
-box_realize_vertical(SngWidget *widget)
+sng_box_realize_vertical(SngWidget *widget)
 {
-    Box *box = TUI_BOX(widget);
-    BoxPrivate *priv = box_get_instance_private(box);
+    SngBox *box = SNG_BOX(widget);
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Set Children width based on expand flag
@@ -191,45 +191,45 @@ box_realize_vertical(SngWidget *widget)
 }
 
 static void
-box_realize(SngWidget *widget)
+sng_box_realize(SngWidget *widget)
 {
-    Box *box = TUI_BOX(widget);
-    BoxPrivate *priv = box_get_instance_private(box);
+    SngBox *box = SNG_BOX(widget);
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
 
     if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
-        box_realize_vertical(widget);
+        sng_box_realize_vertical(widget);
     } else {
-        box_realize_horizontal(widget);
+        sng_box_realize_horizontal(widget);
     }
 
-    SNG_WIDGET_CLASS(box_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(sng_box_parent_class)->realize(widget);
 }
 
 static gint
-box_draw(SngWidget *widget)
+sng_box_draw(SngWidget *widget)
 {
     // Clear the window to draw children widgets
     WINDOW *win = sng_widget_get_ncurses_window(widget);
     werase(win);
-    return SNG_WIDGET_CLASS(box_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(sng_box_parent_class)->draw(widget);
 }
 
 static void
-box_class_init(BoxClass *klass)
+sng_box_class_init(SngBoxClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->set_property = box_set_property;
-    object_class->get_property = box_get_property;
+    object_class->set_property = sng_box_set_property;
+    object_class->get_property = sng_box_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = box_realize;
-    widget_class->draw = box_draw;
+    widget_class->realize = sng_box_realize;
+    widget_class->draw = sng_box_draw;
 
     obj_properties[PROP_ORIENTATION] =
         g_param_spec_enum("orientation",
                           "Box orientation",
                           "Box Layout orientation",
-                          BOX_TYPE_ORIENTATION,
+                          SNG_TYPE_BOX_ORIENTATION,
                           BOX_ORIENTATION_VERTICAL,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT
         );
@@ -262,6 +262,6 @@ box_class_init(BoxClass *klass)
 }
 
 static void
-box_init(G_GNUC_UNUSED Box *box)
+sng_box_init(G_GNUC_UNUSED SngBox *box)
 {
 }

@@ -516,7 +516,7 @@ call_list_win_constructed(GObject *object)
     sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->menu_bar);
 
     // First header line
-    SngWidget *header_first = box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
+    SngWidget *header_first = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
     sng_widget_set_height(header_first, 1);
     sng_widget_set_vexpand(header_first, FALSE);
     sng_container_add(SNG_CONTAINER(call_list_win), header_first);
@@ -551,7 +551,7 @@ call_list_win_constructed(GObject *object)
     sng_container_show_all(SNG_CONTAINER(header_first));
 
     // Second header line
-    SngWidget *header_second = box_new_full(BOX_ORIENTATION_HORIZONTAL, 5, 1);
+    SngWidget *header_second = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 5, 1);
     sng_widget_set_vexpand(header_second, FALSE);
 
     // Show BPF filter if specified in command line
@@ -575,7 +575,7 @@ call_list_win_constructed(GObject *object)
     sng_container_show_all(SNG_CONTAINER(header_second));
 
     // Add Display filter label and entry
-    SngWidget *header_third = box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
+    SngWidget *header_third = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
     sng_widget_set_height(header_third, 1);
     sng_widget_set_vexpand(header_third, FALSE);
     SngWidget *lb_dfilter = label_new("Display Filter:");

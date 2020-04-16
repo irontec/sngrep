@@ -38,23 +38,23 @@ typedef enum
 {
   BOX_ORIENTATION_HORIZONTAL,
   BOX_ORIENTATION_VERTICAL
-} BoxOrientation;
+} SngBoxOrientation;
 
 // Class declaration
-#define TUI_TYPE_BOX box_get_type()
-G_DECLARE_DERIVABLE_TYPE(Box, box, TUI, BOX, SngContainer)
+#define SNG_TYPE_BOX sng_box_get_type()
+G_DECLARE_DERIVABLE_TYPE(SngBox, sng_box, SNG, BOX, SngContainer)
 
-struct _BoxClass
+struct _SngBoxClass
 {
     //! Parent class
     SngContainerClass parent;
 };
 
 SngWidget *
-box_new(BoxOrientation orientation);
+sng_box_new(SngBoxOrientation orientation);
 
 SngWidget *
-box_new_full(BoxOrientation orientation, gint spacing, gint padding);
+sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding);
 
 G_END_DECLS
 

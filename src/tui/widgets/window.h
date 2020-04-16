@@ -40,7 +40,7 @@
 G_BEGIN_DECLS
 
 #define SNG_TYPE_WINDOW sng_window_get_type()
-G_DECLARE_DERIVABLE_TYPE(SngWindow, sng_window, SNG, WINDOW, Box)
+G_DECLARE_DERIVABLE_TYPE(SngWindow, sng_window, SNG, WINDOW, SngBox)
 
 /**
  * @brief Enum for available panel types
@@ -72,7 +72,7 @@ typedef enum
 struct _SngWindowClass
 {
     //! Parent class
-    BoxClass parent;
+    SngBoxClass parent;
     //! Query the panel if redraw is required
     gboolean (*redraw)(SngWindow *self);
     //! Notifies the panel the screen has changed

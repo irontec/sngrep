@@ -52,7 +52,7 @@ typedef struct
 } SngWindowPrivate;
 
 // Window class definition
-G_DEFINE_TYPE_WITH_PRIVATE(SngWindow, sng_window, TUI_TYPE_BOX)
+G_DEFINE_TYPE_WITH_PRIVATE(SngWindow, sng_window, SNG_TYPE_BOX)
 
 SngWindow *
 sng_window_new(gint height, gint width)
