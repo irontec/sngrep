@@ -39,10 +39,10 @@ static gint
 menu_bar_clicked(Widget *widget, MEVENT mevent)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
-    GNode *menus = container_get_children(TUI_CONTAINER(widget));
+    GList *menus = container_get_children(TUI_CONTAINER(widget));
 
     gint index = mevent.x / MENU_WIDTH;
-    if (index < (gint) g_node_n_children(menus)) {
+    if (index < (gint) g_list_length(menus)) {
 
         menu_bar->selected = index;
 
@@ -85,9 +85,9 @@ menu_bar_draw(Widget *widget)
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     werase(win);
 
-    GNode *children = container_get_children(TUI_CONTAINER(widget));
-    for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
-        Widget *menu = g_node_nth_child_data(children, i);
+    GList *children = container_get_children(TUI_CONTAINER(widget));
+    for (GList *l = children; l != NULL; l = l->next) {
+        Widget *menu = l->data;
         widget_set_position(menu, getcurx(win), 1);
 
         if (widget_is_visible(menu)) {
@@ -108,7 +108,7 @@ static gint
 menu_bar_key_pressed(Widget *widget, gint key)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
-    GNode *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = container_get_children(TUI_CONTAINER(widget));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -119,14 +119,14 @@ menu_bar_key_pressed(Widget *widget, gint key)
                 menu_bar->selected = CLAMP(
                     menu_bar->selected + 1,
                     0,
-                    (gint) g_node_n_children(children) - 1
+                    (gint) g_list_length(children) - 1
                 );
                 break;
             case ACTION_LEFT:
                 menu_bar->selected = CLAMP(
                     menu_bar->selected - 1,
                     0,
-                    (gint) g_node_n_children(children) - 1
+                    (gint) g_list_length(children) - 1
                 );
                 break;
             default:
@@ -144,6 +144,14 @@ menu_bar_key_pressed(Widget *widget, gint key)
     );
 
     return KEY_HANDLED;
+}
+
+static gboolean
+menu_bar_focus_gained(Widget *widget)
+{
+    MenuBar *menu_bar = TUI_MENU_BAR(widget);
+    menu_bar->selected = 1;
+    return TRUE;
 }
 
 Widget *
@@ -191,4 +199,5 @@ menu_bar_class_init(MenuBarClass *klass)
     widget_class->draw = menu_bar_draw;
     widget_class->key_pressed = menu_bar_key_pressed;
     widget_class->clicked = menu_bar_clicked;
+    widget_class->focus_gained = menu_bar_focus_gained;
 }

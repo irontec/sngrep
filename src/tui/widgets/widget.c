@@ -64,7 +64,7 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 typedef struct
 {
     //! Parent widget
-    GNode *node;
+    Widget *parent;
     //! Window for drawing this widget
     WINDOW *win;
     //! Dimensions of this widget
@@ -102,6 +102,29 @@ void
 widget_destroy(Widget *widget)
 {
     g_object_unref(widget);
+}
+
+void
+widget_set_parent(Widget *widget, Widget *parent)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->parent = parent;
+}
+
+Widget *
+widget_get_parent(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->parent;
+}
+
+Widget *
+widget_get_toplevel(Widget *widget)
+{
+    while (widget_get_parent(widget) != NULL) {
+        widget = widget_get_parent(widget);
+    }
+    return widget;
 }
 
 void
@@ -144,28 +167,6 @@ widget_has_focus(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->focused;
-}
-
-Widget *
-widget_get_toplevel(Widget *widget)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    GNode *root = g_node_get_root(priv->node);
-    return (root != NULL) ? root->data : NULL;
-}
-
-Widget *
-widget_get_parent(Widget *widget)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    return g_node_parent_data(priv->node);
-}
-
-GNode *
-widget_get_node(Widget *widget)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-    return priv->node;
 }
 
 void
@@ -321,25 +322,6 @@ widget_is_floating(Widget *widget)
     return priv->floating;
 }
 
-gint
-widget_draw(Widget *widget)
-{
-    // Only for visible widgets
-    if (!widget_is_visible(widget)) {
-        return 0;
-    }
-
-    // Notify everyone we're being drawn
-    g_signal_emit(widget, signals[SIG_DRAW], 0);
-
-    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
-    if (klass->draw != NULL) {
-        return klass->draw(widget);
-    }
-
-    return 0;
-}
-
 void
 widget_realize(Widget *widget)
 {
@@ -351,6 +333,30 @@ widget_realize(Widget *widget)
 
     // Notify everyone we're being realized
     g_signal_emit(widget, signals[SIG_REALIZE], 0);
+}
+
+gint
+widget_draw(Widget *widget)
+{
+    // Only for visible widgets
+    if (!widget_is_visible(widget)) {
+        return 0;
+    }
+
+    // Realize widget before drawing
+    if (!widget_is_realized(widget)) {
+        widget_realize(widget);
+    }
+
+    // Notify everyone we're being drawn
+    g_signal_emit(widget, signals[SIG_DRAW], 0);
+
+    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+    if (klass->draw != NULL) {
+        return klass->draw(widget);
+    }
+
+    return 0;
 }
 
 void
@@ -773,6 +779,4 @@ widget_init(Widget *self)
     WidgetPrivate *priv = widget_get_instance_private(self);
     // Initialize window position
     priv->x = priv->y = 0;
-    // Set our node for widget hierarchy
-    priv->node = g_node_new(self);
 }

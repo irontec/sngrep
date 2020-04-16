@@ -51,7 +51,7 @@ Keybinding bindings[ACTION_SENTINEL] = {
     { ACTION_HPPAGE,           "hppage",          { KEY_CTRL('U') },                                 2 },
     { ACTION_BEGIN,            "begin",           { KEY_HOME,      KEY_CTRL('A') },                  2 },
     { ACTION_END,              "end",             { KEY_END,       KEY_CTRL('E') },                  2 },
-    { ACTION_PREV_FIELD,       "pfield",          { KEY_UP },                                        1 },
+    { ACTION_PREV_FIELD,       "pfield",          { KEY_UP,        KEY_SHTAB },                      2 },
     { ACTION_NEXT_FIELD,       "nfield",          { KEY_DOWN,      KEY_TAB },                        2 },
     { ACTION_RESIZE_SCREEN,    "resize",          { KEY_RESIZE },                                    1 },
     { ACTION_CLEAR,            "clear",           { KEY_CTRL('U'), KEY_CTRL('W') },                  2 },
@@ -76,7 +76,7 @@ Keybinding bindings[ACTION_SENTINEL] = {
     { ACTION_COLUMN_MOVE_UP,   "columnup",        { '-' },                                           1 },
     { ACTION_COLUMN_MOVE_DOWN, "columndown",      { '+' },                                           1 },
     { ACTION_SDP_INFO,         "sdpinfo",         { KEY_F(2),  'd' },                                2 },
-    { ACTION_DISP_FILTER,      "search",          { KEY_F(3),  '/',                KEY_TAB },        3 },
+    { ACTION_DISP_FILTER,      "search",          { KEY_F(3),  '/', },                               2 },
     { ACTION_SAVE,             "save",            { KEY_F(2),  's', 'S' },                           3 },
     { ACTION_AUTH_VALIDATE,    "validate",        { 'v' },                                           1 },
     { ACTION_SELECT,           "select",          { KEY_SPACE },                                     1 },
@@ -272,10 +272,10 @@ key_bindings_dump()
     for (guint i = 1; i < ACTION_SENTINEL; i++) {
         for (guint j = 0; j < bindings[i].bindcnt; j++) {
             g_print("ActionID: %d\t ActionName: %-21s Key: %d (%s)\n",
-                   bindings[i].id,
-                   bindings[i].name,
-                   bindings[i].keys[j],
-                   key_to_str(bindings[i].keys[j]));
+                    bindings[i].id,
+                    bindings[i].name,
+                    bindings[i].keys[j],
+                    key_to_str(bindings[i].keys[j]));
         }
     }
 }

@@ -42,12 +42,21 @@ struct _ContainerClass
 {
     //! Parent class
     WidgetClass parent;
+    //! Container class functions
+    void (*add) (Container *container, Widget *widget);
+    void (*remove)(Container *container, Widget *widget);
 };
 
 void
-container_add_child(Container *container, Widget *child);
+container_add(Container *container, Widget *widget);
 
-GNode *
+void
+container_remove(Container *container, Widget *widget);
+
+void
+container_foreach(Container *container, GFunc callback, gpointer user_data);
+
+GList *
 container_get_children(Container *container);
 
 Widget *

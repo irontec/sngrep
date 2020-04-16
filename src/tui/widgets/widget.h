@@ -101,6 +101,12 @@ void
 widget_destroy(Widget *widget);
 
 void
+widget_set_parent(Widget *widget, Widget *parent);
+
+Widget *
+widget_get_parent(Widget *widget);
+
+void
 widget_show(Widget *widget);
 
 void
@@ -117,12 +123,6 @@ widget_has_focus(Widget *widget);
 
 Widget *
 widget_get_toplevel(Widget *widget);
-
-Widget *
-widget_get_parent(Widget *widget);
-
-GNode *
-widget_get_node(Widget *widget);
 
 /**
  * @brief Notifies current ui the screen size has changed

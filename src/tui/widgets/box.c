@@ -120,16 +120,16 @@ box_realize_horizontal(Widget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
-    GNode *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = container_get_children(TUI_CONTAINER(widget));
 
     gint space = widget_get_width(widget)
                  - priv->padding * 2
-                 - priv->spacing * g_node_n_children(children);
+                 - priv->spacing * g_list_length(children);
 
     gint exp_widget_cnt = 0;
     // Remove fixed space from non expanded widgets
-    for (guint i = 0; i < g_node_n_children(children); i++) {
-        Widget *child = g_node_nth_child_data(children, i);
+    for (GList *l = children; l != NULL; l = l->next) {
+        Widget *child = l->data;
         if (!widget_get_hexpand(child)) {
             space -= widget_get_width(child);
         } else {
@@ -139,8 +139,8 @@ box_realize_horizontal(Widget *widget)
 
     // Calculate expanded children width and positions
     gint xpos = priv->padding;
-    for (guint i = 0; i < g_node_n_children(children); i++) {
-        Widget *child = g_node_nth_child_data(children, i);
+    for (GList *l = children; l != NULL; l = l->next) {
+        Widget *child = l->data;
         if (widget_get_hexpand(child)) {
             widget_set_size(child, space / exp_widget_cnt, widget_get_height(child));
         }
@@ -157,17 +157,17 @@ box_realize_vertical(Widget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
-    GNode *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = container_get_children(TUI_CONTAINER(widget));
 
     // Set Children width based on expand flag
     gint space = widget_get_height(widget)
                  - priv->padding * 2
-                 - priv->spacing * g_node_n_children(children);
+                 - priv->spacing * g_list_length(children);
 
     gint exp_widget_cnt = 0;
     // Remove fixed space from non expanded widgets
-    for (guint i = 0; i < g_node_n_children(children); i++) {
-        Widget *child = g_node_nth_child_data(children, i);
+    for (GList *l = children; l != NULL; l = l->next) {
+        Widget *child = l->data;
         if (!widget_get_vexpand(child)) {
             space -= widget_get_height(child);
         } else {
@@ -177,8 +177,8 @@ box_realize_vertical(Widget *widget)
 
     // Calculate expanded children height and positions
     gint ypos = priv->padding;
-    for (guint i = 0; i < g_node_n_children(children); i++) {
-        Widget *child = g_node_nth_child_data(children, i);
+    for (GList *l = children; l != NULL; l = l->next) {
+        Widget *child = l->data;
         if (widget_get_vexpand(child)) {
             widget_set_size(child, widget_get_width(child), space / exp_widget_cnt);
         }

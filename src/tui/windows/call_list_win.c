@@ -495,47 +495,47 @@ call_list_win_constructed(GObject *object)
 
 
     // Add menubar menus and items
-    container_add_child(TUI_CONTAINER(call_list_win), call_list_win->menu_bar);
-    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_file);
-    container_add_child(TUI_CONTAINER(menu_file), menu_file_preferences);
-    container_add_child(TUI_CONTAINER(menu_file), menu_file_save);
-    container_add_child(TUI_CONTAINER(menu_file), menu_item_new(NULL));
-    container_add_child(TUI_CONTAINER(menu_file), menu_file_exit);
-    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_view);
-    container_add_child(TUI_CONTAINER(menu_view), menu_view_filters);
-    container_add_child(TUI_CONTAINER(menu_view), menu_view_protocols);
-    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_list);
-    container_add_child(TUI_CONTAINER(menu_list), menu_list_columns);
-    container_add_child(TUI_CONTAINER(menu_list), menu_item_new(NULL));
-    container_add_child(TUI_CONTAINER(menu_list), menu_list_clear);
-    container_add_child(TUI_CONTAINER(menu_list), menu_list_clear_soft);
-    container_add_child(TUI_CONTAINER(menu_list), menu_item_new(NULL));
-    container_add_child(TUI_CONTAINER(menu_list), menu_list_flow);
-    container_add_child(TUI_CONTAINER(menu_list), menu_list_flow_ex);
-    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_help);
-    container_add_child(TUI_CONTAINER(menu_help), menu_help_about);
+    container_add(TUI_CONTAINER(call_list_win), call_list_win->menu_bar);
+    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_file);
+    container_add(TUI_CONTAINER(menu_file), menu_file_preferences);
+    container_add(TUI_CONTAINER(menu_file), menu_file_save);
+    container_add(TUI_CONTAINER(menu_file), menu_item_new(NULL));
+    container_add(TUI_CONTAINER(menu_file), menu_file_exit);
+    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_view);
+    container_add(TUI_CONTAINER(menu_view), menu_view_filters);
+    container_add(TUI_CONTAINER(menu_view), menu_view_protocols);
+    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_list);
+    container_add(TUI_CONTAINER(menu_list), menu_list_columns);
+    container_add(TUI_CONTAINER(menu_list), menu_item_new(NULL));
+    container_add(TUI_CONTAINER(menu_list), menu_list_clear);
+    container_add(TUI_CONTAINER(menu_list), menu_list_clear_soft);
+    container_add(TUI_CONTAINER(menu_list), menu_item_new(NULL));
+    container_add(TUI_CONTAINER(menu_list), menu_list_flow);
+    container_add(TUI_CONTAINER(menu_list), menu_list_flow_ex);
+    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_help);
+    container_add(TUI_CONTAINER(menu_help), menu_help_about);
 
     // First header line
     Widget *header_first = box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
     widget_set_height(header_first, 1);
     widget_set_vexpand(header_first, FALSE);
-    container_add_child(TUI_CONTAINER(call_list_win), header_first);
+    container_add(TUI_CONTAINER(call_list_win), header_first);
 
     // Mode Label
     Widget *lb_mode = label_new(NULL);
     g_signal_connect(lb_mode, "draw", G_CALLBACK(call_list_win_mode_label), NULL);
-    container_add_child(TUI_CONTAINER(header_first), lb_mode);
+    container_add(TUI_CONTAINER(header_first), lb_mode);
 
     // Dialog Count
     Widget *lb_dialog_cnt = label_new(NULL);
     g_signal_connect(lb_dialog_cnt, "draw", G_CALLBACK(call_list_win_dialog_label), NULL);
-    container_add_child(TUI_CONTAINER(header_first), lb_dialog_cnt);
+    container_add(TUI_CONTAINER(header_first), lb_dialog_cnt);
 
     // Memory usage
     if (storage_memory_limit() != 0) {
         Widget *lb_memory = label_new(NULL);
         g_signal_connect(lb_memory, "draw", G_CALLBACK(call_list_win_memory_label), NULL);
-        container_add_child(TUI_CONTAINER(header_first), lb_memory);
+        container_add(TUI_CONTAINER(header_first), lb_memory);
     }
 
     // Print Open filename in Offline mode
@@ -544,7 +544,7 @@ call_list_win_constructed(GObject *object)
     if (infile != NULL) {
         g_autoptr(GString) file = g_string_new(NULL);
         g_string_append_printf(file, "Filename: %s", infile);
-        container_add_child(TUI_CONTAINER(header_first), label_new(file->str));
+        container_add(TUI_CONTAINER(header_first), label_new(file->str));
     }
 
     // Show all labels in the line
@@ -560,7 +560,7 @@ call_list_win_constructed(GObject *object)
         widget_set_height(header_second, 1);
         g_autoptr(GString) filter = g_string_new("BPF Filter: ");
         g_string_append_printf(filter, "<yellow>%s", bpf_filter);
-        container_add_child(TUI_CONTAINER(header_second), label_new(filter->str));
+        container_add(TUI_CONTAINER(header_second), label_new(filter->str));
     }
 
     // Show Match expression label if specified in command line
@@ -569,9 +569,9 @@ call_list_win_constructed(GObject *object)
         widget_set_height(header_second, 1);
         g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
         g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
-        container_add_child(TUI_CONTAINER(header_second), label_new(match_expression->str));
+        container_add(TUI_CONTAINER(header_second), label_new(match_expression->str));
     }
-    container_add_child(TUI_CONTAINER(call_list_win), header_second);
+    container_add(TUI_CONTAINER(call_list_win), header_second);
     container_show_all(TUI_CONTAINER(header_second));
 
     // Add Display filter label and entry
@@ -580,12 +580,12 @@ call_list_win_constructed(GObject *object)
     widget_set_vexpand(header_third, FALSE);
     Widget *lb_dfilter = label_new("Display Filter:");
     widget_set_hexpand(TUI_WIDGET(lb_dfilter), FALSE);
-    container_add_child(TUI_CONTAINER(header_third), lb_dfilter);
+    container_add(TUI_CONTAINER(header_third), lb_dfilter);
     call_list_win->en_dfilter = entry_new();
     g_signal_connect(call_list_win->en_dfilter, "key-pressed",
                      G_CALLBACK(call_list_win_display_filter), NULL);
-    container_add_child(TUI_CONTAINER(header_third), call_list_win->en_dfilter);
-    container_add_child(TUI_CONTAINER(call_list_win), header_third);
+    container_add(TUI_CONTAINER(header_third), call_list_win->en_dfilter);
+    container_add(TUI_CONTAINER(call_list_win), header_third);
     container_show_all(TUI_CONTAINER(header_third));
 
     call_list_win->tb_calls = table_new();
@@ -595,7 +595,7 @@ call_list_win_constructed(GObject *object)
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
-    container_add_child(TUI_CONTAINER(call_list_win), call_list_win->tb_calls);
+    container_add(TUI_CONTAINER(call_list_win), call_list_win->tb_calls);
     widget_show(TUI_WIDGET(call_list_win->tb_calls));
 
     // Start with the call list focused

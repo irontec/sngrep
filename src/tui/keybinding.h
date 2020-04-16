@@ -50,6 +50,7 @@
 #define KEY_ESC         27
 #define KEY_INTRO       10
 #define KEY_TAB         9
+#define KEY_SHTAB       353
 #define KEY_BACKSPACE2  8
 #define KEY_BACKSPACE3  127
 #define KEY_SPACE       ' '

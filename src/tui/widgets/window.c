@@ -29,8 +29,10 @@
 #include "config.h"
 #include <string.h>
 #include <panel.h>
+#include "glib-extra/glist.h"
 #include "tui/theme.h"
 #include "tui/widgets/box.h"
+#include "tui/keybinding.h"
 #include "tui/widgets/window.h"
 
 typedef struct
@@ -43,6 +45,8 @@ typedef struct
     gboolean changed;
     //! Current focused widget
     Widget *focus;
+    //! Focusable widget chain
+    GList *focus_chain;
 } WindowPrivate;
 
 // Window class definition
@@ -160,7 +164,7 @@ window_redraw(Window *window)
     return TRUE;
 }
 
-static gboolean
+G_GNUC_UNUSED static gboolean
 window_map_floating_child(GNode *node, G_GNUC_UNUSED gpointer data)
 {
     if (widget_is_floating(node->data)) {
@@ -170,17 +174,17 @@ window_map_floating_child(GNode *node, G_GNUC_UNUSED gpointer data)
 }
 
 static void
-window_map_floating(Window *window)
+window_map_floating(G_GNUC_UNUSED Window *window)
 {
-    // Draw floating children at the end
-    g_node_traverse(
-        widget_get_node(TUI_WIDGET(window)),
-        G_IN_ORDER,
-        G_TRAVERSE_ALL,
-        -1,
-        window_map_floating_child,
-        NULL
-    );
+//    // Draw floating children at the end
+//    g_node_traverse(
+//        widget_get_node(TUI_WIDGET(window)),
+//        G_IN_ORDER,
+//        G_TRAVERSE_ALL,
+//        -1,
+//        window_map_floating_child,
+//        NULL
+//    );
 }
 
 static void
@@ -218,12 +222,34 @@ window_realize(Widget *widget)
     TUI_WIDGET_CLASS(window_parent_class)->realize(widget);
 }
 
+static void
+window_update_focus_chain(Window *window, Widget *widget)
+{
+    if (TUI_IS_CONTAINER(widget)) {
+        GList *children = container_get_children(TUI_CONTAINER(widget));
+        for (GList *l = children; l != NULL; l = l->next) {
+            window_update_focus_chain(window, l->data);
+        }
+    }
+
+    if (widget_can_focus(widget)) {
+        WindowPrivate *priv = window_get_instance_private(window);
+        priv->focus_chain = g_list_append(priv->focus_chain, widget);
+    }
+}
+
+
+static void
+window_add_widget(Container *container, Widget *widget)
+{
+    window_update_focus_chain(TUI_WINDOW(container), widget);
+    TUI_CONTAINER_CLASS(window_parent_class)->add(container, widget);
+}
+
 int
 window_draw(Window *window)
 {
     Widget *widget = TUI_WIDGET(window);
-    // Realize all widgets internal windows
-    widget_realize(widget);
     // Draw all widgets of the window
     widget_draw(widget);
     // Map all widgets to their screen positions
@@ -279,7 +305,32 @@ window_handle_key(Window *window, gint key)
 {
     WindowPrivate *priv = window_get_instance_private(window);
     priv->changed = TRUE;
-    return widget_key_pressed(priv->focus, key);
+
+    // Check actions for this key
+    KeybindingAction action = key_find_action(key, ACTION_UNKNOWN);
+    if (action == ACTION_PREV_FIELD || action == ACTION_NEXT_FIELD) {
+        GList *current = g_list_find(priv->focus_chain, priv->focus);
+        if (current != NULL) {
+            if (action == ACTION_PREV_FIELD) {
+                window_set_focused_widget(
+                    window,
+                    (current->prev)
+                    ? current->prev->data
+                    : g_list_last_data(priv->focus_chain)
+                );
+            } else {
+                window_set_focused_widget(
+                    window,
+                    (current->next)
+                    ? current->next->data
+                    : g_list_first_data(priv->focus_chain)
+                );
+            }
+        }
+        return KEY_HANDLED;
+    } else {
+        return widget_key_pressed(priv->focus, key);
+    }
 }
 
 void
@@ -374,6 +425,9 @@ window_class_init(WindowClass *klass)
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
     widget_class->realize = window_realize;
+
+    ContainerClass *container_class = TUI_CONTAINER_CLASS(klass);
+    container_class->add = window_add_widget;
 }
 
 static void
