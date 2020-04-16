@@ -33,38 +33,38 @@ typedef struct
     gint x, y;
     //! SngWidget pointer if found, NULL if not found
     SngWidget *found;
-} ContainerFindData;
+} SngContainerFindData;
 
 typedef struct
 {
     GList *children;
-} ContainerPrivate;
+} SngContainerPrivate;
 
 // Class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Container, container, SNG_TYPE_WIDGET)
+G_DEFINE_TYPE_WITH_PRIVATE(SngContainer, sng_container, SNG_TYPE_WIDGET)
 
 void
-container_add(Container *container, SngWidget *child)
+sng_container_add(SngContainer *container, SngWidget *child)
 {
-    ContainerClass *klass = TUI_CONTAINER_GET_CLASS(container);
+    SngContainerClass *klass = SNG_CONTAINER_GET_CLASS(container);
     if (klass->add != NULL) {
         klass->add(container, child);
     }
 }
 
 void
-container_remove(Container *container, SngWidget *child)
+sng_container_remove(SngContainer *container, SngWidget *child)
 {
-    ContainerClass *klass = TUI_CONTAINER_GET_CLASS(container);
+    SngContainerClass *klass = SNG_CONTAINER_GET_CLASS(container);
     if (klass->remove != NULL) {
         klass->remove(container, child);
     }
 }
 
 void
-container_foreach(Container *container, GFunc callback, gpointer user_data)
+sng_container_foreach(SngContainer *container, GFunc callback, gpointer user_data)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
 
     // Draw each of the container children
     g_list_foreach(
@@ -75,31 +75,31 @@ container_foreach(Container *container, GFunc callback, gpointer user_data)
 }
 
 GList *
-container_get_children(Container *container)
+sng_container_get_children(SngContainer *container)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
     return priv->children;
 }
 
 SngWidget *
-container_get_child(Container *container, gint index)
+sng_container_get_child(SngContainer *container, gint index)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
     return g_list_nth_data(priv->children, index);
 }
 
 static gint
-container_check_child_position(SngWidget *widget, gpointer data)
+sng_container_check_child_position(SngWidget *widget, gpointer data)
 {
-    ContainerFindData *find_data = data;
+    SngContainerFindData *find_data = data;
 
     if (sng_widget_is_visible(widget) == FALSE) {
         return TRUE;
     }
     // Containers check their children first
-    if (TUI_IS_CONTAINER(widget)) {
+    if (SNG_IS_CONTAINER(widget)) {
         if (find_data->found == NULL) {
-            find_data->found = container_find_by_position(TUI_CONTAINER(widget), find_data->x, find_data->y);
+            find_data->found = sng_container_find_by_position(SNG_CONTAINER(widget), find_data->x, find_data->y);
         }
     }
 
@@ -118,101 +118,101 @@ container_check_child_position(SngWidget *widget, gpointer data)
 }
 
 SngWidget *
-container_find_by_position(Container *container, gint x, gint y)
+sng_container_find_by_position(SngContainer *container, gint x, gint y)
 {
-    ContainerFindData find_data = {
+    SngContainerFindData find_data = {
         .x = x,
         .y = y,
         .found = NULL,
     };
 
-    ContainerPrivate *priv = container_get_instance_private(container);
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
     g_list_find_custom(
         priv->children,
         &find_data,
-        (GCompareFunc) container_check_child_position
+        (GCompareFunc) sng_container_check_child_position
     );
 
     return find_data.found;
 }
 
 void
-container_show_all(Container *container)
+sng_container_show_all(SngContainer *container)
 {
     // Show all children
-    container_foreach(container, (GFunc) sng_widget_show, NULL);
+    sng_container_foreach(container, (GFunc) sng_widget_show, NULL);
     // Show container itself
     sng_widget_show(SNG_WIDGET(container));
 }
 
 static void
-container_base_realize(SngWidget *widget)
+sng_container_base_realize(SngWidget *widget)
 {
     // Realize all children
-    container_foreach(TUI_CONTAINER(widget), (GFunc) sng_widget_realize, NULL);
+    sng_container_foreach(SNG_CONTAINER(widget), (GFunc) sng_widget_realize, NULL);
     // Chain up parent class realize
-    SNG_WIDGET_CLASS(container_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(sng_container_parent_class)->realize(widget);
 }
 
 static gint
-container_base_draw(SngWidget *widget)
+sng_container_base_draw(SngWidget *widget)
 {
     // Draw each of the container children
-    container_foreach(TUI_CONTAINER(widget), (GFunc) sng_widget_draw, NULL);
+    sng_container_foreach(SNG_CONTAINER(widget), (GFunc) sng_widget_draw, NULL);
     //  Chain up parent class draw
-    return SNG_WIDGET_CLASS(container_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(sng_container_parent_class)->draw(widget);
 }
 
 static void
-container_base_map(SngWidget *widget)
+sng_container_base_map(SngWidget *widget)
 {
     // Map each of the container children
-    container_foreach(TUI_CONTAINER(widget), (GFunc) sng_widget_map, NULL);
+    sng_container_foreach(SNG_CONTAINER(widget), (GFunc) sng_widget_map, NULL);
     //  Chain up parent class map
-    SNG_WIDGET_CLASS(container_parent_class)->map(widget);
+    SNG_WIDGET_CLASS(sng_container_parent_class)->map(widget);
 }
 
 static void
-container_base_add(Container *container, SngWidget *widget)
+sng_container_base_add(SngContainer *container, SngWidget *widget)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
     priv->children = g_list_append(priv->children, widget);
     sng_widget_set_parent(widget, SNG_WIDGET(container));
 }
 
 static void
-container_base_remove(G_GNUC_UNUSED Container *container, SngWidget *widget)
+sng_container_base_remove(G_GNUC_UNUSED SngContainer *container, SngWidget *widget)
 {
-    ContainerPrivate *priv = container_get_instance_private(container);
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
     priv->children = g_list_remove(priv->children, widget);
     sng_widget_set_parent(widget, NULL);
 }
 
 
 static void
-container_finalize(GObject *object)
+sng_container_finalize(GObject *object)
 {
     // Chain-up parent finalize function
-    G_OBJECT_CLASS(container_parent_class)->finalize(object);
+    G_OBJECT_CLASS(sng_container_parent_class)->finalize(object);
 }
 
 static void
-container_class_init(ContainerClass *klass)
+sng_container_class_init(SngContainerClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->finalize = container_finalize;
+    object_class->finalize = sng_container_finalize;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = container_base_realize;
-    widget_class->draw = container_base_draw;
-    widget_class->map = container_base_map;
+    widget_class->realize = sng_container_base_realize;
+    widget_class->draw = sng_container_base_draw;
+    widget_class->map = sng_container_base_map;
 
-    ContainerClass *container_class = TUI_CONTAINER_CLASS(klass);
-    container_class->add = container_base_add;
-    container_class->remove = container_base_remove;
+    SngContainerClass *container_class = SNG_CONTAINER_CLASS(klass);
+    container_class->add = sng_container_base_add;
+    container_class->remove = sng_container_base_remove;
 }
 
 static void
-container_init(G_GNUC_UNUSED Container *container)
+sng_container_init(G_GNUC_UNUSED SngContainer *container)
 {
 }

@@ -42,7 +42,7 @@ enum
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu class definition
-G_DEFINE_TYPE(Menu, menu, TUI_TYPE_CONTAINER)
+G_DEFINE_TYPE(Menu, menu, SNG_TYPE_CONTAINER)
 
 SngWidget *
 menu_new(const gchar *title)
@@ -70,7 +70,7 @@ menu_get_title(Menu *menu)
 static void
 menu_realize(SngWidget *widget)
 {
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
     gint height = g_list_length(children) + 2;
     gint width = MENU_WIDTH + 2 + 6 + 2;
     for (GList *l = children; l != NULL; l = l->next) {
@@ -98,7 +98,7 @@ menu_draw(SngWidget *widget)
     // Get menu popup width
     gint width = sng_widget_get_width(widget);
 
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
     for (gint i = 0; i < (gint) g_list_length(children); i++) {
         MenuItem *item = TUI_MENU_ITEM(g_list_nth_data(children, i));
 
@@ -127,7 +127,7 @@ static gint
 menu_key_pressed(SngWidget *widget, gint key)
 {
     Menu *menu = TUI_MENU(widget);
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -171,7 +171,7 @@ menu_key_pressed(SngWidget *widget, gint key)
         break;
     }
 
-    MenuItem *item = TUI_MENU_ITEM(container_get_child(TUI_CONTAINER(widget), menu->selected));
+    MenuItem *item = TUI_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
     if (item->text == NULL) {
         menu_key_pressed(widget, key);
     }
@@ -183,7 +183,7 @@ static gint
 menu_clicked(SngWidget *widget, MEVENT mevent)
 {
     Menu *menu = TUI_MENU(widget);
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     menu->selected = CLAMP(
         mevent.y - sng_widget_get_ypos(widget) - 1,
@@ -191,7 +191,7 @@ menu_clicked(SngWidget *widget, MEVENT mevent)
         (gint) g_list_length(children) - 1
     );
 
-    MenuItem *item = TUI_MENU_ITEM(container_get_child(TUI_CONTAINER(widget), menu->selected));
+    MenuItem *item = TUI_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
     menu_item_activate(item);
     sng_widget_lose_focus(widget);
     return 0;

@@ -35,38 +35,38 @@
 G_BEGIN_DECLS
 
 // Class declaration
-#define TUI_TYPE_CONTAINER container_get_type()
-G_DECLARE_DERIVABLE_TYPE(Container, container, TUI, CONTAINER, SngWidget)
+#define SNG_TYPE_CONTAINER sng_container_get_type()
+G_DECLARE_DERIVABLE_TYPE(SngContainer, sng_container, SNG, CONTAINER, SngWidget)
 
-struct _ContainerClass
+struct _SngContainerClass
 {
     //! Parent class
     SngWidgetClass parent;
     //! Container class functions
-    void (*add) (Container *container, SngWidget *widget);
-    void (*remove)(Container *container, SngWidget *widget);
+    void (*add) (SngContainer *container, SngWidget *widget);
+    void (*remove)(SngContainer *container, SngWidget *widget);
 };
 
 void
-container_add(Container *container, SngWidget *widget);
+sng_container_add(SngContainer *container, SngWidget *child);
 
 void
-container_remove(Container *container, SngWidget *widget);
+sng_container_remove(SngContainer *container, SngWidget *child);
 
 void
-container_foreach(Container *container, GFunc callback, gpointer user_data);
+sng_container_foreach(SngContainer *container, GFunc callback, gpointer user_data);
 
 GList *
-container_get_children(Container *container);
+sng_container_get_children(SngContainer *container);
 
 SngWidget *
-container_get_child(Container *container, gint index);
+sng_container_get_child(SngContainer *container, gint index);
 
 SngWidget *
-container_find_by_position(Container *container, gint x, gint y);
+sng_container_find_by_position(SngContainer *container, gint x, gint y);
 
 void
-container_show_all(Container *container);
+sng_container_show_all(SngContainer *container);
 
 
 #endif    /* __SNGREP_CONTAINER_H__ */

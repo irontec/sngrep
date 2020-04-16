@@ -44,12 +44,12 @@ G_BEGIN_DECLS
 
 // Menu class declaration
 #define TUI_TYPE_MENU menu_get_type()
-G_DECLARE_FINAL_TYPE(Menu, menu, TUI, MENU, Container)
+G_DECLARE_FINAL_TYPE(Menu, menu, TUI, MENU, SngContainer)
 
 struct _Menu
 {
     //! Parent object attributes
-    Container parent;
+    SngContainer parent;
     //! Menu title displayed in bar
     const gchar *title;
     //! Selected item index

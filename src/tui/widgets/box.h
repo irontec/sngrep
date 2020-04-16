@@ -42,12 +42,12 @@ typedef enum
 
 // Class declaration
 #define TUI_TYPE_BOX box_get_type()
-G_DECLARE_DERIVABLE_TYPE(Box, box, TUI, BOX, Container)
+G_DECLARE_DERIVABLE_TYPE(Box, box, TUI, BOX, SngContainer)
 
 struct _BoxClass
 {
     //! Parent class
-    ContainerClass parent;
+    SngContainerClass parent;
 };
 
 SngWidget *

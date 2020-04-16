@@ -52,7 +52,7 @@ typedef struct
 } BoxPrivate;
 
 // Class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Box, box, TUI_TYPE_CONTAINER)
+G_DEFINE_TYPE_WITH_PRIVATE(Box, box, SNG_TYPE_CONTAINER)
 
 SngWidget *
 box_new(BoxOrientation orientation)
@@ -120,7 +120,7 @@ box_realize_horizontal(SngWidget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     gint space = sng_widget_get_width(widget)
                  - priv->padding * 2
@@ -157,7 +157,7 @@ box_realize_vertical(SngWidget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Set Children width based on expand flag
     gint space = sng_widget_get_height(widget)

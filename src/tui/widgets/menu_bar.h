@@ -41,12 +41,12 @@ G_BEGIN_DECLS
 #define MENU_WIDTH  20
 
 #define TUI_TYPE_MENU_BAR menu_bar_get_type()
-G_DECLARE_FINAL_TYPE(MenuBar, menu_bar, TUI, MENU_BAR, Container)
+G_DECLARE_FINAL_TYPE(MenuBar, menu_bar, TUI, MENU_BAR, SngContainer)
 
 struct _MenuBar
 {
     //! Parent object attributes
-    Container parent;
+    SngContainer parent;
     //! Selected menu (-1 for none)
     gint selected;
 };

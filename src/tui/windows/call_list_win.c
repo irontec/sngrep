@@ -495,47 +495,47 @@ call_list_win_constructed(GObject *object)
 
 
     // Add menubar menus and items
-    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_file);
-    container_add(TUI_CONTAINER(menu_file), menu_file_preferences);
-    container_add(TUI_CONTAINER(menu_file), menu_file_save);
-    container_add(TUI_CONTAINER(menu_file), menu_item_new(NULL));
-    container_add(TUI_CONTAINER(menu_file), menu_file_exit);
-    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_view);
-    container_add(TUI_CONTAINER(menu_view), menu_view_filters);
-    container_add(TUI_CONTAINER(menu_view), menu_view_protocols);
-    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_list);
-    container_add(TUI_CONTAINER(menu_list), menu_list_columns);
-    container_add(TUI_CONTAINER(menu_list), menu_item_new(NULL));
-    container_add(TUI_CONTAINER(menu_list), menu_list_clear);
-    container_add(TUI_CONTAINER(menu_list), menu_list_clear_soft);
-    container_add(TUI_CONTAINER(menu_list), menu_item_new(NULL));
-    container_add(TUI_CONTAINER(menu_list), menu_list_flow);
-    container_add(TUI_CONTAINER(menu_list), menu_list_flow_ex);
-    container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_help);
-    container_add(TUI_CONTAINER(menu_help), menu_help_about);
-    container_add(TUI_CONTAINER(call_list_win), call_list_win->menu_bar);
+    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_file);
+    sng_container_add(SNG_CONTAINER(menu_file), menu_file_preferences);
+    sng_container_add(SNG_CONTAINER(menu_file), menu_file_save);
+    sng_container_add(SNG_CONTAINER(menu_file), menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_file), menu_file_exit);
+    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_view);
+    sng_container_add(SNG_CONTAINER(menu_view), menu_view_filters);
+    sng_container_add(SNG_CONTAINER(menu_view), menu_view_protocols);
+    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_list);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_columns);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear_soft);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow_ex);
+    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_help);
+    sng_container_add(SNG_CONTAINER(menu_help), menu_help_about);
+    sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->menu_bar);
 
     // First header line
     SngWidget *header_first = box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
     sng_widget_set_height(header_first, 1);
     sng_widget_set_vexpand(header_first, FALSE);
-    container_add(TUI_CONTAINER(call_list_win), header_first);
+    sng_container_add(SNG_CONTAINER(call_list_win), header_first);
 
     // Mode Label
     SngWidget *lb_mode = label_new(NULL);
     g_signal_connect(lb_mode, "draw", G_CALLBACK(call_list_win_mode_label), NULL);
-    container_add(TUI_CONTAINER(header_first), lb_mode);
+    sng_container_add(SNG_CONTAINER(header_first), lb_mode);
 
     // Dialog Count
     SngWidget *lb_dialog_cnt = label_new(NULL);
     g_signal_connect(lb_dialog_cnt, "draw", G_CALLBACK(call_list_win_dialog_label), NULL);
-    container_add(TUI_CONTAINER(header_first), lb_dialog_cnt);
+    sng_container_add(SNG_CONTAINER(header_first), lb_dialog_cnt);
 
     // Memory usage
     if (storage_memory_limit() != 0) {
         SngWidget *lb_memory = label_new(NULL);
         g_signal_connect(lb_memory, "draw", G_CALLBACK(call_list_win_memory_label), NULL);
-        container_add(TUI_CONTAINER(header_first), lb_memory);
+        sng_container_add(SNG_CONTAINER(header_first), lb_memory);
     }
 
     // Print Open filename in Offline mode
@@ -544,11 +544,11 @@ call_list_win_constructed(GObject *object)
     if (infile != NULL) {
         g_autoptr(GString) file = g_string_new(NULL);
         g_string_append_printf(file, "Filename: %s", infile);
-        container_add(TUI_CONTAINER(header_first), label_new(file->str));
+        sng_container_add(SNG_CONTAINER(header_first), label_new(file->str));
     }
 
     // Show all labels in the line
-    container_show_all(TUI_CONTAINER(header_first));
+    sng_container_show_all(SNG_CONTAINER(header_first));
 
     // Second header line
     SngWidget *header_second = box_new_full(BOX_ORIENTATION_HORIZONTAL, 5, 1);
@@ -560,7 +560,7 @@ call_list_win_constructed(GObject *object)
         sng_widget_set_height(header_second, 1);
         g_autoptr(GString) filter = g_string_new("BPF Filter: ");
         g_string_append_printf(filter, "<yellow>%s", bpf_filter);
-        container_add(TUI_CONTAINER(header_second), label_new(filter->str));
+        sng_container_add(SNG_CONTAINER(header_second), label_new(filter->str));
     }
 
     // Show Match expression label if specified in command line
@@ -569,10 +569,10 @@ call_list_win_constructed(GObject *object)
         sng_widget_set_height(header_second, 1);
         g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
         g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
-        container_add(TUI_CONTAINER(header_second), label_new(match_expression->str));
+        sng_container_add(SNG_CONTAINER(header_second), label_new(match_expression->str));
     }
-    container_add(TUI_CONTAINER(call_list_win), header_second);
-    container_show_all(TUI_CONTAINER(header_second));
+    sng_container_add(SNG_CONTAINER(call_list_win), header_second);
+    sng_container_show_all(SNG_CONTAINER(header_second));
 
     // Add Display filter label and entry
     SngWidget *header_third = box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
@@ -580,13 +580,13 @@ call_list_win_constructed(GObject *object)
     sng_widget_set_vexpand(header_third, FALSE);
     SngWidget *lb_dfilter = label_new("Display Filter:");
     sng_widget_set_hexpand(SNG_WIDGET(lb_dfilter), FALSE);
-    container_add(TUI_CONTAINER(header_third), lb_dfilter);
+    sng_container_add(SNG_CONTAINER(header_third), lb_dfilter);
     call_list_win->en_dfilter = entry_new();
     g_signal_connect(call_list_win->en_dfilter, "key-pressed",
                      G_CALLBACK(call_list_win_display_filter), NULL);
-    container_add(TUI_CONTAINER(header_third), call_list_win->en_dfilter);
-    container_add(TUI_CONTAINER(call_list_win), header_third);
-    container_show_all(TUI_CONTAINER(header_third));
+    sng_container_add(SNG_CONTAINER(header_third), call_list_win->en_dfilter);
+    sng_container_add(SNG_CONTAINER(call_list_win), header_third);
+    sng_container_show_all(SNG_CONTAINER(header_third));
 
     call_list_win->tb_calls = table_new();
 //    table_set_rows(TUI_TABLE(call_list), storage_calls());
@@ -595,7 +595,7 @@ call_list_win_constructed(GObject *object)
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
-    container_add(TUI_CONTAINER(call_list_win), call_list_win->tb_calls);
+    sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->tb_calls);
     sng_widget_show(SNG_WIDGET(call_list_win->tb_calls));
 
     // Start with the call list focused

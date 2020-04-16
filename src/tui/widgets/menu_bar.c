@@ -33,21 +33,21 @@
 #include "tui/widgets/menu_bar.h"
 
 // Menu class definition
-G_DEFINE_TYPE(MenuBar, menu_bar, TUI_TYPE_CONTAINER)
+G_DEFINE_TYPE(MenuBar, menu_bar, SNG_TYPE_CONTAINER)
 
 static gint
 menu_bar_clicked(SngWidget *widget, MEVENT mevent)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
-    GList *menus = container_get_children(TUI_CONTAINER(widget));
+    GList *menus = sng_container_get_children(SNG_CONTAINER(widget));
 
     gint index = mevent.x / MENU_WIDTH;
     if (index < (gint) g_list_length(menus)) {
 
         menu_bar->selected = index;
 
-        SngWidget *menu = container_get_child(
-            TUI_CONTAINER(widget),
+        SngWidget *menu = sng_container_get_child(
+            SNG_CONTAINER(widget),
             menu_bar->selected
         );
         sng_widget_show(menu);
@@ -81,7 +81,7 @@ menu_bar_draw(SngWidget *widget)
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     werase(win);
 
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
     for (GList *l = children; l != NULL; l = l->next) {
         SngWidget *menu = l->data;
         sng_widget_set_position(menu, getcurx(win), 1);
@@ -104,7 +104,7 @@ static gint
 menu_bar_key_pressed(SngWidget *widget, gint key)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
-    GList *children = container_get_children(TUI_CONTAINER(widget));
+    GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -134,7 +134,7 @@ menu_bar_key_pressed(SngWidget *widget, gint key)
         break;
     }
 
-    SngWidget *menu = container_get_child(TUI_CONTAINER(widget), menu_bar->selected);
+    SngWidget *menu = sng_container_get_child(SNG_CONTAINER(widget), menu_bar->selected);
     sng_widget_show(menu);
     sng_widget_grab_focus(menu);
 
@@ -148,8 +148,8 @@ menu_bar_focus_gained(SngWidget *widget)
 
     menu_bar->selected = 0;
 
-    SngWidget *menu = container_get_child(
-        TUI_CONTAINER(widget),
+    SngWidget *menu = sng_container_get_child(
+        SNG_CONTAINER(widget),
         menu_bar->selected
     );
     sng_widget_show(menu);

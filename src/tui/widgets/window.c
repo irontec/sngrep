@@ -217,8 +217,8 @@ sng_window_redraw(SngWindow *window)
 static void
 sng_window_map_floating_child(SngWidget *widget, gpointer data)
 {
-    if (TUI_IS_CONTAINER(widget)) {
-        GList *children = container_get_children(TUI_CONTAINER(widget));
+    if (SNG_IS_CONTAINER(widget)) {
+        GList *children = sng_container_get_children(SNG_CONTAINER(widget));
         for (GList *l = children; l != NULL; l = l->next) {
             sng_window_map_floating_child(l->data, data);
         }
@@ -232,7 +232,7 @@ sng_window_map_floating_child(SngWidget *widget, gpointer data)
 static void
 sng_window_map_floating(SngWindow *window)
 {
-    container_foreach(TUI_CONTAINER(window), (GFunc) sng_window_map_floating_child, NULL);
+    sng_container_foreach(SNG_CONTAINER(window), (GFunc) sng_window_map_floating_child, NULL);
 }
 
 static void
@@ -279,8 +279,8 @@ sng_window_update_focus_chain(SngWindow *window, SngWidget *widget)
                                  G_CALLBACK(sng_window_set_focused_widget), window);
     }
 
-    if (TUI_IS_CONTAINER(widget)) {
-        GList *children = container_get_children(TUI_CONTAINER(widget));
+    if (SNG_IS_CONTAINER(widget)) {
+        GList *children = sng_container_get_children(SNG_CONTAINER(widget));
         for (GList *l = children; l != NULL; l = l->next) {
             sng_window_update_focus_chain(window, l->data);
         }
@@ -288,10 +288,10 @@ sng_window_update_focus_chain(SngWindow *window, SngWidget *widget)
 }
 
 static void
-sng_window_add_widget(Container *container, SngWidget *widget)
+sng_window_add_widget(SngContainer *container, SngWidget *widget)
 {
     sng_window_update_focus_chain(SNG_WINDOW(container), widget);
-    TUI_CONTAINER_CLASS(sng_window_parent_class)->add(container, widget);
+    SNG_CONTAINER_CLASS(sng_window_parent_class)->add(container, widget);
 }
 
 int
@@ -340,7 +340,7 @@ sng_window_handle_mouse(SngWindow *window, MEVENT mevent)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
     priv->changed = TRUE;
-    SngWidget *clicked_widget = container_find_by_position(TUI_CONTAINER(window), mevent.x, mevent.y);
+    SngWidget *clicked_widget = sng_container_find_by_position(SNG_CONTAINER(window), mevent.x, mevent.y);
     if (clicked_widget != NULL) {
         sng_window_set_focused_widget(window, clicked_widget);
         return sng_widget_clicked(clicked_widget, mevent);
@@ -460,7 +460,7 @@ sng_window_class_init(SngWindowClass *klass)
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = sng_window_realize;
 
-    ContainerClass *container_class = TUI_CONTAINER_CLASS(klass);
+    SngContainerClass *container_class = SNG_CONTAINER_CLASS(klass);
     container_class->add = sng_window_add_widget;
 }
 
