@@ -70,6 +70,7 @@ box_new_full(BoxOrientation orientation, gint spacing, gint padding)
         "padding", padding,
         "vexpand", TRUE,
         "hexpand", TRUE,
+        "can-focus", FALSE,
         NULL
     );
 }
@@ -114,77 +115,103 @@ box_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *
     }
 }
 
-static gint
-box_draw(Widget *widget)
+static void
+box_realize_horizontal(Widget *widget)
+{
+    Box *box = TUI_BOX(widget);
+    BoxPrivate *priv = box_get_instance_private(box);
+    GNode *children = container_get_children(TUI_CONTAINER(widget));
+
+    gint space = widget_get_width(widget)
+                 - priv->padding * 2
+                 - priv->spacing * g_node_n_children(children);
+
+    gint exp_widget_cnt = 0;
+    // Remove fixed space from non expanded widgets
+    for (guint i = 0; i < g_node_n_children(children); i++) {
+        Widget *child = g_node_nth_child_data(children, i);
+        if (!widget_get_hexpand(child)) {
+            space -= widget_get_width(child);
+        } else {
+            exp_widget_cnt++;
+        }
+    }
+
+    // Calculate expanded children width and positions
+    gint xpos = priv->padding;
+    for (guint i = 0; i < g_node_n_children(children); i++) {
+        Widget *child = g_node_nth_child_data(children, i);
+        if (widget_get_hexpand(child)) {
+            widget_set_size(child, space / exp_widget_cnt, widget_get_height(child));
+        }
+        if (widget_get_vexpand(child)) {
+            widget_set_size(child, widget_get_width(child), widget_get_height(widget));
+        }
+        widget_set_position(child, xpos, widget_get_ypos(widget));
+        xpos += widget_get_width(child) + priv->spacing;
+    }
+}
+
+static void
+box_realize_vertical(Widget *widget)
 {
     Box *box = TUI_BOX(widget);
     BoxPrivate *priv = box_get_instance_private(box);
     GNode *children = container_get_children(TUI_CONTAINER(widget));
 
     // Set Children width based on expand flag
-    if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
-        gint space = widget_get_height(widget)
-                     - priv->padding * 2
-                     - priv->spacing * g_node_n_children(children);
+    gint space = widget_get_height(widget)
+                 - priv->padding * 2
+                 - priv->spacing * g_node_n_children(children);
 
-        gint exp_widget_cnt = 0;
-        // Remove fixed space from non expanded widgets
-        for (guint i = 0; i < g_node_n_children(children); i++) {
-            Widget *child = g_node_nth_child_data(children, i);
-            if (!widget_get_vexpand(child)) {
-                space -= widget_get_height(child);
-            } else {
-                exp_widget_cnt++;
-            }
-        }
-
-        // Calculate expanded children height and positions
-        gint ypos = priv->padding;
-        for (guint i = 0; i < g_node_n_children(children); i++) {
-            Widget *child = g_node_nth_child_data(children, i);
-            if (widget_get_vexpand(child)) {
-                widget_set_size(child, widget_get_width(child), space / exp_widget_cnt);
-            }
-            if (widget_get_hexpand(child)) {
-                widget_set_size(child, widget_get_width(widget), widget_get_height(child));
-            }
-            widget_set_position(child, widget_get_xpos(widget), ypos);
-            ypos += widget_get_height(child) + priv->spacing;
-        }
-    } else {
-        gint space = widget_get_width(widget)
-                     - priv->padding * 2
-                     - priv->spacing * g_node_n_children(children);
-
-        gint exp_widget_cnt = 0;
-        // Remove fixed space from non expanded widgets
-        for (guint i = 0; i < g_node_n_children(children); i++) {
-            Widget *child = g_node_nth_child_data(children, i);
-            if (!widget_get_hexpand(child)) {
-                space -= widget_get_width(child);
-            } else {
-                exp_widget_cnt++;
-            }
-        }
-
-        // Calculate expanded children width and positions
-        gint xpos = priv->padding;
-        for (guint i = 0; i < g_node_n_children(children); i++) {
-            Widget *child = g_node_nth_child_data(children, i);
-            if (widget_get_hexpand(child)) {
-                widget_set_size(child, space / exp_widget_cnt, widget_get_height(child));
-            }
-            if (widget_get_vexpand(child)) {
-                widget_set_size(child, widget_get_width(child), widget_get_height(widget));
-            }
-            widget_set_position(child, xpos, widget_get_ypos(widget));
-            xpos += widget_get_width(child) + priv->spacing;
+    gint exp_widget_cnt = 0;
+    // Remove fixed space from non expanded widgets
+    for (guint i = 0; i < g_node_n_children(children); i++) {
+        Widget *child = g_node_nth_child_data(children, i);
+        if (!widget_get_vexpand(child)) {
+            space -= widget_get_height(child);
+        } else {
+            exp_widget_cnt++;
         }
     }
 
-    TUI_WIDGET_CLASS(box_parent_class)->draw(widget);
-    werase(widget_get_ncurses_window(widget));
-    return 0;
+    // Calculate expanded children height and positions
+    gint ypos = priv->padding;
+    for (guint i = 0; i < g_node_n_children(children); i++) {
+        Widget *child = g_node_nth_child_data(children, i);
+        if (widget_get_vexpand(child)) {
+            widget_set_size(child, widget_get_width(child), space / exp_widget_cnt);
+        }
+        if (widget_get_hexpand(child)) {
+            widget_set_size(child, widget_get_width(widget), widget_get_height(child));
+        }
+        widget_set_position(child, widget_get_xpos(widget), ypos);
+        ypos += widget_get_height(child) + priv->spacing;
+    }
+}
+
+static void
+box_realize(Widget *widget)
+{
+    Box *box = TUI_BOX(widget);
+    BoxPrivate *priv = box_get_instance_private(box);
+
+    if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
+        box_realize_vertical(widget);
+    } else {
+        box_realize_horizontal(widget);
+    }
+
+    TUI_WIDGET_CLASS(box_parent_class)->realize(widget);
+}
+
+static gint
+box_draw(Widget *widget)
+{
+    // Clear the window to draw children widgets
+    WINDOW *win = widget_get_ncurses_window(widget);
+    werase(win);
+    return TUI_WIDGET_CLASS(box_parent_class)->draw(widget);
 }
 
 static void
@@ -195,6 +222,7 @@ box_class_init(BoxClass *klass)
     object_class->get_property = box_get_property;
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->realize = box_realize;
     widget_class->draw = box_draw;
 
     obj_properties[PROP_ORIENTATION] =

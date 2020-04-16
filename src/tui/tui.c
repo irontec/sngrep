@@ -221,38 +221,51 @@ tui_read_input(G_GNUC_UNUSED gint fd,
     if (c == ERR)
         return TRUE;
 
+    MEVENT mevent = { 0 };
     if (c == KEY_MOUSE) {
-        MEVENT event;
-        if (getmouse(&event) == OK) {
-            window_handle_mouse(ui, event);
+        if (getmouse(&mevent) != OK) {
+            return TRUE;
         }
-        // Force screen redraw with each mouse event
-        tui_refresh_screen(loop);
-        return TRUE;
+
+#if NCURSES_MOUSE_VERSION > 1
+        // Simulate wheel as KEY_PPAGE & KEY_NPAGE keys
+        // Button5 events are only available in ncurses6
+        if (mevent.bstate & BUTTON4_PRESSED) {
+            c = KEY_PPAGE;
+        } else if (mevent.bstate & BUTTON5_PRESSED) {
+            c = KEY_NPAGE;
+        }
+#endif
     }
 
-    // Handle received key
-    int hld = KEY_NOT_HANDLED;
-    while (hld != KEY_HANDLED) {
-        // Check if current panel has custom bindings for that key
-        hld = window_handle_key(ui, c);
+    if (c == KEY_MOUSE) {
+        window_handle_mouse(ui, mevent);
+    } else {
+        // Handle received key
+        int hld = KEY_NOT_HANDLED;
+        while (hld != KEY_HANDLED) {
+            // Check if current panel has custom bindings for that key
+            hld = window_handle_key(ui, c);
 
-        if (hld == KEY_HANDLED) {
-            // Panel handled this key
-            continue;
-        } else if (hld == KEY_PROPAGATED) {
-            // Destroy current panel
-            tui_destroy_window(ui);
-            // Try to handle this key with the previous panel
-            ui = tui_find_by_panel(panel_below(NULL));
-        } else if (hld == KEY_DESTROY) {
-            tui_destroy_window(ui);
-            break;
-        } else {
-            // Key not handled by UI nor propagated. Use default handler
-            hld = tui_default_keyhandler(ui, c);
+            if (hld == KEY_HANDLED) {
+                // Panel handled this key
+                continue;
+            } else if (hld == KEY_PROPAGATED) {
+                // Destroy current panel
+                tui_destroy_window(ui);
+                // Try to handle this key with the previous panel
+                ui = tui_find_by_panel(panel_below(NULL));
+            } else if (hld == KEY_DESTROY) {
+                tui_destroy_window(ui);
+                break;
+            } else {
+                // Key not handled by UI nor propagated. Use default handler
+                hld = tui_default_keyhandler(ui, c);
+            }
         }
     }
+
+
 
     // Force screen redraw with each keystroke
     tui_refresh_screen(loop);
@@ -508,6 +521,9 @@ tui_init(GMainLoop *loop, GError **error)
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     ESCDELAY = 25;
+
+    // Mouse support
+    mousemask(ALL_MOUSE_EVENTS, NULL);
 
     // Redefine some keys
     const gchar *term = getenv("TERM");

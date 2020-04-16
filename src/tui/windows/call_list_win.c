@@ -46,57 +46,6 @@
 G_DEFINE_TYPE(CallListWindow, call_list_win, TUI_TYPE_WINDOW)
 
 /**
- * @brief Move selection cursor N times vertically
- *
- * @param self CallListWindow pointer
- * @param times number of lines, positive for down, negative for up
- */
-static void
-call_list_move_vertical(CallListWindow *self, gint times)
-{
-    // Set the new current selected index
-    self->cur_idx = CLAMP(
-        self->cur_idx + times,
-        0,
-        (gint) g_ptr_array_len(self->dcalls) - 1
-    );
-
-    // Move the first index if required (moving up)
-    self->first_idx = MIN(self->first_idx, self->cur_idx);
-
-    // Calculate Call List height
-    gint height = getmaxy(self->list_win);
-    height -= 1;                                        // Remove header line
-    height -= scrollbar_visible(self->hscroll) ? 1 : 0; // Remove Horizontal scrollbar
-
-    // Move the first index if required (moving down)
-    self->first_idx = MAX(
-        self->first_idx,
-        self->cur_idx - height + 1
-    );
-
-    // Update vertical scrollbar position
-    self->vscroll.pos = self->first_idx;
-}
-
-/**
- * @brief Move selection cursor N times horizontal
- *
- * @param self CallListWindow pointer
- * @param times number of lines, positive for right, negative for left
- */
-static void
-call_list_move_horizontal(CallListWindow *self, gint times)
-{
-    // Move horizontal scroll N times
-    self->hscroll.pos = CLAMP(
-        self->hscroll.pos + times,
-        0,
-        self->hscroll.max - getmaxx(self->hscroll.win)
-    );
-}
-
-/**
  * @brief Determine if the screen requires redrawn
  *
  * This will query the interface if it requires to be redraw again.
@@ -121,8 +70,6 @@ call_list_win_redraw(G_GNUC_UNUSED Window *window)
 static int
 call_list_win_resize(Window *window)
 {
-    CallListWindow *self = TUI_CALL_LIST_WIN(window);
-
     // Get current screen dimensions
     gint maxx, maxy;
     getmaxyx(stdscr, maxy, maxx);
@@ -133,103 +80,7 @@ call_list_win_resize(Window *window)
     // Store new size
     window_set_width(window, maxx);
     window_set_height(window, maxy);
-
-    // Calculate available printable area
-    wresize(self->list_win, maxy - 6, maxx);
-
-    // Force list redraw
-    call_list_win_clear(window);
-
     return 0;
-}
-
-/**
- * @brief Draw panel header
- *
- * This function will draw Call list header
- *
- * @param window UI structure pointer
- */
-static void
-call_list_win_draw_header(CallListWindow *self)
-{
-    const gchar *infile;
-    const gchar *device;
-
-    WINDOW *win = window_get_ncurses_window(TUI_WINDOW(self));
-    CaptureManager *capture = capture_manager_get_instance();
-    gboolean online = capture_is_online(capture);
-
-    g_autoptr(GString) mode = g_string_new("Mode: ");
-    g_string_append(mode, online ? "<green>" : "<red>");
-    g_string_append(mode, capture_status_desc(capture));
-
-    if (!online) {
-        guint progress = capture_manager_load_progress(capture_manager_get_instance());
-        if (progress > 0 && progress < 100) {
-            g_string_append_printf(mode, "[%d%%]", progress);
-        }
-    }
-
-    // Get online mode capture device
-    if ((device = capture_input_pcap_device(capture)))
-        g_string_append_printf(mode, "[%s]", device);
-
-#ifdef USE_HEP
-    const char *eep_port;
-    if ((eep_port = capture_output_hep_port(capture_manager_get_instance()))) {
-        g_string_append_printf(mode, "[H:%s]", eep_port);
-    }
-    if ((eep_port = capture_input_hep_port(capture_manager_get_instance()))) {
-        g_string_append_printf(mode, "[L:%s]", eep_port);
-    }
-#endif
-
-    // Set Mode label text
-    label_set_text(TUI_LABEL(self->lb_mode), mode->str);
-
-
-    g_autoptr(GString) count = g_string_new(NULL);
-    // Print Dialogs or Calls in label depending on calls filter
-    StorageMatchOpts storageMatchOpts = storage_match_options();
-    g_string_append(count, storageMatchOpts.invite ? "Calls: " : "Dialogs: ");
-    // Print calls count (also filtered)
-    StorageStats stats = storage_calls_stats();
-    if (stats.total != stats.displayed) {
-        g_string_append_printf(count, "%d / %d", stats.displayed, stats.total);
-    } else {
-        g_string_append_printf(count, "%d", stats.total);
-    }
-    // Set Count label text
-    label_set_text(TUI_LABEL(self->lb_dialog_cnt), count->str);
-
-    g_autoptr(GString) memory = g_string_new(NULL);
-    if (storage_memory_limit() > 0) {
-        g_autofree const gchar *usage = g_format_size_full(
-            storage_memory_usage(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-        g_autofree const gchar *limit = g_format_size_full(
-            storage_memory_limit(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-        g_string_append_printf(memory, "Mem: %s / %s", usage, limit);
-        label_set_text(TUI_LABEL(self->lb_memory), memory->str);
-    }
-
-    // Print Open filename in Offline mode
-    if ((infile = capture_input_pcap_file(capture))) {
-        g_autoptr(GString) file = g_string_new(NULL);
-        g_string_append_printf(file, "Filename: %s", infile);
-        label_set_text(TUI_LABEL(self->lb_filename), file->str);
-    }
-
-    if (self->menu_active) {
-        // Draw separator line
-        wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        mvwprintw(win, 4, 0, "Sort by     ");
-        wattroff(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    }
 }
 
 /**
@@ -240,8 +91,8 @@ call_list_win_draw_header(CallListWindow *self)
  *
  * @param window UI structure pointer
  */
-static void
-call_list_win_draw_footer(CallListWindow *self)
+static gint
+call_list_win_draw_footer(Widget *widget)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Quit",
@@ -256,393 +107,92 @@ call_list_win_draw_footer(CallListWindow *self)
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    window_draw_bindings(TUI_WINDOW(self), keybindings, 20);
-}
+    window_draw_bindings(TUI_WINDOW(widget), keybindings, 20);
 
-static gint
-call_list_columns_width(CallListWindow *self, guint columns)
-{
-    // More requested columns that existing columns??
-    if (columns > g_ptr_array_len(self->columns)) {
-        columns = g_ptr_array_len(self->columns);
-    }
-
-    // If requested column is 0, count all columns
-    guint columncnt = (columns == 0) ? g_ptr_array_len(self->columns) : columns;
-
-    // Add extra width for spaces between columns + selection box
-    gint width = 5 + columncnt;
-
-    // Sum all column widths
-    for (guint i = 0; i < columncnt; i++) {
-        CallListColumn *column = g_ptr_array_index(self->columns, i);
-        width += column->width;
-    }
-
-    return width;
-}
-
-/**
- * @brief Draw panel list contents
- *
- * This function will draw Call list dialogs list
- *
- * @param window UI structure pointer
- */
-static void
-call_list_win_draw_list(CallListWindow *self)
-{
-    gint listh, listw, cline = 0;
-    gint color;
-
-    // Get window of call list panel
-    WINDOW *list_win = self->list_win;
-    getmaxyx(list_win, listh, listw);
-
-    // Get the list of calls that are going to be displayed
-    g_ptr_array_free(self->dcalls, TRUE);
-    self->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
-
-    // If autoscroll is enabled, select the last dialog
-    if (self->autoscroll) {
-        StorageSortOpts sort = storage_sort_options();
-        if (sort.asc) {
-            call_list_move_vertical(self, g_ptr_array_len(self->dcalls));
-        } else {
-            call_list_move_vertical(self, g_ptr_array_len(self->dcalls) * -1);
-        }
-    }
-
-    // Clear call list before redrawing
-    werase(list_win);
-
-    // Create a new pad for configured columns
-    gint padw = call_list_columns_width(self, 0);
-    if (padw < listw) padw = listw;
-
-    WINDOW *pad = newpad(listh + 1, padw);
-
-    // Get configured sorting options
-    StorageSortOpts sort = storage_sort_options();
-
-    // Draw columns titles
-    wattron(pad, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    mvwprintw(pad, 0, 0, "%*s", padw, "");
-
-    // Draw columns
-    gint colpos = 6;
-    for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
-        CallListColumn *column = g_ptr_array_index(self->columns, i);
-        // Get current column title
-        const gchar *coldesc = attribute_get_title(column->attr);
-
-        // Print sort column indicator
-        if (column->attr == sort.by) {
-            wattron(pad, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-            gchar sortind = (gchar) ((sort.asc) ? '^' : 'v');
-            mvwprintw(pad, 0, colpos, "%c%.*s", sortind, column->width, coldesc);
-            wattron(pad, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        } else {
-            mvwprintw(pad, 0, colpos, "%.*s", column->width, coldesc);
-        }
-        colpos += column->width + 1;
-    }
-    wattroff(pad, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-
-    // Fill the call list
-    cline = 1;
-    for (guint i = (guint) self->vscroll.pos; i < g_ptr_array_len(self->dcalls); i++) {
-        Call *call = g_ptr_array_index(self->dcalls, i);
-        g_return_if_fail(call != NULL);
-
-        // Get first call message attributes
-        Message *msg = g_ptr_array_first(call->msgs);
-        g_return_if_fail(msg != NULL);
-
-        // Stop if we have reached the bottom of the list
-        if (cline == listh)
-            break;
-
-        // Show bold selected rows
-        if (call_group_exists(self->group, call))
-            wattron(pad, A_BOLD | COLOR_PAIR(CP_DEFAULT));
-
-        // Highlight active call
-        if (self->cur_idx == (gint) i) {
-            wattron(pad, COLOR_PAIR(CP_WHITE_ON_BLUE));
-        }
-
-        // Set current line background
-        mvwprintw(pad, cline, 0, "%*s", padw, "");
-        // Set current line selection box
-        mvwprintw(pad, cline, 2, call_group_exists(self->group, call) ? "[*]" : "[ ]");
-
-        // Print requested columns
-        colpos = 6;
-        for (guint j = 0; j < g_ptr_array_len(self->columns); j++) {
-            CallListColumn *column = g_ptr_array_index(self->columns, j);
-
-            // Get call attribute for current column
-            const gchar *coltext = NULL;
-            if ((coltext = msg_get_attribute(msg, column->attr)) == NULL) {
-                colpos += column->width + 1;
-                continue;
-            }
-
-            // Enable attribute color (if not current one)
-            color = 0;
-            if (self->cur_idx != (gint) i) {
-                if ((color = attribute_get_color(column->attr, coltext)) > 0) {
-                    wattron(pad, color);
-                }
-            }
-
-            // Add the column text to the existing columns
-            mvwprintw(pad, cline, colpos, "%.*s", column->width, coltext);
-            colpos += column->width + 1;
-
-            // Disable attribute color
-            if (color > 0)
-                wattroff(pad, color);
-        }
-        cline++;
-
-        wattroff(pad, COLOR_PAIR(CP_DEFAULT));
-        wattroff(pad, COLOR_PAIR(CP_DEF_ON_BLUE));
-        wattroff(pad, A_BOLD | A_REVERSE);
-    }
-
-    // Copy the pad into list win
-    copywin(pad, self->list_win, 0, self->hscroll.pos, 0, 0,
-            listh - 1, listw - 1, 0);
-
-    // Copy fixed columns
-    guint fixed_width = call_list_columns_width(self, (guint) setting_get_intvalue(SETTING_TUI_CL_FIXEDCOLS));
-    copywin(pad, self->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
-
-    // Setup horizontal scrollbar
-    self->hscroll.max = call_list_columns_width(self, 0);
-    self->hscroll.preoffset = 1;    // Leave first column for vscroll
-
-    // Setup vertical scrollbar
-    self->vscroll.max = g_ptr_array_len(self->dcalls) - 1;
-    self->vscroll.preoffset = 1;    // Leave first row for titles
-    if (scrollbar_visible(self->hscroll)) {
-        self->vscroll.postoffset = 1; // Leave last row for hscroll
-    }
-
-    // Draw scrollbars if required
-    scrollbar_draw(self->hscroll);
-    scrollbar_draw(self->vscroll);
-
-    // Free the list pad
-    delwin(pad);
-
-    // Print Autoscroll indicator
-    if (self->autoscroll) {
-        wattron(self->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        mvwprintw(self->list_win, 0, 0, "A");
-        wattroff(self->list_win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-    }
-}
-
-/**
- * @brief Draw the Call list panel
- *
- * This function will drawn the panel into the screen based on its stored
- * status
- *
- * @param window UI structure pointer
- * @return 0 if the panel has been drawn, -1 otherwise
- */
-static int
-call_list_win_draw(Widget *widget)
-{
-    Window *window = TUI_WINDOW(widget);
-    CallListWindow *self = TUI_CALL_LIST_WIN(window);
-
-    // Draw the header
-    call_list_win_draw_header(self);
-    // Draw the footer
-    call_list_win_draw_footer(self);
-    // Draw the list content
-    call_list_win_draw_list(self);
-
+    // Chain-up parent draw function
     return TUI_WIDGET_CLASS(call_list_win_parent_class)->draw(widget);
 }
 
-/**
- * @brief Get List line from the given call
- *
- * Get the list line of the given call to display in the list
- * This line is built using the configured columns and sizes
- *
- * @param window UI structure pointer
- * @param call Call to get data from
- * @param text Text pointer to store the generated line
- * @return A pointer to text
- */
-const char *
-call_list_win_line_text(Window *window, Call *call)
-{
-    CallListWindow *self = TUI_CALL_LIST_WIN(window);
-
-    // Get first call message
-    Message *msg = g_ptr_array_first(call->msgs);
-    g_return_val_if_fail(msg != NULL, NULL);
-
-    // Print requested columns
-    GString *out = g_string_new(NULL);
-    for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
-        CallListColumn *column = g_ptr_array_index(self->columns, i);
-
-        // Get call attribute for current column
-        const gchar *call_attr = NULL;
-        if ((call_attr = msg_get_attribute(msg, column->attr)) != NULL) {
-            g_string_append(out, call_attr);
-        }
-    }
-
-    return out->str;
-}
-
-/**
- * @brief Select column to sort by
- *
- * This function will display a lateral menu to select the column to sort
- * the list for. The menu will be filled with current displayed columns.
- *
- * @param window UI structure pointer
- */
 static void
-call_list_select_sort_attribute(CallListWindow *self)
+call_list_win_handle_action(Widget *sender, KeybindingAction action)
 {
-    // Get current sort options
-    StorageSortOpts sort = storage_sort_options();
+    CallListWindow *call_list_win = TUI_CALL_LIST_WIN(widget_get_toplevel(sender));
+    CallGroup *group = NULL;
+    Call *call = NULL;
 
-    // Activate sorting menu
-    self->menu_active = 1;
+    // Check if we handle this action
+    switch (action) {
+        case ACTION_DISP_FILTER:
+            window_set_focused_widget(TUI_WINDOW(call_list_win), call_list_win->en_dfilter);
+            break;
+        case ACTION_SHOW_FLOW:
+        case ACTION_SHOW_FLOW_EX:
+        case ACTION_SHOW_RAW:
+            // Create a new group of calls
+            group = call_group_clone(table_get_call_group(TUI_TABLE(call_list_win->tb_calls)));
 
-    // Move call list to the right
-    gint height = window_get_height(TUI_WINDOW(self));
-    gint width = window_get_width(TUI_WINDOW(self));
-    WINDOW *win = window_get_ncurses_window(TUI_WINDOW(self));
+            // If no call is selected, use current call
+            if (call_group_count(group) == 0) {
+                call = table_get_current_call(TUI_TABLE(call_list_win->tb_calls));
+                call_group_add(group, call);
+            }
 
-    wresize(self->list_win, height - 5, width - 12);
-    mvderwin(self->list_win, 4, 12);
+            // Add xcall to the group
+            if (action == ACTION_SHOW_FLOW_EX) {
+                call = table_get_current_call(TUI_TABLE(call_list_win->tb_calls));
+                call_group_add_calls(group, call->xcalls);
+                group->callid = call->callid;
+            }
 
-    // Allocate memory for all items
-    self->items = g_malloc0_n(g_ptr_array_len(self->columns) + 1, sizeof(ITEM *));
-
-    // Create menu entries
-    ITEM *selected = NULL;
-    for (guint i = 0; i < g_ptr_array_len(self->columns); i++) {
-        CallListColumn *column = g_ptr_array_index(self->columns, i);
-        self->items[i] = new_item(attribute_get_name(column->attr), 0);
-        if (column->attr == sort.by) {
-            selected = self->items[i];
-        }
-    }
-
-    self->items[g_ptr_array_len(self->columns)] = NULL;
-    // Create the columns menu and post it
-    self->menu = new_menu(self->items);
-
-    // Set main window and sub window
-    set_menu_win(self->menu, win);
-    set_menu_sub(self->menu, derwin(win, 20, 15, 5, 0));
-    werase(menu_win(self->menu));
-    set_menu_format(self->menu, height, 1);
-    set_menu_mark(self->menu, "");
-    set_menu_fore(self->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
-    set_current_item(self->menu, selected);
-    menu_opts_off(self->menu, O_ONEVALUE);
-    post_menu(self->menu);
-}
-
-/**
- * @brief Handle Sort menu key strokes
- *
- * This function will manage the custom keybidnings for sort menu
- *
- * @param window UI structure pointer
- * @param key Pressed keycode
- * @return enum @key_handler_ret
- */
-static int
-call_list_handle_menu_key(CallListWindow *self, int key)
-{
-    MENU *menu;
-    int i;
-    StorageSortOpts sort;
-    Attribute *attr;
-
-    menu = self->menu;
-    gint item_cnt = item_count(menu);
-
-    // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
-        // Check if we handle this action
-        switch (action) {
-            case ACTION_DOWN:
-                menu_driver(menu, REQ_DOWN_ITEM);
-                break;
-            case ACTION_UP:
-                menu_driver(menu, REQ_UP_ITEM);
-                break;
-            case ACTION_NPAGE:
-                menu_driver(menu, REQ_SCR_DPAGE);
-                break;
-            case ACTION_PPAGE:
-                menu_driver(menu, REQ_SCR_UPAGE);
-                break;
-            case ACTION_CONFIRM:
-            case ACTION_SELECT:
-                // Change sort attribute
-                sort = storage_sort_options();
-                attr = attribute_find_by_name(item_name(current_item(self->menu)));
-                if (sort.by == attr) {
-                    sort.asc = (sort.asc) ? FALSE : TRUE;
-                } else {
-                    sort.by = attr;
+            if (action == ACTION_SHOW_RAW) {
+                // Create a Call raw panel
+                call_raw_win_set_group(tui_create_window(WINDOW_CALL_RAW), group);
+            } else {
+                // Display current call flow (normal or extended)
+                call_flow_win_set_group(tui_create_window(WINDOW_CALL_FLOW), group);
+            }
+            break;
+        case ACTION_SHOW_PROTOCOLS:
+            tui_create_window(WINDOW_PROTOCOL_SELECT);
+            break;
+        case ACTION_SHOW_FILTERS:
+            tui_create_window(WINDOW_FILTER);
+            break;
+        case ACTION_SHOW_COLUMNS:
+            tui_create_window(WINDOW_COLUMN_SELECT);
+            table_columns_update(TUI_TABLE(call_list_win->tb_calls));
+            break;
+        case ACTION_SHOW_STATS:
+            tui_create_window(WINDOW_STATS);
+            break;
+        case ACTION_SAVE:
+            save_set_group(
+                tui_create_window(WINDOW_SAVE),
+                table_get_call_group(TUI_TABLE(call_list_win->tb_calls))
+            );
+            break;
+        case ACTION_SHOW_SETTINGS:
+            tui_create_window(WINDOW_SETTINGS);
+            break;
+        case ACTION_TOGGLE_PAUSE:
+            // Pause/Resume capture
+            capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
+            break;
+        case ACTION_SHOW_HELP:
+            window_help(TUI_WINDOW(call_list_win));
+            break;
+        case ACTION_PREV_SCREEN:
+            // Handle quit from this screen unless requested
+            if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
+                if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
+                    widget_destroy(widget_get_toplevel(sender));
                 }
-                storage_set_sort_options(sort);
-                /* fall-thru */
-            case ACTION_PREV_SCREEN:
-                // Deactivate sorting menu
-                self->menu_active = FALSE;
-
-                // Remove menu
-                unpost_menu(self->menu);
-                free_menu(self->menu);
-
-                // Remove items
-                for (i = 0; i < item_cnt; i++) {
-                    if (!self->items[i])
-                        break;
-                    free_item(self->items[i]);
-                }
-
-                // Restore list position
-                mvderwin(self->list_win, 4, 0);
-                // Restore list window size
-                wresize(self->list_win,
-                        window_get_height(TUI_WINDOW(self)) - 5,
-                        window_get_width(TUI_WINDOW(self))
-                );
-                break;
-            default:
-                // Parse next action
-                continue;
-        }
-
-        // We've handled this key, stop checking actions
-        break;
+            } else {
+                widget_destroy(widget_get_toplevel(sender));
+            }
+        default:
+            break;
     }
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 /**
@@ -658,177 +208,31 @@ call_list_handle_menu_key(CallListWindow *self, int key)
 static int
 call_list_win_handle_key(Widget *widget, int key)
 {
-    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
-    CallGroup *group;
-    Call *call;
-    StorageSortOpts sort;
-
-    Window *window = TUI_WINDOW(widget);
-    CallListWindow *self = TUI_CALL_LIST_WIN(window);
-
-    if (self->menu_active)
-        return call_list_handle_menu_key(self, key);
-
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
-            case ACTION_RIGHT:
-                call_list_move_horizontal(self, 3);
-                break;
-            case ACTION_LEFT:
-                call_list_move_horizontal(self, -3);
-                break;
-            case ACTION_DOWN:
-                call_list_move_vertical(self, 1);
-                break;
-            case ACTION_UP:
-                call_list_move_vertical(self, -1);
-                break;
-            case ACTION_HNPAGE:
-                call_list_move_vertical(self, rnpag_steps / 2);
-                break;
-            case ACTION_NPAGE:
-                call_list_move_vertical(self, rnpag_steps);
-                break;
-            case ACTION_HPPAGE:
-                call_list_move_vertical(self, -1 * rnpag_steps / 2);
-                break;
-            case ACTION_PPAGE:
-                call_list_move_vertical(self, -1 * rnpag_steps);
-                break;
-            case ACTION_BEGIN:
-                call_list_move_vertical(self, g_ptr_array_len(self->dcalls) * -1);
-                break;
-            case ACTION_END:
-                call_list_move_vertical(self, g_ptr_array_len(self->dcalls));
-                break;
+            case ACTION_DISP_FILTER:
             case ACTION_SHOW_FLOW:
             case ACTION_SHOW_FLOW_EX:
             case ACTION_SHOW_RAW:
-                // Check we have calls in the list
-                if (g_ptr_array_empty(self->dcalls))
-                    break;
-
-                // Create a new group of calls
-                group = call_group_clone(self->group);
-
-                // If not selected call, show current call flow
-                if (call_group_count(group) == 0)
-                    call_group_add(group, g_ptr_array_index(self->dcalls, self->cur_idx));
-
-                // Add xcall to the group
-                if (action == ACTION_SHOW_FLOW_EX) {
-                    call = g_ptr_array_index(self->dcalls, self->cur_idx);
-                    call_group_add_calls(group, call->xcalls);
-                    group->callid = call->callid;
-                }
-
-                if (action == ACTION_SHOW_RAW) {
-                    // Create a Call raw panel
-                    call_raw_win_set_group(tui_create_window(WINDOW_CALL_RAW), group);
-                } else {
-                    // Display current call flow (normal or extended)
-                    call_flow_win_set_group(tui_create_window(WINDOW_CALL_FLOW), group);
-                }
-                break;
             case ACTION_SHOW_PROTOCOLS:
-                tui_create_window(WINDOW_PROTOCOL_SELECT);
-                break;
             case ACTION_SHOW_FILTERS:
-                tui_create_window(WINDOW_FILTER);
-                break;
             case ACTION_SHOW_COLUMNS:
-                column_select_win_set_columns(tui_create_window(WINDOW_COLUMN_SELECT), self->columns);
-                break;
             case ACTION_SHOW_STATS:
-                tui_create_window(WINDOW_STATS);
-                break;
             case ACTION_SAVE:
-                save_set_group(tui_create_window(WINDOW_SAVE), self->group);
-                break;
-            case ACTION_CLEAR:
-                // Clear group calls
-                call_group_remove_all(self->group);
-                break;
-            case ACTION_CLEAR_CALLS:
-                // Remove all stored calls
-                storage_calls_clear();
-                // Clear List
-                call_list_win_clear(window);
-                break;
-            case ACTION_CLEAR_CALLS_SOFT:
-                // Remove stored calls, keeping the currently displayed calls
-                storage_calls_clear_soft();
-                // Clear List
-                call_list_win_clear(window);
-                break;
-            case ACTION_AUTOSCROLL:
-                self->autoscroll = (self->autoscroll) ? 0 : 1;
-                break;
             case ACTION_SHOW_SETTINGS:
-                tui_create_window(WINDOW_SETTINGS);
-                break;
-            case ACTION_SELECT:
-                // Ignore on empty list
-                if (g_ptr_array_len(self->dcalls) == 0) {
-                    break;
-                }
-
-                call = g_ptr_array_index(self->dcalls, self->cur_idx);
-                if (call_group_exists(self->group, call)) {
-                    call_group_remove(self->group, call);
-                } else {
-                    call_group_add(self->group, call);
-                }
-                break;
-            case ACTION_SORT_SWAP:
-                // Change sort order
-                sort = storage_sort_options();
-                sort.asc = (sort.asc) ? FALSE : TRUE;
-                storage_set_sort_options(sort);
-                break;
-            case ACTION_SORT_NEXT:
-            case ACTION_SORT_PREV:
-                call_list_select_sort_attribute(self);
-                break;
+            case ACTION_TOGGLE_PAUSE:
+            case ACTION_SHOW_HELP:
             case ACTION_PREV_SCREEN:
-                // Handle quit from this screen unless requested
-                if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
-                    if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
-                        widget_destroy(TUI_WIDGET(self));
-                    }
-                } else {
-                    widget_destroy(TUI_WIDGET(self));
-                }
-                return KEY_HANDLED;
+                // This panel has handled the key successfully
+                call_list_win_handle_action(widget, action);
+                break;
             default:
-                // Parse next action
                 continue;
         }
-
-        // This panel has handled the key successfully
-        break;
     }
-
-    // Disable autoscroll on some key pressed
-    switch (action) {
-        case ACTION_DOWN:
-        case ACTION_UP:
-        case ACTION_HNPAGE:
-        case ACTION_HPPAGE:
-        case ACTION_NPAGE:
-        case ACTION_PPAGE:
-        case ACTION_BEGIN:
-        case ACTION_END:
-        case ACTION_DISP_FILTER:
-            self->autoscroll = 0;
-            break;
-        default:
-            break;
-    }
-
 
     // Return if this panel has handled or not the key
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
@@ -905,73 +309,87 @@ call_list_win_help(G_GNUC_UNUSED Window *window)
     return 0;
 }
 
-static gint
-call_list_column_sorter(const CallListColumn **a, const CallListColumn **b)
-{
-    if ((*a)->position > (*b)->position) return 1;
-    if ((*a)->position < (*b)->position) return -1;
-    return 0;
-}
 
-/**
- * @brief Add a column the Call List
- *
- * This function will add a new column to the Call List panel
- *
- * @param window UI structure pointer
- * @param id SIP call attribute id
- * @param attr SIP call attribute name
- * @param title SIP call attribute description
- * @param width Column Width
- * @return 0 if column has been successfully added to the list, -1 otherwise
- */
 static void
-call_list_add_column(CallListWindow *self, Attribute *attr, const char *name,
-                     const char *title, gint position, int width)
+call_list_win_mode_label(Widget *widget)
 {
-    CallListColumn *column = g_malloc0(sizeof(CallListColumn));
-    column->attr = attr;
-    column->name = name;
-    column->title = title;
-    column->position = position;
-    column->width = width;
-    g_ptr_array_add(self->columns, column);
+
+    CaptureManager *capture = capture_manager_get_instance();
+    gboolean online = capture_is_online(capture);
+    const gchar *device = capture_input_pcap_device(capture);
+
+    g_autoptr(GString) mode = g_string_new("Mode: ");
+    g_string_append(mode, online ? "<green>" : "<red>");
+    g_string_append(mode, capture_status_desc(capture));
+
+    if (!online) {
+        guint progress = capture_manager_load_progress(capture);
+        if (progress > 0 && progress < 100) {
+            g_string_append_printf(mode, "[%d%%]", progress);
+        }
+    }
+
+    // Get online mode capture device
+    if (device != NULL)
+        g_string_append_printf(mode, "[%s]", device);
+
+#ifdef USE_HEP
+    const char *eep_port;
+    if ((eep_port = capture_output_hep_port(capture))) {
+        g_string_append_printf(mode, "[H:%s]", eep_port);
+    }
+    if ((eep_port = capture_input_hep_port(capture))) {
+        g_string_append_printf(mode, "[L:%s]", eep_port);
+    }
+#endif
+
+    // Set Mode label text
+    label_set_text(TUI_LABEL(widget), mode->str);
 }
 
-void
-call_list_win_clear(Window *window)
-{
-    CallListWindow *self = TUI_CALL_LIST_WIN(window);
-
-    // Initialize structures
-    self->vscroll.pos = self->cur_idx = 0;
-    call_group_remove_all(self->group);
-
-    // Clear Displayed lines
-    werase(self->list_win);
-    wnoutrefresh(self->list_win);
-}
-
-/**
- * @brief Destroy panel
- *
- * This function will hide the panel and free all allocated memory.
- *
- * @param window UI structure pointer
- */
 static void
-call_list_win_finalize(GObject *object)
+call_list_win_dialog_label(Widget *widget)
 {
-    CallListWindow *self = TUI_CALL_LIST_WIN(object);
+    g_autoptr(GString) count = g_string_new(NULL);
+    // Print Dialogs or Calls in label depending on calls filter
+    StorageMatchOpts storageMatchOpts = storage_match_options();
+    g_string_append(count, storageMatchOpts.invite ? "Calls: " : "Dialogs: ");
+    // Print calls count (also filtered)
+    StorageStats stats = storage_calls_stats();
+    if (stats.total != stats.displayed) {
+        g_string_append_printf(count, "%d / %d", stats.displayed, stats.total);
+    } else {
+        g_string_append_printf(count, "%d", stats.total);
+    }
+    // Set Count label text
+    label_set_text(TUI_LABEL(widget), count->str);
+}
 
-    // Deallocate window private data
-    call_group_free(self->group);
-    g_ptr_array_free(self->columns, TRUE);
-    g_ptr_array_free(self->dcalls, TRUE);
-    delwin(self->list_win);
+static void
+call_list_win_memory_label(Widget *widget)
+{
+    g_autoptr(GString) memory = g_string_new(NULL);
+    if (storage_memory_limit() > 0) {
+        g_autofree const gchar *usage = g_format_size_full(
+            storage_memory_usage(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+        g_autofree const gchar *limit = g_format_size_full(
+            storage_memory_limit(),
+            G_FORMAT_SIZE_IEC_UNITS
+        );
+        g_string_append_printf(memory, "Mem: %s / %s", usage, limit);
+        label_set_text(TUI_LABEL(widget), memory->str);
+    }
+}
 
-    // Chain-up parent finalize function
-    G_OBJECT_CLASS(call_list_win_parent_class)->finalize(object);
+static void
+call_list_win_display_filter(Widget *widget)
+{
+    const gchar *text = entry_get_text(TUI_ENTRY(widget));
+    // Reset filters on each key stroke
+    filter_reset_calls();
+    filter_set(FILTER_CALL_LIST, strlen(text) ? text : NULL);
 }
 
 Window *
@@ -986,135 +404,20 @@ call_list_win_new()
     return window;
 }
 
-static void
-call_list_win_handle_action(Widget *sender, KeybindingAction action)
+Table *
+call_list_win_get_table(Window *window)
 {
-    CallListWindow *self = TUI_CALL_LIST_WIN(widget_get_toplevel(sender));
-    CallGroup *group = NULL;
-    Call *call = NULL;
-
-    // Check if we handle this action
-    switch (action) {
-        case ACTION_SHOW_FLOW:
-        case ACTION_SHOW_FLOW_EX:
-        case ACTION_SHOW_RAW:
-            // Check we have calls in the list
-            if (g_ptr_array_empty(self->dcalls))
-                break;
-
-            // Create a new group of calls
-            group = call_group_clone(self->group);
-
-            // If not selected call, show current call flow
-            if (call_group_count(group) == 0)
-                call_group_add(group, g_ptr_array_index(self->dcalls, self->cur_idx));
-
-            // Add xcall to the group
-            if (action == ACTION_SHOW_FLOW_EX) {
-                call = g_ptr_array_index(self->dcalls, self->cur_idx);
-                call_group_add_calls(group, call->xcalls);
-                group->callid = call->callid;
-            }
-
-            if (action == ACTION_SHOW_RAW) {
-                // Create a Call raw panel
-                call_raw_win_set_group(tui_create_window(WINDOW_CALL_RAW), group);
-            } else {
-                // Display current call flow (normal or extended)
-                call_flow_win_set_group(tui_create_window(WINDOW_CALL_FLOW), group);
-            }
-            break;
-        case ACTION_SHOW_PROTOCOLS:
-            tui_create_window(WINDOW_PROTOCOL_SELECT);
-            break;
-        case ACTION_SHOW_FILTERS:
-            tui_create_window(WINDOW_FILTER);
-            break;
-        case ACTION_SHOW_COLUMNS:
-            column_select_win_set_columns(tui_create_window(WINDOW_COLUMN_SELECT), self->columns);
-            break;
-        case ACTION_SHOW_STATS:
-            tui_create_window(WINDOW_STATS);
-            break;
-        case ACTION_SAVE:
-            save_set_group(tui_create_window(WINDOW_SAVE), self->group);
-            break;
-        case ACTION_SHOW_SETTINGS:
-            tui_create_window(WINDOW_SETTINGS);
-            break;
-        case ACTION_TOGGLE_PAUSE:
-            // Pause/Resume capture
-            capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
-            break;
-        case ACTION_SHOW_HELP:
-            window_help(TUI_WINDOW(self));
-            break;
-        case ACTION_PREV_SCREEN:
-            // Handle quit from this screen unless requested
-            if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
-                if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
-                    widget_destroy(widget_get_toplevel(sender));
-                }
-            } else {
-                widget_destroy(widget_get_toplevel(sender));
-            }
-        default:
-            break;
-    }
+    CallListWindow *call_list_win = TUI_CALL_LIST_WIN(window);
+    return TUI_TABLE(call_list_win->tb_calls);
 }
 
 static void
 call_list_win_constructed(GObject *object)
 {
-    // Chain-up parent constructed
-    G_OBJECT_CLASS(call_list_win_parent_class)->constructed(object);
-
-    CallListWindow *self = TUI_CALL_LIST_WIN(object);
-    CaptureManager *capture = capture_manager_get_instance();
-
-    // Add configured columns
-    self->columns = g_ptr_array_new_with_free_func(g_free);
-    GPtrArray *attributes = attribute_get_internal_array();
-    for (guint i = 0; i < g_ptr_array_len(attributes); i++) {
-        Attribute *attr = g_ptr_array_index(attributes, i);
-        // Get column attribute name from options
-        gint position = setting_column_pos(attr);
-        // Check column is visible
-        if (position == -1) continue;
-
-        // Get column information
-        gint collen = attribute_get_length(attr);
-        const gchar *title = attribute_get_title(attr);
-        const gchar *field = attribute_get_name(attr);
-
-        // Add column to the list
-        call_list_add_column(self, attr, field, title, position, collen);
-    }
-    g_ptr_array_sort(self->columns, (GCompareFunc) call_list_column_sorter);
-
-    gint width = window_get_width(TUI_WINDOW(self));
-    gint height = window_get_height(TUI_WINDOW(self));
-    WINDOW *win = window_get_ncurses_window(TUI_WINDOW(self));
-
-    // Initialize the fields
-    self->menu_active = FALSE;
-
-    // Calculate available printable area
-    self->list_win = subwin(win, height - 5, width, 4, 0);
-    self->vscroll = window_set_scrollbar(self->list_win, SB_VERTICAL, SB_LEFT);
-    self->hscroll = window_set_scrollbar(self->list_win, SB_HORIZONTAL, SB_BOTTOM);
-
-    // Set autoscroll default status
-    self->autoscroll = setting_enabled(SETTING_TUI_CL_AUTOSCROLL);
-
-    // Apply initial configured filters
-    filter_method_from_setting(setting_get_value(SETTING_STORAGE_FILTER_METHODS));
-    filter_payload_from_setting(setting_get_value(SETTING_STORAGE_FILTER_PAYLOAD));
-
-
+    CallListWindow *call_list_win = TUI_CALL_LIST_WIN(object);
 
     // Create menu bar entries
-    self->menu_bar = menu_bar_new();
+    call_list_win->menu_bar = menu_bar_new();
 
     // File Menu
     Widget *menu_file = menu_new("File");
@@ -1192,16 +495,16 @@ call_list_win_constructed(GObject *object)
 
 
     // Add menubar menus and items
-    container_add_child(TUI_CONTAINER(self), self->menu_bar);
-    container_add_child(TUI_CONTAINER(self->menu_bar), menu_file);
+    container_add_child(TUI_CONTAINER(call_list_win), call_list_win->menu_bar);
+    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_file);
     container_add_child(TUI_CONTAINER(menu_file), menu_file_preferences);
     container_add_child(TUI_CONTAINER(menu_file), menu_file_save);
     container_add_child(TUI_CONTAINER(menu_file), menu_item_new(NULL));
     container_add_child(TUI_CONTAINER(menu_file), menu_file_exit);
-    container_add_child(TUI_CONTAINER(self->menu_bar), menu_view);
+    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_view);
     container_add_child(TUI_CONTAINER(menu_view), menu_view_filters);
     container_add_child(TUI_CONTAINER(menu_view), menu_view_protocols);
-    container_add_child(TUI_CONTAINER(self->menu_bar), menu_list);
+    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_list);
     container_add_child(TUI_CONTAINER(menu_list), menu_list_columns);
     container_add_child(TUI_CONTAINER(menu_list), menu_item_new(NULL));
     container_add_child(TUI_CONTAINER(menu_list), menu_list_clear);
@@ -1209,47 +512,97 @@ call_list_win_constructed(GObject *object)
     container_add_child(TUI_CONTAINER(menu_list), menu_item_new(NULL));
     container_add_child(TUI_CONTAINER(menu_list), menu_list_flow);
     container_add_child(TUI_CONTAINER(menu_list), menu_list_flow_ex);
-    container_add_child(TUI_CONTAINER(self->menu_bar), menu_help);
+    container_add_child(TUI_CONTAINER(call_list_win->menu_bar), menu_help);
     container_add_child(TUI_CONTAINER(menu_help), menu_help_about);
-
 
     // First header line
     Widget *header_first = box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
-    self->lb_mode = label_new(NULL);
-    self->lb_dialog_cnt = label_new(NULL);
-    self->lb_memory = label_new(NULL);
-    self->lb_filename = label_new(NULL);
-    container_add_child(TUI_CONTAINER(self), header_first);
-    container_add_child(TUI_CONTAINER(header_first), self->lb_mode);
-    container_add_child(TUI_CONTAINER(header_first), self->lb_dialog_cnt);
-    container_add_child(TUI_CONTAINER(header_first), self->lb_memory);
-    container_add_child(TUI_CONTAINER(header_first), self->lb_filename);
+    widget_set_height(header_first, 1);
+    widget_set_vexpand(header_first, FALSE);
+    container_add_child(TUI_CONTAINER(call_list_win), header_first);
+
+    // Mode Label
+    Widget *lb_mode = label_new(NULL);
+    g_signal_connect(lb_mode, "draw", G_CALLBACK(call_list_win_mode_label), NULL);
+    container_add_child(TUI_CONTAINER(header_first), lb_mode);
+
+    // Dialog Count
+    Widget *lb_dialog_cnt = label_new(NULL);
+    g_signal_connect(lb_dialog_cnt, "draw", G_CALLBACK(call_list_win_dialog_label), NULL);
+    container_add_child(TUI_CONTAINER(header_first), lb_dialog_cnt);
+
+    // Memory usage
+    if (storage_memory_limit() != 0) {
+        Widget *lb_memory = label_new(NULL);
+        g_signal_connect(lb_memory, "draw", G_CALLBACK(call_list_win_memory_label), NULL);
+        container_add_child(TUI_CONTAINER(header_first), lb_memory);
+    }
+
+    // Print Open filename in Offline mode
+    CaptureManager *capture = capture_manager_get_instance();
+    const gchar *infile = capture_input_pcap_file(capture);
+    if (infile != NULL) {
+        g_autoptr(GString) file = g_string_new(NULL);
+        g_string_append_printf(file, "Filename: %s", infile);
+        container_add_child(TUI_CONTAINER(header_first), label_new(file->str));
+    }
+
+    // Show all labels in the line
     container_show_all(TUI_CONTAINER(header_first));
 
     // Second header line
     Widget *header_second = box_new_full(BOX_ORIENTATION_HORIZONTAL, 5, 1);
-    if (capture_manager_filter(capture)) {
+    widget_set_vexpand(header_second, FALSE);
+
+    // Show BPF filter if specified in command line
+    const gchar *bpf_filter = capture_manager_filter(capture);
+    if (bpf_filter != NULL) {
+        widget_set_height(header_second, 1);
         g_autoptr(GString) filter = g_string_new("BPF Filter: ");
-        g_string_append_printf(filter, "<yellow>%s", capture_manager_filter(capture));
+        g_string_append_printf(filter, "<yellow>%s", bpf_filter);
         container_add_child(TUI_CONTAINER(header_second), label_new(filter->str));
     }
 
+    // Show Match expression label if specified in command line
     StorageMatchOpts match = storage_match_options();
     if (match.mexpr != NULL) {
+        widget_set_height(header_second, 1);
         g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
         g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
         container_add_child(TUI_CONTAINER(header_second), label_new(match_expression->str));
     }
-    container_add_child(TUI_CONTAINER(self), header_second);
+    container_add_child(TUI_CONTAINER(call_list_win), header_second);
     container_show_all(TUI_CONTAINER(header_second));
 
+    // Add Display filter label and entry
     Widget *header_third = box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
-    container_add_child(TUI_CONTAINER(self), header_third);
-    container_add_child(TUI_CONTAINER(header_third), label_new("Display Filter:"));
-    self->en_dfilter = entry_new(NULL);
-    container_add_child(TUI_CONTAINER(header_third), self->en_dfilter);
+    widget_set_height(header_third, 1);
+    widget_set_vexpand(header_third, FALSE);
+    Widget *lb_dfilter = label_new("Display Filter:");
+    widget_set_hexpand(TUI_WIDGET(lb_dfilter), FALSE);
+    container_add_child(TUI_CONTAINER(header_third), lb_dfilter);
+    call_list_win->en_dfilter = entry_new();
+    g_signal_connect(call_list_win->en_dfilter, "key-pressed",
+                     G_CALLBACK(call_list_win_display_filter), NULL);
+    container_add_child(TUI_CONTAINER(header_third), call_list_win->en_dfilter);
+    container_add_child(TUI_CONTAINER(call_list_win), header_third);
     container_show_all(TUI_CONTAINER(header_third));
 
+    call_list_win->tb_calls = table_new();
+//    table_set_rows(TUI_TABLE(call_list), storage_calls());
+    table_columns_update(TUI_TABLE(call_list_win->tb_calls));
+    g_signal_connect(call_list_win->tb_calls, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_FLOW));
+
+    container_add_child(TUI_CONTAINER(call_list_win), call_list_win->tb_calls);
+    widget_show(TUI_WIDGET(call_list_win->tb_calls));
+
+    // Start with the call list focused
+    window_set_focused_widget(TUI_WINDOW(call_list_win), call_list_win->tb_calls);
+
+    // Chain-up parent constructed
+    G_OBJECT_CLASS(call_list_win_parent_class)->constructed(object);
 }
 
 static void
@@ -1257,7 +610,6 @@ call_list_win_class_init(CallListWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = call_list_win_constructed;
-    object_class->finalize = call_list_win_finalize;
 
     WindowClass *window_class = TUI_WINDOW_CLASS(klass);
     window_class->redraw = call_list_win_redraw;
@@ -1265,7 +617,7 @@ call_list_win_class_init(CallListWindowClass *klass)
     window_class->help = call_list_win_help;
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
-    widget_class->draw = call_list_win_draw;
+    widget_class->draw = call_list_win_draw_footer;
     widget_class->key_pressed = call_list_win_handle_key;
 }
 
@@ -1274,10 +626,4 @@ call_list_win_init(CallListWindow *self)
 {
     // Set parent attributes
     window_set_window_type(TUI_WINDOW(self), WINDOW_CALL_LIST);
-
-    // Initialize Call List attributes
-    self->group = call_group_new();
-    self->dcalls = g_ptr_array_new();
-
-    mousemask(BUTTON1_CLICKED, NULL);
 }

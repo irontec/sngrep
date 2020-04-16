@@ -63,14 +63,27 @@ menu_bar_clicked(Widget *widget, MEVENT mevent)
     return 0;
 }
 
+static void
+menu_bar_realize(Widget *widget)
+{
+    if (!widget_is_realized(widget)) {
+        WINDOW *win = newpad(
+            widget_get_height(widget),
+            widget_get_width(widget)
+        );
+        widget_set_ncurses_window(widget, win);
+
+    }
+    TUI_WIDGET_CLASS(menu_bar_parent_class)->realize(widget);
+}
+
 static gint
 menu_bar_draw(Widget *widget)
 {
     // Create a window to draw the menu bar
-    WINDOW *win = newpad(widget_get_height(widget), widget_get_width(widget));
-    widget_set_ncurses_window(widget, win);
+    WINDOW *win = widget_get_ncurses_window(widget);
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-    wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
+    werase(win);
 
     GNode *children = container_get_children(TUI_CONTAINER(widget));
     for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
@@ -174,6 +187,7 @@ menu_bar_class_init(MenuBarClass *klass)
     object_class->constructed = menu_bar_constructed;
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->realize = menu_bar_realize;
     widget_class->draw = menu_bar_draw;
     widget_class->key_pressed = menu_bar_key_pressed;
     widget_class->clicked = menu_bar_clicked;

@@ -27,7 +27,6 @@
  *
  */
 #include "config.h"
-#include "tui/theme.h"
 #include "tui/keybinding.h"
 #include "tui/widgets/entry.h"
 
@@ -37,25 +36,17 @@ enum
     SIGS
 };
 
-enum
-{
-    PROP_TEXT = 1,
-    N_PROPERTIES
-};
-
 static guint signals[SIGS] = { 0 };
-
-static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu entry class definition
 G_DEFINE_TYPE(Entry, entry, TUI_TYPE_WIDGET)
 
 Widget *
-entry_new(const gchar *text)
+entry_new()
 {
     return g_object_new(
         TUI_TYPE_ENTRY,
-        "text", text,
+        "min-height", 1,
         "height", 1,
         "hexpand", TRUE,
         NULL
@@ -71,16 +62,13 @@ entry_free(Entry *entry)
 void
 entry_set_text(Entry *entry, const gchar *text)
 {
-    if (entry->text != NULL) {
-        g_string_free(entry->text, TRUE);
-    }
-    entry->text = g_string_new(text);
+    set_field_buffer(entry->fields[0], 0, text);
 }
 
 const gchar *
 entry_get_text(Entry *entry)
 {
-    return entry->text->str;
+    return g_strchomp(field_buffer(entry->fields[0], 0));
 }
 
 static void
@@ -89,16 +77,16 @@ entry_activate(Entry *entry)
     g_signal_emit(TUI_WIDGET(entry), signals[SIG_ACTIVATE], 0);
 }
 
-static gint
-entry_draw(Widget *widget)
+static void
+entry_realize(Widget *widget)
 {
     Entry *entry = TUI_ENTRY(widget);
-    g_return_val_if_fail(entry->text != NULL, 0);
 
+    // Chain up parent realize
+    TUI_WIDGET_CLASS(entry_parent_class)->realize(widget);
+
+    // Create entry field
     if (entry->form == NULL) {
-        WINDOW *win = newpad(widget_get_height(widget), widget_get_width(widget));
-        widget_set_ncurses_window(widget, win);
-
         entry->fields = g_malloc0_n(sizeof(FIELD *), 2);
         entry->fields[0] = new_field(
             widget_get_height(widget),
@@ -106,12 +94,32 @@ entry_draw(Widget *widget)
             0, 0,
             0, 0
         );
+        set_field_back(entry->fields[0], A_UNDERLINE);
 
         entry->form = new_form(entry->fields);
-        set_form_sub(entry->form, win);
+        set_form_sub(entry->form, widget_get_ncurses_window(widget));
         set_current_field(entry->form, entry->fields[0]);
     }
+}
+
+static gint
+entry_draw(Widget *widget)
+{
+    Entry *entry = TUI_ENTRY(widget);
     post_form(entry->form);
+
+    // Move the cursor in main screen
+    if (widget_has_focus(widget)) {
+        gint x, y;
+        // Get subwindow current cursor position
+        getyx(widget_get_ncurses_window(widget), y, x);
+        // Position cursor in toplevel window
+        wmove(
+            widget_get_ncurses_window(widget_get_toplevel(widget)),
+            y + widget_get_ypos(widget),
+            x + widget_get_xpos(widget)
+        );
+    }
 
     return TUI_WIDGET_CLASS(entry_parent_class)->draw(widget);
 }
@@ -201,35 +209,6 @@ entry_key_pressed(Widget *widget, gint key)
 }
 
 static void
-entry_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
-{
-    Entry *entry = TUI_ENTRY(self);
-
-    switch (property_id) {
-        case PROP_TEXT:
-            entry->text = g_string_new(g_strdup(g_value_get_string(value)));
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
-            break;
-    }
-}
-
-static void
-entry_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
-{
-    Entry *entry = TUI_ENTRY(self);
-    switch (property_id) {
-        case PROP_TEXT:
-            g_value_set_string(value, entry->text->str);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
-            break;
-    }
-}
-
-static void
 entry_init(G_GNUC_UNUSED Entry *self)
 {
 }
@@ -237,29 +216,12 @@ entry_init(G_GNUC_UNUSED Entry *self)
 static void
 entry_class_init(EntryClass *klass)
 {
-    GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->set_property = entry_set_property;
-    object_class->get_property = entry_get_property;
-
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->realize = entry_realize;
     widget_class->draw = entry_draw;
     widget_class->focus_gained = entry_focus_gained;
     widget_class->focus_lost = entry_focus_lost;
     widget_class->key_pressed = entry_key_pressed;
-
-    obj_properties[PROP_TEXT] =
-        g_param_spec_string("text",
-                            "Menu entry text",
-                            "Menu entry text",
-                            "Untitled menu entry",
-                            G_PARAM_CONSTRUCT | G_PARAM_READWRITE
-        );
-
-    g_object_class_install_properties(
-        object_class,
-        N_PROPERTIES,
-        obj_properties
-    );
 
     signals[SIG_ACTIVATE] =
         g_signal_newv("activate",

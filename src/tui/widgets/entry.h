@@ -44,8 +44,6 @@ struct _Entry
 {
     //! Parent object attributes
     Widget parent;
-    //! Entry text
-    GString *text;
     //! Ncurses input form
     FORM *form;
     //! Ncurses input field
@@ -53,7 +51,7 @@ struct _Entry
 };
 
 Widget *
-entry_new(const gchar *text);
+entry_new();
 
 void
 entry_set_text(Entry *entry, const gchar *text);
@@ -61,5 +59,6 @@ entry_set_text(Entry *entry, const gchar *text);
 const gchar *
 entry_get_text(Entry *entry);
 
+G_END_DECLS
 
 #endif    /* __SNGREP_ENTRY_H__ */

@@ -57,6 +57,8 @@ struct _WidgetClass
 {
     //! Parent class
     GObjectClass parent;
+    //! Create Ncurses components for the widget
+    void (*realize)(Widget *widget);
     //! Map the widget into the screen
     void (*map)(Widget *widget);
     //! Request widget to draw its data in their internal window
@@ -108,6 +110,9 @@ gboolean
 widget_is_visible(Widget *widget);
 
 gboolean
+widget_is_realized(Widget *widget);
+
+gboolean
 widget_has_focus(Widget *widget);
 
 Widget *
@@ -130,6 +135,9 @@ widget_get_node(Widget *widget);
  */
 gint
 widget_draw(Widget *widget);
+
+void
+widget_realize(Widget *widget);
 
 void
 widget_map(Widget *widget);
@@ -195,6 +203,21 @@ gint
 widget_get_height(Widget *widget);
 
 void
+widget_set_min_size(Widget *widget, gint width, gint height);
+
+void
+widget_set_min_width(Widget *widget, gint width);
+
+gint
+widget_get_min_width(Widget *widget);
+
+void
+widget_set_min_height(Widget *widget, gint height);
+
+gint
+widget_get_min_height(Widget *widget);
+
+void
 widget_set_position(Widget *widget, gint xpos, gint ypos);
 
 gint
@@ -219,7 +242,11 @@ void
 widget_set_floating(Widget *widget, gboolean floating);
 
 gboolean
-widget_get_floating(Widget *widget);
+widget_is_floating(Widget *widget);
+
+gboolean
+widget_can_focus(Widget *widget);
+
 
 G_END_DECLS
 

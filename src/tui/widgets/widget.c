@@ -33,6 +33,11 @@
 
 enum
 {
+    SIG_REALIZE,
+    SIG_DRAW,
+    SIG_MAP,
+    SIG_KEY_PRESSED,
+    SIG_CLICKED,
     SIG_DESTROY,
     SIGS
 };
@@ -42,9 +47,13 @@ enum
 {
     PROP_HEIGHT = 1,
     PROP_WIDTH,
+    PROP_MIN_HEIGHT,
+    PROP_MIN_WIDTH,
     PROP_VEXPAND,
     PROP_HEXPAND,
     PROP_FLOATING,
+    PROP_VISIBLE,
+    PROP_CAN_FOCUS,
     N_PROPERTIES
 };
 
@@ -60,10 +69,14 @@ typedef struct
     WINDOW *win;
     //! Dimensions of this widget
     gint height, width;
+    //! Minimum Dimensions of this widget
+    gint min_height, min_width;
     //! Position of this widget in screen
     gint x, y;
     //! Determine if this widget is displayed on the screen
     gboolean visible;
+    //! Determine if the widget can be focused
+    gboolean can_focus;
     //! Determine if this widget has window focus
     gboolean focused;
     //! Determine the fill mode in layouts
@@ -110,6 +123,20 @@ widget_is_visible(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->visible;
+}
+
+gboolean
+widget_is_realized(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->win != NULL;
+}
+
+gboolean
+widget_can_focus(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->can_focus;
 }
 
 gboolean
@@ -194,6 +221,43 @@ widget_get_height(Widget *widget)
 }
 
 void
+widget_set_min_size(Widget *widget, gint width, gint height)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->min_width = width;
+    priv->min_height = height;
+}
+
+void
+widget_set_min_width(Widget *widget, gint width)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->min_width = width;
+}
+
+gint
+widget_get_min_width(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->min_width;
+}
+
+void
+widget_set_min_height(Widget *widget, gint height)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    priv->min_height = height;
+}
+
+gint
+widget_get_min_height(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+    return priv->min_height;
+}
+
+
+void
 widget_set_position(Widget *widget, gint xpos, gint ypos)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
@@ -251,7 +315,7 @@ widget_set_floating(Widget *widget, gboolean floating)
 }
 
 gboolean
-widget_get_floating(Widget *widget)
+widget_is_floating(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     return priv->floating;
@@ -265,12 +329,28 @@ widget_draw(Widget *widget)
         return 0;
     }
 
+    // Notify everyone we're being drawn
+    g_signal_emit(widget, signals[SIG_DRAW], 0);
+
     WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
     if (klass->draw != NULL) {
         return klass->draw(widget);
     }
 
     return 0;
+}
+
+void
+widget_realize(Widget *widget)
+{
+    WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
+
+    if (klass->realize != NULL) {
+        klass->realize(widget);
+    }
+
+    // Notify everyone we're being realized
+    g_signal_emit(widget, signals[SIG_REALIZE], 0);
 }
 
 void
@@ -281,11 +361,15 @@ widget_map(Widget *widget)
         return;
     }
 
+    // Notify everyone we're being mapped
+    g_signal_emit(widget, signals[SIG_MAP], 0);
+
     WidgetClass *klass = TUI_WIDGET_GET_CLASS(widget);
     if (klass->map != NULL) {
         klass->map(widget);
     }
 }
+
 
 gboolean
 widget_focus_gain(Widget *widget)
@@ -316,6 +400,9 @@ widget_clicked(Widget *widget, MEVENT event)
         hld = klass->clicked(widget, event);
     }
 
+    // Notify everyone we're being clicked
+    g_signal_emit(widget, signals[SIG_CLICKED], 0);
+
     return hld;
 }
 
@@ -329,7 +416,29 @@ widget_key_pressed(Widget *widget, gint key)
         hld = klass->key_pressed(widget, key);
     }
 
+    // Notify everyone we've received a new key
+    g_signal_emit(widget, signals[SIG_KEY_PRESSED], 0);
+
     return hld;
+}
+
+static void
+widget_base_realize(Widget *widget)
+{
+    WidgetPrivate *priv = widget_get_instance_private(widget);
+
+    // Create widget window with requested dimensions
+    if (priv->win == NULL) {
+        priv->win = newpad(priv->height, priv->width);
+    } else {
+        wresize(priv->win, priv->height, priv->width);
+    }
+}
+
+static int
+widget_base_draw(G_GNUC_UNUSED Widget *widget)
+{
+    return 0;
 }
 
 static void
@@ -365,18 +474,6 @@ widget_base_map(Widget *widget)
     );
 }
 
-static gint
-widget_base_draw(Widget *widget)
-{
-    WidgetPrivate *priv = widget_get_instance_private(widget);
-
-    // Create widget window with requested dimensions
-    if (priv->win == NULL) {
-        priv->win = newpad(priv->height, priv->width);
-    }
-    return 0;
-}
-
 static gboolean
 widget_base_focus_gained(Widget *widget)
 {
@@ -390,6 +487,19 @@ widget_base_focus_lost(Widget *widget)
 {
     WidgetPrivate *priv = widget_get_instance_private(widget);
     priv->focused = FALSE;
+}
+
+static gint
+widget_base_key_pressed(Widget *widget, gint key)
+{
+    // Pass key to parent widget
+    Widget *parent = widget_get_parent(widget);
+    if (parent != NULL) {
+        return widget_key_pressed(parent, key);
+    }
+
+    // No widget handled this key
+    return KEY_NOT_HANDLED;
 }
 
 static void
@@ -428,6 +538,12 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
         case PROP_WIDTH:
             priv->width = g_value_get_int(value);
             break;
+        case PROP_MIN_HEIGHT:
+            priv->min_height = g_value_get_int(value);
+            break;
+        case PROP_MIN_WIDTH:
+            priv->min_width = g_value_get_int(value);
+            break;
         case PROP_VEXPAND:
             priv->vexpand = g_value_get_boolean(value);
             break;
@@ -436,6 +552,12 @@ widget_set_property(GObject *self, guint property_id, const GValue *value, GPara
             break;
         case PROP_FLOATING:
             priv->floating = g_value_get_boolean(value);
+            break;
+        case PROP_VISIBLE:
+            priv->visible = g_value_get_boolean(value);
+            break;
+        case PROP_CAN_FOCUS:
+            priv->can_focus = g_value_get_boolean(value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
@@ -455,6 +577,12 @@ widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec 
         case PROP_WIDTH:
             g_value_set_int(value, priv->width);
             break;
+        case PROP_MIN_HEIGHT:
+            g_value_set_int(value, priv->min_height);
+            break;
+        case PROP_MIN_WIDTH:
+            g_value_set_int(value, priv->min_width);
+            break;
         case PROP_VEXPAND:
             g_value_set_boolean(value, priv->vexpand);
             break;
@@ -463,6 +591,12 @@ widget_get_property(GObject *self, guint property_id, GValue *value, GParamSpec 
             break;
         case PROP_FLOATING:
             g_value_set_boolean(value, priv->floating);
+            break;
+        case PROP_VISIBLE:
+            g_value_set_boolean(value, priv->visible);
+            break;
+        case PROP_CAN_FOCUS:
+            g_value_set_boolean(value, priv->can_focus);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(self, property_id, pspec);
@@ -480,15 +614,17 @@ widget_class_init(WidgetClass *klass)
     object_class->set_property = widget_set_property;
     object_class->get_property = widget_get_property;
 
+    klass->realize = widget_base_realize;
     klass->map = widget_base_map;
     klass->draw = widget_base_draw;
     klass->focus_gained = widget_base_focus_gained;
     klass->focus_lost = widget_base_focus_lost;
+    klass->key_pressed = widget_base_key_pressed;
 
     obj_properties[PROP_HEIGHT] =
         g_param_spec_int("height",
                          "Widget Height",
-                         "Initial window height",
+                         "Widget height",
                          0,
                          getmaxy(stdscr),
                          0,
@@ -498,7 +634,26 @@ widget_class_init(WidgetClass *klass)
     obj_properties[PROP_WIDTH] =
         g_param_spec_int("width",
                          "Widget Width",
-                         "Initial window Width",
+                         "Widget Width",
+                         0,
+                         getmaxx(stdscr),
+                         0,
+                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+    obj_properties[PROP_MIN_HEIGHT] =
+        g_param_spec_int("min-height",
+                         "Widget Min Height",
+                         "Widget Min height",
+                         0,
+                         getmaxy(stdscr),
+                         0,
+                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+
+    obj_properties[PROP_MIN_WIDTH] =
+        g_param_spec_int("min-width",
+                         "Widget Min Width",
+                         "Widget Min Width",
                          0,
                          getmaxx(stdscr),
                          0,
@@ -529,11 +684,77 @@ widget_class_init(WidgetClass *klass)
                              G_PARAM_READWRITE
         );
 
+    obj_properties[PROP_VISIBLE] =
+        g_param_spec_boolean("visible",
+                             "Visible Widget flag",
+                             "Visible Widget flag",
+                             FALSE,
+                             G_PARAM_READWRITE
+        );
+
+    obj_properties[PROP_CAN_FOCUS] =
+        g_param_spec_boolean("can-focus",
+                             "Can Focus Widget flag",
+                             "Can Focus Widget flag",
+                             TRUE,
+                             G_PARAM_CONSTRUCT | G_PARAM_READWRITE
+        );
+
     g_object_class_install_properties(
         object_class,
         N_PROPERTIES,
         obj_properties
     );
+
+    signals[SIG_REALIZE] =
+        g_signal_newv("realize",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+
+    signals[SIG_DRAW] =
+        g_signal_newv("draw",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+
+    signals[SIG_MAP] =
+        g_signal_newv("map",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+
+    signals[SIG_KEY_PRESSED] =
+        g_signal_newv("key-pressed",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+
+    signals[SIG_CLICKED] =
+        g_signal_newv("clicked",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
 
     signals[SIG_DESTROY] =
         g_signal_newv("destroy",
@@ -544,7 +765,6 @@ widget_class_init(WidgetClass *klass)
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
-
 }
 
 static void

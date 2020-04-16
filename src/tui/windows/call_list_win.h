@@ -45,7 +45,6 @@ G_BEGIN_DECLS
 #define TUI_TYPE_CALL_LIST_WIN call_list_win_get_type()
 G_DECLARE_FINAL_TYPE(CallListWindow, call_list_win, TUI, CALL_LIST_WIN, Window)
 
-
 /**
  * @brief Enum of available fields
  *
@@ -90,39 +89,12 @@ struct _CallListWindow
 {
     //! Parent object attributes
     Window parent;
-    //! Displayed calls vector
-    GPtrArray *dcalls;
-    //! Selected call in the list
-    gint cur_idx;
-    //! First displayed call in the list
-    gint first_idx;
-    //! Selected calls with space
-    CallGroup *group;
-    //! Displayed column list, make it configurable in the future
-    GPtrArray *columns;
-    //! List subwindow
-    WINDOW *list_win;
-    // Columns sort menu
-    MENU *menu;
-    // Columns sort menu items
-    ITEM **items;
-    //! We're selecting sorting field
-    gboolean menu_active;
-    //! Move to last list entry if autoscroll is enabled
-    gboolean autoscroll;
-    //! List vertical scrollbar
-    Scrollbar vscroll;
-    //! List horizontal scrollbar
-    Scrollbar hscroll;
-    //! First header line widgets
-    Widget *lb_mode;
-    Widget *lb_dialog_cnt;
-    Widget *lb_memory;
-    Widget *lb_filename;
-    //! Display filter entry
-    Widget *en_dfilter;
     //! Window menu bar
     Widget *menu_bar;
+    //! Display filter entry
+    Widget *en_dfilter;
+    //! Call List table
+    Widget *tb_calls;
 };
 
 /**
@@ -139,28 +111,8 @@ struct _CallListWindow
 Window *
 call_list_win_new();
 
-/**
- * @brief Get List line from the given call
- *
- * Get the list line of the given call to display in the list
- * This line is built using the configured columns and sizes
- *
- * @param window UI structure pointer
- * @param call Call to get data from
- * @param text Text pointer to store the generated line
- * @return A pointer to text
- */
-const char *
-call_list_win_line_text(Window *window, Call *call);
-
-/**
- * @brief Remove all calls from the list and calls storage
- *
- * This function will clear all call lines in the list
- * @param window UI structure pointer
- */
-void
-call_list_win_clear(Window *window);
+Table *
+call_list_win_get_table(Window *window);
 
 G_END_DECLS
 

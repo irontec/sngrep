@@ -53,8 +53,10 @@ window_new(gint height, gint width)
 {
     Window *window = g_object_new(
         TUI_TYPE_WINDOW,
-        "window-height", height,
-        "window-width", width,
+        "height", height,
+        "width", width,
+        "vexpand", TRUE,
+        "hexpand", TRUE,
         NULL
     );
 
@@ -161,7 +163,7 @@ window_redraw(Window *window)
 static gboolean
 window_map_floating_child(GNode *node, G_GNUC_UNUSED gpointer data)
 {
-    if (widget_get_floating(node->data)) {
+    if (widget_is_floating(node->data)) {
         widget_map(node->data);
     }
     return FALSE;
@@ -181,10 +183,47 @@ window_map_floating(Window *window)
     );
 }
 
+static void
+window_realize(Widget *widget)
+{
+    if (!widget_is_realized(widget)) {
+        // Get current screen dimensions
+        gint maxx, maxy, xpos = 0, ypos = 0;
+        getmaxyx(stdscr, maxy, maxx);
+
+        gint height = widget_get_height(widget);
+        gint width = widget_get_width(widget);
+
+        // If panel doesn't fill the screen center it
+        if (height != maxy) {
+            xpos = ABS((maxy - height) / 2);
+        }
+        if (width != maxx) {
+            ypos = ABS((maxx - width) / 2);
+        }
+        widget_set_position(widget, xpos, ypos);
+
+        WINDOW *win = newwin(height, width, xpos, ypos);
+        widget_set_ncurses_window(widget, win);
+        wtimeout(win, 0);
+        keypad(win, TRUE);
+
+        WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(widget));
+        priv->panel = new_panel(win);
+
+        // Build a list of focusable widgets
+
+    }
+
+    TUI_WIDGET_CLASS(window_parent_class)->realize(widget);
+}
+
 int
 window_draw(Window *window)
 {
     Widget *widget = TUI_WIDGET(window);
+    // Realize all widgets internal windows
+    widget_realize(widget);
     // Draw all widgets of the window
     widget_draw(widget);
     // Map all widgets to their screen positions
@@ -307,36 +346,10 @@ window_draw_bindings(Window *window, const char **keybindings, gint count)
 static void
 window_constructed(GObject *object)
 {
-    // Get current screen dimensions
-    gint maxx, maxy, xpos = 0, ypos = 0;
-    getmaxyx(stdscr, maxy, maxx);
+    // Realize window as soon as its constructed
+    widget_realize(TUI_WIDGET(object));
 
-    Widget *widget = TUI_WIDGET(object);
-    gint height = widget_get_height(widget);
-    gint width = widget_get_width(widget);
-
-    // If panel doesn't fill the screen center it
-    if (height != maxy) {
-        xpos = ABS((maxy - height) / 2);
-    }
-    if (width != maxx) {
-        ypos = ABS((maxx - width) / 2);
-    }
-    widget_set_position(widget, xpos, ypos);
-
-    WINDOW *win = newwin(height, width, xpos, ypos);
-    wtimeout(win, 0);
-    keypad(win, TRUE);
-
-    // Make window widgets visible by default
-    widget_set_ncurses_window(widget, win);
-    widget_show(widget);
-
-    WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(object));
-    priv->panel = new_panel(win);
-    top_panel(priv->panel);
-
-    /* update the object state depending on constructor properties */
+    // Chain-up parent constructed
     G_OBJECT_CLASS(window_parent_class)->constructed(object);
 }
 
@@ -358,6 +371,9 @@ window_class_init(WindowClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = window_constructed;
     object_class->finalize = window_finalize;
+
+    WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->realize = window_realize;
 }
 
 static void
@@ -368,4 +384,6 @@ window_init(Window *self)
     priv->changed = TRUE;
     // Set window as default focused Widget
     priv->focus = TUI_WIDGET(self);
+    // Set window as visible by default
+    widget_show(TUI_WIDGET(self));
 }

@@ -77,9 +77,10 @@ container_check_child_position(GNode *node, gpointer data)
             find_data->found = container_find_by_position(TUI_CONTAINER(widget), find_data->x, find_data->y);
         }
     }
-    if (find_data->found == NULL) {
 
-        // Then check if container has been clicked
+    // Only check focusable widget position
+    if (find_data->found == NULL && widget_can_focus(widget)) {
+        // Then check if widget has been clicked
         if (find_data->x >= widget_get_xpos(widget)
             && find_data->x < widget_get_xpos(widget) + widget_get_width(widget)
             && find_data->y >= widget_get_ypos(widget)
@@ -133,6 +134,26 @@ container_show_all(Container *container)
 }
 
 static void
+container_realize_child(GNode *node, G_GNUC_UNUSED gpointer data)
+{
+    widget_realize(node->data);
+}
+
+static void
+container_realize(Widget *widget)
+{
+    // Draw each of the container children
+    g_node_children_foreach(
+        widget_get_node(widget),
+        G_TRAVERSE_ALL,
+        container_realize_child,
+        NULL
+    );
+
+    TUI_WIDGET_CLASS(container_parent_class)->realize(widget);
+}
+
+static void
 container_draw_child(GNode *node, G_GNUC_UNUSED gpointer data)
 {
     widget_draw(node->data);
@@ -155,7 +176,7 @@ container_draw(Widget *widget)
 static void
 container_map_child(GNode *node, G_GNUC_UNUSED gpointer data)
 {
-    if (!widget_get_floating(node->data)) {
+    if (!widget_is_floating(node->data)) {
         widget_map(node->data);
     }
 }
@@ -188,6 +209,7 @@ container_class_init(ContainerClass *klass)
     object_class->finalize = container_finalize;
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->realize = container_realize;
     widget_class->draw = container_draw;
     widget_class->map = container_map;
 }

@@ -163,7 +163,7 @@ filter_win_save_options(FilterWindow *self)
     filter_reset_calls();
 
     // TODO FIXME Refresh call list FIXME
-    call_list_win_clear(tui_find_by_type(WINDOW_CALL_LIST));
+//    call_list_win_clear(tui_find_by_type(WINDOW_CALL_LIST));
 }
 
 

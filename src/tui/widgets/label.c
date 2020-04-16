@@ -44,10 +44,19 @@ G_DEFINE_TYPE(Label, label, TUI_TYPE_WIDGET)
 Widget *
 label_new(const gchar *text)
 {
+    gint width = 0;
+    if (text != NULL) {
+        width = strlen(text);
+    }
+
     return g_object_new(
         TUI_TYPE_LABEL,
         "text", text,
+        "min-height", 1,
         "height", 1,
+        "width", width,
+        "hexpand", TRUE,
+        "can-focus", FALSE,
         NULL
     );
 }
@@ -76,30 +85,39 @@ label_get_text(Label *label)
 static gint
 label_draw(Widget *widget)
 {
+    // Chain up parent draw
+    TUI_WIDGET_CLASS(label_parent_class)->draw(widget);
+
     Label *label = TUI_LABEL(widget);
-    g_return_val_if_fail(label->text != NULL, 0);
-    widget_set_width(widget, (gint) strlen(label->text));
-    WINDOW *win = newpad(widget_get_height(widget), widget_get_width(widget));
-    widget_set_ncurses_window(widget, win);
+    if (label->text == NULL) {
+        return 0;
+    }
+
+    WINDOW *win = widget_get_ncurses_window(widget);
+    wattron(win, COLOR_PAIR(CP_DEFAULT));
+    werase(win);
 
     g_auto(GStrv) tokens = g_strsplit_set(label->text, "<>", -1);
+    gint color = 0;
     for (guint i = 0; i < g_strv_length(tokens); i++) {
         if (g_strcmp0(tokens[i], "red") == 0) {
-            wattron(win, COLOR_PAIR(CP_RED_ON_DEF));
+            color = CP_RED_ON_DEF;
             continue;
         }
         if (g_strcmp0(tokens[i], "green") == 0) {
-            wattron(win, COLOR_PAIR(CP_GREEN_ON_DEF));
+            color = CP_GREEN_ON_DEF;
             continue;
         }
         if (g_strcmp0(tokens[i], "yellow") == 0) {
-            wattron(win, COLOR_PAIR(CP_YELLOW_ON_DEF));
+            color = CP_YELLOW_ON_DEF;
             continue;
         }
+        wattron(win, COLOR_PAIR(color));
         wprintw(win, tokens[i]);
+        wattroff(win, COLOR_PAIR(color));
     }
 
-    return TUI_WIDGET_CLASS(label_parent_class)->draw(widget);
+    return 0;
 }
 
 static void

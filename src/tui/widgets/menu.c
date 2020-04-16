@@ -67,12 +67,10 @@ menu_get_title(Menu *menu)
     return menu->title;
 }
 
-static gint
-menu_draw(Widget *widget)
+static void
+menu_realize(Widget *widget)
 {
-    Menu *menu = TUI_MENU(widget);
     GNode *children = container_get_children(TUI_CONTAINER(widget));
-
     gint height = g_node_n_children(children) + 2;
     gint width = MENU_WIDTH + 2 + 6 + 2;
     for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
@@ -83,12 +81,24 @@ menu_draw(Widget *widget)
     }
 
     WINDOW *win = newpad(height, width);
+    widget_set_size(widget, width, height);
+    widget_set_ncurses_window(widget, win);
+}
+
+static gint
+menu_draw(Widget *widget)
+{
+    Menu *menu = TUI_MENU(widget);
+
+    // Set menu background color
+    WINDOW *win = widget_get_ncurses_window(widget);
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     box(win, 0, 0);
 
-    widget_set_size(widget, width, height);
-    widget_set_ncurses_window(widget, win);
+    // Get menu popup width
+    gint width = widget_get_width(widget);
 
+    GNode *children = container_get_children(TUI_CONTAINER(widget));
     for (gint i = 0; i < (gint) g_node_n_children(children); i++) {
         MenuItem *item = TUI_MENU_ITEM(g_node_nth_child_data(children, i));
 
@@ -224,6 +234,7 @@ menu_class_init(MenuClass *klass)
     object_class->get_property = menu_get_property;
 
     WidgetClass *widget_class = TUI_WIDGET_CLASS(klass);
+    widget_class->realize = menu_realize;
     widget_class->draw = menu_draw;
     widget_class->key_pressed = menu_key_pressed;
     widget_class->clicked = menu_clicked;

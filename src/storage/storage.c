@@ -616,5 +616,9 @@ storage_new(StorageOpts options, GError **error)
     g_source_set_callback(source, (GSourceFunc) G_CALLBACK(storage_check_packet), NULL, NULL);
     g_source_attach(source, NULL);
 
+    // Apply initial configured filters
+    filter_method_from_setting(setting_get_value(SETTING_STORAGE_FILTER_METHODS));
+    filter_payload_from_setting(setting_get_value(SETTING_STORAGE_FILTER_PAYLOAD));
+
     return storage;
 }
