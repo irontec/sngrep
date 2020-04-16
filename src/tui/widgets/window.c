@@ -43,10 +43,12 @@ typedef struct
     WindowType type;
     //! Flag this panel as redraw required
     gboolean changed;
-    //! Current focused widget
-    Widget *focus;
     //! Focusable widget chain
     GList *focus_chain;
+    //! Default focus widget
+    Widget *focus_default;
+    //! Current focused widget
+    Widget *focus;
 } WindowPrivate;
 
 // Window class definition
@@ -118,6 +120,14 @@ window_get_height(Window *window)
     return widget_get_height(TUI_WIDGET(window));
 }
 
+void
+window_set_default_focus(Window *window, Widget *widget)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+    priv->focus_default = widget;
+    widget_grab_focus(priv->focus_default);
+}
+
 Widget *
 window_focused_widget(Window *window)
 {
@@ -135,13 +145,53 @@ window_set_focused_widget(Window *window, Widget *widget)
         return;
     }
 
-    // Check if the widget wants to be focused
-    if (widget_focus_gain(widget)) {
-        // Remove focus from previous focused widget
-        widget_focus_lost(priv->focus);
-        // Set the new focus
-        priv->focus = widget;
-    }
+    // Remove focus from previous focused widget
+    widget_focus_lost(priv->focus);
+    priv->focus = widget;
+    widget_focus_gain(widget);
+}
+
+static void
+window_focus_default_widget(Window *window)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+    widget_grab_focus(priv->focus_default);
+}
+
+void
+window_focus_next(Window *window)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+    GList *current = g_list_find(priv->focus_chain, priv->focus);
+    do {
+        if (current->next == NULL) {
+            current = g_list_first(priv->focus_chain);
+        } else {
+            current = (current->next)
+                      ? current->next
+                      : g_list_first(priv->focus_chain);
+        }
+    } while (!widget_is_visible(current->data));
+
+    window_set_focused_widget(window, current->data);
+}
+
+void
+window_focus_prev(Window *window)
+{
+    WindowPrivate *priv = window_get_instance_private(window);
+    GList *current = g_list_find(priv->focus_chain, priv->focus);
+    do {
+        if (current->prev == NULL) {
+            current = g_list_last(priv->focus_chain);
+        } else {
+            current = (current->prev)
+                      ? current->prev
+                      : g_list_last(priv->focus_chain);
+        }
+    } while (!widget_is_visible(current->data));
+
+    window_set_focused_widget(window, current->data);
 }
 
 gboolean
@@ -164,27 +214,25 @@ window_redraw(Window *window)
     return TRUE;
 }
 
-G_GNUC_UNUSED static gboolean
-window_map_floating_child(GNode *node, G_GNUC_UNUSED gpointer data)
+static void
+window_map_floating_child(Widget *widget, gpointer data)
 {
-    if (widget_is_floating(node->data)) {
-        widget_map(node->data);
+    if (TUI_IS_CONTAINER(widget)) {
+        GList *children = container_get_children(TUI_CONTAINER(widget));
+        for (GList *l = children; l != NULL; l = l->next) {
+            window_map_floating_child(l->data, data);
+        }
     }
-    return FALSE;
+
+    if (widget_is_floating(widget)) {
+        widget_map(widget);
+    }
 }
 
 static void
-window_map_floating(G_GNUC_UNUSED Window *window)
+window_map_floating(Window *window)
 {
-//    // Draw floating children at the end
-//    g_node_traverse(
-//        widget_get_node(TUI_WIDGET(window)),
-//        G_IN_ORDER,
-//        G_TRAVERSE_ALL,
-//        -1,
-//        window_map_floating_child,
-//        NULL
-//    );
+    container_foreach(TUI_CONTAINER(window), (GFunc) window_map_floating_child, NULL);
 }
 
 static void
@@ -214,9 +262,6 @@ window_realize(Widget *widget)
 
         WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(widget));
         priv->panel = new_panel(win);
-
-        // Build a list of focusable widgets
-
     }
 
     TUI_WIDGET_CLASS(window_parent_class)->realize(widget);
@@ -225,19 +270,22 @@ window_realize(Widget *widget)
 static void
 window_update_focus_chain(Window *window, Widget *widget)
 {
+    if (widget_can_focus(widget)) {
+        WindowPrivate *priv = window_get_instance_private(window);
+        priv->focus_chain = g_list_append(priv->focus_chain, widget);
+        g_signal_connect_swapped(widget, "lose-focus",
+                                 G_CALLBACK(window_focus_default_widget), window);
+        g_signal_connect_swapped(widget, "grab-focus",
+                                 G_CALLBACK(window_set_focused_widget), window);
+    }
+
     if (TUI_IS_CONTAINER(widget)) {
         GList *children = container_get_children(TUI_CONTAINER(widget));
         for (GList *l = children; l != NULL; l = l->next) {
             window_update_focus_chain(window, l->data);
         }
     }
-
-    if (widget_can_focus(widget)) {
-        WindowPrivate *priv = window_get_instance_private(window);
-        priv->focus_chain = g_list_append(priv->focus_chain, widget);
-    }
 }
-
 
 static void
 window_add_widget(Container *container, Widget *widget)
@@ -308,25 +356,11 @@ window_handle_key(Window *window, gint key)
 
     // Check actions for this key
     KeybindingAction action = key_find_action(key, ACTION_UNKNOWN);
-    if (action == ACTION_PREV_FIELD || action == ACTION_NEXT_FIELD) {
-        GList *current = g_list_find(priv->focus_chain, priv->focus);
-        if (current != NULL) {
-            if (action == ACTION_PREV_FIELD) {
-                window_set_focused_widget(
-                    window,
-                    (current->prev)
-                    ? current->prev->data
-                    : g_list_last_data(priv->focus_chain)
-                );
-            } else {
-                window_set_focused_widget(
-                    window,
-                    (current->next)
-                    ? current->next->data
-                    : g_list_first_data(priv->focus_chain)
-                );
-            }
-        }
+    if (action == ACTION_NEXT_FIELD) {
+        window_focus_next(window);
+        return KEY_HANDLED;
+    } else if (action == ACTION_PREV_FIELD) {
+        window_focus_prev(window);
         return KEY_HANDLED;
     } else {
         return widget_key_pressed(priv->focus, key);

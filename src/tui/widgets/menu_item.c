@@ -67,6 +67,7 @@ menu_item_new(const gchar *text)
     return g_object_new(
         TUI_TYPE_MENU_ITEM,
         "text", text,
+        "can-focus", FALSE,
         NULL
     );
 }

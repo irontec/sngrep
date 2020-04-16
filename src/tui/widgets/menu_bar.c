@@ -51,11 +51,7 @@ menu_bar_clicked(Widget *widget, MEVENT mevent)
             menu_bar->selected
         );
         widget_show(menu);
-
-        window_set_focused_widget(
-            TUI_WINDOW(widget_get_parent(widget)),
-            menu
-        );
+        widget_grab_focus(menu);
     } else {
         menu_bar->selected = -1;
     }
@@ -129,6 +125,9 @@ menu_bar_key_pressed(Widget *widget, gint key)
                     (gint) g_list_length(children) - 1
                 );
                 break;
+            case ACTION_CANCEL:
+                widget_lose_focus(widget);
+                break;
             default:
                 continue;
         }
@@ -137,11 +136,7 @@ menu_bar_key_pressed(Widget *widget, gint key)
 
     Widget *menu = container_get_child(TUI_CONTAINER(widget), menu_bar->selected);
     widget_show(menu);
-
-    window_set_focused_widget(
-        TUI_WINDOW(widget_get_parent(widget)),
-        menu
-    );
+    widget_grab_focus(menu);
 
     return KEY_HANDLED;
 }
@@ -150,7 +145,16 @@ static gboolean
 menu_bar_focus_gained(Widget *widget)
 {
     MenuBar *menu_bar = TUI_MENU_BAR(widget);
-    menu_bar->selected = 1;
+
+    menu_bar->selected = 0;
+
+    Widget *menu = container_get_child(
+        TUI_CONTAINER(widget),
+        menu_bar->selected
+    );
+    widget_show(menu);
+    widget_grab_focus(menu);
+
     return TRUE;
 }
 

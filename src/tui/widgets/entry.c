@@ -189,8 +189,11 @@ entry_key_pressed(Widget *widget, gint key)
                 form_driver(entry->form, REQ_DEL_PREV);
                 break;
             case ACTION_CONFIRM:
-                widget_focus_lost(widget);
                 entry_activate(entry);
+                widget_lose_focus(widget);
+                break;
+            case ACTION_CANCEL:
+                widget_lose_focus(widget);
                 break;
             default:
                 // Parse next action

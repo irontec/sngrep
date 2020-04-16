@@ -38,6 +38,8 @@ enum
     SIG_MAP,
     SIG_KEY_PRESSED,
     SIG_CLICKED,
+    SIG_LOSE_FOCUS,
+    SIG_GRAB_FOCUS,
     SIG_DESTROY,
     SIGS
 };
@@ -394,6 +396,18 @@ widget_focus_lost(Widget *widget)
     if (klass->focus_lost != NULL) {
         klass->focus_lost(widget);
     }
+}
+
+void
+widget_lose_focus(Widget *widget)
+{
+    g_signal_emit(widget, signals[SIG_LOSE_FOCUS], 0);
+}
+
+void
+widget_grab_focus(Widget *widget)
+{
+    g_signal_emit(widget, signals[SIG_GRAB_FOCUS], 0);
 }
 
 gint
@@ -754,6 +768,26 @@ widget_class_init(WidgetClass *klass)
 
     signals[SIG_CLICKED] =
         g_signal_newv("clicked",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+
+    signals[SIG_LOSE_FOCUS] =
+        g_signal_newv("lose-focus",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+
+    signals[SIG_GRAB_FOCUS] =
+        g_signal_newv("grab-focus",
                       G_TYPE_FROM_CLASS(klass),
                       G_SIGNAL_RUN_LAST,
                       NULL,

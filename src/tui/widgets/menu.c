@@ -158,6 +158,13 @@ menu_key_pressed(Widget *widget, gint key)
             case ACTION_LEFT:
                 widget_key_pressed(widget_get_parent(widget), key);
                 break;
+            case ACTION_CONFIRM:
+                menu_item_activate(g_list_nth_data(children, menu->selected));
+                widget_lose_focus(widget);
+                break;
+            case ACTION_CANCEL:
+                widget_lose_focus(widget);
+                break;
             default:
                 continue;
         }
@@ -186,7 +193,7 @@ menu_clicked(Widget *widget, MEVENT mevent)
 
     MenuItem *item = TUI_MENU_ITEM(container_get_child(TUI_CONTAINER(widget), menu->selected));
     menu_item_activate(item);
-    widget_hide(widget);
+    widget_lose_focus(widget);
     return 0;
 }
 

@@ -56,6 +56,7 @@ G_DEFINE_TYPE(CallListWindow, call_list_win, TUI_TYPE_WINDOW)
 static gboolean
 call_list_win_redraw(G_GNUC_UNUSED Window *window)
 {
+    return TRUE;
     return storage_calls_changed();
 }
 
@@ -123,7 +124,7 @@ call_list_win_handle_action(Widget *sender, KeybindingAction action)
     // Check if we handle this action
     switch (action) {
         case ACTION_DISP_FILTER:
-            window_set_focused_widget(TUI_WINDOW(call_list_win), call_list_win->en_dfilter);
+            widget_grab_focus(call_list_win->en_dfilter);
             break;
         case ACTION_SHOW_FLOW:
         case ACTION_SHOW_FLOW_EX:
@@ -313,7 +314,6 @@ call_list_win_help(G_GNUC_UNUSED Window *window)
 static void
 call_list_win_mode_label(Widget *widget)
 {
-
     CaptureManager *capture = capture_manager_get_instance();
     gboolean online = capture_is_online(capture);
     const gchar *device = capture_input_pcap_device(capture);
@@ -495,7 +495,6 @@ call_list_win_constructed(GObject *object)
 
 
     // Add menubar menus and items
-    container_add(TUI_CONTAINER(call_list_win), call_list_win->menu_bar);
     container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_file);
     container_add(TUI_CONTAINER(menu_file), menu_file_preferences);
     container_add(TUI_CONTAINER(menu_file), menu_file_save);
@@ -514,6 +513,7 @@ call_list_win_constructed(GObject *object)
     container_add(TUI_CONTAINER(menu_list), menu_list_flow_ex);
     container_add(TUI_CONTAINER(call_list_win->menu_bar), menu_help);
     container_add(TUI_CONTAINER(menu_help), menu_help_about);
+    container_add(TUI_CONTAINER(call_list_win), call_list_win->menu_bar);
 
     // First header line
     Widget *header_first = box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
@@ -599,7 +599,7 @@ call_list_win_constructed(GObject *object)
     widget_show(TUI_WIDGET(call_list_win->tb_calls));
 
     // Start with the call list focused
-    window_set_focused_widget(TUI_WINDOW(call_list_win), call_list_win->tb_calls);
+    window_set_default_focus(TUI_WINDOW(call_list_win), call_list_win->tb_calls);
 
     // Chain-up parent constructed
     G_OBJECT_CLASS(call_list_win_parent_class)->constructed(object);

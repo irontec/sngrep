@@ -81,6 +81,7 @@ Keybinding bindings[ACTION_SENTINEL] = {
     { ACTION_AUTH_VALIDATE,    "validate",        { 'v' },                                           1 },
     { ACTION_SELECT,           "select",          { KEY_SPACE },                                     1 },
     { ACTION_CONFIRM,          "confirm",         { KEY_INTRO },                                     1 },
+    { ACTION_CANCEL,           "cancel",          { KEY_ESC },                                       1 },
     { ACTION_TOGGLE_MEDIA,     "togglemedia",     { KEY_F(3),  'm' },                                2 },
     { ACTION_ONLY_MEDIA,       "onlymedia",       { 'M' },                                           1 },
     { ACTION_HIDE_DUPLICATE,   "hideduplicate",   { 'y' },                                           1 },

@@ -157,6 +157,12 @@ widget_focus_gain(Widget *widget);
 void
 widget_focus_lost(Widget *widget);
 
+void
+widget_lose_focus(Widget *widget);
+
+void
+widget_grab_focus(Widget *widget);
+
 /**
  * @brief Handle moves events on given widget
  *
