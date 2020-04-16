@@ -37,7 +37,7 @@
 #include "storage/filter.h"
 #include "setting.h"
 
-G_DEFINE_TYPE(FilterWindow , filter_win, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(FilterWindow , filter_win, SNG_TYPE_WINDOW)
 
 /**
  * @brief Return String value for a filter field
@@ -299,7 +299,7 @@ filter_win_handle_key(SngWidget *widget, gint key)
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
-Window *
+SngWindow *
 filter_win_new()
 {
     return g_object_new(
@@ -317,11 +317,11 @@ filter_win_constructed(GObject *object)
     G_OBJECT_CLASS(filter_win_parent_class)->constructed(object);
 
     FilterWindow *self = TUI_FILTER(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
+    gint height = sng_window_get_height(parent);
 
     // Initialize the fields
     self->fields[FLD_FILTER_SIPFROM] = new_field(1, 28, 3, 18, 0, 0);
@@ -469,5 +469,5 @@ static void
 filter_win_init(FilterWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_FILTER);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_FILTER);
 }

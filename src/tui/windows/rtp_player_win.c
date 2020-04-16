@@ -29,10 +29,10 @@
 #include "tui/dialog.h"
 #include "rtp_player_win.h"
 
-G_DEFINE_TYPE(RtpPlayerWindow, rtp_player_win, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(RtpPlayerWindow, rtp_player_win, SNG_TYPE_WINDOW)
 
 static void
-rtp_player_win_decode_stream(Window *window, Stream *stream)
+rtp_player_win_decode_stream(SngWindow *window, Stream *stream)
 {
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_if_fail(self != NULL);
@@ -49,10 +49,10 @@ rtp_player_win_decode_stream(Window *window, Stream *stream)
 static gint
 rtp_player_win_draw(SngWidget *widget)
 {
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_val_if_fail(self != NULL, 1);
-    WINDOW *win = window_get_ncurses_window(window);
+    WINDOW *win = sng_window_get_ncurses_window(window);
 
     if (getenv("PULSE_SERVER")) {
         mvwprintw(win, 6, 3, "Server: %s", getenv("PULSE_SERVER"));
@@ -129,7 +129,7 @@ static int
 rtp_player_win_handle_key(SngWidget *widget, int key)
 {
     // Sanity check, this should not happen
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
@@ -223,7 +223,7 @@ rtp_player_win_underflow_cb(pa_stream *s, gpointer userdata)
 }
 
 void
-rtp_player_win_set_stream(Window *window, Stream *stream)
+rtp_player_win_set_stream(SngWindow *window, Stream *stream)
 {
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_if_fail(self != NULL);
@@ -252,7 +252,7 @@ rtp_player_win_set_stream(Window *window, Stream *stream)
 }
 
 void
-rtp_player_win_free(Window *window)
+rtp_player_win_free(SngWindow *window)
 {
     g_object_unref(window);
 }
@@ -282,7 +282,7 @@ rtp_player_win_state_cb(pa_context *ctx, gpointer userdata)
     self->pa_state = pa_context_get_state(ctx);
 }
 
-Window *
+SngWindow *
 rtp_player_win_new()
 {
     return g_object_new(
@@ -300,12 +300,12 @@ rtp_player_win_constructed(GObject *object)
     G_OBJECT_CLASS(rtp_player_win_parent_class)->constructed(object);
 
     RtpPlayerWindow *self = TUI_RTP_PLAYER(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
+    gint height = sng_window_get_height(parent);
+    gint width = sng_window_get_width(parent);
 
     // Set window boxes
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
@@ -363,5 +363,5 @@ static void
 rtp_player_win_init(RtpPlayerWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_RTP_PLAYER);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_RTP_PLAYER);
 }

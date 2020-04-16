@@ -43,7 +43,7 @@
 #include "tui/windows/save_win.h"
 #include "tui/windows/column_select_win.h"
 
-G_DEFINE_TYPE(CallListWindow, call_list_win, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(CallListWindow, call_list_win, SNG_TYPE_WINDOW)
 
 /**
  * @brief Determine if the screen requires redrawn
@@ -54,7 +54,7 @@ G_DEFINE_TYPE(CallListWindow, call_list_win, TUI_TYPE_WINDOW)
  * @return true if the panel requires redraw, false otherwise
  */
 static gboolean
-call_list_win_redraw(G_GNUC_UNUSED Window *window)
+call_list_win_redraw(G_GNUC_UNUSED SngWindow *window)
 {
     return TRUE;
     return storage_calls_changed();
@@ -69,18 +69,18 @@ call_list_win_redraw(G_GNUC_UNUSED Window *window)
  * @return 0 if the panel has been resized, -1 otherwise
  */
 static int
-call_list_win_resize(Window *window)
+call_list_win_resize(SngWindow *window)
 {
     // Get current screen dimensions
     gint maxx, maxy;
     getmaxyx(stdscr, maxy, maxx);
 
     // Change the main window size
-    wresize(window_get_ncurses_window(window), maxy, maxx);
+    wresize(sng_window_get_ncurses_window(window), maxy, maxx);
 
     // Store new size
-    window_set_width(window, maxx);
-    window_set_height(window, maxy);
+    sng_window_set_width(window, maxx);
+    sng_window_set_height(window, maxy);
     return 0;
 }
 
@@ -108,7 +108,7 @@ call_list_win_draw_footer(SngWidget *widget)
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    window_draw_bindings(TUI_WINDOW(widget), keybindings, 20);
+    sng_window_draw_bindings(SNG_WINDOW(widget), keybindings, 20);
 
     // Chain-up parent draw function
     return SNG_WIDGET_CLASS(call_list_win_parent_class)->draw(widget);
@@ -180,7 +180,7 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
             capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
             break;
         case ACTION_SHOW_HELP:
-            window_help(TUI_WINDOW(call_list_win));
+            sng_window_help(SNG_WINDOW(call_list_win));
             break;
         case ACTION_PREV_SCREEN:
             // Handle quit from this screen unless requested
@@ -249,7 +249,7 @@ call_list_win_handle_key(SngWidget *widget, int key)
  * @return 0 if the screen has help, -1 otherwise
  */
 static int
-call_list_win_help(G_GNUC_UNUSED Window *window)
+call_list_win_help(G_GNUC_UNUSED SngWindow *window)
 {
     WINDOW *help_win;
     int height, width;
@@ -392,10 +392,10 @@ call_list_win_display_filter(SngWidget *widget)
     filter_set(FILTER_CALL_LIST, strlen(text) ? text : NULL);
 }
 
-Window *
+SngWindow *
 call_list_win_new()
 {
-    Window *window = g_object_new(
+    SngWindow *window = g_object_new(
         TUI_TYPE_CALL_LIST_WIN,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
@@ -405,7 +405,7 @@ call_list_win_new()
 }
 
 Table *
-call_list_win_get_table(Window *window)
+call_list_win_get_table(SngWindow *window)
 {
     CallListWindow *call_list_win = TUI_CALL_LIST_WIN(window);
     return TUI_TABLE(call_list_win->tb_calls);
@@ -599,7 +599,7 @@ call_list_win_constructed(GObject *object)
     sng_widget_show(SNG_WIDGET(call_list_win->tb_calls));
 
     // Start with the call list focused
-    window_set_default_focus(TUI_WINDOW(call_list_win), call_list_win->tb_calls);
+    sng_window_set_default_focus(SNG_WINDOW(call_list_win), call_list_win->tb_calls);
 
     // Chain-up parent constructed
     G_OBJECT_CLASS(call_list_win_parent_class)->constructed(object);
@@ -611,7 +611,7 @@ call_list_win_class_init(CallListWindowClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = call_list_win_constructed;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
+    SngWindowClass *window_class = SNG_WINDOW_CLASS(klass);
     window_class->redraw = call_list_win_redraw;
     window_class->resize = call_list_win_resize;
     window_class->help = call_list_win_help;
@@ -625,5 +625,5 @@ static void
 call_list_win_init(CallListWindow *self)
 {
     // Set parent attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_CALL_LIST);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_CALL_LIST);
 }

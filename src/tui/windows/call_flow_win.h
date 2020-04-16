@@ -64,7 +64,7 @@
 #define CF_COLUMN_WIDTH 30
 
 #define WINDOW_TYPE_CALL_FLOW call_flow_win_get_type()
-G_DECLARE_FINAL_TYPE(CallFlowWindow, call_flow_win, TUI, CALL_FLOW, Window)
+G_DECLARE_FINAL_TYPE(CallFlowWindow, call_flow_win, TUI, CALL_FLOW, SngWindow)
 
 /**
  * @brief Call flow arrow types
@@ -159,7 +159,7 @@ typedef struct
 struct _CallFlowWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Window to display SIP payload
     WINDOW *raw_win;
     //! Window to display arrows
@@ -200,7 +200,7 @@ struct _CallFlowWindow
  *
  * @param ui UI structure pointer
  */
-Window *
+SngWindow *
 call_flow_win_new();
 
 /**
@@ -211,7 +211,7 @@ call_flow_win_new();
  * @param ui UI structure pointer
  */
 void
-call_flow_win_free(Window *window);
+call_flow_win_free(SngWindow *window);
 
 /**
  * @brief Set the group call of the panel
@@ -222,7 +222,7 @@ call_flow_win_free(Window *window);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-call_flow_win_set_group(Window *window, CallGroup *group);
+call_flow_win_set_group(SngWindow *window, CallGroup *group);
 
 G_END_DECLS
 

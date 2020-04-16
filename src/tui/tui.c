@@ -67,7 +67,7 @@ tui_error_quark()
     return g_quark_from_static_string("tui");
 }
 
-Window *
+SngWindow *
 tui_create_window(WindowType type)
 {
     // Find the panel of given type and create it
@@ -75,7 +75,7 @@ tui_create_window(WindowType type)
 }
 
 void
-tui_destroy_window(Window *window)
+tui_destroy_window(SngWindow *window)
 {
     // Remove from the window list
     g_ptr_array_remove(windows, window);
@@ -84,18 +84,18 @@ tui_destroy_window(Window *window)
 }
 
 static gboolean
-tui_window_panel_cmp(Window *window, PANEL *panel)
+tui_window_panel_cmp(SngWindow *window, PANEL *panel)
 {
-    return window_get_ncurses_panel(window) == panel;
+    return sng_window_get_ncurses_panel(window) == panel;
 }
 
 static gboolean
-tui_window_type_cmp(Window *window, gpointer type)
+tui_window_type_cmp(SngWindow *window, gpointer type)
 {
-    return window_get_window_type(window) == GPOINTER_TO_UINT(type);
+    return sng_window_get_window_type(window) == GPOINTER_TO_UINT(type);
 }
 
-Window *
+SngWindow *
 tui_find_by_panel(PANEL *panel)
 {
     guint index;
@@ -108,7 +108,7 @@ tui_find_by_panel(PANEL *panel)
     return NULL;
 }
 
-Window *
+SngWindow *
 tui_find_by_type(WindowType type)
 {
     guint index;
@@ -118,7 +118,7 @@ tui_find_by_type(WindowType type)
         return g_ptr_array_index(windows, index);
     }
 
-    Window *window = NULL;
+    SngWindow *window = NULL;
 
     switch (type) {
         case WINDOW_CALL_LIST:
@@ -179,12 +179,12 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
     while ((panel = panel_below(panel))) {
 
         // Get panel interface structure
-        Window *ui = tui_find_by_panel(panel);
+        SngWindow *ui = tui_find_by_panel(panel);
 
         // Query the interface if it needs to be redrawn
-        if (window_redraw(ui)) {
+        if (sng_window_redraw(ui)) {
             // Redraw this panel
-            if (window_draw(ui) != 0) {
+            if (sng_window_draw(ui) != 0) {
                 tui_destroy_window(ui);
             }
         }
@@ -207,7 +207,7 @@ tui_read_input(G_GNUC_UNUSED gint fd,
     g_return_val_if_fail(panel != NULL, FALSE);
 
     // Get panel interface structure
-    Window *ui = tui_find_by_panel(panel);
+    SngWindow *ui = tui_find_by_panel(panel);
     g_return_val_if_fail(ui != NULL, FALSE);
 
     // Enable key input on current panel
@@ -239,13 +239,13 @@ tui_read_input(G_GNUC_UNUSED gint fd,
     }
 
     if (c == KEY_MOUSE) {
-        window_handle_mouse(ui, mevent);
+        sng_window_handle_mouse(ui, mevent);
     } else {
         // Handle received key
         int hld = KEY_NOT_HANDLED;
         while (hld != KEY_HANDLED) {
             // Check if current panel has custom bindings for that key
-            hld = window_handle_key(ui, c);
+            hld = sng_window_handle_key(ui, c);
 
             if (hld == KEY_HANDLED) {
                 // Panel handled this key
@@ -273,7 +273,7 @@ tui_read_input(G_GNUC_UNUSED gint fd,
 }
 
 int
-tui_default_keyhandler(Window *window, int key)
+tui_default_keyhandler(SngWindow *window, int key)
 {
     KeybindingAction action = ACTION_UNKNOWN;
 
@@ -304,7 +304,7 @@ tui_default_keyhandler(Window *window, int key)
                 capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
                 break;
             case ACTION_SHOW_HELP:
-                window_help(window);
+                sng_window_help(window);
                 break;
             case ACTION_PREV_SCREEN:
                 tui_destroy_window(window);
@@ -329,7 +329,7 @@ tui_resize_panels()
     // While there are still panels
     while ((panel = panel_below(panel))) {
         // Invoke resize for this panel
-        window_resize(tui_find_by_panel(panel));
+        sng_window_resize(tui_find_by_panel(panel));
     }
 }
 
@@ -574,7 +574,7 @@ tui_init(GMainLoop *loop, GError **error)
     windows = g_ptr_array_new();
 
     // Create the first displayed window
-    Window *window = tui_create_window(WINDOW_CALL_LIST);
+    SngWindow *window = tui_create_window(WINDOW_CALL_LIST);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(g_main_loop_quit), loop);
 
     // Source for reading events from stdin

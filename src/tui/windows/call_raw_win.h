@@ -41,7 +41,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_CALL_RAW call_raw_win_get_type()
-G_DECLARE_FINAL_TYPE(CallRawWindow, call_raw_win, TUI, CALL_RAW, Window)
+G_DECLARE_FINAL_TYPE(CallRawWindow, call_raw_win, TUI, CALL_RAW, SngWindow)
 
 /**
  * @brief Call raw status information
@@ -52,7 +52,7 @@ G_DECLARE_FINAL_TYPE(CallRawWindow, call_raw_win, TUI, CALL_RAW, Window)
 struct _CallRawWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Group of calls displayed on the panel (Call raw display)
     CallGroup *group;
     //! Message to display on the panel (Single message raw display)
@@ -75,7 +75,7 @@ struct _CallRawWindow
  * It will also create an information structure of the panel status and
  * store it in the panel's userpointer
  */
-Window *
+SngWindow *
 call_raw_win_new();
 
 /**
@@ -86,7 +86,7 @@ call_raw_win_new();
  * @param panel Ncurses panel pointer
  */
 void
-call_raw_win_free(Window *window);
+call_raw_win_free(SngWindow *window);
 
 /**
  * @brief Set the active call group of the panel
@@ -98,7 +98,7 @@ call_raw_win_free(Window *window);
  * @param group Call Group pointer to be set in the internal info struct
  */
 void
-call_raw_win_set_group(Window *window, CallGroup *group);
+call_raw_win_set_group(SngWindow *window, CallGroup *group);
 
 /**
  * @brief Set the active msg of the panel
@@ -109,7 +109,7 @@ call_raw_win_set_group(Window *window, CallGroup *group);
  * @param msg Message pointer to be set in the internal info struct
  */
 void
-call_raw_win_set_msg(Window *window, Message *msg);
+call_raw_win_set_msg(SngWindow *window, Message *msg);
 
 G_END_DECLS
 

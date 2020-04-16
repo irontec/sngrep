@@ -31,7 +31,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_RTP_PLAYER rtp_player_win_get_type()
-G_DECLARE_FINAL_TYPE(RtpPlayerWindow, rtp_player_win, TUI, RTP_PLAYER, Window)
+G_DECLARE_FINAL_TYPE(RtpPlayerWindow, rtp_player_win, TUI, RTP_PLAYER, SngWindow)
 
 /**
  * @brief Rtp Player Window information
@@ -42,7 +42,7 @@ G_DECLARE_FINAL_TYPE(RtpPlayerWindow, rtp_player_win, TUI, RTP_PLAYER, Window)
 struct _RtpPlayerWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Stream to be played
     Stream *stream;
     //! Glib Pulseaudio Main loop
@@ -76,12 +76,12 @@ struct _RtpPlayerWindow
 };
 
 void
-rtp_player_win_set_stream(Window *window, Stream *stream);
+rtp_player_win_set_stream(SngWindow *window, Stream *stream);
 
 void
-rtp_player_win_free(Window *window);
+rtp_player_win_free(SngWindow *window);
 
-Window *
+SngWindow *
 rtp_player_win_new();
 
 #endif /* __SNGREP_RTP_PLAYER_WIN_H__ */

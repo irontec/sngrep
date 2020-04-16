@@ -42,7 +42,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_SAVE save_get_type()
-G_DECLARE_FINAL_TYPE(SaveWindow, save, TUI, SAVE, Window)
+G_DECLARE_FINAL_TYPE(SaveWindow, save, TUI, SAVE, SngWindow)
 
 
 /**
@@ -100,7 +100,7 @@ typedef enum
 struct _SaveWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Form that contains the save fields
     FORM *form;
     //! An array of fields
@@ -127,7 +127,7 @@ struct _SaveWindow
  *
  * @param window UI structure pointer
  */
-Window *
+SngWindow *
 save_win_new();
 
 /**
@@ -138,7 +138,7 @@ save_win_new();
  * @param window UI structure pointer
  */
 void
-save_win_free(Window *window);
+save_win_free(SngWindow *window);
 
 /**
  * @brief Set the group call of the panel
@@ -150,7 +150,7 @@ save_win_free(Window *window);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-save_set_group(Window *window, CallGroup *group);
+save_set_group(SngWindow *window, CallGroup *group);
 
 /**
  * @brief Set the SIP message to be saved
@@ -162,7 +162,7 @@ save_set_group(Window *window, CallGroup *group);
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-save_set_msg(Window *window, Message *msg);
+save_set_msg(SngWindow *window, Message *msg);
 
 /**
  * @brief Set the SIP message to be saved
@@ -174,6 +174,6 @@ save_set_msg(Window *window, Message *msg);
  * @param stream Stream packets to be saved
  */
 void
-save_set_stream(Window *window, Stream *stream);
+save_set_stream(SngWindow *window, Stream *stream);
 
 #endif  /* __SNGREP_SAVE_WIN_H__ */

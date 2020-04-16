@@ -41,7 +41,7 @@
 #include "tui/dialog.h"
 #include "tui/windows/save_win.h"
 
-G_DEFINE_TYPE(SaveWindow, save, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(SaveWindow, save, SNG_TYPE_WINDOW)
 
 /**
  * @brief Draw the Save panel
@@ -57,9 +57,9 @@ save_draw(SngWidget *widget)
 {
     char field_value[SETTING_MAX_LEN];
 
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     SaveWindow *self = TUI_SAVE(window);
-    WINDOW *win = window_get_ncurses_window(window);
+    WINDOW *win = sng_window_get_ncurses_window(window);
 
     // Get filter stats
     StorageStats stats = storage_calls_stats();
@@ -146,7 +146,7 @@ save_packet_cb(Packet *packet, CaptureOutput *output)
 #ifdef WITH_SND
 
 static gboolean
-save_stream_to_file(Window *window)
+save_stream_to_file(SngWindow *window)
 {
     // Get panel information
     SaveWindow *self = TUI_SAVE(window);
@@ -222,7 +222,7 @@ save_stream_to_file(Window *window)
  * @returns 1 in case of error, 0 otherwise.
  */
 static int
-save_to_file(Window *window)
+save_to_file(SngWindow *window)
 {
     CaptureOutput *output = NULL;
     int cur = 0, total = 0;
@@ -397,7 +397,7 @@ static int
 save_handle_key(SngWidget *widget, int key)
 {
     // Get panel information
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     SaveWindow *self = TUI_SAVE(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
@@ -517,7 +517,7 @@ save_handle_key(SngWidget *widget, int key)
 }
 
 void
-save_set_group(Window *window, CallGroup *group)
+save_set_group(SngWindow *window, CallGroup *group)
 {
     // Get panel information
     SaveWindow *self = TUI_SAVE(window);
@@ -543,7 +543,7 @@ save_set_group(Window *window, CallGroup *group)
 }
 
 void
-save_set_msg(Window *window, Message *msg)
+save_set_msg(SngWindow *window, Message *msg)
 {
     // Get panel information
     SaveWindow *self = TUI_SAVE(window);
@@ -557,7 +557,7 @@ save_set_msg(Window *window, Message *msg)
 }
 
 void
-save_set_stream(Window *window, Stream *stream)
+save_set_stream(SngWindow *window, Stream *stream)
 {
     // Get panel information
     SaveWindow *self = TUI_SAVE(window);
@@ -576,12 +576,12 @@ save_set_stream(Window *window, Stream *stream)
 
 
 void
-save_win_free(Window *window)
+save_win_free(SngWindow *window)
 {
     g_object_unref(window);
 }
 
-Window *
+SngWindow *
 save_win_new()
 {
     return g_object_new(
@@ -621,12 +621,12 @@ save_constructed(GObject *object)
 
     // Get parent window information
     SaveWindow *self = TUI_SAVE(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
+    gint height = sng_window_get_height(parent);
+    gint width = sng_window_get_width(parent);
 
     // Pause the capture while saving
     capture_manager_set_pause(capture_manager_get_instance(), TRUE);
@@ -760,5 +760,5 @@ static void
 save_init(SaveWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_SAVE);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_SAVE);
 }

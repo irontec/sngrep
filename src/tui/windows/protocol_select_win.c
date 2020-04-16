@@ -36,7 +36,7 @@
 #include "tui/dialog.h"
 #include "tui/windows/protocol_select_win.h"
 
-G_DEFINE_TYPE(ProtocolSelectWindow, protocol_select_win, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(ProtocolSelectWindow, protocol_select_win, SNG_TYPE_WINDOW)
 
 /**
  * @brief Select/Deselect a menu item
@@ -379,7 +379,7 @@ protocol_select_win_finalize(GObject *object)
     G_OBJECT_CLASS(protocol_select_win_parent_class)->finalize(object);
 }
 
-Window *
+SngWindow *
 protocol_select_win_new()
 {
     return g_object_new(
@@ -398,12 +398,12 @@ protocol_select_win_constructed(GObject *object)
 
     // Get parent window information
     ProtocolSelectWindow *self = TUI_PROTOCOL_SELECT(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
+    gint height = sng_window_get_height(parent);
+    gint width = sng_window_get_width(parent);
 
     // Initialize the fields
     self->fields[FLD_PROTOCOLS_SAVE] = new_field(1, 10, height - 2, 15, 0, 0);
@@ -491,6 +491,6 @@ static void
 protocol_select_win_init(ProtocolSelectWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_PROTOCOL_SELECT);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_PROTOCOL_SELECT);
     self->form_active = FALSE;
 }

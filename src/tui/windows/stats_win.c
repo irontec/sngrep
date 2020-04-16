@@ -62,9 +62,9 @@
 #include "tui/tui.h"
 #include "stats_win.h"
 
-G_DEFINE_TYPE(StatsWindow, stats, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(StatsWindow, stats, SNG_TYPE_WINDOW)
 
-Window *
+SngWindow *
 stats_win_new()
 {
     return g_object_new(
@@ -93,12 +93,12 @@ stats_constructed(GObject *object)
 
     // Get parent window information
     StatsWindow *self = TUI_STATS(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
+    gint height = sng_window_get_height(parent);
+    gint width = sng_window_get_width(parent);
 
 
     // Set the window title and boxes
@@ -271,5 +271,5 @@ static void
 stats_init(StatsWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_STATS);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_STATS);
 }

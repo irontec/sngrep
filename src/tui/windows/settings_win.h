@@ -39,7 +39,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_SETTINGS settings_win_get_type()
-G_DECLARE_FINAL_TYPE(SettingsWindow, settings_win, TUI, SETTINGS, Window)
+G_DECLARE_FINAL_TYPE(SettingsWindow, settings_win, TUI, SETTINGS, SngWindow)
 
 typedef enum
 {
@@ -165,7 +165,7 @@ typedef struct
 struct _SettingsWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Window containing form data (and buttons)
     WINDOW *form_win;
     //! Form that contains the filter fields
@@ -190,7 +190,7 @@ struct _SettingsWindow
  * static information of the panel that will never be
  * redrawn.
  */
-Window *
+SngWindow *
 settings_win_new();
 
 /**
@@ -201,7 +201,7 @@ settings_win_new();
  * @param window UI structure pointer
  */
 void
-settings_win_free(Window *window);
+settings_win_free(SngWindow *window);
 
 G_END_DECLS
 

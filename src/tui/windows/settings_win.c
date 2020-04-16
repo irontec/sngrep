@@ -34,7 +34,7 @@
 #include "tui/dialog.h"
 #include "tui/windows/settings_win.h"
 
-G_DEFINE_TYPE(SettingsWindow, settings_win, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(SettingsWindow, settings_win, SNG_TYPE_WINDOW)
 
 SettingsWindowCategory categories[] = {
     { CAT_SETTINGS_INTERFACE, "Interface" },
@@ -128,9 +128,9 @@ SettingsWindowEntry entries[] = {
 static gint
 settings_win_draw(SngWidget *widget)
 {
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     SettingsWindow *self = TUI_SETTINGS(window);
-    WINDOW *win = window_get_ncurses_window(window);
+    WINDOW *win = sng_window_get_ncurses_window(window);
 
     // Store cursor position
     gint cury, curx;
@@ -202,7 +202,7 @@ settings_is_entry(FIELD *field)
  * @return 0 in all cases
  */
 static gint
-settings_update_settings(Window *window)
+settings_update_settings(SngWindow *window)
 {
     SettingsWindow *self = TUI_SETTINGS(window);
 
@@ -232,7 +232,7 @@ settings_update_settings(Window *window)
  * @param ui UI structure pointer
  */
 static void
-settings_win_save(Window *window)
+settings_win_save(SngWindow *window)
 {
     SettingsWindow *self = TUI_SETTINGS(window);
 
@@ -337,7 +337,7 @@ settings_win_handle_key(SngWidget *widget, gint key)
     GType setting_type = -1;
 
     // Get panel information
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     SettingsWindow *self = TUI_SETTINGS(window);
 
     // Get current field id
@@ -477,12 +477,12 @@ settings_win_handle_key(SngWidget *widget, gint key)
 }
 
 void
-settings_win_free(Window *window)
+settings_win_free(SngWindow *window)
 {
     g_object_unref(window);
 }
 
-Window *
+SngWindow *
 settings_win_new()
 {
     return g_object_new(
@@ -515,12 +515,12 @@ settings_win_constructed(GObject *object)
 
     // Get parent window information
     SettingsWindow *self = TUI_SETTINGS(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
+    gint height = sng_window_get_height(parent);
+    gint width = sng_window_get_width(parent);
 
     // Create a scrollable subwindow for settings
     self->form_win = derwin(win, height - 11, width - 2, 8, 1);
@@ -640,5 +640,5 @@ static void
 settings_win_init(SettingsWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_SETTINGS);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_SETTINGS);
 }

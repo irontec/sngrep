@@ -39,7 +39,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_COLUMN_SELECT column_select_get_type()
-G_DECLARE_FINAL_TYPE(ColumnSelectWindow, column_select, TUI, COLUMN_SELECT, Window)
+G_DECLARE_FINAL_TYPE(ColumnSelectWindow, column_select, TUI, COLUMN_SELECT, SngWindow)
 
 /**
  * @brief Enum of available fields
@@ -60,7 +60,7 @@ typedef enum
 struct _ColumnSelectWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Section of panel where menu is being displayed
     WINDOW *menu_win;
     //! Columns menu
@@ -89,7 +89,7 @@ struct _ColumnSelectWindow
  *
  * @return Window UI structure pointer
  */
-Window *
+SngWindow *
 column_select_win_new();
 
 /**
@@ -97,7 +97,7 @@ column_select_win_new();
  * @param columns Array of current active columns
  */
 void
-column_select_win_set_columns(Window *window, GPtrArray *columns);
+column_select_win_set_columns(SngWindow *window, GPtrArray *columns);
 
 G_END_DECLS
 

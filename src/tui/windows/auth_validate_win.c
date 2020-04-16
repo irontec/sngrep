@@ -31,7 +31,7 @@
 #include "tui/dialog.h"
 #include "auth_validate_win.h"
 
-G_DEFINE_TYPE(AuthValidateWindow, auth_validate_win, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(AuthValidateWindow, auth_validate_win, SNG_TYPE_WINDOW)
 
 /**
  * @brief Draw the Auth validator panel
@@ -46,11 +46,11 @@ static gint
 auth_validate_win_draw(SngWidget *widget)
 {
     // Get panel information
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(window);
     g_return_val_if_fail(self != NULL, -1);
 
-    WINDOW *win = window_get_ncurses_window(window);
+    WINDOW *win = sng_window_get_ncurses_window(window);
 
     // No message with Authorization header
     if (self->msg == NULL) {
@@ -84,7 +84,7 @@ auth_validate_win_draw(SngWidget *widget)
 }
 
 static void
-auth_validate_win_calculate(Window *window)
+auth_validate_win_calculate(SngWindow *window)
 {
     // Get panel information
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(window);
@@ -124,7 +124,7 @@ static gint
 auth_validate_win_handle_key(SngWidget *widget, gint key)
 {
     // Get panel information
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
@@ -205,7 +205,7 @@ auth_validate_win_handle_key(SngWidget *widget, gint key)
 }
 
 void
-auth_validate_win_set_group(Window *window, CallGroup *group)
+auth_validate_win_set_group(SngWindow *window, CallGroup *group)
 {
     // Get panel information
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(window);
@@ -225,13 +225,13 @@ auth_validate_win_set_group(Window *window, CallGroup *group)
 }
 
 void
-auth_validate_win_set_msg(Window *window, Message *msg)
+auth_validate_win_set_msg(SngWindow *window, Message *msg)
 {
     // Get panel information
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(window);
     g_return_if_fail(self != NULL);
     g_return_if_fail(msg != NULL);
-    WINDOW *win = window_get_ncurses_window(window);
+    WINDOW *win = sng_window_get_ncurses_window(window);
 
     // Authorization is only checked in request messages
     if (!msg_is_request(msg))
@@ -290,7 +290,7 @@ auth_validate_win_set_msg(Window *window, Message *msg)
 }
 
 void
-auth_validate_win_free(Window *window)
+auth_validate_win_free(SngWindow *window)
 {
     g_object_unref(window);
 }
@@ -313,7 +313,7 @@ auth_validate_win_finalize(GObject *object)
     G_OBJECT_CLASS(auth_validate_win_parent_class)->finalize(object);
 }
 
-Window *
+SngWindow *
 auth_validate_win_new()
 {
     return g_object_new(
@@ -332,12 +332,12 @@ auth_validate_win_constructed(GObject *object)
 
     // Get parent window information
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
+    gint height = sng_window_get_height(parent);
+    gint width = sng_window_get_width(parent);
 
     // Initialize the fields    int total, displayed;
     self->fields[FLD_AUTH_PASS] = new_field(1, 50, 10, 13, 0, 0);
@@ -410,5 +410,5 @@ static void
 auth_validate_win_init(AuthValidateWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_AUTH_VALIDATE);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_AUTH_VALIDATE);
 }

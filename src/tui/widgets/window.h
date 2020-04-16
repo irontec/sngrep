@@ -39,8 +39,8 @@
 
 G_BEGIN_DECLS
 
-#define TUI_TYPE_WINDOW window_get_type()
-G_DECLARE_DERIVABLE_TYPE(Window, window, TUI, WINDOW, Box)
+#define SNG_TYPE_WINDOW sng_window_get_type()
+G_DECLARE_DERIVABLE_TYPE(SngWindow, sng_window, SNG, WINDOW, Box)
 
 /**
  * @brief Enum for available panel types
@@ -69,16 +69,16 @@ typedef enum
  * This struct contains the panel related data, including
  * a pointer to the function that manages its drawing
  */
-struct _WindowClass
+struct _SngWindowClass
 {
     //! Parent class
     BoxClass parent;
     //! Query the panel if redraw is required
-    gboolean (*redraw)(Window *self);
+    gboolean (*redraw)(SngWindow *self);
     //! Notifies the panel the screen has changed
-    gint (*resize)(Window *self);
+    gint (*resize)(SngWindow *self);
     //! Show help window for this panel (if any)
-    gint (*help)(Window *self);
+    gint (*help)(SngWindow *self);
 };
 
 /**
@@ -93,8 +93,8 @@ struct _WindowClass
  * @param width panel windo width
  * @return window instance pointer
  */
-Window *
-window_new(gint height, gint width);
+SngWindow *
+sng_window_new(gint height, gint width);
 
 /**
  * @brief Resize current ui
@@ -106,7 +106,7 @@ window_new(gint height, gint width);
  * @return 0 if ui has been drawn, -1 otherwise
  */
 int
-window_resize(Window *window);
+sng_window_resize(SngWindow *window);
 
 /**
  * @brief Check if the panel requires redraw
@@ -118,7 +118,7 @@ window_resize(Window *window);
  * @return true if the panel must be drawn, false otherwise
  */
 gboolean
-window_redraw(Window *window);
+sng_window_redraw(SngWindow *window);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -129,8 +129,8 @@ window_redraw(Window *window);
  * @param window UI structure
  * @return 0 if ui has been resize, -1 otherwise
  */
-int
-window_draw(Window *window);
+gint
+sng_window_draw(SngWindow *window);
 
 /**
  * @brief Show help screen from current UI (if any)
@@ -142,7 +142,7 @@ window_draw(Window *window);
  * @param window UI structure
  */
 void
-window_help(Window *window);
+sng_window_help(SngWindow *window);
 
 /**
  * @brief Handle moves events on given window
@@ -153,7 +153,7 @@ window_help(Window *window);
  * @return enum @key_handler_ret*
  */
 gint
-window_handle_mouse(Window *window, MEVENT mevent);
+sng_window_handle_mouse(SngWindow *window, MEVENT mevent);
 
 /**
  * @brief Handle key inputs on given UI
@@ -166,7 +166,7 @@ window_handle_mouse(Window *window, MEVENT mevent);
  * @return enum @key_handler_ret*
  */
 gint
-window_handle_key(Window *window, gint key);
+sng_window_handle_key(SngWindow *window, gint key);
 
 /**
  * @brief Draw title at the top of the panel UI
@@ -178,7 +178,7 @@ window_handle_key(Window *window, gint key);
  * @param title String containing the title
  */
 void
-window_set_title(Window *window, const gchar *title);
+sng_window_set_title(SngWindow *window, const gchar *title);
 
 /**
  * @brief Clear a given window line
@@ -190,7 +190,7 @@ window_set_title(Window *window, const gchar *title);
  * @param line Number of line to be cleared
  */
 void
-window_clear_line(Window *window, int line);
+sng_window_clear_line(SngWindow *window, int line);
 
 /**
  * @brief Draw keybinding info at the bottom of the panel
@@ -200,46 +200,46 @@ window_clear_line(Window *window, int line);
  *
  */
 void
-window_draw_bindings(Window *window, const gchar **keybindings, gint count);
+sng_window_draw_bindings(SngWindow *window, const gchar **keybindings, gint count);
 
 PANEL *
-window_get_ncurses_panel(Window *window);
+sng_window_get_ncurses_panel(SngWindow *window);
 
 WINDOW *
-window_get_ncurses_window(Window *window);
+sng_window_get_ncurses_window(SngWindow *window);
 
 void
-window_set_window_type(Window *window, WindowType type);
+sng_window_set_window_type(SngWindow *window, WindowType type);
 
 guint
-window_get_window_type(Window *window);
+sng_window_get_window_type(SngWindow *window);
 
 void
-window_set_width(Window *window, gint width);
+sng_window_set_width(SngWindow *window, gint width);
 
 gint
-window_get_width(Window *window);
+sng_window_get_width(SngWindow *window);
 
 void
-window_set_height(Window *window, gint height);
+sng_window_set_height(SngWindow *window, gint height);
 
 gint
-window_get_height(Window *window);
+sng_window_get_height(SngWindow *window);
 
 void
-window_set_default_focus(Window *window, SngWidget *widget);
+sng_window_set_default_focus(SngWindow *window, SngWidget *widget);
 
 SngWidget *
-window_focused_widget(Window *window);
+sng_window_focused_widget(SngWindow *window);
 
 void
-window_focus_next(Window *window);
+sng_window_focus_next(SngWindow *window);
 
 void
-window_focus_prev(Window *window);
+sng_window_focus_prev(SngWindow *window);
 
 void
-window_set_focused_widget(Window *window, SngWidget *widget);
+sng_window_set_focused_widget(SngWindow *window, SngWidget *widget);
 
 G_END_DECLS
 

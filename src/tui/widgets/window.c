@@ -49,16 +49,16 @@ typedef struct
     SngWidget *focus_default;
     //! Current focused widget
     SngWidget *focus;
-} WindowPrivate;
+} SngWindowPrivate;
 
 // Window class definition
-G_DEFINE_TYPE_WITH_PRIVATE(Window, window, TUI_TYPE_BOX)
+G_DEFINE_TYPE_WITH_PRIVATE(SngWindow, sng_window, TUI_TYPE_BOX)
 
-Window *
-window_new(gint height, gint width)
+SngWindow *
+sng_window_new(gint height, gint width)
 {
-    Window *window = g_object_new(
-        TUI_TYPE_WINDOW,
+    SngWindow *window = g_object_new(
+        SNG_TYPE_WINDOW,
         "height", height,
         "width", width,
         "vexpand", TRUE,
@@ -70,75 +70,75 @@ window_new(gint height, gint width)
 }
 
 PANEL *
-window_get_ncurses_panel(Window *window)
+sng_window_get_ncurses_panel(SngWindow *window)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     return priv->panel;
 }
 
 WINDOW *
-window_get_ncurses_window(Window *window)
+sng_window_get_ncurses_window(SngWindow *window)
 {
     return sng_widget_get_ncurses_window(SNG_WIDGET(window));
 }
 
 void
-window_set_window_type(Window *window, WindowType type)
+sng_window_set_window_type(SngWindow *window, WindowType type)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     priv->type = type;
 }
 
 guint
-window_get_window_type(Window *window)
+sng_window_get_window_type(SngWindow *window)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     return priv->type;
 }
 
 void
-window_set_width(Window *window, gint width)
+sng_window_set_width(SngWindow *window, gint width)
 {
     sng_widget_set_width(SNG_WIDGET(window), width);
 }
 
 gint
-window_get_width(Window *window)
+sng_window_get_width(SngWindow *window)
 {
     return sng_widget_get_width(SNG_WIDGET(window));
 }
 
 void
-window_set_height(Window *window, gint height)
+sng_window_set_height(SngWindow *window, gint height)
 {
     sng_widget_set_height(SNG_WIDGET(window), height);
 }
 
 gint
-window_get_height(Window *window)
+sng_window_get_height(SngWindow *window)
 {
     return sng_widget_get_height(SNG_WIDGET(window));
 }
 
 void
-window_set_default_focus(Window *window, SngWidget *widget)
+sng_window_set_default_focus(SngWindow *window, SngWidget *widget)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     priv->focus_default = widget;
     sng_widget_grab_focus(priv->focus_default);
 }
 
 SngWidget *
-window_focused_widget(Window *window)
+sng_window_focused_widget(SngWindow *window)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     return priv->focus;
 }
 
 void
-window_set_focused_widget(Window *window, SngWidget *widget)
+sng_window_set_focused_widget(SngWindow *window, SngWidget *widget)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
 
     // SngWidget already has the focus
     if (priv->focus == widget) {
@@ -152,16 +152,16 @@ window_set_focused_widget(Window *window, SngWidget *widget)
 }
 
 static void
-window_focus_default_widget(Window *window)
+sng_window_focus_default_widget(SngWindow *window)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     sng_widget_grab_focus(priv->focus_default);
 }
 
 void
-window_focus_next(Window *window)
+sng_window_focus_next(SngWindow *window)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     GList *current = g_list_find(priv->focus_chain, priv->focus);
     do {
         if (current->next == NULL) {
@@ -173,13 +173,13 @@ window_focus_next(Window *window)
         }
     } while (!sng_widget_is_visible(current->data));
 
-    window_set_focused_widget(window, current->data);
+    sng_window_set_focused_widget(window, current->data);
 }
 
 void
-window_focus_prev(Window *window)
+sng_window_focus_prev(SngWindow *window)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     GList *current = g_list_find(priv->focus_chain, priv->focus);
     do {
         if (current->prev == NULL) {
@@ -191,22 +191,22 @@ window_focus_prev(Window *window)
         }
     } while (!sng_widget_is_visible(current->data));
 
-    window_set_focused_widget(window, current->data);
+    sng_window_set_focused_widget(window, current->data);
 }
 
 gboolean
-window_redraw(Window *window)
+sng_window_redraw(SngWindow *window)
 {
-    g_return_val_if_fail(TUI_IS_WINDOW(window), FALSE);
+    g_return_val_if_fail(SNG_IS_WINDOW(window), FALSE);
 
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     // If ui has changed, force redraw. Don't even ask.
     if (priv->changed) {
         priv->changed = FALSE;
         return TRUE;
     }
 
-    WindowClass *klass = TUI_WINDOW_GET_CLASS(window);
+    SngWindowClass *klass = SNG_WINDOW_GET_CLASS(window);
     if (klass->redraw != NULL) {
         return klass->redraw(window);
     }
@@ -215,12 +215,12 @@ window_redraw(Window *window)
 }
 
 static void
-window_map_floating_child(SngWidget *widget, gpointer data)
+sng_window_map_floating_child(SngWidget *widget, gpointer data)
 {
     if (TUI_IS_CONTAINER(widget)) {
         GList *children = container_get_children(TUI_CONTAINER(widget));
         for (GList *l = children; l != NULL; l = l->next) {
-            window_map_floating_child(l->data, data);
+            sng_window_map_floating_child(l->data, data);
         }
     }
 
@@ -230,13 +230,13 @@ window_map_floating_child(SngWidget *widget, gpointer data)
 }
 
 static void
-window_map_floating(Window *window)
+sng_window_map_floating(SngWindow *window)
 {
-    container_foreach(TUI_CONTAINER(window), (GFunc) window_map_floating_child, NULL);
+    container_foreach(TUI_CONTAINER(window), (GFunc) sng_window_map_floating_child, NULL);
 }
 
 static void
-window_realize(SngWidget *widget)
+sng_window_realize(SngWidget *widget)
 {
     if (!sng_widget_is_realized(widget)) {
         // Get current screen dimensions
@@ -260,42 +260,42 @@ window_realize(SngWidget *widget)
         wtimeout(win, 0);
         keypad(win, TRUE);
 
-        WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(widget));
+        SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(widget));
         priv->panel = new_panel(win);
     }
 
-    SNG_WIDGET_CLASS(window_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(sng_window_parent_class)->realize(widget);
 }
 
 static void
-window_update_focus_chain(Window *window, SngWidget *widget)
+sng_window_update_focus_chain(SngWindow *window, SngWidget *widget)
 {
     if (sng_widget_can_focus(widget)) {
-        WindowPrivate *priv = window_get_instance_private(window);
+        SngWindowPrivate *priv = sng_window_get_instance_private(window);
         priv->focus_chain = g_list_append(priv->focus_chain, widget);
         g_signal_connect_swapped(widget, "lose-focus",
-                                 G_CALLBACK(window_focus_default_widget), window);
+                                 G_CALLBACK(sng_window_focus_default_widget), window);
         g_signal_connect_swapped(widget, "grab-focus",
-                                 G_CALLBACK(window_set_focused_widget), window);
+                                 G_CALLBACK(sng_window_set_focused_widget), window);
     }
 
     if (TUI_IS_CONTAINER(widget)) {
         GList *children = container_get_children(TUI_CONTAINER(widget));
         for (GList *l = children; l != NULL; l = l->next) {
-            window_update_focus_chain(window, l->data);
+            sng_window_update_focus_chain(window, l->data);
         }
     }
 }
 
 static void
-window_add_widget(Container *container, SngWidget *widget)
+sng_window_add_widget(Container *container, SngWidget *widget)
 {
-    window_update_focus_chain(TUI_WINDOW(container), widget);
-    TUI_CONTAINER_CLASS(window_parent_class)->add(container, widget);
+    sng_window_update_focus_chain(SNG_WINDOW(container), widget);
+    TUI_CONTAINER_CLASS(sng_window_parent_class)->add(container, widget);
 }
 
 int
-window_draw(Window *window)
+sng_window_draw(SngWindow *window)
 {
     SngWidget *widget = SNG_WIDGET(window);
     // Draw all widgets of the window
@@ -303,16 +303,16 @@ window_draw(Window *window)
     // Map all widgets to their screen positions
     sng_widget_map(widget);
     // Map all floating widgets
-    window_map_floating(window);
+    sng_window_map_floating(window);
     return 0;
 }
 
 int
-window_resize(Window *window)
+sng_window_resize(SngWindow *window)
 {
-    g_return_val_if_fail(TUI_IS_WINDOW(window), FALSE);
+    g_return_val_if_fail(SNG_IS_WINDOW(window), FALSE);
 
-    WindowClass *klass = TUI_WINDOW_GET_CLASS(window);
+    SngWindowClass *klass = SNG_WINDOW_GET_CLASS(window);
     if (klass->resize != NULL) {
         return klass->resize(window);
     }
@@ -321,46 +321,46 @@ window_resize(Window *window)
 }
 
 void
-window_help(Window *window)
+sng_window_help(SngWindow *window)
 {
-    g_return_if_fail(TUI_IS_WINDOW(window));
+    g_return_if_fail(SNG_IS_WINDOW(window));
 
     // Disable input timeout
     nocbreak();
     cbreak();
 
-    WindowClass *klass = TUI_WINDOW_GET_CLASS(window);
+    SngWindowClass *klass = SNG_WINDOW_GET_CLASS(window);
     if (klass->help != NULL) {
         klass->help(window);
     }
 }
 
 gint
-window_handle_mouse(Window *window, MEVENT mevent)
+sng_window_handle_mouse(SngWindow *window, MEVENT mevent)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     priv->changed = TRUE;
     SngWidget *clicked_widget = container_find_by_position(TUI_CONTAINER(window), mevent.x, mevent.y);
     if (clicked_widget != NULL) {
-        window_set_focused_widget(window, clicked_widget);
+        sng_window_set_focused_widget(window, clicked_widget);
         return sng_widget_clicked(clicked_widget, mevent);
     }
     return KEY_HANDLED;
 }
 
 gint
-window_handle_key(Window *window, gint key)
+sng_window_handle_key(SngWindow *window, gint key)
 {
-    WindowPrivate *priv = window_get_instance_private(window);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
     priv->changed = TRUE;
 
     // Check actions for this key
     KeybindingAction action = key_find_action(key, ACTION_UNKNOWN);
     if (action == ACTION_NEXT_FIELD) {
-        window_focus_next(window);
+        sng_window_focus_next(window);
         return KEY_HANDLED;
     } else if (action == ACTION_PREV_FIELD) {
-        window_focus_prev(window);
+        sng_window_focus_prev(window);
         return KEY_HANDLED;
     } else {
         return sng_widget_key_pressed(priv->focus, key);
@@ -368,7 +368,7 @@ window_handle_key(Window *window, gint key)
 }
 
 void
-window_set_title(Window *window, const gchar *title)
+sng_window_set_title(SngWindow *window, const gchar *title)
 {
     WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(window));
 
@@ -379,13 +379,13 @@ window_set_title(Window *window, const gchar *title)
 
     // Center the title on the window
     wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_BLUE));
-    window_clear_line(window, 0);
+    sng_window_clear_line(window, 0);
     mvwprintw(win, 0, (sng_widget_get_width(SNG_WIDGET(window)) - strlen(title)) / 2, "%s", title);
     wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_BLUE));
 }
 
 void
-window_clear_line(Window *window, gint line)
+sng_window_clear_line(SngWindow *window, gint line)
 {
     // We could do this with wcleartoel but we want to
     // preserve previous window attributes. That way we
@@ -395,7 +395,7 @@ window_clear_line(Window *window, gint line)
 }
 
 void
-window_draw_bindings(Window *window, const char **keybindings, gint count)
+sng_window_draw_bindings(SngWindow *window, const char **keybindings, gint count)
 {
     int key, xpos = 0;
 
@@ -408,7 +408,7 @@ window_draw_bindings(Window *window, const char **keybindings, gint count)
 
     // Write a line all the footer width
     wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    window_clear_line(window, sng_widget_get_height(SNG_WIDGET(window)) - 1);
+    sng_window_clear_line(window, sng_widget_get_height(SNG_WIDGET(window)) - 1);
 
     // Draw keys and their actions
     for (key = 0; key < count; key += 2) {
@@ -429,45 +429,45 @@ window_draw_bindings(Window *window, const char **keybindings, gint count)
 }
 
 static void
-window_constructed(GObject *object)
+sng_window_constructed(GObject *object)
 {
     // Realize window as soon as its constructed
     sng_widget_realize(SNG_WIDGET(object));
 
     // Chain-up parent constructed
-    G_OBJECT_CLASS(window_parent_class)->constructed(object);
+    G_OBJECT_CLASS(sng_window_parent_class)->constructed(object);
 }
 
 static void
-window_finalize(GObject *self)
+sng_window_finalize(GObject *self)
 {
-    WindowPrivate *priv = window_get_instance_private(TUI_WINDOW(self));
+    SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(self));
     // Deallocate ncurses pointers
     hide_panel(priv->panel);
     del_panel(priv->panel);
 
     // Chain-up parent finalize function
-    G_OBJECT_CLASS(window_parent_class)->finalize(self);
+    G_OBJECT_CLASS(sng_window_parent_class)->finalize(self);
 }
 
 static void
-window_class_init(WindowClass *klass)
+sng_window_class_init(SngWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = window_constructed;
-    object_class->finalize = window_finalize;
+    object_class->constructed = sng_window_constructed;
+    object_class->finalize = sng_window_finalize;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = window_realize;
+    widget_class->realize = sng_window_realize;
 
     ContainerClass *container_class = TUI_CONTAINER_CLASS(klass);
-    container_class->add = window_add_widget;
+    container_class->add = sng_window_add_widget;
 }
 
 static void
-window_init(Window *self)
+sng_window_init(SngWindow *self)
 {
-    WindowPrivate *priv = window_get_instance_private(self);
+    SngWindowPrivate *priv = sng_window_get_instance_private(self);
     // Force draw on new created windows
     priv->changed = TRUE;
     // Set window as default focused SngWidget

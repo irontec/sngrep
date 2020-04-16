@@ -41,7 +41,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_AUTH_VALIDATE auth_validate_win_get_type()
-G_DECLARE_FINAL_TYPE(AuthValidateWindow, auth_validate_win, TUI, AUTH_VALIDATE, Window)
+G_DECLARE_FINAL_TYPE(AuthValidateWindow, auth_validate_win, TUI, AUTH_VALIDATE, SngWindow)
 
 /**
  * @brief Enum of available dialog fields
@@ -64,7 +64,7 @@ typedef enum
 struct _AuthValidateWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Form that contains the validator fields
     FORM *form;
     //! An array of fields
@@ -99,7 +99,7 @@ struct _AuthValidateWindow
  *
  * @param window UI structure pointer
  */
-Window *
+SngWindow *
 auth_validate_win_new();
 
 /**
@@ -110,7 +110,7 @@ auth_validate_win_new();
  * @param window UI structure pointer
  */
 void
-auth_validate_win_free(Window *window);
+auth_validate_win_free(SngWindow *window);
 
 /**
  * @brief Set the group call of the panel
@@ -122,7 +122,7 @@ auth_validate_win_free(Window *window);
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-auth_validate_win_set_group(Window *window, CallGroup *group);
+auth_validate_win_set_group(SngWindow *window, CallGroup *group);
 
 /**
  * @brief Set the SIP message to be validated
@@ -134,7 +134,7 @@ auth_validate_win_set_group(Window *window, CallGroup *group);
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-auth_validate_win_set_msg(Window *window, Message *msg);
+auth_validate_win_set_msg(SngWindow *window, Message *msg);
 
 G_END_DECLS
 

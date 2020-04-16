@@ -40,7 +40,7 @@
 #include "tui/windows/call_raw_win.h"
 
 
-G_DEFINE_TYPE(CallRawWindow , call_raw_win, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(CallRawWindow , call_raw_win, SNG_TYPE_WINDOW)
 
 /**
  * @brief Determine if the screen requires redrawn
@@ -51,7 +51,7 @@ G_DEFINE_TYPE(CallRawWindow , call_raw_win, TUI_TYPE_WINDOW)
  * @return true if the panel requires redraw, false otherwise
  */
 static gboolean
-call_raw_win_redraw(Window *window)
+call_raw_win_redraw(SngWindow *window)
 {
     // Get panel information
     CallRawWindow *self = TUI_CALL_RAW(window);
@@ -73,7 +73,7 @@ call_raw_win_redraw(Window *window)
  * @param msg New message to be printed
  */
 static void
-call_raw_win_print_msg(Window *window, Message *msg)
+call_raw_win_print_msg(SngWindow *window, Message *msg)
 {
     int payload_lines, column, height, width;
     // Message ngrep style Header
@@ -165,12 +165,12 @@ call_raw_win_draw(SngWidget *widget)
     Message *msg = NULL;
 
     // Get panel information
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_val_if_fail(self != NULL, -1);
-    WINDOW *win = window_get_ncurses_window(window);
-    gint height = window_get_height(window);
-    gint width = window_get_width(window);
+    WINDOW *win = sng_window_get_ncurses_window(window);
+    gint height = sng_window_get_height(window);
+    gint width = sng_window_get_width(window);
 
     if (self->group) {
         // Print the call group messages into the pad
@@ -194,7 +194,7 @@ call_raw_win_draw(SngWidget *widget)
  * @param times number of lines to move up
  */
 static void
-call_raw_win_move_up(Window *window, guint times)
+call_raw_win_move_up(SngWindow *window, guint times)
 {
     // Get panel information
     CallRawWindow *self = TUI_CALL_RAW(window);
@@ -215,7 +215,7 @@ call_raw_win_move_up(Window *window, guint times)
  * @param times number of lines to move up
  */
 static void
-call_raw_win_move_down(Window *window, guint times)
+call_raw_win_move_down(SngWindow *window, guint times)
 {
     // Get panel information
     CallRawWindow *self = TUI_CALL_RAW(window);
@@ -242,7 +242,7 @@ call_raw_win_handle_key(SngWidget *widget, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CR_SCROLLSTEP);
 
-    Window *window = TUI_WINDOW(widget);
+    SngWindow *window = SNG_WINDOW(widget);
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
@@ -309,7 +309,7 @@ call_raw_win_handle_key(SngWidget *widget, int key)
 }
 
 void
-call_raw_win_set_group(Window *window, CallGroup *group)
+call_raw_win_set_group(SngWindow *window, CallGroup *group)
 {
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_if_fail(self != NULL);
@@ -325,7 +325,7 @@ call_raw_win_set_group(Window *window, CallGroup *group)
 }
 
 void
-call_raw_win_set_msg(Window *window, Message *msg)
+call_raw_win_set_msg(SngWindow *window, Message *msg)
 {
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_if_fail(self != NULL);
@@ -344,12 +344,12 @@ call_raw_win_set_msg(Window *window, Message *msg)
 }
 
 void
-call_raw_win_free(Window *window)
+call_raw_win_free(SngWindow *window)
 {
     g_object_unref(window);
 }
 
-Window *
+SngWindow *
 call_raw_win_new()
 {
     return g_object_new(
@@ -378,7 +378,7 @@ call_raw_win_class_init(CallRawWindowClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->finalize = call_raw_win_finalize;
 
-    WindowClass *window_class = TUI_WINDOW_CLASS(klass);
+    SngWindowClass *window_class = SNG_WINDOW_CLASS(klass);
     window_class->redraw = call_raw_win_redraw;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
@@ -391,7 +391,7 @@ static void
 call_raw_win_init(CallRawWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_CALL_RAW);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_CALL_RAW);
 
     // Create a initial pad of 1000 lines
     self->pad = newpad(500, COLS);

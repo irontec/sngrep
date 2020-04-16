@@ -37,7 +37,7 @@
 #include "tui/windows/call_list_win.h"
 #include "tui/windows/column_select_win.h"
 
-G_DEFINE_TYPE(ColumnSelectWindow, column_select, TUI_TYPE_WINDOW)
+G_DEFINE_TYPE(ColumnSelectWindow, column_select, SNG_TYPE_WINDOW)
 
 /**
  * @brief Move a item to a new position
@@ -421,7 +421,7 @@ column_select_handle_key(SngWidget *widget, gint key)
 }
 
 void
-column_select_win_set_columns(Window *window, GPtrArray *columns)
+column_select_win_set_columns(SngWindow *window, GPtrArray *columns)
 {
     ColumnSelectWindow *self = TUI_COLUMN_SELECT(window);
 
@@ -467,7 +467,7 @@ column_select_finalize(GObject *object)
     G_OBJECT_CLASS(column_select_parent_class)->finalize(object);
 }
 
-Window *
+SngWindow *
 column_select_win_new()
 {
     return g_object_new(
@@ -486,12 +486,12 @@ column_select_constructed(GObject *object)
 
     // Get parent window information
     ColumnSelectWindow *self = TUI_COLUMN_SELECT(object);
-    Window *parent = TUI_WINDOW(self);
-    WINDOW *win = window_get_ncurses_window(parent);
-    PANEL *panel = window_get_ncurses_panel(parent);
+    SngWindow *parent = SNG_WINDOW(self);
+    WINDOW *win = sng_window_get_ncurses_window(parent);
+    PANEL *panel = sng_window_get_ncurses_panel(parent);
 
-    gint height = window_get_height(parent);
-    gint width = window_get_width(parent);
+    gint height = sng_window_get_height(parent);
+    gint width = sng_window_get_width(parent);
 
     // Initialize the fields
     self->fields[FLD_COLUMNS_ACCEPT] = new_field(1, 10, height - 2, 13, 0, 0);
@@ -576,6 +576,6 @@ static void
 column_select_init(ColumnSelectWindow *self)
 {
     // Initialize attributes
-    window_set_window_type(TUI_WINDOW(self), WINDOW_COLUMN_SELECT);
+    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_COLUMN_SELECT);
     self->form_active = FALSE;
 }

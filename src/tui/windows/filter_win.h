@@ -37,7 +37,7 @@
 #include "tui/tui.h"
 
 #define WINDOW_TYPE_FILTER filter_win_get_type()
-G_DECLARE_FINAL_TYPE(FilterWindow, filter_win, TUI, FILTER, Window)
+G_DECLARE_FINAL_TYPE(FilterWindow, filter_win, TUI, FILTER, SngWindow)
 
 /**
  * @brief Enum of available dialog fields
@@ -76,7 +76,7 @@ typedef enum
 struct _FilterWindow
 {
     //! Parent object attributes
-    Window parent;
+    SngWindow parent;
     //! Form that contains the filter fields
     FORM *form;
     //! An array of fields
@@ -91,7 +91,7 @@ struct _FilterWindow
  * static information of the panel that will never be
  * redrawn.
  */
-Window *
+SngWindow *
 filter_win_new();
 
 G_END_DECLS

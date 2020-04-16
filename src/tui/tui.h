@@ -119,19 +119,19 @@ tui_is_enabled();
  * @param type Panel Type
  * @return the ui structure with the panel pointer created*
  */
-Window *
+SngWindow *
 tui_create_window(WindowType type);
 
 /**
  * @brief Find a ui from its panel pointer
  */
-Window *
+SngWindow *
 tui_find_by_panel(PANEL *panel);
 
 /**
  * @brief Find a ui form its panel id
  */
-Window *
+SngWindow *
 tui_find_by_type(WindowType type);
 
 /**
@@ -144,7 +144,7 @@ tui_find_by_type(WindowType type);
  * @param key key pressed by user
  */
 int
-tui_default_keyhandler(Window *window, int key);
+tui_default_keyhandler(SngWindow *window, int key);
 
 /**
  * @brief Call Resize function in all panels in the stack
