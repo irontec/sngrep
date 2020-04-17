@@ -417,7 +417,7 @@ call_list_win_constructed(GObject *object)
     CallListWindow *call_list_win = TUI_CALL_LIST_WIN(object);
 
     // Create menu bar entries
-    call_list_win->menu_bar = menu_bar_new();
+    call_list_win->menu_bar = sng_menu_bar_new();
 
     // File Menu
     SngWidget *menu_file = sng_menu_new("File");

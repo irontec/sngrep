@@ -40,10 +40,10 @@ G_BEGIN_DECLS
 
 #define MENU_WIDTH  20
 
-#define TUI_TYPE_MENU_BAR menu_bar_get_type()
-G_DECLARE_FINAL_TYPE(MenuBar, menu_bar, TUI, MENU_BAR, SngContainer)
+#define TUI_TYPE_MENU_BAR sng_menu_bar_get_type()
+G_DECLARE_FINAL_TYPE(SngMenuBar, sng_menu_bar, SNG, MENU_BAR, SngContainer)
 
-struct _MenuBar
+struct _SngMenuBar
 {
     //! Parent object attributes
     SngContainer parent;
@@ -52,10 +52,10 @@ struct _MenuBar
 };
 
 SngWidget *
-menu_bar_new();
+sng_menu_bar_new();
 
 void
-menu_bar_free(MenuBar *menu);
+sng_menu_bar_free(SngMenuBar *bar);
 
 G_END_DECLS
 

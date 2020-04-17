@@ -33,12 +33,12 @@
 #include "tui/widgets/menu_bar.h"
 
 // Menu class definition
-G_DEFINE_TYPE(MenuBar, menu_bar, SNG_TYPE_CONTAINER)
+G_DEFINE_TYPE(SngMenuBar, sng_menu_bar, SNG_TYPE_CONTAINER)
 
 static gint
-menu_bar_clicked(SngWidget *widget, MEVENT mevent)
+sng_menu_bar_clicked(SngWidget *widget, MEVENT mevent)
 {
-    MenuBar *menu_bar = TUI_MENU_BAR(widget);
+    SngMenuBar *menu_bar = SNG_MENU_BAR(widget);
     GList *menus = sng_container_get_children(SNG_CONTAINER(widget));
 
     gint index = mevent.x / MENU_WIDTH;
@@ -60,7 +60,7 @@ menu_bar_clicked(SngWidget *widget, MEVENT mevent)
 }
 
 static void
-menu_bar_realize(SngWidget *widget)
+sng_menu_bar_realize(SngWidget *widget)
 {
     if (!sng_widget_is_realized(widget)) {
         WINDOW *win = newpad(
@@ -70,11 +70,11 @@ menu_bar_realize(SngWidget *widget)
         sng_widget_set_ncurses_window(widget, win);
 
     }
-    SNG_WIDGET_CLASS(menu_bar_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(sng_menu_bar_parent_class)->realize(widget);
 }
 
 static gint
-menu_bar_draw(SngWidget *widget)
+sng_menu_bar_draw(SngWidget *widget)
 {
     // Create a window to draw the menu bar
     WINDOW *win = sng_widget_get_ncurses_window(widget);
@@ -97,13 +97,13 @@ menu_bar_draw(SngWidget *widget)
     }
 
     // Chain up parent draw
-    return SNG_WIDGET_CLASS(menu_bar_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(sng_menu_bar_parent_class)->draw(widget);
 }
 
 static gint
-menu_bar_key_pressed(SngWidget *widget, gint key)
+sng_menu_bar_key_pressed(SngWidget *widget, gint key)
 {
-    MenuBar *menu_bar = TUI_MENU_BAR(widget);
+    SngMenuBar *menu_bar = SNG_MENU_BAR(widget);
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Check actions for this key
@@ -142,9 +142,9 @@ menu_bar_key_pressed(SngWidget *widget, gint key)
 }
 
 static gboolean
-menu_bar_focus_gained(SngWidget *widget)
+sng_menu_bar_focus_gained(SngWidget *widget)
 {
-    MenuBar *menu_bar = TUI_MENU_BAR(widget);
+    SngMenuBar *menu_bar = SNG_MENU_BAR(widget);
 
     menu_bar->selected = 0;
 
@@ -159,7 +159,7 @@ menu_bar_focus_gained(SngWidget *widget)
 }
 
 SngWidget *
-menu_bar_new()
+sng_menu_bar_new()
 {
     return g_object_new(
         TUI_TYPE_MENU_BAR,
@@ -170,38 +170,38 @@ menu_bar_new()
 }
 
 void
-menu_bar_free(MenuBar *bar)
+sng_menu_bar_free(SngMenuBar *bar)
 {
     g_object_unref(bar);
 }
 
 static void
-menu_bar_constructed(GObject *object)
+sng_menu_bar_constructed(GObject *object)
 {
     SngWidget *widget = SNG_WIDGET(object);
     // MenuBar is always visible
     sng_widget_show(widget);
     // update the object state depending on constructor properties
-    G_OBJECT_CLASS(menu_bar_parent_class)->constructed(object);
+    G_OBJECT_CLASS(sng_menu_bar_parent_class)->constructed(object);
 }
 
 
 static void
-menu_bar_init(MenuBar *self)
+sng_menu_bar_init(SngMenuBar *self)
 {
     self->selected = -1;
 }
 
 static void
-menu_bar_class_init(MenuBarClass *klass)
+sng_menu_bar_class_init(SngMenuBarClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = menu_bar_constructed;
+    object_class->constructed = sng_menu_bar_constructed;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = menu_bar_realize;
-    widget_class->draw = menu_bar_draw;
-    widget_class->key_pressed = menu_bar_key_pressed;
-    widget_class->clicked = menu_bar_clicked;
-    widget_class->focus_gained = menu_bar_focus_gained;
+    widget_class->realize = sng_menu_bar_realize;
+    widget_class->draw = sng_menu_bar_draw;
+    widget_class->key_pressed = sng_menu_bar_key_pressed;
+    widget_class->clicked = sng_menu_bar_clicked;
+    widget_class->focus_gained = sng_menu_bar_focus_gained;
 }
