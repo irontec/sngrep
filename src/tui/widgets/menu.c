@@ -42,10 +42,10 @@ enum
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu class definition
-G_DEFINE_TYPE(Menu, menu, SNG_TYPE_CONTAINER)
+G_DEFINE_TYPE(SngMenu, sng_menu, SNG_TYPE_CONTAINER)
 
 SngWidget *
-menu_new(const gchar *title)
+sng_menu_new(const gchar *title)
 {
     return g_object_new(
         TUI_TYPE_MENU,
@@ -56,19 +56,19 @@ menu_new(const gchar *title)
 }
 
 void
-menu_free(Menu *menu)
+sng_menu_free(SngMenu *menu)
 {
     g_object_unref(menu);
 }
 
 const gchar *
-menu_get_title(Menu *menu)
+sng_menu_get_title(SngMenu *menu)
 {
     return menu->title;
 }
 
 static void
-menu_realize(SngWidget *widget)
+sng_menu_realize(SngWidget *widget)
 {
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
     gint height = g_list_length(children) + 2;
@@ -86,9 +86,9 @@ menu_realize(SngWidget *widget)
 }
 
 static gint
-menu_draw(SngWidget *widget)
+sng_menu_draw(SngWidget *widget)
 {
-    Menu *menu = TUI_MENU(widget);
+    SngMenu *menu = SNG_MENU(widget);
 
     // Set menu background color
     WINDOW *win = sng_widget_get_ncurses_window(widget);
@@ -124,9 +124,9 @@ menu_draw(SngWidget *widget)
 }
 
 static gint
-menu_key_pressed(SngWidget *widget, gint key)
+sng_menu_key_pressed(SngWidget *widget, gint key)
 {
-    Menu *menu = TUI_MENU(widget);
+    SngMenu *menu = SNG_MENU(widget);
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Check actions for this key
@@ -173,16 +173,16 @@ menu_key_pressed(SngWidget *widget, gint key)
 
     MenuItem *item = TUI_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
     if (item->text == NULL) {
-        menu_key_pressed(widget, key);
+        sng_menu_key_pressed(widget, key);
     }
 
     return KEY_HANDLED;
 }
 
 static gint
-menu_clicked(SngWidget *widget, MEVENT mevent)
+sng_menu_clicked(SngWidget *widget, MEVENT mevent)
 {
-    Menu *menu = TUI_MENU(widget);
+    SngMenu *menu = SNG_MENU(widget);
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     menu->selected = CLAMP(
@@ -198,15 +198,15 @@ menu_clicked(SngWidget *widget, MEVENT mevent)
 }
 
 static void
-menu_focus_lost(SngWidget *widget)
+sng_menu_focus_lost(SngWidget *widget)
 {
     sng_widget_hide(widget);
 }
 
 static void
-menu_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
+sng_menu_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
 {
-    Menu *menu = TUI_MENU(self);
+    SngMenu *menu = SNG_MENU(self);
 
     switch (property_id) {
         case PROP_TITLE:
@@ -219,9 +219,9 @@ menu_set_property(GObject *self, guint property_id, const GValue *value, GParamS
 }
 
 static void
-menu_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
+sng_menu_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
 {
-    Menu *menu = TUI_MENU(self);
+    SngMenu *menu = SNG_MENU(self);
     switch (property_id) {
         case PROP_TITLE:
             g_value_set_string(value, menu->title);
@@ -234,18 +234,18 @@ menu_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *p
 
 
 static void
-menu_class_init(MenuClass *klass)
+sng_menu_class_init(SngMenuClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->set_property = menu_set_property;
-    object_class->get_property = menu_get_property;
+    object_class->set_property = sng_menu_set_property;
+    object_class->get_property = sng_menu_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = menu_realize;
-    widget_class->draw = menu_draw;
-    widget_class->key_pressed = menu_key_pressed;
-    widget_class->clicked = menu_clicked;
-    widget_class->focus_lost = menu_focus_lost;
+    widget_class->realize = sng_menu_realize;
+    widget_class->draw = sng_menu_draw;
+    widget_class->key_pressed = sng_menu_key_pressed;
+    widget_class->clicked = sng_menu_clicked;
+    widget_class->focus_lost = sng_menu_focus_lost;
 
 
     obj_properties[PROP_TITLE] =
@@ -264,6 +264,6 @@ menu_class_init(MenuClass *klass)
 }
 
 static void
-menu_init(G_GNUC_UNUSED Menu *self)
+sng_menu_init(G_GNUC_UNUSED SngMenu *self)
 {
 }

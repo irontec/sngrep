@@ -43,10 +43,10 @@
 G_BEGIN_DECLS
 
 // Menu class declaration
-#define TUI_TYPE_MENU menu_get_type()
-G_DECLARE_FINAL_TYPE(Menu, menu, TUI, MENU, SngContainer)
+#define TUI_TYPE_MENU sng_menu_get_type()
+G_DECLARE_FINAL_TYPE(SngMenu, sng_menu, SNG, MENU, SngContainer)
 
-struct _Menu
+struct _SngMenu
 {
     //! Parent object attributes
     SngContainer parent;
@@ -57,13 +57,13 @@ struct _Menu
 };
 
 SngWidget *
-menu_new(const gchar *title);
+sng_menu_new(const gchar *title);
 
 void
-menu_free(Menu *menu);
+sng_menu_free(SngMenu *menu);
 
 const gchar *
-menu_get_title(Menu *menu);
+sng_menu_get_title(SngMenu *menu);
 
 G_END_DECLS
 

@@ -420,7 +420,7 @@ call_list_win_constructed(GObject *object)
     call_list_win->menu_bar = menu_bar_new();
 
     // File Menu
-    SngWidget *menu_file = menu_new("File");
+    SngWidget *menu_file = sng_menu_new("File");
     SngWidget *menu_file_preferences = menu_item_new("Settings");
     menu_item_set_action(TUI_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
     g_signal_connect(menu_file_preferences, "activate",
@@ -440,7 +440,7 @@ call_list_win_constructed(GObject *object)
                      GINT_TO_POINTER(ACTION_PREV_SCREEN));
 
     // View Menu
-    SngWidget *menu_view = menu_new("View");
+    SngWidget *menu_view = sng_menu_new("View");
     SngWidget *menu_view_filters = menu_item_new("Filters");
     menu_item_set_action(TUI_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
     g_signal_connect(menu_view_filters, "activate",
@@ -454,7 +454,7 @@ call_list_win_constructed(GObject *object)
                      GINT_TO_POINTER(ACTION_SHOW_PROTOCOLS));
 
     // Call List menu
-    SngWidget *menu_list = menu_new("Call List");
+    SngWidget *menu_list = sng_menu_new("Call List");
     SngWidget *menu_list_columns = menu_item_new("Configure Columns");
     menu_item_set_action(TUI_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
     g_signal_connect(menu_list_columns, "activate",
@@ -486,7 +486,7 @@ call_list_win_constructed(GObject *object)
                      GINT_TO_POINTER(ACTION_SHOW_FLOW_EX));
 
     // Help Menu
-    SngWidget *menu_help = menu_new("Help");
+    SngWidget *menu_help = sng_menu_new("Help");
     SngWidget *menu_help_about = menu_item_new("About");
     menu_item_set_action(TUI_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
     g_signal_connect(menu_help_about, "activate",

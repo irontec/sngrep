@@ -91,7 +91,7 @@ menu_bar_draw(SngWidget *widget)
         } else {
             wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         }
-        wprintw(win, " %-*s", MENU_WIDTH, menu_get_title(TUI_MENU(menu)));
+        wprintw(win, " %-*s", MENU_WIDTH, sng_menu_get_title(SNG_MENU(menu)));
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         waddwstr(win, tui_acs_utf8(ACS_BOARD));
     }
