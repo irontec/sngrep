@@ -45,6 +45,12 @@ static guint signals[SIGS] = { 0 };
 // Menu table class definition
 G_DEFINE_TYPE(SngTable, sng_table, SNG_TYPE_WIDGET)
 
+static void
+sng_table_activate(SngTable *table)
+{
+    g_signal_emit(SNG_WIDGET(table), signals[SIG_ACTIVATE], 0);
+}
+
 /**
  * @brief Move selection cursor N times vertically
  *
@@ -96,6 +102,98 @@ sng_table_move_horizontal(SngTable *table, gint times)
     );
 }
 
+static gboolean
+sng_table_handle_action(SngWidget *widget, KeybindingAction action)
+{
+
+    SngTable *table = SNG_TABLE(widget);
+    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
+    StorageSortOpts sort;
+    Call *call = NULL;
+
+    // Check if we handle this action
+    switch (action) {
+        case ACTION_RIGHT:
+            sng_table_move_horizontal(table, 3);
+            break;
+        case ACTION_LEFT:
+            sng_table_move_horizontal(table, -3);
+            break;
+        case ACTION_DOWN:
+            sng_table_move_vertical(table, 1);
+            break;
+        case ACTION_UP:
+            sng_table_move_vertical(table, -1);
+            break;
+        case ACTION_HNPAGE:
+            sng_table_move_vertical(table, rnpag_steps / 2);
+            break;
+        case ACTION_NPAGE:
+            sng_table_move_vertical(table, rnpag_steps);
+            break;
+        case ACTION_HPPAGE:
+            sng_table_move_vertical(table, -1 * rnpag_steps / 2);
+            break;
+        case ACTION_PPAGE:
+            sng_table_move_vertical(table, -1 * rnpag_steps);
+            break;
+        case ACTION_BEGIN:
+            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
+            break;
+        case ACTION_END:
+            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls));
+            break;
+        case ACTION_CLEAR:
+            // Clear group calls
+            call_group_remove_all(table->group);
+            break;
+        case ACTION_CLEAR_CALLS:
+            // Remove all stored calls
+            storage_calls_clear();
+            // Clear List
+            table->vscroll.pos = table->cur_idx = 0;
+            call_group_remove_all(table->group);
+            break;
+        case ACTION_CLEAR_CALLS_SOFT:
+            // Remove stored calls, keeping the currently displayed calls
+            storage_calls_clear_soft();
+            // Clear List
+            table->vscroll.pos = table->cur_idx = 0;
+            call_group_remove_all(table->group);
+            break;
+        case ACTION_AUTOSCROLL:
+            table->autoscroll = (table->autoscroll) ? 0 : 1;
+            break;
+        case ACTION_SELECT:
+            // Ignore on empty list
+            if (g_ptr_array_len(table->dcalls) == 0) {
+                break;
+            }
+
+            call = g_ptr_array_index(table->dcalls, table->cur_idx);
+            if (call_group_exists(table->group, call)) {
+                call_group_remove(table->group, call);
+            } else {
+                call_group_add(table->group, call);
+            }
+            break;
+        case ACTION_SORT_SWAP:
+            // Change sort order
+            sort = storage_sort_options();
+            sort.asc = (sort.asc) ? FALSE : TRUE;
+            storage_set_sort_options(sort);
+            break;
+        case ACTION_CONFIRM:
+            sng_table_activate(table);
+            break;
+        default:
+            // Parse next action
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
 static gint
 sng_table_columns_width(SngTable *table, guint columns)
 {
@@ -139,10 +237,25 @@ sng_table_get_call_group(SngTable *table)
     return table->group;
 }
 
-Call *
-sng_table_get_current_call(SngTable *table)
+void
+sng_table_select_current(SngTable *table)
 {
+    sng_table_handle_action(SNG_WIDGET(table), ACTION_SELECT);
+}
+
+Call *
+sng_table_get_current(SngTable *table)
+{
+    if (g_ptr_array_len(table->dcalls) == 0) {
+        return NULL;
+    }
     return g_ptr_array_index(table->dcalls, table->cur_idx);
+}
+
+void
+sng_table_clear(SngTable *table)
+{
+    sng_table_handle_action(SNG_WIDGET(table), ACTION_CLEAR_CALLS);
 }
 
 const gchar *
@@ -165,23 +278,6 @@ sng_table_get_line_for_call(SngTable *table, Call *call)
     }
 
     return out->str;
-}
-
-void
-sng_table_clear(SngTable *table)
-{
-    // Initialize structures
-    table->vscroll.pos = table->cur_idx = 0;
-    call_group_remove_all(table->group);
-
-    // Clear Displayed lines
-    werase(sng_widget_get_ncurses_window(SNG_WIDGET(table)));
-}
-
-static void
-sng_table_activate(SngTable *table)
-{
-    g_signal_emit(SNG_WIDGET(table), signals[SIG_ACTIVATE], 0);
 }
 
 static void
@@ -371,98 +467,21 @@ sng_table_focus_lost(SngWidget *widget)
     SNG_WIDGET_CLASS(sng_table_parent_class)->focus_lost(widget);
 }
 
+
 static gint
 sng_table_key_pressed(SngWidget *widget, gint key)
 {
 
     SngTable *table = SNG_TABLE(widget);
-    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
-    StorageSortOpts sort;
-    Call *call = NULL;
+
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
-        // Check if we handle this action
-        switch (action) {
-            case ACTION_RIGHT:
-                sng_table_move_horizontal(table, 3);
-                break;
-            case ACTION_LEFT:
-                sng_table_move_horizontal(table, -3);
-                break;
-            case ACTION_DOWN:
-                sng_table_move_vertical(table, 1);
-                break;
-            case ACTION_UP:
-                sng_table_move_vertical(table, -1);
-                break;
-            case ACTION_HNPAGE:
-                sng_table_move_vertical(table, rnpag_steps / 2);
-                break;
-            case ACTION_NPAGE:
-                sng_table_move_vertical(table, rnpag_steps);
-                break;
-            case ACTION_HPPAGE:
-                sng_table_move_vertical(table, -1 * rnpag_steps / 2);
-                break;
-            case ACTION_PPAGE:
-                sng_table_move_vertical(table, -1 * rnpag_steps);
-                break;
-            case ACTION_BEGIN:
-                sng_table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
-                break;
-            case ACTION_END:
-                sng_table_move_vertical(table, g_ptr_array_len(table->dcalls));
-                break;
-            case ACTION_CLEAR:
-                // Clear group calls
-                call_group_remove_all(table->group);
-                break;
-            case ACTION_CLEAR_CALLS:
-                // Remove all stored calls
-                storage_calls_clear();
-                // Clear List
-                sng_table_clear(table);
-                break;
-            case ACTION_CLEAR_CALLS_SOFT:
-                // Remove stored calls, keeping the currently displayed calls
-                storage_calls_clear_soft();
-                // Clear List
-                sng_table_clear(table);
-                break;
-            case ACTION_AUTOSCROLL:
-                table->autoscroll = (table->autoscroll) ? 0 : 1;
-                break;
-            case ACTION_SELECT:
-                // Ignore on empty list
-                if (g_ptr_array_len(table->dcalls) == 0) {
-                    break;
-                }
-
-                call = g_ptr_array_index(table->dcalls, table->cur_idx);
-                if (call_group_exists(table->group, call)) {
-                    call_group_remove(table->group, call);
-                } else {
-                    call_group_add(table->group, call);
-                }
-                break;
-            case ACTION_SORT_SWAP:
-                // Change sort order
-                sort = storage_sort_options();
-                sort.asc = (sort.asc) ? FALSE : TRUE;
-                storage_set_sort_options(sort);
-                break;
-            case ACTION_CONFIRM:
-                sng_table_activate(table);
-                break;
-            default:
-                // Parse next action
-                continue;
-        }
-
         // This panel has handled the key successfully
-        break;
+        if (sng_table_handle_action(widget, action)) {
+            break;
+        }
     }
 
     // Disable autoscroll on some key pressed
@@ -475,7 +494,6 @@ sng_table_key_pressed(SngWidget *widget, gint key)
         case ACTION_PPAGE:
         case ACTION_BEGIN:
         case ACTION_END:
-        case ACTION_DISP_FILTER:
             table->autoscroll = 0;
             break;
         default:

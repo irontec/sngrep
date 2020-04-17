@@ -101,6 +101,7 @@ static gint
 sng_button_clicked(SngWidget *widget, G_GNUC_UNUSED MEVENT mevent)
 {
     sng_button_activate(SNG_BUTTON(widget));
+    sng_widget_lose_focus(widget);
     return 0;
 }
 

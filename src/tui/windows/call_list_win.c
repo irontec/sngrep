@@ -134,13 +134,20 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
 
             // If no call is selected, use current call
             if (call_group_count(group) == 0) {
-                call = sng_table_get_current_call(SNG_TABLE(call_list_win->tb_calls));
-                call_group_add(group, call);
+                call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
+                if (call != NULL) {
+                    call_group_add(group, call);
+                }
+            }
+
+            // No calls to display
+            if (call_group_count(group) == 0) {
+                break;
             }
 
             // Add xcall to the group
             if (action == ACTION_SHOW_FLOW_EX) {
-                call = sng_table_get_current_call(SNG_TABLE(call_list_win->tb_calls));
+                call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
                 call_group_add_calls(group, call->xcalls);
                 group->callid = call->callid;
             }
@@ -620,9 +627,9 @@ call_list_win_constructed(GObject *object)
                     COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SELECT),
                     COLOR_PAIR(CP_BLACK_ON_CYAN), "Select");
     SngWidget *bn_select = sng_button_new(bn_text->str);
-    g_signal_connect(bn_select, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SELECT));
+    g_signal_connect_swapped(bn_select, "activate",
+                             G_CALLBACK(sng_table_select_current),
+                             SNG_TABLE(call_list_win->tb_calls));
 
     // Button Help
     g_string_printf(bn_text, "<%d>%s <%d>%s",
@@ -656,9 +663,9 @@ call_list_win_constructed(GObject *object)
                     COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_CLEAR_CALLS),
                     COLOR_PAIR(CP_BLACK_ON_CYAN), "Clear");
     SngWidget *bn_clear = sng_button_new(bn_text->str);
-    g_signal_connect(bn_clear, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_CLEAR_CALLS));
+    g_signal_connect_swapped(bn_clear, "activate",
+                             G_CALLBACK(sng_table_clear),
+                             SNG_TABLE(call_list_win->tb_calls));
 
     // Button Filter
     g_string_printf(bn_text, "<%d>%s <%d>%s",

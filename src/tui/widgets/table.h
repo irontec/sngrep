@@ -78,8 +78,14 @@ sng_table_columns_update(SngTable *table);
 CallGroup *
 sng_table_get_call_group(SngTable *table);
 
+void
+sng_table_select_current(SngTable *table);
+
+void
+sng_table_clear(SngTable *table);
+
 Call *
-sng_table_get_current_call(SngTable *table);
+sng_table_get_current(SngTable *table);
 
 /**
  * @brief Get List line from the given call
