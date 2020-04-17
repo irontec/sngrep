@@ -37,10 +37,10 @@
 G_BEGIN_DECLS
 
 // Class declaration
-#define TUI_TYPE_ENTRY entry_get_type()
-G_DECLARE_FINAL_TYPE(Entry, entry, TUI, ENTRY, SngWidget)
+#define SNG_TYPE_ENTRY sng_entry_get_type()
+G_DECLARE_FINAL_TYPE(SngEntry, sng_entry, SNG, ENTRY, SngWidget)
 
-struct _Entry
+struct _SngEntry
 {
     //! Parent object attributes
     SngWidget parent;
@@ -51,13 +51,13 @@ struct _Entry
 };
 
 SngWidget *
-entry_new();
+sng_entry_new();
 
 void
-entry_set_text(Entry *entry, const gchar *text);
+sng_entry_set_text(SngEntry *entry, const gchar *text);
 
 const gchar *
-entry_get_text(Entry *entry);
+sng_entry_get_text(SngEntry *entry);
 
 G_END_DECLS
 

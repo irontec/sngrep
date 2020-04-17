@@ -39,13 +39,13 @@ enum
 static guint signals[SIGS] = { 0 };
 
 // Menu entry class definition
-G_DEFINE_TYPE(Entry, entry, SNG_TYPE_WIDGET)
+G_DEFINE_TYPE(SngEntry, sng_entry, SNG_TYPE_WIDGET)
 
 SngWidget *
-entry_new()
+sng_entry_new()
 {
     return g_object_new(
-        TUI_TYPE_ENTRY,
+        SNG_TYPE_ENTRY,
         "min-height", 1,
         "height", 1,
         "hexpand", TRUE,
@@ -54,36 +54,36 @@ entry_new()
 }
 
 void
-entry_free(Entry *entry)
+sng_entry_free(SngEntry *entry)
 {
     g_object_unref(entry);
 }
 
 void
-entry_set_text(Entry *entry, const gchar *text)
+sng_entry_set_text(SngEntry *entry, const gchar *text)
 {
     set_field_buffer(entry->fields[0], 0, text);
 }
 
 const gchar *
-entry_get_text(Entry *entry)
+sng_entry_get_text(SngEntry *entry)
 {
     return g_strchomp(field_buffer(entry->fields[0], 0));
 }
 
 static void
-entry_activate(Entry *entry)
+sng_entry_activate(SngEntry *entry)
 {
     g_signal_emit(SNG_WIDGET(entry), signals[SIG_ACTIVATE], 0);
 }
 
 static void
-entry_realize(SngWidget *widget)
+sng_entry_realize(SngWidget *widget)
 {
-    Entry *entry = TUI_ENTRY(widget);
+    SngEntry *entry = SNG_ENTRY(widget);
 
     // Chain up parent realize
-    SNG_WIDGET_CLASS(entry_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(sng_entry_parent_class)->realize(widget);
 
     // Create entry field
     if (entry->form == NULL) {
@@ -103,9 +103,9 @@ entry_realize(SngWidget *widget)
 }
 
 static gint
-entry_draw(SngWidget *widget)
+sng_entry_draw(SngWidget *widget)
 {
-    Entry *entry = TUI_ENTRY(widget);
+    SngEntry *entry = SNG_ENTRY(widget);
     post_form(entry->form);
 
     // Move the cursor in main screen
@@ -121,13 +121,13 @@ entry_draw(SngWidget *widget)
         );
     }
 
-    return SNG_WIDGET_CLASS(entry_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(sng_entry_parent_class)->draw(widget);
 }
 
 static gboolean
-entry_focus_gained(SngWidget *widget)
+sng_entry_focus_gained(SngWidget *widget)
 {
-    Entry *entry = TUI_ENTRY(widget);
+    SngEntry *entry = SNG_ENTRY(widget);
     // Enable cursor
     curs_set(1);
     // Change field background
@@ -137,25 +137,25 @@ entry_focus_gained(SngWidget *widget)
     // Update field form
     post_form(entry->form);
     // Chain up parent focus gained
-    return SNG_WIDGET_CLASS(entry_parent_class)->focus_gained(widget);
+    return SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_gained(widget);
 }
 
 static void
-entry_focus_lost(SngWidget *widget)
+sng_entry_focus_lost(SngWidget *widget)
 {
-    Entry *entry = TUI_ENTRY(widget);
+    SngEntry *entry = SNG_ENTRY(widget);
     // Disable cursor
     curs_set(0);
     // Change field background
     set_field_back(entry->fields[0], A_NORMAL);
     // Chain up parent focus lost
-    SNG_WIDGET_CLASS(entry_parent_class)->focus_lost(widget);
+    SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_lost(widget);
 }
 
 static gint
-entry_key_pressed(SngWidget *widget, gint key)
+sng_entry_key_pressed(SngWidget *widget, gint key)
 {
-    Entry *entry = TUI_ENTRY(widget);
+    SngEntry *entry = SNG_ENTRY(widget);
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -189,7 +189,7 @@ entry_key_pressed(SngWidget *widget, gint key)
                 form_driver(entry->form, REQ_DEL_PREV);
                 break;
             case ACTION_CONFIRM:
-                entry_activate(entry);
+                sng_entry_activate(entry);
                 sng_widget_lose_focus(widget);
                 break;
             case ACTION_CANCEL:
@@ -212,19 +212,19 @@ entry_key_pressed(SngWidget *widget, gint key)
 }
 
 static void
-entry_init(G_GNUC_UNUSED Entry *self)
+sng_entry_init(G_GNUC_UNUSED SngEntry *self)
 {
 }
 
 static void
-entry_class_init(EntryClass *klass)
+sng_entry_class_init(SngEntryClass *klass)
 {
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = entry_realize;
-    widget_class->draw = entry_draw;
-    widget_class->focus_gained = entry_focus_gained;
-    widget_class->focus_lost = entry_focus_lost;
-    widget_class->key_pressed = entry_key_pressed;
+    widget_class->realize = sng_entry_realize;
+    widget_class->draw = sng_entry_draw;
+    widget_class->focus_gained = sng_entry_focus_gained;
+    widget_class->focus_lost = sng_entry_focus_lost;
+    widget_class->key_pressed = sng_entry_key_pressed;
 
     signals[SIG_ACTIVATE] =
         g_signal_newv("activate",

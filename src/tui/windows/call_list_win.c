@@ -386,7 +386,7 @@ call_list_win_memory_label(SngWidget *widget)
 static void
 call_list_win_display_filter(SngWidget *widget)
 {
-    const gchar *text = entry_get_text(TUI_ENTRY(widget));
+    const gchar *text = sng_entry_get_text(SNG_ENTRY(widget));
     // Reset filters on each key stroke
     filter_reset_calls();
     filter_set(FILTER_CALL_LIST, strlen(text) ? text : NULL);
@@ -581,7 +581,7 @@ call_list_win_constructed(GObject *object)
     SngWidget *lb_dfilter = label_new("Display Filter:");
     sng_widget_set_hexpand(SNG_WIDGET(lb_dfilter), FALSE);
     sng_container_add(SNG_CONTAINER(header_third), lb_dfilter);
-    call_list_win->en_dfilter = entry_new();
+    call_list_win->en_dfilter = sng_entry_new();
     g_signal_connect(call_list_win->en_dfilter, "key-pressed",
                      G_CALLBACK(call_list_win_display_filter), NULL);
     sng_container_add(SNG_CONTAINER(header_third), call_list_win->en_dfilter);
