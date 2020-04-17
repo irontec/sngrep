@@ -30,17 +30,26 @@
 #include <string.h>
 #include <panel.h>
 #include "glib-extra/glist.h"
+#include "glib-extra/glib_enum_types.h"
 #include "tui/theme.h"
-#include "tui/widgets/box.h"
+#include "tui/widgets/window.h"
 #include "tui/keybinding.h"
 #include "tui/widgets/window.h"
+
+enum
+{
+    PROP_WINDOW_TYPE = 1,
+    N_PROPERTIES
+};
+
+static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 typedef struct
 {
     //! Curses panel pointer
     PANEL *panel;
     //! Panel Type @see PanelTypes enum
-    WindowType type;
+    SngWindowType type;
     //! Flag this panel as redraw required
     gboolean changed;
     //! Focusable widget chain
@@ -83,7 +92,7 @@ sng_window_get_ncurses_window(SngWindow *window)
 }
 
 void
-sng_window_set_window_type(SngWindow *window, WindowType type)
+sng_window_set_window_type(SngWindow *window, SngWindowType type)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
     priv->type = type;
@@ -451,17 +460,62 @@ sng_window_finalize(GObject *self)
 }
 
 static void
+sng_window_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+    SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(object));
+    switch (property_id) {
+        case PROP_WINDOW_TYPE:
+            priv->type = g_value_get_enum(value);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+            break;
+    }
+}
+
+static void
+sng_window_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+{
+    SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(object));
+    switch (property_id) {
+        case PROP_WINDOW_TYPE:
+            g_value_set_enum(value, priv->type);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+            break;
+    }
+}
+
+static void
 sng_window_class_init(SngWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = sng_window_constructed;
     object_class->finalize = sng_window_finalize;
+    object_class->set_property = sng_window_set_property;
+    object_class->get_property = sng_window_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = sng_window_realize;
 
     SngContainerClass *container_class = SNG_CONTAINER_CLASS(klass);
     container_class->add = sng_window_add_widget;
+
+    obj_properties[PROP_WINDOW_TYPE] =
+        g_param_spec_enum("window-type",
+                          "Window Type",
+                          "Window type ",
+                          SNG_TYPE_WINDOW_TYPE,
+                          SNG_WINDOW_TYPE_COUNT,
+                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT
+        );
+
+    g_object_class_install_properties(
+        object_class,
+        N_PROPERTIES,
+        obj_properties
+    );
 }
 
 static void

@@ -147,33 +147,33 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
 
             if (action == ACTION_SHOW_RAW) {
                 // Create a Call raw panel
-                call_raw_win_set_group(tui_create_window(WINDOW_CALL_RAW), group);
+                call_raw_win_set_group(tui_create_window(SNG_WINDOW_TYPE_CALL_RAW), group);
             } else {
                 // Display current call flow (normal or extended)
-                call_flow_win_set_group(tui_create_window(WINDOW_CALL_FLOW), group);
+                call_flow_win_set_group(tui_create_window(SNG_WINDOW_TYPE_CALL_FLOW), group);
             }
             break;
         case ACTION_SHOW_PROTOCOLS:
-            tui_create_window(WINDOW_PROTOCOL_SELECT);
+            tui_create_window(SNG_WINDOW_TYPE_PROTOCOL_SELECT);
             break;
         case ACTION_SHOW_FILTERS:
-            tui_create_window(WINDOW_FILTER);
+            tui_create_window(SNG_WINDOW_TYPE_FILTER);
             break;
         case ACTION_SHOW_COLUMNS:
-            tui_create_window(WINDOW_COLUMN_SELECT);
+            tui_create_window(SNG_WINDOW_TYPE_COLUMN_SELECT);
             sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
             break;
         case ACTION_SHOW_STATS:
-            tui_create_window(WINDOW_STATS);
+            tui_create_window(SNG_WINDOW_TYPE_STATS);
             break;
         case ACTION_SAVE:
             save_set_group(
-                tui_create_window(WINDOW_SAVE),
+                tui_create_window(SNG_WINDOW_TYPE_SAVE),
                 sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls))
             );
             break;
         case ACTION_SHOW_SETTINGS:
-            tui_create_window(WINDOW_SETTINGS);
+            tui_create_window(SNG_WINDOW_TYPE_SETTINGS);
             break;
         case ACTION_TOGGLE_PAUSE:
             // Pause/Resume capture
@@ -397,6 +397,7 @@ call_list_win_new()
 {
     SngWindow *window = g_object_new(
         TUI_TYPE_CALL_LIST_WIN,
+        "window-type", SNG_WINDOW_TYPE_CALL_LIST,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
         NULL
@@ -622,8 +623,6 @@ call_list_win_class_init(CallListWindowClass *klass)
 }
 
 static void
-call_list_win_init(CallListWindow *self)
+call_list_win_init(G_GNUC_UNUSED CallListWindow *self)
 {
-    // Set parent attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_CALL_LIST);
 }

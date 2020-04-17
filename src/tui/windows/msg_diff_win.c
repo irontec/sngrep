@@ -217,6 +217,7 @@ msg_diff_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_MSG_DIFF,
+        "window-type", SNG_WINDOW_TYPE_MSG_DIFF,
         NULL
     );
 }
@@ -259,8 +260,6 @@ msg_diff_win_class_init(MsgDiffWindowClass *klass)
 }
 
 static void
-msg_diff_win_init(MsgDiffWindow *self)
+msg_diff_win_init(G_GNUC_UNUSED MsgDiffWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_MSG_DIFF);
 }

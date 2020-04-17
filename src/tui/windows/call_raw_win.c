@@ -272,7 +272,7 @@ call_raw_win_handle_key(SngWidget *widget, int key)
             case ACTION_SAVE:
                 if (self->group) {
                     // Display save panel
-                    save_set_group(tui_create_window(WINDOW_SAVE), self->group);
+                    save_set_group(tui_create_window(SNG_WINDOW_TYPE_SAVE), self->group);
                 }
                 break;
             case ACTION_TOGGLE_SYNTAX:
@@ -354,6 +354,7 @@ call_raw_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_CALL_RAW,
+        "window-type", SNG_WINDOW_TYPE_CALL_RAW,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
         NULL
@@ -390,9 +391,6 @@ call_raw_win_class_init(CallRawWindowClass *klass)
 static void
 call_raw_win_init(CallRawWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_CALL_RAW);
-
     // Create a initial pad of 1000 lines
     self->pad = newpad(500, COLS);
     self->padline = 0;

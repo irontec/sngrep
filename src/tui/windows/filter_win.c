@@ -304,6 +304,7 @@ filter_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_FILTER,
+        "window-type", SNG_WINDOW_TYPE_FILTER,
         "height", 17,
         "width", 50,
         NULL
@@ -466,8 +467,6 @@ filter_win_class_init(FilterWindowClass *klass)
 }
 
 static void
-filter_win_init(FilterWindow *self)
+filter_win_init(G_GNUC_UNUSED FilterWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_FILTER);
 }

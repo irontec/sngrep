@@ -120,7 +120,7 @@ tui_is_enabled();
  * @return the ui structure with the panel pointer created*
  */
 SngWindow *
-tui_create_window(WindowType type);
+tui_create_window(SngWindowType type);
 
 /**
  * @brief Find a ui from its panel pointer
@@ -132,7 +132,7 @@ tui_find_by_panel(PANEL *panel);
  * @brief Find a ui form its panel id
  */
 SngWindow *
-tui_find_by_type(WindowType type);
+tui_find_by_type(SngWindowType type);
 
 /**
  * @brief Default handler for keys

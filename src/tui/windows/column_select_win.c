@@ -472,6 +472,7 @@ column_select_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_COLUMN_SELECT,
+        "window-type", SNG_WINDOW_TYPE_COLUMN_SELECT,
         "height", 20,
         "width", 60,
         NULL
@@ -576,6 +577,5 @@ static void
 column_select_init(ColumnSelectWindow *self)
 {
     // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_COLUMN_SELECT);
     self->form_active = FALSE;
 }

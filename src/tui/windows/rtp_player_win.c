@@ -287,6 +287,7 @@ rtp_player_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_RTP_PLAYER,
+        "window-type", SNG_WINDOW_TYPE_RTP_PLAYER,
         "height", 11,
         "width", 68,
         NULL
@@ -360,8 +361,6 @@ rtp_player_win_class_init(RtpPlayerWindowClass *klass)
 }
 
 static void
-rtp_player_win_init(RtpPlayerWindow *self)
+rtp_player_win_init(G_GNUC_UNUSED RtpPlayerWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_RTP_PLAYER);
 }

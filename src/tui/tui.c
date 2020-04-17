@@ -68,7 +68,7 @@ tui_error_quark()
 }
 
 SngWindow *
-tui_create_window(WindowType type)
+tui_create_window(SngWindowType type)
 {
     // Find the panel of given type and create it
     return tui_find_by_type(type);
@@ -109,7 +109,7 @@ tui_find_by_panel(PANEL *panel)
 }
 
 SngWindow *
-tui_find_by_type(WindowType type)
+tui_find_by_type(SngWindowType type)
 {
     guint index;
     if (g_ptr_array_find_with_equal_func(
@@ -121,41 +121,41 @@ tui_find_by_type(WindowType type)
     SngWindow *window = NULL;
 
     switch (type) {
-        case WINDOW_CALL_LIST:
+        case SNG_WINDOW_TYPE_CALL_LIST:
             window = call_list_win_new();
             break;
-        case WINDOW_COLUMN_SELECT:
+        case SNG_WINDOW_TYPE_COLUMN_SELECT:
             window = column_select_win_new();
             break;
-        case WINDOW_STATS:
+        case SNG_WINDOW_TYPE_STATS:
             window = stats_win_new();
             break;
-        case WINDOW_CALL_FLOW:
+        case SNG_WINDOW_TYPE_CALL_FLOW:
             window = call_flow_win_new();
             break;
-        case WINDOW_CALL_RAW:
+        case SNG_WINDOW_TYPE_CALL_RAW:
             window = call_raw_win_new();
             break;
-        case WINDOW_FILTER:
+        case SNG_WINDOW_TYPE_FILTER:
             window = filter_win_new();
             break;
-        case WINDOW_MSG_DIFF:
+        case SNG_WINDOW_TYPE_MSG_DIFF:
             window = msg_diff_win_new();
             break;
-        case WINDOW_SAVE:
+        case SNG_WINDOW_TYPE_SAVE:
             window = save_win_new();
             break;
-        case WINDOW_SETTINGS:
+        case SNG_WINDOW_TYPE_SETTINGS:
             window = settings_win_new();
             break;
-        case WINDOW_AUTH_VALIDATE:
+        case SNG_WINDOW_TYPE_AUTH_VALIDATE:
             window = auth_validate_win_new();
             break;
-        case WINDOW_PROTOCOL_SELECT:
+        case SNG_WINDOW_TYPE_PROTOCOL_SELECT:
             window = protocol_select_win_new();
             break;
 #ifdef WITH_PULSE
-        case WINDOW_RTP_PLAYER:
+        case SNG_WINDOW_TYPE_RTP_PLAYER:
             window = rtp_player_win_new();
             break;
 #endif
@@ -297,7 +297,7 @@ tui_default_keyhandler(SngWindow *window, int key)
                 setting_toggle(SETTING_TUI_DISPLAY_ALIAS);
                 break;
             case ACTION_SHOW_SETTINGS:
-                tui_create_window(WINDOW_SETTINGS);
+                tui_create_window(SNG_WINDOW_TYPE_SETTINGS);
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
@@ -574,7 +574,7 @@ tui_init(GMainLoop *loop, GError **error)
     windows = g_ptr_array_new();
 
     // Create the first displayed window
-    SngWindow *window = tui_create_window(WINDOW_CALL_LIST);
+    SngWindow *window = tui_create_window(SNG_WINDOW_TYPE_CALL_LIST);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(g_main_loop_quit), loop);
 
     // Source for reading events from stdin

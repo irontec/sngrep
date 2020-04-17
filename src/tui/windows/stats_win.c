@@ -69,6 +69,7 @@ stats_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_STATS,
+        "window-type", SNG_WINDOW_TYPE_STATS,
         "height", 25,
         "width", 60,
         NULL
@@ -268,8 +269,6 @@ stats_class_init(StatsWindowClass *klass)
 }
 
 static void
-stats_init(StatsWindow *self)
+stats_init(G_GNUC_UNUSED StatsWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_STATS);
 }

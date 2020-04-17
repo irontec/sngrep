@@ -194,6 +194,7 @@ set(ENUM_HEADERS
         src/storage/storage.h
         src/packet/packet.h
         src/tui/widgets/box.h
+        src/tui/widgets/window.h
         )
 
 add_custom_command(

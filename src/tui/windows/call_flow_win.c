@@ -1564,7 +1564,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode
-                next_window = tui_create_window(WINDOW_CALL_RAW);
+                next_window = tui_create_window(SNG_WINDOW_TYPE_CALL_RAW);
                 call_raw_win_set_group(next_window, self->group);
                 break;
             case ACTION_DECREASE_RAW:
@@ -1616,7 +1616,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
             case ACTION_SAVE:
                 cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
                 if (cur_arrow->type == CF_ARROW_SIP) {
-                    next_window = tui_create_window(WINDOW_SAVE);
+                    next_window = tui_create_window(SNG_WINDOW_TYPE_SAVE);
                     save_set_group(next_window, self->group);
                     save_set_msg(next_window, call_flow_arrow_message(cur_arrow));
                 }
@@ -1627,7 +1627,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         dialog_run("RTP packets are not being stored, run with --rtp flag.");
                         break;
                     }
-                    next_window = tui_create_window(WINDOW_SAVE);
+                    next_window = tui_create_window(SNG_WINDOW_TYPE_SAVE);
                     save_set_stream(next_window, cur_arrow->item);
                 }
 #endif
@@ -1642,7 +1642,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         break;
                     }
 
-                    next_window = tui_create_window(WINDOW_RTP_PLAYER);
+                    next_window = tui_create_window(SNG_WINDOW_TYPE_RTP_PLAYER);
                     if (next_window != NULL) {
                         rtp_player_win_set_stream(next_window, cur_arrow->item);
                     }
@@ -1650,7 +1650,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 break;
 #endif
             case ACTION_AUTH_VALIDATE:
-                next_window = tui_create_window(WINDOW_AUTH_VALIDATE);
+                next_window = tui_create_window(SNG_WINDOW_TYPE_AUTH_VALIDATE);
                 auth_validate_win_set_group(next_window, self->group);
                 break;
             case ACTION_TOGGLE_TIME:
@@ -1664,7 +1664,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         self->selected = -1;
                     } else {
                         // Show diff panel
-                        next_window = tui_create_window(WINDOW_MSG_DIFF);
+                        next_window = tui_create_window(SNG_WINDOW_TYPE_MSG_DIFF);
                         msg_diff_win_set_msgs(next_window,
                                               call_flow_arrow_message(g_ptr_array_index(self->darrows, self->selected)),
                                               call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
@@ -1676,7 +1676,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 break;
             case ACTION_CONFIRM:
                 // KEY_ENTER, display current message in raw mode
-                next_window = tui_create_window(WINDOW_CALL_RAW);
+                next_window = tui_create_window(SNG_WINDOW_TYPE_CALL_RAW);
                 call_raw_win_set_group(next_window, self->group);
                 call_raw_win_set_msg(next_window,
                                      call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
@@ -1950,6 +1950,7 @@ call_flow_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_CALL_FLOW,
+        "window-type", SNG_WINDOW_TYPE_CALL_FLOW,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
         NULL
@@ -2013,9 +2014,6 @@ call_flow_win_class_init(CallFlowWindowClass *klass)
 static void
 call_flow_win_init(CallFlowWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_CALL_FLOW);
-
     // Display timestamp next to each arrow
     self->arrowtime = TRUE;
 

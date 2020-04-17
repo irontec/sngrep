@@ -318,6 +318,7 @@ auth_validate_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_AUTH_VALIDATE,
+        "window-type", SNG_WINDOW_TYPE_AUTH_VALIDATE,
         "height", 15,
         "width", 68,
         NULL
@@ -407,8 +408,6 @@ auth_validate_win_class_init(AuthValidateWindowClass *klass)
 }
 
 static void
-auth_validate_win_init(AuthValidateWindow *self)
+auth_validate_win_init(G_GNUC_UNUSED AuthValidateWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_AUTH_VALIDATE);
 }

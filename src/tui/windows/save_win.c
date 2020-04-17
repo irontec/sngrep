@@ -586,6 +586,7 @@ save_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_SAVE,
+        "window-type", SNG_WINDOW_TYPE_SAVE,
         "height", 15,
         "width", 68,
         NULL
@@ -757,8 +758,6 @@ save_class_init(SaveWindowClass *klass)
 }
 
 static void
-save_init(SaveWindow *self)
+save_init(G_GNUC_UNUSED SaveWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_SAVE);
 }

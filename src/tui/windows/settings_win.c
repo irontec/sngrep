@@ -487,6 +487,7 @@ settings_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_SETTINGS,
+        "window-type", SNG_WINDOW_TYPE_SETTINGS,
         "height", 24,
         "width", 70,
         NULL
@@ -637,8 +638,6 @@ settings_win_class_init(SettingsWindowClass *klass)
 }
 
 static void
-settings_win_init(SettingsWindow *self)
+settings_win_init(G_GNUC_UNUSED SettingsWindow *self)
 {
-    // Initialize attributes
-    sng_window_set_window_type(SNG_WINDOW(self), WINDOW_SETTINGS);
 }

@@ -49,19 +49,20 @@ G_DECLARE_DERIVABLE_TYPE(SngWindow, sng_window, SNG, WINDOW, SngBox)
  */
 typedef enum
 {
-    WINDOW_CALL_LIST = 0,    // Call List ui screen
-    WINDOW_CALL_FLOW,        // Call-Flow ui screen
-    WINDOW_CALL_RAW,         // Raw SIP messages ui screen
-    WINDOW_FILTER,           // Filters panel
-    WINDOW_SAVE,             // Save to pcap panel
-    WINDOW_MSG_DIFF,         // Message compare
-    WINDOW_COLUMN_SELECT,    // Column selector panel
-    WINDOW_SETTINGS,         // Settings panel
-    WINDOW_AUTH_VALIDATE,    // Authentication validator panel
-    WINDOW_STATS,            // Stats panel
-    WINDOW_RTP_PLAYER,       // RTP Player panel
-    WINDOW_PROTOCOL_SELECT,  // RTP Player panel
-} WindowType;
+    SNG_WINDOW_TYPE_CALL_LIST = 0,    // Call List ui screen
+    SNG_WINDOW_TYPE_CALL_FLOW,        // Call-Flow ui screen
+    SNG_WINDOW_TYPE_CALL_RAW,         // Raw SIP messages ui screen
+    SNG_WINDOW_TYPE_FILTER,           // Filters panel
+    SNG_WINDOW_TYPE_SAVE,             // Save to pcap panel
+    SNG_WINDOW_TYPE_MSG_DIFF,         // Message compare
+    SNG_WINDOW_TYPE_COLUMN_SELECT,    // Column selector panel
+    SNG_WINDOW_TYPE_SETTINGS,         // Settings panel
+    SNG_WINDOW_TYPE_AUTH_VALIDATE,    // Authentication validator panel
+    SNG_WINDOW_TYPE_STATS,            // Stats panel
+    SNG_WINDOW_TYPE_RTP_PLAYER,       // RTP Player panel
+    SNG_WINDOW_TYPE_PROTOCOL_SELECT,  // RTP Player panel
+    SNG_WINDOW_TYPE_COUNT,
+} SngWindowType;
 
 /**
  * @brief Panel information structure
@@ -209,7 +210,7 @@ WINDOW *
 sng_window_get_ncurses_window(SngWindow *window);
 
 void
-sng_window_set_window_type(SngWindow *window, WindowType type);
+sng_window_set_window_type(SngWindow *window, SngWindowType type);
 
 guint
 sng_window_get_window_type(SngWindow *window);
