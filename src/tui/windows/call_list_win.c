@@ -130,17 +130,17 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
         case ACTION_SHOW_FLOW_EX:
         case ACTION_SHOW_RAW:
             // Create a new group of calls
-            group = call_group_clone(table_get_call_group(TUI_TABLE(call_list_win->tb_calls)));
+            group = call_group_clone(sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls)));
 
             // If no call is selected, use current call
             if (call_group_count(group) == 0) {
-                call = table_get_current_call(TUI_TABLE(call_list_win->tb_calls));
+                call = sng_table_get_current_call(SNG_TABLE(call_list_win->tb_calls));
                 call_group_add(group, call);
             }
 
             // Add xcall to the group
             if (action == ACTION_SHOW_FLOW_EX) {
-                call = table_get_current_call(TUI_TABLE(call_list_win->tb_calls));
+                call = sng_table_get_current_call(SNG_TABLE(call_list_win->tb_calls));
                 call_group_add_calls(group, call->xcalls);
                 group->callid = call->callid;
             }
@@ -161,7 +161,7 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
             break;
         case ACTION_SHOW_COLUMNS:
             tui_create_window(WINDOW_COLUMN_SELECT);
-            table_columns_update(TUI_TABLE(call_list_win->tb_calls));
+            sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
             break;
         case ACTION_SHOW_STATS:
             tui_create_window(WINDOW_STATS);
@@ -169,7 +169,7 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
         case ACTION_SAVE:
             save_set_group(
                 tui_create_window(WINDOW_SAVE),
-                table_get_call_group(TUI_TABLE(call_list_win->tb_calls))
+                sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls))
             );
             break;
         case ACTION_SHOW_SETTINGS:
@@ -404,11 +404,11 @@ call_list_win_new()
     return window;
 }
 
-Table *
+SngTable *
 call_list_win_get_table(SngWindow *window)
 {
     CallListWindow *call_list_win = TUI_CALL_LIST_WIN(window);
-    return TUI_TABLE(call_list_win->tb_calls);
+    return SNG_TABLE(call_list_win->tb_calls);
 }
 
 static void
@@ -588,9 +588,9 @@ call_list_win_constructed(GObject *object)
     sng_container_add(SNG_CONTAINER(call_list_win), header_third);
     sng_container_show_all(SNG_CONTAINER(header_third));
 
-    call_list_win->tb_calls = table_new();
+    call_list_win->tb_calls = sng_table_new();
 //    table_set_rows(TUI_TABLE(call_list), storage_calls());
-    table_columns_update(TUI_TABLE(call_list_win->tb_calls));
+    sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
     g_signal_connect(call_list_win->tb_calls, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW));

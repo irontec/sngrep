@@ -38,10 +38,10 @@
 G_BEGIN_DECLS
 
 // Class declaration
-#define TUI_TYPE_TABLE table_get_type()
-G_DECLARE_FINAL_TYPE(Table, table, TUI, TABLE, SngWidget)
+#define SNG_TYPE_TABLE sng_table_get_type()
+G_DECLARE_FINAL_TYPE(SngTable, sng_table, SNG, TABLE, SngWidget)
 
-struct _Table
+struct _SngTable
 {
     //! Parent object attributes
     SngWidget parent;
@@ -64,22 +64,22 @@ struct _Table
 };
 
 SngWidget *
-table_new();
+sng_table_new();
 
 void
-table_set_rows(Table *table, GPtrArray *rows);
+sng_table_set_rows(SngTable *table, GPtrArray *rows);
 
 GPtrArray *
-table_get_rows(Table *table);
+sng_table_get_rows(SngTable *table);
 
 void
-table_columns_update(Table *table);
+sng_table_columns_update(SngTable *table);
 
 CallGroup *
-table_get_call_group(Table *table);
+sng_table_get_call_group(SngTable *table);
 
 Call *
-table_get_current_call(Table *table);
+sng_table_get_current_call(SngTable *table);
 
 /**
  * @brief Get List line from the given call
@@ -92,7 +92,7 @@ table_get_current_call(Table *table);
  * @return A pointer to text
  */
 const gchar *
-table_get_line_for_call(Table *table, Call *call);
+sng_table_get_line_for_call(SngTable *table, Call *call);
 
 G_END_DECLS
 

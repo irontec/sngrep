@@ -43,7 +43,7 @@ enum
 static guint signals[SIGS] = { 0 };
 
 // Menu table class definition
-G_DEFINE_TYPE(Table, table, SNG_TYPE_WIDGET)
+G_DEFINE_TYPE(SngTable, sng_table, SNG_TYPE_WIDGET)
 
 /**
  * @brief Move selection cursor N times vertically
@@ -52,7 +52,7 @@ G_DEFINE_TYPE(Table, table, SNG_TYPE_WIDGET)
  * @param times number of lines, positive for down, negative for up
  */
 static void
-table_move_vertical(Table *table, gint times)
+sng_table_move_vertical(SngTable *table, gint times)
 {
     // Set the new current selected index
     table->cur_idx = CLAMP(
@@ -86,7 +86,7 @@ table_move_vertical(Table *table, gint times)
  * @param times number of lines, positive for right, negative for left
  */
 static void
-table_move_horizontal(Table *table, gint times)
+sng_table_move_horizontal(SngTable *table, gint times)
 {
     // Move horizontal scroll N times
     table->hscroll.pos = CLAMP(
@@ -97,7 +97,7 @@ table_move_horizontal(Table *table, gint times)
 }
 
 static gint
-table_columns_width(Table *table, guint columns)
+sng_table_columns_width(SngTable *table, guint columns)
 {
     // More requested columns that existing columns??
     if (columns > g_ptr_array_len(table->columns)) {
@@ -120,7 +120,7 @@ table_columns_width(Table *table, guint columns)
 }
 
 void
-table_columns_update(Table *table)
+sng_table_columns_update(SngTable *table)
 {
     // Add configured columns
     table->columns = g_ptr_array_new_with_free_func(g_free);
@@ -134,19 +134,19 @@ table_columns_update(Table *table)
 }
 
 CallGroup *
-table_get_call_group(Table *table)
+sng_table_get_call_group(SngTable *table)
 {
     return table->group;
 }
 
 Call *
-table_get_current_call(Table *table)
+sng_table_get_current_call(SngTable *table)
 {
     return g_ptr_array_index(table->dcalls, table->cur_idx);
 }
 
 const gchar *
-table_get_line_for_call(Table *table, Call *call)
+sng_table_get_line_for_call(SngTable *table, Call *call)
 {
     // Get first call message
     Message *msg = g_ptr_array_first(call->msgs);
@@ -168,7 +168,7 @@ table_get_line_for_call(Table *table, Call *call)
 }
 
 void
-table_clear(Table *table)
+sng_table_clear(SngTable *table)
 {
     // Initialize structures
     table->vscroll.pos = table->cur_idx = 0;
@@ -179,32 +179,32 @@ table_clear(Table *table)
 }
 
 static void
-table_activate(Table *table)
+sng_table_activate(SngTable *table)
 {
     g_signal_emit(SNG_WIDGET(table), signals[SIG_ACTIVATE], 0);
 }
 
 static void
-table_realize(SngWidget *widget)
+sng_table_realize(SngWidget *widget)
 {
-    Table *table = TUI_TABLE(widget);
+    SngTable *table = SNG_TABLE(widget);
 
     if (!sng_widget_is_realized(widget)) {
         // Create a new pad for configured columns
-        SNG_WIDGET_CLASS(table_parent_class)->realize(widget);
+        SNG_WIDGET_CLASS(sng_table_parent_class)->realize(widget);
         WINDOW *win = sng_widget_get_ncurses_window(widget);
         // Set window srollbars
         table->vscroll = window_set_scrollbar(win, SB_VERTICAL, SB_LEFT);
         table->hscroll = window_set_scrollbar(win, SB_HORIZONTAL, SB_BOTTOM);
     }
 
-    SNG_WIDGET_CLASS(table_parent_class)->realize(widget);
+    SNG_WIDGET_CLASS(sng_table_parent_class)->realize(widget);
 }
 
 static gint
-table_draw(SngWidget *widget)
+sng_table_draw(SngWidget *widget)
 {
-    Table *table = TUI_TABLE(widget);
+    SngTable *table = SNG_TABLE(widget);
 
     // Get the list of calls that are going to be displayed
 //    g_ptr_array_free(table->dcalls, TRUE);
@@ -214,9 +214,9 @@ table_draw(SngWidget *widget)
     if (table->autoscroll) {
         StorageSortOpts sort = storage_sort_options();
         if (sort.asc) {
-            table_move_vertical(table, g_ptr_array_len(table->dcalls));
+            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls));
         } else {
-            table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
+            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
         }
     }
 
@@ -335,7 +335,7 @@ table_draw(SngWidget *widget)
 //    copywin(pad, self->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
 
     // Setup horizontal scrollbar
-    table->hscroll.max = table_columns_width(table, 0);
+    table->hscroll.max = sng_table_columns_width(table, 0);
     table->hscroll.preoffset = 1;    // Leave first column for vscroll
 
     // Setup vertical scrollbar
@@ -354,28 +354,28 @@ table_draw(SngWidget *widget)
         mvwprintw(win, 0, 0, "A");
     }
 
-    return SNG_WIDGET_CLASS(table_parent_class)->draw(widget);
+    return SNG_WIDGET_CLASS(sng_table_parent_class)->draw(widget);
 }
 
 static gboolean
-table_focus_gained(SngWidget *widget)
+sng_table_focus_gained(SngWidget *widget)
 {
     // Chain up parent focus gained
-    return SNG_WIDGET_CLASS(table_parent_class)->focus_gained(widget);
+    return SNG_WIDGET_CLASS(sng_table_parent_class)->focus_gained(widget);
 }
 
 static void
-table_focus_lost(SngWidget *widget)
+sng_table_focus_lost(SngWidget *widget)
 {
     // Chain up parent focus lost
-    SNG_WIDGET_CLASS(table_parent_class)->focus_lost(widget);
+    SNG_WIDGET_CLASS(sng_table_parent_class)->focus_lost(widget);
 }
 
 static gint
-table_key_pressed(SngWidget *widget, gint key)
+sng_table_key_pressed(SngWidget *widget, gint key)
 {
 
-    Table *table = TUI_TABLE(widget);
+    SngTable *table = SNG_TABLE(widget);
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
     StorageSortOpts sort;
     Call *call = NULL;
@@ -386,34 +386,34 @@ table_key_pressed(SngWidget *widget, gint key)
         // Check if we handle this action
         switch (action) {
             case ACTION_RIGHT:
-                table_move_horizontal(table, 3);
+                sng_table_move_horizontal(table, 3);
                 break;
             case ACTION_LEFT:
-                table_move_horizontal(table, -3);
+                sng_table_move_horizontal(table, -3);
                 break;
             case ACTION_DOWN:
-                table_move_vertical(table, 1);
+                sng_table_move_vertical(table, 1);
                 break;
             case ACTION_UP:
-                table_move_vertical(table, -1);
+                sng_table_move_vertical(table, -1);
                 break;
             case ACTION_HNPAGE:
-                table_move_vertical(table, rnpag_steps / 2);
+                sng_table_move_vertical(table, rnpag_steps / 2);
                 break;
             case ACTION_NPAGE:
-                table_move_vertical(table, rnpag_steps);
+                sng_table_move_vertical(table, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                table_move_vertical(table, -1 * rnpag_steps / 2);
+                sng_table_move_vertical(table, -1 * rnpag_steps / 2);
                 break;
             case ACTION_PPAGE:
-                table_move_vertical(table, -1 * rnpag_steps);
+                sng_table_move_vertical(table, -1 * rnpag_steps);
                 break;
             case ACTION_BEGIN:
-                table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
+                sng_table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
                 break;
             case ACTION_END:
-                table_move_vertical(table, g_ptr_array_len(table->dcalls));
+                sng_table_move_vertical(table, g_ptr_array_len(table->dcalls));
                 break;
             case ACTION_CLEAR:
                 // Clear group calls
@@ -423,13 +423,13 @@ table_key_pressed(SngWidget *widget, gint key)
                 // Remove all stored calls
                 storage_calls_clear();
                 // Clear List
-                table_clear(table);
+                sng_table_clear(table);
                 break;
             case ACTION_CLEAR_CALLS_SOFT:
                 // Remove stored calls, keeping the currently displayed calls
                 storage_calls_clear_soft();
                 // Clear List
-                table_clear(table);
+                sng_table_clear(table);
                 break;
             case ACTION_AUTOSCROLL:
                 table->autoscroll = (table->autoscroll) ? 0 : 1;
@@ -454,7 +454,7 @@ table_key_pressed(SngWidget *widget, gint key)
                 storage_set_sort_options(sort);
                 break;
             case ACTION_CONFIRM:
-                table_activate(table);
+                sng_table_activate(table);
                 break;
             default:
                 // Parse next action
@@ -483,16 +483,16 @@ table_key_pressed(SngWidget *widget, gint key)
     }
 
     if (action == ACTION_UNKNOWN) {
-        return SNG_WIDGET_CLASS(table_parent_class)->key_pressed(widget, key);
+        return SNG_WIDGET_CLASS(sng_table_parent_class)->key_pressed(widget, key);
     }
 
     return KEY_HANDLED;
 }
 
 static gint
-table_clicked(SngWidget *widget, MEVENT mevent)
+sng_table_clicked(SngWidget *widget, MEVENT mevent)
 {
-    Table *table = TUI_TABLE(widget);
+    SngTable *table = SNG_TABLE(widget);
 
     // Check if the header line was clicked
     if (mevent.y == sng_widget_get_ypos(widget)) {
@@ -505,16 +505,16 @@ table_clicked(SngWidget *widget, MEVENT mevent)
     // Check if the checkbox was selected
     if (mevent.x >= 1 && mevent.x <= 3) {
         // TODO Handle actions instead of keys
-        table_key_pressed(widget, KEY_SPACE);
+        sng_table_key_pressed(widget, KEY_SPACE);
     }
 
     return 0;
 }
 
 static void
-table_finalize(GObject *object)
+sng_table_finalize(GObject *object)
 {
-    Table *table = TUI_TABLE(object);
+    SngTable *table = SNG_TABLE(object);
 
     // Deallocate window private data
     call_group_free(table->group);
@@ -522,15 +522,15 @@ table_finalize(GObject *object)
     g_ptr_array_free(table->dcalls, TRUE);
 
     // Chain-up parent finalize function
-    G_OBJECT_CLASS(table_parent_class)->finalize(object);
+    G_OBJECT_CLASS(sng_table_parent_class)->finalize(object);
 }
 
 
 SngWidget *
-table_new()
+sng_table_new()
 {
     return g_object_new(
-        TUI_TYPE_TABLE,
+        SNG_TYPE_TABLE,
         "hexpand", TRUE,
         "vexpand", TRUE,
         NULL
@@ -538,31 +538,31 @@ table_new()
 }
 
 void
-table_free(Table *table)
+sng_table_free(SngTable *table)
 {
     g_object_unref(table);
 }
 
 static void
-table_init(Table *table)
+sng_table_init(SngTable *table)
 {
     table->autoscroll = setting_enabled(SETTING_TUI_CL_AUTOSCROLL);
     table->group = call_group_new();
 }
 
 static void
-table_class_init(TableClass *klass)
+sng_table_class_init(SngTableClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->finalize = table_finalize;
+    object_class->finalize = sng_table_finalize;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = table_realize;
-    widget_class->draw = table_draw;
-    widget_class->focus_gained = table_focus_gained;
-    widget_class->focus_lost = table_focus_lost;
-    widget_class->key_pressed = table_key_pressed;
-    widget_class->clicked = table_clicked;
+    widget_class->realize = sng_table_realize;
+    widget_class->draw = sng_table_draw;
+    widget_class->focus_gained = sng_table_focus_gained;
+    widget_class->focus_lost = sng_table_focus_lost;
+    widget_class->key_pressed = sng_table_key_pressed;
+    widget_class->clicked = sng_table_clicked;
 
     signals[SIG_ACTIVATE] =
         g_signal_newv("activate",

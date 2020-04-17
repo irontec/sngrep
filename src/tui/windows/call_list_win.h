@@ -111,7 +111,7 @@ struct _CallListWindow
 SngWindow *
 call_list_win_new();
 
-Table *
+SngTable *
 call_list_win_get_table(SngWindow *window);
 
 G_END_DECLS
