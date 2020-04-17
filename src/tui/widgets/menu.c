@@ -74,7 +74,7 @@ sng_menu_realize(SngWidget *widget)
     gint height = g_list_length(children) + 2;
     gint width = MENU_WIDTH + 2 + 6 + 2;
     for (GList *l = children; l != NULL; l = l->next) {
-        MenuItem *item = TUI_MENU_ITEM(l->data);
+        SngMenuItem *item = SNG_MENU_ITEM(l->data);
         if (item->text != NULL) {
             width = MAX(width, (gint) strlen(item->text) + 2 + 6 + 2);
         }
@@ -100,7 +100,7 @@ sng_menu_draw(SngWidget *widget)
 
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
     for (gint i = 0; i < (gint) g_list_length(children); i++) {
-        MenuItem *item = TUI_MENU_ITEM(g_list_nth_data(children, i));
+        SngMenuItem *item = SNG_MENU_ITEM(g_list_nth_data(children, i));
 
         if (item->text != NULL) {
             if (menu->selected == i) {
@@ -159,7 +159,7 @@ sng_menu_key_pressed(SngWidget *widget, gint key)
                 sng_widget_key_pressed(sng_widget_get_parent(widget), key);
                 break;
             case ACTION_CONFIRM:
-                menu_item_activate(g_list_nth_data(children, menu->selected));
+                sng_menu_item_activate(g_list_nth_data(children, menu->selected));
                 sng_widget_lose_focus(widget);
                 break;
             case ACTION_CANCEL:
@@ -171,7 +171,7 @@ sng_menu_key_pressed(SngWidget *widget, gint key)
         break;
     }
 
-    MenuItem *item = TUI_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
+    SngMenuItem *item = SNG_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
     if (item->text == NULL) {
         sng_menu_key_pressed(widget, key);
     }
@@ -191,8 +191,8 @@ sng_menu_clicked(SngWidget *widget, MEVENT mevent)
         (gint) g_list_length(children) - 1
     );
 
-    MenuItem *item = TUI_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
-    menu_item_activate(item);
+    SngMenuItem *item = SNG_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
+    sng_menu_item_activate(item);
     sng_widget_lose_focus(widget);
     return 0;
 }

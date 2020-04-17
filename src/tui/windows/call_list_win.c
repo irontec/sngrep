@@ -421,74 +421,74 @@ call_list_win_constructed(GObject *object)
 
     // File Menu
     SngWidget *menu_file = sng_menu_new("File");
-    SngWidget *menu_file_preferences = menu_item_new("Settings");
-    menu_item_set_action(TUI_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
+    SngWidget *menu_file_preferences = sng_menu_item_new("Settings");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
     g_signal_connect(menu_file_preferences, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_SETTINGS));
 
-    SngWidget *menu_file_save = menu_item_new("Save as ...");
-    menu_item_set_action(TUI_MENU_ITEM(menu_file_save), ACTION_SAVE);
+    SngWidget *menu_file_save = sng_menu_item_new("Save as ...");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_save), ACTION_SAVE);
     g_signal_connect(menu_file_save, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SAVE));
 
-    SngWidget *menu_file_exit = menu_item_new("Exit");
-    menu_item_set_action(TUI_MENU_ITEM(menu_file_exit), ACTION_PREV_SCREEN);
+    SngWidget *menu_file_exit = sng_menu_item_new("Exit");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_exit), ACTION_PREV_SCREEN);
     g_signal_connect(menu_file_exit, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_PREV_SCREEN));
 
     // View Menu
     SngWidget *menu_view = sng_menu_new("View");
-    SngWidget *menu_view_filters = menu_item_new("Filters");
-    menu_item_set_action(TUI_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
+    SngWidget *menu_view_filters = sng_menu_item_new("Filters");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
     g_signal_connect(menu_view_filters, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FILTERS));
 
-    SngWidget *menu_view_protocols = menu_item_new("Protocols");
-    menu_item_set_action(TUI_MENU_ITEM(menu_view_protocols), ACTION_SHOW_PROTOCOLS);
+    SngWidget *menu_view_protocols = sng_menu_item_new("Protocols");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_protocols), ACTION_SHOW_PROTOCOLS);
     g_signal_connect(menu_view_protocols, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_PROTOCOLS));
 
     // Call List menu
     SngWidget *menu_list = sng_menu_new("Call List");
-    SngWidget *menu_list_columns = menu_item_new("Configure Columns");
-    menu_item_set_action(TUI_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
+    SngWidget *menu_list_columns = sng_menu_item_new("Configure Columns");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
     g_signal_connect(menu_list_columns, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_COLUMNS));
 
-    SngWidget *menu_list_clear = menu_item_new("Clear List");
-    menu_item_set_action(TUI_MENU_ITEM(menu_list_clear), ACTION_CLEAR_CALLS);
+    SngWidget *menu_list_clear = sng_menu_item_new("Clear List");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear), ACTION_CLEAR_CALLS);
     g_signal_connect(menu_list_clear, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_CLEAR_CALLS));
 
-    SngWidget *menu_list_clear_soft = menu_item_new("Clear filtered calls");
-    menu_item_set_action(TUI_MENU_ITEM(menu_list_clear_soft), ACTION_CLEAR_CALLS_SOFT);
+    SngWidget *menu_list_clear_soft = sng_menu_item_new("Clear filtered calls");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear_soft), ACTION_CLEAR_CALLS_SOFT);
     g_signal_connect(menu_list_clear_soft, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_CLEAR_CALLS_SOFT));
 
-    SngWidget *menu_list_flow = menu_item_new("Show Call Flow");
-    menu_item_set_action(TUI_MENU_ITEM(menu_list_flow), ACTION_SHOW_FLOW);
+    SngWidget *menu_list_flow = sng_menu_item_new("Show Call Flow");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow), ACTION_SHOW_FLOW);
     g_signal_connect(menu_list_flow, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
-    SngWidget *menu_list_flow_ex = menu_item_new("Show Call Flow Extended");
-    menu_item_set_action(TUI_MENU_ITEM(menu_list_flow_ex), ACTION_SHOW_FLOW_EX);
+    SngWidget *menu_list_flow_ex = sng_menu_item_new("Show Call Flow Extended");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow_ex), ACTION_SHOW_FLOW_EX);
     g_signal_connect(menu_list_flow, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW_EX));
 
     // Help Menu
     SngWidget *menu_help = sng_menu_new("Help");
-    SngWidget *menu_help_about = menu_item_new("About");
-    menu_item_set_action(TUI_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
+    SngWidget *menu_help_about = sng_menu_item_new("About");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
     g_signal_connect(menu_help_about, "activate",
                      G_CALLBACK(call_list_win_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_HELP));
@@ -498,17 +498,17 @@ call_list_win_constructed(GObject *object)
     sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_file);
     sng_container_add(SNG_CONTAINER(menu_file), menu_file_preferences);
     sng_container_add(SNG_CONTAINER(menu_file), menu_file_save);
-    sng_container_add(SNG_CONTAINER(menu_file), menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new(NULL));
     sng_container_add(SNG_CONTAINER(menu_file), menu_file_exit);
     sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_view);
     sng_container_add(SNG_CONTAINER(menu_view), menu_view_filters);
     sng_container_add(SNG_CONTAINER(menu_view), menu_view_protocols);
     sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_list);
     sng_container_add(SNG_CONTAINER(menu_list), menu_list_columns);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
     sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear);
     sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear_soft);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
     sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow);
     sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow_ex);
     sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_help);

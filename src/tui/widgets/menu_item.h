@@ -40,10 +40,10 @@
 G_BEGIN_DECLS
 
 // MenuItem class declaration
-#define TUI_TYPE_MENU_ITEM menu_item_get_type()
-G_DECLARE_FINAL_TYPE(MenuItem, menu_item, TUI, MENU_ITEM, SngWidget)
+#define SNG_TYPE_MENU_ITEM sng_menu_item_get_type()
+G_DECLARE_FINAL_TYPE(SngMenuItem, sng_menu_item, SNG, MENU_ITEM, SngWidget)
 
-struct _MenuItem
+struct _SngMenuItem
 {
     //! Parent object attributes
     SngWidget parent;
@@ -56,16 +56,16 @@ struct _MenuItem
 };
 
 void
-menu_item_set_action(MenuItem *item, KeybindingAction action);
+sng_menu_item_set_action(SngMenuItem *item, KeybindingAction action);
 
 void
-menu_item_activate(MenuItem *item);
+sng_menu_item_activate(SngMenuItem *item);
 
 SngWidget *
-menu_item_new(const gchar *text);
+sng_menu_item_new(const gchar *text);
 
 void
-menu_item_free(MenuItem *item);
+sng_menu_item_free(SngMenuItem *item);
 
 G_END_DECLS
 

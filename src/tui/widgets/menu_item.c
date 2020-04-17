@@ -47,25 +47,25 @@ static guint signals[SIGS] = { 0 };
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu item class definition
-G_DEFINE_TYPE(MenuItem, menu_item, SNG_TYPE_WIDGET)
+G_DEFINE_TYPE(SngMenuItem, sng_menu_item, SNG_TYPE_WIDGET)
 
 void
-menu_item_set_action(MenuItem *item, KeybindingAction action)
+sng_menu_item_set_action(SngMenuItem *item, KeybindingAction action)
 {
     item->action = action;
 }
 
 void
-menu_item_activate(MenuItem *item)
+sng_menu_item_activate(SngMenuItem *item)
 {
     g_signal_emit(SNG_WIDGET(item), signals[SIG_ACTIVATE], 0);
 }
 
 SngWidget *
-menu_item_new(const gchar *text)
+sng_menu_item_new(const gchar *text)
 {
     return g_object_new(
-        TUI_TYPE_MENU_ITEM,
+        SNG_TYPE_MENU_ITEM,
         "text", text,
         "can-focus", FALSE,
         NULL
@@ -73,15 +73,15 @@ menu_item_new(const gchar *text)
 }
 
 void
-menu_item_free(MenuItem *item)
+sng_menu_item_free(SngMenuItem *item)
 {
     g_object_unref(item);
 }
 
 static void
-menu_item_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
+sng_menu_item_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
 {
-    MenuItem *item = TUI_MENU_ITEM(self);
+    SngMenuItem *item = SNG_MENU_ITEM(self);
 
     switch (property_id) {
         case PROP_TEXT:
@@ -94,9 +94,9 @@ menu_item_set_property(GObject *self, guint property_id, const GValue *value, GP
 }
 
 static void
-menu_item_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
+sng_menu_item_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
 {
-    MenuItem *item = TUI_MENU_ITEM(self);
+    SngMenuItem *item = SNG_MENU_ITEM(self);
     switch (property_id) {
         case PROP_TEXT:
             g_value_set_string(value, item->text);
@@ -108,16 +108,16 @@ menu_item_get_property(GObject *self, guint property_id, GValue *value, GParamSp
 }
 
 static void
-menu_item_init(G_GNUC_UNUSED MenuItem *self)
+sng_menu_item_init(G_GNUC_UNUSED SngMenuItem *self)
 {
 }
 
 static void
-menu_item_class_init(MenuItemClass *klass)
+sng_menu_item_class_init(SngMenuItemClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->set_property = menu_item_set_property;
-    object_class->get_property = menu_item_get_property;
+    object_class->set_property = sng_menu_item_set_property;
+    object_class->get_property = sng_menu_item_get_property;
 
     obj_properties[PROP_TEXT] =
         g_param_spec_string("text",
