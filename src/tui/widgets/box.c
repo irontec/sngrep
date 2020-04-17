@@ -49,6 +49,8 @@ typedef struct
     gint spacing;
     // Padding at the beginning and end of box
     gint padding;
+    // Background filler
+    chtype background;
 } SngBoxPrivate;
 
 // Class definition
@@ -73,6 +75,27 @@ sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding)
         "can-focus", FALSE,
         NULL
     );
+}
+
+void
+sng_box_pack_start(SngBox *box, SngWidget *widget)
+{
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
+
+    if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
+        sng_widget_set_vexpand(widget, FALSE);
+    } else {
+        sng_widget_set_hexpand(widget, FALSE);
+    }
+
+    sng_container_add(SNG_CONTAINER(box), widget);
+}
+
+void
+sng_box_set_background(SngBox *box, chtype background)
+{
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
+    priv->background = background;
 }
 
 static void
@@ -209,7 +232,9 @@ static gint
 sng_box_draw(SngWidget *widget)
 {
     // Clear the window to draw children widgets
+    SngBoxPrivate *priv = sng_box_get_instance_private(SNG_BOX(widget));
     WINDOW *win = sng_widget_get_ncurses_window(widget);
+    wbkgd(win, priv->background);
     werase(win);
     return SNG_WIDGET_CLASS(sng_box_parent_class)->draw(widget);
 }

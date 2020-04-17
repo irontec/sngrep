@@ -48,7 +48,7 @@ typedef struct
 {
     //! Curses panel pointer
     PANEL *panel;
-    //! Panel Type @see PanelTypes enum
+    //! Window type
     SngWindowType type;
     //! Flag this panel as redraw required
     gboolean changed;
@@ -507,7 +507,7 @@ sng_window_class_init(SngWindowClass *klass)
                           "Window Type",
                           "Window type ",
                           SNG_TYPE_WINDOW_TYPE,
-                          SNG_WINDOW_TYPE_COUNT,
+                          0,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT
         );
 

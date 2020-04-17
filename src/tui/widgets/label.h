@@ -56,6 +56,9 @@ sng_label_set_text(SngLabel *label, const gchar *text);
 const gchar *
 sng_label_get_text(SngLabel *label);
 
+gint
+sng_label_get_text_len(const gchar *text);
+
 G_END_DECLS
 
 #endif    /* __SNGREP_LABEL_H__ */

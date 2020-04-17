@@ -47,6 +47,7 @@ set(SOURCES
         src/tui/windows/auth_validate_win.c
         src/tui/windows/protocol_select_win.c
         src/tui/widgets/box.c
+        src/tui/widgets/button.c
         src/tui/widgets/container.c
         src/tui/widgets/entry.c
         src/tui/widgets/label.c

@@ -20,48 +20,41 @@
  **
  ****************************************************************************/
 /**
- * @file box.h
+ * @file button.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Container to manage layouts
+ * @brief
+ *
  */
-#ifndef __SNGREP_BOX_H__
-#define __SNGREP_BOX_H__
+#ifndef __SNGREP_BUTTON_H__
+#define __SNGREP_BUTTON_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/container.h"
+#include <form.h>
+#include "tui/widgets/label.h"
 
 G_BEGIN_DECLS
 
-typedef enum
-{
-  BOX_ORIENTATION_HORIZONTAL,
-  BOX_ORIENTATION_VERTICAL
-} SngBoxOrientation;
-
 // Class declaration
-#define SNG_TYPE_BOX sng_box_get_type()
-G_DECLARE_DERIVABLE_TYPE(SngBox, sng_box, SNG, BOX, SngContainer)
+#define SNG_TYPE_BUTTON sng_button_get_type()
+G_DECLARE_FINAL_TYPE(SngButton, sng_button, SNG, BUTTON, SngLabel)
 
-struct _SngBoxClass
+struct _SngButton
 {
-    //! Parent class
-    SngContainerClass parent;
+    //! Parent object attributes
+    SngLabel parent;
 };
 
 SngWidget *
-sng_box_new(SngBoxOrientation orientation);
-
-SngWidget *
-sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding);
+sng_button_new();
 
 void
-sng_box_pack_start(SngBox *box, SngWidget *widget);
+sng_button_set_text(SngButton *button, const gchar *text);
 
-void
-sng_box_set_background(SngBox *box, chtype background);
+const gchar *
+sng_button_get_text(SngButton *button);
 
 G_END_DECLS
 
-#endif    /* __SNGREP_BOX_H__ */
+#endif    /* __SNGREP_BUTTON_H__ */

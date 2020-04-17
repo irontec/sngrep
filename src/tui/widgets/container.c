@@ -188,7 +188,6 @@ sng_container_base_remove(G_GNUC_UNUSED SngContainer *container, SngWidget *widg
     sng_widget_set_parent(widget, NULL);
 }
 
-
 static void
 sng_container_finalize(GObject *object)
 {

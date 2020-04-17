@@ -599,6 +599,106 @@ call_list_win_constructed(GObject *object)
     sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->tb_calls);
     sng_widget_show(SNG_WIDGET(call_list_win->tb_calls));
 
+    // Bottom button bar
+    SngWidget *button_bar = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 3, 0);
+    sng_widget_set_vexpand(button_bar, FALSE);
+    sng_widget_set_height(button_bar, 1);
+    sng_box_set_background(SNG_BOX(button_bar), COLOR_PAIR(CP_WHITE_ON_CYAN));
+
+    // Button Quit
+    g_autoptr(GString) bn_text = g_string_new(NULL);
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_PREV_SCREEN),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Quit");
+    SngWidget *bn_quit = sng_button_new(bn_text->str);
+    g_signal_connect(bn_quit, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_PREV_SCREEN));
+
+    // Button Select
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SELECT),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Select");
+    SngWidget *bn_select = sng_button_new(bn_text->str);
+    g_signal_connect(bn_select, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SELECT));
+
+    // Button Help
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_HELP),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Help");
+    SngWidget *bn_help = sng_button_new(bn_text->str);
+    g_signal_connect(bn_help, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_HELP));
+
+    // Button Help
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_DISP_FILTER),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Search");
+    SngWidget *bn_search = sng_button_new(bn_text->str);
+    g_signal_connect(bn_search, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_DISP_FILTER));
+
+    // Button Extended
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FLOW_EX),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Extended");
+    SngWidget *bn_extended = sng_button_new(bn_text->str);
+    g_signal_connect(bn_extended, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_FLOW_EX));
+
+    // Button Clear
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_CLEAR_CALLS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Clear");
+    SngWidget *bn_clear = sng_button_new(bn_text->str);
+    g_signal_connect(bn_clear, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_CLEAR_CALLS));
+
+    // Button Filter
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FILTERS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Filter");
+    SngWidget *bn_filter = sng_button_new(bn_text->str);
+    g_signal_connect(bn_filter, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_FILTERS));
+
+    // Button Settings
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_SETTINGS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Settings");
+    SngWidget *bn_settings = sng_button_new(bn_text->str);
+    g_signal_connect(bn_settings, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_SETTINGS));
+
+    // Button Columns
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_COLUMNS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Columns");
+    SngWidget *bn_columns = sng_button_new(bn_text->str);
+    g_signal_connect(bn_columns, "activate",
+                     G_CALLBACK(call_list_win_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_COLUMNS));
+
+    sng_box_pack_start(SNG_BOX(button_bar), bn_quit);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_select);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_help);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_search);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_extended);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_clear);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_filter);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_settings);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_columns);
+    sng_container_add(SNG_CONTAINER(call_list_win), button_bar);
+    sng_container_show_all(SNG_CONTAINER(button_bar));
+
     // Start with the call list focused
     sng_window_set_default_focus(SNG_WINDOW(call_list_win), call_list_win->tb_calls);
 

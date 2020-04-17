@@ -44,6 +44,7 @@
 #include "storage/storage.h"
 #include "storage/group.h"
 #include "tui/widgets/box.h"
+#include "tui/widgets/button.h"
 #include "tui/widgets/container.h"
 #include "tui/widgets/entry.h"
 #include "tui/widgets/label.h"

@@ -27,6 +27,7 @@
  *
  */
 #include "config.h"
+#include "glib-extra/glib.h"
 #include "tui/widgets/label.h"
 #include "tui/theme.h"
 
@@ -46,7 +47,7 @@ sng_label_new(const gchar *text)
 {
     gint width = 0;
     if (text != NULL) {
-        width = strlen(text);
+        width = sng_label_get_text_len(text);
     }
 
     return g_object_new(
@@ -82,6 +83,22 @@ sng_label_get_text(SngLabel *label)
     return label->text;
 }
 
+gint
+sng_label_get_text_len(const gchar *text)
+{
+    gint length = 0;
+    g_auto(GStrv) tokens = g_strsplit_set(text, ">", -1);
+    for (guint i = 0; i < g_strv_length(tokens); i++) {
+        const gchar *open_tag = g_strstr_len(tokens[i], strlen(tokens[i]), "<");
+        if (open_tag == NULL) {
+            length += strlen(tokens[i]);
+        } else {
+            length += open_tag - tokens[i];
+        }
+    }
+    return length;
+}
+
 static gint
 sng_label_draw(SngWidget *widget)
 {
@@ -98,23 +115,27 @@ sng_label_draw(SngWidget *widget)
     werase(win);
 
     g_auto(GStrv) tokens = g_strsplit_set(label->text, "<>", -1);
-    gint color = 0;
+    gint attr = 0;
     for (guint i = 0; i < g_strv_length(tokens); i++) {
         if (g_strcmp0(tokens[i], "red") == 0) {
-            color = CP_RED_ON_DEF;
+            attr = COLOR_PAIR(CP_RED_ON_DEF);
             continue;
         }
         if (g_strcmp0(tokens[i], "green") == 0) {
-            color = CP_GREEN_ON_DEF;
+            attr = COLOR_PAIR(CP_GREEN_ON_DEF);
             continue;
         }
         if (g_strcmp0(tokens[i], "yellow") == 0) {
-            color = CP_YELLOW_ON_DEF;
+            attr = COLOR_PAIR(CP_YELLOW_ON_DEF);
             continue;
         }
-        wattron(win, COLOR_PAIR(color));
+        if (g_atoi(tokens[i])) {
+            attr = g_atoi(tokens[i]);
+            continue;
+        }
+        wattron(win, attr);
         wprintw(win, tokens[i]);
-        wattroff(win, COLOR_PAIR(color));
+        wattroff(win, attr);
     }
 
     return 0;
@@ -166,9 +187,9 @@ sng_label_class_init(SngLabelClass *klass)
 
     obj_properties[PROP_TEXT] =
         g_param_spec_string("text",
-                            "Menu label text",
-                            "Menu label text",
-                            "Untitled menu label",
+                            "Label text",
+                            "Label text",
+                            NULL,
                             G_PARAM_READWRITE
         );
 
