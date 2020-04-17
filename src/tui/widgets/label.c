@@ -39,10 +39,10 @@ enum
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu label class definition
-G_DEFINE_TYPE(Label, label, SNG_TYPE_WIDGET)
+G_DEFINE_TYPE(SngLabel, sng_label, SNG_TYPE_WIDGET)
 
 SngWidget *
-label_new(const gchar *text)
+sng_label_new(const gchar *text)
 {
     gint width = 0;
     if (text != NULL) {
@@ -50,7 +50,7 @@ label_new(const gchar *text)
     }
 
     return g_object_new(
-        TUI_TYPE_LABEL,
+        SNG_TYPE_LABEL,
         "text", text,
         "min-height", 1,
         "height", 1,
@@ -62,13 +62,13 @@ label_new(const gchar *text)
 }
 
 void
-label_free(Label *label)
+sng_label_free(SngLabel *label)
 {
     g_object_unref(label);
 }
 
 void
-label_set_text(Label *label, const gchar *text)
+sng_label_set_text(SngLabel *label, const gchar *text)
 {
     if (label->text != NULL) {
         g_free(label->text);
@@ -77,18 +77,18 @@ label_set_text(Label *label, const gchar *text)
 }
 
 const gchar *
-label_get_text(Label *label)
+sng_label_get_text(SngLabel *label)
 {
     return label->text;
 }
 
 static gint
-label_draw(SngWidget *widget)
+sng_label_draw(SngWidget *widget)
 {
     // Chain up parent draw
-    SNG_WIDGET_CLASS(label_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(sng_label_parent_class)->draw(widget);
 
-    Label *label = TUI_LABEL(widget);
+    SngLabel *label = SNG_LABEL(widget);
     if (label->text == NULL) {
         return 0;
     }
@@ -121,9 +121,9 @@ label_draw(SngWidget *widget)
 }
 
 static void
-label_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
+sng_label_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
 {
-    Label *label = TUI_LABEL(self);
+    SngLabel *label = SNG_LABEL(self);
 
     switch (property_id) {
         case PROP_TEXT:
@@ -136,9 +136,9 @@ label_set_property(GObject *self, guint property_id, const GValue *value, GParam
 }
 
 static void
-label_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
+sng_label_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *pspec)
 {
-    Label *label = TUI_LABEL(self);
+    SngLabel *label = SNG_LABEL(self);
     switch (property_id) {
         case PROP_TEXT:
             g_value_set_string(value, label->text);
@@ -150,19 +150,19 @@ label_get_property(GObject *self, guint property_id, GValue *value, GParamSpec *
 }
 
 static void
-label_init(G_GNUC_UNUSED Label *self)
+sng_label_init(G_GNUC_UNUSED SngLabel *self)
 {
 }
 
 static void
-label_class_init(LabelClass *klass)
+sng_label_class_init(SngLabelClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->set_property = label_set_property;
-    object_class->get_property = label_get_property;
+    object_class->set_property = sng_label_set_property;
+    object_class->get_property = sng_label_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->draw = label_draw;
+    widget_class->draw = sng_label_draw;
 
     obj_properties[PROP_TEXT] =
         g_param_spec_string("text",

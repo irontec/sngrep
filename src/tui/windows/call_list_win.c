@@ -344,7 +344,7 @@ call_list_win_mode_label(SngWidget *widget)
 #endif
 
     // Set Mode label text
-    label_set_text(TUI_LABEL(widget), mode->str);
+    sng_label_set_text(SNG_LABEL(widget), mode->str);
 }
 
 static void
@@ -362,7 +362,7 @@ call_list_win_dialog_label(SngWidget *widget)
         g_string_append_printf(count, "%d", stats.total);
     }
     // Set Count label text
-    label_set_text(TUI_LABEL(widget), count->str);
+    sng_label_set_text(SNG_LABEL(widget), count->str);
 }
 
 static void
@@ -379,7 +379,7 @@ call_list_win_memory_label(SngWidget *widget)
             G_FORMAT_SIZE_IEC_UNITS
         );
         g_string_append_printf(memory, "Mem: %s / %s", usage, limit);
-        label_set_text(TUI_LABEL(widget), memory->str);
+        sng_label_set_text(SNG_LABEL(widget), memory->str);
     }
 }
 
@@ -522,18 +522,18 @@ call_list_win_constructed(GObject *object)
     sng_container_add(SNG_CONTAINER(call_list_win), header_first);
 
     // Mode Label
-    SngWidget *lb_mode = label_new(NULL);
+    SngWidget *lb_mode = sng_label_new(NULL);
     g_signal_connect(lb_mode, "draw", G_CALLBACK(call_list_win_mode_label), NULL);
     sng_container_add(SNG_CONTAINER(header_first), lb_mode);
 
     // Dialog Count
-    SngWidget *lb_dialog_cnt = label_new(NULL);
+    SngWidget *lb_dialog_cnt = sng_label_new(NULL);
     g_signal_connect(lb_dialog_cnt, "draw", G_CALLBACK(call_list_win_dialog_label), NULL);
     sng_container_add(SNG_CONTAINER(header_first), lb_dialog_cnt);
 
     // Memory usage
     if (storage_memory_limit() != 0) {
-        SngWidget *lb_memory = label_new(NULL);
+        SngWidget *lb_memory = sng_label_new(NULL);
         g_signal_connect(lb_memory, "draw", G_CALLBACK(call_list_win_memory_label), NULL);
         sng_container_add(SNG_CONTAINER(header_first), lb_memory);
     }
@@ -544,7 +544,7 @@ call_list_win_constructed(GObject *object)
     if (infile != NULL) {
         g_autoptr(GString) file = g_string_new(NULL);
         g_string_append_printf(file, "Filename: %s", infile);
-        sng_container_add(SNG_CONTAINER(header_first), label_new(file->str));
+        sng_container_add(SNG_CONTAINER(header_first), sng_label_new(file->str));
     }
 
     // Show all labels in the line
@@ -560,7 +560,7 @@ call_list_win_constructed(GObject *object)
         sng_widget_set_height(header_second, 1);
         g_autoptr(GString) filter = g_string_new("BPF Filter: ");
         g_string_append_printf(filter, "<yellow>%s", bpf_filter);
-        sng_container_add(SNG_CONTAINER(header_second), label_new(filter->str));
+        sng_container_add(SNG_CONTAINER(header_second), sng_label_new(filter->str));
     }
 
     // Show Match expression label if specified in command line
@@ -569,7 +569,7 @@ call_list_win_constructed(GObject *object)
         sng_widget_set_height(header_second, 1);
         g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
         g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
-        sng_container_add(SNG_CONTAINER(header_second), label_new(match_expression->str));
+        sng_container_add(SNG_CONTAINER(header_second), sng_label_new(match_expression->str));
     }
     sng_container_add(SNG_CONTAINER(call_list_win), header_second);
     sng_container_show_all(SNG_CONTAINER(header_second));
@@ -578,7 +578,7 @@ call_list_win_constructed(GObject *object)
     SngWidget *header_third = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
     sng_widget_set_height(header_third, 1);
     sng_widget_set_vexpand(header_third, FALSE);
-    SngWidget *lb_dfilter = label_new("Display Filter:");
+    SngWidget *lb_dfilter = sng_label_new("Display Filter:");
     sng_widget_set_hexpand(SNG_WIDGET(lb_dfilter), FALSE);
     sng_container_add(SNG_CONTAINER(header_third), lb_dfilter);
     call_list_win->en_dfilter = sng_entry_new();
