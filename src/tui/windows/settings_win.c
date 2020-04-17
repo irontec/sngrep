@@ -128,9 +128,9 @@ SettingsWindowEntry entries[] = {
 static gint
 settings_win_draw(SngWidget *widget)
 {
-    SngWindow *window = SNG_WINDOW(widget);
+    SngAppWindow *window = SNG_APP_WINDOW(widget);
     SettingsWindow *self = TUI_SETTINGS(window);
-    WINDOW *win = sng_window_get_ncurses_window(window);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
 
     // Store cursor position
     gint cury, curx;
@@ -202,7 +202,7 @@ settings_is_entry(FIELD *field)
  * @return 0 in all cases
  */
 static gint
-settings_update_settings(SngWindow *window)
+settings_update_settings(SngAppWindow *window)
 {
     SettingsWindow *self = TUI_SETTINGS(window);
 
@@ -232,7 +232,7 @@ settings_update_settings(SngWindow *window)
  * @param ui UI structure pointer
  */
 static void
-settings_win_save(SngWindow *window)
+settings_win_save(SngAppWindow *window)
 {
     SettingsWindow *self = TUI_SETTINGS(window);
 
@@ -337,7 +337,7 @@ settings_win_handle_key(SngWidget *widget, gint key)
     GType setting_type = -1;
 
     // Get panel information
-    SngWindow *window = SNG_WINDOW(widget);
+    SngAppWindow *window = SNG_APP_WINDOW(widget);
     SettingsWindow *self = TUI_SETTINGS(window);
 
     // Get current field id
@@ -477,12 +477,12 @@ settings_win_handle_key(SngWidget *widget, gint key)
 }
 
 void
-settings_win_free(SngWindow *window)
+settings_win_free(SngAppWindow *window)
 {
     g_object_unref(window);
 }
 
-SngWindow *
+SngAppWindow *
 settings_win_new()
 {
     return g_object_new(
@@ -516,12 +516,12 @@ settings_win_constructed(GObject *object)
 
     // Get parent window information
     SettingsWindow *self = TUI_SETTINGS(object);
-    SngWindow *parent = SNG_WINDOW(self);
-    WINDOW *win = sng_window_get_ncurses_window(parent);
-    PANEL *panel = sng_window_get_ncurses_panel(parent);
+    SngWidget *widget = SNG_WIDGET(object);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    PANEL *panel = sng_window_get_ncurses_panel(SNG_WINDOW(object));
 
-    gint height = sng_window_get_height(parent);
-    gint width = sng_window_get_width(parent);
+    gint height = sng_widget_get_height(widget);
+    gint width = sng_widget_get_width(widget);
 
     // Create a scrollable subwindow for settings
     self->form_win = derwin(win, height - 11, width - 2, 8, 1);

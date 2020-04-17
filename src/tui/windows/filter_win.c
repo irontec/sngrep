@@ -299,7 +299,7 @@ filter_win_handle_key(SngWidget *widget, gint key)
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
-SngWindow *
+SngAppWindow *
 filter_win_new()
 {
     return g_object_new(
@@ -318,11 +318,9 @@ filter_win_constructed(GObject *object)
     G_OBJECT_CLASS(filter_win_parent_class)->constructed(object);
 
     FilterWindow *self = TUI_FILTER(object);
-    SngWindow *parent = SNG_WINDOW(self);
-    WINDOW *win = sng_window_get_ncurses_window(parent);
-    PANEL *panel = sng_window_get_ncurses_panel(parent);
-
-    gint height = sng_window_get_height(parent);
+    SngWidget *widget = SNG_WIDGET(object);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    gint height = sng_widget_get_height(widget);
 
     // Initialize the fields
     self->fields[FLD_FILTER_SIPFROM] = new_field(1, 28, 3, 18, 0, 0);
@@ -433,7 +431,6 @@ filter_win_constructed(GObject *object)
     // Set the window title and boxes
     mvwprintw(win, 1, 18, "Filter options");
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    title_foot_box(panel);
     mvwhline(win, 8, 1, ACS_HLINE, 49);
     mvwaddch(win, 8, 0, ACS_LTEE);
     mvwaddch(win, 8, 49, ACS_RTEE);

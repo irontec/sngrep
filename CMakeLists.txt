@@ -46,6 +46,7 @@ set(SOURCES
         src/tui/windows/stats_win.c
         src/tui/windows/auth_validate_win.c
         src/tui/windows/protocol_select_win.c
+        src/tui/widgets/app_window.c
         src/tui/widgets/box.c
         src/tui/widgets/button.c
         src/tui/widgets/container.c
@@ -195,7 +196,7 @@ set(ENUM_HEADERS
         src/storage/storage.h
         src/packet/packet.h
         src/tui/widgets/box.h
-        src/tui/widgets/window.h
+        src/tui/widgets/app_window.h
         )
 
 add_custom_command(

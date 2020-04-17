@@ -379,7 +379,7 @@ protocol_select_win_finalize(GObject *object)
     G_OBJECT_CLASS(protocol_select_win_parent_class)->finalize(object);
 }
 
-SngWindow *
+SngAppWindow *
 protocol_select_win_new()
 {
     return g_object_new(
@@ -399,12 +399,12 @@ protocol_select_win_constructed(GObject *object)
 
     // Get parent window information
     ProtocolSelectWindow *self = TUI_PROTOCOL_SELECT(object);
-    SngWindow *parent = SNG_WINDOW(self);
-    WINDOW *win = sng_window_get_ncurses_window(parent);
-    PANEL *panel = sng_window_get_ncurses_panel(parent);
+    SngWidget *widget = SNG_WIDGET(object);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    PANEL *panel = sng_window_get_ncurses_panel(SNG_WINDOW(object));
 
-    gint height = sng_window_get_height(parent);
-    gint width = sng_window_get_width(parent);
+    gint height = sng_widget_get_height(widget);
+    gint width = sng_widget_get_width(widget);
 
     // Initialize the fields
     self->fields[FLD_PROTOCOLS_SAVE] = new_field(1, 10, height - 2, 15, 0, 0);

@@ -421,7 +421,7 @@ column_select_handle_key(SngWidget *widget, gint key)
 }
 
 void
-column_select_win_set_columns(SngWindow *window, GPtrArray *columns)
+column_select_win_set_columns(SngAppWindow *window, GPtrArray *columns)
 {
     ColumnSelectWindow *self = TUI_COLUMN_SELECT(window);
 
@@ -467,7 +467,7 @@ column_select_finalize(GObject *object)
     G_OBJECT_CLASS(column_select_parent_class)->finalize(object);
 }
 
-SngWindow *
+SngAppWindow *
 column_select_win_new()
 {
     return g_object_new(
@@ -487,12 +487,11 @@ column_select_constructed(GObject *object)
 
     // Get parent window information
     ColumnSelectWindow *self = TUI_COLUMN_SELECT(object);
-    SngWindow *parent = SNG_WINDOW(self);
-    WINDOW *win = sng_window_get_ncurses_window(parent);
-    PANEL *panel = sng_window_get_ncurses_panel(parent);
-
-    gint height = sng_window_get_height(parent);
-    gint width = sng_window_get_width(parent);
+    SngWidget *widget = SNG_WIDGET(object);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    PANEL *panel = sng_window_get_ncurses_panel(SNG_WINDOW(object));
+    gint height = sng_widget_get_height(widget);
+    gint width = sng_widget_get_width(widget);
 
     // Initialize the fields
     self->fields[FLD_COLUMNS_ACCEPT] = new_field(1, 10, height - 2, 13, 0, 0);

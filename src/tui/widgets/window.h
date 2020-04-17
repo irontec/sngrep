@@ -43,27 +43,6 @@ G_BEGIN_DECLS
 G_DECLARE_DERIVABLE_TYPE(SngWindow, sng_window, SNG, WINDOW, SngBox)
 
 /**
- * @brief Enum for available panel types
- *
- * Mostly used for managing keybindings and offloop ui refresh
- */
-typedef enum
-{
-    SNG_WINDOW_TYPE_CALL_LIST,
-    SNG_WINDOW_TYPE_CALL_FLOW,
-    SNG_WINDOW_TYPE_CALL_RAW,
-    SNG_WINDOW_TYPE_FILTER,
-    SNG_WINDOW_TYPE_SAVE,
-    SNG_WINDOW_TYPE_MSG_DIFF,
-    SNG_WINDOW_TYPE_COLUMN_SELECT,
-    SNG_WINDOW_TYPE_SETTINGS,
-    SNG_WINDOW_TYPE_AUTH_VALIDATE,
-    SNG_WINDOW_TYPE_STATS,
-    SNG_WINDOW_TYPE_RTP_PLAYER,
-    SNG_WINDOW_TYPE_PROTOCOL_SELECT,
-} SngWindowType;
-
-/**
  * @brief Panel information structure
  *
  * This struct contains the panel related data, including
@@ -73,12 +52,6 @@ struct _SngWindowClass
 {
     //! Parent class
     SngBoxClass parent;
-    //! Query the panel if redraw is required
-    gboolean (*redraw)(SngWindow *self);
-    //! Notifies the panel the screen has changed
-    gint (*resize)(SngWindow *self);
-    //! Show help window for this panel (if any)
-    gint (*help)(SngWindow *self);
 };
 
 /**
@@ -97,30 +70,6 @@ SngWindow *
 sng_window_new(gint height, gint width);
 
 /**
- * @brief Resize current ui
- *
- * This function acts as wrapper to custom ui draw functions
- * with some checks
- *
- * @param ui UI structure
- * @return 0 if ui has been drawn, -1 otherwise
- */
-int
-sng_window_resize(SngWindow *window);
-
-/**
- * @brief Check if the panel requires redraw
- *
- * This function acts as wrapper to custom ui redraw function
- * with some checks
- *
- * @param window UI structure
- * @return true if the panel must be drawn, false otherwise
- */
-gboolean
-sng_window_redraw(SngWindow *window);
-
-/**
  * @brief Notifies current ui the screen size has changed
  *
  * This function acts as wrapper to custom ui resize functions
@@ -131,18 +80,6 @@ sng_window_redraw(SngWindow *window);
  */
 gint
 sng_window_draw(SngWindow *window);
-
-/**
- * @brief Show help screen from current UI (if any)
- *
- * This function will display the help screen for given
- * ui if exits.
- * All help screens exits after any character input
- *
- * @param window UI structure
- */
-void
-sng_window_help(SngWindow *window);
 
 /**
  * @brief Handle moves events on given window
@@ -168,63 +105,8 @@ sng_window_handle_mouse(SngWindow *window, MEVENT mevent);
 gint
 sng_window_handle_key(SngWindow *window, gint key);
 
-/**
- * @brief Draw title at the top of the panel UI
- *
- * This function will draw a line with the title on the first
- * row of the UI panel's window
- *
- * @param ui UI structure
- * @param title String containing the title
- */
-void
-sng_window_set_title(SngWindow *window, const gchar *title);
-
-/**
- * @brief Clear a given window line
- *
- * This function can be used to clear a given line on the
- * screen.
- *
- * @param window UI structure
- * @param line Number of line to be cleared
- */
-void
-sng_window_clear_line(SngWindow *window, int line);
-
-/**
- * @brief Draw keybinding info at the bottom of the panel
- *
- * This function will draw a line with the available keybindings
- * in the last line of the given panel
- *
- */
-void
-sng_window_draw_bindings(SngWindow *window, const gchar **keybindings, gint count);
-
 PANEL *
 sng_window_get_ncurses_panel(SngWindow *window);
-
-WINDOW *
-sng_window_get_ncurses_window(SngWindow *window);
-
-void
-sng_window_set_window_type(SngWindow *window, SngWindowType type);
-
-guint
-sng_window_get_window_type(SngWindow *window);
-
-void
-sng_window_set_width(SngWindow *window, gint width);
-
-gint
-sng_window_get_width(SngWindow *window);
-
-void
-sng_window_set_height(SngWindow *window, gint height);
-
-gint
-sng_window_get_height(SngWindow *window);
 
 void
 sng_window_set_default_focus(SngWindow *window, SngWidget *widget);

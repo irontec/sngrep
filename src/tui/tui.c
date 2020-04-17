@@ -34,6 +34,7 @@
 #include <locale.h>
 #include <glib-unix.h>
 #include <storage/message.h>
+#include <tui/widgets/app_window.h>
 #include "glib-extra/glib.h"
 #include "setting.h"
 #include "tui.h"
@@ -67,8 +68,8 @@ tui_error_quark()
     return g_quark_from_static_string("tui");
 }
 
-SngWindow *
-tui_create_window(SngWindowType type)
+SngAppWindow *
+tui_create_app_window(SngAppWindowType type)
 {
     // Find the panel of given type and create it
     return tui_find_by_type(type);
@@ -84,41 +85,35 @@ tui_destroy_window(SngWindow *window)
 }
 
 static gboolean
-tui_window_panel_cmp(SngWindow *window, PANEL *panel)
+tui_app_window_type_cmp(SngAppWindow *app_window, gpointer type)
 {
-    return sng_window_get_ncurses_panel(window) == panel;
-}
-
-static gboolean
-tui_window_type_cmp(SngWindow *window, gpointer type)
-{
-    return sng_window_get_window_type(window) == GPOINTER_TO_UINT(type);
+    return sng_app_window_get_window_type(app_window) == GPOINTER_TO_UINT(type);
 }
 
 SngWindow *
 tui_find_by_panel(PANEL *panel)
 {
-    guint index;
-    if (g_ptr_array_find_with_equal_func(
-        windows, panel,
-        (GEqualFunc) tui_window_panel_cmp, &index)) {
-        return g_ptr_array_index(windows, index);
+    PANEL *candidate = NULL;
+    while ((candidate = panel_below(candidate)) != NULL) {
+        if (candidate == panel) {
+            return (SngWindow *) panel_userptr(candidate);
+        }
     }
 
     return NULL;
 }
 
-SngWindow *
-tui_find_by_type(SngWindowType type)
+SngAppWindow *
+tui_find_by_type(SngAppWindowType type)
 {
     guint index;
     if (g_ptr_array_find_with_equal_func(
         windows, GUINT_TO_POINTER(type),
-        (GEqualFunc) tui_window_type_cmp, &index)) {
+        (GEqualFunc) tui_app_window_type_cmp, &index)) {
         return g_ptr_array_index(windows, index);
     }
 
-    SngWindow *window = NULL;
+    SngAppWindow *window = NULL;
 
     switch (type) {
         case SNG_WINDOW_TYPE_CALL_LIST:
@@ -182,12 +177,10 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
         SngWindow *ui = tui_find_by_panel(panel);
 
         // Query the interface if it needs to be redrawn
-        if (sng_window_redraw(ui)) {
             // Redraw this panel
             if (sng_window_draw(ui) != 0) {
                 tui_destroy_window(ui);
             }
-        }
         // Update panel stack
         update_panels();
     }
@@ -297,14 +290,16 @@ tui_default_keyhandler(SngWindow *window, int key)
                 setting_toggle(SETTING_TUI_DISPLAY_ALIAS);
                 break;
             case ACTION_SHOW_SETTINGS:
-                tui_create_window(SNG_WINDOW_TYPE_SETTINGS);
+                tui_create_app_window(SNG_WINDOW_TYPE_SETTINGS);
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
                 capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
                 break;
             case ACTION_SHOW_HELP:
-                sng_window_help(window);
+                if (SNG_IS_APP_WINDOW(window)) {
+                    sng_app_window_help(SNG_APP_WINDOW(window));
+                }
                 break;
             case ACTION_PREV_SCREEN:
                 tui_destroy_window(window);
@@ -329,7 +324,7 @@ tui_resize_panels()
     // While there are still panels
     while ((panel = panel_below(panel))) {
         // Invoke resize for this panel
-        sng_window_resize(tui_find_by_panel(panel));
+        sng_app_window_resize(SNG_APP_WINDOW(tui_find_by_panel(panel)));
     }
 }
 
@@ -574,7 +569,7 @@ tui_init(GMainLoop *loop, GError **error)
     windows = g_ptr_array_new();
 
     // Create the first displayed window
-    SngWindow *window = tui_create_window(SNG_WINDOW_TYPE_CALL_LIST);
+    SngAppWindow *window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_LIST);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(g_main_loop_quit), loop);
 
     // Source for reading events from stdin

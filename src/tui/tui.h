@@ -43,6 +43,7 @@
 #include "tui/keybinding.h"
 #include "storage/storage.h"
 #include "storage/group.h"
+#include "tui/widgets/app_window.h"
 #include "tui/widgets/box.h"
 #include "tui/widgets/button.h"
 #include "tui/widgets/container.h"
@@ -120,8 +121,8 @@ tui_is_enabled();
  * @param type Panel Type
  * @return the ui structure with the panel pointer created*
  */
-SngWindow *
-tui_create_window(SngWindowType type);
+SngAppWindow *
+tui_create_app_window(SngAppWindowType type);
 
 /**
  * @brief Find a ui from its panel pointer
@@ -132,8 +133,8 @@ tui_find_by_panel(PANEL *panel);
 /**
  * @brief Find a ui form its panel id
  */
-SngWindow *
-tui_find_by_type(SngWindowType type);
+SngAppWindow *
+tui_find_by_type(SngAppWindowType type);
 
 /**
  * @brief Default handler for keys

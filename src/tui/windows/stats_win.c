@@ -64,7 +64,7 @@
 
 G_DEFINE_TYPE(StatsWindow, stats, SNG_TYPE_WINDOW)
 
-SngWindow *
+SngAppWindow *
 stats_win_new()
 {
     return g_object_new(
@@ -93,13 +93,12 @@ stats_constructed(GObject *object)
     memset(&stats, 0, sizeof(stats));
 
     // Get parent window information
-    StatsWindow *self = TUI_STATS(object);
-    SngWindow *parent = SNG_WINDOW(self);
-    WINDOW *win = sng_window_get_ncurses_window(parent);
-    PANEL *panel = sng_window_get_ncurses_panel(parent);
+    SngWidget *widget = SNG_WIDGET(object);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    PANEL *panel = sng_window_get_ncurses_panel(SNG_WINDOW(object));
 
-    gint height = sng_window_get_height(parent);
-    gint width = sng_window_get_width(parent);
+    gint height = sng_widget_get_height(widget);
+    gint width = sng_widget_get_width(widget);
 
 
     // Set the window title and boxes

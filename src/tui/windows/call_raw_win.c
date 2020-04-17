@@ -51,7 +51,7 @@ G_DEFINE_TYPE(CallRawWindow , call_raw_win, SNG_TYPE_WINDOW)
  * @return true if the panel requires redraw, false otherwise
  */
 static gboolean
-call_raw_win_redraw(SngWindow *window)
+call_raw_win_redraw(SngAppWindow *window)
 {
     // Get panel information
     CallRawWindow *self = TUI_CALL_RAW(window);
@@ -73,7 +73,7 @@ call_raw_win_redraw(SngWindow *window)
  * @param msg New message to be printed
  */
 static void
-call_raw_win_print_msg(SngWindow *window, Message *msg)
+call_raw_win_print_msg(SngAppWindow *window, Message *msg)
 {
     int payload_lines, column, height, width;
     // Message ngrep style Header
@@ -165,12 +165,12 @@ call_raw_win_draw(SngWidget *widget)
     Message *msg = NULL;
 
     // Get panel information
-    SngWindow *window = SNG_WINDOW(widget);
+    SngAppWindow *window = SNG_APP_WINDOW(widget);
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_val_if_fail(self != NULL, -1);
-    WINDOW *win = sng_window_get_ncurses_window(window);
-    gint height = sng_window_get_height(window);
-    gint width = sng_window_get_width(window);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    gint height = sng_widget_get_height(widget);
+    gint width = sng_widget_get_width(widget);
 
     if (self->group) {
         // Print the call group messages into the pad
@@ -194,7 +194,7 @@ call_raw_win_draw(SngWidget *widget)
  * @param times number of lines to move up
  */
 static void
-call_raw_win_move_up(SngWindow *window, guint times)
+call_raw_win_move_up(SngAppWindow *window, guint times)
 {
     // Get panel information
     CallRawWindow *self = TUI_CALL_RAW(window);
@@ -215,7 +215,7 @@ call_raw_win_move_up(SngWindow *window, guint times)
  * @param times number of lines to move up
  */
 static void
-call_raw_win_move_down(SngWindow *window, guint times)
+call_raw_win_move_down(SngAppWindow *window, guint times)
 {
     // Get panel information
     CallRawWindow *self = TUI_CALL_RAW(window);
@@ -242,8 +242,8 @@ call_raw_win_handle_key(SngWidget *widget, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CR_SCROLLSTEP);
 
-    SngWindow *window = SNG_WINDOW(widget);
-    CallRawWindow *self = TUI_CALL_RAW(window);
+    SngAppWindow *app_window = SNG_APP_WINDOW(widget);
+    CallRawWindow *self = TUI_CALL_RAW(app_window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
@@ -252,42 +252,42 @@ call_raw_win_handle_key(SngWidget *widget, int key)
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:
-                call_raw_win_move_down(window, 1);
+                call_raw_win_move_down(app_window, 1);
                 break;
             case ACTION_UP:
-                call_raw_win_move_up(window, 1);
+                call_raw_win_move_up(app_window, 1);
                 break;
             case ACTION_HNPAGE:
-                call_raw_win_move_down(window, rnpag_steps / 2);
+                call_raw_win_move_down(app_window, rnpag_steps / 2);
                 break;
             case ACTION_NPAGE:
-                call_raw_win_move_down(window, rnpag_steps);
+                call_raw_win_move_down(app_window, rnpag_steps);
                 break;
             case ACTION_HPPAGE:
-                call_raw_win_move_up(window, rnpag_steps / 2);
+                call_raw_win_move_up(app_window, rnpag_steps / 2);
                 break;
             case ACTION_PPAGE:
-                call_raw_win_move_up(window, rnpag_steps);
+                call_raw_win_move_up(app_window, rnpag_steps);
                 break;
             case ACTION_SAVE:
                 if (self->group) {
                     // Display save panel
-                    save_set_group(tui_create_window(SNG_WINDOW_TYPE_SAVE), self->group);
+                    save_set_group(tui_create_app_window(SNG_WINDOW_TYPE_SAVE), self->group);
                 }
                 break;
             case ACTION_TOGGLE_SYNTAX:
             case ACTION_CYCLE_COLOR:
                 // Handle colors using default handler
-                tui_default_keyhandler(window, key);
+                tui_default_keyhandler(SNG_WINDOW(app_window), key);
                 // Create a new pad (forces messages draw)
                 delwin(self->pad);
                 self->pad = newpad(500, COLS);
                 self->last = NULL;
                 // Force refresh panel
                 if (self->group) {
-                    call_raw_win_set_group(window, self->group);
+                    call_raw_win_set_group(app_window, self->group);
                 } else {
-                    call_raw_win_set_msg(window, self->msg);
+                    call_raw_win_set_msg(app_window, self->msg);
                 }
                 break;
             case ACTION_CLEAR_CALLS:
@@ -309,7 +309,7 @@ call_raw_win_handle_key(SngWidget *widget, int key)
 }
 
 void
-call_raw_win_set_group(SngWindow *window, CallGroup *group)
+call_raw_win_set_group(SngAppWindow *window, CallGroup *group)
 {
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_if_fail(self != NULL);
@@ -325,7 +325,7 @@ call_raw_win_set_group(SngWindow *window, CallGroup *group)
 }
 
 void
-call_raw_win_set_msg(SngWindow *window, Message *msg)
+call_raw_win_set_msg(SngAppWindow *window, Message *msg)
 {
     CallRawWindow *self = TUI_CALL_RAW(window);
     g_return_if_fail(self != NULL);
@@ -344,12 +344,12 @@ call_raw_win_set_msg(SngWindow *window, Message *msg)
 }
 
 void
-call_raw_win_free(SngWindow *window)
+call_raw_win_free(SngAppWindow *window)
 {
     g_object_unref(window);
 }
 
-SngWindow *
+SngAppWindow *
 call_raw_win_new()
 {
     return g_object_new(
@@ -379,7 +379,7 @@ call_raw_win_class_init(CallRawWindowClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->finalize = call_raw_win_finalize;
 
-    SngWindowClass *window_class = SNG_WINDOW_CLASS(klass);
+    SngAppWindowClass *window_class = SNG_APP_WINDOW_CLASS(klass);
     window_class->redraw = call_raw_win_redraw;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);

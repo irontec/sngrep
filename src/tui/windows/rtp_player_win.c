@@ -32,7 +32,7 @@
 G_DEFINE_TYPE(RtpPlayerWindow, rtp_player_win, SNG_TYPE_WINDOW)
 
 static void
-rtp_player_win_decode_stream(SngWindow *window, Stream *stream)
+rtp_player_win_decode_stream(SngAppWindow *window, Stream *stream)
 {
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_if_fail(self != NULL);
@@ -49,10 +49,9 @@ rtp_player_win_decode_stream(SngWindow *window, Stream *stream)
 static gint
 rtp_player_win_draw(SngWidget *widget)
 {
-    SngWindow *window = SNG_WINDOW(widget);
-    RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
+    RtpPlayerWindow *self = TUI_RTP_PLAYER(widget);
     g_return_val_if_fail(self != NULL, 1);
-    WINDOW *win = sng_window_get_ncurses_window(window);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
 
     if (getenv("PULSE_SERVER")) {
         mvwprintw(win, 6, 3, "Server: %s", getenv("PULSE_SERVER"));
@@ -97,7 +96,7 @@ rtp_player_win_draw(SngWidget *widget)
     mvwprintw(win, 6, 50, "Latency: %d ms", self->latency / 1000);
 
     if (self->stream->changed) {
-        rtp_player_win_decode_stream(window, self->stream);
+        rtp_player_win_decode_stream(SNG_APP_WINDOW(widget), self->stream);
         self->stream->changed = FALSE;
     }
 
@@ -129,8 +128,7 @@ static int
 rtp_player_win_handle_key(SngWidget *widget, int key)
 {
     // Sanity check, this should not happen
-    SngWindow *window = SNG_WINDOW(widget);
-    RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
+    RtpPlayerWindow *self = TUI_RTP_PLAYER(widget);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
@@ -223,7 +221,7 @@ rtp_player_win_underflow_cb(pa_stream *s, gpointer userdata)
 }
 
 void
-rtp_player_win_set_stream(SngWindow *window, Stream *stream)
+rtp_player_win_set_stream(SngAppWindow *window, Stream *stream)
 {
     RtpPlayerWindow *self = TUI_RTP_PLAYER(window);
     g_return_if_fail(self != NULL);
@@ -252,7 +250,7 @@ rtp_player_win_set_stream(SngWindow *window, Stream *stream)
 }
 
 void
-rtp_player_win_free(SngWindow *window)
+rtp_player_win_free(SngAppWindow *window)
 {
     g_object_unref(window);
 }
@@ -282,7 +280,7 @@ rtp_player_win_state_cb(pa_context *ctx, gpointer userdata)
     self->pa_state = pa_context_get_state(ctx);
 }
 
-SngWindow *
+SngAppWindow *
 rtp_player_win_new()
 {
     return g_object_new(
@@ -301,17 +299,14 @@ rtp_player_win_constructed(GObject *object)
     G_OBJECT_CLASS(rtp_player_win_parent_class)->constructed(object);
 
     RtpPlayerWindow *self = TUI_RTP_PLAYER(object);
-    SngWindow *parent = SNG_WINDOW(self);
-    WINDOW *win = sng_window_get_ncurses_window(parent);
-    PANEL *panel = sng_window_get_ncurses_panel(parent);
+    SngAppWindow *app_window = SNG_APP_WINDOW(self);
+    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(app_window));
 
-    gint height = sng_window_get_height(parent);
-    gint width = sng_window_get_width(parent);
+    gint height = sng_widget_get_height(SNG_WIDGET(app_window));
+    gint width = sng_widget_get_height(SNG_WIDGET(app_window));
 
     // Set window boxes
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    // Window border
-    title_foot_box(panel);
 
     // Header and footer lines
     mvwhline(win, height - 3, 1, ACS_HLINE, width - 1);
@@ -344,7 +339,7 @@ rtp_player_win_constructed(GObject *object)
     self->pa_mlapi = pa_glib_mainloop_get_api(self->pa_ml);
     self->pa_ctx = pa_context_new(self->pa_mlapi, "sngrep RTP Player");
     pa_context_connect(self->pa_ctx, NULL, 0, NULL);
-    pa_context_set_state_callback(self->pa_ctx, rtp_player_win_state_cb, parent);
+    pa_context_set_state_callback(self->pa_ctx, rtp_player_win_state_cb, app_window);
 }
 
 static void

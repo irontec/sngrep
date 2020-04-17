@@ -31,27 +31,13 @@
 #include <panel.h>
 #include "glib-extra/glist.h"
 #include "glib-extra/glib_enum_types.h"
-#include "tui/theme.h"
 #include "tui/widgets/window.h"
 #include "tui/keybinding.h"
-#include "tui/widgets/window.h"
-
-enum
-{
-    PROP_WINDOW_TYPE = 1,
-    N_PROPERTIES
-};
-
-static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 typedef struct
 {
     //! Curses panel pointer
     PANEL *panel;
-    //! Window type
-    SngWindowType type;
-    //! Flag this panel as redraw required
-    gboolean changed;
     //! Focusable widget chain
     GList *focus_chain;
     //! Default focus widget
@@ -83,50 +69,6 @@ sng_window_get_ncurses_panel(SngWindow *window)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
     return priv->panel;
-}
-
-WINDOW *
-sng_window_get_ncurses_window(SngWindow *window)
-{
-    return sng_widget_get_ncurses_window(SNG_WIDGET(window));
-}
-
-void
-sng_window_set_window_type(SngWindow *window, SngWindowType type)
-{
-    SngWindowPrivate *priv = sng_window_get_instance_private(window);
-    priv->type = type;
-}
-
-guint
-sng_window_get_window_type(SngWindow *window)
-{
-    SngWindowPrivate *priv = sng_window_get_instance_private(window);
-    return priv->type;
-}
-
-void
-sng_window_set_width(SngWindow *window, gint width)
-{
-    sng_widget_set_width(SNG_WIDGET(window), width);
-}
-
-gint
-sng_window_get_width(SngWindow *window)
-{
-    return sng_widget_get_width(SNG_WIDGET(window));
-}
-
-void
-sng_window_set_height(SngWindow *window, gint height)
-{
-    sng_widget_set_height(SNG_WIDGET(window), height);
-}
-
-gint
-sng_window_get_height(SngWindow *window)
-{
-    return sng_widget_get_height(SNG_WIDGET(window));
 }
 
 void
@@ -203,26 +145,6 @@ sng_window_focus_prev(SngWindow *window)
     sng_window_set_focused_widget(window, current->data);
 }
 
-gboolean
-sng_window_redraw(SngWindow *window)
-{
-    g_return_val_if_fail(SNG_IS_WINDOW(window), FALSE);
-
-    SngWindowPrivate *priv = sng_window_get_instance_private(window);
-    // If ui has changed, force redraw. Don't even ask.
-    if (priv->changed) {
-        priv->changed = FALSE;
-        return TRUE;
-    }
-
-    SngWindowClass *klass = SNG_WINDOW_GET_CLASS(window);
-    if (klass->redraw != NULL) {
-        return klass->redraw(window);
-    }
-
-    return TRUE;
-}
-
 static void
 sng_window_map_floating_child(SngWidget *widget, gpointer data)
 {
@@ -271,6 +193,7 @@ sng_window_realize(SngWidget *widget)
 
         SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(widget));
         priv->panel = new_panel(win);
+        set_panel_userptr(priv->panel, SNG_WINDOW(widget));
     }
 
     SNG_WIDGET_CLASS(sng_window_parent_class)->realize(widget);
@@ -316,39 +239,9 @@ sng_window_draw(SngWindow *window)
     return 0;
 }
 
-int
-sng_window_resize(SngWindow *window)
-{
-    g_return_val_if_fail(SNG_IS_WINDOW(window), FALSE);
-
-    SngWindowClass *klass = SNG_WINDOW_GET_CLASS(window);
-    if (klass->resize != NULL) {
-        return klass->resize(window);
-    }
-
-    return 0;
-}
-
-void
-sng_window_help(SngWindow *window)
-{
-    g_return_if_fail(SNG_IS_WINDOW(window));
-
-    // Disable input timeout
-    nocbreak();
-    cbreak();
-
-    SngWindowClass *klass = SNG_WINDOW_GET_CLASS(window);
-    if (klass->help != NULL) {
-        klass->help(window);
-    }
-}
-
 gint
 sng_window_handle_mouse(SngWindow *window, MEVENT mevent)
 {
-    SngWindowPrivate *priv = sng_window_get_instance_private(window);
-    priv->changed = TRUE;
     SngWidget *clicked_widget = sng_container_find_by_position(SNG_CONTAINER(window), mevent.x, mevent.y);
     if (clicked_widget != NULL) {
         sng_window_set_focused_widget(window, clicked_widget);
@@ -361,7 +254,6 @@ gint
 sng_window_handle_key(SngWindow *window, gint key)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
-    priv->changed = TRUE;
 
     // Check actions for this key
     KeybindingAction action = key_find_action(key, ACTION_UNKNOWN);
@@ -374,67 +266,6 @@ sng_window_handle_key(SngWindow *window, gint key)
     } else {
         return sng_widget_key_pressed(priv->focus, key);
     }
-}
-
-void
-sng_window_set_title(SngWindow *window, const gchar *title)
-{
-    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(window));
-
-    // FIXME Reverse colors on monochrome terminals
-    if (!has_colors()) {
-        wattron(win, A_REVERSE);
-    }
-
-    // Center the title on the window
-    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_BLUE));
-    sng_window_clear_line(window, 0);
-    mvwprintw(win, 0, (sng_widget_get_width(SNG_WIDGET(window)) - strlen(title)) / 2, "%s", title);
-    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_BLUE));
-}
-
-void
-sng_window_clear_line(SngWindow *window, gint line)
-{
-    // We could do this with wcleartoel but we want to
-    // preserve previous window attributes. That way we
-    // can set the background of the line.
-    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(window));
-    mvwprintw(win, line, 0, "%*s", sng_widget_get_width(SNG_WIDGET(window)), "");
-}
-
-void
-sng_window_draw_bindings(SngWindow *window, const char **keybindings, gint count)
-{
-    int key, xpos = 0;
-
-    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(window));
-
-    // Reverse colors on monochrome terminals
-    if (!has_colors()) {
-        wattron(win, A_REVERSE);
-    }
-
-    // Write a line all the footer width
-    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    sng_window_clear_line(window, sng_widget_get_height(SNG_WIDGET(window)) - 1);
-
-    // Draw keys and their actions
-    for (key = 0; key < count; key += 2) {
-        wattron(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        mvwprintw(win, sng_widget_get_height(SNG_WIDGET(window)) - 1, xpos, "%-*s",
-                  strlen(keybindings[key]) + 1, keybindings[key]);
-        xpos += strlen(keybindings[key]) + 1;
-        wattroff(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        mvwprintw(win, sng_widget_get_height(SNG_WIDGET(window)) - 1, xpos, "%-*s",
-                  strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);
-        wattroff(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        xpos += strlen(keybindings[key + 1]) + 3;
-    }
-
-    // Disable reverse mode in all cases
-    wattroff(win, A_REVERSE | A_BOLD);
 }
 
 static void
@@ -460,70 +291,23 @@ sng_window_finalize(GObject *self)
 }
 
 static void
-sng_window_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
-{
-    SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(object));
-    switch (property_id) {
-        case PROP_WINDOW_TYPE:
-            priv->type = g_value_get_enum(value);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
-            break;
-    }
-}
-
-static void
-sng_window_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
-{
-    SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(object));
-    switch (property_id) {
-        case PROP_WINDOW_TYPE:
-            g_value_set_enum(value, priv->type);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
-            break;
-    }
-}
-
-static void
 sng_window_class_init(SngWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = sng_window_constructed;
     object_class->finalize = sng_window_finalize;
-    object_class->set_property = sng_window_set_property;
-    object_class->get_property = sng_window_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = sng_window_realize;
 
     SngContainerClass *container_class = SNG_CONTAINER_CLASS(klass);
     container_class->add = sng_window_add_widget;
-
-    obj_properties[PROP_WINDOW_TYPE] =
-        g_param_spec_enum("window-type",
-                          "Window Type",
-                          "Window type ",
-                          SNG_TYPE_WINDOW_TYPE,
-                          0,
-                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT
-        );
-
-    g_object_class_install_properties(
-        object_class,
-        N_PROPERTIES,
-        obj_properties
-    );
 }
 
 static void
 sng_window_init(SngWindow *self)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(self);
-    // Force draw on new created windows
-    priv->changed = TRUE;
     // Set window as default focused SngWidget
     priv->focus = SNG_WIDGET(self);
     // Set window as visible by default

@@ -94,14 +94,14 @@ msg_diff_win_line_highlight(const char *payload1, const char *payload2, char *hi
  * @param window UI structure pointer
  */
 static void
-msg_diff_win_draw_footer(SngWindow *window)
+msg_diff_win_draw_footer(SngAppWindow *window)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls Flow",
         key_action_key_str(ACTION_SHOW_HELP), "Help"
     };
 
-    sng_window_draw_bindings(window, keybindings, 4);
+    sng_app_window_draw_bindings(window, keybindings, 4);
 }
 
 /**
@@ -173,8 +173,8 @@ static int
 msg_diff_win_draw(SngWidget *widget)
 {
     // Get panel information
-    SngWindow *window = SNG_WINDOW(widget);
-    MsgDiffWindow *self = TUI_MSG_DIFF(window);
+    MsgDiffWindow *self = TUI_MSG_DIFF(widget);
+    SngAppWindow *app_window = SNG_APP_WINDOW(widget);
     g_return_val_if_fail(self != NULL, -1);
 
     char highlight[MAX_SIP_PAYLOAD];
@@ -193,14 +193,14 @@ msg_diff_win_draw(SngWidget *widget)
     msg_diff_win_draw_message(self->two_win, self->two, highlight);
 
     // Redraw footer
-    msg_diff_win_draw_footer(window);
+    msg_diff_win_draw_footer(app_window);
 
     return 0;
 }
 
 
 void
-msg_diff_win_set_msgs(SngWindow *window, Message *one, Message *two)
+msg_diff_win_set_msgs(SngAppWindow *window, Message *one, Message *two)
 {
     MsgDiffWindow *self = TUI_MSG_DIFF(window);
     g_return_if_fail(self != NULL);
@@ -212,7 +212,7 @@ msg_diff_win_set_msgs(SngWindow *window, Message *one, Message *two)
     self->two = two;
 }
 
-SngWindow *
+SngAppWindow *
 msg_diff_win_new()
 {
     return g_object_new(
@@ -229,11 +229,12 @@ msg_diff_win_constructed(GObject *object)
     G_OBJECT_CLASS(msg_diff_win_parent_class)->constructed(object);
 
     MsgDiffWindow *self = TUI_MSG_DIFF(object);
-    SngWindow *parent = SNG_WINDOW(self);
-    WINDOW *win = sng_window_get_ncurses_window(parent);
+    SngAppWindow *app_window = SNG_APP_WINDOW(self);
+    SngWidget *widget = SNG_WIDGET(object);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
 
-    gint height = sng_window_get_height(parent);
-    gint width = sng_window_get_width(parent);
+    gint height = sng_widget_get_height(widget);
+    gint width = sng_widget_get_width(widget);
 
     // Calculate sub-windows width
     gint hwidth = width / 2 - 1;
@@ -246,7 +247,7 @@ msg_diff_win_constructed(GObject *object)
     mvwvline(win, 0, hwidth, ACS_VLINE, height);
 
     // Draw title
-    sng_window_set_title(parent, "sngrep - SIP messages flow viewer");
+    sng_app_window_set_title(app_window, "sngrep - SIP messages flow viewer");
 }
 
 static void

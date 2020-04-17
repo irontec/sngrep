@@ -43,7 +43,7 @@
 G_BEGIN_DECLS
 
 #define TUI_TYPE_CALL_LIST_WIN call_list_win_get_type()
-G_DECLARE_FINAL_TYPE(CallListWindow, call_list_win, TUI, CALL_LIST_WIN, SngWindow)
+G_DECLARE_FINAL_TYPE(CallListWindow, call_list_win, TUI, CALL_LIST_WIN, SngAppWindow)
 
 /**
  * @brief Enum of available fields
@@ -88,7 +88,7 @@ struct _CallListColumn
 struct _CallListWindow
 {
     //! Parent object attributes
-    SngWindow parent;
+    SngAppWindow parent;
     //! Window menu bar
     SngWidget *menu_bar;
     //! Display filter entry
@@ -108,11 +108,11 @@ struct _CallListWindow
  * @param window UI structure pointer
  * @return the allocated window structure
  */
-SngWindow *
+SngAppWindow *
 call_list_win_new();
 
 SngTable *
-call_list_win_get_table(SngWindow *window);
+call_list_win_get_table(SngAppWindow *window);
 
 G_END_DECLS
 

@@ -33,13 +33,13 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_STATS stats_get_type()
-G_DECLARE_FINAL_TYPE(StatsWindow, stats, TUI, STATS, SngWindow)
+G_DECLARE_FINAL_TYPE(StatsWindow, stats, TUI, STATS, SngAppWindow)
 
 
 struct _StatsWindow
 {
     //! Parent object attributes
-    SngWindow parent;
+    SngAppWindow parent;
 };
 
 /**
@@ -51,7 +51,7 @@ struct _StatsWindow
  * redrawn.
  *
  */
-SngWindow *
+SngAppWindow *
 stats_win_new();
 
 G_END_DECLS

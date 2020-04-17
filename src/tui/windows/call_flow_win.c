@@ -82,7 +82,7 @@ G_DEFINE_TYPE(CallFlowWindow, call_flow_win, SNG_TYPE_WINDOW)
  * @return user selected arrow
  */
 static CallFlowArrow *
-call_flow_arrow_selected(SngWindow *window)
+call_flow_arrow_selected(SngAppWindow *window)
 {
     // Get panel info
     CallFlowWindow *self = TUI_CALL_FLOW(window);
@@ -181,7 +181,7 @@ call_flow_arrow_find_item_cb(CallFlowArrow *arrow, gpointer item)
  * @return a pointer to the found arrow or NULL
  */
 static CallFlowArrow *
-call_flow_arrow_find(SngWindow *window, const void *data)
+call_flow_arrow_find(SngAppWindow *window, const void *data)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, NULL);
@@ -212,7 +212,7 @@ call_flow_arrow_find(SngWindow *window, const void *data)
  * @return an arrow pointer or NULL in case of error
  */
 static CallFlowArrow *
-call_flow_arrow_create(SngWindow *window, void *item, CallFlowArrowType type)
+call_flow_arrow_create(SngAppWindow *window, void *item, CallFlowArrowType type)
 {
     CallFlowArrow *arrow;
 
@@ -238,7 +238,7 @@ call_flow_arrow_create(SngWindow *window, void *item, CallFlowArrowType type)
  * @return height the arrow will have
  */
 static int
-call_flow_arrow_height(G_GNUC_UNUSED SngWindow *window, const CallFlowArrow *arrow)
+call_flow_arrow_height(G_GNUC_UNUSED SngAppWindow *window, const CallFlowArrow *arrow)
 {
     if (arrow->type == CF_ARROW_SIP) {
         if (setting_enabled(SETTING_TUI_CF_ONLYMEDIA))
@@ -292,7 +292,7 @@ call_flow_arrow_message(const CallFlowArrow *arrow)
 }
 
 static CallFlowArrow *
-call_flow_arrow_find_prev_callid(SngWindow *window, const CallFlowArrow *arrow)
+call_flow_arrow_find_prev_callid(SngAppWindow *window, const CallFlowArrow *arrow)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, NULL);
@@ -334,7 +334,7 @@ call_flow_arrow_find_prev_callid(SngWindow *window, const CallFlowArrow *arrow)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_first(SngWindow *window, const Address addr)
+call_flow_column_get_first(SngAppWindow *window, const Address addr)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, NULL);
@@ -382,7 +382,7 @@ call_flow_column_get_first(SngWindow *window, const Address addr)
  * @return column structure pointer or NULL if not found
  */
 static CallFlowColumn *
-call_flow_column_get_last(SngWindow *window, const Address addr)
+call_flow_column_get_last(SngAppWindow *window, const Address addr)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, NULL);
@@ -426,7 +426,7 @@ call_flow_column_sorter(CallFlowColumn *a, CallFlowColumn *b)
 }
 
 static CallFlowColumn *
-call_flow_column_create(SngWindow *window, const Address addr)
+call_flow_column_create(SngAppWindow *window, const Address addr)
 {
     // Get Window info
     CallFlowWindow *self = TUI_CALL_FLOW(window);
@@ -476,7 +476,7 @@ call_flow_column_free(CallFlowColumn *column)
 }
 
 static void
-call_flow_arrow_set_columns(SngWindow *window, CallFlowArrow *arrow, CallFlowArrowDir dir)
+call_flow_arrow_set_columns(SngAppWindow *window, CallFlowArrow *arrow, CallFlowArrowDir dir)
 {
     g_return_if_fail(window != NULL);
     g_return_if_fail(arrow != NULL);
@@ -592,7 +592,7 @@ call_flow_arrow_set_columns(SngWindow *window, CallFlowArrow *arrow, CallFlowArr
 }
 
 static gint
-call_flow_win_columns_width(SngWindow *window)
+call_flow_win_columns_width(SngAppWindow *window)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, 0);
@@ -601,7 +601,7 @@ call_flow_win_columns_width(SngWindow *window)
 }
 
 static gint
-call_flow_win_arrows_height(SngWindow *window)
+call_flow_win_arrows_height(SngAppWindow *window)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, 0);
@@ -621,7 +621,7 @@ call_flow_win_arrows_height(SngWindow *window)
  * @param window UI structure pointer
  */
 static void
-call_flow_win_draw_footer(SngWindow *window)
+call_flow_win_draw_footer(SngAppWindow *window)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_CONFIRM), "Raw",
@@ -636,11 +636,11 @@ call_flow_win_draw_footer(SngWindow *window)
         key_action_key_str(ACTION_AUTH_VALIDATE), "Auth Validate"
     };
 
-    sng_window_draw_bindings(window, keybindings, 20);
+    sng_app_window_draw_bindings(window, keybindings, 20);
 }
 
 static void
-call_flow_win_create_arrows(SngWindow *window)
+call_flow_win_create_arrows(SngAppWindow *window)
 {
     // Get panel information
     CallFlowWindow *self = TUI_CALL_FLOW(window);
@@ -699,20 +699,20 @@ call_flow_win_create_arrows(SngWindow *window)
 /**
  * @brief Draw the visible columns in panel window
  *
- * @param window UI structure pointer
+ * @param app_window UI structure pointer
  */
 static void
-call_flow_win_draw_columns(SngWindow *window)
+call_flow_win_draw_columns(SngAppWindow *app_window)
 {
     Call *call = NULL;
     Stream *stream;
     char coltext[SETTING_MAX_LEN];
 
     // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
+    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
     g_return_if_fail(self != NULL);
 
-    WINDOW *win = sng_window_get_ncurses_window(window);
+    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(app_window));
 
     // Add RTP columns FIXME Really
     if (!setting_disabled(SETTING_TUI_CF_MEDIA)) {
@@ -720,11 +720,11 @@ call_flow_win_draw_columns(SngWindow *window)
             for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
                 stream = g_ptr_array_index(call->streams, i);
                 if (stream->type == STREAM_RTP && stream_get_count(stream)) {
-                    if (call_flow_column_get_first(window, address_strip_port(stream->src)) == NULL) {
-                        call_flow_column_create(window, address_strip_port(stream->src));
+                    if (call_flow_column_get_first(app_window, address_strip_port(stream->src)) == NULL) {
+                        call_flow_column_create(app_window, address_strip_port(stream->src));
                     }
-                    if (call_flow_column_get_first(window, address_strip_port(stream->dst)) == NULL) {
-                        call_flow_column_create(window, address_strip_port(stream->dst));
+                    if (call_flow_column_get_first(app_window, address_strip_port(stream->dst)) == NULL) {
+                        call_flow_column_create(app_window, address_strip_port(stream->dst));
                     }
                 }
             }
@@ -820,7 +820,7 @@ call_flow_win_draw_columns(SngWindow *window)
  * @return the number of screen lines this arrow uses on screen
  */
 static gint
-call_flow_win_draw_message(SngWindow *window, CallFlowArrow *arrow, gint cline)
+call_flow_win_draw_message(SngAppWindow *window, CallFlowArrow *arrow, gint cline)
 {
     char msg_method[ATTR_MAXLEN];
     char msg_time[80];
@@ -1094,7 +1094,7 @@ call_flow_win_draw_message(SngWindow *window, CallFlowArrow *arrow, gint cline)
  * @return the number of screen lines this arrow uses on screen
  */
 static int
-call_flow_win_draw_rtp_stream(SngWindow *window, CallFlowArrow *arrow, int cline)
+call_flow_win_draw_rtp_stream(SngAppWindow *window, CallFlowArrow *arrow, int cline)
 {
     char text[50], time[20];
     Stream *stream = arrow->item;
@@ -1267,7 +1267,7 @@ call_flow_win_draw_rtp_stream(SngWindow *window, CallFlowArrow *arrow, int cline
  * @return the number of screen lines this arrow uses on screen
  */
 static gint
-call_flow_win_draw_arrow(SngWindow *window, CallFlowArrow *arrow, gint line)
+call_flow_win_draw_arrow(SngAppWindow *window, CallFlowArrow *arrow, gint line)
 {
     g_return_val_if_fail(arrow != NULL, 0);
 
@@ -1284,7 +1284,7 @@ call_flow_win_draw_arrow(SngWindow *window, CallFlowArrow *arrow, gint line)
  * @param window UI structure pointer
  */
 static void
-call_flow_win_draw_arrows(SngWindow *window)
+call_flow_win_draw_arrows(SngAppWindow *window)
 {
     int cline = 0;
 
@@ -1337,16 +1337,14 @@ call_flow_win_draw_arrows(SngWindow *window)
  * @param msg Message data to draw
  */
 static void
-call_flow_win_draw_raw(SngWindow *window, Message *msg)
+call_flow_win_draw_raw(SngAppWindow *window, Message *msg)
 {
     // Get panel information
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_if_fail(self != NULL);
-    WINDOW *win = sng_window_get_ncurses_window(window);
 
     // Print msg payload
     draw_message(self->raw_win, msg);
-    touchwin(win);
 }
 
 /**
@@ -1359,7 +1357,7 @@ call_flow_win_draw_raw(SngWindow *window, Message *msg)
  * @return 0 in all cases
  */
 static int
-call_flow_win_draw_raw_rtcp(SngWindow *window, G_GNUC_UNUSED Stream *stream)
+call_flow_win_draw_raw_rtcp(SngAppWindow *window, G_GNUC_UNUSED Stream *stream)
 {
     // Get panel information
     CallFlowWindow *self = TUI_CALL_FLOW(window);
@@ -1397,7 +1395,7 @@ call_flow_win_draw_raw_rtcp(SngWindow *window, G_GNUC_UNUSED Stream *stream)
  * @param window UI structure pointer
  */
 static void
-call_flow_win_draw_preview(SngWindow *window)
+call_flow_win_draw_preview(SngAppWindow *window)
 {
     CallFlowArrow *arrow = NULL;
 
@@ -1426,7 +1424,7 @@ call_flow_win_draw_preview(SngWindow *window)
  * @param times number of lines to move up
  */
 static void
-call_flow_win_move_vertical(SngWindow *window, gint times)
+call_flow_win_move_vertical(SngAppWindow *window, gint times)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_if_fail(self != NULL);
@@ -1457,26 +1455,27 @@ call_flow_win_move_vertical(SngWindow *window, gint times)
 /**
  * @brief Move selection cursor up N times
  *
- * @param window UI structure pointer
+ * @param app_window UI structure pointer
  * @param times number of lines to move up
  */
 static void
-call_flow_win_move_horizontal(SngWindow *window, gint times)
+call_flow_win_move_horizontal(SngAppWindow *app_window, gint times)
 {
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
+    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
     g_return_if_fail(self != NULL);
 
     // Move the first index if required (moving left)
-    self->hscroll.pos = CLAMP(self->hscroll.pos + times,
-                              0,
-                              getmaxx(self->columns_pad) - getmaxx(self->colunms_win)
+    self->hscroll.pos = CLAMP(
+        self->hscroll.pos + times,
+        0,
+        getmaxx(self->columns_pad) - getmaxx(self->colunms_win)
     );
 }
 
 void
-call_flow_win_set_group(SngWindow *window, CallGroup *group)
+call_flow_win_set_group(SngAppWindow *app_window, CallGroup *group)
 {
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
+    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
     g_return_if_fail(self != NULL);
 
     g_list_free_full(self->columns, (GDestroyNotify) call_flow_column_free);
@@ -1502,16 +1501,16 @@ static gint
 call_flow_win_handle_key(SngWidget *widget, gint key)
 {
     int raw_width;
-    SngWindow *next_window;
+    SngAppWindow *next_app_window;
     Call *call = NULL;
     CallFlowArrow *cur_arrow = NULL;
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CF_SCROLLSTEP);
 
     // Sanity check, this should not happen
-    SngWindow *window = SNG_WINDOW(widget);
+    SngAppWindow *window = SNG_APP_WINDOW(widget);
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
-    WINDOW *win = sng_window_get_ncurses_window(window);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -1564,8 +1563,8 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 break;
             case ACTION_SHOW_RAW:
                 // KEY_R, display current call in raw mode
-                next_window = tui_create_window(SNG_WINDOW_TYPE_CALL_RAW);
-                call_raw_win_set_group(next_window, self->group);
+                next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_RAW);
+                call_raw_win_set_group(next_app_window, self->group);
                 break;
             case ACTION_DECREASE_RAW:
                 raw_width = getmaxx(self->raw_win);
@@ -1574,7 +1573,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 }
                 break;
             case ACTION_INCREASE_RAW:
-                raw_width = MIN(getmaxx(self->raw_win) + 2, sng_window_get_width(window) - 1);
+                raw_width = MIN(getmaxx(self->raw_win) + 2, sng_widget_get_width(SNG_WIDGET(window)) - 1);
                 setting_set_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH, raw_width);
                 break;
             case ACTION_RESET_RAW:
@@ -1616,9 +1615,9 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
             case ACTION_SAVE:
                 cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
                 if (cur_arrow->type == CF_ARROW_SIP) {
-                    next_window = tui_create_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_group(next_window, self->group);
-                    save_set_msg(next_window, call_flow_arrow_message(cur_arrow));
+                    next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
+                    save_set_group(next_app_window, self->group);
+                    save_set_msg(next_app_window, call_flow_arrow_message(cur_arrow));
                 }
 #ifdef WITH_SND
                 if (cur_arrow->type == CF_ARROW_RTP) {
@@ -1627,8 +1626,8 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         dialog_run("RTP packets are not being stored, run with --rtp flag.");
                         break;
                     }
-                    next_window = tui_create_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_stream(next_window, cur_arrow->item);
+                    next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
+                    save_set_stream(next_app_window, cur_arrow->item);
                 }
 #endif
                 break;
@@ -1642,16 +1641,16 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         break;
                     }
 
-                    next_window = tui_create_window(SNG_WINDOW_TYPE_RTP_PLAYER);
-                    if (next_window != NULL) {
-                        rtp_player_win_set_stream(next_window, cur_arrow->item);
+                    next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_RTP_PLAYER);
+                    if (next_app_window != NULL) {
+                        rtp_player_win_set_stream(next_app_window, cur_arrow->item);
                     }
                 }
                 break;
 #endif
             case ACTION_AUTH_VALIDATE:
-                next_window = tui_create_window(SNG_WINDOW_TYPE_AUTH_VALIDATE);
-                auth_validate_win_set_group(next_window, self->group);
+                next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_AUTH_VALIDATE);
+                auth_validate_win_set_group(next_app_window, self->group);
                 break;
             case ACTION_TOGGLE_TIME:
                 self->arrowtime = (self->arrowtime) ? FALSE : TRUE;
@@ -1664,8 +1663,8 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         self->selected = -1;
                     } else {
                         // Show diff panel
-                        next_window = tui_create_window(SNG_WINDOW_TYPE_MSG_DIFF);
-                        msg_diff_win_set_msgs(next_window,
+                        next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_MSG_DIFF);
+                        msg_diff_win_set_msgs(next_app_window,
                                               call_flow_arrow_message(g_ptr_array_index(self->darrows, self->selected)),
                                               call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
                     }
@@ -1676,9 +1675,9 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 break;
             case ACTION_CONFIRM:
                 // KEY_ENTER, display current message in raw mode
-                next_window = tui_create_window(SNG_WINDOW_TYPE_CALL_RAW);
-                call_raw_win_set_group(next_window, self->group);
-                call_raw_win_set_msg(next_window,
+                next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_RAW);
+                call_raw_win_set_group(next_app_window, self->group);
+                call_raw_win_set_msg(next_app_window,
                                      call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
                 break;
             case ACTION_CLEAR_CALLS:
@@ -1709,7 +1708,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
  * @return 0 if the screen has help, -1 otherwise
  */
 static gint
-call_flow_win_help(G_GNUC_UNUSED SngWindow *window)
+call_flow_win_help(G_GNUC_UNUSED SngAppWindow *window)
 {
     WINDOW *help_win;
     int height, width;
@@ -1772,13 +1771,14 @@ call_flow_win_help(G_GNUC_UNUSED SngWindow *window)
 }
 
 static void
-call_flow_win_create_subwindows(SngWindow *window)
+call_flow_win_create_subwindows(SngAppWindow *window)
 {
     // Get panel information
     CallFlowWindow *self = TUI_CALL_FLOW(window);
-    WINDOW *win = sng_window_get_ncurses_window(window);
-    gint win_height = sng_window_get_height(window);
-    gint win_width = sng_window_get_width(window);
+    SngWidget *widget = SNG_WIDGET(window);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    gint win_height = sng_widget_get_height(widget);
+    gint win_width = sng_widget_get_width(widget);
 
     // Create pad to store all arrows
     if (self->arrows_pad) delwin(self->arrows_pad);
@@ -1847,12 +1847,12 @@ call_flow_win_draw(SngWidget *widget)
     char title[256];
 
     // Get panel information
-    SngWindow *window = SNG_WINDOW(widget);
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
+    SngAppWindow *app_window = SNG_APP_WINDOW(widget);
+    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
     g_return_val_if_fail(self != NULL, -1);
 
     // Get window of main panel
-    WINDOW *win = sng_window_get_ncurses_window(window);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
     werase(win);
 
     // Set title
@@ -1879,25 +1879,25 @@ call_flow_win_draw(SngWidget *widget)
     }
 
     // Draw panel title
-    sng_window_set_title(window, title);
+    sng_app_window_set_title(app_window, title);
 
     // Show some keybinding
-    call_flow_win_draw_footer(window);
+    call_flow_win_draw_footer(app_window);
 
     // Create pending arrows for SIP and RTP
-    call_flow_win_create_arrows(window);
+    call_flow_win_create_arrows(app_window);
 
     // Create subwindows for all components
-    call_flow_win_create_subwindows(window);
+    call_flow_win_create_subwindows(app_window);
 
     // Redraw columns
-    call_flow_win_draw_columns(window);
+    call_flow_win_draw_columns(app_window);
 
     // Redraw arrows
-    call_flow_win_draw_arrows(window);
+    call_flow_win_draw_arrows(app_window);
 
     // Redraw preview
-    call_flow_win_draw_preview(window);
+    call_flow_win_draw_preview(app_window);
 
     // Draw scrollbars
     scrollbar_draw(self->vscroll);
@@ -1915,11 +1915,12 @@ call_flow_win_draw(SngWidget *widget)
  * @return true if the panel requires redraw, false otherwise
  */
 static gboolean
-call_flow_win_redraw(SngWindow *window)
+call_flow_win_redraw(SngAppWindow *window)
 {
     // Get panel information
     CallFlowWindow *self = TUI_CALL_FLOW(window);
-    WINDOW *win = sng_window_get_ncurses_window(window);
+    SngWidget *widget = SNG_WIDGET(window);
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
 
     // Get current screen dimensions
     gint maxx, maxy;
@@ -1929,8 +1930,8 @@ call_flow_win_redraw(SngWindow *window)
     wresize(win, maxy, maxx);
 
     // Store new size
-    sng_window_set_width(window, maxx);
-    sng_window_set_height(window, maxy);
+    sng_widget_set_width(widget, maxx);
+    sng_widget_set_height(widget, maxy);
 
     // Calculate available printable area
     wresize(self->arrows_win, maxy - 6, maxx);
@@ -1940,12 +1941,12 @@ call_flow_win_redraw(SngWindow *window)
 }
 
 void
-call_flow_win_free(SngWindow *window)
+call_flow_win_free(SngAppWindow *window)
 {
     g_object_unref(window);
 }
 
-SngWindow *
+SngAppWindow *
 call_flow_win_new()
 {
     return g_object_new(
@@ -2001,14 +2002,13 @@ call_flow_win_class_init(CallFlowWindowClass *klass)
     object_class->constructed = call_flow_win_constructed;
     object_class->finalize = call_flow_win_finalized;
 
-    SngWindowClass *window_class = SNG_WINDOW_CLASS(klass);
-    window_class->redraw = call_flow_win_redraw;
-    window_class->help = call_flow_win_help;
+    SngAppWindowClass *app_window_class = SNG_APP_WINDOW_CLASS(klass);
+    app_window_class->redraw = call_flow_win_redraw;
+    app_window_class->help = call_flow_win_help;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->draw = call_flow_win_draw;
     widget_class->key_pressed = call_flow_win_handle_key;
-
 }
 
 static void

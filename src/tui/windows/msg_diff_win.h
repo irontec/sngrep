@@ -35,7 +35,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_MSG_DIFF msg_diff_win_get_type()
-G_DECLARE_FINAL_TYPE(MsgDiffWindow, msg_diff_win, TUI, MSG_DIFF, SngWindow)
+G_DECLARE_FINAL_TYPE(MsgDiffWindow, msg_diff_win, TUI, MSG_DIFF, SngAppWindow)
 
 /**
  * @brief Call raw status information
@@ -46,7 +46,7 @@ G_DECLARE_FINAL_TYPE(MsgDiffWindow, msg_diff_win, TUI, MSG_DIFF, SngWindow)
 struct _MsgDiffWindow
 {
     //! Parent object attributes
-    SngWindow parent;
+    SngAppWindow parent;
     //! First message to compare
     Message *one;
     //! Second message to compare
@@ -67,7 +67,7 @@ struct _MsgDiffWindow
  *
  * @return the allocated ncurses panel
  */
-SngWindow *
+SngAppWindow *
 msg_diff_win_new();
 
 /**
@@ -79,7 +79,7 @@ msg_diff_win_new();
  * @param window UI structure pointer
  */
 void
-msg_diff_win_free(SngWindow *window);
+msg_diff_win_free(SngAppWindow *window);
 
 /**
  * @brief Set the panel working messages
@@ -92,7 +92,7 @@ msg_diff_win_free(SngWindow *window);
  * @param two Message pointer to be set in the internal info struct
  */
 void
-msg_diff_win_set_msgs(SngWindow *window, Message *one, Message *two);
+msg_diff_win_set_msgs(SngAppWindow *window, Message *one, Message *two);
 
 G_END_DECLS
 

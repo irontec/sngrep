@@ -39,7 +39,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_PROTOCOL_SELECT protocol_select_win_get_type()
-G_DECLARE_FINAL_TYPE(ProtocolSelectWindow, protocol_select_win, TUI, PROTOCOL_SELECT, SngWindow)
+G_DECLARE_FINAL_TYPE(ProtocolSelectWindow, protocol_select_win, TUI, PROTOCOL_SELECT, SngAppWindow)
 
 /**
  * @brief Enum of available fields
@@ -59,7 +59,7 @@ typedef enum
 struct _ProtocolSelectWindow
 {
     //! Parent object attributes
-    SngWindow parent;
+    SngAppWindow parent;
     //! Section of panel where menu is being displayed
     WINDOW *menu_win;
     //! Columns menu
@@ -88,7 +88,7 @@ struct _ProtocolSelectWindow
  *
  * @return Window UI structure pointer
  */
-SngWindow *
+SngAppWindow *
 protocol_select_win_new();
 
 G_END_DECLS
