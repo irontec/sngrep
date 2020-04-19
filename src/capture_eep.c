@@ -444,7 +444,7 @@ capture_eep_send_v3(packet_t *pkt)
     /* IPv6 */
     else if(pkt->ip_version == 6) {
         /* SRC IPv6 */
-        memcpy((void*) buffer+buflen, &src_ip4, sizeof(struct hep_chunk_ip6));
+        memcpy((void*) buffer+buflen, &src_ip6, sizeof(struct hep_chunk_ip6));
         buflen += sizeof(struct hep_chunk_ip6);
 
         memcpy((void*) buffer+buflen, &dst_ip6, sizeof(struct hep_chunk_ip6));
