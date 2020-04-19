@@ -111,10 +111,10 @@ address_from_str(const char *ipport)
     if (!ipport || strlen(ipport) > ADDRESSLEN + 6)
         return ret;
 
-    strncpy(scanipport, ipport, strlen(ipport));
+    strncpy(scanipport, ipport, sizeof(scanipport));
 
     if (sscanf(scanipport, "%[^:]:%d", address, &port) == 2) {
-        strncpy(ret.ip, address, strlen(address));
+        strncpy(ret.ip, address, sizeof(ret.ip));
         ret.port = port;
     }
 
