@@ -136,6 +136,7 @@ main(int argc, char* argv[])
     int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0, no_config = 0;
     vector_t *infiles = vector_create(0, 1);
     vector_t *indevices = vector_create(0, 1);
+    char *token;
 
     // Program options
     static struct option long_options[] = {
@@ -208,10 +209,10 @@ main(int argc, char* argv[])
             case 'V': /* handled before with higher priority options */
                 break;
             case 'd':
-                optarg = strtok(optarg, ",");
-                while (optarg) {
-                    vector_append(indevices, optarg);
-                    optarg = strtok(NULL, ",");
+                token = strtok(optarg, ",");
+                while (token) {
+                    vector_append(indevices, token);
+                    token = strtok(NULL, ",");
                 }
                 break;
             case 'I':
@@ -332,11 +333,13 @@ main(int argc, char* argv[])
 #endif
 
     // Split device into tokens and add to list of capture devices
-    device = strtok(device, ",");
-    while (device) {
-        vector_append(indevices, device);
-        device = strtok(NULL, ",");
+    token = strdup(device);
+    token = strtok(token, ",");
+    while (token) {
+        vector_append(indevices, token);
+        token = strtok(NULL, ",");
     }
+    sng_free(token);
 
     // If no device or files has been specified in command line, use default
     if (vector_count(indevices) == 0 && vector_count(infiles) == 0) {
