@@ -447,8 +447,7 @@ filter_method_from_setting(const char *value)
     // If there's a method filter
     if (methods_len) {
         // Copy value into temporal array
-        memset(methods, 0, sizeof(methods));
-        strncpy(methods, value, methods_len);
+        strncpy(methods, value, sizeof(methods));
 
         // Replace all commas with pippes
         while ((comma = strchr(methods, ',')))
