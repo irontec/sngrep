@@ -86,42 +86,13 @@ call_list_win_resize(SngAppWindow *app_window)
     return 0;
 }
 
-/**
- * @brief Draw panel footer
- *
- * This function will draw Call list footer that contains
- * keybinginds
- *
- * @param window UI structure pointer
- */
-static gint
-call_list_win_draw_footer(SngWidget *widget)
-{
-    const char *keybindings[] = {
-        key_action_key_str(ACTION_PREV_SCREEN), "Quit",
-        key_action_key_str(ACTION_SELECT), "Select",
-        key_action_key_str(ACTION_SHOW_HELP), "Help",
-        key_action_key_str(ACTION_SAVE), "Save",
-        key_action_key_str(ACTION_DISP_FILTER), "Search",
-        key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
-        key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
-        key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
-        key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
-        key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
-    };
-
-    sng_app_window_draw_bindings(SNG_APP_WINDOW(widget), keybindings, 20);
-
-    // Chain-up parent draw function
-    return SNG_WIDGET_CLASS(call_list_win_parent_class)->draw(widget);
-}
-
 static void
 call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
 {
     CallListWindow *call_list_win = TUI_CALL_LIST_WIN(sng_widget_get_toplevel(sender));
     CallGroup *group = NULL;
     Call *call = NULL;
+    SngWidget *exit_dialog = NULL;
 
     // Check if we handle this action
     switch (action) {
@@ -194,11 +165,18 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
         case ACTION_PREV_SCREEN:
             // Handle quit from this screen unless requested
             if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
-                if (dialog_confirm("Confirm exit", "Are you sure you want to quit?", "Yes,No") == 0) {
-                    sng_widget_destroy(sng_widget_get_toplevel(sender));
+                exit_dialog = sng_dialog_new(
+                    SNG_DIALOG_QUESTION,
+                    SNG_BUTTONS_YES_NO,
+                    "Confirm exit",
+                    "<cyan> Are you sure you want to quit?"
+                );
+                if (sng_dialog_run(SNG_DIALOG(exit_dialog)) == SNG_RESPONSE_YES) {
+                    sng_widget_destroy(SNG_WIDGET(call_list_win));
                 }
+                sng_widget_destroy(exit_dialog);
             } else {
-                sng_widget_destroy(sng_widget_get_toplevel(sender));
+                sng_widget_destroy(SNG_WIDGET(call_list_win));
             }
         default:
             break;
@@ -238,14 +216,14 @@ call_list_win_handle_key(SngWidget *widget, int key)
             case ACTION_PREV_SCREEN:
                 // This panel has handled the key successfully
                 call_list_win_handle_action(widget, action);
-                break;
+                return KEY_HANDLED;
             default:
                 continue;
         }
     }
 
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
+    // Return if this panel has not handled the key
+    return KEY_NOT_HANDLED;
 }
 
 /**
@@ -571,6 +549,7 @@ call_list_win_constructed(GObject *object)
         g_autoptr(GString) filter = g_string_new("BPF Filter: ");
         g_string_append_printf(filter, "<yellow>%s", bpf_filter);
         sng_container_add(SNG_CONTAINER(header_second), sng_label_new(filter->str));
+        sng_container_show_all(SNG_CONTAINER(header_second));
     }
 
     // Show Match expression label if specified in command line
@@ -580,9 +559,9 @@ call_list_win_constructed(GObject *object)
         g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
         g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
         sng_container_add(SNG_CONTAINER(header_second), sng_label_new(match_expression->str));
+        sng_container_show_all(SNG_CONTAINER(header_second));
     }
     sng_container_add(SNG_CONTAINER(call_list_win), header_second);
-    sng_container_show_all(SNG_CONTAINER(header_second));
 
     // Add Display filter label and entry
     SngWidget *header_third = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
@@ -727,7 +706,6 @@ call_list_win_class_init(CallListWindowClass *klass)
     app_window_class->help = call_list_win_help;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->draw = call_list_win_draw_footer;
     widget_class->key_pressed = call_list_win_handle_key;
 }
 

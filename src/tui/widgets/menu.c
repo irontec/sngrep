@@ -159,8 +159,8 @@ sng_menu_key_pressed(SngWidget *widget, gint key)
                 sng_widget_key_pressed(sng_widget_get_parent(widget), key);
                 break;
             case ACTION_CONFIRM:
-                sng_menu_item_activate(g_list_nth_data(children, menu->selected));
                 sng_widget_lose_focus(widget);
+                sng_menu_item_activate(g_list_nth_data(children, menu->selected));
                 break;
             case ACTION_CANCEL:
                 sng_widget_lose_focus(widget);
@@ -192,8 +192,8 @@ sng_menu_clicked(SngWidget *widget, MEVENT mevent)
     );
 
     SngMenuItem *item = SNG_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
-    sng_menu_item_activate(item);
     sng_widget_lose_focus(widget);
+    sng_menu_item_activate(item);
     return 0;
 }
 

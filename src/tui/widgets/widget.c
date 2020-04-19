@@ -27,8 +27,9 @@
  */
 
 #include "config.h"
+#include <glib.h>
+#include <glib-object.h>
 #include <ncurses.h>
-#include "glib-extra/glib.h"
 #include "widget.h"
 
 enum
@@ -67,6 +68,8 @@ typedef struct
 {
     //! Parent widget
     SngWidget *parent;
+    //! Widget name
+    const gchar *name;
     //! Window for drawing this widget
     WINDOW *win;
     //! Dimensions of this widget
@@ -85,25 +88,40 @@ typedef struct
     gboolean vexpand, hexpand;
     //! Determine if the widget must be drawn on topmost layer
     gboolean floating;
+    //! Determine if the widget is being destroyed
+    gboolean destroying;
 } SngWidgetPrivate;
 
 // SngWidget class definition
 G_DEFINE_TYPE_WITH_PRIVATE(SngWidget, sng_widget, G_TYPE_OBJECT)
 
 SngWidget *
-sng_widget_new(const SngWidget *parent)
+sng_widget_new()
 {
     return g_object_new(
         SNG_TYPE_WIDGET,
-        "parent", parent,
         NULL
     );
 }
 
 void
-sng_widget_destroy(SngWidget *widget)
+sng_widget_free(SngWidget *widget)
 {
     g_object_unref(widget);
+}
+
+void
+sng_widget_destroy(SngWidget *widget)
+{
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
+    priv->destroying = TRUE;
+}
+
+gboolean
+sng_widget_is_destroying(SngWidget *widget)
+{
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
+    return priv->destroying;
 }
 
 void
@@ -118,6 +136,13 @@ sng_widget_get_parent(SngWidget *widget)
 {
     SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->parent;
+}
+
+void
+sng_widget_set_name(SngWidget *widget, const gchar *name)
+{
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
+    priv->name = name;
 }
 
 SngWidget *
@@ -329,6 +354,10 @@ sng_widget_realize(SngWidget *widget)
 {
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
 
+    if (sng_widget_is_realized(widget)) {
+        return;
+    }
+
     if (klass->realize != NULL) {
         klass->realize(widget);
     }
@@ -346,9 +375,7 @@ sng_widget_draw(SngWidget *widget)
     }
 
     // Realize widget before drawing
-    if (!sng_widget_is_realized(widget)) {
-        sng_widget_realize(widget);
-    }
+    sng_widget_realize(widget);
 
     // Notify everyone we're being drawn
     g_signal_emit(widget, signals[SIG_DRAW], 0);
@@ -484,6 +511,13 @@ sng_widget_base_map(SngWidget *widget)
     gint dmincol = priv->x - sng_widget_get_xpos(parent);
     gint dmaxrow = dminrow + priv->height - 1;
     gint dmaxcol = dmincol + priv->width - 1;
+
+    if (priv->name) {
+        g_debug("Mapping widget %s at %d %d %d %d",
+                priv->name,
+                dminrow, dmincol, dmaxrow, dmaxrow
+        );
+    }
 
     // Copy the widget in its parent widget ncurses window
     copywin(

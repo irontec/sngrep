@@ -50,6 +50,7 @@ set(SOURCES
         src/tui/widgets/box.c
         src/tui/widgets/button.c
         src/tui/widgets/container.c
+        src/tui/widgets/dialog.c
         src/tui/widgets/entry.c
         src/tui/widgets/label.c
         src/tui/widgets/menu_bar.c
@@ -191,12 +192,14 @@ configure_file(
 
 ######################################################################
 set(ENUM_HEADERS
-        src/tui/tui.h
-        src/tui/windows/call_flow_win.h
-        src/storage/storage.h
         src/packet/packet.h
-        src/tui/widgets/box.h
+        src/storage/storage.h
+        src/tui/tui.h
         src/tui/widgets/app_window.h
+        src/tui/widgets/box.h
+        src/tui/windows/call_flow_win.h
+        src/tui/widgets/dialog.h
+        src/tui/widgets/label.h
         )
 
 add_custom_command(

@@ -86,7 +86,10 @@ struct _SngWidgetClass
  * @return widget instance pointer
  */
 SngWidget *
-sng_widget_new(const SngWidget *parent);
+sng_widget_new();
+
+void
+sng_widget_free(SngWidget *widget);
 
 /**
  * @brief Destroy a panel structure
@@ -100,11 +103,17 @@ sng_widget_new(const SngWidget *parent);
 void
 sng_widget_destroy(SngWidget *widget);
 
+gboolean
+sng_widget_is_destroying(SngWidget *widget);
+
 void
 sng_widget_set_parent(SngWidget *widget, SngWidget *parent);
 
 SngWidget *
 sng_widget_get_parent(SngWidget *widget);
+
+void
+sng_widget_set_name(SngWidget *widget, const gchar *name);
 
 void
 sng_widget_show(SngWidget *widget);

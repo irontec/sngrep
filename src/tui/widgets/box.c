@@ -27,8 +27,6 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "glib-extra/glib_enum_types.h"
-#include "glib-extra/gnode.h"
-#include "tui/theme.h"
 #include "tui/widgets/box.h"
 
 enum
@@ -48,7 +46,7 @@ typedef struct
     // Space between children widgets
     gint spacing;
     // Padding at the beginning and end of box
-    gint padding;
+    SngBoxPadding padding;
     // Background filler
     chtype background;
 } SngBoxPrivate;
@@ -75,6 +73,20 @@ sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding)
         "can-focus", FALSE,
         NULL
     );
+}
+
+void
+sng_box_set_padding(SngBox *box, SngBoxPadding padding)
+{
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
+    priv->padding = padding;
+}
+
+SngBoxPadding
+sng_box_get_padding(SngBox *box)
+{
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
+    return priv->padding;
 }
 
 void
@@ -110,7 +122,11 @@ sng_box_set_property(GObject *object, guint property_id, const GValue *value, GP
             priv->spacing = g_value_get_int(value);
             break;
         case PROP_PADDING:
-            priv->padding = g_value_get_int(value);
+            if (priv->orientation == BOX_ORIENTATION_HORIZONTAL) {
+                priv->padding.left = priv->padding.right = g_value_get_int(value);
+            } else {
+                priv->padding.top = priv->padding.bottom = g_value_get_int(value);
+            }
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -130,7 +146,11 @@ sng_box_get_property(GObject *object, guint property_id, GValue *value, GParamSp
             g_value_set_int(value, priv->spacing);
             break;
         case PROP_PADDING:
-            g_value_set_int(value, priv->padding);
+            if (priv->orientation == BOX_ORIENTATION_HORIZONTAL) {
+                g_value_set_int(value, priv->padding.left);
+            } else {
+                g_value_set_int(value, priv->padding.top);
+            }
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -146,7 +166,7 @@ sng_box_realize_horizontal(SngWidget *widget)
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     gint space = sng_widget_get_width(widget)
-                 - priv->padding * 2
+                 - priv->padding.left - priv->padding.right
                  - priv->spacing * g_list_length(children);
 
     gint exp_widget_cnt = 0;
@@ -161,16 +181,18 @@ sng_box_realize_horizontal(SngWidget *widget)
     }
 
     // Calculate expanded children width and positions
-    gint xpos = priv->padding;
+    gint xpos = sng_widget_get_xpos(widget) + priv->padding.left;
+    gint ypos = sng_widget_get_ypos(widget) + priv->padding.top;
+    gint height = sng_widget_get_height(widget) - priv->padding.top - priv->padding.bottom;
     for (GList *l = children; l != NULL; l = l->next) {
         SngWidget *child = l->data;
         if (sng_widget_get_hexpand(child)) {
             sng_widget_set_size(child, space / exp_widget_cnt, sng_widget_get_height(child));
         }
         if (sng_widget_get_vexpand(child)) {
-            sng_widget_set_size(child, sng_widget_get_width(child), sng_widget_get_height(widget));
+            sng_widget_set_size(child, sng_widget_get_width(child), height);
         }
-        sng_widget_set_position(child, xpos, sng_widget_get_ypos(widget));
+        sng_widget_set_position(child, xpos, ypos);
         xpos += sng_widget_get_width(child) + priv->spacing;
     }
 }
@@ -184,8 +206,8 @@ sng_box_realize_vertical(SngWidget *widget)
 
     // Set Children width based on expand flag
     gint space = sng_widget_get_height(widget)
-                 - priv->padding * 2
-                 - priv->spacing * g_list_length(children);
+                 - priv->padding.top - priv->padding.bottom
+                 - priv->spacing * (g_list_length(children) - 1);
 
     gint exp_widget_cnt = 0;
     // Remove fixed space from non expanded widgets
@@ -199,16 +221,18 @@ sng_box_realize_vertical(SngWidget *widget)
     }
 
     // Calculate expanded children height and positions
-    gint ypos = priv->padding;
+    gint xpos = sng_widget_get_xpos(widget) + priv->padding.left;
+    gint ypos = sng_widget_get_ypos(widget) + priv->padding.top;
+    gint width = sng_widget_get_width(widget) - priv->padding.left - priv->padding.right;
     for (GList *l = children; l != NULL; l = l->next) {
         SngWidget *child = l->data;
         if (sng_widget_get_vexpand(child)) {
             sng_widget_set_size(child, sng_widget_get_width(child), space / exp_widget_cnt);
         }
         if (sng_widget_get_hexpand(child)) {
-            sng_widget_set_size(child, sng_widget_get_width(widget), sng_widget_get_height(child));
+            sng_widget_set_size(child, width, sng_widget_get_height(child));
         }
-        sng_widget_set_position(child, sng_widget_get_xpos(widget), ypos);
+        sng_widget_set_position(child, xpos, ypos);
         ypos += sng_widget_get_height(child) + priv->spacing;
     }
 }
@@ -234,8 +258,9 @@ sng_box_draw(SngWidget *widget)
     // Clear the window to draw children widgets
     SngBoxPrivate *priv = sng_box_get_instance_private(SNG_BOX(widget));
     WINDOW *win = sng_widget_get_ncurses_window(widget);
-    wbkgd(win, priv->background);
-    werase(win);
+    if (priv->background) {
+        wbkgd(win, priv->background);
+    }
     return SNG_WIDGET_CLASS(sng_box_parent_class)->draw(widget);
 }
 

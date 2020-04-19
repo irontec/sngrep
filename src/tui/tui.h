@@ -47,6 +47,7 @@
 #include "tui/widgets/box.h"
 #include "tui/widgets/button.h"
 #include "tui/widgets/container.h"
+#include "tui/widgets/dialog.h"
 #include "tui/widgets/entry.h"
 #include "tui/widgets/label.h"
 #include "tui/widgets/menu.h"
@@ -135,6 +136,12 @@ tui_find_by_panel(PANEL *panel);
  */
 SngAppWindow *
 tui_find_by_type(SngAppWindowType type);
+
+gboolean
+tui_refresh_screen(GMainLoop *loop);
+
+gboolean
+tui_read_input(gint fd, GIOCondition condition, GMainLoop *loop);
 
 /**
  * @brief Default handler for keys

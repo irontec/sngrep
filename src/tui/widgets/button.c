@@ -28,6 +28,7 @@
  */
 #include "config.h"
 #include "tui/keybinding.h"
+#include "tui/widgets/window.h"
 #include "tui/widgets/button.h"
 
 enum
@@ -35,7 +36,6 @@ enum
     SIG_ACTIVATE,
     SIGS
 };
-
 
 static guint signals[SIGS] = { 0 };
 
@@ -45,7 +45,7 @@ G_DEFINE_TYPE(SngButton, sng_button, SNG_TYPE_LABEL)
 SngWidget *
 sng_button_new(const gchar *text)
 {
-        return g_object_new(
+    return g_object_new(
         SNG_TYPE_BUTTON,
         "text", text,
         "min-height", 1,
@@ -79,22 +79,24 @@ sng_button_key_pressed(SngWidget *widget, gint key)
         // Check if we handle this action
         switch (action) {
             case ACTION_CONFIRM:
+                sng_widget_lose_focus(widget);
                 sng_button_activate(button);
-                sng_widget_lose_focus(widget);
-                break;
-            case ACTION_CANCEL:
-                sng_widget_lose_focus(widget);
-                break;
+                return KEY_HANDLED;
+            case ACTION_LEFT:
+            case ACTION_UP:
+                sng_window_focus_prev(SNG_WINDOW(sng_widget_get_toplevel(widget)));
+                return KEY_HANDLED;
+            case ACTION_RIGHT:
+            case ACTION_DOWN:
+                sng_window_focus_next(SNG_WINDOW(sng_widget_get_toplevel(widget)));
+                return KEY_HANDLED;
             default:
                 // Parse next action
                 continue;
         }
-        // We've handled this key, stop checking actions
-        break;
     }
 
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
+    return SNG_WIDGET_CLASS(sng_button_parent_class)->key_pressed(widget, key);
 }
 
 static gint
@@ -103,6 +105,21 @@ sng_button_clicked(SngWidget *widget, G_GNUC_UNUSED MEVENT mevent)
     sng_button_activate(SNG_BUTTON(widget));
     sng_widget_lose_focus(widget);
     return 0;
+}
+
+static gboolean
+sng_button_focus_gained(SngWidget *widget)
+{
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    wattron(win, A_REVERSE);
+    return TRUE;
+}
+
+static void
+sng_button_focus_lost(SngWidget *widget)
+{
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    wattroff(win, A_REVERSE);
 }
 
 static void
@@ -116,6 +133,8 @@ sng_button_class_init(SngButtonClass *klass)
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->key_pressed = sng_button_key_pressed;
     widget_class->clicked = sng_button_clicked;
+    widget_class->focus_gained = sng_button_focus_gained;
+    widget_class->focus_lost = sng_button_focus_lost;
 
     signals[SIG_ACTIVATE] =
         g_signal_newv("activate",

@@ -165,22 +165,39 @@ tui_find_by_type(SngAppWindowType type)
     return window;
 }
 
-static gboolean
-tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
+static GList *
+tui_get_panel_stack()
 {
+    GList *stack = NULL;
     PANEL *panel = NULL;
 
-    // While there are still panels
     while ((panel = panel_below(panel))) {
+        stack = g_list_append(stack, panel);
+    }
 
+    return stack;
+}
+
+gboolean
+tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
+{
+    // While there are still panels
+    g_autoptr(GList) stack = tui_get_panel_stack();
+    for (GList *l = stack; l != NULL; l = l->next) {
         // Get panel interface structure
-        SngWindow *ui = tui_find_by_panel(panel);
+        SngWindow *window = tui_find_by_panel(l->data);
+        SngWidget *widget = SNG_WIDGET(window);
 
-        // Query the interface if it needs to be redrawn
-            // Redraw this panel
-            if (sng_window_draw(ui) != 0) {
-                tui_destroy_window(ui);
-            }
+        // Draw each widget in their internal window
+        sng_widget_draw(widget);
+        // Map internal windows to visible panel windows
+        sng_widget_map(widget);
+
+        // Free window memory if destroyed
+        if (sng_widget_is_destroying(widget)) {
+            sng_widget_free(widget);
+        }
+
         // Update panel stack
         update_panels();
     }
@@ -188,10 +205,10 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
     // Update ncurses standard screen with panel info
     doupdate();
 
-    return panel_above(NULL) != NULL;
+    return g_list_length(stack) > 0;
 }
 
-static gboolean
+gboolean
 tui_read_input(G_GNUC_UNUSED gint fd,
                G_GNUC_UNUSED GIOCondition condition,
                GMainLoop *loop)
@@ -234,31 +251,8 @@ tui_read_input(G_GNUC_UNUSED gint fd,
     if (c == KEY_MOUSE) {
         sng_window_handle_mouse(ui, mevent);
     } else {
-        // Handle received key
-        int hld = KEY_NOT_HANDLED;
-        while (hld != KEY_HANDLED) {
-            // Check if current panel has custom bindings for that key
-            hld = sng_window_handle_key(ui, c);
-
-            if (hld == KEY_HANDLED) {
-                // Panel handled this key
-                continue;
-            } else if (hld == KEY_PROPAGATED) {
-                // Destroy current panel
-                tui_destroy_window(ui);
-                // Try to handle this key with the previous panel
-                ui = tui_find_by_panel(panel_below(NULL));
-            } else if (hld == KEY_DESTROY) {
-                tui_destroy_window(ui);
-                break;
-            } else {
-                // Key not handled by UI nor propagated. Use default handler
-                hld = tui_default_keyhandler(ui, c);
-            }
-        }
+        sng_window_handle_key(ui, c);
     }
-
-
 
     // Force screen redraw with each keystroke
     tui_refresh_screen(loop);

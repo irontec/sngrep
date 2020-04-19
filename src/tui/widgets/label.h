@@ -39,12 +39,21 @@ G_BEGIN_DECLS
 #define SNG_TYPE_LABEL sng_label_get_type()
 G_DECLARE_FINAL_TYPE(SngLabel, sng_label, SNG, LABEL, SngWidget)
 
+typedef enum
+{
+    SNG_ALIGN_LEFT,
+    SNG_ALIGN_RIGHT,
+    SNG_ALIGN_CENTER,
+} SngAlignment;
+
 struct _SngLabel
 {
     //! Parent object attributes
     SngWidget parent;
     //! Item text
     gchar *text;
+    //! Text alignment
+    SngAlignment alignment;
 };
 
 SngWidget *
@@ -58,6 +67,12 @@ sng_label_get_text(SngLabel *label);
 
 gint
 sng_label_get_text_len(const gchar *text);
+
+void
+sng_label_set_align(SngLabel *label, SngAlignment align);
+
+SngAlignment
+sng_label_get_align(SngLabel *label);
 
 G_END_DECLS
 

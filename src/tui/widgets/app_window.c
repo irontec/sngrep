@@ -125,17 +125,12 @@ sng_app_window_map_floating(SngAppWindow *window)
     sng_container_foreach(SNG_CONTAINER(window), (GFunc) sng_app_window_map_floating_child, NULL);
 }
 
-int
-sng_app_window_draw(SngAppWindow *window)
+static void
+sng_app_window_map(SngWidget *widget)
 {
-    SngWidget *widget = SNG_WIDGET(window);
-    // Draw all widgets of the window
-    sng_widget_draw(widget);
-    // Map all widgets to their screen positions
-    sng_widget_map(widget);
+    SNG_WIDGET_CLASS(sng_app_window_parent_class)->map(widget);
     // Map all floating widgets
-    sng_app_window_map_floating(window);
-    return 0;
+    sng_app_window_map_floating(SNG_APP_WINDOW(widget));
 }
 
 int
@@ -228,16 +223,6 @@ sng_app_window_draw_bindings(SngAppWindow *window, const char **keybindings, gin
 }
 
 static void
-sng_app_window_constructed(GObject *object)
-{
-    // Realize window as soon as its constructed
-    sng_widget_realize(SNG_WIDGET(object));
-
-    // Chain-up parent constructed
-    G_OBJECT_CLASS(sng_app_window_parent_class)->constructed(object);
-}
-
-static void
 sng_app_window_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
 {
     SngAppWindowPrivate *priv = sng_app_window_get_instance_private(SNG_APP_WINDOW(object));
@@ -269,9 +254,11 @@ static void
 sng_app_window_class_init(SngAppWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = sng_app_window_constructed;
     object_class->set_property = sng_app_window_set_property;
     object_class->get_property = sng_app_window_get_property;
+
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
+    widget_class->map = sng_app_window_map;
 
     obj_properties[PROP_WINDOW_TYPE] =
         g_param_spec_enum("window-type",

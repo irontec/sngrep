@@ -36,8 +36,8 @@ G_BEGIN_DECLS
 
 typedef enum
 {
-  BOX_ORIENTATION_HORIZONTAL,
-  BOX_ORIENTATION_VERTICAL
+    BOX_ORIENTATION_HORIZONTAL,
+    BOX_ORIENTATION_VERTICAL
 } SngBoxOrientation;
 
 // Class declaration
@@ -50,11 +50,25 @@ struct _SngBoxClass
     SngContainerClass parent;
 };
 
+typedef struct
+{
+    gint top;
+    gint bottom;
+    gint right;
+    gint left;
+} SngBoxPadding;
+
 SngWidget *
 sng_box_new(SngBoxOrientation orientation);
 
 SngWidget *
 sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding);
+
+void
+sng_box_set_padding(SngBox *box, SngBoxPadding padding);
+
+SngBoxPadding
+sng_box_get_padding(SngBox *box);
 
 void
 sng_box_pack_start(SngBox *box, SngWidget *widget);

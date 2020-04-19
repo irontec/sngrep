@@ -70,18 +70,6 @@ SngWindow *
 sng_window_new(gint height, gint width);
 
 /**
- * @brief Notifies current ui the screen size has changed
- *
- * This function acts as wrapper to custom ui resize functions
- * with some checks
- *
- * @param window UI structure
- * @return 0 if ui has been resize, -1 otherwise
- */
-gint
-sng_window_draw(SngWindow *window);
-
-/**
  * @brief Handle moves events on given window
  *
  * This function will pass the mouse event
