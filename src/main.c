@@ -208,7 +208,11 @@ main(int argc, char* argv[])
             case 'V': /* handled before with higher priority options */
                 break;
             case 'd':
-                vector_append(indevices, optarg);
+                optarg = strtok(optarg, ",");
+                while (optarg) {
+                    vector_append(indevices, optarg);
+                    optarg = strtok(NULL, ",");
+                }
                 break;
             case 'I':
                 vector_append(infiles, optarg);
@@ -326,6 +330,13 @@ main(int argc, char* argv[])
     // Initialize EEP if enabled
     capture_eep_init();
 #endif
+
+    // Split device into tokens and add to list of capture devices
+    device = strtok(device, ",");
+    while (device) {
+        vector_append(indevices, device);
+        device = strtok(NULL, ",");
+    }
 
     // If no device or files has been specified in command line, use default
     if (vector_count(indevices) == 0 && vector_count(infiles) == 0) {
