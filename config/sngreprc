@@ -26,6 +26,7 @@
 # set capture.lookup on
 
 ## Set default capture device
+# use special keyword 'any', a device name 'eth0' or a comma-separated list like 'eth1,eth3'
 # set capture.device any
 
 ## Set default dump file
