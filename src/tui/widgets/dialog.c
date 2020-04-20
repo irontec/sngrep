@@ -37,7 +37,6 @@ enum
 {
     PROP_TYPE = 1,
     PROP_BUTTONS,
-    PROP_TITLE,
     PROP_MESSAGE,
     N_PROPERTIES
 };
@@ -54,6 +53,7 @@ sng_dialog_new(SngDialogType type, SngDialogButtons buttons, const gchar *title,
         SNG_TYPE_DIALOG,
         "type", type,
         "buttons", buttons,
+        "border", TRUE,
         "title", title,
         "message", message,
         "spacing", 1,
@@ -114,35 +114,6 @@ sng_dialog_key_pressed(SngWidget *widget, gint key)
     return KEY_HANDLED;
 }
 
-static gint
-sng_dialog_draw(SngWidget *widget)
-{
-    // Chain up parent draw
-    SNG_WIDGET_CLASS(sng_dialog_parent_class)->draw(widget);
-
-    SngDialog *dialog = SNG_DIALOG(widget);
-    WINDOW *win = sng_widget_get_ncurses_window(widget);
-    // Write border and boxes around the window
-    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    box(win, 0, 0);
-
-    gint height = sng_widget_get_height(widget);
-    gint width = sng_widget_get_width(widget);
-
-    // Write Horizontal line for title
-    if (dialog->title != NULL) {
-        mvwhline(win, 2, 1, ACS_HLINE, width);
-        mvwaddch(win, 2, 0, ACS_LTEE);
-        mvwaddch(win, 2, width - 1, ACS_RTEE);
-    }
-
-    // Write Horizontal line for Buttons
-    mvwhline(win, height - 3, 1, ACS_HLINE, width);
-    mvwaddch(win, height - 3, 0, ACS_LTEE);
-    mvwaddch(win, height - 3, width - 1, ACS_RTEE);
-
-    return 0;
-}
 
 static void
 sng_dialog_constructed(GObject *object)
@@ -155,7 +126,7 @@ sng_dialog_constructed(GObject *object)
         g_strv_length(msg_lines)
         + 2 // Space for buttons
         + 2 // Space for borders
-        + ((dialog->title != NULL) ? 2 : 0); // Space for title bar
+        + 2; // Space for title bar
 
     sng_widget_set_height(
         SNG_WIDGET(dialog),
@@ -181,61 +152,28 @@ sng_dialog_constructed(GObject *object)
     padding.top = padding.bottom = padding.left = padding.right = 1;
     sng_box_set_padding(SNG_BOX(dialog), padding);
 
-    // Create title label
-    if (dialog->title != NULL) {
-        SngWidget *lb_message = sng_label_new(dialog->title);
-        sng_label_set_align(SNG_LABEL(lb_message), SNG_ALIGN_CENTER);
-        sng_box_pack_start(SNG_BOX(dialog), lb_message);
-    }
-
     SngWidget *lb_message = sng_label_new(dialog->message);
     sng_widget_set_vexpand(lb_message, TRUE);
     sng_container_add(SNG_CONTAINER(dialog), lb_message);
-
-    SngWidget *box_buttons = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 2, 1);
-    sng_widget_set_vexpand(box_buttons, FALSE);
-    sng_widget_set_height(box_buttons, 1);
-//    sng_box_set_background(SNG_BOX(box_buttons), COLOR_PAIR(CP_WHITE_ON_BLUE));
 
     if (dialog->buttons == SNG_BUTTONS_YES_NO) {
 
         SngWidget *bn_yes = sng_button_new();
         sng_label_set_text(SNG_LABEL(bn_yes), "[   Yes    ]");
-        sng_container_add(SNG_CONTAINER(box_buttons), bn_yes);
+        sng_window_add_button(SNG_WINDOW(dialog), SNG_BUTTON(bn_yes));
         g_signal_connect_swapped(bn_yes, "activate",
                                  G_CALLBACK(sng_dialog_set_response_yes), dialog);
 
         SngWidget *bn_no = sng_button_new();
         sng_label_set_text(SNG_LABEL(bn_no), "[    No    ]");
-        sng_container_add(SNG_CONTAINER(box_buttons), bn_no);
+        sng_window_add_button(SNG_WINDOW(dialog), SNG_BUTTON(bn_no));
         g_signal_connect_swapped(bn_no, "activate",
                                  G_CALLBACK(sng_dialog_set_response_no), dialog);
 
-        sng_container_show_all(SNG_CONTAINER(box_buttons));
+        // Set first button as default
+        sng_window_set_default_focus(SNG_WINDOW(dialog), bn_yes);
     }
-
-    sng_container_add(SNG_CONTAINER(dialog), box_buttons);
     sng_container_show_all(SNG_CONTAINER(dialog));
-
-    SngBoxPadding box_buttons_padding = sng_box_get_padding(SNG_BOX(box_buttons));
-    switch (dialog->buttons) {
-        case SNG_BUTTONS_YES_NO:
-        case SNG_BUTTONS_OK_CANCEL:
-            box_buttons_padding.left = box_buttons_padding.right =
-                (width - 12 * 2 - 1) / 2;
-            break;
-        default:
-            break;
-    }
-    sng_box_set_padding(SNG_BOX(box_buttons), box_buttons_padding);
-
-    // Set first button as default
-    sng_window_set_default_focus(
-        SNG_WINDOW(dialog),
-        g_list_first_data(
-            sng_container_get_children(SNG_CONTAINER(box_buttons))
-        )
-    );
 
     // Chain-up parent constructed
     G_OBJECT_CLASS(sng_dialog_parent_class)->constructed(object);
@@ -251,9 +189,6 @@ sng_dialog_set_property(GObject *object, guint property_id, const GValue *value,
             break;
         case PROP_BUTTONS:
             dialog->buttons = g_value_get_enum(value);
-            break;
-        case PROP_TITLE:
-            dialog->title = g_strdup(g_value_get_string(value));
             break;
         case PROP_MESSAGE:
             dialog->message = g_strdup(g_value_get_string(value));
@@ -275,9 +210,6 @@ sng_dialog_get_property(GObject *object, guint property_id, GValue *value, GPara
         case PROP_BUTTONS:
             g_value_set_enum(value, dialog->buttons);
             break;
-        case PROP_TITLE:
-            g_value_set_string(value, dialog->title);
-            break;
         case PROP_MESSAGE:
             g_value_set_string(value, dialog->message);
             break;
@@ -296,7 +228,6 @@ sng_dialog_class_init(SngDialogClass *klass)
     object_class->get_property = sng_dialog_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->draw = sng_dialog_draw;
     widget_class->key_pressed = sng_dialog_key_pressed;
 
     obj_properties[PROP_TYPE] =
@@ -315,14 +246,6 @@ sng_dialog_class_init(SngDialogClass *klass)
                           SNG_TYPE_DIALOG_BUTTONS,
                           SNG_BUTTONS_NONE,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT
-        );
-
-    obj_properties[PROP_TITLE] =
-        g_param_spec_string("title",
-                            "Dialog title",
-                            "Dialog title",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT
         );
 
     obj_properties[PROP_MESSAGE] =

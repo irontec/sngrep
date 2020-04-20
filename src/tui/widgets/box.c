@@ -82,6 +82,17 @@ sng_box_set_padding(SngBox *box, SngBoxPadding padding)
     priv->padding = padding;
 }
 
+void
+sng_box_set_padding_full(SngBox *box, gint top, gint bottom, gint left, gint right)
+{
+    SngBoxPrivate *priv = sng_box_get_instance_private(box);
+    priv->padding.top = top;
+    priv->padding.bottom = bottom;
+    priv->padding.left = left;
+    priv->padding.right = right;
+
+}
+
 SngBoxPadding
 sng_box_get_padding(SngBox *box)
 {

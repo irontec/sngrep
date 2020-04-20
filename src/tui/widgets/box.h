@@ -67,6 +67,9 @@ sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding);
 void
 sng_box_set_padding(SngBox *box, SngBoxPadding padding);
 
+void
+sng_box_set_padding_full(SngBox *box, gint top, gint bottom, gint left, gint right);
+
 SngBoxPadding
 sng_box_get_padding(SngBox *box);
 

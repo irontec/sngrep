@@ -75,8 +75,6 @@ struct _SngDialog
 {
     //! Parent object attributes
     SngWindow parent;
-    //! Window title
-    const gchar *title;
     //! Dialog loop
     GMainLoop *loop;
     //! Dialog type

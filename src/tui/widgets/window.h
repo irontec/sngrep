@@ -35,6 +35,7 @@
 #include <glib-object.h>
 #include <ncurses.h>
 #include <panel.h>
+#include "tui/widgets/button.h"
 #include "tui/widgets/box.h"
 
 G_BEGIN_DECLS
@@ -95,6 +96,12 @@ sng_window_handle_key(SngWindow *window, gint key);
 
 PANEL *
 sng_window_get_ncurses_panel(SngWindow *window);
+
+void
+sng_window_set_title(SngWindow *window, const gchar *title);
+
+void
+sng_window_add_button(SngWindow *window, SngButton *button);
 
 void
 sng_window_set_default_focus(SngWindow *window, SngWidget *widget);
