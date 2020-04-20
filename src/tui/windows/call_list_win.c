@@ -41,7 +41,6 @@
 #include "tui/windows/call_flow_win.h"
 #include "tui/windows/call_raw_win.h"
 #include "tui/windows/save_win.h"
-#include "tui/windows/column_select_win.h"
 
 G_DEFINE_TYPE(CallListWindow, call_list_win, SNG_TYPE_APP_WINDOW)
 
@@ -56,40 +55,13 @@ G_DEFINE_TYPE(CallListWindow, call_list_win, SNG_TYPE_APP_WINDOW)
 static gboolean
 call_list_win_redraw(G_GNUC_UNUSED SngAppWindow *window)
 {
-    return TRUE;
     return storage_calls_changed();
-}
-
-/**
- * @brief Resize the windows of Call List
- *
- * This function will be invoked when the ui size has changed
- *
- * @param app_window UI structure pointer
- * @return 0 if the panel has been resized, -1 otherwise
- */
-static int
-call_list_win_resize(SngAppWindow *app_window)
-{
-    // Get current screen dimensions
-    gint maxx, maxy;
-    getmaxyx(stdscr, maxy, maxx);
-
-    SngWidget *widget = SNG_WIDGET(app_window);
-
-    // Change the main window size
-    wresize(sng_widget_get_ncurses_window(widget), maxy, maxx);
-
-    // Store new size
-    sng_widget_set_width(widget, maxx);
-    sng_widget_set_height(widget, maxy);
-    return 0;
 }
 
 static void
 call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
 {
-    CallListWindow *call_list_win = TUI_CALL_LIST_WIN(sng_widget_get_toplevel(sender));
+    CallListWindow *call_list_win = SNG_CALL_LIST_WIN(sng_widget_get_toplevel(sender));
     CallGroup *group = NULL;
     Call *call = NULL;
     SngWidget *exit_dialog = NULL;
@@ -383,7 +355,7 @@ SngAppWindow *
 call_list_win_new()
 {
     SngAppWindow *window = g_object_new(
-        TUI_TYPE_CALL_LIST_WIN,
+        SNG_TYPE_CALL_LIST_WIN,
         "window-type", SNG_WINDOW_TYPE_CALL_LIST,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
@@ -395,14 +367,14 @@ call_list_win_new()
 SngTable *
 call_list_win_get_table(SngAppWindow *window)
 {
-    CallListWindow *call_list_win = TUI_CALL_LIST_WIN(window);
+    CallListWindow *call_list_win = SNG_CALL_LIST_WIN(window);
     return SNG_TABLE(call_list_win->tb_calls);
 }
 
 static void
 call_list_win_constructed(GObject *object)
 {
-    CallListWindow *call_list_win = TUI_CALL_LIST_WIN(object);
+    CallListWindow *call_list_win = SNG_CALL_LIST_WIN(object);
 
     // Create menu bar entries
     call_list_win->menu_bar = sng_menu_bar_new();
@@ -578,7 +550,6 @@ call_list_win_constructed(GObject *object)
     sng_container_show_all(SNG_CONTAINER(header_third));
 
     call_list_win->tb_calls = sng_table_new();
-//    table_set_rows(TUI_TABLE(call_list), storage_calls());
     sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
     g_signal_connect(call_list_win->tb_calls, "activate",
                      G_CALLBACK(call_list_win_handle_action),
@@ -702,7 +673,6 @@ call_list_win_class_init(CallListWindowClass *klass)
 
     SngAppWindowClass *app_window_class = SNG_APP_WINDOW_CLASS(klass);
     app_window_class->redraw = call_list_win_redraw;
-    app_window_class->resize = call_list_win_resize;
     app_window_class->help = call_list_win_help;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);

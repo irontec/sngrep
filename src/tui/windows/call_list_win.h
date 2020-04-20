@@ -42,42 +42,8 @@
 
 G_BEGIN_DECLS
 
-#define TUI_TYPE_CALL_LIST_WIN call_list_win_get_type()
-G_DECLARE_FINAL_TYPE(CallListWindow, call_list_win, TUI, CALL_LIST_WIN, SngAppWindow)
-
-/**
- * @brief Enum of available fields
- *
- */
-typedef enum
-{
-    FLD_LIST_FILTER = 0,
-    FLD_LIST_COUNT,
-} CallListFieldList;
-
-//! Sorter declaration of column struct
-typedef struct _CallListColumn CallListColumn;
-
-/**
- * @brief Call List column information
- *
- * It will be nice make which columns will appear in this list and
- * in which order a configurable option.
- * This structure is one step towards configurable stuff
- */
-struct _CallListColumn
-{
-    //! Attribute id of the column
-    Attribute *attr;
-    //! Attribute name
-    const gchar *name;
-    //! Column title
-    const gchar *title;
-    //! Current column position
-    gint position;
-    //! Current width
-    gint width;
-};
+#define SNG_TYPE_CALL_LIST_WIN call_list_win_get_type()
+G_DECLARE_FINAL_TYPE(CallListWindow, call_list_win, SNG, CALL_LIST_WIN, SngAppWindow)
 
 /**
  * @brief Call List panel status information

@@ -135,6 +135,8 @@ column_select_update_columns(ColumnSelectWindow *self)
     // Reset column count
     g_ptr_array_remove_all(self->selected);
 
+    GString *columns = NULL;
+
     // Add all selected columns
     for (gint i = 0; i < item_count(self->menu); i++) {
         // If column is active
@@ -145,12 +147,16 @@ column_select_update_columns(ColumnSelectWindow *self)
         Attribute *attr = attribute_find_by_name(item_userptr(self->items[i]));
 
         // Add a new column to the list
-        CallListColumn *column = g_malloc0(sizeof(CallListColumn));
-        column->attr = attr;
-        column->name = attribute_get_name(attr);
-        column->title = attribute_get_title(attr);
-        column->width = attribute_get_length(attr);
-        g_ptr_array_add(self->selected, column);
+        if (columns == NULL) {
+            columns = g_string_new(attribute_get_name(attr));
+        } else {
+            g_string_append_printf(columns, ",%s", attribute_get_name(attr));
+        }
+    }
+
+    if (columns != NULL) {
+        setting_set_value(SETTING_TUI_CL_COLUMNS, columns->str);
+        g_string_free(columns, TRUE);
     }
 }
 
@@ -417,30 +423,6 @@ column_select_handle_key(SngWidget *widget, gint key)
         return column_select_handle_key_form(self, key);
     } else {
         return column_select_handle_key_menu(self, key);
-    }
-}
-
-void
-column_select_win_set_columns(SngAppWindow *window, GPtrArray *columns)
-{
-    ColumnSelectWindow *self = TUI_COLUMN_SELECT(window);
-
-    // Set selected column array
-    self->selected = columns;
-
-    // Toggle current enabled fields and move them to the top
-    for (guint i = 0; i < g_ptr_array_len(self->selected); i++) {
-        CallListColumn *column = g_ptr_array_index(self->selected, i);
-
-        for (guint attr_id = 0; attr_id < (guint) item_count(self->menu); attr_id++) {
-            if (!strcmp(item_userptr(self->items[attr_id]), column->name)) {
-                column_select_toggle_item(self, self->items[attr_id]);
-                column_select_update_menu(self);
-                column_select_move_item(self, self->items[attr_id], i);
-                column_select_update_menu(self);
-                break;
-            }
-        }
     }
 }
 
