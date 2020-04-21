@@ -20,71 +20,34 @@
  **
  ****************************************************************************/
 /**
- * @file box.h
+ * @file separator.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Container to manage layouts
+ * @brief
+ *
  */
-#ifndef __SNGREP_BOX_H__
-#define __SNGREP_BOX_H__
+#ifndef __SNGREP_SEPARATOR_H__
+#define __SNGREP_SEPARATOR_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/container.h"
+#include "tui/widgets/widget.h"
 
 G_BEGIN_DECLS
 
-typedef enum
-{
-    BOX_ORIENTATION_HORIZONTAL,
-    BOX_ORIENTATION_VERTICAL
-} SngBoxOrientation;
-
 // Class declaration
-#define SNG_TYPE_BOX sng_box_get_type()
-G_DECLARE_DERIVABLE_TYPE(SngBox, sng_box, SNG, BOX, SngContainer)
+#define SNG_TYPE_SEPARATOR sng_separator_get_type()
+G_DECLARE_FINAL_TYPE(SngSeparator, sng_separator, SNG, SEPARATOR, SngWidget)
 
-struct _SngBoxClass
+struct _SngSeparator
 {
-    //! Parent class
-    SngContainerClass parent;
+    //! Parent object attributes
+    SngWidget parent;
 };
 
-typedef struct
-{
-    gint top;
-    gint bottom;
-    gint right;
-    gint left;
-} SngBoxPadding;
-
 SngWidget *
-sng_box_new(SngBoxOrientation orientation);
-
-SngWidget *
-sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding);
-
-void
-sng_box_set_padding(SngBox *box, SngBoxPadding padding);
-
-void
-sng_box_set_padding_full(SngBox *box, gint top, gint bottom, gint left, gint right);
-
-SngBoxPadding
-sng_box_get_padding(SngBox *box);
-
-void
-sng_box_pack_start(SngBox *box, SngWidget *widget);
-
-void
-sng_box_set_background(SngBox *box, chtype background);
-
-void
-sng_box_set_border(SngBox *box, gboolean border);
-
-void
-sng_box_set_label(SngBox *box, const gchar *label);
+sng_separator_new();
 
 G_END_DECLS
 
-#endif    /* __SNGREP_BOX_H__ */
+#endif    /* __SNGREP_SEPARATOR_H__ */

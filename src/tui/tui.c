@@ -137,9 +137,6 @@ tui_find_by_type(SngAppWindowType type)
         case SNG_WINDOW_TYPE_MSG_DIFF:
             window = msg_diff_win_new();
             break;
-        case SNG_WINDOW_TYPE_SAVE:
-            window = save_win_new();
-            break;
         case SNG_WINDOW_TYPE_SETTINGS:
             window = settings_win_new();
             break;
@@ -200,6 +197,7 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
 
         // Update panel stack
         update_panels();
+        break;
     }
 
     // Update ncurses standard screen with panel info

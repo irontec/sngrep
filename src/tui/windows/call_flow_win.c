@@ -1616,8 +1616,8 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
                 if (cur_arrow->type == CF_ARROW_SIP) {
                     next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_group(next_app_window, self->group);
-                    save_set_msg(next_app_window, call_flow_arrow_message(cur_arrow));
+                    save_set_group(TUI_SAVE(next_app_window), self->group);
+                    save_set_message(TUI_SAVE(next_app_window), call_flow_arrow_message(cur_arrow));
                 }
 #ifdef WITH_SND
                 if (cur_arrow->type == CF_ARROW_RTP) {
@@ -1627,7 +1627,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         break;
                     }
                     next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_stream(next_app_window, cur_arrow->item);
+                    save_set_stream(TUI_SAVE(next_app_window), cur_arrow->item);
                 }
 #endif
                 break;

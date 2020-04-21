@@ -56,6 +56,8 @@ set(SOURCES
         src/tui/widgets/menu_bar.c
         src/tui/widgets/menu_item.c
         src/tui/widgets/menu.c
+        src/tui/widgets/radio_button.c
+        src/tui/widgets/separator.c
         src/tui/widgets/scrollbar.c
         src/tui/widgets/table.c
         src/tui/widgets/widget.c

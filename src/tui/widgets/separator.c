@@ -20,43 +20,49 @@
  **
  ****************************************************************************/
 /**
- * @file button.h
+ * @file separator.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
- *
- * @brief
- *
  */
-#ifndef __SNGREP_BUTTON_H__
-#define __SNGREP_BUTTON_H__
 
-#include <glib.h>
-#include <glib-object.h>
-#include <form.h>
-#include "tui/widgets/label.h"
+#include "config.h"
+#include "tui/theme.h"
+#include "tui/widgets/separator.h"
 
-G_BEGIN_DECLS
-
-// Class declaration
-#define SNG_TYPE_BUTTON sng_button_get_type()
-G_DECLARE_DERIVABLE_TYPE(SngButton, sng_button, SNG, BUTTON, SngLabel)
-
-struct _SngButtonClass
-{
-    //! Parent class
-    SngLabelClass parent;
-    //! Create Ncurses components for the widget
-    void (*activate)(SngButton *button);
-};
+// Class definition
+G_DEFINE_TYPE(SngSeparator, sng_separator, SNG_TYPE_WIDGET)
 
 SngWidget *
-sng_button_new();
+sng_separator_new()
+{
+    return g_object_new(
+        SNG_TYPE_SEPARATOR,
+        "visible", TRUE,
+        "height", 1,
+        "hexpand", TRUE,
+        "can-focus", FALSE,
+        NULL
+    );
+}
 
-const gchar *
-sng_button_get_text(SngButton *button);
+static gint
+sng_separator_draw(SngWidget *widget)
+{
+    WINDOW *win = sng_widget_get_ncurses_window(widget);
+    wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    whline(win, ACS_HLINE, sng_widget_get_width(widget));
 
-void
-sng_button_activate(SngButton *button);
+    // Chain up parent draw
+    return SNG_WIDGET_CLASS(sng_separator_parent_class)->draw(widget);
+}
 
-G_END_DECLS
+static void
+sng_separator_init(G_GNUC_UNUSED SngSeparator *self)
+{
+}
 
-#endif    /* __SNGREP_BUTTON_H__ */
+static void
+sng_separator_class_init(SngSeparatorClass *klass)
+{
+    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
+    widget_class->draw = sng_separator_draw;
+}

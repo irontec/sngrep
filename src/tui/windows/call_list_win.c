@@ -59,6 +59,22 @@ call_list_win_redraw(G_GNUC_UNUSED SngAppWindow *window)
 }
 
 static void
+call_list_win_show_save_win(CallListWindow *call_list_win)
+{
+    // Create a new Save window
+    SngWindow *save_win = save_win_new();
+
+    // Set selected calls
+    CallGroup *group = sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls));
+    if (group != NULL) {
+        save_set_group(TUI_SAVE(save_win), group);
+    }
+
+    // Make window visible
+    sng_widget_show(SNG_WIDGET(save_win));
+}
+
+static void
 call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
 {
     CallListWindow *call_list_win = SNG_CALL_LIST_WIN(sng_widget_get_toplevel(sender));
@@ -119,10 +135,7 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
             tui_create_app_window(SNG_WINDOW_TYPE_STATS);
             break;
         case ACTION_SAVE:
-            save_set_group(
-                tui_create_app_window(SNG_WINDOW_TYPE_SAVE),
-                sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls))
-            );
+            call_list_win_show_save_win(call_list_win);
             break;
         case ACTION_SHOW_SETTINGS:
             tui_create_app_window(SNG_WINDOW_TYPE_SETTINGS);
@@ -477,9 +490,7 @@ call_list_win_constructed(GObject *object)
 
     // First header line
     SngWidget *header_first = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
-    sng_widget_set_height(header_first, 1);
-    sng_widget_set_vexpand(header_first, FALSE);
-    sng_container_add(SNG_CONTAINER(call_list_win), header_first);
+    sng_box_pack_start(SNG_BOX(call_list_win), header_first);
 
     // Mode Label
     SngWidget *lb_mode = sng_label_new(NULL);
@@ -512,12 +523,11 @@ call_list_win_constructed(GObject *object)
 
     // Second header line
     SngWidget *header_second = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 5, 1);
-    sng_widget_set_vexpand(header_second, FALSE);
+    sng_box_pack_start(SNG_BOX(call_list_win), header_second);
 
     // Show BPF filter if specified in command line
     const gchar *bpf_filter = capture_manager_filter(capture);
     if (bpf_filter != NULL) {
-        sng_widget_set_height(header_second, 1);
         g_autoptr(GString) filter = g_string_new("BPF Filter: ");
         g_string_append_printf(filter, "<yellow>%s", bpf_filter);
         sng_container_add(SNG_CONTAINER(header_second), sng_label_new(filter->str));
@@ -527,26 +537,23 @@ call_list_win_constructed(GObject *object)
     // Show Match expression label if specified in command line
     StorageMatchOpts match = storage_match_options();
     if (match.mexpr != NULL) {
-        sng_widget_set_height(header_second, 1);
         g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
         g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
         sng_container_add(SNG_CONTAINER(header_second), sng_label_new(match_expression->str));
         sng_container_show_all(SNG_CONTAINER(header_second));
     }
-    sng_container_add(SNG_CONTAINER(call_list_win), header_second);
 
     // Add Display filter label and entry
     SngWidget *header_third = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
-    sng_widget_set_height(header_third, 1);
-    sng_widget_set_vexpand(header_third, FALSE);
+    sng_box_pack_start(SNG_BOX(call_list_win), header_third);
+
     SngWidget *lb_dfilter = sng_label_new("Display Filter:");
     sng_widget_set_hexpand(SNG_WIDGET(lb_dfilter), FALSE);
     sng_container_add(SNG_CONTAINER(header_third), lb_dfilter);
-    call_list_win->en_dfilter = sng_entry_new();
+    call_list_win->en_dfilter = sng_entry_new(NULL);
     g_signal_connect(call_list_win->en_dfilter, "key-pressed",
                      G_CALLBACK(call_list_win_display_filter), NULL);
     sng_container_add(SNG_CONTAINER(header_third), call_list_win->en_dfilter);
-    sng_container_add(SNG_CONTAINER(call_list_win), header_third);
     sng_container_show_all(SNG_CONTAINER(header_third));
 
     call_list_win->tb_calls = sng_table_new();
@@ -556,7 +563,6 @@ call_list_win_constructed(GObject *object)
                      GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
     sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->tb_calls);
-    sng_widget_show(SNG_WIDGET(call_list_win->tb_calls));
 
     // Bottom button bar
     SngWidget *button_bar = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 3, 0);
@@ -657,6 +663,7 @@ call_list_win_constructed(GObject *object)
     sng_box_pack_start(SNG_BOX(button_bar), bn_columns);
     sng_container_add(SNG_CONTAINER(call_list_win), button_bar);
     sng_container_show_all(SNG_CONTAINER(button_bar));
+    sng_container_show_all(SNG_CONTAINER(call_list_win));
 
     // Start with the call list focused
     sng_window_set_default_focus(SNG_WINDOW(call_list_win), call_list_win->tb_calls);

@@ -41,23 +41,16 @@ enum
 
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
-// Menu label class definition
+// Class definition
 G_DEFINE_TYPE(SngLabel, sng_label, SNG_TYPE_WIDGET)
 
 SngWidget *
 sng_label_new(const gchar *text)
 {
-    gint width = 0;
-    if (text != NULL) {
-        width = sng_label_get_text_len(text);
-    }
-
     return g_object_new(
         SNG_TYPE_LABEL,
         "text", text,
-        "min-height", 1,
         "height", 1,
-        "width", width,
         "hexpand", TRUE,
         "can-focus", FALSE,
         NULL
@@ -88,6 +81,10 @@ sng_label_get_text(SngLabel *label)
 gint
 sng_label_get_text_len(const gchar *text)
 {
+    if (text == NULL) {
+        return 0;
+    }
+
     gint length = 0;
     g_auto(GStrv) tokens = g_strsplit_set(text, ">", -1);
     for (guint i = 0; i < g_strv_length(tokens); i++) {
@@ -98,6 +95,7 @@ sng_label_get_text_len(const gchar *text)
             length += open_tag - tokens[i];
         }
     }
+
     return length;
 }
 
@@ -174,6 +172,13 @@ sng_label_draw(SngWidget *widget)
     return 0;
 }
 
+static gint
+sng_label_get_preferred_width(SngWidget *widget)
+{
+    SngLabel *label = SNG_LABEL(widget);
+    return sng_label_get_text_len(label->text);
+}
+
 static void
 sng_label_set_property(GObject *self, guint property_id, const GValue *value, GParamSpec *pspec)
 {
@@ -223,6 +228,7 @@ sng_label_class_init(SngLabelClass *klass)
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->draw = sng_label_draw;
+    widget_class->preferred_width = sng_label_get_preferred_width;
 
     obj_properties[PROP_TEXT] =
         g_param_spec_string("text",

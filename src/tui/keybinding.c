@@ -227,7 +227,7 @@ key_find_action(gint key, KeybindingAction start)
 {
     for (guint i = start + 1; i < ACTION_SENTINEL; i++) {
 
-        if (i == ACTION_PRINTABLE && g_ascii_isprint(key))
+        if (i == ACTION_PRINTABLE && isprint(key))
             return ACTION_PRINTABLE;
 
         for (guint j = 0; j < bindings[i].bindcnt; j++)

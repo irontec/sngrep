@@ -54,6 +54,8 @@
 #include "tui/widgets/menu_bar.h"
 #include "tui/widgets/menu_item.h"
 #include "tui/widgets/scrollbar.h"
+#include "tui/widgets/separator.h"
+#include "tui/widgets/radio_button.h"
 #include "tui/widgets/table.h"
 #include "tui/widgets/widget.h"
 #include "tui/widgets/window.h"

@@ -45,13 +45,10 @@ enum
     SIGS
 };
 
-
 enum
 {
     PROP_HEIGHT = 1,
     PROP_WIDTH,
-    PROP_MIN_HEIGHT,
-    PROP_MIN_WIDTH,
     PROP_VEXPAND,
     PROP_HEXPAND,
     PROP_FLOATING,
@@ -74,8 +71,6 @@ typedef struct
     WINDOW *win;
     //! Dimensions of this widget
     gint height, width;
-    //! Minimum Dimensions of this widget
-    gint min_height, min_width;
     //! Position of this widget in screen
     gint x, y;
     //! Determine if this widget is displayed on the screen
@@ -249,43 +244,6 @@ sng_widget_get_height(SngWidget *widget)
 }
 
 void
-sng_widget_set_min_size(SngWidget *widget, gint width, gint height)
-{
-    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
-    priv->min_width = width;
-    priv->min_height = height;
-}
-
-void
-sng_widget_set_min_width(SngWidget *widget, gint width)
-{
-    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
-    priv->min_width = width;
-}
-
-gint
-sng_widget_get_min_width(SngWidget *widget)
-{
-    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
-    return priv->min_width;
-}
-
-void
-sng_widget_set_min_height(SngWidget *widget, gint height)
-{
-    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
-    priv->min_height = height;
-}
-
-gint
-sng_widget_get_min_height(SngWidget *widget)
-{
-    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
-    return priv->min_height;
-}
-
-
-void
 sng_widget_set_position(SngWidget *widget, gint xpos, gint ypos)
 {
     SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
@@ -354,6 +312,9 @@ sng_widget_realize(SngWidget *widget)
 {
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
 
+    // Determine widget size before realize
+    sng_widget_size_request(widget);
+
     if (sng_widget_is_realized(widget)) {
         return;
     }
@@ -369,6 +330,8 @@ sng_widget_realize(SngWidget *widget)
 gint
 sng_widget_draw(SngWidget *widget)
 {
+    g_return_val_if_fail(widget != NULL, 0);
+
     // Only for visible widgets
     if (!sng_widget_is_visible(widget)) {
         return 0;
@@ -469,6 +432,35 @@ sng_widget_key_pressed(SngWidget *widget, gint key)
     return hld;
 }
 
+void
+sng_widget_size_request(SngWidget *widget)
+{
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
+    if (klass->size_request != NULL) {
+        klass->size_request(widget);
+    }
+}
+
+gint
+sng_widget_get_preferred_height(SngWidget *widget)
+{
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
+    if (klass->preferred_height != NULL) {
+        return klass->preferred_height(widget);
+    }
+    return 0;
+}
+
+gint
+sng_widget_get_preferred_width(SngWidget *widget)
+{
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
+    if (klass->preferred_width != NULL) {
+        return klass->preferred_width(widget);
+    }
+    return 0;
+}
+
 static void
 sng_widget_base_realize(SngWidget *widget)
 {
@@ -486,6 +478,11 @@ static int
 sng_widget_base_draw(G_GNUC_UNUSED SngWidget *widget)
 {
     return 0;
+}
+
+static void
+sng_widget_base_size_request(G_GNUC_UNUSED SngWidget *widget)
+{
 }
 
 static void
@@ -592,12 +589,6 @@ sng_widget_set_property(GObject *self, guint property_id, const GValue *value, G
         case PROP_WIDTH:
             priv->width = g_value_get_int(value);
             break;
-        case PROP_MIN_HEIGHT:
-            priv->min_height = g_value_get_int(value);
-            break;
-        case PROP_MIN_WIDTH:
-            priv->min_width = g_value_get_int(value);
-            break;
         case PROP_VEXPAND:
             priv->vexpand = g_value_get_boolean(value);
             break;
@@ -630,12 +621,6 @@ sng_widget_get_property(GObject *self, guint property_id, GValue *value, GParamS
             break;
         case PROP_WIDTH:
             g_value_set_int(value, priv->width);
-            break;
-        case PROP_MIN_HEIGHT:
-            g_value_set_int(value, priv->min_height);
-            break;
-        case PROP_MIN_WIDTH:
-            g_value_set_int(value, priv->min_width);
             break;
         case PROP_VEXPAND:
             g_value_set_boolean(value, priv->vexpand);
@@ -674,6 +659,9 @@ sng_widget_class_init(SngWidgetClass *klass)
     klass->focus_gained = sng_widget_base_focus_gained;
     klass->focus_lost = sng_widget_base_focus_lost;
     klass->key_pressed = sng_widget_base_key_pressed;
+    klass->size_request = sng_widget_base_size_request;
+    klass->preferred_height = sng_widget_get_height;
+    klass->preferred_width = sng_widget_get_width;
 
     obj_properties[PROP_HEIGHT] =
         g_param_spec_int("height",
@@ -689,25 +677,6 @@ sng_widget_class_init(SngWidgetClass *klass)
         g_param_spec_int("width",
                          "SngWidget Width",
                          "SngWidget Width",
-                         0,
-                         getmaxx(stdscr),
-                         0,
-                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
-        );
-    obj_properties[PROP_MIN_HEIGHT] =
-        g_param_spec_int("min-height",
-                         "SngWidget Min Height",
-                         "SngWidget Min height",
-                         0,
-                         getmaxy(stdscr),
-                         0,
-                         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
-        );
-
-    obj_properties[PROP_MIN_WIDTH] =
-        g_param_spec_int("min-width",
-                         "SngWidget Min Width",
-                         "SngWidget Min Width",
                          0,
                          getmaxx(stdscr),
                          0,

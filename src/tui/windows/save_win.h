@@ -42,7 +42,7 @@
 G_BEGIN_DECLS
 
 #define WINDOW_TYPE_SAVE save_get_type()
-G_DECLARE_FINAL_TYPE(SaveWindow, save, TUI, SAVE, SngAppWindow)
+G_DECLARE_FINAL_TYPE(SaveWindow, save, TUI, SAVE, SngWindow)
 
 
 /**
@@ -100,11 +100,7 @@ typedef enum
 struct _SaveWindow
 {
     //! Parent object attributes
-    SngAppWindow parent;
-    //! Form that contains the save fields
-    FORM *form;
-    //! An array of fields
-    FIELD *fields[FLD_SAVE_COUNT + 1];
+    SngWindow parent;
     //! Save mode @see save_modes
     SaveWindowMode savemode;
     //! Save format @see save_formats
@@ -115,6 +111,26 @@ struct _SaveWindow
     Message *msg;
     //! Stream to be saved
     Stream *stream;
+
+    //! Filename Path widgets
+    SngWidget *en_fpath;
+    SngWidget *en_fname;
+    SngWidget *lb_fext;
+
+    //! Dialog select widgets
+    SngWidget *box_dialogs;
+    SngWidget *rb_all;
+    SngWidget *rb_selected;
+    SngWidget *rb_displayed;
+    SngWidget *rb_message;
+    SngWidget *rb_stream;
+
+    //! Format select widgets
+    SngWidget *box_format;
+    SngWidget *rb_pcap;
+    SngWidget *rb_pcap_rtp;
+    SngWidget *rb_txt;
+    SngWidget *rb_wav;
 };
 
 /**
@@ -127,18 +143,8 @@ struct _SaveWindow
  *
  * @param window UI structure pointer
  */
-SngAppWindow *
+SngWindow *
 save_win_new();
-
-/**
- * @brief Destroy save panel
- *
- * This function do the final cleanups for this panel
- *
- * @param window UI structure pointer
- */
-void
-save_win_free(SngAppWindow *window);
 
 /**
  * @brief Set the group call of the panel
@@ -146,11 +152,11 @@ save_win_free(SngAppWindow *window);
  * This function will access the panel information and will set the
  * group call pointer to the selected calls
  *
- * @param window UI structure pointer
+ * @param save_window UI structure pointer
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-save_set_group(SngAppWindow *window, CallGroup *group);
+save_set_group(SaveWindow *save_window, CallGroup *group);
 
 /**
  * @brief Set the SIP message to be saved
@@ -162,7 +168,7 @@ save_set_group(SngAppWindow *window, CallGroup *group);
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-save_set_msg(SngAppWindow *window, Message *msg);
+save_set_message(SaveWindow *save_window, Message *msg);
 
 /**
  * @brief Set the SIP message to be saved
@@ -174,6 +180,6 @@ save_set_msg(SngAppWindow *window, Message *msg);
  * @param stream Stream packets to be saved
  */
 void
-save_set_stream(SngAppWindow *window, Stream *stream);
+save_set_stream(SaveWindow *save_window, Stream *stream);
 
 #endif  /* __SNGREP_SAVE_WIN_H__ */

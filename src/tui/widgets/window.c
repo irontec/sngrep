@@ -35,12 +35,12 @@
 #include "tui/keybinding.h"
 #include "tui/widgets/button.h"
 #include "tui/widgets/label.h"
+#include "tui/widgets/separator.h"
 #include "tui/widgets/window.h"
 
 enum
 {
     PROP_TITLE = 1,
-    PROP_BORDER,
     N_PROPERTIES
 };
 
@@ -56,8 +56,6 @@ typedef struct
     SngWidget *lb_title;
     //! Button bar
     SngWidget *button_bar;
-    //! Window border flag
-    gboolean border;
     //! Focusable widget chain
     GList *focus_chain;
     //! Default focus widget
@@ -100,6 +98,8 @@ sng_window_set_title(SngWindow *window, const gchar *title)
         priv->lb_title = sng_label_new(title);
         sng_label_set_align(SNG_LABEL(priv->lb_title), SNG_ALIGN_CENTER);
         sng_box_pack_start(SNG_BOX(window), priv->lb_title);
+        sng_box_pack_start(SNG_BOX(window), sng_separator_new());
+        sng_container_show_all(SNG_CONTAINER(window));
     }
 }
 
@@ -108,9 +108,7 @@ sng_window_add_button(SngWindow *window, SngButton *button)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
     if (priv->button_bar == NULL) {
-        priv->button_bar = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 0, 1);
-        sng_widget_set_vexpand(priv->button_bar, FALSE);
-        sng_widget_set_height(priv->button_bar, 1);
+        priv->button_bar = sng_box_new(BOX_ORIENTATION_HORIZONTAL);
     }
 
     // Add button to the bar
@@ -229,6 +227,7 @@ sng_window_realize(SngWidget *widget)
 
     // Calculate bar padding
     if (priv->button_bar != NULL) {
+        SngBoxPadding box_padding = sng_box_get_padding(SNG_BOX(priv->button_bar));
         gint padding = sng_widget_get_width(widget);
         padding -= 5;
 
@@ -240,16 +239,8 @@ sng_window_realize(SngWidget *widget)
         }
 
         // Apply half padding to the left and half to the right
-        sng_box_set_padding_full(
-            SNG_BOX(priv->button_bar),
-            0, 0,
-            padding / 2, padding / 2
-        );
-    }
-
-    // If window has border, apply padding to window box
-    if (priv->border) {
-        sng_box_set_padding_full(SNG_BOX(widget), 1, 1, 1, 1);
+        box_padding.left = box_padding.right = padding / 2;
+        sng_box_set_padding(SNG_BOX(priv->button_bar), box_padding);
     }
 
     // Chain-up parent realize
@@ -276,29 +267,22 @@ sng_window_draw(SngWidget *widget)
     gint height = sng_widget_get_height(widget);
     gint width = sng_widget_get_width(widget);
 
-    // Write border and boxes around the window
-    if (priv->border) {
-        wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-        box(win, 0, 0);
-    }
-
     // Write Horizontal line for title
     if (priv->lb_title != NULL) {
-        mvwhline(win, 2, 1, ACS_HLINE, width);
         mvwaddch(win, 2, 0, ACS_LTEE);
         mvwaddch(win, 2, width - 1, ACS_RTEE);
     }
 
+    // Write Horizontal line for Buttons
     if (priv->button_bar != NULL) {
-        // Write Horizontal line for Buttons
-        mvwhline(win, height - 3, 1, ACS_HLINE, width);
         mvwaddch(win, height - 3, 0, ACS_LTEE);
         mvwaddch(win, height - 3, width - 1, ACS_RTEE);
     }
 
+    sng_widget_draw(priv->focus);
+
     return 0;
 }
-
 
 static void
 sng_window_update_focus_chain(SngWindow *window, SngWidget *widget)
@@ -350,7 +334,7 @@ sng_window_handle_key(SngWindow *window, gint key)
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
 
     // Check actions for this key
-    KeybindingAction action = key_find_action(key, ACTION_UNKNOWN);
+    KeybindingAction action = key_find_action(key,  ACTION_UNKNOWN);
     if (action == ACTION_NEXT_FIELD) {
         sng_window_focus_next(window);
         return KEY_HANDLED;
@@ -369,7 +353,9 @@ sng_window_constructed(GObject *object)
 
     // Add button bar at the bottom of the screen
     if (priv->button_bar) {
-        sng_container_add(SNG_CONTAINER(object), priv->button_bar);
+        sng_box_pack_start(SNG_BOX(object), sng_separator_new());
+        sng_box_pack_start(SNG_BOX(object), priv->button_bar);
+        sng_container_show_all(SNG_CONTAINER(object));
     }
 
     // Realize window as soon as its constructed
@@ -402,9 +388,6 @@ sng_window_set_property(GObject *object, guint property_id, const GValue *value,
             priv->title = g_value_get_string(value);
             sng_window_set_title(window, priv->title);
             break;
-        case PROP_BORDER:
-            priv->border = g_value_get_boolean(value);
-            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
             break;
@@ -419,9 +402,6 @@ sng_window_get_property(GObject *object, guint property_id, GValue *value, GPara
     switch (property_id) {
         case PROP_TITLE:
             g_value_set_string(value, priv->title);
-            break;
-        case PROP_BORDER:
-            g_value_set_boolean(value, priv->border);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -451,14 +431,6 @@ sng_window_class_init(SngWindowClass *klass)
                             "Window title",
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT
-        );
-
-    obj_properties[PROP_BORDER] =
-        g_param_spec_boolean("border",
-                             "Window Border",
-                             "Window Border",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT
         );
 
     g_object_class_install_properties(

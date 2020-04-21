@@ -56,7 +56,6 @@ sng_dialog_new(SngDialogType type, SngDialogButtons buttons, const gchar *title,
         "border", TRUE,
         "title", title,
         "message", message,
-        "spacing", 1,
         NULL
     );
 }
@@ -145,12 +144,6 @@ sng_dialog_constructed(GObject *object)
         SNG_WIDGET(dialog),
         MAX(width, SNG_DIALOG_MIN_WIDTH)
     );
-
-    // Take into account border and title for internal box padding
-    SngBoxPadding padding = sng_box_get_padding(SNG_BOX(dialog));
-    // Increase all padding for borders
-    padding.top = padding.bottom = padding.left = padding.right = 1;
-    sng_box_set_padding(SNG_BOX(dialog), padding);
 
     SngWidget *lb_message = sng_label_new(dialog->message);
     sng_widget_set_vexpand(lb_message, TRUE);

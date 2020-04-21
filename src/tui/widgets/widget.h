@@ -57,6 +57,8 @@ struct _SngWidgetClass
 {
     //! Parent class
     GObjectClass parent;
+    //! Handle widget size request
+    void (*size_request)(SngWidget *widget);
     //! Create Ncurses components for the widget
     void (*realize)(SngWidget *widget);
     //! Map the widget into the screen
@@ -71,6 +73,10 @@ struct _SngWidgetClass
     gint (*key_pressed)(SngWidget *widget, gint key);
     //! Handle a mouse event on this panel
     gint (*clicked)(SngWidget *widget, MEVENT event);
+    //! Get widget preferred height
+    gint (*preferred_height)(SngWidget *widget);
+    //! Get widget preferred width
+    gint (*preferred_width)(SngWidget *widget);
 };
 
 /**
@@ -197,6 +203,15 @@ gint
 sng_widget_key_pressed(SngWidget *widget, gint key);
 
 void
+sng_widget_size_request(SngWidget *widget);
+
+gint
+sng_widget_get_preferred_height(SngWidget *widget);
+
+gint
+sng_widget_get_preferred_width(SngWidget *widget);
+
+void
 sng_widget_set_ncurses_window(SngWidget *widget, WINDOW *win);
 
 WINDOW *
@@ -216,21 +231,6 @@ sng_widget_set_height(SngWidget *widget, gint height);
 
 gint
 sng_widget_get_height(SngWidget *widget);
-
-void
-sng_widget_set_min_size(SngWidget *widget, gint width, gint height);
-
-void
-sng_widget_set_min_width(SngWidget *widget, gint width);
-
-gint
-sng_widget_get_min_width(SngWidget *widget);
-
-void
-sng_widget_set_min_height(SngWidget *widget, gint height);
-
-gint
-sng_widget_get_min_height(SngWidget *widget);
 
 void
 sng_widget_set_position(SngWidget *widget, gint xpos, gint ypos);

@@ -48,7 +48,6 @@ sng_button_new(const gchar *text)
     return g_object_new(
         SNG_TYPE_BUTTON,
         "text", text,
-        "min-height", 1,
         "height", 1,
         "width", (text != NULL) ? sng_label_get_text_len(text) : 0,
         "hexpand", TRUE,
@@ -62,9 +61,15 @@ sng_button_free(SngButton *button)
     g_object_unref(button);
 }
 
-static void
+void
 sng_button_activate(SngButton *button)
 {
+    SngButtonClass *button_class = SNG_BUTTON_GET_CLASS(button);
+
+    if (button_class->activate) {
+        button_class->activate(button);
+    }
+
     g_signal_emit(SNG_WIDGET(button), signals[SIG_ACTIVATE], 0);
 }
 
@@ -79,7 +84,7 @@ sng_button_key_pressed(SngWidget *widget, gint key)
         // Check if we handle this action
         switch (action) {
             case ACTION_CONFIRM:
-                sng_widget_lose_focus(widget);
+            case ACTION_SELECT:
                 sng_button_activate(button);
                 return KEY_HANDLED;
             case ACTION_LEFT:
@@ -103,7 +108,6 @@ static gint
 sng_button_clicked(SngWidget *widget, G_GNUC_UNUSED MEVENT mevent)
 {
     sng_button_activate(SNG_BUTTON(widget));
-    sng_widget_lose_focus(widget);
     return 0;
 }
 
@@ -123,6 +127,12 @@ sng_button_focus_lost(SngWidget *widget)
 }
 
 static void
+sng_button_base_acivate(SngButton *button)
+{
+    sng_widget_lose_focus(SNG_WIDGET(button));
+}
+
+static void
 sng_button_init(G_GNUC_UNUSED SngButton *self)
 {
 }
@@ -135,6 +145,9 @@ sng_button_class_init(SngButtonClass *klass)
     widget_class->clicked = sng_button_clicked;
     widget_class->focus_gained = sng_button_focus_gained;
     widget_class->focus_lost = sng_button_focus_lost;
+
+    SngButtonClass *button_class = SNG_BUTTON_CLASS(klass);
+    button_class->activate = sng_button_base_acivate;
 
     signals[SIG_ACTIVATE] =
         g_signal_newv("activate",

@@ -28,6 +28,8 @@
  */
 #include "config.h"
 #include "tui/keybinding.h"
+#include "tui/theme.h"
+#include "tui/widgets/window.h"
 #include "tui/widgets/entry.h"
 
 enum
@@ -36,33 +38,29 @@ enum
     SIGS
 };
 
+enum
+{
+    PROP_TEXT = 1,
+    N_PROPERTIES
+};
+
 static guint signals[SIGS] = { 0 };
+
+static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
 // Menu entry class definition
 G_DEFINE_TYPE(SngEntry, sng_entry, SNG_TYPE_WIDGET)
 
 SngWidget *
-sng_entry_new()
+sng_entry_new(const gchar *text)
 {
     return g_object_new(
         SNG_TYPE_ENTRY,
-        "min-height", 1,
+        "text", text,
         "height", 1,
         "hexpand", TRUE,
         NULL
     );
-}
-
-void
-sng_entry_free(SngEntry *entry)
-{
-    g_object_unref(entry);
-}
-
-void
-sng_entry_set_text(SngEntry *entry, const gchar *text)
-{
-    set_field_buffer(entry->fields[0], 0, text);
 }
 
 const gchar *
@@ -96,6 +94,10 @@ sng_entry_realize(SngWidget *widget)
         );
         set_field_back(entry->fields[0], A_UNDERLINE);
 
+        if (entry->text != NULL) {
+            set_field_buffer(entry->fields[0], 0, entry->text);
+        }
+
         entry->form = new_form(entry->fields);
         set_form_sub(entry->form, sng_widget_get_ncurses_window(widget));
         set_current_field(entry->form, entry->fields[0]);
@@ -113,11 +115,13 @@ sng_entry_draw(SngWidget *widget)
         gint x, y;
         // Get subwindow current cursor position
         getyx(sng_widget_get_ncurses_window(widget), y, x);
+
         // Position cursor in toplevel window
+        SngWidget *toplevel = sng_widget_get_toplevel(widget);
         wmove(
-            sng_widget_get_ncurses_window(sng_widget_get_toplevel(widget)),
-            y + sng_widget_get_ypos(widget),
-            x + sng_widget_get_xpos(widget)
+            sng_widget_get_ncurses_window(toplevel),
+            y + (sng_widget_get_ypos(widget) - sng_widget_get_ypos(toplevel)),
+            x + (sng_widget_get_xpos(widget) - sng_widget_get_xpos(toplevel))
         );
     }
 
@@ -131,7 +135,7 @@ sng_entry_focus_gained(SngWidget *widget)
     // Enable cursor
     curs_set(1);
     // Change field background
-    set_field_back(entry->fields[0], A_REVERSE);
+    set_field_back(entry->fields[0], A_UNDERLINE | A_REVERSE);
     // Move to the last character
     form_driver(entry->form, REQ_END_LINE);
     // Update field form
@@ -147,7 +151,7 @@ sng_entry_focus_lost(SngWidget *widget)
     // Disable cursor
     curs_set(0);
     // Change field background
-    set_field_back(entry->fields[0], A_NORMAL);
+    set_field_back(entry->fields[0], A_UNDERLINE | A_NORMAL);
     // Chain up parent focus lost
     SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_lost(widget);
 }
@@ -188,6 +192,12 @@ sng_entry_key_pressed(SngWidget *widget, gint key)
             case ACTION_BACKSPACE:
                 form_driver(entry->form, REQ_DEL_PREV);
                 break;
+            case ACTION_UP:
+                sng_window_focus_prev(SNG_WINDOW(sng_widget_get_toplevel(widget)));
+                break;
+            case ACTION_DOWN:
+                sng_window_focus_next(SNG_WINDOW(sng_widget_get_toplevel(widget)));
+                return KEY_HANDLED;                break;
             case ACTION_CONFIRM:
                 sng_entry_activate(entry);
                 sng_widget_lose_focus(widget);
@@ -212,6 +222,35 @@ sng_entry_key_pressed(SngWidget *widget, gint key)
 }
 
 static void
+sng_entry_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+    SngEntry *entry = SNG_ENTRY(object);
+
+    switch (property_id) {
+        case PROP_TEXT:
+            entry->text = g_strdup(g_value_get_string(value));
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+            break;
+    }
+}
+
+static void
+sng_entry_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+{
+    SngEntry *entry = SNG_ENTRY(object);
+    switch (property_id) {
+        case PROP_TEXT:
+            g_value_set_string(value, entry->text);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+            break;
+    }
+}
+
+static void
 sng_entry_init(G_GNUC_UNUSED SngEntry *self)
 {
 }
@@ -219,12 +258,30 @@ sng_entry_init(G_GNUC_UNUSED SngEntry *self)
 static void
 sng_entry_class_init(SngEntryClass *klass)
 {
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->set_property = sng_entry_set_property;
+    object_class->get_property = sng_entry_get_property;
+
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = sng_entry_realize;
     widget_class->draw = sng_entry_draw;
     widget_class->focus_gained = sng_entry_focus_gained;
     widget_class->focus_lost = sng_entry_focus_lost;
     widget_class->key_pressed = sng_entry_key_pressed;
+
+    obj_properties[PROP_TEXT] =
+        g_param_spec_string("text",
+                            "Entry default text",
+                            "Entry default text",
+                            NULL,
+                            G_PARAM_READWRITE
+        );
+
+    g_object_class_install_properties(
+        object_class,
+        N_PROPERTIES,
+        obj_properties
+    );
 
     signals[SIG_ACTIVATE] =
         g_signal_newv("activate",

@@ -48,13 +48,12 @@ struct _SngEntry
     FORM *form;
     //! Ncurses input field
     FIELD **fields;
+    //! Initial field text
+    const gchar *text;
 };
 
 SngWidget *
-sng_entry_new();
-
-void
-sng_entry_set_text(SngEntry *entry, const gchar *text);
+sng_entry_new(const gchar *text);
 
 const gchar *
 sng_entry_get_text(SngEntry *entry);

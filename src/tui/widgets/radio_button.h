@@ -20,71 +20,47 @@
  **
  ****************************************************************************/
 /**
- * @file box.h
+ * @file radio_button.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Container to manage layouts
+ * @brief
+ *
  */
-#ifndef __SNGREP_BOX_H__
-#define __SNGREP_BOX_H__
+#ifndef __SNGREP_RADIO_BUTTON_H__
+#define __SNGREP_RADIO_BUTTON_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/container.h"
+#include "tui/widgets/button.h"
 
 G_BEGIN_DECLS
 
-typedef enum
-{
-    BOX_ORIENTATION_HORIZONTAL,
-    BOX_ORIENTATION_VERTICAL
-} SngBoxOrientation;
-
 // Class declaration
-#define SNG_TYPE_BOX sng_box_get_type()
-G_DECLARE_DERIVABLE_TYPE(SngBox, sng_box, SNG, BOX, SngContainer)
+#define SNG_TYPE_RADIO_BUTTON sng_radio_button_get_type()
+G_DECLARE_FINAL_TYPE(SngRadioButton, sng_radio_button, SNG, RADIO_BUTTON, SngButton)
 
-struct _SngBoxClass
+struct _SngRadioButton
 {
-    //! Parent class
-    SngContainerClass parent;
+    //! Parent object attributes
+    SngButton parent;
+    //! Radio Button group
+    GSList *group;
+    //! Radio button active flag
+    gboolean active;
 };
 
-typedef struct
-{
-    gint top;
-    gint bottom;
-    gint right;
-    gint left;
-} SngBoxPadding;
-
 SngWidget *
-sng_box_new(SngBoxOrientation orientation);
+sng_radio_button_new(const gchar *text);
 
-SngWidget *
-sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding);
+GSList *
+sng_radio_button_group_add(GSList *group, SngRadioButton *radio_button);
 
-void
-sng_box_set_padding(SngBox *box, SngBoxPadding padding);
+GSList *
+sng_radio_button_get_group(SngRadioButton *radio_button);
 
-void
-sng_box_set_padding_full(SngBox *box, gint top, gint bottom, gint left, gint right);
-
-SngBoxPadding
-sng_box_get_padding(SngBox *box);
-
-void
-sng_box_pack_start(SngBox *box, SngWidget *widget);
-
-void
-sng_box_set_background(SngBox *box, chtype background);
-
-void
-sng_box_set_border(SngBox *box, gboolean border);
-
-void
-sng_box_set_label(SngBox *box, const gchar *label);
+gboolean
+sng_radio_button_is_active(SngRadioButton *radio_button);
 
 G_END_DECLS
 
-#endif    /* __SNGREP_BOX_H__ */
+#endif    /* __SNGREP_RADIO_BUTTON_H__ */

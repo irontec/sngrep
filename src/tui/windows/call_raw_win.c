@@ -272,7 +272,7 @@ call_raw_win_handle_key(SngWidget *widget, int key)
             case ACTION_SAVE:
                 if (self->group) {
                     // Display save panel
-                    save_set_group(tui_create_app_window(SNG_WINDOW_TYPE_SAVE), self->group);
+                    save_set_group(TUI_SAVE(tui_create_app_window(SNG_WINDOW_TYPE_SAVE)), self->group);
                 }
                 break;
             case ACTION_TOGGLE_SYNTAX:
