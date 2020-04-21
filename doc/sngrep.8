@@ -70,6 +70,10 @@ Save all captured packets to a pcap file. This option can be used
 with bpf filters.
 
 .TP
+.I -B buffer
+Change size of pcap capture buffer (default: 2MB)
+
+.TP
 .I \-d dev
 Use this capture device instead of default (\fIany\fP). Special keyword 'any', a device name like 'eth0' or a comma separated list like 'eth1,eth3'. This overrides the settings in the configuration file.
 

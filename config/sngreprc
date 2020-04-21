@@ -32,6 +32,9 @@
 ## Set default dump file
 # set capture.outfile /tmp/last_capture.pcap
 
+## Set size of pcap capture buffer in MB (default: 2)
+# set capture.buffer 2
+
 ##-----------------------------------------------------------------------------
 ## Default path in save dialog
 # set sngrep.savepath /tmp/sngrep-captures
