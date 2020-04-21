@@ -54,9 +54,10 @@ capture_config_t capture_cfg =
 { 0 };
 
 void
-capture_init(size_t limit, bool rtp_capture, bool rotate)
+capture_init(size_t limit, bool rtp_capture, bool rotate, size_t pcap_buffer_size)
 {
     capture_cfg.limit = limit;
+    capture_cfg.pcap_buffer_size = pcap_buffer_size;
     capture_cfg.rtp_capture = rtp_capture;
     capture_cfg.rotate = rotate;
     capture_cfg.paused = 0;
@@ -123,11 +124,37 @@ capture_online(const char *dev, const char *outfile)
     }
 
     // Open capture device
-    capinfo->handle = pcap_open_live(dev, MAXIMUM_SNAPLEN, 1, 1000, errbuf);
+    capinfo->handle = pcap_create(dev, errbuf);
     if (capinfo->handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
     }
+
+    if (pcap_set_snaplen(capinfo->handle, MAXIMUM_SNAPLEN) != 0) {
+        fprintf(stderr, "Error setting snaplen on %s: %s\n", dev, pcap_geterr(capinfo->handle));
+        return 2;
+    }
+
+    if (pcap_set_promisc(capinfo->handle, 1) != 0) {
+        fprintf(stderr, "Error setting promiscous mode on %s: %s\n", dev, pcap_geterr(capinfo->handle));
+        return 2;
+    }
+
+    if (pcap_set_timeout(capinfo->handle, 1000) != 0) {
+        fprintf(stderr, "Error setting capture timeout on %s: %s\n", dev, pcap_geterr(capinfo->handle));
+        return 2;
+    }
+
+    if (pcap_set_buffer_size(capinfo->handle, capture_cfg.pcap_buffer_size * 1024 * 1024) != 0) {
+        fprintf(stderr, "Error setting capture buffer size on %s: %s\n", dev, pcap_geterr(capinfo->handle));
+        return 2;
+    }
+
+    if (pcap_activate(capinfo->handle) < 0) {
+        fprintf(stderr, "Couldn't activate capture: %s\n", pcap_geterr(capinfo->handle));
+        return 2;
+    }
+
 
     // Store capture device
     capinfo->device = dev;

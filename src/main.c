@@ -52,7 +52,7 @@
 void
 usage()
 {
-    printf("Usage: %s [-hVcivNqrD] [-IO pcap_dump] [-d dev] [-l limit]"
+    printf("Usage: %s [-hVcivNqrD] [-IO pcap_dump] [-d dev] [-l limit] [-B buffer]"
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            " [-k keyfile]"
 #endif
@@ -65,6 +65,7 @@ usage()
            "    -d --device\t\t Use this capture device instead of default\n"
            "    -I --input\t\t Read captured data from pcap file\n"
            "    -O --output\t\t Write captured data to pcap file\n"
+           "    -B --buffer\t\t Set pcap buffer size in MB (default: 2)\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
            "    -r --rtp\t\t Capture RTP packets payload\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
@@ -125,7 +126,7 @@ version()
 int
 main(int argc, char* argv[])
 {
-    int opt, idx, limit, only_calls, no_incomplete, i;
+    int opt, idx, limit, only_calls, no_incomplete, pcap_buffer_size, i;
     const char *device, *outfile;
     char bpf[512];
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
@@ -145,6 +146,7 @@ main(int argc, char* argv[])
         { "device", required_argument, 0, 'd' },
         { "input", required_argument, 0, 'I' },
         { "output", required_argument, 0, 'O' },
+        { "buffer", required_argument, 0, 'B' },
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
         { "keyfile", required_argument, 0, 'k' },
 #endif
@@ -167,7 +169,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:pqtW:k:crl:ivNqDL:H:Rf:F";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:Rf:F";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -190,6 +192,7 @@ main(int argc, char* argv[])
     // Get initial values for configurable arguments
     device = setting_get_value(SETTING_CAPTURE_DEVICE);
     outfile = setting_get_value(SETTING_CAPTURE_OUTFILE);
+    pcap_buffer_size = setting_get_intvalue(SETTING_CAPTURE_BUFFER);
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     keyfile = setting_get_value(SETTING_CAPTURE_KEYFILE);
 #endif
@@ -220,6 +223,16 @@ main(int argc, char* argv[])
                 break;
             case 'O':
                 outfile = optarg;
+                break;
+            case 'B':
+                if(!(pcap_buffer_size = atoi(optarg))) {
+                    fprintf(stderr, "Invalid buffer size.\n");
+                    return 0;
+                }
+                if(!(pcap_buffer_size > 0 && pcap_buffer_size <= 2048)) {
+                    fprintf(stderr, "Buffer size not in range (0 < b <= 2048).\n");
+                    return 0;
+                }
                 break;
             case 'l':
                 if(!(limit = atoi(optarg))) {
@@ -325,7 +338,7 @@ main(int argc, char* argv[])
     sip_init(limit, only_calls, no_incomplete);
 
     // Set capture options
-    capture_init(limit, rtp_capture, rotate);
+    capture_init(limit, rtp_capture, rotate, pcap_buffer_size);
 
 #ifdef USE_EEP
     // Initialize EEP if enabled
