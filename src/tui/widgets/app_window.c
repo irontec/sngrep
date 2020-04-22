@@ -282,6 +282,4 @@ sng_app_window_init(SngAppWindow *self)
     SngAppWindowPrivate *priv = sng_app_window_get_instance_private(self);
     // Force draw on new created windows
     priv->changed = TRUE;
-    // Set window as visible by default
-    sng_widget_show(SNG_WIDGET(self));
 }

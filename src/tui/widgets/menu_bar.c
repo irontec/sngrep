@@ -170,17 +170,6 @@ sng_menu_bar_free(SngMenuBar *bar)
 }
 
 static void
-sng_menu_bar_constructed(GObject *object)
-{
-    SngWidget *widget = SNG_WIDGET(object);
-    // MenuBar is always visible
-    sng_widget_show(widget);
-    // update the object state depending on constructor properties
-    G_OBJECT_CLASS(sng_menu_bar_parent_class)->constructed(object);
-}
-
-
-static void
 sng_menu_bar_init(SngMenuBar *self)
 {
     self->selected = -1;
@@ -189,9 +178,6 @@ sng_menu_bar_init(SngMenuBar *self)
 static void
 sng_menu_bar_class_init(SngMenuBarClass *klass)
 {
-    GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = sng_menu_bar_constructed;
-
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = sng_menu_bar_realize;
     widget_class->draw = sng_menu_bar_draw;

@@ -99,7 +99,6 @@ sng_window_set_title(SngWindow *window, const gchar *title)
         sng_label_set_align(SNG_LABEL(priv->lb_title), SNG_ALIGN_CENTER);
         sng_box_pack_start(SNG_BOX(window), priv->lb_title);
         sng_box_pack_start(SNG_BOX(window), sng_separator_new());
-        sng_container_show_all(SNG_CONTAINER(window));
     }
 }
 
@@ -113,7 +112,6 @@ sng_window_add_button(SngWindow *window, SngButton *button)
 
     // Add button to the bar
     sng_container_add(SNG_CONTAINER(priv->button_bar), SNG_WIDGET(button));
-    sng_container_show_all(SNG_CONTAINER(priv->button_bar));
 }
 
 void
@@ -350,7 +348,6 @@ sng_window_constructed(GObject *object)
     if (priv->button_bar) {
         sng_box_pack_start(SNG_BOX(object), sng_separator_new());
         sng_box_pack_start(SNG_BOX(object), priv->button_bar);
-        sng_container_show_all(SNG_CONTAINER(object));
     }
 
     // Realize window as soon as its constructed
@@ -436,8 +433,6 @@ sng_window_class_init(SngWindowClass *klass)
 }
 
 static void
-sng_window_init(SngWindow *self)
+sng_window_init(G_GNUC_UNUSED SngWindow *window)
 {
-    // Set window as visible by default
-    sng_widget_show(SNG_WIDGET(self));
 }

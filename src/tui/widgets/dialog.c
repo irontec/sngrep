@@ -163,7 +163,6 @@ sng_dialog_constructed(GObject *object)
         // Set first button as default
         sng_window_set_default_focus(SNG_WINDOW(dialog), bn_yes);
     }
-    sng_container_show_all(SNG_CONTAINER(dialog));
 
     // Chain-up parent constructed
     G_OBJECT_CLASS(sng_dialog_parent_class)->constructed(object);

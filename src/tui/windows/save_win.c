@@ -313,18 +313,8 @@ save_set_group(SaveWindow *save_window, CallGroup *group)
     g_string_append_printf(selected, " [%d]", call_group_count(group));
     sng_label_set_text(SNG_LABEL(save_window->rb_selected), selected->str);
 
-    // Display the dialog select box
-    sng_widget_show(SNG_WIDGET(save_window->rb_all));
-    sng_widget_show(SNG_WIDGET(save_window->rb_displayed));
-
-    // Enable PCAP formats
-    sng_widget_show(SNG_WIDGET(save_window->rb_pcap));
-    sng_widget_show(SNG_WIDGET(save_window->rb_pcap_rtp));
-    sng_widget_show(SNG_WIDGET(save_window->rb_txt));
-
     // If there are selected calls enable selected radio button
-    if (call_group_count(group)) {
-        sng_widget_show(SNG_WIDGET(save_window->rb_selected));
+    if (call_group_count(group) != 0) {
         sng_button_activate(SNG_BUTTON(save_window->rb_selected));
     }
 }
@@ -334,16 +324,6 @@ save_set_message(SaveWindow *save_window, Message *msg)
 {
     // Set save group
     save_window->msg = msg;
-
-    // Display the dialog select box
-    sng_widget_show(SNG_WIDGET(save_window->rb_all));
-    sng_widget_show(SNG_WIDGET(save_window->rb_selected));
-    sng_widget_show(SNG_WIDGET(save_window->rb_displayed));
-
-    // Enable PCAP formats
-    sng_widget_show(SNG_WIDGET(save_window->rb_pcap));
-    sng_widget_show(SNG_WIDGET(save_window->rb_pcap_rtp));
-    sng_widget_show(SNG_WIDGET(save_window->rb_txt));
 
     // Select save current message
     sng_button_activate(SNG_BUTTON(save_window->rb_message));
@@ -371,7 +351,6 @@ save_constructed_file_widgets(SaveWindow *save_window)
     sng_box_pack_start(SNG_BOX(box_path), sng_label_new("Path:    "));
     save_window->en_fpath = sng_entry_new(setting_get_value(SETTING_STORAGE_SAVEPATH));
     sng_container_add(SNG_CONTAINER(box_path), save_window->en_fpath);
-    sng_container_show_all(SNG_CONTAINER(box_path));
     sng_box_pack_start(SNG_BOX(save_window), box_path);
     g_signal_connect_swapped(save_window->en_fpath, "activate",
                              G_CALLBACK(save_to_file), save_window);
@@ -384,7 +363,6 @@ save_constructed_file_widgets(SaveWindow *save_window)
     sng_container_add(SNG_CONTAINER(box_fname), save_window->en_fname);
     save_window->lb_fext = sng_label_new(".pcap");
     sng_box_pack_start(SNG_BOX(box_fname), save_window->lb_fext);
-    sng_container_show_all(SNG_CONTAINER(box_fname));
     sng_box_pack_start(SNG_BOX(save_window), box_fname);
     g_signal_connect_swapped(save_window->en_fname, "activate",
                              G_CALLBACK(save_to_file), save_window);
@@ -493,7 +471,6 @@ save_constructed_options_widgets(SaveWindow *save_window)
     sng_container_add(SNG_CONTAINER(box_options), save_window->box_format);
 
     // Add boxes to the window
-    sng_container_show_all(SNG_CONTAINER(box_options));
     sng_container_add(SNG_CONTAINER(save_window), box_options);
 }
 

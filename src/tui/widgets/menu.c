@@ -49,6 +49,7 @@ sng_menu_new(const gchar *title)
 {
     return g_object_new(
         TUI_TYPE_MENU,
+        "visible", FALSE,
         "title", title,
         "floating", TRUE,
         NULL

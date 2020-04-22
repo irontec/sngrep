@@ -695,7 +695,7 @@ sng_widget_class_init(SngWidgetClass *klass)
         g_param_spec_boolean("visible",
                              "Visible SngWidget flag",
                              "Visible SngWidget flag",
-                             FALSE,
+                             TRUE,
                              G_PARAM_READWRITE
         );
 
@@ -800,4 +800,6 @@ sng_widget_init(SngWidget *self)
     SngWidgetPrivate *priv = sng_widget_get_instance_private(self);
     // Initialize window position
     priv->x = priv->y = 0;
+    // Make widgets visible by default
+    priv->visible = TRUE;
 }
