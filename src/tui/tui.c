@@ -185,6 +185,13 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
         SngWindow *window = tui_find_by_panel(l->data);
         SngWidget *widget = SNG_WIDGET(window);
 
+        // Set first window focus active
+        if (l == stack) {
+            sng_widget_focus_gain(sng_window_focused_widget(window));
+        } else {
+            sng_widget_focus_lost(sng_window_focused_widget(window));
+        }
+
         // Draw each widget in their internal window
         sng_widget_draw(widget);
         // Map internal windows to visible panel windows
@@ -197,7 +204,6 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
 
         // Update panel stack
         update_panels();
-        break;
     }
 
     // Update ncurses standard screen with panel info

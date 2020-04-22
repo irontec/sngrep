@@ -95,7 +95,7 @@ sng_radio_button_draw(SngWidget *widget)
 
     // Update label text based on current status
     WINDOW *win = sng_widget_get_ncurses_window(widget);
-    wattron(win, COLOR_PAIR(CP_DEFAULT));
+    wbkgdset(win, COLOR_PAIR(CP_DEFAULT));
     werase(win);
 
     if (radio_button->active) {

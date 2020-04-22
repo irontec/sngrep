@@ -100,6 +100,9 @@ sng_window_get_ncurses_panel(SngWindow *window);
 void
 sng_window_set_title(SngWindow *window, const gchar *title);
 
+const gchar *
+sng_window_get_title(SngWindow *window);
+
 void
 sng_window_add_button(SngWindow *window, SngButton *button);
 

@@ -90,6 +90,12 @@ struct _SngDialog
 SngWidget *
 sng_dialog_new(SngDialogType type, SngDialogButtons buttons, const gchar *title, const gchar *message);
 
+void
+sng_dialog_show_message(const gchar *title, const gchar *format, ...);
+
+gboolean
+sng_dialog_confirm(const gchar *title, const gchar *format, ...);
+
 SngDialogResponse
 sng_dialog_run(SngDialog *dialog);
 

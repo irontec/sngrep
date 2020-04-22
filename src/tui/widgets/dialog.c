@@ -60,6 +60,44 @@ sng_dialog_new(SngDialogType type, SngDialogButtons buttons, const gchar *title,
     );
 }
 
+void
+sng_dialog_show_message(const gchar *title, const gchar *format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    g_autofree const gchar *message = g_strdup_vprintf(format, args);
+    va_end(args);
+
+    SngWidget *dialog = sng_dialog_new(
+        SNG_DIALOG_INFO,
+        SNG_BUTTONS_ACCEPT,
+        title,
+        message
+    );
+    sng_dialog_run(SNG_DIALOG(dialog));
+    sng_widget_destroy(SNG_WIDGET(dialog));
+}
+
+gboolean
+sng_dialog_confirm(const gchar *title, const gchar *format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    g_autofree const gchar *message = g_strdup_vprintf(format, args);
+    va_end(args);
+
+    SngWidget *dialog = sng_dialog_new(
+        SNG_DIALOG_QUESTION,
+        SNG_BUTTONS_YES_NO,
+        title,
+        message
+    );
+    SngDialogResponse response = sng_dialog_run(SNG_DIALOG(dialog));
+    sng_widget_destroy(SNG_WIDGET(dialog));
+
+    return response == SNG_RESPONSE_YES;
+}
+
 SngDialogResponse
 sng_dialog_run(SngDialog *dialog)
 {
@@ -72,6 +110,12 @@ sng_dialog_set_response(SngDialog *dialog, SngDialogResponse response)
 {
     dialog->response = response;
     g_main_loop_quit(dialog->loop);
+}
+
+static void
+sng_dialog_set_response_accept(SngDialog *dialog)
+{
+    sng_dialog_set_response(dialog, SNG_RESPONSE_ACCEPT);
 }
 
 static void
@@ -110,7 +154,6 @@ sng_dialog_key_pressed(SngWidget *widget, gint key)
     }
 }
 
-
 static void
 sng_dialog_constructed(GObject *object)
 {
@@ -118,11 +161,12 @@ sng_dialog_constructed(GObject *object)
 
     // Calculate dialog height
     g_auto(GStrv) msg_lines = g_strsplit(dialog->message, "\n", -1);
-    gint height =
-        g_strv_length(msg_lines)
-        + 2 // Space for buttons
-        + 2 // Space for borders
-        + 2; // Space for title bar
+    gint height = g_strv_length(msg_lines);
+    height += 2; // Space for buttons
+    height += 2; // Space for borders
+    if (sng_window_get_title(SNG_WINDOW(dialog)) != NULL) {
+        height += 2; // Space for title bar
+    }
 
     sng_widget_set_height(
         SNG_WIDGET(dialog),
@@ -146,7 +190,18 @@ sng_dialog_constructed(GObject *object)
     sng_widget_set_vexpand(lb_message, TRUE);
     sng_container_add(SNG_CONTAINER(dialog), lb_message);
 
-    if (dialog->buttons == SNG_BUTTONS_YES_NO) {
+    if (dialog->buttons == SNG_BUTTONS_ACCEPT) {
+        SngWidget *bn_accept = sng_button_new();
+        sng_label_set_text(SNG_LABEL(bn_accept), "[   Accept    ]");
+        sng_window_add_button(SNG_WINDOW(dialog), SNG_BUTTON(bn_accept));
+        g_signal_connect_swapped(bn_accept, "activate",
+                                 G_CALLBACK(sng_dialog_set_response_accept), dialog);
+
+        // Set first button as default
+        sng_window_set_default_focus(SNG_WINDOW(dialog), bn_accept);
+    } else if (dialog->buttons == SNG_BUTTONS_OK) {
+    } else if (dialog->buttons == SNG_BUTTONS_CANCEL) {
+    } else if (dialog->buttons == SNG_BUTTONS_YES_NO) {
 
         SngWidget *bn_yes = sng_button_new();
         sng_label_set_text(SNG_LABEL(bn_yes), "[   Yes    ]");
@@ -162,6 +217,7 @@ sng_dialog_constructed(GObject *object)
 
         // Set first button as default
         sng_window_set_default_focus(SNG_WINDOW(dialog), bn_yes);
+    } else if (dialog->buttons == SNG_BUTTONS_OK_CANCEL) {
     }
 
     // Chain-up parent constructed

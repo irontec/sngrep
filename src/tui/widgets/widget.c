@@ -388,13 +388,19 @@ sng_widget_focus_lost(SngWidget *widget)
 void
 sng_widget_lose_focus(SngWidget *widget)
 {
-    g_signal_emit(widget, signals[SIG_LOSE_FOCUS], 0);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
+    if (priv->focused) {
+        g_signal_emit(widget, signals[SIG_LOSE_FOCUS], 0);
+    }
 }
 
 void
 sng_widget_grab_focus(SngWidget *widget)
 {
-    g_signal_emit(widget, signals[SIG_GRAB_FOCUS], 0);
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
+    if (!priv->focused) {
+        g_signal_emit(widget, signals[SIG_GRAB_FOCUS], 0);
+    }
 }
 
 void

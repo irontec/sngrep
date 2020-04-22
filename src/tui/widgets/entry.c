@@ -125,7 +125,7 @@ sng_entry_draw(SngWidget *widget)
         );
     }
 
-     SNG_WIDGET_CLASS(sng_entry_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(sng_entry_parent_class)->draw(widget);
 }
 
 static void
@@ -141,7 +141,7 @@ sng_entry_focus_gained(SngWidget *widget)
     // Update field form
     post_form(entry->form);
     // Chain up parent focus gained
-     SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_gained(widget);
+    SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_gained(widget);
 }
 
 static void

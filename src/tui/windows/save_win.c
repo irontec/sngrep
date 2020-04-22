@@ -38,7 +38,7 @@
 #include "setting.h"
 #include "storage/filter.h"
 #include "capture/capture_txt.h"
-#include "tui/dialog.h"
+#include "tui/widgets/dialog.h"
 #include "tui/windows/save_win.h"
 
 G_DEFINE_TYPE(SaveWindow, save, SNG_TYPE_WINDOW)
@@ -64,6 +64,7 @@ save_packet_cb(Packet *packet, CaptureOutput *output)
 {
     capture_output_write(output, packet);
 }
+
 #if 0
 #ifdef WITH_SND
 
@@ -138,8 +139,7 @@ static void
 save_to_file(SaveWindow *save_window)
 {
     CaptureOutput *output = NULL;
-    int cur = 0, total = 0;
-    WINDOW *progress;
+    gint total = 0;
     GPtrArray *calls = NULL;
     GPtrArray *packets = g_ptr_array_new();
     GError *error = NULL;
@@ -147,7 +147,7 @@ save_to_file(SaveWindow *save_window)
     // Validate save file name
     g_autoptr(GString) filename = g_string_new(sng_entry_get_text(SNG_ENTRY(save_window->en_fname)));
     if (filename->len == 0) {
-        dialog_run("Please enter a valid filename");
+        sng_dialog_show_message(NULL, " <cyan>Please enter a valid filename");
         return;
     }
 
@@ -162,10 +162,13 @@ save_to_file(SaveWindow *save_window)
     }
 
     if (g_file_test(filename->str, G_FILE_TEST_EXISTS)) {
-        if (dialog_confirm("Overwrite confirmation",
-                           "Selected file already exits.\n Do you want to overwrite it?",
-                           "Yes,No") != 0)
+        gboolean overwrite = sng_dialog_confirm(
+            "Overwrite confirmation",
+            "<cyan> Selected file already exits.\n Do you want to overwrite it?"
+        );
+        if (!overwrite) {
             return;
+        }
     }
 
     // Determine save mode from active radio button
@@ -206,7 +209,7 @@ save_to_file(SaveWindow *save_window)
 
     // Output creation error checking
     if (error != NULL) {
-        dialog_run("Error: %s", error->message);
+        sng_dialog_show_message(NULL, "Error: %s", error->message);
         return;
     }
 
@@ -256,8 +259,8 @@ save_to_file(SaveWindow *save_window)
             }
         }
 
-        progress = dialog_progress_run("Saving packets...");
-        dialog_progress_set_value(progress, 0);
+//        progress = dialog_progress_run("Saving packets...");
+//        dialog_progress_set_value(progress, 0);
 
         // Save selected packets to file
         for (guint i = 0; i < g_ptr_array_len(calls); i++) {
@@ -270,7 +273,7 @@ save_to_file(SaveWindow *save_window)
             for (guint j = 0; j < g_ptr_array_len(call->msgs); j++) {
                 Message *msg = g_ptr_array_index(call->msgs, j);
                 // Update progress bar dialog
-                dialog_progress_set_value(progress, (++cur * 100) / total);
+//                dialog_progress_set_value(progress, (++cur * 100) / total);
                 g_ptr_array_add(packets, msg->packet);
             }
 
@@ -278,7 +281,7 @@ save_to_file(SaveWindow *save_window)
             if (save_window->saveformat == SAVE_PCAP_RTP) {
                 for (guint j = 0; j < g_ptr_array_len(call->streams); j++) {
                     Stream *stream = g_ptr_array_index(call->streams, j);
-                    dialog_progress_set_value(progress, (++cur * 100) / total);
+//                    dialog_progress_set_value(progress, (++cur * 100) / total);
                     g_ptr_array_add_array(packets, stream->packets);
                 }
             }
@@ -287,7 +290,7 @@ save_to_file(SaveWindow *save_window)
         g_ptr_array_sort(packets, (GCompareFunc) packet_time_sorter);
         g_ptr_array_foreach(packets, (GFunc) save_packet_cb, output);
 
-        dialog_progress_destroy(progress);
+//        dialog_progress_destroy(progress);
     }
 
     // Close saved file
@@ -295,9 +298,18 @@ save_to_file(SaveWindow *save_window)
 
     // Show success popup
     if (save_window->savemode == SAVE_MESSAGE) {
-        dialog_run("Successfully saved selected SIP message to %s", filename->str);
+        sng_dialog_show_message(
+            "Save completed",
+            "Successfully saved selected SIP message to %s",
+            g_filename_display_basename(filename->str)
+        );
     } else {
-        dialog_run("Successfully saved %d packets to %s", total, filename->str);
+        sng_dialog_show_message(
+            "Save completed",
+            "Successfully saved %d packets to %s",
+            total,
+            g_filename_display_basename(filename->str)
+        );
     }
 
     sng_widget_destroy(SNG_WIDGET(save_window));
