@@ -169,13 +169,12 @@ msg_diff_win_draw_message(WINDOW *win, Message *msg, char *highlight)
  * @param window UI structure pointer
  * @return 0 in all cases
  */
-static int
+static void
 msg_diff_win_draw(SngWidget *widget)
 {
     // Get panel information
     MsgDiffWindow *self = TUI_MSG_DIFF(widget);
     SngAppWindow *app_window = SNG_APP_WINDOW(widget);
-    g_return_val_if_fail(self != NULL, -1);
 
     char highlight[MAX_SIP_PAYLOAD];
 
@@ -194,8 +193,6 @@ msg_diff_win_draw(SngWidget *widget)
 
     // Redraw footer
     msg_diff_win_draw_footer(app_window);
-
-    return 0;
 }
 
 

@@ -78,7 +78,7 @@ sng_window_new(gint height, gint width);
  *
  * @return enum @key_handler_ret*
  */
-gint
+void
 sng_window_handle_mouse(SngWindow *window, MEVENT mevent);
 
 /**
@@ -91,7 +91,7 @@ sng_window_handle_mouse(SngWindow *window, MEVENT mevent);
  * @param key keycode sequence of the pressed keys and mods
  * @return enum @key_handler_ret*
  */
-gint
+void
 sng_window_handle_key(SngWindow *window, gint key);
 
 PANEL *

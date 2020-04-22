@@ -125,7 +125,7 @@ SettingsWindowEntry entries[] = {
  * @param ui UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-static gint
+static void
 settings_win_draw(SngWidget *widget)
 {
     SngAppWindow *window = SNG_APP_WINDOW(widget);
@@ -172,8 +172,6 @@ settings_win_draw(SngWidget *widget)
 
     // Restore cursor position
     wmove(win, cury, curx);
-
-    return 0;
 }
 
 /**
@@ -329,7 +327,7 @@ settings_win_save(SngAppWindow *window)
  * @param key   key code
  * @return enum @key_handler_ret
  */
-static gint
+static void
 settings_win_handle_key(SngWidget *widget, gint key)
 {
     int field_idx;
@@ -417,7 +415,7 @@ settings_win_handle_key(SngWidget *widget, gint key)
                     break;
                 case ACTION_CONFIRM:
                     settings_update_settings(window);
-                    return KEY_DESTROY;
+                    return ;
                 default:
                     // Parse next action
                     continue;
@@ -448,7 +446,7 @@ settings_win_handle_key(SngWidget *widget, gint key)
                     if (field_idx == BTN_SETTINGS_SAVE)
                         settings_win_save(window);
                     settings_update_settings(window);
-                    return KEY_DESTROY;
+                    return ;
                 default:
                     continue;
             }
@@ -471,9 +469,6 @@ settings_win_handle_key(SngWidget *widget, gint key)
     } else {
         curs_set(0);
     }
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 void

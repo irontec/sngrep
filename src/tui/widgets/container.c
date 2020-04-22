@@ -154,13 +154,13 @@ sng_container_base_realize(SngWidget *widget)
     SNG_WIDGET_CLASS(sng_container_parent_class)->realize(widget);
 }
 
-static gint
+static void
 sng_container_base_draw(SngWidget *widget)
 {
     // Draw each of the container children
     sng_container_foreach(SNG_CONTAINER(widget), (GFunc) sng_widget_draw, NULL);
     //  Chain up parent class draw
-    return SNG_WIDGET_CLASS(sng_container_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(sng_container_parent_class)->draw(widget);
 }
 
 static void

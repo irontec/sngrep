@@ -297,7 +297,7 @@ sng_table_realize(SngWidget *widget)
     SNG_WIDGET_CLASS(sng_table_parent_class)->realize(widget);
 }
 
-static gint
+static void
 sng_table_draw(SngWidget *widget)
 {
     SngTable *table = SNG_TABLE(widget);
@@ -359,11 +359,11 @@ sng_table_draw(SngWidget *widget)
     // Fill the call list
     for (guint i = (guint) table->vscroll.pos; i < g_ptr_array_len(table->dcalls); i++) {
         Call *call = g_ptr_array_index(table->dcalls, i);
-        g_return_val_if_fail(call != NULL, 0);
+        g_return_if_fail(call != NULL);
 
         // Get first call message attributes
         Message *msg = g_ptr_array_first(call->msgs);
-        g_return_val_if_fail(msg != NULL, 0);
+        g_return_if_fail(msg != NULL);
 
         // Stop if we have reached the bottom of the list
         if (getcury(win) == getmaxy(win))
@@ -450,14 +450,14 @@ sng_table_draw(SngWidget *widget)
         mvwprintw(win, 0, 0, "A");
     }
 
-    return SNG_WIDGET_CLASS(sng_table_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(sng_table_parent_class)->draw(widget);
 }
 
-static gboolean
+static void
 sng_table_focus_gained(SngWidget *widget)
 {
     // Chain up parent focus gained
-    return SNG_WIDGET_CLASS(sng_table_parent_class)->focus_gained(widget);
+    SNG_WIDGET_CLASS(sng_table_parent_class)->focus_gained(widget);
 }
 
 static void
@@ -468,7 +468,7 @@ sng_table_focus_lost(SngWidget *widget)
 }
 
 
-static gint
+static void
 sng_table_key_pressed(SngWidget *widget, gint key)
 {
 
@@ -501,20 +501,18 @@ sng_table_key_pressed(SngWidget *widget, gint key)
     }
 
     if (action == ACTION_UNKNOWN) {
-        return SNG_WIDGET_CLASS(sng_table_parent_class)->key_pressed(widget, key);
+         SNG_WIDGET_CLASS(sng_table_parent_class)->key_pressed(widget, key);
     }
-
-    return KEY_HANDLED;
 }
 
-static gint
+static void
 sng_table_clicked(SngWidget *widget, MEVENT mevent)
 {
     SngTable *table = SNG_TABLE(widget);
 
     // Check if the header line was clicked
     if (mevent.y == sng_widget_get_ypos(widget)) {
-        return 0;
+        return;
     }
 
     // Select the clicked line
@@ -525,8 +523,6 @@ sng_table_clicked(SngWidget *widget, MEVENT mevent)
         // TODO Handle actions instead of keys
         sng_table_key_pressed(widget, KEY_SPACE);
     }
-
-    return 0;
 }
 
 static void

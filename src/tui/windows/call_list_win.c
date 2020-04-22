@@ -178,7 +178,7 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
  * @param key Pressed keycode
  * @return enum @key_handler_ret
  */
-static int
+static void
 call_list_win_handle_key(SngWidget *widget, int key)
 {
     // Check actions for this key
@@ -201,14 +201,11 @@ call_list_win_handle_key(SngWidget *widget, int key)
             case ACTION_PREV_SCREEN:
                 // This panel has handled the key successfully
                 call_list_win_handle_action(widget, action);
-                return KEY_HANDLED;
+                return;
             default:
                 continue;
         }
     }
-
-    // Return if this panel has not handled the key
-    return KEY_NOT_HANDLED;
 }
 
 /**

@@ -46,11 +46,11 @@ rtp_player_win_decode_stream(SngAppWindow *window, Stream *stream)
     }
 }
 
-static gint
+static void
 rtp_player_win_draw(SngWidget *widget)
 {
     RtpPlayerWindow *self = TUI_RTP_PLAYER(widget);
-    g_return_val_if_fail(self != NULL, 1);
+    g_return_if_fail(self != NULL);
     WINDOW *win = sng_widget_get_ncurses_window(widget);
 
     if (getenv("PULSE_SERVER")) {
@@ -72,7 +72,7 @@ rtp_player_win_draw(SngWidget *widget)
                            "pactl load-module module-native-protocol-tcp auth-anonymous=1",
                            getenv("PULSE_SERVER")
                 );
-                return 1;
+                return;
             }
             break;
         case PA_CONTEXT_READY:
@@ -101,7 +101,7 @@ rtp_player_win_draw(SngWidget *widget)
     }
 
     if (self->decoded->len == 0) {
-        return 1;
+        return;
     }
 
     gint width = getmaxx(win);
@@ -120,16 +120,14 @@ rtp_player_win_draw(SngWidget *widget)
     if (perc > 0 && perc <= 100) {
         mvwhline(win, 4, 4, ACS_CKBOARD, ((width - 19) * ((float) perc / 100)));
     }
-
-    return 0;
 }
 
-static int
+static void
 rtp_player_win_handle_key(SngWidget *widget, int key)
 {
     // Sanity check, this should not happen
     RtpPlayerWindow *self = TUI_RTP_PLAYER(widget);
-    g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
+    g_return_if_fail(self != NULL);
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -178,9 +176,6 @@ rtp_player_win_handle_key(SngWidget *widget, int key)
         // We've handled this key, stop checking actions
         break;
     }
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 static void

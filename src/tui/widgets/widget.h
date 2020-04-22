@@ -64,15 +64,15 @@ struct _SngWidgetClass
     //! Map the widget into the screen
     void (*map)(SngWidget *widget);
     //! Request widget to draw its data in their internal window
-    gint (*draw)(SngWidget *widget);
+    void (*draw)(SngWidget *widget);
     //! Callback for focused event
-    gboolean (*focus_gained)(SngWidget *widget);
+    void (*focus_gained)(SngWidget *widget);
     //! Callback for focused event
     void (*focus_lost)(SngWidget *widget);
     //! Handle a custom keybinding on this panel
-    gint (*key_pressed)(SngWidget *widget, gint key);
+    void (*key_pressed)(SngWidget *widget, gint key);
     //! Handle a mouse event on this panel
-    gint (*clicked)(SngWidget *widget, MEVENT event);
+    void (*clicked)(SngWidget *widget, MEVENT event);
     //! Get widget preferred height
     gint (*preferred_height)(SngWidget *widget);
     //! Get widget preferred width
@@ -148,7 +148,7 @@ sng_widget_get_toplevel(SngWidget *widget);
  * @param widget UI structure
  * @return 0 if ui has been resize, -1 otherwise
  */
-gint
+void
 sng_widget_draw(SngWidget *widget);
 
 void
@@ -162,7 +162,7 @@ sng_widget_map(SngWidget *widget);
  * @param widget SngWidget to be focused
  * @return TRUE if the widget can be focused, FALSE otherwise
  */
-gboolean
+void
 sng_widget_focus_gain(SngWidget *widget);
 
 /**
@@ -186,7 +186,7 @@ sng_widget_grab_focus(SngWidget *widget);
  *
  * @return enum @key_handler_ret*
  */
-gint
+void
 sng_widget_clicked(SngWidget *widget, MEVENT event);
 
 /**
@@ -199,7 +199,7 @@ sng_widget_clicked(SngWidget *widget, MEVENT event);
  * @param key keycode sequence of the pressed keys and mods
  * @return enum @key_handler_ret*
  */
-gint
+void
 sng_widget_key_pressed(SngWidget *widget, gint key);
 
 void

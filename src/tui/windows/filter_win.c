@@ -37,7 +37,7 @@
 #include "storage/filter.h"
 #include "setting.h"
 
-G_DEFINE_TYPE(FilterWindow , filter_win, SNG_TYPE_WINDOW)
+G_DEFINE_TYPE(FilterWindow, filter_win, SNG_TYPE_WINDOW)
 
 /**
  * @brief Return String value for a filter field
@@ -178,7 +178,7 @@ filter_win_save_options(FilterWindow *self)
  * @param key   key code
  * @return enum @key_handler_ret
  */
-static int
+static void
 filter_win_handle_key(SngWidget *widget, gint key)
 {
     int field_idx;
@@ -259,10 +259,10 @@ filter_win_handle_key(SngWidget *widget, gint key)
                         }
                         break;
                     case FLD_FILTER_CANCEL:
-                        return KEY_DESTROY;
+                        return;
                     case FLD_FILTER_FILTER:
                         filter_win_save_options(self);
-                        return KEY_DESTROY;
+                        return;
                     default:
                         break;
                 }
@@ -270,7 +270,7 @@ filter_win_handle_key(SngWidget *widget, gint key)
             case ACTION_CONFIRM:
                 if (field_idx != FLD_FILTER_CANCEL)
                     filter_win_save_options(self);
-                return KEY_DESTROY;
+                return ;
             default:
                 // Parse next action
                 continue;
@@ -295,8 +295,6 @@ filter_win_handle_key(SngWidget *widget, gint key)
         curs_set(0);
     }
 
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 SngAppWindow *

@@ -44,7 +44,7 @@ sng_separator_new()
     );
 }
 
-static gint
+static void
 sng_separator_draw(SngWidget *widget)
 {
     WINDOW *win = sng_widget_get_ncurses_window(widget);
@@ -52,7 +52,7 @@ sng_separator_draw(SngWidget *widget)
     whline(win, ACS_HLINE, sng_widget_get_width(widget));
 
     // Chain up parent draw
-    return SNG_WIDGET_CLASS(sng_separator_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(sng_separator_parent_class)->draw(widget);
 }
 
 static void

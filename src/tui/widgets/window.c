@@ -254,7 +254,7 @@ sng_window_realize(SngWidget *widget)
     sng_window_set_focused_widget(window, priv->focus_default);
 }
 
-static gint
+static void
 sng_window_draw(SngWidget *widget)
 {
     // Chain up parent draw
@@ -280,8 +280,6 @@ sng_window_draw(SngWidget *widget)
     }
 
     sng_widget_draw(priv->focus);
-
-    return 0;
 }
 
 static void
@@ -317,32 +315,29 @@ sng_window_add_widget(SngContainer *container, SngWidget *widget)
     SNG_CONTAINER_CLASS(sng_window_parent_class)->add(container, widget);
 }
 
-gint
+void
 sng_window_handle_mouse(SngWindow *window, MEVENT mevent)
 {
     SngWidget *clicked_widget = sng_container_find_by_position(SNG_CONTAINER(window), mevent.x, mevent.y);
     if (clicked_widget != NULL) {
         sng_window_set_focused_widget(window, clicked_widget);
-        return sng_widget_clicked(clicked_widget, mevent);
+        sng_widget_clicked(clicked_widget, mevent);
     }
-    return KEY_HANDLED;
 }
 
-gint
+void
 sng_window_handle_key(SngWindow *window, gint key)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
 
     // Check actions for this key
-    KeybindingAction action = key_find_action(key,  ACTION_UNKNOWN);
+    KeybindingAction action = key_find_action(key, ACTION_UNKNOWN);
     if (action == ACTION_NEXT_FIELD) {
         sng_window_focus_next(window);
-        return KEY_HANDLED;
     } else if (action == ACTION_PREV_FIELD) {
         sng_window_focus_prev(window);
-        return KEY_HANDLED;
     } else {
-        return sng_widget_key_pressed(priv->focus, key);
+        sng_widget_key_pressed(priv->focus, key);
     }
 }
 

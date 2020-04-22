@@ -35,7 +35,7 @@
 // Menu class definition
 G_DEFINE_TYPE(SngMenuBar, sng_menu_bar, SNG_TYPE_CONTAINER)
 
-static gint
+static void
 sng_menu_bar_clicked(SngWidget *widget, MEVENT mevent)
 {
     SngMenuBar *menu_bar = SNG_MENU_BAR(widget);
@@ -55,8 +55,6 @@ sng_menu_bar_clicked(SngWidget *widget, MEVENT mevent)
     } else {
         menu_bar->selected = -1;
     }
-
-    return 0;
 }
 
 static void
@@ -73,7 +71,7 @@ sng_menu_bar_realize(SngWidget *widget)
     SNG_WIDGET_CLASS(sng_menu_bar_parent_class)->realize(widget);
 }
 
-static gint
+static void
 sng_menu_bar_draw(SngWidget *widget)
 {
     // Create a window to draw the menu bar
@@ -97,10 +95,10 @@ sng_menu_bar_draw(SngWidget *widget)
     }
 
     // Chain up parent draw
-    return SNG_WIDGET_CLASS(sng_menu_bar_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(sng_menu_bar_parent_class)->draw(widget);
 }
 
-static gint
+static void
 sng_menu_bar_key_pressed(SngWidget *widget, gint key)
 {
     SngMenuBar *menu_bar = SNG_MENU_BAR(widget);
@@ -137,11 +135,9 @@ sng_menu_bar_key_pressed(SngWidget *widget, gint key)
     SngWidget *menu = sng_container_get_child(SNG_CONTAINER(widget), menu_bar->selected);
     sng_widget_show(menu);
     sng_widget_grab_focus(menu);
-
-    return KEY_HANDLED;
 }
 
-static gboolean
+static void
 sng_menu_bar_focus_gained(SngWidget *widget)
 {
     SngMenuBar *menu_bar = SNG_MENU_BAR(widget);
@@ -154,8 +150,6 @@ sng_menu_bar_focus_gained(SngWidget *widget)
     );
     sng_widget_show(menu);
     sng_widget_grab_focus(menu);
-
-    return TRUE;
 }
 
 SngWidget *

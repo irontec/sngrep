@@ -85,7 +85,7 @@ sng_menu_realize(SngWidget *widget)
     sng_widget_set_ncurses_window(widget, win);
 }
 
-static gint
+static void
 sng_menu_draw(SngWidget *widget)
 {
     SngMenu *menu = SNG_MENU(widget);
@@ -119,11 +119,9 @@ sng_menu_draw(SngWidget *widget)
         }
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     }
-
-    return 0;
 }
 
-static gint
+static void
 sng_menu_key_pressed(SngWidget *widget, gint key)
 {
     SngMenu *menu = SNG_MENU(widget);
@@ -175,11 +173,9 @@ sng_menu_key_pressed(SngWidget *widget, gint key)
     if (item->text == NULL) {
         sng_menu_key_pressed(widget, key);
     }
-
-    return KEY_HANDLED;
 }
 
-static gint
+static void
 sng_menu_clicked(SngWidget *widget, MEVENT mevent)
 {
     SngMenu *menu = SNG_MENU(widget);
@@ -194,7 +190,6 @@ sng_menu_clicked(SngWidget *widget, MEVENT mevent)
     SngMenuItem *item = SNG_MENU_ITEM(sng_container_get_child(SNG_CONTAINER(widget), menu->selected));
     sng_widget_lose_focus(widget);
     sng_menu_item_activate(item);
-    return 0;
 }
 
 static void

@@ -86,7 +86,7 @@ sng_dialog_set_response_no(SngDialog *dialog)
     sng_dialog_set_response(dialog, SNG_RESPONSE_NO);
 }
 
-static gint
+static void
 sng_dialog_key_pressed(SngWidget *widget, gint key)
 {
     SngDialog *dialog = SNG_DIALOG(widget);
@@ -108,9 +108,6 @@ sng_dialog_key_pressed(SngWidget *widget, gint key)
         // We've handled this key, stop checking actions
         break;
     }
-
-    // Return if this panel has handled or not the key
-    return KEY_HANDLED;
 }
 
 

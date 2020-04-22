@@ -88,7 +88,7 @@ sng_radio_button_update_group(SngRadioButton *radio_button)
     }
 }
 
-static gint
+static void
 sng_radio_button_draw(SngWidget *widget)
 {
     SngRadioButton *radio_button = SNG_RADIO_BUTTON(widget);
@@ -103,8 +103,6 @@ sng_radio_button_draw(SngWidget *widget)
     } else {
         wprintw(win, "( ) %s", sng_label_get_text(SNG_LABEL(widget)));
     }
-
-    return 0;
 }
 
 static void

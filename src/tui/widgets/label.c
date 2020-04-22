@@ -111,7 +111,7 @@ sng_label_get_align(SngLabel *label)
     return label->alignment;
 }
 
-static gint
+static void
 sng_label_draw(SngWidget *widget)
 {
     // Chain up parent draw
@@ -119,7 +119,7 @@ sng_label_draw(SngWidget *widget)
 
     SngLabel *label = SNG_LABEL(widget);
     if (label->text == NULL) {
-        return 0;
+        return;
     }
 
     WINDOW *win = sng_widget_get_ncurses_window(widget);
@@ -168,8 +168,6 @@ sng_label_draw(SngWidget *widget)
         wprintw(win, tokens[i]);
         wattroff(win, attr);
     }
-
-    return 0;
 }
 
 static gint

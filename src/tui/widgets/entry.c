@@ -104,7 +104,7 @@ sng_entry_realize(SngWidget *widget)
     }
 }
 
-static gint
+static void
 sng_entry_draw(SngWidget *widget)
 {
     SngEntry *entry = SNG_ENTRY(widget);
@@ -125,10 +125,10 @@ sng_entry_draw(SngWidget *widget)
         );
     }
 
-    return SNG_WIDGET_CLASS(sng_entry_parent_class)->draw(widget);
+     SNG_WIDGET_CLASS(sng_entry_parent_class)->draw(widget);
 }
 
-static gboolean
+static void
 sng_entry_focus_gained(SngWidget *widget)
 {
     SngEntry *entry = SNG_ENTRY(widget);
@@ -141,7 +141,7 @@ sng_entry_focus_gained(SngWidget *widget)
     // Update field form
     post_form(entry->form);
     // Chain up parent focus gained
-    return SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_gained(widget);
+     SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_gained(widget);
 }
 
 static void
@@ -156,7 +156,7 @@ sng_entry_focus_lost(SngWidget *widget)
     SNG_WIDGET_CLASS(sng_entry_parent_class)->focus_lost(widget);
 }
 
-static gint
+static void
 sng_entry_key_pressed(SngWidget *widget, gint key)
 {
     SngEntry *entry = SNG_ENTRY(widget);
@@ -197,7 +197,7 @@ sng_entry_key_pressed(SngWidget *widget, gint key)
                 break;
             case ACTION_DOWN:
                 sng_window_focus_next(SNG_WINDOW(sng_widget_get_toplevel(widget)));
-                return KEY_HANDLED;                break;
+                return;
             case ACTION_CONFIRM:
                 sng_entry_activate(entry);
                 sng_widget_lose_focus(widget);
@@ -216,9 +216,6 @@ sng_entry_key_pressed(SngWidget *widget, gint key)
 
     // Validate all input data
     form_driver(entry->form, REQ_VALIDATION);
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 static void

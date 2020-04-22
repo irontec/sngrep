@@ -73,7 +73,7 @@ sng_button_activate(SngButton *button)
     g_signal_emit(SNG_WIDGET(button), signals[SIG_ACTIVATE], 0);
 }
 
-static gint
+static void
 sng_button_key_pressed(SngWidget *widget, gint key)
 {
     SngButton *button = SNG_BUTTON(widget);
@@ -86,37 +86,35 @@ sng_button_key_pressed(SngWidget *widget, gint key)
             case ACTION_CONFIRM:
             case ACTION_SELECT:
                 sng_button_activate(button);
-                return KEY_HANDLED;
+                return;
             case ACTION_LEFT:
             case ACTION_UP:
                 sng_window_focus_prev(SNG_WINDOW(sng_widget_get_toplevel(widget)));
-                return KEY_HANDLED;
+                return;
             case ACTION_RIGHT:
             case ACTION_DOWN:
                 sng_window_focus_next(SNG_WINDOW(sng_widget_get_toplevel(widget)));
-                return KEY_HANDLED;
+                return;
             default:
                 // Parse next action
                 continue;
         }
     }
 
-    return SNG_WIDGET_CLASS(sng_button_parent_class)->key_pressed(widget, key);
+    SNG_WIDGET_CLASS(sng_button_parent_class)->key_pressed(widget, key);
 }
 
-static gint
+static void
 sng_button_clicked(SngWidget *widget, G_GNUC_UNUSED MEVENT mevent)
 {
     sng_button_activate(SNG_BUTTON(widget));
-    return 0;
 }
 
-static gboolean
+static void
 sng_button_focus_gained(SngWidget *widget)
 {
     WINDOW *win = sng_widget_get_ncurses_window(widget);
     wattron(win, A_REVERSE);
-    return TRUE;
 }
 
 static void

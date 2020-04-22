@@ -42,24 +42,23 @@ G_DEFINE_TYPE(AuthValidateWindow, auth_validate_win, SNG_TYPE_WINDOW)
  * @param window UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-static gint
+static void
 auth_validate_win_draw(SngWidget *widget)
 {
     // Get panel information
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(widget);
-    g_return_val_if_fail(self != NULL, -1);
 
     WINDOW *win = sng_widget_get_ncurses_window(widget);
 
     // No message with Authorization header
     if (self->msg == NULL) {
         dialog_run("No Authorization header found in current dialog.");
-        return -1;
+        return;
     }
 
     if (self->algorithm == NULL || g_strcmp0(self->algorithm, "MD5") != 0) {
         dialog_run("Unsupported auth validation algorithm.");
-        return -1;
+        return;
     }
 
     // Set calculated color depending on expected result
@@ -78,8 +77,6 @@ auth_validate_win_draw(SngWidget *widget)
 
     set_current_field(self->form, current_field(self->form));
     form_driver(self->form, REQ_VALIDATION);
-
-    return 0;
 }
 
 static void
@@ -119,13 +116,11 @@ auth_validate_win_calculate(SngAppWindow *window)
  * @param key   key code
  * @return enum @key_handler_ret
  */
-static gint
+static void
 auth_validate_win_handle_key(SngWidget *widget, gint key)
 {
     // Get panel information
     AuthValidateWindow *self = TUI_AUTH_VALIDATE(widget);
-    g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
-
     // Get current field id
     gint field_idx = field_index(current_field(self->form));
 
@@ -168,7 +163,7 @@ auth_validate_win_handle_key(SngWidget *widget, gint key)
                 break;
             case ACTION_CONFIRM:
                 if (field_idx == FLD_AUTH_CLOSE) {
-                    return KEY_DESTROY;
+                    return ;
                 }
                 break;
             default:
@@ -197,9 +192,6 @@ auth_validate_win_handle_key(SngWidget *widget, gint key)
     if (field_idx == FLD_AUTH_PASS) {
         auth_validate_win_calculate(SNG_APP_WINDOW(widget));
     }
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 void

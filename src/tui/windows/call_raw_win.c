@@ -159,7 +159,7 @@ call_raw_win_print_msg(SngAppWindow *window, Message *msg)
  * @param panel Ncurses panel pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-static gint
+static void
 call_raw_win_draw(SngWidget *widget)
 {
     Message *msg = NULL;
@@ -167,7 +167,6 @@ call_raw_win_draw(SngWidget *widget)
     // Get panel information
     SngAppWindow *window = SNG_APP_WINDOW(widget);
     CallRawWindow *self = TUI_CALL_RAW(window);
-    g_return_val_if_fail(self != NULL, -1);
     WINDOW *win = sng_widget_get_ncurses_window(widget);
     gint height = sng_widget_get_height(widget);
     gint width = sng_widget_get_width(widget);
@@ -184,7 +183,6 @@ call_raw_win_draw(SngWidget *widget)
     // Copy the visible part of the pad into the panel window
     copywin(self->pad, win, self->scroll, 0, 0, 0, height - 1, width - 1, 0);
     touchwin(win);
-    return 0;
 }
 
 /**
@@ -237,14 +235,13 @@ call_raw_win_move_down(SngAppWindow *window, guint times)
  * @param key Pressed keycode
  * @return enum @key_handler_ret
  */
-static gint
+static void
 call_raw_win_handle_key(SngWidget *widget, int key)
 {
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CR_SCROLLSTEP);
 
     SngAppWindow *app_window = SNG_APP_WINDOW(widget);
     CallRawWindow *self = TUI_CALL_RAW(app_window);
-    g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
@@ -293,7 +290,7 @@ call_raw_win_handle_key(SngWidget *widget, int key)
             case ACTION_CLEAR_CALLS:
             case ACTION_CLEAR_CALLS_SOFT:
                 // Propagate the key to the previous panel
-                return KEY_PROPAGATED;
+                return ;
             default:
                 // Parse next action
                 continue;
@@ -302,10 +299,6 @@ call_raw_win_handle_key(SngWidget *widget, int key)
         // This panel has handled the key successfully
         break;
     }
-
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 void

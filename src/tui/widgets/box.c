@@ -353,7 +353,7 @@ sng_box_size_request(SngWidget *widget)
     SNG_WIDGET_CLASS(sng_box_parent_class)->size_request(widget);
 }
 
-static gint
+static void
 sng_box_draw(SngWidget *widget)
 {
     // Clear the window to draw children widgets
@@ -377,7 +377,7 @@ sng_box_draw(SngWidget *widget)
     }
 
     // Chain-up parent draw function
-    return SNG_WIDGET_CLASS(sng_box_parent_class)->draw(widget);
+    SNG_WIDGET_CLASS(sng_box_parent_class)->draw(widget);
 }
 
 static void

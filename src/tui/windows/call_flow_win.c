@@ -1497,7 +1497,7 @@ call_flow_win_set_group(SngAppWindow *app_window, CallGroup *group)
  * @param key Pressed keycode
  * @return enum @key_handler_ret
  */
-static gint
+static void
 call_flow_win_handle_key(SngWidget *widget, gint key)
 {
     int raw_width;
@@ -1509,7 +1509,6 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
     // Sanity check, this should not happen
     SngAppWindow *window = SNG_APP_WINDOW(widget);
     CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, KEY_NOT_HANDLED);
     WINDOW *win = sng_widget_get_ncurses_window(widget);
 
     // Check actions for this key
@@ -1683,7 +1682,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
             case ACTION_CLEAR_CALLS:
             case ACTION_CLEAR_CALLS_SOFT:
                 // Propagate the key to the previous panel
-                return KEY_PROPAGATED;
+                return ;
 
             default:
                 // Parse next action
@@ -1693,9 +1692,6 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
         // We've handled this key, stop checking actions
         break;
     }
-
-    // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 /**
@@ -1841,7 +1837,7 @@ call_flow_win_create_subwindows(SngAppWindow *window)
  * @param window UI structure pointer
  * @return 0 if the panel has been drawn, -1 otherwise
  */
-static gint
+static void
 call_flow_win_draw(SngWidget *widget)
 {
     char title[256];
@@ -1849,7 +1845,6 @@ call_flow_win_draw(SngWidget *widget)
     // Get panel information
     SngAppWindow *app_window = SNG_APP_WINDOW(widget);
     CallFlowWindow *self = TUI_CALL_FLOW(app_window);
-    g_return_val_if_fail(self != NULL, -1);
 
     // Get window of main panel
     WINDOW *win = sng_widget_get_ncurses_window(widget);
@@ -1902,8 +1897,6 @@ call_flow_win_draw(SngWidget *widget)
     // Draw scrollbars
     scrollbar_draw(self->vscroll);
     scrollbar_draw(self->hscroll);
-
-    return 0;
 }
 
 /**

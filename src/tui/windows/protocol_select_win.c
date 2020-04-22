@@ -345,16 +345,16 @@ protocol_select_win_handle_key_form(ProtocolSelectWindow *self, int key)
  * @param key   key code
  * @return enum @key_handler_ret
  */
-static gint
+static void
 protocol_select_win_handle_key(SngWidget *widget, gint key)
 {
     // Get panel information
     ProtocolSelectWindow *self = TUI_PROTOCOL_SELECT(widget);
 
     if (self->form_active) {
-        return protocol_select_win_handle_key_form(self, key);
+        protocol_select_win_handle_key_form(self, key);
     } else {
-        return protocol_select_win_handle_key_menu(self, key);
+        protocol_select_win_handle_key_menu(self, key);
     }
 }
 

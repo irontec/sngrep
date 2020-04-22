@@ -327,14 +327,14 @@ sng_widget_realize(SngWidget *widget)
     g_signal_emit(widget, signals[SIG_REALIZE], 0);
 }
 
-gint
+void
 sng_widget_draw(SngWidget *widget)
 {
-    g_return_val_if_fail(widget != NULL, 0);
+    g_return_if_fail(widget != NULL);
 
     // Only for visible widgets
     if (!sng_widget_is_visible(widget)) {
-        return 0;
+        return;
     }
 
     // Realize widget before drawing
@@ -345,10 +345,8 @@ sng_widget_draw(SngWidget *widget)
 
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->draw != NULL) {
-        return klass->draw(widget);
+        klass->draw(widget);
     }
-
-    return 0;
 }
 
 void
@@ -369,14 +367,13 @@ sng_widget_map(SngWidget *widget)
 }
 
 
-gboolean
+void
 sng_widget_focus_gain(SngWidget *widget)
 {
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->focus_gained != NULL) {
-        return klass->focus_gained(widget);
+        klass->focus_gained(widget);
     }
-    return TRUE;
 }
 
 void
@@ -400,36 +397,28 @@ sng_widget_grab_focus(SngWidget *widget)
     g_signal_emit(widget, signals[SIG_GRAB_FOCUS], 0);
 }
 
-gint
+void
 sng_widget_clicked(SngWidget *widget, MEVENT event)
 {
-    gint hld = KEY_NOT_HANDLED;
-
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->clicked != NULL) {
-        hld = klass->clicked(widget, event);
+        klass->clicked(widget, event);
     }
 
     // Notify everyone we're being clicked
     g_signal_emit(widget, signals[SIG_CLICKED], 0);
-
-    return hld;
 }
 
-gint
+void
 sng_widget_key_pressed(SngWidget *widget, gint key)
 {
-    gint hld = KEY_NOT_HANDLED;
-
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->key_pressed != NULL) {
-        hld = klass->key_pressed(widget, key);
+        klass->key_pressed(widget, key);
     }
 
     // Notify everyone we've received a new key
     g_signal_emit(widget, signals[SIG_KEY_PRESSED], 0);
-
-    return hld;
 }
 
 void
@@ -474,10 +463,9 @@ sng_widget_base_realize(SngWidget *widget)
     }
 }
 
-static int
+static void
 sng_widget_base_draw(G_GNUC_UNUSED SngWidget *widget)
 {
-    return 0;
 }
 
 static void
@@ -525,12 +513,11 @@ sng_widget_base_map(SngWidget *widget)
     );
 }
 
-static gboolean
+static void
 sng_widget_base_focus_gained(SngWidget *widget)
 {
     SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     priv->focused = TRUE;
-    return priv->focused;
 }
 
 static void
@@ -540,17 +527,14 @@ sng_widget_base_focus_lost(SngWidget *widget)
     priv->focused = FALSE;
 }
 
-static gint
+static void
 sng_widget_base_key_pressed(SngWidget *widget, gint key)
 {
     // Pass key to parent widget
     SngWidget *parent = sng_widget_get_parent(widget);
     if (parent != NULL) {
-        return sng_widget_key_pressed(parent, key);
+        sng_widget_key_pressed(parent, key);
     }
-
-    // No widget handled this key
-    return KEY_NOT_HANDLED;
 }
 
 static void

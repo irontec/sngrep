@@ -413,16 +413,16 @@ column_select_handle_key_form(ColumnSelectWindow *self, int key)
  * @param key   key code
  * @return enum @key_handler_ret
  */
-static gint
+static void
 column_select_handle_key(SngWidget *widget, gint key)
 {
     // Get panel information
     ColumnSelectWindow *self = TUI_COLUMN_SELECT(widget);
 
     if (self->form_active) {
-        return column_select_handle_key_form(self, key);
+        column_select_handle_key_form(self, key);
     } else {
-        return column_select_handle_key_menu(self, key);
+        column_select_handle_key_menu(self, key);
     }
 }
 
