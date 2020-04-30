@@ -32,12 +32,13 @@
 
 enum
 {
-    PROP_ORIENTATION = 1,
+    PROP_0,
     PROP_SPACING,
     PROP_PADDING,
     PROP_BORDER,
     PROP_LABEL,
-    N_PROPERTIES
+    N_PROPERTIES,
+    PROP_ORIENTATION,
 };
 
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
@@ -45,7 +46,7 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 typedef struct
 {
     //! Vertical or Horizontal box
-    SngBoxOrientation orientation;
+    SngOrientation orientation;
     //! Space between children widgets
     gint spacing;
     //! Padding at the beginning and end of box
@@ -59,16 +60,18 @@ typedef struct
 } SngBoxPrivate;
 
 // Class definition
-G_DEFINE_TYPE_WITH_PRIVATE(SngBox, sng_box, SNG_TYPE_CONTAINER)
+G_DEFINE_TYPE_WITH_CODE(SngBox, sng_box, SNG_TYPE_CONTAINER,
+                        G_ADD_PRIVATE(SngBox)
+                            G_IMPLEMENT_INTERFACE(SNG_TYPE_ORIENTABLE, NULL))
 
 SngWidget *
-sng_box_new(SngBoxOrientation orientation)
+sng_box_new(SngOrientation orientation)
 {
     return sng_box_new_full(orientation, 0, 0);
 }
 
 SngWidget *
-sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding)
+sng_box_new_full(SngOrientation orientation, gint spacing, gint padding)
 {
     return g_object_new(
         SNG_TYPE_BOX,
@@ -111,7 +114,7 @@ sng_box_pack_start(SngBox *box, SngWidget *widget)
 {
     SngBoxPrivate *priv = sng_box_get_instance_private(box);
 
-    if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
+    if (priv->orientation == SNG_ORIENTATION_VERTICAL) {
         sng_widget_set_vexpand(widget, FALSE);
     } else {
         sng_widget_set_hexpand(widget, FALSE);
@@ -156,7 +159,7 @@ sng_box_get_preferred_height(SngWidget *widget)
     SngBoxPrivate *priv = sng_box_get_instance_private(SNG_BOX(widget));
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
     for (GList *l = children; l != NULL; l = l->next) {
-        if (priv->orientation == BOX_ORIENTATION_HORIZONTAL) {
+        if (priv->orientation == SNG_ORIENTATION_HORIZONTAL) {
             height = MAX(height, sng_widget_get_preferred_height(l->data));
         } else {
             height += sng_widget_get_preferred_height(l->data);
@@ -172,7 +175,7 @@ sng_box_get_preferred_width(SngWidget *widget)
     SngBoxPrivate *priv = sng_box_get_instance_private(SNG_BOX(widget));
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
     for (GList *l = children; l != NULL; l = l->next) {
-        if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
+        if (priv->orientation == SNG_ORIENTATION_VERTICAL) {
             width = MAX(width, sng_widget_get_preferred_height(l->data));
         } else {
             width += sng_widget_get_preferred_width(l->data);
@@ -193,7 +196,7 @@ sng_box_set_property(GObject *object, guint property_id, const GValue *value, GP
             priv->spacing = g_value_get_int(value);
             break;
         case PROP_PADDING:
-            if (priv->orientation == BOX_ORIENTATION_HORIZONTAL) {
+            if (priv->orientation == SNG_ORIENTATION_HORIZONTAL) {
                 priv->padding.left = priv->padding.right = g_value_get_int(value);
             } else {
                 priv->padding.top = priv->padding.bottom = g_value_get_int(value);
@@ -223,7 +226,7 @@ sng_box_get_property(GObject *object, guint property_id, GValue *value, GParamSp
             g_value_set_int(value, priv->spacing);
             break;
         case PROP_PADDING:
-            if (priv->orientation == BOX_ORIENTATION_HORIZONTAL) {
+            if (priv->orientation == SNG_ORIENTATION_HORIZONTAL) {
                 g_value_set_int(value, priv->padding.left);
             } else {
                 g_value_set_int(value, priv->padding.top);
@@ -343,8 +346,7 @@ sng_box_size_request(SngWidget *widget)
     SngBox *box = SNG_BOX(widget);
     SngBoxPrivate *priv = sng_box_get_instance_private(box);
 
-
-    if (priv->orientation == BOX_ORIENTATION_VERTICAL) {
+    if (priv->orientation == SNG_ORIENTATION_VERTICAL) {
         sng_box_size_request_vertical(widget);
     } else {
         sng_box_size_request_horizontal(widget);
@@ -393,15 +395,6 @@ sng_box_class_init(SngBoxClass *klass)
     widget_class->preferred_height = sng_box_get_preferred_height;
     widget_class->preferred_width = sng_box_get_preferred_width;
 
-    obj_properties[PROP_ORIENTATION] =
-        g_param_spec_enum("orientation",
-                          "Box orientation",
-                          "Box Layout orientation",
-                          SNG_TYPE_BOX_ORIENTATION,
-                          BOX_ORIENTATION_VERTICAL,
-                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT
-        );
-
     obj_properties[PROP_SPACING] =
         g_param_spec_int("spacing",
                          "Box Spacing",
@@ -438,11 +431,16 @@ sng_box_class_init(SngBoxClass *klass)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT
         );
 
-
     g_object_class_install_properties(
         object_class,
         N_PROPERTIES,
         obj_properties
+    );
+
+    g_object_class_override_property(
+        object_class,
+        PROP_ORIENTATION,
+        "orientation"
     );
 }
 

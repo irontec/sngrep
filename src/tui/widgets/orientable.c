@@ -20,37 +20,44 @@
  **
  ****************************************************************************/
 /**
- * @file separator.h
+ * @file orientable.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief
  *
  */
-#ifndef __SNGREP_SEPARATOR_H__
-#define __SNGREP_SEPARATOR_H__
+#include "config.h"
+#include "glib-extra/glib_enum_types.h"
+#include "orientable.h"
 
-#include <glib.h>
-#include <glib-object.h>
-#include "tui/widgets/orientable.h"
-#include "tui/widgets/widget.h"
+G_DEFINE_INTERFACE(SngOrientable, sng_orientable, G_TYPE_OBJECT)
 
-G_BEGIN_DECLS
-
-// Class declaration
-#define SNG_TYPE_SEPARATOR sng_separator_get_type()
-G_DECLARE_FINAL_TYPE(SngSeparator, sng_separator, SNG, SEPARATOR, SngWidget)
-
-struct _SngSeparator
+void
+sng_orientable_set_orientation(SngOrientable *orientable, SngOrientation orientation)
 {
-    //! Parent object attributes
-    SngWidget parent;
-    //! Separator orientation
+    g_return_if_fail(SNG_IS_ORIENTABLE(orientable));
+    g_object_set(orientable, "orientation", orientation, NULL);
+}
+
+SngOrientation
+sng_orientable_get_orientation(SngOrientable *orientable)
+{
+    g_return_val_if_fail(SNG_IS_ORIENTABLE(orientable), SNG_ORIENTATION_HORIZONTAL);
     SngOrientation orientation;
-};
+    g_object_get(orientable, "orientation", &orientation, NULL);
+    return orientation;
+}
 
-SngWidget *
-sng_separator_new(SngOrientation orientation);
-
-G_END_DECLS
-
-#endif    /* __SNGREP_SEPARATOR_H__ */
+static void
+sng_orientable_default_init(SngOrientableInterface *iface)
+{
+    g_object_interface_install_property(
+        iface,
+        g_param_spec_enum("orientation",
+                          "Orientation",
+                          "The orientation of the orientable",
+                          SNG_TYPE_ORIENTATION,
+                          SNG_ORIENTATION_VERTICAL,
+                          G_PARAM_CONSTRUCT | G_PARAM_READWRITE)
+    );
+}

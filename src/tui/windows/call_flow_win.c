@@ -29,10 +29,6 @@
 #include "config.h"
 #include <glib.h>
 #include "glib-extra/glib.h"
-#include <storage/message.h>
-#include <storage/stream.h>
-#include "packet/packet_sip.h"
-#include "capture/capture_pcap.h"
 #include "tui/tui.h"
 #include "tui/dialog.h"
 #include "tui/windows/call_flow_win.h"
@@ -40,6 +36,10 @@
 #include "tui/windows/msg_diff_win.h"
 #include "tui/windows/auth_validate_win.h"
 #include "tui/windows/save_win.h"
+#include "tui/widgets/flow_arrow.h"
+#include "tui/widgets/flow_msg_arrow.h"
+#include "tui/widgets/flow_rtp_arrow.h"
+#include "tui/widgets/flow_viewer.h"
 #ifdef WITH_PULSE
 #include "tui/windows/rtp_player_win.h"
 #endif
@@ -70,558 +70,26 @@
  *
  */
 
-G_DEFINE_TYPE(CallFlowWindow, call_flow_win, SNG_TYPE_WINDOW)
+G_DEFINE_TYPE(CallFlowWindow, call_flow_win, SNG_TYPE_APP_WINDOW)
 
-/**
- * @brief Return selected flow arrow
- *
- * User can select an arrow to compare times or payload with another
- * arrow. Don't confuse this with the current arrow (where the cursor is)
- *
- * @param ui UI Structure pointer
- * @return user selected arrow
- */
-static CallFlowArrow *
-call_flow_arrow_selected(SngAppWindow *window)
+SngAppWindow *
+call_flow_win_new()
 {
-    // Get panel info
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, NULL);
-
-    // No selected call
-    if (self->selected == -1)
-        return NULL;
-
-    return g_ptr_array_index(self->darrows, self->selected);
-
-}
-
-/**
- * @brief Return timestamp for given arrow
- *
- * This function is a wrapper to return arrow timestamp no matter what
- * type of arrow is passed. Arrows of different types store their times
- * in different locations.
- *
- * If pointer is invalid of arrow type doesn't match anything known, the
- * timestamp returned structure will be zero'd
- *
- * @param arrow Arrow structure pointer
- * @return timestamp for given arrow
- */
-static guint64
-call_flow_arrow_time(const CallFlowArrow *arrow)
-{
-    guint64 ts = 0;
-
-    if (arrow) {
-        if (arrow->type == CF_ARROW_SIP) {
-            Message *msg = (Message *) arrow->item;
-            ts = msg_get_time(msg);
-        } else if (arrow->type == CF_ARROW_RTP) {
-            Stream *stream = (Stream *) arrow->item;
-            ts = stream_time(stream);
-        }
-    }
-
-    return ts;
-}
-
-/**
- * @brief Sort arrows by timestamp
- *
- * This function acts as sorter for arrows vector. Each time a new arrow
- * is appended, it's sorted based on its timestamp.
- */
-static gint
-call_flow_arrow_time_sorter(const CallFlowArrow **a, const CallFlowArrow **b)
-{
-    return call_flow_arrow_time(*a) > call_flow_arrow_time(*b);
-}
-
-/**
- * @brief Filter displayed arrows based on configuration
- */
-static int
-call_flow_arrow_filter(void *item)
-{
-    CallFlowArrow *arrow = (CallFlowArrow *) item;
-
-    // SIP arrows are never filtered
-    if (arrow->type == CF_ARROW_SIP && setting_disabled(SETTING_TUI_CF_ONLYMEDIA)) {
-        return 1;
-    }
-
-    // RTP arrows are only displayed when requested
-    if (arrow->type == CF_ARROW_RTP && setting_enabled(SETTING_TUI_CF_MEDIA)) {
-        return 1;
-    }
-
-    // Rest of the arrows are never displayed
-    return 0;
-}
-
-/**
- * @brief Callback for searching arrows by item
- */
-static gboolean
-call_flow_arrow_find_item_cb(CallFlowArrow *arrow, gpointer item)
-{
-    return arrow->item == item;
-}
-
-/**
- * @brief Return the arrow of a SIP msg or RTP stream
- *
- * This function will try to find an existing arrow with a
- * message or stream equals to the giving pointer.
- *
- * @param window UI structure pointer
- * @param data Data to search in the arrow structure
- * @return a pointer to the found arrow or NULL
- */
-static CallFlowArrow *
-call_flow_arrow_find(SngAppWindow *window, const void *data)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, NULL);
-    g_return_val_if_fail(data != NULL, NULL);
-
-    guint index;
-    if (g_ptr_array_find_with_equal_func(
-        self->arrows, data,
-        (GEqualFunc) call_flow_arrow_find_item_cb, &index)) {
-        return g_ptr_array_index(self->arrows, index);
-    }
-
-    return NULL;
-}
-
-/**
- * @brief Create a new arrow of given type
- *
- * Allocate memory for a new arrow of the given type and associate the
- * item pointer. If the arrow already exists in the ui arrows vector
- * this function will return that arrow instead of creating a new one.
- *
- * This function WON'T add the arrow to any ui vector.
- *
- * @param window UI structure pointer
- * @param item Item pointer to associate to the arrow
- * @param type Type of arrow as defined in enum @CallFlowArrowType
- * @return an arrow pointer or NULL in case of error
- */
-static CallFlowArrow *
-call_flow_arrow_create(SngAppWindow *window, void *item, CallFlowArrowType type)
-{
-    CallFlowArrow *arrow;
-
-    if ((arrow = call_flow_arrow_find(window, item)) == NULL) {
-        // Create a new arrow of the given type
-        arrow = g_malloc0(sizeof(CallFlowArrow));
-        arrow->type = type;
-        arrow->item = item;
-    }
-
-    return arrow;
-}
-
-/**
- * @brief Get how many lines of screen an arrow will use
- *
- * Depending on the arrow type and panel display mode lines can
- * take more than two lines. This function will calculate how many
- * lines the arrow will use.
- *
- * @param window UI structure pointer
- * @param arrow Arrow structure to calculate height
- * @return height the arrow will have
- */
-static int
-call_flow_arrow_height(G_GNUC_UNUSED SngAppWindow *window, const CallFlowArrow *arrow)
-{
-    if (arrow->type == CF_ARROW_SIP) {
-        if (setting_enabled(SETTING_TUI_CF_ONLYMEDIA))
-            return 0;
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
-            return 1;
-        if (!msg_has_sdp(arrow->item))
-            return 2;
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_OFF)
-            return 2;
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FIRST)
-            return 2;
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FULL)
-            return msg_media_count(arrow->item) + 2;
-    } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP) {
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
-            return 1;
-        if (setting_disabled(SETTING_TUI_CF_MEDIA))
-            return 0;
-        return 2;
-    }
-
-    return 0;
-}
-
-/**
- * @brief Return the SIP message associated with the arrow
- *
- * Return the SIP message. If the arrow is of type SIP msg, it will
- * return the message itself. If the arrow is of type RTP stream,
- * it will return the SIP msg that setups the stream.
- *
- * @param arrow Call Flow Arrow pointer
- * @return associated SIP message with the arrow
- */
-static Message *
-call_flow_arrow_message(const CallFlowArrow *arrow)
-{
-    g_return_val_if_fail(arrow != NULL, NULL);
-
-    if (arrow->type == CF_ARROW_SIP) {
-        return arrow->item;
-    }
-
-    if (arrow->type == CF_ARROW_RTP) {
-        Stream *stream = arrow->item;
-        return stream->msg;
-    }
-
-    return NULL;
-}
-
-static CallFlowArrow *
-call_flow_arrow_find_prev_callid(SngAppWindow *window, const CallFlowArrow *arrow)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, NULL);
-    g_return_val_if_fail(arrow->type == CF_ARROW_SIP, NULL);
-
-    Message *msg = call_flow_arrow_message(arrow);
-
-    // Given arrow index
-    gint cur_idx = g_ptr_array_data_index(self->darrows, arrow);
-
-    for (gint i = cur_idx - 1; i > 0; i--) {
-        CallFlowArrow *prev = g_ptr_array_index(self->darrows, i);
-
-        if (prev->type != CF_ARROW_SIP)
-            continue;
-
-        Message *prev_msg = call_flow_arrow_message(prev);
-        g_return_val_if_fail(prev_msg != NULL, NULL);
-
-        if (msg_get_call(msg) == msg_get_call(prev_msg)
-            && msg_is_request(msg) == msg_is_request(prev_msg)
-            && !msg_is_retransmission(prev_msg)) {
-
-            return prev;
-        }
-    }
-
-    return NULL;
-}
-
-/**
- * @brief Get a flow column data starting at a given column index
- *
- * @param window UI structure pointer
- * @param callid Call-Id header of SIP payload
- * @param addr Address:port string
- * @param start Column index to start searching
- *
- * @return column structure pointer or NULL if not found
- */
-static CallFlowColumn *
-call_flow_column_get_first(SngAppWindow *window, const Address addr)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, NULL);
-
-    // Look for address or address:port ?
-    gboolean match_port = address_get_port(addr) != 0;
-
-    // Get alias value for given address
-    const gchar *alias = setting_get_alias(address_get_ip(addr));
-
-    for (GList *l = self->columns; l != NULL; l = l->next) {
-        CallFlowColumn *column = l->data;
-
-        // In compressed mode, we search using alias instead of address
-        if (setting_enabled(SETTING_TUI_CF_SPLITCALLID)) {
-            if (g_strcmp0(column->alias, alias) == 0) {
-                return column;
-            }
-        } else {
-            // Check if this column matches requested address
-            if (match_port) {
-                if (addressport_equals(column->addr, addr)) {
-                    return column;
-                }
-            } else {
-                // Dont check port
-                if (address_equals(column->addr, addr)) {
-                    return column;
-                }
-            }
-        }
-    }
-
-    return NULL;
-}
-
-/**
- * @brief Get a flow column data starting at a given column index
- *
- * @param window UI structure pointer
- * @param callid Call-Id header of SIP payload
- * @param addr Address:port string
- * @param start Column index to start searching
- *
- * @return column structure pointer or NULL if not found
- */
-static CallFlowColumn *
-call_flow_column_get_last(SngAppWindow *window, const Address addr)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, NULL);
-
-    // Look for address or address:port ?
-    gboolean match_port = address_get_port(addr) != 0;
-
-    // Get alias value for given address
-    const gchar *alias = setting_get_alias(address_get_ip(addr));
-
-    for (GList *l = g_list_last(self->columns); l != NULL; l = l->prev) {
-        CallFlowColumn *column = l->data;
-
-        // In compressed mode, we search using alias instead of address
-        if (setting_enabled(SETTING_TUI_CF_SPLITCALLID)) {
-            if (g_strcmp0(column->alias, alias) == 0) {
-                return column;
-            }
-        } else {
-            // Check if this column matches requested address
-            if (match_port) {
-                if (addressport_equals(column->addr, addr)) {
-                    return column;
-                }
-            } else {
-                // Dont check port
-                if (address_equals(column->addr, addr)) {
-                    return column;
-                }
-            }
-        }
-    }
-
-    return NULL;
-}
-
-static gint
-call_flow_column_sorter(CallFlowColumn *a, CallFlowColumn *b)
-{
-    return a->pos - b->pos;
-}
-
-static CallFlowColumn *
-call_flow_column_create(SngAppWindow *window, const Address addr)
-{
-    // Get Window info
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, NULL);
-
-    // Create a new column
-    CallFlowColumn *column = g_malloc0(sizeof(CallFlowColumn));
-    g_return_val_if_fail(column != NULL, NULL);
-
-    column->addr = addr;
-    column->alias = setting_get_alias(address_get_ip(column->addr));
-
-    // Check if column has externip
-    const gchar *twin_ip = setting_get_externip(address_get_ip(column->addr));
-    if (twin_ip != NULL) {
-        Address twin_address = address_from_str(twin_ip);
-        CallFlowColumn *twin = call_flow_column_get_first(window, twin_address);
-        if (twin != NULL) {
-            // Set position based on twin column
-            twin->twin = column;
-            column->twin = twin;
-            column->pos = twin->pos + 1;
-        }
-        address_free(twin_address);
-    }
-
-    // Set position after last existing column
-    if (column->twin == NULL) {
-        if (g_list_length(self->columns)) {
-            CallFlowColumn *last = g_list_last_data(self->columns);
-            if (last != NULL) {
-                column->pos = last->pos + CF_COLUMN_WIDTH;
-            }
-        }
-    }
-
-    // Add to columns list
-    self->columns = g_list_insert_sorted(self->columns, column, (GCompareFunc) call_flow_column_sorter);
-
-    return column;
-}
-
-void
-call_flow_column_free(CallFlowColumn *column)
-{
-    g_free(column);
-}
-
-static void
-call_flow_arrow_set_columns(SngAppWindow *window, CallFlowArrow *arrow, CallFlowArrowDir dir)
-{
-    g_return_if_fail(window != NULL);
-    g_return_if_fail(arrow != NULL);
-    g_return_if_fail(arrow->type == CF_ARROW_SIP);
-
-    // Get Window info
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_if_fail(self != NULL);
-
-    // Get arrow information
-    Message *msg = arrow->item;
-
-    if (dir == CF_ARROW_DIR_ANY) {
-        // Try to reuse current call columns if found
-        Call *call = msg_get_call(msg);
-        g_return_if_fail(call != NULL);
-
-        GPtrArray *msgs = call->msgs;
-        for (guint i = 0; i < g_ptr_array_len(msgs); i++) {
-            CallFlowArrow *msg_arrow = call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
-
-            if (msg_arrow == NULL
-                || msg_arrow->type != CF_ARROW_SIP
-                || msg_arrow->scolumn == NULL
-                || msg_arrow->dcolumn == NULL) {
-                continue;
-            }
-
-            if (msg_arrow == arrow)
-                break;
-
-            if (addressport_equals(msg_src_address(msg), msg_arrow->scolumn->addr)
-                && addressport_equals(msg_dst_address(msg), msg_arrow->dcolumn->addr)) {
-                arrow->scolumn = msg_arrow->scolumn;
-                arrow->dcolumn = msg_arrow->dcolumn;
-                break;
-            }
-
-            if (addressport_equals(msg_src_address(msg), msg_arrow->dcolumn->addr)
-                && addressport_equals(msg_dst_address(msg), msg_arrow->scolumn->addr)) {
-                arrow->scolumn = msg_arrow->dcolumn;
-                arrow->dcolumn = msg_arrow->scolumn;
-                break;
-            }
-        }
-
-        // Fallback use any available arrow
-        if (arrow->scolumn == NULL)
-            arrow->scolumn = call_flow_column_get_first(window, msg_src_address(msg));
-
-        if (arrow->dcolumn == NULL)
-            arrow->dcolumn = call_flow_column_get_first(window, msg_dst_address(msg));
-
-    } else if (dir == CF_ARROW_DIR_RIGHT) {
-        arrow->scolumn = call_flow_column_get_first(window, msg_src_address(msg));
-
-        GList *lscolumn = g_list_find(self->columns, arrow->scolumn);
-        for (GList *l = lscolumn; l != NULL; l = l->next) {
-            CallFlowColumn *dcolumn = l->data;
-            if (addressport_equals(msg_dst_address(msg), dcolumn->addr)) {
-                arrow->dcolumn = dcolumn;
-
-                // Check if there is a source column with src address is nearer
-                for (GList *m = l; m != NULL; m = m->prev) {
-                    CallFlowColumn *scolumn = m->data;
-                    if (addressport_equals(msg_src_address(msg), scolumn->addr)) {
-                        arrow->scolumn = scolumn;
-                        break;
-                    }
-                }
-
-                break;
-            }
-        }
-
-        // If we need to create destination arrow, use nearest source column to the end
-        if (arrow->dcolumn == NULL)
-            arrow->scolumn = call_flow_column_get_last(window, msg_src_address(msg));
-
-    } else if (dir == CF_ARROW_DIR_LEFT) {
-        arrow->scolumn = call_flow_column_get_last(window, msg_src_address(msg));
-
-        GList *lscolumn = g_list_find(self->columns, arrow->scolumn);
-        for (GList *l = lscolumn; l != NULL; l = l->prev) {
-            CallFlowColumn *dcolumn = l->data;
-            if (addressport_equals(msg_dst_address(msg), dcolumn->addr)) {
-                arrow->dcolumn = dcolumn;
-
-                // Check if there is a destination column with dst address is nearer
-                for (GList *m = l; m != NULL; m = m->next) {
-                    CallFlowColumn *scolumn = m->data;
-                    if (addressport_equals(msg_src_address(msg), scolumn->addr)) {
-                        arrow->scolumn = scolumn;
-                        break;
-                    }
-                }
-
-                break;
-            }
-        }
-
-        // If we need to create destination arrow, use nearest source column to the end
-        if (arrow->scolumn == NULL)
-            arrow->dcolumn = call_flow_column_get_last(window, msg_dst_address(msg));
-    }
-
-    // Create any non-existent columns
-    if (arrow->scolumn == NULL)
-        arrow->scolumn = call_flow_column_create(window, msg_src_address(msg));
-
-    if (arrow->dcolumn == NULL)
-        arrow->dcolumn = call_flow_column_create(window, msg_dst_address(msg));
-}
-
-static gint
-call_flow_win_columns_width(SngAppWindow *window)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, 0);
-
-    return g_list_length(self->columns) * CF_COLUMN_WIDTH + 2;
-}
-
-static gint
-call_flow_win_arrows_height(SngAppWindow *window)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, 0);
-
-    gint height = 0;
-    for (guint i = 0; i < g_ptr_array_len(self->darrows); i++) {
-        CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
-        height += call_flow_arrow_height(window, arrow);
-    }
-
-    return height;
+    return g_object_new(
+        WINDOW_TYPE_CALL_FLOW,
+        "height", getmaxy(stdscr),
+        "width", getmaxx(stdscr),
+        NULL
+    );
 }
 
 /**
  * @brief Draw the footer of the panel with keybindings info
  *
- * @param window UI structure pointer
+ * @param call_flow_window UI structure pointer
  */
 static void
-call_flow_win_draw_footer(SngAppWindow *window)
+call_flow_win_draw_footer(CallFlowWindow *call_flow_window)
 {
     const char *keybindings[] = {
         key_action_key_str(ACTION_CONFIRM), "Raw",
@@ -636,755 +104,7 @@ call_flow_win_draw_footer(SngAppWindow *window)
         key_action_key_str(ACTION_AUTH_VALIDATE), "Auth Validate"
     };
 
-    sng_app_window_draw_bindings(window, keybindings, 20);
-}
-
-static void
-call_flow_win_create_arrows(SngAppWindow *window)
-{
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_if_fail(self != NULL);
-
-    // Copy displayed arrows
-    self->darrows = self->arrows;
-
-    // Create pending SIP arrows
-    Message *msg = NULL;
-    while ((msg = call_group_get_next_msg(self->group, msg))) {
-        if (call_flow_arrow_find(window, msg) == NULL) {
-            g_ptr_array_add(
-                self->arrows,
-                call_flow_arrow_create(window, msg, CF_ARROW_SIP)
-            );
-        }
-    }
-
-    // Create pending RTP arrows
-    Stream *stream = NULL;
-    while ((stream = call_group_get_next_stream(self->group, stream))) {
-        if (!call_flow_arrow_find(window, stream)) {
-            CallFlowArrow *arrow = call_flow_arrow_create(window, stream, CF_ARROW_RTP);
-            g_ptr_array_add(self->arrows, arrow);
-        }
-    }
-
-    // Sort arrows by time
-    g_ptr_array_sort(self->arrows, (GCompareFunc) call_flow_arrow_time_sorter);
-
-    // Set arrow columns after sorting arrows by time
-    for (guint i = 0; i < g_ptr_array_len(self->arrows); i++) {
-        CallFlowArrow *arrow = g_ptr_array_index(self->arrows, i);
-
-        if (arrow->type != CF_ARROW_SIP)
-            continue;
-
-        Message *msg = call_flow_arrow_message(arrow);
-
-        if (setting_disabled(SETTING_TUI_CF_SPLITCALLID)
-            && msg_is_initial_transaction(msg)) {
-            // Force Initial Transaction Arrows direction
-            call_flow_arrow_set_columns(
-                window, arrow,
-                msg_is_request(msg) ? CF_ARROW_DIR_RIGHT : CF_ARROW_DIR_LEFT);
-        } else {
-            // Get origin and destination column
-            call_flow_arrow_set_columns(
-                window, arrow,
-                CF_ARROW_DIR_ANY);
-        }
-    }
-}
-
-/**
- * @brief Draw the visible columns in panel window
- *
- * @param app_window UI structure pointer
- */
-static void
-call_flow_win_draw_columns(SngAppWindow *app_window)
-{
-    Call *call = NULL;
-    Stream *stream;
-    char coltext[SETTING_MAX_LEN];
-
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
-    g_return_if_fail(self != NULL);
-
-    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(app_window));
-
-    // Add RTP columns FIXME Really
-    if (!setting_disabled(SETTING_TUI_CF_MEDIA)) {
-        while ((call = call_group_get_next(self->group, call))) {
-            for (guint i = 0; i < g_ptr_array_len(call->streams); i++) {
-                stream = g_ptr_array_index(call->streams, i);
-                if (stream->type == STREAM_RTP && stream_get_count(stream)) {
-                    if (call_flow_column_get_first(app_window, address_strip_port(stream->src)) == NULL) {
-                        call_flow_column_create(app_window, address_strip_port(stream->src));
-                    }
-                    if (call_flow_column_get_first(app_window, address_strip_port(stream->dst)) == NULL) {
-                        call_flow_column_create(app_window, address_strip_port(stream->dst));
-                    }
-                }
-            }
-        }
-    }
-
-    // Draw columns
-    for (GList *l = self->columns; l != NULL; l = l->next) {
-        CallFlowColumn *column = l->data;
-
-        // Draw horizontal line below column address
-        mvwhline(self->columns_pad, 2, 10 + column->pos, ACS_HLINE, 21);
-        mvwaddch(self->columns_pad, 2, 20 + column->pos, ACS_TTEE);
-
-        if (column->twin && column->twin->pos < column->pos) {
-            mvwaddch(self->columns_pad, 2, 20 + column->twin->pos, ACS_TTEE);
-        }
-
-        // Draw vertical line below column (in arrows pad)
-        mvwvline(self->arrows_pad, 0, 20 + column->pos, ACS_VLINE, getmaxy(self->arrows_pad));
-
-        // Set bold to this address if it's local
-        if (setting_enabled(SETTING_TUI_CF_LOCALHIGHLIGHT)) {
-            if (address_is_local(column->addr))
-                wattron(self->columns_pad, A_BOLD);
-        }
-
-        if (setting_enabled(SETTING_TUI_CF_SPLITCALLID) || !address_get_port(column->addr)) {
-            snprintf(coltext, SETTING_MAX_LEN, "%s", address_get_ip(column->addr));
-        } else if (setting_enabled(SETTING_TUI_DISPLAY_ALIAS)) {
-            if (strlen(address_get_ip(column->addr)) > 15) {
-                snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
-                         SETTING_MAX_LEN - 7,
-                         column->alias + strlen(column->alias) - 13,
-                         address_get_port(column->addr)
-                );
-            } else {
-                snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
-                         SETTING_MAX_LEN - 7,
-                         column->alias,
-                         address_get_port(column->addr)
-                );
-            }
-        } else {
-            if (strlen(address_get_ip(column->addr)) > 15) {
-                snprintf(coltext, SETTING_MAX_LEN, "..%.*s:%hu",
-                         SETTING_MAX_LEN - 7,
-                         address_get_ip(column->addr) + strlen(address_get_ip(column->addr)) - 13,
-                         address_get_port(column->addr)
-                );
-            } else {
-                snprintf(coltext, SETTING_MAX_LEN, "%.*s:%hu",
-                         SETTING_MAX_LEN - 7,
-                         address_get_ip(column->addr),
-                         address_get_port(column->addr)
-                );
-            }
-        }
-
-        if (column->twin == NULL) {
-            mvwprintw(self->columns_pad, 1, 10 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
-        } else if (column->pos < column->twin->pos) {
-            mvwprintw(self->columns_pad, 0, 5 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
-        } else {
-            mvwprintw(self->columns_pad, 1, 15 + column->pos + (22 - strlen(coltext)) / 2, "%s", coltext);
-        }
-        wattroff(self->columns_pad, A_BOLD);
-    }
-
-    // Copy columns to column subwindow
-    copywin(
-        self->columns_pad,
-        self->colunms_win,
-        0, self->hscroll.pos, 0, 0,
-        getmaxy(self->colunms_win) - 1,
-        getmaxx(self->colunms_win) - 1,
-        FALSE
-    );
-    touchwin(win);
-}
-
-/**
- * @brief Draw the message arrow in the given line
- *
- * Draw the given message arrow in the given line.
- * This function will calculate origin and destination coordinates
- * base on message information. Each message use multiple lines
- * depending on the display mode of call flow
- *
- * @param window UI structure pointer
- * @param arrow Call flow arrow with message to be drawn
- * @param cline Window line to draw the message
- * @return the number of screen lines this arrow uses on screen
- */
-static gint
-call_flow_win_draw_message(SngAppWindow *window, CallFlowArrow *arrow, gint cline)
-{
-    char msg_method[ATTR_MAXLEN];
-    char msg_time[80];
-    char method[ATTR_MAXLEN + 7];
-    char delta[15] = { 0 };
-    char mediastr[40];
-    guint64 color = 0;
-    int msglen;
-
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, 0);
-
-    // Store arrow start line
-    arrow->line = cline + 1;
-
-    // Calculate how many lines this message requires
-    arrow->height = call_flow_arrow_height(window, arrow);
-
-    Message *msg = arrow->item;
-    g_return_val_if_fail(msg != NULL, 0);
-
-    Call *call = msg_get_call(msg);
-    g_return_val_if_fail(call != NULL, 0);
-
-    // Packet SDP data
-    PacketSdpData *sdp_data = packet_sdp_data(msg->packet);
-    PacketSdpMedia *media = NULL;
-    if (sdp_data != NULL) {
-        media = g_list_nth_data(sdp_data->medias, 0);
-    }
-    // For extended, use xcallid instead
-    date_time_time_to_str(msg_get_time(msg), msg_time);
-
-    // Get Message method (include extra info)
-    sprintf(msg_method, "%s", msg_get_method_str(msg));
-    strcpy(method, msg_method);
-
-    // If message has sdp information
-    if (msg_has_sdp(msg) && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_OFF) {
-        // Show sdp tag in title
-        sprintf(method, "%s (SDP)", msg_method);
-    }
-
-    // If message has sdp information
-    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
-        // Show sdp tag in title
-        if (msg_has_sdp(msg)) {
-            sprintf(method, "%.*s (SDP)", 12, msg_method);
-        } else {
-            sprintf(method, "%.*s", 17, msg_method);
-        }
-    }
-
-    if (media && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FIRST) {
-        sprintf(method, "%.3s (%s:%u)",
-                msg_method,
-                (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address,
-                media->rtpport);
-    }
-
-    if (media && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FULL) {
-        sprintf(method, "%.3s (%s)",
-                msg_method,
-                (media->sconn != NULL) ? media->sconn->address : sdp_data->sconn->address
-        );
-    }
-
-    // Draw message type or status and line
-    msglen = (strlen(method) > 24) ? 24 : strlen(method);
-
-    // Determine start and end position of the arrow line
-    int startpos, endpos;
-    if (arrow->scolumn == arrow->dcolumn) {
-        // Try to follow previous arrow direction
-        CallFlowArrow *prev_arrow = call_flow_arrow_find_prev_callid(window, arrow);
-        if (prev_arrow != NULL && prev_arrow->dir == CF_ARROW_DIR_LEFT) {
-            arrow->dir = CF_ARROW_DIR_SPIRAL_LEFT;
-            startpos = 21 + arrow->dcolumn->pos;
-            endpos = 17 + arrow->scolumn->pos;
-        } else {
-            arrow->dir = CF_ARROW_DIR_SPIRAL_RIGHT;
-            startpos = 19 + arrow->dcolumn->pos;
-            endpos = 20 + arrow->scolumn->pos;
-        }
-    } else if (arrow->scolumn->pos < arrow->dcolumn->pos) {
-        arrow->dir = CF_ARROW_DIR_RIGHT;
-        startpos = 20 + arrow->scolumn->pos;
-        endpos = 20 + arrow->dcolumn->pos;
-    } else {
-        arrow->dir = CF_ARROW_DIR_LEFT;
-        startpos = 20 + arrow->dcolumn->pos;
-        endpos = 20 + arrow->scolumn->pos;
-    }
-    int distance = abs(endpos - startpos) - 3;
-
-    // Highlight current message
-    if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-        switch (setting_get_enum(SETTING_TUI_CF_HIGHTLIGHT)) {
-            case SETTING_ARROW_HIGHLIGH_BOLD:
-                wattron(self->arrows_pad, A_BOLD);
-                break;
-            case SETTING_ARROW_HIGHLIGH_REVERSE:
-                wattron(self->arrows_pad, A_REVERSE);
-                break;
-            case SETTING_ARROW_HIGHLIGH_REVERSEBOLD:
-                wattron(self->arrows_pad, A_REVERSE);
-                wattron(self->arrows_pad, A_BOLD);
-                break;
-        }
-    }
-
-    // Color the message {
-    switch (setting_get_enum(SETTING_TUI_COLORMODE)) {
-        case SETTING_COLORMODE_REQUEST:
-            // Color by request / response
-            color = (msg_is_request(msg)) ? CP_RED_ON_DEF : CP_GREEN_ON_DEF;
-            break;
-        case SETTING_COLORMODE_CALLID:
-            // Color by call-id
-            color = call_group_color(self->group, msg->call);
-            break;
-        case SETTING_COLORMODE_CSEQ:
-            // Color by CSeq within the same call
-            color = msg_get_cseq(msg) % 7 + 1;
-            break;
-    }
-
-    // Print arrow in the same line than message
-    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED) {
-        arrow->line = cline;
-    }
-
-    // Turn on the message color
-    wattron(self->arrows_pad, COLOR_PAIR(color));
-
-    // Clear the line
-    mvwprintw(self->arrows_pad, cline, startpos + 2, "%*s", distance, "");
-
-    // Draw method
-    if (arrow->dir == CF_ARROW_DIR_SPIRAL_RIGHT) {
-        mvwprintw(self->arrows_pad, cline, startpos + 5, "%.26s", method);
-    } else if (arrow->dir == CF_ARROW_DIR_SPIRAL_LEFT) {
-        mvwprintw(self->arrows_pad, cline, startpos - msglen - 4, "%.26s", method);
-    } else {
-        mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - msglen / 2 + 2, "%.26s", method);
-    }
-
-    // Draw media information
-    if (msg_has_sdp(msg) && setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FULL) {
-        arrow->line += g_list_length(sdp_data->medias);
-        for (GList *l = sdp_data->medias; l != NULL; l = l->next) {
-            cline++;
-            PacketSdpMedia *media = l->data;
-            sprintf(mediastr, "%s %d (%s)",
-                    packet_sdp_media_type_str(media->type),
-                    media->rtpport,
-                    msg_get_preferred_codec_alias(msg));
-            mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
-        }
-    }
-
-    if (arrow->dir != CF_ARROW_DIR_SPIRAL_RIGHT && arrow->dir != CF_ARROW_DIR_SPIRAL_LEFT) {
-        if (arrow == call_flow_arrow_selected(window)) {
-            mvwhline(self->arrows_pad, arrow->line, startpos + 2, '=', distance);
-        } else {
-            mvwhline(self->arrows_pad, arrow->line, startpos + 2, ACS_HLINE, distance);
-        }
-    }
-
-    // Write the arrow at the end of the message (two arrows if this is a retrans)
-    if (arrow->dir == CF_ARROW_DIR_SPIRAL_RIGHT) {
-        mvwaddwstr(self->arrows_pad, arrow->line, startpos + 2, tui_acs_utf8('<'));
-        if (msg_is_retransmission(msg)) {
-            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 3, tui_acs_utf8('<'));
-            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 4, tui_acs_utf8('<'));
-        }
-        // If multiple lines are available, print a spiral icon
-        if (arrow->line != cline) {
-            mvwaddch(self->arrows_pad, arrow->line, startpos + 3, ACS_LRCORNER);
-            mvwaddch(self->arrows_pad, arrow->line - 1, startpos + 3, ACS_URCORNER);
-            mvwaddch(self->arrows_pad, arrow->line - 1, startpos + 2, ACS_HLINE);
-        }
-    } else if (arrow->dir == CF_ARROW_DIR_SPIRAL_LEFT) {
-        mvwaddwstr(self->arrows_pad, arrow->line, startpos - 2, tui_acs_utf8('>'));
-        if (msg_is_retransmission(msg)) {
-            mvwaddwstr(self->arrows_pad, arrow->line, startpos - 3, tui_acs_utf8('>'));
-            mvwaddwstr(self->arrows_pad, arrow->line, startpos - 4, tui_acs_utf8('>'));
-        }
-        // If multiple lines are available, print a spiral icon
-        if (arrow->line != cline) {
-            mvwaddch(self->arrows_pad, arrow->line, startpos - 3, ACS_LLCORNER);
-            mvwaddch(self->arrows_pad, arrow->line - 1, startpos - 3, ACS_ULCORNER);
-            mvwaddch(self->arrows_pad, arrow->line - 1, startpos - 2, ACS_HLINE);
-        }
-    } else if (arrow->dir == CF_ARROW_DIR_RIGHT) {
-        mvwaddwstr(self->arrows_pad, arrow->line, endpos - 2, tui_acs_utf8('>'));
-        if (msg_is_retransmission(msg)) {
-            mvwaddwstr(self->arrows_pad, arrow->line, endpos - 3, tui_acs_utf8('>'));
-            mvwaddwstr(self->arrows_pad, arrow->line, endpos - 4, tui_acs_utf8('>'));
-        }
-    } else {
-        mvwaddwstr(self->arrows_pad, arrow->line, startpos + 2, tui_acs_utf8('<'));
-        if (msg_is_retransmission(msg)) {
-            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 3, tui_acs_utf8('<'));
-            mvwaddwstr(self->arrows_pad, arrow->line, startpos + 4, tui_acs_utf8('<'));
-        }
-    }
-
-    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
-        mvwprintw(self->arrows_pad, cline, startpos + distance / 2 - msglen / 2 + 2, " %.26s ", method);
-
-    // Turn off colors
-    wattroff(self->arrows_pad, COLOR_PAIR(CP_RED_ON_DEF));
-    wattroff(self->arrows_pad, COLOR_PAIR(CP_GREEN_ON_DEF));
-    wattroff(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
-    wattroff(self->arrows_pad, COLOR_PAIR(CP_YELLOW_ON_DEF));
-    wattroff(self->arrows_pad, A_BOLD | A_REVERSE);
-
-    // Print timestamp
-    if (self->arrowtime) {
-        if (arrow == call_flow_arrow_selected(window))
-            wattron(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
-
-        if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-            wattron(self->arrows_pad, A_BOLD);
-            mvwprintw(self->arrows_pad, cline, 2, "%s", msg_time);
-            wattroff(self->arrows_pad, A_BOLD);
-        } else {
-            mvwprintw(self->arrows_pad, cline, 2, "%s", msg_time);
-        }
-
-        // Print delta from selected message
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
-            if (self->selected == -1) {
-                if (setting_enabled(SETTING_TUI_CF_DELTA)) {
-                    date_time_to_delta(
-                        msg_get_time(msg),
-                        msg_get_time(call_group_get_next_msg(self->group, msg)),
-                        delta
-                    );
-                }
-            } else if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-                date_time_to_delta(
-                    msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window))),
-                    msg_get_time(msg),
-                    delta
-                );
-            }
-
-            if (strlen(delta)) {
-                wattron(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
-                mvwprintw(self->arrows_pad, cline + 1, 2, "%15s", delta);
-            }
-            wattroff(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
-        }
-    }
-    wattroff(self->arrows_pad, COLOR_PAIR(CP_CYAN_ON_DEF));
-
-    return arrow->height;
-}
-
-/**
- * @brief Draw the stream data in the given line
- *
- * Draw the given arrow of type stream in the given line.
- *
- * @param window UI structure pointer
- * @param arrow Call flow arrow of stream to be drawn
- * @param cline Window line to draw the message
- * @return the number of screen lines this arrow uses on screen
- */
-static int
-call_flow_win_draw_rtp_stream(SngAppWindow *window, CallFlowArrow *arrow, int cline)
-{
-    char text[50], time[20];
-    Stream *stream = arrow->item;
-    Message *msg;
-    CallFlowArrow *msgarrow;
-
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_val_if_fail(self != NULL, 0);
-
-    // Store arrow start line
-    arrow->line = cline + 1;
-
-    // Calculate how many lines this message requires
-    arrow->height = call_flow_arrow_height(window, arrow);
-
-    // Get arrow text
-    g_autofree const gchar *stream_format = stream_get_format(stream);
-    guint stream_count = stream_get_count(stream);
-    sprintf(text, "RTP (%s) %d", stream_format, stream_count);
-
-    // Message with Stream destination configured in SDP content
-    msg = stream->msg;
-
-    // Reuse the msg arrow columns as destination column
-    if ((msgarrow = call_flow_arrow_find(window, msg))) {
-        if (address_equals(msgarrow->scolumn->addr, stream->src))
-            arrow->scolumn = msgarrow->scolumn;
-        if (address_equals(msgarrow->scolumn->addr, stream->dst))
-            arrow->dcolumn = msgarrow->scolumn;
-        if (address_equals(msgarrow->dcolumn->addr, stream->src))
-            arrow->scolumn = msgarrow->dcolumn;
-        if (address_equals(msgarrow->dcolumn->addr, stream->dst))
-            arrow->dcolumn = msgarrow->dcolumn;
-    }
-
-    // fallback: Just use any column that have the destination IP printed
-    if (arrow->dcolumn == NULL) {
-        arrow->dcolumn =
-            call_flow_column_get_first(window, address_strip_port(stream->dst));
-    }
-
-    if (arrow->scolumn == NULL) {
-        arrow->scolumn =
-            call_flow_column_get_first(window, address_strip_port(stream->src));
-    }
-
-    // Determine start and end position of the arrow line
-    int startpos, endpos;
-    if (arrow->scolumn->pos < arrow->dcolumn->pos) {
-        arrow->dir = CF_ARROW_DIR_RIGHT;
-        startpos = 20 + arrow->scolumn->pos;
-        endpos = 20 + arrow->dcolumn->pos;
-    } else {
-        arrow->dir = CF_ARROW_DIR_LEFT;
-        startpos = 20 + arrow->dcolumn->pos;
-        endpos = 20 + arrow->scolumn->pos;
-    }
-    int distance = 0;
-
-    if (startpos != endpos) {
-        // In compressed mode, we display the src and dst port inside the arrow
-        // so fixup the stard and end position
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
-            startpos += 5;
-            endpos -= 5;
-        }
-        distance = abs(endpos - startpos) - 4 + 1;
-    } else {
-        // Fix port positions
-        startpos -= 2;
-        endpos += 2;
-        distance = 1;
-
-        // Fix arrow direction based on ports
-        if (address_get_port(stream->src) < address_get_port(stream->dst)) {
-            arrow->dir = CF_ARROW_DIR_RIGHT;
-        } else {
-            arrow->dir = CF_ARROW_DIR_LEFT;
-        }
-    }
-
-    // Highlight current message
-    if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-        switch (setting_get_enum(SETTING_TUI_CF_HIGHTLIGHT)) {
-            case SETTING_ARROW_HIGHLIGH_BOLD:
-                wattron(self->arrows_pad, A_BOLD);
-                break;
-            case SETTING_ARROW_HIGHLIGH_REVERSE:
-                wattron(self->arrows_pad, A_REVERSE);
-                break;
-            case SETTING_ARROW_HIGHLIGH_REVERSEBOLD:
-                wattron(self->arrows_pad, A_REVERSE);
-                wattron(self->arrows_pad, A_BOLD);
-                break;
-        }
-    }
-
-    // Check if displayed stream is active
-    gboolean active = stream_is_active(stream);
-
-    // Clear the line
-    mvwprintw(self->arrows_pad, cline, startpos + 2, "%*s", distance, "");
-    // Draw RTP arrow text
-    mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
-
-    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED)
-        cline++;
-
-    // Draw line between columns
-    if (active)
-        mvwhline(self->arrows_pad, cline, startpos + 2, '-', distance);
-    else
-        mvwhline(self->arrows_pad, cline, startpos + 2, ACS_HLINE, distance);
-
-    // Write the arrow at the end of the message (two arrows if this is a retrans)
-    if (arrow->dir == CF_ARROW_DIR_RIGHT) {
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
-            mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->src));
-            mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->dst));
-        }
-        mvwaddwstr(self->arrows_pad, cline, endpos - 2, tui_acs_utf8('>'));
-        if (active) {
-            arrow->rtp_count = stream_get_count(stream);
-            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
-            mvwaddwstr(self->arrows_pad, cline, startpos + arrow->rtp_ind_pos + 2, tui_acs_utf8('>'));
-        }
-    } else {
-        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
-            mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(stream->src));
-            mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(stream->dst));
-        }
-        mvwaddwstr(self->arrows_pad, cline, startpos + 2, tui_acs_utf8('<'));
-        if (active) {
-            arrow->rtp_count = stream_get_count(stream);
-            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
-            mvwaddwstr(self->arrows_pad, cline, endpos - arrow->rtp_ind_pos - 2, tui_acs_utf8('<'));
-        }
-    }
-
-    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
-        mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
-
-    wattroff(self->arrows_pad, A_BOLD | A_REVERSE);
-
-    // Print timestamp
-    if (self->arrowtime) {
-        date_time_time_to_str(stream_time(stream), time);
-        if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
-            wattron(self->arrows_pad, A_BOLD);
-            mvwprintw(self->arrows_pad, cline - 1, 2, "%s", time);
-            wattroff(self->arrows_pad, A_BOLD);
-        } else {
-            mvwprintw(self->arrows_pad, cline - 1, 2, "%s", time);
-        }
-
-    }
-
-    return arrow->height;
-}
-
-/**
- * @brief Draw a single arrow in arrow flow
- *
- * This function draws an arrow of any type in the given line of the flow.
- *
- * @param window UI Structure pointer
- * @param arrow Arrow structure pointer of any type
- * @param line Line of the flow window to draw this arrow
- * @return the number of screen lines this arrow uses on screen
- */
-static gint
-call_flow_win_draw_arrow(SngAppWindow *window, CallFlowArrow *arrow, gint line)
-{
-    g_return_val_if_fail(arrow != NULL, 0);
-
-    if (arrow->type == CF_ARROW_SIP) {
-        return call_flow_win_draw_message(window, arrow, line);
-    } else {
-        return call_flow_win_draw_rtp_stream(window, arrow, line);
-    }
-}
-
-/**
- * @brief Draw arrows in the visible part of the panel
- *
- * @param window UI structure pointer
- */
-static void
-call_flow_win_draw_arrows(SngAppWindow *window)
-{
-    int cline = 0;
-
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_if_fail(self != NULL);
-
-    // Draw arrows
-    for (guint i = 0; i < g_ptr_array_len(self->darrows); i++) {
-        CallFlowArrow *arrow = g_ptr_array_index(self->darrows, i);
-
-        if (!call_flow_arrow_filter(arrow))
-            continue;
-
-        // Draw arrow
-        cline += call_flow_win_draw_arrow(window, arrow, cline);
-    }
-
-    // Copy Arrows to arrow subwindow
-    copywin(
-        self->arrows_pad,
-        self->arrows_win,
-        self->vscroll.pos, self->hscroll.pos,
-        0, 0,
-        getmaxy(self->arrows_win) - 1,
-        getmaxx(self->arrows_win) - 1,
-        FALSE
-    );
-
-    // Copy Arrow Times to arrow subwindow
-    if (self->arrowtime) {
-        copywin(
-            self->arrows_pad,
-            self->arrows_win,
-            self->vscroll.pos, 0,
-            0, 0,
-            getmaxy(self->arrows_win) - 1,
-            19,
-            FALSE
-        );
-    }
-}
-
-/**
- * @brief Draw raw panel with message payload
- *
- * Draw the given message payload into the raw window.
- *
- * @param window UI structure pointer
- * @param msg Message data to draw
- */
-static void
-call_flow_win_draw_raw(SngAppWindow *window, Message *msg)
-{
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_if_fail(self != NULL);
-
-    // Print msg payload
-    draw_message(self->raw_win, msg);
-}
-
-/**
- * @brief Draw raw panel with RTCP data
- *
- * Draw the given stream data into the raw window.
- *
- * @param window UI structure pointer
- * @param rtcp stream containing the RTCP conection data
- * @return 0 in all cases
- */
-static int
-call_flow_win_draw_raw_rtcp(SngAppWindow *window, G_GNUC_UNUSED Stream *stream)
-{
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-
-    guint row = 1;
-    mvwprintw(self->raw_win, row++, 1, "RTP Stream Analysis");
-    mvwhline(self->raw_win, row++, 1, ACS_HLINE, getmaxx(self->raw_win) - 1);
-    mvwprintw(self->raw_win, row++, 1, "Source: %s:%hu",
-              address_get_ip(stream->src), address_get_port(stream->src));
-    mvwprintw(self->raw_win, row++, 1, "Destination: %s:%hu",
-              address_get_ip(stream->dst), address_get_port(stream->dst));
-    mvwprintw(self->raw_win, row++, 1, "SSRC: 0x%X", stream->ssrc);
-    mvwprintw(self->raw_win, row++, 1, "Packets: %d / %d", stream->packet_count, stream->stats.expected);
-    mvwprintw(self->raw_win, row++, 1, "Lost: %d (%.1f%%)", stream->stats.lost,
-              (gdouble) stream->stats.lost / stream->stats.expected * 100);
-    mvwprintw(self->raw_win, row++, 1, "Out of sequence: %d (%.1f%%)", stream->stats.oos,
-              (gdouble) stream->stats.oos / stream->packet_count * 100);
-    mvwprintw(self->raw_win, row++, 1, "Max Delta: %.2f ms", stream->stats.max_delta);
-    mvwprintw(self->raw_win, row++, 1, "Max Jitter: %.2f ms", stream->stats.max_jitter);
-    mvwprintw(self->raw_win, row++, 1, "Mean Jitter: %.2f ms", stream->stats.mean_jitter);
-    mvwprintw(self->raw_win, row++, 1, "Problems: %s", (stream->stats.lost) ? "Yes" : "No");
-    row++;
-
-    mvwprintw(self->raw_win, row++, 1, "RTCP VoIP Metrics Report");
-    mvwhline(self->raw_win, row++, 1, ACS_HLINE, getmaxx(self->raw_win));
-
-    return 0;
+    sng_app_window_draw_bindings(SNG_APP_WINDOW(call_flow_window), keybindings, 20);
 }
 
 /**
@@ -1395,96 +115,51 @@ call_flow_win_draw_raw_rtcp(SngAppWindow *window, G_GNUC_UNUSED Stream *stream)
  * @param window UI structure pointer
  */
 static void
-call_flow_win_draw_preview(SngAppWindow *window)
+call_flow_win_draw_preview(CallFlowWindow *call_flow_window)
 {
-    CallFlowArrow *arrow = NULL;
+    SngFlowArrow *arrow = NULL;
 
     // Check if not displaying raw has been requested
     if (setting_disabled(SETTING_TUI_CF_FORCERAW))
         return;
 
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_if_fail(self != NULL);
-
     // Draw current arrow preview
-    if ((arrow = g_ptr_array_index(self->darrows, self->cur_idx))) {
-        if (arrow->type == CF_ARROW_SIP) {
-            call_flow_win_draw_raw(window, arrow->item);
-        } else {
-            call_flow_win_draw_raw_rtcp(window, arrow->item);
-        }
+    if ((arrow = sng_flow_viewer_get_current(SNG_FLOW_VIWER(call_flow_window->flow_viewer)))) {
     }
-}
-
-/**
- * @brief Move selection cursor up N times
- *
- * @param window UI structure pointer
- * @param times number of lines to move up
- */
-static void
-call_flow_win_move_vertical(SngAppWindow *window, gint times)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    g_return_if_fail(self != NULL);
-
-    // Set the new current selected index
-    self->cur_idx = CLAMP(
-        (gint) self->cur_idx + times,
-        0,
-        (gint) g_ptr_array_len(self->darrows) - 1
-    );
-
-    CallFlowArrow *cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
-    g_return_if_fail(cur_arrow != NULL);
-
-    // Move the first index if required (moving up)
-    self->vscroll.pos = MIN(self->vscroll.pos, cur_arrow->line - cur_arrow->height + 1);
-
-    gint arrow_win_height = getmaxy(self->arrows_win);
-    if (scrollbar_visible(self->hscroll)) {
-        arrow_win_height -= 1;
-    }
-
-    // Move the first index if required (moving down)
-    self->vscroll.pos = MAX(self->vscroll.pos, cur_arrow->line - arrow_win_height);
-}
-
-
-/**
- * @brief Move selection cursor up N times
- *
- * @param app_window UI structure pointer
- * @param times number of lines to move up
- */
-static void
-call_flow_win_move_horizontal(SngAppWindow *app_window, gint times)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
-    g_return_if_fail(self != NULL);
-
-    // Move the first index if required (moving left)
-    self->hscroll.pos = CLAMP(
-        self->hscroll.pos + times,
-        0,
-        getmaxx(self->columns_pad) - getmaxx(self->colunms_win)
-    );
 }
 
 void
-call_flow_win_set_group(SngAppWindow *app_window, CallGroup *group)
+call_flow_win_set_group(CallFlowWindow *call_flow_win, CallGroup *group)
 {
-    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
-    g_return_if_fail(self != NULL);
+    sng_flow_viewer_set_group(
+        SNG_FLOW_VIWER(call_flow_win->flow_viewer),
+        group
+    );
+}
 
-    g_list_free_full(self->columns, (GDestroyNotify) call_flow_column_free);
-    self->columns = NULL;
-    g_ptr_array_remove_all(self->arrows);
+static void
+call_flow_win_size_request(SngWidget *widget)
+{
+    CallFlowWindow *call_flow_win = TUI_CALL_FLOW(widget);
 
-    self->group = group;
-    self->cur_idx = 0;
-    self->selected = -1;
+    // Get min raw width
+    gint width = sng_widget_get_width(SNG_WIDGET(call_flow_win));
+    gint flow_viewer_width = sng_flow_viewer_columns_width(SNG_FLOW_VIWER(call_flow_win->flow_viewer));
+    gint min_raw_width = setting_get_intvalue(SETTING_TUI_CF_RAWMINWIDTH);
+    gint fixed_raw_width = setting_get_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH);
+
+    // We can configure an exact detail size
+    if (fixed_raw_width > 0) {
+        sng_widget_set_width(call_flow_win->box_detail, fixed_raw_width);
+    } else {
+        sng_widget_set_width(
+            call_flow_win->box_detail,
+            MAX(width - flow_viewer_width, min_raw_width)
+        );
+    }
+
+    // Chain-up parent size request function
+    SNG_WIDGET_CLASS(call_flow_win_parent_class)->size_request(widget);
 }
 
 /**
@@ -1503,76 +178,46 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
     int raw_width;
     SngAppWindow *next_app_window;
     Call *call = NULL;
-    CallFlowArrow *cur_arrow = NULL;
-    guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CF_SCROLLSTEP);
+    SngFlowArrow *cur_arrow = NULL;
 
     // Sanity check, this should not happen
     SngAppWindow *window = SNG_APP_WINDOW(widget);
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
+    CallFlowWindow *call_flow_window = TUI_CALL_FLOW(window);
     WINDOW *win = sng_widget_get_ncurses_window(widget);
+    CallGroup *group = sng_flow_viewer_get_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer));
 
     // Check actions for this key
     KeybindingAction action = ACTION_UNKNOWN;
     while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
         // Check if we handle this action
         switch (action) {
-            case ACTION_DOWN:
-                call_flow_win_move_vertical(window, 1);
-                break;
-            case ACTION_UP:
-                call_flow_win_move_vertical(window, -1);
-                break;
-            case ACTION_RIGHT:
-                call_flow_win_move_horizontal(window, 15);
-                break;
-            case ACTION_LEFT:
-                call_flow_win_move_horizontal(window, -15);
-                break;
-            case ACTION_HNPAGE:
-                call_flow_win_move_vertical(window, rnpag_steps / 2);;
-                break;
-            case ACTION_NPAGE:
-                call_flow_win_move_vertical(window, rnpag_steps);
-                break;
-            case ACTION_HPPAGE:
-                call_flow_win_move_vertical(window, -1 * rnpag_steps / 2);;
-                break;
-            case ACTION_PPAGE:
-                call_flow_win_move_vertical(window, -1 * rnpag_steps);
-                break;
-            case ACTION_BEGIN:
-                call_flow_win_move_vertical(window, -1 * g_ptr_array_len(self->darrows));
-                break;
-            case ACTION_END:
-                call_flow_win_move_vertical(window, g_ptr_array_len(self->darrows));
-                break;
             case ACTION_SHOW_FLOW_EX:
                 werase(win);
-                if (call_group_count(self->group) == 1) {
-                    call = call_group_get_next(self->group, NULL);
-                    call_group_add_calls(self->group, call->xcalls);
-                    self->group->callid = call->callid;
+                if (call_group_count(group) == 1) {
+                    call = call_group_get_next(group, NULL);
+                    call_group_add_calls(group, call->xcalls);
+                    group->callid = call->callid;
                 } else {
-                    call = call_group_get_next(self->group, NULL);
-                    call_group_remove_all(self->group);
-                    call_group_add(self->group, call);
-                    self->group->callid = 0;
+                    call = call_group_get_next(group, NULL);
+                    call_group_remove_all(group);
+                    call_group_add(group, call);
+                    group->callid = 0;
                 }
-                call_flow_win_set_group(window, self->group);
+                sng_flow_viewer_set_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer), group);
                 break;
-            case ACTION_SHOW_RAW:
-                // KEY_R, display current call in raw mode
-                next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_RAW);
-                call_raw_win_set_group(next_app_window, self->group);
-                break;
+//            case ACTION_SHOW_RAW:
+//                // KEY_R, display current call in raw mode
+//                next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_RAW);
+//                call_raw_win_set_group(next_app_window, call_flow_window->group);
+//                break;
             case ACTION_DECREASE_RAW:
-                raw_width = getmaxx(self->raw_win);
+                raw_width = sng_widget_get_width(call_flow_window->box_detail);
                 if (raw_width - 2 > 1) {
                     setting_set_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH, raw_width - 2);
                 }
                 break;
             case ACTION_INCREASE_RAW:
-                raw_width = MIN(getmaxx(self->raw_win) + 2, sng_widget_get_width(SNG_WIDGET(window)) - 1);
+                raw_width = MIN(sng_widget_get_width(call_flow_window->box_detail) + 2, sng_widget_get_width(SNG_WIDGET(window)) - 1);
                 setting_set_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH, raw_width);
                 break;
             case ACTION_RESET_RAW:
@@ -1580,28 +225,28 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 break;
             case ACTION_ONLY_SDP:
                 // Toggle SDP mode
-                self->group->sdp_only = !(self->group->sdp_only);
+                group->sdp_only = !(group->sdp_only);
                 // Disable sdp_only if there are not messages with sdp
-                if (call_group_msg_count(self->group) == 0)
-                    self->group->sdp_only = 0;
+                if (call_group_msg_count(group) == 0)
+                    group->sdp_only = 0;
                 // Reset screen
-                call_flow_win_set_group(window, self->group);
+                sng_flow_viewer_set_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer), group);
                 break;
             case ACTION_SDP_INFO:
                 setting_toggle(SETTING_TUI_CF_SDP_INFO);
                 break;
             case ACTION_HIDE_DUPLICATE:
                 setting_toggle(SETTING_TUI_CF_HIDEDUPLICATE);
-                call_flow_win_set_group(window, self->group);
+                sng_flow_viewer_set_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer), group);
                 break;
             case ACTION_ONLY_MEDIA:
                 setting_toggle(SETTING_TUI_CF_ONLYMEDIA);
-                call_flow_win_set_group(window, self->group);
+                sng_flow_viewer_set_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer), group);
                 break;
             case ACTION_TOGGLE_MEDIA:
                 setting_toggle(SETTING_TUI_CF_MEDIA);
                 // Force reload arrows
-                call_flow_win_set_group(window, self->group);
+                sng_flow_viewer_set_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer), group);
                 break;
             case ACTION_TOGGLE_RAW:
                 setting_toggle(SETTING_TUI_CF_FORCERAW);
@@ -1609,31 +254,37 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
             case ACTION_COMPRESS:
                 setting_toggle(SETTING_TUI_CF_SPLITCALLID);
                 // Force columns reload
-                call_flow_win_set_group(window, self->group);
+                sng_flow_viewer_set_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer), group);
                 break;
             case ACTION_SAVE:
-                cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
-                if (cur_arrow->type == CF_ARROW_SIP) {
+                cur_arrow = sng_flow_viewer_get_current(SNG_FLOW_VIWER(call_flow_window->flow_viewer));
+                if (SNG_IS_FLOW_MSG_ARROW(cur_arrow)) {
                     next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_group(TUI_SAVE(next_app_window), self->group);
-                    save_set_message(TUI_SAVE(next_app_window), call_flow_arrow_message(cur_arrow));
+                    save_set_group(TUI_SAVE(next_app_window), group);
+                    save_set_message(
+                        TUI_SAVE(next_app_window),
+                        sng_flow_msg_arrow_get_message(SNG_FLOW_MSG_ARROW(cur_arrow))
+                    );
                 }
 #ifdef WITH_SND
-                if (cur_arrow->type == CF_ARROW_RTP) {
+                if (SNG_IS_FLOW_RTP_ARROW(cur_arrow)) {
                     StorageCaptureOpts storageCaptureOpts = storage_capture_options();
                     if (!storageCaptureOpts.rtp) {
                         dialog_run("RTP packets are not being stored, run with --rtp flag.");
                         break;
                     }
                     next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_stream(TUI_SAVE(next_app_window), cur_arrow->item);
+                    save_set_stream(
+                        TUI_SAVE(next_app_window),
+                        sng_flow_rtp_arrow_get_stream(SNG_FLOW_RTP_ARROW(cur_arrow))
+                    );
                 }
 #endif
                 break;
 #ifdef WITH_PULSE
             case ACTION_SHOW_PLAYER:
-                cur_arrow = g_ptr_array_index(self->darrows, self->cur_idx);
-                if (cur_arrow->type == CF_ARROW_RTP) {
+                cur_arrow = sng_flow_viewer_get_current(SNG_FLOW_VIWER(call_flow_window->flow_viewer));
+                if (SNG_IS_FLOW_RTP_ARROW(cur_arrow)) {
                     StorageCaptureOpts storageCaptureOpts = storage_capture_options();
                     if (!storageCaptureOpts.rtp) {
                         dialog_run("RTP packets are not being stored, run with --rtp flag.");
@@ -1642,48 +293,47 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
 
                     next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_RTP_PLAYER);
                     if (next_app_window != NULL) {
-                        rtp_player_win_set_stream(next_app_window, cur_arrow->item);
+                        rtp_player_win_set_stream(
+                            next_app_window,
+                            sng_flow_rtp_arrow_get_stream(SNG_FLOW_RTP_ARROW(cur_arrow))
+                        );
                     }
                 }
                 break;
 #endif
             case ACTION_AUTH_VALIDATE:
                 next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_AUTH_VALIDATE);
-                auth_validate_win_set_group(next_app_window, self->group);
+                auth_validate_win_set_group(next_app_window, group);
                 break;
-            case ACTION_TOGGLE_TIME:
-                self->arrowtime = (self->arrowtime) ? FALSE : TRUE;
-                break;
-            case ACTION_SELECT:
-                if (self->selected == -1) {
-                    self->selected = self->cur_idx;
-                } else {
-                    if (self->selected == (gint) self->cur_idx) {
-                        self->selected = -1;
-                    } else {
-                        // Show diff panel
-                        next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_MSG_DIFF);
-                        msg_diff_win_set_msgs(next_app_window,
-                                              call_flow_arrow_message(g_ptr_array_index(self->darrows, self->selected)),
-                                              call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
-                    }
-                }
-                break;
-            case ACTION_CLEAR:
-                self->selected = -1;
-                break;
-            case ACTION_CONFIRM:
-                // KEY_ENTER, display current message in raw mode
-                next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_RAW);
-                call_raw_win_set_group(next_app_window, self->group);
-                call_raw_win_set_msg(next_app_window,
-                                     call_flow_arrow_message(g_ptr_array_index(self->darrows, self->cur_idx)));
-                break;
+//            case ACTION_SELECT:
+//                if (call_flow_window->selected == -1) {
+//                    call_flow_window->selected = call_flow_window->cur_idx;
+//                } else {
+//                    if (call_flow_window->selected == (gint) call_flow_window->cur_idx) {
+//                        call_flow_window->selected = -1;
+//                    } else {
+//                        // Show diff panel
+//                        next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_MSG_DIFF);
+//                        msg_diff_win_set_msgs(next_app_window,
+//                                              call_flow_arrow_message(g_ptr_array_index(call_flow_window->darrows, call_flow_window->selected)),
+//                                              call_flow_arrow_message(g_ptr_array_index(call_flow_window->darrows, call_flow_window->cur_idx)));
+//                    }
+//                }
+//                break;
+//            case ACTION_CONFIRM:
+//                // KEY_ENTER, display current message in raw mode
+//                next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_RAW);
+//                call_raw_win_set_group(next_app_window, call_flow_window->group);
+//                call_raw_win_set_msg(next_app_window,
+//                                     call_flow_arrow_message(g_ptr_array_index(call_flow_window->darrows, call_flow_window->cur_idx)));
+//                break;
             case ACTION_CLEAR_CALLS:
             case ACTION_CLEAR_CALLS_SOFT:
                 // Propagate the key to the previous panel
-                return ;
-
+                return;
+            case ACTION_PREV_SCREEN:
+                sng_widget_destroy(widget);
+                return;
             default:
                 // Parse next action
                 continue;
@@ -1767,225 +417,164 @@ call_flow_win_help(G_GNUC_UNUSED SngAppWindow *window)
 }
 
 static void
-call_flow_win_create_subwindows(SngAppWindow *window)
-{
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    SngWidget *widget = SNG_WIDGET(window);
-    WINDOW *win = sng_widget_get_ncurses_window(widget);
-    gint win_height = sng_widget_get_height(widget);
-    gint win_width = sng_widget_get_width(widget);
-
-    // Create pad to store all arrows
-    if (self->arrows_pad) delwin(self->arrows_pad);
-    gint pad_height = MAX(call_flow_win_arrows_height(window) + 1, win_height - 4);
-    gint pad_width = MAX(call_flow_win_columns_width(window), win_width);
-    self->arrows_pad = newpad(pad_height, pad_width);
-
-    // Create pad to store all columns
-    if (self->columns_pad) delwin(self->columns_pad);
-    self->columns_pad = newpad(3 /* column height */, pad_width);
-
-    gint raw_width = 0;
-    // Check if not displaying raw has been requested
-    if (setting_enabled(SETTING_TUI_CF_FORCERAW)) {
-        // Get min raw width
-        gint min_raw_width = setting_get_intvalue(SETTING_TUI_CF_RAWMINWIDTH);
-        gint fixed_raw_width = setting_get_intvalue(SETTING_TUI_CF_RAWFIXEDWIDTH);
-
-        // We can configure an exact raw size
-        if (fixed_raw_width > 0) {
-            raw_width = fixed_raw_width;
-        } else {
-            raw_width = MAX(win_width - call_flow_win_columns_width(window), min_raw_width);
-        }
-
-        // Height of raw window is always available size minus 6 lines for header/footer
-        gint raw_height = win_height - 2;
-
-        // If we already have a raw window
-        if (self->raw_win) delwin(self->raw_win);
-        self->raw_win = subwin(win, raw_height, raw_width, 1, win_width - raw_width);
-
-        // Draw raw Separator line
-        wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-        mvwvline(win, 1, win_width - raw_width - 1, ACS_VLINE, win_height - 2);
-        wattroff(win, COLOR_PAIR(CP_BLUE_ON_DEF));
-    }
-
-    // Call Flow arrows subwindow
-    if (self->arrows_win) delwin(self->arrows_win);
-    gint flow_height = win_height - 5;
-    gint flow_width = (raw_width) ? win_width - raw_width - 1 : win_width;
-    self->arrows_win = subwin(win, flow_height, flow_width, 4, 0);
-    self->colunms_win = subwin(win, 3, flow_width, 1, 0);
-
-    // Configure scrollbars
-    self->vscroll.win = self->hscroll.win = self->arrows_win;
-    self->vscroll.max = call_flow_win_arrows_height(window) - 1;
-    self->hscroll.max = call_flow_win_columns_width(window) - 1;
-    self->vscroll.postoffset = (scrollbar_visible(self->hscroll) ? 1 : 0);
-    self->hscroll.preoffset = (scrollbar_visible(self->vscroll) ? 1 : 0);
-}
-
-/**
- * @brief Draw the Call flow extended panel
- *
- * This function will drawn the panel into the screen based on its stored
- * status
- *
- * @param window UI structure pointer
- * @return 0 if the panel has been drawn, -1 otherwise
- */
-static void
-call_flow_win_draw(SngWidget *widget)
-{
-    char title[256];
-
-    // Get panel information
-    SngAppWindow *app_window = SNG_APP_WINDOW(widget);
-    CallFlowWindow *self = TUI_CALL_FLOW(app_window);
-
-    // Get window of main panel
-    WINDOW *win = sng_widget_get_ncurses_window(widget);
-    werase(win);
-
-    // Set title
-    if (self->group->callid) {
-        sprintf(title, "Extended Call flow for %s", self->group->callid);
-    } else if (call_group_count(self->group) == 1) {
-        Call *call = call_group_get_next(self->group, NULL);
-        sprintf(title, "Call flow for %s", call->callid);
-    } else {
-        sprintf(title, "Call flow for %d dialogs", call_group_count(self->group));
-    }
-
-    // Print color mode in title
-    switch (setting_get_enum(SETTING_TUI_COLORMODE)) {
-        case SETTING_COLORMODE_REQUEST:
-            strcat(title, " (Color by Request/Response)");
-            break;
-        case SETTING_COLORMODE_CALLID:
-            strcat(title, " (Color by Call-Id)");
-            break;
-        case SETTING_COLORMODE_CSEQ:
-            strcat(title, " (Color by CSeq)");
-            break;
-    }
-
-    // Draw panel title
-    sng_app_window_set_title(app_window, title);
-
-    // Show some keybinding
-    call_flow_win_draw_footer(app_window);
-
-    // Create pending arrows for SIP and RTP
-    call_flow_win_create_arrows(app_window);
-
-    // Create subwindows for all components
-    call_flow_win_create_subwindows(app_window);
-
-    // Redraw columns
-    call_flow_win_draw_columns(app_window);
-
-    // Redraw arrows
-    call_flow_win_draw_arrows(app_window);
-
-    // Redraw preview
-    call_flow_win_draw_preview(app_window);
-
-    // Draw scrollbars
-    scrollbar_draw(self->vscroll);
-    scrollbar_draw(self->hscroll);
-}
-
-/**
- * @brief Determine if the screen requires redrawn
- *
- * This will query the interface if it requires to be redraw again.
- *
- * @param window UI structure pointer
- * @return true if the panel requires redraw, false otherwise
- */
-static gboolean
-call_flow_win_redraw(SngAppWindow *window)
-{
-    // Get panel information
-    CallFlowWindow *self = TUI_CALL_FLOW(window);
-    SngWidget *widget = SNG_WIDGET(window);
-    WINDOW *win = sng_widget_get_ncurses_window(widget);
-
-    // Get current screen dimensions
-    gint maxx, maxy;
-    getmaxyx(stdscr, maxy, maxx);
-
-    // Change the main window size
-    wresize(win, maxy, maxx);
-
-    // Store new size
-    sng_widget_set_width(widget, maxx);
-    sng_widget_set_height(widget, maxy);
-
-    // Calculate available printable area
-    wresize(self->arrows_win, maxy - 6, maxx);
-
-    // Check if any of the group has changed
-    return call_group_changed(self->group);
-}
-
-void
-call_flow_win_free(SngAppWindow *window)
-{
-    g_object_unref(window);
-}
-
-SngAppWindow *
-call_flow_win_new()
-{
-    return g_object_new(
-        WINDOW_TYPE_CALL_FLOW,
-        "window-type", SNG_WINDOW_TYPE_CALL_FLOW,
-        "height", getmaxy(stdscr),
-        "width", getmaxx(stdscr),
-        NULL
-    );
-}
-
-static void
-call_flow_win_finalized(GObject *object)
-{
-    CallFlowWindow *self = TUI_CALL_FLOW(object);
-    g_return_if_fail(self != NULL);
-
-    // Free the panel information
-    g_list_free(self->columns);
-    g_ptr_array_free(self->arrows, TRUE);
-
-    // Delete panel windows
-    delwin(self->arrows_pad);
-    delwin(self->colunms_win);
-    delwin(self->arrows_win);
-    delwin(self->raw_win);
-
-    // Delete displayed call group
-    call_group_free(self->group);
-
-    // Chain-up parent finalize function
-    G_OBJECT_CLASS(call_flow_win_parent_class)->finalize(object);
-}
-
-static void
 call_flow_win_constructed(GObject *object)
 {
     // Chain-up parent constructed
     G_OBJECT_CLASS(call_flow_win_parent_class)->constructed(object);
 
     // Get parent window information
-    CallFlowWindow *self = TUI_CALL_FLOW(object);
+    CallFlowWindow *call_flow_win = TUI_CALL_FLOW(object);
 
-    // Calculate available printable area for messages
-    self->vscroll = window_set_scrollbar(self->arrows_win, SB_VERTICAL, SB_LEFT);
-    self->hscroll = window_set_scrollbar(self->arrows_win, SB_HORIZONTAL, SB_BOTTOM);
+    // Create menu bar entries
+    call_flow_win->menu_bar = sng_menu_bar_new();
+
+    // File Menu
+    SngWidget *menu_file = sng_menu_new("File");
+    SngWidget *menu_file_preferences = sng_menu_item_new("Settings");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
+    SngWidget *menu_file_save = sng_menu_item_new("Save as ...");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_save), ACTION_SAVE);
+    SngWidget *menu_file_exit = sng_menu_item_new("Exit");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_exit), ACTION_PREV_SCREEN);
+
+    // View Menu
+    SngWidget *menu_view = sng_menu_new("View");
+    SngWidget *menu_view_filters = sng_menu_item_new("Filters");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
+    SngWidget *menu_view_protocols = sng_menu_item_new("Protocols");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_protocols), ACTION_SHOW_PROTOCOLS);
+
+    // Call List menu
+    SngWidget *menu_list = sng_menu_new("Call List");
+    SngWidget *menu_list_columns = sng_menu_item_new("Configure Columns");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
+    SngWidget *menu_list_clear = sng_menu_item_new("Clear List");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear), ACTION_CLEAR_CALLS);
+    SngWidget *menu_list_clear_soft = sng_menu_item_new("Clear filtered calls");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear_soft), ACTION_CLEAR_CALLS_SOFT);
+    SngWidget *menu_list_flow = sng_menu_item_new("Show Call Flow");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow), ACTION_SHOW_FLOW);
+    SngWidget *menu_list_flow_ex = sng_menu_item_new("Show Call Flow Extended");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow_ex), ACTION_SHOW_FLOW_EX);
+
+
+    // Help Menu
+    SngWidget *menu_help = sng_menu_new("Help");
+    SngWidget *menu_help_about = sng_menu_item_new("About");
+    sng_menu_item_set_action(SNG_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
+
+    // Add menubar menus and items
+    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_file);
+    sng_container_add(SNG_CONTAINER(menu_file), menu_file_preferences);
+    sng_container_add(SNG_CONTAINER(menu_file), menu_file_save);
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_file), menu_file_exit);
+    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_view);
+    sng_container_add(SNG_CONTAINER(menu_view), menu_view_filters);
+    sng_container_add(SNG_CONTAINER(menu_view), menu_view_protocols);
+    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_list);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_columns);
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear_soft);
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow);
+    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow_ex);
+    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_help);
+    sng_container_add(SNG_CONTAINER(menu_help), menu_help_about);
+    sng_container_add(SNG_CONTAINER(call_flow_win), call_flow_win->menu_bar);
+
+    // Create Arrow Flow viewer widget
+    SngWidget *box_content = sng_box_new(SNG_ORIENTATION_HORIZONTAL);
+    call_flow_win->flow_viewer = sng_flow_viewer_new();
+    sng_container_add(SNG_CONTAINER(box_content), call_flow_win->flow_viewer);
+    sng_box_pack_start(SNG_BOX(box_content), sng_separator_new(SNG_ORIENTATION_VERTICAL));
+
+    // Create detail Text area
+    call_flow_win->box_detail = sng_widget_new();
+    sng_box_pack_start(SNG_BOX(box_content), call_flow_win->box_detail);
+
+    // Add content box to window
+    sng_container_add(SNG_CONTAINER(call_flow_win), box_content);
+
+    // Bottom button bar
+    SngWidget *button_bar = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 3, 0);
+    sng_widget_set_vexpand(button_bar, FALSE);
+    sng_widget_set_height(button_bar, 1);
+    sng_box_set_background(SNG_BOX(button_bar), COLOR_PAIR(CP_WHITE_ON_CYAN));
+
+    // Button Quit
+    g_autoptr(GString) bn_text = g_string_new(NULL);
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_PREV_SCREEN),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Quit");
+    SngWidget *bn_quit = sng_button_new(bn_text->str);
+
+    // Button Select
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SELECT),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Select");
+    SngWidget *bn_select = sng_button_new(bn_text->str);
+
+    // Button Help
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_HELP),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Help");
+    SngWidget *bn_help = sng_button_new(bn_text->str);
+
+    // Button Help
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_DISP_FILTER),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Search");
+    SngWidget *bn_search = sng_button_new(bn_text->str);
+
+    // Button Extended
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FLOW_EX),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Extended");
+    SngWidget *bn_extended = sng_button_new(bn_text->str);
+
+    // Button Clear
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_CLEAR_CALLS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Clear");
+    SngWidget *bn_clear = sng_button_new(bn_text->str);
+
+    // Button Filter
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FILTERS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Filter");
+    SngWidget *bn_filter = sng_button_new(bn_text->str);
+
+    // Button Settings
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_SETTINGS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Settings");
+    SngWidget *bn_settings = sng_button_new(bn_text->str);
+
+    // Button Columns
+    g_string_printf(bn_text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_COLUMNS),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Columns");
+    SngWidget *bn_columns = sng_button_new(bn_text->str);
+
+    sng_box_pack_start(SNG_BOX(button_bar), bn_quit);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_select);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_help);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_search);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_extended);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_clear);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_filter);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_settings);
+    sng_box_pack_start(SNG_BOX(button_bar), bn_columns);
+    sng_container_add(SNG_CONTAINER(call_flow_win), button_bar);
+
+
+    // Set default widget
+    sng_window_set_default_focus(SNG_WINDOW(call_flow_win), call_flow_win->flow_viewer);
+
+    // Chain up parent constructor
+    G_OBJECT_CLASS(call_flow_win_parent_class)->constructed(object);
 }
 
 static void
@@ -1993,24 +582,16 @@ call_flow_win_class_init(CallFlowWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = call_flow_win_constructed;
-    object_class->finalize = call_flow_win_finalized;
-
-    SngAppWindowClass *app_window_class = SNG_APP_WINDOW_CLASS(klass);
-    app_window_class->redraw = call_flow_win_redraw;
-    app_window_class->help = call_flow_win_help;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->draw = call_flow_win_draw;
+    widget_class->size_request = call_flow_win_size_request;
     widget_class->key_pressed = call_flow_win_handle_key;
+
+    SngAppWindowClass *app_window_class = SNG_APP_WINDOW_CLASS(klass);
+    app_window_class->help = call_flow_win_help;
 }
 
 static void
-call_flow_win_init(CallFlowWindow *self)
+call_flow_win_init(G_GNUC_UNUSED CallFlowWindow *call_flow_window)
 {
-    // Display timestamp next to each arrow
-    self->arrowtime = TRUE;
-
-    // Create vectors for columns and flow arrows
-    self->columns = NULL;
-    self->arrows = g_ptr_array_new_with_free_func(g_free);
 }

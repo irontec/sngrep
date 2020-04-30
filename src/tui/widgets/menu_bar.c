@@ -66,7 +66,6 @@ sng_menu_bar_realize(SngWidget *widget)
             sng_widget_get_width(widget)
         );
         sng_widget_set_ncurses_window(widget, win);
-
     }
     SNG_WIDGET_CLASS(sng_menu_bar_parent_class)->realize(widget);
 }

@@ -492,7 +492,7 @@ capture_output_pcap(const gchar *filename, GError **error)
         }
     }
 
-    pcap->handle = pcap_open_dead(pcap->link, MAXIMUM_SNAPLEN);
+    pcap->handle = pcap_open_dead(pcap->link, 0);
     pcap->dumper = pcap_dump_open(pcap->handle, filename);
     if (pcap->dumper == NULL) {
         g_set_error(error,

@@ -54,10 +54,16 @@ void
 sng_container_remove(SngContainer *container, SngWidget *child);
 
 void
+sng_container_remove_all(SngContainer *container);
+
+void
 sng_container_foreach(SngContainer *container, GFunc callback, gpointer user_data);
 
 GList *
 sng_container_get_children(SngContainer *container);
+
+void
+sng_container_set_children(SngContainer *container, GList *children);
 
 SngWidget *
 sng_container_get_child(SngContainer *container, gint index);

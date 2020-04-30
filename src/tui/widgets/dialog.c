@@ -101,6 +101,7 @@ sng_dialog_confirm(const gchar *title, const gchar *format, ...)
 SngDialogResponse
 sng_dialog_run(SngDialog *dialog)
 {
+    sng_window_update(SNG_WINDOW(dialog));
     g_main_loop_run(dialog->loop);
     return dialog->response;
 }

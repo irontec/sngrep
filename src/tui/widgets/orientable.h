@@ -20,37 +20,40 @@
  **
  ****************************************************************************/
 /**
- * @file separator.h
+ * @file orientable.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief
  *
  */
-#ifndef __SNGREP_SEPARATOR_H__
-#define __SNGREP_SEPARATOR_H__
+#ifndef __SNGREP_ORIENTABLE_H__
+#define __SNGREP_ORIENTABLE_H__
 
-#include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/orientable.h"
-#include "tui/widgets/widget.h"
 
 G_BEGIN_DECLS
 
-// Class declaration
-#define SNG_TYPE_SEPARATOR sng_separator_get_type()
-G_DECLARE_FINAL_TYPE(SngSeparator, sng_separator, SNG, SEPARATOR, SngWidget)
-
-struct _SngSeparator
+typedef enum
 {
-    //! Parent object attributes
-    SngWidget parent;
-    //! Separator orientation
-    SngOrientation orientation;
+    SNG_ORIENTATION_HORIZONTAL,
+    SNG_ORIENTATION_VERTICAL
+} SngOrientation;
+
+#define SNG_TYPE_ORIENTABLE sng_orientable_get_type()
+G_DECLARE_INTERFACE(SngOrientable, sng_orientable, SNG, ORIENTABLE, GObject)
+
+struct _SngOrientableInterface
+{
+    //! Parent interface
+    GTypeInterface parent_iface;
 };
 
-SngWidget *
-sng_separator_new(SngOrientation orientation);
+void
+sng_orientable_set_orientation(SngOrientable *orientable, SngOrientation  orientation);
+
+SngOrientation
+sng_orientable_get_orientation (SngOrientable *orientable);
 
 G_END_DECLS
 
-#endif    /* __SNGREP_SEPARATOR_H__ */
+#endif    /* __SNGREP_ORIENTABLE_H__ */

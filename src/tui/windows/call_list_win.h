@@ -74,7 +74,7 @@ struct _CallListWindow
  * @param window UI structure pointer
  * @return the allocated window structure
  */
-SngAppWindow *
+SngWidget *
 call_list_win_new();
 
 SngTable *

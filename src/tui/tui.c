@@ -183,7 +183,6 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
     for (GList *l = stack; l != NULL; l = l->next) {
         // Get panel interface structure
         SngWindow *window = tui_find_by_panel(l->data);
-        SngWidget *widget = SNG_WIDGET(window);
 
         // Set first window focus active
         if (l == stack) {
@@ -192,18 +191,17 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
             sng_widget_focus_lost(sng_window_focused_widget(window));
         }
 
-        // Draw each widget in their internal window
-        sng_widget_draw(widget);
-        // Map internal windows to visible panel windows
-        sng_widget_map(widget);
-
         // Free window memory if destroyed
-        if (sng_widget_is_destroying(widget)) {
-            sng_widget_free(widget);
+        if (sng_widget_is_destroying(SNG_WIDGET(window))) {
+            sng_widget_free(SNG_WIDGET(window));
+        } else {
+            // Update current window
+            sng_window_update(window);
         }
 
         // Update panel stack
         update_panels();
+        break;
     }
 
     // Update ncurses standard screen with panel info
@@ -567,8 +565,9 @@ tui_init(GMainLoop *loop, GError **error)
     windows = g_ptr_array_new();
 
     // Create the first displayed window
-    SngAppWindow *window = tui_create_app_window(SNG_WINDOW_TYPE_CALL_LIST);
-    g_signal_connect_swapped(window, "destroy", G_CALLBACK(g_main_loop_quit), loop);
+    SngWidget *call_list_win = call_list_win_new();
+    sng_window_update(SNG_WINDOW(call_list_win));
+    g_signal_connect_swapped(call_list_win, "destroy", G_CALLBACK(g_main_loop_quit), loop);
 
     // Source for reading events from stdin
     GSource *source = g_unix_fd_source_new(STDIN_FILENO, G_IO_IN | G_IO_ERR | G_IO_HUP);
@@ -596,6 +595,15 @@ tui_is_enabled()
     return stdscr != NULL;
 }
 
+void
+tui_whline(WINDOW *win, gint row, gint col, chtype acs, gint length)
+{
+    wmove(win, row, col);
+    for (gint i = 0; i < length; i++) {
+        waddwstr(win, tui_acs_utf8(acs));
+    }
+}
+
 wchar_t *
 tui_acs_utf8(const chtype acs)
 {
@@ -604,6 +612,8 @@ tui_acs_utf8(const chtype acs)
     if (acs == ACS_BOARD) {
         utf8[0] = 0x2503;   // ┃
     } else if (acs == ACS_CKBOARD) {
+        utf8[0] = 0x2501;   // ━
+    } else if (acs == ACS_HLINE) {
         utf8[0] = 0x2501;   // ━
     } else if (acs == '>') {
         utf8[0] = 0x25B6;   // ▶

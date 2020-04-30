@@ -82,6 +82,22 @@ sng_window_new(gint height, gint width)
     return window;
 }
 
+void
+sng_window_update(SngWindow *window)
+{
+    SngWidget *widget = SNG_WIDGET(window);
+    // Update all window widgets
+    sng_widget_update(widget);
+    // Request size of all widgets
+    sng_widget_size_request(widget);
+    // Create internal ncurses data
+    sng_widget_realize(widget);
+    // Draw each widget in their internal window
+    sng_widget_draw(widget);
+    // Map internal windows to visible panel windows
+    sng_widget_map(widget);
+}
+
 PANEL *
 sng_window_get_ncurses_panel(SngWindow *window)
 {
@@ -98,7 +114,7 @@ sng_window_set_title(SngWindow *window, const gchar *title)
         priv->lb_title = sng_label_new(title);
         sng_label_set_align(SNG_LABEL(priv->lb_title), SNG_ALIGN_CENTER);
         sng_box_pack_start(SNG_BOX(window), priv->lb_title);
-        sng_box_pack_start(SNG_BOX(window), sng_separator_new());
+        sng_box_pack_start(SNG_BOX(window), sng_separator_new(SNG_ORIENTATION_HORIZONTAL));
     }
 }
 
@@ -114,7 +130,7 @@ sng_window_add_button(SngWindow *window, SngButton *button)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
     if (priv->button_bar == NULL) {
-        priv->button_bar = sng_box_new(BOX_ORIENTATION_HORIZONTAL);
+        priv->button_bar = sng_box_new(SNG_ORIENTATION_HORIZONTAL);
     }
 
     // Add button to the bar
@@ -126,6 +142,9 @@ sng_window_set_default_focus(SngWindow *window, SngWidget *widget)
 {
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
     priv->focus_default = widget;
+    if (priv->focus == NULL) {
+        priv->focus = priv->focus_default;
+    }
 }
 
 SngWidget *
@@ -206,6 +225,13 @@ sng_window_focus_prev(SngWindow *window)
 static void
 sng_window_realize(SngWidget *widget)
 {
+    // Only realize once
+    if (sng_widget_is_realized(widget)) {
+        // Chain-up parent realize
+        SNG_WIDGET_CLASS(sng_window_parent_class)->realize(widget);
+        return;
+    }
+
     // Get current screen dimensions
     SngWindow *window = SNG_WINDOW(widget);
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
@@ -353,12 +379,9 @@ sng_window_constructed(GObject *object)
 
     // Add button bar at the bottom of the screen
     if (priv->button_bar) {
-        sng_box_pack_start(SNG_BOX(object), sng_separator_new());
+        sng_box_pack_start(SNG_BOX(object), sng_separator_new(SNG_ORIENTATION_HORIZONTAL));
         sng_box_pack_start(SNG_BOX(object), priv->button_bar);
     }
-
-    // Realize window as soon as its constructed
-    sng_widget_realize(SNG_WIDGET(object));
 
     // Chain-up parent constructed
     G_OBJECT_CLASS(sng_window_parent_class)->constructed(object);
@@ -418,8 +441,8 @@ sng_window_class_init(SngWindowClass *klass)
     object_class->get_property = sng_window_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->draw = sng_window_draw;
     widget_class->realize = sng_window_realize;
+    widget_class->draw = sng_window_draw;
 
     SngContainerClass *container_class = SNG_CONTAINER_CLASS(klass);
     container_class->add = sng_window_add_widget;

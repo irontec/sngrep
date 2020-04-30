@@ -20,37 +20,43 @@
  **
  ****************************************************************************/
 /**
- * @file separator.h
+ * @file flow_rtp_arrow.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief
  *
  */
-#ifndef __SNGREP_SEPARATOR_H__
-#define __SNGREP_SEPARATOR_H__
+#ifndef __SNGREP_FLOW_RTP_ARROW_H__
+#define __SNGREP_FLOW_RTP_ARROW_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/orientable.h"
-#include "tui/widgets/widget.h"
+#include "storage/stream.h"
+#include "tui/widgets/flow_arrow.h"
 
 G_BEGIN_DECLS
 
-// Class declaration
-#define SNG_TYPE_SEPARATOR sng_separator_get_type()
-G_DECLARE_FINAL_TYPE(SngSeparator, sng_separator, SNG, SEPARATOR, SngWidget)
+#define SNG_TYPE_FLOW_RTP_ARROW sng_flow_rtp_arrow_get_type()
+G_DECLARE_FINAL_TYPE(SngFlowRtpArrow, sng_flow_rtp_arrow, SNG, FLOW_RTP_ARROW, SngFlowArrow)
 
-struct _SngSeparator
+struct _SngFlowRtpArrow
 {
     //! Parent object attributes
-    SngWidget parent;
-    //! Separator orientation
-    SngOrientation orientation;
+    SngFlowArrow parent;
+    //! Item owner of this arrow
+    Stream *stream;
+    //! Stream packet count for this arrow
+    gint rtp_count;
+    //! Stream arrow position
+    gint rtp_ind_pos;
 };
 
 SngWidget *
-sng_separator_new(SngOrientation orientation);
+sng_flow_rtp_arrow_new(const Stream *stream);
+
+Stream *
+sng_flow_rtp_arrow_get_stream(SngFlowRtpArrow *rtp_arrow);
 
 G_END_DECLS
 
-#endif    /* __SNGREP_SEPARATOR_H__ */
+#endif    /* __SNGREP_FLOW_RTP_ARROW_H__ */

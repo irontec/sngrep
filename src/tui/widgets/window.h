@@ -71,6 +71,13 @@ SngWindow *
 sng_window_new(gint height, gint width);
 
 /**
+ * @brief Update window
+ * @param window
+ */
+void
+sng_window_update(SngWindow *window);
+
+/**
  * @brief Handle moves events on given window
  *
  * This function will pass the mouse event

@@ -358,7 +358,7 @@ static void
 save_constructed_file_widgets(SaveWindow *save_window)
 {
     // Save Path entry
-    SngWidget *box_path = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 2);
+    SngWidget *box_path = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 2);
     sng_widget_set_height(box_path, 1);
     sng_box_pack_start(SNG_BOX(box_path), sng_label_new("Path:    "));
     save_window->en_fpath = sng_entry_new(setting_get_value(SETTING_STORAGE_SAVEPATH));
@@ -368,7 +368,7 @@ save_constructed_file_widgets(SaveWindow *save_window)
                              G_CALLBACK(save_to_file), save_window);
 
     // Filename entry
-    SngWidget *box_fname = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 2);
+    SngWidget *box_fname = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 2);
     sng_widget_set_height(box_fname, 1);
     sng_box_pack_start(SNG_BOX(box_fname), sng_label_new("Filename:"));
     save_window->en_fname = sng_entry_new(NULL);
@@ -389,7 +389,7 @@ save_constructed_dialog_widgets(SaveWindow *save_window)
     GSList *rb_group = NULL;
 
     // Dialog box frame
-    save_window->box_dialogs = sng_box_new(BOX_ORIENTATION_VERTICAL);
+    save_window->box_dialogs = sng_box_new(SNG_ORIENTATION_VERTICAL);
     sng_box_set_border(SNG_BOX(save_window->box_dialogs), TRUE);
     sng_box_set_label(SNG_BOX(save_window->box_dialogs), "Dialogs");
 
@@ -435,7 +435,7 @@ save_constructed_format_widgets(SaveWindow *save_window)
     GSList *rb_group = NULL;
 
     // Format box frame
-    save_window->box_format = sng_box_new(BOX_ORIENTATION_VERTICAL);
+    save_window->box_format = sng_box_new(SNG_ORIENTATION_VERTICAL);
     sng_box_set_border(SNG_BOX(save_window->box_format), TRUE);
     sng_box_set_label(SNG_BOX(save_window->box_format), "Format");
 
@@ -471,7 +471,7 @@ save_constructed_format_widgets(SaveWindow *save_window)
 static void
 save_constructed_options_widgets(SaveWindow *save_window)
 {
-    SngWidget *box_options = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 0);
+    SngWidget *box_options = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 0);
     sng_box_set_padding_full(SNG_BOX(box_options), 1, 0, 1, 1);
 
     // Add Dialog selection options

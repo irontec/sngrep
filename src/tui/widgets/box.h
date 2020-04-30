@@ -31,14 +31,9 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "tui/widgets/container.h"
+#include "tui/widgets/orientable.h"
 
 G_BEGIN_DECLS
-
-typedef enum
-{
-    BOX_ORIENTATION_HORIZONTAL,
-    BOX_ORIENTATION_VERTICAL
-} SngBoxOrientation;
 
 // Class declaration
 #define SNG_TYPE_BOX sng_box_get_type()
@@ -59,10 +54,10 @@ typedef struct
 } SngBoxPadding;
 
 SngWidget *
-sng_box_new(SngBoxOrientation orientation);
+sng_box_new(SngOrientation orientation);
 
 SngWidget *
-sng_box_new_full(SngBoxOrientation orientation, gint spacing, gint padding);
+sng_box_new_full(SngOrientation orientation, gint spacing, gint padding);
 
 void
 sng_box_set_padding(SngBox *box, SngBoxPadding padding);

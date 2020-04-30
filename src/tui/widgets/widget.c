@@ -34,6 +34,8 @@
 
 enum
 {
+    SIG_UPDATE,
+    SIG_SIZE_REQUEST,
     SIG_REALIZE,
     SIG_DRAW,
     SIG_MAP,
@@ -168,6 +170,12 @@ sng_widget_is_visible(SngWidget *widget)
 {
     SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     return priv->visible;
+}
+
+gboolean
+sng_widget_is_hidden(SngWidget *widget)
+{
+    return sng_widget_is_visible(widget) == FALSE;
 }
 
 gboolean
@@ -308,16 +316,33 @@ sng_widget_is_floating(SngWidget *widget)
 }
 
 void
+sng_widget_update(SngWidget *widget)
+{
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
+    if (klass->update != NULL) {
+        klass->update(widget);
+    }
+
+    // Notify everyone we're being updated
+    g_signal_emit(widget, signals[SIG_SIZE_REQUEST], 0);
+}
+
+void
+sng_widget_size_request(SngWidget *widget)
+{
+    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
+    if (klass->size_request != NULL) {
+        klass->size_request(widget);
+    }
+
+    // Notify everyone we're being resizing
+    g_signal_emit(widget, signals[SIG_SIZE_REQUEST], 0);
+}
+
+void
 sng_widget_realize(SngWidget *widget)
 {
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-
-    // Determine widget size before realize
-    sng_widget_size_request(widget);
-
-    if (sng_widget_is_realized(widget)) {
-        return;
-    }
 
     if (klass->realize != NULL) {
         klass->realize(widget);
@@ -333,12 +358,9 @@ sng_widget_draw(SngWidget *widget)
     g_return_if_fail(widget != NULL);
 
     // Only for visible widgets
-    if (!sng_widget_is_visible(widget)) {
+    if (sng_widget_is_hidden(widget)) {
         return;
     }
-
-    // Realize widget before drawing
-    sng_widget_realize(widget);
 
     // Notify everyone we're being drawn
     g_signal_emit(widget, signals[SIG_DRAW], 0);
@@ -353,7 +375,7 @@ void
 sng_widget_map(SngWidget *widget)
 {
     // Only for visible widgets
-    if (!sng_widget_is_visible(widget)) {
+    if (sng_widget_is_hidden(widget)) {
         return;
     }
 
@@ -370,6 +392,7 @@ sng_widget_map(SngWidget *widget)
 void
 sng_widget_focus_gain(SngWidget *widget)
 {
+    g_return_if_fail(widget != NULL);
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->focus_gained != NULL) {
         klass->focus_gained(widget);
@@ -379,6 +402,7 @@ sng_widget_focus_gain(SngWidget *widget)
 void
 sng_widget_focus_lost(SngWidget *widget)
 {
+    g_return_if_fail(widget != NULL);
     SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
     if (klass->focus_lost != NULL) {
         klass->focus_lost(widget);
@@ -427,15 +451,6 @@ sng_widget_key_pressed(SngWidget *widget, gint key)
     g_signal_emit(widget, signals[SIG_KEY_PRESSED], 0);
 }
 
-void
-sng_widget_size_request(SngWidget *widget)
-{
-    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-    if (klass->size_request != NULL) {
-        klass->size_request(widget);
-    }
-}
-
 gint
 sng_widget_get_preferred_height(SngWidget *widget)
 {
@@ -457,6 +472,16 @@ sng_widget_get_preferred_width(SngWidget *widget)
 }
 
 static void
+sng_widget_base_update(G_GNUC_UNUSED SngWidget *widget)
+{
+}
+
+static void
+sng_widget_base_size_request(G_GNUC_UNUSED SngWidget *widget)
+{
+}
+
+static void
 sng_widget_base_realize(SngWidget *widget)
 {
     SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
@@ -475,13 +500,10 @@ sng_widget_base_draw(G_GNUC_UNUSED SngWidget *widget)
 }
 
 static void
-sng_widget_base_size_request(G_GNUC_UNUSED SngWidget *widget)
-{
-}
-
-static void
 sng_widget_base_map(SngWidget *widget)
 {
+
+
     SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     SngWidget *parent = sng_widget_get_parent(widget);
     if (priv->floating) {
@@ -503,12 +525,6 @@ sng_widget_base_map(SngWidget *widget)
     gint dmaxrow = dminrow + priv->height - 1;
     gint dmaxcol = dmincol + priv->width - 1;
 
-    if (priv->name) {
-        g_debug("Mapping widget %s at %d %d %d %d",
-                priv->name,
-                dminrow, dmincol, dmaxrow, dmaxrow
-        );
-    }
 
     // Copy the widget in its parent widget ncurses window
     copywin(
@@ -643,13 +659,15 @@ sng_widget_class_init(SngWidgetClass *klass)
     object_class->set_property = sng_widget_set_property;
     object_class->get_property = sng_widget_get_property;
 
+    klass->update = sng_widget_base_update;
+    klass->size_request = sng_widget_base_size_request;
     klass->realize = sng_widget_base_realize;
     klass->map = sng_widget_base_map;
     klass->draw = sng_widget_base_draw;
     klass->focus_gained = sng_widget_base_focus_gained;
     klass->focus_lost = sng_widget_base_focus_lost;
     klass->key_pressed = sng_widget_base_key_pressed;
-    klass->size_request = sng_widget_base_size_request;
+
     klass->preferred_height = sng_widget_get_height;
     klass->preferred_width = sng_widget_get_width;
 
@@ -718,6 +736,26 @@ sng_widget_class_init(SngWidgetClass *klass)
         N_PROPERTIES,
         obj_properties
     );
+
+    signals[SIG_UPDATE] =
+        g_signal_newv("update",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
+
+    signals[SIG_SIZE_REQUEST] =
+        g_signal_newv("size-request",
+                      G_TYPE_FROM_CLASS(klass),
+                      G_SIGNAL_RUN_LAST,
+                      NULL,
+                      NULL, NULL,
+                      NULL,
+                      G_TYPE_NONE, 0, NULL
+        );
 
     signals[SIG_REALIZE] =
         g_signal_newv("realize",

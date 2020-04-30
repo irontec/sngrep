@@ -20,37 +20,46 @@
  **
  ****************************************************************************/
 /**
- * @file separator.h
+ * @file flow_column.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief
  *
  */
-#ifndef __SNGREP_SEPARATOR_H__
-#define __SNGREP_SEPARATOR_H__
+#ifndef __SNGREP_FLOW_COLUMN_H__
+#define __SNGREP_FLOW_COLUMN_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/orientable.h"
+#include "storage/address.h"
 #include "tui/widgets/widget.h"
 
 G_BEGIN_DECLS
 
-// Class declaration
-#define SNG_TYPE_SEPARATOR sng_separator_get_type()
-G_DECLARE_FINAL_TYPE(SngSeparator, sng_separator, SNG, SEPARATOR, SngWidget)
+//! Configurable some day
+#define CF_COLUMN_WIDTH 30
 
-struct _SngSeparator
+#define SNG_TYPE_FLOW_COLUMN sng_flow_column_get_type()
+G_DECLARE_FINAL_TYPE(SngFlowColumn, sng_flow_column, SNG, FLOW_COLUMN, SngWidget)
+
+/**
+ * @brief Structure to hold one column information
+ */
+struct _SngFlowColumn
 {
     //! Parent object attributes
     SngWidget parent;
-    //! Separator orientation
-    SngOrientation orientation;
+    //! Address header for this column
+    Address addr;
+    //! Alias for the given address
+    const gchar *alias;
+    //! Twin column for externip setting
+    SngFlowColumn *twin;
 };
 
 SngWidget *
-sng_separator_new(SngOrientation orientation);
+sng_flow_column_new(Address address);
 
 G_END_DECLS
 
-#endif    /* __SNGREP_SEPARATOR_H__ */
+#endif    /* __SNGREP_FLOW_COLUMN_H__ */

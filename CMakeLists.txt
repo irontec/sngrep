@@ -4,7 +4,7 @@ project(sngrep
         LANGUAGES C)
 
 set(PROJECT_NAME sngrep)
-set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Werror -Wall -Wextra -pedantic")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb  -Wall -Wextra -pedantic")
 
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
@@ -52,10 +52,16 @@ set(SOURCES
         src/tui/widgets/container.c
         src/tui/widgets/dialog.c
         src/tui/widgets/entry.c
+        src/tui/widgets/flow_column.c
+        src/tui/widgets/flow_arrow.c
+        src/tui/widgets/flow_msg_arrow.c
+        src/tui/widgets/flow_rtp_arrow.c
+        src/tui/widgets/flow_viewer.c
         src/tui/widgets/label.c
         src/tui/widgets/menu_bar.c
         src/tui/widgets/menu_item.c
         src/tui/widgets/menu.c
+        src/tui/widgets/orientable.c
         src/tui/widgets/radio_button.c
         src/tui/widgets/separator.c
         src/tui/widgets/scrollbar.c
@@ -198,10 +204,10 @@ set(ENUM_HEADERS
         src/storage/storage.h
         src/tui/tui.h
         src/tui/widgets/app_window.h
-        src/tui/widgets/box.h
-        src/tui/windows/call_flow_win.h
         src/tui/widgets/dialog.h
+        src/tui/widgets/flow_viewer.h
         src/tui/widgets/label.h
+        src/tui/widgets/orientable.h
         )
 
 add_custom_command(

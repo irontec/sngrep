@@ -69,14 +69,58 @@ call_list_win_show_save_win(CallListWindow *call_list_win)
     if (group != NULL) {
         save_set_group(TUI_SAVE(save_win), group);
     }
+
+    sng_window_update(save_win);
+}
+
+static void
+call_list_win_show_flow_win(CallListWindow *call_list_win, gboolean extended)
+{
+    // Create a new group of calls
+    CallGroup *group = call_group_clone(sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls)));
+
+    // If no call is selected, use current call
+    if (call_group_count(group) == 0) {
+        Call *call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
+        if (call != NULL) {
+            call_group_add(group, call);
+        }
+    }
+
+    // No calls to display
+    if (call_group_count(group) == 0) {
+        return;
+    }
+
+    // Add xcall to the group
+    if (extended) {
+        Call *call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
+        call_group_add_calls(group, call->xcalls);
+        group->callid = call->callid;
+    }
+
+    // Create a new Call Flow window
+    SngAppWindow *flow_win = call_flow_win_new();
+    call_flow_win_set_group(TUI_CALL_FLOW(flow_win), group);
+    sng_window_update(SNG_WINDOW(flow_win));
+}
+
+static void
+call_list_win_show_flow_win_simple(CallListWindow *call_list_win)
+{
+    call_list_win_show_flow_win(call_list_win, FALSE);
+}
+
+static void
+call_list_win_show_flow_win_ex(CallListWindow *call_list_win)
+{
+    call_list_win_show_flow_win(call_list_win, TRUE);
 }
 
 static void
 call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
 {
     CallListWindow *call_list_win = SNG_CALL_LIST_WIN(sng_widget_get_toplevel(sender));
-    CallGroup *group = NULL;
-    Call *call = NULL;
     SngWidget *exit_dialog = NULL;
 
     // Check if we handle this action
@@ -85,38 +129,13 @@ call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
             sng_widget_grab_focus(call_list_win->en_dfilter);
             break;
         case ACTION_SHOW_FLOW:
+            call_list_win_show_flow_win_simple(call_list_win);
+            break;
         case ACTION_SHOW_FLOW_EX:
+            call_list_win_show_flow_win_ex(call_list_win);
+            break;
         case ACTION_SHOW_RAW:
-            // Create a new group of calls
-            group = call_group_clone(sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls)));
 
-            // If no call is selected, use current call
-            if (call_group_count(group) == 0) {
-                call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
-                if (call != NULL) {
-                    call_group_add(group, call);
-                }
-            }
-
-            // No calls to display
-            if (call_group_count(group) == 0) {
-                break;
-            }
-
-            // Add xcall to the group
-            if (action == ACTION_SHOW_FLOW_EX) {
-                call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
-                call_group_add_calls(group, call->xcalls);
-                group->callid = call->callid;
-            }
-
-            if (action == ACTION_SHOW_RAW) {
-                // Create a Call raw panel
-                call_raw_win_set_group(tui_create_app_window(SNG_WINDOW_TYPE_CALL_RAW), group);
-            } else {
-                // Display current call flow (normal or extended)
-                call_flow_win_set_group(tui_create_app_window(SNG_WINDOW_TYPE_CALL_FLOW), group);
-            }
             break;
         case ACTION_SHOW_PROTOCOLS:
             tui_create_app_window(SNG_WINDOW_TYPE_PROTOCOL_SELECT);
@@ -358,17 +377,16 @@ call_list_win_display_filter(SngWidget *widget)
     filter_set(FILTER_CALL_LIST, strlen(text) ? text : NULL);
 }
 
-SngAppWindow *
+SngWidget *
 call_list_win_new()
 {
-    SngAppWindow *window = g_object_new(
+    return g_object_new(
         SNG_TYPE_CALL_LIST_WIN,
         "window-type", SNG_WINDOW_TYPE_CALL_LIST,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
         NULL
     );
-    return window;
 }
 
 SngTable *
@@ -483,7 +501,7 @@ call_list_win_constructed(GObject *object)
     sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->menu_bar);
 
     // First header line
-    SngWidget *header_first = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 8, 1);
+    SngWidget *header_first = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 8, 1);
     sng_box_pack_start(SNG_BOX(call_list_win), header_first);
 
     // Mode Label
@@ -513,7 +531,7 @@ call_list_win_constructed(GObject *object)
     }
 
     // Second header line
-    SngWidget *header_second = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 5, 1);
+    SngWidget *header_second = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 5, 1);
     sng_box_pack_start(SNG_BOX(call_list_win), header_second);
 
     // Show BPF filter if specified in command line
@@ -533,7 +551,7 @@ call_list_win_constructed(GObject *object)
     }
 
     // Add Display filter label and entry
-    SngWidget *header_third = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 1, 1);
+    SngWidget *header_third = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 1);
     sng_box_pack_start(SNG_BOX(call_list_win), header_third);
 
     SngWidget *lb_dfilter = sng_label_new("Display Filter:");
@@ -553,7 +571,7 @@ call_list_win_constructed(GObject *object)
     sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->tb_calls);
 
     // Bottom button bar
-    SngWidget *button_bar = sng_box_new_full(BOX_ORIENTATION_HORIZONTAL, 3, 0);
+    SngWidget *button_bar = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 3, 0);
     sng_widget_set_vexpand(button_bar, FALSE);
     sng_widget_set_height(button_bar, 1);
     sng_box_set_background(SNG_BOX(button_bar), COLOR_PAIR(CP_WHITE_ON_CYAN));

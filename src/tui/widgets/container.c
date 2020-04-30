@@ -62,6 +62,13 @@ sng_container_remove(SngContainer *container, SngWidget *child)
 }
 
 void
+sng_container_remove_all(SngContainer *container)
+{
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
+    g_list_free_full(priv->children, g_object_unref);
+}
+
+void
 sng_container_foreach(SngContainer *container, GFunc callback, gpointer user_data)
 {
     SngContainerPrivate *priv = sng_container_get_instance_private(container);
@@ -79,6 +86,13 @@ sng_container_get_children(SngContainer *container)
 {
     SngContainerPrivate *priv = sng_container_get_instance_private(container);
     return priv->children;
+}
+
+void
+sng_container_set_children(SngContainer *container, GList *children)
+{
+    SngContainerPrivate *priv = sng_container_get_instance_private(container);
+    priv->children = children;
 }
 
 SngWidget *
@@ -146,6 +160,24 @@ sng_container_show_all(SngContainer *container)
 }
 
 static void
+sng_container_base_update(SngWidget *widget)
+{
+    // Realize all children
+    sng_container_foreach(SNG_CONTAINER(widget), (GFunc) sng_widget_update, NULL);
+    // Chain up parent class realize
+    SNG_WIDGET_CLASS(sng_container_parent_class)->update(widget);
+}
+
+static void
+sng_container_base_size_request(SngWidget *widget)
+{
+    // Realize all children
+    sng_container_foreach(SNG_CONTAINER(widget), (GFunc) sng_widget_size_request, NULL);
+    // Chain up parent class realize
+    SNG_WIDGET_CLASS(sng_container_parent_class)->size_request(widget);
+}
+
+static void
 sng_container_base_realize(SngWidget *widget)
 {
     // Realize all children
@@ -170,6 +202,32 @@ sng_container_base_map(SngWidget *widget)
     sng_container_foreach(SNG_CONTAINER(widget), (GFunc) sng_widget_map, NULL);
     //  Chain up parent class map
     SNG_WIDGET_CLASS(sng_container_parent_class)->map(widget);
+}
+
+static gint
+sng_container_get_preferred_height(SngWidget *widget)
+{
+    SngContainerPrivate *priv = sng_container_get_instance_private(SNG_CONTAINER(widget));
+
+    gint height = 0;
+    for (GList *l = priv->children; l != NULL; l = l->next) {
+        height = MAX(height, sng_widget_get_preferred_height(l->data));
+    }
+
+    return height;
+}
+
+static gint
+sng_container_get_preferred_width(SngWidget *widget)
+{
+    SngContainerPrivate *priv = sng_container_get_instance_private(SNG_CONTAINER(widget));
+
+    gint width = 0;
+    for (GList *l = priv->children; l != NULL; l = l->next) {
+        width = MAX(width, sng_widget_get_preferred_width(l->data));
+    }
+
+    return width;
 }
 
 static void
@@ -202,9 +260,13 @@ sng_container_class_init(SngContainerClass *klass)
     object_class->finalize = sng_container_finalize;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
+    widget_class->update = sng_container_base_update;
+    widget_class->size_request = sng_container_base_size_request;
     widget_class->realize = sng_container_base_realize;
     widget_class->draw = sng_container_base_draw;
     widget_class->map = sng_container_base_map;
+//    widget_class->preferred_height = sng_container_get_preferred_height;
+//    widget_class->preferred_width = sng_container_get_preferred_width;
 
     SngContainerClass *container_class = SNG_CONTAINER_CLASS(klass);
     container_class->add = sng_container_base_add;

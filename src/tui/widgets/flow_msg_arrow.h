@@ -20,37 +20,39 @@
  **
  ****************************************************************************/
 /**
- * @file separator.h
+ * @file flow_msg_arrow.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * @brief
  *
  */
-#ifndef __SNGREP_SEPARATOR_H__
-#define __SNGREP_SEPARATOR_H__
+#ifndef __SNGREP_FLOW_MSG_ARROW_H__
+#define __SNGREP_FLOW_MSG_ARROW_H__
 
 #include <glib.h>
 #include <glib-object.h>
-#include "tui/widgets/orientable.h"
-#include "tui/widgets/widget.h"
+#include "storage/message.h"
+#include "tui/widgets/flow_arrow.h"
 
 G_BEGIN_DECLS
 
-// Class declaration
-#define SNG_TYPE_SEPARATOR sng_separator_get_type()
-G_DECLARE_FINAL_TYPE(SngSeparator, sng_separator, SNG, SEPARATOR, SngWidget)
+#define SNG_TYPE_FLOW_MSG_ARROW sng_flow_msg_arrow_get_type()
+G_DECLARE_FINAL_TYPE(SngFlowMsgArrow, sng_flow_msg_arrow, SNG, FLOW_MSG_ARROW, SngFlowArrow)
 
-struct _SngSeparator
+struct _SngFlowMsgArrow
 {
     //! Parent object attributes
-    SngWidget parent;
-    //! Separator orientation
-    SngOrientation orientation;
+    SngFlowArrow parent;
+    //! Item owner of this arrow
+    Message *msg;
 };
 
 SngWidget *
-sng_separator_new(SngOrientation orientation);
+sng_flow_msg_arrow_new(const Message *msg);
+
+Message *
+sng_flow_msg_arrow_get_message(SngFlowMsgArrow *msg_arrow);
 
 G_END_DECLS
 
-#endif    /* __SNGREP_SEPARATOR_H__ */
+#endif    /* __SNGREP_FLOW_MSG_ARROW_H__ */

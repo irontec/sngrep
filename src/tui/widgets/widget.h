@@ -57,6 +57,8 @@ struct _SngWidgetClass
 {
     //! Parent class
     GObjectClass parent;
+    //! Handle widget content changes
+    void (*update)(SngWidget *widget);
     //! Handle widget size request
     void (*size_request)(SngWidget *widget);
     //! Create Ncurses components for the widget
@@ -131,6 +133,9 @@ gboolean
 sng_widget_is_visible(SngWidget *widget);
 
 gboolean
+sng_widget_is_hidden(SngWidget *widget);
+
+gboolean
 sng_widget_is_realized(SngWidget *widget);
 
 gboolean
@@ -138,6 +143,15 @@ sng_widget_has_focus(SngWidget *widget);
 
 SngWidget *
 sng_widget_get_toplevel(SngWidget *widget);
+
+void
+sng_widget_update(SngWidget *widget);
+
+void
+sng_widget_size_request(SngWidget *widget);
+
+void
+sng_widget_realize(SngWidget *widget);
 
 /**
  * @brief Notifies current ui the screen size has changed
@@ -151,8 +165,7 @@ sng_widget_get_toplevel(SngWidget *widget);
 void
 sng_widget_draw(SngWidget *widget);
 
-void
-sng_widget_realize(SngWidget *widget);
+
 
 void
 sng_widget_map(SngWidget *widget);
@@ -201,9 +214,6 @@ sng_widget_clicked(SngWidget *widget, MEVENT event);
  */
 void
 sng_widget_key_pressed(SngWidget *widget, gint key);
-
-void
-sng_widget_size_request(SngWidget *widget);
 
 gint
 sng_widget_get_preferred_height(SngWidget *widget);

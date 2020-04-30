@@ -49,6 +49,7 @@
 #include "tui/widgets/container.h"
 #include "tui/widgets/dialog.h"
 #include "tui/widgets/entry.h"
+#include "tui/widgets/flow_viewer.h"
 #include "tui/widgets/label.h"
 #include "tui/widgets/menu.h"
 #include "tui/widgets/menu_bar.h"
@@ -202,6 +203,9 @@ draw_message(WINDOW *win, Message *msg);
  */
 int
 draw_message_pos(WINDOW *win, Message *msg, int starting);
+
+void
+tui_whline(WINDOW *win, gint row, gint col, chtype acs, gint length);
 
 /**
  * @brief Return UTF-8 representation for a given character
