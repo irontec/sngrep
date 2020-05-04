@@ -318,23 +318,13 @@ sng_widget_is_floating(SngWidget *widget)
 void
 sng_widget_update(SngWidget *widget)
 {
-    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-    if (klass->update != NULL) {
-        klass->update(widget);
-    }
-
     // Notify everyone we're being updated
-    g_signal_emit(widget, signals[SIG_SIZE_REQUEST], 0);
+    g_signal_emit(widget, signals[SIG_UPDATE], 0);
 }
 
 void
 sng_widget_size_request(SngWidget *widget)
 {
-    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-    if (klass->size_request != NULL) {
-        klass->size_request(widget);
-    }
-
     // Notify everyone we're being resizing
     g_signal_emit(widget, signals[SIG_SIZE_REQUEST], 0);
 }
@@ -342,12 +332,6 @@ sng_widget_size_request(SngWidget *widget)
 void
 sng_widget_realize(SngWidget *widget)
 {
-    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-
-    if (klass->realize != NULL) {
-        klass->realize(widget);
-    }
-
     // Notify everyone we're being realized
     g_signal_emit(widget, signals[SIG_REALIZE], 0);
 }
@@ -364,11 +348,6 @@ sng_widget_draw(SngWidget *widget)
 
     // Notify everyone we're being drawn
     g_signal_emit(widget, signals[SIG_DRAW], 0);
-
-    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-    if (klass->draw != NULL) {
-        klass->draw(widget);
-    }
 }
 
 void
@@ -381,11 +360,6 @@ sng_widget_map(SngWidget *widget)
 
     // Notify everyone we're being mapped
     g_signal_emit(widget, signals[SIG_MAP], 0);
-
-    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-    if (klass->map != NULL) {
-        klass->map(widget);
-    }
 }
 
 
@@ -442,13 +416,8 @@ sng_widget_clicked(SngWidget *widget, MEVENT event)
 void
 sng_widget_key_pressed(SngWidget *widget, gint key)
 {
-    SngWidgetClass *klass = SNG_WIDGET_GET_CLASS(widget);
-    if (klass->key_pressed != NULL) {
-        klass->key_pressed(widget, key);
-    }
-
     // Notify everyone we've received a new key
-    g_signal_emit(widget, signals[SIG_KEY_PRESSED], 0);
+    g_signal_emit(widget, signals[SIG_KEY_PRESSED], 0, key);
 }
 
 gint
@@ -738,63 +707,63 @@ sng_widget_class_init(SngWidgetClass *klass)
     );
 
     signals[SIG_UPDATE] =
-        g_signal_newv("update",
+        g_signal_new("update",
                       G_TYPE_FROM_CLASS(klass),
                       G_SIGNAL_RUN_LAST,
-                      NULL,
+                      G_STRUCT_OFFSET(SngWidgetClass, update),
                       NULL, NULL,
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_SIZE_REQUEST] =
-        g_signal_newv("size-request",
+        g_signal_new("size-request",
                       G_TYPE_FROM_CLASS(klass),
                       G_SIGNAL_RUN_LAST,
-                      NULL,
+                      G_STRUCT_OFFSET(SngWidgetClass, size_request),
                       NULL, NULL,
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_REALIZE] =
-        g_signal_newv("realize",
+        g_signal_new("realize",
                       G_TYPE_FROM_CLASS(klass),
                       G_SIGNAL_RUN_LAST,
-                      NULL,
+                      G_STRUCT_OFFSET(SngWidgetClass, realize),
                       NULL, NULL,
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_DRAW] =
-        g_signal_newv("draw",
-                      G_TYPE_FROM_CLASS(klass),
-                      G_SIGNAL_RUN_LAST,
-                      NULL,
-                      NULL, NULL,
-                      NULL,
-                      G_TYPE_NONE, 0, NULL
+        g_signal_new("draw",
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(SngWidgetClass, draw),
+                     NULL, NULL,
+                     NULL,
+                     G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_MAP] =
-        g_signal_newv("map",
-                      G_TYPE_FROM_CLASS(klass),
-                      G_SIGNAL_RUN_LAST,
-                      NULL,
-                      NULL, NULL,
-                      NULL,
-                      G_TYPE_NONE, 0, NULL
+        g_signal_new("map",
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(SngWidgetClass, map),
+                     NULL, NULL,
+                     NULL,
+                     G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_KEY_PRESSED] =
-        g_signal_newv("key-pressed",
+        g_signal_new("key-pressed",
                       G_TYPE_FROM_CLASS(klass),
                       G_SIGNAL_RUN_LAST,
-                      NULL,
+                      G_STRUCT_OFFSET(SngWidgetClass, key_pressed),
                       NULL, NULL,
                       NULL,
-                      G_TYPE_NONE, 0, NULL
+                      G_TYPE_NONE, 1, G_TYPE_INT
         );
 
     signals[SIG_CLICKED] =
