@@ -200,6 +200,27 @@ storage_sort_options()
     return storage->options.sort;
 }
 
+Attribute *
+storage_sort_get_attribute()
+{
+    return storage->options.sort.by;
+}
+
+void
+storage_sort_set_attribute(Attribute *attribute)
+{
+    storage->options.sort.by = attribute;
+    storage->options.sort.asc = TRUE;
+    g_ptr_array_sort(storage->calls, (GCompareFunc) storage_call_attr_sorter);
+}
+
+void
+storage_sort_toggle_order()
+{
+    storage->options.sort.asc = !storage->options.sort.asc;
+    g_ptr_array_sort(storage->calls, (GCompareFunc) storage_call_attr_sorter);
+}
+
 StorageCaptureOpts
 storage_capture_options()
 {

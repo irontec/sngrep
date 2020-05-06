@@ -49,7 +49,7 @@ typedef gchar *(*AttributeGetterFunc)(Attribute *, Message *);
  * a call or message can have.
  */
 
-#define ATTR_CALLINDEX      "callindex"         //! Call index in the Call List
+#define ATTR_CALLINDEX      "index"             //! Call index in the Call List
 #define ATTR_SIPFROM        "sipfrom"           //! SIP Message From: header
 #define ATTR_SIPFROMUSER    "sipfromuser"       //! SIP Message User of From: header
 #define ATTR_SIPTO          "sipto"             //! SIP Message To: header

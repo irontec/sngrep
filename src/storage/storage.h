@@ -255,12 +255,32 @@ StorageSortOpts
 storage_sort_options();
 
 /**
+ * @brief Get current sorting attribute
+ */
+Attribute *
+storage_sort_get_attribute();
+
+/**
+ * @brief Set storage call sorting based on given attribute
+ * @param attribute
+ */
+void
+storage_sort_set_attribute(Attribute *attribute);
+
+/**
+ * @brief Toggle storage sorting order between ascending and descending
+ */
+void
+storage_sort_toggle_order();
+
+/**
  * @brief Get Storage Capture options
  *
  * @return Struct containing capture options
  */
 StorageCaptureOpts
 storage_capture_options();
+
 
 /**
  * @brief Set Storage Sorting options

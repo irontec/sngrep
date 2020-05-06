@@ -190,9 +190,7 @@ sng_table_handle_action(SngWidget *widget, SngAction action)
             break;
         case ACTION_SORT_SWAP:
             // Change sort order
-            sort = storage_sort_options();
-            sort.asc = (sort.asc) ? FALSE : TRUE;
-            storage_set_sort_options(sort);
+            storage_sort_toggle_order();
             break;
         case ACTION_CONFIRM:
             sng_table_activate(table);
@@ -335,13 +333,6 @@ sng_table_draw(SngWidget *widget)
     for (guint i = 0; i < g_ptr_array_len(table->columns); i++) {
         Attribute *attr = g_ptr_array_index(table->columns, i);
 
-        // Print sort column indicator
-        if (attr == sort.by) {
-            wattron(win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
-            wprintw(win, "%c", ((sort.asc) ? '^' : 'v'));
-            wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
-        }
-
         gint col_width = CLAMP(
             attribute_get_length(attr),
             0,
@@ -349,13 +340,27 @@ sng_table_draw(SngWidget *widget)
         );
 
         if (col_width > 0) {
-            wprintw(
-                win,
-                "%-*.*s ",
-                col_width,
-                col_width,
-                attribute_get_title(attr)
-            );
+            if (attr == sort.by) {
+                // Print sort column indicator
+                wattron(win, A_BOLD | COLOR_PAIR(CP_YELLOW_ON_CYAN));
+                wprintw(
+                    win,
+                    "%c%-*.*s ",
+                    (sort.asc) ? '^' : 'v',
+                    col_width - 1,
+                    col_width - 1,
+                    attribute_get_title(attr)
+                );
+            } else {
+                wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
+                wprintw(
+                    win,
+                    "%-*.*s ",
+                    col_width,
+                    col_width,
+                    attribute_get_title(attr)
+                );
+            }
         }
     }
     wprintw(win, "%*s", getmaxx(win) - getcurx(win), " ");
@@ -459,20 +464,6 @@ sng_table_draw(SngWidget *widget)
 }
 
 static void
-sng_table_focus_gained(SngWidget *widget)
-{
-    // Chain up parent focus gained
-    SNG_WIDGET_CLASS(sng_table_parent_class)->focus_gained(widget);
-}
-
-static void
-sng_table_focus_lost(SngWidget *widget)
-{
-    // Chain up parent focus lost
-    SNG_WIDGET_CLASS(sng_table_parent_class)->focus_lost(widget);
-}
-
-static void
 sng_table_key_pressed(SngWidget *widget, gint key)
 {
     SngTable *table = SNG_TABLE(widget);
@@ -503,7 +494,7 @@ sng_table_key_pressed(SngWidget *widget, gint key)
     }
 
     if (action == ACTION_NONE) {
-         SNG_WIDGET_CLASS(sng_table_parent_class)->key_pressed(widget, key);
+        SNG_WIDGET_CLASS(sng_table_parent_class)->key_pressed(widget, key);
     }
 }
 
@@ -514,16 +505,29 @@ sng_table_clicked(SngWidget *widget, MEVENT mevent)
 
     // Check if the header line was clicked
     if (mevent.y == sng_widget_get_ypos(widget)) {
-        return;
-    }
+        gint column_xpos = 4;
+        for (guint i = 0; i < g_ptr_array_len(table->columns); i++) {
+            Attribute *attribute = g_ptr_array_index(table->columns, i);
+            column_xpos += attribute->length + 1;
+            if (column_xpos >= mevent.x) {
+                // If already sorting by this attribute, just toggle sort order
+                if (attribute == storage_sort_get_attribute()) {
+                    storage_sort_toggle_order();
+                } else {
+                    storage_sort_set_attribute(attribute);
+                }
+                break;
+            }
+        }
+    } else {
+        // Select the clicked line
+        table->cur_idx = table->first_idx + (mevent.y - sng_widget_get_ypos(widget) - 1);
 
-    // Select the clicked line
-    table->cur_idx = table->first_idx + (mevent.y - sng_widget_get_ypos(widget) - 1);
-
-    // Check if the checkbox was selected
-    if (mevent.x >= 1 && mevent.x <= 3) {
-        // TODO Handle actions instead of keys
-        sng_table_key_pressed(widget, KEY_SPACE);
+        // Check if the checkbox was selected
+        if (mevent.x >= 1 && mevent.x <= 3) {
+            // TODO Handle actions instead of keys
+            sng_table_key_pressed(widget, KEY_SPACE);
+        }
     }
 }
 
@@ -542,14 +546,6 @@ sng_table_finalize(GObject *object)
 }
 
 static void
-sng_table_init(SngTable *table)
-{
-    table->autoscroll = setting_enabled(SETTING_TUI_CL_AUTOSCROLL);
-    table->group = call_group_new();
-    table->dcalls = g_ptr_array_new();
-}
-
-static void
 sng_table_class_init(SngTableClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
@@ -558,8 +554,6 @@ sng_table_class_init(SngTableClass *klass)
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->realize = sng_table_realize;
     widget_class->draw = sng_table_draw;
-    widget_class->focus_gained = sng_table_focus_gained;
-    widget_class->focus_lost = sng_table_focus_lost;
     widget_class->key_pressed = sng_table_key_pressed;
     widget_class->clicked = sng_table_clicked;
 
@@ -572,4 +566,12 @@ sng_table_class_init(SngTableClass *klass)
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
+}
+
+static void
+sng_table_init(SngTable *table)
+{
+    table->autoscroll = setting_enabled(SETTING_TUI_CL_AUTOSCROLL);
+    table->group = call_group_new();
+    table->dcalls = g_ptr_array_new();
 }
