@@ -63,6 +63,12 @@ sng_menu_item_new(const gchar *text, SngAction action)
     );
 }
 
+SngWidget *
+sng_menu_separator()
+{
+    return sng_menu_item_new(NULL, ACTION_NONE);
+}
+
 void
 sng_menu_item_activate(SngMenuItem *item)
 {

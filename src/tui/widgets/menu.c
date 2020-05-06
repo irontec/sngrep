@@ -196,7 +196,10 @@ sng_menu_clicked(SngWidget *widget, MEVENT mevent)
 static void
 sng_menu_focus_lost(SngWidget *widget)
 {
+    // Hide menu
     sng_widget_hide(widget);
+    // Chain-up parent focus lost function
+    SNG_WIDGET_CLASS(sng_menu_parent_class)->focus_lost(widget);
 }
 
 static void

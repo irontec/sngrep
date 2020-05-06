@@ -58,6 +58,9 @@ struct _SngMenuItem
 SngWidget *
 sng_menu_item_new(const gchar *text, SngAction action);
 
+SngWidget *
+sng_menu_separator();
+
 void
 sng_menu_item_activate(SngMenuItem *item);
 

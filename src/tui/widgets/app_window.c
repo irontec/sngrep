@@ -132,7 +132,7 @@ void
 sng_app_window_add_menu(SngAppWindow *window, SngMenu *menu)
 {
     SngAppWindowPrivate *priv = sng_app_window_get_instance_private(window);
-    sng_box_pack_start(SNG_BOX(priv->menu_bar), SNG_WIDGET(menu));
+    sng_container_add(SNG_CONTAINER(priv->menu_bar), SNG_WIDGET(menu));
 }
 
 void
@@ -168,9 +168,15 @@ static void
 sng_app_window_contructed(GObject *object)
 {
     SngAppWindowPrivate *priv = sng_app_window_get_instance_private(SNG_APP_WINDOW(object));
+
+    // Add boxes to main app window
     sng_box_pack_start(SNG_BOX(object), priv->menu_bar);
     sng_container_add(SNG_CONTAINER(object), priv->content_box);
     sng_box_pack_start(SNG_BOX(object), priv->button_bar);
+
+    // Default application window bindings
+    sng_widget_bind_action(SNG_WIDGET(object), ACTION_SHOW_HELP,
+                           G_CALLBACK(sng_app_window_help), NULL);
 }
 
 static void

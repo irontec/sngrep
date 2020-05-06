@@ -342,6 +342,7 @@ call_list_win_setup_menu(CallListWindow *call_list_win)
     SngWidget *menu_file = sng_menu_new("File");
     sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Settings", ACTION_SHOW_SETTINGS));
     sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Save as ...", ACTION_SAVE));
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_separator());
     sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Exit", ACTION_CLOSE));
     sng_app_window_add_menu(SNG_APP_WINDOW(call_list_win), SNG_MENU(menu_file));
 
@@ -354,8 +355,10 @@ call_list_win_setup_menu(CallListWindow *call_list_win)
     // Call List menu
     SngWidget *menu_list = sng_menu_new("Call List");
     sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Configure Columns", ACTION_SHOW_COLUMNS));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_separator());
     sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Clear List", ACTION_CLEAR_CALLS));
     sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Clear filtered calls", ACTION_CLEAR_CALLS_SOFT));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_separator());
     sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Show Call Flow", ACTION_SHOW_FLOW));
     sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Show Call Flow Extended", ACTION_SHOW_FLOW_EX));
     sng_app_window_add_menu(SNG_APP_WINDOW(call_list_win), SNG_MENU(menu_list));
@@ -451,8 +454,8 @@ call_list_win_constructed(GObject *object)
     call_list_win->tb_calls = sng_table_new();
     sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
     g_signal_connect_swapped(call_list_win->tb_calls, "activate",
-                     G_CALLBACK(sng_window_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_FLOW));
+                             G_CALLBACK(sng_window_handle_action),
+                             GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
     sng_box_pack_start(SNG_BOX(content), header_first);
     sng_box_pack_start(SNG_BOX(content), header_second);
@@ -480,12 +483,12 @@ call_list_win_constructed(GObject *object)
                            G_CALLBACK(call_list_win_show_filters_win), NULL);
     sng_widget_bind_action(widget, ACTION_SAVE,
                            G_CALLBACK(call_list_win_show_save_win), NULL);
-    sng_widget_bind_action(widget, ACTION_SHOW_HELP,
-                           G_CALLBACK(sng_app_window_help), NULL);
     sng_widget_bind_action_swapped(widget, ACTION_TOGGLE_PAUSE,
-                                   G_CALLBACK(capture_manager_toggle_pause), capture_manager_get_instance());
+                                   G_CALLBACK(capture_manager_toggle_pause), capture);
     sng_widget_bind_action_swapped(widget, ACTION_DISP_FILTER,
                                    G_CALLBACK(sng_widget_grab_focus), call_list_win->en_dfilter);
+    sng_widget_bind_action_swapped(widget, ACTION_CLEAR_CALLS,
+                                   G_CALLBACK(sng_table_clear), call_list_win->tb_calls);
 
     // Start with the call list focused
     sng_window_set_default_focus(SNG_WINDOW(call_list_win), call_list_win->tb_calls);
