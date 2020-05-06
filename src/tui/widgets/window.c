@@ -405,6 +405,9 @@ sng_window_finalize(GObject *self)
     hide_panel(priv->panel);
     del_panel(priv->panel);
 
+    // Deallocate focus chain
+    g_list_free(priv->focus_chain);
+
     // Chain-up parent finalize function
     G_OBJECT_CLASS(sng_window_parent_class)->finalize(self);
 }

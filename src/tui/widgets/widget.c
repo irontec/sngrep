@@ -90,8 +90,6 @@ typedef struct
     gboolean floating;
     //! Determine if the widget is being destroyed
     gboolean destroying;
-    //! Widget actions bindings (SngWidgetActionBinding)
-    GPtrArray *bindings;
 } SngWidgetPrivate;
 
 // SngWidget class definition
@@ -448,7 +446,7 @@ sng_widget_get_preferred_width(SngWidget *widget)
 void
 sng_widget_bind_action(SngWidget *widget, SngAction action, GCallback callback, gpointer callback_data)
 {
-    GString *detailed_signal = g_string_new("action::");
+    g_autoptr(GString) detailed_signal = g_string_new("action::");
     g_string_append(detailed_signal, key_binding_name(action));
 
     g_signal_connect(
@@ -462,7 +460,7 @@ sng_widget_bind_action(SngWidget *widget, SngAction action, GCallback callback, 
 void
 sng_widget_bind_action_swapped(SngWidget *widget, SngAction action, GCallback callback, gpointer callback_data)
 {
-    GString *detailed_signal = g_string_new("action::");
+    g_autoptr(GString) detailed_signal = g_string_new("action::");
     g_string_append(detailed_signal, key_binding_name(action));
 
     g_signal_connect_swapped(
@@ -604,8 +602,6 @@ sng_widget_finalize(GObject *self)
     SngWidgetPrivate *priv = sng_widget_get_instance_private(SNG_WIDGET(self));
     // Deallocate ncurses pointers
     delwin(priv->win);
-    // Free bindings array
-    g_ptr_array_free(priv->bindings, TRUE);
     // Chain-up parent finalize function
     G_OBJECT_CLASS(sng_widget_parent_class)->finalize(self);
 }
@@ -883,6 +879,4 @@ sng_widget_init(SngWidget *self)
     priv->x = priv->y = 0;
     // Make widgets visible by default
     priv->visible = TRUE;
-    // Initialize bindings array
-    priv->bindings = g_ptr_array_new_with_free_func(g_free);
 }

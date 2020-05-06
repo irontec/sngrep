@@ -259,6 +259,9 @@ void
 attribute_init();
 
 void
+attribute_deinit();
+
+void
 attribute_dump();
 
 #endif /* __SNGREP_ATTRIBUTE_H */

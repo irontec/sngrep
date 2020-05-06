@@ -79,9 +79,6 @@ CallGroup *
 sng_table_get_call_group(SngTable *table);
 
 void
-sng_table_select_current(SngTable *table);
-
-void
 sng_table_clear(SngTable *table);
 
 Call *

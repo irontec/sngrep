@@ -48,7 +48,7 @@ struct _SngMenuItem
     //! Parent object attributes
     SngWidget parent;
     //! Item text
-    const gchar *text;
+    gchar *text;
     //! Mark this entry as enabled
     gboolean checked;
     //! Keybinding Action

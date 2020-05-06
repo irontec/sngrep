@@ -231,11 +231,23 @@ sng_menu_get_property(GObject *self, guint property_id, GValue *value, GParamSpe
     }
 }
 
+static void
+sng_menu_finalize(GObject *object)
+{
+    SngMenu *menu = SNG_MENU(object);
+
+    // Free menu allocated memory
+    g_free(menu->title);
+
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(sng_menu_parent_class)->finalize(object);
+}
 
 static void
 sng_menu_class_init(SngMenuClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = sng_menu_finalize;
     object_class->set_property = sng_menu_set_property;
     object_class->get_property = sng_menu_get_property;
 

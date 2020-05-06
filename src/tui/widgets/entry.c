@@ -248,14 +248,25 @@ sng_entry_get_property(GObject *object, guint property_id, GValue *value, GParam
 }
 
 static void
-sng_entry_init(G_GNUC_UNUSED SngEntry *self)
+sng_entry_finalize(GObject *object)
 {
+    SngEntry *entry = SNG_ENTRY(object);
+
+    // Free initial text string
+    g_free(entry->text);
+
+    // Free ncurses field memory
+    unpost_form(entry->form);
+    free_form(entry->form);
+    free_field(entry->fields[0]);
+    g_free(entry->fields);
 }
 
 static void
 sng_entry_class_init(SngEntryClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = sng_entry_finalize;
     object_class->set_property = sng_entry_set_property;
     object_class->get_property = sng_entry_get_property;
 
@@ -289,4 +300,9 @@ sng_entry_class_init(SngEntryClass *klass)
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
+}
+
+static void
+sng_entry_init(G_GNUC_UNUSED SngEntry *self)
+{
 }

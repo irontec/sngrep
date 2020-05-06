@@ -49,7 +49,7 @@ struct _SngEntry
     //! Ncurses input field
     FIELD **fields;
     //! Initial field text
-    const gchar *text;
+    gchar *text;
 };
 
 SngWidget *

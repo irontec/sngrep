@@ -156,6 +156,46 @@ sng_dialog_key_pressed(SngWidget *widget, gint key)
 }
 
 static void
+sng_dialog_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+    SngDialog *dialog = SNG_DIALOG(object);
+    switch (property_id) {
+        case PROP_TYPE:
+            dialog->type = g_value_get_enum(value);
+            break;
+        case PROP_BUTTONS:
+            dialog->buttons = g_value_get_enum(value);
+            break;
+        case PROP_MESSAGE:
+            dialog->message = g_strdup(g_value_get_string(value));
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+            break;
+    }
+}
+
+static void
+sng_dialog_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+{
+    SngDialog *dialog = SNG_DIALOG(object);
+    switch (property_id) {
+        case PROP_TYPE:
+            g_value_set_enum(value, dialog->type);
+            break;
+        case PROP_BUTTONS:
+            g_value_set_enum(value, dialog->buttons);
+            break;
+        case PROP_MESSAGE:
+            g_value_set_string(value, dialog->message);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+            break;
+    }
+}
+
+static void
 sng_dialog_constructed(GObject *object)
 {
     SngDialog *dialog = SNG_DIALOG(object);
@@ -226,43 +266,15 @@ sng_dialog_constructed(GObject *object)
 }
 
 static void
-sng_dialog_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+sng_dialog_finalize(GObject *object)
 {
     SngDialog *dialog = SNG_DIALOG(object);
-    switch (property_id) {
-        case PROP_TYPE:
-            dialog->type = g_value_get_enum(value);
-            break;
-        case PROP_BUTTONS:
-            dialog->buttons = g_value_get_enum(value);
-            break;
-        case PROP_MESSAGE:
-            dialog->message = g_strdup(g_value_get_string(value));
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
-            break;
-    }
-}
 
-static void
-sng_dialog_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
-{
-    SngDialog *dialog = SNG_DIALOG(object);
-    switch (property_id) {
-        case PROP_TYPE:
-            g_value_set_enum(value, dialog->type);
-            break;
-        case PROP_BUTTONS:
-            g_value_set_enum(value, dialog->buttons);
-            break;
-        case PROP_MESSAGE:
-            g_value_set_string(value, dialog->message);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
-            break;
-    }
+    // Free dialog allocated memory
+    g_free(dialog->message);
+
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(sng_dialog_parent_class)->finalize(object);
 }
 
 static void
@@ -270,6 +282,7 @@ sng_dialog_class_init(SngDialogClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
     object_class->constructed = sng_dialog_constructed;
+    object_class->finalize = sng_dialog_finalize;
     object_class->set_property = sng_dialog_set_property;
     object_class->get_property = sng_dialog_get_property;
 

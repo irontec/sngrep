@@ -249,6 +249,11 @@ sng_container_base_remove(G_GNUC_UNUSED SngContainer *container, SngWidget *widg
 static void
 sng_container_finalize(GObject *object)
 {
+    SngContainerPrivate *priv = sng_container_get_instance_private(SNG_CONTAINER(object));
+
+    // Free children list
+    g_list_free_full(priv->children, g_object_unref);
+
     // Chain-up parent finalize function
     G_OBJECT_CLASS(sng_container_parent_class)->finalize(object);
 }

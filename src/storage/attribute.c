@@ -482,6 +482,17 @@ attribute_init()
 }
 
 void
+attribute_deinit()
+{
+    for (guint i = 0; i < g_ptr_array_len(attributes); i++) {
+        Attribute *attribute = g_ptr_array_index(attributes, i);
+        if (attribute->regex != NULL) {
+            g_regex_unref(attribute->regex);
+        }
+    }
+}
+
+void
 attribute_dump()
 {
     g_print("\nAttribute List\n===============\n");

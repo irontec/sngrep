@@ -218,14 +218,22 @@ sng_label_get_property(GObject *self, guint property_id, GValue *value, GParamSp
 }
 
 static void
-sng_label_init(G_GNUC_UNUSED SngLabel *self)
+sng_label_finalize(GObject *object)
 {
+    SngLabel *label = SNG_LABEL(object);
+
+    // Free label allocated memory
+    g_free(label->text);
+
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(sng_label_parent_class)->finalize(object);
 }
 
 static void
 sng_label_class_init(SngLabelClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = sng_label_finalize;
     object_class->set_property = sng_label_set_property;
     object_class->get_property = sng_label_get_property;
 
@@ -255,4 +263,9 @@ sng_label_class_init(SngLabelClass *klass)
         N_PROPERTIES,
         obj_properties
     );
+}
+
+static void
+sng_label_init(G_GNUC_UNUSED SngLabel *self)
+{
 }

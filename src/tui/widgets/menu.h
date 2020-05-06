@@ -51,7 +51,7 @@ struct _SngMenu
     //! Parent object attributes
     SngContainer parent;
     //! Menu title displayed in bar
-    const gchar *title;
+    gchar *title;
     //! Selected item index
     gint selected;
 };

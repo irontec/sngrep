@@ -45,6 +45,17 @@ static guint signals[SIGS] = { 0 };
 // Menu table class definition
 G_DEFINE_TYPE(SngTable, sng_table, SNG_TYPE_WIDGET)
 
+SngWidget *
+sng_table_new()
+{
+    return g_object_new(
+        SNG_TYPE_TABLE,
+        "hexpand", TRUE,
+        "vexpand", TRUE,
+        NULL
+    );
+}
+
 static void
 sng_table_activate(SngTable *table)
 {
@@ -72,7 +83,7 @@ sng_table_move_vertical(SngTable *table, gint times)
 
     // Calculate Call List height
     gint height = sng_widget_get_height(SNG_WIDGET(table));
-    height -= 1;                                        // Remove header line
+    height -= 1;                                         // Remove header line
     height -= scrollbar_visible(table->hscroll) ? 1 : 0; // Remove Horizontal scrollbar
 
     // Move the first index if required (moving down)
@@ -221,7 +232,7 @@ void
 sng_table_columns_update(SngTable *table)
 {
     // Add configured columns
-    table->columns = g_ptr_array_new_with_free_func(g_free);
+    table->columns = g_ptr_array_new();
     g_auto(GStrv) columns = g_strsplit(setting_get_value(SETTING_TUI_CL_COLUMNS), ",", 0);
     for (guint i = 0; i < g_strv_length(columns); i++) {
         Attribute *attr = attribute_find_by_name(columns[i]);
@@ -235,12 +246,6 @@ CallGroup *
 sng_table_get_call_group(SngTable *table)
 {
     return table->group;
-}
-
-void
-sng_table_select_current(SngTable *table)
-{
-    sng_table_handle_action(SNG_WIDGET(table), ACTION_SELECT);
 }
 
 Call *
@@ -289,7 +294,7 @@ sng_table_realize(SngWidget *widget)
         // Create a new pad for configured columns
         SNG_WIDGET_CLASS(sng_table_parent_class)->realize(widget);
         WINDOW *win = sng_widget_get_ncurses_window(widget);
-        // Set window srollbars
+        // Set window scrollbars
         table->vscroll = window_set_scrollbar(win, SB_VERTICAL, SB_LEFT);
         table->hscroll = window_set_scrollbar(win, SB_HORIZONTAL, SB_BOTTOM);
     }
@@ -303,7 +308,7 @@ sng_table_draw(SngWidget *widget)
     SngTable *table = SNG_TABLE(widget);
 
     // Get the list of calls that are going to be displayed
-//    g_ptr_array_free(table->dcalls, TRUE);
+    g_ptr_array_free(table->dcalls, TRUE);
     table->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
 
     // If autoscroll is enabled, select the last dialog
@@ -536,29 +541,12 @@ sng_table_finalize(GObject *object)
     G_OBJECT_CLASS(sng_table_parent_class)->finalize(object);
 }
 
-
-SngWidget *
-sng_table_new()
-{
-    return g_object_new(
-        SNG_TYPE_TABLE,
-        "hexpand", TRUE,
-        "vexpand", TRUE,
-        NULL
-    );
-}
-
-void
-sng_table_free(SngTable *table)
-{
-    g_object_unref(table);
-}
-
 static void
 sng_table_init(SngTable *table)
 {
     table->autoscroll = setting_enabled(SETTING_TUI_CL_AUTOSCROLL);
     table->group = call_group_new();
+    table->dcalls = g_ptr_array_new();
 }
 
 static void

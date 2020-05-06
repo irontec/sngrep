@@ -458,6 +458,9 @@ main(int argc, char *argv[])
     // Deinitialize configuration options
     settings_deinit();
 
+    // Deinitialize attributes
+    attribute_deinit();
+
     // Leaving!
     return 0;
 }

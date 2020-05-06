@@ -115,14 +115,22 @@ sng_menu_item_get_property(GObject *self, guint property_id, GValue *value, GPar
 }
 
 static void
-sng_menu_item_init(G_GNUC_UNUSED SngMenuItem *self)
+sng_menu_finalize(GObject *object)
 {
+    SngMenuItem *item = SNG_MENU_ITEM(object);
+
+    // Free menu item allocated memory
+    g_free(item->text);
+
+    // Chain-up parent finalize function
+    G_OBJECT_CLASS(sng_menu_item_parent_class)->finalize(object);
 }
 
 static void
 sng_menu_item_class_init(SngMenuItemClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    object_class->finalize = sng_menu_finalize;
     object_class->set_property = sng_menu_item_set_property;
     object_class->get_property = sng_menu_item_get_property;
 
@@ -158,4 +166,9 @@ sng_menu_item_class_init(SngMenuItemClass *klass)
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
+}
+
+static void
+sng_menu_item_init(G_GNUC_UNUSED SngMenuItem *self)
+{
 }
