@@ -28,7 +28,6 @@
  */
 #include "config.h"
 #include <glib.h>
-#include <stdio.h>
 #include "glib-extra/glib.h"
 #include "setting.h"
 #include "storage/filter.h"
@@ -36,7 +35,6 @@
 #include "capture/capture_hep.h"
 #endif
 #include "tui/tui.h"
-#include "tui/dialog.h"
 #include "tui/windows/call_list_win.h"
 #include "tui/windows/call_flow_win.h"
 #include "tui/windows/call_raw_win.h"
@@ -44,14 +42,17 @@
 
 G_DEFINE_TYPE(CallListWindow, call_list_win, SNG_TYPE_APP_WINDOW)
 
-/**
- * @brief Determine if the screen requires redrawn
- *
- * This will query the interface if it requires to be redraw again.
- *
- * @param window UI structure pointer
- * @return true if the panel requires redraw, false otherwise
- */
+SngWidget *
+call_list_win_new()
+{
+    return g_object_new(
+        SNG_TYPE_CALL_LIST_WIN,
+        "height", getmaxy(stdscr),
+        "width", getmaxx(stdscr),
+        NULL
+    );
+}
+
 static gboolean
 call_list_win_redraw(G_GNUC_UNUSED SngAppWindow *window)
 {
@@ -73,8 +74,8 @@ call_list_win_show_save_win(CallListWindow *call_list_win)
     sng_window_update(save_win);
 }
 
-static void
-call_list_win_show_flow_win(CallListWindow *call_list_win, gboolean extended)
+static gboolean
+call_list_win_show_flow_win(CallListWindow *call_list_win, SngAction action)
 {
     // Create a new group of calls
     CallGroup *group = call_group_clone(sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls)));
@@ -89,11 +90,11 @@ call_list_win_show_flow_win(CallListWindow *call_list_win, gboolean extended)
 
     // No calls to display
     if (call_group_count(group) == 0) {
-        return;
+        return FALSE;
     }
 
     // Add xcall to the group
-    if (extended) {
+    if (action == ACTION_SHOW_FLOW_EX) {
         Call *call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
         call_group_add_calls(group, call->xcalls);
         group->callid = call->callid;
@@ -103,125 +104,74 @@ call_list_win_show_flow_win(CallListWindow *call_list_win, gboolean extended)
     SngAppWindow *flow_win = call_flow_win_new();
     call_flow_win_set_group(TUI_CALL_FLOW(flow_win), group);
     sng_window_update(SNG_WINDOW(flow_win));
+
+    return TRUE;
 }
 
-static void
-call_list_win_show_flow_win_simple(CallListWindow *call_list_win)
+static gboolean
+call_list_win_show_filters_win(CallListWindow *call_list_win)
 {
-    call_list_win_show_flow_win(call_list_win, FALSE);
+    tui_create_app_window(SNG_WINDOW_TYPE_FILTER);
+    return TRUE;
 }
 
-static void
-call_list_win_show_flow_win_ex(CallListWindow *call_list_win)
+static gboolean
+call_list_win_show_raw_win(CallListWindow *call_list_win)
 {
-    call_list_win_show_flow_win(call_list_win, TRUE);
+    return TRUE;
 }
 
-static void
-call_list_win_handle_action(SngWidget *sender, KeybindingAction action)
+static gboolean
+call_list_win_show_protocols_win(CallListWindow *call_list_win)
 {
-    CallListWindow *call_list_win = SNG_CALL_LIST_WIN(sng_widget_get_toplevel(sender));
+    tui_create_app_window(SNG_WINDOW_TYPE_PROTOCOL_SELECT);
+    return TRUE;
+}
+
+static gboolean
+call_list_win_show_columns_win(CallListWindow *call_list_win)
+{
+    tui_create_app_window(SNG_WINDOW_TYPE_COLUMN_SELECT);
+    sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
+    return TRUE;
+}
+
+static gboolean
+call_list_win_show_stats_win(CallListWindow *call_list_win)
+{
+    tui_create_app_window(SNG_WINDOW_TYPE_STATS);
+    return TRUE;
+}
+
+static gboolean
+call_list_win_show_settings_win(CallListWindow *call_list_win)
+{
+    tui_create_app_window(SNG_WINDOW_TYPE_SETTINGS);
+    return TRUE;
+}
+
+static gboolean
+call_list_win_confirm_exit(SngWidget *widget, G_GNUC_UNUSED SngAction action)
+{
     SngWidget *exit_dialog = NULL;
 
-    // Check if we handle this action
-    switch (action) {
-        case ACTION_DISP_FILTER:
-            sng_widget_grab_focus(call_list_win->en_dfilter);
-            break;
-        case ACTION_SHOW_FLOW:
-            call_list_win_show_flow_win_simple(call_list_win);
-            break;
-        case ACTION_SHOW_FLOW_EX:
-            call_list_win_show_flow_win_ex(call_list_win);
-            break;
-        case ACTION_SHOW_RAW:
-
-            break;
-        case ACTION_SHOW_PROTOCOLS:
-            tui_create_app_window(SNG_WINDOW_TYPE_PROTOCOL_SELECT);
-            break;
-        case ACTION_SHOW_FILTERS:
-            tui_create_app_window(SNG_WINDOW_TYPE_FILTER);
-            break;
-        case ACTION_SHOW_COLUMNS:
-            tui_create_app_window(SNG_WINDOW_TYPE_COLUMN_SELECT);
-            sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
-            break;
-        case ACTION_SHOW_STATS:
-            tui_create_app_window(SNG_WINDOW_TYPE_STATS);
-            break;
-        case ACTION_SAVE:
-            call_list_win_show_save_win(call_list_win);
-            break;
-        case ACTION_SHOW_SETTINGS:
-            tui_create_app_window(SNG_WINDOW_TYPE_SETTINGS);
-            break;
-        case ACTION_TOGGLE_PAUSE:
-            // Pause/Resume capture
-            capture_manager_get_instance()->paused = !capture_manager_get_instance()->paused;
-            break;
-        case ACTION_SHOW_HELP:
-            sng_app_window_help(SNG_APP_WINDOW(call_list_win));
-            break;
-        case ACTION_PREV_SCREEN:
-            // Handle quit from this screen unless requested
-            if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
-                exit_dialog = sng_dialog_new(
-                    SNG_DIALOG_QUESTION,
-                    SNG_BUTTONS_YES_NO,
-                    "Confirm exit",
-                    "<cyan> Are you sure you want to quit?"
-                );
-                if (sng_dialog_run(SNG_DIALOG(exit_dialog)) == SNG_RESPONSE_YES) {
-                    sng_widget_destroy(SNG_WIDGET(call_list_win));
-                }
-                sng_widget_destroy(exit_dialog);
-            } else {
-                sng_widget_destroy(SNG_WIDGET(call_list_win));
-            }
-        default:
-            break;
-    }
-}
-
-/**
- * @brief Handle Call list key strokes
- *
- * This function will manage the custom keybindings of the panel.
- * This function return one of the values defined in @key_handler_ret
- *
- * @param window UI structure pointer
- * @param key Pressed keycode
- * @return enum @key_handler_ret
- */
-static void
-call_list_win_handle_key(SngWidget *widget, int key)
-{
-    // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
-        // Check if we handle this action
-        switch (action) {
-            case ACTION_DISP_FILTER:
-            case ACTION_SHOW_FLOW:
-            case ACTION_SHOW_FLOW_EX:
-            case ACTION_SHOW_RAW:
-            case ACTION_SHOW_PROTOCOLS:
-            case ACTION_SHOW_FILTERS:
-            case ACTION_SHOW_COLUMNS:
-            case ACTION_SHOW_STATS:
-            case ACTION_SAVE:
-            case ACTION_SHOW_SETTINGS:
-            case ACTION_TOGGLE_PAUSE:
-            case ACTION_SHOW_HELP:
-            case ACTION_PREV_SCREEN:
-                // This panel has handled the key successfully
-                call_list_win_handle_action(widget, action);
-                return;
-            default:
-                continue;
+    // Handle quit from this screen unless requested
+    if (setting_enabled(SETTING_TUI_EXITPROMPT)) {
+        exit_dialog = sng_dialog_new(
+            SNG_DIALOG_QUESTION,
+            SNG_BUTTONS_YES_NO,
+            "Confirm exit",
+            "<cyan> Are you sure you want to quit?"
+        );
+        if (sng_dialog_run(SNG_DIALOG(exit_dialog)) == SNG_RESPONSE_YES) {
+            sng_widget_destroy(widget);
         }
+        sng_widget_destroy(exit_dialog);
+    } else {
+        sng_widget_destroy(widget);
     }
+
+    return TRUE;
 }
 
 /**
@@ -295,7 +245,6 @@ call_list_win_help(G_GNUC_UNUSED SngAppWindow *window)
     return 0;
 }
 
-
 static void
 call_list_win_mode_label(SngWidget *widget)
 {
@@ -339,6 +288,7 @@ call_list_win_dialog_label(SngWidget *widget)
     // Print Dialogs or Calls in label depending on calls filter
     StorageMatchOpts storageMatchOpts = storage_match_options();
     g_string_append(count, storageMatchOpts.invite ? "Calls: " : "Dialogs: ");
+
     // Print calls count (also filtered)
     StorageStats stats = storage_calls_stats();
     if (stats.total != stats.displayed) {
@@ -346,6 +296,7 @@ call_list_win_dialog_label(SngWidget *widget)
     } else {
         g_string_append_printf(count, "%d", stats.total);
     }
+
     // Set Count label text
     sng_label_set_text(SNG_LABEL(widget), count->str);
 }
@@ -377,18 +328,6 @@ call_list_win_display_filter(SngWidget *widget)
     filter_set(FILTER_CALL_LIST, strlen(text) ? text : NULL);
 }
 
-SngWidget *
-call_list_win_new()
-{
-    return g_object_new(
-        SNG_TYPE_CALL_LIST_WIN,
-        "window-type", SNG_WINDOW_TYPE_CALL_LIST,
-        "height", getmaxy(stdscr),
-        "width", getmaxx(stdscr),
-        NULL
-    );
-}
-
 SngTable *
 call_list_win_get_table(SngAppWindow *window)
 {
@@ -397,127 +336,85 @@ call_list_win_get_table(SngAppWindow *window)
 }
 
 static void
-call_list_win_constructed(GObject *object)
+call_list_win_setup_menu(CallListWindow *call_list_win)
 {
-    CallListWindow *call_list_win = SNG_CALL_LIST_WIN(object);
-
-    // Create menu bar entries
-    call_list_win->menu_bar = sng_menu_bar_new();
-
     // File Menu
     SngWidget *menu_file = sng_menu_new("File");
-    SngWidget *menu_file_preferences = sng_menu_item_new("Settings");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
-    g_signal_connect(menu_file_preferences, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_SETTINGS));
-
-    SngWidget *menu_file_save = sng_menu_item_new("Save as ...");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_save), ACTION_SAVE);
-    g_signal_connect(menu_file_save, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SAVE));
-
-    SngWidget *menu_file_exit = sng_menu_item_new("Exit");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_exit), ACTION_PREV_SCREEN);
-    g_signal_connect(menu_file_exit, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_PREV_SCREEN));
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Settings", ACTION_SHOW_SETTINGS));
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Save as ...", ACTION_SAVE));
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Exit", ACTION_CLOSE));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_list_win), SNG_MENU(menu_file));
 
     // View Menu
     SngWidget *menu_view = sng_menu_new("View");
-    SngWidget *menu_view_filters = sng_menu_item_new("Filters");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
-    g_signal_connect(menu_view_filters, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_FILTERS));
-
-    SngWidget *menu_view_protocols = sng_menu_item_new("Protocols");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_protocols), ACTION_SHOW_PROTOCOLS);
-    g_signal_connect(menu_view_protocols, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_PROTOCOLS));
+    sng_container_add(SNG_CONTAINER(menu_view), sng_menu_item_new("Filters", ACTION_SHOW_FILTERS));
+    sng_container_add(SNG_CONTAINER(menu_view), sng_menu_item_new("Protocols", ACTION_SHOW_PROTOCOLS));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_list_win), SNG_MENU(menu_view));
 
     // Call List menu
     SngWidget *menu_list = sng_menu_new("Call List");
-    SngWidget *menu_list_columns = sng_menu_item_new("Configure Columns");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
-    g_signal_connect(menu_list_columns, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_COLUMNS));
-
-    SngWidget *menu_list_clear = sng_menu_item_new("Clear List");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear), ACTION_CLEAR_CALLS);
-    g_signal_connect(menu_list_clear, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_CLEAR_CALLS));
-
-    SngWidget *menu_list_clear_soft = sng_menu_item_new("Clear filtered calls");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear_soft), ACTION_CLEAR_CALLS_SOFT);
-    g_signal_connect(menu_list_clear_soft, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_CLEAR_CALLS_SOFT));
-
-    SngWidget *menu_list_flow = sng_menu_item_new("Show Call Flow");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow), ACTION_SHOW_FLOW);
-    g_signal_connect(menu_list_flow, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_FLOW));
-
-    SngWidget *menu_list_flow_ex = sng_menu_item_new("Show Call Flow Extended");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow_ex), ACTION_SHOW_FLOW_EX);
-    g_signal_connect(menu_list_flow, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_FLOW_EX));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Configure Columns", ACTION_SHOW_COLUMNS));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Clear List", ACTION_CLEAR_CALLS));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Clear filtered calls", ACTION_CLEAR_CALLS_SOFT));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Show Call Flow", ACTION_SHOW_FLOW));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Show Call Flow Extended", ACTION_SHOW_FLOW_EX));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_list_win), SNG_MENU(menu_list));
 
     // Help Menu
     SngWidget *menu_help = sng_menu_new("Help");
-    SngWidget *menu_help_about = sng_menu_item_new("About");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
-    g_signal_connect(menu_help_about, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_HELP));
+    sng_container_add(SNG_CONTAINER(menu_help), sng_menu_item_new("About", ACTION_SHOW_HELP));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_list_win), SNG_MENU(menu_help));
+}
 
+static void
+call_list_win_button_bar(CallListWindow *call_list_win)
+{
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Quit", ACTION_CLOSE);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Show", ACTION_SHOW_FLOW);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Select", ACTION_SELECT);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Help", ACTION_SHOW_HELP);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Save", ACTION_SAVE);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Search", ACTION_DISP_FILTER);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Extended", ACTION_SHOW_FLOW_EX);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Clear", ACTION_CLEAR_CALLS);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Filter", ACTION_SHOW_FILTERS);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Settings", ACTION_SHOW_SETTINGS);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_list_win), "Columns", ACTION_SHOW_COLUMNS);
+}
 
-    // Add menubar menus and items
-    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_file);
-    sng_container_add(SNG_CONTAINER(menu_file), menu_file_preferences);
-    sng_container_add(SNG_CONTAINER(menu_file), menu_file_save);
-    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new(NULL));
-    sng_container_add(SNG_CONTAINER(menu_file), menu_file_exit);
-    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_view);
-    sng_container_add(SNG_CONTAINER(menu_view), menu_view_filters);
-    sng_container_add(SNG_CONTAINER(menu_view), menu_view_protocols);
-    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_list);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_columns);
-    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear_soft);
-    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow_ex);
-    sng_container_add(SNG_CONTAINER(call_list_win->menu_bar), menu_help);
-    sng_container_add(SNG_CONTAINER(menu_help), menu_help_about);
-    sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->menu_bar);
+static void
+call_list_win_constructed(GObject *object)
+{
+    CallListWindow *call_list_win = SNG_CALL_LIST_WIN(object);
+    SngWidget *widget = SNG_WIDGET(call_list_win);
+
+    // Setup Menu Bar
+    call_list_win_setup_menu(call_list_win);
+
+    // Setup Button bar
+    call_list_win_button_bar(call_list_win);
+
+    // Set main window contents
+    SngWidget *content = sng_app_window_get_content(SNG_APP_WINDOW(call_list_win));
+    sng_box_set_orientation(SNG_BOX(content), SNG_ORIENTATION_VERTICAL);
 
     // First header line
     SngWidget *header_first = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 8, 1);
-    sng_box_pack_start(SNG_BOX(call_list_win), header_first);
 
     // Mode Label
     SngWidget *lb_mode = sng_label_new(NULL);
-    g_signal_connect(lb_mode, "draw", G_CALLBACK(call_list_win_mode_label), NULL);
+    g_signal_connect(lb_mode, "update", G_CALLBACK(call_list_win_mode_label), NULL);
     sng_container_add(SNG_CONTAINER(header_first), lb_mode);
 
     // Dialog Count
     SngWidget *lb_dialog_cnt = sng_label_new(NULL);
-    g_signal_connect(lb_dialog_cnt, "draw", G_CALLBACK(call_list_win_dialog_label), NULL);
+    g_signal_connect(lb_dialog_cnt, "update", G_CALLBACK(call_list_win_dialog_label), NULL);
     sng_container_add(SNG_CONTAINER(header_first), lb_dialog_cnt);
 
     // Memory usage
     if (storage_memory_limit() != 0) {
         SngWidget *lb_memory = sng_label_new(NULL);
-        g_signal_connect(lb_memory, "draw", G_CALLBACK(call_list_win_memory_label), NULL);
+        g_signal_connect(lb_memory, "update", G_CALLBACK(call_list_win_memory_label), NULL);
         sng_container_add(SNG_CONTAINER(header_first), lb_memory);
     }
 
@@ -525,149 +422,70 @@ call_list_win_constructed(GObject *object)
     CaptureManager *capture = capture_manager_get_instance();
     const gchar *infile = capture_input_pcap_file(capture);
     if (infile != NULL) {
-        g_autoptr(GString) file = g_string_new(NULL);
-        g_string_append_printf(file, "Filename: %s", infile);
-        sng_container_add(SNG_CONTAINER(header_first), sng_label_new(file->str));
+        sng_container_add(SNG_CONTAINER(header_first), sng_label_new("Filename: %s", infile));
     }
 
     // Second header line
     SngWidget *header_second = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 5, 1);
-    sng_box_pack_start(SNG_BOX(call_list_win), header_second);
 
     // Show BPF filter if specified in command line
     const gchar *bpf_filter = capture_manager_filter(capture);
     if (bpf_filter != NULL) {
-        g_autoptr(GString) filter = g_string_new("BPF Filter: ");
-        g_string_append_printf(filter, "<yellow>%s", bpf_filter);
-        sng_container_add(SNG_CONTAINER(header_second), sng_label_new(filter->str));
+        sng_container_add(SNG_CONTAINER(header_second), sng_label_new("BPF Filter: <yellow>%s", bpf_filter));
     }
 
     // Show Match expression label if specified in command line
     StorageMatchOpts match = storage_match_options();
     if (match.mexpr != NULL) {
-        g_autoptr(GString) match_expression = g_string_new("Match Expression: ");
-        g_string_append_printf(match_expression, "<yellow>%s", match.mexpr);
-        sng_container_add(SNG_CONTAINER(header_second), sng_label_new(match_expression->str));
+        sng_container_add(SNG_CONTAINER(header_second), sng_label_new("Match Expression: <yellow>%s", match.mexpr));
     }
 
     // Add Display filter label and entry
     SngWidget *header_third = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 1);
-    sng_box_pack_start(SNG_BOX(call_list_win), header_third);
-
-    SngWidget *lb_dfilter = sng_label_new("Display Filter:");
-    sng_widget_set_hexpand(SNG_WIDGET(lb_dfilter), FALSE);
-    sng_container_add(SNG_CONTAINER(header_third), lb_dfilter);
+    sng_box_pack_start(SNG_BOX(header_third), sng_label_new("Display Filter:"));
     call_list_win->en_dfilter = sng_entry_new(NULL);
+    sng_container_add(SNG_CONTAINER(header_third), call_list_win->en_dfilter);
     g_signal_connect(call_list_win->en_dfilter, "key-pressed",
                      G_CALLBACK(call_list_win_display_filter), NULL);
-    sng_container_add(SNG_CONTAINER(header_third), call_list_win->en_dfilter);
 
     call_list_win->tb_calls = sng_table_new();
     sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
-    g_signal_connect(call_list_win->tb_calls, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
+    g_signal_connect_swapped(call_list_win->tb_calls, "activate",
+                     G_CALLBACK(sng_window_handle_action),
                      GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
-    sng_container_add(SNG_CONTAINER(call_list_win), call_list_win->tb_calls);
+    sng_box_pack_start(SNG_BOX(content), header_first);
+    sng_box_pack_start(SNG_BOX(content), header_second);
+    sng_box_pack_start(SNG_BOX(content), header_third);
+    sng_container_add(SNG_CONTAINER(content), call_list_win->tb_calls);
 
-    // Bottom button bar
-    SngWidget *button_bar = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 3, 0);
-    sng_widget_set_vexpand(button_bar, FALSE);
-    sng_widget_set_height(button_bar, 1);
-    sng_box_set_background(SNG_BOX(button_bar), COLOR_PAIR(CP_WHITE_ON_CYAN));
-
-    // Button Quit
-    g_autoptr(GString) bn_text = g_string_new(NULL);
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_PREV_SCREEN),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Quit");
-    SngWidget *bn_quit = sng_button_new(bn_text->str);
-    g_signal_connect(bn_quit, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_PREV_SCREEN));
-
-    // Button Select
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SELECT),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Select");
-    SngWidget *bn_select = sng_button_new(bn_text->str);
-    g_signal_connect_swapped(bn_select, "activate",
-                             G_CALLBACK(sng_table_select_current),
-                             SNG_TABLE(call_list_win->tb_calls));
-
-    // Button Help
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_HELP),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Help");
-    SngWidget *bn_help = sng_button_new(bn_text->str);
-    g_signal_connect(bn_help, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_HELP));
-
-    // Button Help
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_DISP_FILTER),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Search");
-    SngWidget *bn_search = sng_button_new(bn_text->str);
-    g_signal_connect(bn_search, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_DISP_FILTER));
-
-    // Button Extended
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FLOW_EX),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Extended");
-    SngWidget *bn_extended = sng_button_new(bn_text->str);
-    g_signal_connect(bn_extended, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_FLOW_EX));
-
-    // Button Clear
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_CLEAR_CALLS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Clear");
-    SngWidget *bn_clear = sng_button_new(bn_text->str);
-    g_signal_connect_swapped(bn_clear, "activate",
-                             G_CALLBACK(sng_table_clear),
-                             SNG_TABLE(call_list_win->tb_calls));
-
-    // Button Filter
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FILTERS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Filter");
-    SngWidget *bn_filter = sng_button_new(bn_text->str);
-    g_signal_connect(bn_filter, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_FILTERS));
-
-    // Button Settings
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_SETTINGS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Settings");
-    SngWidget *bn_settings = sng_button_new(bn_text->str);
-    g_signal_connect(bn_settings, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_SETTINGS));
-
-    // Button Columns
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_COLUMNS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Columns");
-    SngWidget *bn_columns = sng_button_new(bn_text->str);
-    g_signal_connect(bn_columns, "activate",
-                     G_CALLBACK(call_list_win_handle_action),
-                     GINT_TO_POINTER(ACTION_SHOW_COLUMNS));
-
-    sng_box_pack_start(SNG_BOX(button_bar), bn_quit);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_select);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_help);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_search);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_extended);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_clear);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_filter);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_settings);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_columns);
-    sng_container_add(SNG_CONTAINER(call_list_win), button_bar);
+    // Bind widget actions
+    sng_widget_bind_action(widget, ACTION_CLOSE,
+                           G_CALLBACK(call_list_win_confirm_exit), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_FLOW,
+                           G_CALLBACK(call_list_win_show_flow_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_FLOW_EX,
+                           G_CALLBACK(call_list_win_show_flow_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_RAW,
+                           G_CALLBACK(call_list_win_show_raw_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_PROTOCOLS,
+                           G_CALLBACK(call_list_win_show_protocols_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_COLUMNS,
+                           G_CALLBACK(call_list_win_show_columns_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_STATS,
+                           G_CALLBACK(call_list_win_show_stats_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_SETTINGS,
+                           G_CALLBACK(call_list_win_show_settings_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_FILTERS,
+                           G_CALLBACK(call_list_win_show_filters_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SAVE,
+                           G_CALLBACK(call_list_win_show_save_win), NULL);
+    sng_widget_bind_action(widget, ACTION_SHOW_HELP,
+                           G_CALLBACK(sng_app_window_help), NULL);
+    sng_widget_bind_action_swapped(widget, ACTION_TOGGLE_PAUSE,
+                                   G_CALLBACK(capture_manager_toggle_pause), capture_manager_get_instance());
+    sng_widget_bind_action_swapped(widget, ACTION_DISP_FILTER,
+                                   G_CALLBACK(sng_widget_grab_focus), call_list_win->en_dfilter);
 
     // Start with the call list focused
     sng_window_set_default_focus(SNG_WINDOW(call_list_win), call_list_win->tb_calls);
@@ -685,9 +503,6 @@ call_list_win_class_init(CallListWindowClass *klass)
     SngAppWindowClass *app_window_class = SNG_APP_WINDOW_CLASS(klass);
     app_window_class->redraw = call_list_win_redraw;
     app_window_class->help = call_list_win_help;
-
-    SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->key_pressed = call_list_win_handle_key;
 }
 
 static void

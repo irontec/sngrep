@@ -97,11 +97,10 @@ static void
 msg_diff_win_draw_footer(SngAppWindow *window)
 {
     const char *keybindings[] = {
-        key_action_key_str(ACTION_PREV_SCREEN), "Calls Flow",
+        key_action_key_str(ACTION_CLOSE), "Calls Flow",
         key_action_key_str(ACTION_SHOW_HELP), "Help"
     };
 
-    sng_app_window_draw_bindings(window, keybindings, 4);
 }
 
 /**
@@ -243,8 +242,6 @@ msg_diff_win_constructed(GObject *object)
     // Draw a vertical line to separate both sub-windows
     mvwvline(win, 0, hwidth, ACS_VLINE, height);
 
-    // Draw title
-    sng_app_window_set_title(app_window, "sngrep - SIP messages flow viewer");
 }
 
 static void

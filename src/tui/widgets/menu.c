@@ -111,7 +111,7 @@ sng_menu_draw(SngWidget *widget)
                       "%-*s %-6s",
                       width - 6 - 2 - 1,
                       item->text,
-                      (item->action != ACTION_UNKNOWN) ? key_action_key_str(item->action) : ""
+                      (item->action != ACTION_NONE) ? key_action_key_str(item->action) : ""
             );
         } else {
             mvwhline(win, i + 1, 0, ACS_HLINE, width);
@@ -129,8 +129,8 @@ sng_menu_key_pressed(SngWidget *widget, gint key)
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // Check if we handle this action
         switch (action) {
             case ACTION_DOWN:

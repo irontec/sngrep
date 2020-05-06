@@ -60,7 +60,7 @@
  */
 typedef enum
 {
-    ACTION_UNKNOWN = -1,
+    ACTION_NONE = -1,
     ACTION_PRINTABLE = 0,
     ACTION_UP,
     ACTION_DOWN,
@@ -85,7 +85,7 @@ typedef enum
     ACTION_COMPRESS,
     ACTION_SHOW_ALIAS,
     ACTION_TOGGLE_PAUSE,
-    ACTION_PREV_SCREEN,
+    ACTION_CLOSE,
     ACTION_SHOW_HELP,
     ACTION_SHOW_RAW,
     ACTION_SHOW_FLOW,
@@ -120,18 +120,18 @@ typedef enum
     ACTION_SORT_SWAP,
     ACTION_TOGGLE_TIME,
     ACTION_SENTINEL
-}  KeybindingAction;
+}  SngAction;
 
 //! Shorter declaration of key_binding structure
-typedef struct _Keybinding Keybinding;
+typedef struct _SngKeybinding SngKeybinding;
 
 /**
  * @brief Struct to hold a keybinding data
  */
-struct _Keybinding
+struct _SngKeybinding
 {
     //! Keybinding action id
-    KeybindingAction id;
+    SngAction id;
     //! Keybinding action name
     const gchar *name;
     //! keybindings for this action
@@ -147,13 +147,21 @@ void
 key_bindings_dump();
 
 /**
+ * @brief Return Action name
+ * @param action One action defined in @KeybindingAction
+ * @return Static string of action name
+ */
+const gchar *
+key_binding_name(SngAction action);
+
+/**
  * @brief Bind a key to an action
  *
  * @param action One action defined in @KeybindingAction
  * @param key Keycode returned by getch
  */
 void
-key_bind_action(KeybindingAction action, gint key);
+key_bind_action(SngAction action, gint key);
 
 /**
  * @brief Unbind a key to an action
@@ -162,7 +170,7 @@ key_bind_action(KeybindingAction action, gint key);
  * @param key Keycode returned by getch
  */
 void
-key_unbind_action(KeybindingAction action, gint key);
+key_unbind_action(SngAction action, gint key);
 
 /**
  * @brief Find the next action for a given key
@@ -172,8 +180,8 @@ key_unbind_action(KeybindingAction action, gint key);
  *
  * @param key Keycode returned by getch
  */
-KeybindingAction
-key_find_action(gint key, KeybindingAction start);
+SngAction
+key_find_action(gint key, SngAction start);
 
 /**
  * @brief Return the action id associate to an action str
@@ -184,7 +192,7 @@ key_find_action(gint key, KeybindingAction start);
  * @param action Configuration string for an action
  * @return action id from @KeybindingAction (may be ACTION_UNKNOWN)
  */
-KeybindingAction
+SngAction
 key_action_id(const gchar *action);
 
 /**
@@ -210,6 +218,6 @@ key_from_str(const gchar *key);
  * @return Main/Alt keybinding for the given action
  */
 const gchar *
-key_action_key_str(KeybindingAction action);
+key_action_key_str(SngAction action);
 
 #endif /* __SNGREP_KEYBINDING_H_ */

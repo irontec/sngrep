@@ -347,7 +347,7 @@ settings_win_handle_key(SngWidget *widget, gint key)
     }
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
+    SngAction action = ACTION_NONE;
     while ((action = key_find_action(key, action)) != ERR) {
         if (self->active_form == self->form) {
             // Check if we handle this action

@@ -255,6 +255,12 @@ capture_manager_set_pause(CaptureManager *manager, gboolean paused)
     manager->paused = paused;
 }
 
+void
+capture_manager_toggle_pause(CaptureManager *manager)
+{
+    manager->paused = !manager->paused;
+}
+
 gboolean
 capture_is_running()
 {

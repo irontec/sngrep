@@ -206,7 +206,7 @@ protocol_select_win_handle_key_menu(ProtocolSelectWindow *self, gint key)
     ITEM *current = current_item(self->menu);
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
+    SngAction action = ACTION_NONE;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {
@@ -278,7 +278,7 @@ protocol_select_win_handle_key_form(ProtocolSelectWindow *self, int key)
     g_strstrip(field_value);
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
+    SngAction action = ACTION_NONE;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {

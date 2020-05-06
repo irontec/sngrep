@@ -30,7 +30,9 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <ncurses.h>
-#include "widget.h"
+#include "glib-extra/glib.h"
+#include "tui/keybinding.h"
+#include "tui/widgets/widget.h"
 
 enum
 {
@@ -40,6 +42,7 @@ enum
     SIG_DRAW,
     SIG_MAP,
     SIG_KEY_PRESSED,
+    SIG_ACTION,
     SIG_CLICKED,
     SIG_LOSE_FOCUS,
     SIG_GRAB_FOCUS,
@@ -87,6 +90,8 @@ typedef struct
     gboolean floating;
     //! Determine if the widget is being destroyed
     gboolean destroying;
+    //! Widget actions bindings (SngWidgetActionBinding)
+    GPtrArray *bindings;
 } SngWidgetPrivate;
 
 // SngWidget class definition
@@ -440,6 +445,50 @@ sng_widget_get_preferred_width(SngWidget *widget)
     return 0;
 }
 
+void
+sng_widget_bind_action(SngWidget *widget, SngAction action, GCallback callback, gpointer callback_data)
+{
+    GString *detailed_signal = g_string_new("action::");
+    g_string_append(detailed_signal, key_binding_name(action));
+
+    g_signal_connect(
+        widget,
+        detailed_signal->str,
+        callback,
+        callback_data
+    );
+}
+
+void
+sng_widget_bind_action_swapped(SngWidget *widget, SngAction action, GCallback callback, gpointer callback_data)
+{
+    GString *detailed_signal = g_string_new("action::");
+    g_string_append(detailed_signal, key_binding_name(action));
+
+    g_signal_connect_swapped(
+        widget,
+        detailed_signal->str,
+        callback,
+        callback_data
+    );
+}
+
+gboolean
+sng_widget_handle_action(SngWidget *widget, SngAction action)
+{
+    gboolean handled = FALSE;
+
+    g_signal_emit(
+        widget,
+        signals[SIG_ACTION],
+        g_quark_from_static_string(key_binding_name(action)),
+        action,
+        &handled
+    );
+
+    return handled;
+}
+
 static void
 sng_widget_base_update(G_GNUC_UNUSED SngWidget *widget)
 {
@@ -471,8 +520,6 @@ sng_widget_base_draw(G_GNUC_UNUSED SngWidget *widget)
 static void
 sng_widget_base_map(SngWidget *widget)
 {
-
-
     SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
     SngWidget *parent = sng_widget_get_parent(widget);
     if (priv->floating) {
@@ -521,6 +568,15 @@ sng_widget_base_focus_lost(SngWidget *widget)
 static void
 sng_widget_base_key_pressed(SngWidget *widget, gint key)
 {
+    // Check actions for this key
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
+        // Check if we handle this action
+        if (sng_widget_handle_action(widget, action)) {
+            return;
+        }
+    }
+
     // Pass key to parent widget
     SngWidget *parent = sng_widget_get_parent(widget);
     if (parent != NULL) {
@@ -548,6 +604,8 @@ sng_widget_finalize(GObject *self)
     SngWidgetPrivate *priv = sng_widget_get_instance_private(SNG_WIDGET(self));
     // Deallocate ncurses pointers
     delwin(priv->win);
+    // Free bindings array
+    g_ptr_array_free(priv->bindings, TRUE);
     // Chain-up parent finalize function
     G_OBJECT_CLASS(sng_widget_parent_class)->finalize(self);
 }
@@ -708,32 +766,32 @@ sng_widget_class_init(SngWidgetClass *klass)
 
     signals[SIG_UPDATE] =
         g_signal_new("update",
-                      G_TYPE_FROM_CLASS(klass),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(SngWidgetClass, update),
-                      NULL, NULL,
-                      NULL,
-                      G_TYPE_NONE, 0, NULL
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(SngWidgetClass, update),
+                     NULL, NULL,
+                     NULL,
+                     G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_SIZE_REQUEST] =
         g_signal_new("size-request",
-                      G_TYPE_FROM_CLASS(klass),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(SngWidgetClass, size_request),
-                      NULL, NULL,
-                      NULL,
-                      G_TYPE_NONE, 0, NULL
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(SngWidgetClass, size_request),
+                     NULL, NULL,
+                     NULL,
+                     G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_REALIZE] =
         g_signal_new("realize",
-                      G_TYPE_FROM_CLASS(klass),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(SngWidgetClass, realize),
-                      NULL, NULL,
-                      NULL,
-                      G_TYPE_NONE, 0, NULL
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(SngWidgetClass, realize),
+                     NULL, NULL,
+                     NULL,
+                     G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_DRAW] =
@@ -758,12 +816,22 @@ sng_widget_class_init(SngWidgetClass *klass)
 
     signals[SIG_KEY_PRESSED] =
         g_signal_new("key-pressed",
-                      G_TYPE_FROM_CLASS(klass),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(SngWidgetClass, key_pressed),
-                      NULL, NULL,
-                      NULL,
-                      G_TYPE_NONE, 1, G_TYPE_INT
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(SngWidgetClass, key_pressed),
+                     NULL, NULL,
+                     NULL,
+                     G_TYPE_NONE, 1, G_TYPE_INT
+        );
+
+    signals[SIG_ACTION] =
+        g_signal_new("action",
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_DETAILED | G_SIGNAL_RUN_LAST,
+                     0,
+                     g_signal_accumulator_true_handled,
+                     NULL, NULL,
+                     G_TYPE_BOOLEAN, 1, G_TYPE_INT
         );
 
     signals[SIG_CLICKED] =
@@ -777,20 +845,20 @@ sng_widget_class_init(SngWidgetClass *klass)
         );
 
     signals[SIG_LOSE_FOCUS] =
-        g_signal_newv("lose-focus",
+        g_signal_new("lose-focus",
                       G_TYPE_FROM_CLASS(klass),
                       G_SIGNAL_RUN_LAST,
-                      NULL,
+                      G_STRUCT_OFFSET(SngWidgetClass, focus_lost),
                       NULL, NULL,
                       NULL,
                       G_TYPE_NONE, 0, NULL
         );
 
     signals[SIG_GRAB_FOCUS] =
-        g_signal_newv("grab-focus",
+        g_signal_new("grab-focus",
                       G_TYPE_FROM_CLASS(klass),
                       G_SIGNAL_RUN_LAST,
-                      NULL,
+                      G_STRUCT_OFFSET(SngWidgetClass, focus_gained),
                       NULL, NULL,
                       NULL,
                       G_TYPE_NONE, 0, NULL
@@ -815,4 +883,6 @@ sng_widget_init(SngWidget *self)
     priv->x = priv->y = 0;
     // Make widgets visible by default
     priv->visible = TRUE;
+    // Initialize bindings array
+    priv->bindings = g_ptr_array_new_with_free_func(g_free);
 }

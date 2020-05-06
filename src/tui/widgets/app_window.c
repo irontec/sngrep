@@ -28,61 +28,28 @@
 
 #include "config.h"
 #include <string.h>
-#include <panel.h>
 #include "glib-extra/glist.h"
 #include "glib-extra/glib_enum_types.h"
 #include "tui/theme.h"
+#include "tui/widgets/menu_bar.h"
 #include "tui/widgets/window.h"
 #include "tui/keybinding.h"
 #include "tui/widgets/app_window.h"
 
-enum
-{
-    PROP_WINDOW_TYPE = 1,
-    N_PROPERTIES
-};
-
-static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
-
 typedef struct
 {
-    //! Window type
-    SngAppWindowType type;
     //! Flag this panel as redraw required
     gboolean changed;
+    //! Window Top menu bar
+    SngWidget *menu_bar;
+    //! Window content
+    SngWidget *content_box;
+    //! Window Bottom button bar
+    SngWidget *button_bar;
 } SngAppWindowPrivate;
 
 // Window class definition
 G_DEFINE_TYPE_WITH_PRIVATE(SngAppWindow, sng_app_window, SNG_TYPE_WINDOW)
-
-SngAppWindow *
-sng_app_window_new(gint height, gint width)
-{
-    SngAppWindow *window = g_object_new(
-        SNG_TYPE_WINDOW,
-        "height", height,
-        "width", width,
-        "vexpand", TRUE,
-        "hexpand", TRUE,
-        NULL
-    );
-
-    return window;
-}
-
-void
-sng_app_window_set_window_type(SngAppWindow *window, SngAppWindowType type)
-{
-    SngAppWindowPrivate *priv = sng_app_window_get_instance_private(window);
-    priv->type = type;
-}
-
-guint
-sng_app_window_get_window_type(SngAppWindow *window)
-{
-    SngAppWindowPrivate *priv = sng_app_window_get_instance_private(window);
-    return priv->type;
-}
 
 gboolean
 sng_app_window_redraw(SngAppWindow *app_window)
@@ -162,118 +129,58 @@ sng_app_window_help(SngAppWindow *window)
 }
 
 void
-sng_app_window_set_title(SngAppWindow *window, const gchar *title)
+sng_app_window_add_menu(SngAppWindow *window, SngMenu *menu)
 {
-    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(window));
-
-    // FIXME Reverse colors on monochrome terminals
-    if (!has_colors()) {
-        wattron(win, A_REVERSE);
-    }
-
-    // Center the title on the window
-    wattron(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_BLUE));
-    sng_app_window_clear_line(window, 0);
-    mvwprintw(win, 0, (sng_widget_get_width(SNG_WIDGET(window)) - strlen(title)) / 2, "%s", title);
-    wattroff(win, A_BOLD | A_REVERSE | COLOR_PAIR(CP_DEF_ON_BLUE));
+    SngAppWindowPrivate *priv = sng_app_window_get_instance_private(window);
+    sng_box_pack_start(SNG_BOX(priv->menu_bar), SNG_WIDGET(menu));
 }
 
 void
-sng_app_window_clear_line(SngAppWindow *window, gint line)
+sng_app_window_add_button(SngAppWindow *window, const gchar *label, SngAction action)
 {
-    // We could do this with wcleartoel but we want to
-    // preserve previous window attributes. That way we
-    // can set the background of the line.
-    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(window));
-    mvwprintw(win, line, 0, "%*s", sng_widget_get_width(SNG_WIDGET(window)), "");
+    // Build button label
+    g_autoptr(GString) text = g_string_new(NULL);
+    g_string_printf(text, "<%d>%s <%d>%s",
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(action),
+                    COLOR_PAIR(CP_BLACK_ON_CYAN), label);
+
+    // Create new button
+    SngWidget *button = sng_button_new(text->str);
+
+    // Add button to bar
+    SngAppWindowPrivate *priv = sng_app_window_get_instance_private(window);
+    sng_box_pack_start(SNG_BOX(priv->button_bar), button);
+
+    // Connect button activate signal
+    g_signal_connect(button, "activate",
+                     G_CALLBACK(sng_window_handle_action),
+                     GINT_TO_POINTER(action));
 }
 
-void
-sng_app_window_draw_bindings(SngAppWindow *window, const char **keybindings, gint count)
+SngWidget *
+sng_app_window_get_content(SngAppWindow *app_window)
 {
-    int key, xpos = 0;
-
-    WINDOW *win = sng_widget_get_ncurses_window(SNG_WIDGET(window));
-
-    // Reverse colors on monochrome terminals
-    if (!has_colors()) {
-        wattron(win, A_REVERSE);
-    }
-
-    // Write a line all the footer width
-    wattron(win, COLOR_PAIR(CP_DEF_ON_CYAN));
-    sng_app_window_clear_line(window, sng_widget_get_height(SNG_WIDGET(window)) - 1);
-
-    // Draw keys and their actions
-    for (key = 0; key < count; key += 2) {
-        wattron(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        mvwprintw(win, sng_widget_get_height(SNG_WIDGET(window)) - 1, xpos, "%-*s",
-                  strlen(keybindings[key]) + 1, keybindings[key]);
-        xpos += strlen(keybindings[key]) + 1;
-        wattroff(win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
-        wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        mvwprintw(win, sng_widget_get_height(SNG_WIDGET(window)) - 1, xpos, "%-*s",
-                  strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);
-        wattroff(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-        xpos += strlen(keybindings[key + 1]) + 3;
-    }
-
-    // Disable reverse mode in all cases
-    wattroff(win, A_REVERSE | A_BOLD);
+    SngAppWindowPrivate *priv = sng_app_window_get_instance_private(app_window);
+    return priv->content_box;
 }
 
 static void
-sng_app_window_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+sng_app_window_contructed(GObject *object)
 {
     SngAppWindowPrivate *priv = sng_app_window_get_instance_private(SNG_APP_WINDOW(object));
-    switch (property_id) {
-        case PROP_WINDOW_TYPE:
-            priv->type = g_value_get_enum(value);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
-            break;
-    }
-}
-
-static void
-sng_app_window_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
-{
-    SngAppWindowPrivate *priv = sng_app_window_get_instance_private(SNG_APP_WINDOW(object));
-    switch (property_id) {
-        case PROP_WINDOW_TYPE:
-            g_value_set_enum(value, priv->type);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
-            break;
-    }
+    sng_box_pack_start(SNG_BOX(object), priv->menu_bar);
+    sng_container_add(SNG_CONTAINER(object), priv->content_box);
+    sng_box_pack_start(SNG_BOX(object), priv->button_bar);
 }
 
 static void
 sng_app_window_class_init(SngAppWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->set_property = sng_app_window_set_property;
-    object_class->get_property = sng_app_window_get_property;
+    object_class->constructed = sng_app_window_contructed;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
     widget_class->map = sng_app_window_map;
-
-    obj_properties[PROP_WINDOW_TYPE] =
-        g_param_spec_enum("window-type",
-                          "Window Type",
-                          "Window type ",
-                          SNG_TYPE_APP_WINDOW_TYPE,
-                          0,
-                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT
-        );
-
-    g_object_class_install_properties(
-        object_class,
-        N_PROPERTIES,
-        obj_properties
-    );
 }
 
 static void
@@ -282,4 +189,16 @@ sng_app_window_init(SngAppWindow *self)
     SngAppWindowPrivate *priv = sng_app_window_get_instance_private(self);
     // Force draw on new created windows
     priv->changed = TRUE;
+
+    // Initialize menu bar
+    priv->menu_bar = sng_menu_bar_new();
+
+    // Initialize main window content box
+    priv->content_box = sng_box_new(SNG_ORIENTATION_VERTICAL);
+
+    // Initialize button bar
+    priv->button_bar = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 3, 0);
+    sng_widget_set_vexpand(priv->button_bar, FALSE);
+    sng_widget_set_height(priv->button_bar, 1);
+    sng_box_set_background(SNG_BOX(priv->button_bar), COLOR_PAIR(CP_WHITE_ON_CYAN));
 }

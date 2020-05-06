@@ -79,8 +79,8 @@ sng_button_key_pressed(SngWidget *widget, gint key)
     SngButton *button = SNG_BUTTON(widget);
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // Check if we handle this action
         switch (action) {
             case ACTION_CONFIRM:

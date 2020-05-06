@@ -295,8 +295,8 @@ dialog_confirm(const char *title, const char *text, const char *options)
         key = wgetch(dialog_win);
 
         // Check actions for this key
-        KeybindingAction action = ACTION_UNKNOWN;
-        while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+        SngAction action = ACTION_NONE;
+        while ((action = key_find_action(key, action)) != ACTION_NONE) {
             // Check if we handle this action
             switch (action) {
                 case ACTION_RIGHT:
@@ -309,7 +309,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
                 case ACTION_SELECT:
                 case ACTION_CONFIRM:
                     goto done;
-                case ACTION_PREV_SCREEN:
+                case ACTION_CLOSE:
                     selected = -1;
                     goto done;
                 default:

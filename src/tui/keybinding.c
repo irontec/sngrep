@@ -37,7 +37,7 @@
 #include "tui/tui.h"
 
 //! sngrep keybindings
-Keybinding bindings[ACTION_SENTINEL] = {
+SngKeybinding bindings[ACTION_SENTINEL] = {
     { ACTION_PRINTABLE,        "",                { 0 },                                             0 },
     { ACTION_UP,               "up",              { KEY_UP,    'k' },                                2 },
     { ACTION_DOWN,             "down",            { KEY_DOWN,  'j' },                                2 },
@@ -52,27 +52,27 @@ Keybinding bindings[ACTION_SENTINEL] = {
     { ACTION_BEGIN,            "begin",           { KEY_HOME,      KEY_CTRL('A') },                  2 },
     { ACTION_END,              "end",             { KEY_END,       KEY_CTRL('E') },                  2 },
     { ACTION_PREV_FIELD,       "pfield",          { KEY_UP,        KEY_SHTAB },                      2 },
-    { ACTION_NEXT_FIELD,       "nfield",          { KEY_DOWN,      KEY_TAB },                        2 },
-    { ACTION_RESIZE_SCREEN,    "resize",          { KEY_RESIZE },                                    1 },
-    { ACTION_CLEAR,            "clear",           { KEY_CTRL('U'), KEY_CTRL('W') },                  2 },
-    { ACTION_CLEAR_CALLS,      "clearcalls",      { KEY_F(5),      KEY_CTRL('L') },                  2 },
-    { ACTION_CLEAR_CALLS_SOFT, "clearcallssoft",  { KEY_F(9) },                                      2 },
-    { ACTION_TOGGLE_SYNTAX,    "togglesyntax",    { KEY_F(8),  'C' },                                2 },
-    { ACTION_CYCLE_COLOR,      "colormode",       { 'c' },                                           1 },
-    { ACTION_COMPRESS,         "compress",        { 's' },                                           1 },
-    { ACTION_SHOW_ALIAS,       "togglealias",     { 'a' },                                           1 },
-    { ACTION_TOGGLE_PAUSE,     "pause",           { 'p' },                                           1 },
-    { ACTION_PREV_SCREEN,      "prevscreen",      { KEY_ESC,   'q', 'Q' },                           3 },
-    { ACTION_SHOW_HELP,        "help",            { KEY_F(1),  'h', 'H', '?' },                      4 },
-    { ACTION_SHOW_RAW,         "raw",             { KEY_F(6),  'R', 'r' },                           3 },
-    { ACTION_SHOW_FLOW,        "flow",            { KEY_INTRO },                                     1 },
-    { ACTION_SHOW_FLOW_EX,     "flowex",          { KEY_F(4),  'x' },                                2 },
-    { ACTION_SHOW_FILTERS,     "filters",         { KEY_F(7),  'f', 'F' },                           3 },
-    { ACTION_SHOW_COLUMNS,     "columns",         { KEY_F(10), 't', 'T' },                           3 },
-    { ACTION_SHOW_SETTINGS,    "settings",        { KEY_F(8),  'o', 'O' },                           3 },
-    { ACTION_SHOW_STATS,       "stats",           { 'i' },                                           1 },
-    { ACTION_SHOW_PLAYER,      "player",          { 'p',       'P' },                                2 },
-    { ACTION_SHOW_PROTOCOLS,   "protocols",       { 'y',       'Y' },                                2 },
+    { ACTION_NEXT_FIELD,       "nfield",         { KEY_DOWN,      KEY_TAB },       2 },
+    { ACTION_RESIZE_SCREEN,    "resize",         { KEY_RESIZE },                   1 },
+    { ACTION_CLEAR,            "clear",          { KEY_CTRL('U'), KEY_CTRL('W') }, 2 },
+    { ACTION_CLEAR_CALLS,      "clearcalls",     { KEY_F(5),      KEY_CTRL('L') }, 2 },
+    { ACTION_CLEAR_CALLS_SOFT, "clearcallssoft", { KEY_F(9) },                     2 },
+    { ACTION_TOGGLE_SYNTAX,    "togglesyntax",   { KEY_F(8),  'C' },               2 },
+    { ACTION_CYCLE_COLOR,      "colormode",      { 'c' },                          1 },
+    { ACTION_COMPRESS,         "compress",       { 's' },                          1 },
+    { ACTION_SHOW_ALIAS,       "togglealias",    { 'a' },                          1 },
+    { ACTION_TOGGLE_PAUSE,     "pause",          { 'p' },                          1 },
+    { ACTION_CLOSE,            "close",          { KEY_ESC,   'q', 'Q' },          3 },
+    { ACTION_SHOW_HELP,        "help",           { KEY_F(1),  'h', 'H', '?' },     4 },
+    { ACTION_SHOW_RAW,         "raw",            { KEY_F(6),  'R', 'r' },          3 },
+    { ACTION_SHOW_FLOW,        "flow",           { KEY_INTRO },                    1 },
+    { ACTION_SHOW_FLOW_EX,     "flowex",         { KEY_F(4),  'x' },               2 },
+    { ACTION_SHOW_FILTERS,     "filters",        { KEY_F(7),  'f', 'F' },          3 },
+    { ACTION_SHOW_COLUMNS,     "columns",        { KEY_F(10), 't', 'T' },          3 },
+    { ACTION_SHOW_SETTINGS,    "settings",       { KEY_F(8),  'o', 'O' },          3 },
+    { ACTION_SHOW_STATS,       "stats",          { 'i' },                          1 },
+    { ACTION_SHOW_PLAYER,      "player",         { 'p',       'P' },               2 },
+    { ACTION_SHOW_PROTOCOLS,   "protocols",      { 'y',       'Y' },               2 },
     { ACTION_COLUMN_MOVE_UP,   "columnup",        { '-' },                                           1 },
     { ACTION_COLUMN_MOVE_DOWN, "columndown",      { '+' },                                           1 },
     { ACTION_SDP_INFO,         "sdpinfo",         { KEY_F(2),  'd' },                                2 },
@@ -173,8 +173,8 @@ key_from_str(const gchar *key)
     return 0;
 }
 
-static Keybinding *
-key_binding_data(KeybindingAction action)
+static SngKeybinding *
+key_binding_data(SngAction action)
 {
     int i;
     for (i = 1; i < ACTION_SENTINEL; i++) {
@@ -185,10 +185,20 @@ key_binding_data(KeybindingAction action)
     return NULL;
 }
 
-void
-key_bind_action(KeybindingAction action, gint key)
+const gchar *
+key_binding_name(SngAction action)
 {
-    Keybinding *bind;
+    for (gint i = 1; i < ACTION_SENTINEL; i++) {
+        if (bindings[i].id == action)
+            return bindings[i].name;
+    }
+    return NULL;
+}
+
+void
+key_bind_action(SngAction action, gint key)
+{
+    SngKeybinding *bind;
 
     if (!(bind = key_binding_data(action)))
         return;
@@ -200,16 +210,16 @@ key_bind_action(KeybindingAction action, gint key)
 }
 
 void
-key_unbind_action(KeybindingAction action, gint key)
+key_unbind_action(SngAction action, gint key)
 {
-    Keybinding tmp, *bind;
+    SngKeybinding tmp, *bind;
 
     // Action is not valid
     if (!(bind = key_binding_data(action)))
         return;
 
     // Copy binding to temporal struct
-    memcpy(&tmp, bind, sizeof(Keybinding));
+    memcpy(&tmp, bind, sizeof(SngKeybinding));
 
     // Reset bindings for this action
     memset(&bind->keys, 0, sizeof(int) * MAX_BINDINGS);
@@ -222,8 +232,8 @@ key_unbind_action(KeybindingAction action, gint key)
     }
 }
 
-KeybindingAction
-key_find_action(gint key, KeybindingAction start)
+SngAction
+key_find_action(gint key, SngAction start)
 {
     for (guint i = start + 1; i < ACTION_SENTINEL; i++) {
 
@@ -234,10 +244,10 @@ key_find_action(gint key, KeybindingAction start)
             if (bindings[i].keys[j] == key)
                 return bindings[i].id;
     }
-    return ACTION_UNKNOWN;
+    return ACTION_NONE;
 }
 
-KeybindingAction
+SngAction
 key_action_id(const gchar *action)
 {
     for (guint i = 1; i < ACTION_SENTINEL; i++) {
@@ -245,13 +255,13 @@ key_action_id(const gchar *action)
             return bindings[i].id;
 
     }
-    return ACTION_UNKNOWN;
+    return ACTION_NONE;
 }
 
 const gchar *
-key_action_key_str(KeybindingAction action)
+key_action_key_str(SngAction action)
 {
-    Keybinding *bind;
+    SngKeybinding *bind;
 
     if (!(bind = key_binding_data(action)))
         return NULL;

@@ -101,6 +101,9 @@ sng_window_handle_mouse(SngWindow *window, MEVENT mevent);
 void
 sng_window_handle_key(SngWindow *window, gint key);
 
+gboolean
+sng_window_handle_action(gpointer widget, gpointer action);
+
 PANEL *
 sng_window_get_ncurses_panel(SngWindow *window);
 

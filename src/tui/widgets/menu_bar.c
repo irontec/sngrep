@@ -104,8 +104,8 @@ sng_menu_bar_key_pressed(SngWidget *widget, gint key)
     GList *children = sng_container_get_children(SNG_CONTAINER(widget));
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // Check if we handle this action
         switch (action) {
             case ACTION_RIGHT:

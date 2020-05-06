@@ -203,6 +203,7 @@ set(ENUM_HEADERS
         src/packet/packet.h
         src/storage/storage.h
         src/tui/tui.h
+        src/tui/keybinding.h
         src/tui/widgets/app_window.h
         src/tui/widgets/dialog.h
         src/tui/widgets/flow_viewer.h

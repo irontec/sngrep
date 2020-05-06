@@ -57,7 +57,7 @@ struct _SngLabel
 };
 
 SngWidget *
-sng_label_new(const gchar *text);
+sng_label_new(const gchar *format, ...);
 
 void
 sng_label_set_text(SngLabel *label, const gchar *text);

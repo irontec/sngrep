@@ -213,6 +213,12 @@ void
 capture_manager_set_pause(CaptureManager *manager, gboolean paused);
 
 /**
+ * @brief Toggle pause status in given capture manager
+ */
+void
+capture_manager_toggle_pause(CaptureManager *manager);
+
+/**
  * @brief Determine if any of the capture inputs is running
  * @return TRUE if at least one Input is running
  */

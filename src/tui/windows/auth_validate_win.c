@@ -125,7 +125,7 @@ auth_validate_win_handle_key(SngWidget *widget, gint key)
     gint field_idx = field_index(current_field(self->form));
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
+    SngAction action = ACTION_NONE;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {

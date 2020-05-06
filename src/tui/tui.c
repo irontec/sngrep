@@ -84,12 +84,6 @@ tui_destroy_window(SngWindow *window)
     sng_widget_destroy(SNG_WIDGET(window));
 }
 
-static gboolean
-tui_app_window_type_cmp(SngAppWindow *app_window, gpointer type)
-{
-    return sng_app_window_get_window_type(app_window) == GPOINTER_TO_UINT(type);
-}
-
 SngWindow *
 tui_find_by_panel(PANEL *panel)
 {
@@ -106,13 +100,6 @@ tui_find_by_panel(PANEL *panel)
 SngAppWindow *
 tui_find_by_type(SngAppWindowType type)
 {
-    guint index;
-    if (g_ptr_array_find_with_equal_func(
-        windows, GUINT_TO_POINTER(type),
-        (GEqualFunc) tui_app_window_type_cmp, &index)) {
-        return g_ptr_array_index(windows, index);
-    }
-
     SngAppWindow *window = NULL;
 
     switch (type) {
@@ -201,7 +188,6 @@ tui_refresh_screen(G_GNUC_UNUSED GMainLoop *loop)
 
         // Update panel stack
         update_panels();
-        break;
     }
 
     // Update ncurses standard screen with panel info
@@ -264,10 +250,10 @@ tui_read_input(G_GNUC_UNUSED gint fd,
 int
 tui_default_keyhandler(SngWindow *window, int key)
 {
-    KeybindingAction action = ACTION_UNKNOWN;
+    SngAction action = ACTION_NONE;
 
     // Check actions for this key
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // Check if we handle this action
         switch (action) {
             case ACTION_RESIZE_SCREEN:
@@ -297,7 +283,7 @@ tui_default_keyhandler(SngWindow *window, int key)
                     sng_app_window_help(SNG_APP_WINDOW(window));
                 }
                 break;
-            case ACTION_PREV_SCREEN:
+            case ACTION_CLOSE:
                 tui_destroy_window(window);
                 break;
             default:

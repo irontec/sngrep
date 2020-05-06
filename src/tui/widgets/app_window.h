@@ -35,6 +35,7 @@
 #include <glib-object.h>
 #include <ncurses.h>
 #include <panel.h>
+#include "tui/widgets/menu.h"
 #include "tui/widgets/window.h"
 
 G_BEGIN_DECLS
@@ -74,27 +75,12 @@ struct _SngAppWindowClass
     //! Parent class
     SngWindowClass parent;
     //! Query the panel if redraw is required
-    gboolean (*redraw)(SngAppWindow *self);
+    gboolean (*redraw)(SngAppWindow *app_window);
     //! Notifies the panel the screen has changed
-    gint (*resize)(SngAppWindow *self);
+    gint (*resize)(SngAppWindow *app_window);
     //! Show help window for this panel (if any)
-    gint (*help)(SngAppWindow *self);
+    gint (*help)(SngAppWindow *app_window);
 };
-
-/**
- * @brief Create a ncurses panel for the given ui
- *
- * Create a panel and associated window and store their
- * pointers in ui structure.
- * If height and width doesn't match the screen dimensions
- * the panel will be centered on the screen.
- *
- * @param height panel window height
- * @param width panel windo width
- * @return window instance pointer
- */
-SngAppWindow *
-sng_app_window_new(gint height, gint width);
 
 /**
  * @brief Resize current ui
@@ -132,45 +118,14 @@ sng_app_window_redraw(SngAppWindow *app_window);
 void
 sng_app_window_help(SngAppWindow *window);
 
-/**
- * @brief Draw title at the top of the panel UI
- *
- * This function will draw a line with the title on the first
- * row of the UI panel's window
- *
- * @param ui UI structure
- * @param title String containing the title
- */
 void
-sng_app_window_set_title(SngAppWindow *window, const gchar *title);
-
-/**
- * @brief Clear a given window line
- *
- * This function can be used to clear a given line on the
- * screen.
- *
- * @param window UI structure
- * @param line Number of line to be cleared
- */
-void
-sng_app_window_clear_line(SngAppWindow *window, int line);
-
-/**
- * @brief Draw keybinding info at the bottom of the panel
- *
- * This function will draw a line with the available keybindings
- * in the last line of the given panel
- *
- */
-void
-sng_app_window_draw_bindings(SngAppWindow *window, const gchar **keybindings, gint count);
+sng_app_window_add_menu(SngAppWindow *window, SngMenu *menu);
 
 void
-sng_app_window_set_window_type(SngAppWindow *window, SngAppWindowType type);
+sng_app_window_add_button(SngAppWindow *window, const gchar *label, SngAction action);
 
-guint
-sng_app_window_get_window_type(SngAppWindow *window);
+SngWidget *
+sng_app_window_get_content(SngAppWindow *app_window);
 
 G_END_DECLS
 

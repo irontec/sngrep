@@ -244,7 +244,7 @@ call_raw_win_handle_key(SngWidget *widget, int key)
     CallRawWindow *self = TUI_CALL_RAW(app_window);
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
+    SngAction action = ACTION_NONE;
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
         switch (action) {

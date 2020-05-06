@@ -137,8 +137,8 @@ sng_dialog_key_pressed(SngWidget *widget, gint key)
     SngDialog *dialog = SNG_DIALOG(widget);
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // Check if we handle this action
         switch (action) {
             case ACTION_CANCEL:

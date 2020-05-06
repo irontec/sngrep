@@ -60,6 +60,9 @@ SngWidget *
 sng_box_new_full(SngOrientation orientation, gint spacing, gint padding);
 
 void
+sng_box_set_orientation(SngBox *box, SngOrientation orientation);
+
+void
 sng_box_set_padding(SngBox *box, SngBoxPadding padding);
 
 void

@@ -362,7 +362,7 @@ sng_window_handle_key(SngWindow *window, gint key)
     SngWindowPrivate *priv = sng_window_get_instance_private(window);
 
     // Check actions for this key
-    KeybindingAction action = key_find_action(key, ACTION_UNKNOWN);
+    SngAction action = key_find_action(key, ACTION_NONE);
     if (action == ACTION_NEXT_FIELD) {
         sng_window_focus_next(window);
     } else if (action == ACTION_PREV_FIELD) {
@@ -370,6 +370,15 @@ sng_window_handle_key(SngWindow *window, gint key)
     } else {
         sng_widget_key_pressed(priv->focus, key);
     }
+}
+
+gboolean
+sng_window_handle_action(gpointer widget, gpointer action)
+{
+    sng_widget_handle_action(
+        sng_widget_get_toplevel(SNG_WIDGET(widget)),
+        GPOINTER_TO_INT(action)
+    );
 }
 
 static void

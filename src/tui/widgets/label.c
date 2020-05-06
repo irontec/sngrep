@@ -45,8 +45,13 @@ static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 G_DEFINE_TYPE(SngLabel, sng_label, SNG_TYPE_WIDGET)
 
 SngWidget *
-sng_label_new(const gchar *text)
+sng_label_new(const gchar *format, ...)
 {
+    va_list args;
+    va_start (args, format);
+    g_autofree const gchar *text = g_strdup_vprintf(format, args);
+    va_end(args);
+
     return g_object_new(
         SNG_TYPE_LABEL,
         "text", text,

@@ -32,6 +32,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <ncurses.h>
+#include "tui/keybinding.h"
 
 G_BEGIN_DECLS
 
@@ -80,6 +81,22 @@ struct _SngWidgetClass
     //! Get widget preferred width
     gint (*preferred_width)(SngWidget *widget);
 };
+
+/**
+ * @brief Action Handler Callback
+ */
+typedef gboolean (*SngWidgetActionHandler)(SngWidget *widget, SngAction action);
+
+/**
+ * @brief Registered Action Callback
+ */
+typedef struct
+{
+    //! Action bind
+    SngAction action;
+    //! Handler for action
+    SngWidgetActionHandler handler;
+} SngWidgetActionBinding;
 
 /**
  * @brief Create a ncurses panel for the given ui
@@ -164,7 +181,6 @@ sng_widget_realize(SngWidget *widget);
  */
 void
 sng_widget_draw(SngWidget *widget);
-
 
 
 void
@@ -272,6 +288,14 @@ sng_widget_is_floating(SngWidget *widget);
 gboolean
 sng_widget_can_focus(SngWidget *widget);
 
+void
+sng_widget_bind_action(SngWidget *widget, SngAction action, GCallback callback, gpointer callback_data);
+
+void
+sng_widget_bind_action_swapped(SngWidget *widget, SngAction action, GCallback callback, gpointer callback_data);
+
+gboolean
+sng_widget_handle_action(SngWidget *widget, SngAction action);
 
 G_END_DECLS
 

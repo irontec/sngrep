@@ -104,7 +104,6 @@ call_flow_win_draw_footer(CallFlowWindow *call_flow_window)
         key_action_key_str(ACTION_AUTH_VALIDATE), "Auth Validate"
     };
 
-    sng_app_window_draw_bindings(SNG_APP_WINDOW(call_flow_window), keybindings, 20);
 }
 
 /**
@@ -187,8 +186,8 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
     CallGroup *group = sng_flow_viewer_get_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer));
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // Check if we handle this action
         switch (action) {
             case ACTION_SHOW_FLOW_EX:
@@ -331,7 +330,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
             case ACTION_CLEAR_CALLS_SOFT:
                 // Propagate the key to the previous panel
                 return;
-            case ACTION_PREV_SCREEN:
+            case ACTION_CLOSE:
                 sng_widget_destroy(widget);
                 return;
             default:
@@ -428,62 +427,6 @@ call_flow_win_constructed(GObject *object)
     // Create menu bar entries
     call_flow_win->menu_bar = sng_menu_bar_new();
 
-    // File Menu
-    SngWidget *menu_file = sng_menu_new("File");
-    SngWidget *menu_file_preferences = sng_menu_item_new("Settings");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_preferences), ACTION_SHOW_SETTINGS);
-    SngWidget *menu_file_save = sng_menu_item_new("Save as ...");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_save), ACTION_SAVE);
-    SngWidget *menu_file_exit = sng_menu_item_new("Exit");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_file_exit), ACTION_PREV_SCREEN);
-
-    // View Menu
-    SngWidget *menu_view = sng_menu_new("View");
-    SngWidget *menu_view_filters = sng_menu_item_new("Filters");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_filters), ACTION_SHOW_FILTERS);
-    SngWidget *menu_view_protocols = sng_menu_item_new("Protocols");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_view_protocols), ACTION_SHOW_PROTOCOLS);
-
-    // Call List menu
-    SngWidget *menu_list = sng_menu_new("Call List");
-    SngWidget *menu_list_columns = sng_menu_item_new("Configure Columns");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_columns), ACTION_SHOW_COLUMNS);
-    SngWidget *menu_list_clear = sng_menu_item_new("Clear List");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear), ACTION_CLEAR_CALLS);
-    SngWidget *menu_list_clear_soft = sng_menu_item_new("Clear filtered calls");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_clear_soft), ACTION_CLEAR_CALLS_SOFT);
-    SngWidget *menu_list_flow = sng_menu_item_new("Show Call Flow");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow), ACTION_SHOW_FLOW);
-    SngWidget *menu_list_flow_ex = sng_menu_item_new("Show Call Flow Extended");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_list_flow_ex), ACTION_SHOW_FLOW_EX);
-
-
-    // Help Menu
-    SngWidget *menu_help = sng_menu_new("Help");
-    SngWidget *menu_help_about = sng_menu_item_new("About");
-    sng_menu_item_set_action(SNG_MENU_ITEM(menu_help_about), ACTION_SHOW_HELP);
-
-    // Add menubar menus and items
-    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_file);
-    sng_container_add(SNG_CONTAINER(menu_file), menu_file_preferences);
-    sng_container_add(SNG_CONTAINER(menu_file), menu_file_save);
-    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new(NULL));
-    sng_container_add(SNG_CONTAINER(menu_file), menu_file_exit);
-    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_view);
-    sng_container_add(SNG_CONTAINER(menu_view), menu_view_filters);
-    sng_container_add(SNG_CONTAINER(menu_view), menu_view_protocols);
-    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_list);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_columns);
-    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_clear_soft);
-    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new(NULL));
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow);
-    sng_container_add(SNG_CONTAINER(menu_list), menu_list_flow_ex);
-    sng_container_add(SNG_CONTAINER(call_flow_win->menu_bar), menu_help);
-    sng_container_add(SNG_CONTAINER(menu_help), menu_help_about);
-    sng_container_add(SNG_CONTAINER(call_flow_win), call_flow_win->menu_bar);
-
     // Create Arrow Flow viewer widget
     SngWidget *box_content = sng_box_new(SNG_ORIENTATION_HORIZONTAL);
     call_flow_win->flow_viewer = sng_flow_viewer_new();
@@ -506,7 +449,7 @@ call_flow_win_constructed(GObject *object)
     // Button Quit
     g_autoptr(GString) bn_text = g_string_new(NULL);
     g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_PREV_SCREEN),
+                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_CLOSE),
                     COLOR_PAIR(CP_BLACK_ON_CYAN), "Quit");
     SngWidget *bn_quit = sng_button_new(bn_text->str);
 

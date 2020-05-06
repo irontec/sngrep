@@ -52,20 +52,14 @@ struct _SngMenuItem
     //! Mark this entry as enabled
     gboolean checked;
     //! Keybinding Action
-    KeybindingAction action;
+    SngAction action;
 };
 
-void
-sng_menu_item_set_action(SngMenuItem *item, KeybindingAction action);
+SngWidget *
+sng_menu_item_new(const gchar *text, SngAction action);
 
 void
 sng_menu_item_activate(SngMenuItem *item);
-
-SngWidget *
-sng_menu_item_new(const gchar *text);
-
-void
-sng_menu_item_free(SngMenuItem *item);
 
 G_END_DECLS
 

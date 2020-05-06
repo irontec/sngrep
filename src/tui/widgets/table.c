@@ -103,7 +103,7 @@ sng_table_move_horizontal(SngTable *table, gint times)
 }
 
 static gboolean
-sng_table_handle_action(SngWidget *widget, KeybindingAction action)
+sng_table_handle_action(SngWidget *widget, SngAction action)
 {
 
     SngTable *table = SNG_TABLE(widget);
@@ -467,17 +467,14 @@ sng_table_focus_lost(SngWidget *widget)
     SNG_WIDGET_CLASS(sng_table_parent_class)->focus_lost(widget);
 }
 
-
 static void
 sng_table_key_pressed(SngWidget *widget, gint key)
 {
-
     SngTable *table = SNG_TABLE(widget);
 
-
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // This panel has handled the key successfully
         if (sng_table_handle_action(widget, action)) {
             break;
@@ -500,7 +497,7 @@ sng_table_key_pressed(SngWidget *widget, gint key)
             break;
     }
 
-    if (action == ACTION_UNKNOWN) {
+    if (action == ACTION_NONE) {
          SNG_WIDGET_CLASS(sng_table_parent_class)->key_pressed(widget, key);
     }
 }

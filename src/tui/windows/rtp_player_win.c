@@ -130,8 +130,8 @@ rtp_player_win_handle_key(SngWidget *widget, int key)
     g_return_if_fail(self != NULL);
 
     // Check actions for this key
-    KeybindingAction action = ACTION_UNKNOWN;
-    while ((action = key_find_action(key, action)) != ACTION_UNKNOWN) {
+    SngAction action = ACTION_NONE;
+    while ((action = key_find_action(key, action)) != ACTION_NONE) {
         // Check if we handle this action
         switch (action) {
             case ACTION_RIGHT:
