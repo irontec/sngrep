@@ -67,7 +67,7 @@ SettingsWindowEntry entries[] = {
       "Max dialogs * ............................." },
     { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_CAPTURE_DEVICE, SETTING_CAPTURE_PCAP_DEVICE,
       "Capture device * .........................." },
-    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_SIP_NOINCOMPLETE, SETTING_STORAGE_INCOMPLETE_DLG,
+    { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_SIP_NOINCOMPLETE, SETTING_STORAGE_COMPLETE_DLG,
       "Capture full transactions ................." },
     { CAT_SETTINGS_CAPTURE, FLD_SETTINGS_SAVEPATH, SETTING_STORAGE_SAVEPATH,
       "Default Save path ........................." },

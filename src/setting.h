@@ -100,7 +100,7 @@ typedef struct _SettingStorage SettingStorage;
 #define SETTING_STORAGE_MODE            "storage.mode"
 #define SETTING_STORAGE_MEMORY_LIMIT    "storage.memory_limit"
 #define SETTING_STORAGE_ROTATE          "storage.rotate"
-#define SETTING_STORAGE_INCOMPLETE_DLG  "storage.incomplete"
+#define SETTING_STORAGE_COMPLETE_DLG    "storage.complete"
 #define SETTING_STORAGE_CALLS           "storage.calls"
 #define SETTING_STORAGE_SAVEPATH        "storage.savepath"
 #define SETTING_STORAGE_FILTER_PAYLOAD  "storage.filter.payload"

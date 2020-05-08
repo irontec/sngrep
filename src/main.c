@@ -192,7 +192,7 @@ main(int argc, char *argv[])
     if (!storage_opts.match.invite)
         storage_opts.match.invite = setting_enabled(SETTING_STORAGE_CALLS);
     if (!storage_opts.match.complete)
-        storage_opts.match.complete = setting_enabled(SETTING_STORAGE_INCOMPLETE_DLG);
+        storage_opts.match.complete = setting_enabled(SETTING_STORAGE_COMPLETE_DLG);
     if (!storage_opts.capture.limit)
         storage_opts.capture.limit = (guint) setting_get_intvalue(SETTING_CAPTURE_LIMIT);
     if (!storage_opts.capture.rtp)

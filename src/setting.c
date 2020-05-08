@@ -480,7 +480,7 @@ settings_init(SettingOpts options)
     settings_add_setting(SETTING_STORAGE_MODE,
                          setting_enum_new(SETTING_STORAGE_MODE_MEMORY, SETTING_TYPE_STORAGE_MODE));
     settings_add_setting(SETTING_STORAGE_ROTATE, setting_bool_new(FALSE));
-    settings_add_setting(SETTING_STORAGE_INCOMPLETE_DLG, setting_bool_new(FALSE));
+    settings_add_setting(SETTING_STORAGE_COMPLETE_DLG, setting_bool_new(TRUE));
     settings_add_setting(SETTING_STORAGE_CALLS, setting_bool_new(FALSE));
     settings_add_setting(SETTING_STORAGE_SAVEPATH, setting_string_new(g_get_current_dir()));
     settings_add_setting(SETTING_STORAGE_FILTER_METHODS, setting_string_new(NULL));
