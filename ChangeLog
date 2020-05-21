@@ -1,3 +1,16 @@
+2020-05-21 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.7 released
+
+	* capture: fixed a crash with invalid CSeq values
+	* capture: allow configurable libpcap capture buffer
+	* hep: support parsing of HEPv3 headers in any order
+	* ssl: updated code to exclude depcreted OpenSSL functions
+	* call raw: add support to IP alias display
+	* call list: updated diverted Call state conditions
+	* cli: match expression now applies to whole SIP payload
+	* cli: add support to multiple comma separated capture devices
+	* sip: add KDMQ custom method to SIP parser
+
 2018-10-31 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.6 released
 

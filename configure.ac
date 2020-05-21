@@ -1,5 +1,5 @@
 AC_PREREQ([2.59])
-AC_INIT([sngrep], [1.4.6], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
+AC_INIT([sngrep], [1.4.7], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
 AM_INIT_AUTOMAKE([1.9])
 AC_CONFIG_HEADERS([src/config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
