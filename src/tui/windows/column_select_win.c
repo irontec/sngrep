@@ -306,8 +306,8 @@ column_select_handle_key_menu(ColumnSelectWindow *self, gint key)
     }
 
     // Draw a scrollbar to the right
-    self->scroll.pos = (guint) top_row(self->menu);
-    scrollbar_draw(self->scroll);
+//    self->scroll.pos = (guint) top_row(self->menu);
+//    scrollbar_draw(self->scroll);
     wnoutrefresh(self->menu_win);
 
     // Return if this panel has handled or not the key
@@ -521,9 +521,9 @@ column_select_constructed(GObject *object)
     post_menu(self->menu);
 
     // Draw a scrollbar to the right
-    self->scroll = window_set_scrollbar(self->menu_win, SB_VERTICAL, SB_RIGHT);
-    self->scroll.max = (guint) (item_count(self->menu) - 1);
-    scrollbar_draw(self->scroll);
+//    self->scroll = window_set_scrollbar(self->menu_win, SB_VERTICAL, SNG_POSITION_RIGHT);
+//    self->scroll.max = (guint) (item_count(self->menu) - 1);
+//    scrollbar_draw(self->scroll);
 
     // Set the window title and boxes
     mvwprintw(win, 1, width / 2 - 14, "Call List columns selection");

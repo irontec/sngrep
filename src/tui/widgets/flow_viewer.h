@@ -34,7 +34,7 @@
 #include "storage/address.h"
 #include "storage/group.h"
 #include "tui/widgets/flow_arrow.h"
-#include "tui/widgets/scrollbar.h"
+#include "tui/widgets/scrollable.h"
 #include "tui/widgets/widget.h"
 
 G_BEGIN_DECLS
@@ -55,12 +55,12 @@ typedef enum
 } SettingSdpMode;
 
 #define SNG_TYPE_FLOW_VIEWER sng_flow_viewer_get_type()
-G_DECLARE_FINAL_TYPE(SngFlowViewer, sng_flow_viewer, SNG, FLOW_VIWER, SngContainer)
+G_DECLARE_FINAL_TYPE(SngFlowViewer, sng_flow_viewer, SNG, FLOW_VIWER, SngScrollable)
 
 struct _SngFlowViewer
 {
     //! Parent object attributes
-    SngContainer parent;
+    SngScrollable parent;
     //! Container for flow columns
     SngWidget *box_columns;
     //! Container for flow arrows
@@ -71,10 +71,6 @@ struct _SngFlowViewer
     SngWidget *current;
     //! Selected arrow to compare
     SngWidget *selected;
-    //! Vertical Flow window scrollbar
-    Scrollbar vscroll;
-    //! Vertical Flow window scrollbar
-    Scrollbar hscroll;
     //! Print timestamp next to the arrow
     gboolean arrowtime;
 };

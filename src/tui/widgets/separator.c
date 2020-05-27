@@ -25,6 +25,7 @@
  */
 
 #include "config.h"
+#include "tui/tui.h"
 #include "tui/theme.h"
 #include "tui/widgets/orientable.h"
 #include "tui/widgets/separator.h"
@@ -61,9 +62,9 @@ sng_separator_draw(SngWidget *widget)
     WINDOW *win = sng_widget_get_ncurses_window(widget);
     wattron(win, COLOR_PAIR(CP_BLUE_ON_DEF));
     if (separator->orientation == SNG_ORIENTATION_HORIZONTAL) {
-        whline(win, ACS_HLINE, sng_widget_get_width(widget));
+        tui_whline(win, 0, 0, ACS_HLINE, sng_widget_get_width(widget));
     } else {
-        wvline(win, ACS_VLINE, sng_widget_get_height(widget));
+        tui_wvline(win, 0, 0, ACS_VLINE, sng_widget_get_height(widget));
     }
 
     // Chain up parent draw

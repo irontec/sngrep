@@ -38,7 +38,7 @@
 #include "tui/widgets/flow_viewer.h"
 
 // Class Definition
-G_DEFINE_TYPE(SngFlowViewer, sng_flow_viewer, SNG_TYPE_CONTAINER)
+G_DEFINE_TYPE(SngFlowViewer, sng_flow_viewer, SNG_TYPE_SCROLLABLE)
 
 SngWidget *
 sng_flow_viewer_new()
@@ -555,20 +555,22 @@ sng_flow_viewer_move_vertical(SngFlowViewer *flow_viewer, gint times)
     flow_viewer->current = g_list_nth_data(arrows, index);
     sng_widget_focus_gain(flow_viewer->current);
 
-    // Move the first index if required (moving up)
-    flow_viewer->vscroll.pos = MIN(
-        flow_viewer->vscroll.pos,
+    // Update vertical scrollbar position
+    SngScrollbar *vscroll = sng_scrollable_get_vscroll(SNG_SCROLLABLE(flow_viewer));
+    vscroll->position = MIN(
+        vscroll->position,
         sng_widget_get_ypos(flow_viewer->current) - sng_widget_get_height(flow_viewer->current) + 1
     );
 
     gint arrow_win_height = getmaxy(sng_widget_get_ncurses_window(flow_viewer->box_arrows));
-    if (scrollbar_visible(flow_viewer->hscroll)) {
-        arrow_win_height -= 1;
+    SngScrollbar *hscroll = sng_scrollable_get_hscroll(SNG_SCROLLABLE(flow_viewer));
+    if (sng_widget_is_visible(SNG_WIDGET(hscroll))) {
+        arrow_win_height--;
     }
 
     // Move the first index if required (moving down)
-    flow_viewer->vscroll.pos = MAX(
-        flow_viewer->vscroll.pos,
+    vscroll->position = MAX(
+        vscroll->position,
         sng_widget_get_ypos(flow_viewer->current) - arrow_win_height
     );
 }
@@ -586,8 +588,9 @@ sng_flow_viewer_move_horizontal(SngFlowViewer *flow_viewer, gint times)
     g_return_if_fail(flow_viewer != NULL);
 
     // Move the first index if required (moving left)
-    flow_viewer->hscroll.pos = CLAMP(
-        flow_viewer->hscroll.pos + times,
+    SngScrollbar *hscroll = sng_scrollable_get_hscroll(SNG_SCROLLABLE(flow_viewer));
+    hscroll->position = CLAMP(
+        hscroll->position + times,
         0,
         sng_widget_get_width(flow_viewer->box_columns)
     );
@@ -651,6 +654,9 @@ sng_flow_viewer_size_request(SngWidget *widget)
         sng_widget_get_ypos(widget)
     );
     sng_widget_size_request(flow_viewer->box_arrows);
+
+    // Chain-up parent size request function
+    SNG_WIDGET_CLASS(sng_flow_viewer_parent_class)->size_request(widget);
 }
 
 static void
@@ -661,16 +667,6 @@ sng_flow_viewer_realize(SngWidget *widget)
     // Update Box internal Ncurses window
     sng_widget_realize(flow_viewer->box_columns);
     sng_widget_realize(flow_viewer->box_arrows);
-
-    // Calculate available printable area for messages
-    flow_viewer->vscroll = window_set_scrollbar(sng_widget_get_ncurses_window(flow_viewer->box_arrows), SB_VERTICAL,
-                                                SB_LEFT);
-    flow_viewer->hscroll = window_set_scrollbar(sng_widget_get_ncurses_window(flow_viewer->box_arrows), SB_HORIZONTAL,
-                                                SB_BOTTOM);
-    flow_viewer->vscroll.max = sng_flow_viewer_arrows_height(flow_viewer) - 1;
-    flow_viewer->hscroll.max = sng_flow_viewer_columns_width(flow_viewer) - 1;
-    flow_viewer->vscroll.postoffset = (scrollbar_visible(flow_viewer->hscroll) ? 1 : 0);
-    flow_viewer->hscroll.preoffset = (scrollbar_visible(flow_viewer->vscroll) ? 1 : 0);
 
     // Create subwindows for all components
     SNG_WIDGET_CLASS(sng_flow_viewer_parent_class)->realize(widget);
@@ -688,10 +684,6 @@ sng_flow_viewer_draw(SngWidget *widget)
     // Draw columns and arrows
     sng_widget_draw(flow_viewer->box_columns);
     sng_widget_draw(flow_viewer->box_arrows);
-
-    // Draw scrollbars
-    scrollbar_draw(flow_viewer->vscroll);
-    scrollbar_draw(flow_viewer->hscroll);
 
     // Chain-up parent draw function
     SNG_WIDGET_CLASS(sng_flow_viewer_parent_class)->draw(widget);
@@ -849,12 +841,21 @@ sng_flow_viewer_handle_key(SngWidget *widget, gint key)
     SNG_WIDGET_CLASS(sng_flow_viewer_parent_class)->key_pressed(widget, key);
 }
 
+static gint
+sng_flow_viewer_get_preferred_height(SngWidget *widget)
+{
+    return sng_flow_viewer_arrows_height(SNG_FLOW_VIWER(widget)) + 3;
+}
+
+static gint
+sng_flow_viewer_get_preferred_width(SngWidget *widget)
+{
+    return sng_flow_viewer_columns_width(SNG_FLOW_VIWER(widget));
+}
+
 static void
 sng_flow_viewer_constructed(GObject *object)
 {
-    // Chain-up parent constructed
-    G_OBJECT_CLASS(sng_flow_viewer_parent_class)->constructed(object);
-
     // Get parent window information
     SngFlowViewer *flow_viewer = SNG_FLOW_VIWER(object);
 
@@ -864,6 +865,12 @@ sng_flow_viewer_constructed(GObject *object)
 
     flow_viewer->box_arrows = sng_box_new(SNG_ORIENTATION_VERTICAL);
     sng_box_set_padding_full(SNG_BOX(flow_viewer->box_arrows), 3, 0, 0, 0);
+
+    // Set scrollbar padding
+    sng_scrollable_set_padding(SNG_SCROLLABLE(flow_viewer), 3, 0, 0, 0);
+
+    // Chain-up parent constructed
+    G_OBJECT_CLASS(sng_flow_viewer_parent_class)->constructed(object);
 }
 
 static void
@@ -893,6 +900,8 @@ sng_flow_viewer_class_init(SngFlowViewerClass *klass)
     widget_class->draw = sng_flow_viewer_draw;
     widget_class->map = sng_flow_viewer_map;
     widget_class->key_pressed = sng_flow_viewer_handle_key;
+    widget_class->preferred_height = sng_flow_viewer_get_preferred_height;
+    widget_class->preferred_width = sng_flow_viewer_get_preferred_width;
 }
 
 static void

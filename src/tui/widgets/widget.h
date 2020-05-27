@@ -144,6 +144,9 @@ void
 sng_widget_show(SngWidget *widget);
 
 void
+sng_widget_set_visible(SngWidget *widget, gboolean visible);
+
+void
 sng_widget_hide(SngWidget *widget);
 
 gboolean

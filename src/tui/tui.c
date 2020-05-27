@@ -590,17 +590,63 @@ tui_whline(WINDOW *win, gint row, gint col, chtype acs, gint length)
     }
 }
 
+void
+tui_wvline(WINDOW *win, gint row, gint col, chtype acs, gint length)
+{
+    for (gint i = 0; i < length; i++) {
+        wmove(win, row + i, col);
+        waddwstr(win, tui_acs_utf8(acs));
+    }
+}
+
+void
+tui_mvwaddch(WINDOW *win, gint row, gint col, chtype acs)
+{
+    mvwaddwstr(win, row, col, tui_acs_utf8(acs));
+}
+
+void
+tui_box(WINDOW *win)
+{
+    tui_whline(win, 0, 0, ACS_HLINE, getmaxx(win));
+    tui_whline(win, getmaxy(win) - 1, 0, ACS_HLINE, getmaxx(win));
+    tui_wvline(win, 0, 0, ACS_VLINE, getmaxy(win));
+    tui_wvline(win, 0, getmaxx(win) - 1, ACS_VLINE, getmaxy(win));
+    tui_mvwaddch(win, 0, 0, ACS_ULCORNER);
+    tui_mvwaddch(win, 0, getmaxx(win) - 1, ACS_URCORNER);
+    tui_mvwaddch(win, getmaxy(win) - 1, 0, ACS_LLCORNER);
+    tui_mvwaddch(win, getmaxy(win) - 1, getmaxx(win) - 1, ACS_LRCORNER);
+}
+
 wchar_t *
 tui_acs_utf8(const chtype acs)
 {
     static wchar_t utf8[2] = { 0, 0 };
 
-    if (acs == ACS_BOARD) {
-        utf8[0] = 0x2503;   // ┃
+    if (acs == ACS_HLINE) {
+        utf8[0] = 0x2500;   // ━
     } else if (acs == ACS_CKBOARD) {
         utf8[0] = 0x2501;   // ━
-    } else if (acs == ACS_HLINE) {
-        utf8[0] = 0x2501;   // ━
+    } else if (acs == ACS_VLINE) {
+        utf8[0] = 0x2502;   // │
+    } else if (acs == ACS_BOARD) {
+        utf8[0] = 0x2503;   // ┃
+    } else if (acs == ACS_TTEE) {
+        utf8[0] = 0x252C;   // ┬
+    } else if (acs == ACS_BTEE) {
+        utf8[0] = 0x2534;   // ┴
+    } else if (acs == ACS_LTEE) {
+        utf8[0] = 0x251C;   // ├
+    } else if (acs == ACS_RTEE) {
+        utf8[0] = 0x2524;   // ┤
+    } else if (acs == ACS_ULCORNER) {
+        utf8[0] = 0x250C;   // ┌
+    } else if (acs == ACS_URCORNER) {
+        utf8[0] = 0x2510;   // ┐
+    } else if (acs == ACS_LLCORNER) {
+        utf8[0] = 0x2514;   // └
+    } else if (acs == ACS_LRCORNER) {
+        utf8[0] = 0x2518;   // ┘
     } else if (acs == '>') {
         utf8[0] = 0x25B6;   // ▶
     } else if (acs == '<') {

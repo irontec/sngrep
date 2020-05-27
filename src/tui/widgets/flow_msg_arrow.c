@@ -180,9 +180,9 @@ sng_flow_msg_arrow_draw(SngWidget *widget)
     if (sng_widget_has_focus(widget)) {
         tui_whline(win, arrow_row, 0, ACS_HLINE, width);
     } else if (sng_flow_arrow_is_selected(arrow)) {
-        mvwhline(win, arrow_row, 0, '=', width);
+        tui_whline(win, arrow_row, 0, '=', width);
     } else {
-        mvwhline(win, arrow_row, 0, ACS_HLINE, width);
+        tui_whline(win, arrow_row, 0, ACS_HLINE, width);
     }
 
     // Draw method

@@ -76,7 +76,7 @@ SngAppWindow *
 call_flow_win_new()
 {
     return g_object_new(
-        WINDOW_TYPE_CALL_FLOW,
+        SNG_TYPE_CALL_FLOW_WIN,
         "height", getmaxy(stdscr),
         "width", getmaxx(stdscr),
         NULL
@@ -139,7 +139,7 @@ call_flow_win_set_group(CallFlowWindow *call_flow_win, CallGroup *group)
 static void
 call_flow_win_size_request(SngWidget *widget)
 {
-    CallFlowWindow *call_flow_win = TUI_CALL_FLOW(widget);
+    CallFlowWindow *call_flow_win = SNG_CALL_FLOW(widget);
 
     // Get min raw width
     gint width = sng_widget_get_width(SNG_WIDGET(call_flow_win));
@@ -181,7 +181,7 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
 
     // Sanity check, this should not happen
     SngAppWindow *window = SNG_APP_WINDOW(widget);
-    CallFlowWindow *call_flow_window = TUI_CALL_FLOW(window);
+    CallFlowWindow *call_flow_window = SNG_CALL_FLOW(window);
     WINDOW *win = sng_widget_get_ncurses_window(widget);
     CallGroup *group = sng_flow_viewer_get_group(SNG_FLOW_VIWER(call_flow_window->flow_viewer));
 
@@ -416,19 +416,67 @@ call_flow_win_help(G_GNUC_UNUSED SngAppWindow *window)
 }
 
 static void
+call_flow_win_setup_menu(CallFlowWindow *call_flow_win)
+{
+    // File Menu
+    SngWidget *menu_file = sng_menu_new("File");
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Settings", ACTION_SHOW_SETTINGS));
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Save as ...", ACTION_SAVE));
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_separator());
+    sng_container_add(SNG_CONTAINER(menu_file), sng_menu_item_new("Exit", ACTION_CLOSE));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_flow_win), SNG_MENU(menu_file));
+
+    // View Menu
+    SngWidget *menu_view = sng_menu_new("View");
+    sng_container_add(SNG_CONTAINER(menu_view), sng_menu_item_new("Filters", ACTION_SHOW_FILTERS));
+    sng_container_add(SNG_CONTAINER(menu_view), sng_menu_item_new("Protocols", ACTION_SHOW_PROTOCOLS));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_flow_win), SNG_MENU(menu_view));
+
+    // Call List menu
+    SngWidget *menu_list = sng_menu_new("Call List");
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Configure Columns", ACTION_SHOW_COLUMNS));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_separator());
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Clear List", ACTION_CLEAR_CALLS));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Clear filtered calls", ACTION_CLEAR_CALLS_SOFT));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_separator());
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Show Call Flow", ACTION_SHOW_FLOW));
+    sng_container_add(SNG_CONTAINER(menu_list), sng_menu_item_new("Show Call Flow Extended", ACTION_SHOW_FLOW_EX));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_flow_win), SNG_MENU(menu_list));
+
+    // Help Menu
+    SngWidget *menu_help = sng_menu_new("Help");
+    sng_container_add(SNG_CONTAINER(menu_help), sng_menu_item_new("About", ACTION_SHOW_HELP));
+    sng_app_window_add_menu(SNG_APP_WINDOW(call_flow_win), SNG_MENU(menu_help));
+}
+
+static void
+call_flow_win_button_bar(CallFlowWindow *call_flow_win)
+{
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Quit", ACTION_CLOSE);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Select", ACTION_SELECT);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Help", ACTION_SHOW_HELP);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Save", ACTION_SAVE);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Search", ACTION_DISP_FILTER);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Extended", ACTION_SHOW_FLOW_EX);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Clear", ACTION_CLEAR_CALLS);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Filter", ACTION_SHOW_FILTERS);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Settings", ACTION_SHOW_SETTINGS);
+    sng_app_window_add_button(SNG_APP_WINDOW(call_flow_win), "Columns", ACTION_SHOW_COLUMNS);
+}
+static void
 call_flow_win_constructed(GObject *object)
 {
-    // Chain-up parent constructed
-    G_OBJECT_CLASS(call_flow_win_parent_class)->constructed(object);
-
     // Get parent window information
-    CallFlowWindow *call_flow_win = TUI_CALL_FLOW(object);
+    CallFlowWindow *call_flow_win = SNG_CALL_FLOW(object);
 
-    // Create menu bar entries
-    call_flow_win->menu_bar = sng_menu_bar_new();
+    // Setup Menu Bar
+    call_flow_win_setup_menu(call_flow_win);
+
+    // Setup Button bar
+    call_flow_win_button_bar(call_flow_win);
 
     // Create Arrow Flow viewer widget
-    SngWidget *box_content = sng_box_new(SNG_ORIENTATION_HORIZONTAL);
+    SngWidget *box_content = sng_app_window_get_content(SNG_APP_WINDOW(call_flow_win));
     call_flow_win->flow_viewer = sng_flow_viewer_new();
     sng_container_add(SNG_CONTAINER(box_content), call_flow_win->flow_viewer);
     sng_box_pack_start(SNG_BOX(box_content), sng_separator_new(SNG_ORIENTATION_VERTICAL));
@@ -436,82 +484,6 @@ call_flow_win_constructed(GObject *object)
     // Create detail Text area
     call_flow_win->box_detail = sng_widget_new();
     sng_box_pack_start(SNG_BOX(box_content), call_flow_win->box_detail);
-
-    // Add content box to window
-    sng_container_add(SNG_CONTAINER(call_flow_win), box_content);
-
-    // Bottom button bar
-    SngWidget *button_bar = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 3, 0);
-    sng_widget_set_vexpand(button_bar, FALSE);
-    sng_widget_set_height(button_bar, 1);
-    sng_box_set_background(SNG_BOX(button_bar), COLOR_PAIR(CP_WHITE_ON_CYAN));
-
-    // Button Quit
-    g_autoptr(GString) bn_text = g_string_new(NULL);
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_CLOSE),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Quit");
-    SngWidget *bn_quit = sng_button_new(bn_text->str);
-
-    // Button Select
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SELECT),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Select");
-    SngWidget *bn_select = sng_button_new(bn_text->str);
-
-    // Button Help
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_HELP),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Help");
-    SngWidget *bn_help = sng_button_new(bn_text->str);
-
-    // Button Help
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_DISP_FILTER),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Search");
-    SngWidget *bn_search = sng_button_new(bn_text->str);
-
-    // Button Extended
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FLOW_EX),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Extended");
-    SngWidget *bn_extended = sng_button_new(bn_text->str);
-
-    // Button Clear
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_CLEAR_CALLS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Clear");
-    SngWidget *bn_clear = sng_button_new(bn_text->str);
-
-    // Button Filter
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_FILTERS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Filter");
-    SngWidget *bn_filter = sng_button_new(bn_text->str);
-
-    // Button Settings
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_SETTINGS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Settings");
-    SngWidget *bn_settings = sng_button_new(bn_text->str);
-
-    // Button Columns
-    g_string_printf(bn_text, "<%d>%s <%d>%s",
-                    COLOR_PAIR(CP_WHITE_ON_CYAN) | A_BOLD, key_action_key_str(ACTION_SHOW_COLUMNS),
-                    COLOR_PAIR(CP_BLACK_ON_CYAN), "Columns");
-    SngWidget *bn_columns = sng_button_new(bn_text->str);
-
-    sng_box_pack_start(SNG_BOX(button_bar), bn_quit);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_select);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_help);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_search);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_extended);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_clear);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_filter);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_settings);
-    sng_box_pack_start(SNG_BOX(button_bar), bn_columns);
-    sng_container_add(SNG_CONTAINER(call_flow_win), button_bar);
-
 
     // Set default widget
     sng_window_set_default_focus(SNG_WINDOW(call_flow_win), call_flow_win->flow_viewer);

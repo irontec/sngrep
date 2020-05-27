@@ -54,7 +54,7 @@
 #include "tui/widgets/menu.h"
 #include "tui/widgets/menu_bar.h"
 #include "tui/widgets/menu_item.h"
-#include "tui/widgets/scrollbar.h"
+#include "tui/widgets/scrollable.h"
 #include "tui/widgets/separator.h"
 #include "tui/widgets/radio_button.h"
 #include "tui/widgets/table.h"
@@ -206,6 +206,15 @@ draw_message_pos(WINDOW *win, Message *msg, int starting);
 
 void
 tui_whline(WINDOW *win, gint row, gint col, chtype acs, gint length);
+
+void
+tui_wvline(WINDOW *win, gint row, gint col, chtype acs, gint length);
+
+void
+tui_mvwaddch(WINDOW *win, gint row, gint col, chtype acs);
+
+void
+tui_box(WINDOW *win);
 
 /**
  * @brief Return UTF-8 representation for a given character

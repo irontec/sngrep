@@ -33,18 +33,18 @@
 #include <glib-object.h>
 #include "storage/group.h"
 #include "tui/widgets/widget.h"
-#include "tui/widgets/scrollbar.h"
+#include "tui/widgets/scrollable.h"
 
 G_BEGIN_DECLS
 
 // Class declaration
 #define SNG_TYPE_TABLE sng_table_get_type()
-G_DECLARE_FINAL_TYPE(SngTable, sng_table, SNG, TABLE, SngWidget)
+G_DECLARE_FINAL_TYPE(SngTable, sng_table, SNG, TABLE, SngScrollable)
 
 struct _SngTable
 {
     //! Parent object attributes
-    SngWidget parent;
+    SngScrollable parent;
     //! Table Columns (Pointers to Attributes)
     GPtrArray *columns;
     //! Table displayed rows
@@ -57,10 +57,6 @@ struct _SngTable
     CallGroup *group;
     //! Move to last list entry if autoscroll is enabled
     gboolean autoscroll;
-    //! List vertical scrollbar
-    Scrollbar vscroll;
-    //! List horizontal scrollbar
-    Scrollbar hscroll;
 };
 
 SngWidget *

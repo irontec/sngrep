@@ -23,52 +23,41 @@
  * @file scrollbar.h
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief
+ * @brief Scrollbar function and structures
  *
  */
-#ifndef __SNGREP_SCROLLBAR_H__
-#define __SNGREP_SCROLLBAR_H__
+
+#ifndef __SNGREP_SCROLLABLE_H__
+#define __SNGREP_SCROLLABLE_H__
 
 #include <glib.h>
+#include "tui/widgets/scrollbar.h"
 #include "tui/widgets/container.h"
-#include "orientable.h"
 
 G_BEGIN_DECLS
 
 // Class declaration
-#define SNG_TYPE_SCROLLBAR sng_scrollbar_get_type()
-G_DECLARE_FINAL_TYPE(SngScrollbar, sng_scrollbar, SNG, SCROLLBAR, SngWidget)
+#define SNG_TYPE_SCROLLABLE sng_scrollable_get_type()
+G_DECLARE_DERIVABLE_TYPE(SngScrollable, sng_scrollable, SNG, SCROLLABLE, SngContainer)
 
-struct _SngScrollbar
+struct _SngScrollableClass
 {
-    //! Parent object attributes
-    SngWidget parent;
-    //! Vertical or Horizontal scrollbar
-    SngOrientation orientation;
-    //! Current bar position
-    gint position;
-    //! Max position
-    gint max_position;
+    //! Parent class
+    SngContainerClass parent;
 };
 
+SngScrollbar *
+sng_scrollable_get_vscroll(SngScrollable *scrollable);
+
+SngScrollbar *
+sng_scrollable_get_hscroll(SngScrollable *scrollable);
+
 SngWidget *
-sng_scrollbar_new(SngOrientation orientation);
-
-gint
-sng_scrollbar_get_position(SngScrollbar *scrollbar);
+sng_scrollable_get_content(SngScrollable *scrollable);
 
 void
-sng_scrollbar_set_position(SngScrollbar *scrollbar, gint position);
-
-gint
-sng_scrollbar_get_max_position(SngScrollbar *scrollbar);
-
-void
-sng_scrollbar_set_max_position(SngScrollbar *scrollbar, gint max_position);
-
-gint
-sng_scrollbar_get_max(SngScrollbar *scrollbar);
+sng_scrollable_set_padding(SngScrollable *scrollable, gint top, gint bottom, gint left, gint right);
 
 G_END_DECLS
 
-#endif    /* __SNGREP_SCROLLBAR_H__ */
+#endif /*__SNGREP_SCROLLABLE_H__*/

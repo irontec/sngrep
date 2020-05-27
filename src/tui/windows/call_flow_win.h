@@ -57,12 +57,12 @@
 
 #include <glib.h>
 #include "tui/tui.h"
-#include "tui/widgets/scrollbar.h"
+#include "tui/widgets/scrollable.h"
 #include "tui/widgets/flow_viewer.h"
 #include "storage/group.h"
 
-#define WINDOW_TYPE_CALL_FLOW call_flow_win_get_type()
-G_DECLARE_FINAL_TYPE(CallFlowWindow, call_flow_win, TUI, CALL_FLOW, SngAppWindow)
+#define SNG_TYPE_CALL_FLOW_WIN call_flow_win_get_type()
+G_DECLARE_FINAL_TYPE(CallFlowWindow, call_flow_win, SNG, CALL_FLOW, SngAppWindow)
 
 /**
  * @brief Call flow Extended status information
@@ -74,8 +74,6 @@ struct _CallFlowWindow
 {
     //! Parent object attributes
     SngAppWindow parent;
-    //! Window menu bar
-    SngWidget *menu_bar;
     //! Flow viewer
     SngWidget *flow_viewer;
     //! Detail text area

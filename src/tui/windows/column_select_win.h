@@ -33,7 +33,7 @@
 #include <form.h>
 #include "tui/widgets/window.h"
 #include "tui/tui.h"
-#include "tui/widgets/scrollbar.h"
+#include "tui/widgets/scrollable.h"
 #include "storage/attribute.h"
 
 G_BEGIN_DECLS
@@ -76,7 +76,7 @@ struct _ColumnSelectWindow
     //! Flag to handle key inputs
     gboolean form_active;
     //! Scrollbar for the menu window
-    Scrollbar scroll;
+//    Scrollbar scroll;
 };
 
 /**

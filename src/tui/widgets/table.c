@@ -43,7 +43,7 @@ enum
 static guint signals[SIGS] = { 0 };
 
 // Menu table class definition
-G_DEFINE_TYPE(SngTable, sng_table, SNG_TYPE_WIDGET)
+G_DEFINE_TYPE(SngTable, sng_table, SNG_TYPE_SCROLLABLE)
 
 SngWidget *
 sng_table_new()
@@ -83,8 +83,13 @@ sng_table_move_vertical(SngTable *table, gint times)
 
     // Calculate Call List height
     gint height = sng_widget_get_height(SNG_WIDGET(table));
-    height -= 1;                                         // Remove header line
-    height -= scrollbar_visible(table->hscroll) ? 1 : 0; // Remove Horizontal scrollbar
+    height -= 1; // Remove header line
+
+    // If horizontal scrolling is visible, we have one line less to draw data
+    SngScrollbar *hscroll = sng_scrollable_get_hscroll(SNG_SCROLLABLE(table));
+    if (sng_widget_is_visible(SNG_WIDGET(hscroll))) {
+        height--;
+    }
 
     // Move the first index if required (moving down)
     table->first_idx = MAX(
@@ -93,7 +98,8 @@ sng_table_move_vertical(SngTable *table, gint times)
     );
 
     // Update vertical scrollbar position
-    table->vscroll.pos = table->first_idx;
+    SngScrollbar *vscroll = sng_scrollable_get_vscroll(SNG_SCROLLABLE(table));
+    sng_scrollbar_set_position(vscroll, table->first_idx);
 }
 
 /**
@@ -106,10 +112,10 @@ static void
 sng_table_move_horizontal(SngTable *table, gint times)
 {
     // Move horizontal scroll N times
-    table->hscroll.pos = CLAMP(
-        table->hscroll.pos + times,
-        0,
-        table->hscroll.max - getmaxx(table->hscroll.win)
+    SngScrollbar *hscroll = sng_scrollable_get_hscroll(SNG_SCROLLABLE(table));
+    sng_scrollbar_set_position(
+        hscroll,
+        sng_scrollbar_get_position(hscroll) + times
     );
 }
 
@@ -119,7 +125,6 @@ sng_table_handle_action(SngWidget *widget, SngAction action)
 
     SngTable *table = SNG_TABLE(widget);
     guint rnpag_steps = (guint) setting_get_intvalue(SETTING_TUI_CL_SCROLLSTEP);
-    StorageSortOpts sort;
     Call *call = NULL;
 
     // Check if we handle this action
@@ -162,14 +167,18 @@ sng_table_handle_action(SngWidget *widget, SngAction action)
             // Remove all stored calls
             storage_calls_clear();
             // Clear List
-            table->vscroll.pos = table->cur_idx = 0;
+            table->cur_idx = 0;
+            // Reset scroll position
+            sng_scrollbar_set_position(sng_scrollable_get_vscroll(SNG_SCROLLABLE(table)), 0);
             call_group_remove_all(table->group);
             break;
         case ACTION_CLEAR_CALLS_SOFT:
             // Remove stored calls, keeping the currently displayed calls
             storage_calls_clear_soft();
             // Clear List
-            table->vscroll.pos = table->cur_idx = 0;
+            table->cur_idx = 0;
+            // Reset scroll position
+            sng_scrollbar_set_position(sng_scrollable_get_vscroll(SNG_SCROLLABLE(table)), 0);
             call_group_remove_all(table->group);
             break;
         case ACTION_AUTOSCROLL:
@@ -201,29 +210,6 @@ sng_table_handle_action(SngWidget *widget, SngAction action)
     }
 
     return TRUE;
-}
-
-static gint
-sng_table_columns_width(SngTable *table, guint columns)
-{
-    // More requested columns that existing columns??
-    if (columns > g_ptr_array_len(table->columns)) {
-        columns = g_ptr_array_len(table->columns);
-    }
-
-    // If requested column is 0, count all columns
-    guint columncnt = (columns == 0) ? g_ptr_array_len(table->columns) : columns;
-
-    // Add extra width for spaces between columns + selection box
-    gint width = 5 + columncnt;
-
-    // Sum all column widths
-    for (guint i = 0; i < columncnt; i++) {
-        Attribute *attr = g_ptr_array_index(table->columns, i);
-        width += attr->length;
-    }
-
-    return width;
 }
 
 void
@@ -283,25 +269,45 @@ sng_table_get_line_for_call(SngTable *table, Call *call)
     return out->str;
 }
 
-static void
-sng_table_realize(SngWidget *widget)
+static gint
+sng_table_preferred_height(SngWidget *widget)
 {
     SngTable *table = SNG_TABLE(widget);
+    return g_ptr_array_len(table->dcalls) + 1 /* column line */;
+}
 
-    if (!sng_widget_is_realized(widget)) {
-        // Create a new pad for configured columns
-        SNG_WIDGET_CLASS(sng_table_parent_class)->realize(widget);
-        WINDOW *win = sng_widget_get_ncurses_window(widget);
-        // Set window scrollbars
-        table->vscroll = window_set_scrollbar(win, SB_VERTICAL, SB_LEFT);
-        table->hscroll = window_set_scrollbar(win, SB_HORIZONTAL, SB_BOTTOM);
+static gint
+sng_table_columns_width(SngTable *table, guint columns)
+{
+    // More requested columns that existing columns??
+    if (columns > g_ptr_array_len(table->columns)) {
+        columns = g_ptr_array_len(table->columns);
     }
 
-    SNG_WIDGET_CLASS(sng_table_parent_class)->realize(widget);
+    // If requested column is 0, count all columns
+    guint column_cnt = (columns == 0) ? g_ptr_array_len(table->columns) : columns;
+
+    // Add extra width for spaces between columns + selection box
+    gint width = 4 + column_cnt;
+
+    // Sum all column widths
+    for (guint i = 0; i < column_cnt; i++) {
+        Attribute *attr = g_ptr_array_index(table->columns, i);
+        width += attr->length;
+    }
+
+    return width;
+}
+
+static gint
+sng_table_preferred_width(SngWidget *widget)
+{
+    SngTable *table = SNG_TABLE(widget);
+    return sng_table_columns_width(table, g_ptr_array_len(table->columns));
 }
 
 static void
-sng_table_draw(SngWidget *widget)
+sng_table_update(SngWidget *widget)
 {
     SngTable *table = SNG_TABLE(widget);
 
@@ -309,17 +315,24 @@ sng_table_draw(SngWidget *widget)
     g_ptr_array_free(table->dcalls, TRUE);
     table->dcalls = g_ptr_array_copy_filtered(storage_calls(), (GEqualFunc) filter_check_call, NULL);
 
-    // If autoscroll is enabled, select the last dialog
-    if (table->autoscroll) {
-        StorageSortOpts sort = storage_sort_options();
-        if (sort.asc) {
-            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls));
-        } else {
-            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
-        }
+    // Add configured columns
+    g_ptr_array_free(table->columns, TRUE);
+    table->columns = g_ptr_array_new();
+    g_auto(GStrv) columns = g_strsplit(setting_get_value(SETTING_TUI_CL_COLUMNS), ",", 0);
+    for (guint i = 0; i < g_strv_length(columns); i++) {
+        Attribute *attr = attribute_find_by_name(columns[i]);
+        g_return_if_fail(attr != NULL);
+        // Add column to the list
+        g_ptr_array_add(table->columns, attr);
     }
+}
 
-    WINDOW *win = sng_widget_get_ncurses_window(widget);
+static void
+sng_table_draw(SngWidget *widget)
+{
+    SngTable *table = SNG_TABLE(widget);
+    SngWidget *content = sng_scrollable_get_content(SNG_SCROLLABLE(table));
+    WINDOW *win = sng_widget_get_ncurses_window(content);
     werase(win);
 
     // Get configured sorting options
@@ -363,21 +376,31 @@ sng_table_draw(SngWidget *widget)
             }
         }
     }
+
+    // If autoscroll is enabled
+    if (table->autoscroll) {
+        // Print Autoscroll indicator
+        mvwprintw(win, 0, 0, "A");
+        // Select last dialog
+        StorageSortOpts sort = storage_sort_options();
+        if (sort.asc) {
+            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls));
+        } else {
+            sng_table_move_vertical(table, g_ptr_array_len(table->dcalls) * -1);
+        }
+    }
+
     wprintw(win, "%*s", getmaxx(win) - getcurx(win), " ");
     wattroff(win, A_BOLD | COLOR_PAIR(CP_DEF_ON_CYAN));
 
-    // Fill the call list
-    for (guint i = (guint) table->vscroll.pos; i < g_ptr_array_len(table->dcalls); i++) {
+    // Fill the call list starting at current scroll position
+    for (guint i = 0; i < g_ptr_array_len(table->dcalls); i++) {
         Call *call = g_ptr_array_index(table->dcalls, i);
         g_return_if_fail(call != NULL);
 
         // Get first call message attributes
         Message *msg = g_ptr_array_first(call->msgs);
         g_return_if_fail(msg != NULL);
-
-        // Stop if we have reached the bottom of the list
-        if (getcury(win) == getmaxy(win))
-            break;
 
         // Show bold selected rows
         if (call_group_exists(table->group, call))
@@ -386,7 +409,7 @@ sng_table_draw(SngWidget *widget)
         // Highlight active call
         if (table->cur_idx == (gint) i) {
             wattron(win, COLOR_PAIR(CP_WHITE_ON_BLUE));
-            if (!sng_widget_has_focus(widget)) {
+            if (!sng_widget_has_focus(SNG_WIDGET(table))) {
                 wattron(win, A_DIM);
             }
         }
@@ -436,31 +459,39 @@ sng_table_draw(SngWidget *widget)
         wattroff(win, A_BOLD | A_REVERSE | A_DIM);
     }
 
-    // Copy fixed columns
-//    guint fixed_width = call_list_columns_width(self, (guint) setting_get_intvalue(SETTING_TUI_CL_FIXEDCOLS));
-//    copywin(pad, self->list_win, 0, 0, 0, 0, listh - 1, fixed_width, 0);
-
-    // Setup horizontal scrollbar
-    table->hscroll.max = sng_table_columns_width(table, 0);
-    table->hscroll.preoffset = 1;    // Leave first column for vscroll
-
-    // Setup vertical scrollbar
-    table->vscroll.max = g_ptr_array_len(table->dcalls) - 1;
-    table->vscroll.preoffset = 1;    // Leave first row for titles
-    if (scrollbar_visible(table->hscroll)) {
-        table->vscroll.postoffset = 1; // Leave last row for hscroll
-    }
-
-    // Draw scrollbars if required
-    scrollbar_draw(table->hscroll);
-    scrollbar_draw(table->vscroll);
-
-    // Print Autoscroll indicator
-    if (table->autoscroll) {
-        mvwprintw(win, 0, 0, "A");
-    }
-
+    // Chain-up parent draw function
     SNG_WIDGET_CLASS(sng_table_parent_class)->draw(widget);
+}
+
+static void
+sng_table_map(SngWidget *widget)
+{
+    SngScrollable *scrollable = SNG_SCROLLABLE(widget);
+    SngScrollbar *vscroll = sng_scrollable_get_vscroll(scrollable);
+    SngScrollbar *hscroll = sng_scrollable_get_hscroll(scrollable);
+    SngWidget *content = sng_scrollable_get_content(scrollable);
+
+    // Copy lines based on current scrolls position from internal to current
+    WINDOW *srcwin = sng_widget_get_ncurses_window(content);
+    WINDOW *dstwin = sng_widget_get_ncurses_window(widget);
+    gint sminrow = sng_scrollbar_get_position(vscroll);
+    gint smincol = sng_scrollbar_get_position(hscroll);;
+    gint dmaxrow = sng_widget_get_height(widget) - 1;
+    gint dmaxcol = sng_widget_get_width(widget) - 1;
+
+    // Copy the internal table to visible table
+    copywin(srcwin, dstwin, sminrow, smincol, 0, 0, dmaxrow, dmaxcol, FALSE);
+
+    // Always overwrite table header
+    copywin(srcwin, dstwin, 0, 0, 0, 0, 0, dmaxcol, FALSE);
+
+    // Respect fixed columns in horizontal scrolling
+//    gint fixed_columns = setting_get_intvalue(SETTING_TUI_CL_FIXEDCOLS);
+//    gint fixed_width = sng_table_columns_width(SNG_TABLE(widget), fixed_columns);
+//    copywin(dstwin, dstwin, sminrow, smincol, 0, 0, dmaxrow, fixed_width, FALSE);
+
+    // Chain-up parent map function
+    SNG_WIDGET_CLASS(sng_table_parent_class)->map(widget);
 }
 
 static void
@@ -499,35 +530,38 @@ sng_table_key_pressed(SngWidget *widget, gint key)
 }
 
 static void
-sng_table_clicked(SngWidget *widget, MEVENT mevent)
+sng_table_header_clicked(SngWidget *widget, MEVENT mevent)
 {
     SngTable *table = SNG_TABLE(widget);
 
-    // Check if the header line was clicked
-    if (mevent.y == sng_widget_get_ypos(widget)) {
-        gint column_xpos = 4;
-        for (guint i = 0; i < g_ptr_array_len(table->columns); i++) {
-            Attribute *attribute = g_ptr_array_index(table->columns, i);
-            column_xpos += attribute->length + 1;
-            if (column_xpos >= mevent.x) {
-                // If already sorting by this attribute, just toggle sort order
-                if (attribute == storage_sort_get_attribute()) {
-                    storage_sort_toggle_order();
-                } else {
-                    storage_sort_set_attribute(attribute);
-                }
-                break;
+    gint column_xpos = 4;
+    for (guint i = 0; i < g_ptr_array_len(table->columns); i++) {
+        Attribute *attribute = g_ptr_array_index(table->columns, i);
+        column_xpos += attribute->length + 1;
+        if (column_xpos >= mevent.x) {
+            // If already sorting by this attribute, just toggle sort order
+            if (attribute == storage_sort_get_attribute()) {
+                storage_sort_toggle_order();
+            } else {
+                storage_sort_set_attribute(attribute);
             }
+            break;
         }
-    } else {
-        // Select the clicked line
-        table->cur_idx = table->first_idx + (mevent.y - sng_widget_get_ypos(widget) - 1);
+    }
+}
 
-        // Check if the checkbox was selected
-        if (mevent.x >= 1 && mevent.x <= 3) {
-            // TODO Handle actions instead of keys
-            sng_table_key_pressed(widget, KEY_SPACE);
-        }
+static void
+sng_table_lines_clicked(SngWidget *widget, MEVENT mevent)
+{
+    SngTable *table = SNG_TABLE(widget);
+
+    // Select the clicked line
+    table->cur_idx = table->first_idx + (mevent.y - sng_widget_get_ypos(widget) - 1);
+
+    // Check if the checkbox was selected
+    if (mevent.x >= 1 && mevent.x <= 3) {
+        // TODO Handle actions instead of keys
+        sng_table_key_pressed(widget, KEY_SPACE);
     }
 }
 
@@ -552,10 +586,12 @@ sng_table_class_init(SngTableClass *klass)
     object_class->finalize = sng_table_finalize;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
-    widget_class->realize = sng_table_realize;
+    widget_class->update = sng_table_update;
     widget_class->draw = sng_table_draw;
+    widget_class->map = sng_table_map;
     widget_class->key_pressed = sng_table_key_pressed;
-    widget_class->clicked = sng_table_clicked;
+    widget_class->preferred_height = sng_table_preferred_height;
+    widget_class->preferred_width = sng_table_preferred_width;
 
     signals[SIG_ACTIVATE] =
         g_signal_newv("activate",
@@ -574,4 +610,8 @@ sng_table_init(SngTable *table)
     table->autoscroll = setting_enabled(SETTING_TUI_CL_AUTOSCROLL);
     table->group = call_group_new();
     table->dcalls = g_ptr_array_new();
+    table->columns = g_ptr_array_new();
+
+    // Set scrollbar padding
+    sng_scrollable_set_padding(SNG_SCROLLABLE(table), 1, 0, 0, 0);
 }

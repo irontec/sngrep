@@ -29,6 +29,7 @@
 #include "config.h"
 #include <panel.h>
 #include "glib-extra/glib.h"
+#include "tui/tui.h"
 #include "tui/theme.h"
 #include "tui/widgets/window.h"
 #include "tui/widgets/menu.h"
@@ -94,7 +95,7 @@ sng_menu_draw(SngWidget *widget)
     // Set menu background color
     WINDOW *win = sng_widget_get_ncurses_window(widget);
     wbkgd(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
-    box(win, 0, 0);
+    tui_box(win);
 
     // Get menu popup width
     gint width = sng_widget_get_width(widget);
@@ -114,9 +115,9 @@ sng_menu_draw(SngWidget *widget)
                       (item->action != ACTION_NONE) ? key_action_key_str(item->action) : ""
             );
         } else {
-            mvwhline(win, i + 1, 0, ACS_HLINE, width);
-            mvwaddch(win, i + 1, 0, ACS_LTEE);
-            mvwaddch(win, i + 1, width - 1, ACS_RTEE);
+            tui_whline(win, i + 1, 0, ACS_HLINE, width);
+            tui_mvwaddch(win, i + 1, 0, ACS_LTEE);
+            tui_mvwaddch(win, i + 1, width - 1, ACS_RTEE);
         }
         wattron(win, COLOR_PAIR(CP_BLACK_ON_CYAN));
     }

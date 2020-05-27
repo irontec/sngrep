@@ -37,7 +37,7 @@
 #include <glib.h>
 #include "tui/tui.h"
 #include "tui/widgets/window.h"
-#include "tui/widgets/scrollbar.h"
+#include "tui/widgets/scrollable.h"
 #include "tui/widgets/menu_bar.h"
 
 G_BEGIN_DECLS

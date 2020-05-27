@@ -64,6 +64,7 @@ set(SOURCES
         src/tui/widgets/orientable.c
         src/tui/widgets/radio_button.c
         src/tui/widgets/separator.c
+        src/tui/widgets/scrollable.c
         src/tui/widgets/scrollbar.c
         src/tui/widgets/table.c
         src/tui/widgets/widget.c
@@ -209,6 +210,7 @@ set(ENUM_HEADERS
         src/tui/widgets/flow_viewer.h
         src/tui/widgets/label.h
         src/tui/widgets/orientable.h
+        src/tui/widgets/scrollable.h
         )
 
 add_custom_command(

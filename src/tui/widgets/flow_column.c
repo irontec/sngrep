@@ -67,11 +67,11 @@ sng_flow_column_draw(SngWidget *widget)
 
     // Draw horizontal line below column address
     WINDOW *win = sng_widget_get_ncurses_window(widget);
-    mvwhline(win, 1, 9, ACS_HLINE, 21);
-    mvwaddch(win, 1, 19, ACS_TTEE);
+    tui_whline(win, 1, 9, ACS_HLINE, 21);
+    tui_mvwaddch(win, 1, 19, ACS_TTEE);
 
     // Draw vertical line below column (in arrows pad)
-    mvwvline(win, 2, 19, ACS_VLINE, sng_widget_get_height(widget) - 2);
+    tui_wvline(win, 2, 19, ACS_VLINE, sng_widget_get_height(widget) - 2);
 
     // Set bold to this address if it's local
     if (setting_enabled(SETTING_TUI_CF_LOCALHIGHLIGHT)) {

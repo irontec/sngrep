@@ -288,9 +288,19 @@ sng_box_size_request_horizontal(SngWidget *widget)
         }
 
         if (sng_widget_get_hexpand(child)) {
-            sng_widget_set_size(child, space / exp_widget_cnt, height);
+            // Divide available space between children
+            sng_widget_set_size(
+                child,
+                space / exp_widget_cnt,
+                height
+            );
         } else {
-            sng_widget_set_size(child, sng_widget_get_preferred_width(child), height);
+            // This widget has fixed width (it must fit in parent widget)
+            sng_widget_set_size(
+                child,
+                CLAMP(sng_widget_get_preferred_width(child), 0, sng_widget_get_width(widget)),
+                height
+            );
         }
 
         sng_widget_set_position(child, xpos, ypos);
@@ -337,9 +347,19 @@ sng_box_size_request_vertical(SngWidget *widget)
         }
 
         if (sng_widget_get_vexpand(child)) {
-            sng_widget_set_size(child, width, space / exp_widget_cnt);
+            // Divide available space between children
+            sng_widget_set_size(
+                child,
+                width,
+                space / exp_widget_cnt
+            );
         } else {
-            sng_widget_set_size(child, width, sng_widget_get_preferred_height(child));
+            // This widget has fixed height (it must fit in parent widget)
+            sng_widget_set_size(
+                child,
+                width,
+                CLAMP(sng_widget_get_preferred_height(child), 0, sng_widget_get_height(widget))
+            );
         }
 
         sng_widget_set_position(child, xpos, ypos);

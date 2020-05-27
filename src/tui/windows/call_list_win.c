@@ -102,7 +102,7 @@ call_list_win_show_flow_win(CallListWindow *call_list_win, SngAction action)
 
     // Create a new Call Flow window
     SngAppWindow *flow_win = call_flow_win_new();
-    call_flow_win_set_group(TUI_CALL_FLOW(flow_win), group);
+    call_flow_win_set_group(SNG_CALL_FLOW(flow_win), group);
     sng_window_update(SNG_WINDOW(flow_win));
 
     return TRUE;
@@ -453,9 +453,9 @@ call_list_win_constructed(GObject *object)
 
     call_list_win->tb_calls = sng_table_new();
     sng_table_columns_update(SNG_TABLE(call_list_win->tb_calls));
-    g_signal_connect_swapped(call_list_win->tb_calls, "activate",
-                             G_CALLBACK(sng_window_handle_action),
-                             GINT_TO_POINTER(ACTION_SHOW_FLOW));
+    g_signal_connect(call_list_win->tb_calls, "activate",
+                     G_CALLBACK(sng_window_handle_action),
+                     GINT_TO_POINTER(ACTION_SHOW_FLOW));
 
     sng_box_pack_start(SNG_BOX(content), header_first);
     sng_box_pack_start(SNG_BOX(content), header_second);

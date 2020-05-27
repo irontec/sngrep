@@ -168,6 +168,13 @@ sng_widget_hide(SngWidget *widget)
     priv->visible = FALSE;
 }
 
+void
+sng_widget_set_visible(SngWidget *widget, gboolean visible)
+{
+    SngWidgetPrivate *priv = sng_widget_get_instance_private(widget);
+    priv->visible = visible;
+}
+
 gboolean
 sng_widget_is_visible(SngWidget *widget)
 {

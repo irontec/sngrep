@@ -243,9 +243,9 @@ protocol_select_win_handle_key_menu(ProtocolSelectWindow *self, gint key)
     }
 
     // Draw a scrollbar to the right
-    self->scroll.pos = (guint) top_row(self->menu);
-    scrollbar_draw(self->scroll);
-    wnoutrefresh(self->menu_win);
+//    self->scroll.pos = (guint) top_row(self->menu);
+//    scrollbar_draw(self->scroll);
+//    wnoutrefresh(self->menu_win);
 
     // Return if this panel has handled or not the key
     return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
@@ -454,10 +454,10 @@ protocol_select_win_constructed(GObject *object)
     menu_opts_off(self->menu, O_ONEVALUE);
     post_menu(self->menu);
 
-    // Draw a scrollbar to the right
-    self->scroll = window_set_scrollbar(self->menu_win, SB_VERTICAL, SB_RIGHT);
-    self->scroll.max = (guint) (item_count(self->menu) - 1);
-    scrollbar_draw(self->scroll);
+//    // Draw a scrollbar to the right
+//    self->scroll = window_set_scrollbar(self->menu_win, SB_VERTICAL, SNG_POSITION_RIGHT);
+//    self->scroll.max = (guint) (item_count(self->menu) - 1);
+//    scrollbar_draw(self->scroll);
 
     // Set the window title and boxes
     mvwprintw(win, 1, width / 2 - 14, "Parser protocol selection");
