@@ -23,13 +23,10 @@
  * @file window.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
- * @brief Source of functions defined in ui_panel.h
  */
 
 #include "config.h"
-#include <string.h>
 #include <panel.h>
-#include <tui/theme.h>
 #include "glib-extra/glist.h"
 #include "glib-extra/glib_enum_types.h"
 #include "tui/keybinding.h"
@@ -223,38 +220,24 @@ sng_window_focus_prev(SngWindow *window)
 }
 
 static void
-sng_window_realize(SngWidget *widget)
+sng_window_size_request(SngWidget *widget)
 {
-    // Only realize once
-    if (sng_widget_is_realized(widget)) {
-        // Chain-up parent realize
-        SNG_WIDGET_CLASS(sng_window_parent_class)->realize(widget);
-        return;
-    }
-
-    // Get current screen dimensions
-    SngWindow *window = SNG_WINDOW(widget);
-    SngWindowPrivate *priv = sng_window_get_instance_private(window);
-    gint maxx, maxy, xpos = 0, ypos = 0;
-    getmaxyx(stdscr, maxy, maxx);
+    SngWindowPrivate *priv = sng_window_get_instance_private(SNG_WINDOW(widget));
 
     gint height = sng_widget_get_height(widget);
     gint width = sng_widget_get_width(widget);
+    gint maxx = getmaxx(stdscr);
+    gint maxy = getmaxy(stdscr);
 
-    // If panel doesn't fill the screen center it
-    if (height != maxy) {
-        ypos = ABS((maxy - height) / 2);
+    // If window doesn't fill the screen
+    if (height != maxy || width != maxx) {
+        // Center window in screen
+        sng_widget_set_position(
+            widget,
+            ABS((maxx - width) / 2),
+            ABS((maxy - height) / 2)
+        );
     }
-    if (width != maxx) {
-        xpos = ABS((maxx - width) / 2);
-    }
-    sng_widget_set_position(widget, xpos, ypos);
-
-    // Enable keystrokes in ncurses window
-    WINDOW *win = newwin(height, width, ypos, xpos);
-    sng_widget_set_ncurses_window(widget, win);
-    wtimeout(win, 0);
-    keypad(win, TRUE);
 
     // Calculate bar padding
     if (priv->button_bar != NULL) {
@@ -274,15 +257,42 @@ sng_window_realize(SngWidget *widget)
         sng_box_set_padding(SNG_BOX(priv->button_bar), box_padding);
     }
 
+    // Chain-up parent size request
+    SNG_WIDGET_CLASS(sng_window_parent_class)->size_request(widget);
+}
+
+static void
+sng_window_realize(SngWidget *widget)
+{
+    SngWindow *window = SNG_WINDOW(widget);
+    SngWindowPrivate *priv = sng_window_get_instance_private(window);
+
+    // Only realize once
+    if (!sng_widget_is_realized(widget)) {
+        // Enable keystrokes in ncurses window
+        WINDOW *win = newwin(
+            sng_widget_get_height(widget),
+            sng_widget_get_width(widget),
+            sng_widget_get_ypos(widget),
+            sng_widget_get_xpos(widget)
+        );
+
+        g_return_if_fail(win != NULL);
+        sng_widget_set_ncurses_window(widget, win);
+        wtimeout(win, 0);
+        keypad(win, TRUE);
+
+        // Create a new panel on top of panel stack
+        priv->panel = new_panel(win);
+        g_return_if_fail(priv->panel != NULL);
+        set_panel_userptr(priv->panel, SNG_WINDOW(widget));
+
+        // Focus default widget
+        sng_window_set_focused_widget(window, priv->focus_default);
+    }
+
     // Chain-up parent realize
     SNG_WIDGET_CLASS(sng_window_parent_class)->realize(widget);
-
-    // Create a new panel on top of panel stack
-    priv->panel = new_panel(win);
-    set_panel_userptr(priv->panel, window);
-
-    // Focus default widget
-    sng_window_set_focused_widget(window, priv->focus_default);
 }
 
 static void
@@ -453,6 +463,7 @@ sng_window_class_init(SngWindowClass *klass)
     object_class->get_property = sng_window_get_property;
 
     SngWidgetClass *widget_class = SNG_WIDGET_CLASS(klass);
+    widget_class->size_request = sng_window_size_request;
     widget_class->realize = sng_window_realize;
     widget_class->draw = sng_window_draw;
 
