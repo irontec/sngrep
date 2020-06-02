@@ -41,33 +41,8 @@
 
 G_BEGIN_DECLS
 
-#define WINDOW_TYPE_SAVE save_get_type()
-G_DECLARE_FINAL_TYPE(SaveWindow, save, TUI, SAVE, SngWindow)
-
-
-/**
- * @brief Enum of available dialog fields
- *
- * Dialog form has a field array. Following enum represents the
- * order this fields are stored in panel info structure.
- */
-typedef enum
-{
-    FLD_SAVE_PATH = 0,
-    FLD_SAVE_FILE,
-    FLD_SAVE_ALL,
-    FLD_SAVE_SELECTED,
-    FLD_SAVE_DISPLAYED,
-    FLD_SAVE_MESSAGE,
-    FLD_SAVE_STREAM,
-    FLD_SAVE_PCAP,
-    FLD_SAVE_PCAP_RTP,
-    FLD_SAVE_TXT,
-    FLD_SAVE_WAV,
-    FLD_SAVE_SAVE,
-    FLD_SAVE_CANCEL,
-    FLD_SAVE_COUNT
-} SaveWindowField;
+#define SNG_TYPE_SAVE_WIN save_win_get_type()
+G_DECLARE_FINAL_TYPE(SaveWindow, save_win, SNG, SAVE_WIN, SngWindow)
 
 /**
  * @brief Dialogs to be saved
@@ -156,7 +131,7 @@ save_win_new();
  * @param group Call group pointer to be set in the internal info struct
  */
 void
-save_set_group(SaveWindow *save_window, CallGroup *group);
+save_win_set_group(SaveWindow *save_window, CallGroup *group);
 
 /**
  * @brief Set the SIP message to be saved
@@ -168,7 +143,7 @@ save_set_group(SaveWindow *save_window, CallGroup *group);
  * @param msg SIP message pointer to be set in the internal info struct
  */
 void
-save_set_message(SaveWindow *save_window, Message *msg);
+save_win_set_message(SaveWindow *save_window, Message *msg);
 
 /**
  * @brief Set the SIP message to be saved
@@ -180,6 +155,6 @@ save_set_message(SaveWindow *save_window, Message *msg);
  * @param stream Stream packets to be saved
  */
 void
-save_set_stream(SaveWindow *save_window, Stream *stream);
+save_win_set_stream(SaveWindow *save_window, Stream *stream);
 
 #endif  /* __SNGREP_SAVE_WIN_H__ */

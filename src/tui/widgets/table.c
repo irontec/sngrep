@@ -553,6 +553,7 @@ sng_table_header_clicked(SngWidget *widget, MEVENT mevent)
 static void
 sng_table_clicked(SngWidget *widget, MEVENT mevent)
 {
+
     SngTable *table = SNG_TABLE(widget);
 
     // Check if header was clicked

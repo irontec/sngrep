@@ -27,9 +27,7 @@
  */
 #include "config.h"
 #include <glib.h>
-#include <glib/gstdio.h>
 #include <unistd.h>
-#include <form.h>
 #ifdef  WITH_SND
 #include <sndfile.h>
 #endif
@@ -41,13 +39,13 @@
 #include "tui/widgets/dialog.h"
 #include "tui/windows/save_win.h"
 
-G_DEFINE_TYPE(SaveWindow, save, SNG_TYPE_WINDOW)
+G_DEFINE_TYPE(SaveWindow, save_win, SNG_TYPE_WINDOW)
 
 SngWindow *
 save_win_new()
 {
     return g_object_new(
-        WINDOW_TYPE_SAVE,
+        SNG_TYPE_SAVE_WIN,
         "title", "Save Capture",
         "border", TRUE,
         "height", 15,
@@ -60,21 +58,20 @@ save_win_new()
  * @brief Callback function to save a single packet into a capture output
  */
 static void
-save_packet_cb(Packet *packet, CaptureOutput *output)
+save_win_packet_cb(Packet *packet, CaptureOutput *output)
 {
     capture_output_write(output, packet);
 }
 
-#if 0
 #ifdef WITH_SND
 
 static void
-save_stream_to_file(SaveWindow *save_window)
+save_win_stream_to_file(SaveWindow *save_window)
 {
     // Validate save file name
     g_autoptr(GString) filename = g_string_new(sng_entry_get_text(SNG_ENTRY(save_window->en_fname)));
     if (filename->len == 0) {
-        dialog_run("Please enter a valid filename");
+        sng_dialog_show_message(NULL, " <cyan>Please enter a valid filename");
         return;
     }
 
@@ -89,10 +86,13 @@ save_stream_to_file(SaveWindow *save_window)
     }
 
     if (g_file_test(filename->str, G_FILE_TEST_EXISTS) == 0) {
-        if (dialog_confirm("Overwrite confirmation",
-                           "Selected file already exits.\n Do you want to overwrite it?",
-                           "Yes,No") != 0)
+        gboolean overwrite = sng_dialog_confirm(
+            "Overwrite confirmation",
+            "<cyan> Selected file already exits.\n Do you want to overwrite it?"
+        );
+        if (!overwrite) {
             return;
+        }
     }
 
     SF_INFO file_info = { 0 };
@@ -103,14 +103,14 @@ save_stream_to_file(SaveWindow *save_window)
     GError *error = NULL;
     g_autoptr(GByteArray) decoded = codec_stream_decode(save_window->stream, NULL, &error);
     if (error != NULL) {
-        dialog_run("error: %s", error->message);
+        sng_dialog_show_message(NULL, "Error: %s", error->message);
         return;
     }
 
     // Create a new wav file in requested path
     SNDFILE *file = sf_open(filename->str, SFM_WRITE, &file_info);
     if (file == NULL) {
-        dialog_run("error: %s", sf_strerror(file));
+        sng_dialog_show_message(NULL, "Error: %s", sf_strerror(file));
         return;
     }
 
@@ -120,10 +120,14 @@ save_stream_to_file(SaveWindow *save_window)
     // Close wav file and free decoded data
     sf_close(file);
 
-    dialog_run("%d bytes decoded into %s", g_byte_array_len(decoded) / 2, filename->str);
+    sng_dialog_show_message(
+        NULL,
+        "%d bytes decoded into %s",
+        g_byte_array_len(decoded) / 2,
+        filename->str
+    );
 }
 
-#endif
 #endif
 
 /**
@@ -136,7 +140,7 @@ save_stream_to_file(SaveWindow *save_window)
  * @returns 1 in case of error, 0 otherwise.
  */
 static void
-save_to_file(SaveWindow *save_window)
+save_win_activated(SaveWindow *save_window)
 {
     CaptureOutput *output = NULL;
     gint total = 0;
@@ -288,7 +292,7 @@ save_to_file(SaveWindow *save_window)
         }
 
         g_ptr_array_sort(packets, (GCompareFunc) packet_time_sorter);
-        g_ptr_array_foreach(packets, (GFunc) save_packet_cb, output);
+        g_ptr_array_foreach(packets, (GFunc) save_win_packet_cb, output);
 
 //        dialog_progress_destroy(progress);
     }
@@ -316,46 +320,79 @@ save_to_file(SaveWindow *save_window)
 }
 
 void
-save_set_group(SaveWindow *save_window, CallGroup *group)
+save_win_set_group(SaveWindow *save_window, CallGroup *group)
 {
     // Set dialogs group
     save_window->group = group;
 
-    g_autoptr(GString) selected = g_string_new("selected dialogs");
-    g_string_append_printf(selected, " [%d]", call_group_count(group));
-    sng_label_set_text(SNG_LABEL(save_window->rb_selected), selected->str);
+    // Show group options
+    sng_widget_show(save_window->rb_all);
+    sng_widget_show(save_window->rb_pcap);
+    sng_widget_show(save_window->rb_txt);
 
-    // If there are selected calls enable selected radio button
+    // Show Selected option if there are dialogs selected
     if (call_group_count(group) != 0) {
-        sng_button_activate(SNG_BUTTON(save_window->rb_selected));
+        g_autoptr(GString) selected = g_string_new("Selected dialogs");
+        g_string_append_printf(selected, " [%d]", call_group_count(group));
+        sng_label_set_text(SNG_LABEL(save_window->rb_selected), selected->str);
+        sng_widget_show(save_window->rb_selected);
+    }
+
+    // Show Displayed option if no dialog is being filtered
+    StorageStats stats = storage_calls_stats();
+    if (stats.displayed == stats.total) {
+        // Mark All dialogs as default selected option
+        sng_button_activate(SNG_BUTTON(save_window->rb_all));
+    } else {
+        g_autoptr(GString) displayed = g_string_new("Displayed dialogs");
+        g_string_append_printf(displayed, " [%d]", stats.displayed);
+        sng_label_set_text(SNG_LABEL(save_window->rb_displayed), displayed->str);
+        sng_widget_show(save_window->rb_displayed);
+        // Mark Selected dialogs as default selected option
+        sng_button_activate(SNG_BUTTON(save_window->rb_displayed));
+    }
+
+    // Activate format based on storage options
+    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
+    if (storageCaptureOpts.rtp) {
+        sng_widget_show(save_window->rb_pcap_rtp);
+        sng_button_activate(SNG_BUTTON(save_window->rb_pcap_rtp));
+    } else {
+        sng_button_activate(SNG_BUTTON(save_window->rb_pcap));
     }
 }
 
 void
-save_set_message(SaveWindow *save_window, Message *msg)
+save_win_set_message(SaveWindow *save_window, Message *msg)
 {
     // Set save group
     save_window->msg = msg;
+
+    // Hide all non-message settings
+    sng_widget_show(save_window->rb_message);
+    sng_widget_show(save_window->rb_pcap);
+    sng_widget_show(save_window->rb_txt);
 
     // Select save current message
     sng_button_activate(SNG_BUTTON(save_window->rb_message));
 }
 
 void
-save_set_stream(SaveWindow *save_window, Stream *stream)
+save_win_set_stream(SaveWindow *save_window, Stream *stream)
 {
     // Set save group
     save_window->stream = stream;
 
     // Display the dialog select box
-    sng_widget_show(SNG_WIDGET(save_window->rb_stream));
+    sng_widget_show(save_window->rb_stream);
+    sng_widget_show(save_window->rb_wav);
 
     // Enable PCAP formats
     sng_widget_show(SNG_WIDGET(save_window->rb_wav));
 }
 
 static void
-save_constructed_file_widgets(SaveWindow *save_window)
+save_win_constructed_file_widgets(SaveWindow *save_window)
 {
     // Save Path entry
     SngWidget *box_path = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 2);
@@ -365,7 +402,7 @@ save_constructed_file_widgets(SaveWindow *save_window)
     sng_container_add(SNG_CONTAINER(box_path), save_window->en_fpath);
     sng_box_pack_start(SNG_BOX(save_window), box_path);
     g_signal_connect_swapped(save_window->en_fpath, "activate",
-                             G_CALLBACK(save_to_file), save_window);
+                             G_CALLBACK(save_win_activated), save_window);
 
     // Filename entry
     SngWidget *box_fname = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 2);
@@ -377,14 +414,14 @@ save_constructed_file_widgets(SaveWindow *save_window)
     sng_box_pack_start(SNG_BOX(box_fname), save_window->lb_fext);
     sng_box_pack_start(SNG_BOX(save_window), box_fname);
     g_signal_connect_swapped(save_window->en_fname, "activate",
-                             G_CALLBACK(save_to_file), save_window);
+                             G_CALLBACK(save_win_activated), save_window);
 
     // Set Filename entry as default widget
     sng_window_set_default_focus(SNG_WINDOW(save_window), save_window->en_fname);
 }
 
 static void
-save_constructed_dialog_widgets(SaveWindow *save_window)
+save_win_constructed_dialog_widgets(SaveWindow *save_window)
 {
     GSList *rb_group = NULL;
 
@@ -395,42 +432,37 @@ save_constructed_dialog_widgets(SaveWindow *save_window)
 
     // All Dialogs Radio Button
     save_window->rb_all = sng_radio_button_new("All dialogs");
+    sng_widget_hide(save_window->rb_all);
     sng_box_pack_start(SNG_BOX(save_window->box_dialogs), save_window->rb_all);
     rb_group = sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_all));
 
     // Selected Dialogs Radio Button
     save_window->rb_selected = sng_radio_button_new("Selected dialogs");
+    sng_widget_hide(save_window->rb_selected);
     rb_group = sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_selected));
     sng_box_pack_start(SNG_BOX(save_window->box_dialogs), save_window->rb_selected);
 
     // Displayed Dialogs Radio Button
-    StorageStats stats = storage_calls_stats();
-    g_autoptr(GString) displayed = g_string_new("Displayed dialogs");
-    g_string_append_printf(displayed, " [%d]", stats.displayed);
-    save_window->rb_displayed = sng_radio_button_new(displayed->str);
+    save_window->rb_displayed = sng_radio_button_new("Selected dialogs");
+    sng_widget_hide(save_window->rb_displayed);
     sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_displayed));
     sng_box_pack_start(SNG_BOX(save_window->box_dialogs), save_window->rb_displayed);
 
     // Current Message Radio Button
     save_window->rb_message = sng_radio_button_new("Current SIP Message");
+    sng_widget_hide(save_window->rb_message);
     sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_message));
     sng_box_pack_start(SNG_BOX(save_window->box_dialogs), save_window->rb_message);
 
     // Current Message Radio Button
     save_window->rb_stream = sng_radio_button_new("Current Stream");
+    sng_widget_hide(save_window->rb_stream);
     sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_stream));
     sng_box_pack_start(SNG_BOX(save_window->box_dialogs), save_window->rb_stream);
-
-    // Activate dialog mode based on storage stats
-    if (stats.displayed == stats.total) {
-        sng_button_activate(SNG_BUTTON(save_window->rb_all));
-    } else {
-        sng_button_activate(SNG_BUTTON(save_window->rb_displayed));
-    }
 }
 
 static void
-save_constructed_format_widgets(SaveWindow *save_window)
+save_win_constructed_format_widgets(SaveWindow *save_window)
 {
     GSList *rb_group = NULL;
 
@@ -441,45 +473,41 @@ save_constructed_format_widgets(SaveWindow *save_window)
 
     // PCAP Radio Button
     save_window->rb_pcap = sng_radio_button_new(".pcap (SIP)");
+    sng_widget_hide(save_window->rb_pcap);
     sng_box_pack_start(SNG_BOX(save_window->box_format), save_window->rb_pcap);
     rb_group = sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_pcap));
 
     // PCAP with RTP Radio Button
     save_window->rb_pcap_rtp = sng_radio_button_new(".pcap (SIP + RTP)");
+    sng_widget_hide(save_window->rb_pcap_rtp);
     rb_group = sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_pcap_rtp));
     sng_box_pack_start(SNG_BOX(save_window->box_format), save_window->rb_pcap_rtp);
 
     // TXT Radio Button
     save_window->rb_txt = sng_radio_button_new(".txt");
+    sng_widget_hide(save_window->rb_txt);
     sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_txt));
     sng_box_pack_start(SNG_BOX(save_window->box_format), save_window->rb_txt);
 
     // WAV Radio Button
     save_window->rb_wav = sng_radio_button_new(".wav");
+    sng_widget_hide(save_window->rb_wav);
     sng_radio_button_group_add(rb_group, SNG_RADIO_BUTTON(save_window->rb_wav));
     sng_box_pack_start(SNG_BOX(save_window->box_format), save_window->rb_wav);
-
-    // Activate format based on storage options
-    StorageCaptureOpts storageCaptureOpts = storage_capture_options();
-    if (storageCaptureOpts.rtp) {
-        sng_button_activate(SNG_BUTTON(save_window->rb_pcap_rtp));
-    } else {
-        sng_button_activate(SNG_BUTTON(save_window->rb_pcap));
-    }
 }
 
 static void
-save_constructed_options_widgets(SaveWindow *save_window)
+save_win_constructed_options_widgets(SaveWindow *save_window)
 {
     SngWidget *box_options = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 0);
     sng_box_set_padding_full(SNG_BOX(box_options), 1, 0, 1, 1);
 
     // Add Dialog selection options
-    save_constructed_dialog_widgets(save_window);
+    save_win_constructed_dialog_widgets(save_window);
     sng_container_add(SNG_CONTAINER(box_options), save_window->box_dialogs);
 
     // Add Format selection options
-    save_constructed_format_widgets(save_window);
+    save_win_constructed_format_widgets(save_window);
     sng_container_add(SNG_CONTAINER(box_options), save_window->box_format);
 
     // Add boxes to the window
@@ -487,22 +515,32 @@ save_constructed_options_widgets(SaveWindow *save_window)
 }
 
 static void
-save_constructed(GObject *object)
+save_win_finalize(GObject *object)
+{
+    // Unpause the capture while saving
+    capture_manager_set_pause(capture_manager_get_instance(), TRUE);
+
+    // Chain-up parent finalize
+    G_OBJECT_CLASS(save_win_parent_class)->finalize(object);
+}
+
+static void
+save_win_constructed(GObject *object)
 {
     // Pause the capture while saving
     capture_manager_set_pause(capture_manager_get_instance(), TRUE);
 
-    SaveWindow *save_window = TUI_SAVE(object);
+    SaveWindow *save_window = SNG_SAVE_WIN(object);
     // File path and name
-    save_constructed_file_widgets(save_window);
+    save_win_constructed_file_widgets(save_window);
     // Dialog select options
-    save_constructed_options_widgets(save_window);
+    save_win_constructed_options_widgets(save_window);
 
     SngWidget *bn_save = sng_button_new();
     sng_label_set_text(SNG_LABEL(bn_save), "[   Save   ]");
     sng_window_add_button(SNG_WINDOW(save_window), SNG_BUTTON(bn_save));
     g_signal_connect_swapped(bn_save, "activate",
-                             G_CALLBACK(save_to_file), save_window);
+                             G_CALLBACK(save_win_activated), save_window);
 
     SngWidget *bn_no = sng_button_new();
     sng_label_set_text(SNG_LABEL(bn_no), "[   Cancel   ]");
@@ -511,17 +549,18 @@ save_constructed(GObject *object)
                              G_CALLBACK(sng_widget_destroy), save_window);
 
     // Chain-up parent constructed
-    G_OBJECT_CLASS(save_parent_class)->constructed(object);
+    G_OBJECT_CLASS(save_win_parent_class)->constructed(object);
 }
 
 static void
-save_init(G_GNUC_UNUSED SaveWindow *self)
+save_win_init(G_GNUC_UNUSED SaveWindow *self)
 {
 }
 
 static void
-save_class_init(SaveWindowClass *klass)
+save_win_class_init(SaveWindowClass *klass)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
-    object_class->constructed = save_constructed;
+    object_class->constructed = save_win_constructed;
+    object_class->finalize = save_win_finalize;
 }

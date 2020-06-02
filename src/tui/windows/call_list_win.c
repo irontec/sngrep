@@ -68,7 +68,7 @@ call_list_win_show_save_win(CallListWindow *call_list_win)
     // Set selected calls
     CallGroup *group = sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls));
     if (group != NULL) {
-        save_set_group(TUI_SAVE(save_win), group);
+        save_win_set_group(SNG_SAVE_WIN(save_win), group);
     }
 
     sng_window_update(save_win);

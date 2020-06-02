@@ -259,9 +259,9 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                 cur_arrow = sng_flow_viewer_get_current(SNG_FLOW_VIWER(call_flow_window->flow_viewer));
                 if (SNG_IS_FLOW_MSG_ARROW(cur_arrow)) {
                     next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_group(TUI_SAVE(next_app_window), group);
-                    save_set_message(
-                        TUI_SAVE(next_app_window),
+                    save_win_set_group(SNG_SAVE_WIN(next_app_window), group);
+                    save_win_set_message(
+                        SNG_SAVE_WIN(next_app_window),
                         sng_flow_msg_arrow_get_message(SNG_FLOW_MSG_ARROW(cur_arrow))
                     );
                 }
@@ -273,8 +273,8 @@ call_flow_win_handle_key(SngWidget *widget, gint key)
                         break;
                     }
                     next_app_window = tui_create_app_window(SNG_WINDOW_TYPE_SAVE);
-                    save_set_stream(
-                        TUI_SAVE(next_app_window),
+                    save_win_set_stream(
+                        SNG_SAVE_WIN(next_app_window),
                         sng_flow_rtp_arrow_get_stream(SNG_FLOW_RTP_ARROW(cur_arrow))
                     );
                 }
