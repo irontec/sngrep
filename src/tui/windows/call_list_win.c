@@ -78,11 +78,12 @@ static gboolean
 call_list_win_show_flow_win(CallListWindow *call_list_win, SngAction action)
 {
     // Create a new group of calls
-    CallGroup *group = call_group_clone(sng_table_get_call_group(SNG_TABLE(call_list_win->tb_calls)));
+    SngTable *table = SNG_TABLE(call_list_win->tb_calls);
+    CallGroup *group = call_group_clone(sng_table_get_call_group(table));
 
     // If no call is selected, use current call
     if (call_group_count(group) == 0) {
-        Call *call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
+        Call *call = sng_table_get_current(table);
         if (call != NULL) {
             call_group_add(group, call);
         }
@@ -95,7 +96,7 @@ call_list_win_show_flow_win(CallListWindow *call_list_win, SngAction action)
 
     // Add xcall to the group
     if (action == ACTION_SHOW_FLOW_EX) {
-        Call *call = sng_table_get_current(SNG_TABLE(call_list_win->tb_calls));
+        Call *call = sng_table_get_current(table);
         call_group_add_calls(group, call->xcalls);
         group->callid = call->callid;
     }
@@ -268,7 +269,7 @@ call_list_win_mode_label(SngWidget *widget)
         g_string_append_printf(mode, "[%s]", device);
 
 #ifdef USE_HEP
-    const char *eep_port;
+    const gchar *eep_port = NULL;
     if ((eep_port = capture_output_hep_port(capture))) {
         g_string_append_printf(mode, "[H:%s]", eep_port);
     }
@@ -305,18 +306,16 @@ static void
 call_list_win_memory_label(SngWidget *widget)
 {
     g_autoptr(GString) memory = g_string_new(NULL);
-    if (storage_memory_limit() > 0) {
-        g_autofree const gchar *usage = g_format_size_full(
-            storage_memory_usage(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-        g_autofree const gchar *limit = g_format_size_full(
-            storage_memory_limit(),
-            G_FORMAT_SIZE_IEC_UNITS
-        );
-        g_string_append_printf(memory, "Mem: %s / %s", usage, limit);
-        sng_label_set_text(SNG_LABEL(widget), memory->str);
-    }
+    g_autofree const gchar *usage = g_format_size_full(
+        storage_memory_usage(),
+        G_FORMAT_SIZE_IEC_UNITS
+    );
+    g_autofree const gchar *limit = g_format_size_full(
+        storage_memory_limit(),
+        G_FORMAT_SIZE_IEC_UNITS
+    );
+    g_string_append_printf(memory, "Mem: %s / %s", usage, limit);
+    sng_label_set_text(SNG_LABEL(widget), memory->str);
 }
 
 static void

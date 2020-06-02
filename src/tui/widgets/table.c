@@ -551,18 +551,33 @@ sng_table_header_clicked(SngWidget *widget, MEVENT mevent)
 }
 
 static void
-sng_table_lines_clicked(SngWidget *widget, MEVENT mevent)
+sng_table_clicked(SngWidget *widget, MEVENT mevent)
 {
     SngTable *table = SNG_TABLE(widget);
+
+    // Check if header was clicked
+    if (mevent.y == sng_widget_get_ypos(widget)) {
+        sng_table_header_clicked(widget, mevent);
+        return;
+    }
 
     // Select the clicked line
     table->cur_idx = table->first_idx + (mevent.y - sng_widget_get_ypos(widget) - 1);
 
-    // Check if the checkbox was selected
-    if (mevent.x >= 1 && mevent.x <= 3) {
+    // Check if the checkbox was selected or Ctrl key is hold
+    if ((mevent.x >= 1 && mevent.x <= 3)
+        || mevent.bstate & BUTTON_CTRL) {
         // TODO Handle actions instead of keys
         sng_table_key_pressed(widget, KEY_SPACE);
     }
+
+    // Activate selected rows on right click or double click
+    if (mevent.bstate & BUTTON3_CLICKED
+        || mevent.bstate & BUTTON1_DOUBLE_CLICKED) {
+        sng_table_activate(SNG_TABLE(widget));
+        return;
+    }
+
 }
 
 static void
@@ -589,6 +604,7 @@ sng_table_class_init(SngTableClass *klass)
     widget_class->update = sng_table_update;
     widget_class->draw = sng_table_draw;
     widget_class->map = sng_table_map;
+    widget_class->clicked = sng_table_clicked;
     widget_class->key_pressed = sng_table_key_pressed;
     widget_class->preferred_height = sng_table_preferred_height;
     widget_class->preferred_width = sng_table_preferred_width;
