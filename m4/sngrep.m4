@@ -44,7 +44,7 @@ AC_DEFUN([SNGREP_CHECK_SCRIPT],
          LIBS="$sngrep_config_script $LIBS "
          sngrep_script_success=yes
       ], [])
-      LDFLAGS="$save_LDFLAGS"
+      LDFLAGS="$sngrep_save_LDFLAGS"
    fi
    if test "x$sngrep_script_success" = xno; then
       [$5]
