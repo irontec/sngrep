@@ -484,16 +484,10 @@ save_win_constructed(GObject *object)
     g_signal_connect_swapped(save_window->en_fname, "action::cancel",
                              G_CALLBACK(sng_widget_destroy), SNG_WIDGET(save_window));
 
-    // Layout box for save options
-    SngWidget *box_options = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 0);
-    sng_box_set_padding_full(SNG_BOX(box_options), 1, 0, 1, 1);
-    sng_container_add(SNG_CONTAINER(save_window), box_options);
-
     // Dialog box frame
     save_window->box_dialogs = sng_box_new(SNG_ORIENTATION_VERTICAL);
     sng_box_set_border(SNG_BOX(save_window->box_dialogs), TRUE);
     sng_box_set_label(SNG_BOX(save_window->box_dialogs), "Dialogs");
-    sng_container_add(SNG_CONTAINER(box_options), save_window->box_dialogs);
 
     // Dialog select radio group
     GSList *rb_group_dialogs = NULL;
@@ -543,7 +537,6 @@ save_win_constructed(GObject *object)
     save_window->box_format = sng_box_new(SNG_ORIENTATION_VERTICAL);
     sng_box_set_border(SNG_BOX(save_window->box_format), TRUE);
     sng_box_set_label(SNG_BOX(save_window->box_format), "Format");
-    sng_container_add(SNG_CONTAINER(box_options), save_window->box_format);
 
     // Format select radio group
     GSList *rb_group_format = NULL;
@@ -592,6 +585,13 @@ save_win_constructed(GObject *object)
     sng_window_add_button(SNG_WINDOW(save_window), SNG_BUTTON(bn_no));
     g_signal_connect_swapped(bn_no, "activate",
                              G_CALLBACK(sng_widget_destroy), save_window);
+
+    // Layout box for save options
+    SngWidget *box_options = sng_box_new_full(SNG_ORIENTATION_HORIZONTAL, 1, 0);
+    sng_box_set_padding_full(SNG_BOX(box_options), 1, 0, 1, 1);
+    sng_container_add(SNG_CONTAINER(box_options), save_window->box_dialogs);
+    sng_container_add(SNG_CONTAINER(box_options), save_window->box_format);
+    sng_container_add(SNG_CONTAINER(save_window), box_options);
 
     // Set Filename entry as default widget
     sng_window_set_default_focus(SNG_WINDOW(save_window), save_window->en_fname);
