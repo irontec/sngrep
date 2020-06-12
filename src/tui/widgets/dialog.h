@@ -59,6 +59,7 @@ typedef enum
     SNG_DIALOG_WARNING,
     SNG_DIALOG_QUESTION,
     SNG_DIALOG_ERROR,
+    SNG_DIALOG_PROGRESS,
     SNG_DIALOG_OTHER
 } SngDialogType;
 
@@ -83,6 +84,10 @@ struct _SngDialog
     SngDialogButtons buttons;
     //! Dialog text message
     gchar *message;
+    //! Dialog label
+    SngWidget *label;
+    //! Dialog progress bar
+    SngWidget *pbar;
     //! Dialog response
     SngDialogResponse response;
 };
@@ -95,6 +100,12 @@ sng_dialog_show_message(const gchar *title, const gchar *format, ...);
 
 gboolean
 sng_dialog_confirm(const gchar *title, const gchar *format, ...);
+
+void
+sng_dialog_set_message(SngDialog *dialog, const gchar *format, ...);
+
+void
+sng_dialog_progress_set_fraction(SngDialog *dialog, gdouble fraction);
 
 SngDialogResponse
 sng_dialog_run(SngDialog *dialog);

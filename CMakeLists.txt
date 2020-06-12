@@ -62,6 +62,7 @@ set(SOURCES
         src/tui/widgets/menu_item.c
         src/tui/widgets/menu.c
         src/tui/widgets/orientable.c
+        src/tui/widgets/progress_bar.c
         src/tui/widgets/radio_button.c
         src/tui/widgets/separator.c
         src/tui/widgets/scrollable.c
@@ -141,7 +142,7 @@ pkg_check_modules(CURSES REQUIRED ncursesw menuw panelw formw)
 include_directories(${CURSES_INCLUDE_DIRS})
 target_link_libraries(sngrep ${CURSES_LIBRARIES})
 
-pkg_check_modules(GLIB REQUIRED glib-2.0>=2.44 gobject-2.0>=2.44)
+pkg_check_modules(GLIB REQUIRED glib-2.0>=2.44 gobject-2.0>=2.44 gio-2.0>=2.44)
 include_directories(${GLIB_INCLUDE_DIRS})
 target_link_libraries(sngrep ${GLIB_LIBRARIES})
 find_program(GLIB_MKENUMS glib-mkenums HINTS ${glib_mkenums})

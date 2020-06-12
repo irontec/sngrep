@@ -31,6 +31,8 @@
 #include "glib-extra/glib.h"
 #include "glib-extra/glib_enum_types.h"
 #include "tui/tui.h"
+#include "tui/widgets/label.h"
+#include "tui/widgets/progress_bar.h"
 #include "tui/widgets/dialog.h"
 
 enum
@@ -98,6 +100,26 @@ sng_dialog_confirm(const gchar *title, const gchar *format, ...)
     return response == SNG_RESPONSE_YES;
 }
 
+void
+sng_dialog_set_message(SngDialog *dialog, const gchar *format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    g_autofree const gchar *message = g_strdup_vprintf(format, args);
+    va_end(args);
+
+    g_return_if_fail(dialog->label != NULL);
+    sng_label_set_text(SNG_LABEL(dialog->label), message);
+}
+
+void
+sng_dialog_progress_set_fraction(SngDialog *dialog, gdouble fraction)
+{
+    g_return_if_fail(dialog->type == SNG_DIALOG_PROGRESS);
+    g_return_if_fail(dialog->pbar != NULL);
+    sng_progress_bar_set_fraction(SNG_PROGRESS_BAR(dialog->pbar), fraction);
+}
+
 SngDialogResponse
 sng_dialog_run(SngDialog *dialog)
 {
@@ -117,6 +139,12 @@ static void
 sng_dialog_set_response_accept(SngDialog *dialog)
 {
     sng_dialog_set_response(dialog, SNG_RESPONSE_ACCEPT);
+}
+
+static void
+sng_dialog_set_response_cancel(SngDialog *dialog)
+{
+    sng_dialog_set_response(dialog, SNG_RESPONSE_CANCEL);
 }
 
 static void
@@ -208,6 +236,9 @@ sng_dialog_constructed(GObject *object)
     if (sng_window_get_title(SNG_WINDOW(dialog)) != NULL) {
         height += 2; // Space for title bar
     }
+    if (dialog->type == SNG_DIALOG_PROGRESS) {
+        height += 2; // Space for progress bar
+    }
 
     sng_widget_set_height(
         SNG_WIDGET(dialog),
@@ -227,9 +258,14 @@ sng_dialog_constructed(GObject *object)
         MAX(width, SNG_DIALOG_MIN_WIDTH)
     );
 
-    SngWidget *lb_message = sng_label_new(dialog->message);
-    sng_widget_set_vexpand(lb_message, TRUE);
-    sng_container_add(SNG_CONTAINER(dialog), lb_message);
+    dialog->label = sng_label_new(dialog->message);
+    sng_widget_set_vexpand(dialog->label, TRUE);
+    sng_container_add(SNG_CONTAINER(dialog), dialog->label);
+
+    if (dialog->type == SNG_DIALOG_PROGRESS) {
+        dialog->pbar = sng_progress_bar_new();
+        sng_container_add(SNG_CONTAINER(dialog), dialog->pbar);
+    }
 
     if (dialog->buttons == SNG_BUTTONS_ACCEPT) {
         SngWidget *bn_accept = sng_button_new();
@@ -242,6 +278,14 @@ sng_dialog_constructed(GObject *object)
         sng_window_set_default_focus(SNG_WINDOW(dialog), bn_accept);
     } else if (dialog->buttons == SNG_BUTTONS_OK) {
     } else if (dialog->buttons == SNG_BUTTONS_CANCEL) {
+        SngWidget *bn_cancel = sng_button_new();
+        sng_label_set_text(SNG_LABEL(bn_cancel), "[   Cancel    ]");
+        sng_window_add_button(SNG_WINDOW(dialog), SNG_BUTTON(bn_cancel));
+        g_signal_connect_swapped(bn_cancel, "activate",
+                                 G_CALLBACK(sng_dialog_set_response_cancel), dialog);
+
+        // Set first button as default
+        sng_window_set_default_focus(SNG_WINDOW(dialog), bn_cancel);
     } else if (dialog->buttons == SNG_BUTTONS_YES_NO) {
 
         SngWidget *bn_yes = sng_button_new();

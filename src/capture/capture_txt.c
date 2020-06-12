@@ -94,6 +94,7 @@ capture_output_txt(const gchar *filename, GError **error)
 {
     // Allocate private output data
     CaptureOutputTxt *txt = g_object_new(CAPTURE_TYPE_OUTPUT_TXT, NULL);
+    capture_output_set_sink(CAPTURE_OUTPUT(txt), filename);
 
     if (!(txt->file = fopen(filename, "w"))) {
         g_set_error(error,

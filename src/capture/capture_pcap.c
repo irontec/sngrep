@@ -482,6 +482,8 @@ capture_output_pcap(const gchar *filename, GError **error)
 
     // Create a new structure to handle this capture source
     CaptureOutputPcap *pcap = g_object_new(CAPTURE_TYPE_OUTPUT_PCAP, NULL);
+    capture_output_set_manager(CAPTURE_OUTPUT(pcap), manager);
+    capture_output_set_sink(CAPTURE_OUTPUT(pcap), filename);
 
     pcap->link = capture_input_pcap_datalink(input);
     if (g_slist_length(manager->inputs) > 1) {

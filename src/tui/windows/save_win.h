@@ -38,22 +38,30 @@
 #include "storage/group.h"
 #include "tui/tui.h"
 
-
 G_BEGIN_DECLS
 
 #define SNG_TYPE_SAVE_WIN save_win_get_type()
 G_DECLARE_FINAL_TYPE(SaveWindow, save_win, SNG, SAVE_WIN, SngWindow)
+
+//! Error reporting
+#define SAVE_ERROR (capture_pcap_error_quark())
+
+//! Error codes
+typedef enum
+{
+    SAVE_ERROR_SND_OPEN = 0,
+} SaveWindowErrors;
 
 /**
  * @brief Dialogs to be saved
  */
 typedef enum
 {
-    SAVE_ALL = 0,
-    SAVE_SELECTED,
-    SAVE_DISPLAYED,
-    SAVE_MESSAGE,
-    SAVE_STREAM
+    SAVE_MODE_ALL = 0,
+    SAVE_MODE_SELECTED,
+    SAVE_MODE_DISPLAYED,
+    SAVE_MODE_MESSAGE,
+    SAVE_MODE_STREAM
 } SaveWindowMode;
 
 /**
@@ -61,10 +69,10 @@ typedef enum
  */
 typedef enum
 {
-    SAVE_PCAP = 0,
-    SAVE_PCAP_RTP,
-    SAVE_TXT,
-    SAVE_WAV
+    SAVE_FORMAT_PCAP = 0,
+    SAVE_FORMAT_PCAP_RTP,
+    SAVE_FORMAT_TXT,
+    SAVE_FORMAT_WAV
 } SaveWindowFormat;
 
 /**
@@ -76,16 +84,18 @@ struct _SaveWindow
 {
     //! Parent object attributes
     SngWindow parent;
-    //! Save mode @see save_modes
-    SaveWindowMode savemode;
-    //! Save format @see save_formats
-    SaveWindowFormat saveformat;
+    //! Save mode
+    SaveWindowMode mode;
+    //! Save format
+    SaveWindowFormat format;
     //! Call group to be saved
     CallGroup *group;
     //! Message to be saved
     Message *msg;
     //! Stream to be saved
     Stream *stream;
+    //! Packet output formatter
+    CaptureOutput *output;
 
     //! Filename Path widgets
     SngWidget *en_fpath;

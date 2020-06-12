@@ -388,6 +388,7 @@ sng_box_draw(SngWidget *widget)
     // Clear the window to draw children widgets
     SngBoxPrivate *priv = sng_box_get_instance_private(SNG_BOX(widget));
     WINDOW *win = sng_widget_get_ncurses_window(widget);
+    werase(win);
 
     // Fill box background
     if (priv->background) {
