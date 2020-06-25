@@ -610,7 +610,6 @@ capture_eep_receive_v3()
 #endif
     hep_chunk_t payload_chunk;
     hep_chunk_t authkey_chunk;
-    hep_chunk_t uuid_chunk;
     char password[100];
     int password_len;
     unsigned char *payload = 0;
