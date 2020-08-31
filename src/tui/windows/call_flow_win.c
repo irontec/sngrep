@@ -136,7 +136,16 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
 static gint
 call_flow_arrow_time_sorter(const CallFlowArrow **a, const CallFlowArrow **b)
 {
-    return call_flow_arrow_time(*a) > call_flow_arrow_time(*b);
+    guint64 arrow_time_a = call_flow_arrow_time(*a);
+    guint64 arrow_time_b = call_flow_arrow_time(*b);
+
+    if (arrow_time_a < arrow_time_b)
+        return -1;
+
+    if (arrow_time_a > arrow_time_b)
+        return 1;
+
+    return 0;
 }
 
 /**
@@ -1057,16 +1066,19 @@ call_flow_win_draw_message(Window *window, CallFlowArrow *arrow, gint cline)
         if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
             if (self->selected == -1) {
                 if (setting_enabled(SETTING_TUI_CF_DELTA)) {
-                    date_time_to_delta(
-                        msg_get_time(msg),
-                        msg_get_time(call_group_get_next_msg(self->group, msg)),
-                        delta
-                    );
+                    CallFlowArrow *next = g_ptr_array_next(self->arrows, arrow);
+                    if (next != NULL) {
+                        date_time_to_delta(
+                            call_flow_arrow_time(arrow),
+                            call_flow_arrow_time(next),
+                            delta
+                        );
+                    }
                 }
             } else if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
                 date_time_to_delta(
-                    msg_get_time(call_flow_arrow_message(call_flow_arrow_selected(window))),
-                    msg_get_time(msg),
+                    call_flow_arrow_time(call_flow_arrow_selected(window)),
+                    call_flow_arrow_time(arrow),
                     delta
                 );
             }
