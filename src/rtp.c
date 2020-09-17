@@ -249,7 +249,7 @@ rtp_check_packet(packet_t *packet)
         stream_add_packet(stream, packet);
     } else if (data_is_rtcp(payload, size) == 0) {
         // Find the matching stream
-        if ((stream = rtp_find_stream(src, dst))) {
+        if ((stream = rtp_find_rtcp_stream(src, dst))) {
 
             // Parse all packet payload headers
             while ((int32_t) size > 0) {
@@ -379,7 +379,7 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
 }
 
 rtp_stream_t *
-rtp_find_stream(address_t src, address_t dst)
+rtp_find_rtcp_stream(address_t src, address_t dst)
 {
     // Structure for RTP packet streams
     rtp_stream_t *stream;
@@ -395,6 +395,8 @@ rtp_find_stream(address_t src, address_t dst)
     while ((call = vector_iterator_prev(&calls))) {
         // Check if this call has an RTP stream for current packet data
         if ((stream = rtp_find_call_stream(call, src, dst))) {
+            if (stream->type != PACKET_RTCP)
+                continue;
             return stream;
         }
     }
