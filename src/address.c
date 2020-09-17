@@ -29,6 +29,7 @@
 
 #include "config.h"
 #include "address.h"
+#include "util.h"
 #include <string.h>
 #include <pcap.h>
 #include <sys/socket.h>
@@ -105,7 +106,7 @@ address_from_str(const char *ipport)
 {
     address_t ret = {};
     char scanipport[256];
-    char address[256];
+    char address[ADDRESSLEN + 1];
     int port;
 
     if (!ipport || strlen(ipport) > ADDRESSLEN + 6)
@@ -113,7 +114,7 @@ address_from_str(const char *ipport)
 
     strncpy(scanipport, ipport, sizeof(scanipport));
 
-    if (sscanf(scanipport, "%[^:]:%d", address, &port) == 2) {
+    if (sscanf(scanipport, "%" STRINGIFY(ADDRESSLEN) "[^:]:%d", address, &port) == 2) {
         strncpy(ret.ip, address, sizeof(ret.ip));
         ret.port = port;
     }

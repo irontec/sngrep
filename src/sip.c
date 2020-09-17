@@ -654,8 +654,9 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
     address_t dst, src = { };
     rtp_stream_t *rtp_stream = NULL, *rtcp_stream = NULL, *msg_rtp_stream = NULL;
-    char media_type[MEDIATYPELEN] = { };
+    char media_type[MEDIATYPELEN + 1] = { };
     char media_format[30] = { };
+    char address[ADDRESSLEN + 1] = { };
     uint32_t media_fmt_pref;
     uint32_t media_fmt_code;
     sdp_media_t *media = NULL;
@@ -674,8 +675,8 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     while ((line = strsep(&payload2, "\r\n")) != NULL) {
         // Check if we have a media string
         if (!strncmp(line, "m=", 2)) {
-            if (sscanf(line, "m=%s %hu RTP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3
-            ||  sscanf(line, "m=%s %hu UDP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3) {
+            if (sscanf(line, "m=%" STRINGIFY(MEDIATYPELEN) "s %hu RTP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3
+            ||  sscanf(line, "m=%" STRINGIFY(MEDIATYPELEN) "s %hu UDP/%*s %u", media_type, &dst.port, &media_fmt_pref) == 3) {
 
                 // Add streams from previous 'm=' line to the call
                 ADD_STREAM(msg_rtp_stream);
@@ -713,16 +714,19 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
         // Check if we have a connection string
         if (!strncmp(line, "c=", 2)) {
-            if (sscanf(line, "c=IN IP4 %s", dst.ip) && media) {
-                media_set_address(media, dst);
-                strcpy(rtp_stream->dst.ip, dst.ip);
-                strcpy(rtcp_stream->dst.ip, dst.ip);
+            if (sscanf(line, "c=IN IP4 %" STRINGIFY(ADDRESSLEN) "s", address)) {
+                strncpy(dst.ip, address, ADDRESSLEN - 1);
+                if (media) {
+                    media_set_address(media, dst);
+                    strcpy(rtp_stream->dst.ip, dst.ip);
+                    strcpy(rtcp_stream->dst.ip, dst.ip);
+                }
             }
         }
 
         // Check if we have attribute format string
         if (!strncmp(line, "a=rtpmap:", 9)) {
-            if (media && sscanf(line, "a=rtpmap:%u %30[^ ]", &media_fmt_code, media_format)) {
+            if (media && sscanf(line, "a=rtpmap:%u %29[^ ]", &media_fmt_code, media_format)) {
                 media_add_format(media, media_fmt_code, media_format);
             }
         }

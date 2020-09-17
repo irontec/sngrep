@@ -62,7 +62,7 @@ media_destroyer(void *item)
 void
 media_set_type(sdp_media_t *media, const char *type)
 {
-    strcpy(media->type, type);
+    strncpy(media->type, type, MEDIATYPELEN - 1);
 }
 
 void

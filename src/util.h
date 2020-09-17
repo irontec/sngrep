@@ -35,6 +35,9 @@
 // Max Memmory allocation
 #define MALLOC_MAX_SIZE 102400
 
+// Stringify numbers for concatenation
+#define STRINGIFY_ARG(x)    #x
+#define STRINGIFY(x)        STRINGIFY_ARG(x)
 
 /**
  * @brief Wrapper for memory allocation
