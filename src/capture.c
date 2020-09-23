@@ -697,7 +697,6 @@ int
 capture_ws_check_packet(packet_t *packet)
 {
     int ws_off = 0;
-    u_char ws_fin;
     u_char ws_opcode;
     u_char ws_mask;
     uint8_t ws_len;
@@ -737,7 +736,6 @@ capture_ws_check_packet(packet_t *packet)
         return 0;
 
     // Flags && Opcode
-    ws_fin = (*payload & WH_FIN) >> 4;
     ws_opcode = *payload & WH_OPCODE;
     ws_off++;
 
