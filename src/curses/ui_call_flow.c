@@ -226,11 +226,6 @@ call_flow_draw(ui_t *ui)
 void
 call_flow_draw_footer(ui_t *ui)
 {
-    call_flow_info_t *info;
-
-    // Get panel information
-    info = call_flow_info(ui);
-
     const char *keybindings[] = {
         key_action_key_str(ACTION_PREV_SCREEN), "Calls List",
         key_action_key_str(ACTION_CONFIRM), "Raw",
