@@ -400,7 +400,7 @@ filter_save_options(ui_t *ui)
 const char*
 filter_field_method(int field_id)
 {
-    int method;
+    int method = 0;
     switch(field_id) {
         case FLD_FILTER_REGISTER:
             method = SIP_METHOD_REGISTER;
