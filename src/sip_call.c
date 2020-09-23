@@ -197,13 +197,9 @@ void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
     int reqresp;
-    sip_msg_t *first;
 
     if (!call_is_invite(call))
         return;
-
-    // Get the first message in the call
-    first = vector_first(call->msgs);
 
     // Get current message Method / Response Code
     reqresp = msg->reqresp;
