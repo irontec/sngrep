@@ -832,7 +832,6 @@ int
 call_list_handle_menu_key(ui_t *ui, int key)
 {
     MENU *menu;
-    ITEM *current;
     int i;
     int action = -1;
     sip_sort_t sort;
@@ -842,7 +841,6 @@ call_list_handle_menu_key(ui_t *ui, int key)
     call_list_info_t *info = call_list_info(ui);
 
     menu = info->menu;
-    current = current_item(menu);
 
       // Check actions for this key
       while ((action = key_find_action(key, action)) != ERR) {
