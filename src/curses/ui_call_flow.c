@@ -674,7 +674,6 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     WINDOW *win;
     char text[50], time[20];
     int height, width;
-    const char *callid;
     rtp_stream_t *stream = arrow->item;
     sip_msg_t *msg;
     sip_call_t *call;
@@ -702,7 +701,6 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Get message data
     call = stream->media->msg->call;
-    callid = call->callid;
 
     /**
      * This logic will try to use the same columns for the stream representation
@@ -881,13 +879,9 @@ call_flow_arrow_t *
 call_flow_arrow_create(ui_t *ui, void *item, int type)
 {
     call_flow_arrow_t *arrow;
-    call_flow_info_t *info;
 
     if ((arrow = call_flow_arrow_find(ui, item)))
         return arrow;
-
-    // Get panel information
-    info = call_flow_info(ui);
 
     // Create a new arrow of the given type
     arrow = malloc(sizeof(call_flow_arrow_t));
