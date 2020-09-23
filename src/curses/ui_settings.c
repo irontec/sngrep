@@ -218,7 +218,6 @@ settings_info(ui_t *ui)
 int
 settings_draw(ui_t *ui)
 {
-    int field_idx;
     int i;
     int cury, curx;
 
@@ -228,9 +227,6 @@ settings_draw(ui_t *ui)
 
     // Store cursor position
     getyx(ui->win, cury, curx);
-
-    // Get current field id
-    field_idx = field_index(current_field(info->form));
 
     // Print category headers
     int colpos = 2;
