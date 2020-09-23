@@ -97,7 +97,7 @@ settings_create(ui_t *ui)
 {
     int i, j, line;
     settings_info_t *info;
-    FIELD *entry, *label;
+    FIELD *entry = NULL, *label;
     int field = 0;
 
     // Cerate a new window for the panel and form
