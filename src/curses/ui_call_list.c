@@ -746,15 +746,11 @@ call_list_handle_key(ui_t *ui, int key)
 int
 call_list_handle_form_key(ui_t *ui, int key)
 {
-    int field_idx;
     char *dfilter;
     int action = -1;
 
     // Get panel information
     call_list_info_t *info = call_list_info(ui);
-
-    // Get current field id
-    field_idx = field_index(current_field(info->form));
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -837,7 +833,7 @@ call_list_handle_menu_key(ui_t *ui, int key)
 {
     MENU *menu;
     ITEM *current;
-    int current_idx, i;
+    int i;
     int action = -1;
     sip_sort_t sort;
     enum sip_attr_id id;
@@ -847,7 +843,6 @@ call_list_handle_menu_key(ui_t *ui, int key)
 
     menu = info->menu;
     current = current_item(menu);
-    current_idx = item_index(current);
 
       // Check actions for this key
       while ((action = key_find_action(key, action)) != ERR) {
