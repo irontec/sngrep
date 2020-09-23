@@ -7,7 +7,7 @@ Release:            0%{?dist}
 License:            GPLv3
 Group:              Applications/Engineering
 BuildRoot:          %{_tmppath}/%{name}-%{version}-%{release}-root
-Source:             https://github.com/irontec/%{name}/archive/v%{version}.zip
+Source:             https://github.com/irontec/sngrep/releases/download/v%{version}/sngrep-%{version}.tar.gz
 URL:                http://github.com/irontec/sngrep
 BuildRequires: ncurses-devel 
 BuildRequires: make 
