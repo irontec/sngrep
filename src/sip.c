@@ -328,17 +328,12 @@ sip_check_packet(packet_t *packet)
     sip_msg_t *msg;
     sip_call_t *call;
     char callid[1024], xcallid[1024];
-    address_t src, dst;
     u_char payload[MAX_SIP_PAYLOAD];
     bool newcall = false;
 
     // Max SIP payload allowed
     if (packet->payload_len > MAX_SIP_PAYLOAD)
         return NULL;
-
-    // Get Addresses from packet
-    src = packet->src;
-    dst = packet->dst;
 
     // Initialize local variables
     memset(callid, 0, sizeof(callid));
