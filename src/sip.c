@@ -709,7 +709,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
 
         // Check if we have a connection string
         if (!strncmp(line, "c=", 2)) {
-            if (sscanf(line, "c=IN IP4 %" STRINGIFY(ADDRESSLEN) "s", address)) {
+            if (sscanf(line, "c=IN IP%*c %" STRINGIFY(ADDRESSLEN) "s", address)) {
                 strncpy(dst.ip, address, ADDRESSLEN - 1);
                 if (media) {
                     media_set_address(media, dst);
