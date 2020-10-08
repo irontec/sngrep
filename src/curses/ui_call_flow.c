@@ -426,7 +426,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     char msg_time[80];
     address_t src;
     address_t dst;
-    char method[METHOD_MAXLEN];
+    char method[METHOD_MAXLEN + 1];
     char delta[15] = {};
     int flowh, floww;
     char mediastr[40];
@@ -435,6 +435,9 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     int color = 0;
     int msglen;
     int aline = cline + 1;
+
+    // Initialize method
+    memset(method, 0, sizeof(method));
 
     // Get panel information
     info = call_flow_info(ui);
@@ -462,45 +465,33 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     timeval_to_time(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
-    if (METHOD_MAXLEN <= (snprintf(method, METHOD_MAXLEN, "%s", msg_method))) {
-        method[METHOD_MAXLEN-1]='\0';
-    }
+    snprintf(method, METHOD_MAXLEN, "%s", msg_method);
 
     // If message has sdp information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
         // Show sdp tag in title
-        if (METHOD_MAXLEN <= (snprintf(method, METHOD_MAXLEN, "%s (SDP)", msg_method))) {
-            method[METHOD_MAXLEN-1]='\0';
-        }
+        snprintf(method, METHOD_MAXLEN, "%s (SDP)", msg_method );
     }
 
     // If message has sdp information
     if (setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
         // Show sdp tag in title
         if (msg_has_sdp(msg)) {
-            if (METHOD_MAXLEN <= (snprintf(method, METHOD_MAXLEN, "%.*s (SDP)", 12, msg_method))) {
-                method[METHOD_MAXLEN-1]='\0';
-            }
+            snprintf(method, METHOD_MAXLEN, "%.*s (SDP)", 12, msg_method);
         } else {
-            if (METHOD_MAXLEN <= (snprintf(method, METHOD_MAXLEN, "%.*s", 17, msg_method))) {
-                method[METHOD_MAXLEN-1]='\0';
-            }
+            snprintf(method, METHOD_MAXLEN, "%.*s", 17, msg_method);
         }
     }
 
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "first")) {
-        if (METHOD_MAXLEN <= (snprintf(method, METHOD_MAXLEN, "%.3s (%s:%u)",
-                msg_method,
-                media->address.ip,
-                media->address.port))) {
-	    method[METHOD_MAXLEN-1]='\0';
-	}
+        snprintf(method, METHOD_MAXLEN, "%.3s (%s:%u)",
+		 msg_method,
+		 media->address.ip,
+		 media->address.port);
     }
 
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "full")) {
-        if (METHOD_MAXLEN <= (snprintf(method, METHOD_MAXLEN, "%.3s (%s)", msg_method, media->address.ip))) {
-	    method[METHOD_MAXLEN-1]='\0';
-	}
+        snprintf(method, METHOD_MAXLEN, "%.3s (%s)", msg_method, media->address.ip);
     }
 
     // Draw message type or status and line
