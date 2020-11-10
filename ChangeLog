@@ -1,3 +1,15 @@
+2020-11-10 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.8 released
+
+	* capture: add support for IPv6 SDP connection address
+	* capture: fixed a crash while parsing INVITES without R-URI
+	* capture: fixed a crash while parsing malformed Req/Resp lines
+	* call flow: improved IPv6 RTP columns address display
+	* core: code cleanup removing unused variables
+	* core: fixed multiple snprintf memory overflows
+	* core: avoid crash when linking against ncurses without tinfo
+
+
 2020-05-21 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.7 released
 
