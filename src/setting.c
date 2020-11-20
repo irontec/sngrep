@@ -51,6 +51,9 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CAPTURE_KEYFILE,    "capture.keyfile",    SETTING_FMT_STRING,  "",          NULL },
     { SETTING_CAPTURE_TLSSERVER,  "capture.tlsserver",  SETTING_FMT_STRING,  "",          NULL },
 #endif
+#ifdef USE_EEP
+    { SETTING_CAPTURE_EEP,        "capture.eep",        SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
+#endif
     { SETTING_CAPTURE_RTP,        "capture.rtp",        SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_CAPTURE_STORAGE,    "capture.storage",    SETTING_FMT_ENUM,    "memory",    SETTING_ENUM_STORAGE },
     { SETTING_CAPTURE_ROTATE,     "capture.rotate",     SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },

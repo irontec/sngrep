@@ -35,6 +35,9 @@
 ## Set size of pcap capture buffer in MB (default: 2)
 # set capture.buffer 2
 
+## Uncomment to enable parsing of captured HEP3 packets
+# set capture.eep on
+
 ##-----------------------------------------------------------------------------
 ## Default path in save dialog
 # set sngrep.savepath /tmp/sngrep-captures

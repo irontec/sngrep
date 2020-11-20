@@ -275,6 +275,10 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     uint32_t size_payload =  size_capture - capinfo->link_hl;
     // Captured packet info
     packet_t *pkt;
+#ifdef USE_EEP
+    // Captured HEP3 packet info
+    packet_t *pkt_hep3;
+#endif
 
     // Ignore packets while capture is paused
     if (capture_paused())
@@ -318,10 +322,27 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         // Remove TCP Header from payload
         payload = (u_char *) (udp) + udp_off;
 
-        // Complete packet with Transport information
-        packet_set_type(pkt, PACKET_SIP_UDP);
-        packet_set_payload(pkt, payload, size_payload);
+#ifdef USE_EEP
+        // check for HEP3 header and parse payload
+        if(setting_enabled(SETTING_CAPTURE_EEP)) {
+            pkt_hep3 = capture_eep_receive_v3(payload, size_payload);
 
+            if (pkt_hep3) {
+                packet_destroy(pkt);
+                pkt = pkt_hep3;
+            } else {
+                // Complete packet with Transport information
+                packet_set_type(pkt, PACKET_SIP_UDP);
+                packet_set_payload(pkt, payload, size_payload);
+            }
+        } else {
+#endif
+            // Complete packet with Transport information
+            packet_set_type(pkt, PACKET_SIP_UDP);
+            packet_set_payload(pkt, payload, size_payload);
+#ifdef USE_EEP
+        }
+#endif
     } else if (pkt->proto == IPPROTO_TCP) {
         // Get TCP header
         tcp = (struct tcphdr *)((u_char *)(data) + (size_capture - size_payload));

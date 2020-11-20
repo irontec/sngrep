@@ -57,7 +57,7 @@ usage()
            " [-k keyfile]"
 #endif
 #ifdef USE_EEP
-           " [-LH capture_url]"
+           " [-LHE capture_url]"
 #endif
            " [<match expression>] [<bpf filter>]\n\n"
            "    -h --help\t\t This usage\n"
@@ -80,6 +80,7 @@ usage()
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
+           "    -E --eep-parse\t Enable EEP parsing in captured packets\n"
 #endif
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            "    -k --keyfile\t RSA private keyfile to decrypt captured packets\n"
@@ -163,13 +164,14 @@ main(int argc, char* argv[])
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
+        { "eep-parse", required_argument, 0, 'E' },
 #endif
         { "quiet", no_argument, 0, 'q' },
     };
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:Rf:F";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:F";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -298,6 +300,14 @@ main(int argc, char* argv[])
             case 'H':
 #ifdef USE_EEP
                 capture_eep_set_client_url(optarg);
+                break;
+#else
+                fprintf(stderr, "sngrep is not compiled with HEP/EEP support.");
+                exit(1);
+#endif
+            case 'E':
+#ifdef USE_EEP
+                setting_set_value(SETTING_CAPTURE_EEP, SETTING_ON);
                 break;
 #else
                 fprintf(stderr, "sngrep is not compiled with HEP/EEP support.");
