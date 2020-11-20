@@ -11,7 +11,7 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [-hVcivlkNq] [ -IO
+.B sngrep [-hVcivlkNqE] [ -IO
 .I pcap_dump
 .B ] [ -d
 .I dev
@@ -111,6 +111,10 @@ Argument must be an IP address and port in the format: udp:A.B.C.D:PORT
 .I -L
 Start a HEP server listening for packets
 Argument must be an IP address and port in the format: udp:A.B.C.D:PORT
+
+.TP
+.I -E
+Enable parsing of captured HEP3 packets.
 
 .TP
 .I match expression

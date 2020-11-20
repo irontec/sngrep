@@ -328,10 +328,12 @@ capture_eep_receive_v2();
  * function will parse received EEP data and create a new packet
  * structure.
  *
+ * @param pkt packet structure data, NULL if socket should be used
+ * @param size size of packet structure data
  * @return NULL on any error, packet structure otherwise
  */
 packet_t *
-capture_eep_receive_v3();
+capture_eep_receive_v3(const u_char *pkt, uint32_t size);
 
 /**
  * @brief Set EEP server url
