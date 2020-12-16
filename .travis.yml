@@ -1,4 +1,7 @@
 language: c
+arch:
+  - amd64
+  - ppc64le
 compiler:
   - clang
   - gcc
@@ -16,3 +19,4 @@ branches:
   only:
     - master
     - travis
+    - ppc64le
