@@ -52,7 +52,7 @@
 # set cl.defexitbutton 0/1
 
 # Set default filter on startup
-# set cl.filter INVITE
+# set filter.methods INVITE
 
 ##-----------------------------------------------------------------------------
 ## You can change the default number of columns in call list
