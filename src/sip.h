@@ -44,6 +44,8 @@
 
 #define MAX_SIP_PAYLOAD 10240
 
+#define MRCP_CHANNEL_ID_LENGTH 64
+
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
 //! Shorter declaration of sip codes structure
@@ -70,6 +72,36 @@ enum sip_methods {
     SIP_METHOD_BYE,
     SIP_METHOD_ACK,
     SIP_METHOD_PRACK,
+
+    SIP_METHOD_MRCP_SET_PARAMS,
+    SIP_METHOD_MRCP_GET_PARAMS,
+    SIP_METHOD_MRCP_SPEAK,
+    SIP_METHOD_MRCP_STOP,
+    SIP_METHOD_MRCP_PAUSE,
+    SIP_METHOD_MRCP_RESUME,
+    SIP_METHOD_MRCP_BARGE_IN_OCCURRED,
+    SIP_METHOD_MRCP_CONTROL,
+    SIP_METHOD_MRCP_DEFINE_LEXICON,
+    SIP_METHOD_MRCP_DEFINE_GRAMMAR,
+    SIP_METHOD_MRCP_RECOGNIZE,
+    SIP_METHOD_MRCP_INTERPRET,
+    SIP_METHOD_MRCP_GET_RESULT,
+    SIP_METHOD_MRCP_START_INPUT_TIMERS,
+    SIP_METHOD_MRCP_START_PHRASE_ENROLLMENT,
+    SIP_METHOD_MRCP_ENROLLMENT_ROLLBACK,
+    SIP_METHOD_MRCP_END_PHRASE_ENROLLMENT,
+    SIP_METHOD_MRCP_MODIFY_PHRASE,
+    SIP_METHOD_MRCP_DELETE_PHRASE,
+    SIP_METHOD_MRCP_RECORD,
+    SIP_METHOD_MRCP_START_SESSION,
+    SIP_METHOD_MRCP_END_SESSION,
+    SIP_METHOD_MRCP_QUERY_VOICEPRINT,
+    SIP_METHOD_MRCP_DELETE_VOICEPRINT,
+    SIP_METHOD_MRCP_VERIFY,
+    SIP_METHOD_MRCP_VERIFY_FROM_BUFFER,
+    SIP_METHOD_MRCP_VERIFY_ROLLBACK,
+    SIP_METHOD_MRCP_CLEAR_BUFFER,
+    SIP_METHOD_MRCP_GET_INTERMEDIATE_RESULT,
 };
 
 //! Return values for sip_validate_packet
@@ -130,6 +162,9 @@ struct sip_call_list {
     //! Call-Ids hash table
     htable_t *callids;
 
+    //! MRCP channelids hash table
+    htable_t *mrcp_channelids;
+
     // Max call limit
     int limit;
     //! Only store dialogs starting with INVITE
@@ -161,6 +196,11 @@ struct sip_call_list {
     regex_t reg_body;
     regex_t reg_reason;
     regex_t reg_warning;
+
+    regex_t reg_mrcp_req;
+    regex_t reg_mrcp_res;
+    regex_t reg_mrcp_evt;
+    regex_t reg_mrcp_channelid;
 };
 
 /**
@@ -186,9 +226,9 @@ sip_deinit();
  *
  * @param payload SIP message payload
  * @param callid Character array to store callid
- * @return callid parsed from Call-ID header
+ * @return 1 on success
  */
-char *
+int
 sip_get_callid(const char* payload, char *callid);
 
 /**
@@ -319,6 +359,15 @@ sip_find_by_index(int index);
 sip_call_t *
 sip_find_by_callid(const char *callid);
 
+/**
+ * @brief Find a call structure in calls linked list given an MRCP channel-identifier
+ *
+ * @param channelid
+ * @return pointer to the sip_call structure found or NULL
+ */
+sip_call_t *
+sip_find_by_mrcp_channelid(const char *channelid);
+
 
 /**
  * @brief Parse extra fields only for dialogs strarting with invite
@@ -368,6 +417,18 @@ sip_calls_rotate();
  */
 int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload);
+
+/**
+ * @brief Get MRCP message Request/Event/Response
+ *
+ * Parse Payload to get MRCP Request/Event/Response
+ *
+ * @param msg SIP Message to be parsed
+ * @return numeric representation of Request/ResponseCode
+ */
+int
+sip_get_msg_reqresp_for_mrcp(sip_msg_t *msg, const u_char *payload);
+
 
 /**
  * @brief Get full Response code (including text)
@@ -493,5 +554,7 @@ sip_sort_list();
 
 void
 sip_list_sorter(vector_t *vector, void *item);
+
+void sip_remove_mrcp_channelid(char *channelid);
 
 #endif

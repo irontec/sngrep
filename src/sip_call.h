@@ -80,6 +80,8 @@ struct sip_call {
     int warning;
     //! List of calls with with this call as X-Call-Id
     vector_t *xcalls;
+    //! List of MRCP channel-identifiers
+    vector_t *mrcp_channelids;
     //! Cseq from invite startint the call
     uint32_t invitecseq;
     //! List of messages of this call (sip_msg_t*)

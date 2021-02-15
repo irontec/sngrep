@@ -63,6 +63,37 @@ sip_code_t sip_codes[] = {
     { SIP_METHOD_INFO,      "INFO" },
     { SIP_METHOD_REFER,     "REFER" },
     { SIP_METHOD_UPDATE,    "UPDATE" },
+
+    { SIP_METHOD_MRCP_SET_PARAMS,                "SET-PARAMS" },
+    { SIP_METHOD_MRCP_GET_PARAMS,                "GET-PARAMS" },
+    { SIP_METHOD_MRCP_SPEAK,                     "SPEAK" },
+    { SIP_METHOD_MRCP_STOP,                      "STOP" },
+    { SIP_METHOD_MRCP_PAUSE,                     "PAUSE" },
+    { SIP_METHOD_MRCP_RESUME,                    "RESUME" },
+    { SIP_METHOD_MRCP_BARGE_IN_OCCURRED,         "BARGE-IN-OCCURRED" },
+    { SIP_METHOD_MRCP_CONTROL,                   "CONTROL" },
+    { SIP_METHOD_MRCP_DEFINE_LEXICON,            "DEFINE-LEXICON" },
+    { SIP_METHOD_MRCP_DEFINE_GRAMMAR,            "DEFINE-GRAMMAR" },
+    { SIP_METHOD_MRCP_RECOGNIZE,                 "RECOGNIZE" },
+    { SIP_METHOD_MRCP_INTERPRET,                 "INTERPRET" },
+    { SIP_METHOD_MRCP_GET_RESULT,                "GET-RESULT" },
+    { SIP_METHOD_MRCP_START_INPUT_TIMERS,        "START-INPUT-TIMERS" },
+    { SIP_METHOD_MRCP_START_PHRASE_ENROLLMENT,   "START-PHRASE-ENROLLMENT" },
+    { SIP_METHOD_MRCP_ENROLLMENT_ROLLBACK,       "ENROLLMENT-ROLLBACK" },
+    { SIP_METHOD_MRCP_END_PHRASE_ENROLLMENT,     "END_PHRASE-ENROLLMENT" },
+    { SIP_METHOD_MRCP_MODIFY_PHRASE,             "MODIFY-PHRASE" },
+    { SIP_METHOD_MRCP_DELETE_PHRASE,             "DELETE-PHRASE" },
+    { SIP_METHOD_MRCP_RECORD,                    "RECORD" },
+    { SIP_METHOD_MRCP_START_SESSION,             "START-SESSION" },
+    { SIP_METHOD_MRCP_END_SESSION,               "END-SESSION" },
+    { SIP_METHOD_MRCP_QUERY_VOICEPRINT,          "QUERY-VOICEPRINT" },
+    { SIP_METHOD_MRCP_DELETE_VOICEPRINT,         "DELETE-VOICEPRINT" },
+    { SIP_METHOD_MRCP_VERIFY,                    "VERIFY" },
+    { SIP_METHOD_MRCP_VERIFY_FROM_BUFFER,        "VERIFY-FROM-BUFFER" },
+    { SIP_METHOD_MRCP_VERIFY_ROLLBACK,           "VERIFY-ROLLBACK" },
+    { SIP_METHOD_MRCP_CLEAR_BUFFER,              "CLEAR-BUFFER" },
+    { SIP_METHOD_MRCP_GET_INTERMEDIATE_RESULT,   "INTERMEDIATE-RESULT" },
+
     { 100, "100 Trying" },
     { 180, "180 Ringing" },
     { 181, "181 Call is Being Forwarded" },
@@ -159,6 +190,9 @@ sip_init(int limit, int only_calls, int no_incomplete)
     // Create hash table for callid search
     calls.callids = htable_create(calls.limit);
 
+    // Create hash table for MRCP channelid search
+    calls.mrcp_channelids = htable_create(calls.limit);
+
     // Set default sorting field
     if (sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD)) >= 0) {
         calls.sort.by = sip_attr_from_name(setting_get_value(SETTING_CL_SORTFIELD));
@@ -173,6 +207,12 @@ sip_init(int limit, int only_calls, int no_incomplete)
     match_flags = REG_EXTENDED | REG_ICASE | REG_NEWLINE;
     regcomp(&calls.reg_method, "^([a-zA-Z]+) [a-zA-Z]+:.* SIP/2.0[ ]*\r", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_callid, "^(Call-ID|i):[ ]*([^ ]+)[ ]*\r$", match_flags);
+
+    regcomp(&calls.reg_mrcp_req, "^MRCP/2.0[ ]+[0-9]+[ ]+([A-Z-]+)[ ]+([0-9]+)[ ]*\r$", match_flags);
+    regcomp(&calls.reg_mrcp_res, "^MRCP/2.0[ ]+[0-9]+[ ]+([0-9]+)[ ]+([0-9]{3})[ ]+([A-Z-]+)[ ]*\r$", match_flags);
+    regcomp(&calls.reg_mrcp_evt, "^MRCP/2.0[ ]+[0-9]+[ ]+([A-Z-]+)[ ]+([0-9]+)[ ]+([A-Z-]+)[ ]*\r$", match_flags);
+    regcomp(&calls.reg_mrcp_channelid, "^(Channel-Identifier):[ ]*([^\r]+)[ ]*\r$", match_flags);
+
     setting = setting_get_value(SETTING_SIP_HEADER_X_CID);
     reg_rule_len = strlen(setting) + 22;
     if (reg_rule_len >= SIP_ATTR_MAXLEN) {
@@ -211,6 +251,10 @@ sip_deinit()
     sip_calls_clear();
     // Remove Call-id hash table
     htable_destroy(calls.callids);
+
+    // Remove channelids hash table
+    htable_destroy(calls.mrcp_channelids);
+
     // Remove calls vector
     vector_destroy(calls.list);
     vector_destroy(calls.active);
@@ -227,10 +271,14 @@ sip_deinit()
     regfree(&calls.reg_body);
     regfree(&calls.reg_reason);
     regfree(&calls.reg_warning);
+    regfree(&calls.reg_mrcp_req);
+    regfree(&calls.reg_mrcp_res);
+    regfree(&calls.reg_mrcp_evt);
+    regfree(&calls.reg_mrcp_channelid);
 }
 
 
-char *
+int
 sip_get_callid(const char* payload, char *callid)
 {
     regmatch_t pmatch[3];
@@ -239,9 +287,11 @@ sip_get_callid(const char* payload, char *callid)
     if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
         // Copy the matching part of payload
         strncpy(callid, payload + pmatch[2].rm_so, (int) pmatch[2].rm_eo - pmatch[2].rm_so);
+
+        return 1;
     }
 
-    return callid;
+    return 0;
 }
 
 char *
@@ -255,6 +305,21 @@ sip_get_xcallid(const char *payload, char *xcallid)
     }
 
     return xcallid;
+}
+
+int
+sip_get_mrcp_channelid(const char* payload, char *channelid)
+{
+    regmatch_t pmatch[3];
+
+    // Try to get Call-ID from payload
+    if (regexec(&calls.reg_mrcp_channelid, payload, 3, pmatch, 0) == 0) {
+        // Copy the matching part of payload
+        strncpy(channelid, payload + pmatch[2].rm_so, (int) pmatch[2].rm_eo - pmatch[2].rm_so);
+        return 1;
+    }
+
+    return 0;
 }
 
 int
@@ -327,7 +392,7 @@ sip_check_packet(packet_t *packet)
 {
     sip_msg_t *msg;
     sip_call_t *call;
-    char callid[1024], xcallid[1024];
+    char callid[1024], xcallid[1024], channelid[1024];
     u_char payload[MAX_SIP_PAYLOAD];
     bool newcall = false;
 
@@ -343,9 +408,13 @@ sip_check_packet(packet_t *packet)
     memset(payload, 0, MAX_SIP_PAYLOAD);
     memcpy(payload, packet_payload(packet), packet_payloadlen(packet));
 
-    // Get the Call-ID of this message
-    if (!sip_get_callid((const char*) payload, callid))
-        return NULL;
+    channelid[0] = 0;
+    // Get the Call-ID or MRCP channel-identifier of this message
+    if (!sip_get_callid((const char*) payload, callid)) {
+        if(!sip_get_mrcp_channelid((const char*) payload, channelid)) {
+            return NULL;
+        }
+    }
 
     // Create a new message from this data
     if (!(msg = msg_create((const char*) payload)))
@@ -354,15 +423,27 @@ sip_check_packet(packet_t *packet)
     // Get Method and request for the following checks
     // There is no need to parse all payload at this point
     // If no response or request code is found, this is not a SIP message
-    if (!sip_get_msg_reqresp(msg, payload)) {
+    if(channelid[0]) {
+        if(!sip_get_msg_reqresp_for_mrcp(msg, payload)) {
+            printf("bad bad\n");
+            exit(1);
+            msg_destroy(msg);
+            return NULL;
+        }
+    } else if (!sip_get_msg_reqresp(msg, payload)) {
         // Deallocate message memory
         msg_destroy(msg);
         return NULL;
     }
 
     // Find the call for this msg
-    if (!(call = sip_find_by_callid(callid))) {
+    if(channelid[0]) {
+        call = sip_find_by_mrcp_channelid(channelid);
+    } else {
+        call = sip_find_by_callid(callid);
+    }
 
+    if (!call) {
         // Check if payload matches expression
         if (!sip_check_match_expression((const char*) payload))
             goto skip_message;
@@ -523,6 +604,16 @@ sip_find_by_callid(const char *callid)
     return htable_find(calls.callids, callid);
 }
 
+sip_call_t *
+sip_find_by_mrcp_channelid(const char *channelid)
+{
+    char *callid = htable_find(calls.mrcp_channelids, channelid);
+    if(!callid)
+        return NULL;
+
+    return sip_find_by_callid(callid);
+}
+
 int
 sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 {
@@ -585,6 +676,64 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
     return msg->reqresp;
 }
 
+int
+sip_get_msg_reqresp_for_mrcp(sip_msg_t *msg, const u_char *payload)
+{
+    regmatch_t pmatch[3];
+    char resp_str[SIP_ATTR_MAXLEN];
+    char reqresp[SIP_ATTR_MAXLEN];
+    char cseq[11];
+    const char *resp_def;
+
+    // Initialize variables
+    memset(pmatch, 0, sizeof(pmatch));
+    memset(resp_str, 0, sizeof(resp_str));
+    memset(reqresp, 0, sizeof(reqresp));
+
+    // If not already parsed
+    if (!msg->reqresp) {
+
+        // Method & CSeq
+        if (regexec(&calls.reg_mrcp_req, (const char *)payload, 3, pmatch, 0) == 0) {
+            if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
+                strncpy(reqresp, "<malformed>", 11);
+            } else {
+                sprintf(reqresp, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+            }
+
+            sprintf(cseq, "%.*s", (int)(pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
+            msg->cseq = atoi(cseq);
+
+            msg->reqresp = sip_method_from_str(reqresp);
+        } else if (regexec(&calls.reg_mrcp_res, (const char *)payload, 4, pmatch, 0) == 0) {
+            sprintf(cseq, "%.*s", (int)(pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+            msg->cseq = atoi(cseq);
+
+            if (((int)(pmatch[2].rm_eo - pmatch[2].rm_so) >= SIP_ATTR_MAXLEN)
+            ||  ((int)(pmatch[3].rm_eo - pmatch[3].rm_so) >= SIP_ATTR_MAXLEN)) {
+                strncpy(resp_str, "<malformed>", 11);
+            } else {
+                sprintf(resp_str, "%.*s %.*s",
+                    (int) (pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so,
+                    (int) (pmatch[3].rm_eo - pmatch[3].rm_so), payload + pmatch[3].rm_so);
+            }
+            msg->resp_str = strdup(resp_str);
+            msg->reqresp = 1000; // force to be a response
+        } else if (regexec(&calls.reg_mrcp_evt, (const char *)payload, 4, pmatch, 0) == 0) {
+            if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
+                strncpy(resp_str, "<malformed>", 11);
+            } else {
+                sprintf(resp_str, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
+            }
+            msg->resp_str = strdup(resp_str);
+            msg->reqresp = 1000; // force to be a response
+
+            sprintf(cseq, "%.*s", (int)(pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
+            msg->cseq = atoi(cseq);
+        }
+    }
+    return msg->reqresp;
+}
 const char *
 sip_get_msg_reqresp_str(sip_msg_t *msg)
 {
@@ -657,6 +806,7 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
     sdp_media_t *media = NULL;
     char *payload2, *tofree, *line;
     sip_call_t *call = msg_get_call(msg);
+    char channelid[MRCP_CHANNEL_ID_LENGTH + 1] = { };
 
     // If message is retrans, there's no need to parse the payload again
     if (msg->retrans) {
@@ -704,6 +854,10 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
                     rtcp_stream = stream_create(media, dst, PACKET_RTCP);
                     rtcp_stream->dst.port++;
                 }
+            } else {
+                if(sscanf(line, "m=%" STRINGIFY(MEDIATYPELEN) "s %hu TCP/MRCPv2 %u", media_type, &dst.port, &media_fmt_pref) != 3) {
+                    sscanf(line, "m=%" STRINGIFY(MEDIATYPELEN) "s %hu TCP/TLS/MCRPv2 %u", media_type, &dst.port, &media_fmt_pref);
+                }
             }
         }
 
@@ -731,7 +885,14 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
             sscanf(line, "a=rtcp:%hu", &rtcp_stream->dst.port);
         }
 
-
+        // Check if we have attribute channel-identifier
+        if(sscanf(line, "a=channel:%" STRINGIFY(MRCP_CHANNEL_ID_LENGTH) "s", channelid) == 1) {
+            if(!strcmp(media_type, "application")) { 
+                char *dup = strdup(channelid);
+                vector_append(call->mrcp_channelids, dup);
+                htable_insert(calls.mrcp_channelids, dup, call->callid);
+            }
+        }
     }
 
     // Add streams from last 'm=' line to the call
@@ -770,6 +931,10 @@ sip_calls_clear()
     htable_destroy(calls.callids);
     calls.callids = htable_create(calls.limit);
 
+    // Create again the MRCP channelid hash table
+    htable_destroy(calls.mrcp_channelids);
+    calls.mrcp_channelids = htable_create(calls.limit);
+
     // Remove all items from vector
     vector_clear(calls.list);
     vector_clear(calls.active);
@@ -781,6 +946,10 @@ sip_calls_clear_soft()
         // Create again the callid hash table
         htable_destroy(calls.callids);
         calls.callids = htable_create(calls.limit);
+
+        // Create again the MRCP channelid hash table
+        htable_destroy(calls.mrcp_channelids);
+        calls.mrcp_channelids = htable_create(calls.limit);
 
         // Repopulate list applying current filter
         calls.list = vector_copy_if(sip_calls_vector(), filter_check_call);
@@ -989,3 +1158,8 @@ sip_list_sorter(vector_t *vector, void *item)
     // Put this item at the begining of the vector
     vector_insert(vector, item, 0);
 }
+
+void sip_remove_mrcp_channelid(char *channelid) {
+    htable_remove(calls.mrcp_channelids, channelid);
+}
+

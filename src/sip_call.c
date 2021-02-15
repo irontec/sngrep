@@ -59,6 +59,9 @@ call_create(char *callid, char *xcallid)
     // Create an empty vector to store x-calls
     call->xcalls = vector_create(0, 1);
 
+    // Create an empty vector to store mrcp_channelids 
+    call->mrcp_channelids = vector_create(0, 1);
+
     // Initialize call filter status
     call->filtered = -1;
 
@@ -80,6 +83,16 @@ call_destroy(sip_call_t *call)
     vector_destroy(call->rtp_packets);
     // Remove all xcalls
     vector_destroy(call->xcalls);
+
+    // Remove all MRCP channel-identifiers
+    char *channelid;
+    vector_iter_t it = vector_iterator(call->mrcp_channelids);
+    while ((channelid = vector_iterator_next(&it))) {
+        sip_remove_mrcp_channelid(channelid);
+        sng_free(channelid);
+    }
+    vector_destroy(call->mrcp_channelids);
+
     // Deallocate call memory
     sng_free(call->callid);
     sng_free(call->xcallid);
