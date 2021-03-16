@@ -108,8 +108,10 @@ msg_get_time(sip_msg_t *msg) {
     struct timeval t = { };
     frame_t *frame;
 
-    if (msg && (frame = vector_first(msg->packet->frames)))
-        return frame->header->ts;
+    if (msg && (frame = vector_first(msg->packet->frames))) {
+        t.tv_sec = frame->header->ts.tv_sec;
+        t.tv_usec = frame->header->ts.tv_usec;
+    }
     return t;
 }
 
