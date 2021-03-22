@@ -56,6 +56,20 @@ struct _Message
     Packet *packet;
     //! Attribute list for this message
     GSList *attributes;
+    //! Message is part of initial transaciton
+    gboolean initial;
+    //! Message is a request?
+    gboolean isrequest;
+    //! Request/Response code
+    guint method;
+    //! Request/Response text
+    const gchar *method_str;
+    //! CSeq Number
+    guint64 cseq;
+    //! Message payload pointer
+    const gchar *payload;
+    //! Message auth data
+    const gchar *auth;
     //! Message is a retransmission from other message
     gint retrans;
 };

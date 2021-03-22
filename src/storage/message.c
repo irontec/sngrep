@@ -46,6 +46,16 @@ msg_new(Packet *packet)
     msg->attributes = NULL;
     // Mark retransmission flag as not checked
     msg->retrans = -1;
+    if (packet_has_protocol(packet, PACKET_PROTO_SIP)) {
+        // Fill SIP protocol information
+        msg->initial = packet_sip_initial_transaction(packet);
+        msg->isrequest = packet_sip_is_request(packet);
+        msg->method = packet_sip_method(packet);
+        msg->method_str =  packet_sip_method_str(packet);
+        msg->cseq = packet_sip_cseq(packet);
+        msg->payload = packet_sip_payload_str(packet);
+        msg->auth = packet_sip_auth_data(msg->packet);
+    }
     return msg;
 }
 
@@ -97,7 +107,7 @@ msg_media_for_addr(Message *msg, Address dst)
 gboolean
 msg_is_initial_transaction(Message *msg)
 {
-    return packet_sip_initial_transaction(msg->packet);
+    return msg->initial;
 }
 
 gboolean
@@ -121,31 +131,31 @@ msg_dst_address(Message *msg)
 gboolean
 msg_is_request(Message *msg)
 {
-    return packet_sip_is_request(msg->packet);
+    return msg->isrequest;
 }
 
 guint
 msg_get_method(Message *msg)
 {
-    return packet_sip_method(msg->packet);
+    return msg->method;
 }
 
 const gchar *
 msg_get_method_str(Message *msg)
 {
-    return packet_sip_method_str(msg->packet);
+    return msg->method_str;
 }
 
 guint64
 msg_get_cseq(Message *msg)
 {
-    return packet_sip_cseq(msg->packet);
+    return msg->cseq;
 }
 
 gchar *
 msg_get_payload(Message *msg)
 {
-    return packet_sip_payload_str(msg->packet);
+    return g_strdup(msg->payload);
 }
 
 guint64
@@ -290,5 +300,5 @@ msg_is_duplicate(Message *msg)
 const gchar *
 msg_get_auth_hdr(const Message *msg)
 {
-    return packet_sip_auth_data(msg->packet);
+    return msg->auth;
 }
