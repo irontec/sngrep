@@ -158,6 +158,8 @@ packet_dissector_enabled(PacketProtocolId id)
             return setting_enabled(SETTING_PACKET_RTP);
         case PACKET_PROTO_RTCP:
             return setting_enabled(SETTING_PACKET_RTCP);
+        case PACKET_PROTO_MRCP:
+            return setting_enabled(SETTING_PACKET_MRCP);
 #ifdef USE_HEP
         case PACKET_PROTO_HEP:
             return setting_enabled(SETTING_PACKET_HEP);
