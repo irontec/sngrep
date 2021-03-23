@@ -33,6 +33,7 @@
 #include "glib-extra/glib.h"
 #include "message.h"
 #include "packet/packet_sip.h"
+#include "packet/packet_mrcp.h"
 #include "packet/packet_sdp.h"
 #include "storage/storage.h"
 
@@ -46,6 +47,8 @@ msg_new(Packet *packet)
     msg->attributes = NULL;
     // Mark retransmission flag as not checked
     msg->retrans = -1;
+
+    // Message from SIP packet
     if (packet_has_protocol(packet, PACKET_PROTO_SIP)) {
         // Fill SIP protocol information
         msg->initial = packet_sip_initial_transaction(packet);
@@ -56,6 +59,17 @@ msg_new(Packet *packet)
         msg->payload = packet_sip_payload_str(packet);
         msg->auth = packet_sip_auth_data(msg->packet);
     }
+
+    // Message from MRCP arrow
+    if (packet_has_protocol(packet, PACKET_PROTO_MRCP)) {
+        // Fill MRCP protocol information
+        msg->isrequest = packet_mrcp_is_request(packet);
+        msg->method = packet_mrcp_method(packet);
+        msg->method_str = packet_mrcp_method_str(packet);
+        msg->payload = packet_mrcp_payload_str(packet);
+        msg->cseq = packet_mrcp_request_id(packet);
+    }
+
     return msg;
 }
 

@@ -59,6 +59,7 @@
 #include "glib-extra/glib.h"
 #include "packet/dissector.h"
 #include "packet/packet_sip.h"
+#include "packet/packet_mrcp.h"
 #include "setting.h"
 #include "filter.h"
 #include "storage.h"
@@ -127,6 +128,7 @@ storage_calls_clear()
     // Create again the callid hash table
     g_hash_table_remove_all(storage->callids);
     g_hash_table_remove_all(storage->streams);
+    g_hash_table_remove_all(storage->mrcp_channels);
 
     // Remove all items from vector
     g_ptr_array_remove_all(storage->calls);
@@ -279,6 +281,29 @@ storage_register_streams(Message *msg)
     }
 }
 
+static void
+storage_register_mrcp_channels(Message *msg)
+{
+    Packet *packet = msg->packet;
+
+    PacketSdpData *sdp = packet_sdp_data(packet);
+    if (sdp == NULL) {
+        // Packet without SDP content
+        return;
+    }
+
+    for (guint i = 0; i < g_list_length(sdp->medias); i++) {
+        PacketSdpMedia *media = g_list_nth_data(sdp->medias, i);
+
+        if (media->channel == NULL)
+            continue;
+
+        // Add this channel to hash table
+        g_hash_table_remove(storage->streams, media->channel);
+        g_hash_table_insert(storage->mrcp_channels, g_strdup(media->channel), msg_get_call(msg));
+    }
+}
+
 void
 storage_check_sip_packet(Packet *packet)
 {
@@ -343,6 +368,8 @@ storage_check_sip_packet(Packet *packet)
 
     // Parse media data
     storage_register_streams(msg);
+    // Add MRCP channels
+    storage_register_mrcp_channels(msg);
 
     if (call_is_invite(call)) {
         // Update Call State
@@ -453,6 +480,29 @@ storage_check_rtcp_packet(Packet *packet)
     capture_manager_output_packet(capture_manager_get_instance(), packet);
 }
 
+static void
+storage_check_mrcp_packet(Packet *packet)
+{
+    PacketMrcpData *mrcp_data = packet_mrcp_data(packet);
+
+    // Find the call for this message channel
+    Call *call = g_hash_table_lookup(storage->mrcp_channels, mrcp_data->channel);
+    if (call == NULL)
+        return;
+
+    // Create a new call message for this MRCP
+    Message *msg = msg_new(packet);
+
+    // Add the message to the call
+    call_add_message(call, msg);
+
+    // Mark the list as changed
+    storage->changed = TRUE;
+
+    // Send this packet to all capture outputs
+    capture_manager_output_packet(capture_manager_get_instance(), packet);
+}
+
 static gboolean
 storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
 {
@@ -462,6 +512,8 @@ storage_check_packet(Packet *packet, G_GNUC_UNUSED gpointer user_data)
         storage_check_rtp_packet(packet);
     } else if (packet_has_protocol(packet, PACKET_PROTO_RTCP)) {
         storage_check_rtcp_packet(packet);
+    } else if (packet_has_protocol(packet, PACKET_PROTO_MRCP)) {
+        storage_check_mrcp_packet(packet);
     }
 
     if (storage->options.capture.mode == STORAGE_MODE_NONE) {
@@ -588,6 +640,7 @@ storage_new(StorageOpts options, GError **error)
     // Create hash tables for fast call and stream search
     storage->callids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     storage->streams = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    storage->mrcp_channels = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     // Set default sorting field
     if (attribute_find_by_name(setting_get_value(SETTING_TUI_CL_SORTFIELD)) != NULL) {

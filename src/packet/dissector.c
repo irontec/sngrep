@@ -36,6 +36,7 @@
 #include "packet/packet_ip.h"
 #include "packet/packet_udp.h"
 #include "packet/packet_tcp.h"
+#include "packet/packet_mrcp.h"
 #include "packet/packet_sip.h"
 #include "packet/packet_sdp.h"
 #include "packet/packet_rtp.h"
@@ -97,6 +98,9 @@ packet_dissector_find_by_id(PacketProtocolId id)
                 break;
             case PACKET_PROTO_TCP:
                 dissector = packet_dissector_tcp_new();
+                break;
+            case PACKET_PROTO_MRCP:
+                dissector = packet_dissector_mrcp_new();
                 break;
             case PACKET_PROTO_SIP:
                 dissector = packet_dissector_sip_new();

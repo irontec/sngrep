@@ -463,7 +463,8 @@ settings_init(SettingOpts options)
 #endif
     settings_add_setting(SETTING_PACKET_IP, setting_bool_new(TRUE));
     settings_add_setting(SETTING_PACKET_UDP, setting_bool_new(TRUE));
-    settings_add_setting(SETTING_PACKET_TCP, setting_bool_new(TRUE));
+    settings_add_setting(SETTING_PACKET_TCP, setting_bool_new(FALSE));
+    settings_add_setting(SETTING_PACKET_MRCP, setting_bool_new(FALSE));
     settings_add_setting(SETTING_PACKET_TLS, setting_bool_new(FALSE));
 #ifdef WITH_SSL
     settings_add_setting(SETTING_PACKET_TLS_KEYFILE, setting_string_new(NULL));

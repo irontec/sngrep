@@ -225,6 +225,8 @@ packet_sdp_dissect_attribute(G_GNUC_UNUSED PacketSdpData *sdp, PacketSdpMedia *m
         }
     } else if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "rtcp") == 0) {
         media->rtcpport = (guint16) strtoul(rtpattr[SDP_ATTR_VALUE], NULL, 10);
+    } else if (g_ascii_strcasecmp(rtpattr[SDP_ATTR_NAME], "channel") == 0) {
+        media->channel =  g_strdup(rtpattr[SDP_ATTR_VALUE]);
     }
 }
 
@@ -284,6 +286,7 @@ packet_sdp_media_free(PacketSdpMedia *media)
     g_list_free_full(media->formats, (GDestroyNotify) packet_sdp_format_free);
     address_free(media->address);
     g_free(media->sconn);
+    g_free(media->channel);
     g_free(media);
 }
 

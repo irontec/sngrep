@@ -317,6 +317,7 @@ packet_dissector_tcp_init(PacketDissectorTcp *self)
     // TCP Dissector base information
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_SIP);
     packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_TLS);
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_MRCP);
 
     // TCP assembly garbage collector
     GSource *tcp_garbage_collector = g_timeout_source_new(10000);

@@ -126,6 +126,8 @@ struct _PacketSdpMedia
     guint16 rtcpport;
     //! RTP Address (Connection IP + RTP port)
     Address address;
+    //! MRCP Channel
+    gchar *channel;
     //! Media formats list (SDPFormat)
     GList *formats;
 };

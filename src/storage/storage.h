@@ -143,6 +143,8 @@ struct _Storage
     GHashTable *callids;
     //! Streams hash table
     GHashTable *streams;
+    //! MRCPC hash table
+    GHashTable *mrcp_channels;
     //! Storage processing source
     GSource *source;
     //! Packet waiting to be processed

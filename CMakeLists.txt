@@ -56,6 +56,7 @@ set(SOURCES
         src/packet/packet_link.c
         src/packet/packet_ip.c
         src/packet/packet_tcp.c
+        src/packet/packet_mrcp.c
         src/packet/packet_udp.c
         src/packet/packet_sip.c
         src/packet/packet_sdp.c

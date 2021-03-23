@@ -85,6 +85,7 @@ typedef struct _SettingStorage SettingStorage;
 #define SETTING_PACKET_IP               "packet.ip.enabled"
 #define SETTING_PACKET_UDP              "packet.udp.enabled"
 #define SETTING_PACKET_TCP              "packet.tcp.enabled"
+#define SETTING_PACKET_MRCP             "packet.mrcp.enabled"
 #define SETTING_PACKET_TLS              "packet.tls.enabled"
 #ifdef WITH_SSL
 #define SETTING_PACKET_TLS_KEYFILE      "packet.tls.keyfile"
