@@ -41,6 +41,7 @@
 #include "packet/packet_sdp.h"
 #include "packet/packet_rtp.h"
 #include "packet/packet_rtcp.h"
+#include "packet/packet_televt.h"
 #ifdef USE_HEP
 #include "packet/packet_hep.h"
 #endif
@@ -114,6 +115,9 @@ packet_dissector_find_by_id(PacketProtocolId id)
             case PACKET_PROTO_RTCP:
                 dissector = packet_dissector_rtcp_new();
                 break;
+            case PACKET_PROTO_TELEVT:
+                dissector = packet_dissector_televt_new();
+                break;
 #ifdef USE_HEP
             case PACKET_PROTO_HEP:
                 dissector = packet_dissector_hep_new();
@@ -160,6 +164,8 @@ packet_dissector_enabled(PacketProtocolId id)
             return setting_enabled(SETTING_PACKET_RTCP);
         case PACKET_PROTO_MRCP:
             return setting_enabled(SETTING_PACKET_MRCP);
+        case PACKET_PROTO_TELEVT:
+            return setting_enabled(SETTING_PACKET_TELEVT);
 #ifdef USE_HEP
         case PACKET_PROTO_HEP:
             return setting_enabled(SETTING_PACKET_HEP);

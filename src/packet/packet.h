@@ -68,6 +68,7 @@ typedef enum
     PACKET_PROTO_RTCP,
     PACKET_PROTO_HEP,
     PACKET_PROTO_MRCP,
+    PACKET_PROTO_TELEVT,
     PACKET_PROTO_COUNT
 } PacketProtocolId;
 

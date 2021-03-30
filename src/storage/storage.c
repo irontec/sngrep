@@ -425,7 +425,7 @@ storage_check_rtp_packet(Packet *packet)
     stream_add_packet(stream, packet);
 
     // Store packet if rtp capture is enabled
-    if (storage->options.capture.rtp) {
+    if (storage->options.capture.rtp || packet_has_protocol(packet, PACKET_PROTO_TELEVT)) {
         g_ptr_array_add(stream->packets, packet_ref(packet));
     }
 

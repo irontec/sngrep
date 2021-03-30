@@ -144,6 +144,9 @@ packet_dissector_rtp_dissect(G_GNUC_UNUSED PacketDissector *self, Packet *packet
     // Set packet RTP information
     packet_set_protocol_data(packet, PACKET_PROTO_RTP, rtp);
 
+    // Pass data to sub-dissectors
+    packet_dissector_next(self, packet, data);
+
     // Add data to storage
     storage_add_packet(packet);
 
@@ -174,8 +177,9 @@ packet_dissector_rtp_class_init(PacketDissectorRtpClass *klass)
 }
 
 static void
-packet_dissector_rtp_init(G_GNUC_UNUSED PacketDissectorRtp *self)
+packet_dissector_rtp_init(PacketDissectorRtp *self)
 {
+    packet_dissector_add_subdissector(PACKET_DISSECTOR(self), PACKET_PROTO_TELEVT);
 }
 
 PacketDissector *

@@ -72,6 +72,8 @@ struct _Stream
     guint32 ssrc;
     //! Stream packets (not always stored in packets array)
     guint packet_count;
+    //! Event packets in streams
+    guint event_count;
     //! Stream statistics
     struct {
         //! First sequence number received. This will be used to calculate the expected packet

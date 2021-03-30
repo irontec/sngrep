@@ -62,6 +62,7 @@ set(SOURCES
         src/packet/packet_sdp.c
         src/packet/packet_rtp.c
         src/packet/packet_rtcp.c
+        src/packet/packet_televt.c
         src/storage/filter.c
         src/storage/group.c
         src/storage/stream.c

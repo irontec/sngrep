@@ -168,6 +168,10 @@ stream_add_packet(Stream *stream, Packet *packet)
         stream->first_ts = packet_time(packet);
     }
 
+    if (packet_has_protocol(packet, PACKET_PROTO_TELEVT)) {
+        stream->event_count++;
+    }
+
     // Add received packet to stream stats
     stream_rtp_analyze(stream, packet);
 }
