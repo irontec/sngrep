@@ -324,9 +324,9 @@ storage_check_sip_packet(Packet *packet)
         if (storage->options.match.invite && sip_data->code.id != SIP_METHOD_INVITE)
             return;
 
-        // Only create a new call if the first msg
-        // is a request message in the following gorup
-        if (storage->options.match.complete && sip_data->code.id > SIP_METHOD_MESSAGE)
+        // Only create a new call if the first msg is a request message in the initial transaction
+        if (storage->options.match.complete &&
+            !(packet_sip_is_request(packet) && packet_sip_initial_transaction(packet)))
             return;
 
         // Rotate call list if limit has been reached
