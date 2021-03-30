@@ -118,6 +118,7 @@ typedef enum
     ACTION_SORT_NEXT,
     ACTION_SORT_SWAP,
     ACTION_TOGGLE_TIME,
+    ACTION_TELEVT_MODE,
     ACTION_SENTINEL
 }  KeybindingAction;
 

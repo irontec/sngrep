@@ -476,6 +476,7 @@ settings_init(SettingOpts options)
     settings_add_setting(SETTING_PACKET_SDP, setting_bool_new(TRUE));
     settings_add_setting(SETTING_PACKET_RTP, setting_bool_new(TRUE));
     settings_add_setting(SETTING_PACKET_RTCP, setting_bool_new(TRUE));
+    settings_add_setting(SETTING_PACKET_TELEVT, setting_bool_new(TRUE));
     settings_add_setting(SETTING_STORAGE_MEMORY_LIMIT, setting_string_new("250M"));
     settings_add_setting(SETTING_STORAGE_RTP, setting_bool_new(FALSE));
     settings_add_setting(SETTING_STORAGE_MODE,
@@ -514,6 +515,7 @@ settings_init(SettingOpts options)
     settings_add_setting(SETTING_TUI_CF_ONLYMEDIA, setting_bool_new(FALSE));
     settings_add_setting(SETTING_TUI_CF_DELTA, setting_bool_new(TRUE));
     settings_add_setting(SETTING_TUI_CF_HIDEDUPLICATE, setting_bool_new(FALSE));
+    settings_add_setting(SETTING_TUI_CF_TELEVT, setting_enum_new(SETTING_TELEVT_MERGED, SETTING_TYPE_TEL_EVT_DISPLAY));
     settings_add_setting(SETTING_TUI_CR_SCROLLSTEP, setting_number_new(10));
     settings_add_setting(SETTING_TUI_CR_NON_ASCII, setting_string_new("."));
 

@@ -95,6 +95,7 @@ Keybinding bindings[ACTION_SENTINEL] = {
     { ACTION_SORT_NEXT,        "sortnext",        { '>' },                                           1 },
     { ACTION_SORT_SWAP,        "sortswap",        { 'z' },                                           1 },
     { ACTION_TOGGLE_TIME,      "toggletime",      { 'w' },                                           1 },
+    { ACTION_TELEVT_MODE,      "televtmode",      { 'Z' },                                           1 },
 };
 
 /**

@@ -74,6 +74,8 @@ typedef enum
     CF_ARROW_SIP,
     CF_ARROW_RTP,
     CF_ARROW_RTCP,
+    CF_ARROW_RTP_TELEVT,
+    CF_ARROW_TELEVT,
 } CallFlowArrowType;
 
 /**
@@ -103,6 +105,18 @@ typedef enum
     SETTING_SDP_COMPRESSED,
 } SettingSdpMode;
 
+typedef enum
+{
+    //! Merge Telephony events in its original SSRC stream
+    SETTING_TELEVT_MERGED,
+    //! Show Telephony events in its own stream
+    SETTING_TELEVT_STREAM,
+    //! Split DMTF events in new streams, one for each event
+    SETTING_TELEVT_COALESCED,
+    //! Split DMTF events in new stream, one for each packet
+    SETTING_TELEVT_SPLITTED,
+} SettingTelEvtDisplay;
+
 /**
  * @brief Structure to hold one column information
  *
@@ -124,6 +138,16 @@ struct _CallFlowColumn
     //! Column position on the screen
     guint pos;
 };
+
+/**
+ * @brief Arrow search criteria
+ */
+typedef struct {
+    //! Arrow item
+    gconstpointer item;
+    //! Arrow type
+    CallFlowArrowType type;
+} CallFlowArrowSearch;
 
 /**
  * @brief Call Flow arrow information

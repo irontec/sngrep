@@ -384,7 +384,7 @@ protocol_select_win_new()
 {
     return g_object_new(
         WINDOW_TYPE_PROTOCOL_SELECT,
-        "height", 20,
+        "height", 22,
         "width", 60,
         NULL
     );
@@ -420,7 +420,7 @@ protocol_select_win_constructed(GObject *object)
     post_form(self->form);
 
     // Create a subwin for the menu area
-    self->menu_win = derwin(win, 10, width - 2, 7, 0);
+    self->menu_win = derwin(win, 12, width - 2, 10, 0);
 
     // Initialize one field for each attribute
     gint field_cnt = 0;
@@ -446,8 +446,8 @@ protocol_select_win_constructed(GObject *object)
 
     // Set main window and sub window
     set_menu_win(self->menu, win);
-    set_menu_sub(self->menu, derwin(win, 10, width - 5, 7, 2));
-    set_menu_format(self->menu, 10, 1);
+    set_menu_sub(self->menu, derwin(win, 12, width - 5, 7, 2));
+    set_menu_format(self->menu, 12, 1);
     set_menu_mark(self->menu, "");
     set_menu_fore(self->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
     menu_opts_off(self->menu, O_ONEVALUE);

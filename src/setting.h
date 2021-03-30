@@ -97,6 +97,7 @@ typedef struct _SettingStorage SettingStorage;
 #define SETTING_PACKET_SDP              "packet.sdp.enabled"
 #define SETTING_PACKET_RTP              "packet.rtp.enabled"
 #define SETTING_PACKET_RTCP             "packet.rtcp.enabled"
+#define SETTING_PACKET_TELEVT           "packet.televt.enabled"
 #define SETTING_STORAGE_RTP             "storage.rtp"
 #define SETTING_STORAGE_MODE            "storage.mode"
 #define SETTING_STORAGE_MEMORY_LIMIT    "storage.memory_limit"
@@ -133,6 +134,7 @@ typedef struct _SettingStorage SettingStorage;
 #define SETTING_TUI_CF_ONLYMEDIA        "tui.cf.onlymedia"
 #define SETTING_TUI_CF_DELTA            "tui.cf.delta"
 #define SETTING_TUI_CF_HIDEDUPLICATE    "tui.cf.hideduplicate"
+#define SETTING_TUI_CF_TELEVT           "tui.cf.televt"
 #define SETTING_TUI_CR_SCROLLSTEP       "tui.cr.scrollstep"
 #define SETTING_TUI_CR_NON_ASCII        "tui.cr.noascii"
 

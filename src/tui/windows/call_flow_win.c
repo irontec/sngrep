@@ -32,6 +32,7 @@
 #include <storage/message.h>
 #include <storage/stream.h>
 #include "packet/packet_sip.h"
+#include "packet/packet_televt.h"
 #include "capture/capture_pcap.h"
 #include "tui/tui.h"
 #include "tui/dialog.h"
@@ -118,9 +119,12 @@ call_flow_arrow_time(const CallFlowArrow *arrow)
         if (arrow->type == CF_ARROW_SIP) {
             Message *msg = (Message *) arrow->item;
             ts = msg_get_time(msg);
-        } else if (arrow->type == CF_ARROW_RTP) {
+        } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP || arrow->type == CF_ARROW_RTP_TELEVT) {
             Stream *stream = (Stream *) arrow->item;
             ts = stream_time(stream);
+        } else if (arrow->type == CF_ARROW_TELEVT) {
+            Packet *packet = (Packet*) arrow->item;
+            ts = packet_time(packet);
         }
     }
 
@@ -166,6 +170,21 @@ call_flow_arrow_filter(void *item)
         return 1;
     }
 
+    // RTP arrows are only displayed when requested
+    if (arrow->type == CF_ARROW_RTCP && setting_enabled(SETTING_TUI_CF_MEDIA)) {
+        return 1;
+    }
+
+    // RTP arrows are only displayed when requested
+    if (arrow->type == CF_ARROW_RTP_TELEVT && setting_enabled(SETTING_TUI_CF_MEDIA)) {
+        return 1;
+    }
+
+    // RTP arrows are only displayed when requested
+    if (arrow->type == CF_ARROW_TELEVT && setting_enabled(SETTING_TUI_CF_MEDIA)) {
+        return 1;
+    }
+
     // Rest of the arrows are never displayed
     return 0;
 }
@@ -174,9 +193,10 @@ call_flow_arrow_filter(void *item)
  * @brief Callback for searching arrows by item
  */
 static gboolean
-call_flow_arrow_find_item_cb(CallFlowArrow *arrow, gpointer item)
+call_flow_arrow_find_item_cb(CallFlowArrow *arrow, gpointer data)
 {
-    return arrow->item == item;
+    CallFlowArrowSearch *search = data;
+    return arrow->item == search->item && arrow->type == search->type;
 }
 
 /**
@@ -190,15 +210,16 @@ call_flow_arrow_find_item_cb(CallFlowArrow *arrow, gpointer item)
  * @return a pointer to the found arrow or NULL
  */
 static CallFlowArrow *
-call_flow_arrow_find(Window *window, const void *data)
+call_flow_arrow_find(Window *window, const void *data, CallFlowArrowType type)
 {
     CallFlowWindow *self = TUI_CALL_FLOW(window);
     g_return_val_if_fail(self != NULL, NULL);
     g_return_val_if_fail(data != NULL, NULL);
 
+    CallFlowArrowSearch search = { .item = data, .type = type };
     guint index;
     if (g_ptr_array_find_with_equal_func(
-        self->arrows, data,
+        self->arrows, &search,
         (GEqualFunc) call_flow_arrow_find_item_cb, &index)) {
         return g_ptr_array_index(self->arrows, index);
     }
@@ -225,7 +246,7 @@ call_flow_arrow_create(Window *window, void *item, CallFlowArrowType type)
 {
     CallFlowArrow *arrow;
 
-    if ((arrow = call_flow_arrow_find(window, item)) == NULL) {
+    if ((arrow = call_flow_arrow_find(window, item, type)) == NULL) {
         // Create a new arrow of the given type
         arrow = g_malloc0(sizeof(CallFlowArrow));
         arrow->type = type;
@@ -262,11 +283,13 @@ call_flow_arrow_height(G_GNUC_UNUSED Window *window, const CallFlowArrow *arrow)
             return 2;
         if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_FULL)
             return msg_media_count(arrow->item) + 2;
-    } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP) {
+    } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP || arrow->type == CF_ARROW_RTP_TELEVT) {
         if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
             return 1;
         if (setting_disabled(SETTING_TUI_CF_MEDIA))
             return 0;
+        return 2;
+    } else if (arrow->type == CF_ARROW_TELEVT) {
         return 2;
     }
 
@@ -505,7 +528,7 @@ call_flow_arrow_set_columns(Window *window, CallFlowArrow *arrow, CallFlowArrowD
 
         GPtrArray *msgs = call->msgs;
         for (guint i = 0; i < g_ptr_array_len(msgs); i++) {
-            CallFlowArrow *msg_arrow = call_flow_arrow_find(window, g_ptr_array_index(msgs, i));
+            CallFlowArrow *msg_arrow = call_flow_arrow_find(window, g_ptr_array_index(msgs, i), CF_ARROW_SIP);
 
             if (msg_arrow == NULL
                 || msg_arrow->type != CF_ARROW_SIP
@@ -661,7 +684,7 @@ call_flow_win_create_arrows(Window *window)
     // Create pending SIP arrows
     Message *msg = NULL;
     while ((msg = call_group_get_next_msg(self->group, msg))) {
-        if (call_flow_arrow_find(window, msg) == NULL) {
+        if (call_flow_arrow_find(window, msg, CF_ARROW_SIP) == NULL) {
             g_ptr_array_add(
                 self->arrows,
                 call_flow_arrow_create(window, msg, CF_ARROW_SIP)
@@ -672,9 +695,63 @@ call_flow_win_create_arrows(Window *window)
     // Create pending RTP arrows
     Stream *stream = NULL;
     while ((stream = call_group_get_next_stream(self->group, stream))) {
-        if (!call_flow_arrow_find(window, stream)) {
-            CallFlowArrow *arrow = call_flow_arrow_create(window, stream, CF_ARROW_RTP);
-            g_ptr_array_add(self->arrows, arrow);
+        if (call_flow_arrow_find(window, stream, CF_ARROW_RTP) == NULL) {
+            // Add new RTP Stream arrow
+            g_ptr_array_add(
+                self->arrows,
+                call_flow_arrow_create(window, stream, CF_ARROW_RTP)
+            );
+        }
+        // Do not display Telephony events arrows
+        if (setting_get_enum(SETTING_TUI_CF_TELEVT) == SETTING_TELEVT_MERGED) {
+            continue;
+        }
+        // Display only a single stream arrow for telephony events
+        if (setting_get_enum(SETTING_TUI_CF_TELEVT) == SETTING_TELEVT_STREAM) {
+            if (call_flow_arrow_find(window, stream, CF_ARROW_RTP_TELEVT) == NULL) {
+                // Add new RTP Stream arrow
+                g_ptr_array_add(
+                    self->arrows,
+                    call_flow_arrow_create(window, stream, CF_ARROW_RTP_TELEVT)
+                );
+            }
+            continue;
+        }
+
+        gboolean evt_ongoing = TRUE;
+        for (guint i = 0; i < g_ptr_array_len(stream->packets); i++) {
+            Packet *packet = g_ptr_array_index(stream->packets, i);
+            if (!packet_has_protocol(packet, PACKET_PROTO_TELEVT))
+                continue;
+
+            PacketTelEvtData *televt_data = packet_televt_data(packet);
+            if (televt_data == NULL)
+                continue;
+
+            if (setting_get_enum(SETTING_TUI_CF_TELEVT) == SETTING_TELEVT_SPLITTED) {
+                // Add new Packet arrow per TelEvt packet
+                if (call_flow_arrow_find(window, packet, CF_ARROW_TELEVT) == NULL) {
+                    g_ptr_array_add(
+                        self->arrows,
+                        call_flow_arrow_create(window, packet, CF_ARROW_TELEVT)
+                    );
+                }
+            } else {
+                if (televt_data->end) {
+                    if (evt_ongoing) {
+                        // Add new Packet arrow per TelEvt event
+                        if (call_flow_arrow_find(window, packet, CF_ARROW_TELEVT) == NULL) {
+                            g_ptr_array_add(
+                                self->arrows,
+                                call_flow_arrow_create(window, packet, CF_ARROW_TELEVT)
+                            );
+                        }
+                        evt_ongoing = FALSE;
+                    }
+                } else {
+                    evt_ongoing = TRUE;
+                }
+            }
         }
     }
 
@@ -1125,14 +1202,24 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 
     // Get arrow text
     g_autofree const gchar *stream_format = stream_get_format(stream);
-    guint stream_count = stream_get_count(stream);
-    sprintf(text, "RTP (%s) %d", stream_format, stream_count);
+    if (arrow->type == CF_ARROW_RTP) {
+        if (setting_get_enum(SETTING_TUI_CF_TELEVT) == SETTING_TELEVT_MERGED) {
+            sprintf(text, "RTP (%s) %d", stream_format, stream->packet_count);
+        } else {
+            sprintf(text, "RTP (%s) %d", stream_format, stream->packet_count - stream->event_count);
+        }
+    } else if (arrow->type == CF_ARROW_RTP_TELEVT) {
+        sprintf(text, "RTP (%s) %d", "telephony-event", stream->event_count);
+    } else {
+        sprintf(text, "RTCP %d", stream->event_count);
+    }
+
 
     // Message with Stream destination configured in SDP content
     msg = stream->msg;
 
     // Reuse the msg arrow columns as destination column
-    if ((msgarrow = call_flow_arrow_find(window, msg))) {
+    if ((msgarrow = call_flow_arrow_find(window, msg, CF_ARROW_SIP))) {
         if (address_equals(msgarrow->scolumn->addr, stream->src))
             arrow->scolumn = msgarrow->scolumn;
         if (address_equals(msgarrow->scolumn->addr, stream->dst))
@@ -1269,6 +1356,152 @@ call_flow_win_draw_rtp_stream(Window *window, CallFlowArrow *arrow, int cline)
 }
 
 /**
+ * @brief Draw the event data in the given line
+ *
+ * Draw the given arrow of type event in the given line.
+ *
+ * @param window UI structure pointer
+ * @param arrow Call flow arrow of event to be drawn
+ * @param cline Window line to draw the message
+ * @return the number of screen lines this arrow uses on screen
+ */
+static int
+call_flow_win_draw_televt(Window *window, CallFlowArrow *arrow, int cline)
+{
+    // Get panel information
+    CallFlowWindow *self = TUI_CALL_FLOW(window);
+    g_return_val_if_fail(self != NULL, 0);
+
+    // Store arrow start line
+    arrow->line = cline + 1;
+
+    // Calculate how many lines this message requires
+    arrow->height = call_flow_arrow_height(window, arrow);
+
+    // Packet owner of the event
+    Packet *packet = arrow->item;
+    Address src = packet_src_address(packet);
+    Address dst = packet_dst_address(packet);
+
+    // Get arrow text
+    PacketTelEvtData *televt_data = packet_televt_data(packet);
+    g_autofree gchar *text = g_strdup_printf(
+        "DTMF %c %s",
+        televt_data->value,
+        (televt_data->end)?"(end)":""
+    );
+
+    // fallback: Just use any column that have the destination IP printed
+    if (arrow->dcolumn == NULL) {
+        arrow->dcolumn = call_flow_column_get_first(window, address_strip_port(dst));
+    }
+
+    if (arrow->scolumn == NULL) {
+        arrow->scolumn = call_flow_column_get_first(window, address_strip_port(src));
+    }
+
+    // Determine start and end position of the arrow line
+    int startpos, endpos;
+    if (arrow->scolumn->pos < arrow->dcolumn->pos) {
+        arrow->dir = CF_ARROW_DIR_RIGHT;
+        startpos = 20 + arrow->scolumn->pos;
+        endpos = 20 + arrow->dcolumn->pos;
+    } else {
+        arrow->dir = CF_ARROW_DIR_LEFT;
+        startpos = 20 + arrow->dcolumn->pos;
+        endpos = 20 + arrow->scolumn->pos;
+    }
+    int distance = 0;
+
+    if (startpos != endpos) {
+        // In compressed mode, we display the src and dst port inside the arrow
+        // so fixup the start and end position
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
+            startpos += 5;
+            endpos -= 5;
+        }
+        distance = abs(endpos - startpos) - 4 + 1;
+    } else {
+        // Fix port positions
+        startpos -= 2;
+        endpos += 2;
+        distance = 1;
+
+        // Fix arrow direction based on ports
+        if (address_get_port(src) < address_get_port(dst)) {
+            arrow->dir = CF_ARROW_DIR_RIGHT;
+        } else {
+            arrow->dir = CF_ARROW_DIR_LEFT;
+        }
+    }
+
+    // Highlight current message
+    if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
+        switch (setting_get_enum(SETTING_TUI_CF_HIGHTLIGHT)) {
+            case SETTING_ARROW_HIGHLIGH_BOLD:
+                wattron(self->arrows_pad, A_BOLD);
+                break;
+            case SETTING_ARROW_HIGHLIGH_REVERSE:
+                wattron(self->arrows_pad, A_REVERSE);
+                break;
+            case SETTING_ARROW_HIGHLIGH_REVERSEBOLD:
+                wattron(self->arrows_pad, A_REVERSE);
+                wattron(self->arrows_pad, A_BOLD);
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Clear the line
+    mvwprintw(self->arrows_pad, cline, startpos + 2, "%*s", distance, "");
+    // Draw RTP arrow text
+    mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
+
+    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED)
+        cline++;
+
+    // Draw line between columns
+    mvwhline(self->arrows_pad, cline, startpos + 2, '-', distance);
+
+    // Write the arrow at the end of the message (two arrows if this is a retrans)
+    if (arrow->dir == CF_ARROW_DIR_RIGHT) {
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
+            mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(src));
+            mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(dst));
+        }
+        mvwaddwstr(self->arrows_pad, cline, endpos - 2, tui_acs_utf8('>'));
+    } else {
+        if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) != SETTING_SDP_COMPRESSED) {
+            mvwprintw(self->arrows_pad, cline, endpos, "%d", address_get_port(src));
+            mvwprintw(self->arrows_pad, cline, startpos - 4, "%d", address_get_port(dst));
+        }
+        mvwaddwstr(self->arrows_pad, cline, startpos + 2, tui_acs_utf8('<'));
+    }
+
+    if (setting_get_enum(SETTING_TUI_CF_SDP_INFO) == SETTING_SDP_COMPRESSED)
+        mvwprintw(self->arrows_pad, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
+
+    wattroff(self->arrows_pad, A_BOLD | A_REVERSE);
+
+    // Print timestamp
+    if (self->arrowtime) {
+        gchar time[20];
+        date_time_time_to_str(packet_time(packet), time);
+        if (arrow == g_ptr_array_index(self->darrows, self->cur_idx)) {
+            wattron(self->arrows_pad, A_BOLD);
+            mvwprintw(self->arrows_pad, cline - 1, 2, "%s", time);
+            wattroff(self->arrows_pad, A_BOLD);
+        } else {
+            mvwprintw(self->arrows_pad, cline - 1, 2, "%s", time);
+        }
+
+    }
+
+    return arrow->height;
+}
+
+/**
  * @brief Draw a single arrow in arrow flow
  *
  * This function draws an arrow of any type in the given line of the flow.
@@ -1285,9 +1518,13 @@ call_flow_win_draw_arrow(Window *window, CallFlowArrow *arrow, gint line)
 
     if (arrow->type == CF_ARROW_SIP) {
         return call_flow_win_draw_message(window, arrow, line);
-    } else {
+    } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP || arrow->type == CF_ARROW_RTP_TELEVT) {
         return call_flow_win_draw_rtp_stream(window, arrow, line);
+    } else if (arrow->type == CF_ARROW_TELEVT) {
+        return call_flow_win_draw_televt(window, arrow, line);
     }
+
+    return 0;
 }
 
 /**
@@ -1371,7 +1608,7 @@ call_flow_win_draw_raw(Window *window, Message *msg)
  * @return 0 in all cases
  */
 static int
-call_flow_win_draw_raw_rtcp(Window *window, G_GNUC_UNUSED Stream *stream)
+call_flow_win_draw_raw_rtcp(Window *window, Stream *stream)
 {
     // Get panel information
     CallFlowWindow *self = TUI_CALL_FLOW(window);
@@ -1402,6 +1639,35 @@ call_flow_win_draw_raw_rtcp(Window *window, G_GNUC_UNUSED Stream *stream)
 }
 
 /**
+ * @brief Draw raw panel with Telephony Event data
+ *
+ * Draw the given stream data into the raw window.
+ *
+ * @param window UI structure pointer
+ * @param packet packet containing the TelEvt data
+ * @return 0 in all cases
+ */
+static int
+call_flow_win_draw_raw_televt(Window *window, Packet *packet)
+{
+    // Get panel information
+    CallFlowWindow *self = TUI_CALL_FLOW(window);
+
+    PacketTelEvtData *televt_data = packet_televt_data(packet);
+    g_return_val_if_fail(televt_data != NULL, 0);
+
+    guint row = 1;
+    mvwprintw(self->raw_win, row++, 1, "RFC4733 (telephone-event) Information");
+    mvwhline(self->raw_win, row++, 1, ACS_HLINE, getmaxx(self->raw_win) - 1);
+    mvwprintw(self->raw_win, row++, 1, "Event: DTMF %c", televt_data->value);
+    mvwprintw(self->raw_win, row++, 1, "End: %s", televt_data->end ? "yes" : "no");
+    mvwprintw(self->raw_win, row++, 1, "Volume: %d", televt_data->volume);
+    mvwprintw(self->raw_win, row++, 1, "Duration: %d", televt_data->duration);
+
+    return 0;
+}
+
+/**
  * @brief Draw panel preview of current arrow
  *
  * If user request to not draw preview panel, this function does nothing.
@@ -1425,8 +1691,10 @@ call_flow_win_draw_preview(Window *window)
     if ((arrow = g_ptr_array_index(self->darrows, self->cur_idx))) {
         if (arrow->type == CF_ARROW_SIP) {
             call_flow_win_draw_raw(window, arrow->item);
-        } else {
+        } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP || arrow->type == CF_ARROW_RTP_TELEVT){
             call_flow_win_draw_raw_rtcp(window, arrow->item);
+        } else if (arrow->type == CF_ARROW_TELEVT) {
+            call_flow_win_draw_raw_televt(window, arrow->item);
         }
     }
 }
@@ -1616,6 +1884,11 @@ call_flow_win_handle_key(Window *window, gint key)
                 // Force reload arrows
                 call_flow_win_set_group(window, self->group);
                 break;
+            case ACTION_TELEVT_MODE:
+                setting_toggle(SETTING_TUI_CF_TELEVT);
+                // Force reload arrows
+                call_flow_win_set_group(window, self->group);
+                break;
             case ACTION_TOGGLE_RAW:
                 setting_toggle(SETTING_TUI_CF_FORCERAW);
                 break;
@@ -1726,7 +1999,7 @@ call_flow_win_help(G_GNUC_UNUSED Window *window)
     int height, width;
 
     // Create a new panel and show centered
-    height = 28;
+    height = 29;
     width = 65;
     help_win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
 
@@ -1775,6 +2048,7 @@ call_flow_win_help(G_GNUC_UNUSED Window *window)
     mvwprintw(help_win, 22, 2, "t           Toggle raw preview display");
     mvwprintw(help_win, 23, 2, "T           Restore raw preview size");
     mvwprintw(help_win, 24, 2, "D           Only show SDP messages");
+    mvwprintw(help_win, 25, 2, "Z           Toogle full packets or coalesced telephone-events");
 
     // Press any key to close
     wgetch(help_win);
