@@ -563,7 +563,7 @@ call_list_handle_key(ui_t *ui, int key)
     ui_t *next_ui;
     sip_call_group_t *group;
     int action = -1;
-    sip_call_t *call;
+    sip_call_t *call, *xcall;
     sip_sort_t sort;
 
     // Sanity check, this should not happen
@@ -632,8 +632,17 @@ call_list_handle_key(ui_t *ui, int key)
                 // Add xcall to the group
                 if (action == ACTION_SHOW_FLOW_EX) {
                     call = vector_item(info->dcalls, info->cur_call);
-                    call_group_add_calls(group, call->xcalls);
-                    group->callid = call->callid;
+                    if (call->xcallid != NULL && strlen(call->xcallid)) {
+                        if ((xcall = sip_find_by_callid(call->xcallid))) {
+                            call_group_del(group, call);
+                            call_group_add(group, xcall);
+                            call_group_add_calls(group, xcall->xcalls);
+                            group->callid = xcall->callid;
+                        }
+                    } else {
+                        call_group_add_calls(group, call->xcalls);
+                        group->callid = call->callid;
+                    }
                 }
 
                 if (action == ACTION_SHOW_RAW) {

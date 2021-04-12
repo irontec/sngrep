@@ -1110,7 +1110,7 @@ call_flow_handle_key(ui_t *ui, int key)
     int raw_width, height, width;
     call_flow_info_t *info = call_flow_info(ui);
     ui_t *next_ui;
-    sip_call_t *call = NULL;
+    sip_call_t *call = NULL, *xcall = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
 
@@ -1153,8 +1153,17 @@ call_flow_handle_key(ui_t *ui, int key)
                 werase(ui->win);
                 if (call_group_count(info->group) == 1) {
                     call = vector_first(info->group->calls);
-                    call_group_add_calls(info->group, call->xcalls);
-                    info->group->callid = call->callid;
+                    if (call->xcallid != NULL && strlen(call->xcallid)) {
+                        if ((xcall = sip_find_by_callid(call->xcallid))) {
+                            call_group_del(info->group, call);
+                            call_group_add(info->group, xcall);
+                            call_group_add_calls(info->group, xcall->xcalls);
+                            info->group->callid = xcall->callid;
+                        }
+                    } else {
+                        call_group_add_calls(info->group, call->xcalls);
+                        info->group->callid = call->callid;
+                    }
                 } else {
                     call = vector_first(info->group->calls);
                     vector_clear(info->group->calls);
