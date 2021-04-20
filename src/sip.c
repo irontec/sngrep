@@ -262,7 +262,7 @@ sip_validate_packet(packet_t *packet)
 {
     uint32_t plen = packet_payloadlen(packet);
     u_char payload[MAX_SIP_PAYLOAD];
-    regmatch_t pmatch[3];
+    regmatch_t pmatch[4];
     char cl_header[10];
     int content_len;
     int bodylen;
