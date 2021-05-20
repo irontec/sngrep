@@ -1,3 +1,11 @@
+2021-05-20 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.9 released
+
+	* capture: add support for HEP/EEP protocol packet capture
+	* capture: fixed a buffer overflow while validating TCP packets
+	* core: fixed timestamp formats for OpenBSD
+	* call flow: improved display for B-leg extended flows
+
 2020-11-10 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.8 released
 
