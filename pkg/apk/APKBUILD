@@ -1,0 +1,41 @@
+# Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=sngrep
+pkgver=1.4.9
+pkgrel=0
+pkgdesc="display SIP call message flows from a terminal"
+url="https://github.com/irontec/sngrep"
+arch="all !ppc64le"
+license="GPL-3.0-or-later"
+depends="sed"
+makedepends="autoconf automake ncurses-dev libpcap-dev
+	pcre-dev libgcrypt-dev openssl-dev"
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/irontec/sngrep/releases/download/v$pkgver/sngrep-$pkgver.tar.gz"
+
+prepare() {
+	default_prepare
+	./bootstrap.sh
+}
+
+build() {
+	./configure \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--with-openssl \
+		--with-pcre \
+		--disable-logo \
+		--enable-unicode \
+		--enable-ipv6
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make DESTDIR="$pkgdir/" install
+}
+
+sha512sums="f25e8c5b1a6feddc2210fc8295f6e2c7ce708ae4bc4903f33b334f210e67c5c58d636e0a3bcaecef6d0c2bdfb9cab7c9ee28a5605d4df5ab1251be0856674c42 sngrep-1.4.9.tar.gz"
