@@ -31,17 +31,20 @@ AC_DEFUN([SNGREP_CHECK_SCRIPT],
 [
    if test ! -z "m4_toupper($SNGREP_[$1]_CONFIG_SCRIPT)"; then
       # to be used to set the path to *-config when cross-compiling
-      sngrep_config_script=$(m4_toupper($SNGREP_[$1]_CONFIG_SCRIPT) --libs 2> /dev/null)
+      sngrep_config_script_libs=$(m4_toupper($SNGREP_[$1]_CONFIG_SCRIPT) --libs 2> /dev/null)
+      sngrep_config_script_cflags=$(m4_toupper($SNGREP_[$1]_CONFIG_SCRIPT) --cflags 2> /dev/null)
    else
-      sngrep_config_script=$([$4] --libs 2> /dev/null)
+      sngrep_config_script_libs=$([$4] --libs 2> /dev/null)
+      sngrep_config_script_cflags=$([$4] --cflags 2> /dev/null)
    fi
    sngrep_script_success=no
    sngrep_save_LDFLAGS="$LDFLAGS"
-   if test ! "x$sngrep_config_script" = x; then
-      LDFLAGS="$sngrep_config_script $LDFLAGS"
+   if test ! "x$sngrep_config_script_libs" = x; then
+      LDFLAGS="$sngrep_config_script_libs $LDFLAGS"
       AC_CHECK_LIB([$1], [$2], [
          AC_DEFINE([$3], 1, [The library is present.])
-         LIBS="$sngrep_config_script $LIBS "
+         LIBS="$sngrep_config_script_libs $LIBS "
+         CFLAGS="$sngrep_config_script_cflags $CFLAGS "
          sngrep_script_success=yes
       ], [])
       LDFLAGS="$sngrep_save_LDFLAGS"

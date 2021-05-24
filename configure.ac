@@ -55,10 +55,10 @@ AS_IF([test "x$enable_unicode" == "xyes"], [
 	# Ncurses with wide-character support
 	AC_DEFINE([WITH_UNICODE], [], [Compile With Unicode compatibility])
 
-   SNGREP_CHECK_SCRIPT([ncursesw6], [addnwstr], [WITH_UNICODE], "ncursesw6-config",
+   SNGREP_CHECK_SCRIPT([ncursesw], [addnwstr], [WITH_UNICODE], "ncursesw6-config",
     SNGREP_CHECK_SCRIPT([ncursesw], [addnwstr], [WITH_UNICODE], "ncursesw5-config",
      SNGREP_CHECK_SCRIPT([ncurses], [addnwstr], [WITH_UNICODE], "ncurses5-config",
-      SNGREP_CHECK_LIB([ncursesw6], [addnwstr], [WITH_UNICODE],
+      SNGREP_CHECK_LIB([ncursesw], [addnwstr], [WITH_UNICODE],
        SNGREP_CHECK_LIB([ncursesw], [addnwstr], [WITH_UNICODE],
         SNGREP_CHECK_LIB([ncurses], [addnwstr], [WITH_UNICODE],
 	))))))
