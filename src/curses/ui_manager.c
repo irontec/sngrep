@@ -93,7 +93,7 @@ ncurses_init()
     // Hide the cursor
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
-    ESCDELAY = 25;
+    set_escdelay(25);
 
     // Redefine some keys
     term = getenv("TERM");
