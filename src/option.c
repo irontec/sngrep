@@ -195,6 +195,29 @@ set_alias_value(const char *address, const char *alias)
 }
 
 const char *
+get_alias_value_vs_port(const char *address, uint16_t port)
+{
+    if (!address)
+        return NULL;
+
+    int i;
+    const char * rc = NULL;
+
+    char *addr_port = sng_malloc(ADDRESSLEN + 10);
+    sprintf(addr_port, "%s:%d", address, port);
+    for (i = 0; i < optscnt; i++) {
+        if (options[i].type != ALIAS)
+            continue;
+        if (!strcmp(options[i].opt, addr_port) || !strcmp(options[i].opt, address)) {
+            sng_free(addr_port);
+            return options[i].value;
+        }
+    }
+
+    return address;
+}
+
+const char *
 get_alias_value(const char *address)
 {
     int i;
