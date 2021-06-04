@@ -43,6 +43,8 @@
 #ifndef __SNGREP_CONFIG_H
 #define __SNGREP_CONFIG_H
 
+#include <stdint.h>
+
 //! Shorter declaration of config_option struct
 typedef struct config_option option_opt_t;
 
@@ -157,5 +159,14 @@ set_alias_value(const char *address, const char *alias);
 const char *
 get_alias_value(const char *address);
 
+/**
+ * @brief Get alias for a given address and port (string)
+ *
+ * @param address IP Address
+ * @param port port
+ * @return configured alias or address if alias not found
+ */
+const char *
+get_alias_value_vs_port(const char *address, uint16_t port);
 
 #endif

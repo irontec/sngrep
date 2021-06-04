@@ -1391,9 +1391,7 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr)
     vector_append(column->callids, (void*)callid);
     column->addr = addr;
     if (setting_enabled(SETTING_ALIAS_PORT)) {
-        char addr_port[1024];
-        sprintf(addr_port, "%s:%d", addr.ip, addr.port);
-        strcpy(column->alias, get_alias_value(addr_port));
+        strcpy(column->alias, get_alias_value_vs_port(addr.ip, addr.port));
     } else {
         strcpy(column->alias, get_alias_value(addr.ip));
     }
@@ -1417,10 +1415,8 @@ call_flow_column_get(ui_t *ui, const char *callid, address_t addr)
     match_port = addr.port != 0;
 
     // Get alias value for given address
-    if (setting_enabled(SETTING_ALIAS_PORT)) {
-        char addr_port[1024];
-        sprintf(addr_port, "%s:%d", addr.ip, addr.port);
-        alias = get_alias_value(addr_port);
+    if (setting_enabled(SETTING_ALIAS_PORT) && match_port) {
+        alias = get_alias_value_vs_port(addr.ip, addr.port);
     } else {
         alias = get_alias_value(addr.ip);
     }
