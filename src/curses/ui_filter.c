@@ -86,8 +86,8 @@ filter_create(ui_t *ui)
     // Set fields options
     field_opts_off(info->fields[FLD_FILTER_SIPFROM], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SIPTO], O_AUTOSKIP);
-    field_opts_off(info->fields[FLD_FILTER_SRC], O_AUTOSKIP);
-    field_opts_off(info->fields[FLD_FILTER_DST], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_SRC], O_AUTOSKIP | O_STATIC);
+    field_opts_off(info->fields[FLD_FILTER_DST], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_PAYLOAD], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_REGISTER], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_INVITE], O_AUTOSKIP);
@@ -101,6 +101,10 @@ filter_create(ui_t *ui)
     field_opts_off(info->fields[FLD_FILTER_UPDATE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_FILTER], O_EDIT);
     field_opts_off(info->fields[FLD_FILTER_CANCEL], O_EDIT);
+
+    // Set max field size
+    set_max_field(info->fields[FLD_FILTER_SRC], ADDRESSLEN);
+    set_max_field(info->fields[FLD_FILTER_DST], ADDRESSLEN);
 
     // Change background of input fields
     set_field_back(info->fields[FLD_FILTER_SIPFROM], A_UNDERLINE);
