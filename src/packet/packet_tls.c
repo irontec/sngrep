@@ -894,6 +894,7 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GBytes *data
                             packet_tls_connection_destroy(conn);
                             break;
                         }
+                        data = out;
                     }
                 }
 
