@@ -787,7 +787,7 @@ packet_tls_process_record_handshake(SSLConnection *conn, GBytes *data)
 }
 
 static GBytes *
-packet_tls_process_record(SSLConnection *conn, GBytes *data)
+packet_tls_process_record(SSLConnection *conn, GBytes *data, GBytes **out)
 {
     // No record data here!
     if (g_bytes_get_size(data) == 0)
@@ -822,7 +822,7 @@ packet_tls_process_record(SSLConnection *conn, GBytes *data)
             case APPLICATION_DATA:
                 if (conn->encrypted) {
                     // Decrypt application data using MasterSecret
-                    return packet_tls_process_record_decode(conn, fragment);
+                    *out = packet_tls_process_record_decode(conn, fragment);
                 }
                 break;
             default:
@@ -888,13 +888,12 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GBytes *data
                 } else {
                     // Process data segment!
                     while (g_bytes_get_size(data) > 0) {
-                        out = packet_tls_process_record(conn, data);
-                        if (out == NULL) {
+                        data = packet_tls_process_record(conn, data, &out);
+                        if (data == NULL) {
                             dissector->connections = g_slist_remove(dissector->connections, conn);
                             packet_tls_connection_destroy(conn);
                             break;
                         }
-                        data = out;
                     }
                 }
 
