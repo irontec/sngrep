@@ -215,16 +215,11 @@ struct PreMasterSecret
     guint8 random[46];
 };
 
-struct EncryptedPreMasterSecret
-{
-    guint8 pre_master_secret[128];
-};
-
 //! ClientKeyExchange type in Handshake records
 struct ClientKeyExchange
 {
     uint16 length;
-    struct EncryptedPreMasterSecret exchange_keys;
+    guint8 pre_master_secret[];
 };
 
 /**
