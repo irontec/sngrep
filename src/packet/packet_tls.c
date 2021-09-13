@@ -638,12 +638,11 @@ static gboolean
 packet_tls_process_record_key_exchange(SSLConnection *conn, GBytes *data)
 {
     // Decrypt PreMasterKey
-    struct ClientKeyExchange clientkeyex;
-    memcpy(&clientkeyex, g_bytes_get_data(data, NULL), sizeof(struct ClientKeyExchange));
+    struct ClientKeyExchange *clientkeyex = (struct ClientKeyExchange *) g_bytes_get_data(data, NULL);
 
     gnutls_datum_t exkeys, pms;
-    exkeys.size = UINT16_INT(clientkeyex.length);
-    exkeys.data = (unsigned char *) &clientkeyex.exchange_keys;
+    exkeys.size = UINT16_INT(clientkeyex->length);
+    exkeys.data = (unsigned char *) &clientkeyex->pre_master_secret;
     packet_tls_debug_print_hex("exchange keys", exkeys.data, exkeys.size);
 
     packet_tls_privkey_decrypt_data(conn->server_private_key, 0, &exkeys, &pms);
