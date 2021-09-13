@@ -899,7 +899,7 @@ packet_dissector_tls_dissect(PacketDissector *self, Packet *packet, GBytes *data
                 }
 
                 // This seems a SIP TLS packet ;-)
-                if (out != NULL && g_bytes_get_size(data) > 0) {
+                if (out != NULL && g_bytes_get_size(out) > 0) {
                     return packet_dissector_next(self, packet, out);
                 }
                 break;
