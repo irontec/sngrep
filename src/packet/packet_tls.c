@@ -800,6 +800,9 @@ packet_tls_process_record(SSLConnection *conn, GBytes *data)
 
     // Process record fragment
     if (UINT16_INT(record.length) > 0) {
+        if (UINT16_INT(record.length) > (int) g_bytes_get_size(data)) {
+            return g_bytes_offset(data, g_bytes_get_size(data));
+        }
         // TLSPlaintext fragment pointer
         g_autoptr(GBytes) fragment = g_bytes_new(g_bytes_get_data(data, NULL), g_bytes_get_size(data));
         data = g_bytes_offset(data, UINT16_INT(record.length));
