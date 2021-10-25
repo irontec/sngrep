@@ -543,7 +543,7 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
         // Method & CSeq
         if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
             if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(reqresp, "<malformed>", 11);
+                strncpy(reqresp, "<malformed>", 12);
             } else {
                 sprintf(reqresp, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
             }
@@ -559,12 +559,12 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
         // Response code
         if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
             if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(resp_str, "<malformed>", 11);
+                strncpy(resp_str, "<malformed>", 12);
             } else {
                 sprintf(resp_str, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
             }
             if ((int)(pmatch[2].rm_eo - pmatch[2].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(resp_str, "<malformed>", 11);
+                strncpy(resp_str, "<malformed>", 12);
             } else {
                 sprintf(reqresp, "%.*s", (int) (pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
             }
@@ -617,7 +617,7 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     } else {
         // Malformed From Header
         msg->sip_from = sng_malloc(12);
-        strncpy(msg->sip_from, "<malformed>", 11);
+        strncpy(msg->sip_from, "<malformed>", 12);
     }
 
     // To
@@ -627,7 +627,7 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     } else {
         // Malformed To Header
         msg->sip_to = sng_malloc(12);
-        strncpy(msg->sip_to, "<malformed>", 11);
+        strncpy(msg->sip_to, "<malformed>", 12);
     }
 
     return 0;

@@ -444,7 +444,7 @@ filter_field_method(int field_id)
 void
 filter_method_from_setting(const char *value)
 {
-    char methods[256], method_expr[256];
+    char methods[250], method_expr[256];
     int methods_len = strlen(value);
     char *comma;
 
@@ -459,7 +459,7 @@ filter_method_from_setting(const char *value)
 
         // Create a regular expression
         memset(method_expr, 0, sizeof(method_expr));
-        sprintf(method_expr, "(%s)", methods);
+        snprintf(method_expr, sizeof(method_expr), "(%s)", methods);
         filter_set(FILTER_METHOD, method_expr);
     } else {
         filter_set(FILTER_METHOD, " ");

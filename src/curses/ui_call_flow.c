@@ -465,12 +465,12 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     timeval_to_time(msg_get_time(msg), msg_time);
 
     // Get Message method (include extra info)
-    snprintf(method, METHOD_MAXLEN, "%s", msg_method);
+    snprintf(method, METHOD_MAXLEN, "%.*s", METHOD_MAXLEN-1, msg_method);
 
     // If message has sdp information
     if (msg_has_sdp(msg) && setting_has_value(SETTING_CF_SDP_INFO, "off")) {
         // Show sdp tag in title
-        snprintf(method, METHOD_MAXLEN, "%s (SDP)", msg_method );
+        snprintf(method, METHOD_MAXLEN, "%.*s (SDP)", METHOD_MAXLEN-7, msg_method );
     }
 
     // If message has sdp information
