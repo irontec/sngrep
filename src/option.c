@@ -201,7 +201,6 @@ get_alias_value_vs_port(const char *address, uint16_t port)
         return NULL;
 
     int i;
-    const char * rc = NULL;
 
     char *addr_port = sng_malloc(ADDRESSLEN + 10);
     sprintf(addr_port, "%s:%d", address, port);
