@@ -56,6 +56,7 @@ packet_clone(packet_t *packet)
     // Create a new packet with the original information
     clone =    packet_create(packet->ip_version, packet->proto, packet->src, packet->dst, packet->ip_id);
     clone->tcp_seq = packet->tcp_seq;
+    clone->type = packet->type;
 
     // Append this frames to the original packet
     vector_iter_t frames = vector_iterator(packet->frames);
