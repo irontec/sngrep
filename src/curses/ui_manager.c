@@ -665,7 +665,7 @@ dialog_confirm(const char *title, const char *text, const char *options)
     curs = curs_set(0);
 
     // Set the window title
-    mvwprintw(dialog_win, 1, (width - strlen(title)) / 2, title);
+    mvwprintw(dialog_win, 1, (width - strlen(title)) / 2, "%s", title);
 
     // Write border and boxes around the window
     wattron(dialog_win, COLOR_PAIR(CP_BLUE_ON_DEF));

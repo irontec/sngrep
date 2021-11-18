@@ -187,7 +187,7 @@ msg_diff_draw_message(WINDOW *win, sip_msg_t *msg, char *highlight)
     getmaxyx(win, height, width);
 
     wattron(win, A_BOLD);
-    mvwprintw(win, 0, 0, sip_get_msg_header(msg, header));
+    mvwprintw(win, 0, 0, "%s", sip_get_msg_header(msg, header));
     wattroff(win, A_BOLD);
 
     // Print msg payload
