@@ -571,9 +571,9 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
                     media->address.port,
                     media_get_prefered_format(media));
             if (arrow->dir == CF_ARROW_SPIRAL) {
-                mvwprintw(flow_win, cline + 1, startpos + 5, mediastr);
+                mvwprintw(flow_win, cline + 1, startpos + 5, "%s", mediastr);
             } else {
-                mvwprintw(flow_win, cline + 1, startpos + distance / 2 - strlen(mediastr) / 2 + 2, mediastr);
+                mvwprintw(flow_win, cline + 1, startpos + distance / 2 - strlen(mediastr) / 2 + 2, "%s", mediastr);
             }
             cline++;
             aline++;
