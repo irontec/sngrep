@@ -310,7 +310,7 @@ call_flow_draw_columns(ui_t *ui)
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
             if (strlen(column->addr.ip) > 15) {
                 snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%u",
-                         MAX_SETTING_LEN - 7, column->alias + strlen(column->alias) - 13, column->addr.port);
+                         MAX_SETTING_LEN - 9, column->alias + strlen(column->alias) - 13, column->addr.port);
             } else {
                 snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
                          MAX_SETTING_LEN - 7, column->alias, column->addr.port);
@@ -318,7 +318,7 @@ call_flow_draw_columns(ui_t *ui)
         } else {
             if (strlen(column->addr.ip) > 15) {
                 snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%u",
-                         MAX_SETTING_LEN - 7, column->addr.ip + strlen(column->addr.ip) - 13, column->addr.port);
+                         MAX_SETTING_LEN - 9, column->addr.ip + strlen(column->addr.ip) - 13, column->addr.port);
             } else {
                 snprintf(coltext, MAX_SETTING_LEN, "%.*s:%u",
                          MAX_SETTING_LEN - 7, column->addr.ip, column->addr.port);
