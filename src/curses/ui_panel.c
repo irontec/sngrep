@@ -220,12 +220,12 @@ ui_draw_bindings(ui_t *ui, const char *keybindings[], int count)
     for (key = 0; key < count; key += 2) {
         wattron(ui->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
         mvwprintw(ui->win, ui->height - 1, xpos, "%-*s",
-                  strlen(keybindings[key]) + 1, keybindings[key]);
+                  (int) strlen(keybindings[key]) + 1, keybindings[key]);
         xpos += strlen(keybindings[key]) + 1;
         wattroff(ui->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
         wattron(ui->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         mvwprintw(ui->win, ui->height - 1, xpos, "%-*s",
-                  strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);
+                  (int) strlen(keybindings[key + 1]) + 1, keybindings[key + 1]);
         wattroff(ui->win, COLOR_PAIR(CP_BLACK_ON_CYAN));
         xpos += strlen(keybindings[key + 1]) + 3;
     }
