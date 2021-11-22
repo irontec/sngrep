@@ -1,7 +1,7 @@
 # Contributor: Francesco Colista <fcolista@alpinelinux.org>
 # Maintainer: Francesco Colista <fcolista@alpinelinux.org>
 pkgname=sngrep
-pkgver=1.4.9
+pkgver=1.4.10
 pkgrel=0
 pkgdesc="display SIP call message flows from a terminal"
 url="https://github.com/irontec/sngrep"
@@ -38,4 +38,4 @@ package() {
 	make DESTDIR="$pkgdir/" install
 }
 
-sha512sums="f25e8c5b1a6feddc2210fc8295f6e2c7ce708ae4bc4903f33b334f210e67c5c58d636e0a3bcaecef6d0c2bdfb9cab7c9ee28a5605d4df5ab1251be0856674c42 sngrep-1.4.9.tar.gz"
+sha512sums="d3aabe22a31ec5860ec80f94b6556d345d72574e552c4e92dfebdddeaaa5f69caf811fc2fa201ca7af24cabfcbdd530a4f50248ebf0381cef26390a78824d1af sngrep-1.4.10.tar.gz"
