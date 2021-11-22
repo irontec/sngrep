@@ -1,3 +1,12 @@
+2021-11-19 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.4.10 released
+
+	* build: fix compilation warnings on MacOS 10.15
+	* build: fix compilation errors when using -Werror=format-security
+	* capture: properly set transport as TCP for assembled TCP messages
+	* config: alias keyword now supports IP:PORT format
+	* filter: increased size of src and dst fields for IPv6 addresses
+
 2021-05-20 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.9 released
 
