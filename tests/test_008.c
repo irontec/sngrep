@@ -20,7 +20,7 @@
  **
  ****************************************************************************/
 /**
- * @file test_001.c
+ * @file test_008.c
  * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
  *
  * Test for sorting columns based on standard attributes
