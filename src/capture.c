@@ -485,56 +485,68 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         }
     }
 
-    // Get IP header
-    ip4 = (struct ip *) (packet + link_hl);
+    while (*size >= sizeof(struct ip)) {
+        // Get IP header
+        ip4 = (struct ip *) (packet + link_hl);
 
 #ifdef USE_IPV6
-    // Get IPv6 header
-    ip6 = (struct ip6_hdr *) (packet + link_hl);
+        // Get IPv6 header
+        ip6 = (struct ip6_hdr *) (packet + link_hl);
 #endif
 
-    // Get IP version
-    ip_ver = ip4->ip_v;
+        // Get IP version
+        ip_ver = ip4->ip_v;
 
-    switch (ip_ver) {
-        case 4:
-            ip_hl = ip4->ip_hl * 4;
-            ip_proto = ip4->ip_p;
-            ip_off = ntohs(ip4->ip_off);
-            ip_len = ntohs(ip4->ip_len);
+        switch (ip_ver) {
+            case 4:
+                ip_hl = ip4->ip_hl * 4;
+                ip_proto = ip4->ip_p;
+                ip_off = ntohs(ip4->ip_off);
+                ip_len = ntohs(ip4->ip_len);
 
-            ip_frag = ip_off & (IP_MF | IP_OFFMASK);
-            ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
-            ip_id = ntohs(ip4->ip_id);
+                ip_frag = ip_off & (IP_MF | IP_OFFMASK);
+                ip_frag_off = (ip_frag) ? (ip_off & IP_OFFMASK) * 8 : 0;
+                ip_id = ntohs(ip4->ip_id);
 
-            inet_ntop(AF_INET, &ip4->ip_src, src.ip, sizeof(src.ip));
-            inet_ntop(AF_INET, &ip4->ip_dst, dst.ip, sizeof(dst.ip));
-            break;
+                inet_ntop(AF_INET, &ip4->ip_src, src.ip, sizeof(src.ip));
+                inet_ntop(AF_INET, &ip4->ip_dst, dst.ip, sizeof(dst.ip));
+                break;
 #ifdef USE_IPV6
-        case 6:
-            ip_hl = sizeof(struct ip6_hdr);
-            ip_proto = ip6->ip6_nxt;
-            ip_len = ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen) + ip_hl;
+            case 6:
+                ip_hl = sizeof(struct ip6_hdr);
+                ip_proto = ip6->ip6_nxt;
+                ip_len = ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen) + ip_hl;
 
-            if (ip_proto == IPPROTO_FRAGMENT) {
-                struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_hl);
-                ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
-                ip_id = ntohl(ip6f->ip6f_ident);
-            }
+                if (ip_proto == IPPROTO_FRAGMENT) {
+                    struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_hl);
+                    ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
+                    ip_id = ntohl(ip6f->ip6f_ident);
+                }
 
-            inet_ntop(AF_INET6, &ip6->ip6_src, src.ip, sizeof(src.ip));
-            inet_ntop(AF_INET6, &ip6->ip6_dst, dst.ip, sizeof(dst.ip));
-            break;
+                inet_ntop(AF_INET6, &ip6->ip6_src, src.ip, sizeof(src.ip));
+                inet_ntop(AF_INET6, &ip6->ip6_dst, dst.ip, sizeof(dst.ip));
+                break;
 #endif
-        default:
-            return NULL;
+            default:
+                return NULL;
+        }
+
+        // Fixup VSS trailer in ethernet packets
+        *caplen = link_hl + ip_len;
+
+        // Remove IP Header length from payload
+        *size = *caplen - link_hl - ip_hl;
+
+        if (ip_proto == IPPROTO_IPIP) {
+            // The payload is an incapsulated IP packet (IP-IP tunnel)
+            // so we simply skip the "outer" IP header and repeat.
+            // NOTE: this will break IP reassembly if the "outer"
+            // packet is fragmented.
+            link_hl += ip_hl;
+        } else {
+            break;
+        }
     }
-
-    // Fixup VSS trailer in ethernet packets
-    *caplen = link_hl + ip_len;
-
-    // Remove IP Header length from payload
-    *size = *caplen - link_hl - ip_hl;
 
     // If no fragmentation
     if (ip_frag == 0) {

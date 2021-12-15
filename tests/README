@@ -1,6 +1,6 @@
 Basic testing programs for sngrep.
 
-This set of test will do some basic inputs to check sngrep screen navigation 
+This set of test will do some basic inputs to check sngrep screen navigation
 doesn't crash. This checks are ultra-super-basic.
 
 - test_001 : UI testing
@@ -10,6 +10,7 @@ doesn't crash. This checks are ultra-super-basic.
 - test_005 : Column selection testing
 - test_006 : Message diff testing
 - test_007: Test vector container structures
+- test_011: Test mix of normal packets with IPIP tunneled packets
 
 Sample capture files has been taken from wireshark Wiki:
 - https://wiki.wireshark.org/SampleCaptures

@@ -20,29 +20,24 @@
  **
  ****************************************************************************/
 /**
- * @file test_009.c
- * @author Ivan Alonso [aka Kaian] <kaian@irontec.com>
+ * @file test_011.c
+ * @author Evgeny Khramtsov <evgeny.khramtsov@nordigy.ru>
  *
- * Test for adding a new attribute column and sorting using it.
+ * IP-IP tunnel test from ipip.pcap
  */
 
 const char keys[] =
         {
-          /* show sort menu */
-          60,
-          /* select sort field */
-          106, 106, 10,
-          /* Enter Column screen */
-          116, 27,
-          /* add a new column */
-          106, 106, 106, 32,
-          /* select new sort attribute */
-          60, 106, 106, 106, 106, 106, 106, 10,
-          /* swap order */
-          122, 122,
-          /* Leave */
-          27, 10,
+          /* Enter Call Flow */
+          10,
+          /* Leave Call Flow */
+          27,
+          /* Exit */
+          27,
+          10,
           0
         };
+
+#define TEST_PCAP_INPUT "ipip.pcap"
 
 #include "test_input.c"
