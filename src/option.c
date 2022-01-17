@@ -109,7 +109,7 @@ int
 read_options(const char *fname)
 {
     FILE *fh;
-    char line[1024], type[20], option[50], value[50];
+    char line[1024], type[20], option[50], value[500];
     int id;
 
     if (!(fh = fopen(fname, "rt")))
@@ -121,7 +121,7 @@ read_options(const char *fname)
             continue;
 
         // Get configuration option from setting line
-        if (sscanf(line, "%19s %49s %49[^\t\n]", type, option, value) == 3) {
+        if (sscanf(line, "%19s %49s %499[^\t\n]", type, option, value) == 3) {
             if (!strcasecmp(type, "set")) {
                 if ((id = setting_id(option)) >= 0) {
                     setting_set_value(id, value);
