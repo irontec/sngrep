@@ -77,7 +77,11 @@ struct packet {
     //! Destination
     address_t dst;
     //! Packet IP id
+#ifdef USE_IPV6
+    uint32_t ip_id;
+#else
     uint16_t ip_id;
+#endif
     //! Packet IP fragmentation captured data
     uint32_t ip_cap_len;
     //! Packet IP fragmentation expected data
