@@ -448,6 +448,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     uint32_t len_data = 0;
     //! Link + Extra header size
     uint16_t link_hl = capinfo->link_hl;
+#ifdef USE_IPV6
+    struct ip6_frag *ip6f;
+#endif
 
     // Skip VLAN header if present
     if (capinfo->link == DLT_EN10MB) {
@@ -518,7 +521,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
                 ip_len = ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen) + ip_hl;
 
                 if (ip_proto == IPPROTO_FRAGMENT) {
-                    struct ip6_frag *ip6f = (struct ip6_frag *) (ip6 + ip_hl);
+                    ip_frag = 1;
+                    ip6f = (struct ip6_frag *) (packet + link_hl + ip_hl);
                     ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
                     ip_id = ntohl(ip6f->ip6f_ident);
                 }
@@ -578,14 +582,25 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 
     // Add this IP content length to the total captured of the packet
     pkt->ip_cap_len += ip_len - ip_hl;
+#ifdef USE_IPV6
+    if (ip_ver == 6 && ip_frag) {
+        pkt->ip_cap_len -= sizeof(struct ip6_frag);
+    }
+#endif
 
     // Calculate how much data we need to complete this packet
     // The total packet size can only be known using the last fragment of the packet
     // where 'No more fragments is enabled' and it's calculated based on the
     // last fragment offset
-    if ((ip_off & IP_MF) == 0) {
+    if (ip_ver == 4 && (ip_off & IP_MF) == 0) {
         pkt->ip_exp_len = ip_frag_off + ip_len - ip_hl;
     }
+#ifdef USE_IPV6
+    if (ip_ver == 6 && ip_frag && (ip6f->ip6f_offlg & htons(0x01)) == 0) {
+        pkt->ip_exp_len = ip_frag_off + ip_len - ip_hl - sizeof(struct ip6_frag);
+    }
+#endif
+
 
     // If we have the whole packet (captured length is expected length)
     if (pkt->ip_cap_len == pkt->ip_exp_len) {
@@ -593,8 +608,22 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         // Calculate assembled IP payload data
         it = vector_iterator(pkt->frames);
         while ((frame = vector_iterator_next(&it))) {
-            struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
-            len_data += ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4;
+            switch (ip_ver) {
+                case 4: {
+                    struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
+                    len_data += ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4;
+                    break;
+                }
+#ifdef USE_IPV6
+                case 6: {
+                    struct ip6_hdr *frame_ip6 = (struct ip6_hdr *) (frame->data + link_hl);
+                    len_data += ntohs(frame_ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
+                    break;
+                }
+#endif
+                default:
+                    break;
+            }
         }
 
         // Check packet content length
@@ -606,14 +635,39 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 
         it = vector_iterator(pkt->frames);
         while ((frame = vector_iterator_next(&it))) {
-            // Get IP header
-            struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
-            memcpy(packet + link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
-                   frame->data + link_hl + frame_ip->ip_hl * 4,
-                   ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4);
+            switch (ip_ver) {
+                case 4: {
+                    // Get IP header
+                    struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
+                    memcpy(packet + link_hl + ip_hl + (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8,
+                           frame->data + link_hl + frame_ip->ip_hl * 4,
+                           ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4);
+
+                }
+                    break;
+#ifdef USE_IPV6
+                case 6: {
+                    struct ip6_hdr *frame_ip6 = (struct ip6_hdr*)(frame->data + link_hl);
+                    struct ip6_frag *frame_ip6f = (struct ip6_frag *)(frame->data + link_hl + ip_hl);
+                    uint16_t frame_ip_frag_off = ntohs(frame_ip6f->ip6f_offlg & IP6F_OFF_MASK);
+                    memcpy(packet + link_hl + ip_hl + sizeof(struct ip6_frag) + frame_ip_frag_off,
+                            frame->data + link_hl + ip_hl + sizeof (struct ip6_frag),
+                            ntohs(frame_ip6->ip6_ctlun.ip6_un1.ip6_un1_plen));
+                    pkt->proto = frame_ip6f->ip6f_nxt;
+                }
+                    break;
+#endif
+                default:
+                    break;
+            }
         }
 
         *caplen = link_hl + ip_hl + len_data;
+#ifdef USE_IPV6
+        if (ip_ver == 6) {
+            *caplen += sizeof(struct ip6_frag);
+        }
+#endif
         *size = len_data;
 
         // Return the assembled IP packet
