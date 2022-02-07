@@ -172,10 +172,10 @@ ui_panel_create(ui_t *ui, int height, int width)
 void
 ui_panel_destroy(ui_t *ui)
 {
-    // Deallocate panel window
-    delwin(ui->win);
     // Deallocate panel pointer
     del_panel(ui->panel);
+    // Deallocate panel window
+    delwin(ui->win);
 }
 
 void
