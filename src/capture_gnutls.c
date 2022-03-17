@@ -477,6 +477,20 @@ tls_process_record_ssl2(struct SSLConnection *conn, const uint8_t *payload,
         // Client Hello SSLv2
         struct ClientHelloSSLv2 *clienthello = (struct ClientHelloSSLv2 *) fragment;
 
+        // Check we have a TLS handshake
+        if (clienthello->client_version.major != 0x03) {
+            tls_connection_destroy(conn);
+            return 1;
+        }
+
+        // Only TLS 1.0, 1.1 or 1.2 connections
+        if (clienthello->client_version.minor != 0x01
+                && clienthello->client_version.minor != 0x02
+                && clienthello->client_version.minor != 0x03) {
+            tls_connection_destroy(conn);
+            return 1;
+        }
+        
         // Store TLS version
         conn->version = clienthello->client_version.minor;
 
