@@ -3,6 +3,7 @@
 .settings
 .vscode
 .idea
+build
 
 # Build files
 src/sngrep
