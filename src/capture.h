@@ -420,6 +420,12 @@ address_t
 capture_tls_server();
 
 /**
+ * @brief Add new source to capture list
+ */
+void
+capture_add_source(struct capture_info *capinfo);
+
+/**
  * @brief Return packet catprue sources count
  * @return capture sources count
  */

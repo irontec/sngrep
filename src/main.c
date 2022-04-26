@@ -356,7 +356,8 @@ main(int argc, char* argv[])
 #endif
 
     // If no device or files has been specified in command line, use default
-    if (vector_count(indevices) == 0 && vector_count(infiles) == 0) {
+    if (capture_sources_count() == 0 &&
+        vector_count(indevices) == 0 && vector_count(infiles) == 0) {
         token = strdup(device);
         token = strtok(token, ",");
         while (token) {

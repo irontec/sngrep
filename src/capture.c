@@ -173,7 +173,7 @@ capture_online(const char *dev, const char *outfile)
     capinfo->ip_reasm = vector_create(0, 10);
 
     // Add this capture information as packet source
-    vector_append(capture_cfg.sources, capinfo);
+    capture_add_source(capinfo);
 
     // If requested store packets in a dump file
     if (outfile && !capture_cfg.pd) {
@@ -238,7 +238,7 @@ capture_offline(const char *infile, const char *outfile)
     capinfo->ip_reasm = vector_create(0, 10);
 
     // Add this capture information as packet source
-    vector_append(capture_cfg.sources, capinfo);
+    capture_add_source(capinfo);
 
     // If requested store packets in a dump file
     if (outfile && !capture_cfg.pd) {
@@ -1138,6 +1138,12 @@ address_t
 capture_tls_server()
 {
     return capture_cfg.tlsserver;
+}
+
+void
+capture_add_source(struct capture_info *capinfo)
+{
+    vector_append(capture_cfg.sources, capinfo);
 }
 
 int

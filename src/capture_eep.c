@@ -131,6 +131,32 @@ capture_eep_init()
             return 1;
         }
 
+        capture_info_t *capinfo;
+
+        // Create a new structure to handle this capture source
+        if (!(capinfo = sng_malloc(sizeof(capture_info_t)))) {
+            fprintf(stderr, "Can't allocate memory for capture data!\n");
+            return 1;
+        }
+
+        // Open capture device
+        capinfo->handle = pcap_open_dead(DLT_EN10MB, MAXIMUM_SNAPLEN);
+
+        // Get datalink to parse packets correctly
+        capinfo->link = pcap_datalink(capinfo->handle);
+
+        // Check linktypes sngrep knowns before start parsing packets
+        if ((capinfo->link_hl = datalink_size(capinfo->link)) == -1) {
+            fprintf(stderr, "Unable to handle linktype %d\n", capinfo->link);
+            return 3;
+        }
+
+        // Create Vectors for IP and TCP reassembly
+        capinfo->tcp_reasm = vector_create(0, 10);
+        capinfo->ip_reasm = vector_create(0, 10);
+
+        // Add this capture information as packet source
+        capture_add_source(capinfo);
     }
 
     // Settings for EEP server
@@ -204,6 +230,65 @@ capture_eep_send(packet_t *pkt)
             return capture_eep_send_v3(pkt);
     }
     return 1;
+}
+
+struct pcap_pkthdr
+capture_eep_build_frame_data(
+        const struct pcap_pkthdr header,
+        const unsigned char *payload,
+        const uint32_t payload_size,
+        const address_t src,
+        const address_t dst,
+        unsigned char **frame_payload
+) {
+    //! Frame variables
+    struct pcap_pkthdr frame_pcap_header;
+    uint32_t frame_size = 0;
+
+    // Build frame ethernet header
+    struct ether_header ether_hdr = {
+        .ether_dhost = { 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB },
+        .ether_shost = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA },
+        .ether_type = htons(ETHERTYPE_IP),
+    };
+
+    // Build frame IP header
+    struct ip ip_hdr = {
+        .ip_v = 4,
+        .ip_p = IPPROTO_UDP,
+        .ip_hl = sizeof(ip_hdr) / 4,
+        .ip_len = htons(sizeof(ip_hdr) + sizeof(struct udphdr) + payload_size),
+        .ip_ttl = 128,
+    };
+    inet_pton(AF_INET, src.ip, &ip_hdr.ip_src);
+    inet_pton(AF_INET, dst.ip, &ip_hdr.ip_dst);
+
+    // Build frame UDP header
+    struct udphdr udp_hdr = {
+        .uh_sport = htons(src.port),
+        .uh_dport = htons(dst.port),
+        .uh_ulen = htons(sizeof(struct udphdr) + payload_size),
+    };
+
+    // Allocate memory for payload contents
+    *frame_payload = sng_malloc(sizeof(ether_hdr) + sizeof(ip_hdr) + sizeof(udp_hdr) + payload_size);
+
+    // Append all headers to frame contents
+    memcpy(*frame_payload + frame_size, (void*) &ether_hdr, sizeof(ether_hdr));
+    frame_size += sizeof(ether_hdr);
+    memcpy(*frame_payload + frame_size, (void*) &ip_hdr, sizeof(ip_hdr));
+    frame_size += sizeof(ip_hdr);
+    memcpy(*frame_payload + frame_size, (void*) &udp_hdr, sizeof(udp_hdr));
+    frame_size += sizeof(udp_hdr);
+    memcpy(*frame_payload + frame_size, (void*) payload, payload_size);
+    frame_size += payload_size;
+
+    // Build a custom frame pcap header
+    frame_pcap_header.caplen = frame_size;
+    frame_pcap_header.len = frame_size;
+    frame_pcap_header.ts = header.ts;
+
+    return frame_pcap_header;
 }
 
 int
@@ -514,6 +599,9 @@ capture_eep_receive_v2()
     struct hep_hdr hdr;
     struct hep_timehdr hep_time;
     struct hep_iphdr hep_ipheader;
+    //! Frame contents
+    struct pcap_pkthdr frame_pcap_header;
+    unsigned char *frame_payload;
 #ifdef USE_IPV6
     struct hep_ip6hdr hep_ip6header;
 #endif
@@ -576,9 +664,12 @@ capture_eep_receive_v2()
     payload = sng_malloc(header.caplen + 1);
     memcpy(payload, (void*) buffer + pos, header.caplen);
 
+    // Build a custom frame pcap header
+    frame_pcap_header = capture_eep_build_frame_data(header, payload,header.caplen, src, dst, &frame_payload);
+
     // Create a new packet
     pkt = packet_create((family == AF_INET) ? 4 : 6, proto, src, dst, 0);
-    packet_add_frame(pkt, &header, payload);
+    packet_add_frame(pkt, &frame_pcap_header, frame_payload);
     packet_set_transport_data(pkt, src.port, dst.port);
     packet_set_type(pkt, PACKET_SIP_UDP);
     packet_set_payload(pkt, payload, header.caplen);
@@ -624,6 +715,9 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
     struct pcap_pkthdr header;
     //! New created packet pointer
     packet_t *pkt_new;
+    //! Frame contents
+    struct pcap_pkthdr frame_pcap_header;
+    unsigned char *frame_payload;
 
     if(!pkt) {
         /* Receive EEP generic header */
@@ -750,9 +844,12 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
             return NULL;
     }
 
+    // Build a custom frame pcap header
+    frame_pcap_header = capture_eep_build_frame_data(header, payload,header.caplen, src, dst, &frame_payload);
+
     // Create a new packet
     pkt_new = packet_create((hg.ip_family.data == AF_INET)?4:6, hg.ip_proto.data, src, dst, 0);
-    packet_add_frame(pkt_new, &header, payload);
+    packet_add_frame(pkt_new, &frame_pcap_header, frame_payload);
     packet_set_type(pkt_new, PACKET_SIP_UDP);
     packet_set_payload(pkt_new, payload, header.caplen);
 
