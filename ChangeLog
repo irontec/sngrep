@@ -1,3 +1,12 @@
+2021-04-26 Ivan Alonso <kaian@irontec.com>
+    * sngrep 1.5.0 released
+
+    * capture: add support for IP-IP encapsulation
+    * capture: add support for IPv6 fragments reassembly
+    * hep: add support for saving HEP received packets to PCAP
+    * tls: check client TLS version in gnutls code
+    * ui: fixed a crash when leaving ncurses screens
+
 2021-11-19 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.4.10 released
 
