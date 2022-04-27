@@ -155,6 +155,8 @@ capture_online(const char *dev, const char *outfile)
         return 2;
     }
 
+    // Set capture thread function
+    capinfo->capture_fn = capture_thread;
 
     // Store capture device
     capinfo->device = dev;
@@ -952,7 +954,7 @@ capture_launch_thread(capture_info_t *capinfo)
     while ((capinfo = vector_iterator_next(&it))) {
         // Mark capture as running
         capinfo->running = true;
-        if (pthread_create(&capinfo->capture_t, &attr, (void *) capture_thread, capinfo)) {
+        if (pthread_create(&capinfo->capture_t, &attr, (void *) capinfo->capture_fn, capinfo)) {
             return 1;
         }
     }
@@ -961,7 +963,7 @@ capture_launch_thread(capture_info_t *capinfo)
     return 0;
 }
 
-void
+void *
 capture_thread(void *info)
 {
     capture_info_t *capinfo = (capture_info_t *) info;
@@ -969,6 +971,8 @@ capture_thread(void *info)
     // Parse available packets
     pcap_loop(capinfo->handle, -1, parse_packet, (u_char *) capinfo);
     capinfo->running = false;
+
+    return NULL;
 }
 
 int

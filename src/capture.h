@@ -172,6 +172,8 @@ struct capture_info
     vector_t *ip_reasm;
     //! Packets pending TCP reassembly
     vector_t *tcp_reasm;
+    //! Capture thread function
+    void *(*capture_fn)(void *data);
     //! Capture thread for online capturing
     pthread_t capture_t;
 };
@@ -314,7 +316,7 @@ capture_launch_thread();
  * This function is used as worker thread for capturing filtered packets and
  * pass them to the UI layer.
  */
-void
+void *
 capture_thread(void *none);
 
 /**

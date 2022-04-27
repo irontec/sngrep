@@ -53,7 +53,7 @@
 capture_eep_config_t eep_cfg = { 0 };
 
 void *
-accept_eep_client(void *data);
+accept_eep_client(void *info);
 
 int
 capture_eep_init()
@@ -125,12 +125,6 @@ capture_eep_init()
             return 1;
         }
 
-        // Create a new thread for accepting client connections
-        if (pthread_create(&eep_cfg.server_thread, NULL, accept_eep_client, NULL) != 0) {
-            fprintf(stderr, "Error creating accept thread: %s\n", strerror(errno));
-            return 1;
-        }
-
         capture_info_t *capinfo;
 
         // Create a new structure to handle this capture source
@@ -138,6 +132,9 @@ capture_eep_init()
             fprintf(stderr, "Can't allocate memory for capture data!\n");
             return 1;
         }
+
+        // Set capture thread function
+        capinfo->capture_fn = accept_eep_client;
 
         // Open capture device
         capinfo->handle = pcap_open_dead(DLT_EN10MB, MAXIMUM_SNAPLEN);
@@ -165,9 +162,10 @@ capture_eep_init()
 
 
 void *
-accept_eep_client(void *data)
+accept_eep_client(void *info)
 {
     packet_t *pkt;
+    capture_info_t *capinfo = (capture_info_t *) info;
 
     // Begin accepting connections
     while (eep_cfg.server_sock > 0) {
@@ -181,6 +179,9 @@ accept_eep_client(void *data)
             capture_unlock();
         }
     }
+
+    // Mark capture as not longer running
+    capinfo->running = false;
 
     // Leave the thread gracefully
     pthread_exit(NULL);
@@ -196,7 +197,6 @@ capture_eep_deinit()
     if (eep_cfg.server_sock) {
         close(eep_cfg.server_sock);
         eep_cfg.server_sock = -1;
-        //pthread_join(&eep_cfg.server_thread, &ret);
     }
 }
 
