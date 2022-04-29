@@ -67,10 +67,11 @@
 #endif
 
 /* LibreSSL declares OPENSSL_VERSION_NUMBER == 2.0 but does not include most
- * changes from OpenSSL >= 1.1 (new functions, macros, deprecations, ...)
+ * changes from OpenSSL >= 1.1 (new functions, macros, deprecations, ...) until
+ * version 3.5.0
  */
 #if defined(LIBRESSL_VERSION_NUMBER)
-#define MODSSL_USE_OPENSSL_PRE_1_1_API (1)
+#define MODSSL_USE_OPENSSL_PRE_1_1_API (LIBRESSL_VERSION_NUMBER < 0x30500000L)
 #else
 #define MODSSL_USE_OPENSSL_PRE_1_1_API (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #endif
