@@ -29,8 +29,8 @@
 #include "config.h"
 #include <assert.h>
 #include <stdlib.h>
-#include "vector.h"
-#include "util.h"
+#include "../src/vector.h"
+#include "../src/util.h"
 
 int main ()
 {
