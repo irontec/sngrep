@@ -104,7 +104,7 @@ capture_deinit()
 }
 
 int
-capture_online(const char *dev, const char *outfile)
+capture_online(const char *dev)
 {
     capture_info_t *capinfo;
 
@@ -177,20 +177,11 @@ capture_online(const char *dev, const char *outfile)
     // Add this capture information as packet source
     capture_add_source(capinfo);
 
-    // If requested store packets in a dump file
-    if (outfile && !capture_cfg.pd) {
-        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
-            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo->handle));
-            return 2;
-        }
-    }
-
     return 0;
 }
 
 int
-capture_offline(const char *infile, const char *outfile)
+capture_offline(const char *infile)
 {
     capture_info_t *capinfo;
     FILE *fstdin;
@@ -241,15 +232,6 @@ capture_offline(const char *infile, const char *outfile)
 
     // Add this capture information as packet source
     capture_add_source(capinfo);
-
-    // If requested store packets in a dump file
-    if (outfile && !capture_cfg.pd) {
-        if ((capture_cfg.pd = dump_open(outfile)) == NULL) {
-            fprintf(stderr, "Couldn't open output dump file %s: %s\n", outfile,
-                    pcap_geterr(capinfo->handle));
-            return 2;
-        }
-    }
 
     return 0;
 }
@@ -1206,6 +1188,18 @@ capture_packet_time_sorter(vector_t *vector, void *item)
 
     // Put this item at the begining of the vector
     vector_insert(vector, item, 0);
+}
+
+void
+capture_set_dumper(pcap_dumper_t *dumper)
+{
+    capture_cfg.pd = dumper;
+}
+
+void
+capture_dump_packet(packet_t *packet)
+{
+    dump_packet(capture_cfg.pd, packet);
 }
 
 

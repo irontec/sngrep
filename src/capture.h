@@ -199,12 +199,11 @@ capture_deinit();
  * @brief Online capture function
  *
  * @param device Device to start capture from
- * @param outfile Dumpfile for captured packets
  *
  * @return 0 on spawn success, 1 otherwise
  */
 int
-capture_online(const char *dev, const char *outfile);
+capture_online(const char *dev);
 
 /**
  * @brief Read from pcap file and fill sngrep sctuctures
@@ -217,7 +216,7 @@ capture_online(const char *dev, const char *outfile);
  * @return 0 if load has been successfull, 1 otherwise
  */
 int
-capture_offline(const char *infile, const char *outfile);
+capture_offline(const char *infile);
 
 /**
  * @brief Read the next package and parse SIP messages
@@ -463,6 +462,18 @@ capture_packet_time_sorter(vector_t *vector, void *item);
  */
 void
 capture_close();
+
+/**
+ * @brief Set general capture dumper
+ */
+void
+capture_set_dumper(pcap_dumper_t *dumper);
+
+/**
+ * @brief Store a packet in dumper file
+ */
+void
+capture_dump_packet(packet_t *packet);
 
 /**
  * @brief Get datalink header size

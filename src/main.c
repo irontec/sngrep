@@ -370,15 +370,19 @@ main(int argc, char* argv[])
     // If we have an input file, load it
     for (i = 0; i < vector_count(infiles); i++) {
         // Try to load file
-        if (capture_offline(vector_item(infiles, i), outfile) != 0)
+        if (capture_offline(vector_item(infiles, i)) != 0)
             return 1;
     }
 
     // If we have an input device, load it
     for (i = 0; i < vector_count(indevices); i++) {
         // Check if all capture data is valid
-        if (capture_online(vector_item(indevices, i), outfile) != 0)
+        if (capture_online(vector_item(indevices, i)) != 0)
             return 1;
+    }
+
+    if (outfile) {
+        capture_set_dumper(dump_open(outfile));
     }
 
     // Remove Input files vector
