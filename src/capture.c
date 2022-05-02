@@ -733,6 +733,12 @@ capture_packet_reasm_tcp(capture_info_t *capinfo, packet_t *packet, struct tcphd
         sng_free(new_payload);
     }
 
+    // Check if packet is too large after assembly
+    if (pkt->payload_len > MAX_CAPTURE_LEN) {
+        vector_remove(capinfo->tcp_reasm, pkt);
+        return NULL;
+    }
+
     // Store full payload content
     memset(full_payload, 0, MAX_CAPTURE_LEN);
     memcpy(full_payload, pkt->payload, pkt->payload_len);
