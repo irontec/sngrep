@@ -201,6 +201,9 @@ capture_offline(const char *infile)
         infile = "/dev/stdin";
     }
 
+    // Set capture thread function
+    capinfo->capture_fn = capture_thread;
+
     // Set capture input file
     capinfo->infile = infile;
     capinfo->ispcap = true;
