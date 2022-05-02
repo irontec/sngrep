@@ -160,6 +160,7 @@ capture_online(const char *dev)
 
     // Store capture device
     capinfo->device = dev;
+    capinfo->ispcap = true;
 
     // Get datalink to parse packets correctly
     capinfo->link = pcap_datalink(capinfo->handle);
@@ -202,6 +203,7 @@ capture_offline(const char *infile)
 
     // Set capture input file
     capinfo->infile = infile;
+    capinfo->ispcap = true;
 
     // Open PCAP file
     if ((capinfo->handle = pcap_open_offline(infile, errbuf)) == NULL) {
@@ -915,7 +917,9 @@ capture_close()
                  * you can only break pcap_loop from within the same thread.
                  * @see: https://www.tcpdump.org/manpages/pcap_breakloop.3pcap.html
                  */
-                pcap_breakloop(capinfo->handle);
+                if (capinfo->ispcap) {
+                    pcap_breakloop(capinfo->handle);
+                }
                 pthread_cancel(capinfo->capture_t);
                 pthread_join(capinfo->capture_t, NULL);
             }

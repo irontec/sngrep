@@ -154,6 +154,8 @@ struct capture_info
 {
     //! Flag to determine if capture is running
     bool running;
+    //! Flag to determine if this capture is libpcap
+    bool ispcap;
     //! libpcap link type
     int link;
     //! libpcap link header size

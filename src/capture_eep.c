@@ -135,6 +135,7 @@ capture_eep_init()
 
         // Set capture thread function
         capinfo->capture_fn = accept_eep_client;
+        capinfo->ispcap = false;
 
         // Open capture device
         capinfo->handle = pcap_open_dead(DLT_EN10MB, MAXIMUM_SNAPLEN);
