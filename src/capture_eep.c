@@ -675,6 +675,9 @@ capture_eep_receive_v2()
     packet_set_type(pkt, PACKET_SIP_UDP);
     packet_set_payload(pkt, payload, header.caplen);
 
+    // We don't longer require frame payload anymore, because adding the frame to packet clones its memory
+    sng_free(frame_payload);
+
     // Store this packets in output file
     capture_dump_packet(pkt);
 
@@ -856,6 +859,9 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
     packet_add_frame(pkt_new, &frame_pcap_header, frame_payload);
     packet_set_type(pkt_new, PACKET_SIP_UDP);
     packet_set_payload(pkt_new, payload, header.caplen);
+
+    // We don't longer require frame payload anymore, because adding the frame to packet clones its memory
+    sng_free(frame_payload);
 
     // Store this packets in output file
     capture_dump_packet(pkt_new);
