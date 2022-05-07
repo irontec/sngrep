@@ -595,8 +595,8 @@ capture_eep_receive_v2()
     //! New created packet pointer
     packet_t *pkt;
     //! EEP client data
-    struct sockaddr eep_client;
-    socklen_t eep_client_len;
+    struct sockaddr_storage eep_client;
+    socklen_t eep_client_len=sizeof(eep_client);
     struct hep_hdr hdr;
     struct hep_timehdr hep_time;
     struct hep_iphdr hep_ipheader;
@@ -611,7 +611,7 @@ capture_eep_receive_v2()
     memset(buffer, 0, MAX_CAPTURE_LEN);
 
     /* Receive EEP generic header */
-    if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, &eep_client, &eep_client_len) == -1)
+    if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, (struct sockaddr*)&eep_client, &eep_client_len) == -1)
         return NULL;
 
     /* Copy initial bytes to HEPv2 header */
@@ -716,8 +716,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
     //! Source and Destination Address
     address_t src, dst;
     //! EEP client data
-    struct sockaddr eep_client;
-    socklen_t eep_client_len;
+    struct sockaddr_storage eep_client;
+    socklen_t eep_client_len=sizeof(eep_client);
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
@@ -728,7 +728,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     if(!pkt) {
         /* Receive EEP generic header */
-        if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, &eep_client, &eep_client_len) == -1)
+        if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, (struct sockaddr*)&eep_client, &eep_client_len) == -1)
             return NULL;
     } else {
         memcpy(&buffer, pkt, size);
