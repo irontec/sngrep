@@ -34,6 +34,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdbool.h>
+#include <signal.h>
+#include <sys/stat.h>
 #include "capture.h"
 #ifdef USE_EEP
 #include "capture_eep.h"
@@ -49,9 +51,25 @@
 #include "setting.h"
 #include "util.h"
 
+#if __STDC_VERSION__ >= 201112L && __STDC_NO_ATOMICS__ != 1
+// modern C with atomics
+#include <stdatomic.h>
+typedef atomic_int signal_flag_type;
+#else
+// no atomics available
+typedef volatile sig_atomic_t signal_flag_type;
+#endif
+
 // Capture information
 capture_config_t capture_cfg =
 { 0 };
+
+signal_flag_type sighup_received = 0;
+
+void sighup_handler(int signum)
+{
+    sighup_received = 1;
+}
 
 void
 capture_init(size_t limit, bool rtp_capture, bool rotate, size_t pcap_buffer_size)
@@ -62,6 +80,13 @@ capture_init(size_t limit, bool rtp_capture, bool rotate, size_t pcap_buffer_siz
     capture_cfg.rotate = rotate;
     capture_cfg.paused = 0;
     capture_cfg.sources = vector_create(1, 1);
+
+    // set up SIGHUP handler
+    // the handler will be served by any of the running threads
+    // so we just set a flag and check it in dump_packet
+    // so it is only acted upon before then next packed will be dumped
+    if (signal(SIGHUP, sighup_handler) == SIG_ERR)
+        exit(EXIT_FAILURE);
 
     // Fixme
     if (setting_has_value(SETTING_CAPTURE_STORAGE, "none")) {
@@ -383,7 +408,7 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         capture_eep_send(pkt);
 #endif
         // Store this packets in output file
-        dump_packet(capture_cfg.pd, pkt);
+        capture_dump_packet(pkt);;
         // If storage is disabled, delete frames payload
         if (capture_cfg.storage == 0) {
             packet_free_frames(pkt);
@@ -1204,17 +1229,39 @@ capture_packet_time_sorter(vector_t *vector, void *item)
 }
 
 void
-capture_set_dumper(pcap_dumper_t *dumper)
+capture_set_dumper(pcap_dumper_t *dumper, ino_t dump_inode)
 {
     capture_cfg.pd = dumper;
+    capture_cfg.dump_inode = dump_inode;
 }
 
 void
 capture_dump_packet(packet_t *packet)
 {
+    if (sighup_received && capture_cfg.pd) {
+        // we got a SIGHUP: reopen the dump file because it could have been renamed
+        // we don't need to care about locking or other threads accessing in parallel
+        // because dump_open ensures count(capture_cfg.sources) == 1
+
+        // check if the file has actually changed
+        // only reopen if it has, otherwise we would overwrite the existing one
+        struct stat sb;
+        if (stat(capture_cfg.dumpfilename, &sb) == -1 ||
+            sb.st_ino != capture_cfg.dump_inode)
+        {
+            pcap_dump_close(capture_cfg.pd);
+            capture_cfg.pd = dump_open(capture_cfg.dumpfilename, &capture_cfg.dump_inode);
+        }
+
+        sighup_received = 0;
+
+        // error reopening capture file: we can't capture anymore
+        if (!capture_cfg.pd)
+            return;
+    }
+
     dump_packet(capture_cfg.pd, packet);
 }
-
 
 int8_t
 datalink_size(int datalink)
@@ -1260,13 +1307,31 @@ datalink_size(int datalink)
 }
 
 pcap_dumper_t *
-dump_open(const char *dumpfile)
+dump_open(const char *dumpfile, ino_t* dump_inode)
 {
     capture_info_t *capinfo;
 
     if (vector_count(capture_cfg.sources) == 1) {
+        capture_cfg.dumpfilename = dumpfile;
         capinfo = vector_first(capture_cfg.sources);
-        return pcap_dump_open(capinfo->handle, dumpfile);
+
+        FILE *fp = fopen(dumpfile,"wb+");
+        if (!fp)
+            return NULL;
+
+        struct stat sb;
+        if (fstat(fileno(fp), &sb) == -1)
+            return NULL;
+
+        if (dump_inode) {
+            // read out the files inode, allows to later check if it has changed
+            struct stat sb;
+            if (fstat(fileno(fp), &sb) == -1)
+                return NULL;
+            *dump_inode = sb.st_ino;
+        }
+
+        return pcap_dump_fopen(capinfo->handle, fp);
     }
     return NULL;
 }

@@ -139,6 +139,10 @@ struct capture_config {
     struct bpf_program fp;
     //! libpcap dump file handler
     pcap_dumper_t *pd;
+    //! libpcap dump file name
+    const char *dumpfilename;
+    //! inode of the dump file we have open
+    ino_t dump_inode;
     //! Capture sources
     vector_t *sources;
     //! Capture Lock. Avoid parsing and handling data at the same time
@@ -469,7 +473,7 @@ capture_close();
  * @brief Set general capture dumper
  */
 void
-capture_set_dumper(pcap_dumper_t *dumper);
+capture_set_dumper(pcap_dumper_t *dumper, ino_t dump_inode);
 
 /**
  * @brief Store a packet in dumper file
@@ -488,7 +492,7 @@ datalink_size(int datalink);
  * @brief Open a new dumper file for capture handler
  */
 pcap_dumper_t *
-dump_open(const char *dumpfile);
+dump_open(const char *dumpfile, ino_t* dump_inode);
 
 /**
  * @brief Store a packet in dump file
