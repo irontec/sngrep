@@ -381,8 +381,11 @@ main(int argc, char* argv[])
             return 1;
     }
 
-    if (outfile) {
-        capture_set_dumper(dump_open(outfile));
+    if (outfile)
+    {
+        ino_t dump_inode;
+        pcap_dumper_t *dumper = dump_open(outfile, &dump_inode);
+        capture_set_dumper(dumper, dump_inode);
     }
 
     // Remove Input files vector

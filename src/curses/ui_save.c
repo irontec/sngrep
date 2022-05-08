@@ -465,7 +465,7 @@ save_to_file(ui_t *ui)
 
     if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
         // Open dump file
-        pd = dump_open(fullfile);
+        pd = dump_open(fullfile, NULL);
         if (access(fullfile, W_OK) != 0) {
             dialog_run("%s", capture_last_error());
             return 1;
