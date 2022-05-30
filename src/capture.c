@@ -1248,6 +1248,10 @@ datalink_size(int datalink)
         case DLT_LINUX_SLL:
             return 16;
 #endif
+#ifdef DLT_LINUX_SLL2
+        case DLT_LINUX_SLL2:
+            return 20;
+#endif
 #ifdef DLT_IPNET
         case DLT_IPNET:
             return 24;
