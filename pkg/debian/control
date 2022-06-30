@@ -1,6 +1,6 @@
 Source: sngrep
 Section: comm
-Build-Depends: dh-autoreconf, debhelper, libpcap-dev, libncursesw5-dev, gnutls-dev, libgcrypt-dev, libpcre3-dev, libncurses5-dev, pkg-config
+Build-Depends: dh-autoreconf, debhelper, libpcap-dev, libncursesw5-dev, gnutls-dev, libgcrypt-dev, libpcre2-dev, libncurses5-dev, pkg-config
 Priority: optional
 Standards-Version: 3.9.6
 Homepage: https://github.com/irontec/sngrep
@@ -9,7 +9,7 @@ Maintainer: Ivan Alonso <kaian@irontec.com>
 Package: sngrep
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends}, ${shlibs:Depends}, libpcap0.8, libncursesw5, libpcre3
+Depends: ${misc:Depends}, ${shlibs:Depends}, libpcap0.8, libncursesw5, libpcre2
 Description: Ncurses SIP Messages flow viewer
  sngrep displays SIP Messages grouped by Call-Id into flow
  diagrams. It can be used as an offline PCAP viewer or online
