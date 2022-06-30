@@ -37,6 +37,8 @@
 #include <regex.h>
 #ifdef WITH_PCRE
 #include <pcre.h>
+#elifdef WITH_PCRE2
+#include <pcre2.h>
 #endif
 #include "sip_call.h"
 #include "vector.h"
@@ -141,6 +143,9 @@ struct sip_call_list {
 #ifdef WITH_PCRE
     //! Compiled match expression
     pcre *match_regex;
+#elifdef WITH_PCRE2
+    //! Compiled match expression
+    pcre2_code *match_regex;
 #else
     //! Compiled match expression
     regex_t match_regex;

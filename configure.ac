@@ -190,6 +190,34 @@ AS_IF([test "x$WITH_PCRE" == "xyes"], [
 ], [])
 
 ####
+#### PCRE2 Support
+####
+AC_ARG_WITH([pcre2],
+    AS_HELP_STRING([--with-pcre2], [Enable Perl compatible regular expressions (v2)]),
+    [AC_SUBST(WITH_PCRE2, $withval)],
+    [AC_SUBST(WITH_PCRE2, no)]
+)
+
+AS_IF([test "x$WITH_PCRE2" == "xyes"], [
+    AS_IF([test "x$WITH_PCRE" == "xyes"], [
+        AC_MSG_ERROR([libpcre-2 and libpcre-3 can not be enabled at the same time ])
+    ], [])
+    AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Required for including pcre2.h])
+    AC_SUBST(PCRE2_CODE_UNIT_WIDTH, 8)
+    m4_ifdef([PKG_CHECK_MODULES], [
+        PKG_CHECK_MODULES([PCRE2], [libpcre2-8])
+    ], [
+	    AC_CHECK_HEADER([pcre2.h], [], [
+	        AC_MSG_ERROR([ You need libpcre2 development files installed to compile with pcre support.])
+	    ])
+	    AC_CHECK_LIB([pcre2-8], [pcre2_compile_8], [], [
+	        AC_MSG_ERROR([ You need libpcre2 library installed to compile with pcre support.])
+	    ])
+    ])
+	AC_DEFINE([WITH_PCRE2],[],[Compile With Perl Compatible regular expressions support])
+], [])
+
+####
 #### IPv6 Support
 ####
 AC_ARG_ENABLE([ipv6],
@@ -228,7 +256,8 @@ AS_IF([test "x$USE_EEP" == "xyes"], [
 ], [])
 
 
-# Conditional Source inclusion 
+# Conditional Source inclusion
+AM_CONDITIONAL([WITH_PCRE2], [test "x$WITH_PCRE2" == "xyes"])
 AM_CONDITIONAL([WITH_GNUTLS], [test "x$WITH_GNUTLS" == "xyes"])
 AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" == "xyes"])
 AM_CONDITIONAL([USE_EEP], [test "x$USE_EEP" == "xyes"])
@@ -259,6 +288,7 @@ AC_MSG_NOTICE( GnuTLS Support               : ${WITH_GNUTLS}		)
 AC_MSG_NOTICE( OpenSSL Support              : ${WITH_OPENSSL} 			)
 AC_MSG_NOTICE( Unicode Support              : ${UNICODE}  		)
 AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
+AC_MSG_NOTICE( Perl Expressions Support (v2): ${WITH_PCRE2}             )
 AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )
 AC_MSG_NOTICE( EEP Support                  : ${USE_EEP}               )
 AC_MSG_NOTICE( ====================================================== 	)

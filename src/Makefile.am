@@ -16,6 +16,10 @@ sngrep_SOURCES+=capture_openssl.c
 sngrep_CFLAGS+=$(SSL_CFLAGS)
 sngrep_LDADD+=$(SSL_LIBS)
 endif
+if WITH_PCRE2
+sngrep_CFLAGS+=$(PCRE2_CFLAGS)
+sngrep_LDADD+=$(PCRE2_LIBS)
+endif
 sngrep_SOURCES+=address.c packet.c sip.c sip_call.c sip_msg.c sip_attr.c main.c
 sngrep_SOURCES+=option.c group.c filter.c keybinding.c media.c setting.c rtp.c
 sngrep_SOURCES+=util.c hash.c vector.c curses/ui_panel.c curses/scrollbar.c
