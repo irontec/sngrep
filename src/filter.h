@@ -43,7 +43,7 @@
 #include "config.h"
 #ifdef WITH_PCRE
 #include <pcre.h>
-#elifdef WITH_PCRE2
+#elif defined(WITH_PCRE2)
 #include <pcre2.h>
 #else
 #include <regex.h>
@@ -84,7 +84,7 @@ struct filter {
 #ifdef WITH_PCRE
     //! The filter compiled expression
     pcre *regex;
-#elifdef WITH_PCRE2
+#elif defined(WITH_PCRE2)
     //! The filter compiled expression
     pcre2_code *regex;
 #else

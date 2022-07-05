@@ -61,7 +61,7 @@ filter_set(int type, const char *expr)
     // Set new expresion values
     filters[type].expr = (expr) ? strdup(expr) : NULL;
     filters[type].regex = regex;
-#elifdef WITH_PCRE2
+#elif defined(WITH_PCRE2)
     pcre2_code *regex = NULL;
 
     // If we have an expression, check if compiles before changing the filter
@@ -206,7 +206,7 @@ filter_check_expr(filter_t filter, const char *data)
 {
 #ifdef WITH_PCRE
         return pcre_exec(filter.regex, 0, data, strlen(data), 0, 0, 0, 0);
-#elifdef WITH_PCRE2
+#elif defined(WITH_PCRE2)
     pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(filter.regex, NULL);
     int ret = pcre2_match(filter.regex, (PCRE2_SPTR) data, (PCRE2_SIZE) strlen(data), 0, 0, match_data, NULL);
     pcre2_match_data_free(match_data);

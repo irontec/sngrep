@@ -832,7 +832,7 @@ sip_set_match_expression(const char *expr, int insensitive, int invert)
     // Check if we have a valid expression
     calls.match_regex = pcre_compile(expr, pflags, &re_err, &err_offset, 0);
     return calls.match_regex == NULL;
-#elifdef WITH_PCRE2
+#elif defined(WITH_PCRE2)
     int re_err = 0;
     PCRE2_SIZE err_offset = 0;
     uint32_t pflags = PCRE2_UNGREEDY | PCRE2_CASELESS;
@@ -875,7 +875,7 @@ sip_check_match_expression(const char *payload)
     }
 
     return 0 == calls.match_invert;
-#elifdef WITH_PCRE2
+#elif defined(WITH_PCRE2)
     pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(calls.match_regex, NULL);
     int ret = pcre2_match(calls.match_regex, (PCRE2_SPTR) payload, (PCRE2_SIZE) strlen(payload), 0, 0, match_data, NULL);
     pcre2_match_data_free(match_data);
