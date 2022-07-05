@@ -149,6 +149,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     calls.only_calls = only_calls;
     calls.ignore_incomplete = no_incomplete;
     calls.last_index = 0;
+    calls.call_count_unrotated = 0;
 
     // Create a vector to store calls
     calls.list = vector_create(200, 50);
@@ -438,6 +439,7 @@ sip_check_packet(packet_t *packet)
     if (newcall) {
         // Append this call to the call list
         vector_append(calls.list, call);
+        ++calls.call_count_unrotated;
     }
 
     // Mark the list as changed
@@ -465,6 +467,12 @@ int
 sip_calls_count()
 {
     return vector_count(calls.list);
+}
+
+int
+sip_calls_count_unrotated()
+{
+    return calls.call_count_unrotated;
 }
 
 vector_iter_t

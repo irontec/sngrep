@@ -132,6 +132,8 @@ struct sip_call_list {
     //! Call-Ids hash table
     htable_t *callids;
 
+    //! Full count of all captured calls, regardless of rotation
+    int call_count_unrotated;
     // Max call limit
     int limit;
     //! Only store dialogs starting with INVITE
@@ -258,6 +260,14 @@ sip_calls_has_changed();
  */
 int
 sip_calls_count();
+
+/**
+ * @brief Getter for full count of calls since program start
+ *
+ * @return full number of calls since program start, regardless of rotation
+ */
+int
+sip_calls_count_unrotated();
 
 /**
  * @brief Return an iterator of call list
