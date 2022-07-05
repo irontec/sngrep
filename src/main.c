@@ -445,11 +445,11 @@ main(int argc, char* argv[])
         setbuf(stdout, NULL);
         while(capture_is_running()) {
             if (!quiet)
-                printf("\rDialog count: %d", sip_calls_count());
+                printf("\rDialog count: %d", sip_calls_count_unrotated());
             usleep(500 * 1000);
         }
         if (!quiet)
-            printf("\rDialog count: %d\n", sip_calls_count());
+            printf("\rDialog count: %d\n", sip_calls_count_unrotated());
     }
 
     // Capture deinit
