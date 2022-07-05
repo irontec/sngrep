@@ -107,6 +107,7 @@ htable_remove(htable_t *table, const char *key)
             }
             // Remove item memory
             free(entry);
+            return;
         }
     }
 }
