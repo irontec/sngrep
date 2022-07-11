@@ -27,6 +27,7 @@ Prerequisites
  - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
  - libncursesw5 - (optional) for UI, windows, panels (wide-character support)
  - libpcre - (optional) for Perl Compatible regular expressions
+ - zlib - (optional) for gzip compressed pcap files
 
 On most systems the commands to build will be the standard autotools procedure:
 
@@ -42,6 +43,7 @@ You can pass following flags to ./configure to enable some features
 | `--with-openssl` | Adds OpenSSL support to parse TLS captured messages (req. libssl)  |
 | `--with-gnutls` | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
 | `--with-pcre`|  Adds Perl Compatible regular expressions support in regexp fields |
+| `--with-zlib`|  Enable zlib to support gzip compressed pcap files |
 | `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
 | `--enable-ipv6`   | Enable IPv6 packet capture support. |
 | `--enable-eep`   | Enable EEP packet send/receive support. |
