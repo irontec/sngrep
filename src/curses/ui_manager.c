@@ -192,6 +192,9 @@ ui_wait_for_input()
     // While there are still panels
     while ((panel = panel_below(NULL))) {
 
+        if (was_sigterm_received())
+            return 0;
+
         // Get panel interface structure
         ui = ui_find_by_panel(panel);
 

@@ -327,6 +327,8 @@ main(int argc, char* argv[])
         }
     }
 
+    setup_sigterm_handler();
+
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     // Set capture decrypt key file
     capture_set_keyfile(keyfile);
@@ -443,7 +445,7 @@ main(int argc, char* argv[])
         ui_wait_for_input();
     } else {
         setbuf(stdout, NULL);
-        while(capture_is_running()) {
+        while(capture_is_running() && !was_sigterm_received()) {
             if (!quiet)
                 printf("\rDialog count: %d", sip_calls_count_unrotated());
             usleep(500 * 1000);

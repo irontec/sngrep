@@ -46,6 +46,9 @@
 #ifdef WITH_OPENSSL
 #include "capture_openssl.h"
 #endif
+#ifdef WITH_ZLIB
+#include <zlib.h>
+#endif
 #include "sip.h"
 #include "rtp.h"
 #include "setting.h"
@@ -70,6 +73,26 @@ void sighup_handler(int signum)
 {
     sighup_received = 1;
 }
+
+#if defined(WITH_ZLIB)
+static ssize_t
+gzip_cookie_write(void *cookie, const char *buf, size_t size)
+{
+    return gzwrite((gzFile)cookie, (voidpc)buf, size);
+}
+
+static ssize_t
+gzip_cookie_read(void *cookie, char *buf, size_t size)
+{
+    return gzread((gzFile)cookie, (voidp)buf, size);
+}
+
+static int
+gzip_cookie_close(void *cookie)
+{
+    return gzclose((gzFile)cookie);
+}
+#endif
 
 void
 capture_init(size_t limit, bool rtp_capture, bool rotate, size_t pcap_buffer_size)
@@ -235,9 +258,36 @@ capture_offline(const char *infile)
 
     // Open PCAP file
     if ((capinfo->handle = pcap_open_offline(infile, errbuf)) == NULL) {
+#if defined(HAVE_FOPENCOOKIE) && defined(WITH_ZLIB)
+        // we can't directly parse the file as pcap - could it be gzip compressed?
+        gzFile zf = gzopen(infile, "rb");
+        if (!zf)
+            goto openerror;
+
+        static cookie_io_functions_t cookiefuncs = {
+            gzip_cookie_read, NULL, NULL, gzip_cookie_close
+        };
+
+        // reroute the file access functions
+        // use the gzip read+close functions when accessing the file
+        FILE *fp = fopencookie(zf, "r", cookiefuncs);
+        if (!fp)
+        {
+            gzclose(zf);
+            goto openerror;
+        }
+
+        if ((capinfo->handle = pcap_fopen_offline(fp, errbuf)) == NULL) {
+openerror:
+            fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
+            return 1;
+        }
+    }
+#else
         fprintf(stderr, "Couldn't open pcap file %s: %s\n", infile, errbuf);
         return 1;
     }
+#endif
 
     // Reopen tty for ncurses after pcap have used stdin
     if (!strncmp(infile, "/dev/stdin", 10)) {
@@ -1310,6 +1360,17 @@ datalink_size(int datalink)
 
 }
 
+bool
+is_gz_filename(const char *filename)
+{
+    // does the filename end on ".gz"?
+    char *dotpos = strrchr(filename, '.');
+    if (dotpos && (strcmp(dotpos, ".gz") == 0))
+        return true;
+    else
+        return false;
+}
+
 pcap_dumper_t *
 dump_open(const char *dumpfile, ino_t* dump_inode)
 {
@@ -1333,6 +1394,30 @@ dump_open(const char *dumpfile, ino_t* dump_inode)
             if (fstat(fileno(fp), &sb) == -1)
                 return NULL;
             *dump_inode = sb.st_ino;
+        }
+
+        if (is_gz_filename(dumpfile))
+        {
+#if defined(HAVE_FOPENCOOKIE) && defined(WITH_ZLIB)
+            // create a gzip file stream out of the already opened file
+            gzFile zf = gzdopen(fileno(fp), "w");
+            if (!zf)
+                return NULL;
+
+            static cookie_io_functions_t cookiefuncs = {
+                NULL, gzip_cookie_write, NULL, gzip_cookie_close
+            };
+
+            // reroute the file access functions
+            // use the gzip write+close functions when accessing the file
+            fp = fopencookie(zf, "w", cookiefuncs);
+            if (!fp)
+                return NULL;
+#else
+            // no support for gzip compressed pcap files compiled in -> abort
+            fclose(fp);
+            return NULL;
+#endif
         }
 
         return pcap_dump_fopen(capinfo->handle, fp);

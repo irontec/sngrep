@@ -29,6 +29,9 @@ AC_PROG_EGREP
 AC_LANG(C)
 AM_PROG_CC_C_O
 
+# we might want to use this with zlib for compressed pcap support
+AC_CHECK_FUNCS([fopencookie])
+
 #######################################################################
 # Check for other REQUIRED libraries
 AC_CHECK_LIB([pthread], [pthread_create], [], [
@@ -255,12 +258,33 @@ AS_IF([test "x$USE_EEP" = "xyes"], [
 	AC_DEFINE([USE_EEP],[],[Compile With EEP support])
 ], [])
 
+####
+#### zlib Support
+####
+AC_ARG_WITH([zlib],
+    AS_HELP_STRING([--with-zlib], [Enable zlib to support gzip compressed pcap files]),
+    [AC_SUBST(WITH_ZLIB, $withval)],
+    [AC_SUBST(WITH_ZLIB, no)]
+)
+
+AS_IF([test "x$WITH_ZLIB" = "xyes"], [
+	AC_CHECK_HEADER([zlib.h], [], [
+	    AC_MSG_ERROR([ You need libz header files installed to compile with zlib support.])
+	])
+	AC_CHECK_LIB([z], [gzdopen], [], [
+	    AC_MSG_ERROR([ You need libz library installed to compile with zlib support.])
+	])
+	AC_DEFINE([WITH_ZLIB],[],[Compile With zlib support])
+], [])
+
+
 
 # Conditional Source inclusion
 AM_CONDITIONAL([WITH_PCRE2], [test "x$WITH_PCRE2" = "xyes"])
 AM_CONDITIONAL([WITH_GNUTLS], [test "x$WITH_GNUTLS" = "xyes"])
 AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" = "xyes"])
 AM_CONDITIONAL([USE_EEP], [test "x$USE_EEP" = "xyes"])
+AM_CONDITIONAL([WITH_ZLIB], [test "x$WITH_ZLIB" = "xyes"])
 
 
 ######################################################################
@@ -291,6 +315,7 @@ AC_MSG_NOTICE( Perl Expressions Support     : ${WITH_PCRE}              )
 AC_MSG_NOTICE( Perl Expressions Support (v2): ${WITH_PCRE2}             )
 AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )
 AC_MSG_NOTICE( EEP Support                  : ${USE_EEP}               )
+AC_MSG_NOTICE( Zlib Support                 : ${WITH_ZLIB}               )
 AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE
 

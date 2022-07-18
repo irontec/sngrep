@@ -99,4 +99,16 @@ timeval_to_delta(struct timeval start, struct timeval end, char *out);
 char *
 strtrim(char *str);
 
+/**
+ * @brief Set up handler for SIGTERM, SIGINT and SIGQUIT
+ */
+void setup_sigterm_handler(void);
+
+/**
+ * @brief Check if SIGTERM, SIGINT or SIGQUIT were received
+ *
+ * @return true if any of the exit signals were received
+ */
+bool was_sigterm_received(void);
+
 #endif /* __SNGREP_UTIL_H */

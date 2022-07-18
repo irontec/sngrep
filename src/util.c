@@ -32,8 +32,45 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <signal.h>
 #include "util.h"
 
+#if __STDC_VERSION__ >= 201112L && __STDC_NO_ATOMICS__ != 1
+// modern C with atomics
+#include <stdatomic.h>
+typedef atomic_int signal_flag_type;
+#else
+// no atomics available
+typedef volatile sig_atomic_t signal_flag_type;
+#endif
+
+static signal_flag_type sigterm_received = 0;
+
+static void sigterm_handler(int signum)
+{
+    sigterm_received = 1;
+}
+
+void setup_sigterm_handler(void)
+{
+    // set up SIGTERM handler (also used for SIGINT and SIGQUIT)
+    // the handler will be served by any of the running threads
+    // so we just set a flag and check it in one of the two available
+    // main loops of the program (main for --no-interface and
+    // ui_wait_for_input() for curses)
+
+    if (signal(SIGTERM, sigterm_handler) == SIG_ERR)
+        exit(EXIT_FAILURE);
+    if (signal(SIGINT, sigterm_handler) == SIG_ERR)
+        exit(EXIT_FAILURE);
+    if (signal(SIGQUIT, sigterm_handler) == SIG_ERR)
+        exit(EXIT_FAILURE);
+}
+
+bool was_sigterm_received(void)
+{
+    return (sigterm_received == 1);
+}
 
 void *
 sng_malloc(size_t size)
