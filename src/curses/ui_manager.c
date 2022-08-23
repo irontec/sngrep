@@ -448,11 +448,14 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
             cur_line =payload + i + 1;
 
         // Move to the next line if line is filled or a we reach a line break
-        if (column > width || payload[i] == '\n') {
+        if (column > width - 1 || payload[i] == '\n') {
             line++;
             column = 0;
-            continue;
         }
+
+        // No need to print new line characters
+        if (payload[i] == '\n')
+            continue;
 
         // Put next character in position
         if (isascii(payload[i])) {
