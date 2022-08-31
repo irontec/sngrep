@@ -1,4 +1,16 @@
-2021-04-26 Ivan Alonso <kaian@irontec.com>
+2022-08-31 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.6.0 released
+
+	* capture: added compatibility with openssl >= 3.5.0
+	* capture: fixed memory leak while rotating dialogs
+	* capture: added save file rotation through SIPHUP signal
+	* capture: added support for opening gzip compressed input files
+	* hep: received HEP packets can now be saved to PCAP files
+	* core: added support for PCRE2 library
+	* cf: raw payload preview now properly displays characters near window borders
+	* cli: properly display captured dialog count when no interface is used
+
+2022-04-26 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.5.0 released
 
 	* capture: add support for IP-IP encapsulation
