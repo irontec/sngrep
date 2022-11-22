@@ -518,8 +518,8 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
                 if (conn->client_cipher_ctx->cipher && conn->server_cipher_ctx->cipher)
                     conn->encrypted = 1;
 #else
-                if (EVP_CIPHER_CTX_get_cipher_data(conn->client_cipher_ctx) &&
-                    EVP_CIPHER_CTX_get_cipher_data(conn->server_cipher_ctx))
+                if (EVP_CIPHER_CTX_cipher(conn->client_cipher_ctx) &&
+                    EVP_CIPHER_CTX_cipher(conn->server_cipher_ctx))
                     conn->encrypted = 1;
 #endif
                 break;
@@ -738,6 +738,7 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment,
     EVP_CIPHER_CTX *evp;
     uint8_t pad;
     size_t flen = len;
+    uint8_t nonce[16] = { 0 };
 
     tls_debug_print_hex("Ciphertext", fragment, len);
 
@@ -747,19 +748,38 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment,
         evp = conn->server_cipher_ctx;
     }
 
-    // TLS 1.1 and later extract explicit IV
-    if (conn->version >= 2 && len > 16) {
-        if (conn->direction == 0) {
-            EVP_CipherInit(evp, conn->ciph,
-                           conn->key_material.client_write_key,
-                           fragment, 0);
-        } else {
-            EVP_CipherInit(evp, conn->ciph,
-                           conn->key_material.server_write_key,
-                           fragment, 0);
+    if (conn->cipher_data.mode == MODE_CBC) {
+        // TLS 1.1 and later extract explicit IV
+        if (conn->version >= 2 && len > 16) {
+            if (conn->direction == 0) {
+                EVP_CipherInit(evp, conn->ciph,
+                               conn->key_material.client_write_key,
+                               fragment, 0);
+            } else {
+                EVP_CipherInit(evp, conn->ciph,
+                               conn->key_material.server_write_key,
+                               fragment, 0);
+            }
+            flen -= 16;
+            fragment += 16;
         }
-        flen -= 16;
-        fragment += 16;
+    }
+
+    if (conn->cipher_data.mode == MODE_GCM) {
+        if (conn->direction == 0) {
+            memcpy(nonce, conn->key_material.client_write_IV, conn->cipher_data.ivblock);
+            memcpy(nonce + conn->cipher_data.ivblock, fragment, 8);
+            nonce[15] = 2;
+            EVP_CipherInit(evp, conn->ciph,conn->key_material.client_write_key,nonce, 0);
+        } else {
+            memcpy(nonce, conn->key_material.server_write_IV, conn->cipher_data.ivblock);
+            memcpy(nonce + conn->cipher_data.ivblock, fragment, 8);
+            nonce[15] = 2;
+            EVP_CipherInit(evp, conn->ciph,conn->key_material.server_write_key,nonce, 0);
+        }
+
+        flen -= 8;
+        fragment += 8;
     }
 
     size_t dlen = len;
@@ -767,17 +787,27 @@ tls_process_record_data(struct SSLConnection *conn, const opaque *fragment,
     EVP_Cipher(evp, decoded, (unsigned char *) fragment, flen);
     tls_debug_print_hex("Plaintext", decoded, flen);
 
-    // Get padding counter and remove from data
-    pad = decoded[flen - 1];
-    dlen = flen - (pad + 1);
-    tls_debug_print_hex("Mac", decoded + (dlen - 20), 20);
+    if (conn->cipher_data.mode == MODE_CBC) {
+        // Get padding counter and remove from data
+        pad = decoded[flen - 1];
+        dlen = flen - (pad + 1);
+        tls_debug_print_hex("Mac", decoded + (dlen - 20), 20);
 
-    if ((int32_t)dlen > 0 && dlen <= *outl) {
-        memcpy(*out, decoded, dlen);
-        *outl = dlen - 20 /* Trailing MAC */;
+        if ((int32_t) dlen > 0 && dlen <= *outl) {
+            memcpy(*out, decoded, dlen);
+            *outl = dlen - 20 /* Trailing MAC */;
+        }
     }
 
-    // Clenaup decoded memory
+    // Strip auth tag from decoded data
+    if (conn->cipher_data.mode == MODE_GCM) {
+        if ((int32_t)flen > 16) {
+            memcpy(*out, decoded, dlen);
+            *outl = flen - 16;
+        }
+    }
+
+    // Cleanup decoded memory
     sng_free(decoded);
     return *outl;
 }
@@ -802,7 +832,11 @@ tls_connection_load_cipher(struct SSLConnection *conn)
             conn->ciph = EVP_get_cipherbyname("AES128");
             break;
         case ENC_AES256:
-            conn->ciph = EVP_get_cipherbyname("AES256");
+            if (conn->cipher_data.mode == MODE_CBC) {
+                conn->ciph = EVP_get_cipherbyname("AES256");
+            } else {
+                conn->ciph = EVP_get_cipherbyname("AES-256-CTR");
+            }
             break;
         default:
             return 1;
