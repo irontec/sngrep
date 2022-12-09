@@ -453,7 +453,7 @@ save_to_file(ui_t *ui)
     sprintf(fullfile, "%s%s", savepath, savefile);
 
     if (access(fullfile, R_OK) == 0) {
-        if (dialog_confirm("Overwrite confirmation", "Selected file already exits.\n Do you want to overwrite it?", "Yes,No") != 0)
+        if (dialog_confirm("Overwrite confirmation", "Selected file already exists.\n Do you want to overwrite it?", "Yes,No") != 0)
             return 1;
     }
 
