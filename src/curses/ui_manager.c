@@ -26,9 +26,12 @@
  * @brief Source of functions defined in ui_manager.h
  *
  */
+#include "config.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <math.h>
 #include <stdlib.h>
 #include <locale.h>
