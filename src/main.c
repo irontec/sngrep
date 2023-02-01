@@ -231,7 +231,6 @@ main(int argc, char* argv[])
                 outfile = optarg;
                 break;
             case 'S':
-                printf("SK2307: Reading siplify argument");
                 siplify_outfile = optarg;
                 no_interface = 1;
                 setting_set_value(SETTING_CAPTURE_STORAGE, "none");
@@ -470,9 +469,6 @@ main(int argc, char* argv[])
 
     if (siplify_outfile)
     {
-
-        printf("SK2307 Preparing for saving sip to text file");
-        //SK2307: should add save sip to text file
         no_interface = 1;
         vector_iter_t calls;
         calls = sip_calls_iterator();
@@ -480,7 +476,6 @@ main(int argc, char* argv[])
         sip_call_t *call = NULL;
         sip_msg_t *msg = NULL;
         vector_iter_t msgs;
-        // char fullfile[MAX_SETTING_LEN*2];
 
         FILE *f = NULL;
 
