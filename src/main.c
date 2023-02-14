@@ -77,7 +77,7 @@ usage()
            "    -D --dump-config\t Print active configuration settings and exit\n"
            "    -f --config\t\t Read configuration from file\n"
            "    -F --no-config\t Do not read configuration from default config file\n"
-           "    -S --siplify\t save pcap to text file\n"
+           "    -T --text\t Save pcap to text file\n"
            "    -R --rotate\t\t Rotate calls when capture limit have been reached\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
@@ -130,8 +130,7 @@ int
 main(int argc, char* argv[])
 {
     int opt, idx, limit, only_calls, no_incomplete, pcap_buffer_size, i;
-    const char *device, *outfile, *siplify_outfile;
-    // const char *siplify_outfile = NULL;
+    const char *device, *outfile, *text_outfile;
     char bpf[512];
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     const char *keyfile;
@@ -164,7 +163,7 @@ main(int argc, char* argv[])
         { "rotate", no_argument, 0, 'R' },
         { "config", required_argument, 0, 'f' },
         { "no-config", no_argument, 0, 'F' },
-        { "siplify", required_argument, 0, 'S' },
+        { "text", required_argument, 0, 'T' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -175,7 +174,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:F:S";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:F:T";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -230,8 +229,8 @@ main(int argc, char* argv[])
             case 'O':
                 outfile = optarg;
                 break;
-            case 'S':
-                siplify_outfile = optarg;
+            case 'T':
+                text_outfile = optarg;
                 no_interface = 1;
                 setting_set_value(SETTING_CAPTURE_STORAGE, "none");
                 break;
@@ -467,9 +466,8 @@ main(int argc, char* argv[])
     }
 
 
-    if (siplify_outfile)
+    if (text_outfile)
     {
-        no_interface = 1;
         vector_iter_t calls;
         calls = sip_calls_iterator();
 
@@ -479,7 +477,7 @@ main(int argc, char* argv[])
 
         FILE *f = NULL;
 
-        if (!(f = fopen(siplify_outfile, "w"))) {
+        if (!(f = fopen(text_outfile, "w"))) {
             fprintf(stderr, "Couldn't open sip output file");
             return 0;
         }
