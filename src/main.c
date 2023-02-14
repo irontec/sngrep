@@ -36,6 +36,7 @@
 #include "vector.h"
 #include "capture.h"
 #include "capture_eep.h"
+#include "curses/ui_save.h"
 #ifdef WITH_GNUTLS
 #include "capture_gnutls.h"
 #endif
@@ -76,6 +77,7 @@ usage()
            "    -D --dump-config\t Print active configuration settings and exit\n"
            "    -f --config\t\t Read configuration from file\n"
            "    -F --no-config\t Do not read configuration from default config file\n"
+           "    -T --text\t Save pcap to text file\n"
            "    -R --rotate\t\t Rotate calls when capture limit have been reached\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
@@ -128,7 +130,7 @@ int
 main(int argc, char* argv[])
 {
     int opt, idx, limit, only_calls, no_incomplete, pcap_buffer_size, i;
-    const char *device, *outfile;
+    const char *device, *outfile, *text_outfile;
     char bpf[512];
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     const char *keyfile;
@@ -161,6 +163,7 @@ main(int argc, char* argv[])
         { "rotate", no_argument, 0, 'R' },
         { "config", required_argument, 0, 'f' },
         { "no-config", no_argument, 0, 'F' },
+        { "text", required_argument, 0, 'T' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -171,7 +174,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:F";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:F:T";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -225,6 +228,11 @@ main(int argc, char* argv[])
                 break;
             case 'O':
                 outfile = optarg;
+                break;
+            case 'T':
+                text_outfile = optarg;
+                no_interface = 1;
+                setting_set_value(SETTING_CAPTURE_STORAGE, "none");
                 break;
             case 'B':
                 if(!(pcap_buffer_size = atoi(optarg))) {
@@ -383,6 +391,9 @@ main(int argc, char* argv[])
             return 1;
     }
 
+
+
+
     if (outfile)
     {
         ino_t dump_inode;
@@ -454,6 +465,32 @@ main(int argc, char* argv[])
             printf("\rDialog count: %d\n", sip_calls_count_unrotated());
     }
 
+
+    if (text_outfile)
+    {
+        vector_iter_t calls;
+        calls = sip_calls_iterator();
+
+        sip_call_t *call = NULL;
+        sip_msg_t *msg = NULL;
+        vector_iter_t msgs;
+
+        FILE *f = NULL;
+
+        if (!(f = fopen(text_outfile, "w"))) {
+            fprintf(stderr, "Couldn't open sip output file");
+            return 0;
+        }
+
+        while ((call = vector_iterator_next(&calls))) {
+            msgs = vector_iterator(call->msgs);
+            // Save SIP message content
+            while ((msg = vector_iterator_next(&msgs))) {
+                save_msg_txt(f, msg);
+            }
+        }
+        fclose(f);
+    }
     // Capture deinit
     capture_deinit();
 
