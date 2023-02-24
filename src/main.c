@@ -361,13 +361,20 @@ main(int argc, char* argv[])
     capture_init(limit, rtp_capture, rotate, pcap_buffer_size);
 
 #ifdef USE_EEP
+    // Disable HEP listen when input files are specified in command line, otherwise online and offline packets
+    // will be mixed, and it will be confusing
+    if (vector_count(infiles) != 0) {
+        setting_set_value(SETTING_EEP_LISTEN, SETTING_OFF);
+    }
+
     // Initialize EEP if enabled
     capture_eep_init();
 #endif
 
     // If no device or files has been specified in command line, use default
-    if (capture_sources_count() == 0 &&
-        vector_count(indevices) == 0 && vector_count(infiles) == 0) {
+    if (capture_sources_count() == 0
+        && vector_count(indevices) == 0
+        && vector_count(infiles) == 0) {
         token = strdup(device);
         token = strtok(token, ",");
         while (token) {
