@@ -616,6 +616,10 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         }
     }
 
+    // Check maximum capture len
+    if (*caplen > MAX_CAPTURE_LEN)
+        return NULL;
+
     // If no fragmentation
     if (ip_frag == 0) {
         // Just create a new packet with given network data
