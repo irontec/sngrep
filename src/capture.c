@@ -620,6 +620,15 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     if (*caplen > MAX_CAPTURE_LEN)
         return NULL;
 
+    // Check frame has at least IP header length
+    if (ip_ver == 4 && header->caplen < link_hl + sizeof(struct ip))
+        return NULL;
+
+#ifdef USE_IPV6
+    if (ip_ver == 6 && header->caplen < link_hl + sizeof(struct ip6_hdr))
+        return NULL;
+#endif
+
     // If no fragmentation
     if (ip_frag == 0) {
         // Just create a new packet with given network data
