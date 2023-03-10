@@ -130,7 +130,7 @@ int
 main(int argc, char* argv[])
 {
     int opt, idx, limit, only_calls, no_incomplete, pcap_buffer_size, i;
-    const char *device, *outfile, *text_outfile;
+    const char *device, *outfile, *text_outfile = NULL;
     char bpf[512];
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
     const char *keyfile;
