@@ -1,3 +1,12 @@
+2023-03-31 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.7.0 released
+
+	* save: add option --text to save captured data to plain text
+	* capture: fix memory overflows while parsing IP headers
+	* hep: fix hep listener enabled in offline mode
+	* core: stop sngrep when parent process has ended
+	* ssl: fix decrypt with AES256 GCM SHA384 cipher
+
 2022-08-31 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.6.0 released
 
