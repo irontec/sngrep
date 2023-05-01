@@ -184,7 +184,7 @@ capture_online(const char *dev)
     }
 
     if (pcap_set_promisc(capinfo->handle, 1) != 0) {
-        fprintf(stderr, "Error setting promiscous mode on %s: %s\n", dev, pcap_geterr(capinfo->handle));
+        fprintf(stderr, "Error setting promiscuous mode on %s: %s\n", dev, pcap_geterr(capinfo->handle));
         return 2;
     }
 
