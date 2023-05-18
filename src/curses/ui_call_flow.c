@@ -436,6 +436,9 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     int msglen;
     int aline = cline + 1;
 
+    // quell warning about unused variables (getmaxyx is a macro)
+    (void)floww;
+
     // Initialize method
     memset(method, 0, sizeof(method));
 
@@ -679,6 +682,9 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     sip_call_t *call;
     call_flow_arrow_t *msgarrow;
     address_t addr;
+
+    // quell warning about unused variables (getmaxyx is a macro)
+    (void)width;
 
     // Get panel information
     info = call_flow_info(ui);
@@ -1113,6 +1119,10 @@ call_flow_handle_key(ui_t *ui, int key)
     sip_call_t *call = NULL, *xcall = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
+
+    // quell warnings about unused variables (getmaxyx is a macro)
+    (void)height;
+    (void)width;
 
     // Sanity check, this should not happen
     if (!info)

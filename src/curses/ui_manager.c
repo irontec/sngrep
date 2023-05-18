@@ -594,6 +594,9 @@ dialog_progress_set_value(WINDOW *win, int perc)
 {
     int height, width;
 
+    // quell warning about unused variables (getmaxyx is a macro)
+    (void)height;
+
     getmaxyx(win, height, width);
     mvwhline(win, 4, 4, '-', width - 10);
     mvwaddch(win, 4, 3, '[');

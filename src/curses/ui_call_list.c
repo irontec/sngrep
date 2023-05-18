@@ -566,6 +566,10 @@ call_list_handle_key(ui_t *ui, int key)
     sip_call_t *call, *xcall;
     sip_sort_t sort;
 
+    // quell warnings about unused variables (getmaxyx is a macro)
+    (void)listh;
+    (void)listw;
+
     // Sanity check, this should not happen
     if (!(info  = call_list_info(ui)))
         return -1;
