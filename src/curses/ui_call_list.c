@@ -558,17 +558,13 @@ call_list_line_text(ui_t *ui, sip_call_t *call, char *text)
 int
 call_list_handle_key(ui_t *ui, int key)
 {
-    int listh, listw,rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
+    int rnpag_steps = setting_get_intvalue(SETTING_CL_SCROLLSTEP);
     call_list_info_t *info;
     ui_t *next_ui;
     sip_call_group_t *group;
     int action = -1;
     sip_call_t *call, *xcall;
     sip_sort_t sort;
-
-    // quell warnings about unused variables (getmaxyx is a macro)
-    (void)listh;
-    (void)listw;
 
     // Sanity check, this should not happen
     if (!(info  = call_list_info(ui)))
@@ -583,7 +579,6 @@ call_list_handle_key(ui_t *ui, int key)
 
     // Get window of call list panel
     WINDOW *list_win = info->list_win;
-    getmaxyx(list_win, listh, listw);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {

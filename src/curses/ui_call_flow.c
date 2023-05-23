@@ -428,16 +428,13 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     address_t dst;
     char method[METHOD_MAXLEN + 1];
     char delta[15] = {};
-    int flowh, floww;
+    int flowh;
     char mediastr[40];
     sip_msg_t *msg = arrow->item;
     vector_iter_t medias;
     int color = 0;
     int msglen;
     int aline = cline + 1;
-
-    // quell warning about unused variables (getmaxyx is a macro)
-    (void)floww;
 
     // Initialize method
     memset(method, 0, sizeof(method));
@@ -447,7 +444,7 @@ call_flow_draw_message(ui_t *ui, call_flow_arrow_t *arrow, int cline)
 
     // Get the messages window
     flow_win = info->flow_win;
-    getmaxyx(flow_win, flowh, floww);
+    flowh = getmaxx(flow_win);
 
     // Store arrow start line
     arrow->line = cline;
@@ -676,21 +673,18 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     call_flow_info_t *info;
     WINDOW *win;
     char text[50], time[20];
-    int height, width;
+    int height;
     rtp_stream_t *stream = arrow->item;
     sip_msg_t *msg;
     sip_call_t *call;
     call_flow_arrow_t *msgarrow;
     address_t addr;
 
-    // quell warning about unused variables (getmaxyx is a macro)
-    (void)width;
-
     // Get panel information
     info = call_flow_info(ui);
     // Get the messages window
     win = info->flow_win;
-    getmaxyx(win, height, width);
+    height = getmaxy(win);
 
     // Store arrow start line
     arrow->line = cline;
@@ -1113,22 +1107,16 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
 int
 call_flow_handle_key(ui_t *ui, int key)
 {
-    int raw_width, height, width;
+    int raw_width;
     call_flow_info_t *info = call_flow_info(ui);
     ui_t *next_ui;
     sip_call_t *call = NULL, *xcall = NULL;
     int rnpag_steps = setting_get_intvalue(SETTING_CF_SCROLLSTEP);
     int action = -1;
 
-    // quell warnings about unused variables (getmaxyx is a macro)
-    (void)height;
-    (void)width;
-
     // Sanity check, this should not happen
     if (!info)
         return KEY_NOT_HANDLED;
-
-    getmaxyx(info->flow_win, height, width);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
