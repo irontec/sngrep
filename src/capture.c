@@ -901,8 +901,8 @@ capture_ws_check_packet(packet_t *packet)
     size_payload = packet_payloadlen(packet);
     payload = packet_payload(packet);
 
-    // Check we have payload
-    if (size_payload == 0)
+    // Check we have enough payload (base)
+    if (size_payload == 0 || size_payload <= 2)
         return 0;
 
     // Flags && Opcode
@@ -931,8 +931,17 @@ capture_ws_check_packet(packet_t *packet)
             return 0;
     }
 
+    // Check we have enough payload (base + extended payload headers)
+    if ((int32_t) size_payload - ws_off <= 0) {
+        return 0;
+    }
+
     // Get Masking key if mask is enabled
     if (ws_mask) {
+        // Check we have enough payload (base + extended payload headers + mask)
+        if ((int32_t) size_payload - ws_off - 4 <= 0) {
+            return 0;
+        }
         memcpy(ws_mask_key, (payload + ws_off), 4);
         ws_off += 4;
     }
