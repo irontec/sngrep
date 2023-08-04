@@ -162,7 +162,7 @@ filter_check_call(void *item)
             case FILTER_PAYLOAD:
                 break;
             case FILTER_CALL_LIST:
-                // FIXME Maybe call should know hot to calculate this line
+                // FIXME Maybe call should know how to calculate this line
                 call_list_line_text(ui_find_by_type(PANEL_CALL_LIST), call, data);
                 break;
             default:
