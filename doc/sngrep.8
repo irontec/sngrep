@@ -11,7 +11,7 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [-hVcivlkNqE] [ -IO
+.B sngrep [-hVcivlkNqEr] [ -IO
 .I pcap_dump
 .B ] [ -d
 .I dev
@@ -50,6 +50,10 @@ Display version information.
 .TP
 .I \-c
 Only capture dialogs starting with an INVITE request.
+
+.TP
+.I \-r
+Store RTP packets payload in memory (enables saving RTP to pcap)
 
 .TP
 .I \-i
