@@ -1099,6 +1099,10 @@ capture_set_bpf_filter(const char *filter)
 
     // Apply the given filter to all sources
     while ((capinfo = vector_iterator_next(&it))) {
+        //! Only try to validate bpf filter for pcap sources
+        if (!capinfo->ispcap)
+            continue;
+
         //! Check if filter compiles
         if (pcap_compile(capinfo->handle, &capture_cfg.fp, filter, 0, capinfo->mask) == -1)
             return 1;
