@@ -552,6 +552,10 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         }
     }
 
+    // Check capture length contains more than link layer
+    if (link_hl >= *caplen)
+        return NULL;
+
     while (*size >= sizeof(struct ip)) {
         // Get IP header
         ip4 = (struct ip *) (packet + link_hl);
