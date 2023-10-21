@@ -71,7 +71,8 @@ with bpf filters.
 .TP
 .I \-O pcap_dump
 Save all captured packets to a pcap file. This option can be used
-with bpf filters.
+with bpf filters. When receiving a SIGUSR1 signal sngrep will reopen
+the pcap file in order to facilitate pcap file rotation.
 
 .TP
 .I -B buffer
