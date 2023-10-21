@@ -66,10 +66,9 @@ void setup_sigterm_handler(void)
     if (signal(SIGQUIT, sigterm_handler) == SIG_ERR)
         exit(EXIT_FAILURE);
 
-    // Handle SIGCONT signal, received when parent process has died and
-    // kernel requests us to continue running. This prevents running on
-    // dead ssh connections.
-    if (signal(SIGCONT, sigterm_handler) == SIG_ERR)
+    // Handle SIGHUP signal, received when our controlling terminal is closed.
+    // This prevents running on dead ssh connections.
+    if (signal(SIGHUP, sigterm_handler) == SIG_ERR)
         exit(EXIT_FAILURE);
 }
 

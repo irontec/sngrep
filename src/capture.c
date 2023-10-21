@@ -67,11 +67,11 @@ typedef volatile sig_atomic_t signal_flag_type;
 capture_config_t capture_cfg =
 { 0 };
 
-signal_flag_type sighup_received = 0;
+signal_flag_type sigusr1_received = 0;
 
-void sighup_handler(int signum)
+void sigusr1_handler(int signum)
 {
-    sighup_received = 1;
+    sigusr1_received = 1;
 }
 
 #if defined(WITH_ZLIB)
@@ -104,11 +104,11 @@ capture_init(size_t limit, bool rtp_capture, bool rotate, size_t pcap_buffer_siz
     capture_cfg.paused = 0;
     capture_cfg.sources = vector_create(1, 1);
 
-    // set up SIGHUP handler
+    // set up SIGUSR1 signal handler for pcap dump file rotation
     // the handler will be served by any of the running threads
     // so we just set a flag and check it in dump_packet
     // so it is only acted upon before then next packed will be dumped
-    if (signal(SIGHUP, sighup_handler) == SIG_ERR)
+    if (signal(SIGUSR1, sigusr1_handler) == SIG_ERR)
         exit(EXIT_FAILURE);
 
     // Fixme
@@ -1318,8 +1318,8 @@ capture_set_dumper(pcap_dumper_t *dumper, ino_t dump_inode)
 void
 capture_dump_packet(packet_t *packet)
 {
-    if (sighup_received && capture_cfg.pd) {
-        // we got a SIGHUP: reopen the dump file because it could have been renamed
+    if (sigusr1_received && capture_cfg.pd) {
+        // we got a SIGUSR1: reopen the dump file because it could have been renamed
         // we don't need to care about locking or other threads accessing in parallel
         // because dump_open ensures count(capture_cfg.sources) == 1
 
@@ -1333,7 +1333,7 @@ capture_dump_packet(packet_t *packet)
             capture_cfg.pd = dump_open(capture_cfg.dumpfilename, &capture_cfg.dump_inode);
         }
 
-        sighup_received = 0;
+        sigusr1_received = 0;
 
         // error reopening capture file: we can't capture anymore
         if (!capture_cfg.pd)
