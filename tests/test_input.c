@@ -68,7 +68,11 @@ main()
     } else if (child == 0) {
         // Child process, run sngrep with test pcap
         dup2(ppipe[0], STDIN_FILENO);
+#ifdef CMAKE_CURRENT_BINARY_DIR
+	char *argv[] = { CMAKE_CURRENT_BINARY_DIR "/sngrep", "-I", TEST_PCAP_INPUT, 0 };
+#else
         char *argv[] = { "../src/sngrep", "-I", TEST_PCAP_INPUT, 0 };
+#endif
         execv(argv[0], argv);
     } else {
         // Parent process, send keys to child stdin
