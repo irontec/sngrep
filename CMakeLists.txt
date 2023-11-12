@@ -49,8 +49,31 @@ endif()
 # Check for other REQUIRED libraries
 
 find_package( PkgConfig REQUIRED )
-pkg_check_modules( LIBPCAP REQUIRED IMPORTED_TARGET libpcap )
-target_link_libraries( sngrep PUBLIC pthread PkgConfig::LIBPCAP )
+
+message( STATUS "Checking for library 'libpthread'" )
+find_library( LIBPTHREAD pthread ) # Note: The use of "REQUIRED" here would need CMake 3.18...
+if( LIBPTHREAD )                   # ...therefore we check the result for ourself
+	message( STATUS "  Found ${LIBPTHREAD}" )
+	target_link_libraries( sngrep PUBLIC pthread )
+else()
+	message( STATUS "  No library 'libpthread' found" )
+	message( FATAL_ERROR "You need to have libpthread installed to compile sngrep." )
+endif()
+
+pkg_check_modules( LIBPCAP IMPORTED_TARGET libpcap )
+if( LIBPCAP_FOUND )
+	target_link_libraries( sngrep PUBLIC PkgConfig::LIBPCAP )
+else()
+	message( STATUS "Checking for library 'libpcap'" )
+	find_library( LIBPCAP pcap )
+	if( LIBPCAP )
+		message( STATUS "  Found ${LIBPCAP}" )
+		target_link_libraries( sngrep PUBLIC pcap )
+	else()
+		message( STATUS "  No library 'libpcap' found" )
+		message( FATAL_ERROR "You need to have libpcap installed to compile sngrep." )
+	endif()
+endif()
 
 ####
 #### Ncurses Wide character support
@@ -77,8 +100,12 @@ if( WITH_GNUTLS )
 	target_compile_definitions( sngrep PRIVATE WITH_GNUTLS ) # Compile With GnuTLS compatibility
 
 	pkg_check_modules( GNUTLS REQUIRED IMPORTED_TARGET gnutls )
-	find_library( GCRYPT gcrypt ) # Note: The use of "REQUIRED" here would need CMake 3.18...
-	if( NOT GCRYPT )              # ...therefore we check the result for ourself
+	message( STATUS "Checking for library 'libgcrypt'" )
+	find_library( LIBGCRYPT gcrypt ) # Note: The use of "REQUIRED" here would need CMake 3.18...
+	if( LIBGCRYPT )                  # ...therefore we check the result for ourself
+		message( STATUS "  Found ${LIBGCRYPT}" )
+	else()
+		message( STATUS "  No library 'libgcrypt' found" )
 		message( FATAL_ERROR "You need to have libgcrypt installed to compile sngrep" )
 	endif()
 	target_link_libraries( sngrep PUBLIC pthread PkgConfig::GNUTLS gcrypt )
@@ -224,6 +251,8 @@ install( FILES README TODO COPYING ChangeLog DESTINATION "${CMAKE_INSTALL_DOCDIR
 ######################################################################
 # Packaging
 
+set( CPACK_PACKAGE_NAME "${AC_PACKAGE_NAME}" )
+set( CPACK_PACKAGE_VERSION "${AC_PACKAGE_VERSION}" )
 set( CPACK_PACKAGE_CONTACT "Ivan Alonso <kaian@irontec.com>" ) # ${AC_PACKAGE_BUGREPORT} only contains the E-Mail address, therefore we don't use it here
 set( CPACK_PACKAGE_HOMEPAGE_URL "${AC_PACKAGE_URL}" )
 set( CPACK_PACKAGE_VENDOR "Irontec S.L." )
