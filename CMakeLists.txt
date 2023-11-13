@@ -7,9 +7,9 @@ option( WITH_OPENSSL   "Enable SSL Support (TLS SIP Transport)"            no )
 option( WITH_PCRE      "Enable Perl compatible regular expressions"        no )
 option( WITH_PCRE2     "Enable Perl compatible regular expressions (v2)"   no )
 option( WITH_ZLIB      "Enable zlib to support gzip compressed pcap files" no )
-option( ENABLE_UNICODE "Enable Ncurses Unicode support"                    no )
-option( ENABLE_IPV6    "Enable IPv6 Support"                               no )
-option( ENABLE_EEP     "Enable EEP/HEP Support"                            no )
+option( WITH_UNICODE   "Enable Ncurses Unicode support"                    no )
+option( USE_IPV6       "Enable IPv6 Support"                               no )
+option( USE_EEP        "Enable EEP/HEP Support"                            no )
 option( DISABLE_LOGO   "Disable Irontec Logo from Summary menu"            no )
 
 # Read parameters of AC_INIT() from file configure.ac
@@ -33,17 +33,17 @@ project( ${AC_PACKAGE_NAME}
 
 add_executable( sngrep src/main.c )
 
+set_target_properties( sngrep PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED YES C_EXTENSIONS YES )
+target_compile_options( sngrep PRIVATE -Wall -pedantic ) # -Wextra -Wconversion -Werror
+
 # Define _GNU_SOURCE etc.
 if( CMAKE_SYSTEM_NAME STREQUAL "Linux" )
-	target_compile_definitions( sngrep PRIVATE _GNU_SOURCE=1 )
+	target_compile_definitions( sngrep PRIVATE _GNU_SOURCE=1 _XOPEN_SOURCE_EXTENDED=1 )
 endif()
 
 # we might want to use this with zlib for compressed pcap support
 include( CheckFunctionExists )
 check_function_exists( fopencookie HAVE_FOPENCOOKIE )
-if( HAVE_FOPENCOOKIE )
-	target_compile_definitions( sngrep PRIVATE HAVE_FOPENCOOKIE=1 )
-endif()
 
 #######################################################################
 # Check for other REQUIRED libraries
@@ -78,9 +78,7 @@ endif()
 ####
 #### Ncurses Wide character support
 ####
-if( ENABLE_UNICODE )
-	target_compile_definitions( sngrep PRIVATE WITH_UNICODE ) # Compile With Unicode compatibility
-
+if( WITH_UNICODE )
 	pkg_check_modules( NCURSES REQUIRED IMPORTED_TARGET ncursesw )
 	pkg_check_modules( PANEL REQUIRED IMPORTED_TARGET panelw )
 	pkg_check_modules( FORM REQUIRED IMPORTED_TARGET formw )
@@ -97,8 +95,6 @@ target_link_libraries( sngrep PUBLIC PkgConfig::NCURSES PkgConfig::PANEL PkgConf
 #### GnuTLS Support
 ####
 if( WITH_GNUTLS )
-	target_compile_definitions( sngrep PRIVATE WITH_GNUTLS ) # Compile With GnuTLS compatibility
-
 	pkg_check_modules( GNUTLS REQUIRED IMPORTED_TARGET gnutls )
 	message( STATUS "Checking for library 'libgcrypt'" )
 	find_library( LIBGCRYPT gcrypt ) # Note: The use of "REQUIRED" here would need CMake 3.18...
@@ -119,8 +115,6 @@ if( WITH_OPENSSL )
 		message( FATAL_ERROR "GnuTLS and OpenSSL can not be enabled at the same time" )
 	endif()
 
-	target_compile_definitions( sngrep PRIVATE WITH_OPENSSL ) # Compile With Openssl compatibility
-
 	pkg_check_modules( LIBSSL REQUIRED IMPORTED_TARGET libssl )
 	pkg_check_modules( LIBCRYPTO REQUIRED IMPORTED_TARGET libcrypto )
 	target_link_libraries( sngrep PUBLIC pthread PkgConfig::LIBSSL PkgConfig::LIBCRYPTO )
@@ -130,8 +124,6 @@ endif()
 #### PCRE Support
 ####
 if( WITH_PCRE )
-	target_compile_definitions( sngrep PRIVATE WITH_PCRE ) # Compile With Perl Compatible regular expressions support
-
 	pkg_check_modules( LIBPCRE REQUIRED IMPORTED_TARGET libpcre )
 	target_link_libraries( sngrep PUBLIC pthread PkgConfig::LIBPCRE )
 endif()
@@ -144,7 +136,6 @@ if( WITH_PCRE2 )
 		message( FATAL_ERROR "libpcre-2 and libpcre-3 can not be enabled at the same time" )
 	endif()
 
-	target_compile_definitions( sngrep PRIVATE WITH_PCRE2 ) # Compile With Perl Compatible regular expressions support
 	target_compile_definitions( sngrep PRIVATE PCRE2_CODE_UNIT_WIDTH=8 ) # Required for including pcre2.h
 
 	pkg_check_modules( LIBPCRE2 REQUIRED IMPORTED_TARGET libpcre2-8 )
@@ -152,25 +143,9 @@ if( WITH_PCRE2 )
 endif()
 
 ####
-#### IPv6 Support
-####
-if( ENABLE_IPV6 )
-	target_compile_definitions( sngrep PRIVATE USE_IPV6 ) # Compile With IPv6 support
-endif()
-
-####
-#### EEP Support
-####
-if( ENABLE_EEP )
-	target_compile_definitions( sngrep PRIVATE USE_EEP ) # Compile With EEP support
-endif()
-
-####
 #### zlib Support
 ####
 if ( WITH_ZLIB )
-	target_compile_definitions( sngrep PRIVATE WITH_ZLIB ) # Compile With zlib support
-
 	pkg_check_modules( ZLIB REQUIRED IMPORTED_TARGET zlib )
 	target_link_libraries( sngrep PUBLIC pthread PkgConfig::ZLIB )
 endif()
@@ -219,23 +194,14 @@ endif()
 if( WITH_OPENSSL )
 	target_sources( sngrep PRIVATE src/capture_openssl.c )
 endif()
-if( ENABLE_EEP )
+if( USE_EEP )
 	target_sources( sngrep PRIVATE src/capture_eep.c )
 endif()
 
 ######################################################################
 # Generate config.h
 
-file( WRITE ${CMAKE_CURRENT_BINARY_DIR}/config.h
-	"#define PACKAGE \"${PROJECT_NAME}\"\n"
-	"#define PACKAGE_BUGREPORT \"${CPACK_PACKAGE_CONTACT}\"\n"
-	"#define PACKAGE_NAME \"${PROJECT_NAME}\"\n"
-	"#define PACKAGE_STRING \"${PROJECT_NAME} ${PROJECT_VERSION}\"\n"
-	"#define PACKAGE_URL \"${PROJECT_HOMEPAGE_URL}\"\n"
-	"#define PACKAGE_VERSION \"${PROJECT_VERSION}\"\n"
-	"#define VERSION \"${PROJECT_VERSION}\"\n\n"
-	"#define CMAKE_CURRENT_BINARY_DIR \"${CMAKE_CURRENT_BINARY_DIR}\"\n" ) # CMAKE_CURRENT_BINARY_DIR is needed in tests/test_input.c
-
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h )
 target_include_directories( sngrep PRIVATE ${CMAKE_CURRENT_BINARY_DIR} )
 
 ######################################################################
@@ -305,11 +271,11 @@ message( STATUS "sngrep configure finished"                              )
 message( STATUS "======================================================" )
 message( STATUS "GnuTLS Support               : ${WITH_GNUTLS}"          )
 message( STATUS "OpenSSL Support              : ${WITH_OPENSSL}"         )
-message( STATUS "Unicode Support              : ${ENABLE_UNICODE}"       )
+message( STATUS "Unicode Support              : ${WITH_UNICODE}"         )
 message( STATUS "Perl Expressions Support     : ${WITH_PCRE}"            )
 message( STATUS "Perl Expressions Support (v2): ${WITH_PCRE2}"           )
-message( STATUS "IPv6 Support                 : ${ENABLE_IPV6}"          )
-message( STATUS "EEP Support                  : ${ENABLE_EEP}"           )
+message( STATUS "IPv6 Support                 : ${USE_IPV6}"             )
+message( STATUS "EEP Support                  : ${USE_EEP}"              )
 message( STATUS "Zlib Support                 : ${WITH_ZLIB}"            )
 message( STATUS "======================================================" )
 message( STATUS "" )
