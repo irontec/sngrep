@@ -174,7 +174,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:F:T";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
