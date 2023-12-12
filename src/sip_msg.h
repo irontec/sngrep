@@ -84,7 +84,7 @@ struct sip_msg {
  * @return a new allocated message
  */
 sip_msg_t *
-msg_create();
+msg_create(const char *payload);
 
 /**
  * @brief Destroy a SIP message and free its memory
