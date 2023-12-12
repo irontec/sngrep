@@ -313,7 +313,7 @@ capture_packet_parse(packet_t *pkt);
  * @return 0 on success, 1 otherwise
  */
 int
-capture_launch_thread();
+capture_launch_thread(capture_info_t *capinfo);
 
 /**
  * @brief PCAP Capture Thread
