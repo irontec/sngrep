@@ -448,7 +448,7 @@ main(int argc, char* argv[])
     }
 
     // Start a capture thread
-    if (capture_launch_thread() != 0) {
+    if (capture_launch_thread(NULL) != 0) {
         ncurses_deinit();
         fprintf(stderr, "Failed to launch capture thread.\n");
         return 1;
