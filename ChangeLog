@@ -1,3 +1,13 @@
+2023-12-20 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.8.0 released
+
+	* fix typo in message, thanks to lintian
+	* fix compiler warnings about unused variables
+	* fix debian pkg dependency to libpcre2-8-0
+	* Fixed a typo in comment line in filter.c
+	* Redefine usage of POSIX signals
+	* Support for building sngrep using CMake added
+
 2023-03-31 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.7.0 released
 
