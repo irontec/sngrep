@@ -1039,8 +1039,9 @@ capture_close()
 }
 
 int
-capture_launch_thread(capture_info_t *capinfo)
+capture_launch_thread()
 {
+    capture_info_t *capinfo = NULL;
     //! capture thread attributes
     pthread_attr_t attr;
     pthread_attr_init(&attr);

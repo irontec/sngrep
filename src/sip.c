@@ -349,7 +349,7 @@ sip_check_packet(packet_t *packet)
         return NULL;
 
     // Create a new message from this data
-    if (!(msg = msg_create((const char*) payload)))
+    if (!(msg = msg_create()))
         return NULL;
 
     // Get Method and request for the following checks
