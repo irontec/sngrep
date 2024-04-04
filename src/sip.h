@@ -47,6 +47,8 @@
 #define MAX_SIP_PAYLOAD 10240
 #define MAX_CALLID_SIZE 1024
 #define MAX_XCALLID_SIZE 1024
+#define MAX_CONTENT_LENGTH_SIZE 10
+#define MAX_WARNING_SIZE 10
 
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;

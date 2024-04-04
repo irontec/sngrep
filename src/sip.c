@@ -280,7 +280,7 @@ sip_validate_packet(packet_t *packet)
     uint32_t plen = packet_payloadlen(packet);
     u_char payload[MAX_SIP_PAYLOAD];
     regmatch_t pmatch[4];
-    char cl_header[10];
+    char cl_header[MAX_CONTENT_LENGTH_SIZE];
     int content_len;
     int bodylen;
 
@@ -307,7 +307,15 @@ sip_validate_packet(packet_t *packet)
         return VALIDATE_PARTIAL_SIP;
     }
 
-    strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+    // Ensure the copy length does not exceed MAX_CONTENT_LENGTH_SIZE - 1
+    int cl_match_len = pmatch[2].rm_eo - pmatch[2].rm_so;
+    if (cl_match_len > MAX_CONTENT_LENGTH_SIZE - 1) {
+        cl_match_len = MAX_CONTENT_LENGTH_SIZE - 1;
+    }
+
+    strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, cl_match_len);
+    cl_header[cl_match_len] = '\0'; // Ensuring null termination
+
     content_len = atoi(cl_header);
 
     // Check if we have Body separator field
@@ -772,7 +780,7 @@ void
 sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
 {
     regmatch_t pmatch[4];
-    char warning[10];
+    char warning[MAX_WARNING_SIZE];
 
      // Reason text
      if (regexec(&calls.reg_reason, (const char *)payload, 2, pmatch, 0) == 0) {
@@ -782,8 +790,16 @@ sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
 
      // Warning code
      if (regexec(&calls.reg_warning, (const char *)payload, 2, pmatch, 0) == 0) {
-         strncpy(warning, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
-         msg->call->warning = atoi(warning);
+
+        // Ensure the copy length does not exceed MAX_WARNING_SIZE - 1
+        int warning_match_len = pmatch[1].rm_eo - pmatch[1].rm_so;
+        if (warning_match_len > MAX_WARNING_SIZE - 1) {
+            warning_match_len = MAX_WARNING_SIZE - 1;
+        }
+        strncpy(warning, (const char *)payload +  pmatch[1].rm_so, warning_match_len);
+        warning[warning_match_len] = '\0'; // Ensuring null termination
+
+        msg->call->warning = atoi(warning);
      }
 }
 
