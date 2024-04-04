@@ -238,8 +238,16 @@ sip_get_callid(const char* payload, char *callid)
 
     // Try to get Call-ID from payload
     if (regexec(&calls.reg_callid, payload, 3, pmatch, 0) == 0) {
+        int input_len = pmatch[2].rm_eo - pmatch[2].rm_so;
+
+        // Ensure the copy length does not exceed MAX_CALLID_SIZE - 1
+        if (input_len > MAX_CALLID_SIZE - 1) {
+            input_len = MAX_CALLID_SIZE - 1;
+        }
+
         // Copy the matching part of payload
-        strncpy(callid, payload + pmatch[2].rm_so, (int) pmatch[2].rm_eo - pmatch[2].rm_so);
+        strncpy(callid, payload + pmatch[2].rm_so, input_len);
+        callid[input_len] = '\0';
     }
 
     return callid;
@@ -252,7 +260,15 @@ sip_get_xcallid(const char *payload, char *xcallid)
 
     // Try to get X-Call-ID from payload
     if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
-        strncpy(xcallid, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+        int input_len = pmatch[2].rm_eo - pmatch[2].rm_so;
+
+        // Ensure the copy length does not exceed MAX_XCALLID_SIZE - 1
+        if (input_len > MAX_XCALLID_SIZE - 1) {
+            input_len = MAX_XCALLID_SIZE - 1;
+        }
+
+        strncpy(xcallid, (const char *)payload +  pmatch[2].rm_so, input_len);
+        xcallid[input_len] = '\0';
     }
 
     return xcallid;
@@ -328,7 +344,7 @@ sip_check_packet(packet_t *packet)
 {
     sip_msg_t *msg;
     sip_call_t *call;
-    char callid[1024], xcallid[1024];
+    char callid[MAX_CALLID_SIZE], xcallid[MAX_XCALLID_SIZE];
     u_char payload[MAX_SIP_PAYLOAD];
     bool newcall = false;
 
