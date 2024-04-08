@@ -61,7 +61,7 @@ make %{?_smp_mflags}
 %changelog
 * Mon Apr 08 2024 Ivan Alonso <kaian@irontec.com> - 1.8.1
  - Version 1.8.1
-* Wed Dec 20 2024 Ivan Alonso <kaian@irontec.com> - 1.8.0
+* Wed Dec 20 2023 Ivan Alonso <kaian@irontec.com> - 1.8.0
  - Version 1.8.0
 * Fri Mar 31 2023 Ivan Alonso <kaian@irontec.com> - 1.7.0
  - Version 1.7.0
