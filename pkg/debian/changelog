@@ -1,3 +1,9 @@
+sngrep (1.8.1) experimental; urgency=low
+
+    * sngrep 1.8.1 released
+
+ -- Ivan Alonso <kaian@irontec.com>  Mon, 08 Apr 2024 10:55:20 +0200
+
 sngrep (1.8.0) experimental; urgency=low
 
     * sngrep 1.8.0 released
