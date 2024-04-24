@@ -271,6 +271,10 @@ rtp_check_packet(packet_t *packet)
                 // Check RTCP packet header typ
                 switch (hdr.type) {
                     case RTCP_HDR_SR:
+                        // Ensure there is enough payload to fill the header
+                        if (size < sizeof(struct rtcp_hdr_sr))
+                            break;
+
                         // Get Sender Report header
                         memcpy(&hdr_sr, payload, sizeof(hdr_sr));
                         stream->rtcpinfo.spc = ntohl(hdr_sr.spc);
@@ -283,6 +287,10 @@ rtp_check_packet(packet_t *packet)
                     case RTCP_PSFB:
                         break;
                     case RTCP_XR:
+                        // Ensure there is enough payload to fill the header
+                        if (size < sizeof(struct rtcp_hdr_xr))
+                            break;
+
                         // Get Sender Report Extended header
                         memcpy(&hdr_xr, payload, sizeof(hdr_xr));
                         bsize = sizeof(hdr_xr);
