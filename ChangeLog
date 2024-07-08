@@ -1,3 +1,8 @@
+2024-07-08 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.8.2 released
+
+	* capture: fix possible buffer overflow while processing RTP payload
+
 2024-04-08 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.8.1 released
 
