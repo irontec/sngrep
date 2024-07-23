@@ -394,6 +394,11 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
             if (pkt_hep3) {
                 packet_destroy(pkt);
                 pkt = pkt_hep3;
+                // Replace fake HEP generated frames with captured ones
+                vector_set_destroyer(pkt->frames, vector_generic_destroyer);
+                vector_destroy(pkt->frames);
+                pkt->frames = vector_create(1, 1);
+                packet_add_frame(pkt, header, packet);
             } else {
                 // Complete packet with Transport information
                 packet_set_type(pkt, PACKET_SIP_UDP);
