@@ -177,6 +177,10 @@ accept_eep_client(void *info)
             if (capture_packet_parse(pkt) != 0) {
                 packet_destroy(pkt);
             }
+
+            // Store this packets in output file
+            capture_dump_packet(pkt);
+
             capture_unlock();
         }
     }
@@ -678,9 +682,6 @@ capture_eep_receive_v2()
     // We don't longer require frame payload anymore, because adding the frame to packet clones its memory
     sng_free(frame_payload);
 
-    // Store this packets in output file
-    capture_dump_packet(pkt);
-
     /* FREE */
     sng_free(payload);
     return pkt;
@@ -862,9 +863,6 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     // We don't longer require frame payload anymore, because adding the frame to packet clones its memory
     sng_free(frame_payload);
-
-    // Store this packets in output file
-    capture_dump_packet(pkt_new);
 
     /* FREE */
     sng_free(payload);
