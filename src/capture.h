@@ -65,7 +65,9 @@
 #endif
 
 #include <arpa/inet.h>
+#ifndef __CYGWIN__
 #include <netinet/if_ether.h>
+#endif
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
