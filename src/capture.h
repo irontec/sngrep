@@ -100,6 +100,18 @@ typedef struct nflog_tlv {
 #define WH_LEN      0x7F
 #define WS_OPCODE_TEXT 0x1
 
+//! Define Virtual Extensible Local Area Network port
+#define VXLAN_PORT 4789
+
+//! VXLAN Support
+struct vxlan_hdr {
+    uint8_t flags;
+    uint8_t reserved[3];
+    uint32_t vni;
+};
+
+
+
 enum capture_storage {
     CAPTURE_STORAGE_NONE = 0,
     CAPTURE_STORAGE_MEMORY,

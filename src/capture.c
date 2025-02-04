@@ -453,6 +453,20 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         return;
     }
 
+    // Check if this could be an encapsulated packet
+    if (pkt->dst.port == VXLAN_PORT) {
+        // Get VXLAN header from current payload
+        struct vxlan_hdr *vxlan = (struct vxlan_hdr *) (payload);
+        // Destroy current packet
+        packet_destroy(pkt);
+        // Create a new header for encapsulated data
+        struct pcap_pkthdr new_header;
+        memcpy(&new_header, header, sizeof(struct pcap_pkthdr));
+        new_header.caplen = size_payload - sizeof(struct vxlan_hdr);
+        // Parse encapsulated packet again
+        return parse_packet(info, &new_header, payload + sizeof(struct vxlan_hdr));
+    }
+
     // Avoid parsing from multiples sources.
     // Avoid parsing while screen in being redrawn
     capture_lock();
