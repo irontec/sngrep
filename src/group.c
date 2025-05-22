@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include "group.h"
 
+static vector_t * oldcalls = NULL;
+vector_t * oldmessages = NULL;
+extern int offline_capture;
+
 sip_call_group_t *
 call_group_create()
 {
@@ -220,6 +224,36 @@ call_group_msg_number(sip_call_group_t *group, sip_msg_t *msg)
     return 0;
 }
 
+vector_t *
+get_ordered_messages(sip_call_group_t *group)
+{
+    vector_t *messages = NULL;
+    if (offline_capture && oldcalls != NULL && oldcalls != group->calls)
+    {
+       vector_destroy(oldmessages);
+       oldmessages = NULL;
+    }
+    if (!offline_capture || oldcalls != group->calls)
+    {
+        oldcalls = group->calls;
+
+        messages = vector_create(1,10);
+        vector_set_sorter(messages, call_group_msg_sorter);
+        vector_iter_t callsit = vector_iterator(group->calls);
+        sip_call_t *call;
+        while ((call = vector_iterator_next(&callsit))) {
+            vector_append_vector(messages, call->msgs);
+        }
+        oldmessages = messages;
+    }
+    // Caching system active here, recycle old messages
+    else
+    {
+        messages = oldmessages;
+    }
+    return messages;
+}
+
 sip_msg_t *
 call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
 {
@@ -231,20 +265,17 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
         vector_iterator_set_current(&it, vector_index(call->msgs, msg));
         next = vector_iterator_next(&it);
     } else {
-        vector_t *messages = vector_create(1,10);
-        vector_set_sorter(messages, call_group_msg_sorter);
-        vector_iter_t callsit = vector_iterator(group->calls);
-        sip_call_t *call;
-        while ((call = vector_iterator_next(&callsit))) {
-            vector_append_vector(messages, call->msgs);
-        }
+        vector_t *messages = get_ordered_messages(group);
 
         if (msg == NULL) {
             next = vector_first(messages);
         } else {
             next = vector_item(messages, vector_index(messages, msg) + 1);
         }
-        vector_destroy(messages);
+
+        if (!offline_capture) {
+            vector_destroy(messages);
+        }
     }
 
     next = sip_parse_msg(next);
@@ -266,22 +297,16 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
         vector_iterator_set_current(&it, vector_index(call->msgs, msg));
         prev = vector_iterator_prev(&it);
     } else {
-        vector_t *messages = vector_create(1, 10);
-        vector_set_sorter(messages, call_group_msg_sorter);
-
-
-        vector_iter_t callsit = vector_iterator(group->calls);
-        sip_call_t *call;
-        while ((call = vector_iterator_next(&callsit))) {
-            vector_append_vector(messages, call->msgs);
-        }
+        vector_t *messages = get_ordered_messages(group);
 
         if (msg == NULL) {
             prev = vector_last(messages);
         } else {
             prev = vector_item(messages, vector_index(messages, msg) - 1);
         }
-        vector_destroy(messages);
+        if (!offline_capture) {
+            vector_destroy(messages);
+        }
     }
 
     prev = sip_parse_msg(prev);

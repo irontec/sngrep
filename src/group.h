@@ -238,4 +238,12 @@ call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream);
 void
 call_group_msg_sorter(vector_t *vector, void *item);
 
+/**
+ * @brief Create a list of ordered messages for a call group. The list is cached in offline_capture mode
+ * @param callgroup SIP call group structure
+ * @return vector sorted vector
+ */
+vector_t *
+get_ordered_messages(sip_call_group_t *group);
+
 #endif /* __SNGREP_GROUP_H_ */

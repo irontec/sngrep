@@ -121,6 +121,8 @@ version()
            PACKAGE, VERSION);
 }
 
+int offline_capture = 0;
+extern vector_t * oldmessages;
 /**
  * @brief Main function logic
  *
@@ -389,6 +391,7 @@ main(int argc, char* argv[])
         // Try to load file
         if (capture_offline(vector_item(infiles, i)) != 0)
             return 1;
+        offline_capture = 1;
     }
 
     // If we have an input device, load it
@@ -509,6 +512,11 @@ main(int argc, char* argv[])
 
     // Deallocate sip stored messages
     sip_deinit();
+
+    if (offline_capture && oldmessages)
+    {
+        vector_destroy(oldmessages);
+    }
 
     // Leaving!
     return 0;
