@@ -577,9 +577,6 @@ call_list_handle_key(ui_t *ui, int key)
     if (info->menu_active)
         return call_list_handle_menu_key(ui, key);
 
-    // Get window of call list panel
-    WINDOW *list_win = info->list_win;
-
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
         // Check if we handle this action
