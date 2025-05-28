@@ -52,6 +52,8 @@ struct sip_call_group {
     char *callid;
     //! Calls array in the group
     vector_t *calls;
+    //! Messages from calls in the group
+    vector_t *msgs;
     //! Color of the last printed call in mode Color-by-Call
     int color;
     //! Only consider SDP messages from Calls

@@ -50,6 +50,7 @@ call_group_destroy(sip_call_group_t *group)
         call_group_del(group, call);
     }
     vector_destroy(group->calls);
+    vector_destroy(group->msgs);
     sng_free(group);
 }
 
@@ -58,11 +59,17 @@ call_group_has_changed(sip_call_group_t *group)
 {
     bool changed = false;
 
+    if (group == NULL || group->calls == NULL) {
+        return changed;
+    }
+
     // Check if any of the group has changed
     // We check all the calls even after we found a changed one to reset all
     // the changed pointers
-    sip_call_t *call = NULL;
-    while ((call = call_group_get_next(group, call))) {
+    for (int i = 0; i < vector_count(group->calls); i++) {
+        sip_call_t *call = vector_item(group->calls, i);
+
+        // If the call has changed, reset the changed flag
         if (call_has_changed(call)) {
             call->changed = false;
             changed = true;
@@ -231,20 +238,22 @@ call_group_get_next_msg(sip_call_group_t *group, sip_msg_t *msg)
         vector_iterator_set_current(&it, vector_index(call->msgs, msg));
         next = vector_iterator_next(&it);
     } else {
-        vector_t *messages = vector_create(1,10);
-        vector_set_sorter(messages, call_group_msg_sorter);
-        vector_iter_t callsit = vector_iterator(group->calls);
-        sip_call_t *call;
-        while ((call = vector_iterator_next(&callsit))) {
-            vector_append_vector(messages, call->msgs);
+        if (group->msgs == NULL || call_group_has_changed(group)) {
+            vector_t *messages = vector_create(1,10);
+            vector_set_sorter(messages, call_group_msg_sorter);
+            vector_iter_t callsit = vector_iterator(group->calls);
+            sip_call_t *call;
+            while ((call = vector_iterator_next(&callsit))) {
+                vector_append_vector(messages, call->msgs);
+            }
+            group->msgs = messages;
         }
 
         if (msg == NULL) {
-            next = vector_first(messages);
+            next = vector_first(group->msgs);
         } else {
-            next = vector_item(messages, vector_index(messages, msg) + 1);
+            next = vector_item(group->msgs, vector_index(group->msgs, msg) + 1);
         }
-        vector_destroy(messages);
     }
 
     next = sip_parse_msg(next);
@@ -266,22 +275,25 @@ call_group_get_prev_msg(sip_call_group_t *group, sip_msg_t *msg)
         vector_iterator_set_current(&it, vector_index(call->msgs, msg));
         prev = vector_iterator_prev(&it);
     } else {
-        vector_t *messages = vector_create(1, 10);
-        vector_set_sorter(messages, call_group_msg_sorter);
+        if (group->msgs == NULL || call_group_has_changed(group)) {
+            vector_t *messages = vector_create(1, 10);
+            vector_set_sorter(messages, call_group_msg_sorter);
 
 
-        vector_iter_t callsit = vector_iterator(group->calls);
-        sip_call_t *call;
-        while ((call = vector_iterator_next(&callsit))) {
-            vector_append_vector(messages, call->msgs);
+            vector_iter_t callsit = vector_iterator(group->calls);
+            sip_call_t *call;
+            while ((call = vector_iterator_next(&callsit))) {
+                vector_append_vector(messages, call->msgs);
+            }
+            group->msgs = messages;
         }
+
 
         if (msg == NULL) {
-            prev = vector_last(messages);
+            prev = vector_last(group->msgs);
         } else {
-            prev = vector_item(messages, vector_index(messages, msg) - 1);
+            prev = vector_item(group->msgs, vector_index(group->msgs, msg) - 1);
         }
-        vector_destroy(messages);
     }
 
     prev = sip_parse_msg(prev);
