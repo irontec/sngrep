@@ -387,7 +387,7 @@ filter_save_options(ui_t *ui)
             case FLD_FILTER_KDMQ:
                 if (!strcmp(field_value, "*")) {
                     if (strlen(method_expr)) {
-                        sprintf(method_expr + strlen(method_expr), ",%s", filter_field_method(field_id));
+                        snprintf(method_expr + strlen(method_expr), sizeof(method_expr) - strlen(method_expr), ",%s", filter_field_method(field_id));
                     } else {
                         strncpy(method_expr, filter_field_method(field_id), sizeof(method_expr) - 1);
                         method_expr[sizeof(method_expr) - 1] = '\0';
