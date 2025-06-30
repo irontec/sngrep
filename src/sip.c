@@ -984,7 +984,7 @@ sip_transport_str(int transport)
 }
 
 char *
-sip_get_msg_header(sip_msg_t *msg, char *out)
+sip_get_msg_header(sip_msg_t *msg, char *out, size_t maxlen)
 {
     char from_addr[80], to_addr[80], time[80], date[80];
 
@@ -996,9 +996,9 @@ sip_get_msg_header(sip_msg_t *msg, char *out)
 
     // Get msg header
     if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-        sprintf(out, "%s %s %s -> %s", date, time, get_alias_value(from_addr), get_alias_value(to_addr));
+        snprintf(out, maxlen, "%s %s %s -> %s", date, time, get_alias_value(from_addr), get_alias_value(to_addr));
     } else {
-        sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
+        snprintf(out, maxlen, "%s %s %s -> %s", date, time, from_addr, to_addr);
     }
     return out;
 }

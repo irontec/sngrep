@@ -190,7 +190,7 @@ call_raw_print_msg(ui_t *ui, sip_msg_t *msg)
 
     // Print msg header
     wattron(pad, A_BOLD);
-    mvwprintw(pad, info->padline++, 0, "%s", sip_get_msg_header(msg, header));
+    mvwprintw(pad, info->padline++, 0, "%s", sip_get_msg_header(msg, header, sizeof(header)));
     wattroff(pad, A_BOLD);
 
     // Print msg payload
