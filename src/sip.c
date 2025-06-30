@@ -646,16 +646,19 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     if (regexec(&calls.reg_from, (const char *)payload, 4, pmatch, 0) == 0) {
         msg->sip_from = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         strncpy(msg->sip_from, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+        msg->sip_from[(int)pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
     } else {
         // Malformed From Header
         msg->sip_from = sng_malloc(12);
-        strncpy(msg->sip_from, "<malformed>", 12);
+        strncpy(msg->sip_from, "<malformed>", 11);
+        msg->sip_from[11] = '\0';
     }
 
     // To
     if (regexec(&calls.reg_to, (const char *)payload, 4, pmatch, 0) == 0) {
         msg->sip_to = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
         strncpy(msg->sip_to, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+        msg->sip_to[(int)pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
     } else {
         // Malformed To Header
         msg->sip_to = sng_malloc(12);
@@ -743,10 +746,13 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
         if (!strncmp(line, "c=", 2)) {
             if (sscanf(line, "c=IN IP%*c %" STRINGIFY(ADDRESSLEN) "s", address)) {
                 strncpy(dst.ip, address, ADDRESSLEN - 1);
+                dst.ip[ADDRESSLEN - 1] = '\0';
                 if (media) {
                     media_set_address(media, dst);
-                    strcpy(rtp_stream->dst.ip, dst.ip);
-                    strcpy(rtcp_stream->dst.ip, dst.ip);
+                    strncpy(rtp_stream->dst.ip, dst.ip, ADDRESSLEN - 1);
+                    rtp_stream->dst.ip[ADDRESSLEN - 1] = '\0';
+                    strncpy(rtcp_stream->dst.ip, dst.ip, ADDRESSLEN - 1);
+                    rtcp_stream->dst.ip[ADDRESSLEN - 1] = '\0';
                 }
             }
         }
@@ -786,6 +792,7 @@ sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
      if (regexec(&calls.reg_reason, (const char *)payload, 2, pmatch, 0) == 0) {
          msg->call->reasontxt = sng_malloc((int)pmatch[1].rm_eo - pmatch[1].rm_so + 1);
          strncpy(msg->call->reasontxt, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
+         msg->call->reasontxt[(int)pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
      }
 
      // Warning code

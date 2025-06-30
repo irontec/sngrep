@@ -142,7 +142,8 @@ call_raw_print_msg(ui_t *ui, sip_msg_t *msg)
     getmaxyx(pad, height, width);
 
     // Get message payload
-    strcpy(payload, msg_get_payload(msg));
+    strncpy(payload, msg_get_payload(msg), sizeof(payload) - 1);
+    payload[sizeof(payload) - 1] = '\0';
 
     // Check how many lines we well need to draw this message
     payload_lines = 0;

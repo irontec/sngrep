@@ -178,7 +178,8 @@ filter_check_call(void *item)
             it = vector_iterator(call->msgs);
             while ((msg = vector_iterator_next(&it))) {
                 // Copy message payload
-                strcpy(data, msg_get_payload(msg));
+                strncpy(data, msg_get_payload(msg), sizeof(data) - 1);
+                data[sizeof(data) - 1] = '\0';
                 // Check if this payload matches the filter
                 if (filter_check_expr(filters[i], data) == 0) {
                     call->filtered = 0;
