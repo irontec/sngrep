@@ -223,7 +223,7 @@ filter_handle_key(ui_t *ui, int key)
     // We trim spaces with sscanf because and empty field is stored as
     // space characters
     memset(field_value, 0, sizeof(field_value));
-    strcpy(field_value, field_buffer(current_field(info->form), 0));
+    strncpy(field_value, field_buffer(current_field(info->form), 0), sizeof(field_value) - 1);
     strtrim(field_value);
 
     // Check actions for this key
@@ -352,7 +352,7 @@ filter_save_options(ui_t *ui)
         // We trim spaces with sscanf because and empty field is stored as
         // space characters
         memset(field_value, 0, sizeof(field_value));
-        strcpy(field_value, field_buffer(info->fields[field_id], 0));
+        strncpy(field_value, field_buffer(info->fields[field_id], 0), sizeof(field_value) - 1);
         strtrim(field_value);
 
         // Set filter expression
@@ -389,7 +389,8 @@ filter_save_options(ui_t *ui)
                     if (strlen(method_expr)) {
                         sprintf(method_expr + strlen(method_expr), ",%s", filter_field_method(field_id));
                     } else {
-                        strcpy(method_expr, filter_field_method(field_id));
+                        strncpy(method_expr, filter_field_method(field_id), sizeof(method_expr) - 1);
+                        method_expr[sizeof(method_expr) - 1] = '\0';
                     }
                 }
                 break;

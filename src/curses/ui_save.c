@@ -232,7 +232,7 @@ save_draw(ui_t *ui)
 
     // Get filename field value.
     memset(field_value, 0, sizeof(field_value));
-    strcpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    strncpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0), sizeof(field_value) - 1);
     strtrim(field_value);
 
     mvwprintw(ui->win, 4, 60, "     ");
@@ -426,14 +426,14 @@ save_to_file(ui_t *ui)
 
     // Get current path field value.
     memset(savepath, 0, sizeof(savepath));
-    strcpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0));
+    strncpy(savepath, field_buffer(info->fields[FLD_SAVE_PATH], 0), sizeof(savepath) - 2);
     strtrim(savepath);
     if (strlen(savepath))
         strcat(savepath, "/");
 
     // Get current file field value.
     memset(savefile, 0, sizeof(savefile));
-    strcpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0));
+    strncpy(savefile, field_buffer(info->fields[FLD_SAVE_FILE], 0), sizeof(savefile) - 1);
     strtrim(savefile);
 
     if (!strlen(savefile)) {
