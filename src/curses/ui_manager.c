@@ -356,6 +356,7 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
     const char *cur_line, *payload, *method = NULL;
     int syntax = setting_enabled(SETTING_SYNTAX);
     const char *nonascii = setting_get_value(SETTING_CR_NON_ASCII);
+    int payload_len;
 
     // Default text format
     int attrs = A_NORMAL | COLOR_PAIR(CP_DEFAULT);
@@ -372,11 +373,12 @@ draw_message_pos(WINDOW *win, sip_msg_t *msg, int starting)
 
     // Get packet payload
     cur_line = payload = (const char *) msg_get_payload(msg);
+    payload_len=packet_payloadlen(msg->packet);
 
     // Print msg payload
     line = starting;
     column = 0;
-    for (i = 0; i < strlen(payload); i++) {
+    for (i = 0; i < payload_len; i++) {
         // If syntax highlighting is enabled
         if (syntax) {
             // First line highlight
