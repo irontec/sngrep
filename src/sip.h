@@ -499,7 +499,7 @@ sip_method_from_str(const char *method);
  * @returns pointer to out
  */
 char *
-sip_get_msg_header(sip_msg_t *msg, char *out);
+sip_get_msg_header(sip_msg_t *msg, char *out, size_t maxlen);
 
 void
 sip_set_sort_options(sip_sort_t sort);

@@ -63,6 +63,7 @@ void
 media_set_type(sdp_media_t *media, const char *type)
 {
     strncpy(media->type, type, MEDIATYPELEN - 1);
+    media->type[MEDIATYPELEN - 1] = '\0';
 }
 
 void
@@ -86,7 +87,8 @@ media_add_format(sdp_media_t *media, uint32_t code, const char *format)
         return;
 
     fmt->id = code;
-    strcpy(fmt->format, format);
+    strncpy(fmt->format, format, sizeof(fmt->format) - 1);
+    fmt->format[sizeof(fmt->format) - 1] = '\0';
     vector_append(media->formats, fmt);
 }
 
