@@ -176,10 +176,10 @@ call_flow_draw(ui_t *ui)
 
     // Set title
     if (info->group->callid) {
-        sprintf(title, "Extended Call flow for %s", info->group->callid);
+        sprintf(title, "Extended Call flow for %.125s", info->group->callid);
     } else if (call_group_count(info->group) == 1) {
         sip_call_t *call = call_group_get_next(info->group, NULL);
-        sprintf(title, "Call flow for %s", call->callid);
+        sprintf(title, "Call flow for %.125s", call->callid);
     } else {
         sprintf(title, "Call flow for %d dialogs", call_group_count(info->group));
     }
