@@ -98,6 +98,76 @@ stream_set_format(rtp_stream_t *stream, uint32_t format)
 }
 
 void
+stream_set_telephone_event(rtp_stream_t *stream)
+{
+    const char *fmt = stream_get_format(stream);
+    if(fmt && !strncmp(fmt, "telephone-event", 15)) {
+        stream->telephone_event = 1;
+    }
+}
+
+void
+stream_add_event(rtp_stream_t *stream, packet_t *packet)
+{
+    u_char *payload = packet_payload(packet);
+    uint32_t payload_len = packet_payloadlen(packet);
+    rtp_event_t *event = sng_malloc(sizeof(rtp_event_t));
+    event->stream = stream;
+    event->time = packet_time(packet);
+
+    if (stream->events == NULL) {
+        stream->events = vector_create(0, 1);
+    }
+
+
+    if(payload_len < 12) {
+        event->error = TELEPHONE_EVENT_SHORT;
+        vector_append(stream->events, event);
+        return;
+    }
+
+    u_char v = payload[0] >> 6;
+    if(v != 2) {
+        event->error = TELEPHONE_EVENT_WRONG_VERSION;
+        vector_append(stream->events, event);
+        return;
+    }
+
+    u_char cc = 0x0F & payload[0];
+
+    int offset = 12 + (cc * 4);
+
+    if(payload_len < offset + 4) {
+        event->error = TELEPHONE_EVENT_SHORT;
+        vector_append(stream->events, event);
+        return;
+    }
+
+    int evt = payload[offset];
+    if(evt > 15) {
+        event->error = TELEPHONE_EVENT_UNKNOWN;
+        vector_append(stream->events, event);
+        return;
+    }
+
+    event->end = payload[offset+1] >> 7;
+
+    if(evt < 10) {
+        event->dtmf = '0' + evt;
+    } else if(evt < 14) {
+        event->dtmf = 'A' + evt;
+    } else if(evt == 14) {
+        event->dtmf = '*';
+    } else {
+        event->dtmf = '#';
+    }
+
+    event->volume = payload[offset+1] & 0x3F;
+    event->duration = ntohs(payload[offset+2]);
+    vector_append(stream->events, event);
+}
+
+void
 stream_add_packet(rtp_stream_t *stream, packet_t *packet)
 {
     if (stream->pktcnt == 0)
@@ -198,6 +268,7 @@ rtp_check_packet(packet_t *packet)
             stream = stream_create(stream->media, dst, PACKET_RTP);
             stream_complete(stream, src);
             stream_set_format(stream, format);
+            stream_set_telephone_event(stream);
             call_add_stream(msg_get_call(stream->media->msg), stream);
         }
 
@@ -205,6 +276,7 @@ rtp_check_packet(packet_t *packet)
         if (!(stream_is_complete(stream))) {
             stream_complete(stream, src);
             stream_set_format(stream, format);
+            stream_set_telephone_event(stream);
 
             /**
              * TODO This is a mess. Rework required
@@ -230,6 +302,7 @@ rtp_check_packet(packet_t *packet)
                 reverse = stream_create(stream->media, stream->src, PACKET_RTP);
                 stream_complete(reverse, stream->dst);
                 stream_set_format(reverse, format);
+                stream_set_telephone_event(reverse);
                 call_add_stream(msg_get_call(stream->media->msg), reverse);
             } else {
                 // If the reverse stream has other source configured
@@ -239,10 +312,15 @@ rtp_check_packet(packet_t *packet)
                         reverse = stream_create(stream->media, stream->src, PACKET_RTP);
                         stream_complete(reverse, stream->dst);
                         stream_set_format(reverse, format);
+                        stream_set_telephone_event(reverse);
                         call_add_stream(msg_get_call(stream->media->msg), reverse);
                     }
                 }
             }
+        }
+
+        if (stream->telephone_event) {
+            stream_add_event(stream, packet);
         }
 
         // Add packet to stream
