@@ -83,6 +83,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_CR_NON_ASCII,       "cr.nonascii",        SETTING_FMT_STRING,  ".",        NULL },
     { SETTING_FILTER_PAYLOAD,     "filter.payload",     SETTING_FMT_STRING,  "",          NULL },
     { SETTING_FILTER_METHODS,     "filter.methods",     SETTING_FMT_STRING,  "",          NULL },
+    { SETTING_TELEPHONE_EVENT,    "telephone_event",    SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
 #ifdef USE_EEP
     { SETTING_EEP_SEND,           "eep.send",           SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_EEP_SEND_VER,       "eep.send.version",   SETTING_FMT_ENUM,    "3",         SETTING_ENUM_HEPVERSION },
