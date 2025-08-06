@@ -79,6 +79,7 @@ usage()
            "    -F --no-config\t Do not read configuration from default config file\n"
            "    -T --text\t Save pcap to text file\n"
            "    -R --rotate\t\t Rotate calls when capture limit have been reached\n"
+           "    -T --telephone-event\t\t capture and parse RTP telephone-event packets\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
@@ -164,6 +165,7 @@ main(int argc, char* argv[])
         { "config", required_argument, 0, 'f' },
         { "no-config", no_argument, 0, 'F' },
         { "text", required_argument, 0, 'T' },
+        { "telephone-event", no_argument, 0, 't' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -174,7 +176,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT:t";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -292,9 +294,11 @@ main(int argc, char* argv[])
                 rotate = 1;
                 setting_set_value(SETTING_CAPTURE_ROTATE, SETTING_ON);
                 break;
+            case 't':
+                setting_set_value(SETTING_TELEPHONE_EVENT, SETTING_ON);
+                break;
                 // Dark options for dummy ones
             case 'p':
-            case 't':
             case 'W':
                 break;
             case 'L':
