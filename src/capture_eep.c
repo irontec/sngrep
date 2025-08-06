@@ -709,7 +709,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 #endif
     hep_chunk_t payload_chunk;
     hep_chunk_t authkey_chunk;
-    char password[100];
+    char *password;
     int password_len;
     unsigned char *payload = 0;
     uint32_t total_len, pos;
@@ -737,7 +737,6 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     // Initialize structs
     memset(&hg, 0, sizeof(hep_generic_t));
-    memset(&password, 0, sizeof(password));
     memset(&src, 0, sizeof(address_t));
     memset(&dst, 0, sizeof(address_t));
     memset(&header, 0, sizeof(struct pcap_pkthdr));
@@ -824,6 +823,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
             case CAPTURE_EEP_CHUNK_AUTH_KEY:
                 memcpy(&authkey_chunk, (void*) buffer + pos, sizeof(authkey_chunk));
                 password_len = ntohs(authkey_chunk.length) - sizeof(authkey_chunk);
+                password = sng_malloc(password_len);
                 memcpy(password, (void*) buffer + pos + sizeof(hep_chunk_t), password_len);
                 break;
             case CAPTURE_EEP_CHUNK_PAYLOAD:
@@ -866,6 +866,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     /* FREE */
     sng_free(payload);
+    sng_free(password);
+
     return pkt_new;
 }
 
