@@ -740,6 +740,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
                             frame->data + link_hl + ip_hl + sizeof (struct ip6_frag),
                             ntohs(frame_ip6->ip6_ctlun.ip6_un1.ip6_un1_plen));
                     pkt->proto = frame_ip6f->ip6f_nxt;
+		    len_data-=sizeof(struct ip6_frag);
                 }
                     break;
 #endif

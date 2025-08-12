@@ -724,8 +724,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 #endif
     hep_chunk_t payload_chunk;
     hep_chunk_t authkey_chunk;
-    char password[100];
-    int password_len;
+    char *password = 0;
+    int password_len = 0;
     unsigned char *payload = 0;
     uint32_t total_len, pos;
     char buffer[MAX_CAPTURE_LEN] ;
@@ -752,7 +752,6 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     // Initialize structs
     memset(&hg, 0, sizeof(hep_generic_t));
-    memset(&password, 0, sizeof(password));
     memset(&src, 0, sizeof(address_t));
     memset(&dst, 0, sizeof(address_t));
     memset(&header, 0, sizeof(struct pcap_pkthdr));
@@ -789,8 +788,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
         switch (chunk_type) {
             case CAPTURE_EEP_CHUNK_INVALID:
-                if (payload)
-                    sng_free(payload);
+                sng_free(payload);
+                sng_free(password);
                 return NULL;
             case CAPTURE_EEP_CHUNK_FAMILY:
                 memcpy(&hg.ip_family, (void*) buffer + pos, sizeof(hep_chunk_uint8_t));
@@ -843,11 +842,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
             case CAPTURE_EEP_CHUNK_AUTH_KEY:
                 memcpy(&authkey_chunk, (void*) buffer + pos, sizeof(authkey_chunk));
                 password_len = ntohs(authkey_chunk.length) - sizeof(authkey_chunk);
-                if (password_len >= sizeof(password)-1) {
-                    if (payload)
-                        sng_free(payload);
-                    return NULL;
-                }
+                password = sng_malloc(password_len);
                 memcpy(password, (void*) buffer + pos + sizeof(hep_chunk_t), password_len);
                 password[password_len] = '\0';
                 break;
@@ -873,17 +868,24 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
     // Validate password
     if (eep_cfg.capt_srv_password != NULL) {
         // No password in packet
-        if (strlen(password) == 0)
+        if (!password || strlen(password) == 0) {
+            sng_free(payload);
+            sng_free(password);
             return NULL;
+        }
         // Check password matches configured
-        if (strcmp(password, eep_cfg.capt_srv_password) != 0)
+        if (strcmp(password, eep_cfg.capt_srv_password) != 0) {
+            sng_free(payload);
+            sng_free(password);
             return NULL;
+        }
     }
 
     // Build a custom frame pcap header
     frame_pcap_header = capture_eep_build_frame_data(header, payload,header.caplen, src, dst, &frame_payload);
     if (!frame_payload) {
         sng_free(payload);
+        sng_free(password);
         return NULL;
     }
 
@@ -898,6 +900,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     /* FREE */
     sng_free(payload);
+    sng_free(password);
+
     return pkt_new;
 }
 

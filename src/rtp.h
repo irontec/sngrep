@@ -87,10 +87,20 @@ enum rtcp_xr_block_types
     RTCP_XR_IDMS
 };
 
+//! Telephone event types
+enum telephone_event_errors {
+    TELEPHONE_EVENT_NO_ERROR = 0,
+    TELEPHONE_EVENT_SHORT,
+    TELEPHONE_EVENT_WRONG_VERSION,
+    TELEPHONE_EVENT_UNKNOWN
+};
+
 //! Shorter declaration of rtp_encoding structure
 typedef struct rtp_encoding rtp_encoding_t;
 //! Shorter declaration of rtp_stream structure
 typedef struct rtp_stream rtp_stream_t;
+//! Shorter declaration of rtp_event structure
+typedef struct rtp_event rtp_event_t;
 
 struct rtp_encoding {
     uint32_t id;
@@ -113,6 +123,10 @@ struct rtp_stream {
     struct timeval time;
     //! Unix timestamp of last received packet
     int lasttm;
+    //! if it is for telephone-event
+    int telephone_event;
+    //! Telephone events of this stream (rtp_event_t)
+    vector_t *events;
 
     // Stream information (depending on type)
     union {
@@ -133,6 +147,23 @@ struct rtp_stream {
             uint8_t mosc;
         } rtcpinfo;
     };
+};
+
+struct rtp_event {
+    //! Event stream
+    rtp_stream_t *stream;
+    //! Event error
+    uint8_t error;
+    //! Time of event
+    struct timeval time;
+    //! Event volumne
+    uint8_t volume;
+    //! Event duration
+    uint16_t duration;
+    //! Event end
+    bool end;
+    //! Event dtmf digit
+    u_char dtmf;
 };
 
 struct rtcp_hdr_generic

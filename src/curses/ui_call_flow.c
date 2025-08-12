@@ -176,10 +176,10 @@ call_flow_draw(ui_t *ui)
 
     // Set title
     if (info->group->callid) {
-        sprintf(title, "Extended Call flow for %s", info->group->callid);
+        sprintf(title, "Extended Call flow for %.125s", info->group->callid);
     } else if (call_group_count(info->group) == 1) {
         sip_call_t *call = call_group_get_next(info->group, NULL);
-        sprintf(title, "Call flow for %s", call->callid);
+        sprintf(title, "Call flow for %.125s", call->callid);
     } else {
         sprintf(title, "Call flow for %d dialogs", call_group_count(info->group));
     }
@@ -353,9 +353,20 @@ call_flow_draw_arrows(ui_t *ui)
     // Create pending RTP arrows
     rtp_stream_t *stream = NULL;
     while ((stream = call_group_get_next_stream(info->group, stream))) {
-        if (!call_flow_arrow_find(ui, stream)) {
-            arrow = call_flow_arrow_create(ui, stream, CF_ARROW_RTP);
-            vector_append(info->arrows, arrow);
+        if(stream->telephone_event && setting_enabled(SETTING_TELEPHONE_EVENT)) {
+            vector_iter_t it = vector_iterator(stream->events);
+            rtp_event_t *event = NULL;
+            while ((event = vector_iterator_next(&it))) {
+                if (!call_flow_arrow_find(ui, event)) {
+                    arrow = call_flow_arrow_create(ui, event, CF_ARROW_EVENT);
+                    vector_append(info->arrows, arrow);
+                }
+            }
+        } else {
+            if (!call_flow_arrow_find(ui, stream)) {
+                arrow = call_flow_arrow_create(ui, stream, CF_ARROW_RTP);
+                vector_append(info->arrows, arrow);
+            }
         }
     }
 
@@ -387,6 +398,8 @@ call_flow_draw_arrow(ui_t *ui, call_flow_arrow_t *arrow, int line)
 {
     if (arrow->type == CF_ARROW_SIP) {
         return call_flow_draw_message(ui, arrow, line);
+    } else if (arrow->type == CF_ARROW_EVENT) {
+        return call_flow_draw_event(ui, arrow, line);
     } else {
         return call_flow_draw_rtp_stream(ui, arrow, line);
     }
@@ -409,6 +422,8 @@ call_flow_draw_preview(ui_t *ui)
     if ((arrow = vector_item(info->darrows, info->cur_arrow))) {
         if (arrow->type == CF_ARROW_SIP) {
             call_flow_draw_raw(ui, arrow->item);
+        } else if (arrow->type == CF_ARROW_EVENT) {
+            call_flow_draw_raw_event(ui, arrow->item);
         } else {
             call_flow_draw_raw_rtcp(ui, arrow->item);
         }
@@ -875,6 +890,228 @@ call_flow_draw_rtp_stream(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     return arrow->height;
 }
 
+int
+call_flow_draw_event(ui_t *ui, call_flow_arrow_t *arrow, int cline)
+{
+    call_flow_info_t *info;
+    WINDOW *win;
+    char text[50], time[20];
+    int height;
+    rtp_event_t *event = arrow->item;
+    rtp_stream_t *stream = event->stream;
+    sip_msg_t *msg;
+    sip_call_t *call;
+    call_flow_arrow_t *msgarrow;
+    address_t addr;
+    packet_t *packet = NULL;
+
+    // Get panel information
+    info = call_flow_info(ui);
+    // Get the messages window
+    win = info->flow_win;
+    height = getmaxy(win);
+
+    // Store arrow start line
+    arrow->line = cline;
+
+    // Calculate how many lines this message requires
+    arrow->height = call_flow_arrow_height(ui, arrow);
+
+    // Check this media fits on the panel
+    if (cline > height + arrow->height)
+        return 0;
+
+    if (event->error == TELEPHONE_EVENT_SHORT) {
+        sprintf(text, "TelEvt (pkt too short)");
+    } else if (event->error == TELEPHONE_EVENT_WRONG_VERSION) {
+        sprintf(text, "TelEvt (wrong RTP version)");
+    } else if (event->error == TELEPHONE_EVENT_UNKNOWN) {
+        sprintf(text, "TelEvt (unknown)");
+    } else if (event->end) {
+        sprintf(text, "TelEvt DTMF:%c (end)", event->dtmf, event->duration);
+    } else {
+        sprintf(text, "TelEvt DTMF:%c", event->dtmf, event->duration);
+    }
+
+    // Get message data
+    call = stream->media->msg->call;
+
+    /**
+     * This logic will try to use the same columns for the stream representation
+     * that are used in the SIP messages that configured the streams in their SDP
+     * if they share the same IP addresses.
+     */
+    // Message with Stream destination configured in SDP content
+    msg = stream->media->msg;
+
+    // If message and stream share the same IP address
+    if (address_equals(msg->packet->src, stream->dst)) {
+        // Reuse the msg arrow columns as destination column
+        if ((msgarrow = call_flow_arrow_find(ui, msg))) {
+            // Get origin and destination column
+            arrow->dcolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->src);
+        }
+    }
+
+    // fallback: Just use any column that have the destination IP printed
+    if (!arrow->dcolumn) {
+        // FIXME figure a better way to find ignoring port :(
+        addr = stream->dst; addr.port = 0;
+        arrow->dcolumn = call_flow_column_get(ui, 0, addr);
+    }
+
+    /**
+     * For source address of the stream, first try to find a message that have
+     * the stream source configured in their SDP as destination and then apply
+     * the same previous logic address: if IP address matches, reuse message
+     * column, othwerise any column with the source IP will be used.
+     */
+    // Message with Stream source configured in SDP content
+    msg = call_msg_with_media(call, stream->src);
+
+    // Try to find a message with configured SDP matching the source of this stream
+    if (msg && address_equals(msg->packet->src, stream->src)) {
+        // Reuse the msg arrow columns as destination column
+        if ((msgarrow = call_flow_arrow_find(ui, msg))) {
+            // Get origin and destination column
+            arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->src);
+        }
+    }
+
+    // Prefer message that configured this stream rather than any column
+    if (!arrow->scolumn) {
+        msg = stream->media->msg;
+        // If message and stream share the same IP address
+        if (address_equals(msg->packet->dst, stream->src)) {
+            // Reuse the msg arrow columns as destination column
+            if ((msgarrow = call_flow_arrow_find(ui, msg))) {
+                arrow->scolumn = call_flow_column_get(ui, msg->call->callid, msg->packet->dst);
+            }
+        }
+    }
+
+    // fallback: Just use any column that have the soruce IP printed
+    if (!arrow->scolumn) {
+        // FIXME figure a better way to find ignoring port :(
+        addr = stream->src; addr.port = 0;
+        arrow->scolumn = call_flow_column_get(ui, 0, addr);
+    }
+
+    // Determine start and end position of the arrow line
+    int startpos, endpos;
+    if (arrow->scolumn->colpos < arrow->dcolumn->colpos) {
+        arrow->dir= CF_ARROW_RIGHT;
+        startpos = 20 + 30 * arrow->scolumn->colpos;
+        endpos = 20 + 30 * arrow->dcolumn->colpos;
+    } else {
+        arrow->dir = CF_ARROW_LEFT;
+        startpos = 20 + 30 * arrow->dcolumn->colpos;
+        endpos = 20 + 30 * arrow->scolumn->colpos;
+    }
+    int distance = 0;
+
+    if (startpos != endpos) {
+        // In compressed mode, we display the src and dst port inside the arrow
+        // so fixup the stard and end position
+        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+            startpos += 5;
+            endpos -= 5;
+        }
+        distance = abs(endpos - startpos) - 4 + 1;
+    } else {
+        // Fix port positions
+        startpos -= 2;
+        endpos += 2;
+        distance = 1;
+
+        // Fix arrow direction based on ports
+        if (stream->src.port < stream->dst.port) {
+            arrow->dir = CF_ARROW_RIGHT;
+        } else {
+            arrow->dir = CF_ARROW_LEFT;
+        }
+    }
+
+    // Highlight current message
+    if (arrow == vector_item(info->darrows, info->cur_arrow)) {
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reverse")) {
+            wattron(win, A_REVERSE);
+        }
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "bold")) {
+            wattron(win, A_BOLD);
+        }
+        if (setting_has_value(SETTING_CF_HIGHTLIGHT, "reversebold")) {
+            wattron(win, A_REVERSE);
+            wattron(win, A_BOLD);
+        }
+    }
+
+    // Check if displayed stream is active
+    int active = 0;
+    if(!packet) {
+        active = stream_is_active(stream);
+    }
+
+    // Clear the line
+    mvwprintw(win, cline, startpos + 2, "%*s", distance, "");
+    // Draw RTP arrow text
+    mvwprintw(win, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, "%s", text);
+
+    if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+        cline++;
+
+    // Draw line between columns
+    if (active)
+        mvwhline(win, cline, startpos + 2, '-', distance);
+    else
+        mvwhline(win, cline, startpos + 2, ACS_HLINE, distance);
+
+    // Write the arrow at the end of the message (two arrows if this is a retrans)
+    if (arrow->dir == CF_ARROW_RIGHT) {
+        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+            mvwprintw(win, cline, startpos - 4, "%d", stream->src.port);
+            mvwprintw(win, cline, endpos, "%d", stream->dst.port);
+        }
+        mvwaddch(win, cline, endpos - 2, '>');
+        if (active) {
+            arrow->rtp_count = stream_get_count(stream);
+            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
+            mvwaddch(win, cline, startpos + arrow->rtp_ind_pos + 2, '>');
+        }
+    } else {
+        if (!setting_has_value(SETTING_CF_SDP_INFO, "compressed")) {
+            mvwprintw(win, cline, endpos, "%d", stream->src.port);
+            mvwprintw(win, cline, startpos - 4, "%d", stream->dst.port);
+        }
+        mvwaddch(win, cline, startpos + 2, '<');
+        if (active) {
+            arrow->rtp_count = stream_get_count(stream);
+            arrow->rtp_ind_pos = (arrow->rtp_ind_pos + 1) % distance;
+            mvwaddch(win, cline, endpos - arrow->rtp_ind_pos - 2, '<');
+        }
+    }
+
+    if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
+        mvwprintw(win, cline, startpos + (distance) / 2 - strlen(text) / 2 + 2, " %s ", text);
+
+    wattroff(win, A_BOLD | A_REVERSE);
+
+    // Print timestamp
+    if (info->arrowtime) {
+        timeval_to_time(event->time, time);
+        if (arrow == vector_item(info->darrows, info->cur_arrow)) {
+            wattron(win, A_BOLD);
+            mvwprintw(win, cline, 2, "%s", time);
+            wattroff(win, A_BOLD);
+        } else {
+            mvwprintw(win, cline, 2, "%s", time);
+        }
+
+    }
+
+    return arrow->height;
+}
+
 call_flow_arrow_t *
 call_flow_arrow_create(ui_t *ui, void *item, int type)
 {
@@ -907,7 +1144,7 @@ call_flow_arrow_height(ui_t *ui, const call_flow_arrow_t *arrow)
             return 2;
         if (setting_has_value(SETTING_CF_SDP_INFO, "full"))
             return msg_media_count(arrow->item) + 2;
-    } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP) {
+    } else if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_RTCP || arrow->type == CF_ARROW_EVENT) {
         if (setting_has_value(SETTING_CF_SDP_INFO, "compressed"))
             return 1;
         if (setting_disabled(SETTING_CF_MEDIA))
@@ -951,6 +1188,11 @@ call_flow_arrow_message(const  call_flow_arrow_t *arrow)
 
     if (arrow->type == CF_ARROW_RTP) {
         rtp_stream_t *stream = arrow->item;
+        return stream->media->msg;
+    }
+
+    if (arrow->type == CF_ARROW_EVENT) {
+        rtp_stream_t *stream = arrow->stream;
         return stream->media->msg;
     }
 
@@ -1024,6 +1266,71 @@ call_flow_draw_raw(ui_t *ui, sip_msg_t *msg)
 
     // Print msg payload
     draw_message(info->raw_win, msg);
+
+    // Copy the raw_win contents into the panel
+    copywin(raw_win, ui->win, 0, 0, 1, ui->width - raw_width - 1, raw_height, ui->width - 2, 0);
+
+    return 0;
+}
+
+
+int
+call_flow_draw_raw_event(ui_t *ui, rtp_event_t *event)
+{
+    char text[50];
+    call_flow_info_t *info;
+    WINDOW *raw_win;
+    int raw_width, raw_height;
+    int min_raw_width, fixed_raw_width;
+
+    if (!(info = call_flow_info(ui)))
+        return 1;
+
+    // Get min raw width
+    min_raw_width = setting_get_intvalue(SETTING_CF_RAWMINWIDTH);
+    fixed_raw_width = setting_get_intvalue(SETTING_CF_RAWFIXEDWIDTH);
+
+    // Calculate the raw data width (width - used columns for flow - vertical lines)
+    raw_width = ui->width - (30 * vector_count(info->columns)) - 2;
+    // We can define a mininum size for rawminwidth
+    if (raw_width < min_raw_width) {
+        raw_width = min_raw_width;
+    }
+    // We can configure an exact raw size
+    if (fixed_raw_width > 0) {
+        raw_width = fixed_raw_width;
+    }
+
+    // Height of raw window is always available size minus 6 lines for header/footer
+    raw_height = ui->height - 3;
+
+    // If we already have a raw window
+    raw_win = info->raw_win;
+    if (raw_win) {
+        // Check it has the correct size
+        if (getmaxx(raw_win) != raw_width) {
+            // We need a new raw window
+            delwin(raw_win);
+            info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
+        } else {
+            // We have a valid raw win, clear its content
+            werase(raw_win);
+        }
+    } else {
+        // Create the raw window of required size
+        info->raw_win = raw_win = newwin(raw_height, raw_width, 0, 0);
+    }
+
+    // Draw raw box lines
+    wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwvline(ui->win, 1, ui->width - raw_width - 2, ACS_VLINE, ui->height - 2);
+    wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+
+    mvwprintw(raw_win, 0, 0, "============ RFC4733 (telephone-event) Information ============");
+    mvwprintw(raw_win, 2, 0, "DTMF: %c", event->dtmf);
+    mvwprintw(raw_win, 3, 0, "End: %s", event->end ? "yes" : "no");
+    mvwprintw(raw_win, 4, 0, "Volume: %d", event->volume);
+    mvwprintw(raw_win, 5, 0, "Duration: %d", event->duration);
 
     // Copy the raw_win contents into the panel
     copywin(raw_win, ui->win, 0, 0, 1, ui->width - raw_width - 1, raw_height, ui->width - 2, 0);
@@ -1537,6 +1844,7 @@ call_flow_arrow_time(call_flow_arrow_t *arrow)
     struct timeval ts = { 0 };
     sip_msg_t *msg;
     rtp_stream_t *stream;
+    rtp_event_t *event;
 
     if (!arrow)
         return ts;
@@ -1547,6 +1855,9 @@ call_flow_arrow_time(call_flow_arrow_t *arrow)
     } else if (arrow->type == CF_ARROW_RTP) {
         stream = (rtp_stream_t *) arrow->item;
         ts = stream->time;
+    } else if (arrow->type == CF_ARROW_EVENT) {
+        event = (rtp_event_t *) arrow->item;
+        ts = event->time;
     }
     return ts;
 
@@ -1589,7 +1900,7 @@ call_flow_arrow_filter(void *item)
         return 1;
 
     // RTP arrows are only displayed when requested
-    if (arrow->type == CF_ARROW_RTP) {
+    if (arrow->type == CF_ARROW_RTP || arrow->type == CF_ARROW_EVENT) {
         // Display all streams
         if (setting_enabled(SETTING_CF_MEDIA))
             return 1;
