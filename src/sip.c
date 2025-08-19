@@ -261,7 +261,7 @@ sip_get_xcallid(const char *payload, char *xcallid)
     if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
         int input_len = pmatch[2].rm_eo - pmatch[2].rm_so;
 
-        // Ensure the copy length does not exceed MAX_XCALLID_SIZE - 1
+        // Ensure the copy length does not exceed MAX_XCALLID_SIZE
         if (input_len > MAX_XCALLID_SIZE) {
             input_len = MAX_XCALLID_SIZE;
         }
@@ -305,7 +305,7 @@ sip_validate_packet(packet_t *packet)
         return VALIDATE_PARTIAL_SIP;
     }
 
-    // Ensure the copy length does not exceed MAX_CONTENT_LENGTH_SIZE - 1
+    // Ensure the copy length does not exceed MAX_CONTENT_LENGTH_SIZE
     int cl_match_len = pmatch[2].rm_eo - pmatch[2].rm_so;
     if (cl_match_len > MAX_CONTENT_LENGTH_SIZE) {
         cl_match_len = MAX_CONTENT_LENGTH_SIZE;
@@ -788,7 +788,7 @@ sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
      // Warning code
      if (regexec(&calls.reg_warning, (const char *)payload, 2, pmatch, 0) == 0) {
 
-        // Ensure the copy length does not exceed MAX_WARNING_SIZE - 1
+        // Ensure the copy length does not exceed MAX_WARNING_SIZE
         int warning_match_len = pmatch[1].rm_eo - pmatch[1].rm_so;
         if (warning_match_len > MAX_WARNING_SIZE) {
             warning_match_len = MAX_WARNING_SIZE;
