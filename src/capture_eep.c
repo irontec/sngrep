@@ -651,11 +651,12 @@ capture_eep_receive_v2()
         pos += sizeof(struct hep_ip6hdr);
     }
 #endif
-    else
+    else {
         // if we don't recognise the address family, then we don't know how long
         // the IP header is, so we don't know where the time header will start,
         // so we can't handle the packet
         return NULL;
+    }
 
     /* PORTS */
     src.port = ntohs(hdr.hp_sport);
