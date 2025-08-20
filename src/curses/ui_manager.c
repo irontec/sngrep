@@ -665,8 +665,9 @@ dialog_confirm(const char *title, const char *text, const char *options)
     // Parse each line of payload looking for sdp information
     tofree = str = strdup((char*)options);
     i = 0;
-    while ((option = strsep(&str, ",")) != NULL) {
-        strcpy(opts[i++], option);
+    while (i < (sizeof(opts) / sizeof(opts[0])) && (option = strsep(&str, ",")) != NULL) {
+        sng_strncpy(opts[i], option, sizeof(opts[i]));
+        i++;
     }
     sng_free(tofree);
 

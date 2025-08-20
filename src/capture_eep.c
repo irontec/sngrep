@@ -880,7 +880,7 @@ capture_eep_set_server_url(const char *url)
     memset(address, 0, sizeof(address));
     memset(port, 0, sizeof(port));
 
-    strncpy(urlstr, url, sizeof(urlstr));
+    sng_strncpy(urlstr, url, sizeof(urlstr));
     if (sscanf(urlstr, "%*[^:]:%" STRINGIFY(ADDRESSLEN) "[^:]:%5s", address, port) == 2) {
         setting_set_value(SETTING_EEP_LISTEN, SETTING_ON);
         setting_set_value(SETTING_EEP_LISTEN_ADDR, address);
@@ -899,7 +899,7 @@ capture_eep_set_client_url(const char *url)
     memset(address, 0, sizeof(address));
     memset(port, 0, sizeof(port));
 
-    strncpy(urlstr, url, sizeof(urlstr));
+    sng_strncpy(urlstr, url, sizeof(urlstr));
     if (sscanf(urlstr, "%*[^:]:%" STRINGIFY(ADDRESSLEN) "[^:]:%5s", address, port) == 2) {
         setting_set_value(SETTING_EEP_SEND, SETTING_ON);
         setting_set_value(SETTING_EEP_SEND_ADDR, address);

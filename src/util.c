@@ -116,6 +116,17 @@ sng_basename(const char *name)
     return (char *) base;
 }
 
+char *
+sng_strncpy(char *dst, const char *src, size_t len)
+{
+    if (dst == NULL || src == NULL) {
+        return NULL;
+    }
+    strncpy(dst, src, len-1);
+    dst[len-1] = '\0';
+    return dst;
+}
+
 int
 timeval_is_older(struct timeval t1, struct timeval t2)
 {

@@ -1696,9 +1696,9 @@ call_flow_column_add(ui_t *ui, const char *callid, address_t addr)
     vector_append(column->callids, (void*)callid);
     column->addr = addr;
     if (setting_enabled(SETTING_ALIAS_PORT)) {
-        strcpy(column->alias, get_alias_value_vs_port(addr.ip, addr.port));
+        sng_strncpy(column->alias, get_alias_value_vs_port(addr.ip, addr.port), sizeof(column->alias));
     } else {
-        strcpy(column->alias, get_alias_value(addr.ip));
+        sng_strncpy(column->alias, get_alias_value(addr.ip), sizeof(column->alias));
     }
     column->colpos = vector_count(info->columns);
     vector_append(info->columns, column);
