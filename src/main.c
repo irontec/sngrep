@@ -422,19 +422,40 @@ main(int argc, char* argv[])
 
         // Try to build the bpf filter string with the rest
         memset(bpf, 0, sizeof(bpf));
-        for (i = optind; i < argc; i++)
-            sprintf(bpf + strlen(bpf), "%s ", argv[i]);
+        for (i = optind; i < argc; i++) {
+            size_t current_len = strlen(bpf);
+            size_t remaining_space = sizeof(bpf) - current_len;
+            if (remaining_space <= 1) {
+                fprintf(stderr, "BPF filter too long (max %zu characters)\n", sizeof(bpf) - 1);
+                return 1;
+            }
+            int written = snprintf(bpf + current_len, remaining_space, "%s ", argv[i]);
+            if (written < 0 || (size_t)written >= remaining_space) {
+                fprintf(stderr, "BPF filter too long (max %zu characters)\n", sizeof(bpf) - 1);
+                return 1;
+            }
+        }
 
         // Check if this BPF filter is valid
         if (capture_set_bpf_filter(bpf) != 0) {
             // BPF Filter invalid, check incluiding match_expr
             match_expr = 0;    // There is no need to parse all payload at this point
 
-
             // Build the bpf filter string
             memset(bpf, 0, sizeof(bpf));
-            for (i = optind - 1; i < argc; i++)
-                sprintf(bpf + strlen(bpf), "%s ", argv[i]);
+            for (i = optind - 1; i < argc; i++) {
+                size_t current_len = strlen(bpf);
+                size_t remaining_space = sizeof(bpf) - current_len;
+                if (remaining_space <= 1) {
+                    fprintf(stderr, "BPF filter too long (max %zu characters)\n", sizeof(bpf) - 1);
+                    return 1;
+                }
+                int written = snprintf(bpf + current_len, remaining_space, "%s ", argv[i]);
+                if (written < 0 || (size_t)written >= remaining_space) {
+                    fprintf(stderr, "BPF filter too long (max %zu characters)\n", sizeof(bpf) - 1);
+                    return 1;
+                }
+            }
 
             // Check bpf filter is valid again
             if (capture_set_bpf_filter(bpf) != 0) {

@@ -261,9 +261,9 @@ sip_get_xcallid(const char *payload, char *xcallid)
     if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
         int input_len = pmatch[2].rm_eo - pmatch[2].rm_so;
 
-        // Ensure the copy length does not exceed MAX_XCALLID_SIZE - 1
-        if (input_len > MAX_XCALLID_SIZE - 1) {
-            input_len = MAX_XCALLID_SIZE - 1;
+        // Ensure the copy length does not exceed MAX_XCALLID_SIZE
+        if (input_len > MAX_XCALLID_SIZE) {
+            input_len = MAX_XCALLID_SIZE;
         }
 
         sng_strncpy(xcallid, (const char *)payload +  pmatch[2].rm_so, input_len);
@@ -305,10 +305,10 @@ sip_validate_packet(packet_t *packet)
         return VALIDATE_PARTIAL_SIP;
     }
 
-    // Ensure the copy length does not exceed MAX_CONTENT_LENGTH_SIZE - 1
+    // Ensure the copy length does not exceed MAX_CONTENT_LENGTH_SIZE
     int cl_match_len = pmatch[2].rm_eo - pmatch[2].rm_so;
-    if (cl_match_len > MAX_CONTENT_LENGTH_SIZE - 1) {
-        cl_match_len = MAX_CONTENT_LENGTH_SIZE - 1;
+    if (cl_match_len > MAX_CONTENT_LENGTH_SIZE) {
+        cl_match_len = MAX_CONTENT_LENGTH_SIZE;
     }
 
     sng_strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, cl_match_len);
@@ -788,10 +788,10 @@ sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
      // Warning code
      if (regexec(&calls.reg_warning, (const char *)payload, 2, pmatch, 0) == 0) {
 
-        // Ensure the copy length does not exceed MAX_WARNING_SIZE - 1
+        // Ensure the copy length does not exceed MAX_WARNING_SIZE
         int warning_match_len = pmatch[1].rm_eo - pmatch[1].rm_so;
-        if (warning_match_len > MAX_WARNING_SIZE - 1) {
-            warning_match_len = MAX_WARNING_SIZE - 1;
+        if (warning_match_len > MAX_WARNING_SIZE) {
+            warning_match_len = MAX_WARNING_SIZE;
         }
         sng_strncpy(warning, (const char *)payload +  pmatch[1].rm_so, warning_match_len);
 
@@ -973,7 +973,7 @@ sip_transport_str(int transport)
 }
 
 char *
-sip_get_msg_header(sip_msg_t *msg, char *out)
+sip_get_msg_header(sip_msg_t *msg, char *out, size_t maxlen)
 {
     char from_addr[80], to_addr[80], time[80], date[80];
 
@@ -985,9 +985,9 @@ sip_get_msg_header(sip_msg_t *msg, char *out)
 
     // Get msg header
     if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-        sprintf(out, "%s %s %s -> %s", date, time, get_alias_value(from_addr), get_alias_value(to_addr));
+        snprintf(out, maxlen, "%s %s %s -> %s", date, time, get_alias_value(from_addr), get_alias_value(to_addr));
     } else {
-        sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
+        snprintf(out, maxlen, "%s %s %s -> %s", date, time, from_addr, to_addr);
     }
     return out;
 }
