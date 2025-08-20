@@ -246,8 +246,7 @@ sip_get_callid(const char* payload, char *callid)
         }
 
         // Copy the matching part of payload
-        strncpy(callid, payload + pmatch[2].rm_so, input_len);
-        callid[input_len] = '\0';
+        sng_strncpy(callid, payload + pmatch[2].rm_so, input_len);
     }
 
     return callid;
@@ -262,13 +261,12 @@ sip_get_xcallid(const char *payload, char *xcallid)
     if (regexec(&calls.reg_xcallid, (const char *)payload, 3, pmatch, 0) == 0) {
         int input_len = pmatch[2].rm_eo - pmatch[2].rm_so;
 
-        // Ensure the copy length does not exceed MAX_XCALLID_SIZE - 1
-        if (input_len > MAX_XCALLID_SIZE - 1) {
-            input_len = MAX_XCALLID_SIZE - 1;
+        // Ensure the copy length does not exceed MAX_XCALLID_SIZE
+        if (input_len > MAX_XCALLID_SIZE) {
+            input_len = MAX_XCALLID_SIZE;
         }
 
-        strncpy(xcallid, (const char *)payload +  pmatch[2].rm_so, input_len);
-        xcallid[input_len] = '\0';
+        sng_strncpy(xcallid, (const char *)payload +  pmatch[2].rm_so, input_len);
     }
 
     return xcallid;
@@ -307,14 +305,13 @@ sip_validate_packet(packet_t *packet)
         return VALIDATE_PARTIAL_SIP;
     }
 
-    // Ensure the copy length does not exceed MAX_CONTENT_LENGTH_SIZE - 1
+    // Ensure the copy length does not exceed MAX_CONTENT_LENGTH_SIZE
     int cl_match_len = pmatch[2].rm_eo - pmatch[2].rm_so;
-    if (cl_match_len > MAX_CONTENT_LENGTH_SIZE - 1) {
-        cl_match_len = MAX_CONTENT_LENGTH_SIZE - 1;
+    if (cl_match_len > MAX_CONTENT_LENGTH_SIZE) {
+        cl_match_len = MAX_CONTENT_LENGTH_SIZE;
     }
 
-    strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, cl_match_len);
-    cl_header[cl_match_len] = '\0'; // Ensuring null termination
+    sng_strncpy(cl_header, (const char *)payload +  pmatch[2].rm_so, cl_match_len);
 
     content_len = atoi(cl_header);
 
@@ -575,7 +572,7 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
         // Method & CSeq
         if (regexec(&calls.reg_method, (const char *)payload, 2, pmatch, 0) == 0) {
             if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(reqresp, "<malformed>", 12);
+                sng_strncpy(reqresp, "<malformed>", 12);
             } else {
                 sprintf(reqresp, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
             }
@@ -591,12 +588,12 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
         // Response code
         if (regexec(&calls.reg_response, (const char *)payload, 3, pmatch, 0) == 0) {
             if ((int)(pmatch[1].rm_eo - pmatch[1].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(resp_str, "<malformed>", 12);
+                sng_strncpy(resp_str, "<malformed>", 12);
             } else {
                 sprintf(resp_str, "%.*s", (int) (pmatch[1].rm_eo - pmatch[1].rm_so), payload + pmatch[1].rm_so);
             }
             if ((int)(pmatch[2].rm_eo - pmatch[2].rm_so) >= SIP_ATTR_MAXLEN) {
-                strncpy(resp_str, "<malformed>", 12);
+                sng_strncpy(resp_str, "<malformed>", 12);
             } else {
                 sprintf(reqresp, "%.*s", (int) (pmatch[2].rm_eo - pmatch[2].rm_so), payload + pmatch[2].rm_so);
             }
@@ -645,21 +642,21 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
     // From
     if (regexec(&calls.reg_from, (const char *)payload, 4, pmatch, 0) == 0) {
         msg->sip_from = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
-        strncpy(msg->sip_from, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+        sng_strncpy(msg->sip_from, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
     } else {
         // Malformed From Header
         msg->sip_from = sng_malloc(12);
-        strncpy(msg->sip_from, "<malformed>", 12);
+        sng_strncpy(msg->sip_from, "<malformed>", 12);
     }
 
     // To
     if (regexec(&calls.reg_to, (const char *)payload, 4, pmatch, 0) == 0) {
         msg->sip_to = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
-        strncpy(msg->sip_to, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+        sng_strncpy(msg->sip_to, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
     } else {
         // Malformed To Header
         msg->sip_to = sng_malloc(12);
-        strncpy(msg->sip_to, "<malformed>", 12);
+        sng_strncpy(msg->sip_to, "<malformed>", 12);
     }
 
     return 0;
@@ -742,11 +739,11 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
         // Check if we have a connection string
         if (!strncmp(line, "c=", 2)) {
             if (sscanf(line, "c=IN IP%*c %" STRINGIFY(ADDRESSLEN) "s", address)) {
-                strncpy(dst.ip, address, ADDRESSLEN - 1);
+                sng_strncpy(dst.ip, address, ADDRESSLEN);
                 if (media) {
                     media_set_address(media, dst);
-                    strcpy(rtp_stream->dst.ip, dst.ip);
-                    strcpy(rtcp_stream->dst.ip, dst.ip);
+                    sng_strncpy(rtp_stream->dst.ip, dst.ip, ADDRESSLEN);
+                    sng_strncpy(rtcp_stream->dst.ip, dst.ip, ADDRESSLEN);
                 }
             }
         }
@@ -785,19 +782,18 @@ sip_parse_extra_headers(sip_msg_t *msg, const u_char *payload)
      // Reason text
      if (regexec(&calls.reg_reason, (const char *)payload, 2, pmatch, 0) == 0) {
          msg->call->reasontxt = sng_malloc((int)pmatch[1].rm_eo - pmatch[1].rm_so + 1);
-         strncpy(msg->call->reasontxt, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
+         sng_strncpy(msg->call->reasontxt, (const char *)payload +  pmatch[1].rm_so, (int)pmatch[1].rm_eo - pmatch[1].rm_so);
      }
 
      // Warning code
      if (regexec(&calls.reg_warning, (const char *)payload, 2, pmatch, 0) == 0) {
 
-        // Ensure the copy length does not exceed MAX_WARNING_SIZE - 1
+        // Ensure the copy length does not exceed MAX_WARNING_SIZE
         int warning_match_len = pmatch[1].rm_eo - pmatch[1].rm_so;
-        if (warning_match_len > MAX_WARNING_SIZE - 1) {
-            warning_match_len = MAX_WARNING_SIZE - 1;
+        if (warning_match_len > MAX_WARNING_SIZE) {
+            warning_match_len = MAX_WARNING_SIZE;
         }
-        strncpy(warning, (const char *)payload +  pmatch[1].rm_so, warning_match_len);
-        warning[warning_match_len] = '\0'; // Ensuring null termination
+        sng_strncpy(warning, (const char *)payload +  pmatch[1].rm_so, warning_match_len);
 
         msg->call->warning = atoi(warning);
      }
@@ -977,7 +973,7 @@ sip_transport_str(int transport)
 }
 
 char *
-sip_get_msg_header(sip_msg_t *msg, char *out)
+sip_get_msg_header(sip_msg_t *msg, char *out, size_t maxlen)
 {
     char from_addr[80], to_addr[80], time[80], date[80];
 
@@ -989,9 +985,9 @@ sip_get_msg_header(sip_msg_t *msg, char *out)
 
     // Get msg header
     if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-        sprintf(out, "%s %s %s -> %s", date, time, get_alias_value(from_addr), get_alias_value(to_addr));
+        snprintf(out, maxlen, "%s %s %s -> %s", date, time, get_alias_value(from_addr), get_alias_value(to_addr));
     } else {
-        sprintf(out, "%s %s %s -> %s", date, time, from_addr, to_addr);
+        snprintf(out, maxlen, "%s %s %s -> %s", date, time, from_addr, to_addr);
     }
     return out;
 }
