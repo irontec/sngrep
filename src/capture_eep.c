@@ -276,7 +276,9 @@ capture_eep_build_frame_data(
     };
 
     // Allocate memory for payload contents
-    *frame_payload = sng_malloc(sizeof(ether_hdr) + sizeof(ip_hdr) + sizeof(udp_hdr) + payload_size);
+    if (!(*frame_payload = sng_malloc(sizeof(ether_hdr) + sizeof(ip_hdr) + sizeof(udp_hdr) + payload_size))) {
+        return frame_pcap_header;
+    }
 
     // Append all headers to frame contents
     memcpy(*frame_payload + frame_size, (void*) &ether_hdr, sizeof(ether_hdr));
@@ -403,7 +405,8 @@ capture_eep_send_v3(packet_t *pkt)
     unsigned char *data = packet_payload(pkt);
     uint32_t len = packet_payloadlen(pkt);
 
-    hg = sng_malloc(sizeof(struct hep_generic));
+    if (!(hg = sng_malloc(sizeof(struct hep_generic))))
+        return 1;
 
     /* header set "HEP3" */
     memcpy(hg->header.id, "\x48\x45\x50\x33", 4);
@@ -648,6 +651,12 @@ capture_eep_receive_v2()
         pos += sizeof(struct hep_ip6hdr);
     }
 #endif
+    else {
+        // if we don't recognise the address family, then we don't know how long
+        // the IP header is, so we don't know where the time header will start,
+        // so we can't handle the packet
+        return NULL;
+    }
 
     /* PORTS */
     src.port = ntohs(hdr.hp_sport);
@@ -664,13 +673,20 @@ capture_eep_receive_v2()
 
     // Calculate payload size (Total size - headers size)
     header.caplen = header.len = ntohs(hdr.hp_l) - pos;
+    if (pos+header.caplen >= MAX_CAPTURE_LEN)
+        return NULL;
 
     // Copy packet payload
-    payload = sng_malloc(header.caplen + 1);
+    if (!(payload = sng_malloc(header.caplen + 1)))
+        return NULL;
     memcpy(payload, (void*) buffer + pos, header.caplen);
 
     // Build a custom frame pcap header
     frame_pcap_header = capture_eep_build_frame_data(header, payload,header.caplen, src, dst, &frame_payload);
+    if (!frame_payload) {
+        sng_free(payload);
+        return NULL;
+    }
 
     // Create a new packet
     pkt = packet_create((family == AF_INET) ? 4 : 6, proto, src, dst, 0);
@@ -749,6 +765,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
         return NULL;
 
     total_len = ntohs(hg.header.length);
+    if (total_len >= MAX_CAPTURE_LEN)
+        return NULL;
     pos = sizeof(hep_ctrl_t);
 
     while (pos < total_len) {
@@ -771,6 +789,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
         switch (chunk_type) {
             case CAPTURE_EEP_CHUNK_INVALID:
+                if (payload)
+                    sng_free(payload);
                 return NULL;
             case CAPTURE_EEP_CHUNK_FAMILY:
                 memcpy(&hg.ip_family, (void*) buffer + pos, sizeof(hep_chunk_uint8_t));
@@ -829,7 +849,10 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
             case CAPTURE_EEP_CHUNK_PAYLOAD:
                 memcpy(&payload_chunk, (void*) buffer + pos, sizeof(payload_chunk));
                 header.caplen = header.len = chunk_len - sizeof(hep_chunk_t);
-                payload = sng_malloc(header.caplen);
+                if (pos+sizeof(hep_chunk_t)+header.caplen >= MAX_CAPTURE_LEN)
+                    return NULL;
+                if (!(payload = sng_malloc(header.caplen)))
+                    return NULL;
                 memcpy(payload, (void*) buffer + pos + sizeof(hep_chunk_t), header.caplen);
                 break;
             case CAPTURE_EEP_CHUNK_CORRELATION_ID:
@@ -848,12 +871,16 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
         if (strlen(password) == 0)
             return NULL;
         // Check password matches configured
-        if (strncmp(password, eep_cfg.capt_srv_password, strlen(eep_cfg.capt_srv_password)) != 0)
+        if (strcmp(password, eep_cfg.capt_srv_password) != 0)
             return NULL;
     }
 
     // Build a custom frame pcap header
     frame_pcap_header = capture_eep_build_frame_data(header, payload,header.caplen, src, dst, &frame_payload);
+    if (!frame_payload) {
+        sng_free(payload);
+        return NULL;
+    }
 
     // Create a new packet
     pkt_new = packet_create((hg.ip_family.data == AF_INET)?4:6, hg.ip_proto.data, src, dst, 0);
