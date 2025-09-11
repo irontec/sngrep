@@ -163,7 +163,7 @@ stream_add_event(rtp_stream_t *stream, packet_t *packet)
     }
 
     event->volume = payload[offset+1] & 0x3F;
-    event->duration = ntohs(payload[offset+2]);
+    event->duration = (payload[offset+2] << 8) + payload[offset+3];
     vector_append(stream->events, event);
 }
 
