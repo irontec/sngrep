@@ -57,6 +57,12 @@ sng_free(void *ptr);
 char *
 sng_basename(const char *name);
 
+/*
+ * @brief Wrapper for strncpy
+ */
+char *
+sng_strncpy(char *dst, const char *src, size_t len);
+
 /**
  * @brief Compare two timeval structures
  *
