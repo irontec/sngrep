@@ -128,9 +128,20 @@ AS_IF([test "x$WITH_GNUTLS" = "xyes"], [
 	])
     ])
 
-    m4_ifdef([PKG_CHECK_MODULES], [
+    # Determine which method to use for libgcrypt detection
+    libgcrypt_use_pkgconfig=no
+    m4_ifdef([PKG_CHECK_EXISTS], [
+        # Check if pkg-config is available and libgcrypt module exists
+        PKG_CHECK_EXISTS([libgcrypt], [
+            libgcrypt_use_pkgconfig=yes
+        ], [])
+    ])
+
+    # Use the determined method
+    if test "x$libgcrypt_use_pkgconfig" = "xyes"; then
         PKG_CHECK_MODULES([LIBGCRYPT], [libgcrypt])
-    ], [
+    else
+        # Fall back to libgcrypt-config
         AC_PATH_PROG([LIBGCRYPT_CONFIG],[libgcrypt-config],[no])
         if test "x${LIBGCRYPT_CONFIG}" = "xno"; then
             AC_MSG_FAILURE([libgcrypt-config not found in PATH])
@@ -148,7 +159,7 @@ AS_IF([test "x$WITH_GNUTLS" = "xyes"], [
                 ]
             )
         fi
-    ])
+    fi
     AC_DEFINE([WITH_GNUTLS],[],[Compile With GnuTLS compatibility])
     AC_SUBST(LIBGCRYPT_CFLAGS)
     AC_SUBST(LIBGCRYPT_LIBS)
