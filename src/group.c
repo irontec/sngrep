@@ -57,6 +57,7 @@ call_group_destroy(sip_call_group_t *group)
 bool
 call_group_has_changed(sip_call_group_t *group)
 {
+    int i;
     bool changed = false;
 
     if (group == NULL || group->calls == NULL) {
@@ -66,7 +67,7 @@ call_group_has_changed(sip_call_group_t *group)
     // Check if any of the group has changed
     // We check all the calls even after we found a changed one to reset all
     // the changed pointers
-    for (int i = 0; i < vector_count(group->calls); i++) {
+    for (i = 0; i < vector_count(group->calls); i++) {
         sip_call_t *call = vector_item(group->calls, i);
 
         // If the call has changed, reset the changed flag
