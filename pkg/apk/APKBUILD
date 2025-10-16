@@ -1,7 +1,7 @@
 # Contributor: Francesco Colista <fcolista@alpinelinux.org>
 # Maintainer: Francesco Colista <fcolista@alpinelinux.org>
 pkgname=sngrep
-pkgver=1.8.2
+pkgver=1.8.3
 pkgrel=0
 pkgdesc="display SIP call message flows from a terminal"
 url="https://github.com/irontec/sngrep"
