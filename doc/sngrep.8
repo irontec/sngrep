@@ -1,9 +1,9 @@
 .\" Man page for the sngrep
 .\"
-.\" Copyright (c) 2013-2024  Ivan Alonso <kaian@irontec.com>
-.\" Copyright (c) 2013-2024  Irontec S.L.
+.\" Copyright (c) 2013-2025  Ivan Alonso <kaian@irontec.com>
+.\" Copyright (c) 2013-2025  Irontec S.L.
 
-.TH SNGREP 8 "Mar 2023" "sngrep 1.8.2"
+.TH SNGREP 8 "Mar 2025" "sngrep 1.8.3"
 
 .SH NAME
 
@@ -11,15 +11,21 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [-hVcivlkNqEr] [ -IO
+.B sngrep [-hVcivNqrD] [-IO
 .I pcap_dump
-.B ] [ -d
+.B ] [-d
 .I dev
-.B ] [ -l
+.B ] [-l
 .I limit
-.B ] [ -k
+.B ] [-B
+.I buffer
+.B ] [-k
 .I keyfile
-.B ] [-LH
+.B ] [-f
+.I config_file
+.B ] [-F] [-T
+.I text_file
+.B ] [-t] [-R] [-LHE
 .I capture_url
 .B ] [
 .I <match expression>
@@ -49,11 +55,11 @@ Display version information.
 
 .TP
 .I \-c
-Only capture dialogs starting with an INVITE request.
+Only display dialogs starting with an INVITE request.
 
 .TP
 .I \-r
-Store RTP packets payload in memory (enables saving RTP to pcap)
+Capture RTP packets payload.
 
 .TP
 .I \-i
@@ -76,7 +82,7 @@ the pcap file in order to facilitate pcap file rotation.
 
 .TP
 .I -B buffer
-Change size of pcap capture buffer (default: 2MB)
+Set pcap buffer size in MB (default: 2)
 
 .TP
 .I \-d dev
@@ -84,42 +90,60 @@ Use this capture device instead of default (\fIany\fP). Special keyword 'any', a
 
 .TP
 .I -k keyfile
-Use private keyfile to decrypt TLS packets.
+RSA private keyfile to decrypt captured packets.
 
 .TP
 .I -l limit
-Change default capture limit (20000 dialogs)
+Set capture limit to N dialogs.
 Limit must be a numeric value above 1 and can not be disabled. This is both
 security measure to avoid unlimited memory usage and also used internally
 in sngrep to manage hash table sizes.
 
 .TP
 .I -R
-Remove oldest dialog when the capture limit has reached
+Rotate calls when capture limit has been reached.
 Although not recommended, this can be used to keep sngrep running during long
 times with some control over consumed memory.
 
 .TP
 .I -N
-Don't display sngrep interface, just capture
+Don't display sngrep interface, just capture.
 
 .TP
 .I -q
-Don't print captured dialogs in no interface mode
+Don't print captured dialogs in no interface mode.
 
 .TP
 .I -H
-Send captured packets to a HEP server (like Homer or another sngrep)
-Argument must be an IP address and port in the format: udp:A.B.C.D:PORT
+Homer sipcapture url (udp:X.X.X.X:XXXX).
 
 .TP
 .I -L
-Start a HEP server listening for packets
-Argument must be an IP address and port in the format: udp:A.B.C.D:PORT
+Listen for encapsulated packets (udp:X.X.X.X:XXXX).
 
 .TP
 .I -E
 Enable parsing of captured HEP3 packets.
+
+.TP
+.I -D
+Print active configuration settings and exit.
+
+.TP
+.I -f config_file
+Read configuration from file.
+
+.TP
+.I -F
+Do not read configuration from default config file.
+
+.TP
+.I -T text_file
+Save pcap to text file.
+
+.TP
+.I -t
+Capture and parse RTP telephone-event packets.
 
 .TP
 .I match expression

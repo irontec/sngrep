@@ -1,3 +1,15 @@
+2025-10-16 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.8.3 released
+
+	* capture: add support for telephony-event rtp streams (RFC 4733)
+	* capture: replace fake HEP frames for network captured packets
+	* call flow: limit call-id displayed on title to 125 characters
+	* rtp: fix duration value in telephony-event is incorrectly converted
+	* core: fix out of bound arrays crashes
+	* eep: fix multiple memory crashes in HEP parsing
+	* ipv6: fixed incorrect payload length for fragmented IPv6 packets
+	* build: use libgcrypt-config if pkg-config is not available for libcrypt
+
 2024-07-08 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.8.2 released
 
