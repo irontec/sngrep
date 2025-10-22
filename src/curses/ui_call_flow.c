@@ -928,9 +928,9 @@ call_flow_draw_event(ui_t *ui, call_flow_arrow_t *arrow, int cline)
     } else if (event->error == TELEPHONE_EVENT_UNKNOWN) {
         sprintf(text, "TelEvt (unknown)");
     } else if (event->end) {
-        sprintf(text, "TelEvt DTMF:%c (end)", event->dtmf, event->duration);
+        sprintf(text, "TelEvt DTMF:%c (end)", event->dtmf);
     } else {
-        sprintf(text, "TelEvt DTMF:%c", event->dtmf, event->duration);
+        sprintf(text, "TelEvt DTMF:%c", event->dtmf);
     }
 
     // Get message data
