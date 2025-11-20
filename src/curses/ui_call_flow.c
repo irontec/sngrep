@@ -308,7 +308,7 @@ call_flow_draw_columns(ui_t *ui)
         if (setting_enabled(SETTING_CF_SPLITCALLID) || !column->addr.port) {
             snprintf(coltext, MAX_SETTING_LEN, "%s", column->alias);
         } else if (setting_enabled(SETTING_DISPLAY_ALIAS)) {
-            if (strlen(column->addr.ip) > 15) {
+            if (strlen(column->alias) > 15) {
                 snprintf(coltext, MAX_SETTING_LEN, "..%.*s:%u",
                          MAX_SETTING_LEN - 9, column->alias + strlen(column->alias) - 13, column->addr.port);
             } else {
