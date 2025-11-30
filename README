@@ -26,7 +26,7 @@ Prerequisites
  - libssl - (optional) for TLS transport decrypt using OpenSSL and libcrypt
  - gnutls - (optional) for TLS transport decrypt using GnuTLS and libgcrypt
  - libncursesw5 - (optional) for UI, windows, panels (wide-character support)
- - libpcre - (optional) for Perl Compatible regular expressions
+ - libpcre or libpcre2 - (optional) for Perl Compatible regular expressions
  - zlib - (optional) for gzip compressed pcap files
 
 On most systems the commands to build will be the standard autotools procedure:
@@ -38,15 +38,16 @@ On most systems the commands to build will be the standard autotools procedure:
 
 You can pass following flags to ./configure to enable some features
 
-| configure flag | Feature |
-| ------------- | ------------- |
-| `--with-openssl` | Adds OpenSSL support to parse TLS captured messages (req. libssl)  |
-| `--with-gnutls` | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
-| `--with-pcre`|  Adds Perl Compatible regular expressions support in regexp fields |
-| `--with-zlib`|  Enable zlib to support gzip compressed pcap files |
-| `--enable-unicode`   | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
-| `--enable-ipv6`   | Enable IPv6 packet capture support. |
-| `--enable-eep`   | Enable EEP packet send/receive support. |
+| configure flag     | Feature                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| `--with-openssl`   | Adds OpenSSL support to parse TLS captured messages (req. libssl)       |
+| `--with-gnutls`    | Adds GnuTLS support to parse TLS captured messages (req. gnutls)        |
+| `--with-pcre`      | Adds Perl Compatible regular expressions support in regexp fields       |
+| `--with-pcre2`     | Adds Perl Compatible regular expressions (v2) support in regexp fields  |
+| `--with-zlib`      | Enable zlib to support gzip compressed pcap files                       |
+| `--enable-unicode` | Adds Ncurses UTF-8/Unicode support (req. libncursesw5)                  |
+| `--enable-ipv6`    | Enable IPv6 packet capture support.                                     |
+| `--enable-eep`     | Enable EEP packet send/receive support.                                 |
 
 Instead of using autotools, sngrep could be build with CMake, e.g.:
 
@@ -57,17 +58,18 @@ Instead of using autotools, sngrep could be build with CMake, e.g.:
 
 You can pass following options to cmake to enable some features
 
-| CMake option | Feature |
-| ------------- | ------------- |
-| `-D WITH_OPENSSL=ON` | Adds OpenSSL support to parse TLS captured messages (req. libssl)  |
-| `-D WITH_GNUTLS=ON` | Adds GnuTLS support to parse TLS captured messages (req. gnutls)  |
-| `-D WITH_PCRE=ON`|  Adds Perl Compatible regular expressions support in regexp fields |
-| `-D WITH_ZLIB=ON`|  Enable zlib to support gzip compressed pcap files |
-| `-D WITH_UNICODE=ON` | Adds Ncurses UTF-8/Unicode support (req. libncursesw5) |
-| `-D USE_IPV6=ON` | Enable IPv6 packet capture support |
-| `-D USE_EEP=ON` | Enable EEP packet send/receive support |
-| `-D CPACK_GENERATOR=DEB` | `make package` builds a Debian package |
-| `-D CPACK_GENERATOR=RPM` | `make package` builds a RPM package |
+| CMake option             | Feature                                                                |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `-D WITH_OPENSSL=ON`     | Adds OpenSSL support to parse TLS captured messages (req. libssl)      |
+| `-D WITH_GNUTLS=ON`      | Adds GnuTLS support to parse TLS captured messages (req. gnutls)       |
+| `-D WITH_PCRE=ON`        | Adds Perl Compatible regular expressions support in regexp fields      |
+| `-D WITH_PCRE2=ON`       | Adds Perl Compatible regular expressions (v2) support in regexp fields |
+| `-D WITH_ZLIB=ON`        | Enable zlib to support gzip compressed pcap files                      |
+| `-D WITH_UNICODE=ON`     | Adds Ncurses UTF-8/Unicode support (req. libncursesw5)                 |
+| `-D USE_IPV6=ON`         | Enable IPv6 packet capture support                                     |
+| `-D USE_EEP=ON`          | Enable EEP packet send/receive support                                 |
+| `-D CPACK_GENERATOR=DEB` | `make package` builds a Debian package                                 |
+| `-D CPACK_GENERATOR=RPM` | `make package` builds a RPM package                                    |
 
 You can find [detailed instructions for some distributions](https://github.com/irontec/sngrep/wiki/Building) on wiki.
 
