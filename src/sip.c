@@ -447,13 +447,11 @@ sip_check_packet(packet_t *packet)
         sip_parse_extra_headers(msg, payload);
         // Check if this call should be in active call list
         if (call_is_active(call)) {
-            if (sip_call_is_active(call)) {
+            if (!sip_call_is_active(call)) {
                 vector_append(calls.active, call);
             }
         } else {
-            if (sip_call_is_active(call)) {
-                vector_remove(calls.active, call);
-            }
+            vector_remove(calls.active, call);
         }
     }
 
