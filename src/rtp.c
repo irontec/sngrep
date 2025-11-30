@@ -745,7 +745,7 @@ rtp_find_stream_format(address_t src, address_t dst, uint32_t format)
     rtp_stream_t *candidate = NULL;
 
     // Get active calls (during conversation)
-    calls = sip_calls_iterator();
+    calls = sip_active_calls_iterator();
     vector_iterator_set_current(&calls, vector_iterator_count(&calls));
 
     while ((call = vector_iterator_prev(&calls))) {
