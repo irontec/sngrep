@@ -50,13 +50,20 @@ int
 init_options(int no_config)
 {
     // Custom user conf file
+    char *homedir = NULL;
     char *userconf = NULL;
     char *rcfile;
     char pwd[MAX_SETTING_LEN];
 
-    // Defualt savepath is current directory
-    if (getcwd(pwd, MAX_SETTING_LEN)) {
-        setting_set_value(SETTING_SAVEPATH, pwd);
+
+    // Use $HOME directory as default savepath
+    if ((homedir = getenv("HOME"))) {
+        setting_set_value(SETTING_SAVEPATH, homedir);
+    } else {
+        // Use current directory as savepath if no HOME is set
+        if (getcwd(pwd, MAX_SETTING_LEN)) {
+            setting_set_value(SETTING_SAVEPATH, pwd);
+        }
     }
 
     // Initialize settings
