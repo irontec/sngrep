@@ -40,7 +40,7 @@
 
 ##-----------------------------------------------------------------------------
 ## Default path in save dialog
-# set sngrep.savepath /tmp/sngrep-captures
+# set savepath /tmp/sngrep-captures
 
 ##-----------------------------------------------------------------------------
 ## Change default scrolling in call list and call flow
