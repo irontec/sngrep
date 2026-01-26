@@ -1277,7 +1277,6 @@ call_flow_draw_raw(ui_t *ui, sip_msg_t *msg)
 int
 call_flow_draw_raw_event(ui_t *ui, rtp_event_t *event)
 {
-    char text[50];
     call_flow_info_t *info;
     WINDOW *raw_win;
     int raw_width, raw_height;
