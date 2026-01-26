@@ -725,8 +725,8 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 #endif
     hep_chunk_t payload_chunk;
     hep_chunk_t authkey_chunk;
-    char *password;
-    int password_len;
+    char *password = NULL;
+    int password_len = 0;
     unsigned char *payload = 0;
     uint32_t total_len, pos;
     char buffer[MAX_CAPTURE_LEN] ;
@@ -843,6 +843,10 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
             case CAPTURE_EEP_CHUNK_AUTH_KEY:
                 memcpy(&authkey_chunk, (void*) buffer + pos, sizeof(authkey_chunk));
                 password_len = ntohs(authkey_chunk.length) - sizeof(authkey_chunk);
+                if (password_len <= 0) {
+                    pos += chunk_len;
+                    continue;
+                }
                 password = sng_malloc(password_len);
                 memcpy(password, (void*) buffer + pos + sizeof(hep_chunk_t), password_len);
                 break;
@@ -868,7 +872,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
     // Validate password
     if (eep_cfg.capt_srv_password != NULL) {
         // No password in packet
-        if (strlen(password) == 0)
+        if (!password ||strlen(password) == 0)
             return NULL;
         // Check password matches configured
         if (strcmp(password, eep_cfg.capt_srv_password) != 0)
