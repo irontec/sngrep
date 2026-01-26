@@ -247,7 +247,7 @@ capture_eep_build_frame_data(
         unsigned char **frame_payload
 ) {
     //! Frame variables
-    struct pcap_pkthdr frame_pcap_header;
+    struct pcap_pkthdr frame_pcap_header = { 0 };
     uint32_t frame_size = 0;
 
     // Build frame ethernet header
