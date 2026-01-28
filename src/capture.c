@@ -523,10 +523,12 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
 
     // Skip VLAN header if present
     if (capinfo->link == DLT_EN10MB) {
+#ifndef __CYGWIN__
         struct ether_header *eth = (struct ether_header *) packet;
         if (ntohs(eth->ether_type) == ETHERTYPE_8021Q) {
             link_hl += 4;
         }
+#endif
     }
 
 #ifdef SLL_HDR_LEN
