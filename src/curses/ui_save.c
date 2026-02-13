@@ -93,6 +93,13 @@ save_create(ui_t *ui)
     field_opts_off(info->fields[FLD_SAVE_DISPLAYED], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_SAVE_MESSAGE], O_VISIBLE);
 
+    // Disable field save path
+    if (!setting_enabled(SETTING_SAVEPATH_EDITABLE))
+    {
+        field_opts_off(info->fields[FLD_SAVE_PATH], O_EDIT);
+        field_opts_off(info->fields[FLD_SAVE_PATH], O_ACTIVE);
+    }
+
     // Limit max save path and file length
     set_max_field(info->fields[FLD_SAVE_PATH], MAX_SETTING_LEN);
     set_max_field(info->fields[FLD_SAVE_FILE], MAX_SETTING_LEN);
