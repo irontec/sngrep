@@ -54,6 +54,7 @@ msg_destroy(sip_msg_t *msg)
     sng_free(msg->resp_str);
     sng_free(msg->sip_from);
     sng_free(msg->sip_to);
+    sng_free(msg->sip_contact);
     sng_free(msg);
 }
 
@@ -159,6 +160,11 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             break;
         case SIP_ATTR_TIME:
             timeval_to_time(msg_get_time(msg), value);
+            break;
+        case SIP_ATTR_CONTACT:
+            if (msg->sip_contact) {
+                sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_contact);
+            }
             break;
         default:
             fprintf(stderr, "Unhandled attribute %s (%d)\n", sip_attr_get_name(id), id); abort();

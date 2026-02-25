@@ -167,6 +167,7 @@ struct sip_call_list {
     regex_t reg_cseq;
     regex_t reg_from;
     regex_t reg_to;
+    regex_t reg_contact;
     regex_t reg_valid;
     regex_t reg_cl;
     regex_t reg_body;
