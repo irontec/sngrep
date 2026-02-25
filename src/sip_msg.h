@@ -60,6 +60,8 @@ struct sip_msg {
     char *sip_from;
     //! SIP To Header
     char *sip_to;
+    //! SIP Contact Header
+    char *sip_contact;
     //! SDP payload information (sdp_media_t *)
     vector_t *medias;
     //! Captured packet for this message

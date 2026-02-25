@@ -197,6 +197,7 @@ sip_init(int limit, int only_calls, int no_incomplete)
     regcomp(&calls.reg_cseq, "^CSeq:[ ]*([0-9]{1,10}) .+\r$", match_flags);
     regcomp(&calls.reg_from, "^(From|f):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_to, "^(To|t):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);
+    regcomp(&calls.reg_contact, "^(Contact|m):[ ]*[^:]*:(([^@>]+)@?[^\r>;]+)", match_flags);
     regcomp(&calls.reg_valid, "^([A-Z]+ [a-zA-Z]+:|SIP/2.0 [0-9]{3})", match_flags & ~REG_NEWLINE);
     regcomp(&calls.reg_cl, "^(Content-Length|l):[ ]*([0-9]+)[ ]*\r$", match_flags);
     regcomp(&calls.reg_body, "\r\n\r\n(.*)", match_flags & ~REG_NEWLINE);
@@ -223,6 +224,7 @@ sip_deinit()
     regfree(&calls.reg_cseq);
     regfree(&calls.reg_from);
     regfree(&calls.reg_to);
+    regfree(&calls.reg_contact);
     regfree(&calls.reg_valid);
     regfree(&calls.reg_cl);
     regfree(&calls.reg_body);
@@ -655,6 +657,12 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
         // Malformed To Header
         msg->sip_to = sng_malloc(12);
         sng_strncpy(msg->sip_to, "<malformed>", 12);
+    }
+
+    // Contact
+    if (regexec(&calls.reg_contact, (const char *)payload, 3, pmatch, 0) == 0) {
+        msg->sip_contact = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
+        sng_strncpy(msg->sip_contact, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
     }
 
     return 0;

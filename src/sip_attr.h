@@ -85,6 +85,8 @@ enum sip_attr_id {
     SIP_ATTR_REASON_TXT,
     //! Warning Header
     SIP_ATTR_WARNING,
+    //! SIP Contact header
+    SIP_ATTR_CONTACT,
     //! SIP Attribute count
     SIP_ATTR_COUNT
 };
