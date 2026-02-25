@@ -661,8 +661,9 @@ sip_parse_msg_payload(sip_msg_t *msg, const u_char *payload)
 
     // Contact
     if (regexec(&calls.reg_contact, (const char *)payload, 3, pmatch, 0) == 0) {
-        msg->sip_contact = sng_malloc((int)pmatch[2].rm_eo - pmatch[2].rm_so + 1);
-        sng_strncpy(msg->sip_contact, (const char *)payload +  pmatch[2].rm_so, (int)pmatch[2].rm_eo - pmatch[2].rm_so);
+        int len = (int)pmatch[2].rm_eo - pmatch[2].rm_so;
+        msg->sip_contact = sng_malloc(len + 1);
+        sng_strncpy(msg->sip_contact, (const char *)payload + pmatch[2].rm_so, len + 1);
     }
 
     return 0;
