@@ -33,6 +33,46 @@
 #include "setting.h"
 #include "util.h"
 
+static void
+setting_expand_env_macros(const char *value, char *expanded, size_t expanded_size)
+{
+    const char *cursor = value;
+    size_t exp_len = 0;
+
+    if (!value || !expanded || expanded_size == 0)
+        return;
+
+    expanded[0] = '\0';
+
+    while (*cursor && exp_len < expanded_size - 1) {
+        if (cursor[0] == '$' && cursor[1] == '{') {
+            const char *macro_start = cursor + 2;
+            const char *macro_end = strchr(macro_start, '}');
+            if (macro_end) {
+                char macro_name[128];
+                const char *macro_value;
+                size_t macro_name_len = macro_end - macro_start;
+
+                if (macro_name_len > 0 && macro_name_len < sizeof(macro_name)) {
+                    memcpy(macro_name, macro_start, macro_name_len);
+                    macro_name[macro_name_len] = '\0';
+                    macro_value = getenv(macro_name);
+                    if (macro_value && *macro_value) {
+                        while (*macro_value && exp_len < expanded_size - 1)
+                            expanded[exp_len++] = *macro_value++;
+                    }
+                    cursor = macro_end + 1;
+                    continue;
+                }
+            }
+        }
+
+        expanded[exp_len++] = *cursor++;
+    }
+
+    expanded[exp_len] = '\0';
+}
+
 
 //! Available configurable settings
 setting_t settings[SETTING_COUNT] = {
@@ -168,11 +208,19 @@ void
 setting_set_value(int id, const char *value)
 {
     setting_t *sett = setting_by_id(id);
+    const char *setting_value = value;
+    char expanded_value[MAX_SETTING_LEN];
+
+    if (sett && sett->id == SETTING_SAVEPATH && value && strstr(value, "${")) {
+        setting_expand_env_macros(value, expanded_value, sizeof(expanded_value));
+        setting_value = expanded_value;
+    }
+
     if (sett) {
         memset(sett->value, 0, sizeof(sett->value));
-        if (value) {
-            if (strlen(value) < MAX_SETTING_LEN) {
-                strcpy(sett->value, value);
+        if (setting_value) {
+            if (strlen(setting_value) < MAX_SETTING_LEN) {
+                strcpy(sett->value, setting_value);
             } else {
                 fprintf(stderr, "Setting value %s for %s is too long\n", sett->value, sett->name);
                 exit(1);
