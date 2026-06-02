@@ -101,11 +101,58 @@ typedef struct rtp_encoding rtp_encoding_t;
 typedef struct rtp_stream rtp_stream_t;
 //! Shorter declaration of rtp_event structure
 typedef struct rtp_event rtp_event_t;
+//! Shorter declaration of rtp_stats structure
+typedef struct rtp_stats rtp_stats_t;
 
 struct rtp_encoding {
     uint32_t id;
     const char *name;
     const char *format;
+};
+
+struct rtp_stats {
+    //! RTP stats have received at least one RTP packet
+    bool initialized;
+    //! Payload type from the last received RTP packet
+    uint8_t payload_type;
+    //! Synchronization source identifier
+    uint32_t ssrc;
+    //! First received RTP sequence number
+    uint16_t first_seq;
+    //! Last received RTP sequence number
+    uint16_t last_seq;
+    //! Highest received extended RTP sequence number
+    uint32_t max_seq;
+    //! Extended RTP sequence number of the first packet
+    uint32_t base_seq;
+    //! RTP sequence wrap cycles
+    uint32_t cycles;
+    //! First received RTP timestamp
+    uint32_t first_ts;
+    //! Last received RTP timestamp
+    uint32_t last_ts;
+    //! Time of last received RTP packet
+    struct timeval last_time;
+    //! Total RTP packets received, including duplicates
+    uint32_t received;
+    //! Duplicate RTP packets
+    uint32_t duplicates;
+    //! Out-of-order RTP packets
+    uint32_t outoforder;
+    //! Jitter calculated using RFC3550, in RTP timestamp units
+    double jitter;
+    //! Previous packet transit time for jitter calculation
+    double transit;
+    //! Max capture delta between accepted RTP packets, in ms
+    double max_delta;
+    //! Jitter calculated using RFC3550, in ms
+    double jitter_ms;
+    //! Max jitter found in the stream, in ms
+    double max_jitter;
+    //! Mean jitter of the stream, in ms
+    double mean_jitter;
+    //! Number of jitter samples used for mean jitter
+    uint32_t jitter_samples;
 };
 
 struct rtp_stream {
@@ -127,6 +174,8 @@ struct rtp_stream {
     int telephone_event;
     //! Telephone events of this stream (rtp_event_t)
     vector_t *events;
+    //! Statistics observed from RTP packets
+    rtp_stats_t rtpstats;
 
     // Stream information (depending on type)
     union {
@@ -137,6 +186,14 @@ struct rtp_stream {
         struct {
             //! Sender packet count
             uint32_t spc;
+            //! Cumulative packets lost
+            int32_t lost;
+            //! Extended highest sequence number received
+            uint32_t hseq;
+            //! Interarrival jitter
+            uint32_t jitter;
+            //! RTCP report data has been received
+            bool reported;
             //! Fraction lost x/256
             uint8_t flost;
             //! uint8_t discarded x/256
@@ -319,6 +376,18 @@ stream_add_packet(rtp_stream_t *stream, packet_t *packet);
 uint32_t
 stream_get_count(rtp_stream_t *stream);
 
+uint32_t
+stream_get_expected_count(rtp_stream_t *stream);
+
+uint32_t
+stream_get_lost_count(rtp_stream_t *stream);
+
+uint32_t
+stream_get_duration_ms(rtp_stream_t *stream);
+
+uint32_t
+stream_get_clock_rate(rtp_stream_t *stream);
+
 struct sip_call *
 stream_get_call(rtp_stream_t *stream);
 
@@ -342,6 +411,9 @@ rtp_find_call_stream(struct sip_call *call, address_t src, address_t dst);
 
 rtp_stream_t *
 rtp_find_call_exact_stream(struct sip_call *call, address_t src, address_t dst);
+
+rtp_stream_t *
+rtp_find_related_rtcp_stream(rtp_stream_t *rtp);
 
 /**
  * @brief Check if a message is older than other

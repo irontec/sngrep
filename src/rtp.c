@@ -31,6 +31,8 @@
 
 #include "config.h"
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "rtp.h"
 #include "sip.h"
@@ -66,6 +68,202 @@ rtp_encoding_t encodings[] = {
     { 34, "H263/90000", "h263" },
     { 0, NULL, NULL }
 };
+
+static uint16_t
+rtp_read_uint16(const u_char *data)
+{
+    return ((uint16_t) data[0] << 8) | data[1];
+}
+
+static uint32_t
+rtp_read_uint32(const u_char *data)
+{
+    return ((uint32_t) data[0] << 24) | ((uint32_t) data[1] << 16) |
+           ((uint32_t) data[2] << 8) | data[3];
+}
+
+static int32_t
+rtcp_read_lost(const struct rtcp_blk_sr *blk)
+{
+    uint32_t lost = ((uint32_t) blk->plost.pl1 << 16) |
+                    ((uint32_t) blk->plost.pl2 << 8) |
+                    blk->plost.pl3;
+
+    if (lost & 0x800000)
+        lost |= 0xff000000;
+
+    return (int32_t) lost;
+}
+
+static uint32_t
+rtp_encoding_clock_rate(uint32_t code)
+{
+    int i;
+    const char *clock;
+
+    for (i = 0; encodings[i].name; i++) {
+        if (encodings[i].id == code) {
+            if ((clock = strchr(encodings[i].name, '/')))
+                return (uint32_t) atoi(clock + 1);
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+static uint32_t
+rtp_format_clock_rate(const char *format)
+{
+    const char *clock;
+
+    if (!format || !(clock = strchr(format, '/')))
+        return 0;
+
+    return (uint32_t) atoi(clock + 1);
+}
+
+static uint32_t
+rtp_extended_seq(rtp_stats_t *stats, uint16_t seq)
+{
+    uint32_t cycles = stats->cycles;
+    uint16_t max_seq = stats->max_seq & 0xffff;
+
+    if (stats->initialized && seq < max_seq && max_seq - seq > 30000) {
+        cycles += 0x10000;
+        stats->cycles = cycles;
+    } else if (stats->initialized && seq > max_seq &&
+               seq - max_seq > 30000 && cycles >= 0x10000) {
+        cycles -= 0x10000;
+    }
+
+    return cycles + seq;
+}
+
+static void
+stream_update_rtp_stats(rtp_stream_t *stream, packet_t *packet)
+{
+    u_char *payload = packet_payload(packet);
+    uint32_t size = packet_payloadlen(packet);
+    rtp_stats_t *stats = &stream->rtpstats;
+    struct timeval ptime;
+    uint8_t payload_type;
+    uint16_t seq;
+    uint32_t ts, ssrc, ext_seq, clock;
+    bool accepted = true;
+
+    if (stream->type != PACKET_RTP || size < RTP_HDR_LENGTH)
+        return;
+
+    payload_type = RTP_PAYLOAD_TYPE(*(payload + 1));
+    seq = rtp_read_uint16(payload + 2);
+    ts = rtp_read_uint32(payload + 4);
+    ssrc = rtp_read_uint32(payload + 8);
+    ptime = packet_time(packet);
+
+    if (!stats->initialized) {
+        memset(stats, 0, sizeof(*stats));
+        stats->initialized = true;
+        stats->payload_type = payload_type;
+        stats->ssrc = ssrc;
+        stats->first_seq = seq;
+        stats->last_seq = seq;
+        stats->base_seq = seq;
+        stats->max_seq = seq;
+        stats->first_ts = ts;
+        stats->last_ts = ts;
+        stats->last_time = ptime;
+        stats->received = 1;
+        if ((clock = stream_get_clock_rate(stream))) {
+            stats->transit = ptime.tv_sec * (double) clock +
+                             ptime.tv_usec * (double) clock / 1000000.0 - ts;
+        }
+        return;
+    }
+
+    ext_seq = rtp_extended_seq(stats, seq);
+    stats->received++;
+    stats->payload_type = payload_type;
+    stats->ssrc = ssrc;
+
+    if (ext_seq > stats->max_seq) {
+        if (ext_seq > stats->max_seq + 1)
+            stats->outoforder++;
+        stats->max_seq = ext_seq;
+    } else if (seq == stats->last_seq && ts == stats->last_ts) {
+        stats->duplicates++;
+        stats->outoforder++;
+        accepted = false;
+    } else {
+        stats->outoforder++;
+        accepted = false;
+    }
+
+    if (!accepted) {
+        return;
+    }
+
+    clock = stream_get_clock_rate(stream);
+    {
+        double last_ms = stats->last_time.tv_sec * 1000.0 +
+                         stats->last_time.tv_usec / 1000.0;
+        double current_ms = ptime.tv_sec * 1000.0 + ptime.tv_usec / 1000.0;
+        double delta = current_ms - last_ms;
+
+        if (delta > stats->max_delta)
+            stats->max_delta = delta;
+    }
+
+    if (clock) {
+        double arrival = ptime.tv_sec * (double) clock +
+                         ptime.tv_usec * (double) clock / 1000000.0;
+        double transit = arrival - ts;
+        double d = transit - stats->transit;
+
+        if (d < 0)
+            d = -d;
+        if (stats->received > 1)
+            stats->jitter += (d - stats->jitter) / 16.0;
+        stats->transit = transit;
+        stats->jitter_ms = stats->jitter * 1000 / clock;
+        if (stats->jitter_ms > stats->max_jitter)
+            stats->max_jitter = stats->jitter_ms;
+        stats->jitter_samples++;
+        stats->mean_jitter += (stats->jitter_ms - stats->mean_jitter) /
+                              stats->jitter_samples;
+    }
+
+    stats->last_seq = seq;
+    stats->last_ts = ts;
+    stats->last_time = ptime;
+}
+
+static void
+rtcp_parse_report_block(rtp_stream_t *stream, const u_char *payload)
+{
+    struct rtcp_blk_sr blk;
+
+    memcpy(&blk, payload, sizeof(blk));
+    stream->rtcpinfo.flost = blk.flost;
+    stream->rtcpinfo.lost = rtcp_read_lost(&blk);
+    stream->rtcpinfo.hseq = ntohl(blk.hseq);
+    stream->rtcpinfo.jitter = ntohl(blk.ijitter);
+    stream->rtcpinfo.reported = true;
+}
+
+static void
+rtcp_parse_report_blocks(rtp_stream_t *stream, const u_char *payload, uint32_t size,
+                         uint32_t offset, uint8_t count)
+{
+    uint8_t i;
+
+    for (i = 0; i < count; i++) {
+        if (offset + sizeof(struct rtcp_blk_sr) > size)
+            break;
+        rtcp_parse_report_block(stream, payload + offset);
+        offset += sizeof(struct rtcp_blk_sr);
+    }
+}
 
 rtp_stream_t *
 stream_create(sdp_media_t *media, address_t dst, int type)
@@ -173,6 +371,8 @@ stream_add_packet(rtp_stream_t *stream, packet_t *packet)
     if (stream->pktcnt == 0)
         stream->time = packet_time(packet);
 
+    stream_update_rtp_stats(stream, packet);
+
     stream->lasttm = (int) time(NULL);
     stream->pktcnt++;
 }
@@ -181,6 +381,66 @@ uint32_t
 stream_get_count(rtp_stream_t *stream)
 {
     return stream->pktcnt;
+}
+
+uint32_t
+stream_get_expected_count(rtp_stream_t *stream)
+{
+    rtp_stats_t *stats;
+
+    if (!stream || !(stats = &stream->rtpstats)->initialized)
+        return 0;
+
+    return stats->max_seq - stats->base_seq + 1;
+}
+
+uint32_t
+stream_get_lost_count(rtp_stream_t *stream)
+{
+    rtp_stats_t *stats;
+    uint32_t expected, received;
+
+    if (!stream || !(stats = &stream->rtpstats)->initialized)
+        return 0;
+
+    expected = stream_get_expected_count(stream);
+    received = stats->received - stats->duplicates;
+
+    return (expected > received) ? expected - received : 0;
+}
+
+uint32_t
+stream_get_duration_ms(rtp_stream_t *stream)
+{
+    rtp_stats_t *stats;
+    uint64_t start, end;
+
+    if (!stream || !(stats = &stream->rtpstats)->initialized)
+        return 0;
+
+    start = (uint64_t) stream->time.tv_sec * 1000 + stream->time.tv_usec / 1000;
+    end = (uint64_t) stats->last_time.tv_sec * 1000 + stats->last_time.tv_usec / 1000;
+
+    return (end > start) ? (uint32_t) (end - start) : 0;
+}
+
+uint32_t
+stream_get_clock_rate(rtp_stream_t *stream)
+{
+    const char *fmt;
+    uint32_t rate;
+
+    if (!stream)
+        return 0;
+
+    if ((rate = rtp_encoding_clock_rate(stream->rtpinfo.fmtcode)))
+        return rate;
+
+    if (stream->media &&
+        (fmt = media_get_format(stream->media, stream->rtpinfo.fmtcode)))
+        return rtp_format_clock_rate(fmt);
+
+    return 0;
 }
 
 struct sip_call *
@@ -356,8 +616,15 @@ rtp_check_packet(packet_t *packet)
                         // Get Sender Report header
                         memcpy(&hdr_sr, payload, sizeof(hdr_sr));
                         stream->rtcpinfo.spc = ntohl(hdr_sr.spc);
+                        rtcp_parse_report_blocks(stream, payload, size,
+                                                 sizeof(struct rtcp_hdr_sr),
+                                                 hdr.version & 0x1f);
                         break;
                     case RTCP_HDR_RR:
+                        rtcp_parse_report_blocks(stream, payload, size,
+                                                 sizeof(struct rtcp_hdr_generic) + 4,
+                                                 hdr.version & 0x1f);
+                        break;
                     case RTCP_HDR_SDES:
                     case RTCP_HDR_BYE:
                     case RTCP_HDR_APP:
@@ -541,6 +808,34 @@ rtp_find_call_exact_stream(struct sip_call *call, address_t src, address_t dst)
     }
 
     // Nothing found
+    return NULL;
+}
+
+rtp_stream_t *
+rtp_find_related_rtcp_stream(rtp_stream_t *rtp)
+{
+    rtp_stream_t *stream;
+    sip_call_t *call;
+    vector_iter_t it;
+
+    if (!rtp || rtp->type != PACKET_RTP || !(call = stream_get_call(rtp)))
+        return NULL;
+
+    it = vector_iterator(call->streams);
+    while ((stream = vector_iterator_next(&it))) {
+        if (stream->type != PACKET_RTCP)
+            continue;
+
+        if (address_equals(stream->src, rtp->src) &&
+            address_equals(stream->dst, rtp->dst) &&
+            ((stream->src.port == rtp->src.port + 1 &&
+              stream->dst.port == rtp->dst.port + 1) ||
+             (stream->src.port == rtp->src.port &&
+              stream->dst.port == rtp->dst.port))) {
+            return stream;
+        }
+    }
+
     return NULL;
 }
 
