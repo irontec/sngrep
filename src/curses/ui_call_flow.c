@@ -1341,15 +1341,16 @@ call_flow_draw_raw_event(ui_t *ui, rtp_event_t *event)
 int
 call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
 {
-    /**
-     * TODO This is too experimental to even display it
-     */
-    return 0;
-
     call_flow_info_t *info;
     WINDOW *raw_win;
     int raw_width, raw_height;
     int min_raw_width, fixed_raw_width;
+    rtp_stream_t *rtcp;
+    rtp_stats_t *stats;
+    uint32_t expected, lost, duration, clock;
+    const char *format;
+    float lostpct = 0, oospct = 0;
+    int line = 0;
 
     // Get panel information
     if (!(info = call_flow_info(ui)))
@@ -1395,14 +1396,73 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
     mvwvline(ui->win, 1, ui->width - raw_width - 2, ACS_VLINE, ui->height - 2);
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
-    mvwprintw(raw_win, 0, 0, "============ RTCP Information ============");
-    mvwprintw(raw_win, 2, 0, "Sender's packet count: %d", stream->rtcpinfo.spc);
-    mvwprintw(raw_win, 3, 0, "Fraction Lost: %d / 256", stream->rtcpinfo.flost);
-    mvwprintw(raw_win, 4, 0, "Fraction discarded: %d / 256", stream->rtcpinfo.fdiscard);
-    mvwprintw(raw_win, 6, 0, "MOS - Listening Quality: %.1f", (float) stream->rtcpinfo.mosl / 10);
-    mvwprintw(raw_win, 7, 0, "MOS - Conversational Quality: %.1f", (float) stream->rtcpinfo.mosc / 10);
+    stats = &stream->rtpstats;
+    expected = stream_get_expected_count(stream);
+    lost = stream_get_lost_count(stream);
+    duration = stream_get_duration_ms(stream);
+    clock = stream_get_clock_rate(stream);
+    format = stream_get_format(stream);
+    if (expected)
+        lostpct = (float) lost * 100 / expected;
+    if (stats->received)
+        oospct = (float) stats->outoforder * 100 / stats->received;
 
+    mvwprintw(raw_win, line++, 0, "============ RTP Stream Analysis ============");
+    mvwprintw(raw_win, ++line, 0, "Source:      %s:%u", stream->src.ip, stream->src.port);
+    mvwprintw(raw_win, ++line, 0, "Destination: %s:%u", stream->dst.ip, stream->dst.port);
+    mvwprintw(raw_win, ++line, 0, "Codec:       %s", format ? format : "unknown");
+    mvwprintw(raw_win, ++line, 0, "Payload:     %u", stats->payload_type);
+    mvwprintw(raw_win, ++line, 0, "SSRC:        0x%08x", stats->ssrc);
+    mvwprintw(raw_win, ++line, 0, "Clock rate:  %s", clock ? "" : "unknown");
+    if (clock)
+        mvwprintw(raw_win, line, 13, "%u Hz", clock);
 
+    line++;
+    mvwprintw(raw_win, ++line, 0, "Packets:     %u / %u", stats->received, expected);
+    mvwprintw(raw_win, ++line, 0, "Lost:        %u (%.1f%%)", lost, lostpct);
+    mvwprintw(raw_win, ++line, 0, "Out of seq:  %u (%.1f%%)", stats->outoforder, oospct);
+    mvwprintw(raw_win, ++line, 0, "Duplicates:  %u", stats->duplicates);
+    mvwprintw(raw_win, ++line, 0, "Timestamp err:%u", stats->wrong_timestamp);
+    mvwprintw(raw_win, ++line, 0, "Max Delta:   %.2f ms", stats->max_delta);
+    mvwprintw(raw_win, ++line, 0, "Mean Delta:  %.2f ms", stats->mean_delta);
+    mvwprintw(raw_win, ++line, 0, "Max Jitter:  %.2f ms", stats->max_jitter);
+    mvwprintw(raw_win, ++line, 0, "Min Jitter:  %.2f ms", stats->min_jitter);
+    mvwprintw(raw_win, ++line, 0, "Mean Jitter: %.2f ms", stats->mean_jitter);
+    mvwprintw(raw_win, ++line, 0, "Problems:    %s",
+              (lost || stats->outoforder || stats->duplicates ||
+               stats->wrong_timestamp) ? "Yes" : "No");
+    mvwprintw(raw_win, ++line, 0, "Seq range:   %u -> %u", stats->first_seq, stats->last_seq);
+    mvwprintw(raw_win, ++line, 0, "RTP ts:      %u -> %u", stats->first_ts, stats->last_ts);
+    mvwprintw(raw_win, ++line, 0, "Excluded:    marker %u, CN %u, event %u",
+              stats->marker, stats->comfort_noise, stats->telephone_event);
+    mvwprintw(raw_win, ++line, 0, "Duration:    %u.%03u s", duration / 1000, duration % 1000);
+    mvwprintw(raw_win, ++line, 0, "RFC jitter:  %.1f ts units", stats->jitter);
+    if (clock)
+        mvwprintw(raw_win, line, 30, "(%.3f ms)", stats->jitter_ms);
+    mvwprintw(raw_win, ++line, 0, "Active:      %s", stream_is_active(stream) ? "yes" : "no");
+
+    if ((rtcp = rtp_find_related_rtcp_stream(stream)) &&
+        (rtcp->rtcpinfo.reported || rtcp->rtcpinfo.spc ||
+         rtcp->rtcpinfo.flost || rtcp->rtcpinfo.fdiscard ||
+         rtcp->rtcpinfo.mosl || rtcp->rtcpinfo.mosc)) {
+        line += 2;
+        mvwprintw(raw_win, line++, 0, "============ RTCP Information ============");
+        mvwprintw(raw_win, ++line, 0, "Sender packets:      %u", rtcp->rtcpinfo.spc);
+        mvwprintw(raw_win, ++line, 0, "Fraction lost:       %u / 256", rtcp->rtcpinfo.flost);
+        if (rtcp->rtcpinfo.reported) {
+            mvwprintw(raw_win, ++line, 0, "Cumulative lost:     %d", rtcp->rtcpinfo.lost);
+            mvwprintw(raw_win, ++line, 0, "Highest sequence:    %u", rtcp->rtcpinfo.hseq);
+            mvwprintw(raw_win, ++line, 0, "RTCP jitter:         %u", rtcp->rtcpinfo.jitter);
+        }
+        mvwprintw(raw_win, ++line, 0, "Fraction discarded:  %u / 256", rtcp->rtcpinfo.fdiscard);
+        if (rtcp->rtcpinfo.mosl || rtcp->rtcpinfo.mosc) {
+            mvwprintw(raw_win, ++line, 0, "MOS Listening:       %.1f", (float) rtcp->rtcpinfo.mosl / 10);
+            mvwprintw(raw_win, ++line, 0, "MOS Conversational:  %.1f", (float) rtcp->rtcpinfo.mosc / 10);
+        }
+    } else {
+        line += 2;
+        mvwprintw(raw_win, line, 0, "No RTCP information available for this stream");
+    }
 
     // Copy the raw_win contents into the panel
     copywin(raw_win, ui->win, 0, 0, 1, ui->width - raw_width - 1, raw_height, ui->width - 2, 0);
