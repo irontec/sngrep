@@ -123,6 +123,18 @@ rtp_format_clock_rate(const char *format)
     return (uint32_t) atoi(clock + 1);
 }
 
+static bool
+rtp_is_comfort_noise(uint8_t payload_type)
+{
+    return payload_type == 13 || payload_type == 19;
+}
+
+static bool
+rtp_timestamp_in_sequence(rtp_stats_t *stats, uint32_t ts)
+{
+    return (uint32_t) (ts - stats->first_ts) < 0x80000000;
+}
+
 static uint32_t
 rtp_extended_seq(rtp_stats_t *stats, uint16_t seq)
 {
@@ -148,13 +160,16 @@ stream_update_rtp_stats(rtp_stream_t *stream, packet_t *packet)
     rtp_stats_t *stats = &stream->rtpstats;
     struct timeval ptime;
     uint8_t payload_type;
+    bool marker;
     uint16_t seq;
     uint32_t ts, ssrc, ext_seq, clock;
     bool accepted = true;
+    bool regular = true;
 
     if (stream->type != PACKET_RTP || size < RTP_HDR_LENGTH)
         return;
 
+    marker = RTP_MARKER(*(payload + 1));
     payload_type = RTP_PAYLOAD_TYPE(*(payload + 1));
     seq = rtp_read_uint16(payload + 2);
     ts = rtp_read_uint32(payload + 4);
@@ -174,6 +189,12 @@ stream_update_rtp_stats(rtp_stream_t *stream, packet_t *packet)
         stats->last_ts = ts;
         stats->last_time = ptime;
         stats->received = 1;
+        if (marker)
+            stats->marker++;
+        if (rtp_is_comfort_noise(payload_type))
+            stats->comfort_noise++;
+        if (stream->telephone_event)
+            stats->telephone_event++;
         if ((clock = stream_get_clock_rate(stream))) {
             stats->transit = ptime.tv_sec * (double) clock +
                              ptime.tv_usec * (double) clock / 1000000.0 - ts;
@@ -185,6 +206,23 @@ stream_update_rtp_stats(rtp_stream_t *stream, packet_t *packet)
     stats->received++;
     stats->payload_type = payload_type;
     stats->ssrc = ssrc;
+    if (marker) {
+        stats->marker++;
+        regular = false;
+    }
+    if (rtp_is_comfort_noise(payload_type)) {
+        stats->comfort_noise++;
+        regular = false;
+    }
+    if (stream->telephone_event) {
+        stats->telephone_event++;
+        regular = false;
+    }
+    if (!rtp_timestamp_in_sequence(stats, ts)) {
+        stats->wrong_timestamp++;
+        regular = false;
+        accepted = false;
+    }
 
     if (ext_seq > stats->max_seq) {
         if (ext_seq > stats->max_seq + 1)
@@ -210,11 +248,18 @@ stream_update_rtp_stats(rtp_stream_t *stream, packet_t *packet)
         double current_ms = ptime.tv_sec * 1000.0 + ptime.tv_usec / 1000.0;
         double delta = current_ms - last_ms;
 
-        if (delta > stats->max_delta)
+        if (regular && delta > stats->max_delta)
             stats->max_delta = delta;
+        if (regular) {
+            if (!stats->delta_samples || delta < stats->min_delta)
+                stats->min_delta = delta;
+            stats->delta_samples++;
+            stats->mean_delta += (delta - stats->mean_delta) / stats->delta_samples;
+            stats->regular++;
+        }
     }
 
-    if (clock) {
+    if (clock && !stream->telephone_event) {
         double arrival = ptime.tv_sec * (double) clock +
                          ptime.tv_usec * (double) clock / 1000000.0;
         double transit = arrival - ts;
@@ -226,11 +271,15 @@ stream_update_rtp_stats(rtp_stream_t *stream, packet_t *packet)
             stats->jitter += (d - stats->jitter) / 16.0;
         stats->transit = transit;
         stats->jitter_ms = stats->jitter * 1000 / clock;
-        if (stats->jitter_ms > stats->max_jitter)
-            stats->max_jitter = stats->jitter_ms;
-        stats->jitter_samples++;
-        stats->mean_jitter += (stats->jitter_ms - stats->mean_jitter) /
-                              stats->jitter_samples;
+        if (regular) {
+            if (stats->jitter_ms > stats->max_jitter)
+                stats->max_jitter = stats->jitter_ms;
+            if (!stats->jitter_samples || stats->jitter_ms < stats->min_jitter)
+                stats->min_jitter = stats->jitter_ms;
+            stats->jitter_samples++;
+            stats->mean_jitter += (stats->jitter_ms - stats->mean_jitter) /
+                                  stats->jitter_samples;
+        }
     }
 
     stats->last_seq = seq;

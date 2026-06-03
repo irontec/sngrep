@@ -1422,13 +1422,19 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
     mvwprintw(raw_win, ++line, 0, "Lost:        %u (%.1f%%)", lost, lostpct);
     mvwprintw(raw_win, ++line, 0, "Out of seq:  %u (%.1f%%)", stats->outoforder, oospct);
     mvwprintw(raw_win, ++line, 0, "Duplicates:  %u", stats->duplicates);
+    mvwprintw(raw_win, ++line, 0, "Timestamp err:%u", stats->wrong_timestamp);
     mvwprintw(raw_win, ++line, 0, "Max Delta:   %.2f ms", stats->max_delta);
+    mvwprintw(raw_win, ++line, 0, "Mean Delta:  %.2f ms", stats->mean_delta);
     mvwprintw(raw_win, ++line, 0, "Max Jitter:  %.2f ms", stats->max_jitter);
+    mvwprintw(raw_win, ++line, 0, "Min Jitter:  %.2f ms", stats->min_jitter);
     mvwprintw(raw_win, ++line, 0, "Mean Jitter: %.2f ms", stats->mean_jitter);
     mvwprintw(raw_win, ++line, 0, "Problems:    %s",
-              (lost || stats->outoforder || stats->duplicates) ? "Yes" : "No");
+              (lost || stats->outoforder || stats->duplicates ||
+               stats->wrong_timestamp) ? "Yes" : "No");
     mvwprintw(raw_win, ++line, 0, "Seq range:   %u -> %u", stats->first_seq, stats->last_seq);
     mvwprintw(raw_win, ++line, 0, "RTP ts:      %u -> %u", stats->first_ts, stats->last_ts);
+    mvwprintw(raw_win, ++line, 0, "Excluded:    marker %u, CN %u, event %u",
+              stats->marker, stats->comfort_noise, stats->telephone_event);
     mvwprintw(raw_win, ++line, 0, "Duration:    %u.%03u s", duration / 1000, duration % 1000);
     mvwprintw(raw_win, ++line, 0, "RFC jitter:  %.1f ts units", stats->jitter);
     if (clock)

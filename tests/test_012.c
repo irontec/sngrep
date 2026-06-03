@@ -60,7 +60,8 @@ media_get_format(sdp_media_t *media, uint32_t code)
 #include "../src/rtp.c"
 
 static packet_t *
-rtp_packet(uint16_t seq, uint32_t ts, uint32_t usec)
+rtp_packet_ex(uint16_t seq, uint32_t ts, uint32_t usec, uint8_t payload_type,
+              bool marker)
 {
     address_t src = { "10.0.0.1", 10000 };
     address_t dst = { "10.0.0.2", 20000 };
@@ -74,6 +75,7 @@ rtp_packet(uint16_t seq, uint32_t ts, uint32_t usec)
     header.caplen = sizeof(payload);
     header.len = sizeof(payload);
 
+    payload[1] = payload_type | (marker ? 0x80 : 0);
     payload[2] = seq >> 8;
     payload[3] = seq & 0xff;
     payload[4] = ts >> 24;
@@ -91,11 +93,18 @@ rtp_packet(uint16_t seq, uint32_t ts, uint32_t usec)
 }
 
 static void
-add_rtp(rtp_stream_t *stream, uint16_t seq, uint32_t ts, uint32_t usec)
+add_rtp_ex(rtp_stream_t *stream, uint16_t seq, uint32_t ts, uint32_t usec,
+           uint8_t payload_type, bool marker)
 {
-    packet_t *packet = rtp_packet(seq, ts, usec);
+    packet_t *packet = rtp_packet_ex(seq, ts, usec, payload_type, marker);
     stream_add_packet(stream, packet);
     packet_destroy(packet);
+}
+
+static void
+add_rtp(rtp_stream_t *stream, uint16_t seq, uint32_t ts, uint32_t usec)
+{
+    add_rtp_ex(stream, seq, ts, usec, 0, false);
 }
 
 int
@@ -116,8 +125,13 @@ main()
     assert(stream_get_duration_ms(stream) == 40);
     assert(stream_get_clock_rate(stream) == 8000);
     assert(stream->rtpstats.max_delta == 20.0);
+    assert(stream->rtpstats.min_delta == 20.0);
+    assert(stream->rtpstats.mean_delta == 20.0);
     assert(stream->rtpstats.max_jitter == 0.0);
+    assert(stream->rtpstats.min_jitter == 0.0);
     assert(stream->rtpstats.mean_jitter == 0.0);
+    assert(stream->rtpstats.delta_samples == 2);
+    assert(stream->rtpstats.jitter_samples == 2);
     sng_free(stream);
 
     stream = stream_create(NULL, dst, PACKET_RTP);
@@ -158,10 +172,43 @@ main()
     add_rtp(stream, 10, 0, 0);
     add_rtp(stream, 11, 160, 30000);
     assert(stream->rtpstats.max_delta == 30.0);
+    assert(stream->rtpstats.min_delta == 30.0);
+    assert(stream->rtpstats.mean_delta == 30.0);
     assert(stream->rtpstats.max_jitter > 0.62);
     assert(stream->rtpstats.max_jitter < 0.63);
+    assert(stream->rtpstats.min_jitter > 0.62);
+    assert(stream->rtpstats.min_jitter < 0.63);
     assert(stream->rtpstats.mean_jitter > 0.62);
     assert(stream->rtpstats.mean_jitter < 0.63);
+    sng_free(stream);
+
+    stream = stream_create(NULL, dst, PACKET_RTP);
+    stream_set_format(stream, 0);
+    add_rtp(stream, 10, 0, 0);
+    add_rtp_ex(stream, 11, 160, 20000, 0, true);
+    add_rtp(stream, 12, 320, 40000);
+    assert(stream->rtpstats.marker == 1);
+    assert(stream->rtpstats.delta_samples == 1);
+    assert(stream->rtpstats.max_delta == 20.0);
+    assert(stream->rtpstats.mean_delta == 20.0);
+    sng_free(stream);
+
+    stream = stream_create(NULL, dst, PACKET_RTP);
+    stream_set_format(stream, 13);
+    add_rtp_ex(stream, 10, 0, 0, 13, false);
+    add_rtp_ex(stream, 11, 160, 20000, 13, false);
+    assert(stream->rtpstats.comfort_noise == 2);
+    assert(stream->rtpstats.delta_samples == 0);
+    assert(stream->rtpstats.jitter_samples == 0);
+    sng_free(stream);
+
+    stream = stream_create(NULL, dst, PACKET_RTP);
+    stream_set_format(stream, 0);
+    add_rtp(stream, 10, 320, 40000);
+    add_rtp(stream, 11, 160, 60000);
+    assert(stream->rtpstats.wrong_timestamp == 1);
+    assert(stream->rtpstats.delta_samples == 0);
+    assert(stream->rtpstats.jitter_samples == 0);
     sng_free(stream);
 
     return 0;

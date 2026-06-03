@@ -38,6 +38,8 @@
 
 // Version is the first 2 bits of the first octet
 #define RTP_VERSION(octet) ((octet) >> 6)
+// Marker is the first bit in the second octet
+#define RTP_MARKER(octet) ((octet) >> 7)
 // Payload type is the last 7 bits
 #define RTP_PAYLOAD_TYPE(octet) ((octet) & 0x7F)
 
@@ -139,20 +141,38 @@ struct rtp_stats {
     uint32_t duplicates;
     //! Out-of-order RTP packets
     uint32_t outoforder;
+    //! RTP packets with marker bit set
+    uint32_t marker;
+    //! Comfort noise RTP packets
+    uint32_t comfort_noise;
+    //! Telephone-event RTP packets
+    uint32_t telephone_event;
+    //! RTP packets with a timestamp older than the first packet
+    uint32_t wrong_timestamp;
     //! Jitter calculated using RFC3550, in RTP timestamp units
     double jitter;
     //! Previous packet transit time for jitter calculation
     double transit;
     //! Max capture delta between accepted RTP packets, in ms
     double max_delta;
+    //! Min capture delta between regular RTP packets, in ms
+    double min_delta;
+    //! Mean capture delta between regular RTP packets, in ms
+    double mean_delta;
+    //! Number of delta samples used for mean delta
+    uint32_t delta_samples;
     //! Jitter calculated using RFC3550, in ms
     double jitter_ms;
     //! Max jitter found in the stream, in ms
     double max_jitter;
+    //! Min jitter found in the stream, in ms
+    double min_jitter;
     //! Mean jitter of the stream, in ms
     double mean_jitter;
     //! Number of jitter samples used for mean jitter
     uint32_t jitter_samples;
+    //! Regular RTP packets included in delta/jitter aggregates
+    uint32_t regular;
 };
 
 struct rtp_stream {
