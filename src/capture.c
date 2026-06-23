@@ -1014,16 +1014,8 @@ capture_close()
 {
     capture_info_t *capinfo;
 
-    // Nothing to close
-    if (vector_count(capture_cfg.sources) == 0)
-        return;
-
-    // Close dump file
-    if (capture_cfg.pd) {
-        dump_close(capture_cfg.pd);
-    }
-
-    // Stop all captures
+    // Stop all captures before closing the shared dumper.  Otherwise a live
+    // capture thread can still call pcap_dump() on a closed FILE handle.
     vector_iter_t it = vector_iterator(capture_cfg.sources);
     while ((capinfo = vector_iterator_next(&it))) {
         //Close PCAP file
@@ -1038,8 +1030,17 @@ capture_close()
                 }
                 pthread_cancel(capinfo->capture_t);
                 pthread_join(capinfo->capture_t, NULL);
+                capinfo->running = false;
             }
         }
+    }
+
+    // Close dump file after capture threads have stopped using it.
+    if (capture_cfg.pd) {
+        dump_close(capture_cfg.pd);
+        capture_cfg.pd = NULL;
+        capture_cfg.dumpfilename = NULL;
+        capture_cfg.dump_inode = 0;
     }
 
 }

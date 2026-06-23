@@ -57,6 +57,21 @@ htable_create(size_t size)
 void
 htable_destroy(htable_t *table)
 {
+    size_t i;
+    hentry_t *entry, *next;
+
+    if (!table)
+        return;
+
+    for (i = 0; i < table->size; i++) {
+        entry = table->buckets[i];
+        while (entry) {
+            next = entry->next;
+            free(entry);
+            entry = next;
+        }
+    }
+
     free(table->buckets);
     free(table);
 }

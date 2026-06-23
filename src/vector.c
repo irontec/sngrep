@@ -157,7 +157,7 @@ vector_append(vector_t *vector, void *item)
         // Add more memory to the list
         vector->list = realloc(vector->list, sizeof(void *) * vector->limit);
         // Initialize new allocated memory
-        memset(vector->list + vector->limit - vector->step, 0, vector->step);
+        memset(vector->list + vector->limit - vector->step, 0, sizeof(void *) * vector->step);
     }
 
     // Add item to the end of the list
@@ -404,4 +404,3 @@ vector_iterator_reset(vector_iter_t *it)
 {
     vector_iterator_set_current(it, -1);
 }
-
