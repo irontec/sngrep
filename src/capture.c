@@ -1401,7 +1401,7 @@ bool
 is_gz_filename(const char *filename)
 {
     // does the filename end on ".gz"?
-    char *dotpos = strrchr(filename, '.');
+    const char *dotpos = strrchr(filename, '.');
     if (dotpos && (strcmp(dotpos, ".gz") == 0))
         return true;
     else
