@@ -3,8 +3,8 @@ Upstream-Name: sngrep
 Source: http://github.com/irontec/sngrep
 
 Files: *
-Copyright: 2013-2015 Ivan Alonso <kaian@irontec.com>
-           2013-2015 Irontec SL.
+Copyright: 2013-2026 Ivan Alonso <kaian@irontec.com>
+           2013-2026 Irontec SL.
 License: GPL-3+ with OpenSSL exception
 
 License: GPL-3+ with OpenSSL exception
