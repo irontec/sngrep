@@ -119,7 +119,7 @@ sng_basename(const char *name)
 char *
 sng_strncpy(char *dst, const char *src, size_t len)
 {
-    if (dst == NULL || src == NULL) {
+    if (dst == NULL || src == NULL || len <= 0) {
         return NULL;
     }
     strncpy(dst, src, len-1);
