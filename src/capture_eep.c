@@ -281,13 +281,13 @@ capture_eep_build_frame_data(
     }
 
     // Append all headers to frame contents
-    memcpy(*frame_payload + frame_size, (void*) &ether_hdr, sizeof(ether_hdr));
+    memcpy(*frame_payload + frame_size, &ether_hdr, sizeof(ether_hdr));
     frame_size += sizeof(ether_hdr);
-    memcpy(*frame_payload + frame_size, (void*) &ip_hdr, sizeof(ip_hdr));
+    memcpy(*frame_payload + frame_size, &ip_hdr, sizeof(ip_hdr));
     frame_size += sizeof(ip_hdr);
-    memcpy(*frame_payload + frame_size, (void*) &udp_hdr, sizeof(udp_hdr));
+    memcpy(*frame_payload + frame_size, &udp_hdr, sizeof(udp_hdr));
     frame_size += sizeof(udp_hdr);
-    memcpy(*frame_payload + frame_size, (void*) payload, payload_size);
+    memcpy(*frame_payload + frame_size, payload, payload_size);
     frame_size += payload_size;
 
     // Build a custom frame pcap header
@@ -301,7 +301,7 @@ capture_eep_build_frame_data(
 int
 capture_eep_send_v2(packet_t *pkt)
 {
-    void* buffer;
+    unsigned char *buffer;
     uint32_t buflen = 0, tlen = 0;
     struct hep_hdr hdr;
     struct hep_timehdr hep_time;
@@ -356,27 +356,27 @@ capture_eep_send_v2(packet_t *pkt)
 
     // Copy basic headers
     buflen = 0;
-    memcpy((void*) buffer + buflen, &hdr, sizeof(struct hep_hdr));
+    memcpy(buffer + buflen, &hdr, sizeof(struct hep_hdr));
     buflen += sizeof(struct hep_hdr);
 
     // Copy IP header
     if (pkt->ip_version == 4) {
-        memcpy((void*) buffer + buflen, &hep_ipheader, sizeof(struct hep_iphdr));
+        memcpy(buffer + buflen, &hep_ipheader, sizeof(struct hep_iphdr));
         buflen += sizeof(struct hep_iphdr);
     }
 #ifdef USE_IPV6
     else if(pkt->ip_version == 6) {
-        memcpy((void*) buffer + buflen, &hep_ip6header, sizeof(struct hep_ip6hdr));
+        memcpy(buffer + buflen, &hep_ip6header, sizeof(struct hep_ip6hdr));
         buflen += sizeof(struct hep_ip6hdr);
     }
 #endif
 
     // Copy TImestamp header
-    memcpy((void*) buffer + buflen, &hep_time, sizeof(struct hep_timehdr));
+    memcpy(buffer + buflen, &hep_time, sizeof(struct hep_timehdr));
     buflen += sizeof(struct hep_timehdr);
 
     // Now copy payload itself
-    memcpy((void*) buffer + buflen, data, len);
+    memcpy(buffer + buflen, data, len);
     buflen += len;
 
     if (send(eep_cfg.client_sock, buffer, buflen, 0) == -1) {
@@ -393,7 +393,7 @@ int
 capture_eep_send_v3(packet_t *pkt)
 {
     struct hep_generic *hg = NULL;
-    void* buffer;
+    unsigned char *buffer;
     uint32_t buflen = 0, iplen = 0, tlen = 0;
     hep_chunk_ip4_t src_ip4, dst_ip4;
 #ifdef USE_IPV6
@@ -520,16 +520,16 @@ capture_eep_send_v3(packet_t *pkt)
         sng_free(hg);
         return 1;
     }
-    memcpy((void*) buffer, hg, sizeof(struct hep_generic));
+    memcpy(buffer, hg, sizeof(struct hep_generic));
     buflen = sizeof(struct hep_generic);
 
     /* IPv4 */
     if (pkt->ip_version == 4) {
         /* SRC IP */
-        memcpy((void*) buffer + buflen, &src_ip4, sizeof(struct hep_chunk_ip4));
+        memcpy(buffer + buflen, &src_ip4, sizeof(struct hep_chunk_ip4));
         buflen += sizeof(struct hep_chunk_ip4);
 
-        memcpy((void*) buffer + buflen, &dst_ip4, sizeof(struct hep_chunk_ip4));
+        memcpy(buffer + buflen, &dst_ip4, sizeof(struct hep_chunk_ip4));
         buflen += sizeof(struct hep_chunk_ip4);
     }
 
@@ -537,10 +537,10 @@ capture_eep_send_v3(packet_t *pkt)
     /* IPv6 */
     else if(pkt->ip_version == 6) {
         /* SRC IPv6 */
-        memcpy((void*) buffer+buflen, &src_ip6, sizeof(struct hep_chunk_ip6));
+        memcpy(buffer+buflen, &src_ip6, sizeof(struct hep_chunk_ip6));
         buflen += sizeof(struct hep_chunk_ip6);
 
-        memcpy((void*) buffer+buflen, &dst_ip6, sizeof(struct hep_chunk_ip6));
+        memcpy(buffer+buflen, &dst_ip6, sizeof(struct hep_chunk_ip6));
         buflen += sizeof(struct hep_chunk_ip6);
     }
 #endif
@@ -548,20 +548,20 @@ capture_eep_send_v3(packet_t *pkt)
     /* AUTH KEY CHUNK */
     if (eep_cfg.capt_password != NULL) {
 
-        memcpy((void*) buffer + buflen, &authkey_chunk, sizeof(struct hep_chunk));
+        memcpy(buffer + buflen, &authkey_chunk, sizeof(struct hep_chunk));
         buflen += sizeof(struct hep_chunk);
 
         /* Now copying payload self */
-        memcpy((void*) buffer + buflen, eep_cfg.capt_password, strlen(eep_cfg.capt_password));
+        memcpy(buffer + buflen, eep_cfg.capt_password, strlen(eep_cfg.capt_password));
         buflen += strlen(eep_cfg.capt_password);
     }
 
     /* PAYLOAD CHUNK */
-    memcpy((void*) buffer + buflen, &payload_chunk, sizeof(struct hep_chunk));
+    memcpy(buffer + buflen, &payload_chunk, sizeof(struct hep_chunk));
     buflen += sizeof(struct hep_chunk);
 
     /* Now copying payload itself */
-    memcpy((void*) buffer + buflen, data, len);
+    memcpy(buffer + buflen, data, len);
     buflen += len;
 
     if (send(eep_cfg.client_sock, buffer, buflen, 0) == -1) {
@@ -637,7 +637,7 @@ capture_eep_receive_v2()
 
     /* IPv4 */
     if (family == AF_INET) {
-        memcpy(&hep_ipheader, (void*) buffer + pos, sizeof(struct hep_iphdr));
+        memcpy(&hep_ipheader, buffer + pos, sizeof(struct hep_iphdr));
         inet_ntop(AF_INET, &hep_ipheader.hp_src, src.ip, sizeof(src.ip));
         inet_ntop(AF_INET, &hep_ipheader.hp_dst, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct hep_iphdr);
@@ -645,7 +645,7 @@ capture_eep_receive_v2()
 #ifdef USE_IPV6
     /* IPv6 */
     else if(family == AF_INET6) {
-        memcpy(&hep_ip6header, (void*) buffer + pos, sizeof(struct hep_ip6hdr));
+        memcpy(&hep_ip6header, buffer + pos, sizeof(struct hep_ip6hdr));
         inet_ntop(AF_INET6, &hep_ip6header.hp6_src, src.ip, sizeof(src.ip));
         inet_ntop(AF_INET6, &hep_ip6header.hp6_dst, dst.ip, sizeof(dst.ip));
         pos += sizeof(struct hep_ip6hdr);
@@ -663,7 +663,7 @@ capture_eep_receive_v2()
     dst.port = ntohs(hdr.hp_dport);
 
     /* TIMESTAMP*/
-    memcpy(&hep_time, (void*) buffer + pos, sizeof(struct hep_timehdr));
+    memcpy(&hep_time, buffer + pos, sizeof(struct hep_timehdr));
     pos += sizeof(struct hep_timehdr);
     header.ts.tv_sec = hep_time.tv_sec;
     header.ts.tv_usec = hep_time.tv_usec;
@@ -679,7 +679,7 @@ capture_eep_receive_v2()
     // Copy packet payload
     if (!(payload = sng_malloc(header.caplen + 1)))
         return NULL;
-    memcpy(payload, (void*) buffer + pos, header.caplen);
+    memcpy(payload, buffer + pos, header.caplen);
 
     // Build a custom frame pcap header
     frame_pcap_header = capture_eep_build_frame_data(header, payload,header.caplen, src, dst, &frame_payload);
@@ -793,71 +793,71 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
                     sng_free(payload);
                 return NULL;
             case CAPTURE_EEP_CHUNK_FAMILY:
-                memcpy(&hg.ip_family, (void*) buffer + pos, sizeof(hep_chunk_uint8_t));
+                memcpy(&hg.ip_family, buffer + pos, sizeof(hep_chunk_uint8_t));
                 break;
             case CAPTURE_EEP_CHUNK_PROTO:
-                memcpy(&hg.ip_proto, (void*) buffer + pos, sizeof(hep_chunk_uint8_t));
+                memcpy(&hg.ip_proto, buffer + pos, sizeof(hep_chunk_uint8_t));
                 break;
             case CAPTURE_EEP_CHUNK_SRC_IP4:
-                memcpy(&src_ip4, (void*) buffer + pos, sizeof(struct hep_chunk_ip4));
+                memcpy(&src_ip4, buffer + pos, sizeof(struct hep_chunk_ip4));
                 inet_ntop(AF_INET, &src_ip4.data, src.ip, sizeof(src.ip));
                 break;
             case CAPTURE_EEP_CHUNK_DST_IP4:
-                memcpy(&dst_ip4, (void*) buffer + pos, sizeof(struct hep_chunk_ip4));
+                memcpy(&dst_ip4, buffer + pos, sizeof(struct hep_chunk_ip4));
                 inet_ntop(AF_INET, &dst_ip4.data, dst.ip, sizeof(src.ip));
                 break;
 #ifdef USE_IPV6
             case CAPTURE_EEP_CHUNK_SRC_IP6:
-                memcpy(&src_ip6, (void*) buffer + pos, sizeof(struct hep_chunk_ip6));
+                memcpy(&src_ip6, buffer + pos, sizeof(struct hep_chunk_ip6));
                 inet_ntop(AF_INET6, &src_ip6.data, src.ip, sizeof(src.ip));
                 break;
             case CAPTURE_EEP_CHUNK_DST_IP6:
-                memcpy(&dst_ip6, (void*) buffer + pos, sizeof(struct hep_chunk_ip6));
+                memcpy(&dst_ip6, buffer + pos, sizeof(struct hep_chunk_ip6));
                 inet_ntop(AF_INET6, &dst_ip6.data, dst.ip, sizeof(dst.ip));
                 break;
 #endif
             case CAPTURE_EEP_CHUNK_SRC_PORT:
-                memcpy(&hg.src_port, (void*) buffer + pos, sizeof(hep_chunk_uint16_t));
+                memcpy(&hg.src_port, buffer + pos, sizeof(hep_chunk_uint16_t));
                 src.port = ntohs(hg.src_port.data);
                 break;
             case CAPTURE_EEP_CHUNK_DST_PORT:
-                memcpy(&hg.dst_port, (void*) buffer + pos, sizeof(hep_chunk_uint16_t));
+                memcpy(&hg.dst_port, buffer + pos, sizeof(hep_chunk_uint16_t));
                 dst.port = ntohs(hg.dst_port.data);
                 break;
             case CAPTURE_EEP_CHUNK_TS_SEC:
-                memcpy(&hg.time_sec, (void*) buffer + pos, sizeof(hep_chunk_uint32_t));
+                memcpy(&hg.time_sec, buffer + pos, sizeof(hep_chunk_uint32_t));
                 header.ts.tv_sec = ntohl(hg.time_sec.data);
                 break;
             case CAPTURE_EEP_CHUNK_TS_USEC:
-                memcpy(&hg.time_usec, (void*) buffer + pos, sizeof(hep_chunk_uint32_t));
+                memcpy(&hg.time_usec, buffer + pos, sizeof(hep_chunk_uint32_t));
                 header.ts.tv_usec = ntohl(hg.time_usec.data);
                 break;
             case CAPTURE_EEP_CHUNK_PROTO_TYPE:
-                memcpy(&hg.proto_t, (void*) buffer + pos, sizeof(hep_chunk_uint8_t));
+                memcpy(&hg.proto_t, buffer + pos, sizeof(hep_chunk_uint8_t));
                 break;
             case CAPTURE_EEP_CHUNK_CAPT_ID:
-                memcpy(&hg.capt_id, (void*) buffer + pos, sizeof(hep_chunk_uint32_t));
+                memcpy(&hg.capt_id, buffer + pos, sizeof(hep_chunk_uint32_t));
                 break;
             case CAPTURE_EEP_CHUNK_KEEP_TM:
                 break;
             case CAPTURE_EEP_CHUNK_AUTH_KEY:
-                memcpy(&authkey_chunk, (void*) buffer + pos, sizeof(authkey_chunk));
+                memcpy(&authkey_chunk, buffer + pos, sizeof(authkey_chunk));
                 password_len = ntohs(authkey_chunk.length) - sizeof(authkey_chunk);
                 if (password_len <= 0) {
                     pos += chunk_len;
                     continue;
                 }
                 password = sng_malloc(password_len);
-                memcpy(password, (void*) buffer + pos + sizeof(hep_chunk_t), password_len);
+                memcpy(password, buffer + pos + sizeof(hep_chunk_t), password_len);
                 break;
             case CAPTURE_EEP_CHUNK_PAYLOAD:
-                memcpy(&payload_chunk, (void*) buffer + pos, sizeof(payload_chunk));
+                memcpy(&payload_chunk, buffer + pos, sizeof(payload_chunk));
                 header.caplen = header.len = chunk_len - sizeof(hep_chunk_t);
                 if (pos+sizeof(hep_chunk_t)+header.caplen >= MAX_CAPTURE_LEN)
                     return NULL;
                 if (!(payload = sng_malloc(header.caplen)))
                     return NULL;
-                memcpy(payload, (void*) buffer + pos + sizeof(hep_chunk_t), header.caplen);
+                memcpy(payload, buffer + pos + sizeof(hep_chunk_t), header.caplen);
                 break;
             case CAPTURE_EEP_CHUNK_CORRELATION_ID:
                 break;

@@ -1057,7 +1057,7 @@ capture_launch_thread()
     while ((capinfo = vector_iterator_next(&it))) {
         // Mark capture as running
         capinfo->running = true;
-        if (pthread_create(&capinfo->capture_t, &attr, (void *) capinfo->capture_fn, capinfo)) {
+        if (pthread_create(&capinfo->capture_t, &attr, capinfo->capture_fn, capinfo)) {
             return 1;
         }
     }
