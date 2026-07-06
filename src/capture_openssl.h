@@ -292,17 +292,17 @@ struct SSLConnection {
  * hash function. The amount of data generated will be determined by output
  * length (dlen).
  *
- * @param digest Digest name to get the hash function
+ * @param evp_md Digest to use
  * @param dest Destination of hash function result. Memory must be already allocated
  * @param dlen Destination length in bytes
- * @param secret Input for the hash function
- * @param sslen Secret length in bytes
+ * @param key Input for the hash function
+ * @param key_len Secret length in bytes
  * @param seed Input for the hash function
  * @param slen Seed length in bytes
  * @return Output bytes
  */
 int
-P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
+P_hash(const EVP_MD *evp_md, unsigned char *dest, int dlen, void *key, int key_len,
        unsigned char *seed, int slen);
 
 /**

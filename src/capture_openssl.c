@@ -80,12 +80,11 @@ tls_debug_print_hex (char *desc, const void *ptr, int len) {
 }
 
 int
-P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret, int sslen,
+P_hash(const EVP_MD *evp_md, unsigned char *dest, int dlen, void *key, int key_len,
        unsigned char *seed, int slen)
 {
     unsigned char hmac[48];
     uint32_t hlen;
-    const EVP_MD *md = EVP_get_digestbyname(digest);
     uint32_t tmpslen;
     unsigned char tmpseed[slen];
     unsigned char *out = dest;
@@ -97,31 +96,19 @@ P_hash(const char *digest, unsigned char *dest, int dlen, unsigned char *secret,
 
     // Calculate enough data to fill destination
     while (pending > 0) {
-#if MODSSL_USE_OPENSSL_PRE_1_1_API
-        HMAC_CTX hm;
-        HMAC_Init(&hm, secret, sslen, md);
-        HMAC_Update(&hm, tmpseed, tmpslen);
-        HMAC_Final(&hm, tmpseed, &tmpslen);
+        unsigned char data[(slen < EVP_MAX_MD_SIZE ? EVP_MAX_MD_SIZE : slen) + EVP_MAX_MD_SIZE];
 
-        HMAC_Init(&hm, secret, sslen, md);
-        HMAC_Update(&hm, tmpseed, tmpslen);
-        HMAC_Update(&hm, seed, slen);
-        HMAC_Final(&hm, hmac, &hlen);
+        HMAC(evp_md, key, key_len,
+            tmpseed, tmpslen,
+            tmpseed, &tmpslen);
 
-        HMAC_cleanup(&hm);
-#else
-        HMAC_CTX *hm = HMAC_CTX_new();
-        HMAC_Init_ex(hm, secret, sslen, md, NULL);
-        HMAC_Update(hm, tmpseed, tmpslen);
-        HMAC_Final(hm, tmpseed, &tmpslen);
+        memcpy(&data[0], tmpseed, tmpslen);
+        memcpy(&data[tmpslen], seed, slen);
 
-        HMAC_Init_ex(hm, secret, sslen, md, NULL);
-        HMAC_Update(hm, tmpseed, tmpslen);
-        HMAC_Update(hm, seed, slen);
-        HMAC_Final(hm, hmac, &hlen);
+        HMAC(evp_md, key, key_len,
+           data, tmpslen + slen,
+           hmac, &hlen);
 
-        HMAC_CTX_free(hm);
-#endif
         hlen = (hlen > pending) ? pending : hlen;
         memcpy(out, hmac, hlen);
         out += hlen;
@@ -156,8 +143,8 @@ PRF(struct SSLConnection *conn,
         memcpy(fseed + llen, seed, slen);
 
         // Get enough MD5 and SHA1 data to fill output len
-        P_hash("MD5", h_md5, dlen, pre_master_secret, hplen, fseed, slen + llen);
-        P_hash("SHA1", h_sha, dlen, pre_master_secret + hplen, hplen, fseed, slen + llen);
+        P_hash(EVP_md5(), h_md5, dlen, pre_master_secret, hplen, fseed, slen + llen);
+        P_hash(EVP_sha1(), h_sha, dlen, pre_master_secret + hplen, hplen, fseed, slen + llen);
 
         // Final output will be MD5 and SHA1 X-ORed
         for (i = 0; i < dlen; i++)
@@ -173,13 +160,13 @@ PRF(struct SSLConnection *conn,
         // Get enough SHA data to fill output len
         switch (conn->cipher_data.digest) {
             case DIG_SHA1:
-                P_hash("SHA256", dest, dlen, pre_master_secret, plen, fseed, slen + llen);
+                P_hash(EVP_sha256(), dest, dlen, pre_master_secret, plen, fseed, slen + llen);
                 break;
             case DIG_SHA256:
-                P_hash("SHA256", dest, dlen, pre_master_secret, plen, fseed, slen + llen);
+                P_hash(EVP_sha256(), dest, dlen, pre_master_secret, plen, fseed, slen + llen);
                 break;
             case DIG_SHA384:
-                P_hash("SHA384", dest, dlen, pre_master_secret, plen, fseed, slen + llen);
+                P_hash(EVP_sha384(), dest, dlen, pre_master_secret, plen, fseed, slen + llen);
                 break;
             default:
                 break;
@@ -543,6 +530,25 @@ tls_process_record(struct SSLConnection *conn, const uint8_t *payload,
     return 0;
 }
 
+static void
+rsa_decrypt(struct SSLConnection *conn, struct ClientKeyExchange *clientkeyex)
+{
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(conn->server_private_key, NULL);
+    if (!ctx) {
+        return;
+    }
+
+    size_t outlen = sizeof(conn->pre_master_secret);
+
+    EVP_PKEY_decrypt_init(ctx);
+    EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING);
+    EVP_PKEY_decrypt(ctx,
+        (unsigned char *) &conn->pre_master_secret, &outlen,
+        (const unsigned char *) &clientkeyex->exchange_keys, UINT16_INT(clientkeyex->length));
+
+    EVP_PKEY_CTX_free(ctx);
+}
+
 int
 tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment, const int len)
 {
@@ -607,17 +613,7 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 // Decrypt PreMasterKey
                 clientkeyex = (struct ClientKeyExchange *) body;
 
-#if MODSSL_USE_OPENSSL_PRE_1_1_API
-                RSA_private_decrypt(UINT16_INT(clientkeyex->length),
-                                    (const unsigned char *) &clientkeyex->exchange_keys,
-                                    (unsigned char *) &conn->pre_master_secret,
-                                    conn->server_private_key->pkey.rsa, RSA_PKCS1_PADDING);
-#else
-                RSA_private_decrypt(UINT16_INT(clientkeyex->length),
-                                    (const unsigned char *) &clientkeyex->exchange_keys,
-                                    (unsigned char *) &conn->pre_master_secret,
-                                    EVP_PKEY_get0_RSA(conn->server_private_key), RSA_PKCS1_PADDING);
-#endif
+                rsa_decrypt(conn, clientkeyex);
 
                 tls_debug_print_hex("client_random", &conn->client_random, 32);
                 tls_debug_print_hex("server_random", &conn->server_random, 32);
