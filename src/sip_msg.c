@@ -106,7 +106,7 @@ msg_get_payload(sip_msg_t *msg)
 
 struct timeval
 msg_get_time(sip_msg_t *msg) {
-    struct timeval t = { };
+    struct timeval t = { 0 };
     frame_t *frame;
 
     if (msg && (frame = vector_first(msg->packet->frames))) {
