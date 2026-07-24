@@ -1,27 +1,36 @@
 %bcond_with openssl
+%bcond_with gnutls
+# Build against legacy PCRE (v1) instead of PCRE2. PCRE2 is the default because
+# PCRE(v1) has been dropped from recent Fedora releases.
+%bcond_with pcre1
 
 Summary:            SIP Messages flow viewer
 Name:               sngrep
-Version:            1.8.3
+Version:            1.8.4-rc0
 Release:            0%{?dist}
 License:            GPLv3
 Group:              Applications/Engineering
-BuildRoot:          %{_tmppath}/%{name}-%{version}-%{release}-root
 Source:             https://github.com/irontec/sngrep/releases/download/v%{version}/sngrep-%{version}.tar.gz
 URL:                http://github.com/irontec/sngrep
-BuildRequires: ncurses-devel
+
+BuildRequires: gcc
 BuildRequires: make
-BuildRequires: libpcap-devel
-BuildRequires: pcre-devel
 BuildRequires: autoconf
 BuildRequires: automake
-BuildRequires: gcc
+BuildRequires: pkgconfig
+BuildRequires: ncurses-devel
+BuildRequires: libpcap-devel
+%if %{with pcre1}
+BuildRequires: pcre-devel
+%else
+BuildRequires: pcre2-devel
+%endif
 %if %{with openssl}
 BuildRequires: openssl-devel
 %endif
-Requires: ncurses
-Requires: libpcap
-Requires: pcre
+%if %{with gnutls}
+BuildRequires: gnutls-devel
+%endif
 
 %description
 sngrep displays SIP Messages grouped by Call-Id into flow
@@ -38,25 +47,29 @@ You can also create new PCAP files from captures or displayed dialogs.
 
 %build
 ./bootstrap.sh
-%configure --with-pcre \
+%configure \
+%if %{with pcre1}
+    --with-pcre \
+%else
+    --with-pcre2 \
+%endif
     --enable-unicode \
     --enable-ipv6 \
     --enable-eep \
-    %{?_with_openssl}
+    %{?with_openssl:--with-openssl} \
+    %{?with_gnutls:--with-gnutls}
 
-make %{?_smp_mflags}
+%make_build
 
 %install
-%{__make} install DESTDIR=%{buildroot}
+%make_install
 
 %files
-%doc README TODO COPYING ChangeLog
-%{_bindir}/*
-%{_mandir}/man8/*
-%config(noreplace) %{_sysconfdir}/*
-
-%clean
-%{__rm} -rf %{buildroot}
+%license COPYING
+%doc README TODO ChangeLog
+%{_bindir}/sngrep
+%{_mandir}/man8/sngrep.8*
+%config(noreplace) %{_sysconfdir}/sngreprc
 
 %changelog
 * Thu Oct 16 2025 Ivan Alonso <kaian@irontec.com> - 1.8.3
