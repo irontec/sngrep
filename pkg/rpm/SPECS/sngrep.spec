@@ -6,11 +6,11 @@
 
 Summary:            SIP Messages flow viewer
 Name:               sngrep
-Version:            1.8.4-rc0
+Version:            0.0.99
 Release:            0%{?dist}
 License:            GPLv3
 Group:              Applications/Engineering
-Source:             https://github.com/irontec/sngrep/releases/download/v%{version}/sngrep-%{version}.tar.gz
+Source:             https://github.com/irontec/sngrep/archive/refs/tags/0.0.99.tar.gz
 URL:                http://github.com/irontec/sngrep
 
 BuildRequires: gcc
