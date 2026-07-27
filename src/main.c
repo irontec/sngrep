@@ -529,12 +529,6 @@ main(int argc, char* argv[])
     // Deinitialize interface
     ncurses_deinit();
 
-    // Deinitialize configuration options
-    deinit_options();
-
-    // Deallocate sip stored messages
-    sip_deinit();
-
     // Leaving!
     return 0;
 }
