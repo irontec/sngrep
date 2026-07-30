@@ -37,6 +37,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include "capture.h"
+#include "capture_esp.h"
 #ifdef USE_EEP
 #include "capture_eep.h"
 #endif
@@ -447,6 +448,45 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
 
         // Check if packet is WS or WSS
         capture_ws_check_packet(pkt);
+    } else if (setting_enabled(SETTING_CAPTURE_ESP) && pkt->proto == IPPROTO_ESP) {
+        // IPsec ESP with NULL encryption (transport mode): the inner UDP/TCP
+        // header follows the 8-byte ESP header. Recover the inner transport and
+        // the exact SIP payload boundary (ESP trailer + ICV are stripped).
+        u_char *esp = (u_char *)(data) + (size_capture - size_payload);
+        uint8_t esp_proto;
+        uint16_t esp_sport, esp_dport;
+        uint32_t esp_poff, esp_plen;
+
+        if (capture_esp_null_parse(esp, size_payload, &esp_proto, &esp_sport,
+                                   &esp_dport, &esp_poff, &esp_plen) != 0) {
+            // Not a decodable ESP-NULL payload (or actually encrypted)
+            packet_destroy(pkt);
+            return;
+        }
+
+        pkt->proto = esp_proto;
+        pkt->src.port = esp_sport;
+        pkt->dst.port = esp_dport;
+        payload = esp + esp_poff;
+        size_payload = esp_plen;
+
+        if (esp_proto == IPPROTO_UDP) {
+            // Complete packet with Transport information
+            packet_set_type(pkt, PACKET_SIP_UDP);
+            packet_set_payload(pkt, payload, size_payload);
+        } else {
+            // Inner TCP: hand off to TCP reassembly, then check for WS/WSS
+            tcp = (struct tcphdr *) (esp + ESP_HEADER_LEN);
+            packet_set_type(pkt, PACKET_SIP_TCP);
+            packet_set_payload(pkt, payload, size_payload);
+
+            // Create a structure for this captured packet
+            if (!(pkt = capture_packet_reasm_tcp(capinfo, pkt, tcp, payload, size_payload)))
+                return;
+
+            // Check if packet is WS or WSS
+            capture_ws_check_packet(pkt);
+        }
     } else {
         // Not handled protocol
         packet_destroy(pkt);
