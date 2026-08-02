@@ -210,7 +210,7 @@ target_include_directories( sngrep PRIVATE ${CMAKE_CURRENT_BINARY_DIR} )
 include( GNUInstallDirs )
 
 install( TARGETS sngrep RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )
-install( FILES config/sngreprc DESTINATION /etc )
+install( FILES config/sngreprc DESTINATION ${CMAKE_INSTALL_SYSCONFDIR} )
 install( FILES doc/sngrep.8 DESTINATION ${CMAKE_INSTALL_MANDIR}/man8 )
 install( FILES README TODO COPYING ChangeLog DESTINATION "${CMAKE_INSTALL_DOCDIR}" )
 
