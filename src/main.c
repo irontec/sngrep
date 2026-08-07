@@ -69,6 +69,7 @@ usage()
            "    -B --buffer\t\t Set pcap buffer size in MB (default: 2)\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
            "    -r --rtp\t\t Capture RTP packets payload\n"
+           "    -P --esp\t\t Decode SIP inside IPsec ESP with NULL encryption\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
            "    -v --invert\t\t Invert <match expression>\n"
@@ -166,6 +167,7 @@ main(int argc, char* argv[])
         { "no-config", no_argument, 0, 'F' },
         { "text", required_argument, 0, 'T' },
         { "telephone-event", no_argument, 0, 't' },
+        { "esp", no_argument, 0, 'P' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -176,7 +178,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT:t";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT:tP";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -296,6 +298,9 @@ main(int argc, char* argv[])
                 break;
             case 't':
                 setting_set_value(SETTING_TELEPHONE_EVENT, SETTING_ON);
+                break;
+            case 'P':
+                setting_set_value(SETTING_CAPTURE_ESP, SETTING_ON);
                 break;
                 // Dark options for dummy ones
             case 'p':

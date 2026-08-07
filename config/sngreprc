@@ -38,6 +38,9 @@
 ## Uncomment to enable parsing of captured HEP3 packets
 # set capture.eep on
 
+## Uncomment to decode SIP inside IPsec ESP with NULL encryption (transport mode)
+# set capture.esp on
+
 ##-----------------------------------------------------------------------------
 ## Default path in save dialog
 # set savepath /tmp/sngrep-captures
