@@ -683,11 +683,11 @@ sip_parse_msg_media(sip_msg_t *msg, const u_char *payload)
       } \
     }
 
-    address_t dst, src = { };
+    address_t dst, src = { 0 };
     rtp_stream_t *rtp_stream = NULL, *rtcp_stream = NULL, *msg_rtp_stream = NULL;
-    char media_type[MEDIATYPELEN + 1] = { };
-    char media_format[30] = { };
-    char address[ADDRESSLEN + 1] = { };
+    char media_type[MEDIATYPELEN + 1] = "";
+    char media_format[30] = "";
+    char address[ADDRESSLEN + 1] = "";
     uint32_t media_fmt_pref;
     uint32_t media_fmt_code;
     sdp_media_t *media = NULL;

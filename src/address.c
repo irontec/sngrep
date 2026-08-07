@@ -104,7 +104,7 @@ address_is_local(address_t addr)
 address_t
 address_from_str(const char *ipport)
 {
-    address_t ret = {};
+    address_t ret = { 0 };
     char scanipport[256];
     char address[ADDRESSLEN + 1];
     int port;

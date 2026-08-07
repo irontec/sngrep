@@ -505,9 +505,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     // Fragmentation offset
     uint16_t ip_frag_off = 0;
     //! Source Address
-    address_t src = { };
+    address_t src = { 0 };
     //! Destination Address
-    address_t dst = { };
+    address_t dst = { 0 };
     //! Common interator for vectors
     vector_iter_t it;
     //! Packet containers
@@ -1057,7 +1057,7 @@ capture_launch_thread()
     while ((capinfo = vector_iterator_next(&it))) {
         // Mark capture as running
         capinfo->running = true;
-        if (pthread_create(&capinfo->capture_t, &attr, (void *) capinfo->capture_fn, capinfo)) {
+        if (pthread_create(&capinfo->capture_t, &attr, capinfo->capture_fn, capinfo)) {
             return 1;
         }
     }

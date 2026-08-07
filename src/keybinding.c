@@ -37,7 +37,7 @@
 
 //! sngrep keybindings
 key_binding_t bindings[ACTION_SENTINEL] = {
-   { ACTION_PRINTABLE,      "",             { }, 0 },
+   { ACTION_PRINTABLE,      "",             { 0 }, 0 },
    { ACTION_UP,             "up",           { KEY_UP, 'k' }, 2 },
    { ACTION_DOWN,           "down",         { KEY_DOWN, 'j' }, 2 },
    { ACTION_LEFT,           "left",         { KEY_LEFT, 'h' }, 2 },
