@@ -257,10 +257,10 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
             sprintf(value, "%d", call->index);
             break;
         case SIP_ATTR_CALLID:
-            sprintf(value, "%s", call->callid);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN - 1, call->callid);
             break;
         case SIP_ATTR_XCALLID:
-            sprintf(value, "%s", call->xcallid);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN - 1, call->xcallid);
             break;
         case SIP_ATTR_MSGCNT:
             sprintf(value, "%d", vector_count(call->msgs));
@@ -282,7 +282,7 @@ call_get_attribute(sip_call_t *call, enum sip_attr_id id, char *value)
             break;
         case SIP_ATTR_REASON_TXT:
             if (call->reasontxt)
-                sprintf(value, "%s", call->reasontxt);
+                sprintf(value, "%.*s", SIP_ATTR_MAXLEN - 1, call->reasontxt);
             break;
         case SIP_ATTR_WARNING:
             if (call->warning)

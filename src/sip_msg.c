@@ -137,13 +137,13 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             }
             break;
         case SIP_ATTR_METHOD:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, sip_get_msg_reqresp_str(msg));
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN - 1, sip_get_msg_reqresp_str(msg));
             break;
         case SIP_ATTR_SIPFROM:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_from);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN - 1, msg->sip_from);
             break;
         case SIP_ATTR_SIPTO:
-            sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_to);
+            sprintf(value, "%.*s", SIP_ATTR_MAXLEN - 1, msg->sip_to);
             break;
         case SIP_ATTR_SIPFROMUSER:
             if (msg->sip_from && (ar = strchr(msg->sip_from, '@'))) {
@@ -163,7 +163,7 @@ msg_get_attribute(sip_msg_t *msg, int id, char *value)
             break;
         case SIP_ATTR_CONTACT:
             if (msg->sip_contact) {
-                sprintf(value, "%.*s", SIP_ATTR_MAXLEN, msg->sip_contact);
+                sprintf(value, "%.*s", SIP_ATTR_MAXLEN - 1, msg->sip_contact);
             }
             break;
         default:
