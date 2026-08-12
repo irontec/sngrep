@@ -43,6 +43,9 @@
 #ifdef WITH_OPENSSL
 #include "capture_openssl.h"
 #endif
+#ifdef WITH_BPF
+#include "capture_bpf.h"
+#endif
 #include "curses/ui_manager.h"
 
 /**
@@ -70,6 +73,9 @@ usage()
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
            "    -r --rtp\t\t Capture RTP packets payload\n"
            "    -P --esp\t\t Decode SIP inside IPsec ESP with NULL encryption\n"
+#ifdef WITH_BPF
+           "    -e --ebpf\t\t Capture SIP over TLS using eBPF (no key required)\n"
+#endif
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
            "    -v --invert\t\t Invert <match expression>\n"
@@ -168,6 +174,8 @@ main(int argc, char* argv[])
         { "text", required_argument, 0, 'T' },
         { "telephone-event", no_argument, 0, 't' },
         { "esp", no_argument, 0, 'P' },
+        // Recognised either way, so a build without eBPF support can say so
+        { "ebpf", no_argument, 0, 'e' },
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
@@ -178,7 +186,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT:tP";
+    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT:tPe";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -302,6 +310,15 @@ main(int argc, char* argv[])
             case 'P':
                 setting_set_value(SETTING_CAPTURE_ESP, SETTING_ON);
                 break;
+            case 'e':
+#ifdef WITH_BPF
+                setting_set_value(SETTING_CAPTURE_BPF, SETTING_ON);
+                break;
+#else
+                fprintf(stderr, "eBPF support not compiled in "
+                                "(rebuild with --with-bpf)\n");
+                return 1;
+#endif
                 // Dark options for dummy ones
             case 'p':
             case 'W':
@@ -378,6 +395,16 @@ main(int argc, char* argv[])
 
     // Initialize EEP if enabled
     capture_eep_init();
+#endif
+
+#ifdef WITH_BPF
+    // Initialize eBPF TLS capture if enabled. This runs before the default
+    // device is chosen, so --ebpf on its own captures from eBPF only, while
+    // combining it with -d captures from both sources.
+    if (setting_enabled(SETTING_CAPTURE_BPF)) {
+        if (capture_bpf_init() != 0)
+            return 1;
+    }
 #endif
 
     // If no device or files has been specified in command line, use default
@@ -530,6 +557,12 @@ main(int argc, char* argv[])
     }
     // Capture deinit
     capture_deinit();
+
+#ifdef WITH_BPF
+    // Detach the probes and report anything the kernel side had to drop
+    if (setting_enabled(SETTING_CAPTURE_BPF))
+        capture_bpf_deinit();
+#endif
 
     // Deinitialize interface
     ncurses_deinit();

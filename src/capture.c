@@ -446,6 +446,14 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
         }
 #endif
 
+#ifdef WITH_BPF
+        // Data from an eBPF source travelled over TLS, even though we
+        // synthesized a plain TCP frame to carry it. Mark it before the
+        // WebSocket check, so that check resolves to WSS rather than WS.
+        if (capinfo->isbpf)
+            packet_set_type(pkt, PACKET_SIP_TLS);
+#endif
+
         // Check if packet is WS or WSS
         capture_ws_check_packet(pkt);
     } else if (setting_enabled(SETTING_CAPTURE_ESP) && pkt->proto == IPPROTO_ESP) {

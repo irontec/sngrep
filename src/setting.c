@@ -54,6 +54,11 @@ setting_t settings[SETTING_COUNT] = {
 #ifdef USE_EEP
     { SETTING_CAPTURE_EEP,        "capture.eep",        SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
 #endif
+#ifdef WITH_BPF
+    { SETTING_CAPTURE_BPF,        "capture.bpf",        SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
+    { SETTING_BPF_FILTER,         "bpf.filter",         SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
+    { SETTING_BPF_DEBUG,          "bpf.debug",          SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
+#endif
     { SETTING_CAPTURE_RTP,        "capture.rtp",        SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_CAPTURE_ESP,        "capture.esp",        SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_CAPTURE_STORAGE,    "capture.storage",    SETTING_FMT_ENUM,    "memory",    SETTING_ENUM_STORAGE },

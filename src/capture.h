@@ -160,6 +160,8 @@ struct capture_info
     bool running;
     //! Flag to determine if this capture is libpcap
     bool ispcap;
+    //! Flag to determine if this capture source is eBPF
+    bool isbpf;
     //! libpcap link type
     int link;
     //! libpcap link header size

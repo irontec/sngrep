@@ -66,6 +66,9 @@
 /* Compile With EEP support */
 #cmakedefine USE_EEP
 
+/* Compile With eBPF TLS capture support */
+#cmakedefine WITH_BPF
+
 /* CMAKE_CURRENT_BINARY_DIR is needed in tests/test_input.c */
 #define CMAKE_CURRENT_BINARY_DIR "@CMAKE_CURRENT_BINARY_DIR@"
 

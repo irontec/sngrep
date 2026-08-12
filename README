@@ -48,6 +48,7 @@ You can pass following flags to ./configure to enable some features
 | `--enable-unicode` | Adds Ncurses UTF-8/Unicode support (req. libncursesw5)                  |
 | `--enable-ipv6`    | Enable IPv6 packet capture support.                                     |
 | `--enable-eep`     | Enable EEP packet send/receive support.                                 |
+| `--with-bpf`       | Enable eBPF TLS capture, Linux only (req. libbpf, clang, bpftool)       |
 
 Instead of using autotools, sngrep could be build with CMake, e.g.:
 
@@ -68,8 +69,14 @@ You can pass following options to cmake to enable some features
 | `-D WITH_UNICODE=ON`     | Adds Ncurses UTF-8/Unicode support (req. libncursesw5)                 |
 | `-D USE_IPV6=ON`         | Enable IPv6 packet capture support                                     |
 | `-D USE_EEP=ON`          | Enable EEP packet send/receive support                                 |
+| `-D WITH_BPF=ON`         | Enable eBPF TLS capture, Linux only (req. libbpf, clang, bpftool)      |
 | `-D CPACK_GENERATOR=DEB` | `make package` builds a Debian package                                 |
 | `-D CPACK_GENERATOR=RPM` | `make package` builds a RPM package                                    |
+
+If the same tree has already been built with autotools, run `make distclean`
+first. A `config.h` left behind in `src/` takes precedence over the one CMake
+generates, because a quoted include is resolved against the including file's
+own directory before any search path.
 
 You can find [detailed instructions for some distributions](https://github.com/irontec/sngrep/wiki/Building) on wiki.
 
@@ -84,6 +91,51 @@ For example, sngrep can be used to view SIP packets from a pcap file, also apply
 or live capturing, saving packets to a new file
 
 	sngrep -d eth0 -O save.pcap port 5060 and udp
+
+
+### Capturing TLS with eBPF
+
+Built with `--with-bpf`, sngrep can display SIP over TLS in plaintext without a
+private key and without a certificate, by attaching eBPF uprobes to OpenSSL in
+the processes already running on the machine:
+
+	sngrep --ebpf
+
+Unlike `-k`, this works with forward secrecy ciphers, which is every modern
+deployment. Combine it with `-d` to capture from a network device at the same
+time.
+
+Requirements:
+
+ - sngrep must run on the **same host** as the SIP daemon. uprobes cannot reach
+   another machine.
+ - Linux 5.8 or newer, built with `CONFIG_DEBUG_INFO_BTF=y`
+ - root, or the `CAP_BPF` and `CAP_PERFMON` capabilities
+ - the daemon must use OpenSSL as a shared library (`libssl.so`)
+
+Start sngrep **after** the SIP daemon. Libraries are discovered once, at
+startup, by scanning `/proc`.
+
+Two settings tune it in [sngreprc](https://github.com/irontec/sngrep/wiki/Configuration):
+`bpf.filter` (default on) discards non-SIP TLS traffic inside the kernel, and
+turning it off is useful when working out why an expected message was missed.
+`bpf.debug` (default off) reports which probes attached to which library.
+
+Known limitations:
+
+ - Only OpenSSL is supported. GnuTLS, NSS and Go's crypto/tls are not.
+ - OpenSSL linked statically into the daemon is not detected, because no
+   `libssl.so` appears in `/proc`.
+ - A daemon started after sngrep is covered only if it maps a library sngrep
+   already attached to.
+ - Around 380 concurrent TLS connections are tracked before the oldest is
+   forgotten, which can disturb reassembly of a very long lived connection.
+ - Sequence numbers in a saved pcap are synthetic, so they will not match a
+   capture of the same connection taken from the wire.
+ - uprobes are attached to every `libssl.so` on the host, so sngrep briefly
+   inspects TLS plaintext belonging to unrelated processes. Non-SIP data is
+   discarded inside the kernel and never leaves it, but this is worth knowing
+   on a shared machine.
 
 
 ## Configuration

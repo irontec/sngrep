@@ -10,6 +10,8 @@ src/sngrep
 tests/test-*.log
 tests/test-*.trs
 tests/test-???
+tests/test_*.log
+tests/test_*.trs
 *.o
 .deps
 .dirstamp
@@ -43,3 +45,10 @@ TAGS
 # Vim swap files
 .*.swp
 .*.swo
+
+# Backup files left behind by autoconf and autoheader
+*~
+
+# Generated eBPF objects and skeletons
+src/sngrep_tls.bpf.o
+src/sngrep_tls.skel.h

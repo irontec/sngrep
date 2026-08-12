@@ -24,6 +24,29 @@ if WITH_ZLIB
 sngrep_CFLAGS+=$(ZLIB_CFLAGS)
 sngrep_LDADD+=$(ZLIB_LIBS)
 endif
+if WITH_BPF
+sngrep_SOURCES+=capture_bpf.c capture_bpf_source.c capture_bpf_util.c
+sngrep_CFLAGS+=$(LIBBPF_CFLAGS) -I$(srcdir)/bpf
+sngrep_LDADD+=$(LIBBPF_LIBS)
+
+BUILT_SOURCES=sngrep_tls.skel.h
+CLEANFILES=sngrep_tls.skel.h sngrep_tls.bpf.o
+
+sngrep_tls.bpf.o: $(srcdir)/bpf/sngrep_tls.bpf.c $(srcdir)/bpf/sngrep_tls.h
+	$(CLANG) -g -O2 -Wall -target bpf -ffreestanding \
+	    -D__TARGET_ARCH_$(BPF_TARGET_ARCH) \
+	    -I$(srcdir)/bpf $(LIBBPF_CFLAGS) $(BPF_ARCH_CFLAGS) \
+	    -c $< -o $@
+
+sngrep_tls.skel.h: sngrep_tls.bpf.o
+	$(BPFTOOL) gen skeleton $< > $@
+
+# Without this, a parallel make can compile capture_bpf.c before bpftool has
+# written the skeleton header it includes
+capture_bpf.$(OBJEXT): sngrep_tls.skel.h
+endif
+
+EXTRA_DIST=bpf/sngrep_tls.bpf.c bpf/sngrep_tls.h
 
 sngrep_SOURCES+=address.c packet.c sip.c sip_call.c sip_msg.c sip_attr.c main.c
 sngrep_SOURCES+=option.c group.c filter.c keybinding.c media.c setting.c rtp.c

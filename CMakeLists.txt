@@ -10,6 +10,7 @@ option( WITH_ZLIB      "Enable zlib to support gzip compressed pcap files" no )
 option( WITH_UNICODE   "Enable Ncurses Unicode support"                    no )
 option( USE_IPV6       "Enable IPv6 Support"                               no )
 option( USE_EEP        "Enable EEP/HEP Support"                            no )
+option( WITH_BPF       "Enable eBPF TLS capture (Linux only)"              no )
 option( DISABLE_LOGO   "Disable Irontec Logo from Summary menu"            no )
 
 # Read parameters of AC_INIT() from file configure.ac
@@ -150,6 +151,78 @@ if ( WITH_ZLIB )
 	target_link_libraries( sngrep PUBLIC pthread PkgConfig::ZLIB )
 endif()
 
+####
+#### eBPF TLS capture
+####
+if ( WITH_BPF )
+	if( NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" )
+		message( FATAL_ERROR "eBPF TLS capture is only supported on Linux." )
+	endif()
+
+	find_program( CLANG_EXECUTABLE clang )
+	if( NOT CLANG_EXECUTABLE )
+		message( FATAL_ERROR "You need clang installed to compile the eBPF programs." )
+	endif()
+	find_program( BPFTOOL_EXECUTABLE bpftool )
+	if( NOT BPFTOOL_EXECUTABLE )
+		message( FATAL_ERROR "You need bpftool installed to generate the eBPF skeleton." )
+	endif()
+	pkg_check_modules( LIBBPF REQUIRED IMPORTED_TARGET libbpf>=1.0 )
+
+	# clang needs to know the target architecture to build the BPF programs
+	if( CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|i.86" )
+		set( BPF_TARGET_ARCH x86 )
+	elseif( CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64" )
+		set( BPF_TARGET_ARCH arm64 )
+	elseif( CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" )
+		set( BPF_TARGET_ARCH arm )
+	elseif( CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64le|powerpc64le" )
+		set( BPF_TARGET_ARCH powerpc )
+	elseif( CMAKE_SYSTEM_PROCESSOR MATCHES "s390x" )
+		set( BPF_TARGET_ARCH s390 )
+	elseif( CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64" )
+		set( BPF_TARGET_ARCH riscv )
+	else()
+		message( FATAL_ERROR "eBPF capture is not supported on ${CMAKE_SYSTEM_PROCESSOR}." )
+	endif()
+
+	# linux/types.h includes asm/types.h, which multiarch distributions
+	# install outside the default clang search path
+	execute_process( COMMAND ${CMAKE_C_COMPILER} -print-multiarch
+		OUTPUT_VARIABLE BPF_MULTIARCH OUTPUT_STRIP_TRAILING_WHITESPACE
+		ERROR_QUIET )
+	set( BPF_ARCH_INCLUDES "" )
+	if( BPF_MULTIARCH AND IS_DIRECTORY "/usr/include/${BPF_MULTIARCH}" )
+		set( BPF_ARCH_INCLUDES -I/usr/include/${BPF_MULTIARCH} )
+	endif()
+
+	set( BPF_OBJ  ${CMAKE_CURRENT_BINARY_DIR}/sngrep_tls.bpf.o )
+	set( BPF_SKEL ${CMAKE_CURRENT_BINARY_DIR}/sngrep_tls.skel.h )
+
+	# -ffreestanding keeps clang off the host libc headers, which the bpf
+	# target can not parse
+	add_custom_command( OUTPUT ${BPF_OBJ}
+		COMMAND ${CLANG_EXECUTABLE} -g -O2 -Wall -target bpf -ffreestanding
+			-D__TARGET_ARCH_${BPF_TARGET_ARCH}
+			-I${CMAKE_CURRENT_SOURCE_DIR}/src/bpf
+			${BPF_ARCH_INCLUDES}
+			-c ${CMAKE_CURRENT_SOURCE_DIR}/src/bpf/sngrep_tls.bpf.c
+			-o ${BPF_OBJ}
+		DEPENDS src/bpf/sngrep_tls.bpf.c src/bpf/sngrep_tls.h
+		COMMENT "Compiling eBPF program" )
+
+	add_custom_command( OUTPUT ${BPF_SKEL}
+		COMMAND ${BPFTOOL_EXECUTABLE} gen skeleton ${BPF_OBJ} > ${BPF_SKEL}
+		DEPENDS ${BPF_OBJ}
+		COMMENT "Generating eBPF skeleton" )
+
+	add_custom_target( bpf_skel DEPENDS ${BPF_SKEL} )
+	add_dependencies( sngrep bpf_skel )
+
+	target_link_libraries( sngrep PUBLIC PkgConfig::LIBBPF )
+	target_include_directories( sngrep PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/bpf )
+endif()
+
 # Source inclusion
 target_sources( sngrep
 	PRIVATE
@@ -197,6 +270,13 @@ if( WITH_OPENSSL )
 endif()
 if( USE_EEP )
 	target_sources( sngrep PRIVATE src/capture_eep.c )
+endif()
+if( WITH_BPF )
+	target_sources( sngrep PRIVATE
+		src/capture_bpf.c
+		src/capture_bpf_source.c
+		src/capture_bpf_util.c
+	)
 endif()
 
 ######################################################################
@@ -277,6 +357,7 @@ message( STATUS "Perl Expressions Support     : ${WITH_PCRE}"            )
 message( STATUS "Perl Expressions Support (v2): ${WITH_PCRE2}"           )
 message( STATUS "IPv6 Support                 : ${USE_IPV6}"             )
 message( STATUS "EEP Support                  : ${USE_EEP}"              )
+message( STATUS "eBPF TLS Capture             : ${WITH_BPF}"             )
 message( STATUS "Zlib Support                 : ${WITH_ZLIB}"            )
 message( STATUS "======================================================" )
 message( STATUS "" )
@@ -287,7 +368,7 @@ message( STATUS "" )
 enable_testing()            # "ctest" will run all tests
 add_custom_target( tests )  # "make tests" will build all tests
 
-foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 )
+foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 014 015 016 )
 	add_executable( test_${i} EXCLUDE_FROM_ALL tests/test_${i}.c )
 	if( i STREQUAL "007" )
 		target_sources( test_${i} PUBLIC src/vector.c src/util.c )
@@ -295,6 +376,10 @@ foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 )
 		target_sources( test_${i} PUBLIC src/hash.c )
 	elseif( i STREQUAL "013" )
 		target_sources( test_${i} PUBLIC src/capture_esp.c )
+	elseif( i STREQUAL "015" OR i STREQUAL "016" )
+		# These cover the half of the eBPF code that needs no libbpf, so
+		# they build and run even without WITH_BPF
+		target_sources( test_${i} PUBLIC src/capture_bpf_util.c src/vector.c src/util.c )
 	endif()
 	target_include_directories( test_${i} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} )
 

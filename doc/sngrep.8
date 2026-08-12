@@ -146,6 +146,22 @@ Save pcap to text file.
 Capture and parse RTP telephone-event packets.
 
 .TP
+.I -e, --ebpf
+Capture SIP over TLS in plaintext using eBPF uprobes on OpenSSL, requiring
+neither a private key nor a certificate, and working with forward secrecy
+ciphers that \fI-k\fP cannot handle. Only available when sngrep was built with
+\fB--with-bpf\fP.
+.IP
+sngrep must run on the same host as the SIP daemon, on Linux 5.8 or newer with
+BTF enabled, as root or with the CAP_BPF and CAP_PERFMON capabilities. The
+daemon must use OpenSSL as a shared library. Libraries are discovered once at
+startup, so start sngrep after the SIP daemon is already running.
+.IP
+uprobes are attached to every libssl on the host, so plaintext belonging to
+unrelated processes is briefly inspected. Anything that is not SIP is discarded
+inside the kernel and never leaves it.
+
+.TP
 .I match expression
 Match given expression in Messages' payload. If one request message matches the
 given expression, the following messages within the same dialog will be also

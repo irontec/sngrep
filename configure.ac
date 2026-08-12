@@ -1,5 +1,6 @@
 AC_PREREQ([2.59])
 AC_INIT([sngrep], [1.8.4], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
+AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE([1.9])
 AC_CONFIG_HEADERS([src/config.h])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -297,6 +298,49 @@ AS_IF([test "x$WITH_ZLIB" = "xyes"], [
 ], [])
 
 
+######################################################################
+# Check for eBPF TLS capture support
+AC_ARG_WITH([bpf],
+    AS_HELP_STRING([--with-bpf], [Enable eBPF TLS capture (Linux only)]),
+    [AC_SUBST(WITH_BPF, $withval)],
+    [AC_SUBST(WITH_BPF, no)]
+)
+
+AS_IF([test "x$WITH_BPF" = "xyes"], [
+	AC_CHECK_PROG([CLANG], [clang], [clang])
+	AS_IF([test "x$CLANG" = "x"], [
+	    AC_MSG_ERROR([ You need clang installed to compile the eBPF programs.])
+	])
+	AC_CHECK_PROG([BPFTOOL], [bpftool], [bpftool])
+	AS_IF([test "x$BPFTOOL" = "x"], [
+	    AC_MSG_ERROR([ You need bpftool installed to generate the eBPF skeleton.])
+	])
+	PKG_CHECK_MODULES([LIBBPF], [libbpf >= 1.0])
+
+	dnl clang needs to know the target architecture to build the BPF programs
+	case "$host_cpu" in
+	    x86_64|amd64|i?86)   BPF_TARGET_ARCH=x86     ;;
+	    aarch64|arm64)       BPF_TARGET_ARCH=arm64   ;;
+	    arm*)                BPF_TARGET_ARCH=arm     ;;
+	    powerpc64le|ppc64le) BPF_TARGET_ARCH=powerpc ;;
+	    s390x)               BPF_TARGET_ARCH=s390    ;;
+	    riscv64)             BPF_TARGET_ARCH=riscv   ;;
+	    *) AC_MSG_ERROR([ eBPF capture is not supported on $host_cpu.]) ;;
+	esac
+	AC_SUBST(BPF_TARGET_ARCH)
+
+	dnl linux/types.h includes asm/types.h, which multiarch distributions
+	dnl install outside the default clang search path
+	BPF_ARCH_CFLAGS=""
+	sngrep_multiarch=`$CC -print-multiarch 2>/dev/null`
+	AS_IF([test -n "$sngrep_multiarch" && test -d "/usr/include/$sngrep_multiarch"], [
+	    BPF_ARCH_CFLAGS="-I/usr/include/$sngrep_multiarch"
+	])
+	AC_SUBST(BPF_ARCH_CFLAGS)
+
+	AC_DEFINE([WITH_BPF],[],[Compile With eBPF TLS capture support])
+], [])
+
 
 # Conditional Source inclusion
 AM_CONDITIONAL([WITH_PCRE2], [test "x$WITH_PCRE2" = "xyes"])
@@ -304,6 +348,7 @@ AM_CONDITIONAL([WITH_GNUTLS], [test "x$WITH_GNUTLS" = "xyes"])
 AM_CONDITIONAL([WITH_OPENSSL], [test "x$WITH_OPENSSL" = "xyes"])
 AM_CONDITIONAL([USE_EEP], [test "x$USE_EEP" = "xyes"])
 AM_CONDITIONAL([WITH_ZLIB], [test "x$WITH_ZLIB" = "xyes"])
+AM_CONDITIONAL([WITH_BPF], [test "x$WITH_BPF" = "xyes"])
 
 
 ######################################################################
@@ -335,6 +380,7 @@ AC_MSG_NOTICE( Perl Expressions Support (v2): ${WITH_PCRE2}             )
 AC_MSG_NOTICE( IPv6 Support                 : ${USE_IPV6}               )
 AC_MSG_NOTICE( EEP Support                  : ${USE_EEP}               )
 AC_MSG_NOTICE( Zlib Support                 : ${WITH_ZLIB}               )
+AC_MSG_NOTICE( eBPF TLS Capture             : ${WITH_BPF}               )
 AC_MSG_NOTICE( ====================================================== 	)
 AC_MSG_NOTICE
 
