@@ -1,0 +1,79 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  autotools:
+    name: autotools (${{ matrix.compiler }}, ${{ matrix.config }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [ gcc, clang ]
+        config: [ default, openssl, gnutls ]
+        include:
+          - config: default
+            configure: ""
+          - config: openssl
+            configure: "--with-openssl --enable-unicode --enable-ipv6 --enable-eep --with-pcre2 --with-zlib"
+          - config: gnutls
+            configure: "--with-gnutls --enable-unicode --enable-ipv6 --enable-eep --with-pcre2 --with-zlib"
+    env:
+      # Warnings are only fatal on gcc; clang-specific warnings have not been
+      # audited yet. Note this can not be done with --enable-debug: those flags
+      # also reach the configure test programs, and -Werror makes them fail on
+      # the duplicated WITH_UNICODE definition, aborting the ncurses checks.
+      BUILD_CFLAGS: ${{ matrix.compiler == 'gcc' && '-g -O0 -Wall -Werror -Wno-unused-but-set-variable' || '-g -O2 -Wall' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            autoconf automake pkg-config \
+            libncurses-dev libpcap-dev libssl-dev \
+            libgnutls28-dev libgcrypt20-dev \
+            libpcre2-dev zlib1g-dev
+
+      - name: Bootstrap
+        run: ./bootstrap.sh
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.compiler }}
+        run: ./configure ${{ matrix.configure }}
+
+      - name: Build
+        run: make -j$(nproc) CFLAGS="$BUILD_CFLAGS"
+
+      - name: Test
+        run: make check CFLAGS="$BUILD_CFLAGS"
+
+      - name: Show test log on failure
+        if: failure()
+        run: cat tests/test-suite.log || true
+
+  cmake:
+    name: cmake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake pkg-config \
+            libncurses-dev libpcap-dev libssl-dev \
+            libpcre2-dev zlib1g-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DWITH_OPENSSL=yes -DWITH_UNICODE=yes -DUSE_IPV6=yes -DUSE_EEP=yes -DWITH_PCRE2=yes -DWITH_ZLIB=yes
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
