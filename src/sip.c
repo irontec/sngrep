@@ -232,6 +232,45 @@ sip_deinit()
     regfree(&calls.reg_warning);
 }
 
+/**
+ * @brief Remove expired dialogs from the active call list
+ *
+ * Finished dialogs are not removed from the active call list right away,
+ * because endpoints keep sending RTP/RTCP packets for a while after the
+ * dialog has been terminated and those packets must still find their
+ * stream. They are kept in the list until their last SIP message is older
+ * than SIP_CALL_ACTIVE_GRACE_SECS.
+ *
+ * Times are compared against the last captured SIP message instead of the
+ * system clock, so offline captures are expired following the timeline
+ * stored in the capture file.
+ *
+ * @param now Time of the last captured SIP message
+ */
+static void
+sip_active_calls_expire(struct timeval now)
+{
+    sip_call_t *call;
+    sip_msg_t *last;
+    time_t last_ts;
+    int i;
+
+    // Walk the list backwards so removals don't skip any call
+    for (i = vector_count(calls.active) - 1; i >= 0; i--) {
+        call = vector_item(calls.active, i);
+
+        if (call_is_active(call))
+            continue;
+
+        if (!(last = vector_last(call->msgs)))
+            continue;
+
+        last_ts = msg_get_time(last).tv_sec;
+
+        if (now.tv_sec - last_ts > SIP_CALL_ACTIVE_GRACE_SECS)
+            vector_remove(calls.active, call);
+    }
+}
 
 char *
 sip_get_callid(const char* payload, char *callid)
@@ -448,14 +487,14 @@ sip_check_packet(packet_t *packet)
         // Parse extra fields
         sip_parse_extra_headers(msg, payload);
         // Check if this call should be in active call list
-        if (call_is_active(call)) {
-            if (!sip_call_is_active(call)) {
-                vector_append(calls.active, call);
-            }
-        } else {
-            vector_remove(calls.active, call);
+        if (call_is_active(call) && !sip_call_is_active(call)) {
+            vector_append(calls.active, call);
         }
     }
+
+    // Drop from the active call list the dialogs that finished long enough
+    // ago to no longer receive media packets
+    sip_active_calls_expire(msg_get_time(msg));
 
     if (newcall) {
         // Append this call to the call list
