@@ -50,6 +50,9 @@
 #define MAX_CONTENT_LENGTH_SIZE 10
 #define MAX_WARNING_SIZE 10
 
+//! Seconds a finished dialog is kept in the active call list.
+#define SIP_CALL_ACTIVE_GRACE_SECS 60
+
 //! Shorter declaration of sip_call_list structure
 typedef struct sip_call_list sip_call_list_t;
 //! Shorter declaration of sip codes structure
