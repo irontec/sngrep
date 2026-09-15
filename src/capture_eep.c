@@ -847,7 +847,10 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
                     pos += chunk_len;
                     continue;
                 }
-                password = sng_malloc(password_len);
+                if (pos+sizeof(hep_chunk_t)+password_len >= MAX_CAPTURE_LEN)
+                    return NULL;
+                if (!(password = sng_malloc(password_len)))
+                    return NULL;
                 memcpy(password, buffer + pos + sizeof(hep_chunk_t), password_len);
                 break;
             case CAPTURE_EEP_CHUNK_PAYLOAD:
