@@ -519,6 +519,23 @@ parse_packet(u_char *info, const struct pcap_pkthdr *header, const u_char *packe
     capture_unlock();
 }
 
+// Skip any 802.1Q/802.1ad VLAN tags. 
+// VLAN tags can be stacked (q-in-q) and each one is 4 bytes ending
+// with the type of whatever follows, so re-read that type from the
+// tag we skipped.
+capture_packet_skip_vlan(u_char *packet, uint32_t caplen, uint16_t *link_hl, uint16_t ethertype)
+{
+    while (ethertype == ETHERTYPE_8021Q || ethertype == ETHERTYPE_8021AD) {
+        // Malformed packet, the tag doesn't fit...
+        if (*link_hl + 4 > caplen)
+            return;
+
+        *link_hl += 4;
+        memcpy(&ethertype, packet + *link_hl - 2, sizeof(ethertype));
+        ethertype = ntohs(ethertype);
+    }
+}
+
 packet_t *
 capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *header, u_char *packet, uint32_t *size, uint32_t *caplen)
 {
@@ -561,20 +578,17 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     struct ip6_frag *ip6f;
 #endif
 
-    // Skip VLAN header if present
+    // Skip VLAN header(s) if present. 
+	// NB: they can be stacked (q-in-q), this is implemented in capture_packet_skip_vlan() 
     if (capinfo->link == DLT_EN10MB) {
         struct ether_header *eth = (struct ether_header *) packet;
-        if (ntohs(eth->ether_type) == ETHERTYPE_8021Q) {
-            link_hl += 4;
-        }
+        capture_packet_skip_vlan(packet, *caplen, &link_hl, ntohs(eth->ether_type));
     }
 
 #ifdef SLL_HDR_LEN
     if (capinfo->link == DLT_LINUX_SLL) {
         struct sll_header *sll = (struct sll_header *) packet;
-        if (ntohs(sll->sll_protocol) == ETHERTYPE_8021Q) {
-            link_hl += 4;
-        }
+        capture_packet_skip_vlan(packet, *caplen, &link_hl, ntohs(sll->sll_protocol));
     }
 #endif
 
