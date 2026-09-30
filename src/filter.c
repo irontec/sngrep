@@ -163,7 +163,7 @@ filter_check_call(void *item)
                 break;
             case FILTER_CALL_LIST:
                 // FIXME Maybe call should know how to calculate this line
-                call_list_line_text(ui_find_by_type(PANEL_CALL_LIST), call, data);
+                call_list_search_text(ui_find_by_type(PANEL_CALL_LIST), call, data, sizeof(data));
                 break;
             default:
                 // Unknown filter id

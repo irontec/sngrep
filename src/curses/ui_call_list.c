@@ -513,43 +513,33 @@ call_list_form_activate(ui_t *ui, int active)
 }
 
 const char *
-call_list_line_text(ui_t *ui, sip_call_t *call, char *text)
+call_list_search_text(ui_t *ui, sip_call_t *call, char *text, size_t textlen)
 {
-    int i, collen;
+    int i, colid;
     char call_attr[SIP_ATTR_MAXLEN];
-    char coltext[SIP_ATTR_MAXLEN];
-    int colid;
 
     // Get panel info
     call_list_info_t *info = call_list_info(ui);
 
-    // Print requested columns
+    if (!text || !textlen)
+        return text;
+
+    text[0] = '\0';
+
+    // Search all configured columns using their complete values.
+    // Rendering widths are a presentation concern and must not make
+    // otherwise searchable data invisible to the display filter.
     for (i = 0; i < info->columncnt; i++) {
-
-        // Get current column id
         colid = info->columns[i].id;
-
-        // Get current column width
-        collen = info->columns[i].width;
-
-        // Check if next column fits on window width
-        if (strlen(text) + collen >= ui->width)
-            collen = ui->width - strlen(text);
-
-        // If no space left on the screen stop processing columns
-        if (collen <= 0)
-            break;
-
-        // Initialize column text
-        memset(coltext, 0, sizeof(coltext));
         memset(call_attr, 0, sizeof(call_attr));
 
-        // Get call attribute for current column
-        if (call_get_attribute(call, colid, call_attr)) {
-            sprintf(coltext, "%.*s", collen, call_attr);
-        }
-        // Add the column text to the existing columns
-        sprintf(text + strlen(text), "%-*s ", collen, coltext);
+        if (!call_get_attribute(call, colid, call_attr))
+            continue;
+
+        size_t used = strlen(text);
+        if (used >= textlen - 1)
+            break;
+        snprintf(text + used, textlen - used, "%s%s", used ? " " : "", call_attr);
     }
 
     return text;
