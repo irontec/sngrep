@@ -393,6 +393,7 @@ sip_check_packet(packet_t *packet)
     char callid[MAX_CALLID_SIZE], xcallid[MAX_XCALLID_SIZE];
     u_char payload[MAX_SIP_PAYLOAD];
     bool newcall = false;
+    int oldstate;
 
     // Max SIP payload allowed
     if (packet->payload_len > MAX_SIP_PAYLOAD)
@@ -483,7 +484,10 @@ sip_check_packet(packet_t *packet)
         // Parse media data
         sip_parse_msg_media(msg, payload);
         // Update Call State
+        oldstate = call->state;
         call_update_state(call, msg);
+        if (call->state != oldstate)
+            filter_call_state_changed(call);
         // Parse extra fields
         sip_parse_extra_headers(msg, payload);
         // Check if this call should be in active call list
