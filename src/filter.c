@@ -156,6 +156,9 @@ filter_check_call(void *item)
             case FILTER_DESTINATION:
                 call_get_attribute(call, SIP_ATTR_DST, data);
                 break;
+            case FILTER_CALLID:
+                call_get_attribute(call, SIP_ATTR_CALLID, data);
+                break;
             case FILTER_METHOD:
                 call_get_attribute(call, SIP_ATTR_METHOD, data);
                 break;
