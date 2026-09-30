@@ -80,6 +80,10 @@ struct filter_info {
     FORM *form;
     //! An array of fields
     FIELD *fields[FLD_FILTER_COUNT + 1];
+#ifdef NCURSES_MOUSE_VERSION
+    //! Mouse events mask before the panel was created
+    mmask_t old_mousemask;
+#endif
 };
 
 /**
@@ -129,6 +133,29 @@ filter_info(ui_t *ui);
  */
 int
 filter_handle_key(ui_t *ui, int key);
+
+/**
+ * @brief Select the given field
+ *
+ * Toggle checkbox fields and activate button fields.
+ *
+ * @param ui UI structure pointer
+ * @param field_idx field to be selected
+ * @return true if the panel has been destroyed
+ */
+bool
+filter_select_field(ui_t *ui, int field_idx);
+
+/**
+ * @brief Get the field under the last mouse click
+ *
+ * Clicking a field label counts as clicking the field.
+ *
+ * @param ui UI structure pointer
+ * @return field index or -1 if no field has been clicked
+ */
+int
+filter_mouse_field(ui_t *ui);
 
 /**
  * @brief Save form data to options
