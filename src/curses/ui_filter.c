@@ -55,7 +55,7 @@ filter_create(ui_t *ui)
     const char *method, *payload;
 
     // Cerate a new indow for the panel and form
-    ui_panel_create(ui, 18, 50);
+    ui_panel_create(ui, 19, 50);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(filter_info_t));
