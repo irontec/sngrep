@@ -68,18 +68,19 @@ filter_create(ui_t *ui)
     info->fields[FLD_FILTER_SIPTO] = new_field(1, 28, 4, 18, 0, 0);
     info->fields[FLD_FILTER_SRC] = new_field(1, 18, 5, 18, 0, 0);
     info->fields[FLD_FILTER_DST] = new_field(1, 18, 6, 18, 0, 0);
-    info->fields[FLD_FILTER_PAYLOAD] = new_field(1, 28, 7, 18, 0, 0);
-    info->fields[FLD_FILTER_REGISTER] = new_field(1, 1, 9, 15, 0, 0);
-    info->fields[FLD_FILTER_INVITE] = new_field(1, 1, 10, 15, 0, 0);
-    info->fields[FLD_FILTER_SUBSCRIBE] = new_field(1, 1, 11, 15, 0, 0);
-    info->fields[FLD_FILTER_NOTIFY] = new_field(1, 1, 12, 15, 0, 0);
-    info->fields[FLD_FILTER_INFO] = new_field(1, 1, 13, 15, 0, 0);
-    info->fields[FLD_FILTER_KDMQ] = new_field(1, 1, 14, 15, 0, 0);
-    info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 9, 37, 0, 0);
-    info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 10, 37, 0, 0);
-    info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 11, 37, 0, 0);
-    info->fields[FLD_FILTER_REFER] = new_field(1, 1, 12, 37, 0, 0);
-    info->fields[FLD_FILTER_UPDATE] = new_field(1, 1, 13, 37, 0, 0);
+    info->fields[FLD_FILTER_CALLID] = new_field(1, 28, 7, 18, 0, 0);
+    info->fields[FLD_FILTER_PAYLOAD] = new_field(1, 28, 8, 18, 0, 0);
+    info->fields[FLD_FILTER_REGISTER] = new_field(1, 1, 10, 15, 0, 0);
+    info->fields[FLD_FILTER_INVITE] = new_field(1, 1, 11, 15, 0, 0);
+    info->fields[FLD_FILTER_SUBSCRIBE] = new_field(1, 1, 12, 15, 0, 0);
+    info->fields[FLD_FILTER_NOTIFY] = new_field(1, 1, 13, 15, 0, 0);
+    info->fields[FLD_FILTER_INFO] = new_field(1, 1, 14, 15, 0, 0);
+    info->fields[FLD_FILTER_KDMQ] = new_field(1, 1, 15, 15, 0, 0);
+    info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 10, 37, 0, 0);
+    info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 11, 37, 0, 0);
+    info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 12, 37, 0, 0);
+    info->fields[FLD_FILTER_REFER] = new_field(1, 1, 13, 37, 0, 0);
+    info->fields[FLD_FILTER_UPDATE] = new_field(1, 1, 14, 37, 0, 0);
     info->fields[FLD_FILTER_FILTER] = new_field(1, 10, ui->height - 2, 11, 0, 0);
     info->fields[FLD_FILTER_CANCEL] = new_field(1, 10, ui->height - 2, 30, 0, 0);
     info->fields[FLD_FILTER_COUNT] = NULL;
@@ -89,6 +90,7 @@ filter_create(ui_t *ui)
     field_opts_off(info->fields[FLD_FILTER_SIPTO], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SRC], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_DST], O_AUTOSKIP | O_STATIC);
+    field_opts_off(info->fields[FLD_FILTER_CALLID], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_PAYLOAD], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_REGISTER], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_INVITE], O_AUTOSKIP);
@@ -113,6 +115,7 @@ filter_create(ui_t *ui)
     set_field_back(info->fields[FLD_FILTER_SIPTO], A_UNDERLINE);
     set_field_back(info->fields[FLD_FILTER_SRC], A_UNDERLINE);
     set_field_back(info->fields[FLD_FILTER_DST], A_UNDERLINE);
+    set_field_back(info->fields[FLD_FILTER_CALLID], A_UNDERLINE);
     set_field_back(info->fields[FLD_FILTER_PAYLOAD], A_UNDERLINE);
 
     // Create the form and post it
@@ -125,18 +128,19 @@ filter_create(ui_t *ui)
     mvwprintw(ui->win, 4, 3, "SIP To:");
     mvwprintw(ui->win, 5, 3, "Source:");
     mvwprintw(ui->win, 6, 3, "Destination:");
-    mvwprintw(ui->win, 7, 3, "Payload:");
-    mvwprintw(ui->win, 9, 3, "REGISTER   [ ]");
-    mvwprintw(ui->win, 10, 3, "INVITE     [ ]");
-    mvwprintw(ui->win, 11, 3, "SUBSCRIBE  [ ]");
-    mvwprintw(ui->win, 12, 3, "NOTIFY     [ ]");
-    mvwprintw(ui->win, 13, 3, "INFO       [ ]");
-    mvwprintw(ui->win, 14, 3, "KDMQ       [ ]");
-    mvwprintw(ui->win, 9, 25, "OPTIONS    [ ]");
-    mvwprintw(ui->win, 10, 25, "PUBLISH    [ ]");
-    mvwprintw(ui->win, 11, 25, "MESSAGE    [ ]");
-    mvwprintw(ui->win, 12, 25, "REFER      [ ]");
-    mvwprintw(ui->win, 13, 25, "UPDATE     [ ]");
+    mvwprintw(ui->win, 7, 3, "Call-ID:");
+    mvwprintw(ui->win, 8, 3, "Payload:");
+    mvwprintw(ui->win, 10, 3, "REGISTER   [ ]");
+    mvwprintw(ui->win, 11, 3, "INVITE     [ ]");
+    mvwprintw(ui->win, 12, 3, "SUBSCRIBE  [ ]");
+    mvwprintw(ui->win, 13, 3, "NOTIFY     [ ]");
+    mvwprintw(ui->win, 14, 3, "INFO       [ ]");
+    mvwprintw(ui->win, 15, 3, "KDMQ       [ ]");
+    mvwprintw(ui->win, 10, 25, "OPTIONS    [ ]");
+    mvwprintw(ui->win, 11, 25, "PUBLISH    [ ]");
+    mvwprintw(ui->win, 12, 25, "MESSAGE    [ ]");
+    mvwprintw(ui->win, 13, 25, "REFER      [ ]");
+    mvwprintw(ui->win, 14, 25, "UPDATE     [ ]");
 
     // Get Method filter
     if (!(method = filter_get(FILTER_METHOD)))
@@ -151,6 +155,7 @@ filter_create(ui_t *ui)
     set_field_buffer(info->fields[FLD_FILTER_SIPTO], 0, filter_get(FILTER_SIPTO));
     set_field_buffer(info->fields[FLD_FILTER_SRC], 0, filter_get(FILTER_SOURCE));
     set_field_buffer(info->fields[FLD_FILTER_DST], 0, filter_get(FILTER_DESTINATION));
+    set_field_buffer(info->fields[FLD_FILTER_CALLID], 0, filter_get(FILTER_CALLID));
     set_field_buffer(info->fields[FLD_FILTER_PAYLOAD], 0, filter_get(FILTER_PAYLOAD));
     set_field_buffer(info->fields[FLD_FILTER_REGISTER], 0,
                      strcasestr(method, sip_method_str(SIP_METHOD_REGISTER)) ? "*" : "");
@@ -181,9 +186,9 @@ filter_create(ui_t *ui)
     mvwprintw(ui->win, 1, 18, "Filter options");
     wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
     title_foot_box(ui->panel);
-    mvwhline(ui->win, 8, 1, ACS_HLINE, 49);
-    mvwaddch(ui->win, 8, 0, ACS_LTEE);
-    mvwaddch(ui->win, 8, 49, ACS_RTEE);
+    mvwhline(ui->win, 9, 1, ACS_HLINE, 49);
+    mvwaddch(ui->win, 9, 0, ACS_LTEE);
+    mvwaddch(ui->win, 9, 49, ACS_RTEE);
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
     // Set default cursor position
@@ -233,7 +238,7 @@ filter_handle_key(ui_t *ui, int key)
                 // If this is a normal character on input field, print it
                 if (field_idx == FLD_FILTER_SIPFROM || field_idx == FLD_FILTER_SIPTO
                     || field_idx == FLD_FILTER_SRC || field_idx == FLD_FILTER_DST
-                    || field_idx == FLD_FILTER_PAYLOAD) {
+                    || field_idx == FLD_FILTER_CALLID || field_idx == FLD_FILTER_PAYLOAD) {
                     form_driver(info->form, key);
                     break;
                 }
@@ -369,6 +374,9 @@ filter_save_options(ui_t *ui)
                 break;
             case FLD_FILTER_DST:
                 filter_set(FILTER_DESTINATION, expr);
+                break;
+            case FLD_FILTER_CALLID:
+                filter_set(FILTER_CALLID, expr);
                 break;
             case FLD_FILTER_PAYLOAD:
                 filter_set(FILTER_PAYLOAD, expr);
