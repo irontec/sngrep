@@ -61,6 +61,13 @@ enum filter_field_list {
     FLD_FILTER_MESSAGE,
     FLD_FILTER_REFER,
     FLD_FILTER_UPDATE,
+    FLD_FILTER_CALLSETUP,
+    FLD_FILTER_INCALL,
+    FLD_FILTER_CANCELLED,
+    FLD_FILTER_REJECTED,
+    FLD_FILTER_DIVERTED,
+    FLD_FILTER_BUSY,
+    FLD_FILTER_COMPLETED,
     FLD_FILTER_FILTER,
     FLD_FILTER_CANCEL,
     //! Never remove this field id @see filter_info
@@ -148,6 +155,14 @@ filter_save_options(ui_t *ui);
  */
 const char*
 filter_field_method(int field_id);
+
+/**
+ * @brief Return call state for a filter field
+ *
+ * @return call state @see call_state
+ */
+int
+filter_field_callstate(int field_id);
 
 /**
  * @brief Set Method filtering from filter.methods setting format
