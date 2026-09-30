@@ -218,18 +218,20 @@ void
 call_list_form_activate(ui_t *ui, int active);
 
 /**
- * @brief Get List line from the given call
+ * @brief Get searchable call list text
  *
- * Get the list line of the given call to display in the list
- * This line is built using the configured columns and sizes
+ * Build a search string using the full values of all configured columns.
+ * Unlike the rendered call list line, values are not truncated to the
+ * configured column width or the current terminal width.
  *
  * @param ui UI structure pointer
  * @param call Call to get data from
- * @param text Text pointer to store the generated line
+ * @param text Text pointer to store the generated search string
+ * @param textlen Size of the destination buffer
  * @return A pointer to text
  */
 const char*
-call_list_line_text(ui_t *ui, sip_call_t *call, char *text);
+call_list_search_text(ui_t *ui, sip_call_t *call, char *text, size_t textlen);
 
 /**
  * @brief Handle Call list key strokes
