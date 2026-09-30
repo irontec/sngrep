@@ -63,6 +63,7 @@ filter_set(int type, const char *expr)
     filters[type].regex = regex;
 #elif defined(WITH_PCRE2)
     pcre2_code *regex = NULL;
+    pcre2_match_data *match_data = NULL;
 
     // If we have an expression, check if compiles before changing the filter
     if (expr) {
@@ -73,17 +74,26 @@ filter_set(int type, const char *expr)
         // Check if we have a valid expression
         if (!(regex = pcre2_compile((PCRE2_SPTR) expr, PCRE2_ZERO_TERMINATED, pcre_options, &re_err, &err_offset, NULL)))
             return 1;
+
+        // Match data only depends on the compiled pattern. Reuse it for all
+        // calls instead of allocating and freeing it for every match.
+        if (!(match_data = pcre2_match_data_create_from_pattern(regex, NULL))) {
+            pcre2_code_free(regex);
+            return 1;
+        }
     }
 
     // Remove previous value
     if (filters[type].expr) {
         free(filters[type].expr);
         pcre2_code_free(filters[type].regex);
+        pcre2_match_data_free(filters[type].match_data);
     }
 
     // Set new expresion values
     filters[type].expr = (expr) ? strdup(expr) : NULL;
     filters[type].regex = regex;
+    filters[type].match_data = match_data;
 #else
     regex_t regex;
     // If we have an expression, check if compiles before changing the filter
@@ -210,9 +220,7 @@ filter_check_expr(filter_t filter, const char *data)
 #ifdef WITH_PCRE
         return pcre_exec(filter.regex, 0, data, strlen(data), 0, 0, 0, 0);
 #elif defined(WITH_PCRE2)
-    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(filter.regex, NULL);
-    int ret = pcre2_match(filter.regex, (PCRE2_SPTR) data, (PCRE2_SIZE) strlen(data), 0, 0, match_data, NULL);
-    pcre2_match_data_free(match_data);
+    int ret = pcre2_match(filter.regex, (PCRE2_SPTR) data, (PCRE2_SIZE) strlen(data), 0, 0, filter.match_data, NULL);
     return (ret == PCRE2_ERROR_NOMATCH) ? 1 : 0;
 #else
         // Call doesn't match this filter

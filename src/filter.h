@@ -89,6 +89,8 @@ struct filter {
 #elif defined(WITH_PCRE2)
     //! The filter compiled expression
     pcre2_code *regex;
+    //! Reusable match data for the compiled expression
+    pcre2_match_data *match_data;
 #else
     //! The filter compiled expression
     regex_t regex;
