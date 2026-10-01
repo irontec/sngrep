@@ -558,7 +558,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
     //! Link + Extra header size
     uint16_t link_hl = capinfo->link_hl;
 #ifdef USE_IPV6
-    struct ip6_frag *ip6f;
+    struct ip6_frag *ip6f = NULL;
 #endif
 
     // Skip VLAN header if present
@@ -613,6 +613,17 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         // Get IP version
         ip_ver = ip4->ip_v;
 
+        // Fragment metadata belongs to the IP header currently being parsed.
+        // Reset it when walking through an IP-in-IP packet so an outer
+        // fragmented header can not leak into the inner packet state.
+        ip_off = 0;
+        ip_frag = 0;
+        ip_frag_off = 0;
+        ip_id = 0;
+#ifdef USE_IPV6
+        ip6f = NULL;
+#endif
+
         switch (ip_ver) {
             case 4:
                 ip_hl = ip4->ip_hl * 4;
@@ -634,6 +645,13 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
                 ip_len = ntohs(ip6->ip6_ctlun.ip6_un1.ip6_un1_plen) + ip_hl;
 
                 if (ip_proto == IPPROTO_FRAGMENT) {
+                    // The fixed IPv6 header only tells us that a fragment
+                    // header follows. Do not dereference it unless the
+                    // captured frame actually contains the full header.
+                    if (header->caplen < link_hl + ip_hl + sizeof(struct ip6_frag)
+                            || ip_len < ip_hl + sizeof(struct ip6_frag))
+                        return NULL;
+
                     ip_frag = 1;
                     ip6f = (struct ip6_frag *) (packet + link_hl + ip_hl);
                     ip_frag_off = ntohs(ip6f->ip6f_offlg & IP6F_OFF_MASK);
@@ -722,7 +740,8 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
         pkt->ip_exp_len = ip_frag_off + ip_len - ip_hl;
     }
 #ifdef USE_IPV6
-    if (ip_ver == 6 && ip_frag && (ip6f->ip6f_offlg & htons(0x01)) == 0) {
+    if (ip_ver == 6 && ip_frag && ip6f
+            && (ip6f->ip6f_offlg & htons(0x01)) == 0) {
         pkt->ip_exp_len = ip_frag_off + ip_len - ip_hl - sizeof(struct ip6_frag);
     }
 #endif
