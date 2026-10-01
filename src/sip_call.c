@@ -106,6 +106,10 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     msg->call = call;
     // Put this msg at the end of the msg list
     msg->index = vector_append(call->msgs, msg);
+    // A new message can change payload, message-count, state, duration and
+    // other values used by display filters. Never reuse a result cached
+    // before this message arrived.
+    call->filtered = -1;
     // Flag this call as changed
     call->changed = true;
 }
