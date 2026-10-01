@@ -79,6 +79,8 @@ enum sip_methods {
     SIP_METHOD_BYE,
     SIP_METHOD_ACK,
     SIP_METHOD_PRACK,
+    //! Request method not present in the built-in method table
+    SIP_METHOD_UNKNOWN,
 };
 
 //! Return values for sip_validate_packet
