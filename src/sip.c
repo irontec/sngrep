@@ -436,7 +436,8 @@ sip_check_packet(packet_t *packet)
 
         // Only create a new call if the first msg
         // is a request message in the following gorup
-        if (calls.ignore_incomplete && msg->reqresp > SIP_METHOD_MESSAGE)
+        if (calls.ignore_incomplete && msg->reqresp > SIP_METHOD_MESSAGE
+                && msg->reqresp != SIP_METHOD_UNKNOWN)
             goto skip_message;
 
         // Get the Call-ID of this message
@@ -638,8 +639,13 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
             }
         }
 
-        // Get Request/Response Code
+        // Get Request/Response Code. Unknown request methods are valid SIP
+        // tokens too; keep their original text instead of dropping the packet.
         msg->reqresp = sip_method_from_str(reqresp);
+        if (!msg->reqresp && reqresp[0] && strncmp(reqresp, "<malformed>", 11)) {
+            msg->reqresp = SIP_METHOD_UNKNOWN;
+            msg->method_str = strdup(reqresp);
+        }
 
         // For response codes, check if the text matches the default
         if (!msg_is_request(msg)) {
@@ -656,12 +662,13 @@ sip_get_msg_reqresp(sip_msg_t *msg, const u_char *payload)
 const char *
 sip_get_msg_reqresp_str(sip_msg_t *msg)
 {
-    // Check if code has non-standard text
-    if (msg->resp_str) {
+    // Preserve request methods that are not in the built-in table.
+    if (msg->method_str)
+        return msg->method_str;
+    // Check if a response has non-standard text.
+    if (msg->resp_str)
         return msg->resp_str;
-    } else {
-        return sip_method_str(msg->reqresp);
-    }
+    return sip_method_str(msg->reqresp);
 }
 
 sip_msg_t *
