@@ -32,6 +32,7 @@
 #include "sip_call.h"
 #include "sip.h"
 #include "setting.h"
+#include "filter.h"
 
 sip_call_t *
 call_create(char *callid, char *xcallid)
@@ -196,10 +197,12 @@ call_msg_with_media(sip_call_t *call, address_t dst)
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
-    int reqresp;
+    int reqresp, oldstate;
 
     if (!call_is_invite(call))
         return;
+
+    oldstate = call->state;
 
     // Get current message Method / Response Code
     reqresp = msg->reqresp;
@@ -242,6 +245,9 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call->state = SIP_CALLSTATE_CALLSETUP;
         }
     }
+
+    if (call->state != oldstate)
+        filter_call_state_changed(call);
 }
 
 const char *

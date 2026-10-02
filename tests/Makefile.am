@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS=subdir-objects
 
 check_PROGRAMS=test-001 test-002 test-003 test-004 test-005
 check_PROGRAMS+=test-006 test-007 test-008 test-009 test-010
-check_PROGRAMS+=test-011 test-012 test-013
+check_PROGRAMS+=test-011 test-012 test-013 test-014
 
 test_001_SOURCES=test_001.c
 test_002_SOURCES=test_002.c
@@ -17,5 +17,12 @@ test_010_SOURCES=test_010.c ../src/hash.c
 test_011_SOURCES=test_011.c
 test_012_SOURCES=test_012.c ../src/packet.c ../src/vector.c ../src/util.c ../src/address.c ../src/rtp.c
 test_013_SOURCES=test_013.c ../src/capture_esp.c
+test_014_SOURCES=test_014.c ../src/filter.c ../src/sip_call.c ../src/vector.c ../src/util.c
+test_014_CFLAGS=
+test_014_LDADD=
+if WITH_PCRE2
+test_014_CFLAGS+=$(PCRE2_CFLAGS)
+test_014_LDADD+=$(PCRE2_LIBS)
+endif
 
 TESTS = $(check_PROGRAMS)
