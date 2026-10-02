@@ -238,11 +238,20 @@ filter_create(ui_t *ui)
     set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);
     wmove(ui->win, 3, 18);
     curs_set(1);
+
+#ifdef NCURSES_MOUSE_VERSION
+    // Allow clicking fields while this panel is displayed
+    mousemask(BUTTON1_CLICKED, &info->old_mousemask);
+#endif
 }
 
 void
 filter_destroy(ui_t *ui)
 {
+#ifdef NCURSES_MOUSE_VERSION
+    // Restore previous mouse events, so terminal text selection works again
+    mousemask(filter_info(ui)->old_mousemask, NULL);
+#endif
     curs_set(0);
     ui_panel_destroy(ui);
 }
@@ -272,6 +281,14 @@ filter_handle_key(ui_t *ui, int key)
     // space characters
     sng_strlcpy(field_value, field_buffer(current_field(info->form), 0), sizeof(field_value));
     strtrim(field_value);
+
+    // Clicked fields get the focus. Checkboxes and buttons are also selected
+    if (key == KEY_MOUSE && (field_idx = filter_mouse_field(ui)) != -1) {
+        set_current_field(info->form, info->fields[field_idx]);
+        form_driver(info->form, REQ_END_LINE);
+        if (filter_select_field(ui, field_idx))
+            return KEY_HANDLED;
+    }
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -320,39 +337,8 @@ filter_handle_key(ui_t *ui, int key)
                     form_driver(info->form, REQ_DEL_PREV);
                 break;
             case ACTION_SELECT:
-                switch (field_idx) {
-                    case FLD_FILTER_REGISTER:
-                    case FLD_FILTER_INVITE:
-                    case FLD_FILTER_SUBSCRIBE:
-                    case FLD_FILTER_NOTIFY:
-                    case FLD_FILTER_INFO:
-                    case FLD_FILTER_KDMQ:
-                    case FLD_FILTER_OPTIONS:
-                    case FLD_FILTER_PUBLISH:
-                    case FLD_FILTER_MESSAGE:
-                    case FLD_FILTER_REFER:
-                    case FLD_FILTER_UPDATE:
-                    case FLD_FILTER_CALLSETUP:
-                    case FLD_FILTER_INCALL:
-                    case FLD_FILTER_CANCELLED:
-                    case FLD_FILTER_REJECTED:
-                    case FLD_FILTER_DIVERTED:
-                    case FLD_FILTER_BUSY:
-                    case FLD_FILTER_COMPLETED:
-                        if (field_value[0] == '*') {
-                            form_driver(info->form, REQ_DEL_CHAR);
-                        } else {
-                            form_driver(info->form, '*');
-                        }
-                        break;
-                    case FLD_FILTER_CANCEL:
-                        ui_destroy(ui);
-                        return KEY_HANDLED;
-                    case FLD_FILTER_FILTER:
-                        filter_save_options(ui);
-                        ui_destroy(ui);
-                        return KEY_HANDLED;
-                }
+                if (filter_select_field(ui, field_idx))
+                    return KEY_HANDLED;
                 break;
             case ACTION_CONFIRM:
                 if (field_idx != FLD_FILTER_CANCEL)
@@ -384,7 +370,92 @@ filter_handle_key(ui_t *ui, int key)
     }
 
     // Return if this panel has handled or not the key
-    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
+    // Mouse events are always handled, even outside the fields
+    return (action == ERR && key != KEY_MOUSE) ? KEY_NOT_HANDLED : KEY_HANDLED;
+}
+
+bool
+filter_select_field(ui_t *ui, int field_idx)
+{
+    filter_info_t *info = filter_info(ui);
+
+    switch (field_idx) {
+        case FLD_FILTER_REGISTER:
+        case FLD_FILTER_INVITE:
+        case FLD_FILTER_SUBSCRIBE:
+        case FLD_FILTER_NOTIFY:
+        case FLD_FILTER_INFO:
+        case FLD_FILTER_KDMQ:
+        case FLD_FILTER_OPTIONS:
+        case FLD_FILTER_PUBLISH:
+        case FLD_FILTER_MESSAGE:
+        case FLD_FILTER_REFER:
+        case FLD_FILTER_UPDATE:
+        case FLD_FILTER_CALLSETUP:
+        case FLD_FILTER_INCALL:
+        case FLD_FILTER_CANCELLED:
+        case FLD_FILTER_REJECTED:
+        case FLD_FILTER_DIVERTED:
+        case FLD_FILTER_BUSY:
+        case FLD_FILTER_COMPLETED:
+            if (field_buffer(info->fields[field_idx], 0)[0] == '*') {
+                form_driver(info->form, REQ_DEL_CHAR);
+            } else {
+                form_driver(info->form, '*');
+            }
+            break;
+        case FLD_FILTER_CANCEL:
+            ui_destroy(ui);
+            return true;
+        case FLD_FILTER_FILTER:
+            filter_save_options(ui);
+            ui_destroy(ui);
+            return true;
+    }
+
+    return false;
+}
+
+int
+filter_mouse_field(ui_t *ui)
+{
+#ifdef NCURSES_MOUSE_VERSION
+    MEVENT event;
+    int field_id, rows, cols, frow, fcol, nrow, nbuf, label, end;
+    filter_info_t *info = filter_info(ui);
+
+    if (getmouse(&event) != OK || !(event.bstate & BUTTON1_CLICKED))
+        return -1;
+
+    // Get click position relative to the panel
+    if (!wmouse_trafo(ui->win, &event.y, &event.x, FALSE))
+        return -1;
+
+    for (field_id = 0; field_id < FLD_FILTER_COUNT; field_id++) {
+        field_info(info->fields[field_id], &rows, &cols, &frow, &fcol, &nrow, &nbuf);
+        if (event.y != frow)
+            continue;
+
+        switch (field_id) {
+            case FLD_FILTER_FILTER:
+            case FLD_FILTER_CANCEL:
+                // Button text
+                if (event.x >= fcol && event.x < fcol + cols)
+                    return field_id;
+                break;
+            default:
+                // Accept clicks from the field label to the field end. Labels
+                // are drawn at column 3, or 25 for the right checkbox column.
+                // Checkboxes end with the "]" drawn after the field
+                label = (fcol >= 25) ? 25 : 3;
+                end = (cols == 1) ? fcol + 1 : fcol + cols - 1;
+                if (event.x >= label && event.x <= end)
+                    return field_id;
+                break;
+        }
+    }
+#endif
+    return -1;
 }
 
 void
@@ -575,4 +646,3 @@ filter_payload_from_setting(const char *value)
 {
     if (value) filter_set(FILTER_PAYLOAD, value);
 }
-

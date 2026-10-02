@@ -51,6 +51,7 @@ msg_destroy(sip_msg_t *msg)
     // Free message packets
     packet_destroy(msg->packet);
     // Free all memory
+    free(msg->method_str);
     free(msg->resp_str);
     free(msg->sip_from);
     free(msg->sip_to);
