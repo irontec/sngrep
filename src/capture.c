@@ -771,8 +771,9 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             }
         }
 
-        // Check packet content length
-        if (len_data > MAX_CAPTURE_LEN)
+        // Check packet content length, accounting for link-layer and IP
+        // header overhead written ahead of the reassembled payload
+        if (link_hl + ip_hl + len_data > MAX_CAPTURE_LEN)
             return NULL;
 
         // Initialize memory for the assembly packet
@@ -797,7 +798,7 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
                     uint16_t frame_ip_frag_off = ntohs(frame_ip6f->ip6f_offlg & IP6F_OFF_MASK);
                     memcpy(packet + link_hl + ip_hl + sizeof(struct ip6_frag) + frame_ip_frag_off,
                             frame->data + link_hl + ip_hl + sizeof (struct ip6_frag),
-                            ntohs(frame_ip6->ip6_ctlun.ip6_un1.ip6_un1_plen));
+                            ntohs(frame_ip6->ip6_ctlun.ip6_un1.ip6_un1_plen) - sizeof(struct ip6_frag));
                     pkt->proto = frame_ip6f->ip6f_nxt;
 		    len_data-=sizeof(struct ip6_frag);
                 }
