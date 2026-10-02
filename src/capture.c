@@ -756,13 +756,47 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
             switch (ip_ver) {
                 case 4: {
                     struct ip *frame_ip = (struct ip *) (frame->data + link_hl);
-                    len_data += ntohs(frame_ip->ip_len) - frame_ip->ip_hl * 4;
+                    uint32_t frame_hl, frame_len, frame_off;
+
+                    // Check frame has at least IP header length
+                    if (frame->header->caplen < link_hl + sizeof(struct ip))
+                        return NULL;
+
+                    frame_hl = frame_ip->ip_hl * 4;
+                    frame_len = ntohs(frame_ip->ip_len);
+                    frame_off = (ntohs(frame_ip->ip_off) & IP_OFFMASK) * 8;
+
+                    // Check fragment payload was captured and fits in the
+                    // assembled packet at its reassembly offset
+                    if (frame_len < frame_hl
+                            || frame->header->caplen < link_hl + frame_len
+                            || link_hl + ip_hl + frame_off + frame_len - frame_hl > MAX_CAPTURE_LEN)
+                        return NULL;
+
+                    len_data += frame_len - frame_hl;
                     break;
                 }
 #ifdef USE_IPV6
                 case 6: {
                     struct ip6_hdr *frame_ip6 = (struct ip6_hdr *) (frame->data + link_hl);
-                    len_data += ntohs(frame_ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
+                    struct ip6_frag *frame_ip6f = (struct ip6_frag *) (frame->data + link_hl + ip_hl);
+                    uint32_t frame_len, frame_off;
+
+                    // Check frame has at least IPv6 and fragment header length
+                    if (frame->header->caplen < link_hl + ip_hl + sizeof(struct ip6_frag))
+                        return NULL;
+
+                    frame_len = ntohs(frame_ip6->ip6_ctlun.ip6_un1.ip6_un1_plen);
+                    frame_off = ntohs(frame_ip6f->ip6f_offlg & IP6F_OFF_MASK);
+
+                    // Check fragment payload was captured and fits in the
+                    // assembled packet at its reassembly offset
+                    if (frame_len < sizeof(struct ip6_frag)
+                            || frame->header->caplen < link_hl + ip_hl + frame_len
+                            || link_hl + ip_hl + frame_off + frame_len > MAX_CAPTURE_LEN)
+                        return NULL;
+
+                    len_data += frame_len;
                     break;
                 }
 #endif
