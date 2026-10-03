@@ -69,6 +69,8 @@ enum filter_type {
     FILTER_CALLID,
     //! SIP X-Call-ID header in packet payload
     FILTER_XCALLID,
+    //! SIP transport (UDP/TCP/TLS/WS/WSS)
+    FILTER_TRANSPORT,
     //! SIP Method in packet payload
     FILTER_METHOD,
     //! SIP Payload in any call packet
