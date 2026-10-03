@@ -67,6 +67,8 @@ enum filter_type {
     FILTER_DESTINATION,
     //! SIP Call-ID header
     FILTER_CALLID,
+    //! SIP X-Call-ID header in packet payload
+    FILTER_XCALLID,
     //! SIP Method in packet payload
     FILTER_METHOD,
     //! SIP Payload in any call packet
@@ -89,7 +91,7 @@ struct filter {
 #elif defined(WITH_PCRE2)
     //! The filter compiled expression
     pcre2_code *regex;
-    //! Reusable match data for the compiled expression
+    //! Reusable match data for the compiled pattern
     pcre2_match_data *match_data;
 #else
     //! The filter compiled expression
