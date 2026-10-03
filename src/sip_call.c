@@ -32,6 +32,7 @@
 #include "sip_call.h"
 #include "sip.h"
 #include "setting.h"
+#include "filter.h"
 
 sip_call_t *
 call_create(char *callid, char *xcallid)
@@ -106,6 +107,10 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     msg->call = call;
     // Put this msg at the end of the msg list
     msg->index = vector_append(call->msgs, msg);
+    // Only mutable filters need their cached result invalidated when a new
+    // message arrives. The other dedicated filters read the first message.
+    if (filter_get(FILTER_PAYLOAD) || filter_get(FILTER_CALL_LIST))
+        call->filtered = -1;
     // Flag this call as changed
     call->changed = true;
 }
