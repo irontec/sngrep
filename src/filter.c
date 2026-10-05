@@ -182,6 +182,9 @@ filter_check_call(void *item)
             case FILTER_XCALLID:
                 call_get_attribute(call, SIP_ATTR_XCALLID, data);
                 break;
+            case FILTER_TRANSPORT:
+                call_get_attribute(call, SIP_ATTR_TRANSPORT, data);
+                break;
             case FILTER_METHOD:
                 call_get_attribute(call, SIP_ATTR_METHOD, data);
                 break;
