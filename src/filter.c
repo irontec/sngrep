@@ -28,12 +28,16 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "sip.h"
 #include "curses/ui_call_list.h"
 #include "filter.h"
 
 //! Storage of filter information
 filter_t filters[FILTER_COUNT] = { 0 };
+
+//! Mask of call states displayed calls must be in (0 = disabled)
+static unsigned int filter_callstates = 0;
 
 int
 filter_set(int type, const char *expr)
@@ -143,6 +147,12 @@ filter_check_call(void *item)
     // By default, call matches all filters
     call->filtered = 0;
 
+    // Check call state filter
+    if (filter_callstates && !(filter_callstates & FILTER_CALLSTATE_BIT(call->state))) {
+        call->filtered = 1;
+        return 0;
+    }
+
     // Check all filter types
     for (i=0; i < FILTER_COUNT; i++) {
         // If filter is not enabled, go to the next
@@ -239,5 +249,56 @@ filter_reset_calls()
 
     // Force filter evaluation
     while ((call = vector_iterator_next(&calls)))
+        call->filtered = -1;
+}
+
+void
+filter_set_callstates(unsigned int states)
+{
+    filter_callstates = states;
+}
+
+unsigned int
+filter_get_callstates()
+{
+    return filter_callstates;
+}
+
+unsigned int
+filter_callstates_from_str(const char *value)
+{
+    char states[256];
+    char *name, *saveptr = NULL;
+    unsigned int mask = 0;
+    int state;
+
+    if (!value)
+        return 0;
+
+    sng_strlcpy(states, value, sizeof(states));
+
+    for (name = strtok_r(states, ",", &saveptr); name; name = strtok_r(NULL, ",", &saveptr)) {
+        // Ignore spaces around state names
+        while (*name == ' ')
+            name++;
+        strtrim(name);
+
+        // Check against all known call states
+        for (state = SIP_CALLSTATE_CALLSETUP; *call_state_to_str(state); state++) {
+            if (!strcasecmp(name, call_state_to_str(state))) {
+                mask |= FILTER_CALLSTATE_BIT(state);
+                break;
+            }
+        }
+    }
+
+    return mask;
+}
+
+void
+filter_call_state_changed(sip_call_t *call)
+{
+    // Cached result only depends on call state when the filter is enabled
+    if (filter_callstates)
         call->filtered = -1;
 }

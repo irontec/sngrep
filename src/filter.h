@@ -79,6 +79,9 @@ enum filter_type {
     FILTER_COUNT,
 };
 
+//! Bit of a call state in the call state filter mask @see call_state
+#define FILTER_CALLSTATE_BIT(state) (1U << (state))
+
 /**
  * @brief Filter information
  */
@@ -147,5 +150,48 @@ filter_check_expr(filter_t filter, const char *data);
  */
 void
 filter_reset_calls();
+
+/**
+ * @brief Set the call states filter
+ *
+ * Calls match this filter when their current state is any of
+ * the given states. Dialogs without call state (not started with
+ * an INVITE) never match an enabled call state filter.
+ *
+ * @param states Mask of FILTER_CALLSTATE_BIT values, 0 to disable the filter
+ */
+void
+filter_set_callstates(unsigned int states);
+
+/**
+ * @brief Get the call states filter
+ *
+ * @return Mask of FILTER_CALLSTATE_BIT values, 0 if filter is disabled
+ */
+unsigned int
+filter_get_callstates();
+
+/**
+ * @brief Parse a comma separated list of call state names
+ *
+ * Names are compared case insensitively with the output of
+ * call_state_to_str. Unknown names are ignored.
+ *
+ * @param value Comma separated list of call states (i.e. "IN CALL,COMPLETED")
+ * @return Mask of FILTER_CALLSTATE_BIT values
+ */
+unsigned int
+filter_callstates_from_str(const char *value);
+
+/**
+ * @brief Notify a call state has changed
+ *
+ * Discard the cached filter result of the given call if it depends
+ * on the call state, so it is evaluated again on next check.
+ *
+ * @param call Call whose state has changed
+ */
+void
+filter_call_state_changed(sip_call_t *call);
 
 #endif /* __SNGREP_FILTER_H_ */
