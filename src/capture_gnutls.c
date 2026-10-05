@@ -622,7 +622,16 @@ tls_process_record_handshake(struct SSLConnection *conn, const opaque *fragment,
                 tls_debug_print_hex("exchange keys",exkeys.data, exkeys.size);
 
                 tls_privkey_decrypt_data(conn->server_private_key, 0, &exkeys, &pms);
-                if (!pms.data) break;
+                // Check if decryption was successful
+                if (!pms.data) {
+                    break;
+                }
+
+                // Check if the PreMasterSecret has the correct size
+                if (pms.size != sizeof(struct PreMasterSecret)) {
+                    gnutls_free(pms.data);
+                    break;
+                }
 
                 memcpy(&conn->pre_master_secret, pms.data, pms.size);
                 tls_debug_print_hex("pre_master_secret", pms.data, pms.size);
