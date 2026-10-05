@@ -1,3 +1,23 @@
+2026-10-05 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.9.0 released
+
+	* filter: add Call-ID and X-Call-ID fields to filter dialog
+	* filter: add SIP transport field to filter dialog
+	* filter: add call state checkboxes to filter dialog
+	* filter: allow selecting filter dialog fields with the mouse
+	* call list: search full configured column values
+	* capture: decode SIP inside IPsec ESP with NULL encryption
+	* sip: support non-standard request methods
+	* rtp: keep finished calls active while they may still send media
+	* capture: fix stack buffer overflow in IP fragment reassembly
+	* capture: validate PreMasterSecret size in GnuTLS handshake
+	* capture_eep: bound AUTH_KEY chunk copy in HEPv3 receive
+	* sip: fix stack buffer overflow in SIP attribute formatting
+	* sip: check sscanf return values in SDP media parsing
+	* openssl: use non-deprecated API
+	* cmake: use CMAKE_INSTALL_SYSCONFDIR instead of hardcoded path
+	* ci: add GitHub Actions build workflow
+
 2026-07-24 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.8.4 released
 
