@@ -67,10 +67,28 @@ typedef struct media_inspector_flow
 /**
  * @brief Enable or disable passive RTP inspection.
  *
- * @param value Non-zero enables media-only mode, zero disables it.
+ * @param value Non-zero enables media inspection, zero disables it.
  */
 void
 media_inspector_set_enabled(int value);
+
+/**
+ * @brief Enable or disable standalone media-only mode.
+ *
+ * Standalone mode bypasses SIP parsing; F6 inspection in normal mode does not.
+ *
+ * @param value Non-zero enables standalone mode (and inspection), zero disables it.
+ */
+void
+media_inspector_set_standalone(int value);
+
+/**
+ * @brief Check whether standalone media-only mode is enabled.
+ *
+ * @return Non-zero when enabled, zero otherwise.
+ */
+int
+media_inspector_standalone(void);
 
 /**
  * @brief Check whether media-only inspection is enabled.

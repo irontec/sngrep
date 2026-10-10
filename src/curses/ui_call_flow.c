@@ -1718,7 +1718,7 @@ call_flow_help(ui_t *ui)
     mvwprintw(help_win, 14, 2, "F3/m        Toggle RTP arrows display");
     mvwprintw(help_win, 15, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
     mvwprintw(help_win, 16, 2, "F5/s        Toggle compressed view (One address <=> one column");
-    mvwprintw(help_win, 17, 2, "F6/R        Show original call messages in raw mode");
+    mvwprintw(help_win, 17, 2, "R           Show original call messages in raw mode");
     mvwprintw(help_win, 18, 2, "F7/c        Cycle between available color modes");
     mvwprintw(help_win, 19, 2, "F8/C        Turn on/off message syntax highlighting");
     mvwprintw(help_win, 20, 2, "F9/l        Turn on/off resolved addresses");
@@ -1726,6 +1726,7 @@ call_flow_help(ui_t *ui)
     mvwprintw(help_win, 22, 2, "t           Toggle raw preview display");
     mvwprintw(help_win, 23, 2, "T           Restore raw preview size");
     mvwprintw(help_win, 24, 2, "D           Only show SDP messages");
+    mvwprintw(help_win, 25, 2, "F6/v        Open Media Inspector (RTP streams)");
 
     // Press any key to close
     wgetch(help_win);
