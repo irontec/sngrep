@@ -1087,13 +1087,20 @@ capture_packet_parse(packet_t *packet)
      * Standalone media monitoring must not depend on SIP, SDP or call storage.
      * Consume headers only and let the capture callback free the packet.
      */
-    if (media_inspector_enabled()) {
+    if (media_inspector_standalone()) {
         if (media_inspector_ingest(packet)) {
             packet_set_type(packet, PACKET_RTP);
             capture_dump_packet(packet);
         }
         return 1;
     }
+
+    /*
+     * When F6 is opened in normal SIP mode, also track observed RTP headers.
+     * Unlike --media-only this must not swallow SIP packets or call storage.
+     */
+    if (media_inspector_enabled())
+        media_inspector_ingest(packet);
 
     // We're only interested in packets with payload
     if (packet_payloadlen(packet)) {

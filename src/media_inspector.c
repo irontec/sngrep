@@ -17,6 +17,7 @@
 static media_inspector_flow_t flows[MEDIA_INSPECTOR_MAX_FLOWS];
 static size_t flow_count;
 static int enabled;
+static int standalone;
 
 static uint16_t
 read16(const unsigned char *p)
@@ -65,6 +66,20 @@ int
 media_inspector_enabled(void)
 {
     return enabled;
+}
+
+void
+media_inspector_set_standalone(int value)
+{
+    standalone = !!value;
+    if (standalone)
+        enabled = 1;
+}
+
+int
+media_inspector_standalone(void)
+{
+    return standalone;
 }
 
 void

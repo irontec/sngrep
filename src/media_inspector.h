@@ -30,6 +30,9 @@ typedef struct media_inspector_flow {
 
 /* All functions are called under the capture lock in capture/UI code. */
 void media_inspector_set_enabled(int enabled);
+/* Standalone mode bypasses SIP; ordinary F6 inspection does not. */
+void media_inspector_set_standalone(int standalone);
+int media_inspector_standalone(void);
 int media_inspector_enabled(void);
 void media_inspector_reset(void);
 /* Returns 1 for a validated, aggregated RTP packet; 0 otherwise. */

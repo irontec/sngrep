@@ -371,7 +371,7 @@ main(int argc, char* argv[])
     }
 
     // Media-only discovery uses no SIP dialog or SDP.
-    media_inspector_set_enabled(media_only);
+    media_inspector_set_standalone(media_only);
     sip_init(limit, only_calls, no_incomplete);
 
     // Set capture options

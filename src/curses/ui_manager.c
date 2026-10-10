@@ -40,6 +40,7 @@
 #include "capture.h"
 #include "ui_call_list.h"
 #include "ui_media_dashboard.h"
+#include "media_inspector.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_filter.h"
@@ -290,6 +291,7 @@ ui_default_handle_key(ui_t *ui, int key)
                 ui_create_panel(PANEL_SETTINGS);
                 break;
             case ACTION_MEDIA_DASHBOARD:
+                media_inspector_set_enabled(1);
                 if (ui->type == PANEL_MEDIA_DASHBOARD) {
                     ui_destroy(ui);
                     if (!panel_below(NULL))
