@@ -39,6 +39,7 @@
 #include "ui_manager.h"
 #include "capture.h"
 #include "ui_call_list.h"
+#include "ui_media_dashboard.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_filter.h"
@@ -63,7 +64,8 @@ static ui_t *panel_pool[] = {
     &ui_msg_diff,
     &ui_column_select,
     &ui_settings,
-    &ui_stats
+    &ui_stats,
+    &ui_media_dashboard
 };
 
 int
@@ -286,6 +288,15 @@ ui_default_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_SHOW_SETTINGS:
                 ui_create_panel(PANEL_SETTINGS);
+                break;
+            case ACTION_MEDIA_DASHBOARD:
+                if (ui->type == PANEL_MEDIA_DASHBOARD) {
+                    ui_destroy(ui);
+                    if (!panel_below(NULL))
+                        ui_create_panel(PANEL_CALL_LIST);
+                } else {
+                    ui_create_panel(PANEL_MEDIA_DASHBOARD);
+                }
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture

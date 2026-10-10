@@ -74,6 +74,8 @@ enum panel_types {
     PANEL_SETTINGS,
     //! Stats panel
     PANEL_STATS,
+    //! Modern media dashboard
+    PANEL_MEDIA_DASHBOARD,
     //! Panel Counter
     PANEL_COUNT,
 };

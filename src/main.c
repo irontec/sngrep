@@ -70,7 +70,7 @@ usage()
            "    -B --buffer\t\t Set pcap buffer size in MB (default: 2)\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
            "    -r --rtp		 Capture RTP packets payload\n"
-           "       --media-only	 Inspect RTP streams without SIP/SDP (headless)\n"
+           "       --media-only	 Inspect RTP streams without SIP/SDP (F6 dashboard; -N for headless)\n"
            "    -P --esp\t\t Decode SIP inside IPsec ESP with NULL encryption\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
@@ -224,7 +224,6 @@ main(int argc, char* argv[])
                 break;
             case 1001:
                 media_only = 1;
-                no_interface = 1;
                 break;
             case 'V': /* handled before with higher priority options */
                 break;
@@ -498,7 +497,7 @@ main(int argc, char* argv[])
         ncurses_init();
         // This is a blocking call.
         // Create the first panel and wait for user input
-        ui_create_panel(PANEL_CALL_LIST);
+        ui_create_panel(media_only ? PANEL_MEDIA_DASHBOARD : PANEL_CALL_LIST);
         ui_wait_for_input();
     } else {
         setbuf(stdout, NULL);

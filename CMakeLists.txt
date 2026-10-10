@@ -184,6 +184,7 @@ target_sources( sngrep
 		src/curses/ui_msg_diff.c
 		src/curses/ui_column_select.c
 		src/curses/ui_settings.c
+		src/curses/ui_media_dashboard.c
 	)
 
 target_include_directories( sngrep PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src )
