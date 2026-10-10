@@ -6,8 +6,11 @@ hosts, such as RTPengine nodes. It does not require SIP or SDP.
 ## Usage
 
 ```sh
-# Live interface, headless one-line summary.
+# Live interface with the Media Inspector dashboard.
 sudo sngrep --media-only -d eth0 udp
+
+# Headless summary output (e.g. automated diagnostics).
+sudo sngrep --media-only -N -d eth0 udp
 
 # Offline packet capture. Prints the observed flow count when complete.
 sngrep --media-only -I media.pcap
@@ -16,8 +19,10 @@ sngrep --media-only -I media.pcap
 sudo sngrep --media-only -d eth0 -O media-only.pcap udp
 ```
 
-This initial PR provides the capture/aggregation foundation. Its companion
-TUI PR adds the dashboard and a standalone `F6` switch. No RTPengine session
+This stack has two independently reviewable PRs: the foundation adds
+capture/aggregation, and the UI follow-up adds the new dashboard.
+Press **F6** to switch between the classic call list/flow and Media Inspector.
+Press **R** to open the existing raw SIP message view (F6 previously did this). No RTPengine session
 API adapter, Call-ID association, bidirectional leg correlation, codec-specific
 MOS estimate, or definitive one-way-audio diagnosis exists in this PR.
 
@@ -52,6 +57,8 @@ file contains packets and may include sensitive audio; handle it accordingly.
 1. Build with Autotools and CMake on Linux.
 2. `sngrep --media-only -I` an RTP-only PCAP: non-zero flow count.
 3. The same PCAP in regular SIP mode: unchanged dialog behavior.
+4. Verify `F6` switches dashboards, `R` opens raw SIP view, and `ESC` returns.
+5. Resize from 80 to 120 columns, navigate with arrows, toggle sorting using `S`.
 4. Inject malformed UDP, RTCP, RTP with malformed extensions and padding:
    parser rejects it without crashing.
 5. Check SSRC separation, wraparound at 65535, 1/2/3 missing sequence
