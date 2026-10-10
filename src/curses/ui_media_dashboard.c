@@ -109,14 +109,15 @@ dashboard_draw(ui_t *ui)
     size_t n = media_inspector_snapshot(view, MEDIA_INSPECTOR_MAX_FLOWS);
     size_t i, visible;
     uint64_t packets = 0, losses = 0, duplicates = 0, ordered = 0;
-    size_t stale = 0, degraded = 0;
+    size_t stale = 0;
     time_t now = time(NULL);
     WINDOW *w = ui->win;
     int rows, y, width = ui->width, height = ui->height;
+    int compact = width < 110;
 
     werase(w);
-    if (width < 76 || height < 18) {
-        mvwprintw(w, 1, 2, "Media Inspector requires at least 76 columns x 18 rows.");
+    if (width < 76 || height < 20) {
+        mvwprintw(w, 1, 2, "Media Inspector requires at least 76 columns x 20 rows.");
         mvwprintw(w, 3, 2, "F6 switch view  |  ESC return");
         return 0;
     }
@@ -132,8 +133,7 @@ dashboard_draw(ui_t *ui)
         ordered += view[i].out_of_order;
         if (!strcmp(state, "STALE"))
             stale++;
-        else if (!strcmp(state, "LOSS") || !strcmp(state, "JITTER"))
-            degraded++;
+        /* Quality alerts are calculated per observed stream, not per call. */
     }
 
     label(w, 1, 3, "SNGREP", A_BOLD | COLOR_PAIR(CP_GREEN_ON_DEF));
@@ -152,8 +152,12 @@ dashboard_draw(ui_t *ui)
     mvwhline(w, 7, 2, ACS_HLINE, width - 4);
 
     label(w, 9, 3, "LIVE RTP STREAMS", A_BOLD | COLOR_PAIR(CP_CYAN_ON_DEF));
-    mvwprintw(w, 10, 3, "%-3s %-23s %-23s %-8s %8s %6s %9s",
-              "#", "SOURCE", "DESTINATION", "STATE", "PACKETS", "LOSS", "JITTER");
+    if (compact)
+        mvwprintw(w, 10, 3, "%-3s %-19s %-19s %-8s %8s %6s",
+                  "#", "SOURCE", "DESTINATION", "STATE", "PACKETS", "LOSS");
+    else
+        mvwprintw(w, 10, 3, "%-3s %-23s %-23s %-8s %8s %6s %9s",
+                  "#", "SOURCE", "DESTINATION", "STATE", "PACKETS", "LOSS", "JITTER");
     mvwhline(w, 11, 2, ACS_HLINE, width - 4);
 
     rows = height - 19;
@@ -184,12 +188,19 @@ dashboard_draw(ui_t *ui)
         else
             snprintf(jitter, sizeof(jitter), "N/A");
         wattron(w, attr);
-        mvwprintw(w, y, 3, "%-3zu %-23.23s %-23.23s", i + 1, source, dest);
+        if (compact)
+            mvwprintw(w, y, 3, "%-3zu %-19.19s %-19.19s", i + 1, source, dest);
+        else
+            mvwprintw(w, y, 3, "%-3zu %-23.23s %-23.23s", i + 1, source, dest);
         wattroff(w, attr);
-        label(w, y, 55, state, COLOR_PAIR(color));
-        mvwprintw(w, y, 64, "%8llu %6llu %9s",
-                  (unsigned long long)f->packets,
-                  (unsigned long long)lost, jitter);
+        label(w, y, compact ? 48 : 55, state, COLOR_PAIR(color));
+        if (compact)
+            mvwprintw(w, y, 57, "%8llu %6llu",
+                      (unsigned long long)f->packets, (unsigned long long)lost);
+        else
+            mvwprintw(w, y, 64, "%8llu %6llu %9s",
+                      (unsigned long long)f->packets,
+                      (unsigned long long)lost, jitter);
     }
 
     if (!n)
@@ -206,8 +217,11 @@ dashboard_draw(ui_t *ui)
     } else {
         mvwprintw(w, y + 2, 3, "No observed RTP stream selected.");
     }
-    mvwprintw(w, y + 3, 3,
-              "Direction pairing: unavailable without RTPengine metadata. No one-way diagnosis.");
+    if (compact)
+        mvwprintw(w, y + 3, 3, "RTPengine leg pairing unavailable; no one-way diagnosis.");
+    else
+        mvwprintw(w, y + 3, 3,
+                  "Direction pairing: unavailable without RTPengine metadata. No one-way diagnosis.");
     wattron(w, A_REVERSE);
     mvwhline(w, height - 1, 0, ' ', width);
     mvwprintw(w, height - 1, 2,
