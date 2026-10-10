@@ -52,6 +52,7 @@
 #endif
 #include "sip.h"
 #include "rtp.h"
+#include "media_inspector.h"
 #include "setting.h"
 #include "util.h"
 
@@ -1081,6 +1082,18 @@ capture_packet_parse(packet_t *packet)
 {
     // Media structure for RTP packets
     rtp_stream_t *stream;
+
+    /*
+     * Standalone media monitoring must not depend on SIP, SDP or call storage.
+     * Consume headers only and let the capture callback free the packet.
+     */
+    if (media_inspector_enabled()) {
+        if (media_inspector_ingest(packet)) {
+            packet_set_type(packet, PACKET_RTP);
+            capture_dump_packet(packet);
+        }
+        return 1;
+    }
 
     // We're only interested in packets with payload
     if (packet_payloadlen(packet)) {
