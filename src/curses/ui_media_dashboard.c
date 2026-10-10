@@ -77,7 +77,7 @@ dashboard_create(ui_t *ui)
 static void
 dashboard_destroy(ui_t *ui)
 {
-    free(panel_userptr(ui->panel));
+    free((void *)panel_userptr(ui->panel));
     ui_panel_destroy(ui);
 }
 
@@ -93,7 +93,7 @@ dashboard_resize(ui_t *ui)
 static bool
 dashboard_redraw(ui_t *ui)
 {
-    dashboard_state_t *info = panel_userptr(ui->panel);
+    dashboard_state_t *info = (dashboard_state_t *)panel_userptr(ui->panel);
     time_t now = time(NULL);
     if (info && now != info->last_render) {
         info->last_render = now;
@@ -105,7 +105,7 @@ dashboard_redraw(ui_t *ui)
 static int
 dashboard_draw(ui_t *ui)
 {
-    dashboard_state_t *info = panel_userptr(ui->panel);
+    dashboard_state_t *info = (dashboard_state_t *)panel_userptr(ui->panel);
     size_t n = media_inspector_snapshot(view, MEDIA_INSPECTOR_MAX_FLOWS);
     size_t i, visible;
     uint64_t packets = 0, losses = 0, duplicates = 0, ordered = 0;
@@ -233,7 +233,7 @@ dashboard_draw(ui_t *ui)
 static int
 dashboard_key(ui_t *ui, int key)
 {
-    dashboard_state_t *info = panel_userptr(ui->panel);
+    dashboard_state_t *info = (dashboard_state_t *)panel_userptr(ui->panel);
     int action = -1;
     if (!info)
         return KEY_NOT_HANDLED;
