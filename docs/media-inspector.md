@@ -22,7 +22,10 @@ sudo sngrep --media-only -d eth0 -O media-only.pcap udp
 This stack has two independently reviewable PRs: the foundation adds
 capture/aggregation, and the UI follow-up adds the new dashboard.
 Press **F6** to switch between the classic call list/flow and Media Inspector.
-Press **R** to open the existing raw SIP message view (F6 previously did this). No RTPengine session
+Press **R** to open the existing raw SIP message view (F6 previously did this).
+In a regular SIP session, F6 activates passive RTP sampling from that moment
+onward without disabling SIP capture. It does not reconstruct RTP packets
+captured before F6 was pressed. No RTPengine session
 API adapter, Call-ID association, bidirectional leg correlation, codec-specific
 MOS estimate, or definitive one-way-audio diagnosis exists in this PR.
 
