@@ -25,9 +25,24 @@ Press **F6** to switch between the classic call list/flow and Media Inspector.
 Press **R** to open the existing raw SIP message view (F6 previously did this).
 In a regular SIP session, F6 activates passive RTP sampling from that moment
 onward without disabling SIP capture. It does not reconstruct RTP packets
-captured before F6 was pressed. No RTPengine session
-API adapter, Call-ID association, bidirectional leg correlation, codec-specific
-MOS estimate, or definitive one-way-audio diagnosis exists in this PR.
+captured before F6 was pressed. No codec-specific MOS estimate or definitive
+one-way-audio diagnosis exists yet.
+
+## RTPengine sessions
+
+When the dashboard opens, sngrep polls RTPengine's NG control socket once a
+second (`list` + `query`, read-only). Press **E** to switch from the captured
+streams to RTPengine sessions: Call-ID, both legs, and the kbps received from
+each leg (`A->B`, `B->A`), plus packet/byte/error counters for the selected one.
+These counters come from RTPengine itself, so they include kernel-forwarded
+media that a packet capture may miss.
+
+```sh
+# Default address is 127.0.0.1:2223; point it at RTPengine's --listen-ng.
+sngrep --rtpengine 127.0.0.1:2223
+```
+
+Only the first 200 sessions and the first two tags of a forked call are shown.
 
 ## Metrics and confidence
 
@@ -51,7 +66,8 @@ at 2048 flow entries; when full, the least recently seen entry is replaced.
 ## Scope and security
 
 The feature is opt-in. Normal SIP capture and its UI remain unchanged.
-It neither opens control sockets to RTPengine nor changes live media sessions.
+It never changes live media sessions; the RTPengine socket is opened only
+after the dashboard is shown and only sends read-only `list`/`query` commands.
 RTP payload data is not stored in the tracker. The optional `-O` output
 file contains packets and may include sensitive audio; handle it accordingly.
 

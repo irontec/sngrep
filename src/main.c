@@ -36,6 +36,7 @@
 #include "vector.h"
 #include "capture.h"
 #include "media_inspector.h"
+#include "rtpengine.h"
 #include "capture_eep.h"
 #include "curses/ui_save.h"
 #ifdef WITH_GNUTLS
@@ -71,6 +72,7 @@ usage()
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
            "    -r --rtp		 Capture RTP packets payload\n"
            "       --media-only	 Inspect RTP streams without SIP/SDP (F6 dashboard; -N for headless)\n"
+           "       --rtpengine\t RTPengine NG control address for F6 (default: " RTPENGINE_DEFAULT_ADDR ")\n"
            "    -P --esp\t\t Decode SIP inside IPsec ESP with NULL encryption\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
@@ -161,6 +163,7 @@ main(int argc, char* argv[])
         { "calls", no_argument, 0, 'c' },
         { "rtp", no_argument, 0, 'r' },
         { "media-only", no_argument, 0, 1001 },
+        { "rtpengine", required_argument, 0, 1002 },
         { "limit", required_argument, 0, 'l' },
         { "icase", no_argument, 0, 'i' },
         { "invert", no_argument, 0, 'v' },
@@ -224,6 +227,13 @@ main(int argc, char* argv[])
                 break;
             case 1001:
                 media_only = 1;
+                break;
+            case 1002:
+                if (!strchr(optarg, ':')) {
+                    fprintf(stderr, "--rtpengine expects HOST:PORT\n");
+                    return 1;
+                }
+                rtpengine_set_address(optarg);
                 break;
             case 'V': /* handled before with higher priority options */
                 break;
