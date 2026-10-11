@@ -35,6 +35,8 @@
 #include "option.h"
 #include "vector.h"
 #include "capture.h"
+#include "media_inspector.h"
+#include "rtpengine.h"
 #include "capture_eep.h"
 #include "curses/ui_save.h"
 #ifdef WITH_GNUTLS
@@ -68,7 +70,9 @@ usage()
            "    -O --output\t\t Write captured data to pcap file\n"
            "    -B --buffer\t\t Set pcap buffer size in MB (default: 2)\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
-           "    -r --rtp\t\t Capture RTP packets payload\n"
+           "    -r --rtp		 Capture RTP packets payload\n"
+           "       --media-only	 Inspect RTP streams without SIP/SDP (F6 dashboard; -N for headless)\n"
+           "       --rtpengine\t RTPengine NG control address for F6 (default: " RTPENGINE_DEFAULT_ADDR ")\n"
            "    -P --esp\t\t Decode SIP inside IPsec ESP with NULL encryption\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
@@ -140,6 +144,7 @@ main(int argc, char* argv[])
     const char *match_expr;
     int match_insensitive = 0, match_invert = 0;
     int no_interface = 0, quiet = 0, rtp_capture = 0, rotate = 0, no_config = 0;
+    int media_only = 0;
     vector_t *infiles = vector_create(0, 1);
     vector_t *indevices = vector_create(0, 1);
     char *token;
@@ -157,6 +162,8 @@ main(int argc, char* argv[])
 #endif
         { "calls", no_argument, 0, 'c' },
         { "rtp", no_argument, 0, 'r' },
+        { "media-only", no_argument, 0, 1001 },
+        { "rtpengine", required_argument, 0, 1002 },
         { "limit", required_argument, 0, 'l' },
         { "icase", no_argument, 0, 'i' },
         { "invert", no_argument, 0, 'v' },
@@ -217,6 +224,16 @@ main(int argc, char* argv[])
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h': /* handled before with higher priority options */
+                break;
+            case 1001:
+                media_only = 1;
+                break;
+            case 1002:
+                if (!strchr(optarg, ':')) {
+                    fprintf(stderr, "--rtpengine expects HOST:PORT\n");
+                    return 1;
+                }
+                rtpengine_set_address(optarg);
                 break;
             case 'V': /* handled before with higher priority options */
                 break;
@@ -363,7 +380,8 @@ main(int argc, char* argv[])
         return 0;
     }
 
-    // Initialize SIP Messages Storage
+    // Media-only discovery uses no SIP dialog or SDP.
+    media_inspector_set_standalone(media_only);
     sip_init(limit, only_calls, no_incomplete);
 
     // Set capture options
@@ -489,17 +507,39 @@ main(int argc, char* argv[])
         ncurses_init();
         // This is a blocking call.
         // Create the first panel and wait for user input
-        ui_create_panel(PANEL_CALL_LIST);
+        ui_create_panel(media_only ? PANEL_MEDIA_DASHBOARD : PANEL_CALL_LIST);
         ui_wait_for_input();
     } else {
         setbuf(stdout, NULL);
         while(capture_is_running() && !was_sigterm_received()) {
-            if (!quiet)
-                printf("\rDialog count: %d", sip_calls_count_unrotated());
+            if (!quiet) {
+                if (media_only) {
+                    media_inspector_flow_t snapshot[16];
+                    size_t n, j;
+                    uint64_t packets = 0, loss = 0;
+                    capture_lock();
+                    n = media_inspector_snapshot(snapshot, 16);
+                    for (j = 0; j < n; j++) {
+                        packets += snapshot[j].packets;
+                        loss += media_inspector_estimated_loss(&snapshot[j]);
+                    }
+                    printf("\rMedia flows: %zu (first %zu shown); RTP packets: %llu; estimated gaps: %llu   ",
+                           media_inspector_flow_count(), n,
+                           (unsigned long long)packets, (unsigned long long)loss);
+                    capture_unlock();
+                } else {
+                    printf("\rDialog count: %d", sip_calls_count_unrotated());
+                }
+            }
             usleep(500 * 1000);
         }
-        if (!quiet)
-            printf("\rDialog count: %d\n", sip_calls_count_unrotated());
+        if (!quiet) {
+            if (media_only)
+                printf("\nMedia-only capture complete: %zu flows observed.\n",
+                       media_inspector_flow_count());
+            else
+                printf("\rDialog count: %d\n", sip_calls_count_unrotated());
+        }
     }
 
 

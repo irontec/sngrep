@@ -166,6 +166,8 @@ target_sources( sngrep
 		src/media.c
 		src/setting.c
 		src/rtp.c
+		src/media_inspector.c
+		src/rtpengine.c
 		src/util.c
 		src/hash.c
 		src/vector.c
@@ -183,6 +185,7 @@ target_sources( sngrep
 		src/curses/ui_msg_diff.c
 		src/curses/ui_column_select.c
 		src/curses/ui_settings.c
+		src/curses/ui_media_dashboard.c
 	)
 
 target_include_directories( sngrep PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src )
@@ -287,7 +290,7 @@ message( STATUS "" )
 enable_testing()            # "ctest" will run all tests
 add_custom_target( tests )  # "make tests" will build all tests
 
-foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 014 )
+foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 014 015 )
 	add_executable( test_${i} EXCLUDE_FROM_ALL tests/test_${i}.c )
 	if( i STREQUAL "007" )
 		target_sources( test_${i} PUBLIC src/vector.c src/util.c )
@@ -304,6 +307,9 @@ foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 014 )
 			target_compile_definitions( test_${i} PRIVATE PCRE2_CODE_UNIT_WIDTH=8 )
 			target_link_libraries( test_${i} PkgConfig::LIBPCRE2 )
 		endif()
+	elseif( i STREQUAL "015" )
+		target_sources( test_${i} PUBLIC src/rtpengine.c )
+		target_link_libraries( test_${i} PUBLIC pthread )
 	endif()
 	target_include_directories( test_${i} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} )
 
