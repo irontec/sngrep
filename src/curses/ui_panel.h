@@ -104,6 +104,12 @@ struct ui {
     enum panel_types type;
     //! Flag this panel as redraw required
     bool changed;
+    //! Footer key hints positions, so they can be clicked
+    struct {
+        int start, end, key;
+    } bindings[16];
+    //! Number of footer key hints
+    int bindingcnt;
 
     //! Constructor for this panel
     void (*create)(ui_t *);

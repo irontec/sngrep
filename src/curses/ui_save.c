@@ -273,6 +273,29 @@ save_draw(ui_t *ui)
     return 0;
 }
 
+static int
+save_handle_mouse(ui_t *ui)
+{
+    save_info_t *info = save_info(ui);
+    FIELD *field = ui_mouse_form_field(info->form, NULL);
+
+    if (!field)
+        return KEY_HANDLED;
+
+    set_current_field(info->form, field);
+    switch (field_index(field)) {
+        case FLD_SAVE_PATH:
+        case FLD_SAVE_FILE:
+            return save_handle_key(ui, key_action_key(ACTION_END));
+        case FLD_SAVE_SAVE:
+        case FLD_SAVE_CANCEL:
+            return save_handle_key(ui, key_action_key(ACTION_CONFIRM));
+        default:
+            // Radio buttons
+            return save_handle_key(ui, key_action_key(ACTION_SELECT));
+    }
+}
+
 int
 save_handle_key(ui_t *ui, int key)
 {
@@ -281,6 +304,9 @@ save_handle_key(ui_t *ui, int key)
 
     // Get panel information
     save_info_t *info = save_info(ui);
+
+    if (key == KEY_MOUSE)
+        return save_handle_mouse(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));

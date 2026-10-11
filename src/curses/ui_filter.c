@@ -248,20 +248,11 @@ filter_create(ui_t *ui)
     set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);
     wmove(ui->win, 3, 18);
     curs_set(1);
-
-#ifdef NCURSES_MOUSE_VERSION
-    // Allow clicking fields while this panel is displayed
-    mousemask(BUTTON1_CLICKED, &info->old_mousemask);
-#endif
 }
 
 void
 filter_destroy(ui_t *ui)
 {
-#ifdef NCURSES_MOUSE_VERSION
-    // Restore previous mouse events, so terminal text selection works again
-    mousemask(filter_info(ui)->old_mousemask, NULL);
-#endif
     curs_set(0);
     ui_panel_destroy(ui);
 }
@@ -435,11 +426,8 @@ filter_mouse_field(ui_t *ui)
     int field_id, rows, cols, frow, fcol, nrow, nbuf, label, end;
     filter_info_t *info = filter_info(ui);
 
-    if (getmouse(&event) != OK || !(event.bstate & BUTTON1_CLICKED))
-        return -1;
-
     // Get click position relative to the panel
-    if (!wmouse_trafo(ui->win, &event.y, &event.x, FALSE))
+    if (!ui_mouse_pos(ui->win, &event.y, &event.x))
         return -1;
 
     for (field_id = 0; field_id < FLD_FILTER_COUNT; field_id++) {

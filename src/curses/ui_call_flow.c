@@ -1470,6 +1470,34 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
     return 0;
 }
 
+static int
+call_flow_handle_mouse(ui_t *ui)
+{
+    call_flow_info_t *info = call_flow_info(ui);
+    call_flow_arrow_t *arrow;
+    int y, x, line = 0;
+
+    if (!ui_mouse_pos(info->flow_win, &y, &x))
+        return KEY_HANDLED;
+
+    // Walk displayed arrows the same way they are drawn
+    vector_iter_t it = vector_iterator(info->darrows);
+    vector_iterator_set_current(&it, info->first_arrow - 1);
+    vector_iterator_set_filter(&it, call_flow_arrow_filter);
+    while ((arrow = vector_iterator_next(&it))) {
+        line += call_flow_arrow_height(ui, arrow);
+        if (y < line) {
+            call_flow_move(ui, vector_iterator_current(&it));
+            // Double click shows the message, like Enter
+            if (ui_mouse_double_click())
+                return call_flow_handle_key(ui, key_action_key(ACTION_CONFIRM));
+            break;
+        }
+    }
+
+    return KEY_HANDLED;
+}
+
 int
 call_flow_handle_key(ui_t *ui, int key)
 {
@@ -1483,6 +1511,9 @@ call_flow_handle_key(ui_t *ui, int key)
     // Sanity check, this should not happen
     if (!info)
         return KEY_NOT_HANDLED;
+
+    if (key == KEY_MOUSE)
+        return call_flow_handle_mouse(ui);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
