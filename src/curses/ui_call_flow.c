@@ -1696,6 +1696,7 @@ call_flow_help(ui_t *ui)
     mvwprintw(help_win, 22, 2, "t           Toggle raw preview display");
     mvwprintw(help_win, 23, 2, "T           Restore raw preview size");
     mvwprintw(help_win, 24, 2, "D           Only show SDP messages");
+    mvwprintw(help_win, 25, 2, "F6/v        Open Media Inspector (RTP streams)");
 
     // Press any key to close
     wgetch(help_win);

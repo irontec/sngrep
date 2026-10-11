@@ -329,13 +329,14 @@ call_list_draw_footer(ui_t *ui)
         key_action_key_str(ACTION_DISP_FILTER), "Search",
         key_action_key_str(ACTION_SHOW_FLOW_EX), "Extended",
         key_action_key_str(ACTION_CLEAR_CALLS), "Clear",
+        key_action_key_str(ACTION_MEDIA_DASHBOARD), "Media",
         key_action_key_str(ACTION_SHOW_FILTERS), "Filter",
         key_action_key_str(ACTION_SHOW_SETTINGS), "Settings",
         key_action_key_str(ACTION_CLEAR_CALLS_SOFT), "Clear with Filter",
         key_action_key_str(ACTION_SHOW_COLUMNS), "Columns"
     };
 
-    ui_draw_bindings(ui, keybindings, 23);
+    ui_draw_bindings(ui, keybindings, 25);
 }
 
 void
@@ -950,6 +951,7 @@ call_list_help(ui_t *ui)
     mvwprintw(help_win, 21, 2, "F10/t       Select displayed columns");
     mvwprintw(help_win, 22, 2, "i/I         Set display filter to invite");
     mvwprintw(help_win, 23, 2, "p           Stop/Resume packet capture");
+    mvwprintw(help_win, 24, 2, "F6/v        Open Media Inspector (RTP streams)");
 
     // Press any key to close
     wgetch(help_win);
