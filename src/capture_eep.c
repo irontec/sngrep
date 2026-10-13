@@ -112,18 +112,21 @@ capture_eep_init()
             return 1;
         }
 
-        // Create a socket for a new TCP IPv4 connection
-        eep_cfg.server_sock = socket(AF_INET, SOCK_DGRAM, 0);
-        if (eep_cfg.client_sock < 0) {
+        // Create a socket for the resolved address family and protocol
+        eep_cfg.server_sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (eep_cfg.server_sock < 0) {
             fprintf(stderr, "Error creating server socket: %s\n", strerror(errno));
+            freeaddrinfo(ai);
             return 1;
         }
 
         // Bind that socket to the requested address and port
         if (bind(eep_cfg.server_sock, ai->ai_addr, ai->ai_addrlen) == -1) {
             fprintf(stderr, "Error binding address: %s\n", strerror(errno));
+            freeaddrinfo(ai);
             return 1;
         }
+        freeaddrinfo(ai);
 
         capture_info_t *capinfo;
 
