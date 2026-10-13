@@ -174,12 +174,14 @@ accept_eep_client(void *info)
             // Avoid parsing from multiples sources.
             // Avoid parsing while screen in being redrawn
             capture_lock();
-            if (capture_packet_parse(pkt) != 0) {
+            if (capture_packet_parse(pkt) == 0) {
+                // The parser accepted this packet and retains ownership.
+                // Only accepted packets may be emitted to the capture file.
+                capture_dump_packet(pkt);
+            } else {
+                // Never hand a freed HEP packet to the dumper.
                 packet_destroy(pkt);
             }
-
-            // Store this packets in output file
-            capture_dump_packet(pkt);
 
             capture_unlock();
         }
