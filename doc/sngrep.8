@@ -3,7 +3,7 @@
 .\" Copyright (c) 2013-2026  Ivan Alonso <kaian@irontec.com>
 .\" Copyright (c) 2013-2026  Irontec S.L.
 
-.TH SNGREP 8 "Jul 2026" "sngrep 1.8.4"
+.TH SNGREP 8 "Oct 2026" "sngrep 1.9.0"
 
 .SH NAME
 
@@ -25,7 +25,7 @@ sngrep \- SIP Messages flow viewer
 .I config_file
 .B ] [-F] [-T
 .I text_file
-.B ] [-t] [-R] [-LHE
+.B ] [-t] [-P] [-R] [-LHE
 .I capture_url
 .B ] [
 .I <match expression>
@@ -144,6 +144,10 @@ Save pcap to text file.
 .TP
 .I -t
 Capture and parse RTP telephone-event packets.
+
+.TP
+.I -P
+Decode SIP inside IPsec ESP packets with NULL encryption (transport mode).
 
 .TP
 .I match expression

@@ -122,6 +122,7 @@ call_list_create(ui_t *ui)
     // Apply initial configured filters
     filter_method_from_setting(setting_get_value(SETTING_FILTER_METHODS));
     filter_payload_from_setting(setting_get_value(SETTING_FILTER_PAYLOAD));
+    filter_set_callstates(filter_callstates_from_str(setting_get_value(SETTING_FILTER_CALLSTATES)));
 }
 
 void

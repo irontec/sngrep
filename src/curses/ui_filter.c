@@ -53,9 +53,10 @@ filter_create(ui_t *ui)
 {
     filter_info_t *info;
     const char *method, *payload;
+    unsigned int callstates;
 
     // Cerate a new indow for the panel and form
-    ui_panel_create(ui, 19, 50);
+    ui_panel_create(ui, 26, 50);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(filter_info_t));
@@ -69,18 +70,27 @@ filter_create(ui_t *ui)
     info->fields[FLD_FILTER_SRC] = new_field(1, 18, 5, 18, 0, 0);
     info->fields[FLD_FILTER_DST] = new_field(1, 18, 6, 18, 0, 0);
     info->fields[FLD_FILTER_CALLID] = new_field(1, 28, 7, 18, 0, 0);
-    info->fields[FLD_FILTER_PAYLOAD] = new_field(1, 28, 8, 18, 0, 0);
-    info->fields[FLD_FILTER_REGISTER] = new_field(1, 1, 10, 15, 0, 0);
-    info->fields[FLD_FILTER_INVITE] = new_field(1, 1, 11, 15, 0, 0);
-    info->fields[FLD_FILTER_SUBSCRIBE] = new_field(1, 1, 12, 15, 0, 0);
-    info->fields[FLD_FILTER_NOTIFY] = new_field(1, 1, 13, 15, 0, 0);
-    info->fields[FLD_FILTER_INFO] = new_field(1, 1, 14, 15, 0, 0);
-    info->fields[FLD_FILTER_KDMQ] = new_field(1, 1, 15, 15, 0, 0);
-    info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 10, 37, 0, 0);
-    info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 11, 37, 0, 0);
-    info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 12, 37, 0, 0);
-    info->fields[FLD_FILTER_REFER] = new_field(1, 1, 13, 37, 0, 0);
-    info->fields[FLD_FILTER_UPDATE] = new_field(1, 1, 14, 37, 0, 0);
+    info->fields[FLD_FILTER_XCALLID] = new_field(1, 28, 8, 18, 0, 0);
+    info->fields[FLD_FILTER_PAYLOAD] = new_field(1, 28, 9, 18, 0, 0);
+    info->fields[FLD_FILTER_TRANSPORT] = new_field(1, 28, 10, 18, 0, 0);
+    info->fields[FLD_FILTER_REGISTER] = new_field(1, 1, 12, 15, 0, 0);
+    info->fields[FLD_FILTER_INVITE] = new_field(1, 1, 13, 15, 0, 0);
+    info->fields[FLD_FILTER_SUBSCRIBE] = new_field(1, 1, 14, 15, 0, 0);
+    info->fields[FLD_FILTER_NOTIFY] = new_field(1, 1, 15, 15, 0, 0);
+    info->fields[FLD_FILTER_INFO] = new_field(1, 1, 16, 15, 0, 0);
+    info->fields[FLD_FILTER_KDMQ] = new_field(1, 1, 17, 15, 0, 0);
+    info->fields[FLD_FILTER_OPTIONS] = new_field(1, 1, 12, 37, 0, 0);
+    info->fields[FLD_FILTER_PUBLISH] = new_field(1, 1, 13, 37, 0, 0);
+    info->fields[FLD_FILTER_MESSAGE] = new_field(1, 1, 14, 37, 0, 0);
+    info->fields[FLD_FILTER_REFER] = new_field(1, 1, 15, 37, 0, 0);
+    info->fields[FLD_FILTER_UPDATE] = new_field(1, 1, 16, 37, 0, 0);
+    info->fields[FLD_FILTER_CALLSETUP] = new_field(1, 1, 19, 15, 0, 0);
+    info->fields[FLD_FILTER_INCALL] = new_field(1, 1, 20, 15, 0, 0);
+    info->fields[FLD_FILTER_CANCELLED] = new_field(1, 1, 21, 15, 0, 0);
+    info->fields[FLD_FILTER_REJECTED] = new_field(1, 1, 22, 15, 0, 0);
+    info->fields[FLD_FILTER_DIVERTED] = new_field(1, 1, 19, 37, 0, 0);
+    info->fields[FLD_FILTER_BUSY] = new_field(1, 1, 20, 37, 0, 0);
+    info->fields[FLD_FILTER_COMPLETED] = new_field(1, 1, 21, 37, 0, 0);
     info->fields[FLD_FILTER_FILTER] = new_field(1, 10, ui->height - 2, 11, 0, 0);
     info->fields[FLD_FILTER_CANCEL] = new_field(1, 10, ui->height - 2, 30, 0, 0);
     info->fields[FLD_FILTER_COUNT] = NULL;
@@ -91,7 +101,9 @@ filter_create(ui_t *ui)
     field_opts_off(info->fields[FLD_FILTER_SRC], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_DST], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_CALLID], O_AUTOSKIP | O_STATIC);
+    field_opts_off(info->fields[FLD_FILTER_XCALLID], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_PAYLOAD], O_AUTOSKIP | O_STATIC);
+    field_opts_off(info->fields[FLD_FILTER_TRANSPORT], O_AUTOSKIP | O_STATIC);
     field_opts_off(info->fields[FLD_FILTER_REGISTER], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_INVITE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_SUBSCRIBE], O_AUTOSKIP);
@@ -103,6 +115,13 @@ filter_create(ui_t *ui)
     field_opts_off(info->fields[FLD_FILTER_MESSAGE], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_REFER], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_UPDATE], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_CALLSETUP], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_INCALL], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_CANCELLED], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_REJECTED], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_DIVERTED], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_BUSY], O_AUTOSKIP);
+    field_opts_off(info->fields[FLD_FILTER_COMPLETED], O_AUTOSKIP);
     field_opts_off(info->fields[FLD_FILTER_FILTER], O_EDIT);
     field_opts_off(info->fields[FLD_FILTER_CANCEL], O_EDIT);
 
@@ -116,7 +135,9 @@ filter_create(ui_t *ui)
     set_field_back(info->fields[FLD_FILTER_SRC], A_UNDERLINE);
     set_field_back(info->fields[FLD_FILTER_DST], A_UNDERLINE);
     set_field_back(info->fields[FLD_FILTER_CALLID], A_UNDERLINE);
+    set_field_back(info->fields[FLD_FILTER_XCALLID], A_UNDERLINE);
     set_field_back(info->fields[FLD_FILTER_PAYLOAD], A_UNDERLINE);
+    set_field_back(info->fields[FLD_FILTER_TRANSPORT], A_UNDERLINE);
 
     // Create the form and post it
     info->form = new_form(info->fields);
@@ -129,18 +150,27 @@ filter_create(ui_t *ui)
     mvwprintw(ui->win, 5, 3, "Source:");
     mvwprintw(ui->win, 6, 3, "Destination:");
     mvwprintw(ui->win, 7, 3, "Call-ID:");
-    mvwprintw(ui->win, 8, 3, "Payload:");
-    mvwprintw(ui->win, 10, 3, "REGISTER   [ ]");
-    mvwprintw(ui->win, 11, 3, "INVITE     [ ]");
-    mvwprintw(ui->win, 12, 3, "SUBSCRIBE  [ ]");
-    mvwprintw(ui->win, 13, 3, "NOTIFY     [ ]");
-    mvwprintw(ui->win, 14, 3, "INFO       [ ]");
-    mvwprintw(ui->win, 15, 3, "KDMQ       [ ]");
-    mvwprintw(ui->win, 10, 25, "OPTIONS    [ ]");
-    mvwprintw(ui->win, 11, 25, "PUBLISH    [ ]");
-    mvwprintw(ui->win, 12, 25, "MESSAGE    [ ]");
-    mvwprintw(ui->win, 13, 25, "REFER      [ ]");
-    mvwprintw(ui->win, 14, 25, "UPDATE     [ ]");
+    mvwprintw(ui->win, 8, 3, "X-Call-ID:");
+    mvwprintw(ui->win, 9, 3, "Payload:");
+    mvwprintw(ui->win, 10, 3, "Transport:");
+    mvwprintw(ui->win, 12, 3, "REGISTER   [ ]");
+    mvwprintw(ui->win, 13, 3, "INVITE     [ ]");
+    mvwprintw(ui->win, 14, 3, "SUBSCRIBE  [ ]");
+    mvwprintw(ui->win, 15, 3, "NOTIFY     [ ]");
+    mvwprintw(ui->win, 16, 3, "INFO       [ ]");
+    mvwprintw(ui->win, 17, 3, "KDMQ       [ ]");
+    mvwprintw(ui->win, 12, 25, "OPTIONS    [ ]");
+    mvwprintw(ui->win, 13, 25, "PUBLISH    [ ]");
+    mvwprintw(ui->win, 14, 25, "MESSAGE    [ ]");
+    mvwprintw(ui->win, 15, 25, "REFER      [ ]");
+    mvwprintw(ui->win, 16, 25, "UPDATE     [ ]");
+    mvwprintw(ui->win, 19, 3, "%-10s [ ]", call_state_to_str(SIP_CALLSTATE_CALLSETUP));
+    mvwprintw(ui->win, 20, 3, "%-10s [ ]", call_state_to_str(SIP_CALLSTATE_INCALL));
+    mvwprintw(ui->win, 21, 3, "%-10s [ ]", call_state_to_str(SIP_CALLSTATE_CANCELLED));
+    mvwprintw(ui->win, 22, 3, "%-10s [ ]", call_state_to_str(SIP_CALLSTATE_REJECTED));
+    mvwprintw(ui->win, 19, 25, "%-10s [ ]", call_state_to_str(SIP_CALLSTATE_DIVERTED));
+    mvwprintw(ui->win, 20, 25, "%-10s [ ]", call_state_to_str(SIP_CALLSTATE_BUSY));
+    mvwprintw(ui->win, 21, 25, "%-10s [ ]", call_state_to_str(SIP_CALLSTATE_COMPLETED));
 
     // Get Method filter
     if (!(method = filter_get(FILTER_METHOD)))
@@ -150,13 +180,18 @@ filter_create(ui_t *ui)
     if (!(payload = filter_get(FILTER_PAYLOAD)))
         payload = setting_get_value(SETTING_FILTER_PAYLOAD);
 
+    // Get Call State filter
+    callstates = filter_get_callstates();
+
     // Set Default field values
     set_field_buffer(info->fields[FLD_FILTER_SIPFROM], 0, filter_get(FILTER_SIPFROM));
     set_field_buffer(info->fields[FLD_FILTER_SIPTO], 0, filter_get(FILTER_SIPTO));
     set_field_buffer(info->fields[FLD_FILTER_SRC], 0, filter_get(FILTER_SOURCE));
     set_field_buffer(info->fields[FLD_FILTER_DST], 0, filter_get(FILTER_DESTINATION));
     set_field_buffer(info->fields[FLD_FILTER_CALLID], 0, filter_get(FILTER_CALLID));
+    set_field_buffer(info->fields[FLD_FILTER_XCALLID], 0, filter_get(FILTER_XCALLID));
     set_field_buffer(info->fields[FLD_FILTER_PAYLOAD], 0, filter_get(FILTER_PAYLOAD));
+    set_field_buffer(info->fields[FLD_FILTER_TRANSPORT], 0, filter_get(FILTER_TRANSPORT));
     set_field_buffer(info->fields[FLD_FILTER_REGISTER], 0,
                      strcasestr(method, sip_method_str(SIP_METHOD_REGISTER)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_INVITE], 0,
@@ -179,6 +214,20 @@ filter_create(ui_t *ui)
                      strcasestr(method, sip_method_str(SIP_METHOD_REFER)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_UPDATE], 0,
                      strcasestr(method, sip_method_str(SIP_METHOD_UPDATE)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_CALLSETUP], 0,
+                     (callstates & FILTER_CALLSTATE_BIT(SIP_CALLSTATE_CALLSETUP)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_INCALL], 0,
+                     (callstates & FILTER_CALLSTATE_BIT(SIP_CALLSTATE_INCALL)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_CANCELLED], 0,
+                     (callstates & FILTER_CALLSTATE_BIT(SIP_CALLSTATE_CANCELLED)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_REJECTED], 0,
+                     (callstates & FILTER_CALLSTATE_BIT(SIP_CALLSTATE_REJECTED)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_DIVERTED], 0,
+                     (callstates & FILTER_CALLSTATE_BIT(SIP_CALLSTATE_DIVERTED)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_BUSY], 0,
+                     (callstates & FILTER_CALLSTATE_BIT(SIP_CALLSTATE_BUSY)) ? "*" : "");
+    set_field_buffer(info->fields[FLD_FILTER_COMPLETED], 0,
+                     (callstates & FILTER_CALLSTATE_BIT(SIP_CALLSTATE_COMPLETED)) ? "*" : "");
     set_field_buffer(info->fields[FLD_FILTER_FILTER], 0, "[ Filter ]");
     set_field_buffer(info->fields[FLD_FILTER_CANCEL], 0, "[ Cancel ]");
 
@@ -186,10 +235,14 @@ filter_create(ui_t *ui)
     mvwprintw(ui->win, 1, 18, "Filter options");
     wattron(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
     title_foot_box(ui->panel);
-    mvwhline(ui->win, 9, 1, ACS_HLINE, 49);
-    mvwaddch(ui->win, 9, 0, ACS_LTEE);
-    mvwaddch(ui->win, 9, 49, ACS_RTEE);
+    mvwhline(ui->win, 11, 1, ACS_HLINE, 49);
+    mvwaddch(ui->win, 11, 0, ACS_LTEE);
+    mvwaddch(ui->win, 11, 49, ACS_RTEE);
+    mvwhline(ui->win, 18, 1, ACS_HLINE, 49);
+    mvwaddch(ui->win, 18, 0, ACS_LTEE);
+    mvwaddch(ui->win, 18, 49, ACS_RTEE);
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
+    mvwprintw(ui->win, 18, 3, " Call State ");
 
     // Set default cursor position
     set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);
@@ -255,7 +308,8 @@ filter_handle_key(ui_t *ui, int key)
                 // If this is a normal character on input field, print it
                 if (field_idx == FLD_FILTER_SIPFROM || field_idx == FLD_FILTER_SIPTO
                     || field_idx == FLD_FILTER_SRC || field_idx == FLD_FILTER_DST
-                    || field_idx == FLD_FILTER_CALLID || field_idx == FLD_FILTER_PAYLOAD) {
+                    || field_idx == FLD_FILTER_CALLID || field_idx == FLD_FILTER_XCALLID
+                    || field_idx == FLD_FILTER_PAYLOAD || field_idx == FLD_FILTER_TRANSPORT) {
                     form_driver(info->form, key);
                     break;
                 }
@@ -348,6 +402,13 @@ filter_select_field(ui_t *ui, int field_idx)
         case FLD_FILTER_MESSAGE:
         case FLD_FILTER_REFER:
         case FLD_FILTER_UPDATE:
+        case FLD_FILTER_CALLSETUP:
+        case FLD_FILTER_INCALL:
+        case FLD_FILTER_CANCELLED:
+        case FLD_FILTER_REJECTED:
+        case FLD_FILTER_DIVERTED:
+        case FLD_FILTER_BUSY:
+        case FLD_FILTER_COMPLETED:
             if (field_buffer(info->fields[field_idx], 0)[0] == '*') {
                 form_driver(info->form, REQ_DEL_CHAR);
             } else {
@@ -415,6 +476,7 @@ filter_save_options(ui_t *ui)
     char *expr;
     int field_id;
     char method_expr[256];
+    unsigned int callstates = 0;
 
     // Initialize variables
     memset(method_expr, 0, sizeof(method_expr));
@@ -449,8 +511,14 @@ filter_save_options(ui_t *ui)
             case FLD_FILTER_CALLID:
                 filter_set(FILTER_CALLID, expr);
                 break;
+            case FLD_FILTER_XCALLID:
+                filter_set(FILTER_XCALLID, expr);
+                break;
             case FLD_FILTER_PAYLOAD:
                 filter_set(FILTER_PAYLOAD, expr);
+                break;
+            case FLD_FILTER_TRANSPORT:
+                filter_set(FILTER_TRANSPORT, expr);
                 break;
             case FLD_FILTER_REGISTER:
             case FLD_FILTER_INVITE:
@@ -471,6 +539,16 @@ filter_save_options(ui_t *ui)
                     }
                 }
                 break;
+            case FLD_FILTER_CALLSETUP:
+            case FLD_FILTER_INCALL:
+            case FLD_FILTER_CANCELLED:
+            case FLD_FILTER_REJECTED:
+            case FLD_FILTER_DIVERTED:
+            case FLD_FILTER_BUSY:
+            case FLD_FILTER_COMPLETED:
+                if (!strcmp(field_value, "*"))
+                    callstates |= FILTER_CALLSTATE_BIT(filter_field_callstate(field_id));
+                break;
             default:
                 break;
         }
@@ -478,6 +556,9 @@ filter_save_options(ui_t *ui)
 
     // Set Method filter
     filter_method_from_setting(method_expr);
+
+    // Set Call State filter
+    filter_set_callstates(callstates);
 
     // Force filter evaluation
     filter_reset_calls();
@@ -529,6 +610,29 @@ filter_field_method(int field_id)
     return sip_method_str(method);
 }
 
+int
+filter_field_callstate(int field_id)
+{
+    switch(field_id) {
+        case FLD_FILTER_CALLSETUP:
+            return SIP_CALLSTATE_CALLSETUP;
+        case FLD_FILTER_INCALL:
+            return SIP_CALLSTATE_INCALL;
+        case FLD_FILTER_CANCELLED:
+            return SIP_CALLSTATE_CANCELLED;
+        case FLD_FILTER_REJECTED:
+            return SIP_CALLSTATE_REJECTED;
+        case FLD_FILTER_DIVERTED:
+            return SIP_CALLSTATE_DIVERTED;
+        case FLD_FILTER_BUSY:
+            return SIP_CALLSTATE_BUSY;
+        case FLD_FILTER_COMPLETED:
+            return SIP_CALLSTATE_COMPLETED;
+    }
+
+    return 0;
+}
+
 void
 filter_method_from_setting(const char *value)
 {
@@ -559,4 +663,3 @@ filter_payload_from_setting(const char *value)
 {
     if (value) filter_set(FILTER_PAYLOAD, value);
 }
-

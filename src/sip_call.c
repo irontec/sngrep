@@ -32,6 +32,7 @@
 #include "sip_call.h"
 #include "sip.h"
 #include "setting.h"
+#include "filter.h"
 
 sip_call_t *
 call_create(char *callid, char *xcallid)
@@ -106,6 +107,10 @@ call_add_message(sip_call_t *call, sip_msg_t *msg)
     msg->call = call;
     // Put this msg at the end of the msg list
     msg->index = vector_append(call->msgs, msg);
+    // Only mutable filters need their cached result invalidated when a new
+    // message arrives. The other dedicated filters read the first message.
+    if (filter_get(FILTER_PAYLOAD) || filter_get(FILTER_CALL_LIST))
+        call->filtered = -1;
     // Flag this call as changed
     call->changed = true;
 }
@@ -196,10 +201,12 @@ call_msg_with_media(sip_call_t *call, address_t dst)
 void
 call_update_state(sip_call_t *call, sip_msg_t *msg)
 {
-    int reqresp;
+    int reqresp, oldstate;
 
     if (!call_is_invite(call))
         return;
+
+    oldstate = call->state;
 
     // Get current message Method / Response Code
     reqresp = msg->reqresp;
@@ -242,6 +249,9 @@ call_update_state(sip_call_t *call, sip_msg_t *msg)
             call->state = SIP_CALLSTATE_CALLSETUP;
         }
     }
+
+    if (call->state != oldstate)
+        filter_call_state_changed(call);
 }
 
 const char *
