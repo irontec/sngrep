@@ -73,6 +73,14 @@ int
 ncurses_init();
 
 /**
+ * @brief Initialize color pairs from the theme and background settings
+ *
+ * Can be called again at any time to apply a new theme.
+ */
+void
+ncurses_init_colors();
+
+/**
  * @brief Stops ncurses mode
  *
  * This functions will deinitialize ncurse mode

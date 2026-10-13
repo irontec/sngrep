@@ -55,7 +55,8 @@ settings_category_t categories[] = {
 };
 
 settings_entry_t entries[] = {
-    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_BACKGROUND,         SETTING_BACKGROUND,         "Background * .............................." },
+    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_BACKGROUND,         SETTING_BACKGROUND,         "Background ................................" },
+    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_THEME,              SETTING_THEME,              "Color theme ..............................." },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX,             SETTING_SYNTAX,             "SIP message syntax ........................" },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX_TAG,         SETTING_SYNTAX_TAG,         "SIP tag syntax ............................" },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_SYNTAX_BRANCH,      SETTING_SYNTAX_BRANCH,      "SIP branch syntax ........................." },
@@ -439,6 +440,9 @@ ui_settings_update_settings(ui_t *ui)
             setting_set_value(entry->setting_id, field_value);
         }
     }
+
+    // Apply theme and background changes right away
+    ncurses_init_colors();
 
     return 0;
 }

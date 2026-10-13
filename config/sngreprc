@@ -7,6 +7,10 @@
 ##-----------------------------------------------------------------------------
 ## Enable color on or off
 # set color off
+## Color theme: classic, modern, professional or simple (themes need 256
+## colors and use the terminal background)
+# set theme modern
+
 ## Use default foreground and background colors of your terminal
 # set background default
 ## Disable syntax highlighting
