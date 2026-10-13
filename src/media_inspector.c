@@ -1,19 +1,37 @@
-/*
- * sngrep - SIP Messages flow viewer
- * Copyright (C) 2026 contributors
- * SPDX-License-Identifier: GPL-3.0-or-later
+/**************************************************************************
+ **
+ ** sngrep - SIP Messages flow viewer
+ **
+ ** Copyright (C) 2026 sngrep contributors
+ **
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
+ **
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
+ **
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **
+ ****************************************************************************/
+/**
+ * @file media_inspector.c
+ *
+ * @brief SIP-independent RTP stream tracking and statistics
  */
 #include "config.h"
 #include "media_inspector.h"
+#include "capture.h"
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/time.h>
 
-/*
- * Header-only, bounded-memory RTP monitoring.  Unlike the SIP/SDP-derived
- * streams in rtp.c, these entries do not require a SIP dialog.  No RTP audio
- * payload is copied or retained.
- */
+// Bounded header-only RTP monitoring, independent of SIP/SDP.
+// RTP audio payload is never retained.
 static media_inspector_flow_t flows[MEDIA_INSPECTOR_MAX_FLOWS];
 static size_t flow_count;
 static int enabled;
@@ -40,12 +58,12 @@ time_us(struct timeval tv)
 static uint32_t
 static_clock(uint8_t pt)
 {
-    /* Dynamic mappings require SDP/rtpengine metadata: unknown => no ms. */
+    // Dynamic mappings require external SDP metadata for a clock rate.
     switch (pt) {
     case 0: case 3: case 4: case 5: case 6: case 7:
     case 8: case 12: case 13: case 15: case 18:
         return 8000;
-    case 9: return 8000; /* G.722 RTP clock, not codec sample rate */
+    case 9: return 8000; // G.722 RTP clock, not codec sample rate
     case 10: case 11: return 44100;
     case 14: case 25: case 26: case 28:
     case 31: case 32: case 33: case 34: return 90000;
@@ -99,6 +117,23 @@ media_inspector_snapshot(media_inspector_flow_t *dst, size_t capacity)
     return n;
 }
 
+media_inspector_stats_t
+media_inspector_snapshot_stats(void)
+{
+    media_inspector_stats_t stats = {0};
+    size_t i;
+
+    // Aggregate the full bounded table while the capture lock is held.
+    capture_lock();
+    stats.count = flow_count;
+    for (i = 0; i < flow_count; i++) {
+        stats.packets += flows[i].packets;
+        stats.loss += media_inspector_estimated_loss(&flows[i]);
+    }
+    capture_unlock();
+    return stats;
+}
+
 static media_inspector_flow_t *
 find_flow(packet_t *packet, uint32_t ssrc, uint64_t now)
 {
@@ -115,7 +150,7 @@ find_flow(packet_t *packet, uint32_t ssrc, uint64_t now)
             oldest = i;
     }
 
-    /* Avoid unbounded memory growth on busy media-only hosts. */
+    // Keep memory bounded by evicting the least recently observed flow.
     if (flow_count < MEDIA_INSPECTOR_MAX_FLOWS)
         f = &flows[flow_count++];
     else
@@ -150,7 +185,7 @@ media_inspector_ingest(packet_t *packet)
     if (!p || len < 12 || (p[0] >> 6) != 2)
         return 0;
 
-    /* RTCP and ambiguous payloads are excluded from RTP-only estimates. */
+    // Exclude RTCP and ambiguous payloads from RTP-only estimates.
     if (p[1] >= 200 && p[1] <= 211 &&
         len >= 4 && ((uint32_t)read16(p + 2) + 1) * 4 <= len)
         return 0;
@@ -199,7 +234,7 @@ media_inspector_ingest(packet_t *packet)
         return 1;
     }
 
-    /* Recent 64-packet bitmap handles duplicates, reordering and wrap. */
+    // The 64-packet bitmap tracks recent duplicates and reordering.
     delta = (int16_t)(seq - (uint16_t)f->max_seq);
     if (delta > 0) {
         f->seen_recent = delta >= 64 ? 1 : (f->seen_recent << delta) | 1;
@@ -214,10 +249,10 @@ media_inspector_ingest(packet_t *packet)
             f->seen_recent |= UINT64_C(1) << -delta;
             f->unique++;
         }
-        /* Late samples outside the recent window are not counted as unique. */
+        // Late samples outside this window are not counted as unique.
     }
 
-    /* RFC 3550 interarrival jitter; units can be converted only for known PTs. */
+    // RFC 3550 jitter is convertible to ms only for known clock rates.
     if (f->clock_rate != clock || !clock) {
         f->jitter_available = 0;
     } else {
