@@ -1083,10 +1083,8 @@ capture_packet_parse(packet_t *packet)
     // Media structure for RTP packets
     rtp_stream_t *stream;
 
-    /*
-     * Standalone media monitoring must not depend on SIP, SDP or call storage.
-     * Consume headers only and let the capture callback free the packet.
-     */
+    // Media-only parsing is independent of SIP, SDP and call storage.
+    // The capture callback frees each inspected packet.
     if (media_inspector_enabled()) {
         if (media_inspector_ingest(packet)) {
             packet_set_type(packet, PACKET_RTP);
