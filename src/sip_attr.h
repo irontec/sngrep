@@ -87,6 +87,8 @@ enum sip_attr_id {
     SIP_ATTR_WARNING,
     //! SIP Contact header
     SIP_ATTR_CONTACT,
+    //! Negotiated audio codec from a successful SDP answer
+    SIP_ATTR_CODEC,
     //! SIP Attribute count
     SIP_ATTR_COUNT
 };

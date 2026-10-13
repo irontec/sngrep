@@ -123,6 +123,24 @@ sip_transport_str(int transport)
     return "UDP";
 }
 
+const char *
+media_get_format(sdp_media_t *media, uint32_t code)
+{
+    return "Unassigned";
+}
+
+const char *
+rtp_get_standard_name(uint32_t code)
+{
+    return NULL;
+}
+
+int
+media_get_format_code(sdp_media_t *media)
+{
+    return 0;
+}
+
 vector_iter_t
 sip_calls_iterator()
 {

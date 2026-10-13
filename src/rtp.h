@@ -417,6 +417,9 @@ stream_get_format(rtp_stream_t *stream);
 const char *
 rtp_get_standard_format(uint32_t code);
 
+const char *
+rtp_get_standard_name(uint32_t code);
+
 rtp_stream_t *
 rtp_check_packet(packet_t *packet);
 

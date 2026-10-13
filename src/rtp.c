@@ -535,6 +535,20 @@ rtp_get_standard_format(uint32_t code)
     return NULL;
 }
 
+const char *
+rtp_get_standard_name(uint32_t code)
+{
+    int i;
+
+    // Encoding name from RTP codec id
+    for (i = 0; encodings[i].name; i++) {
+        if (encodings[i].id == code)
+            return encodings[i].name;
+    }
+
+    return NULL;
+}
+
 rtp_stream_t *
 rtp_check_packet(packet_t *packet)
 {

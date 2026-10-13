@@ -86,6 +86,7 @@
 ##    - state
 ##    - convdur
 ##    - totaldur
+##    - codec
 ##
 ## Examples:
 # set cl.column0 sipfrom
