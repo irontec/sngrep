@@ -864,6 +864,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
     //! EEP client data
     struct sockaddr_storage eep_client;
     socklen_t eep_client_len=sizeof(eep_client);
+    ssize_t received;
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
@@ -874,9 +875,13 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     if(!pkt) {
         /* Receive EEP generic header */
-        if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, (struct sockaddr*)&eep_client, &eep_client_len) == -1)
+        received = recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, (struct sockaddr*)&eep_client, &eep_client_len);
+        if (received < (ssize_t) sizeof(hep_ctrl_t))
             return NULL;
+        size = received;
     } else {
+        if (size < sizeof(hep_ctrl_t) || size > MAX_CAPTURE_LEN)
+            return NULL;
         memcpy(&buffer, pkt, size);
     }
 
@@ -894,11 +899,11 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
         return NULL;
 
     total_len = ntohs(hg.header.length);
-    if (total_len >= MAX_CAPTURE_LEN)
+    if (total_len >= MAX_CAPTURE_LEN || total_len > size)
         return NULL;
     pos = sizeof(hep_ctrl_t);
 
-    while (pos < total_len) {
+    while (pos + sizeof(hep_chunk_t) <= total_len) {
 
         hep_chunk_t *chunk = (struct hep_chunk*) (buffer + pos);
         int chunk_vendor = ntohs(chunk->vendor_id);
@@ -906,7 +911,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
         int chunk_len = ntohs(chunk->length);
 
         /* Bad length, drop packet */
-        if (chunk_len == 0) {
+        if (chunk_len < (int) sizeof(hep_chunk_t) || pos + chunk_len > total_len) {
             return NULL;
         }
 
@@ -978,7 +983,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
                 }
                 if (pos+sizeof(hep_chunk_t)+password_len >= MAX_CAPTURE_LEN)
                     return NULL;
-                if (!(password = sng_malloc(password_len)))
+                if (!(password = sng_malloc(password_len + 1)))
                     return NULL;
                 memcpy(password, buffer + pos + sizeof(hep_chunk_t), password_len);
                 break;
