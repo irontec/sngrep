@@ -1,10 +1,30 @@
-/*
- * sngrep - SIP Messages flow viewer
- * Copyright (C) 2026 contributors
- * SPDX-License-Identifier: GPL-3.0-or-later
+/**************************************************************************
+ **
+ ** sngrep - SIP Messages flow viewer
+ **
+ ** Copyright (C) 2026 sngrep contributors
+ **
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
+ **
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
+ **
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **
+ ****************************************************************************/
+/**
+ * @file media_inspector.h
+ *
+ * @brief Public API for standalone RTP stream inspection
  */
-#ifndef SNGREP_MEDIA_INSPECTOR_H
-#define SNGREP_MEDIA_INSPECTOR_H
+#ifndef SNGREP_MEDIA_INSPECTOR_H_INCLUDED
+#define SNGREP_MEDIA_INSPECTOR_H_INCLUDED
 
 #include <stddef.h>
 #include <stdint.h>
@@ -13,7 +33,16 @@
 
 #define MEDIA_INSPECTOR_MAX_FLOWS 2048
 
-/* One unidirectional RTP flow observed on a capture interface. */
+/**
+ * @brief Aggregate counters of all currently retained RTP flows.
+ */
+typedef struct media_inspector_stats {
+    size_t count;        //!< Number of retained flow entries.
+    uint64_t packets;    //!< Observed RTP packets across the table.
+    uint64_t loss;       //!< Estimated sequence gaps across the table.
+} media_inspector_stats_t;
+
+// A unidirectional RTP flow observed at the capture point.
 typedef struct media_inspector_flow {
     address_t src, dst;
     uint32_t ssrc;
@@ -28,14 +57,60 @@ typedef struct media_inspector_flow {
     int initialized;
 } media_inspector_flow_t;
 
-/* All functions are called under the capture lock in capture/UI code. */
+/**
+ * @brief Enable or disable passive RTP inspection.
+ * @param enabled Non-zero enables media-only mode, zero disables it.
+ */
 void media_inspector_set_enabled(int enabled);
+
+/**
+ * @brief Check whether media-only inspection is enabled.
+ * @return Non-zero when enabled, zero otherwise.
+ */
 int media_inspector_enabled(void);
+
+/**
+ * @brief Reset the retained flow table.
+ * @note Caller must hold the capture lock if capture is active.
+ */
 void media_inspector_reset(void);
-/* Returns 1 for a validated, aggregated RTP packet; 0 otherwise. */
+
+/**
+ * @brief Validate and aggregate one RTP packet without retaining its payload.
+ * @param packet Packet received from the capture pipeline.
+ * @return 1 for an accepted RTP packet, zero otherwise.
+ * @note Caller must hold the capture lock.
+ */
 int media_inspector_ingest(packet_t *packet);
+
+/**
+ * @brief Copy up to capacity tracked flows into the output array.
+ * @param out Destination array, or NULL to request a limited count.
+ * @param capacity Maximum number of flows to copy.
+ * @return Minimum of retained flow count and capacity.
+ * @note Caller must hold the capture lock.
+ */
 size_t media_inspector_snapshot(media_inspector_flow_t *out, size_t capacity);
+
+/**
+ * @brief Return the number of retained RTP flows.
+ * @return Active flow count, at most MEDIA_INSPECTOR_MAX_FLOWS.
+ * @note Caller must hold the capture lock.
+ */
 size_t media_inspector_flow_count(void);
+
+/**
+ * @brief Estimate missing RTP sequence numbers for a flow.
+ * @param flow Flow to inspect, or NULL.
+ * @return Estimated sequence gaps, or zero for invalid flow.
+ */
 uint64_t media_inspector_estimated_loss(const media_inspector_flow_t *flow);
 
-#endif
+/**
+ * @brief Snapshot total packets and estimated gaps across all retained flows.
+ * @return Aggregate flow count, RTP packet count, and estimated loss.
+ * @note Acquires/releases the capture lock internally.
+ */
+media_inspector_stats_t media_inspector_snapshot_stats(void);
+
+#endif /* SNGREP_MEDIA_INSPECTOR_H_INCLUDED */
