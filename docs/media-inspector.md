@@ -7,14 +7,18 @@ hosts, such as RTPengine nodes. It does not require SIP or SDP.
 
 ```sh
 # Live interface, headless one-line summary.
-sudo sngrep --media-only -d eth0 udp
+sudo sngrep -m -d eth0 udp
 
 # Offline packet capture. Prints the observed flow count when complete.
-sngrep --media-only -I media.pcap
+sngrep -m -I media.pcap
 
 # Save matching captured RTP frames while inspecting.
-sudo sngrep --media-only -d eth0 -O media-only.pcap udp
+sudo sngrep -m -d eth0 -O media-only.pcap udp
 ```
+
+Use either `-m` or `--media-only` to inspect RTP without SIP/SDP. The
+headless packet and estimated-gap totals include every retained flow (up to
+2048), not only a limited display snapshot.
 
 This initial PR provides the capture/aggregation foundation. Its companion
 TUI PR adds the dashboard and a standalone `F6` switch. No RTPengine session
