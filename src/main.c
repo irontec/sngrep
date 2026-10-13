@@ -54,7 +54,7 @@
 void
 usage()
 {
-    printf("Usage: %s [-hVcivNqrD] [-IO pcap_dump] [-d dev] [-l limit] [-B buffer]"
+    printf("Usage: %s [-hVcivNqrmD] [-IO pcap_dump] [-d dev] [-l limit] [-B buffer]"
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            " [-k keyfile]"
 #endif
@@ -70,7 +70,7 @@ usage()
            "    -B --buffer\t\t Set pcap buffer size in MB (default: 2)\n"
            "    -c --calls\t\t Only display dialogs starting with INVITE\n"
            "    -r --rtp		 Capture RTP packets payload\n"
-           "       --media-only	 Inspect RTP streams without SIP/SDP (headless)\n"
+           "    -m --media-only	 Inspect RTP streams without SIP/SDP (headless)\n"
            "    -P --esp\t\t Decode SIP inside IPsec ESP with NULL encryption\n"
            "    -l --limit\t\t Set capture limit to N dialogs\n"
            "    -i --icase\t\t Make <match expression> case insensitive\n"
@@ -160,7 +160,7 @@ main(int argc, char* argv[])
 #endif
         { "calls", no_argument, 0, 'c' },
         { "rtp", no_argument, 0, 'r' },
-        { "media-only", no_argument, 0, 1001 },
+        { "media-only", no_argument, 0, 'm' },
         { "limit", required_argument, 0, 'l' },
         { "icase", no_argument, 0, 'i' },
         { "invert", no_argument, 0, 'v' },
@@ -182,7 +182,7 @@ main(int argc, char* argv[])
 
     // Parse command line arguments that have high priority
     opterr = 0;
-    char *options = "hVd:I:O:B:pqtW:k:crl:ivNqDL:H:ERf:FT:tP";
+    char *options = "hVd:I:O:B:pqtW:k:crml:ivNqDL:H:ERf:FT:tP";
     while ((opt = getopt_long(argc, argv, options, long_options, &idx)) != -1) {
         switch (opt) {
             case 'h':
@@ -222,7 +222,7 @@ main(int argc, char* argv[])
         switch (opt) {
             case 'h': /* handled before with higher priority options */
                 break;
-            case 1001:
+            case 'm':
                 media_only = 1;
                 no_interface = 1;
                 break;
@@ -505,19 +505,10 @@ main(int argc, char* argv[])
         while(capture_is_running() && !was_sigterm_received()) {
             if (!quiet) {
                 if (media_only) {
-                    media_inspector_flow_t snapshot[16];
-                    size_t n, j;
-                    uint64_t packets = 0, loss = 0;
-                    capture_lock();
-                    n = media_inspector_snapshot(snapshot, 16);
-                    for (j = 0; j < n; j++) {
-                        packets += snapshot[j].packets;
-                        loss += media_inspector_estimated_loss(&snapshot[j]);
-                    }
-                    printf("\rMedia flows: %zu (first %zu shown); RTP packets: %llu; estimated gaps: %llu   ",
-                           media_inspector_flow_count(), n,
-                           (unsigned long long)packets, (unsigned long long)loss);
-                    capture_unlock();
+                    media_inspector_stats_t stats = media_inspector_snapshot_stats();
+                    printf("\rMedia flows: %zu; RTP packets: %llu; estimated gaps: %llu   ",
+                           stats.count, (unsigned long long)stats.packets,
+                           (unsigned long long)stats.loss);
                 } else {
                     printf("\rDialog count: %d", sip_calls_count_unrotated());
                 }
@@ -525,9 +516,10 @@ main(int argc, char* argv[])
             usleep(500 * 1000);
         }
         if (!quiet) {
-            if (media_only)
-                printf("\nMedia-only capture complete: %zu flows observed.\n",
-                       media_inspector_flow_count());
+            if (media_only) {
+                media_inspector_stats_t stats = media_inspector_snapshot_stats();
+                printf("\nMedia-only capture complete: %zu flows observed.\n", stats.count);
+            }
             else
                 printf("\rDialog count: %d\n", sip_calls_count_unrotated());
         }
