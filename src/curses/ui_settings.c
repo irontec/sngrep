@@ -87,6 +87,7 @@ settings_entry_t entries[] = {
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_ID,        SETTING_EEP_SEND_ID,        "EEP send capture id ......................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN,         SETTING_EEP_LISTEN,         "Listen for eep packets ...................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_VER,     SETTING_EEP_LISTEN_VER,     "Listen EEP version  ......................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PROTO,   SETTING_EEP_LISTEN_PROTO,   "Listen EEP protocol ......................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_ADDR,    SETTING_EEP_LISTEN_ADDR,    "Listen EEP packet address ................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PORT,    SETTING_EEP_LISTEN_PORT,    "Listen EEP packet port ...................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PASS,    SETTING_EEP_LISTEN_PASS,    "EEP server password ......................." },

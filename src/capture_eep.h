@@ -67,6 +67,16 @@ enum
 };
 
 
+//! Max number of simultaneous HEP TCP clients
+#define EEP_TCP_MAX_CLIENTS 64
+
+//! Pending data of a HEP TCP client until a full HEP3 packet is received
+typedef struct eep_tcp_client
+{
+    uint32_t len;
+    u_char buffer[MAX_CAPTURE_LEN];
+} eep_tcp_client_t;
+
 //! Shorter declaration of capture_eep_config structure
 typedef struct capture_eep_config  capture_eep_config_t;
 
@@ -97,6 +107,8 @@ struct capture_eep_config
     const char *capt_srv_port;
     //! Server password to authenticate incoming connections
     const char *capt_srv_password;
+    //! Receive EEP data using TCP instead of UDP
+    bool capt_srv_tcp;
     //! Server thread to parse incoming data
     pthread_t server_thread;
 };

@@ -61,6 +61,7 @@ typedef struct setting_option setting_t;
 #define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", "compressed", NULL}
 #define SETTING_ENUM_STORAGE     (const char *[]){ "none", "memory", NULL }
 #define SETTING_ENUM_HEPVERSION  (const char *[]){ "2", "3", NULL }
+#define SETTING_ENUM_HEPPROTO    (const char *[]){ "udp", "tcp", NULL }
 #define SETTING_ENUM_MEDIA       (const char *[]){ "off", "on", "active", NULL }
 
 //! Other useful defines
@@ -135,6 +136,7 @@ enum setting_id {
     SETTING_EEP_SEND_ID,
     SETTING_EEP_LISTEN,
     SETTING_EEP_LISTEN_VER,
+    SETTING_EEP_LISTEN_PROTO,
     SETTING_EEP_LISTEN_ADDR,
     SETTING_EEP_LISTEN_PORT,
     SETTING_EEP_LISTEN_PASS,

@@ -85,7 +85,7 @@ usage()
            "    -t --telephone-event Capture and parse RTP telephone-event packets\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
-           "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
+           "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX or tcp:X.X.X.X:XXXX)\n"
            "    -E --eep-parse\t Enable EEP parsing in captured packets\n"
 #endif
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)

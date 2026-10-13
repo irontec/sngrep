@@ -98,6 +98,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_EEP_SEND_ID,        "eep.send.id",        SETTING_FMT_NUMBER,  "2002",      NULL },
     { SETTING_EEP_LISTEN,         "eep.listen",         SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_EEP_LISTEN_VER,     "eep.listen.version", SETTING_FMT_ENUM,    "3",         SETTING_ENUM_HEPVERSION },
+    { SETTING_EEP_LISTEN_PROTO,   "eep.listen.proto",   SETTING_FMT_ENUM,    "udp",       SETTING_ENUM_HEPPROTO },
     { SETTING_EEP_LISTEN_ADDR,    "eep.listen.address", SETTING_FMT_STRING,  "0.0.0.0",   NULL },
     { SETTING_EEP_LISTEN_PORT,    "eep.listen.port",    SETTING_FMT_NUMBER,  "9060",      NULL },
     { SETTING_EEP_LISTEN_PASS,    "eep.listen.pass",    SETTING_FMT_STRING,  "",          NULL },
