@@ -233,6 +233,7 @@ include( GNUInstallDirs )
 install( TARGETS sngrep RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )
 install( FILES config/sngreprc DESTINATION ${CMAKE_INSTALL_SYSCONFDIR} )
 install( FILES doc/sngrep.8 DESTINATION ${CMAKE_INSTALL_MANDIR}/man8 )
+install( FILES doc/sngreprc.5 DESTINATION ${CMAKE_INSTALL_MANDIR}/man5 )
 install( FILES README TODO COPYING ChangeLog DESTINATION "${CMAKE_INSTALL_DOCDIR}" )
 
 ######################################################################
