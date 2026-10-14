@@ -373,6 +373,8 @@ main(int argc, char* argv[])
 
     // Media-only discovery uses no SIP dialog or SDP.
     media_inspector_set_enabled(media_only);
+
+    // Initialize SIP Messages Storage
     sip_init(limit, only_calls, no_incomplete);
 
     // Set capture options
@@ -519,9 +521,9 @@ main(int argc, char* argv[])
             if (media_only) {
                 media_inspector_stats_t stats = media_inspector_snapshot_stats();
                 printf("\nMedia-only capture complete: %zu flows observed.\n", stats.count);
-            }
-            else
+            } else {
                 printf("\rDialog count: %d\n", sip_calls_count_unrotated());
+            }
         }
     }
 

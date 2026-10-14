@@ -2,7 +2,8 @@
  **
  ** sngrep - SIP Messages flow viewer
  **
- ** Copyright (C) 2026 sngrep contributors
+ ** Copyright (C) 2013-2026 Ivan Alonso (Kaian)
+ ** Copyright (C) 2013-2026 Irontec SL. All rights reserved.
  **
  ** This program is free software: you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License as published by
@@ -20,9 +21,11 @@
  ****************************************************************************/
 /**
  * @file media_inspector.c
+ * @author Mohammad Bagher Amini <darwvin@hotmail.com>
  *
  * @brief SIP-independent RTP stream tracking and statistics
  */
+
 #include "config.h"
 #include "media_inspector.h"
 #include "capture.h"
@@ -60,16 +63,39 @@ static_clock(uint8_t pt)
 {
     // Dynamic mappings require external SDP metadata for a clock rate.
     switch (pt) {
-    case 0: case 3: case 4: case 5: case 6: case 7:
-    case 8: case 12: case 13: case 15: case 18:
-        return 8000;
-    case 9: return 8000; // G.722 RTP clock, not codec sample rate
-    case 10: case 11: return 44100;
-    case 14: case 25: case 26: case 28:
-    case 31: case 32: case 33: case 34: return 90000;
-    case 16: return 11025;
-    case 17: return 22050;
-    default: return 0;
+        case 0:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 12:
+        case 13:
+        case 15:
+        case 18:
+            return 8000;
+        case 9:
+            // G.722 RTP clock, not codec sample rate
+            return 8000;
+        case 10:
+        case 11:
+            return 44100;
+        case 14:
+        case 25:
+        case 26:
+        case 28:
+        case 31:
+        case 32:
+        case 33:
+        case 34:
+            return 90000;
+        case 16:
+            return 11025;
+        case 17:
+            return 22050;
+        default:
+            return 0;
     }
 }
 
@@ -99,21 +125,21 @@ media_inspector_flow_count(void)
 }
 
 uint64_t
-media_inspector_estimated_loss(const media_inspector_flow_t *f)
+media_inspector_estimated_loss(const media_inspector_flow_t *flow)
 {
     uint64_t expected;
-    if (!f || !f->initialized)
+    if (!flow || !flow->initialized)
         return 0;
-    expected = (uint64_t)f->max_seq - f->first_seq + 1;
-    return expected > f->unique ? expected - f->unique : 0;
+    expected = (uint64_t)flow->max_seq - flow->first_seq + 1;
+    return expected > flow->unique ? expected - flow->unique : 0;
 }
 
 size_t
-media_inspector_snapshot(media_inspector_flow_t *dst, size_t capacity)
+media_inspector_snapshot(media_inspector_flow_t *out, size_t capacity)
 {
     size_t n = flow_count < capacity ? flow_count : capacity;
-    if (dst && n)
-        memcpy(dst, flows, n * sizeof(*dst));
+    if (out && n)
+        memcpy(out, flows, n * sizeof(*out));
     return n;
 }
 
