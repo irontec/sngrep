@@ -35,12 +35,15 @@
 /**
  * Ui Structure definition for Settings panel
  */
+static int settings_handle_mouse(ui_t *ui, int key);
+
 ui_t ui_settings = {
     .type = PANEL_SETTINGS,
     .panel = NULL,
     .create = settings_create,
     .draw = settings_draw,
     .handle_key = settings_handle_key,
+    .handle_mouse = settings_handle_mouse,
     .destroy = settings_destroy
 };
 
@@ -270,8 +273,9 @@ settings_draw(ui_t *ui)
 }
 
 static int
-settings_handle_mouse(ui_t *ui)
+settings_handle_mouse(ui_t *ui, int key)
 {
+    (void) key;
     settings_info_t *info = settings_info(ui);
     settings_entry_t *entry;
     FIELD *field;
@@ -322,9 +326,6 @@ settings_handle_key(ui_t *ui, int key)
 
     // Get panel information
     settings_info_t *info = settings_info(ui);
-
-    if (key == KEY_MOUSE)
-        return settings_handle_mouse(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->active_form));
