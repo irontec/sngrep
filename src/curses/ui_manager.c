@@ -244,8 +244,11 @@ ui_wait_for_input()
         // Handle received key
         int hld = KEY_NOT_HANDLED;
         while (hld != KEY_HANDLED) {
-            // Check if current panel has custom bindings for that key
-            hld = ui_handle_key(ui, c);
+            // Mouse click handlers are distinct from keyboard handlers.
+            if (c == KEY_MOUSE)
+                hld = ui_handle_mouse(ui, c);
+            else
+                hld = ui_handle_key(ui, c);
 
             if (hld == KEY_HANDLED) {
                 // Panel handled this key
