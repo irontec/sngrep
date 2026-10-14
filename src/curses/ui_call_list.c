@@ -49,6 +49,8 @@
 /**
  * Ui Structure definition for Call List panel
  */
+static int call_list_handle_mouse(ui_t *ui, int key);
+
 ui_t ui_call_list = {
     .type = PANEL_CALL_LIST,
     .create = call_list_create,
@@ -57,6 +59,7 @@ ui_t ui_call_list = {
     .draw = call_list_draw,
     .resize = call_list_resize,
     .handle_key = call_list_handle_key,
+    .handle_mouse = call_list_handle_mouse,
     .help = call_list_help,
 };
 
@@ -547,8 +550,9 @@ call_list_search_text(ui_t *ui, sip_call_t *call, char *text, size_t textlen)
 }
 
 static int
-call_list_handle_mouse(ui_t *ui)
+call_list_handle_mouse(ui_t *ui, int key)
 {
+    (void) key;
     call_list_info_t *info = call_list_info(ui);
     int y, x, row;
 
@@ -611,9 +615,6 @@ call_list_handle_key(ui_t *ui, int key)
     // Sanity check, this should not happen
     if (!(info  = call_list_info(ui)))
         return -1;
-
-    if (key == KEY_MOUSE)
-        return call_list_handle_mouse(ui);
 
     // Handle form key
     if (info->form_active)
