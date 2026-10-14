@@ -1,0 +1,206 @@
+.\" sngreprc(5) - sngrep configuration file
+.TH SNGREPRC 5 "October 2026" "sngrep" "File Formats"
+.SH NAME
+sngreprc \- configuration file for the sngrep SIP call-flow viewer
+.SH DESCRIPTION
+.B sngreprc
+stores optional defaults for capture, SIP parsing, terminal displays,
+filters, and the packet export dialog.
+A configuration file may contain comments beginning with
+.B #
+and assignments of the form:
+.PP
+.RS
+.nf
+set setting.name value
+.fi
+.RE
+.PP
+The shipped example is
+.BR /etc/sngreprc ,
+or a copy of the source file
+.BR config/sngreprc .
+Settings are also available to inspect with
+.BR "sngrep -D" .
+Some settings depend on optional build features.
+.SH FILES
+.TP
+.B /etc/sngreprc
+System-wide defaults.
+.TP
+.B /usr/local/etc/sngreprc
+Alternative system-wide location.
+.TP
+.B ~/.sngreprc
+Per-user configuration.
+.SH CAPTURE SETTINGS
+.TP
+.B capture.device
+Capture device, a comma-separated device list, or
+.BR any .
+Example:
+.B "set capture.device eth0"
+.TP
+.B capture.limit
+Maximum stored call dialogs.
+.TP
+.B capture.buffer
+Capture ring buffer size in megabytes.
+.TP
+.B capture.outfile
+Default PCAP dump filename.
+.TP
+.B capture.rtp
+Enable RTP capture; off by default.
+.TP
+.B capture.esp
+Decode SIP within IPsec ESP with NULL encryption.
+.TP
+.B capture.rotate
+Rotate the stored call list after the configured limit is reached.
+.TP
+.B capture.storage
+Packet storage mode, for example
+.BR memory .
+.TP
+.B capture.keyfile
+RSA key file for optional TLS decryption (requires TLS support at build time).
+.TP
+.B capture.eep
+Enable HEP/EEP decoding (requires HEP support at build time).
+.SH SIP AND FILTER SETTINGS
+.TP
+.B sip.calls
+Only list calls starting with INVITE.
+.TP
+.B sip.noincomplete
+Ignore incomplete or response-only dialogs.
+.TP
+.B sip.xcid
+Additional header names used to correlate dialogs, e.g.
+.BR "X-Call-ID|X-CID" .
+.TP
+.B filter.methods
+Comma-separated SIP methods to display.
+.TP
+.B filter.callstates
+Call-state filter.
+.TP
+.B filter.payload
+Payload filter expression.
+.SH USER INTERFACE SETTINGS
+.TP
+.B background
+Color background preference.
+.TP
+.B theme
+Color theme:
+.BR classic " (default), " modern ", " professional " or " simple .
+Themes other than classic need a terminal with 256 colors and use the
+terminal default background.
+.TP
+.B syntax
+Enable or disable message syntax highlighting.
+.TP
+.B colormode
+Call-flow color grouping mode.
+.TP
+.B mouse
+Enable mouse support; on by default.
+Set it to
+.B off
+to restore terminal text selection without holding Shift.
+.TP
+.B cl.scrollstep
+Call List scrolling step.
+.TP
+.B cl.columnN
+Configure the Nth visible Call List column; N starts at zero.
+See the shipped example for supported fields.
+.TP
+.B cl.columnN.width
+Width of the Nth Call List column.
+.TP
+.B cf.scrollstep
+Call Flow scrolling step.
+.TP
+.B cf.rawminwidth
+Minimum width for raw SIP message preview.
+.TP
+.B cf.rawfixedwidth
+Fixed width for raw SIP message preview.
+.TP
+.B cf.highlight
+Highlight mode for the selected Call Flow message.
+.TP
+.B savepath
+Default path for the Save dialog.
+.SH HEP/EEP SETTINGS
+Available only when sngrep is built with HEP support.
+.TP
+.B eep.listen
+Enable HEP listening.
+.TP
+.B eep.listen.address
+Listener address.
+.TP
+.B eep.listen.port
+Listener port (typically 9060).
+.TP
+.B eep.listen.proto
+Listener transport,
+.BR udp " (default) or " tcp .
+TCP requires HEP version 3.
+.TP
+.B eep.listen.version
+HEP protocol version.
+.TP
+.B eep.listen.pass
+Optional HEP authentication secret.
+.TP
+.B eep.send
+Enable HEP sending.
+.TP
+.B eep.send.address
+HEP collector address.
+.TP
+.B eep.send.port
+HEP collector port.
+.SH EXAMPLES
+.PP
+.RS
+.nf
+# Capture SIP messages but not RTP.
+set capture.device eth0
+set capture.rtp off
+
+# Save captures under a particular directory.
+set savepath /var/tmp/sngrep
+
+# Display selected columns.
+set cl.column0 sipfrom
+set cl.column1 sipto
+set cl.column2 state
+set cl.column2.width 14
+
+# Only INVITE and REGISTER requests.
+set filter.methods INVITE,REGISTER
+
+# Use a 256 color theme and keep terminal text selection.
+set theme modern
+set mouse off
+
+# Listen for HEP3 packets over TCP.
+set eep.listen on
+set eep.listen.proto tcp
+set eep.listen.version 3
+.fi
+.RE
+.SH NOTES
+A BPF capture filter and a SIP display filter are different: a BPF
+filter controls which frames libpcap passes to sngrep, while a SIP
+display filter controls the call list.
+In particular, port-only BPF filters may discard non-initial IP fragments.
+.SH SEE ALSO
+.BR sngrep (8),
+.BR pcap-filter (7)
