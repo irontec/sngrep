@@ -155,6 +155,18 @@ ui_handle_key(ui_t *ui, int key)
 }
 
 
+int
+ui_handle_mouse(ui_t *ui, int key)
+{
+    // Mouse-only dispatch leaves keyboard handlers untouched.
+    // A panel without custom click support simply ignores the event.
+    int hld = KEY_HANDLED;
+    if (ui->handle_mouse)
+        hld = ui->handle_mouse(ui, key);
+    ui->changed = true;
+    return hld;
+}
+
 void
 ui_panel_create(ui_t *ui, int height, int width)
 {
