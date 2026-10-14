@@ -70,8 +70,6 @@
 /**
  * Ui Structure definition for Call Flow panel
  */
-static int call_flow_handle_mouse(ui_t *ui, int key);
-
 ui_t ui_call_flow = {
     .type = PANEL_CALL_FLOW,
     .panel = NULL,
@@ -1473,7 +1471,7 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
     return 0;
 }
 
-static int
+int
 call_flow_handle_mouse(ui_t *ui, int key)
 {
     (void) key;

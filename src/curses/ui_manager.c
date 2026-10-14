@@ -97,8 +97,6 @@ ncurses_init()
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     set_escdelay(25);
-    // Clicks, double clicks and wheel
-    ui_mouse_setup();
 
     // Redefine some keys
     term = getenv("TERM");
@@ -228,6 +226,9 @@ ui_wait_for_input()
         // Enable key input on current panel
         win = panel_window(panel);
         keypad(win, TRUE);
+
+        // Enable mouse events if current panel supports them
+        ui_mouse_setup(ui);
 
         // Get pressed key
         int c = wgetch(win);

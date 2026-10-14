@@ -39,8 +39,6 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
-static int column_select_handle_mouse(ui_t *ui, int key);
-
 ui_t ui_column_select = {
     .type = PANEL_COLUMN_SELECT,
     .panel = NULL,
@@ -176,7 +174,7 @@ column_select_info(ui_t *ui)
     return (column_select_info_t*) panel_userptr(ui->panel);
 }
 
-static int
+int
 column_select_handle_mouse(ui_t *ui, int key)
 {
     (void) key;

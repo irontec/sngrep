@@ -41,8 +41,6 @@
 /**
  * Ui Structure definition for Save panel
  */
-static int save_handle_mouse(ui_t *ui, int key);
-
 ui_t ui_save = {
     .type = PANEL_SAVE,
     .panel = NULL,
@@ -276,7 +274,7 @@ save_draw(ui_t *ui)
     return 0;
 }
 
-static int
+int
 save_handle_mouse(ui_t *ui, int key)
 {
     (void) key;

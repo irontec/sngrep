@@ -424,6 +424,21 @@ int
 call_flow_handle_key(ui_t *ui, int key);
 
 /**
+ * @brief Handle Call flow panel mouse clicks
+ *
+ * This function is called by UI manager every time a mouse click
+ * is received on this panel. Wheel events and footer key hints are
+ * translated into keys and handled by call_flow_handle_key instead.
+ * This function return one of the values defined in @key_handler_ret
+ *
+ * @param ui UI structure pointer
+ * @param key KEY_MOUSE
+ * @return enum @key_handler_ret
+ */
+int
+call_flow_handle_mouse(ui_t *ui, int key);
+
+/**
  * @brief Request the panel to show its help
  *
  * This function will request to panel to show its help (if any) by

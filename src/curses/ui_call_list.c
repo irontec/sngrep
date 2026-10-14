@@ -49,8 +49,6 @@
 /**
  * Ui Structure definition for Call List panel
  */
-static int call_list_handle_mouse(ui_t *ui, int key);
-
 ui_t ui_call_list = {
     .type = PANEL_CALL_LIST,
     .create = call_list_create,
@@ -549,7 +547,7 @@ call_list_search_text(ui_t *ui, sip_call_t *call, char *text, size_t textlen)
     return text;
 }
 
-static int
+int
 call_list_handle_mouse(ui_t *ui, int key)
 {
     (void) key;

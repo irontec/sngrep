@@ -22,15 +22,25 @@
 static MEVENT last;
 
 void
-ui_mouse_setup()
+ui_mouse_setup(ui_t *ui)
 {
 #ifdef NCURSES_MOUSE_VERSION
+    static mmask_t current = 0;
     mmask_t mask = BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON4_PRESSED;
 #if NCURSES_MOUSE_VERSION > 1
     mask |= BUTTON5_PRESSED;
 #endif
     // Without mouse events the terminal keeps its own text selection
-    mousemask(setting_enabled(SETTING_MOUSE) ? mask : 0, NULL);
+    if (!setting_enabled(SETTING_MOUSE))
+        mask = 0;
+    // Raw panel has no mouse support, so its messages can be selected
+    if (ui && ui->type == PANEL_CALL_RAW)
+        mask = 0;
+    // Only notify the terminal when the mask changes
+    if (mask != current) {
+        mousemask(mask, NULL);
+        current = mask;
+    }
 #endif
 }
 

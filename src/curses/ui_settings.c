@@ -35,8 +35,6 @@
 /**
  * Ui Structure definition for Settings panel
  */
-static int settings_handle_mouse(ui_t *ui, int key);
-
 ui_t ui_settings = {
     .type = PANEL_SETTINGS,
     .panel = NULL,
@@ -272,7 +270,7 @@ settings_draw(ui_t *ui)
     return 0;
 }
 
-static int
+int
 settings_handle_mouse(ui_t *ui, int key)
 {
     (void) key;
@@ -487,9 +485,6 @@ ui_settings_update_settings(ui_t *ui)
             setting_set_value(entry->setting_id, field_value);
         }
     }
-
-    // Mouse setting takes effect without restarting
-    ui_mouse_setup();
     return 0;
 }
 

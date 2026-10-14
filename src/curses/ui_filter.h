@@ -140,6 +140,21 @@ int
 filter_handle_key(ui_t *ui, int key);
 
 /**
+ * @brief Handle Filter panel mouse clicks
+ *
+ * This function is called by UI manager every time a mouse click
+ * is received on this panel. Wheel events and footer key hints are
+ * translated into keys and handled by filter_handle_key instead.
+ * This function return one of the values defined in @key_handler_ret
+ *
+ * @param ui UI structure pointer
+ * @param key KEY_MOUSE
+ * @return enum @key_handler_ret
+ */
+int
+filter_handle_mouse(ui_t *ui, int key);
+
+/**
  * @brief Select the given field
  *
  * Toggle checkbox fields and activate button fields.

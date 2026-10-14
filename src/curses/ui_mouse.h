@@ -25,10 +25,15 @@
 #include "ui_panel.h"
 
 /**
- * @brief Enable or disable mouse events according to the mouse setting
+ * @brief Enable or disable mouse events for the given panel
+ *
+ * Mouse events are enabled according to the mouse setting, except
+ * for panels without mouse support.
+ *
+ * @param ui UI structure pointer of the current panel
  */
 void
-ui_mouse_setup();
+ui_mouse_setup(ui_t *ui);
 
 /**
  * @brief Read the pending mouse event

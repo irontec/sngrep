@@ -40,8 +40,6 @@
 /**
  * Ui Structure definition for Filter panel
  */
-static int filter_handle_mouse(ui_t *ui, int key);
-
 ui_t ui_filter = {
     .type = PANEL_FILTER,
     .panel = NULL,
@@ -268,7 +266,7 @@ filter_info(ui_t *ui)
 }
 
 
-static int
+int
 filter_handle_mouse(ui_t *ui, int key)
 {
     filter_info_t *info = filter_info(ui);
