@@ -104,6 +104,12 @@ struct ui {
     enum panel_types type;
     //! Flag this panel as redraw required
     bool changed;
+    //! Footer key hints positions, so they can be clicked
+    struct {
+        int start, end, key;
+    } bindings[16];
+    //! Number of footer key hints
+    int bindingcnt;
 
     //! Constructor for this panel
     void (*create)(ui_t *);
@@ -117,6 +123,8 @@ struct ui {
     int (*resize)(ui_t *);
     //! Handle a custom keybind on this panel
     int (*handle_key)(ui_t *, int key);
+    //! Handle a mouse click on this panel, independently of keyboard input
+    int (*handle_mouse)(ui_t *, int key);
     //! Show help window for this panel (if any)
     int (*help)(ui_t *);
 };
@@ -218,6 +226,19 @@ ui_help(ui_t *ui);
  */
 int
 ui_handle_key(ui_t *ui, int key);
+
+/**
+ * @brief Dispatch a mouse event to the current panel.
+ *
+ * Panels without a mouse handler ignore the click. Wheel events and footer
+ * hints are converted to regular keys before reaching this function.
+ *
+ * @param ui UI structure
+ * @param key KEY_MOUSE
+ * @return enum key_handler_ret
+ */
+int
+ui_handle_mouse(ui_t *ui, int key);
 
 /**
  * @brief Create a ncurses panel for the given ui

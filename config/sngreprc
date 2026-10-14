@@ -53,6 +53,8 @@
 # set cl.noexitprompt off
 ## Or set its default button
 # set cl.defexitbutton 0/1
+## Disable mouse support (restores terminal text selection without Shift)
+# set mouse off
 
 # Set default filter on startup
 # set filter.methods INVITE

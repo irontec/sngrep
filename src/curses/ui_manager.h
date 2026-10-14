@@ -38,6 +38,7 @@
 #include "config.h"
 #include "theme.h"
 #include "ui_panel.h"
+#include "ui_mouse.h"
 #include "sip.h"
 #include "group.h"
 #include "keybinding.h"

@@ -97,6 +97,8 @@ ncurses_init()
     curs_set(0);
     // Only delay ESC Sequences 25 ms (we dont want Escape sequences)
     set_escdelay(25);
+    // Clicks, double clicks and wheel
+    ui_mouse_setup();
 
     // Redefine some keys
     term = getenv("TERM");
@@ -230,6 +232,10 @@ ui_wait_for_input()
         // Get pressed key
         int c = wgetch(win);
 
+        // Mouse events become keys when possible (wheel, footer hints)
+        if (c == KEY_MOUSE)
+            c = ui_mouse_translate(ui);
+
         // Timeout, no key pressed
         if (c == ERR)
             continue;
@@ -238,8 +244,11 @@ ui_wait_for_input()
         // Handle received key
         int hld = KEY_NOT_HANDLED;
         while (hld != KEY_HANDLED) {
-            // Check if current panel has custom bindings for that key
-            hld = ui_handle_key(ui, c);
+            // Mouse click handlers are distinct from keyboard handlers.
+            if (c == KEY_MOUSE)
+                hld = ui_handle_mouse(ui, c);
+            else
+                hld = ui_handle_key(ui, c);
 
             if (hld == KEY_HANDLED) {
                 // Panel handled this key
@@ -727,6 +736,20 @@ dialog_confirm(const char *title, const char *text, const char *options)
 
         // Get pressed key
         key = wgetch(dialog_win);
+
+        // Clicking an option chooses it
+        if (key == KEY_MOUSE && ui_mouse_read()) {
+            int y, x;
+            if (ui_mouse_pos(dialog_win, &y, &x) && y == height - 2) {
+                for (i = 0; i < optioncnt; i++) {
+                    if (x >= 10 + 10 * i && x < 10 + 10 * i + (int) strlen(opts[i]) + 6) {
+                        selected = i;
+                        goto done;
+                    }
+                }
+            }
+            continue;
+        }
 
         // Check actions for this key
         while ((action = key_find_action(key, action)) != ERR) {

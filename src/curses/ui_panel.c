@@ -30,6 +30,7 @@
 #include "ui_panel.h"
 #include <string.h>
 #include "theme.h"
+#include "keybinding.h"
 
 ui_t *
 ui_create(ui_t *ui)
@@ -154,6 +155,18 @@ ui_handle_key(ui_t *ui, int key)
 }
 
 
+int
+ui_handle_mouse(ui_t *ui, int key)
+{
+    // Mouse-only dispatch leaves keyboard handlers untouched.
+    // A panel without custom click support simply ignores the event.
+    int hld = KEY_HANDLED;
+    if (ui->handle_mouse)
+        hld = ui->handle_mouse(ui, key);
+    ui->changed = true;
+    return hld;
+}
+
 void
 ui_panel_create(ui_t *ui, int height, int width)
 {
@@ -217,7 +230,14 @@ ui_draw_bindings(ui_t *ui, const char *keybindings[], int count)
     ui_clear_line(ui, ui->height - 1);
 
     // Draw keys and their actions
+    ui->bindingcnt = 0;
     for (key = 0; key < count; key += 2) {
+        if (ui->bindingcnt < (int) (sizeof(ui->bindings) / sizeof(ui->bindings[0]))) {
+            ui->bindings[ui->bindingcnt].start = xpos;
+            ui->bindings[ui->bindingcnt].end = xpos + strlen(keybindings[key]) + strlen(keybindings[key + 1]) + 2;
+            ui->bindings[ui->bindingcnt].key = key_from_str(keybindings[key]);
+            ui->bindingcnt++;
+        }
         wattron(ui->win, A_BOLD | COLOR_PAIR(CP_WHITE_ON_CYAN));
         mvwprintw(ui->win, ui->height - 1, xpos, "%-*s",
                   (int) strlen(keybindings[key]) + 1, keybindings[key]);

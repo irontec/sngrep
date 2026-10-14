@@ -89,10 +89,6 @@ struct filter_info {
     FORM *form;
     //! An array of fields
     FIELD *fields[FLD_FILTER_COUNT + 1];
-#ifdef NCURSES_MOUSE_VERSION
-    //! Mouse events mask before the panel was created
-    mmask_t old_mousemask;
-#endif
 };
 
 /**
