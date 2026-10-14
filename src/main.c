@@ -82,7 +82,7 @@ usage()
            "    -F --no-config\t Do not read configuration from default config file\n"
            "    -T --text\t Save pcap to text file\n"
            "    -R --rotate\t\t Rotate calls when capture limit have been reached\n"
-           "    -T --telephone-event\t\t capture and parse RTP telephone-event packets\n"
+           "    -t --telephone-event\t\t capture and parse RTP telephone-event packets\n"
 #ifdef USE_EEP
            "    -H --eep-send\t Homer sipcapture url (udp:X.X.X.X:XXXX)\n"
            "    -L --eep-listen\t Listen for encapsulated packets (udp:X.X.X.X:XXXX)\n"
