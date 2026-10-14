@@ -39,11 +39,14 @@
 /**
  * Ui Structure definition for Message Diff panel
  */
+static int column_select_handle_mouse(ui_t *ui, int key);
+
 ui_t ui_column_select = {
     .type = PANEL_COLUMN_SELECT,
     .panel = NULL,
     .create = column_select_create,
     .handle_key = column_select_handle_key,
+    .handle_mouse = column_select_handle_mouse,
     .destroy = column_select_destroy
 };
 
@@ -174,8 +177,9 @@ column_select_info(ui_t *ui)
 }
 
 static int
-column_select_handle_mouse(ui_t *ui)
+column_select_handle_mouse(ui_t *ui, int key)
 {
+    (void) key;
     column_select_info_t *info = column_select_info(ui);
     FIELD *field;
     int y, x, row;
@@ -210,9 +214,6 @@ column_select_handle_key(ui_t *ui, int key)
 {
     // Get panel information
     column_select_info_t *info = column_select_info(ui);
-
-    if (key == KEY_MOUSE)
-        return column_select_handle_mouse(ui);
 
     if (info->form_active) {
         return column_select_handle_key_form(ui, key);
