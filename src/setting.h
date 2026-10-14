@@ -55,6 +55,7 @@ typedef struct setting_option setting_t;
 #define SETTING_ENUM_ONOFF       (const char *[]){ "on", "off", NULL }
 #define SETTING_ENUM_YESNO       (const char *[]){ "yes", "no", NULL }
 #define SETTING_ENUM_BACKGROUND  (const char *[]){ "dark" , "default", NULL }
+#define SETTING_ENUM_THEME       (const char *[]){ "classic", "modern", "professional", "simple", NULL }
 #define SETTING_ENUM_COLORMODE   (const char *[]){ "request", "cseq", "callid", NULL }
 #define SETTING_ENUM_HIGHLIGHT   (const char *[]){ "bold", "reverse", "reversebold", NULL }
 #define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", "compressed", NULL}
@@ -73,6 +74,7 @@ typedef struct setting_option setting_t;
 //! Available setting Options
 enum setting_id {
     SETTING_BACKGROUND = 0,
+    SETTING_THEME,
     SETTING_COLORMODE,
     SETTING_SYNTAX,
     SETTING_SYNTAX_TAG,

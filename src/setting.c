@@ -37,6 +37,7 @@
 //! Available configurable settings
 setting_t settings[SETTING_COUNT] = {
     { SETTING_BACKGROUND,         "background",         SETTING_FMT_ENUM,    "dark",      SETTING_ENUM_BACKGROUND },
+    { SETTING_THEME,              "theme",              SETTING_FMT_ENUM,    "classic",   SETTING_ENUM_THEME },
     { SETTING_COLORMODE,          "colormode",          SETTING_FMT_ENUM,    "request",   SETTING_ENUM_COLORMODE },
     { SETTING_SYNTAX,             "syntax",             SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_SYNTAX_TAG,         "syntax.tag",         SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
