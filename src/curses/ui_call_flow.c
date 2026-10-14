@@ -70,6 +70,8 @@
 /**
  * Ui Structure definition for Call Flow panel
  */
+static int call_flow_handle_mouse(ui_t *ui, int key);
+
 ui_t ui_call_flow = {
     .type = PANEL_CALL_FLOW,
     .panel = NULL,
@@ -78,6 +80,7 @@ ui_t ui_call_flow = {
     .redraw = call_flow_redraw,
     .draw = call_flow_draw,
     .handle_key = call_flow_handle_key,
+    .handle_mouse = call_flow_handle_mouse,
     .help = call_flow_help
 };
 
@@ -1471,8 +1474,9 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
 }
 
 static int
-call_flow_handle_mouse(ui_t *ui)
+call_flow_handle_mouse(ui_t *ui, int key)
 {
+    (void) key;
     call_flow_info_t *info = call_flow_info(ui);
     call_flow_arrow_t *arrow;
     int y, x, line = 0;
@@ -1511,9 +1515,6 @@ call_flow_handle_key(ui_t *ui, int key)
     // Sanity check, this should not happen
     if (!info)
         return KEY_NOT_HANDLED;
-
-    if (key == KEY_MOUSE)
-        return call_flow_handle_mouse(ui);
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
