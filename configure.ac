@@ -2,6 +2,18 @@ AC_PREREQ([2.59])
 AC_INIT([sngrep], [1.9.0], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
 AM_INIT_AUTOMAKE([1.9])
 AC_CONFIG_HEADERS([src/config.h])
+
+# A Git checkout can report the exact revision; release tarballs keep the
+# normal version output without a misleading or stale commit identifier.
+SNGREP_GIT_REVISION=""
+AS_IF([test -d "$srcdir/.git" && command -v git >/dev/null 2>&1], [
+    SNGREP_GIT_REVISION=`(cd "$srcdir" && git rev-parse --verify --short=12 HEAD 2>/dev/null) || true`
+])
+AS_IF([test -n "$SNGREP_GIT_REVISION"], [
+    AC_DEFINE_UNQUOTED([SNGREP_GIT_COMMIT], ["$SNGREP_GIT_REVISION"],
+        [Git revision included in the binary built from a checkout])
+])
+
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 m4_ifdef([AC_CONFIG_MACRO_DIRS], AC_CONFIG_MACRO_DIRS([m4]), m4_include([m4/sngrep.m4]))
 
