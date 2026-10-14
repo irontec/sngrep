@@ -57,6 +57,7 @@ ui_t ui_call_list = {
     .draw = call_list_draw,
     .resize = call_list_resize,
     .handle_key = call_list_handle_key,
+    .handle_mouse = call_list_handle_mouse,
     .help = call_list_help,
 };
 
@@ -544,6 +545,58 @@ call_list_search_text(ui_t *ui, sip_call_t *call, char *text, size_t textlen)
     }
 
     return text;
+}
+
+int
+call_list_handle_mouse(ui_t *ui, int key)
+{
+    (void) key;
+    call_list_info_t *info = call_list_info(ui);
+    int y, x, row;
+
+    // Sort menu: clicking a column sorts by it
+    if (info->menu_active) {
+        if (ui_mouse_pos(menu_sub(info->menu), &y, &x)) {
+            row = top_row(info->menu) + y;
+            if (row < item_count(info->menu)) {
+                set_current_item(info->menu, menu_items(info->menu)[row]);
+                return call_list_handle_menu_key(ui, key_action_key(ACTION_CONFIRM));
+            }
+        }
+        return KEY_HANDLED;
+    }
+
+    if (!ui_mouse_pos(ui->win, &y, &x))
+        return KEY_HANDLED;
+
+    // Display filter line
+    if (y == 3) {
+        if (!info->form_active)
+            call_list_form_activate(ui, 1);
+        return KEY_HANDLED;
+    }
+    if (info->form_active)
+        call_list_form_activate(ui, 0);
+
+    // Column titles open the sort menu
+    if (y == 4) {
+        call_list_select_sort_attribute(ui);
+        return KEY_HANDLED;
+    }
+
+    if (ui_mouse_pos(info->list_win, &y, &x)) {
+        row = info->scroll.pos + y;
+        if (row >= vector_count(info->dcalls))
+            return KEY_HANDLED;
+        call_list_move(ui, row);
+        // The [ ] box toggles selection, a double click opens the flow
+        if (x >= 2 && x <= 4)
+            return call_list_handle_key(ui, key_action_key(ACTION_SELECT));
+        if (ui_mouse_double_click())
+            return call_list_handle_key(ui, key_action_key(ACTION_SHOW_FLOW));
+    }
+
+    return KEY_HANDLED;
 }
 
 int

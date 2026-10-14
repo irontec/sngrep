@@ -11,7 +11,7 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [-hVcivNqrD] [-IO
+.B sngrep [-hVcivNqrmD] [-IO
 .I pcap_dump
 .B ] [-d
 .I dev
@@ -60,6 +60,11 @@ Only display dialogs starting with an INVITE request.
 .TP
 .I \-r
 Capture RTP packets payload.
+
+.TP
+.I \-m
+Inspect RTP streams without SIP/SDP. Implies no interface mode and prints
+the number of RTP flows, packets and estimated sequence gaps.
 
 .TP
 .I \-i

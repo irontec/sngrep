@@ -55,7 +55,8 @@ static sip_attr_hdr_t attrs[SIP_ATTR_COUNT] = {
     { SIP_ATTR_TOTALDUR,    "totaldur",    "TotalDur", "Total Duration", 8 },
     { SIP_ATTR_REASON_TXT,  "reason",      "Reason Text",   "Reason Text", 25 },
     { SIP_ATTR_WARNING,     "warning",     "Warning", "Warning code", 4 },
-    { SIP_ATTR_CONTACT,     "contact",     NULL,   "Contact",        30 }
+    { SIP_ATTR_CONTACT,     "contact",     NULL,   "Contact",        30 },
+    { SIP_ATTR_CODEC,       "codec",       "Codec", "Negotiated Audio Codec", 18 }
 };
 
 sip_attr_hdr_t *

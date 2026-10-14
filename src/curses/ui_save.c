@@ -47,6 +47,7 @@ ui_t ui_save = {
     .create = save_create,
     .draw = save_draw,
     .handle_key = save_handle_key,
+    .handle_mouse = save_handle_mouse,
     .destroy = save_destroy
 };
 
@@ -271,6 +272,30 @@ save_draw(ui_t *ui)
     form_driver(info->form, REQ_VALIDATION);
 
     return 0;
+}
+
+int
+save_handle_mouse(ui_t *ui, int key)
+{
+    (void) key;
+    save_info_t *info = save_info(ui);
+    FIELD *field = ui_mouse_form_field(info->form, NULL);
+
+    if (!field)
+        return KEY_HANDLED;
+
+    set_current_field(info->form, field);
+    switch (field_index(field)) {
+        case FLD_SAVE_PATH:
+        case FLD_SAVE_FILE:
+            return save_handle_key(ui, key_action_key(ACTION_END));
+        case FLD_SAVE_SAVE:
+        case FLD_SAVE_CANCEL:
+            return save_handle_key(ui, key_action_key(ACTION_CONFIRM));
+        default:
+            // Radio buttons
+            return save_handle_key(ui, key_action_key(ACTION_SELECT));
+    }
 }
 
 int

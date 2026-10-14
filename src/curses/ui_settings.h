@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef __SNGREP_UI_SETTINGS_H
-#define __SNGREP_UI_SETTINGS_H
+#ifndef SNGREP_UI_SETTINGS_H
+#define SNGREP_UI_SETTINGS_H
 
 //! Sorter declaration of struct option_info
 typedef struct settings_info settings_info_t;
@@ -72,6 +72,8 @@ enum settings_field_list {
     FLD_SETTINGS_COLORMODE_LB,
     FLD_SETTINGS_EXITPROMPT,
     FLD_SETTINGS_EXITPROMPT_LB,
+    FLD_SETTINGS_MOUSE,
+    FLD_SETTINGS_MOUSE_LB,
     FLD_SETTINGS_DISPLAY_ALIAS,
     FLD_SETTINGS_DISPLAY_ALIAS_LB,
     FLD_SETTINGS_CAPTURE_LIMIT,
@@ -237,6 +239,21 @@ int
 settings_handle_key(ui_t *ui, int key);
 
 /**
+ * @brief Handle Settings panel mouse clicks
+ *
+ * This function is called by UI manager every time a mouse click
+ * is received on this panel. Wheel events and footer key hints are
+ * translated into keys and handled by settings_handle_key instead.
+ * This function return one of the values defined in @key_handler_ret
+ *
+ * @param ui UI structure pointer
+ * @param key KEY_MOUSE
+ * @return enum @key_handler_ret
+ */
+int
+settings_handle_mouse(ui_t *ui, int key);
+
+/**
  * @brief Return entry information of the field
  *
  * If field is storing a setting value, return the entry
@@ -272,4 +289,4 @@ ui_settings_update_settings(ui_t *ui);
 void
 ui_settings_save(ui_t *ui);
 
-#endif /* __SNGREP_UI_SETTINGS_H */
+#endif /* SNGREP_UI_SETTINGS_H */

@@ -44,6 +44,7 @@ setting_t settings[SETTING_COUNT] = {
     { SETTING_SYNTAX_BRANCH,      "syntax.branch",      SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_ALTKEY_HINT,        "hintkeyalt",         SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_EXITPROMPT,         "exitprompt",         SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
+    { SETTING_MOUSE,              "mouse",              SETTING_FMT_ENUM,    SETTING_ON,  SETTING_ENUM_ONOFF },
     { SETTING_CAPTURE_LIMIT,      "capture.limit",      SETTING_FMT_NUMBER,  "20000",     NULL },
     { SETTING_CAPTURE_DEVICE,     "capture.device",     SETTING_FMT_STRING,  "any",       NULL },
     { SETTING_CAPTURE_OUTFILE,    "capture.outfile",    SETTING_FMT_STRING,  "",          NULL },

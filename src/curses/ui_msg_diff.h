@@ -26,8 +26,8 @@
  * @brief Functions to manage diff display
  *
  */
-#ifndef __UI_MSG_DIFF_H
-#define __UI_MSG_DIFF_H
+#ifndef SNGREP_UI_MSG_DIFF_H
+#define SNGREP_UI_MSG_DIFF_H
 #include "config.h"
 #include "ui_manager.h"
 

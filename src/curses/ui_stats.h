@@ -25,8 +25,8 @@
  *
  * @brief Functions to manage ui window for capture stats display
  */
-#ifndef __SNGREP_UI_STATS_H
-#define __SNGREP_UI_STATS_H
+#ifndef SNGREP_UI_STATS_H
+#define SNGREP_UI_STATS_H
 
 /**
  * @brief Creates a new stats panel
@@ -41,4 +41,4 @@
 void
 stats_create(ui_t *ui);
 
-#endif /* __SNGREP_UI_STATS_H */
+#endif /* SNGREP_UI_STATS_H */

@@ -26,8 +26,8 @@
  * @brief Functions to manage sip calls
  *
  */
-#ifndef __SNGREP_SIP_CALL_H
-#define __SNGREP_SIP_CALL_H
+#ifndef SNGREP_SIP_CALL_H
+#define SNGREP_SIP_CALL_H
 
 #include "config.h"
 #include <stdarg.h>
@@ -270,4 +270,4 @@ call_attr_compare(sip_call_t *one, sip_call_t *two, enum sip_attr_id id);
 void
 call_add_xcall(sip_call_t *call, sip_call_t *xcall);
 
-#endif /* __SNGREP_SIP_CALL_H */
+#endif /* SNGREP_SIP_CALL_H */

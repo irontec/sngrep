@@ -33,11 +33,12 @@
  * panel pointers.
  *
  */
-#ifndef __SNGREP_UI_MANAGER_H
-#define __SNGREP_UI_MANAGER_H
+#ifndef SNGREP_UI_MANAGER_H
+#define SNGREP_UI_MANAGER_H
 #include "config.h"
 #include "theme.h"
 #include "ui_panel.h"
+#include "ui_mouse.h"
 #include "sip.h"
 #include "group.h"
 #include "keybinding.h"
@@ -240,4 +241,4 @@ dialog_progress_destroy(WINDOW *win);
 int
 dialog_confirm(const char *title, const char *text, const char *options);
 
-#endif    // __SNGREP_UI_MANAGER_H
+#endif    // SNGREP_UI_MANAGER_H

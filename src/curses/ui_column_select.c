@@ -44,6 +44,7 @@ ui_t ui_column_select = {
     .panel = NULL,
     .create = column_select_create,
     .handle_key = column_select_handle_key,
+    .handle_mouse = column_select_handle_mouse,
     .destroy = column_select_destroy
 };
 
@@ -171,6 +172,39 @@ column_select_info_t *
 column_select_info(ui_t *ui)
 {
     return (column_select_info_t*) panel_userptr(ui->panel);
+}
+
+int
+column_select_handle_mouse(ui_t *ui, int key)
+{
+    (void) key;
+    column_select_info_t *info = column_select_info(ui);
+    FIELD *field;
+    int y, x, row;
+
+    // Accept, Save and Cancel buttons
+    if ((field = ui_mouse_form_field(info->form, NULL))) {
+        info->form_active = 1;
+        set_menu_fore(info->menu, COLOR_PAIR(CP_DEFAULT));
+        set_current_field(info->form, field);
+        return column_select_handle_key_form(ui, key_action_key(ACTION_CONFIRM));
+    }
+
+    // Clicking a column toggles it
+    if (ui_mouse_pos(menu_sub(info->menu), &y, &x)) {
+        row = top_row(info->menu) + y;
+        if (row >= item_count(info->menu))
+            return KEY_HANDLED;
+        if (info->form_active) {
+            info->form_active = 0;
+            set_menu_fore(info->menu, COLOR_PAIR(CP_DEF_ON_BLUE));
+            set_field_back(current_field(info->form), A_NORMAL);
+        }
+        set_current_item(info->menu, menu_items(info->menu)[row]);
+        return column_select_handle_key_menu(ui, key_action_key(ACTION_SELECT));
+    }
+
+    return KEY_HANDLED;
 }
 
 int

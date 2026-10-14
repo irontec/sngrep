@@ -39,8 +39,8 @@
  * every sngrep execution.
  */
 
-#ifndef __SNGREP_SETTING_H
-#define __SNGREP_SETTING_H
+#ifndef SNGREP_SETTING_H
+#define SNGREP_SETTING_H
 
 //! Max setting value
 #define MAX_SETTING_LEN   1024
@@ -81,6 +81,7 @@ enum setting_id {
     SETTING_SYNTAX_BRANCH,
     SETTING_ALTKEY_HINT,
     SETTING_EXITPROMPT,
+    SETTING_MOUSE,
     SETTING_CAPTURE_LIMIT,
     SETTING_CAPTURE_DEVICE,
     SETTING_CAPTURE_OUTFILE,
@@ -232,4 +233,4 @@ setting_enum_next(int id, const char *value);
 void
 settings_dump();
 
-#endif /* __SNGREP_SETTING_H */
+#endif /* SNGREP_SETTING_H */

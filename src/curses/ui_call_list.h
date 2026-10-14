@@ -29,8 +29,8 @@
  * screen.
  *
  */
-#ifndef __UI_CALL_LIST_H
-#define __UI_CALL_LIST_H
+#ifndef SNGREP_UI_CALL_LIST_H
+#define SNGREP_UI_CALL_LIST_H
 
 #include "ui_manager.h"
 #include <menu.h>
@@ -245,6 +245,21 @@ call_list_search_text(ui_t *ui, sip_call_t *call, char *text, size_t textlen);
  */
 int
 call_list_handle_key(ui_t *ui, int key);
+
+/**
+ * @brief Handle Call List panel mouse clicks
+ *
+ * This function is called by UI manager every time a mouse click
+ * is received on this panel. Wheel events and footer key hints are
+ * translated into keys and handled by call_list_handle_key instead.
+ * This function return one of the values defined in @key_handler_ret
+ *
+ * @param ui UI structure pointer
+ * @param key KEY_MOUSE
+ * @return enum @key_handler_ret
+ */
+int
+call_list_handle_mouse(ui_t *ui, int key);
 
 /**
  * @brief Handle Forms entries key strokes

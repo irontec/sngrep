@@ -26,8 +26,8 @@
  * @brief Functions to manage SIP calls and messages attributes
  */
 
-#ifndef __SNGREP_SIP_ATTR_H
-#define __SNGREP_SIP_ATTR_H
+#ifndef SNGREP_SIP_ATTR_H
+#define SNGREP_SIP_ATTR_H
 
 #include "config.h"
 #include "vector.h"
@@ -87,6 +87,8 @@ enum sip_attr_id {
     SIP_ATTR_WARNING,
     //! SIP Contact header
     SIP_ATTR_CONTACT,
+    //! Negotiated audio codec from a successful SDP answer
+    SIP_ATTR_CODEC,
     //! SIP Attribute count
     SIP_ATTR_COUNT
 };
@@ -219,4 +221,4 @@ sip_attr_color_method(const char *value);
 int
 sip_attr_color_state(const char *value);
 
-#endif /* __SNGREP_SIP_ATTR_H */
+#endif /* SNGREP_SIP_ATTR_H */

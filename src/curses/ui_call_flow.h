@@ -52,8 +52,8 @@
  * +--------------------------------------------------------+
  *
  */
-#ifndef __SNGREP_UI_CALL_FLOW_H
-#define __SNGREP_UI_CALL_FLOW_H
+#ifndef SNGREP_UI_CALL_FLOW_H
+#define SNGREP_UI_CALL_FLOW_H
 
 #include <stdbool.h>
 #include "ui_manager.h"
@@ -424,6 +424,21 @@ int
 call_flow_handle_key(ui_t *ui, int key);
 
 /**
+ * @brief Handle Call flow panel mouse clicks
+ *
+ * This function is called by UI manager every time a mouse click
+ * is received on this panel. Wheel events and footer key hints are
+ * translated into keys and handled by call_flow_handle_key instead.
+ * This function return one of the values defined in @key_handler_ret
+ *
+ * @param ui UI structure pointer
+ * @param key KEY_MOUSE
+ * @return enum @key_handler_ret
+ */
+int
+call_flow_handle_mouse(ui_t *ui, int key);
+
+/**
  * @brief Request the panel to show its help
  *
  * This function will request to panel to show its help (if any) by
@@ -530,4 +545,4 @@ call_flow_arrow_sorter(vector_t *vector, void *item);
 int
 call_flow_arrow_filter(void *item);
 
-#endif /* __SNGREP_UI_CALL_FLOW_H */
+#endif /* SNGREP_UI_CALL_FLOW_H */

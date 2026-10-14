@@ -41,6 +41,7 @@ ui_t ui_settings = {
     .create = settings_create,
     .draw = settings_draw,
     .handle_key = settings_handle_key,
+    .handle_mouse = settings_handle_mouse,
     .destroy = settings_destroy
 };
 
@@ -63,6 +64,7 @@ settings_entry_t entries[] = {
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_ALTKEY_HINT,        SETTING_ALTKEY_HINT,        "Alternative keybinding hints .............." },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_COLORMODE,          SETTING_COLORMODE,          "Default message color mode ................" },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_EXITPROMPT,         SETTING_EXITPROMPT,         "Always prompt on quit ....................." },
+    { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_MOUSE,              SETTING_MOUSE,              "Mouse support (Shift selects text) ........" },
     { CAT_SETTINGS_INTERFACE,  FLD_SETTINGS_DISPLAY_ALIAS,      SETTING_DISPLAY_ALIAS,      "Replace addresses with alias .............." },
     { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_LIMIT,      SETTING_CAPTURE_LIMIT,      "Max dialogs * ............................." },
     { CAT_SETTINGS_CAPTURE,    FLD_SETTINGS_CAPTURE_DEVICE,     SETTING_CAPTURE_DEVICE,     "Capture device * .........................." },
@@ -267,6 +269,50 @@ settings_draw(ui_t *ui)
     wmove(ui->win, cury, curx);
 
     return 0;
+}
+
+int
+settings_handle_mouse(ui_t *ui, int key)
+{
+    (void) key;
+    settings_info_t *info = settings_info(ui);
+    settings_entry_t *entry;
+    FIELD *field;
+    bool exact;
+    int i, y, x, len, colpos = 2;
+
+    // Category tabs are drawn in line 6 as "[ Title ]"
+    if (ui_mouse_pos(ui->win, &y, &x) && y == 6) {
+        for (i = 0; categories[i].cat_id; i++) {
+            len = strlen(categories[i].title) + 4;
+            if (x >= colpos && x < colpos + len) {
+                info->active_form = info->form;
+                set_form_page(info->form, categories[i].cat_id - 1);
+                info->active_category = form_page(info->form) + 1;
+                return settings_handle_key(ui, key_action_key(ACTION_END));
+            }
+            colpos += len + 1;
+        }
+        return KEY_HANDLED;
+    }
+
+    if ((field = ui_mouse_form_field(info->buttons_form, NULL))) {
+        info->active_form = info->buttons_form;
+        set_current_field(info->buttons_form, field);
+        return settings_handle_key(ui, key_action_key(ACTION_CONFIRM));
+    }
+
+    if ((field = ui_mouse_form_field(info->form, &exact))) {
+        info->active_form = info->form;
+        set_current_field(info->form, field);
+        // Clicking an option value cycles it, like Space does
+        entry = ui_settings_is_entry(field);
+        if (exact && entry && setting_format(entry->setting_id) == SETTING_FMT_ENUM)
+            return settings_handle_key(ui, key_action_key(ACTION_SELECT));
+        return settings_handle_key(ui, key_action_key(ACTION_END));
+    }
+
+    return KEY_HANDLED;
 }
 
 int

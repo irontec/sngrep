@@ -26,8 +26,8 @@
  * @brief Functions to manage hash tables
  */
 
-#ifndef __SNGREP_HASH_H_
-#define __SNGREP_HASH_H_
+#ifndef SNGREP_HASH_H
+#define SNGREP_HASH_H
 
 #include "config.h"
 #include <stdio.h>
@@ -73,4 +73,4 @@ htable_find(htable_t *table, const char *key);
 size_t
 htable_hash(htable_t *table, const char *key);
 
-#endif /* __SNGREP_HASH_H_ */
+#endif /* SNGREP_HASH_H */
