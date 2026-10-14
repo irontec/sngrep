@@ -26,8 +26,8 @@
  * @brief Functions to manage sip messages
  *
  */
-#ifndef __SNGREP_SIP_MSG_H
-#define __SNGREP_SIP_MSG_H
+#ifndef SNGREP_SIP_MSG_H
+#define SNGREP_SIP_MSG_H
 
 #include "config.h"
 #include <stdarg.h>
@@ -203,4 +203,4 @@ int
 msg_is_older(sip_msg_t *one, sip_msg_t *two);
 
 
-#endif /* __SNGREP_SIP_MSG_H */
+#endif /* SNGREP_SIP_MSG_H */

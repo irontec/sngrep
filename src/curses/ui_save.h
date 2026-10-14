@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef __UI_SAVE_PCAP_H
-#define __UI_SAVE_PCAP_H
+#ifndef SNGREP_UI_SAVE_PCAP_H
+#define SNGREP_UI_SAVE_PCAP_H
 #include "config.h"
 #include <form.h>
 #include "group.h"

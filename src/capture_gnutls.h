@@ -43,8 +43,8 @@
  *
  */
 
-#ifndef __SNGREP_CAPTURE_TLS_
-#define __SNGREP_CAPTURE_TLS_
+#ifndef SNGREP_CAPTURE_TLS_H
+#define SNGREP_CAPTURE_TLS_H
 
 #include "config.h"
 #include <gnutls/gnutls.h>

@@ -29,8 +29,8 @@
  *       source code: packet-rtp.c
  */
 
-#ifndef __SNGREP_RTP_H
-#define __SNGREP_RTP_H
+#ifndef SNGREP_RTP_H
+#define SNGREP_RTP_H
 
 #include "config.h"
 #include "capture.h"
@@ -480,4 +480,4 @@ data_is_rtp(u_char *data, uint32_t len);
 int
 data_is_rtcp(u_char *data, uint32_t len);
 
-#endif /* __SNGREP_RTP_H */
+#endif /* SNGREP_RTP_H */

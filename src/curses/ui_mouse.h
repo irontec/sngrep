@@ -17,8 +17,8 @@
  * and clicks on footer key hints become that key, so panels only need to
  * handle KEY_MOUSE for clicks inside their own content.
  */
-#ifndef __SNGREP_UI_MOUSE_H
-#define __SNGREP_UI_MOUSE_H
+#ifndef SNGREP_UI_MOUSE_H
+#define SNGREP_UI_MOUSE_H
 
 #include <stdbool.h>
 #include <form.h>
@@ -79,4 +79,4 @@ ui_mouse_double_click();
 FIELD *
 ui_mouse_form_field(FORM *form, bool *exact);
 
-#endif /* __SNGREP_UI_MOUSE_H */
+#endif /* SNGREP_UI_MOUSE_H */

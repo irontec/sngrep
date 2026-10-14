@@ -37,8 +37,8 @@
  *
  */
 
-#ifndef __SNGREP_KEYBINDING_H_
-#define __SNGREP_KEYBINDING_H_
+#ifndef SNGREP_KEYBINDING_H
+#define SNGREP_KEYBINDING_H
 
 //! Number of keybindings per action
 #define MAX_BINDINGS    5
@@ -235,4 +235,4 @@ key_action_key_str(int action);
 int
 key_action_key(int action);
 
-#endif /* __SNGREP_KEYBINDING_H_ */
+#endif /* SNGREP_KEYBINDING_H */

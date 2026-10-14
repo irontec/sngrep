@@ -52,8 +52,8 @@
  * +--------------------------------------------------------+
  *
  */
-#ifndef __SNGREP_UI_CALL_FLOW_H
-#define __SNGREP_UI_CALL_FLOW_H
+#ifndef SNGREP_UI_CALL_FLOW_H
+#define SNGREP_UI_CALL_FLOW_H
 
 #include <stdbool.h>
 #include "ui_manager.h"
@@ -545,4 +545,4 @@ call_flow_arrow_sorter(vector_t *vector, void *item);
 int
 call_flow_arrow_filter(void *item);
 
-#endif /* __SNGREP_UI_CALL_FLOW_H */
+#endif /* SNGREP_UI_CALL_FLOW_H */

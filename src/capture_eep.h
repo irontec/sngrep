@@ -39,8 +39,8 @@
  * sngrep packet structures has been made by Ivan Alonso (Kaian)
  *
  */
-#ifndef __SNGREP_CAPTURE_EEP_H
-#define __SNGREP_CAPTURE_EEP_H
+#ifndef SNGREP_CAPTURE_EEP_H
+#define SNGREP_CAPTURE_EEP_H
 #include <pthread.h>
 #include "capture.h"
 
@@ -365,4 +365,4 @@ capture_eep_set_server_url(const char *url);
 int
 capture_eep_set_client_url(const char *url);
 
-#endif /* __SNGREP_CAPTURE_EEP_H */
+#endif /* SNGREP_CAPTURE_EEP_H */

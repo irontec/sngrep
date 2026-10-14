@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef __SNGREP_UI_SETTINGS_H
-#define __SNGREP_UI_SETTINGS_H
+#ifndef SNGREP_UI_SETTINGS_H
+#define SNGREP_UI_SETTINGS_H
 
 //! Sorter declaration of struct option_info
 typedef struct settings_info settings_info_t;
@@ -287,4 +287,4 @@ ui_settings_update_settings(ui_t *ui);
 void
 ui_settings_save(ui_t *ui);
 
-#endif /* __SNGREP_UI_SETTINGS_H */
+#endif /* SNGREP_UI_SETTINGS_H */

@@ -33,8 +33,8 @@
  * Header) and stripping the Integrity Check Value (ICV), whose length is
  * auto-detected from the standard self-describing padding pattern.
  */
-#ifndef __SNGREP_CAPTURE_ESP_H
-#define __SNGREP_CAPTURE_ESP_H
+#ifndef SNGREP_CAPTURE_ESP_H
+#define SNGREP_CAPTURE_ESP_H
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -69,4 +69,4 @@ int capture_esp_null_parse(const u_char *esp, uint32_t esp_len,
                            uint8_t *proto, uint16_t *sport, uint16_t *dport,
                            uint32_t *payload_off, uint32_t *payload_len);
 
-#endif /* __SNGREP_CAPTURE_ESP_H */
+#endif /* SNGREP_CAPTURE_ESP_H */

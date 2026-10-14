@@ -29,8 +29,8 @@
  * screen.
  *
  */
-#ifndef __UI_CALL_LIST_H
-#define __UI_CALL_LIST_H
+#ifndef SNGREP_UI_CALL_LIST_H
+#define SNGREP_UI_CALL_LIST_H
 
 #include "ui_manager.h"
 #include <menu.h>

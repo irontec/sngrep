@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef __SNGREP_GROUP_H_
-#define __SNGREP_GROUP_H_
+#ifndef SNGREP_GROUP_H
+#define SNGREP_GROUP_H
 
 #include "config.h"
 #include "vector.h"
@@ -240,4 +240,4 @@ call_group_get_next_stream(sip_call_group_t *group, rtp_stream_t *stream);
 void
 call_group_msg_sorter(vector_t *vector, void *item);
 
-#endif /* __SNGREP_GROUP_H_ */
+#endif /* SNGREP_GROUP_H */

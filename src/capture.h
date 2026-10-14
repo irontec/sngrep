@@ -29,8 +29,8 @@
  * This file include the functions that uses libpcap to do so.
  *
  */
-#ifndef __SNGREP_CAPTURE_H
-#define __SNGREP_CAPTURE_H
+#ifndef SNGREP_CAPTURE_H
+#define SNGREP_CAPTURE_H
 
 #include "config.h"
 #include <pthread.h>

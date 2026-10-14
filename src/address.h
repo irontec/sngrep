@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef __SNGREP_ADDRESS_H
-#define __SNGREP_ADDRESS_H
+#ifndef SNGREP_ADDRESS_H
+#define SNGREP_ADDRESS_H
 
 #include <netinet/in.h>
 #include <stdint.h>
@@ -100,4 +100,4 @@ address_t
 address_from_str(const char *ipport);
 
 
-#endif /* __SNGREP_ADDRESS_H */
+#endif /* SNGREP_ADDRESS_H */

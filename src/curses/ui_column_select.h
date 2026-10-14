@@ -26,8 +26,8 @@
  * @brief Functions to manage columns select panel
  */
 
-#ifndef __UI_COLUMN_SELECT_H
-#define __UI_COLUMN_SELECT_H
+#ifndef SNGREP_UI_COLUMN_SELECT_H
+#define SNGREP_UI_COLUMN_SELECT_H
 
 #include "config.h"
 #include <menu.h>
@@ -221,4 +221,4 @@ column_select_toggle_item(ui_t *ui, ITEM *item);
 void
 column_select_update_menu(ui_t *ui);
 
-#endif /* __UI_COLUMN_SELECT_H */
+#endif /* SNGREP_UI_COLUMN_SELECT_H */

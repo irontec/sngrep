@@ -29,8 +29,8 @@
  * dialog, that can be used to filter the lines in call list window.
  */
 
-#ifndef __UI_FILTER_H
-#define __UI_FILTER_H
+#ifndef SNGREP_UI_FILTER_H
+#define SNGREP_UI_FILTER_H
 
 #include "config.h"
 #include <form.h>

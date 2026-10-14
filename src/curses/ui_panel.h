@@ -28,8 +28,8 @@
  * This file contains common functions shared by all panels.
  */
 
-#ifndef __SNGREP_UI_PANEL_H
-#define __SNGREP_UI_PANEL_H
+#ifndef SNGREP_UI_PANEL_H
+#define SNGREP_UI_PANEL_H
 
 #ifdef WITH_UNICODE
 #define _X_OPEN_SOURCE_EXTENDED
@@ -297,4 +297,4 @@ ui_clear_line(ui_t *ui, int line);
 void
 ui_draw_bindings(ui_t *ui, const char *keybindings[], int count);
 
-#endif /* __SNGREP_UI_PANEL_H */
+#endif /* SNGREP_UI_PANEL_H */

@@ -29,8 +29,8 @@
  * messages.
  */
 
-#ifndef __SNGREP_SIP_H
-#define __SNGREP_SIP_H
+#ifndef SNGREP_SIP_H
+#define SNGREP_SIP_H
 
 #include "config.h"
 #include <stdbool.h>

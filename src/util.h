@@ -26,8 +26,8 @@
  * @brief Functions for general use in the program
  *
  */
-#ifndef __SNGREP_UTIL_H
-#define __SNGREP_UTIL_H
+#ifndef SNGREP_UTIL_H
+#define SNGREP_UTIL_H
 
 // Capture headers has some fixes for pcap timevals in BSD systems
 #include "capture.h"
@@ -135,4 +135,4 @@ void setup_sigterm_handler(void);
  */
 bool was_sigterm_received(void);
 
-#endif /* __SNGREP_UTIL_H */
+#endif /* SNGREP_UTIL_H */

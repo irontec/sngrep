@@ -39,8 +39,8 @@
  * every sngrep execution.
  */
 
-#ifndef __SNGREP_SETTING_H
-#define __SNGREP_SETTING_H
+#ifndef SNGREP_SETTING_H
+#define SNGREP_SETTING_H
 
 //! Max setting value
 #define MAX_SETTING_LEN   1024
@@ -231,4 +231,4 @@ setting_enum_next(int id, const char *value);
 void
 settings_dump();
 
-#endif /* __SNGREP_SETTING_H */
+#endif /* SNGREP_SETTING_H */
