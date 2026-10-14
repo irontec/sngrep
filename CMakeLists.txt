@@ -166,6 +166,7 @@ target_sources( sngrep
 		src/media.c
 		src/setting.c
 		src/rtp.c
+		src/media_inspector.c
 		src/util.c
 		src/hash.c
 		src/vector.c
