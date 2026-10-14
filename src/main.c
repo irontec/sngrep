@@ -97,7 +97,7 @@ usage()
 void
 version()
 {
-    printf("%s - %s\n"
+    printf("%s - %s - (%s)\n"
            "Copyright (C) 2013-2026 Irontec S.L.\n"
            "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
            "This is free software: you are free to change and redistribute it.\n"
@@ -122,7 +122,13 @@ version()
             " * Compiled with EEP/HEP support.\n"
 #endif
            "\nWritten by Ivan Alonso [aka Kaian]\n",
-           PACKAGE, VERSION);
+           PACKAGE, VERSION,
+#ifdef SNGREP_GIT_COMMIT
+           SNGREP_GIT_COMMIT
+#else
+           "unknown"
+#endif
+           );
 }
 
 /**
