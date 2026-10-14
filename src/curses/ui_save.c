@@ -41,12 +41,15 @@
 /**
  * Ui Structure definition for Save panel
  */
+static int save_handle_mouse(ui_t *ui, int key);
+
 ui_t ui_save = {
     .type = PANEL_SAVE,
     .panel = NULL,
     .create = save_create,
     .draw = save_draw,
     .handle_key = save_handle_key,
+    .handle_mouse = save_handle_mouse,
     .destroy = save_destroy
 };
 
@@ -274,8 +277,9 @@ save_draw(ui_t *ui)
 }
 
 static int
-save_handle_mouse(ui_t *ui)
+save_handle_mouse(ui_t *ui, int key)
 {
+    (void) key;
     save_info_t *info = save_info(ui);
     FIELD *field = ui_mouse_form_field(info->form, NULL);
 
@@ -304,9 +308,6 @@ save_handle_key(ui_t *ui, int key)
 
     // Get panel information
     save_info_t *info = save_info(ui);
-
-    if (key == KEY_MOUSE)
-        return save_handle_mouse(ui);
 
     // Get current field id
     field_idx = field_index(current_field(info->form));
