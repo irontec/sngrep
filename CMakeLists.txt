@@ -33,6 +33,24 @@ project( ${AC_PACKAGE_NAME}
 
 add_executable( sngrep src/main.c )
 
+# Match Autotools: embed the current checkout revision only when Git data is
+# available, without changing builds from exported source archives.
+find_package( Git QUIET )
+if( GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git" )
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --verify --short=12 HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE SNGREP_GIT_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE SNGREP_GIT_RESULT
+        ERROR_QUIET
+    )
+    if( SNGREP_GIT_RESULT EQUAL 0 AND SNGREP_GIT_REVISION )
+        target_compile_definitions( sngrep PRIVATE
+            "SNGREP_GIT_COMMIT=\"${SNGREP_GIT_REVISION}\"" )
+    endif()
+endif()
+
 set_target_properties( sngrep PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED YES C_EXTENSIONS YES )
 target_compile_options( sngrep PRIVATE -Wall -pedantic ) # -Wextra -Wconversion -Werror
 
