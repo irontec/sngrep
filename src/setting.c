@@ -92,6 +92,7 @@ setting_t settings[SETTING_COUNT] = {
 #ifdef USE_EEP
     { SETTING_EEP_SEND,           "eep.send",           SETTING_FMT_ENUM,    SETTING_OFF, SETTING_ENUM_ONOFF },
     { SETTING_EEP_SEND_VER,       "eep.send.version",   SETTING_FMT_ENUM,    "3",         SETTING_ENUM_HEPVERSION },
+    { SETTING_EEP_SEND_PROTO,     "eep.send.proto",     SETTING_FMT_ENUM,    "udp",       SETTING_ENUM_HEPPROTO },
     { SETTING_EEP_SEND_ADDR,      "eep.send.address",   SETTING_FMT_STRING,  "127.0.0.1",  NULL },
     { SETTING_EEP_SEND_PORT,      "eep.send.port",      SETTING_FMT_NUMBER,  "9060",      NULL },
     { SETTING_EEP_SEND_PASS,      "eep.send.pass",      SETTING_FMT_STRING,  "",          NULL },

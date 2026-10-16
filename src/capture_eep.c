@@ -68,12 +68,19 @@ capture_eep_init()
         eep_cfg.capt_host = setting_get_value(SETTING_EEP_SEND_ADDR);
         eep_cfg.capt_port = setting_get_value(SETTING_EEP_SEND_PORT);
         eep_cfg.capt_password = setting_get_value(SETTING_EEP_SEND_PASS);
-        eep_cfg.capt_id = setting_get_intvalue(SETTING_EEP_SEND_ID);;
+        eep_cfg.capt_id = setting_get_intvalue(SETTING_EEP_SEND_ID);
+        eep_cfg.capt_tcp = setting_has_value(SETTING_EEP_SEND_PROTO, "tcp");
+
+        // HEPv2 cannot be framed on a TCP stream.
+        if (eep_cfg.capt_tcp && eep_cfg.capt_version != 3) {
+            fprintf(stderr, "EEP client: TCP send requires HEP version 3\n");
+            return 1;
+        }
 
         hints->ai_flags = AI_NUMERICSERV;
         hints->ai_family = AF_UNSPEC;
-        hints->ai_socktype = SOCK_DGRAM;
-        hints->ai_protocol = IPPROTO_UDP;
+        hints->ai_socktype = eep_cfg.capt_tcp ? SOCK_STREAM : SOCK_DGRAM;
+        hints->ai_protocol = eep_cfg.capt_tcp ? IPPROTO_TCP : IPPROTO_UDP;
 
         if (getaddrinfo(eep_cfg.capt_host, eep_cfg.capt_port, hints, &ai)) {
             fprintf(stderr, "EEP client: failed getaddrinfo() for %s:%s\n",
@@ -84,15 +91,19 @@ capture_eep_init()
         eep_cfg.client_sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
         if (eep_cfg.client_sock < 0) {
             fprintf(stderr, "Sender socket creation failed: %s\n", strerror(errno));
+            freeaddrinfo(ai);
+            eep_cfg.client_sock = 0;
             return 1;
         }
 
-        if (connect(eep_cfg.client_sock, ai->ai_addr, (socklen_t) (ai->ai_addrlen)) == -1) {
-            if (errno != EINPROGRESS) {
-                fprintf(stderr, "Sender socket creation failed: %s\n", strerror(errno));
-                return 1;
-            }
+        if (connect(eep_cfg.client_sock, ai->ai_addr, (socklen_t) ai->ai_addrlen) == -1) {
+            fprintf(stderr, "Sender socket connection failed: %s\n", strerror(errno));
+            freeaddrinfo(ai);
+            close(eep_cfg.client_sock);
+            eep_cfg.client_sock = 0;
+            return 1;
         }
+        freeaddrinfo(ai);
     }
 
     if (setting_enabled(SETTING_EEP_LISTEN)) {
@@ -366,6 +377,48 @@ capture_eep_send(packet_t *pkt)
     return 1;
 }
 
+// Multiple capture sources may send concurrently: serialize complete HEP3
+// frames so that bytes from separate packets never interleave on TCP.
+static pthread_mutex_t eep_tcp_send_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static int
+capture_eep_send_bytes(const unsigned char *data, size_t length)
+{
+    size_t sent_total = 0;
+    ssize_t sent;
+    int result = 0;
+    int flags = 0;
+
+#ifdef MSG_NOSIGNAL
+    flags = MSG_NOSIGNAL;
+#endif
+
+    if (eep_cfg.capt_tcp)
+        pthread_mutex_lock(&eep_tcp_send_lock);
+
+    while (sent_total < length) {
+        sent = send(eep_cfg.client_sock, data + sent_total, length - sent_total, flags);
+        if (sent < 0 && errno == EINTR)
+            continue;
+        if (sent <= 0) {
+            result = 1;
+            break;
+        }
+        sent_total += (size_t) sent;
+
+        // UDP encapsulation must be sent in exactly one datagram.
+        if (!eep_cfg.capt_tcp && sent_total != length) {
+            result = 1;
+            break;
+        }
+    }
+
+    if (eep_cfg.capt_tcp)
+        pthread_mutex_unlock(&eep_tcp_send_lock);
+
+    return result;
+}
+
 struct pcap_pkthdr
 capture_eep_build_frame_data(
         const struct pcap_pkthdr header,
@@ -508,14 +561,9 @@ capture_eep_send_v2(packet_t *pkt)
     memcpy(buffer + buflen, data, len);
     buflen += len;
 
-    if (send(eep_cfg.client_sock, buffer, buflen, 0) == -1) {
-        return 1;
-    }
-
-    /* FREE */
+    int result = capture_eep_send_bytes(buffer, buflen);
     free(buffer);
-
-    return 1;
+    return result;
 }
 
 int
@@ -642,6 +690,12 @@ capture_eep_send_v3(packet_t *pkt)
         tlen += strlen(eep_cfg.capt_password);
     }
 
+    /* HEP3 packet and individual chunks use 16-bit length fields. */
+    if (tlen > 0xffffU || len + sizeof(hep_chunk_t) > 0xffffU) {
+        free(hg);
+        return 1;
+    }
+
     /* total */
     hg->header.length = htons(tlen);
 
@@ -693,14 +747,10 @@ capture_eep_send_v3(packet_t *pkt)
     memcpy(buffer + buflen, data, len);
     buflen += len;
 
-    if (send(eep_cfg.client_sock, buffer, buflen, 0) == -1) {
-        return 1;
-    }
-
-    /* FREE */
+    int result = capture_eep_send_bytes(buffer, buflen);
     free(buffer);
     free(hg);
-    return 0;
+    return result;
 }
 
 packet_t *
@@ -1071,6 +1121,7 @@ capture_eep_set_client_url(const char *url)
     sng_strlcpy(urlstr, url, sizeof(urlstr));
     if (sscanf(urlstr, "%*[^:]:%" STRINGIFY(ADDRESSLEN) "[^:]:%5s", address, port) == 2) {
         setting_set_value(SETTING_EEP_SEND, SETTING_ON);
+        setting_set_value(SETTING_EEP_SEND_PROTO, strncmp(urlstr, "tcp:", 4) ? "udp" : "tcp");
         setting_set_value(SETTING_EEP_SEND_ADDR, address);
         setting_set_value(SETTING_EEP_SEND_PORT, port);
         return 0;

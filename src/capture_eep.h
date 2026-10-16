@@ -93,6 +93,8 @@ struct capture_eep_config
     int capt_id;
     //! Hep Version for sending data (2 or 3)
     int capt_version;
+    //! Send EEP data using TCP instead of UDP
+    bool capt_tcp;
     //! IP address to sends EEP data
     const char *capt_host;
     //! Port to send EEP data
