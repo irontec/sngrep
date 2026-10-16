@@ -81,12 +81,14 @@ settings_entry_t entries[] = {
 #ifdef USE_EEP
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND,           SETTING_EEP_SEND,           "Send all captured SIP packets ............." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_VER,       SETTING_EEP_SEND_VER,       "Send EEP version .........................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_PROTO,     SETTING_EEP_SEND_PROTO,     "Send EEP protocol ........................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_ADDR,      SETTING_EEP_SEND_ADDR,      "Send EEP packet address ..................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_PORT,      SETTING_EEP_SEND_PORT,      "Send EEP packet port ......................" },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_PASS,      SETTING_EEP_SEND_PASS,      "EEP send password ........................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_SEND_ID,        SETTING_EEP_SEND_ID,        "EEP send capture id ......................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN,         SETTING_EEP_LISTEN,         "Listen for eep packets ...................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_VER,     SETTING_EEP_LISTEN_VER,     "Listen EEP version  ......................." },
+    { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PROTO,   SETTING_EEP_LISTEN_PROTO,   "Listen EEP protocol ......................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_ADDR,    SETTING_EEP_LISTEN_ADDR,    "Listen EEP packet address ................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PORT,    SETTING_EEP_LISTEN_PORT,    "Listen EEP packet port ...................." },
     { CAT_SETTINGS_EEP_HOMER,  FLD_SETTINGS_EEP_LISTEN_PASS,    SETTING_EEP_LISTEN_PASS,    "EEP server password ......................." },
@@ -104,7 +106,7 @@ settings_create(ui_t *ui)
     int field = 0;
 
     // Cerate a new window for the panel and form
-    ui_panel_create(ui, 24, 70);
+    ui_panel_create(ui, 26, 70);
 
     // Initialize Filter panel specific data
     info = sng_malloc(sizeof(settings_info_t));
