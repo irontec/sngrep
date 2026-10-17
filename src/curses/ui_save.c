@@ -34,6 +34,8 @@
 #include <form.h>
 #include <ctype.h>
 #include "ui_save.h"
+#include "ui_call_list.h"
+#include "ui_csv.h"
 #include "setting.h"
 #include "capture.h"
 #include "filter.h"
@@ -80,6 +82,7 @@ save_create(ui_t *ui)
     info->fields[FLD_SAVE_PCAP] = new_field(1, 1, 7, 36, 0, 0);
     info->fields[FLD_SAVE_PCAP_RTP] = new_field(1, 1, 8, 36, 0, 0);
     info->fields[FLD_SAVE_TXT] = new_field(1, 1, 9, 36, 0, 0);
+    info->fields[FLD_SAVE_CSV] = new_field(1, 1, 10, 36, 0, 0);
     info->fields[FLD_SAVE_SAVE] = new_field(1, 10, ui->height - 2, 20, 0, 0);
     info->fields[FLD_SAVE_CANCEL] = new_field(1, 10, ui->height - 2, 40, 0, 0);
     info->fields[FLD_SAVE_COUNT] = NULL;
@@ -149,11 +152,11 @@ save_create(ui_t *ui)
     mvwaddch(ui->win, 6, 34, ACS_ULCORNER);
     mvwhline(ui->win, 6, 35, ACS_HLINE, 30);
     mvwaddch(ui->win, 6, 64, ACS_URCORNER);
-    mvwvline(ui->win, 7, 34, ACS_VLINE, 3);
-    mvwvline(ui->win, 7, 64, ACS_VLINE, 3);
-    mvwaddch(ui->win, 10, 34, ACS_LLCORNER);
-    mvwhline(ui->win, 10, 35, ACS_HLINE, 30);
-    mvwaddch(ui->win, 10, 64, ACS_LRCORNER);
+    mvwvline(ui->win, 7, 34, ACS_VLINE, 4);
+    mvwvline(ui->win, 7, 64, ACS_VLINE, 4);
+    mvwaddch(ui->win, 11, 34, ACS_LLCORNER);
+    mvwhline(ui->win, 11, 35, ACS_HLINE, 30);
+    mvwaddch(ui->win, 11, 64, ACS_LRCORNER);
 
     wattroff(ui->win, COLOR_PAIR(CP_BLUE_ON_DEF));
 
@@ -236,6 +239,7 @@ save_draw(ui_t *ui)
     mvwprintw(ui->win, 7, 35, "( ) .pcap (SIP)");
     mvwprintw(ui->win, 8, 35, "( ) .pcap (SIP + RTP)");
     mvwprintw(ui->win, 9, 35, "( ) .txt");
+    mvwprintw(ui->win, 10, 35, "( ) .csv (call list)");
 
     // Get filename field value.
     sng_strlcpy(field_value, field_buffer(info->fields[FLD_SAVE_FILE], 0), sizeof(field_value));
@@ -246,9 +250,13 @@ save_draw(ui_t *ui)
         info->saveformat = (setting_enabled(SETTING_CAPTURE_RTP))? SAVE_PCAP_RTP : SAVE_PCAP;
     } else if (strstr(field_value, ".txt")) {
         info->saveformat = SAVE_TXT;
+    } else if (strstr(field_value, ".csv")) {
+        info->saveformat = SAVE_CSV;
     } else {
         if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP)
             mvwprintw(ui->win, 4, 60, ".pcap");
+        else if (info->saveformat == SAVE_CSV)
+            mvwprintw(ui->win, 4, 60, ".csv ");
         else
             mvwprintw(ui->win, 4, 60, ".txt ");
     }
@@ -263,6 +271,7 @@ save_draw(ui_t *ui)
     set_field_buffer(info->fields[FLD_SAVE_PCAP], 0, (info->saveformat == SAVE_PCAP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_PCAP_RTP], 0, (info->saveformat == SAVE_PCAP_RTP) ? "*" : " ");
     set_field_buffer(info->fields[FLD_SAVE_TXT], 0, (info->saveformat == SAVE_TXT) ? "*" : " ");
+    set_field_buffer(info->fields[FLD_SAVE_CSV], 0, (info->saveformat == SAVE_CSV) ? "*" : " ");
 
     // Show disabled options with makers
     if (!setting_enabled(SETTING_CAPTURE_RTP))
@@ -372,6 +381,9 @@ save_handle_key(ui_t *ui, int key)
                     case FLD_SAVE_TXT:
                         info->saveformat = SAVE_TXT;
                         break;
+                    case FLD_SAVE_CSV:
+                        info->saveformat = SAVE_CSV;
+                        break;
                     case FLD_SAVE_FILE:
                         form_driver(info->form, key);
                         break;
@@ -450,6 +462,9 @@ save_to_file(ui_t *ui)
     vector_iter_t calls, msgs, rtps, packets;
     packet_t *packet;
     vector_t *sorted;
+    call_list_info_t *list_info;
+    char coltext[SIP_ATTR_MAXLEN];
+    int i;
 
     // Get panel information
     save_info_t *info = save_info(ui);
@@ -472,9 +487,17 @@ save_to_file(ui_t *ui)
     if (info->saveformat == SAVE_PCAP || info->saveformat == SAVE_PCAP_RTP) {
         if (!strstr(savefile, ".pcap"))
             strcat(savefile, ".pcap");
+    } else if (info->saveformat == SAVE_CSV) {
+        if (!strstr(savefile, ".csv"))
+            strcat(savefile, ".csv");
     } else {
         if (!strstr(savefile, ".txt"))
             strcat(savefile, ".txt");
+    }
+
+    if (info->saveformat == SAVE_CSV && info->savemode == SAVE_MESSAGE) {
+        dialog_run("CSV export supports call list entries, not a SIP message.");
+        return 1;
     }
 
     // Absolute filename
@@ -525,7 +548,30 @@ save_to_file(ui_t *ui)
             break;
     }
 
-    if (info->savemode == SAVE_MESSAGE) {
+    if (info->saveformat == SAVE_CSV) {
+        // Save the configured call list columns, not the raw SIP messages.
+        list_info = call_list_info(&ui_call_list);
+        if (!list_info) {
+            fclose(f);
+            dialog_run("Unable to export CSV: the call list is unavailable.");
+            return 1;
+        }
+        for (i = 0; i < list_info->columncnt; i++) {
+            if (i) fputc(',', f);
+            csv_write_field(f, list_info->columns[i].title);
+        }
+        fputs("\r\n", f);
+        while ((call = vector_iterator_next(&calls))) {
+            if (!call_msg_count(call)) continue;
+            for (i = 0; i < list_info->columncnt; i++) {
+                if (i) fputc(',', f);
+                coltext[0] = '\0';
+                call_get_attribute(call, list_info->columns[i].id, coltext);
+                csv_write_field(f, coltext);
+            }
+            fputs("\r\n", f);
+        }
+    } else if (info->savemode == SAVE_MESSAGE) {
         if (info->saveformat == SAVE_TXT) {
             // Save selected message to file
             save_msg_txt(f, info->msg);
