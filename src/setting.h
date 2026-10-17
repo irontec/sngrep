@@ -39,8 +39,8 @@
  * every sngrep execution.
  */
 
-#ifndef __SNGREP_SETTING_H
-#define __SNGREP_SETTING_H
+#ifndef SNGREP_SETTING_H
+#define SNGREP_SETTING_H
 
 //! Max setting value
 #define MAX_SETTING_LEN   1024
@@ -55,11 +55,13 @@ typedef struct setting_option setting_t;
 #define SETTING_ENUM_ONOFF       (const char *[]){ "on", "off", NULL }
 #define SETTING_ENUM_YESNO       (const char *[]){ "yes", "no", NULL }
 #define SETTING_ENUM_BACKGROUND  (const char *[]){ "dark" , "default", NULL }
+#define SETTING_ENUM_THEME       (const char *[]){ "classic", "modern", "professional", "simple", NULL }
 #define SETTING_ENUM_COLORMODE   (const char *[]){ "request", "cseq", "callid", NULL }
 #define SETTING_ENUM_HIGHLIGHT   (const char *[]){ "bold", "reverse", "reversebold", NULL }
 #define SETTING_ENUM_SDP_INFO    (const char *[]){ "off", "first", "full", "compressed", NULL}
 #define SETTING_ENUM_STORAGE     (const char *[]){ "none", "memory", NULL }
 #define SETTING_ENUM_HEPVERSION  (const char *[]){ "2", "3", NULL }
+#define SETTING_ENUM_HEPPROTO    (const char *[]){ "udp", "tcp", NULL }
 #define SETTING_ENUM_MEDIA       (const char *[]){ "off", "on", "active", NULL }
 
 //! Other useful defines
@@ -73,12 +75,14 @@ typedef struct setting_option setting_t;
 //! Available setting Options
 enum setting_id {
     SETTING_BACKGROUND = 0,
+    SETTING_THEME,
     SETTING_COLORMODE,
     SETTING_SYNTAX,
     SETTING_SYNTAX_TAG,
     SETTING_SYNTAX_BRANCH,
     SETTING_ALTKEY_HINT,
     SETTING_EXITPROMPT,
+    SETTING_MOUSE,
     SETTING_CAPTURE_LIMIT,
     SETTING_CAPTURE_DEVICE,
     SETTING_CAPTURE_OUTFILE,
@@ -126,12 +130,14 @@ enum setting_id {
 #ifdef USE_EEP
     SETTING_EEP_SEND,
     SETTING_EEP_SEND_VER,
+    SETTING_EEP_SEND_PROTO,
     SETTING_EEP_SEND_ADDR,
     SETTING_EEP_SEND_PORT,
     SETTING_EEP_SEND_PASS,
     SETTING_EEP_SEND_ID,
     SETTING_EEP_LISTEN,
     SETTING_EEP_LISTEN_VER,
+    SETTING_EEP_LISTEN_PROTO,
     SETTING_EEP_LISTEN_ADDR,
     SETTING_EEP_LISTEN_PORT,
     SETTING_EEP_LISTEN_PASS,
@@ -230,4 +236,4 @@ setting_enum_next(int id, const char *value);
 void
 settings_dump();
 
-#endif /* __SNGREP_SETTING_H */
+#endif /* SNGREP_SETTING_H */

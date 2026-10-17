@@ -40,8 +40,8 @@
  *
  */
 
-#ifndef __SNGREP_OPTION_H
-#define __SNGREP_OPTION_H
+#ifndef SNGREP_OPTION_H
+#define SNGREP_OPTION_H
 
 #include <stdint.h>
 

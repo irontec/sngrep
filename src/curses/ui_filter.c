@@ -45,6 +45,7 @@ ui_t ui_filter = {
     .panel = NULL,
     .create = filter_create,
     .handle_key = filter_handle_key,
+    .handle_mouse = filter_handle_mouse,
     .destroy = filter_destroy
 };
 
@@ -248,20 +249,11 @@ filter_create(ui_t *ui)
     set_current_field(info->form, info->fields[FLD_FILTER_SIPFROM]);
     wmove(ui->win, 3, 18);
     curs_set(1);
-
-#ifdef NCURSES_MOUSE_VERSION
-    // Allow clicking fields while this panel is displayed
-    mousemask(BUTTON1_CLICKED, &info->old_mousemask);
-#endif
 }
 
 void
 filter_destroy(ui_t *ui)
 {
-#ifdef NCURSES_MOUSE_VERSION
-    // Restore previous mouse events, so terminal text selection works again
-    mousemask(filter_info(ui)->old_mousemask, NULL);
-#endif
     curs_set(0);
     ui_panel_destroy(ui);
 }
@@ -271,6 +263,27 @@ filter_info_t *
 filter_info(ui_t *ui)
 {
     return (filter_info_t*) panel_userptr(ui->panel);
+}
+
+
+int
+filter_handle_mouse(ui_t *ui, int key)
+{
+    filter_info_t *info = filter_info(ui);
+    int field_idx = filter_mouse_field(ui);
+    (void) key;
+
+    if (field_idx < 0)
+        return KEY_HANDLED;
+
+    // Clicking a field focuses it; checkboxes and buttons also activate.
+    set_current_field(info->form, info->fields[field_idx]);
+    form_driver(info->form, REQ_END_LINE);
+    if (filter_select_field(ui, field_idx))
+        return KEY_HANDLED;
+
+    // Run the same validation and cursor/highlight updates as keyboard focus.
+    return filter_handle_key(ui, key_action_key(ACTION_END));
 }
 
 int
@@ -291,14 +304,6 @@ filter_handle_key(ui_t *ui, int key)
     // space characters
     sng_strlcpy(field_value, field_buffer(current_field(info->form), 0), sizeof(field_value));
     strtrim(field_value);
-
-    // Clicked fields get the focus. Checkboxes and buttons are also selected
-    if (key == KEY_MOUSE && (field_idx = filter_mouse_field(ui)) != -1) {
-        set_current_field(info->form, info->fields[field_idx]);
-        form_driver(info->form, REQ_END_LINE);
-        if (filter_select_field(ui, field_idx))
-            return KEY_HANDLED;
-    }
 
     // Check actions for this key
     while ((action = key_find_action(key, action)) != ERR) {
@@ -380,9 +385,8 @@ filter_handle_key(ui_t *ui, int key)
         curs_set(0);
     }
 
-    // Return if this panel has handled or not the key
-    // Mouse events are always handled, even outside the fields
-    return (action == ERR && key != KEY_MOUSE) ? KEY_NOT_HANDLED : KEY_HANDLED;
+    // Return if this panel has handled the keyboard action
+    return (action == ERR) ? KEY_NOT_HANDLED : KEY_HANDLED;
 }
 
 bool
@@ -435,11 +439,8 @@ filter_mouse_field(ui_t *ui)
     int field_id, rows, cols, frow, fcol, nrow, nbuf, label, end;
     filter_info_t *info = filter_info(ui);
 
-    if (getmouse(&event) != OK || !(event.bstate & BUTTON1_CLICKED))
-        return -1;
-
     // Get click position relative to the panel
-    if (!wmouse_trafo(ui->win, &event.y, &event.x, FALSE))
+    if (!ui_mouse_pos(ui->win, &event.y, &event.x))
         return -1;
 
     for (field_id = 0; field_id < FLD_FILTER_COUNT; field_id++) {

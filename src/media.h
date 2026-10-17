@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef __SNGREP_MEDIA_H_
-#define __SNGREP_MEDIA_H_
+#ifndef SNGREP_MEDIA_H
+#define SNGREP_MEDIA_H
 
 #include "config.h"
 #include <sys/types.h>
@@ -102,4 +102,4 @@ media_get_prefered_format(sdp_media_t *media);
 int
 media_get_format_code(sdp_media_t *media);
 
-#endif /* __SNGREP_MEDIA_H_ */
+#endif /* SNGREP_MEDIA_H */

@@ -39,6 +39,8 @@
 #include "ui_manager.h"
 #include "capture.h"
 #include "ui_call_list.h"
+#include "ui_media_dashboard.h"
+#include "media_inspector.h"
 #include "ui_call_flow.h"
 #include "ui_call_raw.h"
 #include "ui_filter.h"
@@ -63,13 +65,90 @@ static ui_t *panel_pool[] = {
     &ui_msg_diff,
     &ui_column_select,
     &ui_settings,
-    &ui_stats
+    &ui_stats,
+    &ui_media_dashboard
 };
+
+/**
+ * @brief Color theme definition
+ *
+ * Panels draw with color pairs named after the 8 basic colors. A theme
+ * replaces those basic colors with its own palette: accent[] is used when
+ * the color is the foreground, bar[] when it is the background. Themes keep
+ * the terminal default background, so they work with any terminal scheme.
+ */
+struct color_theme {
+    const char *name;
+    short bar_fg;           // Foreground over bars and selections
+    short accent[8];        // black, red, green, yellow, blue, magenta, cyan, white
+    short bar[8];
+};
+
+static const struct color_theme themes[] = {
+    { "modern", 255,
+        { 235, 204, 114, 221, 75, 176, 80, 255 },
+        { 235, 131, 65, 136, 61, 96, 31, 250 } },
+    { "professional", 255,
+        { 236, 167, 108, 179, 110, 139, 109, 255 },
+        { 236, 88, 22, 94, 240, 53, 67, 252 } },
+    { "simple", 234,
+        { 234, 203, 150, 223, 153, 182, 152, 255 },
+        { 234, 203, 150, 223, 245, 182, 248, 252 } },
+};
+
+void
+ncurses_init_colors()
+{
+    const struct color_theme *theme = NULL;
+    short fg, bg, bar_fg;
+    short accent[8], bar[8];
+    int i;
+
+    // ponytail: themes need a 256 color terminal, others keep the classic colors
+    if (COLORS >= 256) {
+        for (i = 0; i < (int) (sizeof(themes) / sizeof(themes[0])); i++) {
+            if (setting_has_value(SETTING_THEME, themes[i].name))
+                theme = &themes[i];
+        }
+    }
+
+    for (i = 0; i < 8; i++) {
+        accent[i] = theme ? theme->accent[i] : i;
+        bar[i] = theme ? theme->bar[i] : i;
+    }
+
+    // Check if user wants a black background
+    fg = bg = COLOR_DEFAULT;
+    if (!theme && setting_has_value(SETTING_BACKGROUND, "dark")) {
+        fg = COLOR_WHITE;
+        bg = COLOR_BLACK;
+    }
+    assume_default_colors(fg, bg);
+    bar_fg = theme ? theme->bar_fg : fg;
+
+    // Initialize colorpairs
+    init_pair(CP_CYAN_ON_DEF, accent[COLOR_CYAN], bg);
+    init_pair(CP_YELLOW_ON_DEF, accent[COLOR_YELLOW], bg);
+    init_pair(CP_MAGENTA_ON_DEF, accent[COLOR_MAGENTA], bg);
+    init_pair(CP_GREEN_ON_DEF, accent[COLOR_GREEN], bg);
+    init_pair(CP_RED_ON_DEF, accent[COLOR_RED], bg);
+    init_pair(CP_BLUE_ON_DEF, accent[COLOR_BLUE], bg);
+    init_pair(CP_WHITE_ON_DEF, accent[COLOR_WHITE], bg);
+    init_pair(CP_DEF_ON_CYAN, bar_fg, bar[COLOR_CYAN]);
+    init_pair(CP_DEF_ON_BLUE, bar_fg, bar[COLOR_BLUE]);
+    init_pair(CP_WHITE_ON_BLUE, accent[COLOR_WHITE], bar[COLOR_BLUE]);
+    init_pair(CP_BLACK_ON_CYAN, accent[COLOR_BLACK], bar[COLOR_CYAN]);
+    init_pair(CP_WHITE_ON_CYAN, accent[COLOR_WHITE], bar[COLOR_CYAN]);
+    init_pair(CP_YELLOW_ON_CYAN, accent[COLOR_YELLOW], bar[COLOR_CYAN]);
+    init_pair(CP_BLUE_ON_CYAN, accent[COLOR_BLUE], bar[COLOR_CYAN]);
+    init_pair(CP_BLUE_ON_WHITE, accent[COLOR_BLUE], bar[COLOR_WHITE]);
+    init_pair(CP_CYAN_ON_WHITE, accent[COLOR_CYAN], bar[COLOR_WHITE]);
+    init_pair(CP_CYAN_ON_BLACK, accent[COLOR_CYAN], bar[COLOR_BLACK]);
+}
 
 int
 ncurses_init()
 {
-    int bg, fg;
     const char *term;
 
     // Set Locale
@@ -81,12 +160,6 @@ ncurses_init()
         return -1;
     }
 
-    // Check if user wants a black background
-    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
-        assume_default_colors(COLOR_WHITE, COLOR_BLACK);
-    } else {
-        use_default_colors();
-    }
     // Enable Colors
     start_color();
     cbreak();
@@ -115,32 +188,7 @@ ncurses_init()
         define_key("\033[17;2~", KEY_F(18));
     }
 
-    if (setting_has_value(SETTING_BACKGROUND, "dark")) {
-        fg = COLOR_WHITE;
-        bg = COLOR_BLACK;
-    } else {
-        fg = COLOR_DEFAULT;
-        bg = COLOR_DEFAULT;
-    }
-
-    // Initialize colorpairs
-    init_pair(CP_CYAN_ON_DEF, COLOR_CYAN, bg);
-    init_pair(CP_YELLOW_ON_DEF, COLOR_YELLOW, bg);
-    init_pair(CP_MAGENTA_ON_DEF, COLOR_MAGENTA, bg);
-    init_pair(CP_GREEN_ON_DEF, COLOR_GREEN, bg);
-    init_pair(CP_RED_ON_DEF, COLOR_RED, bg);
-    init_pair(CP_BLUE_ON_DEF, COLOR_BLUE, bg);
-    init_pair(CP_WHITE_ON_DEF, COLOR_WHITE, bg);
-    init_pair(CP_DEF_ON_CYAN, fg, COLOR_CYAN);
-    init_pair(CP_DEF_ON_BLUE, fg, COLOR_BLUE);
-    init_pair(CP_WHITE_ON_BLUE, COLOR_WHITE, COLOR_BLUE);
-    init_pair(CP_BLACK_ON_CYAN, COLOR_BLACK, COLOR_CYAN);
-    init_pair(CP_WHITE_ON_CYAN, COLOR_WHITE, COLOR_CYAN);
-    init_pair(CP_YELLOW_ON_CYAN, COLOR_YELLOW, COLOR_CYAN);
-    init_pair(CP_BLUE_ON_CYAN, COLOR_BLUE, COLOR_CYAN);
-    init_pair(CP_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
-    init_pair(CP_CYAN_ON_WHITE, COLOR_CYAN, COLOR_WHITE);
-    init_pair(CP_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
+    ncurses_init_colors();
 
     return 0;
 }
@@ -227,8 +275,15 @@ ui_wait_for_input()
         win = panel_window(panel);
         keypad(win, TRUE);
 
+        // Enable mouse events if current panel supports them
+        ui_mouse_setup(ui);
+
         // Get pressed key
         int c = wgetch(win);
+
+        // Mouse events become keys when possible (wheel, footer hints)
+        if (c == KEY_MOUSE)
+            c = ui_mouse_translate(ui);
 
         // Timeout, no key pressed
         if (c == ERR)
@@ -238,8 +293,11 @@ ui_wait_for_input()
         // Handle received key
         int hld = KEY_NOT_HANDLED;
         while (hld != KEY_HANDLED) {
-            // Check if current panel has custom bindings for that key
-            hld = ui_handle_key(ui, c);
+            // Mouse click handlers are distinct from keyboard handlers.
+            if (c == KEY_MOUSE)
+                hld = ui_handle_mouse(ui, c);
+            else
+                hld = ui_handle_key(ui, c);
 
             if (hld == KEY_HANDLED) {
                 // Panel handled this key
@@ -286,6 +344,16 @@ ui_default_handle_key(ui_t *ui, int key)
                 break;
             case ACTION_SHOW_SETTINGS:
                 ui_create_panel(PANEL_SETTINGS);
+                break;
+            case ACTION_MEDIA_DASHBOARD:
+                media_inspector_set_enabled(1);
+                if (ui->type == PANEL_MEDIA_DASHBOARD) {
+                    ui_destroy(ui);
+                    if (!panel_below(NULL))
+                        ui_create_panel(PANEL_CALL_LIST);
+                } else {
+                    ui_create_panel(PANEL_MEDIA_DASHBOARD);
+                }
                 break;
             case ACTION_TOGGLE_PAUSE:
                 // Pause/Resume capture
@@ -727,6 +795,20 @@ dialog_confirm(const char *title, const char *text, const char *options)
 
         // Get pressed key
         key = wgetch(dialog_win);
+
+        // Clicking an option chooses it
+        if (key == KEY_MOUSE && ui_mouse_read()) {
+            int y, x;
+            if (ui_mouse_pos(dialog_win, &y, &x) && y == height - 2) {
+                for (i = 0; i < optioncnt; i++) {
+                    if (x >= 10 + 10 * i && x < 10 + 10 * i + (int) strlen(opts[i]) + 6) {
+                        selected = i;
+                        goto done;
+                    }
+                }
+            }
+            continue;
+        }
 
         // Check actions for this key
         while ((action = key_find_action(key, action)) != ERR) {

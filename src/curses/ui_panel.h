@@ -28,8 +28,8 @@
  * This file contains common functions shared by all panels.
  */
 
-#ifndef __SNGREP_UI_PANEL_H
-#define __SNGREP_UI_PANEL_H
+#ifndef SNGREP_UI_PANEL_H
+#define SNGREP_UI_PANEL_H
 
 #ifdef WITH_UNICODE
 #define _X_OPEN_SOURCE_EXTENDED
@@ -74,6 +74,8 @@ enum panel_types {
     PANEL_SETTINGS,
     //! Stats panel
     PANEL_STATS,
+    //! Modern media dashboard
+    PANEL_MEDIA_DASHBOARD,
     //! Panel Counter
     PANEL_COUNT,
 };
@@ -104,6 +106,12 @@ struct ui {
     enum panel_types type;
     //! Flag this panel as redraw required
     bool changed;
+    //! Footer key hints positions, so they can be clicked
+    struct {
+        int start, end, key;
+    } bindings[16];
+    //! Number of footer key hints
+    int bindingcnt;
 
     //! Constructor for this panel
     void (*create)(ui_t *);
@@ -117,6 +125,8 @@ struct ui {
     int (*resize)(ui_t *);
     //! Handle a custom keybind on this panel
     int (*handle_key)(ui_t *, int key);
+    //! Handle a mouse click on this panel, independently of keyboard input
+    int (*handle_mouse)(ui_t *, int key);
     //! Show help window for this panel (if any)
     int (*help)(ui_t *);
 };
@@ -220,6 +230,19 @@ int
 ui_handle_key(ui_t *ui, int key);
 
 /**
+ * @brief Dispatch a mouse event to the current panel.
+ *
+ * Panels without a mouse handler ignore the click. Wheel events and footer
+ * hints are converted to regular keys before reaching this function.
+ *
+ * @param ui UI structure
+ * @param key KEY_MOUSE
+ * @return enum key_handler_ret
+ */
+int
+ui_handle_mouse(ui_t *ui, int key);
+
+/**
  * @brief Create a ncurses panel for the given ui
  *
  * Create a panel and associated window and store their
@@ -276,4 +299,4 @@ ui_clear_line(ui_t *ui, int line);
 void
 ui_draw_bindings(ui_t *ui, const char *keybindings[], int count);
 
-#endif /* __SNGREP_UI_PANEL_H */
+#endif /* SNGREP_UI_PANEL_H */

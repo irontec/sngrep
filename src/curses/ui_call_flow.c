@@ -78,6 +78,7 @@ ui_t ui_call_flow = {
     .redraw = call_flow_redraw,
     .draw = call_flow_draw,
     .handle_key = call_flow_handle_key,
+    .handle_mouse = call_flow_handle_mouse,
     .help = call_flow_help
 };
 
@@ -1471,6 +1472,35 @@ call_flow_draw_raw_rtcp(ui_t *ui, rtp_stream_t *stream)
 }
 
 int
+call_flow_handle_mouse(ui_t *ui, int key)
+{
+    (void) key;
+    call_flow_info_t *info = call_flow_info(ui);
+    call_flow_arrow_t *arrow;
+    int y, x, line = 0;
+
+    if (!ui_mouse_pos(info->flow_win, &y, &x))
+        return KEY_HANDLED;
+
+    // Walk displayed arrows the same way they are drawn
+    vector_iter_t it = vector_iterator(info->darrows);
+    vector_iterator_set_current(&it, info->first_arrow - 1);
+    vector_iterator_set_filter(&it, call_flow_arrow_filter);
+    while ((arrow = vector_iterator_next(&it))) {
+        line += call_flow_arrow_height(ui, arrow);
+        if (y < line) {
+            call_flow_move(ui, vector_iterator_current(&it));
+            // Double click shows the message, like Enter
+            if (ui_mouse_double_click())
+                return call_flow_handle_key(ui, key_action_key(ACTION_CONFIRM));
+            break;
+        }
+    }
+
+    return KEY_HANDLED;
+}
+
+int
 call_flow_handle_key(ui_t *ui, int key)
 {
     int raw_width;
@@ -1688,7 +1718,7 @@ call_flow_help(ui_t *ui)
     mvwprintw(help_win, 14, 2, "F3/m        Toggle RTP arrows display");
     mvwprintw(help_win, 15, 2, "F4/X        Show call-flow with X-CID/X-Call-ID dialog");
     mvwprintw(help_win, 16, 2, "F5/s        Toggle compressed view (One address <=> one column");
-    mvwprintw(help_win, 17, 2, "F6/R        Show original call messages in raw mode");
+    mvwprintw(help_win, 17, 2, "R           Show original call messages in raw mode");
     mvwprintw(help_win, 18, 2, "F7/c        Cycle between available color modes");
     mvwprintw(help_win, 19, 2, "F8/C        Turn on/off message syntax highlighting");
     mvwprintw(help_win, 20, 2, "F9/l        Turn on/off resolved addresses");
@@ -1696,6 +1726,7 @@ call_flow_help(ui_t *ui)
     mvwprintw(help_win, 22, 2, "t           Toggle raw preview display");
     mvwprintw(help_win, 23, 2, "T           Restore raw preview size");
     mvwprintw(help_win, 24, 2, "D           Only show SDP messages");
+    mvwprintw(help_win, 25, 2, "F6/v        Open Media Inspector (RTP streams)");
 
     // Press any key to close
     wgetch(help_win);

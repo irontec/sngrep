@@ -29,8 +29,8 @@
  * output screen.
  *
  */
-#ifndef __UI_CALL_RAW_H
-#define __UI_CALL_RAW_H
+#ifndef SNGREP_UI_CALL_RAW_H
+#define SNGREP_UI_CALL_RAW_H
 
 #include "config.h"
 #include "ui_manager.h"

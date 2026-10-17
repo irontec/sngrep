@@ -39,8 +39,8 @@
  * sngrep packet structures has been made by Ivan Alonso (Kaian)
  *
  */
-#ifndef __SNGREP_CAPTURE_EEP_H
-#define __SNGREP_CAPTURE_EEP_H
+#ifndef SNGREP_CAPTURE_EEP_H
+#define SNGREP_CAPTURE_EEP_H
 #include <pthread.h>
 #include "capture.h"
 
@@ -67,6 +67,16 @@ enum
 };
 
 
+//! Max number of simultaneous HEP TCP clients
+#define EEP_TCP_MAX_CLIENTS 64
+
+//! Pending data of a HEP TCP client until a full HEP3 packet is received
+typedef struct eep_tcp_client
+{
+    uint32_t len;
+    u_char buffer[MAX_CAPTURE_LEN];
+} eep_tcp_client_t;
+
 //! Shorter declaration of capture_eep_config structure
 typedef struct capture_eep_config  capture_eep_config_t;
 
@@ -83,6 +93,8 @@ struct capture_eep_config
     int capt_id;
     //! Hep Version for sending data (2 or 3)
     int capt_version;
+    //! Send EEP data using TCP instead of UDP
+    bool capt_tcp;
     //! IP address to sends EEP data
     const char *capt_host;
     //! Port to send EEP data
@@ -97,6 +109,8 @@ struct capture_eep_config
     const char *capt_srv_port;
     //! Server password to authenticate incoming connections
     const char *capt_srv_password;
+    //! Receive EEP data using TCP instead of UDP
+    bool capt_srv_tcp;
     //! Server thread to parse incoming data
     pthread_t server_thread;
 };
@@ -365,4 +379,4 @@ capture_eep_set_server_url(const char *url);
 int
 capture_eep_set_client_url(const char *url);
 
-#endif /* __SNGREP_CAPTURE_EEP_H */
+#endif /* SNGREP_CAPTURE_EEP_H */

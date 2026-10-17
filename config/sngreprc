@@ -7,6 +7,10 @@
 ##-----------------------------------------------------------------------------
 ## Enable color on or off
 # set color off
+## Color theme: classic, modern, professional or simple (themes need 256
+## colors and use the terminal background)
+# set theme modern
+
 ## Use default foreground and background colors of your terminal
 # set background default
 ## Disable syntax highlighting
@@ -53,6 +57,8 @@
 # set cl.noexitprompt off
 ## Or set its default button
 # set cl.defexitbutton 0/1
+## Disable mouse support (restores terminal text selection without Shift)
+# set mouse off
 
 # Set default filter on startup
 # set filter.methods INVITE
@@ -86,6 +92,7 @@
 ##    - state
 ##    - convdur
 ##    - totaldur
+##    - codec
 ##
 ## Examples:
 # set cl.column0 sipfrom

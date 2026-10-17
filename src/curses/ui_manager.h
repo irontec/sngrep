@@ -33,11 +33,12 @@
  * panel pointers.
  *
  */
-#ifndef __SNGREP_UI_MANAGER_H
-#define __SNGREP_UI_MANAGER_H
+#ifndef SNGREP_UI_MANAGER_H
+#define SNGREP_UI_MANAGER_H
 #include "config.h"
 #include "theme.h"
 #include "ui_panel.h"
+#include "ui_mouse.h"
 #include "sip.h"
 #include "group.h"
 #include "keybinding.h"
@@ -61,6 +62,7 @@ extern ui_t ui_msg_diff;
 extern ui_t ui_column_select;
 extern ui_t ui_settings;
 extern ui_t ui_stats;
+extern ui_t ui_media_dashboard;
 
 /**
  * @brief Initialize ncurses mode
@@ -71,6 +73,14 @@ extern ui_t ui_stats;
  */
 int
 ncurses_init();
+
+/**
+ * @brief Initialize color pairs from the theme and background settings
+ *
+ * Can be called again at any time to apply a new theme.
+ */
+void
+ncurses_init_colors();
 
 /**
  * @brief Stops ncurses mode
@@ -232,4 +242,4 @@ dialog_progress_destroy(WINDOW *win);
 int
 dialog_confirm(const char *title, const char *text, const char *options);
 
-#endif    // __SNGREP_UI_MANAGER_H
+#endif    // SNGREP_UI_MANAGER_H

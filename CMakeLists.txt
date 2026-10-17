@@ -33,6 +33,24 @@ project( ${AC_PACKAGE_NAME}
 
 add_executable( sngrep src/main.c )
 
+# Match Autotools: embed the current checkout revision only when Git data is
+# available, without changing builds from exported source archives.
+find_package( Git QUIET )
+if( GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git" )
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --verify --short=12 HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE SNGREP_GIT_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE SNGREP_GIT_RESULT
+        ERROR_QUIET
+    )
+    if( SNGREP_GIT_RESULT EQUAL 0 AND SNGREP_GIT_REVISION )
+        target_compile_definitions( sngrep PRIVATE
+            "SNGREP_GIT_COMMIT=\"${SNGREP_GIT_REVISION}\"" )
+    endif()
+endif()
+
 set_target_properties( sngrep PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED YES C_EXTENSIONS YES )
 target_compile_options( sngrep PRIVATE -Wall -pedantic ) # -Wextra -Wconversion -Werror
 
@@ -166,6 +184,7 @@ target_sources( sngrep
 		src/media.c
 		src/setting.c
 		src/rtp.c
+		src/media_inspector.c
 		src/util.c
 		src/hash.c
 		src/vector.c
@@ -183,6 +202,8 @@ target_sources( sngrep
 		src/curses/ui_msg_diff.c
 		src/curses/ui_column_select.c
 		src/curses/ui_settings.c
+		src/curses/ui_mouse.c
+		src/curses/ui_media_dashboard.c
 	)
 
 target_include_directories( sngrep PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src )
@@ -213,6 +234,7 @@ include( GNUInstallDirs )
 install( TARGETS sngrep RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )
 install( FILES config/sngreprc DESTINATION ${CMAKE_INSTALL_SYSCONFDIR} )
 install( FILES doc/sngrep.8 DESTINATION ${CMAKE_INSTALL_MANDIR}/man8 )
+install( FILES doc/sngreprc.5 DESTINATION ${CMAKE_INSTALL_MANDIR}/man5 )
 install( FILES README TODO COPYING ChangeLog DESTINATION "${CMAKE_INSTALL_DOCDIR}" )
 
 ######################################################################

@@ -44,6 +44,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <poll.h>
 #include <unistd.h>
 #include <pcap.h>
 #include "capture_eep.h"
@@ -67,12 +68,19 @@ capture_eep_init()
         eep_cfg.capt_host = setting_get_value(SETTING_EEP_SEND_ADDR);
         eep_cfg.capt_port = setting_get_value(SETTING_EEP_SEND_PORT);
         eep_cfg.capt_password = setting_get_value(SETTING_EEP_SEND_PASS);
-        eep_cfg.capt_id = setting_get_intvalue(SETTING_EEP_SEND_ID);;
+        eep_cfg.capt_id = setting_get_intvalue(SETTING_EEP_SEND_ID);
+        eep_cfg.capt_tcp = setting_has_value(SETTING_EEP_SEND_PROTO, "tcp");
+
+        // HEPv2 cannot be framed on a TCP stream.
+        if (eep_cfg.capt_tcp && eep_cfg.capt_version != 3) {
+            fprintf(stderr, "EEP client: TCP send requires HEP version 3\n");
+            return 1;
+        }
 
         hints->ai_flags = AI_NUMERICSERV;
         hints->ai_family = AF_UNSPEC;
-        hints->ai_socktype = SOCK_DGRAM;
-        hints->ai_protocol = IPPROTO_UDP;
+        hints->ai_socktype = eep_cfg.capt_tcp ? SOCK_STREAM : SOCK_DGRAM;
+        hints->ai_protocol = eep_cfg.capt_tcp ? IPPROTO_TCP : IPPROTO_UDP;
 
         if (getaddrinfo(eep_cfg.capt_host, eep_cfg.capt_port, hints, &ai)) {
             fprintf(stderr, "EEP client: failed getaddrinfo() for %s:%s\n",
@@ -83,15 +91,19 @@ capture_eep_init()
         eep_cfg.client_sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
         if (eep_cfg.client_sock < 0) {
             fprintf(stderr, "Sender socket creation failed: %s\n", strerror(errno));
+            freeaddrinfo(ai);
+            eep_cfg.client_sock = 0;
             return 1;
         }
 
-        if (connect(eep_cfg.client_sock, ai->ai_addr, (socklen_t) (ai->ai_addrlen)) == -1) {
-            if (errno != EINPROGRESS) {
-                fprintf(stderr, "Sender socket creation failed: %s\n", strerror(errno));
-                return 1;
-            }
+        if (connect(eep_cfg.client_sock, ai->ai_addr, (socklen_t) ai->ai_addrlen) == -1) {
+            fprintf(stderr, "Sender socket connection failed: %s\n", strerror(errno));
+            freeaddrinfo(ai);
+            close(eep_cfg.client_sock);
+            eep_cfg.client_sock = 0;
+            return 1;
         }
+        freeaddrinfo(ai);
     }
 
     if (setting_enabled(SETTING_EEP_LISTEN)) {
@@ -100,11 +112,18 @@ capture_eep_init()
         eep_cfg.capt_srv_host = setting_get_value(SETTING_EEP_LISTEN_ADDR);
         eep_cfg.capt_srv_port = setting_get_value(SETTING_EEP_LISTEN_PORT);
         eep_cfg.capt_srv_password = setting_get_value(SETTING_EEP_LISTEN_PASS);
+        eep_cfg.capt_srv_tcp = !strcmp(setting_get_value(SETTING_EEP_LISTEN_PROTO), "tcp");
+
+        // HEPv2 has no total length field to split a TCP stream into packets
+        if (eep_cfg.capt_srv_tcp && eep_cfg.capt_srv_version != 3) {
+            fprintf(stderr, "EEP server: TCP listen requires HEP version 3\n");
+            return 1;
+        }
 
         hints->ai_flags = AI_NUMERICSERV;
         hints->ai_family = AF_UNSPEC;
-        hints->ai_socktype = SOCK_DGRAM;
-        hints->ai_protocol = IPPROTO_UDP;
+        hints->ai_socktype = eep_cfg.capt_srv_tcp ? SOCK_STREAM : SOCK_DGRAM;
+        hints->ai_protocol = eep_cfg.capt_srv_tcp ? IPPROTO_TCP : IPPROTO_UDP;
 
         if (getaddrinfo(eep_cfg.capt_srv_host, eep_cfg.capt_srv_port, hints, &ai)) {
             fprintf(stderr, "EEP server: failed getaddrinfo() for %s:%s\n",
@@ -112,16 +131,29 @@ capture_eep_init()
             return 1;
         }
 
-        // Create a socket for a new TCP IPv4 connection
-        eep_cfg.server_sock = socket(AF_INET, SOCK_DGRAM, 0);
-        if (eep_cfg.client_sock < 0) {
+        // Create a socket for the resolved address family and protocol
+        eep_cfg.server_sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (eep_cfg.server_sock < 0) {
             fprintf(stderr, "Error creating server socket: %s\n", strerror(errno));
+            freeaddrinfo(ai);
             return 1;
         }
+
+        // Allow restarting sngrep while old TCP connections are in TIME_WAIT
+        if (eep_cfg.capt_srv_tcp)
+            setsockopt(eep_cfg.server_sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
 
         // Bind that socket to the requested address and port
         if (bind(eep_cfg.server_sock, ai->ai_addr, ai->ai_addrlen) == -1) {
             fprintf(stderr, "Error binding address: %s\n", strerror(errno));
+            freeaddrinfo(ai);
+            return 1;
+        }
+        freeaddrinfo(ai);
+
+        // Wait for incoming TCP connections
+        if (eep_cfg.capt_srv_tcp && listen(eep_cfg.server_sock, SOMAXCONN) == -1) {
+            fprintf(stderr, "Error listening on address: %s\n", strerror(errno));
             return 1;
         }
 
@@ -162,26 +194,134 @@ capture_eep_init()
 }
 
 
+/**
+ * @brief Parse a received EEP packet and store it in the output file
+ */
+static void
+capture_eep_parse_packet(packet_t *pkt)
+{
+    // Avoid parsing from multiples sources.
+    // Avoid parsing while screen in being redrawn
+    capture_lock();
+    if (capture_packet_parse(pkt) == 0) {
+        // Store this packets in output file
+        capture_dump_packet(pkt);
+    } else {
+        packet_destroy(pkt);
+    }
+    capture_unlock();
+}
+
+/**
+ * @brief Read data from a HEP TCP client and parse completed HEP3 packets
+ *
+ * A single read can contain only a part of a HEP3 packet or several of them,
+ * so data is stored in client buffer and split using HEP3 total length field.
+ *
+ * @return 0 if connection must be kept open, -1 otherwise
+ */
+static int
+capture_eep_tcp_read(int fd, eep_tcp_client_t *client)
+{
+    ssize_t received;
+    uint32_t len;
+    packet_t *pkt;
+
+    received = recv(fd, client->buffer + client->len, sizeof(client->buffer) - client->len, 0);
+    if (received == -1 && errno == EINTR)
+        return 0;
+    if (received <= 0)
+        return -1;
+    client->len += received;
+
+    while (client->len >= sizeof(hep_ctrl_t)) {
+        // Not a HEP3 stream, we can not find next packet start
+        if (memcmp(client->buffer, "\x48\x45\x50\x33", 4) != 0)
+            return -1;
+
+        // Packets bigger than our buffer can not be stored
+        len = (client->buffer[4] << 8) | client->buffer[5];
+        if (len < sizeof(hep_ctrl_t) || len >= sizeof(client->buffer))
+            return -1;
+
+        // Wait for the rest of the packet
+        if (client->len < len)
+            break;
+
+        if ((pkt = capture_eep_receive_v3(client->buffer, len)))
+            capture_eep_parse_packet(pkt);
+
+        // Move remaining data to the beginning of the buffer
+        client->len -= len;
+        memmove(client->buffer, client->buffer + len, client->len);
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Accept HEP TCP clients and read HEP3 packets from all of them
+ */
+static void
+capture_eep_tcp_loop()
+{
+    struct pollfd fds[EEP_TCP_MAX_CLIENTS + 1];
+    eep_tcp_client_t *clients[EEP_TCP_MAX_CLIENTS] = { 0 };
+    int i, fd;
+
+    // First poll entry is the listening socket, the rest are client sockets
+    for (i = 0; i <= EEP_TCP_MAX_CLIENTS; i++) {
+        fds[i].fd = (i == 0) ? eep_cfg.server_sock : -1;
+        fds[i].events = POLLIN;
+    }
+
+    while (eep_cfg.server_sock > 0) {
+        if (poll(fds, EEP_TCP_MAX_CLIENTS + 1, -1) == -1) {
+            if (errno == EINTR)
+                continue;
+            break;
+        }
+
+        // Read data from connected clients
+        for (i = 0; i < EEP_TCP_MAX_CLIENTS; i++) {
+            if (!clients[i] || !fds[i + 1].revents)
+                continue;
+            if (capture_eep_tcp_read(fds[i + 1].fd, clients[i]) != 0) {
+                close(fds[i + 1].fd);
+                fds[i + 1].fd = -1;
+                free(clients[i]);
+                clients[i] = NULL;
+            }
+        }
+
+        // Accept new clients
+        if (fds[0].revents & POLLIN) {
+            if ((fd = accept(eep_cfg.server_sock, NULL, NULL)) == -1)
+                continue;
+            for (i = 0; i < EEP_TCP_MAX_CLIENTS && clients[i]; i++);
+            if (i == EEP_TCP_MAX_CLIENTS || !(clients[i] = sng_malloc(sizeof(eep_tcp_client_t)))) {
+                close(fd);
+                continue;
+            }
+            fds[i + 1].fd = fd;
+        }
+    }
+}
+
 void *
 accept_eep_client(void *info)
 {
     packet_t *pkt;
     capture_info_t *capinfo = (capture_info_t *) info;
 
-    // Begin accepting connections
-    while (eep_cfg.server_sock > 0) {
-        if ((pkt = capture_eep_receive())) {
-            // Avoid parsing from multiples sources.
-            // Avoid parsing while screen in being redrawn
-            capture_lock();
-            if (capture_packet_parse(pkt) != 0) {
-                packet_destroy(pkt);
+    if (eep_cfg.capt_srv_tcp) {
+        capture_eep_tcp_loop();
+    } else {
+        // Begin accepting packets
+        while (eep_cfg.server_sock > 0) {
+            if ((pkt = capture_eep_receive())) {
+                capture_eep_parse_packet(pkt);
             }
-
-            // Store this packets in output file
-            capture_dump_packet(pkt);
-
-            capture_unlock();
         }
     }
 
@@ -235,6 +375,48 @@ capture_eep_send(packet_t *pkt)
             return capture_eep_send_v3(pkt);
     }
     return 1;
+}
+
+// Multiple capture sources may send concurrently: serialize complete HEP3
+// frames so that bytes from separate packets never interleave on TCP.
+static pthread_mutex_t eep_tcp_send_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static int
+capture_eep_send_bytes(const unsigned char *data, size_t length)
+{
+    size_t sent_total = 0;
+    ssize_t sent;
+    int result = 0;
+    int flags = 0;
+
+#ifdef MSG_NOSIGNAL
+    flags = MSG_NOSIGNAL;
+#endif
+
+    if (eep_cfg.capt_tcp)
+        pthread_mutex_lock(&eep_tcp_send_lock);
+
+    while (sent_total < length) {
+        sent = send(eep_cfg.client_sock, data + sent_total, length - sent_total, flags);
+        if (sent < 0 && errno == EINTR)
+            continue;
+        if (sent <= 0) {
+            result = 1;
+            break;
+        }
+        sent_total += (size_t) sent;
+
+        // UDP encapsulation must be sent in exactly one datagram.
+        if (!eep_cfg.capt_tcp && sent_total != length) {
+            result = 1;
+            break;
+        }
+    }
+
+    if (eep_cfg.capt_tcp)
+        pthread_mutex_unlock(&eep_tcp_send_lock);
+
+    return result;
 }
 
 struct pcap_pkthdr
@@ -379,14 +561,9 @@ capture_eep_send_v2(packet_t *pkt)
     memcpy(buffer + buflen, data, len);
     buflen += len;
 
-    if (send(eep_cfg.client_sock, buffer, buflen, 0) == -1) {
-        return 1;
-    }
-
-    /* FREE */
+    int result = capture_eep_send_bytes(buffer, buflen);
     free(buffer);
-
-    return 1;
+    return result;
 }
 
 int
@@ -513,6 +690,12 @@ capture_eep_send_v3(packet_t *pkt)
         tlen += strlen(eep_cfg.capt_password);
     }
 
+    /* HEP3 packet and individual chunks use 16-bit length fields. */
+    if (tlen > 0xffffU || len + sizeof(hep_chunk_t) > 0xffffU) {
+        free(hg);
+        return 1;
+    }
+
     /* total */
     hg->header.length = htons(tlen);
 
@@ -564,14 +747,10 @@ capture_eep_send_v3(packet_t *pkt)
     memcpy(buffer + buflen, data, len);
     buflen += len;
 
-    if (send(eep_cfg.client_sock, buffer, buflen, 0) == -1) {
-        return 1;
-    }
-
-    /* FREE */
+    int result = capture_eep_send_bytes(buffer, buflen);
     free(buffer);
     free(hg);
-    return 0;
+    return result;
 }
 
 packet_t *
@@ -735,6 +914,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
     //! EEP client data
     struct sockaddr_storage eep_client;
     socklen_t eep_client_len=sizeof(eep_client);
+    ssize_t received;
     //! Packet header
     struct pcap_pkthdr header;
     //! New created packet pointer
@@ -745,9 +925,13 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
 
     if(!pkt) {
         /* Receive EEP generic header */
-        if (recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, (struct sockaddr*)&eep_client, &eep_client_len) == -1)
+        received = recvfrom(eep_cfg.server_sock, buffer, MAX_CAPTURE_LEN, 0, (struct sockaddr*)&eep_client, &eep_client_len);
+        if (received < (ssize_t) sizeof(hep_ctrl_t))
             return NULL;
+        size = received;
     } else {
+        if (size < sizeof(hep_ctrl_t) || size > MAX_CAPTURE_LEN)
+            return NULL;
         memcpy(&buffer, pkt, size);
     }
 
@@ -765,11 +949,11 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
         return NULL;
 
     total_len = ntohs(hg.header.length);
-    if (total_len >= MAX_CAPTURE_LEN)
+    if (total_len >= MAX_CAPTURE_LEN || total_len > size)
         return NULL;
     pos = sizeof(hep_ctrl_t);
 
-    while (pos < total_len) {
+    while (pos + sizeof(hep_chunk_t) <= total_len) {
 
         hep_chunk_t *chunk = (struct hep_chunk*) (buffer + pos);
         int chunk_vendor = ntohs(chunk->vendor_id);
@@ -777,7 +961,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
         int chunk_len = ntohs(chunk->length);
 
         /* Bad length, drop packet */
-        if (chunk_len == 0) {
+        if (chunk_len < (int) sizeof(hep_chunk_t) || pos + chunk_len > total_len) {
             return NULL;
         }
 
@@ -849,7 +1033,7 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
                 }
                 if (pos+sizeof(hep_chunk_t)+password_len >= MAX_CAPTURE_LEN)
                     return NULL;
-                if (!(password = sng_malloc(password_len)))
+                if (!(password = sng_malloc(password_len + 1)))
                     return NULL;
                 memcpy(password, buffer + pos + sizeof(hep_chunk_t), password_len);
                 break;
@@ -917,6 +1101,7 @@ capture_eep_set_server_url(const char *url)
     sng_strlcpy(urlstr, url, sizeof(urlstr));
     if (sscanf(urlstr, "%*[^:]:%" STRINGIFY(ADDRESSLEN) "[^:]:%5s", address, port) == 2) {
         setting_set_value(SETTING_EEP_LISTEN, SETTING_ON);
+        setting_set_value(SETTING_EEP_LISTEN_PROTO, strncmp(urlstr, "tcp:", 4) ? "udp" : "tcp");
         setting_set_value(SETTING_EEP_LISTEN_ADDR, address);
         setting_set_value(SETTING_EEP_LISTEN_PORT, port);
         return 0;
@@ -936,6 +1121,7 @@ capture_eep_set_client_url(const char *url)
     sng_strlcpy(urlstr, url, sizeof(urlstr));
     if (sscanf(urlstr, "%*[^:]:%" STRINGIFY(ADDRESSLEN) "[^:]:%5s", address, port) == 2) {
         setting_set_value(SETTING_EEP_SEND, SETTING_ON);
+        setting_set_value(SETTING_EEP_SEND_PROTO, strncmp(urlstr, "tcp:", 4) ? "udp" : "tcp");
         setting_set_value(SETTING_EEP_SEND_ADDR, address);
         setting_set_value(SETTING_EEP_SEND_PORT, port);
         return 0;

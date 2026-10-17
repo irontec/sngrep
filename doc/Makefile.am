@@ -1,1 +1,1 @@
-man_MANS = sngrep.8
+man_MANS = sngrep.8 sngreprc.5

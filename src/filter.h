@@ -37,8 +37,8 @@
  *
  */
 
-#ifndef __SNGREP_FILTER_H_
-#define __SNGREP_FILTER_H_
+#ifndef SNGREP_FILTER_H
+#define SNGREP_FILTER_H
 
 #include "config.h"
 #ifdef WITH_PCRE
@@ -196,4 +196,4 @@ filter_callstates_from_str(const char *value);
 void
 filter_call_state_changed(sip_call_t *call);
 
-#endif /* __SNGREP_FILTER_H_ */
+#endif /* SNGREP_FILTER_H */

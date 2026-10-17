@@ -11,7 +11,7 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [-hVcivNqrD] [-IO
+.B sngrep [-hVcivNqrmD] [-IO
 .I pcap_dump
 .B ] [-d
 .I dev
@@ -60,6 +60,11 @@ Only display dialogs starting with an INVITE request.
 .TP
 .I \-r
 Capture RTP packets payload.
+
+.TP
+.I \-m
+Inspect RTP streams without SIP/SDP. Implies no interface mode and prints
+the number of RTP flows, packets and estimated sequence gaps.
 
 .TP
 .I \-i
@@ -115,11 +120,13 @@ Don't print captured dialogs in no interface mode.
 
 .TP
 .I -H
-Homer sipcapture url (udp:X.X.X.X:XXXX).
+Homer sipcapture url (udp:X.X.X.X:XXXX or tcp:X.X.X.X:XXXX).
+TCP send requires HEP version 3.
 
 .TP
 .I -L
-Listen for encapsulated packets (udp:X.X.X.X:XXXX).
+Listen for encapsulated packets (udp:X.X.X.X:XXXX or tcp:X.X.X.X:XXXX).
+TCP listen requires HEP version 3.
 
 .TP
 .I -E
@@ -201,6 +208,10 @@ This window will compare two messages. Right now the comparison is done
 searching each line in the other message, highlighting those not found exactly.
 You can reach this window by selecting two messages using Spacebar in Call Flow
 window
+
+.SH SEE ALSO
+.BR sngreprc (5),
+.BR pcap-filter (7)
 
 .SH FILES
 Full paths below may vary between installations.

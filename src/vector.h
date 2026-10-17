@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef __SNGREP_VECTOR_H_
-#define __SNGREP_VECTOR_H_
+#ifndef SNGREP_VECTOR_H
+#define SNGREP_VECTOR_H
 
 #include "config.h"
 #include <stdint.h>
@@ -291,4 +291,4 @@ vector_iterator_current(vector_iter_t *it);
 void
 vector_iterator_reset(vector_iter_t *it);
 
-#endif /* __SNGREP_VECTOR_H_ */
+#endif /* SNGREP_VECTOR_H */

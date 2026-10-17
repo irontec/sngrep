@@ -37,8 +37,8 @@
  *
  */
 
-#ifndef __SNGREP_KEYBINDING_H_
-#define __SNGREP_KEYBINDING_H_
+#ifndef SNGREP_KEYBINDING_H
+#define SNGREP_KEYBINDING_H
 
 //! Number of keybindings per action
 #define MAX_BINDINGS    5
@@ -84,6 +84,7 @@ enum key_actions {
     ACTION_PREV_SCREEN,
     ACTION_SHOW_HELP,
     ACTION_SHOW_RAW,
+    ACTION_MEDIA_DASHBOARD,
     ACTION_SHOW_FLOW,
     ACTION_SHOW_FLOW_EX,
     ACTION_SHOW_FILTERS,
@@ -235,4 +236,4 @@ key_action_key_str(int action);
 int
 key_action_key(int action);
 
-#endif /* __SNGREP_KEYBINDING_H_ */
+#endif /* SNGREP_KEYBINDING_H */

@@ -26,8 +26,8 @@
  * @brief Theme and Color definitions
  *
  */
-#ifndef __SNGREP_THEME_H
-#define __SNGREP_THEME_H
+#ifndef SNGREP_THEME_H
+#define SNGREP_THEME_H
 
 /**
  * @brief Enum for available color pairs
@@ -57,4 +57,4 @@ enum sngrep_colors_pairs {
 #define COLOR_DEFAULT -1
 
 
-#endif /* __SNGREP_THEME_H */
+#endif /* SNGREP_THEME_H */

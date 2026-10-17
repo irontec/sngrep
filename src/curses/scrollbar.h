@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef __SNGREP_SCROLLBAR_H
-#define __SNGREP_SCROLLBAR_H
+#ifndef SNGREP_SCROLLBAR_H
+#define SNGREP_SCROLLBAR_H
 
 #ifdef WITH_UNICODE
 #define _X_OPEN_SOURCE_EXTENDED
@@ -82,4 +82,4 @@ ui_set_scrollbar(WINDOW *win, int alignment, int dock);
 void
 ui_scrollbar_draw(scrollbar_t sb);
 
-#endif /* __SNGREP_SCROLLBAR_H */
+#endif /* SNGREP_SCROLLBAR_H */
