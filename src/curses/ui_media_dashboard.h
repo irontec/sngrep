@@ -46,6 +46,10 @@ struct media_dashboard_info
     size_t offset;
     //! Sort by estimated loss instead of first seen time
     int order_by_loss;
+    //! Show RTPengine sessions instead of captured RTP streams
+    int show_rtpengine;
+    //! Total visible items in current view
+    size_t total;
     //! Last time the panel was redrawn
     time_t last_render;
 };
