@@ -59,7 +59,7 @@ usage()
            " [-k keyfile]"
 #endif
 #ifdef USE_EEP
-           " [-LHE capture_url]"
+           " [-E] [-LH capture_url]"
 #endif
            " [<match expression>] [<bpf filter>]\n\n"
            "    -h --help\t\t This usage\n"
