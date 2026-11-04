@@ -33,6 +33,9 @@ install-sh
 depcomp
 test-driver
 
+# Backups left by autoreconf and editors
+*~
+
 # Ignore Doxygen generated files
 doc/html
 
