@@ -78,6 +78,19 @@ media_dashboard_label(WINDOW *win, int y, int x, const char *text, int attr)
     wattroff(win, attr);
 }
 
+/**
+ * Highlights a row the same way the call list highlights its selected call.
+ */
+static void
+media_dashboard_highlight_row(ui_t *ui, int y)
+{
+    wattron(ui->win, COLOR_PAIR(CP_WHITE_ON_BLUE));
+    // Reverse colors on monochrome terminals
+    if (!has_colors())
+        wattron(ui->win, A_REVERSE);
+    ui_clear_line(ui, y);
+}
+
 const char *
 media_dashboard_state(const media_inspector_flow_t *f, time_t now)
 {
@@ -209,7 +222,7 @@ media_dashboard_draw(ui_t *ui)
         uint64_t lost = media_inspector_estimated_loss(f);
         char source[96], dest[96], jitter[16];
         const char *state = media_dashboard_state(f, now);
-        int attr = i == (info ? info->selected : 0) ? A_REVERSE | A_BOLD : A_NORMAL;
+        int selected = i == (info ? info->selected : 0);
         int color = !strcmp(state, "STALE") || !strcmp(state, "LOSS") ?
                     CP_YELLOW_ON_DEF : CP_GREEN_ON_DEF;
         y = 12 + (int)(i - (info ? info->offset : 0));
@@ -219,13 +232,14 @@ media_dashboard_draw(ui_t *ui)
             snprintf(jitter, sizeof(jitter), "%.1fms", f->jitter_ms);
         else
             snprintf(jitter, sizeof(jitter), "N/A");
-        wattron(w, attr);
+        if (selected)
+            media_dashboard_highlight_row(ui, y);
         if (compact)
             mvwprintw(w, y, 3, "%-3zu %-19.19s %-19.19s", i + 1, source, dest);
         else
             mvwprintw(w, y, 3, "%-3zu %-23.23s %-23.23s", i + 1, source, dest);
-        wattroff(w, attr);
-        media_dashboard_label(w, y, compact ? 48 : 55, state, COLOR_PAIR(color));
+        // Keep the selection background instead of the state color, like the call list
+        media_dashboard_label(w, y, compact ? 48 : 55, state, selected ? 0 : COLOR_PAIR(color));
         if (compact)
             mvwprintw(w, y, 57, "%8llu %6llu",
                       (unsigned long long)f->packets, (unsigned long long)lost);
@@ -233,6 +247,7 @@ media_dashboard_draw(ui_t *ui)
             mvwprintw(w, y, 64, "%8llu %6llu %9s",
                       (unsigned long long)f->packets,
                       (unsigned long long)lost, jitter);
+        wattroff(w, A_REVERSE | COLOR_PAIR(CP_WHITE_ON_BLUE));
     }
 
     if (!n)
