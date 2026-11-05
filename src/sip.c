@@ -317,7 +317,7 @@ int
 sip_validate_packet(packet_t *packet)
 {
     uint32_t plen = packet_payloadlen(packet);
-    u_char payload[MAX_SIP_PAYLOAD];
+    u_char payload[MAX_SIP_PAYLOAD + 1];
     regmatch_t pmatch[4];
     char cl_header[MAX_CONTENT_LENGTH_SIZE];
     int content_len;
@@ -328,7 +328,7 @@ sip_validate_packet(packet_t *packet)
         return VALIDATE_NOT_SIP;
 
     // Get payload from packet(s)
-    memset(payload, 0, MAX_SIP_PAYLOAD);
+    memset(payload, 0, sizeof(payload));
     memcpy(payload, packet_payload(packet), plen);
 
     // Initialize variables
@@ -391,7 +391,7 @@ sip_check_packet(packet_t *packet)
     sip_msg_t *msg;
     sip_call_t *call;
     char callid[MAX_CALLID_SIZE], xcallid[MAX_XCALLID_SIZE];
-    u_char payload[MAX_SIP_PAYLOAD];
+    u_char payload[MAX_SIP_PAYLOAD + 1];
     bool newcall = false;
 
     // Max SIP payload allowed
@@ -403,7 +403,7 @@ sip_check_packet(packet_t *packet)
     memset(xcallid, 0, sizeof(xcallid));
 
     // Get payload from packet(s)
-    memset(payload, 0, MAX_SIP_PAYLOAD);
+    memset(payload, 0, sizeof(payload));
     memcpy(payload, packet_payload(packet), packet_payloadlen(packet));
 
     // Get the Call-ID of this message
