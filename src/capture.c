@@ -592,9 +592,13 @@ capture_packet_reasm_ip(capture_info_t *capinfo, const struct pcap_pkthdr *heade
                 break;
             }
 
-            if (tlv->tlv_length >= 4) {
-                link_hl += ((tlv->tlv_length + 3) & ~3); /* next TLV aligned to 4B */
-            }
+            // A TLV shorter than its own header would never advance the
+            // offset, and a huge one would wrap it: drop the packet
+            if (tlv->tlv_length < 4
+                || link_hl + (((uint32_t) tlv->tlv_length + 3) & ~3u) > *caplen)
+                return NULL;
+
+            link_hl += ((tlv->tlv_length + 3) & ~3); /* next TLV aligned to 4B */
         }
     }
 
