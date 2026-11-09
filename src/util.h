@@ -29,6 +29,7 @@
 #ifndef SNGREP_UTIL_H
 #define SNGREP_UTIL_H
 
+#include <stdio.h>
 // Capture headers has some fixes for pcap timevals in BSD systems
 #include "capture.h"
 
@@ -122,6 +123,24 @@ timeval_to_delta(struct timeval start, struct timeval end, char *out);
  */
 char *
 strtrim(char *str);
+
+/**
+ * @brief Write a string as a quoted CSV field (RFC 4180)
+ *
+ * The field is always enclosed in double quotes and any double quote
+ * inside the string is doubled. A NULL string is written as an empty field.
+ *
+ * SIP headers are untrusted input. When compiled with CSV_FORMULA_ESCAPE
+ * defined, values starting with a character that spreadsheets interpret
+ * as a formula (=, +, -, @, tab, CR, LF) are prefixed with a single quote
+ * to be shown as text. It is disabled by default because it alters E.164
+ * numbers starting with '+'.
+ *
+ * @param out File where the field is written
+ * @param str String to write, may be NULL
+ */
+void
+csv_write_field(FILE *out, const char *str);
 
 /**
  * @brief Set up handler for SIGTERM, SIGINT and SIGQUIT

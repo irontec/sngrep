@@ -3,6 +3,7 @@ AUTOMAKE_OPTIONS=subdir-objects
 check_PROGRAMS=test-001 test-002 test-003 test-004 test-005
 check_PROGRAMS+=test-006 test-007 test-008 test-009 test-010
 check_PROGRAMS+=test-011 test-012 test-013 test-014 test-015 test-016
+check_PROGRAMS+=test-017
 
 test_001_SOURCES=test_001.c
 test_002_SOURCES=test_002.c
@@ -27,5 +28,6 @@ endif
 test_015_SOURCES=test_015.c ../src/sip_call.c ../src/media.c ../src/rtp.c ../src/packet.c ../src/address.c ../src/vector.c ../src/util.c
 test_016_SOURCES=test_016.c ../src/rtpengine.c
 test_016_LDADD=-lpthread
+test_017_SOURCES=test_017.c ../src/util.c
 
 TESTS = $(check_PROGRAMS)
