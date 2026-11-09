@@ -83,6 +83,11 @@
 #define ETHERTYPE_8021Q 0x8100
 #endif
 
+//! Define VLAN 802.1ad (QinQ) Ethernet type
+#ifndef ETHERTYPE_8021AD
+#define ETHERTYPE_8021AD 0x88a8
+#endif
+
 //! NFLOG Support (for libpcap <1.6.0)
 #define DLT_NFLOG       239
 #define NFULA_PAYLOAD   9
