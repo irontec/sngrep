@@ -60,7 +60,7 @@ usage()
            " [-k keyfile]"
 #endif
 #ifdef USE_EEP
-           " [-LHE capture_url]"
+           " [-E] [-LH capture_url]"
 #endif
            " [<match expression>] [<bpf filter>]\n\n"
            "    -h --help\t\t This usage\n"
@@ -184,7 +184,7 @@ main(int argc, char* argv[])
 #ifdef USE_EEP
         { "eep-listen", required_argument, 0, 'L' },
         { "eep-send", required_argument, 0, 'H' },
-        { "eep-parse", required_argument, 0, 'E' },
+        { "eep-parse", no_argument, 0, 'E' },
 #endif
         { "quiet", no_argument, 0, 'q' },
     };
