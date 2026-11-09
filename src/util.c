@@ -212,3 +212,24 @@ strtrim(char *str)
 
     return str;
 }
+
+void
+csv_write_field(FILE *out, const char *str)
+{
+    const char *p = (str) ? str : "";
+
+    fputc('"', out);
+#ifdef CSV_FORMULA_ESCAPE
+    // Prefix values that spreadsheets would interpret as formulas
+    if (*p == '=' || *p == '+' || *p == '-' || *p == '@' ||
+        *p == '\r' || *p == '\n' || *p == '\t')
+        fputc('\'', out);
+#endif
+    for (; *p; p++) {
+        // Double quotes are escaped by doubling them
+        if (*p == '"')
+            fputc('"', out);
+        fputc(*p, out);
+    }
+    fputc('"', out);
+}

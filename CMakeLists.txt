@@ -310,7 +310,7 @@ message( STATUS "" )
 enable_testing()            # "ctest" will run all tests
 add_custom_target( tests )  # "make tests" will build all tests
 
-foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 014 015 016 )
+foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 014 015 016 017 )
 	add_executable( test_${i} EXCLUDE_FROM_ALL tests/test_${i}.c )
 	if( i STREQUAL "007" )
 		target_sources( test_${i} PUBLIC src/vector.c src/util.c )
@@ -339,6 +339,8 @@ foreach( i 001 002 003 004 005 006 007 008 009 010 011 013 014 015 016 )
 	elseif( i STREQUAL "016" )
 		target_sources( test_${i} PUBLIC src/rtpengine.c )
 		target_link_libraries( test_${i} PUBLIC pthread )
+	elseif( i STREQUAL "017" )
+		target_sources( test_${i} PUBLIC src/util.c )
 	endif()
 	target_include_directories( test_${i} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} )
 

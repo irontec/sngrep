@@ -53,6 +53,7 @@ enum save_field_list {
     FLD_SAVE_PCAP,
     FLD_SAVE_PCAP_RTP,
     FLD_SAVE_TXT,
+    FLD_SAVE_CSV,
     FLD_SAVE_SAVE,
     FLD_SAVE_CANCEL,
     FLD_SAVE_COUNT
@@ -74,7 +75,8 @@ enum save_mode {
 enum save_format {
     SAVE_PCAP = 0,
     SAVE_PCAP_RTP,
-    SAVE_TXT
+    SAVE_TXT,
+    SAVE_CSV
 };
 
 //! Sorter declaration of struct save_info
