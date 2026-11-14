@@ -355,7 +355,9 @@ main(int argc, char* argv[])
                 exit(1);
 #endif
             case '?':
-                if (strchr(options, optopt)) {
+                if (!optopt) {
+                    fprintf(stderr, "Unknown option %s.\n", argv[optind - 1]);
+                } else if (strchr(options, optopt)) {
                     fprintf(stderr, "-%c option requires an argument.\n", optopt);
                 } else if (isprint(optopt)) {
                     fprintf(stderr, "Unknown option -%c.\n", optopt);
