@@ -187,6 +187,7 @@ main(int argc, char* argv[])
         { "eep-parse", no_argument, 0, 'E' },
 #endif
         { "quiet", no_argument, 0, 'q' },
+        { 0, 0, 0, 0 }
     };
 
     // Parse command line arguments that have high priority
