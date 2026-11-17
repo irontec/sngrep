@@ -5,8 +5,8 @@
 ##
 
 ##-----------------------------------------------------------------------------
-## Enable color on or off
-# set color off
+## Call flow color grouping: request, cseq or callid
+# set colormode callid
 ## Color theme: classic, modern, professional or simple (themes need 256
 ## colors and use the terminal background)
 # set theme modern
@@ -25,9 +25,6 @@
 
 ## Default capture keyfile for TLS transport
 # set capture.keyfile /etc/ssl/key.pem
-
-## Uncommnet to lookup hostnames from packets ips
-# set capture.lookup on
 
 ## Set default capture device
 # use special keyword 'any', a device name 'eth0' or a comma-separated list like 'eth1,eth3'
@@ -54,9 +51,7 @@
 # set cl.scrollstep 20
 # set cf.scrollstep 4
 ## Disable exit prompt
-# set cl.noexitprompt off
-## Or set its default button
-# set cl.defexitbutton 0/1
+# set exitprompt off
 ## Disable mouse support (restores terminal text selection without Shift)
 # set mouse off
 
