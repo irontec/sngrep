@@ -55,10 +55,11 @@
 void
 usage()
 {
-    printf("Usage: %s [-hVcivNqrmD] [-IO pcap_dump] [-d dev] [-l limit] [-B buffer]"
+    printf("Usage: %s [-hVcivNqrmDFtPR] [-IO pcap_dump] [-d dev] [-l limit] [-B buffer]"
 #if defined(WITH_GNUTLS) || defined(WITH_OPENSSL)
            " [-k keyfile]"
 #endif
+           " [-f config_file] [-T text_file] [-e host:port]"
 #ifdef USE_EEP
            " [-E] [-LH capture_url]"
 #endif
