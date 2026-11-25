@@ -3,7 +3,7 @@
 .\" Copyright (c) 2013-2026  Ivan Alonso <kaian@irontec.com>
 .\" Copyright (c) 2013-2026  Irontec S.L.
 
-.TH SNGREP 8 "Oct 2026" "sngrep 1.9.0"
+.TH SNGREP 8 "Nov 2026" "sngrep 1.10.0"
 
 .SH NAME
 
@@ -11,7 +11,7 @@ sngrep \- SIP Messages flow viewer
 
 .SH SYNOPSIS
 
-.B sngrep [-hVcivNqrmD] [-IO
+.B sngrep [-hVcivNqrmDFtPR] [-IO
 .I pcap_dump
 .B ] [-d
 .I dev
@@ -23,9 +23,11 @@ sngrep \- SIP Messages flow viewer
 .I keyfile
 .B ] [-f
 .I config_file
-.B ] [-F] [-T
+.B ] [-T
 .I text_file
-.B ] [-t] [-P] [-R] [-E] [-LH
+.B ] [-e
+.I host:port
+.B ] [-E] [-LH
 .I capture_url
 .B ] [
 .I <match expression>
@@ -63,8 +65,9 @@ Capture RTP packets payload.
 
 .TP
 .I \-m
-Inspect RTP streams without SIP/SDP. Implies no interface mode and prints
-the number of RTP flows, packets and estimated sequence gaps.
+Inspect RTP streams without SIP/SDP. Opens the Media Inspector (F6) instead
+of the call list. With -N, prints the number of RTP flows, packets and
+estimated sequence gaps.
 
 .TP
 .I \-e host:port

@@ -1,3 +1,24 @@
+2026-11-25 Ivan Alonso <kaian@irontec.com>
+	* sngrep 1.10.0 released
+
+	* media: add media inspector dashboard (F6) for RTP streams
+	* media: add -m option to inspect RTP streams without SIP/SDP
+	* media: show RTPengine sessions via the NG control protocol
+	* call list: add negotiated audio codec column
+	* ui: add mouse support in every panel
+	* ui: add color themes to settings
+	* save: add csv format with call list columns to save dialog
+	* eep: add TCP support for HEP3 listen and send
+	* eep: allow listening on IPv6 addresses
+	* main: show git commit next to version in -V output
+	* main: make --eep-parse take no argument
+	* main: fix crash on unknown or abbreviated long options
+	* eep: fix use-after-free on rejected HEP packets
+	* eep: validate HEP3 packet and chunk lengths
+	* capture: fix infinite loop on crafted NFLOG TLVs
+	* sip: fix off-by-one out of bounds read on full-size SIP payloads
+	* doc: add sngreprc(5) manual page
+
 2026-10-05 Ivan Alonso <kaian@irontec.com>
 	* sngrep 1.9.0 released
 
