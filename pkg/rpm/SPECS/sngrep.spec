@@ -69,6 +69,7 @@ You can also create new PCAP files from captures or displayed dialogs.
 %doc README TODO ChangeLog
 %{_bindir}/sngrep
 %{_mandir}/man8/sngrep.8*
+%{_mandir}/man5/sngreprc.5*
 %config(noreplace) %{_sysconfdir}/sngreprc
 
 %changelog
