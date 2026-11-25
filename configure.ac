@@ -42,7 +42,7 @@ AC_LANG(C)
 AM_PROG_CC_C_O
 
 # we might want to use this with zlib for compressed pcap support
-AC_CHECK_FUNCS([fopencookie])
+AC_CHECK_FUNCS([fopencookie funopen])
 
 #######################################################################
 # Check for other REQUIRED libraries

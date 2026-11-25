@@ -76,7 +76,8 @@ void sigusr1_handler(int signum)
     sigusr1_received = 1;
 }
 
-#if defined(WITH_ZLIB)
+#if defined(WITH_ZLIB) && (defined(HAVE_FOPENCOOKIE) || defined(HAVE_FUNOPEN))
+#if defined(HAVE_FOPENCOOKIE)
 static ssize_t
 gzip_cookie_write(void *cookie, const char *buf, size_t size)
 {
@@ -88,6 +89,21 @@ gzip_cookie_read(void *cookie, char *buf, size_t size)
 {
     return gzread((gzFile)cookie, (voidp)buf, size);
 }
+#else
+static int
+gzip_cookie_write(void *cookie, const char *buf, int size)
+{
+    // gzwrite returns 0 on error, funopen expects -1
+    int written = gzwrite((gzFile)cookie, (voidpc)buf, size);
+    return (written > 0 || size == 0) ? written : -1;
+}
+
+static int
+gzip_cookie_read(void *cookie, char *buf, int size)
+{
+    return gzread((gzFile)cookie, (voidp)buf, size);
+}
+#endif
 
 static int
 gzip_cookie_close(void *cookie)
@@ -260,19 +276,22 @@ capture_offline(const char *infile)
 
     // Open PCAP file
     if ((capinfo->handle = pcap_open_offline(infile, errbuf)) == NULL) {
-#if defined(HAVE_FOPENCOOKIE) && defined(WITH_ZLIB)
+#if defined(WITH_ZLIB) && (defined(HAVE_FOPENCOOKIE) || defined(HAVE_FUNOPEN))
         // we can't directly parse the file as pcap - could it be gzip compressed?
         gzFile zf = gzopen(infile, "rb");
         if (!zf)
             goto openerror;
 
+        // reroute the file access functions
+        // use the gzip read+close functions when accessing the file
+#if defined(HAVE_FOPENCOOKIE)
         static cookie_io_functions_t cookiefuncs = {
             gzip_cookie_read, NULL, NULL, gzip_cookie_close
         };
-
-        // reroute the file access functions
-        // use the gzip read+close functions when accessing the file
         FILE *fp = fopencookie(zf, "r", cookiefuncs);
+#else
+        FILE *fp = funopen(zf, gzip_cookie_read, NULL, NULL, gzip_cookie_close);
+#endif
         if (!fp)
         {
             gzclose(zf);
@@ -1549,19 +1568,22 @@ dump_open(const char *dumpfile, ino_t* dump_inode)
 
         if (is_gz_filename(dumpfile))
         {
-#if defined(HAVE_FOPENCOOKIE) && defined(WITH_ZLIB)
+#if defined(WITH_ZLIB) && (defined(HAVE_FOPENCOOKIE) || defined(HAVE_FUNOPEN))
             // create a gzip file stream out of the already opened file
             gzFile zf = gzdopen(fileno(fp), "w");
             if (!zf)
                 return NULL;
 
+            // reroute the file access functions
+            // use the gzip write+close functions when accessing the file
+#if defined(HAVE_FOPENCOOKIE)
             static cookie_io_functions_t cookiefuncs = {
                 NULL, gzip_cookie_write, NULL, gzip_cookie_close
             };
-
-            // reroute the file access functions
-            // use the gzip write+close functions when accessing the file
             fp = fopencookie(zf, "w", cookiefuncs);
+#else
+            fp = funopen(zf, NULL, gzip_cookie_write, NULL, gzip_cookie_close);
+#endif
             if (!fp)
                 return NULL;
 #else

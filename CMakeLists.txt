@@ -62,6 +62,7 @@ endif()
 # we might want to use this with zlib for compressed pcap support
 include( CheckFunctionExists )
 check_function_exists( fopencookie HAVE_FOPENCOOKIE )
+check_function_exists( funopen HAVE_FUNOPEN )
 
 #######################################################################
 # Check for other REQUIRED libraries
