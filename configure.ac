@@ -1,5 +1,5 @@
 AC_PREREQ([2.59])
-AC_INIT([sngrep], [1.9.0], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
+AC_INIT([sngrep], [1.10.0], [kaian@irontec.com], [sngrep], [http://www.irontec.com/])
 AM_INIT_AUTOMAKE([1.9])
 AC_CONFIG_HEADERS([src/config.h])
 

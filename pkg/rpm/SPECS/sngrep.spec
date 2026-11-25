@@ -6,7 +6,7 @@
 
 Summary:            SIP Messages flow viewer
 Name:               sngrep
-Version:            1.9.0
+Version:            1.10.0
 Release:            0%{?dist}
 License:            GPLv3
 Group:              Applications/Engineering
@@ -73,6 +73,8 @@ You can also create new PCAP files from captures or displayed dialogs.
 %config(noreplace) %{_sysconfdir}/sngreprc
 
 %changelog
+* Wed Nov 25 2026 Ivan Alonso <kaian@irontec.com> - 1.10.0
+ - Version 1.10.0
 * Mon Oct 05 2026 Ivan Alonso <kaian@irontec.com> - 1.9.0
  - Version 1.9.0
 * Fri Jul 24 2026 Ivan Alonso <kaian@irontec.com> - 1.8.4
