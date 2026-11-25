@@ -95,7 +95,7 @@ You can also create new PCAP files from captures or displayed dialogs.
  - Version 1.4.10
 * Thu May 20 2021 Ivan Alonso <kaian@irontec.com> - 1.4.9
  - Version 1.4.9
-* Tue Oct 10 2020 Ivan Alonso <kaian@irontec.com> - 1.4.8
+* Tue Nov 10 2020 Ivan Alonso <kaian@irontec.com> - 1.4.8
  - Version 1.4.8
 * Thu May 21 2020 Ivan Alonso <kaian@irontec.com> - 1.4.7
  - Version 1.4.7
@@ -107,7 +107,7 @@ You can also create new PCAP files from captures or displayed dialogs.
  - Version 1.4.4
 * Wed May 10 2017 Ivan Alonso <kaian@irontec.com> - 1.4.3
  - Version 1.4.3
-* Fri Dec 19 2016 Ivan Alonso <kaian@irontec.com> - 1.4.2
+* Tue Dec 20 2016 Ivan Alonso <kaian@irontec.com> - 1.4.2
  - Version 1.4.2
 * Fri Oct 28 2016 Ivan Alonso <kaian@irontec.com> - 1.4.1
  - Version 1.4.1
