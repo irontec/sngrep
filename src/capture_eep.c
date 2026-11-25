@@ -885,6 +885,42 @@ capture_eep_receive_v2()
 
 
 /**
+ * @brief Minimum length of a HEP3 chunk of the given type
+ *
+ * Fixed-size chunks are copied into their struct, so they must be at least
+ * that long. Variable-size chunks only require the chunk header.
+ *
+ * @return minimum chunk length in bytes, including the chunk header
+ */
+static int
+capture_eep_chunk_min_len(int chunk_type)
+{
+    switch (chunk_type) {
+        case CAPTURE_EEP_CHUNK_FAMILY:
+        case CAPTURE_EEP_CHUNK_PROTO:
+        case CAPTURE_EEP_CHUNK_PROTO_TYPE:
+            return sizeof(hep_chunk_uint8_t);
+        case CAPTURE_EEP_CHUNK_SRC_PORT:
+        case CAPTURE_EEP_CHUNK_DST_PORT:
+            return sizeof(hep_chunk_uint16_t);
+        case CAPTURE_EEP_CHUNK_TS_SEC:
+        case CAPTURE_EEP_CHUNK_TS_USEC:
+        case CAPTURE_EEP_CHUNK_CAPT_ID:
+            return sizeof(hep_chunk_uint32_t);
+        case CAPTURE_EEP_CHUNK_SRC_IP4:
+        case CAPTURE_EEP_CHUNK_DST_IP4:
+            return sizeof(hep_chunk_ip4_t);
+#ifdef USE_IPV6
+        case CAPTURE_EEP_CHUNK_SRC_IP6:
+        case CAPTURE_EEP_CHUNK_DST_IP6:
+            return sizeof(hep_chunk_ip6_t);
+#endif
+        default:
+            return sizeof(hep_chunk_t);
+    }
+}
+
+/**
  * @brief Received a HEP3 packet
  *
  * This function receives HEP protocol payload and converts it
@@ -969,6 +1005,13 @@ capture_eep_receive_v3(const u_char *pkt, uint32_t size)
         if (chunk_vendor != 0) {
             pos += chunk_len;
             continue;
+        }
+
+        // Chunk shorter than its type data, drop packet
+        if (chunk_len < capture_eep_chunk_min_len(chunk_type)) {
+            free(payload);
+            free(password);
+            return NULL;
         }
 
         switch (chunk_type) {
