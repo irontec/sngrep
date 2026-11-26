@@ -42,6 +42,9 @@
 /* Define if you have the `fopencookie' function */
 #cmakedefine HAVE_FOPENCOOKIE
 
+/* Define if you have the `funopen' function */
+#cmakedefine HAVE_FUNOPEN
+
 /* Compile With Unicode compatibility */
 #cmakedefine WITH_UNICODE
 
